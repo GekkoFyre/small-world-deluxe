@@ -1,0 +1,136 @@
+#
+#  ______  ______  ___   ___  ______  ______  ______  ______       
+# /_____/\/_____/\/___/\/__/\/_____/\/_____/\/_____/\/_____/\      
+# \:::_ \ \::::_\/\::.\ \\ \ \:::_ \ \:::_ \ \::::_\/\:::_ \ \     
+#  \:\ \ \ \:\/___/\:: \/_) \ \:\ \ \ \:\ \ \ \:\/___/\:(_) ) )_   
+#   \:\ \ \ \::___\/\:. __  ( (\:\ \ \ \:\ \ \ \::___\/\: __ `\ \  
+#    \:\/.:| \:\____/\: \ )  \ \\:\_\ \ \:\/.:| \:\____/\ \ `\ \ \ 
+#     \____/_/\_____\/\__\/\__\/ \_____\/\____/_/\_____\/\_\/ \_\/ 
+#                                                                 
+#
+#   If you have downloaded the source code for "Small World Deluxe" and are reading this,
+#   then thank you from the bottom of our hearts for making use of our hard work, sweat
+#   and tears in whatever you are implementing this into!
+#
+#   Copyright (C) 2019. GekkoFyre.
+#
+#   Small World Deluxe is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   Small World is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with Small World Deluxe.  If not, see <http://www.gnu.org/licenses/>.
+#
+#
+#   The latest source code updates can be obtained from [ 1 ] below at your
+#   discretion. A web-browser or the 'git' application may be required.
+#
+#   [ 1 ] - https://git.gekkofyre.io/amateur-radio/small-world-deluxe
+#
+
+#
+# https://docs.gitlab.com/ee/ci/yaml/
+# https://gitlab.com/gitlab-org/gitlab-runner/issues/248
+# https://stackoverflow.com/questions/19383887/how-to-use-sudo-in-build-script-for-gitlab-ci
+#
+
+### --------------------------------------------------------------------------------------------------- ###
+
+stages:
+    - sworld_debug_ubuntu_x86_64
+    - sworld_cpplint_ubuntu_x86_64
+    - sworld_debug_mingw_x86_64
+
+### --------------------------------------------------------------------------------------------------- ###
+
+#
+# For MinGW libraries
+# https://hub.docker.com/r/mmozeiko/mingw-w64/dockerfile
+# https://sourceforge.net/p/mingw-w64/wiki2/CrossQuickstart/
+# http://files.ettus.com/manual/page_build_guide.html
+#
+before_script:
+    - mkdir -p third-party
+    - cd third-party
+    - wget http://git.savannah.gnu.org/cgit/texinfo.git/snapshot/texinfo-6.6.tar.gz
+    - tar -xvzf texinfo-6.6.tar.gz
+    - cd texinfo-6.6
+    - sh ./autogen.sh
+    - ./configure --host=x86_64-w64-mingw32 --target=x86_64-w64-mingw32 && make -j 4 && sudo make install
+    - cd ./..
+    - git clone https://github.com/libusb/libusb-compat-0.1.git
+    - cd libusb-compat-0.1 && sh bootstrap.sh && ./configure --host=x86_64-w64-mingw32 --target=x86_64-w64-mingw32 && make -j 4 && make check && sudo make install
+    - cd ./..
+    - wget https://github.com/Hamlib/Hamlib/releases/download/3.3/hamlib-3.3.tar.gz
+    - tar -xvzf hamlib-3.3.tar.gz
+    - cd hamlib-3.3 && sudo ./configure --host=x86_64-w64-mingw32 --target=x86_64-w64-mingw32 && make -j 4 && sudo make install
+    - cd ./../..
+
+sworld_debug_ubuntu_x86_64:
+    stage: sworld_debug_ubuntu_x86_64
+    image: gekkofyre/ubuntu:latest
+    cache:
+        paths:
+            - "binaries/*.deb"
+    tags:
+        - "debug-build"
+    script:
+        - mkdir -p artifact-build
+        - cp -v /builds/amateur-radio/small-world-deluxe/src/sworld_res.rcc /builds/amateur-radio/small-world-deluxe/artifact-build/sworld_res.rcc
+        - cd artifact-build
+        - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug ..
+        - make -j 4
+        - cd ..
+    when: always
+
+#
+# https://gitlab.com/gitlab-org/gitlab-ee/issues/3985
+# https://github.com/antiagainst/codeclimate-cppcheck
+#
+sworld_cpplint_ubuntu_x86_64:
+    stage: sworld_cpplint_ubuntu_x86_64
+    image: gekkofyre/ubuntu:latest
+    cache:
+        paths:
+            - "binaries/*.deb"
+    tags:
+        - "debug-build"
+    before_script:
+        - echo "Executing cppLint"
+    script:
+        - sudo apt-get update -y
+        - sudo apt-get install -y python-pip
+        - sudo python -m pip install cpplint
+        - "cpplint --filter=-whitespace,-legal/copyright,-readability/multiline_comment /builds/amateur-radio/small-world-deluxe/src/main.cpp"
+    after_script:
+        - echo "Finished execution of cppLint"
+    when: always
+    dependencies:
+        - sworld_debug_ubuntu_x86_64
+
+### --------------------------------------------------------------------------------------------------- ###
+
+sworld_debug_mingw_x86_64:
+    stage: sworld_debug_mingw_x86_64
+    image: gekkofyre/archlinux:smallworld
+    cache:
+        paths:
+            - "binaries/*.exe"
+    tags:
+        - "debug-build"
+    script:
+        - mkdir -p artifact-build
+        - cp -v /builds/amateur-radio/small-world-deluxe/src/sworld_res.rcc /builds/amateur-radio/small-world-deluxe/artifact-build/sworld_res.rcc
+        - cd artifact-build
+        - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE="~/toolchains/x86_64-w64-mingw32_linux.cmake" ..
+        - make -j 4
+        - cd ..
+    dependencies:
+        - sworld_debug_ubuntu_x86_64
+    when: always

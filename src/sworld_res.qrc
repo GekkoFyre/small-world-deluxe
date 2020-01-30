@@ -1,0 +1,24 @@
+<RCC>
+    <qresource prefix="/resources">
+        <file>contrib/images/vector/Radio-04/Radio-04.png</file>
+        <file>contrib/images/vector/Radio-04/Radio-04_orig.svg</file>
+        <file>contrib/images/vector/Radio-04/Radio-04_rescaled.svg</file>
+        <file>contrib/images/vector/Kameleon/Record-Player.svg</file>
+        <file>contrib/images/vector/no-attrib/clipboard-flat.svg</file>
+        <file>contrib/images/vector/no-attrib/link-open-flat.svg</file>
+        <file>contrib/images/vector/no-attrib/play-rounded-flat.svg</file>
+        <file>contrib/images/vector/no-attrib/settings-flat.svg</file>
+        <file>contrib/images/vector/no-attrib/wav-flat.svg</file>
+        <file>contrib/images/vector/no-attrib/vinyl-record.svg</file>
+        <file>contrib/images/vector/purchased/iconfinder_99_4033346.svg</file>
+        <file>contrib/images/vector/purchased/iconfinder_archive_226655.svg</file>
+        <file>contrib/images/vector/purchased/iconfinder_chemistry_226643.svg</file>
+        <file>contrib/images/vector/purchased/iconfinder_Graph-Decrease_378375.svg</file>
+        <file>contrib/images/vector/purchased/iconfinder_turn_off_on_power_181492.svg</file>
+        <file>contrib/images/vector/purchased/iconfinder_Warning-02_2403924.svg</file>
+        <file>contrib/images/vector/purchased/iconfinder_Warning-03_2403937.svg</file>
+        <file>contrib/images/vector/purchased/iconfinder_Warning-04_2403936.svg</file>
+        <file>contrib/images/vector/purchased/iconfinder_Warning-14_2403925.svg</file>
+        <file>contrib/images/vector/purchased/iconfinder_wi-fi_226705.svg</file>
+    </qresource>
+</RCC>

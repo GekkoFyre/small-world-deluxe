@@ -1,0 +1,97 @@
+#
+#  ______  ______  ___   ___  ______  ______  ______  ______       
+# /_____/\/_____/\/___/\/__/\/_____/\/_____/\/_____/\/_____/\      
+# \:::_ \ \::::_\/\::.\ \\ \ \:::_ \ \:::_ \ \::::_\/\:::_ \ \     
+#  \:\ \ \ \:\/___/\:: \/_) \ \:\ \ \ \:\ \ \ \:\/___/\:(_) ) )_   
+#   \:\ \ \ \::___\/\:. __  ( (\:\ \ \ \:\ \ \ \::___\/\: __ `\ \  
+#    \:\/.:| \:\____/\: \ )  \ \\:\_\ \ \:\/.:| \:\____/\ \ `\ \ \ 
+#     \____/_/\_____\/\__\/\__\/ \_____\/\____/_/\_____\/\_\/ \_\/ 
+#                                                                 
+#
+#   If you have downloaded the source code for "Dekoder for Morse" and are reading this,
+#   then thank you from the bottom of our hearts for making use of our hard work, sweat
+#   and tears in whatever you are implementing this into!
+#
+#   Copyright (C) 2019. GekkoFyre.
+#
+#   Dekoder for Morse is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   Dekoder is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with Dekoder for Morse.  If not, see <http://www.gnu.org/licenses/>.
+#
+#
+#   The latest source code updates can be obtained from [ 1 ] below at your
+#   discretion. A web-browser or the 'git' application may be required.
+#
+#   [ 1 ] - https://git.gekkofyre.io/amateur-radio/dekoder-for-morse
+#
+
+project('dekoder', ['cpp', 'c'], default_options : ['cpp_std=c++17', 'warning_level=3'])
+
+qt5 = import('qt5')
+qt5dep = dependency('qt5', modules : ['Core', 'Gui', 'Widgets', 'Charts', 'Test'])
+boost_dep = dependency('boost', modules : ['iostreams', 'filesystem', 'chrono', 'system'])
+
+#
+# https://mesonbuild.com/Dependencies.html
+# https://mesonbuild.com/Compiler-properties.html
+#
+hamlib_dep = dependency('hamlib', method : 'sysconfig', modules : ['hamlib++', 'hamlib-2'])
+liblz4_dep = dependency('lz4', method : 'sysconfig', modules : ['lz4_static', 'lz4'])
+libzstd_dep = dependency('zstd', method : 'sysconfig', modules : ['zstd_static', 'zstd'])
+zlib_dep = dependency('ZLIB', method : 'sysconfig', modules : ['ZLIB::ZLIB'])
+snappy_dep = dependency('snappy', method : 'sysconfig', modules : ['libsnappy'])
+rocksdb_dep = dependency('rocksdb', method : 'sysconfig', modules : ['librocksdb'])
+
+srcdir      = include_directories('src')
+uidir       = include_directories('src/ui')
+microtardir = include_directories('src/contrib/microtar')
+
+dekoder_headers =    ['src/defines.hpp',
+                      'src/dek_db.hpp',
+                      'src/file_io.hpp',
+                      'src/radiolibs.hpp',
+                      'src/ui/dialogsettings.hpp',
+                      'src/ui/mainwindow.hpp',
+                      'src/contrib/microtar/microtar.h']
+
+dekoder_sources =    ['src/dek_db.cpp',
+                      'src/file_io.cpp',
+                      'src/main.cpp',
+                      'src/radiolibs.cpp',
+                      'src/ui/dialogsettings.cpp',
+                      'src/ui/mainwindow.cpp',
+                      'src/contrib/microtar/microtar.c']
+
+dekoder_resources =  ['src/dekoder_res.qrc']
+
+dekoder_ui =         ['src/ui/dialogsettings.ui',
+                      'src/ui/mainwindow.ui']
+
+prep = qt5.preprocess(moc_headers : dekoder_headers,
+                      ui_files : dekoder_ui,
+                      qresources : dekoder_resources,
+                      include_directories : ['srcdir', 'uidir'])
+
+q5exe = executable('dekoder',
+                    sources : ['dekoder_sources', 'prep'],
+                    dependencies : ['qt5dep', 'boost_dep', 'hamlib_dep', 'liblz4_dep', 'libzstd', 'snappy_dep', 'rocksdb_dep'],
+                    include_directories : ['srcdir', 'uidir', 'microtardir'],
+                    install : true)
+
+# install_man('resources/docs/dekoder.1')
+
+install_data('README.md', install_dir : 'share/doc/dekoder')
+install_data('INSTALL', install_dir : 'share/doc/dekoder')
+install_data('LICENSE', install_dir : 'share/doc/dekoder')
+install_data('AUTHORS', install_dir : 'share/doc/dekoder')
+install_data('CREDITS', install_dir : 'share/doc/dekoder')
+install_data('CONTRIBUTING.md', install_dir : 'share/doc/dekoder')
