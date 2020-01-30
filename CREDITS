@@ -1,0 +1,51 @@
+Project (name, author, <URL>, license)
+-----------------------------------------
+It is with the help and hard work of these libraries that Dekoder for Morse was made possible. We owe our sincere thanks to the following authors, contributors, helpers, and communities below...
+
+Qt5 by Qt Project et al.
+    <https://www.qt.io/>
+        GNU Lesser General Public License (LGPL, version 3)
+
+Boost C++ Libraries by various
+    <http://www.boost.org/>
+        Boost Software License, v1
+
+CMake (Cross Platform Makefile Generator) by Kitware
+    <https://cmake.org/>
+        BSD 3-clause License
+        
+Doxygen by Dimitri van Heesch et al.
+    <http://www.stack.nl/~dimitri/doxygen/>
+        GNU General Public License (GPL, version 2)
+        
+LZ4 by various
+    <https://github.com/lz4/lz4>
+        BSD 2-Clause License & GNU General Public License (GPL, version 2)
+
+Snappy by Google
+    <https://github.com/google/snappy>
+        Creative Commons Attribution 3.0 License (CC-BY-3.0)
+
+LevelDB by Google
+    <https://github.com/google/leveldb>
+        BSD 3-clause License
+        
+Hamlib by The Hamlib Group
+    <https://github.com/Hamlib/Hamlib>
+        GNU General Public License (GPL, version 2)
+
+PortAudio by the PortAudio community
+    <http://www.portaudio.com/>
+        The MIT License
+
+LibUSB by Hans de Goede & Chris Dickens et al.
+    <https://github.com/libusb/libusb>
+        GNU Lesser General Public License (LGPL, version 2.1)
+
+FFTW by Matteo Frigo & Steven G. Johnson et al.
+    <http://www.fftw.org/>
+        GNU General Public License (GPL, version 2)
+
+OpenCV by the OpenCV Team
+    <https://opencv.org/>
+        BSD 3-clause License
