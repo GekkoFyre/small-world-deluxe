@@ -176,43 +176,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 break;
             }
         }
-
-        const int spect_width_per_sec = 100;
-        const int spect_win_secs = 8;
-        const float spect_step_secs = 4.0;
-        const int spect_win_width = (spect_width_per_sec * spect_win_secs);
-        const int spect_win_height = 320;
-
-        size_t speclen = (spect_win_height * (output_audio_dev.def_sample_rate / 20 / spect_win_height + 1));
-
-        for (size_t i = 0; ; ++i) {
-            if (gkAudioDevices->is_good_speclen(speclen + i)) {
-                speclen += i;
-                break;
-            }
-
-            if (speclen - i >= spect_win_height && gkAudioDevices->is_good_speclen(speclen - i)) {
-                speclen -= i;
-                break;
-            }
-        }
-
-        Spectrum *spectrum = gkAudioDevices->createSpectrum(speclen);
-        spectrum->linear_floor = std::pow(10.0, AUDIO_SPEC_FLOOR_DECIBELS / 20.0);
-        spectrum->mag_to_norm = 100.0;
-        spectrum->max_freq = (output_audio_dev.def_sample_rate / output_audio_dev.dev_input_channel_count);
-
-        spectrum->min_freq = 0;
-        for (const auto &sample_rate: spectrum->audio_dev.supp_sample_rates) {
-            if (sample_rate > 11025.0) {
-                double loop_tmp = sample_rate;
-                spectrum->min_freq = std::fmin(loop_tmp, spectrum->min_freq);
-            }
-        }
-
-        const float spect_total_secs = ((float)AUDIO_FRAMES_PER_BUFFER / spectrum->audio_dev.def_sample_rate);
-        spectro_thread = std::thread(&AudioDevices::spectrogram, gkAudioDevices, spectrum, 100, spect_total_secs, spect_win_width, spect_win_height, spect_win_secs, spect_step_secs);
-        spectro_thread.detach();
     } catch (const std::exception &e) {
         QMessageBox::warning(parent, tr("Error!"), e.what(), QMessageBox::Ok);
         QApplication::exit(-1);

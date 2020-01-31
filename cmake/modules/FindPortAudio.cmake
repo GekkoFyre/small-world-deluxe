@@ -42,7 +42,7 @@ find_path(PortAudio_INCLUDE_DIR NAMES "portaudio.h"
             HINTS ${PC_PortAudio_INCLUDEDIR} ${PC_PortAudio_INCLUDE_DIRS}
             PATH_SUFFIXES portaudio)
 
-find_library(PortAudio_LIBRARY NAMES "portaudio" "libportaudio" "portaudio_static_x64" "portaudio_x64"
+find_library(PortAudio_LIBRARY NAMES "portaudio" "libportaudio" "portaudio_static_x64" "portaudio_x64" "portaudio_x86" "portaudio_static_x86"
             HINTS ${PC_PortAudio_LIBDIR} ${PC_PortAudio_LIBRARY_DIRS})
 
 include(FindPackageHandleStandardArgs)
