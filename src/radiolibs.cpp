@@ -49,11 +49,6 @@ extern "C"
 {
 #endif
 
-#include <dirent.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <termios.h>
-
 #ifdef _WIN32
 #elif __linux__
 #include <sys/types.h>

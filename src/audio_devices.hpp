@@ -66,11 +66,6 @@ public:
     std::vector<double> enumSupportedStdSampleRates(const PaStreamParameters *inputParameters, const PaStreamParameters *outputParameters);
     std::vector<GekkoFyre::Database::Settings::Audio::Device> enumAudioDevices();
     void testSinewave(const GekkoFyre::Database::Settings::Audio::Device &device);
-    void spectrogram(Database::Settings::Audio::Spectrum *spectrum, const int &pixels_width_per_sec, const float &total_secs,
-                     const size_t &spectro_win_width, const size_t &spectro_win_height, const float &win_secs,
-                     const float &step_secs);
-    Database::Settings::Audio::Spectrum *createSpectrum(const size_t &specified_length);
-    static bool is_good_speclen(size_t n);
     void volumeSetting();
     double vuMeter();
 
@@ -88,14 +83,6 @@ private:
     bool filterAudioInputEnum(const PaHostApiTypeId &host_api_type);
     bool filterAudioOutputEnum(const PaHostApiTypeId &host_api_type);
     void portAudioErr(const PaError &err);
-
-    double calcMagnSpectrum(Database::Settings::Audio::Spectrum *spectrum);
-    void destroySpectrum(Database::Settings::Audio::Spectrum *spectrum);
-    void spectrumColorMap(float value, double spec_floor_db, unsigned char colour[3], bool gray_scale);
-    static bool is_2357 (size_t n);
-    void interpSpectrum(float *mag, int maglen, const double *spec, int speclen, const double &min_freq,
-                               const double &max_freq, size_t samplerate);
-    double magindex_to_specindex(int speclen, int maglen, size_t magindex, double min_freq, double max_freq, size_t samplerate, bool log_freq);
 
 };
 };

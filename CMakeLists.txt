@@ -202,42 +202,6 @@ else()
     message(FATAL_ERROR "The 'libusb' USB system library could not be found!")
 endif(LIBUSB_FOUND)
 
-find_package(FFTW REQUIRED)
-if (FFTW_FOUND)
-    include_directories(${FFTW_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${FFTW_LIBRARIES})
-else()
-    message(SEND_ERROR "The 'FFTW' mathematics library could not be found!")
-endif(FFTW_FOUND)
-
-find_package(JPEG REQUIRED)
-if (JPEG_FOUND)
-    include_directories(${JPEG_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${JPEG_LIBRARIES})
-else()
-    message(SEND_ERROR "The 'JPEG' photographic library could not be found!")
-endif (JPEG_FOUND)
-
-set(PNG_STATIC ON)
-find_package(PNG REQUIRED)
-if (PNG_FOUND)
-    include_directories(${PNG_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${PNG_LIBRARIES})
-else()
-    message(SEND_ERROR "The 'PNG' lossless image library could not be found!")
-endif (PNG_FOUND)
-
-find_package(TIFF REQUIRED)
-if (TIFF_FOUND)
-    include_directories(${TIFF_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${TIFF_LIBRARIES})
-else()
-    message(SEND_ERROR "The 'TIFF' photographic library could not be found!")
-endif (TIFF_FOUND)
-
-# https://docs.opencv.org/4.1.1/
-find_package(OpenCV REQUIRED core highgui imgcodecs videoio imgproc)
-
 set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-arcs -ftest-coverage")
 
 # set up a mapping so that the Release configuration for the Qt imported target is
