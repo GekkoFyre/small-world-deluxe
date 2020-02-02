@@ -47,7 +47,6 @@
 #include <cstdio>
 
 #ifdef _WIN32
-#include <cvt/wstring>
 #include <winsdkver.h>
 #include <atlbase.h>
 #include <atlstr.h>
@@ -102,7 +101,7 @@ namespace GekkoFyre {
 #define AUDIO_SPEC_FLOOR_DECIBELS (-180.0)
 
 #ifndef M_PI
-#define M_PI (3.14159265359)
+#define M_PI (3.14159265358979323846) /* pi */
 #endif
 
 typedef std::vector<char> char_array;
@@ -309,5 +308,20 @@ namespace AmateurRadio {
             pbwidth_t width;                // Bandwidth
         };
     }
+}
+
+namespace Spectrograph {
+    // http://ofdsp.blogspot.com/2011/08/short-time-fourier-transform-with-fftw3.html
+    struct RawFFT {
+        fftw_complex *chunk_forward_0;
+        fftw_complex *chunk_forward_1;
+    };
+
+    struct Window {
+        struct axis {
+            int rows;
+            int cols;
+        };
+    };
 }
 };

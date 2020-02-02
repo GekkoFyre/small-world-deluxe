@@ -202,6 +202,14 @@ else()
     message(FATAL_ERROR "The 'libusb' USB system library could not be found!")
 endif(LIBUSB_FOUND)
 
+find_package(FFTW REQUIRED)
+if (FFTW_FOUND)
+    include_directories(${FFTW_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${FFTW_LIBRARIES})
+else()
+    message(SEND_ERROR "The 'FFTW' mathematics library could not be found!")
+endif(FFTW_FOUND)
+
 set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-arcs -ftest-coverage")
 
 # set up a mapping so that the Release configuration for the Qt imported target is
@@ -220,6 +228,7 @@ if(WIN32)
         src/dek_db.hpp
         src/file_io.hpp
         src/audio_devices.hpp
+        src/spectro_fftw.hpp
         src/string_funcs_windows.hpp)
 elseif(UNIX)
     qt5_wrap_cpp(UI_MOC
@@ -230,6 +239,7 @@ elseif(UNIX)
         src/dek_db.hpp
         src/file_io.hpp
         src/audio_devices.hpp
+        src/spectro_fftw.hpp
         src/string_funcs_linux.hpp)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
@@ -255,6 +265,7 @@ if(WIN32)
         src/dek_db.cpp
         src/file_io.cpp
         src/audio_devices.cpp
+        src/spectro_fftw.cpp
         src/string_funcs_windows.cpp)
 elseif(UNIX)
     set(GALAXY_UI_CPP
@@ -266,6 +277,7 @@ elseif(UNIX)
         src/dek_db.cpp
         src/file_io.cpp
         src/audio_devices.cpp
+        src/spectro_fftw.cpp
         src/string_funcs_linux.cpp)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
