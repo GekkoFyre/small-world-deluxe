@@ -126,6 +126,7 @@ namespace Database {
         enum radio_cfg {
             RigBrand,
             RigModel,
+            RigModelIndex,
             RigVersion,
             ComDevice,
             ComBaudRate,

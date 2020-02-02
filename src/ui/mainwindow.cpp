@@ -181,6 +181,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QPointer<SpectroDialog> dlg_spectro = new SpectroDialog(this);
         dlg_spectro->setWindowFlags(Qt::Tool | Qt::Dialog);
         dlg_spectro->show();
+
+        if (radio->freq >= 0.0) {
+            ui->label_freq_large->setText(QString::number(radio->freq));
+        } else {
+            ui->label_freq_large->setText(tr("N/A"));
+        }
     } catch (const std::exception &e) {
         QMessageBox::warning(parent, tr("Error!"), e.what(), QMessageBox::Ok);
         QApplication::exit(-1);

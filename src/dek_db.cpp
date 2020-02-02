@@ -88,6 +88,9 @@ void DekodeDb::write_rig_settings(const QString &value, const Database::Settings
     case radio_cfg::RigModel:
         batch.Put("RigModel", value.toStdString());
         break;
+    case radio_cfg::RigModelIndex:
+        batch.Put("RigModelIndex", value.toStdString());
+        break;
     case radio_cfg::RigVersion:
         batch.Put("RigVersion", value.toStdString());
         break;
@@ -221,6 +224,9 @@ QString DekodeDb::read_rig_settings(const Database::Settings::radio_cfg &key)
         break;
     case radio_cfg::RigModel:
         status = db->Get(read_options, "RigModel", &value);
+        break;
+    case radio_cfg::RigModelIndex:
+        status = db->Get(read_options, "RigModelIndex", &value);
         break;
     case radio_cfg::RigVersion:
         status = db->Get(read_options, "RigVersion", &value);
