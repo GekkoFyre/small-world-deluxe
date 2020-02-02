@@ -31,7 +31,7 @@
  **   The latest source code updates can be obtained from [ 1 ] below at your
  **   discretion. A web-browser or the 'git' application may be required.
  **
- **   [ 1 ] - https://git.gekkofyre.io/amateur-radio/dekoder-for-morse
+ **   [ 1 ] - https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe
  **
  ****************************************************************************************************/
 
@@ -52,7 +52,7 @@ SpectroFFTW::SpectroFFTW(QObject *parent) : QObject(parent)
 {}
 
 SpectroFFTW::~SpectroFFTW()
-= default;
+{}
 
 /**
  * @brief SpectroFFTW::hamming performs the calculations for the overall window size of the spectrogram.

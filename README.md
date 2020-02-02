@@ -4,8 +4,8 @@
 
 |              |                           Develop                            |                            Master                            |
 | :----------: | :----------------------------------------------------------: | :----------------------------------------------------------: |
-|  **Status**  | [![pipeline status](https://git.gekkofyre.io/amateur-radio/small-world-deluxe/badges/develop/pipeline.svg)](https://git.gekkofyre.io/amateur-radio/small-world-deluxe/commits/develop) | [![pipeline status](https://git.gekkofyre.io/amateur-radio/small-world-deluxe/badges/master/pipeline.svg)](https://git.gekkofyre.io/amateur-radio/small-world-deluxe/commits/master) |
-| **Coverage** | [![coverage report](https://git.gekkofyre.io/amateur-radio/small-world-deluxe/badges/develop/coverage.svg)](https://git.gekkofyre.io/amateur-radio/small-world-deluxe/commits/develop) | [![coverage report](https://git.gekkofyre.io/amateur-radio/small-world-deluxe/badges/master/coverage.svg)](https://git.gekkofyre.io/amateur-radio/small-world-deluxe/commits/master) |
+|  **Status**  | [![pipeline status](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/badges/develop/pipeline.svg)](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/commits/develop) | [![pipeline status](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/badges/master/pipeline.svg)](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/commits/master) |
+| **Coverage** | [![coverage report](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/badges/develop/coverage.svg)](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/commits/develop) | [![coverage report](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/badges/master/coverage.svg)](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/commits/master) |
 
 As a software project just only recently borne mid-July, 2019, `Small World` is a 'new age' [Morse Code](https://en.wikipedia.org/wiki/Morse_code) interpreter for amateur radio enthusiasts and listeners alike. It is particularly aimed at those who simply do not wish to expend the time to learn Morse Code themselves or simply wish to have the convenience of a software application undertaking the decoding of an audio stream for them.
 
@@ -29,12 +29,10 @@ To begin with, you will need to install the following dependencies along with th
 - `Boost C++` [ static and multithreaded libraries ]
 - `libzstd-devel`
 - `lz4-devel`
-- `snappy-devel`
 - `zlib-devel`
 - `libusb-devel`
 - `leveldb-devel`
 - `HamLib` C++ [ development libraries ]
-- `gflags-devel`
 - `Qt5` [ development libraries ]
 
 And for Linux-based systems in particular, you will further require the following:
@@ -42,9 +40,6 @@ And for Linux-based systems in particular, you will further require the followin
 * `libilmbase-dev`
 * `libopenexr-dev`
 * `libgstreamer1.0-dev`
-* `libjpeg`
-* `libpng`
-* `libtiff`
 
 Once you have downloaded these dependencies with the appropriate package manager, whether that be `apt-get`, `yum`, `dnf`, `pacman`, or something else entirely, you are ready to begin the compilation process! You will need to secondly download the source repository: `git clone https://git.gekkofyre.io/amateur-radio/small-world-deluxe.git`
 

@@ -1,12 +1,12 @@
 /**
- **  ______  ______  ___   ___  ______  ______  ______  ______       
- ** /_____/\/_____/\/___/\/__/\/_____/\/_____/\/_____/\/_____/\      
- ** \:::_ \ \::::_\/\::.\ \\ \ \:::_ \ \:::_ \ \::::_\/\:::_ \ \     
- **  \:\ \ \ \:\/___/\:: \/_) \ \:\ \ \ \:\ \ \ \:\/___/\:(_) ) )_   
- **   \:\ \ \ \::___\/\:. __  ( (\:\ \ \ \:\ \ \ \::___\/\: __ `\ \  
- **    \:\/.:| \:\____/\: \ )  \ \\:\_\ \ \:\/.:| \:\____/\ \ `\ \ \ 
- **     \____/_/\_____\/\__\/\__\/ \_____\/\____/_/\_____\/\_\/ \_\/ 
- **                                                                 
+ **  ______  ______  ___   ___  ______  ______  ______  ______
+ ** /_____/\/_____/\/___/\/__/\/_____/\/_____/\/_____/\/_____/\
+ ** \:::_ \ \::::_\/\::.\ \\ \ \:::_ \ \:::_ \ \::::_\/\:::_ \ \
+ **  \:\ \ \ \:\/___/\:: \/_) \ \:\ \ \ \:\ \ \ \:\/___/\:(_) ) )_
+ **   \:\ \ \ \::___\/\:. __  ( (\:\ \ \ \:\ \ \ \::___\/\: __ `\ \
+ **    \:\/.:| \:\____/\: \ )  \ \\:\_\ \ \:\/.:| \:\____/\ \ `\ \ \
+ **     \____/_/\_____\/\__\/\__\/ \_____\/\____/_/\_____\/\_\/ \_\/
+ **
  **
  **   If you have downloaded the source code for "Small World Deluxe" and are reading this,
  **   then thank you from the bottom of our hearts for making use of our hard work, sweat
@@ -37,24 +37,17 @@
 
 #pragma once
 
-#include <QDialog>
+#include "src/defines.hpp"
+#include <QObject>
 
-namespace Ui {
-class AboutDialog;
-}
+namespace GekkoFyre {
 
-class AboutDialog : public QDialog
-{
+class SpectroGui : public QObject {
     Q_OBJECT
 
 public:
-    explicit AboutDialog(QWidget *parent = nullptr);
-    ~AboutDialog();
+    explicit SpectroGui(QObject *parent = nullptr);
+    ~SpectroGui() override;
 
-private slots:
-    void on_buttonBox_accepted();
-
-private:
-    Ui::AboutDialog *ui;
 };
-
+};

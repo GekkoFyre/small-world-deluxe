@@ -31,7 +31,7 @@
  **   The latest source code updates can be obtained from [ 1 ] below at your
  **   discretion. A web-browser or the 'git' application may be required.
  **
- **   [ 1 ] - https://git.gekkofyre.io/amateur-radio/small-world-deluxe
+ **   [ 1 ] - https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe
  **
  ****************************************************************************************************/
 
@@ -99,6 +99,10 @@ namespace GekkoFyre {
 #define AUDIO_TEST_SAMPLE_LENGTH_SEC (3)
 #define AUDIO_TEST_SAMPLE_TABLE_SIZE (200)
 #define AUDIO_SPEC_FLOOR_DECIBELS (-180.0)
+
+// Mostly regarding FFTW functions
+#define AUDIO_SIGNAL_LENGTH (2048)
+#define FFTW_HOP_SIZE (128)
 
 #ifndef M_PI
 #define M_PI (3.14159265358979323846) /* pi */

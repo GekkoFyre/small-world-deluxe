@@ -31,7 +31,7 @@
  **   The latest source code updates can be obtained from [ 1 ] below at your
  **   discretion. A web-browser or the 'git' application may be required.
  **
- **   [ 1 ] - https://git.gekkofyre.io/amateur-radio/small-world-deluxe
+ **   [ 1 ] - https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe
  **
  ****************************************************************************************************/
 
@@ -39,6 +39,7 @@
 #include "ui_mainwindow.h"
 #include "dialogsettings.hpp"
 #include "aboutdialog.hpp"
+#include "spectrodialog.hpp"
 #include <boost/exception/all.hpp>
 #include <string>
 #include <sstream>
@@ -176,6 +177,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 break;
             }
         }
+
+        QPointer<SpectroDialog> dlg_spectro = new SpectroDialog(this);
+        dlg_spectro->setWindowFlags(Qt::Tool | Qt::Dialog);
+        dlg_spectro->show();
     } catch (const std::exception &e) {
         QMessageBox::warning(parent, tr("Error!"), e.what(), QMessageBox::Ok);
         QApplication::exit(-1);

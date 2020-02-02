@@ -31,7 +31,7 @@
 #   The latest source code updates can be obtained from [ 1 ] below at your
 #   discretion. A web-browser or the 'git' application may be required.
 #
-#   [ 1 ] - https://git.gekkofyre.io/amateur-radio/small-world-deluxe
+#   [ 1 ] - https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe
 #
 
 cmake_minimum_required(VERSION 3.1.0 FATAL_ERROR) # This version is needed to properly search for libpthreads
@@ -224,22 +224,26 @@ if(WIN32)
         src/ui/mainwindow.hpp
         src/ui/dialogsettings.hpp
         src/ui/aboutdialog.hpp
+        src/ui/spectrodialog.hpp
         src/radiolibs.hpp
         src/dek_db.hpp
         src/file_io.hpp
         src/audio_devices.hpp
         src/spectro_fftw.hpp
+        src/spectro_gui.hpp
         src/string_funcs_windows.hpp)
 elseif(UNIX)
     qt5_wrap_cpp(UI_MOC
         src/ui/mainwindow.hpp
         src/ui/dialogsettings.hpp
         src/ui/aboutdialog.hpp
+        src/ui/spectrodialog.hpp
         src/radiolibs.hpp
         src/dek_db.hpp
         src/file_io.hpp
         src/audio_devices.hpp
         src/spectro_fftw.hpp
+        src/spectro_gui.hpp
         src/string_funcs_linux.hpp)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
@@ -248,7 +252,8 @@ endif()
 qt5_wrap_ui(UI_HEADERS
     src/ui/mainwindow.ui
     src/ui/dialogsettings.ui
-    src/ui/aboutdialog.ui)
+    src/ui/aboutdialog.ui
+    src/ui/spectrodialog.ui)
 
 # qt5_add_resources(UI_RESOURCES src/smallworld_res.qrc)
 
@@ -261,11 +266,13 @@ if(WIN32)
         src/ui/mainwindow.cpp
         src/ui/dialogsettings.cpp
         src/ui/aboutdialog.cpp
+        src/ui/spectrodialog.cpp
         src/radiolibs.cpp
         src/dek_db.cpp
         src/file_io.cpp
         src/audio_devices.cpp
         src/spectro_fftw.cpp
+        src/spectro_gui.cpp
         src/string_funcs_windows.cpp)
 elseif(UNIX)
     set(GALAXY_UI_CPP
@@ -273,11 +280,13 @@ elseif(UNIX)
         src/ui/mainwindow.cpp
         src/ui/dialogsettings.cpp
         src/ui/aboutdialog.cpp
+        src/ui/spectrodialog.cpp
         src/radiolibs.cpp
         src/dek_db.cpp
         src/file_io.cpp
         src/audio_devices.cpp
         src/spectro_fftw.cpp
+        src/spectro_gui.cpp
         src/string_funcs_linux.cpp)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
