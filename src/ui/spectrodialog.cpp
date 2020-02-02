@@ -8,24 +8,24 @@
  **     \____/_/\_____\/\__\/\__\/ \_____\/\____/_/\_____\/\_\/ \_\/
  **
  **
- **   If you have downloaded the source code for "Small World Deluxe" and are reading this,
+ **   If you have downloaded the source code for "Dekoder for Morse" and are reading this,
  **   then thank you from the bottom of our hearts for making use of our hard work, sweat
  **   and tears in whatever you are implementing this into!
  **
  **   Copyright (C) 2020. GekkoFyre.
  **
- **   Small World Deluxe is free software: you can redistribute it and/or modify
+ **   Dekoder for Morse is free software: you can redistribute it and/or modify
  **   it under the terms of the GNU General Public License as published by
  **   the Free Software Foundation, either version 3 of the License, or
  **   (at your option) any later version.
  **
- **   Small World is distributed in the hope that it will be useful,
+ **   Dekoder is distributed in the hope that it will be useful,
  **   but WITHOUT ANY WARRANTY; without even the implied warranty of
  **   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  **   GNU General Public License for more details.
  **
  **   You should have received a copy of the GNU General Public License
- **   along with Small World Deluxe.  If not, see <http://www.gnu.org/licenses/>.
+ **   along with Dekoder for Morse.  If not, see <http://www.gnu.org/licenses/>.
  **
  **
  **   The latest source code updates can be obtained from [ 1 ] below at your
@@ -35,19 +35,35 @@
  **
  ****************************************************************************************************/
 
-#pragma once
+#include "spectrodialog.hpp"
+#include "ui_spectrodialog.h"
 
-#include "src/defines.hpp"
-#include <QObject>
+SpectroDialog::SpectroDialog(QWidget *parent) :
+    QDialog(parent),
+    ui(new Ui::SpectroDialog)
+{
+    ui->setupUi(this);
+    this->adjustSize(); // Resize to contents
 
-namespace GekkoFyre {
+    // Make the window frameless
+    // setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
+    // this->setMask(QRegion(this->rect()));
 
-class StringFuncs : public QObject {
-    Q_OBJECT
+    // Make the window transparent
+    // setAttribute(Qt::WA_NoSystemBackground);
+    // setAttribute(Qt::WA_TranslucentBackground);
+}
 
-public:
-    explicit StringFuncs(QObject *parent = nullptr);
-    ~StringFuncs() override;
+SpectroDialog::~SpectroDialog()
+{
+    delete ui;
+}
 
-};
-};
+void SpectroDialog::on_pushButton_apply_clicked()
+{}
+
+void SpectroDialog::on_pushButton_reset_clicked()
+{}
+
+void SpectroDialog::on_pushButton_exit_clicked()
+{}
