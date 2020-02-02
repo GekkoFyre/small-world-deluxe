@@ -38,6 +38,7 @@
 #include "dialogsettings.hpp"
 #include "ui_dialogsettings.h"
 #include <exception>
+#include <set>
 #include <QStringList>
 #include <QMessageBox>
 
@@ -73,8 +74,13 @@ DialogSettings::DialogSettings(std::shared_ptr<DekodeDb> dkDb, std::shared_ptr<G
 
         rig_comboBox = ui->comboBox_rig_selection;
         mfg_comboBox = ui->comboBox_brand_selection;
+
+        // Initialize the list of amateur radio transceiver models and associated manufacturers
         rig_list_foreach(prefill_rig_selection, nullptr);
 
+        //
+        // Lists all the amateur radio receivers, transmitters and transceivers by manufacturer
+        //
         for (const auto &mfg: unique_mfgs) {
             mfg_comboBox->addItem(mfg);
         }
@@ -134,6 +140,7 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         //
         int brand = ui->comboBox_brand_selection->currentIndex();
         QVariant sel_rig = ui->comboBox_rig_selection->currentData();
+        int sel_rig_index = ui->comboBox_rig_selection->currentIndex();
         int com_device = ui->comboBox_com_port->currentIndex();
         int com_baud_rate = ui->comboBox_baud_rate->currentIndex();
         int stop_bits = ui->spinBox_stop_bits->value();
@@ -182,6 +189,7 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         using namespace Database::Settings;
         gkDekodeDb->write_rig_settings(QString::number(brand), radio_cfg::RigBrand);
         gkDekodeDb->write_rig_settings(QString::number(sel_rig.toInt()), radio_cfg::RigModel);
+        gkDekodeDb->write_rig_settings(QString::number(sel_rig_index), radio_cfg::RigModelIndex);
         gkDekodeDb->write_rig_settings(QString::number(com_baud_rate), radio_cfg::ComBaudRate);
         gkDekodeDb->write_rig_settings(QString::number(stop_bits), radio_cfg::StopBits);
         gkDekodeDb->write_rig_settings(QString::number(poll_interv), radio_cfg::PollingInterval);
@@ -291,6 +299,7 @@ int DialogSettings::prefill_rig_selection(const rig_caps *caps, void *data)
             break;
         }
 
+        // Sort out the amateur radio transceiver manufacturers that are unique and remove any duplicates!
         for (const auto &kv: radio_model_names.toStdMap()) {
             QString value = std::get<1>(kv.second);
             if (!value.isEmpty()) {
@@ -301,6 +310,9 @@ int DialogSettings::prefill_rig_selection(const rig_caps *caps, void *data)
                 }
             }
         }
+
+        // Now sort the items alphabetically!
+        std::sort(unique_mfgs.begin(), unique_mfgs.end());
     } catch (const std::exception &e) {
         QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
     }
@@ -583,6 +595,7 @@ bool DialogSettings::read_settings()
 
         QString rigBrand = gkDekodeDb->read_rig_settings(radio_cfg::RigBrand);
         QString rigModel = gkDekodeDb->read_rig_settings(radio_cfg::RigModel);
+        QString rigModelIndex = gkDekodeDb->read_rig_settings(radio_cfg::RigModelIndex);
         QString rigVers = gkDekodeDb->read_rig_settings(radio_cfg::RigVersion);
         QString comBaudRate = gkDekodeDb->read_rig_settings(radio_cfg::ComBaudRate);
         QString stopBits = gkDekodeDb->read_rig_settings(radio_cfg::StopBits);
@@ -597,12 +610,18 @@ bool DialogSettings::read_settings()
         QString writeDelay = gkDekodeDb->read_rig_settings(radio_cfg::WriteDelay);
         QString postWriteDelay = gkDekodeDb->read_rig_settings(radio_cfg::PostWriteDelay);
 
+        /*
+        if (!rigModel.isEmpty()) {
+            ui->comboBox_rig_selection->setCurrentIndex(rigModel.toInt());
+        }
+        */
+
         if (!rigBrand.isEmpty()) {
             ui->comboBox_brand_selection->setCurrentIndex(rigBrand.toInt());
         }
 
-        if (!rigModel.isEmpty()) {
-            ui->comboBox_rig_selection->setCurrentIndex(rigModel.toInt());
+        if (!rigModelIndex.isEmpty()) {
+            ui->comboBox_rig_selection->setCurrentIndex(rigModelIndex.toInt());
         }
 
         if (!rigVers.isEmpty()) {}
@@ -662,7 +681,8 @@ bool DialogSettings::read_settings()
 }
 
 /**
- * @brief DialogSettings::on_comboBox_brand_selection_currentIndexChanged
+ * @brief DialogSettings::on_comboBox_brand_selection_currentIndexChanged list the transceivers associated with a chosen
+ * device manufacturer.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param arg1
  */
@@ -679,8 +699,9 @@ void DialogSettings::on_comboBox_brand_selection_currentIndexChanged(const QStri
         }
     }
 
+    rig_comboBox->clear();
     for (const auto &model: temp_map.toStdMap()) {
-        rig_comboBox->addItem(model.second, model.first);
+        rig_comboBox->addItem(model.second, model.first); // Do not modify this!
     }
 
     return;
