@@ -48,7 +48,7 @@ using namespace GekkoFyre;
  * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param parent
  */
-SpectroFFTW::SpectroFFTW(QObject *parent) : QObject(parent)
+SpectroFFTW::SpectroFFTW()
 {}
 
 SpectroFFTW::~SpectroFFTW()
