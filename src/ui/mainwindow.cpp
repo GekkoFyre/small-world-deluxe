@@ -121,11 +121,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         if (!save_db_path.empty()) {
             status = leveldb::DB::Open(options, save_db_path.string(), &db);
-
-            // Check that the database initialized okay
-
             dekodeDb = std::make_shared<GekkoFyre::DekodeDb>(db, fileIo, this);
-            // gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(dekodeDb, fileIo, this);
             gkRadioLibs = std::make_shared<GekkoFyre::RadioLibs>(fileIo, gkStringFuncs, dekodeDb, this);
         } else {
             throw std::runtime_error(tr("Unable to find settings database; we've lost its location! Aborting...").toStdString());
@@ -177,24 +173,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         std::thread t1(&MainWindow::infoBar, this);
         t1.detach();
-
-        // The spectrometer must listen to the chosen *input* audio device
-        Device input_audio_dev;
-        for (const auto &device: pref_audio_devices) {
-            if (device.is_output_dev == false) {
-                input_audio_dev = device;
-                break;
-            }
-        }
-
-        if (input_audio_dev.is_output_dev == boost::tribool::true_value
-                || input_audio_dev.is_output_dev == boost::tribool::indeterminate_value) {
-            gkPaMic = std::make_shared<GekkoFyre::PaMic>(gkAudioDevices, this);
-            gkPaMic->recordMic(input_audio_dev, &micStream, true, 0);
-        } else {
-            QMessageBox::warning(this, tr("Unavailable device!"), tr("Please be sure to configure an appropriate input sound device."),
-                                 QMessageBox::Ok);
-        }
 
         if (radio->freq >= 0.0) {
             ui->label_freq_large->setText(QString::number(radio->freq));
@@ -468,6 +446,46 @@ void MainWindow::radioStats(AmateurRadio::Control::Radio *radio_dev)
     return;
 }
 
+/**
+ * @brief MainWindow::grabDefPaInputDevice returns either the chosen input device as designated by the user, or
+ * the best possible choice as can be enumerated on the user's computing system.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return Hopefully an audio input device of some kind, let alone one that works.
+ */
+Device MainWindow::grabDefPaInputDevice()
+{
+    Device input_audio_dev;
+
+    try {
+        // The spectrometer and other functions must listen to the chosen *input* audio device
+        for (const auto &device: pref_audio_devices) {
+            if (device.is_output_dev == false) {
+                input_audio_dev = device;
+                break;
+            }
+        }
+    } catch (const std::exception &e) {
+        throw e.what();
+    }
+
+    return input_audio_dev;
+}
+
+void MainWindow::paMicProcBackground(const Device &input_audio_device, const int &numSamples)
+{
+    //
+    // When the buffer is filled, new data will be written as starting at the very beginning, overwriting
+    // any old data within the buffer itself
+    // https://www.boost.org/doc/libs/1_72_0/doc/html/circular_buffer.html
+    //
+    boost::circular_buffer<double> input_dev_circ_buffer(numSamples);
+
+    while (btn_radio_rx) {
+        gkPaMic = std::make_shared<GekkoFyre::PaMic>(gkAudioDevices, this);
+        input_dev_circ_buffer = gkPaMic->recordMic(input_audio_device, &micStream, true, AUDIO_MIC_INPUT_RECRD_SECS);
+    }
+}
+
 void MainWindow::on_actionSave_Decoded_Ab_triggered()
 {
     return;
@@ -485,9 +503,11 @@ void MainWindow::on_actionView_Graphs_triggered()
 void MainWindow::on_pushButton_bridge_input_audio_clicked()
 {
     if (!btn_bridge_input_audio) {
+        // Set the QPushButton to 'Green'
         changePushButtonColor(ui->pushButton_bridge_input_audio, false);
         btn_bridge_input_audio = true;
     } else {
+        // Set the QPushButton to 'Red'
         changePushButtonColor(ui->pushButton_bridge_input_audio, true);
         btn_bridge_input_audio = false;
     }
@@ -498,9 +518,22 @@ void MainWindow::on_pushButton_bridge_input_audio_clicked()
 void MainWindow::on_pushButton_radio_receive_clicked()
 {
     if (!btn_radio_rx) {
+        // Set the QPushButton to 'Green'
         changePushButtonColor(ui->pushButton_radio_receive, false);
         btn_radio_rx = true;
+
+        auto input_audio_dev = grabDefPaInputDevice();
+        int totalFrames = AUDIO_MIC_INPUT_RECRD_SECS * input_audio_dev.def_sample_rate;
+        int numSamples = totalFrames * input_audio_dev.dev_input_channel_count;
+        if (input_audio_dev.is_output_dev == boost::tribool::true_value
+                || input_audio_dev.is_output_dev == boost::tribool::indeterminate_value) {
+            paMicProcBackground(input_audio_dev, numSamples);
+        } else {
+            QMessageBox::warning(this, tr("Unavailable device!"), tr("You must firstly configure an appropriate **input** sound device."),
+                                 QMessageBox::Ok);
+        }
     } else {
+        // Set the QPushButton to 'Red'
         changePushButtonColor(ui->pushButton_radio_receive, true);
         btn_radio_rx = false;
     }
@@ -511,9 +544,11 @@ void MainWindow::on_pushButton_radio_receive_clicked()
 void MainWindow::on_pushButton_radio_transmit_clicked()
 {
     if (!btn_radio_tx) {
+        // Set the QPushButton to 'Green'
         changePushButtonColor(ui->pushButton_radio_transmit, false);
         btn_radio_tx = true;
     } else {
+        // Set the QPushButton to 'Red'
         changePushButtonColor(ui->pushButton_radio_transmit, true);
         btn_radio_tx = false;
     }
@@ -524,9 +559,11 @@ void MainWindow::on_pushButton_radio_transmit_clicked()
 void MainWindow::on_pushButton_radio_tune_clicked()
 {
     if (!btn_radio_tune) {
+        // Set the QPushButton to 'Green'
         changePushButtonColor(ui->pushButton_radio_tune, false);
         btn_radio_tune = true;
     } else {
+        // Set the QPushButton to 'Red'
         changePushButtonColor(ui->pushButton_radio_tune, true);
         btn_radio_tune = false;
     }
@@ -537,9 +574,11 @@ void MainWindow::on_pushButton_radio_tune_clicked()
 void MainWindow::on_pushButton_radio_tx_halt_clicked()
 {
     if (!btn_radio_tx_halt) {
+        // Set the QPushButton to 'Green'
         changePushButtonColor(ui->pushButton_radio_tx_halt, false);
         btn_radio_tx_halt = true;
     } else {
+        // Set the QPushButton to 'Red'
         changePushButtonColor(ui->pushButton_radio_tx_halt, true);
         btn_radio_tx_halt = false;
     }
@@ -550,9 +589,11 @@ void MainWindow::on_pushButton_radio_tx_halt_clicked()
 void MainWindow::on_pushButton_radio_monitor_clicked()
 {
     if (!btn_radio_monitor) {
+        // Set the QPushButton to 'Green'
         changePushButtonColor(ui->pushButton_radio_monitor, false);
         btn_radio_monitor = true;
     } else {
+        // Set the QPushButton to 'Red'
         changePushButtonColor(ui->pushButton_radio_monitor, true);
         btn_radio_monitor = false;
     }

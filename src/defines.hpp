@@ -100,6 +100,8 @@ namespace GekkoFyre {
 #define AUDIO_TEST_SAMPLE_TABLE_SIZE (200)
 #define AUDIO_SPEC_FLOOR_DECIBELS (-180.0)
 
+#define AUDIO_MIC_INPUT_RECRD_SECS (1)
+
 // Mostly regarding FFTW functions
 #define AUDIO_SIGNAL_LENGTH (2048)
 #define FFTW_HOP_SIZE (128)

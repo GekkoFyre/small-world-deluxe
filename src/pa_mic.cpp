@@ -36,6 +36,7 @@
  ****************************************************************************************************/
 
 #include "pa_mic.hpp"
+#include <boost/exception/all.hpp>
 #include <chrono>
 
 using namespace GekkoFyre;
@@ -69,8 +70,8 @@ PaMic::~PaMic()
  * @note <https://github.com/EddieRingle/portaudio/blob/master/examples/paex_record.c>
  * <https://github.com/EddieRingle/portaudio/blob/master/test/patest_read_record.c>
  */
-std::vector<double> PaMic::recordMic(const Device &device, PaStream *stream, const bool &continuous,
-                                     const int &buffer_sec_record)
+circular_buffer<double> PaMic::recordMic(const Device &device, PaStream *stream, const bool &continuous,
+                                         const int &buffer_sec_record)
 {
     PaError err = paNoError;
     paRecData data;
@@ -140,26 +141,10 @@ std::vector<double> PaMic::recordMic(const Device &device, PaStream *stream, con
             }
 
             if (circ_buffer.full()) { // The circular buffer is full! Although technically it could keep going...
-                // Linearize the buffer into a continuous array
-                std::vector<double> linear_buffer = linearBuffer(circ_buffer, numSamples);
-                return linear_buffer;
+                return circ_buffer;
             }
         }
     }
 
-    return std::vector<double>();
-}
-
-/**
- * @brief PaMic::linearBuffer Linearizes the Boost C++ continuous buffer into a more typical array, ready for
- * processing by PortAudio.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param circ_buf The circular buffer to be modified in question.
- * @return A typical, C++ std::vector.
- */
-std::vector<double> PaMic::linearBuffer(circular_buffer<double> circ_buf, const int &array_size)
-{
-    double *buf_array = circ_buf.linearize();
-    std::vector<double> linear_buffer(buf_array, (buf_array + array_size));
-    return linear_buffer;
+    return circular_buffer<double>();
 }
