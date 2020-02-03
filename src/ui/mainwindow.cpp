@@ -518,16 +518,16 @@ void MainWindow::on_pushButton_bridge_input_audio_clicked()
 void MainWindow::on_pushButton_radio_receive_clicked()
 {
     if (!btn_radio_rx) {
-        // Set the QPushButton to 'Green'
-        changePushButtonColor(ui->pushButton_radio_receive, false);
-        btn_radio_rx = true;
-
         auto input_audio_dev = grabDefPaInputDevice();
         int totalFrames = AUDIO_MIC_INPUT_RECRD_SECS * input_audio_dev.def_sample_rate;
         int numSamples = totalFrames * input_audio_dev.dev_input_channel_count;
-        if (input_audio_dev.is_output_dev == boost::tribool::true_value
-                || input_audio_dev.is_output_dev == boost::tribool::indeterminate_value) {
-            paMicProcBackground(input_audio_dev, numSamples);
+        if (input_audio_dev.is_output_dev == boost::tribool::false_value) {
+            // Set the QPushButton to 'Green'
+            changePushButtonColor(ui->pushButton_radio_receive, false);
+            btn_radio_rx = true;
+
+            std::thread tMic(&MainWindow::paMicProcBackground, this, input_audio_dev, numSamples);
+            tMic.detach();
         } else {
             QMessageBox::warning(this, tr("Unavailable device!"), tr("You must firstly configure an appropriate **input** sound device."),
                                  QMessageBox::Ok);

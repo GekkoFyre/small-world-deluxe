@@ -38,20 +38,17 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include <vector>
 
 namespace GekkoFyre {
 
-class SpectroFFTW {
+class GkExceptions {
 
 private:
     void hamming(int winLength, double *buffer);
 
 public:
-    explicit SpectroFFTW();
-    ~SpectroFFTW();
-
-    Spectrograph::RawFFT stft(std::vector<double> *signal, int signalLength, int windowSize, int hopSize);
+    explicit GkExceptions();
+    ~GkExceptions();
 
 };
 };

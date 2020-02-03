@@ -73,77 +73,81 @@ PaMic::~PaMic()
 circular_buffer<double> PaMic::recordMic(const Device &device, PaStream *stream, const bool &continuous,
                                          const int &buffer_sec_record)
 {
-    PaError err = paNoError;
-    paRecData data;
-    int totalFrames;
-    int numSamples;
-    int numBytes;
+    try {
+        PaError err = paNoError;
+        paRecData data;
+        int totalFrames;
+        int numSamples;
+        int numBytes;
 
-    data.maxFrameIndex = totalFrames = buffer_sec_record * device.def_sample_rate;
-    data.frameIndex = 0;
-    numSamples = totalFrames * device.dev_input_channel_count;
-    numBytes = numSamples * sizeof(int);
-    data.rec_samples = (int *)malloc(numBytes); // From now on, `rec_samples` is initialised
+        data.maxFrameIndex = totalFrames = buffer_sec_record * device.def_sample_rate;
+        data.frameIndex = 0;
+        numSamples = totalFrames * device.dev_input_channel_count;
+        numBytes = numSamples * sizeof(int);
+        data.rec_samples = (int *)malloc(numBytes); // From now on, `rec_samples` is initialised
 
-    if (data.rec_samples == nullptr) {
-        throw std::runtime_error(tr("Could not allocate record array.").toStdString());
-    }
+        if (data.rec_samples == nullptr) {
+            throw std::runtime_error(tr("Could not allocate record array.").toStdString());
+        }
 
-    for (int i = 0; i < numSamples; ++i) {
-        data.rec_samples[i] = 0;
-    }
+        for (int i = 0; i < numSamples; ++i) {
+            data.rec_samples[i] = 0;
+        }
 
-    //
-    // By using `paFramesPerBufferUnspecified` tells PortAudio to pick the best, possibly changing, buffer size
-    // as according to many apps.
-    // http://portaudio.com/docs/v19-doxydocs/open_default_stream.html
-    //
-    err = Pa_OpenStream(&stream, &device.stream_parameters, nullptr, device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
-                        paClipOff, nullptr, nullptr);
-    if (err != paNoError) {
-        gkAudioDevices->portAudioErr(err);
-    }
+        //
+        // By using `paFramesPerBufferUnspecified` tells PortAudio to pick the best, possibly changing, buffer size
+        // as according to many apps.
+        // http://portaudio.com/docs/v19-doxydocs/open_default_stream.html
+        //
+        err = Pa_OpenStream(&stream, &device.stream_parameters, nullptr, device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
+                            paClipOff, nullptr, nullptr);
+        if (err != paNoError) {
+            gkAudioDevices->portAudioErr(err);
+        }
 
-    err = Pa_StartStream(stream);
-    if (err != paNoError) {
-        gkAudioDevices->portAudioErr(err);
-    }
+        err = Pa_StartStream(stream);
+        if (err != paNoError) {
+            gkAudioDevices->portAudioErr(err);
+        }
 
-    //
-    // Keep a 'circular buffer' within memory
-    // https://www.boost.org/doc/libs/1_72_0/doc/html/circular_buffer.html
-    //
-    circular_buffer<double> circ_buffer(numSamples);
+        //
+        // Keep a 'circular buffer' within memory
+        // https://www.boost.org/doc/libs/1_72_0/doc/html/circular_buffer.html
+        //
+        circular_buffer<double> circ_buffer(numSamples);
 
-    Pa_Sleep(5000);
+        Pa_Sleep(5000);
 
-    if (!continuous && buffer_sec_record > 0) {
-        std::time_t start = time(0);
-        int timeLeft = buffer_sec_record;
-        while ((timeLeft > 0) && (err = Pa_IsStreamActive(stream)) == 1) {
-            std::time_t end = time(0);
-            std::time_t timeTaken = end - start;
-            timeLeft = buffer_sec_record - timeTaken;
+        if (!continuous && buffer_sec_record > 0) {
+            std::time_t start = time(0);
+            int timeLeft = buffer_sec_record;
+            while ((timeLeft > 0) && (err = Pa_IsStreamActive(stream)) == 1) {
+                std::time_t end = time(0);
+                std::time_t timeTaken = end - start;
+                timeLeft = buffer_sec_record - timeTaken;
 
-            if (err != paNoError) {
-                gkAudioDevices->portAudioErr(err);
+                if (err != paNoError) {
+                    gkAudioDevices->portAudioErr(err);
+                }
+            }
+        } else {
+            while ((err = Pa_IsStreamActive(stream)) == 1) {
+                if (err != paNoError) {
+                    gkAudioDevices->portAudioErr(err);
+                }
+
+                err = Pa_ReadStream(stream, &circ_buffer[0], data.maxFrameIndex);
+                if (err != paNoError) {
+                    gkAudioDevices->portAudioErr(err);
+                }
+
+                if (circ_buffer.full()) { // The circular buffer is full! Although technically it could keep going...
+                    return circ_buffer;
+                }
             }
         }
-    } else {
-        while ((err = Pa_IsStreamActive(stream)) == 1) {
-            if (err != paNoError) {
-                gkAudioDevices->portAudioErr(err);
-            }
-
-            err = Pa_ReadStream(stream, &circ_buffer, data.maxFrameIndex);
-            if (err != paNoError) {
-                gkAudioDevices->portAudioErr(err);
-            }
-
-            if (circ_buffer.full()) { // The circular buffer is full! Although technically it could keep going...
-                return circ_buffer;
-            }
-        }
+    } catch (const std::exception &e) {
+        throw e.what();
     }
 
     return circular_buffer<double>();

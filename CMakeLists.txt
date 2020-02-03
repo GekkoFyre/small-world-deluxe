@@ -229,7 +229,6 @@ if(WIN32)
         src/dek_db.hpp
         src/file_io.hpp
         src/audio_devices.hpp
-        src/spectro_fftw.hpp
         src/spectro_gui.hpp
         src/pa_mic.hpp
         src/string_funcs_windows.hpp)
@@ -243,7 +242,6 @@ elseif(UNIX)
         src/dek_db.hpp
         src/file_io.hpp
         src/audio_devices.hpp
-        src/spectro_fftw.hpp
         src/spectro_gui.hpp
         src/pa_mic.hpp
         src/string_funcs_linux.hpp)
@@ -264,7 +262,6 @@ include_directories(${PROJECT_BINARY_DIR})
 
 if(WIN32)
     set(GALAXY_UI_CPP
-        src/defines.hpp
         src/ui/mainwindow.cpp
         src/ui/dialogsettings.cpp
         src/ui/aboutdialog.cpp
@@ -273,13 +270,11 @@ if(WIN32)
         src/dek_db.cpp
         src/file_io.cpp
         src/audio_devices.cpp
-        src/spectro_fftw.cpp
         src/spectro_gui.cpp
         src/pa_mic.cpp
         src/string_funcs_windows.cpp)
 elseif(UNIX)
     set(GALAXY_UI_CPP
-        src/defines.hpp
         src/ui/mainwindow.cpp
         src/ui/dialogsettings.cpp
         src/ui/aboutdialog.cpp
@@ -288,7 +283,6 @@ elseif(UNIX)
         src/dek_db.cpp
         src/file_io.cpp
         src/audio_devices.cpp
-        src/spectro_fftw.cpp
         src/spectro_gui.cpp
         src/pa_mic.cpp
         src/string_funcs_linux.cpp)
@@ -296,7 +290,33 @@ elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()
 
-add_library(galaxy STATIC ${GALAXY_UI_CPP} ${UI_MOC} ${UI_HEADERS})
+if(WIN32)
+    set(GALAXY_SRC_CPP
+        src/gk_exceptions.cpp
+        src/spectro_fftw.cpp)
+elseif(UNIX)
+    set(GALAXY_SRC_CPP
+        src/gk_exceptions.cpp
+        src/spectro_fftw.cpp)
+elseif(APPLE)
+    message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
+endif()
+
+if(WIN32)
+    set(GALAXY_SRC_HEADERS
+        src/defines.hpp
+        src/gk_exceptions.hpp
+        src/spectro_fftw.hpp)
+elseif(UNIX)
+    set(GALAXY_SRC_HEADERS
+        src/defines.hpp
+        src/gk_exceptions.hpp
+        src/spectro_fftw.hpp)
+elseif(APPLE)
+    message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
+endif()
+
+add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_SRC_HEADERS} ${UI_HEADERS})
 
 target_link_libraries(galaxy Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Charts Qt5::Test Threads::Threads ${OpenCV_LIBS} ${LIBS})
 
