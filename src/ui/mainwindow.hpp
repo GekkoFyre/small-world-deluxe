@@ -37,9 +37,11 @@
 
 #pragma once
 
+#include "src/defines.hpp"
 #include "src/file_io.hpp"
 #include "src/dek_db.hpp"
 #include "src/audio_devices.hpp"
+#include "src/pa_mic.hpp"
 #include "src/radiolibs.hpp"
 #include <boost/filesystem.hpp>
 #include <memory>
@@ -49,6 +51,17 @@
 #include <QMainWindow>
 #include <QMultiMap>
 #include <QChart>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#include <portaudio.h>
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #ifdef _WIN32
 #include "src/string_funcs_windows.hpp"
@@ -102,15 +115,19 @@ private:
     std::shared_ptr<GekkoFyre::FileIo> fileIo;
     std::shared_ptr<GekkoFyre::DekodeDb> dekodeDb;
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
+    std::shared_ptr<GekkoFyre::PaMic> gkPaMic;
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GekkoFyre::RadioLibs> gkRadioLibs;
 
     std::future<GekkoFyre::AmateurRadio::Control::Radio *> rig_thread;
     std::thread spectro_thread;
 
-    std::vector<GekkoFyre::Database::Settings::Audio::Device> pref_audio_devices;                     // The configured audio devices for the user's system
+    std::vector<GekkoFyre::Database::Settings::Audio::Device> pref_audio_devices; // The configured audio devices for the user's system
     GekkoFyre::AmateurRadio::Control::Radio *radio;
     QTimer *timer;
+
+    PaError err = paNoError;
+    std::shared_ptr<PaStream> micStream;
 
     void radioStats(GekkoFyre::AmateurRadio::Control::Radio *radio_dev);
     void procVuMeter(const GekkoFyre::Database::Settings::Audio::Device &audio_stream);

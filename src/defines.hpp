@@ -95,7 +95,7 @@ namespace GekkoFyre {
 #define AUDIO_OUTPUT_CHANNEL_MIN_LIMIT (-1024)
 #define AUDIO_INPUT_CHANNEL_MAX_LIMIT (1024)
 #define AUDIO_INPUT_CHANNEL_MIN_LIMIT (-1024)
-#define AUDIO_FRAMES_PER_BUFFER (256)                   // Frames per buffer, i.e. the number of sample frames that PortAudio will request from the callback. Many apps may want to use paFramesPerBufferUnspecified, which tells PortAudio to pick the best, possibly changing, buffer size
+#define AUDIO_FRAMES_PER_BUFFER (512)                   // Frames per buffer, i.e. the number of sample frames that PortAudio will request from the callback. Many apps may want to use paFramesPerBufferUnspecified, which tells PortAudio to pick the best, possibly changing, buffer size
 #define AUDIO_TEST_SAMPLE_LENGTH_SEC (3)
 #define AUDIO_TEST_SAMPLE_TABLE_SIZE (200)
 #define AUDIO_SPEC_FLOOR_DECIBELS (-180.0)
@@ -214,18 +214,10 @@ namespace Database {
                 std::string message;
             };
 
-            struct Spectrum {
-                Device audio_dev;
-                size_t speclen;
-                fftw_plan plan;
-                double max_freq;
-                double min_freq;
-                double *window;
-                double linear_floor;
-                double mag_to_norm;
-                double *time_domain;
-                double *freq_domain;
-                double *mag_spec;
+            struct paRecData {
+                int frameIndex;
+                int maxFrameIndex;
+                int *rec_samples;
             };
         }
     }
