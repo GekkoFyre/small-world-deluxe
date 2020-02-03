@@ -49,7 +49,6 @@
 #include <QWidget>
 #include <QResource>
 #include <QMessageBox>
-#include <QPointer>
 #include <QDate>
 #include <QTimer>
 
@@ -93,6 +92,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         ui->actionE_xit->setIcon(QIcon(":/resources/contrib/images/vector/purchased/iconfinder_turn_off_on_power_181492.svg"));
         ui->action_Settings->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/settings-flat.svg"));
         ui->actionCheck_for_Updates->setIcon(QIcon(":/resources/contrib/images/vector/purchased/iconfinder_chemistry_226643.svg"));
+
+        //
+        // Initialize the default logic state on all applicable QPushButtons within QMainWindow.
+        //
+        btn_bridge_input_audio = false;
+        btn_radio_rx = false;
+        btn_radio_tx = false;
+        btn_radio_tx_halt = false;
+        btn_radio_tune = false;
+        btn_radio_monitor = false;
 
         rig_load_all_backends();
 
@@ -178,12 +187,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             }
         }
 
-        gkPaMic = std::make_shared<GekkoFyre::PaMic>(gkAudioDevices, this);
-        gkPaMic->recordMic(input_audio_dev, &micStream, true, 0);
-
-        QPointer<SpectroDialog> dlg_spectro = new SpectroDialog(this);
-        dlg_spectro->setWindowFlags(Qt::Tool | Qt::Dialog);
-        dlg_spectro->show();
+        if (input_audio_dev.is_output_dev == boost::tribool::true_value
+                || input_audio_dev.is_output_dev == boost::tribool::indeterminate_value) {
+            gkPaMic = std::make_shared<GekkoFyre::PaMic>(gkAudioDevices, this);
+            gkPaMic->recordMic(input_audio_dev, &micStream, true, 0);
+        } else {
+            QMessageBox::warning(this, tr("Unavailable device!"), tr("Please be sure to configure an appropriate input sound device."),
+                                 QMessageBox::Ok);
+        }
 
         if (radio->freq >= 0.0) {
             ui->label_freq_large->setText(QString::number(radio->freq));
@@ -274,6 +285,27 @@ void MainWindow::procVuMeter(const Device &audio_stream)
         // gkAudioDevices->vuMeter(device.dev_output_channel_count, 1, 100, 3, );
         return;
     }
+}
+
+/**
+ * @brief MainWindow::changePushButtonColor
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param push_button The QPushButton to be modified with the new QStyleSheet.
+ * @param green_result Whether to make the QPushButton in question Green or Red.
+ * @param color_blind_mode Not yet implemented!
+ */
+void MainWindow::changePushButtonColor(QPointer<QPushButton> push_button, const bool &green_result, const bool &color_blind_mode)
+{
+    if (green_result) {
+        // Change QPushButton to a shade of darkish 'Green'
+        push_button->setStyleSheet("QPushButton{\nbackground-color: #B80000; border: 1px solid black;\nborder-radius: 5px;\nborder-width: 1px;\npadding: 6px;\nfont: bold;\ncolor: white;\n}");
+    } else {
+        // Change QPushButton to a shade of darkish 'Red'
+        push_button->setStyleSheet("QPushButton{\nbackground-color: #3C8C2F; border: 1px solid black;\nborder-radius: 5px;\nborder-width: 1px;\npadding: 6px;\nfont: bold;\ncolor: white;\n}");
+    }
+
+    // TODO: Implement color-blind mode!
+    return;
 }
 
 /**
@@ -443,5 +475,87 @@ void MainWindow::on_actionSave_Decoded_Ab_triggered()
 
 void MainWindow::on_actionView_Graphs_triggered()
 {
+    QPointer<SpectroDialog> dlg_spectro = new SpectroDialog(this);
+    dlg_spectro->setWindowFlags(Qt::Tool | Qt::Dialog);
+    dlg_spectro->show();
+
+    return;
+}
+
+void MainWindow::on_pushButton_bridge_input_audio_clicked()
+{
+    if (!btn_bridge_input_audio) {
+        changePushButtonColor(ui->pushButton_bridge_input_audio, false);
+        btn_bridge_input_audio = true;
+    } else {
+        changePushButtonColor(ui->pushButton_bridge_input_audio, true);
+        btn_bridge_input_audio = false;
+    }
+
+    return;
+}
+
+void MainWindow::on_pushButton_radio_receive_clicked()
+{
+    if (!btn_radio_rx) {
+        changePushButtonColor(ui->pushButton_radio_receive, false);
+        btn_radio_rx = true;
+    } else {
+        changePushButtonColor(ui->pushButton_radio_receive, true);
+        btn_radio_rx = false;
+    }
+
+    return;
+}
+
+void MainWindow::on_pushButton_radio_transmit_clicked()
+{
+    if (!btn_radio_tx) {
+        changePushButtonColor(ui->pushButton_radio_transmit, false);
+        btn_radio_tx = true;
+    } else {
+        changePushButtonColor(ui->pushButton_radio_transmit, true);
+        btn_radio_tx = false;
+    }
+
+    return;
+}
+
+void MainWindow::on_pushButton_radio_tune_clicked()
+{
+    if (!btn_radio_tune) {
+        changePushButtonColor(ui->pushButton_radio_tune, false);
+        btn_radio_tune = true;
+    } else {
+        changePushButtonColor(ui->pushButton_radio_tune, true);
+        btn_radio_tune = false;
+    }
+
+    return;
+}
+
+void MainWindow::on_pushButton_radio_tx_halt_clicked()
+{
+    if (!btn_radio_tx_halt) {
+        changePushButtonColor(ui->pushButton_radio_tx_halt, false);
+        btn_radio_tx_halt = true;
+    } else {
+        changePushButtonColor(ui->pushButton_radio_tx_halt, true);
+        btn_radio_tx_halt = false;
+    }
+
+    return;
+}
+
+void MainWindow::on_pushButton_radio_monitor_clicked()
+{
+    if (!btn_radio_monitor) {
+        changePushButtonColor(ui->pushButton_radio_monitor, false);
+        btn_radio_monitor = true;
+    } else {
+        changePushButtonColor(ui->pushButton_radio_monitor, true);
+        btn_radio_monitor = false;
+    }
+
     return;
 }
