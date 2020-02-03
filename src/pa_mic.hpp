@@ -38,51 +38,24 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/dek_db.hpp"
-#include "src/file_io.hpp"
+#include "src/audio_devices.hpp"
+#include <portaudio.h>
 #include <QObject>
-#include <vector>
-#include <string>
 #include <memory>
-#include <mutex>
-
-#ifdef _WIN32
-#include "src/string_funcs_windows.hpp"
-#elif __linux__
-#include "src/string_funcs_linux.hpp"
-#endif
 
 namespace GekkoFyre {
 
-class AudioDevices : public QObject {
+class PaMic : public QObject {
     Q_OBJECT
 
 public:
-    explicit AudioDevices(std::shared_ptr<GekkoFyre::DekodeDb> gkDb, std::shared_ptr<GekkoFyre::FileIo> filePtr, QObject *parent = nullptr);
-    ~AudioDevices();
+    explicit PaMic(std::shared_ptr<GekkoFyre::AudioDevices> gkAudio, QObject *parent = nullptr);
+    ~PaMic() override;
 
-    std::vector<GekkoFyre::Database::Settings::Audio::Device> initPortAudio();
-    std::vector<GekkoFyre::Database::Settings::Audio::Device> defaultAudioDevices();
-    std::vector<double> enumSupportedStdSampleRates(const PaStreamParameters *inputParameters, const PaStreamParameters *outputParameters);
-    std::vector<GekkoFyre::Database::Settings::Audio::Device> enumAudioDevices();
-    void portAudioErr(const PaError &err);
-    void testSinewave(const GekkoFyre::Database::Settings::Audio::Device &device);
-    void volumeSetting();
-    double vuMeter();
+    void recordMic(const GekkoFyre::Database::Settings::Audio::Device &device, PaStream *stream, const int &total_sec_record);
 
 private:
-    std::shared_ptr<DekodeDb> gkDekodeDb;
-    std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
-    // std::unique_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
-    static std::mutex spectro_mutex;                           // Mutex for the spectrometer side of things
-    static std::mutex audio_mutex;                             // Mutex for general audio device work
-
-    static int paTestCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
-                              const PaStreamCallbackTimeInfo* timeInfo, PaStreamCallbackFlags statusFlags,
-                              void *userData);
-    static void streamFinished(void *userData);
-    bool filterAudioInputEnum(const PaHostApiTypeId &host_api_type);
-    bool filterAudioOutputEnum(const PaHostApiTypeId &host_api_type);
+    std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
 
 };
 };

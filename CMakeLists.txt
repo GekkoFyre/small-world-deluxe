@@ -231,6 +231,7 @@ if(WIN32)
         src/audio_devices.hpp
         src/spectro_fftw.hpp
         src/spectro_gui.hpp
+        src/pa_mic.hpp
         src/string_funcs_windows.hpp)
 elseif(UNIX)
     qt5_wrap_cpp(UI_MOC
@@ -244,6 +245,7 @@ elseif(UNIX)
         src/audio_devices.hpp
         src/spectro_fftw.hpp
         src/spectro_gui.hpp
+        src/pa_mic.hpp
         src/string_funcs_linux.hpp)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
@@ -273,6 +275,7 @@ if(WIN32)
         src/audio_devices.cpp
         src/spectro_fftw.cpp
         src/spectro_gui.cpp
+        src/pa_mic.cpp
         src/string_funcs_windows.cpp)
 elseif(UNIX)
     set(GALAXY_UI_CPP
@@ -287,6 +290,7 @@ elseif(UNIX)
         src/audio_devices.cpp
         src/spectro_fftw.cpp
         src/spectro_gui.cpp
+        src/pa_mic.cpp
         src/string_funcs_linux.cpp)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")

@@ -66,4 +66,6 @@ void SpectroDialog::on_pushButton_reset_clicked()
 {}
 
 void SpectroDialog::on_pushButton_exit_clicked()
-{}
+{
+    this->close();
+}

@@ -169,14 +169,17 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         std::thread t1(&MainWindow::infoBar, this);
         t1.detach();
 
-        // The spectrometer must listen to the chosen *output* audio device
-        Device output_audio_dev;
+        // The spectrometer must listen to the chosen *input* audio device
+        Device input_audio_dev;
         for (const auto &device: pref_audio_devices) {
-            if (device.is_output_dev == true) {
-                output_audio_dev = device;
+            if (device.is_output_dev == false) {
+                input_audio_dev = device;
                 break;
             }
         }
+
+        gkPaMic = std::make_shared<GekkoFyre::PaMic>(gkAudioDevices, this);
+        gkPaMic->recordMic(input_audio_dev, &micStream, 30);
 
         QPointer<SpectroDialog> dlg_spectro = new SpectroDialog(this);
         dlg_spectro->setWindowFlags(Qt::Tool | Qt::Dialog);
@@ -201,6 +204,11 @@ MainWindow::~MainWindow()
 {
     if (spectro_thread.joinable()) {
         spectro_thread.join();
+    }
+
+    err = Pa_CloseStream(&micStream);
+    if (err != paNoError) {
+        gkAudioDevices->portAudioErr(err);
     }
 
     delete db;
