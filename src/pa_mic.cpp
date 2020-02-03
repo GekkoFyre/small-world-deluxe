@@ -36,14 +36,14 @@
  ****************************************************************************************************/
 
 #include "pa_mic.hpp"
-#include <boost/circular_buffer.hpp>
-#include <vector>
+#include <chrono>
 
 using namespace GekkoFyre;
 using namespace GekkoFyre;
 using namespace Database;
 using namespace Settings;
 using namespace Audio;
+using namespace boost;
 
 /**
  * @brief PaMic::PaMic handles most microphone functions via PortAudio.
@@ -60,12 +60,17 @@ PaMic::~PaMic()
 
 /**
  * @brief PaMic::recordMic Record from a selected/given microphone device on the user's computing device.
- * @author Phil Burk <http://www.softsynth.com> <https://github.com/EddieRingle/portaudio/blob/master/examples/paex_record.c>
- * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param device
- * @param total_sec_record
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * Phil Burk <http://www.softsynth.com>
+ * @param device A specifically chosen PortAudio input device.
+ * @param stream A PortAudio input device stream.
+ * @param continuous Whether to record continuously from the given input device until otherwise, or not.
+ * @param buffer_sec_record The read buffer, as measured in seconds.
+ * @note <https://github.com/EddieRingle/portaudio/blob/master/examples/paex_record.c>
+ * <https://github.com/EddieRingle/portaudio/blob/master/test/patest_read_record.c>
  */
-void PaMic::recordMic(const Device &device, PaStream *stream, const int &total_sec_record)
+std::vector<double> PaMic::recordMic(const Device &device, PaStream *stream, const bool &continuous,
+                                     const int &buffer_sec_record)
 {
     PaError err = paNoError;
     paRecData data;
@@ -73,7 +78,7 @@ void PaMic::recordMic(const Device &device, PaStream *stream, const int &total_s
     int numSamples;
     int numBytes;
 
-    data.maxFrameIndex = totalFrames = total_sec_record * device.def_sample_rate;
+    data.maxFrameIndex = totalFrames = buffer_sec_record * device.def_sample_rate;
     data.frameIndex = 0;
     numSamples = totalFrames * device.dev_input_channel_count;
     numBytes = numSamples * sizeof(int);
@@ -87,7 +92,13 @@ void PaMic::recordMic(const Device &device, PaStream *stream, const int &total_s
         data.rec_samples[i] = 0;
     }
 
-    err = Pa_OpenStream(&stream, &device.stream_parameters, nullptr, device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER, paClipOff, nullptr, nullptr);
+    //
+    // By using `paFramesPerBufferUnspecified` tells PortAudio to pick the best, possibly changing, buffer size
+    // as according to many apps.
+    // http://portaudio.com/docs/v19-doxydocs/open_default_stream.html
+    //
+    err = Pa_OpenStream(&stream, &device.stream_parameters, nullptr, device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
+                        paClipOff, nullptr, nullptr);
     if (err != paNoError) {
         gkAudioDevices->portAudioErr(err);
     }
@@ -101,14 +112,54 @@ void PaMic::recordMic(const Device &device, PaStream *stream, const int &total_s
     // Keep a 'circular buffer' within memory
     // https://www.boost.org/doc/libs/1_72_0/doc/html/circular_buffer.html
     //
-    boost::circular_buffer<float> cb(4096);
+    circular_buffer<double> circ_buffer(numSamples);
 
     Pa_Sleep(5000);
-    while((err = Pa_IsStreamActive(stream)) == 1) {
-        if (err != paNoError) {
-            gkAudioDevices->portAudioErr(err);
+
+    if (!continuous && buffer_sec_record > 0) {
+        std::time_t start = time(0);
+        int timeLeft = buffer_sec_record;
+        while ((timeLeft > 0) && (err = Pa_IsStreamActive(stream)) == 1) {
+            std::time_t end = time(0);
+            std::time_t timeTaken = end - start;
+            timeLeft = buffer_sec_record - timeTaken;
+
+            if (err != paNoError) {
+                gkAudioDevices->portAudioErr(err);
+            }
+        }
+    } else {
+        while ((err = Pa_IsStreamActive(stream)) == 1) {
+            if (err != paNoError) {
+                gkAudioDevices->portAudioErr(err);
+            }
+
+            err = Pa_ReadStream(stream, &circ_buffer, data.maxFrameIndex);
+            if (err != paNoError) {
+                gkAudioDevices->portAudioErr(err);
+            }
+
+            if (circ_buffer.full()) { // The circular buffer is full! Although technically it could keep going...
+                // Linearize the buffer into a continuous array
+                std::vector<double> linear_buffer = linearBuffer(circ_buffer, numSamples);
+                return linear_buffer;
+            }
         }
     }
 
-    return;
+    return std::vector<double>();
+}
+
+/**
+ * @brief PaMic::linearBuffer Linearizes the Boost C++ continuous buffer into a more typical array, ready for
+ * processing by PortAudio.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param circ_buf The circular buffer to be modified in question.
+ * @return A typical, C++ std::vector.
+ */
+std::vector<double> PaMic::linearBuffer(circular_buffer<double> circ_buf, const int &array_size)
+{
+    double *buf_array = circ_buf.linearize();
+    std::vector<double> linear_buffer(buf_array, (buf_array + array_size));
+    return linear_buffer;
 }

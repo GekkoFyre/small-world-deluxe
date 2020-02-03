@@ -179,7 +179,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
 
         gkPaMic = std::make_shared<GekkoFyre::PaMic>(gkAudioDevices, this);
-        gkPaMic->recordMic(input_audio_dev, &micStream, 30);
+        gkPaMic->recordMic(input_audio_dev, &micStream, true, 0);
 
         QPointer<SpectroDialog> dlg_spectro = new SpectroDialog(this);
         dlg_spectro->setWindowFlags(Qt::Tool | Qt::Dialog);
