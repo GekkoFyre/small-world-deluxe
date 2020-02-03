@@ -512,9 +512,27 @@
                 <item>
                  <layout class="QHBoxLayout" name="horizontalLayout_6">
                   <item>
-                   <widget class="QPushButton" name="pushButton_5">
+                   <widget class="QPushButton" name="pushButton_radio_monitor">
+                    <property name="styleSheet">
+                     <string notr="true">QPushButton:pressed {
+    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(60, 186, 162, 255), stop:1 rgba(98, 211, 162, 255))
+}
+
+QPushButton {
+     background-color: #B80000; border: 1px solid black;
+     border-radius: 5px;
+     border-width: 1px;
+     padding: 6px;
+     font: bold;
+     color: white;
+}
+
+QPushButton:disabled {
+    background-color: rgb(170, 170, 127)
+}</string>
+                    </property>
                     <property name="text">
-                     <string>PushButton</string>
+                     <string>Monitor</string>
                     </property>
                    </widget>
                   </item>
@@ -537,9 +555,27 @@
                 <item>
                  <layout class="QHBoxLayout" name="horizontalLayout_15">
                   <item>
-                   <widget class="QPushButton" name="pushButton_6">
+                   <widget class="QPushButton" name="pushButton_radio_tx_halt">
+                    <property name="styleSheet">
+                     <string notr="true">QPushButton:pressed {
+    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(60, 186, 162, 255), stop:1 rgba(98, 211, 162, 255))
+}
+
+QPushButton {
+     background-color: #B80000; border: 1px solid black;
+     border-radius: 5px;
+     border-width: 1px;
+     padding: 6px;
+     font: bold;
+     color: white;
+}
+
+QPushButton:disabled {
+    background-color: rgb(170, 170, 127)
+}</string>
+                    </property>
                     <property name="text">
-                     <string>PushButton</string>
+                     <string>Halt TX</string>
                     </property>
                    </widget>
                   </item>
@@ -572,9 +608,27 @@
                 <item>
                  <layout class="QHBoxLayout" name="horizontalLayout_7">
                   <item>
-                   <widget class="QPushButton" name="pushButton_3">
+                   <widget class="QPushButton" name="pushButton_bridge_input_audio">
+                    <property name="styleSheet">
+                     <string notr="true">QPushButton:pressed {
+    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(60, 186, 162, 255), stop:1 rgba(98, 211, 162, 255))
+}
+
+QPushButton {
+     background-color: #B80000; border: 1px solid black;
+     border-radius: 5px;
+     border-width: 1px;
+     padding: 6px;
+     font: bold;
+     color: white;
+}
+
+QPushButton:disabled {
+    background-color: rgb(170, 170, 127)
+}</string>
+                    </property>
                     <property name="text">
-                     <string>PushButton</string>
+                     <string>Bridge Input -&gt; Output Audio</string>
                     </property>
                    </widget>
                   </item>
@@ -583,9 +637,27 @@
                 <item>
                  <layout class="QHBoxLayout" name="horizontalLayout_9">
                   <item>
-                   <widget class="QPushButton" name="pushButton_4">
+                   <widget class="QPushButton" name="pushButton_radio_receive">
+                    <property name="styleSheet">
+                     <string notr="true">QPushButton:pressed {
+    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(60, 186, 162, 255), stop:1 rgba(98, 211, 162, 255))
+}
+
+QPushButton {
+     background-color: #B80000; border: 1px solid black;
+     border-radius: 5px;
+     border-width: 1px;
+     padding: 6px;
+     font: bold;
+     color: white;
+}
+
+QPushButton:disabled {
+    background-color: rgb(170, 170, 127)
+}</string>
+                    </property>
                     <property name="text">
-                     <string>PushButton</string>
+                     <string>RX</string>
                     </property>
                    </widget>
                   </item>
@@ -594,9 +666,27 @@
                 <item>
                  <layout class="QHBoxLayout" name="horizontalLayout_11">
                   <item>
-                   <widget class="QPushButton" name="pushButton_2">
+                   <widget class="QPushButton" name="pushButton_radio_transmit">
+                    <property name="styleSheet">
+                     <string notr="true">QPushButton:pressed {
+    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(60, 186, 162, 255), stop:1 rgba(98, 211, 162, 255))
+}
+
+QPushButton {
+     background-color: #B80000; border: 1px solid black;
+     border-radius: 5px;
+     border-width: 1px;
+     padding: 6px;
+     font: bold;
+     color: white;
+}
+
+QPushButton:disabled {
+    background-color: rgb(170, 170, 127)
+}</string>
+                    </property>
                     <property name="text">
-                     <string>PushButton</string>
+                     <string>TX</string>
                     </property>
                    </widget>
                   </item>
@@ -605,9 +695,27 @@
                 <item>
                  <layout class="QHBoxLayout" name="horizontalLayout_16">
                   <item>
-                   <widget class="QPushButton" name="pushButton">
+                   <widget class="QPushButton" name="pushButton_radio_tune">
+                    <property name="styleSheet">
+                     <string notr="true">QPushButton:pressed {
+    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(60, 186, 162, 255), stop:1 rgba(98, 211, 162, 255))
+}
+
+QPushButton {
+     background-color: #B80000; border: 1px solid black;
+     border-radius: 5px;
+     border-width: 1px;
+     padding: 6px;
+     font: bold;
+     color: white;
+}
+
+QPushButton:disabled {
+    background-color: rgb(170, 170, 127)
+}</string>
+                    </property>
                     <property name="text">
-                     <string>PushButton</string>
+                     <string>Tune</string>
                     </property>
                    </widget>
                   </item>

@@ -49,6 +49,8 @@
 #include <thread>
 #include <future>
 #include <QMainWindow>
+#include <QPushButton>
+#include <QPointer>
 #include <QMultiMap>
 #include <QChart>
 
@@ -107,6 +109,18 @@ private slots:
 
     void infoBar();
 
+    //
+    // QPushButtons that contain a logic state of some sort and are therefore displayed as
+    // the color, "Green", when TRUE and the color, "Red", when FALSE. Note: May possibly
+    // be different colors depending on the needs of any colorblind users for a given session.
+    //
+    void on_pushButton_bridge_input_audio_clicked();
+    void on_pushButton_radio_receive_clicked();
+    void on_pushButton_radio_transmit_clicked();
+    void on_pushButton_radio_tune_clicked();
+    void on_pushButton_radio_tx_halt_clicked();
+    void on_pushButton_radio_monitor_clicked();
+
 private:
     Ui::MainWindow *ui;
 
@@ -129,6 +143,21 @@ private:
     PaError err = paNoError;
     std::shared_ptr<PaStream> micStream;
 
+    //
+    // This sub-section contains all the boolean variables pertaining to the QPushButtons on QMainWindow that
+    // possess a logic state of some kind. If the button holds a TRUE value, it'll be 'Green' in colour, otherwise
+    // it'll appear 'Red' in order to display its FALSE value.
+    // See: MainWindow::changePushButtonColor().
+    //
+    bool btn_bridge_input_audio;
+    bool btn_radio_rx;
+    bool btn_radio_tx;
+    bool btn_radio_tx_halt;
+    bool btn_radio_tune;
+    bool btn_radio_monitor;
+
     void radioStats(GekkoFyre::AmateurRadio::Control::Radio *radio_dev);
     void procVuMeter(const GekkoFyre::Database::Settings::Audio::Device &audio_stream);
+    void changePushButtonColor(QPointer<QPushButton> push_button, const bool &green_result = true,
+                               const bool &color_blind_mode = false);
 };
