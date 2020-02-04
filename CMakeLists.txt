@@ -294,11 +294,9 @@ endif()
 
 if(WIN32)
     set(GALAXY_SRC_CPP
-        src/gk_exceptions.cpp
         src/spectro_fftw.cpp)
 elseif(UNIX)
     set(GALAXY_SRC_CPP
-        src/gk_exceptions.cpp
         src/spectro_fftw.cpp)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
@@ -307,12 +305,10 @@ endif()
 if(WIN32)
     set(GALAXY_SRC_HEADERS
         src/defines.hpp
-        src/gk_exceptions.hpp
         src/spectro_fftw.hpp)
 elseif(UNIX)
     set(GALAXY_SRC_HEADERS
         src/defines.hpp
-        src/gk_exceptions.hpp
         src/spectro_fftw.hpp)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")

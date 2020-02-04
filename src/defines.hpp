@@ -106,6 +106,11 @@ namespace GekkoFyre {
 #define AUDIO_SIGNAL_LENGTH (2048)
 #define FFTW_HOP_SIZE (128)
 
+// https://github.com/EddieRingle/portaudio/blob/master/test/patest_read_record.c
+#define PA_SAMPLE_TYPE paFloat32
+typedef float SAMPLE;
+#define SAMPLE_SILENCE (0.0f)
+
 #ifndef M_PI
 #define M_PI (3.14159265358979323846) /* pi */
 #endif
@@ -219,7 +224,7 @@ namespace Database {
             struct paRecData {
                 int frameIndex;
                 int maxFrameIndex;
-                int *rec_samples;
+                SAMPLE *rec_samples;                    // Related to the recording of audio data
             };
         }
     }

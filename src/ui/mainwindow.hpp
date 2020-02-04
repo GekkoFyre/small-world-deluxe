@@ -165,4 +165,7 @@ private:
 
     void changePushButtonColor(QPointer<QPushButton> push_button, const bool &green_result = true,
                                const bool &color_blind_mode = false);
+
+    void createStatusBar(const QString &statusMsg = "");
+    void print_exception(const std::exception &e, int level = 0);
 };
