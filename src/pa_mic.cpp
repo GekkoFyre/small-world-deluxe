@@ -38,6 +38,7 @@
 #include "pa_mic.hpp"
 #include <boost/exception/all.hpp>
 #include <chrono>
+#include <iostream>
 
 using namespace GekkoFyre;
 using namespace GekkoFyre;
@@ -84,7 +85,7 @@ circular_buffer<double> PaMic::recordMic(const Device &device, PaStream *stream,
         data.frameIndex = 0;
         numSamples = totalFrames * device.dev_input_channel_count;
         numBytes = numSamples * sizeof(int);
-        data.rec_samples = (int *)malloc(numBytes); // From now on, `rec_samples` is initialised
+        data.rec_samples = (SAMPLE *)malloc(numBytes); // From now on, `rec_samples` is initialised
 
         if (data.rec_samples == nullptr) {
             throw std::runtime_error(tr("Could not allocate record array.").toStdString());
@@ -98,6 +99,7 @@ circular_buffer<double> PaMic::recordMic(const Device &device, PaStream *stream,
         // By using `paFramesPerBufferUnspecified` tells PortAudio to pick the best, possibly changing, buffer size
         // as according to many apps.
         // http://portaudio.com/docs/v19-doxydocs/open_default_stream.html
+        // https://github.com/EddieRingle/portaudio/blob/master/test/patest_read_record.c
         //
         err = Pa_OpenStream(&stream, &device.stream_parameters, nullptr, device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
                             paClipOff, nullptr, nullptr);
@@ -116,12 +118,18 @@ circular_buffer<double> PaMic::recordMic(const Device &device, PaStream *stream,
         //
         circular_buffer<double> circ_buffer(numSamples);
 
-        Pa_Sleep(5000);
+        Pa_Sleep(2500);
+
+        err = Pa_ReadStream(stream, &circ_buffer[0], data.maxFrameIndex);
+        if (err != paNoError && err != 1) {
+            gkAudioDevices->portAudioErr(err);
+        }
 
         if (!continuous && buffer_sec_record > 0) {
             std::time_t start = time(0);
             int timeLeft = buffer_sec_record;
             while ((timeLeft > 0) && (err = Pa_IsStreamActive(stream)) == 1) {
+                // TODO: Must complete writing the code for this section!
                 std::time_t end = time(0);
                 std::time_t timeTaken = end - start;
                 timeLeft = buffer_sec_record - timeTaken;
@@ -131,23 +139,32 @@ circular_buffer<double> PaMic::recordMic(const Device &device, PaStream *stream,
                 }
             }
         } else {
-            while ((err = Pa_IsStreamActive(stream)) == 1) {
-                if (err != paNoError) {
-                    gkAudioDevices->portAudioErr(err);
+            SAMPLE max, average, val;
+            max = 0;
+            average = 0;
+            int i = 0;
+            while (Pa_IsStreamActive(stream) == 1) {
+                ++i;
+                val = data.rec_samples[i];
+                if (val < 0) {
+                    val = -val; // ABS
                 }
 
-                err = Pa_ReadStream(stream, &circ_buffer[0], data.maxFrameIndex);
-                if (err != paNoError) {
-                    gkAudioDevices->portAudioErr(err);
+                if (val > max) {
+                    max = val;
                 }
 
-                if (circ_buffer.full()) { // The circular buffer is full! Although technically it could keep going...
-                    return circ_buffer;
-                }
+                average += val;
             }
+
+            average = average / numSamples;
+
+            // TODO: Finish writing the code for above and below (i.e. amplitude and averages)!
+            // std::cout << tr("[ Input device ] Max amplitude as of past 30 seconds: %1").arg(QString::number(max)).toStdString() << std::endl;
+            // std::cout << tr("[ Input device ] Average as of past 30 seconds: %1").arg(QString::number(average)).toStdString() << std::endl;
         }
     } catch (const std::exception &e) {
-        throw e.what();
+        throw std::runtime_error(e.what());
     }
 
     return circular_buffer<double>();

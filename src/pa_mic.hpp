@@ -54,7 +54,7 @@ public:
     explicit PaMic(std::shared_ptr<GekkoFyre::AudioDevices> gkAudio, QObject *parent = nullptr);
     ~PaMic() override;
 
-    boost::circular_buffer<double> recordMic(const GekkoFyre::Database::Settings::Audio::Device &device,
+    boost::circular_buffer<double> recordMic(const Database::Settings::Audio::Device &device,
                                              PaStream *stream, const bool &continuous = false,
                                              const int &buffer_sec_record = 30);
 

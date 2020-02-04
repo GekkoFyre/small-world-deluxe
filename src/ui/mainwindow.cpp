@@ -94,6 +94,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         ui->actionCheck_for_Updates->setIcon(QIcon(":/resources/contrib/images/vector/purchased/iconfinder_chemistry_226643.svg"));
 
         //
+        // Create a status bar at the bottom of the window with a default message
+        // https://doc.qt.io/qt-5/qstatusbar.html
+        //
+        createStatusBar();
+
+        //
         // Initialize the default logic state on all applicable QPushButtons within QMainWindow.
         //
         btn_bridge_input_audio = false;
@@ -287,6 +293,36 @@ void MainWindow::changePushButtonColor(QPointer<QPushButton> push_button, const 
 }
 
 /**
+ * @brief MainWindow::createStatusBar creates a status bar at the bottom of the window.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @note <https://doc.qt.io/qt-5/qstatusbar.html>
+ */
+void MainWindow::createStatusBar(const QString &statusMsg)
+{
+    if (statusMsg.isEmpty()) {
+        statusBar()->showMessage(tr("Ready..."), 5000);
+    } else {
+        statusBar()->showMessage(statusMsg, 2000);
+    }
+}
+
+/**
+ * @brief MainWindow::print_exception
+ * @author <https://en.cppreference.com/w/cpp/error/nested_exception>
+ * @param e
+ * @param level
+ */
+void MainWindow::print_exception(const std::exception &e, int level)
+{
+    std::cerr << std::string(level, ' ') << "exception: " << e.what() << '\n';
+    try {
+        std::rethrow_if_nested(e);
+    } catch (const std::exception &e) {
+        print_exception(e, level + 1);
+    } catch (...) {}
+}
+
+/**
  * @brief MainWindow::on_actionCheck_for_Updates_triggered
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
@@ -473,17 +509,23 @@ Device MainWindow::grabDefPaInputDevice()
 
 void MainWindow::paMicProcBackground(const Device &input_audio_device, const int &numSamples)
 {
-    //
-    // When the buffer is filled, new data will be written as starting at the very beginning, overwriting
-    // any old data within the buffer itself
-    // https://www.boost.org/doc/libs/1_72_0/doc/html/circular_buffer.html
-    //
-    boost::circular_buffer<double> input_dev_circ_buffer(numSamples);
+    try {
+        //
+        // When the buffer is filled, new data will be written as starting at the very beginning, overwriting
+        // any old data within the buffer itself
+        // https://www.boost.org/doc/libs/1_72_0/doc/html/circular_buffer.html
+        //
+        boost::circular_buffer<double> input_dev_circ_buffer(numSamples);
 
-    while (btn_radio_rx) {
-        gkPaMic = std::make_shared<GekkoFyre::PaMic>(gkAudioDevices, this);
-        input_dev_circ_buffer = gkPaMic->recordMic(input_audio_device, &micStream, true, AUDIO_MIC_INPUT_RECRD_SECS);
+        while (btn_radio_rx) {
+            gkPaMic = std::make_shared<GekkoFyre::PaMic>(gkAudioDevices, this);
+            input_dev_circ_buffer = gkPaMic->recordMic(input_audio_device, &micStream, true, AUDIO_MIC_INPUT_RECRD_SECS);
+        }
+    } catch (const std::exception &e) {
+        print_exception(e);
     }
+
+    return;
 }
 
 void MainWindow::on_actionSave_Decoded_Ab_triggered()
@@ -517,25 +559,42 @@ void MainWindow::on_pushButton_bridge_input_audio_clicked()
 
 void MainWindow::on_pushButton_radio_receive_clicked()
 {
-    if (!btn_radio_rx) {
-        auto input_audio_dev = grabDefPaInputDevice();
-        int totalFrames = AUDIO_MIC_INPUT_RECRD_SECS * input_audio_dev.def_sample_rate;
-        int numSamples = totalFrames * input_audio_dev.dev_input_channel_count;
-        if (input_audio_dev.is_output_dev == boost::tribool::false_value) {
-            // Set the QPushButton to 'Green'
-            changePushButtonColor(ui->pushButton_radio_receive, false);
-            btn_radio_rx = true;
+    try {
+        if (!btn_radio_rx) {
+            auto input_audio_dev = grabDefPaInputDevice();
+            if (input_audio_dev.stream_parameters.device != paNoDevice) {
+                int totalFrames = AUDIO_MIC_INPUT_RECRD_SECS * input_audio_dev.def_sample_rate;
+                int numSamples = totalFrames * input_audio_dev.dev_input_channel_count;
+                if (input_audio_dev.is_output_dev == boost::tribool::false_value) {
+                    if (input_audio_dev.device_info->maxInputChannels > 0) {
+                        if ((input_audio_dev.device_info->name != nullptr)) {
+                            // Set the QPushButton to 'Green'
+                            changePushButtonColor(ui->pushButton_radio_receive, false);
+                            btn_radio_rx = true;
 
-            std::thread tMic(&MainWindow::paMicProcBackground, this, input_audio_dev, numSamples);
-            tMic.detach();
-        } else {
+                            std::thread tMic(&MainWindow::paMicProcBackground, this, input_audio_dev, numSamples);
+                            tMic.detach();
+                            return;
+                        }
+                    }
+                }
+            } else {
+                QMessageBox::warning(this, tr("Unavailable device!"), tr("No default input device!"), QMessageBox::Ok);
+                return;
+            }
+
             QMessageBox::warning(this, tr("Unavailable device!"), tr("You must firstly configure an appropriate **input** sound device."),
                                  QMessageBox::Ok);
+            return;
+        } else {
+            // Set the QPushButton to 'Red'
+            changePushButtonColor(ui->pushButton_radio_receive, true);
+            btn_radio_rx = false;
+            return;
         }
-    } else {
-        // Set the QPushButton to 'Red'
-        changePushButtonColor(ui->pushButton_radio_receive, true);
-        btn_radio_rx = false;
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), tr("An issue was encountered while attempting to enter RX mode. Error: %1\n\nCancelling...").arg(e.what()),
+                             QMessageBox::Ok);
     }
 
     return;
