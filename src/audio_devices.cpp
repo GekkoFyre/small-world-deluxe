@@ -43,6 +43,8 @@
 #include <cstdlib>
 #include <algorithm>
 #include <QDebug>
+#include <QMessageBox>
+#include <QApplication>
 
 #ifdef _WIN32
 #include <stringapiset.h>
@@ -591,6 +593,35 @@ double AudioDevices::vuMeter()
 }
 
 /**
+ * @brief AudioDevices::sampleFormatConvert converts the sample rate into a readable format
+ * for PortAudio's C++ bindings.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param sample_rate The desired sample rate to be converted.
+ * @return The converted sample rate that is now readable by PortAudio's C++ bindings.
+ */
+portaudio::SampleDataFormat AudioDevices::sampleFormatConvert(const int sample_rate)
+{
+    switch (sample_rate) {
+    case paFloat32:
+        return portaudio::FLOAT32;
+    case paInt32:
+        return portaudio::INT32;
+    case paInt24:
+        return portaudio::INT24;
+    case paInt16:
+        return portaudio::INT16;
+    case paInt8:
+        return portaudio::INT8;
+    case paUInt8:
+        return portaudio::UINT8;
+    default:
+        return portaudio::INT16;
+    }
+
+    return portaudio::INT16;
+}
+
+/**
  * @brief AudioDevices::paTestCallback This is called by the PortAudio engine when audio is needed.
  * @author PortAudio <http://portaudio.com/docs/v19-doxydocs/paex__sine_8c_source.html>
  * @param inputBuffer
@@ -740,9 +771,16 @@ bool AudioDevices::filterAudioOutputEnum(const PaHostApiTypeId &host_api_type)
  */
 void AudioDevices::portAudioErr(const PaError &err)
 {
-    std::cerr << tr("An error occured while using the PortAudio stream").toStdString() << std::endl;
-    std::cerr << tr("Error number: %1").arg(QString::number(err)).toStdString() << std::endl;
-    std::cerr << tr("Error message: %1").arg(QString::fromStdString(Pa_GetErrorText(err))).toStdString() << std::endl;
-    throw std::runtime_error(tr("An error occured within the audio stream:\n\n%1")
-                             .arg(QString::fromStdString(Pa_GetErrorText(err))).toStdString());
+    try {
+        std::cerr << tr("An error occured while using the PortAudio stream").toStdString() << std::endl;
+        std::cerr << tr("Error number: %1").arg(QString::number(err)).toStdString() << std::endl;
+        std::cerr << tr("Error message: %1").arg(QString::fromStdString(Pa_GetErrorText(err))).toStdString() << std::endl;
+        throw std::runtime_error(tr("An error occured within the audio stream:\n\n%1")
+                                 .arg(QString::fromStdString(Pa_GetErrorText(err))).toStdString());
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
+        QApplication::exit(-5);
+    }
+
+    return;
 }

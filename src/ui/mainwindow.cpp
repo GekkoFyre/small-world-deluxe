@@ -516,11 +516,24 @@ void MainWindow::paMicProcBackground(const Device &input_audio_device)
         // https://www.boost.org/doc/libs/1_72_0/doc/html/circular_buffer.html
         //
         gkPaMic = std::make_shared<GekkoFyre::PaMic>(gkAudioDevices, this);
-        std::vector<SAMPLE> *input_dev_rec_buffer = nullptr;
+        std::vector<SAMPLE> *input_dev_rec_buffer = new std::vector<SAMPLE>;
         bool result = false;
+        int maxFrameIndex = 0;
+        int totalFrames = 0;
+        int numSamples = 0;
+        int numBytes = 0;
+
+        maxFrameIndex = totalFrames = AUDIO_MIC_INPUT_RECRD_SECS * input_audio_device.def_sample_rate;
+        numSamples = totalFrames * input_audio_device.dev_input_channel_count;
+        numBytes = numSamples * sizeof(int);
 
         while (btn_radio_rx) {
-            result = gkPaMic->recordMic(input_audio_device, &micStream, input_dev_rec_buffer, AUDIO_MIC_INPUT_RECRD_SECS);
+            result = gkPaMic->recordMic(input_audio_device, &micStream, &input_dev_rec_buffer[0], AUDIO_MIC_INPUT_RECRD_SECS);
+
+            // Create a rolling buffer
+            if (input_dev_rec_buffer->size() >= numSamples) {
+                input_dev_rec_buffer->clear();
+            }
         }
     } catch (const std::exception &e) {
         print_exception(e);
