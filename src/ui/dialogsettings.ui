@@ -76,6 +76,12 @@
          </property>
          <item>
           <widget class="QTabWidget" name="tabWidget_config">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="currentIndex">
             <number>0</number>
            </property>
@@ -95,93 +101,220 @@
                 </attribute>
                 <layout class="QVBoxLayout" name="verticalLayout_9">
                  <item>
-                  <widget class="QGroupBox" name="groupBox_general_rig_basic_details">
-                   <property name="title">
-                    <string>Basic Details</string>
+                  <widget class="QScrollArea" name="scrollArea_general_settings">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
                    </property>
-                   <layout class="QFormLayout" name="formLayout_7">
-                    <item row="0" column="0">
-                     <widget class="QLabel" name="label_rig_my_callsign">
-                      <property name="text">
-                       <string>My Callsign: </string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="0" column="1">
-                     <widget class="QLineEdit" name="lineEdit_rig_my_callsign">
-                      <property name="toolTip">
-                       <string>Your personal and licensed as by the government, call-sign.</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="1" column="0">
-                     <widget class="QLabel" name="label_rig_maidenhead">
-                      <property name="text">
-                       <string>My Maidenhead Grid Locator: </string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="1" column="1">
-                     <widget class="QLineEdit" name="lineEdit_rig_maidenhead"/>
-                    </item>
-                   </layout>
+                   <property name="frameShadow">
+                    <enum>QFrame::Plain</enum>
+                   </property>
+                   <property name="horizontalScrollBarPolicy">
+                    <enum>Qt::ScrollBarAlwaysOff</enum>
+                   </property>
+                   <property name="widgetResizable">
+                    <bool>true</bool>
+                   </property>
+                   <widget class="QWidget" name="scrollAreaWidgetContents">
+                    <property name="geometry">
+                     <rect>
+                      <x>0</x>
+                      <y>0</y>
+                      <width>632</width>
+                      <height>370</height>
+                     </rect>
+                    </property>
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                    <layout class="QVBoxLayout" name="verticalLayout_19">
+                     <item>
+                      <widget class="QGroupBox" name="groupBox_general_rig_basic_details">
+                       <property name="title">
+                        <string>Basic Details</string>
+                       </property>
+                       <layout class="QFormLayout" name="formLayout_12">
+                        <item row="0" column="0">
+                         <widget class="QLabel" name="label_rig_my_callsign_2">
+                          <property name="text">
+                           <string>My Callsign: </string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="0" column="1">
+                         <widget class="QLineEdit" name="lineEdit_rig_my_callsign_2">
+                          <property name="toolTip">
+                           <string>Your personal and licensed as by the government, call-sign.</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="0">
+                         <widget class="QLabel" name="label_rig_maidenhead_2">
+                          <property name="text">
+                           <string>My Maidenhead Grid Locator: </string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="1">
+                         <widget class="QLineEdit" name="lineEdit_rig_maidenhead_2"/>
+                        </item>
+                       </layout>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QGroupBox" name="groupBox_general_rig_messages">
+                       <property name="title">
+                        <string>Messages</string>
+                       </property>
+                       <layout class="QFormLayout" name="formLayout_13">
+                        <item row="0" column="0">
+                         <widget class="QLabel" name="label_rig_cq_message">
+                          <property name="text">
+                           <string>CQ Message: </string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="0" column="1">
+                         <widget class="QLineEdit" name="lineEdit_rig_cq_message"/>
+                        </item>
+                        <item row="1" column="0">
+                         <widget class="QLabel" name="label_rig_reply_message">
+                          <property name="text">
+                           <string>Reply Message: </string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="1">
+                         <widget class="QLineEdit" name="lineEdit_rig_reply_message"/>
+                        </item>
+                        <item row="2" column="0">
+                         <widget class="QLabel" name="label_rig_station_info">
+                          <property name="text">
+                           <string>Station Info: </string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="2" column="1">
+                         <widget class="QLineEdit" name="lineEdit_rig_station_info">
+                          <property name="toolTip">
+                           <string>This includes such details as your primary Rig(s), Antenna(e), Location, etc. but be sure to keep it short!</string>
+                          </property>
+                         </widget>
+                        </item>
+                       </layout>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QGroupBox" name="groupBox_db_save_loc">
+                       <property name="title">
+                        <string>Settings Database</string>
+                       </property>
+                       <layout class="QFormLayout" name="formLayout_8">
+                        <item row="0" column="0">
+                         <widget class="QLabel" name="label_db_save_loc_2">
+                          <property name="text">
+                           <string>Location: </string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="0" column="1">
+                         <widget class="QFrame" name="frame_db_save_loc_2">
+                          <property name="frameShape">
+                           <enum>QFrame::StyledPanel</enum>
+                          </property>
+                          <property name="frameShadow">
+                           <enum>QFrame::Raised</enum>
+                          </property>
+                          <layout class="QHBoxLayout" name="horizontalLayout_12">
+                           <property name="leftMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="topMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="rightMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="bottomMargin">
+                            <number>0</number>
+                           </property>
+                           <item>
+                            <widget class="QLineEdit" name="lineEdit_db_save_loc_2"/>
+                           </item>
+                           <item>
+                            <widget class="QPushButton" name="pushButton_db_save_loc_2">
+                             <property name="text">
+                              <string>Browse</string>
+                             </property>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                       </layout>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QGroupBox" name="groupBox_logs_save_dir">
+                       <property name="title">
+                        <string>Logs Save Directory</string>
+                       </property>
+                       <layout class="QFormLayout" name="formLayout_5">
+                        <item row="0" column="0">
+                         <widget class="QLabel" name="label_audio_logs_save_dir">
+                          <property name="text">
+                           <string>Location: </string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="0" column="1">
+                         <widget class="QFrame" name="frame_audio_location_power">
+                          <property name="frameShape">
+                           <enum>QFrame::StyledPanel</enum>
+                          </property>
+                          <property name="frameShadow">
+                           <enum>QFrame::Raised</enum>
+                          </property>
+                          <layout class="QHBoxLayout" name="horizontalLayout_5">
+                           <property name="spacing">
+                            <number>7</number>
+                           </property>
+                           <property name="leftMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="topMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="rightMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="bottomMargin">
+                            <number>0</number>
+                           </property>
+                           <item>
+                            <widget class="QLineEdit" name="lineEdit_audio_logs_save_dir"/>
+                           </item>
+                           <item>
+                            <widget class="QPushButton" name="pushButton_audio_logs_save_dir">
+                             <property name="text">
+                              <string>Browse</string>
+                             </property>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                       </layout>
+                      </widget>
+                     </item>
+                    </layout>
+                   </widget>
                   </widget>
-                 </item>
-                 <item>
-                  <widget class="QGroupBox" name="groupBox_general_rig_messages">
-                   <property name="title">
-                    <string>Messages</string>
-                   </property>
-                   <layout class="QFormLayout" name="formLayout_8">
-                    <item row="0" column="0">
-                     <widget class="QLabel" name="label_rig_cq_message">
-                      <property name="text">
-                       <string>CQ Message: </string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="0" column="1">
-                     <widget class="QLineEdit" name="lineEdit_rig_cq_message"/>
-                    </item>
-                    <item row="1" column="0">
-                     <widget class="QLabel" name="label_rig_reply_message">
-                      <property name="text">
-                       <string>Reply Message: </string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="1" column="1">
-                     <widget class="QLineEdit" name="lineEdit_rig_reply_message"/>
-                    </item>
-                    <item row="2" column="0">
-                     <widget class="QLabel" name="label_rig_station_info">
-                      <property name="text">
-                       <string>Station Info: </string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="2" column="1">
-                     <widget class="QLineEdit" name="lineEdit_rig_station_info">
-                      <property name="toolTip">
-                       <string>This includes such details as your primary Rig(s), Antenna(e), Location, etc. but be sure to keep it short!</string>
-                      </property>
-                     </widget>
-                    </item>
-                   </layout>
-                  </widget>
-                 </item>
-                 <item>
-                  <spacer name="verticalSpacer_2">
-                   <property name="orientation">
-                    <enum>Qt::Vertical</enum>
-                   </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>20</width>
-                     <height>40</height>
-                    </size>
-                   </property>
-                  </spacer>
                  </item>
                 </layout>
                </widget>
@@ -402,109 +535,6 @@
                               <string>Both</string>
                              </property>
                             </item>
-                           </widget>
-                          </item>
-                         </layout>
-                        </widget>
-                       </item>
-                      </layout>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QGroupBox" name="groupBox_db_save_loc">
-                      <property name="title">
-                       <string>Settings Database</string>
-                      </property>
-                      <layout class="QFormLayout" name="formLayout_4">
-                       <item row="0" column="0">
-                        <widget class="QLabel" name="label_db_save_loc">
-                         <property name="text">
-                          <string>Location: </string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="0" column="1">
-                        <widget class="QFrame" name="frame_db_save_loc">
-                         <property name="frameShape">
-                          <enum>QFrame::StyledPanel</enum>
-                         </property>
-                         <property name="frameShadow">
-                          <enum>QFrame::Raised</enum>
-                         </property>
-                         <layout class="QHBoxLayout" name="horizontalLayout_6">
-                          <property name="leftMargin">
-                           <number>0</number>
-                          </property>
-                          <property name="topMargin">
-                           <number>0</number>
-                          </property>
-                          <property name="rightMargin">
-                           <number>0</number>
-                          </property>
-                          <property name="bottomMargin">
-                           <number>0</number>
-                          </property>
-                          <item>
-                           <widget class="QLineEdit" name="lineEdit_db_save_loc"/>
-                          </item>
-                          <item>
-                           <widget class="QPushButton" name="pushButton_db_save_loc">
-                            <property name="text">
-                             <string>Browse</string>
-                            </property>
-                           </widget>
-                          </item>
-                         </layout>
-                        </widget>
-                       </item>
-                      </layout>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QGroupBox" name="groupBox_logs_save_dir">
-                      <property name="title">
-                       <string>Logs Save Directory</string>
-                      </property>
-                      <layout class="QFormLayout" name="formLayout_5">
-                       <item row="0" column="0">
-                        <widget class="QLabel" name="label_audio_logs_save_dir">
-                         <property name="text">
-                          <string>Location: </string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="0" column="1">
-                        <widget class="QFrame" name="frame_audio_location_power">
-                         <property name="frameShape">
-                          <enum>QFrame::StyledPanel</enum>
-                         </property>
-                         <property name="frameShadow">
-                          <enum>QFrame::Raised</enum>
-                         </property>
-                         <layout class="QHBoxLayout" name="horizontalLayout_5">
-                          <property name="spacing">
-                           <number>7</number>
-                          </property>
-                          <property name="leftMargin">
-                           <number>0</number>
-                          </property>
-                          <property name="topMargin">
-                           <number>0</number>
-                          </property>
-                          <property name="rightMargin">
-                           <number>0</number>
-                          </property>
-                          <property name="bottomMargin">
-                           <number>0</number>
-                          </property>
-                          <item>
-                           <widget class="QLineEdit" name="lineEdit_audio_logs_save_dir"/>
-                          </item>
-                          <item>
-                           <widget class="QPushButton" name="pushButton_audio_logs_save_dir">
-                            <property name="text">
-                             <string>Browse</string>
-                            </property>
                            </widget>
                           </item>
                          </layout>
@@ -784,411 +814,436 @@
             </attribute>
             <layout class="QVBoxLayout" name="verticalLayout_12">
              <item>
-              <widget class="QFrame" name="frame_2_rig_top">
-               <property name="frameShape">
-                <enum>QFrame::StyledPanel</enum>
-               </property>
+              <widget class="QScrollArea" name="scrollArea_radio_rig_settings">
                <property name="frameShadow">
-                <enum>QFrame::Raised</enum>
+                <enum>QFrame::Plain</enum>
                </property>
-               <layout class="QHBoxLayout" name="horizontalLayout_2">
-                <property name="spacing">
-                 <number>0</number>
-                </property>
-                <property name="leftMargin">
-                 <number>0</number>
-                </property>
-                <property name="topMargin">
-                 <number>0</number>
-                </property>
-                <property name="rightMargin">
-                 <number>0</number>
-                </property>
-                <property name="bottomMargin">
-                 <number>0</number>
-                </property>
-                <item>
-                 <widget class="QGroupBox" name="groupBox_rig_top_basic">
-                  <property name="title">
-                   <string>Basic</string>
-                  </property>
-                  <layout class="QHBoxLayout" name="horizontalLayout_3">
-                   <item>
-                    <widget class="QFrame" name="frame_rig_left">
-                     <property name="sizePolicy">
-                      <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                       <horstretch>50</horstretch>
-                       <verstretch>0</verstretch>
-                      </sizepolicy>
-                     </property>
-                     <property name="frameShape">
-                      <enum>QFrame::StyledPanel</enum>
-                     </property>
-                     <property name="frameShadow">
-                      <enum>QFrame::Raised</enum>
-                     </property>
-                     <layout class="QFormLayout" name="formLayout_10">
-                      <property name="horizontalSpacing">
-                       <number>0</number>
-                      </property>
-                      <property name="verticalSpacing">
-                       <number>7</number>
-                      </property>
-                      <property name="leftMargin">
-                       <number>0</number>
-                      </property>
-                      <property name="topMargin">
-                       <number>0</number>
-                      </property>
-                      <property name="rightMargin">
-                       <number>11</number>
-                      </property>
-                      <property name="bottomMargin">
-                       <number>0</number>
-                      </property>
-                      <item row="0" column="0">
-                       <widget class="QLabel" name="label_brand_selection">
-                        <property name="text">
-                         <string>Brand: </string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="0" column="1">
-                       <widget class="QComboBox" name="comboBox_brand_selection"/>
-                      </item>
-                      <item row="1" column="0">
-                       <widget class="QLabel" name="label_rig_selection">
-                        <property name="text">
-                         <string>Rig: </string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="1" column="1">
-                       <widget class="QComboBox" name="comboBox_rig_selection"/>
-                      </item>
-                      <item row="2" column="1">
-                       <widget class="QFrame" name="frame_rig_left_inner_subopt_2">
-                        <property name="frameShape">
-                         <enum>QFrame::StyledPanel</enum>
-                        </property>
-                        <property name="frameShadow">
-                         <enum>QFrame::Raised</enum>
-                        </property>
-                        <layout class="QHBoxLayout" name="horizontalLayout_7">
-                         <property name="spacing">
-                          <number>0</number>
-                         </property>
-                         <property name="leftMargin">
-                          <number>0</number>
-                         </property>
-                         <property name="topMargin">
-                          <number>0</number>
-                         </property>
-                         <property name="rightMargin">
-                          <number>0</number>
-                         </property>
-                         <property name="bottomMargin">
-                          <number>0</number>
-                         </property>
-                         <item>
-                          <widget class="QFrame" name="frame_left_subopt_3">
-                           <property name="frameShape">
-                            <enum>QFrame::StyledPanel</enum>
-                           </property>
-                           <property name="frameShadow">
-                            <enum>QFrame::Raised</enum>
-                           </property>
-                           <layout class="QVBoxLayout" name="verticalLayout_10">
-                            <item>
-                             <widget class="QLabel" name="label_subopt_retries">
-                              <property name="text">
-                               <string>Retries: </string>
-                              </property>
-                             </widget>
-                            </item>
-                            <item>
-                             <widget class="QSpinBox" name="spinBox_subopt_retries">
-                              <property name="maximum">
-                               <number>15</number>
-                              </property>
-                             </widget>
-                            </item>
-                            <item>
-                             <widget class="QLabel" name="label_subopt_write_delay">
-                              <property name="text">
-                               <string>Write Delay:</string>
-                              </property>
-                             </widget>
-                            </item>
-                            <item>
-                             <widget class="QSpinBox" name="spinBox_subopt_write_delay">
-                              <property name="maximum">
-                               <number>600</number>
-                              </property>
-                             </widget>
-                            </item>
-                           </layout>
-                          </widget>
-                         </item>
-                         <item>
-                          <widget class="QFrame" name="frame_left_subopt_4">
-                           <property name="frameShape">
-                            <enum>QFrame::StyledPanel</enum>
-                           </property>
-                           <property name="frameShadow">
-                            <enum>QFrame::Raised</enum>
-                           </property>
-                           <layout class="QVBoxLayout" name="verticalLayout_11">
-                            <item>
-                             <widget class="QLabel" name="label_subopt_retry_interv">
-                              <property name="text">
-                               <string>Retry Interval: </string>
-                              </property>
-                             </widget>
-                            </item>
-                            <item>
-                             <widget class="QSpinBox" name="spinBox_subopt_retry_interv">
-                              <property name="maximum">
-                               <number>86400</number>
-                              </property>
-                             </widget>
-                            </item>
-                            <item>
-                             <widget class="QLabel" name="label_subopt_post_write_delay">
-                              <property name="text">
-                               <string>Post write delay: </string>
-                              </property>
-                             </widget>
-                            </item>
-                            <item>
-                             <widget class="QSpinBox" name="spinBox_subopt_post_write_delay">
-                              <property name="maximum">
-                               <number>600</number>
-                              </property>
-                             </widget>
-                            </item>
-                           </layout>
-                          </widget>
-                         </item>
-                        </layout>
-                       </widget>
-                      </item>
-                      <item row="3" column="0">
-                       <widget class="QLabel" name="label_flow_control">
-                        <property name="text">
-                         <string>Flow Control: </string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="3" column="1">
-                       <widget class="QComboBox" name="comboBox_flow_control">
-                        <item>
-                         <property name="text">
-                          <string>None</string>
-                         </property>
-                        </item>
-                        <item>
-                         <property name="text">
-                          <string>RTS/CTS</string>
-                         </property>
-                        </item>
-                        <item>
-                         <property name="text">
-                          <string>XON/XOFF</string>
-                         </property>
-                        </item>
-                       </widget>
-                      </item>
-                     </layout>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QFrame" name="frame_rig_right">
-                     <property name="sizePolicy">
-                      <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                       <horstretch>50</horstretch>
-                       <verstretch>0</verstretch>
-                      </sizepolicy>
-                     </property>
-                     <property name="frameShape">
-                      <enum>QFrame::StyledPanel</enum>
-                     </property>
-                     <property name="frameShadow">
-                      <enum>QFrame::Raised</enum>
-                     </property>
-                     <layout class="QFormLayout" name="formLayout_9">
-                      <property name="horizontalSpacing">
-                       <number>0</number>
-                      </property>
-                      <property name="leftMargin">
-                       <number>11</number>
-                      </property>
-                      <property name="topMargin">
-                       <number>0</number>
-                      </property>
-                      <property name="rightMargin">
-                       <number>0</number>
-                      </property>
-                      <property name="bottomMargin">
-                       <number>0</number>
-                      </property>
-                      <item row="0" column="0">
-                       <widget class="QLabel" name="label_com_port">
-                        <property name="text">
-                         <string>Port: </string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="0" column="1">
-                       <widget class="QComboBox" name="comboBox_com_port"/>
-                      </item>
-                      <item row="1" column="0">
-                       <widget class="QLabel" name="label_baud_rate">
-                        <property name="text">
-                         <string>Baud Rate: </string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="1" column="1">
-                       <widget class="QComboBox" name="comboBox_baud_rate"/>
-                      </item>
-                      <item row="3" column="0">
-                       <widget class="QLabel" name="label_stop_bits">
-                        <property name="text">
-                         <string>Stop bits: </string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="3" column="1">
-                       <widget class="QSpinBox" name="spinBox_stop_bits"/>
-                      </item>
-                      <item row="4" column="0">
-                       <widget class="QLabel" name="label_polling_interv">
-                        <property name="text">
-                         <string>Polling Inter.: </string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="4" column="1">
-                       <widget class="QSpinBox" name="spinBox_polling_interv"/>
-                      </item>
-                      <item row="5" column="0">
-                       <spacer name="horizontalSpacer_3">
-                        <property name="orientation">
-                         <enum>Qt::Horizontal</enum>
-                        </property>
-                        <property name="sizeHint" stdset="0">
-                         <size>
-                          <width>40</width>
-                          <height>20</height>
-                         </size>
-                        </property>
-                       </spacer>
-                      </item>
-                      <item row="6" column="0">
-                       <widget class="QLabel" name="label_mode_delay">
-                        <property name="text">
-                         <string>Mode Delay: </string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="6" column="1">
-                       <widget class="QSpinBox" name="spinBox_mode_delay"/>
-                      </item>
-                      <item row="7" column="0">
-                       <widget class="QLabel" name="label_rig_sideband">
-                        <property name="text">
-                         <string>Sideband: </string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="7" column="1">
-                       <widget class="QComboBox" name="comboBox_rig_sideband"/>
-                      </item>
-                      <item row="8" column="1">
-                       <widget class="QCheckBox" name="checkBox_cw_lsb_mode">
-                        <property name="text">
-                         <string>CW is LSB mode</string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="2" column="1">
-                       <widget class="QLineEdit" name="lineEdit_device_port_name">
-                        <property name="maxLength">
-                         <number>16384</number>
-                        </property>
-                        <property name="readOnly">
-                         <bool>true</bool>
-                        </property>
-                        <property name="placeholderText">
-                         <string>N/A</string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="2" column="0">
-                       <widget class="QLabel" name="label_device_port_name">
-                        <property name="text">
-                         <string>Device: </string>
-                        </property>
-                       </widget>
-                      </item>
-                     </layout>
-                    </widget>
-                   </item>
-                  </layout>
-                 </widget>
-                </item>
-               </layout>
-              </widget>
-             </item>
-             <item>
-              <widget class="QFrame" name="frame_2_rig_bottom">
-               <property name="frameShape">
-                <enum>QFrame::StyledPanel</enum>
+               <property name="horizontalScrollBarPolicy">
+                <enum>Qt::ScrollBarAlwaysOff</enum>
                </property>
-               <property name="frameShadow">
-                <enum>QFrame::Raised</enum>
+               <property name="widgetResizable">
+                <bool>true</bool>
                </property>
-               <layout class="QHBoxLayout" name="horizontalLayout_8">
-                <property name="spacing">
-                 <number>0</number>
+               <widget class="QWidget" name="scrollAreaWidgetContents_2">
+                <property name="geometry">
+                 <rect>
+                  <x>0</x>
+                  <y>0</y>
+                  <width>656</width>
+                  <height>417</height>
+                 </rect>
                 </property>
-                <property name="leftMargin">
-                 <number>0</number>
-                </property>
-                <property name="topMargin">
-                 <number>0</number>
-                </property>
-                <property name="rightMargin">
-                 <number>0</number>
-                </property>
-                <property name="bottomMargin">
-                 <number>0</number>
-                </property>
-                <item>
-                 <widget class="QGroupBox" name="groupBox_rig_bottom_advanced">
-                  <property name="title">
-                   <string>Advanced</string>
-                  </property>
-                  <layout class="QFormLayout" name="formLayout_11">
-                   <item row="0" column="0">
-                    <widget class="QLabel" name="label_adv_ptt_cmd">
-                     <property name="text">
-                      <string>PTT Command: </string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="0" column="1">
-                    <widget class="QLineEdit" name="lineEdit_adv_ptt_cmd">
-                     <property name="placeholderText">
-                      <string>For advanced users only!</string>
-                     </property>
-                    </widget>
-                   </item>
-                  </layout>
-                 </widget>
-                </item>
-               </layout>
+                <layout class="QVBoxLayout" name="verticalLayout_20">
+                 <item>
+                  <widget class="QFrame" name="frame_2_rig_top">
+                   <property name="frameShape">
+                    <enum>QFrame::StyledPanel</enum>
+                   </property>
+                   <property name="frameShadow">
+                    <enum>QFrame::Raised</enum>
+                   </property>
+                   <layout class="QHBoxLayout" name="horizontalLayout_2">
+                    <property name="spacing">
+                     <number>0</number>
+                    </property>
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <item>
+                     <widget class="QGroupBox" name="groupBox_rig_top_basic">
+                      <property name="title">
+                       <string>Basic</string>
+                      </property>
+                      <layout class="QHBoxLayout" name="horizontalLayout_3">
+                       <item>
+                        <widget class="QFrame" name="frame_rig_left">
+                         <property name="sizePolicy">
+                          <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                           <horstretch>50</horstretch>
+                           <verstretch>0</verstretch>
+                          </sizepolicy>
+                         </property>
+                         <property name="frameShape">
+                          <enum>QFrame::StyledPanel</enum>
+                         </property>
+                         <property name="frameShadow">
+                          <enum>QFrame::Raised</enum>
+                         </property>
+                         <layout class="QFormLayout" name="formLayout_10">
+                          <property name="horizontalSpacing">
+                           <number>0</number>
+                          </property>
+                          <property name="verticalSpacing">
+                           <number>7</number>
+                          </property>
+                          <property name="leftMargin">
+                           <number>0</number>
+                          </property>
+                          <property name="topMargin">
+                           <number>0</number>
+                          </property>
+                          <property name="rightMargin">
+                           <number>11</number>
+                          </property>
+                          <property name="bottomMargin">
+                           <number>0</number>
+                          </property>
+                          <item row="0" column="0">
+                           <widget class="QLabel" name="label_brand_selection">
+                            <property name="text">
+                             <string>Brand: </string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="0" column="1">
+                           <widget class="QComboBox" name="comboBox_brand_selection"/>
+                          </item>
+                          <item row="1" column="0">
+                           <widget class="QLabel" name="label_rig_selection">
+                            <property name="text">
+                             <string>Rig: </string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="1" column="1">
+                           <widget class="QComboBox" name="comboBox_rig_selection"/>
+                          </item>
+                          <item row="2" column="1">
+                           <widget class="QFrame" name="frame_rig_left_inner_subopt_2">
+                            <property name="frameShape">
+                             <enum>QFrame::StyledPanel</enum>
+                            </property>
+                            <property name="frameShadow">
+                             <enum>QFrame::Raised</enum>
+                            </property>
+                            <layout class="QHBoxLayout" name="horizontalLayout_7">
+                             <property name="spacing">
+                              <number>0</number>
+                             </property>
+                             <property name="leftMargin">
+                              <number>0</number>
+                             </property>
+                             <property name="topMargin">
+                              <number>0</number>
+                             </property>
+                             <property name="rightMargin">
+                              <number>0</number>
+                             </property>
+                             <property name="bottomMargin">
+                              <number>0</number>
+                             </property>
+                             <item>
+                              <widget class="QFrame" name="frame_left_subopt_3">
+                               <property name="frameShape">
+                                <enum>QFrame::StyledPanel</enum>
+                               </property>
+                               <property name="frameShadow">
+                                <enum>QFrame::Raised</enum>
+                               </property>
+                               <layout class="QVBoxLayout" name="verticalLayout_10">
+                                <item>
+                                 <widget class="QLabel" name="label_subopt_retries">
+                                  <property name="text">
+                                   <string>Retries: </string>
+                                  </property>
+                                 </widget>
+                                </item>
+                                <item>
+                                 <widget class="QSpinBox" name="spinBox_subopt_retries">
+                                  <property name="maximum">
+                                   <number>15</number>
+                                  </property>
+                                 </widget>
+                                </item>
+                                <item>
+                                 <widget class="QLabel" name="label_subopt_write_delay">
+                                  <property name="text">
+                                   <string>Write Delay:</string>
+                                  </property>
+                                 </widget>
+                                </item>
+                                <item>
+                                 <widget class="QSpinBox" name="spinBox_subopt_write_delay">
+                                  <property name="maximum">
+                                   <number>600</number>
+                                  </property>
+                                 </widget>
+                                </item>
+                               </layout>
+                              </widget>
+                             </item>
+                             <item>
+                              <widget class="QFrame" name="frame_left_subopt_4">
+                               <property name="frameShape">
+                                <enum>QFrame::StyledPanel</enum>
+                               </property>
+                               <property name="frameShadow">
+                                <enum>QFrame::Raised</enum>
+                               </property>
+                               <layout class="QVBoxLayout" name="verticalLayout_11">
+                                <item>
+                                 <widget class="QLabel" name="label_subopt_retry_interv">
+                                  <property name="text">
+                                   <string>Retry Interval: </string>
+                                  </property>
+                                 </widget>
+                                </item>
+                                <item>
+                                 <widget class="QSpinBox" name="spinBox_subopt_retry_interv">
+                                  <property name="maximum">
+                                   <number>86400</number>
+                                  </property>
+                                 </widget>
+                                </item>
+                                <item>
+                                 <widget class="QLabel" name="label_subopt_post_write_delay">
+                                  <property name="text">
+                                   <string>Post write delay: </string>
+                                  </property>
+                                 </widget>
+                                </item>
+                                <item>
+                                 <widget class="QSpinBox" name="spinBox_subopt_post_write_delay">
+                                  <property name="maximum">
+                                   <number>600</number>
+                                  </property>
+                                 </widget>
+                                </item>
+                               </layout>
+                              </widget>
+                             </item>
+                            </layout>
+                           </widget>
+                          </item>
+                          <item row="3" column="0">
+                           <widget class="QLabel" name="label_flow_control">
+                            <property name="text">
+                             <string>Flow Control: </string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="3" column="1">
+                           <widget class="QComboBox" name="comboBox_flow_control">
+                            <item>
+                             <property name="text">
+                              <string>None</string>
+                             </property>
+                            </item>
+                            <item>
+                             <property name="text">
+                              <string>RTS/CTS</string>
+                             </property>
+                            </item>
+                            <item>
+                             <property name="text">
+                              <string>XON/XOFF</string>
+                             </property>
+                            </item>
+                           </widget>
+                          </item>
+                         </layout>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QFrame" name="frame_rig_right">
+                         <property name="sizePolicy">
+                          <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                           <horstretch>50</horstretch>
+                           <verstretch>0</verstretch>
+                          </sizepolicy>
+                         </property>
+                         <property name="frameShape">
+                          <enum>QFrame::StyledPanel</enum>
+                         </property>
+                         <property name="frameShadow">
+                          <enum>QFrame::Raised</enum>
+                         </property>
+                         <layout class="QFormLayout" name="formLayout_9">
+                          <property name="horizontalSpacing">
+                           <number>0</number>
+                          </property>
+                          <property name="leftMargin">
+                           <number>11</number>
+                          </property>
+                          <property name="topMargin">
+                           <number>0</number>
+                          </property>
+                          <property name="rightMargin">
+                           <number>0</number>
+                          </property>
+                          <property name="bottomMargin">
+                           <number>0</number>
+                          </property>
+                          <item row="0" column="0">
+                           <widget class="QLabel" name="label_com_port">
+                            <property name="text">
+                             <string>Port: </string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="0" column="1">
+                           <widget class="QComboBox" name="comboBox_com_port"/>
+                          </item>
+                          <item row="1" column="0">
+                           <widget class="QLabel" name="label_baud_rate">
+                            <property name="text">
+                             <string>Baud Rate: </string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="1" column="1">
+                           <widget class="QComboBox" name="comboBox_baud_rate"/>
+                          </item>
+                          <item row="3" column="0">
+                           <widget class="QLabel" name="label_stop_bits">
+                            <property name="text">
+                             <string>Stop bits: </string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="3" column="1">
+                           <widget class="QSpinBox" name="spinBox_stop_bits"/>
+                          </item>
+                          <item row="4" column="0">
+                           <widget class="QLabel" name="label_polling_interv">
+                            <property name="text">
+                             <string>Polling Inter.: </string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="4" column="1">
+                           <widget class="QSpinBox" name="spinBox_polling_interv"/>
+                          </item>
+                          <item row="5" column="0">
+                           <spacer name="horizontalSpacer_3">
+                            <property name="orientation">
+                             <enum>Qt::Horizontal</enum>
+                            </property>
+                            <property name="sizeHint" stdset="0">
+                             <size>
+                              <width>40</width>
+                              <height>20</height>
+                             </size>
+                            </property>
+                           </spacer>
+                          </item>
+                          <item row="6" column="0">
+                           <widget class="QLabel" name="label_mode_delay">
+                            <property name="text">
+                             <string>Mode Delay: </string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="6" column="1">
+                           <widget class="QSpinBox" name="spinBox_mode_delay"/>
+                          </item>
+                          <item row="7" column="0">
+                           <widget class="QLabel" name="label_rig_sideband">
+                            <property name="text">
+                             <string>Sideband: </string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="7" column="1">
+                           <widget class="QComboBox" name="comboBox_rig_sideband"/>
+                          </item>
+                          <item row="8" column="1">
+                           <widget class="QCheckBox" name="checkBox_cw_lsb_mode">
+                            <property name="text">
+                             <string>CW is LSB mode</string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="2" column="1">
+                           <widget class="QLineEdit" name="lineEdit_device_port_name">
+                            <property name="maxLength">
+                             <number>16384</number>
+                            </property>
+                            <property name="readOnly">
+                             <bool>true</bool>
+                            </property>
+                            <property name="placeholderText">
+                             <string>N/A</string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="2" column="0">
+                           <widget class="QLabel" name="label_device_port_name">
+                            <property name="text">
+                             <string>Device: </string>
+                            </property>
+                           </widget>
+                          </item>
+                         </layout>
+                        </widget>
+                       </item>
+                      </layout>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QFrame" name="frame_2_rig_bottom">
+                   <property name="frameShape">
+                    <enum>QFrame::StyledPanel</enum>
+                   </property>
+                   <property name="frameShadow">
+                    <enum>QFrame::Raised</enum>
+                   </property>
+                   <layout class="QHBoxLayout" name="horizontalLayout_8">
+                    <property name="spacing">
+                     <number>0</number>
+                    </property>
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <item>
+                     <widget class="QGroupBox" name="groupBox_rig_bottom_advanced">
+                      <property name="title">
+                       <string>Advanced</string>
+                      </property>
+                      <layout class="QFormLayout" name="formLayout_11">
+                       <item row="0" column="0">
+                        <widget class="QLabel" name="label_adv_ptt_cmd">
+                         <property name="text">
+                          <string>PTT Command: </string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="0" column="1">
+                        <widget class="QLineEdit" name="lineEdit_adv_ptt_cmd">
+                         <property name="placeholderText">
+                          <string>For advanced users only!</string>
+                         </property>
+                        </widget>
+                       </item>
+                      </layout>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
               </widget>
              </item>
             </layout>
