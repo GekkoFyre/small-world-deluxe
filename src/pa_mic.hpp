@@ -39,7 +39,6 @@
 
 #include "src/defines.hpp"
 #include "src/audio_devices.hpp"
-#include <boost/circular_buffer.hpp>
 #include <portaudio.h>
 #include <QObject>
 #include <memory>
@@ -54,14 +53,15 @@ public:
     explicit PaMic(std::shared_ptr<GekkoFyre::AudioDevices> gkAudio, QObject *parent = nullptr);
     ~PaMic() override;
 
-    boost::circular_buffer<double> recordMic(const Database::Settings::Audio::Device &device,
-                                             PaStream *stream, const bool &continuous = false,
-                                             const int &buffer_sec_record = 30);
+    bool recordMic(const Database::Settings::Audio::Device &device, PaStream *stream,
+                   std::vector<SAMPLE> *rec_data, const int &buffer_sec_record = 30);
 
 private:
-    std::vector<double> linearBuffer(boost::circular_buffer<double> circ_buf, const int &array_size);
-
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
+
+    static int recordCallback(const void *input_buffer, void *output_buffer, unsigned long frame_count,
+                              const PaStreamCallbackTimeInfo *time_info, PaStreamCallbackFlags status_flags,
+                              void *user_data);
 
 };
 };

@@ -507,7 +507,7 @@ Device MainWindow::grabDefPaInputDevice()
     return input_audio_dev;
 }
 
-void MainWindow::paMicProcBackground(const Device &input_audio_device, const int &numSamples)
+void MainWindow::paMicProcBackground(const Device &input_audio_device)
 {
     try {
         //
@@ -515,11 +515,12 @@ void MainWindow::paMicProcBackground(const Device &input_audio_device, const int
         // any old data within the buffer itself
         // https://www.boost.org/doc/libs/1_72_0/doc/html/circular_buffer.html
         //
-        boost::circular_buffer<double> input_dev_circ_buffer(numSamples);
+        gkPaMic = std::make_shared<GekkoFyre::PaMic>(gkAudioDevices, this);
+        std::vector<SAMPLE> *input_dev_rec_buffer = nullptr;
+        bool result = false;
 
         while (btn_radio_rx) {
-            gkPaMic = std::make_shared<GekkoFyre::PaMic>(gkAudioDevices, this);
-            input_dev_circ_buffer = gkPaMic->recordMic(input_audio_device, &micStream, true, AUDIO_MIC_INPUT_RECRD_SECS);
+            result = gkPaMic->recordMic(input_audio_device, &micStream, input_dev_rec_buffer, AUDIO_MIC_INPUT_RECRD_SECS);
         }
     } catch (const std::exception &e) {
         print_exception(e);
@@ -563,8 +564,6 @@ void MainWindow::on_pushButton_radio_receive_clicked()
         if (!btn_radio_rx) {
             auto input_audio_dev = grabDefPaInputDevice();
             if (input_audio_dev.stream_parameters.device != paNoDevice) {
-                int totalFrames = AUDIO_MIC_INPUT_RECRD_SECS * input_audio_dev.def_sample_rate;
-                int numSamples = totalFrames * input_audio_dev.dev_input_channel_count;
                 if (input_audio_dev.is_output_dev == boost::tribool::false_value) {
                     if (input_audio_dev.device_info->maxInputChannels > 0) {
                         if ((input_audio_dev.device_info->name != nullptr)) {
@@ -572,7 +571,7 @@ void MainWindow::on_pushButton_radio_receive_clicked()
                             changePushButtonColor(ui->pushButton_radio_receive, false);
                             btn_radio_rx = true;
 
-                            std::thread tMic(&MainWindow::paMicProcBackground, this, input_audio_dev, numSamples);
+                            std::thread tMic(&MainWindow::paMicProcBackground, this, input_audio_dev);
                             tMic.detach();
                             return;
                         }

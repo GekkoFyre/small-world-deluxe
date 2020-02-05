@@ -224,7 +224,7 @@ namespace Database {
             struct paRecData {
                 int frameIndex;
                 int maxFrameIndex;
-                SAMPLE *rec_samples;                    // Related to the recording of audio data
+                SAMPLE *recordedSamples;                    // Related to the recording of audio data
             };
         }
     }
