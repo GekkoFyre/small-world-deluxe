@@ -117,7 +117,8 @@ set(Boost_USE_STATIC_LIBS ON CACHE BOOL "Use static libraries when linking Boost
 set(Boost_USE_MULTITHREADED ON CACHE BOOL "Use multithreaded libraries when linking Boost C++.")
 set(Boost_USE_STATIC_RUNTIME OFF CACHE BOOL "Use static runtime when linking Boost C++.")
 find_package(Boost 1.54.0 REQUIRED COMPONENTS "filesystem"
-                                              "system")
+                                              "system"
+                                              "thread")
                                               
 if(WIN32)
     if(${GFYRE_PACKAGE_MAINTAINER} EQUAL ON)

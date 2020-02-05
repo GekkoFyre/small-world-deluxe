@@ -37,8 +37,13 @@
 
 #include "pa_mic.hpp"
 #include <boost/exception/all.hpp>
+#include <boost/thread/thread.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/condition.hpp>
+#include <boost/interprocess/sync/scoped_lock.hpp>
 #include <chrono>
 #include <iostream>
+#include <deque>
 
 using namespace GekkoFyre;
 using namespace GekkoFyre;
@@ -46,6 +51,13 @@ using namespace Database;
 using namespace Settings;
 using namespace Audio;
 using namespace boost;
+
+boost::condition wait_audio;
+boost::mutex wait_audio_mutex;
+boost::mutex audio_buffer_mutex;
+bool trigger = false;
+
+std::deque<char> audio_buffer;
 
 /**
  * @brief PaMic::PaMic handles most microphone functions via PortAudio.
@@ -63,16 +75,13 @@ PaMic::~PaMic()
 /**
  * @brief PaMic::recordMic Record from a selected/given microphone device on the user's computing device.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * Phil Burk <http://www.softsynth.com>
  * @param device A specifically chosen PortAudio input device.
  * @param stream A PortAudio input device stream.
- * @param continuous Whether to record continuously from the given input device until otherwise, or not.
  * @param buffer_sec_record The read buffer, as measured in seconds.
  * @note <https://github.com/EddieRingle/portaudio/blob/master/examples/paex_record.c>
  * <https://github.com/EddieRingle/portaudio/blob/master/test/patest_read_record.c>
  */
-circular_buffer<double> PaMic::recordMic(const Device &device, PaStream *stream, const bool &continuous,
-                                         const int &buffer_sec_record)
+bool PaMic::recordMic(const Device &device, PaStream *stream, std::vector<SAMPLE> *rec_data, const int &buffer_sec_record)
 {
     try {
         PaError err = paNoError;
@@ -85,14 +94,11 @@ circular_buffer<double> PaMic::recordMic(const Device &device, PaStream *stream,
         data.frameIndex = 0;
         numSamples = totalFrames * device.dev_input_channel_count;
         numBytes = numSamples * sizeof(int);
-        data.rec_samples = (SAMPLE *)malloc(numBytes); // From now on, `rec_samples` is initialised
+        data.recordedSamples = (SAMPLE *)malloc(numBytes);
 
-        if (data.rec_samples == nullptr) {
-            throw std::runtime_error(tr("Could not allocate record array.").toStdString());
-        }
-
+        // Zero the buffer
         for (int i = 0; i < numSamples; ++i) {
-            data.rec_samples[i] = 0;
+            data.recordedSamples[i] = 0;
         }
 
         //
@@ -102,7 +108,7 @@ circular_buffer<double> PaMic::recordMic(const Device &device, PaStream *stream,
         // https://github.com/EddieRingle/portaudio/blob/master/test/patest_read_record.c
         //
         err = Pa_OpenStream(&stream, &device.stream_parameters, nullptr, device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
-                            paClipOff, nullptr, nullptr);
+                            paClipOff, recordCallback, &data);
         if (err != paNoError) {
             gkAudioDevices->portAudioErr(err);
         }
@@ -112,60 +118,67 @@ circular_buffer<double> PaMic::recordMic(const Device &device, PaStream *stream,
             gkAudioDevices->portAudioErr(err);
         }
 
-        //
-        // Keep a 'circular buffer' within memory
-        // https://www.boost.org/doc/libs/1_72_0/doc/html/circular_buffer.html
-        //
-        circular_buffer<double> circ_buffer(numSamples);
-
+        // Maybe good practice to do this?
         Pa_Sleep(2500);
 
-        err = Pa_ReadStream(stream, &circ_buffer[0], data.maxFrameIndex);
-        if (err != paNoError && err != 1) {
-            gkAudioDevices->portAudioErr(err);
-        }
-
-        if (!continuous && buffer_sec_record > 0) {
-            std::time_t start = time(0);
-            int timeLeft = buffer_sec_record;
-            while ((timeLeft > 0) && (err = Pa_IsStreamActive(stream)) == 1) {
-                // TODO: Must complete writing the code for this section!
-                std::time_t end = time(0);
-                std::time_t timeTaken = end - start;
-                timeLeft = buffer_sec_record - timeTaken;
-
-                if (err != paNoError) {
-                    gkAudioDevices->portAudioErr(err);
-                }
-            }
-        } else {
-            SAMPLE max, average, val;
-            max = 0;
-            average = 0;
-            int i = 0;
-            while (Pa_IsStreamActive(stream) == 1) {
-                ++i;
-                val = data.rec_samples[i];
-                if (val < 0) {
-                    val = -val; // ABS
-                }
-
-                if (val > max) {
-                    max = val;
-                }
-
-                average += val;
+        while (Pa_IsStreamActive(stream) == 1) {
+            boost::xtime duration;
+            boost::xtime_get(&duration, boost::TIME_UTC_);
+            boost::interprocess::scoped_lock<boost::mutex> lock(wait_audio_mutex);
+            if(!wait_audio.timed_wait(lock, duration)) {
+                return false;
             }
 
-            average = average / numSamples;
-
-            // TODO: Finish writing the code for above and below (i.e. amplitude and averages)!
-            // std::cout << tr("[ Input device ] Max amplitude as of past 30 seconds: %1").arg(QString::number(max)).toStdString() << std::endl;
-            // std::cout << tr("[ Input device ] Average as of past 30 seconds: %1").arg(QString::number(average)).toStdString() << std::endl;
+            rec_data->clear();
+            for (int j = 0; j < numSamples; ++j) {
+                rec_data->push_back(data.recordedSamples[j]);
+            }
         }
+
+        return true;
     } catch (const std::exception &e) {
         throw std::runtime_error(e.what());
     }
 
-    return circular_buffer<double>();
+    return false;
+}
+
+/**
+ * @brief PaMic::recordCallback is needed to record an input audio stream in real-time.
+ * @author trukvl <https://stackoverflow.com/questions/15690668/continuous-recording-in-portaudio-from-mic-or-output>
+ * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param input_buffer
+ * @param output_buffer
+ * @param frame_count
+ * @param time_info
+ * @param status_flags
+ * @param user_data
+ * @return
+ */
+int PaMic::recordCallback(const void *input_buffer, void *output_buffer, unsigned long frame_count,
+                          const PaStreamCallbackTimeInfo *time_info, PaStreamCallbackFlags status_flags,
+                          void *user_data)
+{
+    const char *buffer_ptr = (const char *)input_buffer;
+
+    // Lock mutex to block user thread from modifying data buffer
+    audio_buffer_mutex.lock();
+
+    // Copy data to user buffer
+    for (int i = 0; i < frame_count; ++i) {
+        audio_buffer.push_back(buffer_ptr[i]);
+    }
+
+    // Unlock mutex, allow user to manipulate buffer
+    audio_buffer_mutex.unlock();
+
+    // Signal user thread to process audio
+    wait_audio_mutex.lock();
+
+    trigger = true;
+
+    wait_audio.notify_one();
+    wait_audio_mutex.unlock();
+
+    return 0;
 }

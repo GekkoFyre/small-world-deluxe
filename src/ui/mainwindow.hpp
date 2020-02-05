@@ -160,7 +160,7 @@ private:
     void radioStats(GekkoFyre::AmateurRadio::Control::Radio *radio_dev);
 
     GekkoFyre::Database::Settings::Audio::Device grabDefPaInputDevice();
-    void paMicProcBackground(const GekkoFyre::Database::Settings::Audio::Device &input_audio_device, const int &numSamples);
+    void paMicProcBackground(const GekkoFyre::Database::Settings::Audio::Device &input_audio_device);
     void procVuMeter(const GekkoFyre::Database::Settings::Audio::Device &audio_stream);
 
     void changePushButtonColor(QPointer<QPushButton> push_button, const bool &green_result = true,
