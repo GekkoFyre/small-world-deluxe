@@ -40,6 +40,7 @@
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
 #include "src/file_io.hpp"
+#include <portaudiocpp/SampleDataFormat.hxx>
 #include <QObject>
 #include <vector>
 #include <string>
@@ -69,6 +70,7 @@ public:
     void testSinewave(const GekkoFyre::Database::Settings::Audio::Device &device);
     void volumeSetting();
     double vuMeter();
+    portaudio::SampleDataFormat sampleFormatConvert(const int sample_rate);
 
 private:
     std::shared_ptr<DekodeDb> gkDekodeDb;

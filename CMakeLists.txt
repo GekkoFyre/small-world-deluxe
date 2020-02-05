@@ -188,6 +188,14 @@ else()
     message(FATAL_ERROR "The 'PortAudio' sound library could not be found!")
 endif(PortAudio_FOUND)
 
+find_package(PortAudioCpp REQUIRED)
+if (PortAudioCpp_FOUND)
+    include_directories(${PortAudioCpp_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${PortAudioCpp_LIBRARIES})
+else()
+    message(FATAL_ERROR "The C++ bindings for PortAudio could not be found!")
+endif(PortAudioCpp_FOUND)
+
 find_package(Hamlib REQUIRED)
 if (HAMLIB_FOUND)
     include_directories(${HAMLIB_INCLUDE_DIRS})
@@ -295,10 +303,12 @@ endif()
 
 if(WIN32)
     set(GALAXY_SRC_CPP
-        src/spectro_fftw.cpp)
+        src/spectro_fftw.cpp
+        src/pa_audio_buf.cpp)
 elseif(UNIX)
     set(GALAXY_SRC_CPP
-        src/spectro_fftw.cpp)
+        src/spectro_fftw.cpp
+        src/pa_audio_buf.cpp)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()
@@ -306,11 +316,13 @@ endif()
 if(WIN32)
     set(GALAXY_SRC_HEADERS
         src/defines.hpp
-        src/spectro_fftw.hpp)
+        src/spectro_fftw.hpp
+        src/pa_audio_buf.hpp)
 elseif(UNIX)
     set(GALAXY_SRC_HEADERS
         src/defines.hpp
-        src/spectro_fftw.hpp)
+        src/spectro_fftw.hpp
+        src/pa_audio_buf.hpp)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()

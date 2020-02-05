@@ -38,27 +38,40 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/audio_devices.hpp"
-#include "src/pa_audio_buf.hpp"
 #include <portaudio.h>
-#include <QObject>
 #include <memory>
 #include <vector>
+#include <string>
 
 namespace GekkoFyre {
 
-class PaMic : public QObject {
-    Q_OBJECT
+class PaAudioBuf : private std::vector<short> {
+
+    typedef short T;
+    typedef std::vector<short> vector;
 
 public:
-    explicit PaMic(std::shared_ptr<GekkoFyre::AudioDevices> gkAudio, QObject *parent = nullptr);
-    ~PaMic() override;
+    explicit PaAudioBuf(int size_hint);
+    virtual ~PaAudioBuf();
 
-    bool recordMic(const Database::Settings::Audio::Device &device, PaStream *stream,
-                   std::vector<SAMPLE> *rec_data, const int &buffer_sec_record = 30);
+    using vector::push_back;
+    using vector::operator[];
+    using vector::begin;
+    using vector::end;
+    using vector::size;
+    using vector::clear;
+    PaAudioBuf operator*(const PaAudioBuf &) const;
+    PaAudioBuf operator+(const PaAudioBuf &) const;
+    PaAudioBuf();
+
+    int recordCallback(const void *input_buffer, void *putput_buffer, unsigned long frames_per_buffer,
+                       const PaStreamCallbackTimeInfo *time_info, PaStreamCallbackFlags status_flags);
+    void writeToFile(const std::string &file_name);
+    void resetPlayback();
 
 private:
-    std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
+    std::vector<short> rec_samples;
+    std::vector<short>::iterator playback_iter;
 
 };
 };
