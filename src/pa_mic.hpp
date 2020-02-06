@@ -54,8 +54,8 @@ public:
     explicit PaMic(std::shared_ptr<GekkoFyre::AudioDevices> gkAudio, QObject *parent = nullptr);
     ~PaMic() override;
 
-    bool recordMic(const Database::Settings::Audio::Device &device, PaStream *stream,
-                   std::vector<SAMPLE> *rec_data, const int &buffer_sec_record = 30);
+    bool recordInputDevice(const Database::Settings::Audio::GkDevice &device, PaStream *stream,
+                           std::vector<PaAudioBuf> *rec_data, const int &buffer_sec_record = 30);
 
 private:
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;

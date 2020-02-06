@@ -38,6 +38,10 @@
 #pragma once
 
 #include <fftw3.h>
+#include <portaudiocpp/PortAudioCpp.hxx>
+#include <portaudiocpp/SampleDataFormat.hxx>
+#include <portaudiocpp/Device.hxx>
+#include <portaudiocpp/AsioDeviceAdapter.hxx>
 #include <boost/logic/tribool.hpp>
 #include <vector>
 #include <string>
@@ -105,11 +109,6 @@ namespace GekkoFyre {
 // Mostly regarding FFTW functions
 #define AUDIO_SIGNAL_LENGTH (2048)
 #define FFTW_HOP_SIZE (128)
-
-// https://github.com/EddieRingle/portaudio/blob/master/test/patest_read_record.c
-#define PA_SAMPLE_TYPE paFloat32
-typedef float SAMPLE;
-#define SAMPLE_SILENCE (0.0f)
 
 #ifndef M_PI
 #define M_PI (3.14159265358979323846) /* pi */
@@ -193,7 +192,8 @@ namespace Database {
         };
 
         namespace Audio {
-            struct Device {
+            struct GkDevice {
+                std::string dev_name;                   // The name of the device itself
                 bool default_dev;                       // Is this the default device for the system?
                 bool default_disp;                      // Used for filtering purposes
                 double def_sample_rate;                 // Default sample rate
@@ -205,6 +205,9 @@ namespace Database {
                 long asio_max_latency;                  // ASIO specific
                 long asio_granularity;                  // ASIO specific
                 long asio_pref_latency;                 // ASIO specific
+                long asio_min_buffer_size;              // ASIO specific
+                long asio_max_buffer_size;              // ASIO specific
+                long asio_pref_buffer_size;             // ASIO specific
                 int dev_input_channel_count;            // The number of channels this INPUT audio device supports
                 int dev_output_channel_count;           // The number of channels this OUTPUT audio device supports
                 audio_channels sel_channels;            // The selected audio channel configuration
@@ -219,12 +222,6 @@ namespace Database {
                 int left_phase;
                 int right_phase;
                 std::string message;
-            };
-
-            struct paRecData {
-                int frameIndex;
-                int maxFrameIndex;
-                SAMPLE *recordedSamples;                    // Related to the recording of audio data
             };
         }
     }

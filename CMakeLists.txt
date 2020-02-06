@@ -118,7 +118,8 @@ set(Boost_USE_MULTITHREADED ON CACHE BOOL "Use multithreaded libraries when link
 set(Boost_USE_STATIC_RUNTIME OFF CACHE BOOL "Use static runtime when linking Boost C++.")
 find_package(Boost 1.54.0 REQUIRED COMPONENTS "filesystem"
                                               "system"
-                                              "thread")
+                                              "thread"
+                                              "chrono")
                                               
 if(WIN32)
     if(${GFYRE_PACKAGE_MAINTAINER} EQUAL ON)

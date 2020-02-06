@@ -40,6 +40,8 @@
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
 #include "src/file_io.hpp"
+#include <portaudiocpp/PortAudioCpp.hxx>
+#include <portaudiocpp/AsioDeviceAdapter.hxx>
 #include <portaudiocpp/SampleDataFormat.hxx>
 #include <QObject>
 #include <vector>
@@ -59,18 +61,21 @@ class AudioDevices : public QObject {
     Q_OBJECT
 
 public:
-    explicit AudioDevices(std::shared_ptr<GekkoFyre::DekodeDb> gkDb, std::shared_ptr<GekkoFyre::FileIo> filePtr, QObject *parent = nullptr);
+    explicit AudioDevices(std::shared_ptr<GekkoFyre::DekodeDb> gkDb, std::shared_ptr<GekkoFyre::FileIo> filePtr,
+                          QObject *parent = nullptr);
     ~AudioDevices();
 
-    std::vector<GekkoFyre::Database::Settings::Audio::Device> initPortAudio();
-    std::vector<GekkoFyre::Database::Settings::Audio::Device> defaultAudioDevices();
-    std::vector<double> enumSupportedStdSampleRates(const PaStreamParameters *inputParameters, const PaStreamParameters *outputParameters);
-    std::vector<GekkoFyre::Database::Settings::Audio::Device> enumAudioDevices();
+    std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> initPortAudio();
+    std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> defaultAudioDevices();
+    std::vector<double> enumSupportedStdSampleRates(const PaStreamParameters *inputParameters,
+                                                    const PaStreamParameters *outputParameters);
+    std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> enumAudioDevices();
+    std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> enumAudioDevicesCpp();
     void portAudioErr(const PaError &err);
-    void testSinewave(const GekkoFyre::Database::Settings::Audio::Device &device);
+    void testSinewave(const GekkoFyre::Database::Settings::Audio::GkDevice &device);
     void volumeSetting();
     double vuMeter();
-    portaudio::SampleDataFormat sampleFormatConvert(const int sample_rate);
+    portaudio::SampleDataFormat sampleFormatConvert(const unsigned long sample_rate);
 
 private:
     std::shared_ptr<DekodeDb> gkDekodeDb;

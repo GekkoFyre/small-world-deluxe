@@ -40,7 +40,9 @@
 #include "dialogsettings.hpp"
 #include "aboutdialog.hpp"
 #include "spectrodialog.hpp"
+#include "src/pa_audio_buf.hpp"
 #include <boost/exception/all.hpp>
+#include <boost/chrono/chrono.hpp>
 #include <string>
 #include <sstream>
 #include <iostream>
@@ -197,8 +199,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
  */
 MainWindow::~MainWindow()
 {
-    if (spectro_thread.joinable()) {
-        spectro_thread.join();
+    // https://www.boost.org/doc/libs/1_72_0/doc/html/thread/thread_management.html
+    if (tInputDev.try_join_for(boost::chrono::milliseconds(5000))) {
+        tInputDev.join();
+    } else {
+        tInputDev.interrupt();
     }
 
     err = Pa_CloseStream(&micStream);
@@ -263,7 +268,7 @@ void MainWindow::on_action_Open_triggered()
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param audio_stream
  */
-void MainWindow::procVuMeter(const Device &audio_stream)
+void MainWindow::procVuMeter(const GkDevice &audio_stream)
 {
     for (const auto &device: pref_audio_devices) {
         // gkAudioDevices->vuMeter(device.dev_output_channel_count, 1, 100, 3, );
@@ -488,9 +493,9 @@ void MainWindow::radioStats(AmateurRadio::Control::Radio *radio_dev)
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return Hopefully an audio input device of some kind, let alone one that works.
  */
-Device MainWindow::grabDefPaInputDevice()
+GkDevice MainWindow::grabDefPaInputDevice()
 {
-    Device input_audio_dev;
+    GkDevice input_audio_dev;
 
     try {
         // The spectrometer and other functions must listen to the chosen *input* audio device
@@ -507,31 +512,22 @@ Device MainWindow::grabDefPaInputDevice()
     return input_audio_dev;
 }
 
-void MainWindow::paMicProcBackground(const Device &input_audio_device)
+void MainWindow::paMicProcBackground(const GkDevice &input_audio_device)
 {
     try {
         //
-        // When the buffer is filled, new data will be written as starting at the very beginning, overwriting
-        // any old data within the buffer itself
-        // https://www.boost.org/doc/libs/1_72_0/doc/html/circular_buffer.html
+        // When the buffer is full after a minute's worth of data, it will be cleared and ready to fill up again!
         //
         gkPaMic = std::make_shared<GekkoFyre::PaMic>(gkAudioDevices, this);
-        std::vector<SAMPLE> *input_dev_rec_buffer = new std::vector<SAMPLE>;
+        std::vector<PaAudioBuf> *input_dev_rec_buffer = new std::vector<PaAudioBuf>();
         bool result = false;
-        int maxFrameIndex = 0;
-        int totalFrames = 0;
-        int numSamples = 0;
-        int numBytes = 0;
-
-        maxFrameIndex = totalFrames = AUDIO_MIC_INPUT_RECRD_SECS * input_audio_device.def_sample_rate;
-        numSamples = totalFrames * input_audio_device.dev_input_channel_count;
-        numBytes = numSamples * sizeof(int);
 
         while (btn_radio_rx) {
-            result = gkPaMic->recordMic(input_audio_device, &micStream, &input_dev_rec_buffer[0], AUDIO_MIC_INPUT_RECRD_SECS);
+            result = gkPaMic->recordInputDevice(input_audio_device, &micStream, &input_dev_rec_buffer[0],
+                                                AUDIO_MIC_INPUT_RECRD_SECS);
 
             // Create a rolling buffer
-            if (input_dev_rec_buffer->size() >= numSamples) {
+            if (input_dev_rec_buffer->size() >= (input_audio_device.def_sample_rate * 60)) {
                 input_dev_rec_buffer->clear();
             }
         }
@@ -584,8 +580,8 @@ void MainWindow::on_pushButton_radio_receive_clicked()
                             changePushButtonColor(ui->pushButton_radio_receive, false);
                             btn_radio_rx = true;
 
-                            std::thread tMic(&MainWindow::paMicProcBackground, this, input_audio_dev);
-                            tMic.detach();
+                            tInputDev = boost::thread(&MainWindow::paMicProcBackground, this, input_audio_dev);
+                            tInputDev.detach();
                             return;
                         }
                     }
