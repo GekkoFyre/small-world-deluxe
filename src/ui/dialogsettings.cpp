@@ -97,7 +97,7 @@ DialogSettings::DialogSettings(std::shared_ptr<DekodeDb> dkDb, std::shared_ptr<G
         prefill_avail_com_ports(status_com_ports);
         prefill_avail_usb_ports(status_usb_devices);
 
-        std::vector<Device> audio_devices = gkAudioDevices->enumAudioDevices();
+        std::vector<GkDevice> audio_devices = gkAudioDevices->enumAudioDevices();
         prefill_audio_devices(audio_devices);
 
         prefill_com_baud_speed(GekkoFyre::AmateurRadio::com_baud_rates::BAUD1200);
@@ -341,7 +341,7 @@ QMultiMap<rig_model_t, std::tuple<QString, QString, AmateurRadio::rig_type>> Dia
  * @param audio_devices The available audio devices on the user's system, as a typical std::vector.
  * @see GekkoFyre::AudioDevices::enumAudioDevices()
  */
-void DialogSettings::prefill_audio_devices(const std::vector<Device> &audio_devices_vec)
+void DialogSettings::prefill_audio_devices(const std::vector<GkDevice> &audio_devices_vec)
 {
     try {
         ui->comboBox_soundcard_input->insertItem(0, tr("No audio device selected"));

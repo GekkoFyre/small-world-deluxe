@@ -161,7 +161,7 @@ void DekodeDb::write_rig_settings(const QString &value, const Database::Settings
  * @param key
  * @param is_output_device
  */
-void DekodeDb::write_audio_device_settings(const Device &value, const QString &key, const bool &is_output_device)
+void DekodeDb::write_audio_device_settings(const GkDevice &value, const QString &key, const bool &is_output_device)
 {
     leveldb::WriteBatch batch;
     leveldb::Status status;
@@ -301,9 +301,9 @@ int DekodeDb::read_audio_device_settings(const bool &is_output_device)
  * @param is_output_device Whether we are dealing with an output or input audio device.
  * @return The struct, `GekkoFyre::Database::Settings::Audio::Device`.
  */
-Device DekodeDb::read_audio_details_settings(const bool &is_output_device)
+GkDevice DekodeDb::read_audio_details_settings(const bool &is_output_device)
 {
-    Device audio_device;
+    GkDevice audio_device;
     leveldb::Status status;
     leveldb::ReadOptions read_options;
 

@@ -103,15 +103,15 @@ private:
     QMap<tstring, int> available_com_ports; // For tracking the *available* Device Ports (i.e. COM/Serial/RS232/USB) that the user can choose from...
 
     // The key corresponds to the position within the QComboBoxes
-    QMap<int, GekkoFyre::Database::Settings::Audio::Device> avail_input_audio_devs;
-    QMap<int, GekkoFyre::Database::Settings::Audio::Device> avail_output_audio_devs;
-    GekkoFyre::Database::Settings::Audio::Device chosen_input_audio_dev;
-    GekkoFyre::Database::Settings::Audio::Device chosen_output_audio_dev;
+    QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> avail_input_audio_devs;
+    QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> avail_output_audio_devs;
+    GekkoFyre::Database::Settings::Audio::GkDevice chosen_input_audio_dev;
+    GekkoFyre::Database::Settings::Audio::GkDevice chosen_output_audio_dev;
 
     static int prefill_rig_selection(const rig_caps *caps, void *data);
     static QMultiMap<rig_model_t, std::tuple<QString, QString, GekkoFyre::AmateurRadio::rig_type>> init_model_names();
 
-    void prefill_audio_devices(const std::vector<GekkoFyre::Database::Settings::Audio::Device> &audio_devices_vec);
+    void prefill_audio_devices(const std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> &audio_devices_vec);
 
     void prefill_avail_com_ports(const QMap<tstring, std::pair<tstring, boost::tribool>> &com_ports);
     void prefill_avail_usb_ports(const std::vector<GekkoFyre::Database::Settings::UsbPort> usb_devices);

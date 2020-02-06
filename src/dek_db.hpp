@@ -55,12 +55,12 @@ public:
     ~DekodeDb();
 
     void write_rig_settings(const QString &value, const Database::Settings::radio_cfg &key);
-    void write_audio_device_settings(const GekkoFyre::Database::Settings::Audio::Device &value, const QString &key,
+    void write_audio_device_settings(const GekkoFyre::Database::Settings::Audio::GkDevice &value, const QString &key,
                                      const bool &is_output_device);
 
     QString read_rig_settings(const Database::Settings::radio_cfg &key);
     int read_audio_device_settings(const bool &is_output_device);
-    GekkoFyre::Database::Settings::Audio::Device read_audio_details_settings(const bool &is_output_device);
+    GekkoFyre::Database::Settings::Audio::GkDevice read_audio_details_settings(const bool &is_output_device);
 
 
     GekkoFyre::Database::Settings::audio_channels convertAudioChannelsInt(const int &audio_channel_sel);

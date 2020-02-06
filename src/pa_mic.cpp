@@ -68,11 +68,12 @@ PaMic::~PaMic()
  * @note <https://github.com/EddieRingle/portaudio/blob/master/examples/paex_record.c>
  * <https://github.com/EddieRingle/portaudio/blob/master/test/patest_read_record.c>
  */
-bool PaMic::recordMic(const Device &device, PaStream *stream, std::vector<SAMPLE> *rec_data, const int &buffer_sec_record)
+bool PaMic::recordInputDevice(const GkDevice &device, PaStream *stream, std::vector<PaAudioBuf> *rec_data,
+                              const int &buffer_sec_record)
 {
     try {
         // Create an object that is used for recording data (i.e. buffering)
-        PaAudioBuf audioBuf((int)(device.def_sample_rate * 60));
+        PaAudioBuf *audioBuf = new PaAudioBuf((short)(device.def_sample_rate * 60));
 
         std::cout << tr("Setting up PortAudio for recording from input audio device...").toStdString() << std::endl;
 
@@ -81,14 +82,14 @@ bool PaMic::recordMic(const Device &device, PaStream *stream, std::vector<SAMPLE
 
         std::cout << tr("Opening a recording stream on: %1").arg(device.device_info->name).toStdString() << std::endl;
         portaudio::DirectionSpecificStreamParameters inParamsRecord(sys.deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)),
-                                                                    device.dev_input_channel_count, portaudio::INT16, false,
-                                                                    device.device_info->defaultLowInputLatency, nullptr);
+                                                                    device.dev_input_channel_count, gkAudioDevices->sampleFormatConvert(device.def_sample_rate),
+                                                                    false, device.device_info->defaultLowInputLatency, nullptr);
         portaudio::StreamParameters paramsRecord(inParamsRecord, portaudio::DirectionSpecificStreamParameters::null(),
                                                  device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER, paClipOff);
-        portaudio::MemFunCallbackStream<PaAudioBuf> streamRecord(paramsRecord, audioBuf, &PaAudioBuf::recordCallback);
+        portaudio::MemFunCallbackStream<PaAudioBuf> streamRecord(paramsRecord, *audioBuf, &PaAudioBuf::recordCallback);
 
         while (Pa_IsStreamActive(stream) == 1) {
-            for (int j = 0; j < audioBuf.size(); ++j) {
+            for (int j = 0; j < audioBuf->size(); ++j) {
                 rec_data->push_back(audioBuf[j]);
             }
 

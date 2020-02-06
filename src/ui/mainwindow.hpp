@@ -44,7 +44,7 @@
 #include "src/pa_mic.hpp"
 #include "src/radiolibs.hpp"
 #include <boost/filesystem.hpp>
-#include <boost/circular_buffer.hpp>
+#include <boost/thread/thread.hpp>
 #include <memory>
 #include <ctime>
 #include <thread>
@@ -134,10 +134,14 @@ private:
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GekkoFyre::RadioLibs> gkRadioLibs;
 
+    //
+    // Multithreading
+    // https://www.boost.org/doc/libs/1_72_0/doc/html/thread/thread_management.html
+    //
     std::future<GekkoFyre::AmateurRadio::Control::Radio *> rig_thread;
-    std::thread spectro_thread;
+    boost::thread tInputDev;
 
-    std::vector<GekkoFyre::Database::Settings::Audio::Device> pref_audio_devices; // The configured audio devices for the user's system
+    std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> pref_audio_devices; // The configured audio devices for the user's system
     GekkoFyre::AmateurRadio::Control::Radio *radio;
     QTimer *timer;
 
@@ -159,9 +163,9 @@ private:
 
     void radioStats(GekkoFyre::AmateurRadio::Control::Radio *radio_dev);
 
-    GekkoFyre::Database::Settings::Audio::Device grabDefPaInputDevice();
-    void paMicProcBackground(const GekkoFyre::Database::Settings::Audio::Device &input_audio_device);
-    void procVuMeter(const GekkoFyre::Database::Settings::Audio::Device &audio_stream);
+    GekkoFyre::Database::Settings::Audio::GkDevice grabDefPaInputDevice();
+    void paMicProcBackground(const GekkoFyre::Database::Settings::Audio::GkDevice &input_audio_device);
+    void procVuMeter(const GekkoFyre::Database::Settings::Audio::GkDevice &audio_stream);
 
     void changePushButtonColor(QPointer<QPushButton> push_button, const bool &green_result = true,
                                const bool &color_blind_mode = false);
