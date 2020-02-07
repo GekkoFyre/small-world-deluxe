@@ -70,7 +70,6 @@ public:
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> defaultAudioDevices();
     std::vector<double> enumSupportedStdSampleRates(const PaStreamParameters *inputParameters,
                                                     const PaStreamParameters *outputParameters);
-    std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> enumAudioDevices();
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> enumAudioDevicesCpp();
     void portAudioErr(const PaError &err);
     void testSinewave(const GekkoFyre::Database::Settings::Audio::GkDevice &device);

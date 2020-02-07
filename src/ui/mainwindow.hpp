@@ -45,6 +45,7 @@
 #include "src/radiolibs.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/thread/thread.hpp>
+#include <boost/thread/future.hpp>
 #include <memory>
 #include <ctime>
 #include <thread>
@@ -171,5 +172,6 @@ private:
                                const bool &color_blind_mode = false);
 
     void createStatusBar(const QString &statusMsg = "");
+    bool steadyTimer(const int &seconds);
     void print_exception(const std::exception &e, int level = 0);
 };

@@ -41,6 +41,7 @@
 #include "aboutdialog.hpp"
 #include "spectrodialog.hpp"
 #include "src/pa_audio_buf.hpp"
+#include <portaudiocpp/PortAudioCpp.hxx>
 #include <boost/exception/all.hpp>
 #include <boost/chrono/chrono.hpp>
 #include <string>
@@ -48,6 +49,8 @@
 #include <iostream>
 #include <cmath>
 #include <functional>
+#include <cstdlib>
+#include <chrono>
 #include <QWidget>
 #include <QResource>
 #include <QMessageBox>
@@ -111,8 +114,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         btn_radio_tune = false;
         btn_radio_monitor = false;
 
-        portaudio::AutoSystem auto_sys;                             // For some weird reason unbeknownst to us, this has to exist
-        portaudio::System &portaudio_sys = portaudio::System::instance();     // Begin an audio device session
+        portaudio::AutoSystem auto_sys;                                         // For some weird reason unbeknownst to us, this has to exist
+        portaudio::System &portaudio_sys = portaudio::System::instance();       // Begin an audio device session
+
         rig_load_all_backends();
 
         // Create path to file-database
@@ -191,7 +195,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
     } catch (const std::exception &e) {
         QMessageBox::warning(parent, tr("Error!"), e.what(), QMessageBox::Ok);
-        QApplication::exit(-1);
+        QApplication::exit(EXIT_FAILURE);
     }
 }
 
@@ -208,9 +212,11 @@ MainWindow::~MainWindow()
         tInputDev.interrupt();
     }
 
-    err = Pa_CloseStream(&micStream);
-    if (err != paNoError) {
-        gkAudioDevices->portAudioErr(err);
+    if (micStream.get() != nullptr) {
+        err = Pa_CloseStream(&micStream);
+        if (err != paNoError) {
+            gkAudioDevices->portAudioErr(err);
+        }
     }
 
     delete db;
@@ -221,6 +227,19 @@ MainWindow::~MainWindow()
         if (radio->is_open) {
             rig_close(radio->rig); // Close port
             rig_cleanup(radio->rig); // Cleanup memory
+        }
+
+        //
+        // If we have to wait more than 5 seconds for this library to terminate, then simply abort!
+        //
+        std::future<bool> counter = std::async(std::launch::async, &MainWindow::steadyTimer, this, GK_EXIT_TIMEOUT);
+        if (counter.get()) {
+            //
+            // Exit without cleaning up resoruces because otherwise, we are going to be waiting a long time
+            // for the program to finish...
+            // https://en.cppreference.com/w/cpp/utility/program/abort
+            //
+            std::quick_exit(EXIT_FAILURE); // TODO: Implement code that deals with this in a much nicer manner
         }
 
         delete radio;
@@ -245,7 +264,7 @@ void MainWindow::on_actionE_xit_triggered()
 
     switch (ret) {
     case QMessageBox::Ok:
-        QApplication::exit(0);
+        QApplication::exit(EXIT_SUCCESS);
         break;
     case QMessageBox::Cancel:
         return;
@@ -311,6 +330,34 @@ void MainWindow::createStatusBar(const QString &statusMsg)
     } else {
         statusBar()->showMessage(statusMsg, 2000);
     }
+}
+
+/**
+ * @brief MainWindow::steadyTimer is a simple duration timer that returns TRUE upon reaching a set duration that
+ * is stated in milliseconds.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param milliseconds The duration of time you wish to measure.
+ * @return Whether or not the duration of time has been met yet.
+ * @note <http://rachelnertia.github.io/programming/2018/01/07/intro-to-std-chrono/>
+ */
+bool MainWindow::steadyTimer(const int &seconds)
+{
+    try {
+        std::chrono::steady_clock::time_point t_counter = std::chrono::steady_clock::now();
+        std::chrono::duration<int> time_span;
+
+        while (time_span.count() != seconds) {
+            std::chrono::steady_clock::time_point t_duration = std::chrono::steady_clock::now();
+            time_span = std::chrono::duration_cast<std::chrono::duration<int>>(t_duration - t_counter);
+        }
+
+        return true;
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("There has been a timing error:\n\n%1").arg(e.what()),
+                             QMessageBox::Ok);
+    }
+
+    return false;
 }
 
 /**

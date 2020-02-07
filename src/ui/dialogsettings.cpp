@@ -97,7 +97,7 @@ DialogSettings::DialogSettings(std::shared_ptr<DekodeDb> dkDb, std::shared_ptr<G
         prefill_avail_com_ports(status_com_ports);
         prefill_avail_usb_ports(status_usb_devices);
 
-        std::vector<GkDevice> audio_devices = gkAudioDevices->enumAudioDevices();
+        std::vector<GkDevice> audio_devices = gkAudioDevices->enumAudioDevicesCpp();
         prefill_audio_devices(audio_devices);
 
         ui->label_pa_version->setText(gkAudioDevices->portAudioVersionNumber());
