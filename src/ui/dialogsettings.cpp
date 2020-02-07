@@ -100,6 +100,9 @@ DialogSettings::DialogSettings(std::shared_ptr<DekodeDb> dkDb, std::shared_ptr<G
         std::vector<GkDevice> audio_devices = gkAudioDevices->enumAudioDevices();
         prefill_audio_devices(audio_devices);
 
+        ui->label_pa_version->setText(gkAudioDevices->portAudioVersionNumber());
+        ui->textEdit_pa_version_text->setText(gkAudioDevices->portAudioVersionText());
+
         prefill_com_baud_speed(GekkoFyre::AmateurRadio::com_baud_rates::BAUD1200);
         prefill_com_baud_speed(GekkoFyre::AmateurRadio::com_baud_rates::BAUD2400);
         prefill_com_baud_speed(GekkoFyre::AmateurRadio::com_baud_rates::BAUD4800);

@@ -111,6 +111,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         btn_radio_tune = false;
         btn_radio_monitor = false;
 
+        portaudio::AutoSystem auto_sys;                             // For some weird reason unbeknownst to us, this has to exist
+        portaudio::System &portaudio_sys = portaudio::System::instance();     // Begin an audio device session
         rig_load_all_backends();
 
         // Create path to file-database
@@ -170,7 +172,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         radio->verbosity = RIG_DEBUG_BUG;
 
         // Initialize sub-systems such as PortAudio and Hamlib!
-        gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(dekodeDb, fileIo, this);
+        gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(portaudio_sys, dekodeDb, fileIo, this);
         pref_audio_devices = gkAudioDevices->initPortAudio();
         radio->is_open = false;
         rig_thread = std::async(std::launch::async, &RadioLibs::init_rig, gkRadioLibs, radio->rig_model, def_com_port.toStdString(), final_baud_rate, radio->verbosity);

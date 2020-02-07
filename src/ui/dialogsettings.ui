@@ -210,56 +210,6 @@
                       </widget>
                      </item>
                      <item>
-                      <widget class="QGroupBox" name="groupBox_db_save_loc">
-                       <property name="title">
-                        <string>Settings Database</string>
-                       </property>
-                       <layout class="QFormLayout" name="formLayout_8">
-                        <item row="0" column="0">
-                         <widget class="QLabel" name="label_db_save_loc_2">
-                          <property name="text">
-                           <string>Location: </string>
-                          </property>
-                         </widget>
-                        </item>
-                        <item row="0" column="1">
-                         <widget class="QFrame" name="frame_db_save_loc_2">
-                          <property name="frameShape">
-                           <enum>QFrame::StyledPanel</enum>
-                          </property>
-                          <property name="frameShadow">
-                           <enum>QFrame::Raised</enum>
-                          </property>
-                          <layout class="QHBoxLayout" name="horizontalLayout_12">
-                           <property name="leftMargin">
-                            <number>0</number>
-                           </property>
-                           <property name="topMargin">
-                            <number>0</number>
-                           </property>
-                           <property name="rightMargin">
-                            <number>0</number>
-                           </property>
-                           <property name="bottomMargin">
-                            <number>0</number>
-                           </property>
-                           <item>
-                            <widget class="QLineEdit" name="lineEdit_db_save_loc_2"/>
-                           </item>
-                           <item>
-                            <widget class="QPushButton" name="pushButton_db_save_loc_2">
-                             <property name="text">
-                              <string>Browse</string>
-                             </property>
-                            </widget>
-                           </item>
-                          </layout>
-                         </widget>
-                        </item>
-                       </layout>
-                      </widget>
-                     </item>
-                     <item>
                       <widget class="QGroupBox" name="groupBox_logs_save_dir">
                        <property name="title">
                         <string>Logs Save Directory</string>
@@ -312,6 +262,19 @@
                        </layout>
                       </widget>
                      </item>
+                     <item>
+                      <spacer name="verticalSpacer_2">
+                       <property name="orientation">
+                        <enum>Qt::Vertical</enum>
+                       </property>
+                       <property name="sizeHint" stdset="0">
+                        <size>
+                         <width>20</width>
+                         <height>40</height>
+                        </size>
+                       </property>
+                      </spacer>
+                     </item>
                     </layout>
                    </widget>
                   </widget>
@@ -322,6 +285,128 @@
                 <attribute name="title">
                  <string>User Interface</string>
                 </attribute>
+                <layout class="QVBoxLayout" name="verticalLayout_22">
+                 <item>
+                  <widget class="QScrollArea" name="scrollArea">
+                   <property name="frameShadow">
+                    <enum>QFrame::Plain</enum>
+                   </property>
+                   <property name="horizontalScrollBarPolicy">
+                    <enum>Qt::ScrollBarAlwaysOff</enum>
+                   </property>
+                   <property name="widgetResizable">
+                    <bool>true</bool>
+                   </property>
+                   <widget class="QWidget" name="scrollAreaWidgetContents_user_interface">
+                    <property name="geometry">
+                     <rect>
+                      <x>0</x>
+                      <y>0</y>
+                      <width>632</width>
+                      <height>370</height>
+                     </rect>
+                    </property>
+                    <layout class="QVBoxLayout" name="verticalLayout_23">
+                     <item>
+                      <widget class="QGroupBox" name="groupBox_general_settings">
+                       <property name="title">
+                        <string>General Settings</string>
+                       </property>
+                       <layout class="QFormLayout" name="formLayout_2">
+                        <item row="0" column="0">
+                         <widget class="QCheckBox" name="checkBox_compress_settings_db">
+                          <property name="text">
+                           <string>Compress settings database</string>
+                          </property>
+                         </widget>
+                        </item>
+                       </layout>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QGroupBox" name="groupBox_window_views">
+                       <property name="title">
+                        <string>Windowing &amp;&amp; Views</string>
+                       </property>
+                       <layout class="QFormLayout" name="formLayout_4">
+                        <item row="0" column="0">
+                         <widget class="QCheckBox" name="checkBox_waterfall_upon_start">
+                          <property name="text">
+                           <string>Initialize waterfall upon startup</string>
+                          </property>
+                         </widget>
+                        </item>
+                       </layout>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QGroupBox" name="groupBox_db_save_loc">
+                       <property name="title">
+                        <string>Settings Database</string>
+                       </property>
+                       <layout class="QFormLayout" name="formLayout_8">
+                        <item row="0" column="0">
+                         <widget class="QLabel" name="label_db_save_loc_2">
+                          <property name="text">
+                           <string>Location: </string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="0" column="1">
+                         <widget class="QFrame" name="frame_db_save_loc_2">
+                          <property name="frameShape">
+                           <enum>QFrame::StyledPanel</enum>
+                          </property>
+                          <property name="frameShadow">
+                           <enum>QFrame::Raised</enum>
+                          </property>
+                          <layout class="QHBoxLayout" name="horizontalLayout_12">
+                           <property name="leftMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="topMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="rightMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="bottomMargin">
+                            <number>0</number>
+                           </property>
+                           <item>
+                            <widget class="QLineEdit" name="lineEdit_db_save_loc_2"/>
+                           </item>
+                           <item>
+                            <widget class="QPushButton" name="pushButton_db_save_loc_2">
+                             <property name="text">
+                              <string>Browse</string>
+                             </property>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                       </layout>
+                      </widget>
+                     </item>
+                     <item>
+                      <spacer name="verticalSpacer_5">
+                       <property name="orientation">
+                        <enum>Qt::Vertical</enum>
+                       </property>
+                       <property name="sizeHint" stdset="0">
+                        <size>
+                         <width>20</width>
+                         <height>40</height>
+                        </size>
+                       </property>
+                      </spacer>
+                     </item>
+                    </layout>
+                   </widget>
+                  </widget>
+                 </item>
+                </layout>
                </widget>
               </widget>
              </item>
@@ -544,6 +629,55 @@
                      </widget>
                     </item>
                     <item>
+                     <widget class="QGroupBox" name="groupBox_audio_cfg_settings">
+                      <property name="title">
+                       <string>Audio Settings</string>
+                      </property>
+                      <layout class="QVBoxLayout" name="verticalLayout_21">
+                       <item>
+                        <widget class="QFrame" name="frame_audio_cfg_settings">
+                         <property name="frameShape">
+                          <enum>QFrame::StyledPanel</enum>
+                         </property>
+                         <property name="frameShadow">
+                          <enum>QFrame::Raised</enum>
+                         </property>
+                         <layout class="QFormLayout" name="formLayout">
+                          <property name="horizontalSpacing">
+                           <number>0</number>
+                          </property>
+                          <property name="verticalSpacing">
+                           <number>7</number>
+                          </property>
+                          <property name="leftMargin">
+                           <number>0</number>
+                          </property>
+                          <property name="topMargin">
+                           <number>0</number>
+                          </property>
+                          <property name="rightMargin">
+                           <number>0</number>
+                          </property>
+                          <property name="bottomMargin">
+                           <number>0</number>
+                          </property>
+                          <item row="0" column="0">
+                           <widget class="QCheckBox" name="checkBox_formatted_audio_devices">
+                            <property name="toolTip">
+                             <string>Whether you want the audio devices to appear in a formatted manner or not.</string>
+                            </property>
+                            <property name="text">
+                             <string>Formatted Audio Devices</string>
+                            </property>
+                           </widget>
+                          </item>
+                         </layout>
+                        </widget>
+                       </item>
+                      </layout>
+                     </widget>
+                    </item>
+                    <item>
                      <widget class="QGroupBox" name="groupBox_audio_save_loc">
                       <property name="title">
                        <string>Audio Recordings Save Directory</string>
@@ -718,16 +852,70 @@
                          </property>
                          <layout class="QVBoxLayout" name="verticalLayout_16">
                           <item>
-                           <widget class="QLabel" name="label">
-                            <property name="text">
-                             <string>TextLabel</string>
+                           <widget class="QFrame" name="frame">
+                            <property name="frameShape">
+                             <enum>QFrame::StyledPanel</enum>
                             </property>
+                            <property name="frameShadow">
+                             <enum>QFrame::Raised</enum>
+                            </property>
+                            <layout class="QHBoxLayout" name="horizontalLayout_13">
+                             <item>
+                              <spacer name="horizontalSpacer_6">
+                               <property name="orientation">
+                                <enum>Qt::Horizontal</enum>
+                               </property>
+                               <property name="sizeHint" stdset="0">
+                                <size>
+                                 <width>40</width>
+                                 <height>20</height>
+                                </size>
+                               </property>
+                              </spacer>
+                             </item>
+                             <item>
+                              <widget class="QLabel" name="label_version_holder">
+                               <property name="text">
+                                <string>Version:</string>
+                               </property>
+                              </widget>
+                             </item>
+                             <item>
+                              <widget class="QLabel" name="label_pa_version">
+                               <property name="text">
+                                <string>&lt;version&gt;</string>
+                               </property>
+                              </widget>
+                             </item>
+                             <item>
+                              <spacer name="horizontalSpacer_5">
+                               <property name="orientation">
+                                <enum>Qt::Horizontal</enum>
+                               </property>
+                               <property name="sizeHint" stdset="0">
+                                <size>
+                                 <width>40</width>
+                                 <height>20</height>
+                                </size>
+                               </property>
+                              </spacer>
+                             </item>
+                            </layout>
                            </widget>
                           </item>
                           <item>
-                           <widget class="QLabel" name="label_2">
-                            <property name="text">
-                             <string>TextLabel</string>
+                           <widget class="QTextEdit" name="textEdit_pa_version_text">
+                            <property name="documentTitle">
+                             <string notr="true"/>
+                            </property>
+                            <property name="undoRedoEnabled">
+                             <bool>false</bool>
+                            </property>
+                            <property name="readOnly">
+                             <bool>true</bool>
+                            </property>
+                            <property name="placeholderText">
+                             <string>&lt;PortAudio version information&gt;</string>
                             </property>
                            </widget>
                           </item>
@@ -1241,6 +1429,19 @@
                     </item>
                    </layout>
                   </widget>
+                 </item>
+                 <item>
+                  <spacer name="verticalSpacer_6">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>20</width>
+                     <height>40</height>
+                    </size>
+                   </property>
+                  </spacer>
                  </item>
                 </layout>
                </widget>
