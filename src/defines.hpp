@@ -49,6 +49,7 @@
 #include <vector>
 #include <cstdlib>
 #include <cstdio>
+#include <QString>
 
 #ifdef _WIN32
 #include <winsdkver.h>
@@ -193,7 +194,7 @@ namespace Database {
 
         namespace Audio {
             struct GkDevice {
-                std::string dev_name;                   // The name of the device itself
+                std::string dev_name_formatted;         // The name of the device itself, formatted
                 bool default_dev;                       // Is this the default device for the system?
                 bool default_disp;                      // Used for filtering purposes
                 double def_sample_rate;                 // Default sample rate

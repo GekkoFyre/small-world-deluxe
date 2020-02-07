@@ -92,12 +92,12 @@ std::mutex GekkoFyre::AudioDevices::audio_mutex;
  * @param parent
  * @note Core Audio APIs <https://docs.microsoft.com/en-us/windows/win32/api/_coreaudio/index>
  */
-AudioDevices::AudioDevices(std::shared_ptr<DekodeDb> gkDb, std::shared_ptr<GekkoFyre::FileIo> filePtr,
+AudioDevices::AudioDevices(portaudio::System &pa_sys, std::shared_ptr<DekodeDb> gkDb, std::shared_ptr<GekkoFyre::FileIo> filePtr,
                            QObject *parent) : QObject(parent)
 {
+    portAudioSys = &pa_sys;
     gkDekodeDb = gkDb;
     gkFileIo = filePtr;
-    // gkStringFuncs = std::make_unique<GekkoFyre::StringFuncs>(new StringFuncs(this));
 }
 
 AudioDevices::~AudioDevices()
@@ -120,7 +120,7 @@ std::vector<GkDevice> AudioDevices::initPortAudio()
     int chosen_output_dev = 0;
     int chosen_input_dev = 0;
 
-    enum_devices = enumAudioDevices();
+    enum_devices = enumAudioDevicesCpp();
     chosen_output_dev = gkDekodeDb->read_audio_device_settings(true);
     chosen_input_dev = gkDekodeDb->read_audio_device_settings(false);
 
@@ -216,7 +216,7 @@ std::vector<GkDevice> AudioDevices::defaultAudioDevices()
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> enum_devices;
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> exported_devices;
 
-    enum_devices = enumAudioDevices();
+    enum_devices = enumAudioDevicesCpp();
     for (const auto &device: enum_devices) {
         if (device.default_dev == true) {
             // We have a default device!
@@ -445,17 +445,17 @@ std::vector<GkDevice> AudioDevices::enumAudioDevices()
  */
 std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp()
 {
-    std::vector<GkDevice> audio_devices_vec;
-    portaudio::AutoSystem auto_sys;
-    portaudio::System &sys = portaudio::System::instance();
-
     try {
-        for (portaudio::System::DeviceIterator i = sys.devicesBegin(); i != sys.devicesEnd(); ++i) {
+        std::vector<GkDevice> audio_devices_vec;                        // The vector responsible for storage all audio device sessions
+        int device_number = 0;                                          // The index number for the input/output audio device in question
+
+        for (portaudio::System::DeviceIterator i = portAudioSys->devicesBegin(); i != portAudioSys->devicesEnd(); ++i) {
             // Mark both global and API specific default audio devices
             bool default_disp = false;
             std::ostringstream audio_device_name;
             const PaDeviceInfo *deviceInfo;
             GkDevice device;
+            device.dev_number = device_number;
 
             if ((*i).isSystemDefaultInputDevice()) {
                 audio_device_name << tr("[ Default Input").toStdString();
@@ -477,62 +477,64 @@ std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp()
 
             if (default_disp) {
                 audio_device_name << " ]";
+            }
 
-                //
-                // Grab the unique Device Info
-                //
-                device.device_info->name = (*i).name();
-                device.dev_name = (*i).hostApi().name();
-                deviceInfo = Pa_GetDeviceInfo((*i).index());
-                device.device_info = const_cast<PaDeviceInfo*>(deviceInfo);
+            //
+            // Grab the unique Device Info
+            //
+            deviceInfo = Pa_GetDeviceInfo((*i).index());
+            device.device_info = const_cast<PaDeviceInfo*>(deviceInfo);
 
-                #ifdef WIN32
-                //
-                // ASIO specific settings
-                //
-                if ((*i).hostApi().typeId() == paASIO) {
-                    portaudio::AsioDeviceAdapter asio_device(*i);
-                    device.asio_min_buffer_size = asio_device.minBufferSize();
-                    device.asio_max_buffer_size = asio_device.maxBufferSize();
-                    device.asio_pref_buffer_size = asio_device.preferredBufferSize();
-                    if (asio_device.granularity() != -1) {
-                        device.asio_granularity = asio_device.granularity();
-                    } else {
-                        device.asio_granularity = -1;
-                    }
-                }
-                #endif // WIN32
+            device.dev_name_formatted = audio_device_name.str();
+            device.host_type_id = Pa_GetHostApiInfo(deviceInfo->hostApi)->type;
 
-                //
-                // Default sample rate
-                //
-                device.def_sample_rate = (*i).defaultSampleRate();
-
-                //
-                // Poll for standard sample rates as associated with audio device in question
-                //
-                portaudio::DirectionSpecificStreamParameters inputParameters((*i), (*i).maxInputChannels(),
-                                                                             sampleFormatConvert(device.def_sample_rate),
-                                                                             true, 0.0, nullptr);
-                portaudio::DirectionSpecificStreamParameters outputParameters((*i), (*i).maxOutputChannels(),
-                                                                              sampleFormatConvert(device.def_sample_rate),
-                                                                              true, 0.0, nullptr);
-
-                device.dev_input_channel_count = inputParameters.numChannels();
-                device.dev_output_channel_count = outputParameters.numChannels();
-                if (device.dev_input_channel_count > 0) {
-                    device.is_output_dev = false;
-                    device.stream_parameters = *inputParameters.paStreamParameters();
-                } else if (device.dev_output_channel_count > 0) {
-                    device.is_output_dev = true;
-                    device.stream_parameters = *outputParameters.paStreamParameters();
+            #ifdef WIN32
+            //
+            // ASIO specific settings
+            //
+            if ((*i).hostApi().typeId() == paASIO) {
+                portaudio::AsioDeviceAdapter asio_device(*i);
+                device.asio_min_buffer_size = asio_device.minBufferSize();
+                device.asio_max_buffer_size = asio_device.maxBufferSize();
+                device.asio_pref_buffer_size = asio_device.preferredBufferSize();
+                if (asio_device.granularity() != -1) {
+                    device.asio_granularity = asio_device.granularity();
                 } else {
-                    device.is_output_dev = boost::tribool::indeterminate_value;
-                    device.stream_parameters = PaStreamParameters();
+                    device.asio_granularity = -1;
                 }
+            }
+            #endif // WIN32
+
+            //
+            // Default sample rate
+            //
+            device.def_sample_rate = (*i).defaultSampleRate();
+
+            //
+            // Poll for standard sample rates as associated with audio device in question
+            //
+            portaudio::DirectionSpecificStreamParameters inputParameters((*i), (*i).maxInputChannels(),
+                                                                         sampleFormatConvert(device.def_sample_rate),
+                                                                         true, 0.0, nullptr);
+            portaudio::DirectionSpecificStreamParameters outputParameters((*i), (*i).maxOutputChannels(),
+                                                                          sampleFormatConvert(device.def_sample_rate),
+                                                                          true, 0.0, nullptr);
+
+            device.dev_input_channel_count = inputParameters.numChannels();
+            device.dev_output_channel_count = outputParameters.numChannels();
+            if (device.dev_input_channel_count > 0) {
+                device.is_output_dev = false;
+                device.stream_parameters = *inputParameters.paStreamParameters();
+            } else if (device.dev_output_channel_count > 0) {
+                device.is_output_dev = true;
+                device.stream_parameters = *outputParameters.paStreamParameters();
+            } else {
+                device.is_output_dev = boost::tribool::indeterminate_value;
+                device.stream_parameters = PaStreamParameters();
             }
 
             audio_devices_vec.push_back(device);
+            ++device_number;
         }
 
         return audio_devices_vec;
@@ -560,81 +562,93 @@ std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp()
  */
 void AudioDevices::testSinewave(const GkDevice &device)
 {
-    PaStream *stream;
-    PaError err;
-    paTestData data;
-    PaStreamParameters outputParameters;
-    PaStreamParameters inputParameters;
-    if (device.is_output_dev == true) {
-        outputParameters = device.stream_parameters;
-    } else {
-        inputParameters = device.stream_parameters;
-    }
-
-    qInfo() << tr("Audio Test: output sine wave. SR = %1, BufSize = %2").arg(QString::number(device.def_sample_rate))
-               .arg(QString::number(AUDIO_FRAMES_PER_BUFFER));
-
-    // Initialise sinusoidal wavetable
-    for (int i = 0; i < AUDIO_TEST_SAMPLE_TABLE_SIZE; i++) {
-        data.sine[i] = ((float)sin(((double)i/(double)AUDIO_TEST_SAMPLE_TABLE_SIZE) * M_PI * 2.));
-    }
-
-    data.left_phase = data.right_phase = 0;
-
-    err = Pa_Initialize();
-    if (err != paNoError) {
-        portAudioErr(err);
-    }
-
-    if (device.is_output_dev == true) {
-        if (outputParameters.device == paNoDevice) {
-            std::cerr << tr("Error: No default output device has been chosen!").toStdString() << std::endl;
-            portAudioErr(err);
+    try {
+        PaStream *stream;
+        PaError err;
+        paTestData data;
+        PaStreamParameters outputParameters;
+        PaStreamParameters inputParameters;
+        if (device.is_output_dev == true) {
+            outputParameters = device.stream_parameters;
+        } else {
+            inputParameters = device.stream_parameters;
         }
 
-        // http://portaudio.com/docs/v19-doxydocs/portaudio_8h.html#a443ad16338191af364e3be988014cbbe
-        err = Pa_OpenStream(&stream, nullptr, &outputParameters, device.def_sample_rate, paFramesPerBufferUnspecified, paClipOff, paTestCallback, &data);
+        qInfo() << tr("Audio Test: output sine wave. SR = %1, BufSize = %2").arg(QString::number(device.def_sample_rate))
+                   .arg(QString::number(AUDIO_FRAMES_PER_BUFFER));
+
+        // Initialise sinusoidal wavetable
+        for (int i = 0; i < AUDIO_TEST_SAMPLE_TABLE_SIZE; i++) {
+            data.sine[i] = ((float)sin(((double)i/(double)AUDIO_TEST_SAMPLE_TABLE_SIZE) * M_PI * 2.));
+        }
+
+        data.left_phase = data.right_phase = 0;
+
+        err = Pa_Initialize();
         if (err != paNoError) {
             portAudioErr(err);
         }
-    } else {
-        if (inputParameters.device == paNoDevice) {
-            std::cerr << tr("Error: No default output device has been chosen!").toStdString() << std::endl;
-            portAudioErr(err);
+
+        if (device.is_output_dev == true) {
+            if (outputParameters.device == paNoDevice) {
+                std::cerr << tr("Error: No default output device has been chosen!").toStdString() << std::endl;
+                portAudioErr(err);
+            }
+
+            // http://portaudio.com/docs/v19-doxydocs/portaudio_8h.html#a443ad16338191af364e3be988014cbbe
+            err = Pa_OpenStream(&stream, nullptr, &outputParameters, device.def_sample_rate, paFramesPerBufferUnspecified, paClipOff, paTestCallback, &data);
+            if (err != paNoError) {
+                portAudioErr(err);
+            }
+        } else {
+            if (inputParameters.device == paNoDevice) {
+                std::cerr << tr("Error: No default output device has been chosen!").toStdString() << std::endl;
+                portAudioErr(err);
+            }
+
+            // http://portaudio.com/docs/v19-doxydocs/portaudio_8h.html#a443ad16338191af364e3be988014cbbe
+            err = Pa_OpenStream(&stream, &inputParameters, nullptr, device.def_sample_rate, paFramesPerBufferUnspecified, paClipOff, paTestCallback, &data);
+            if (err != paNoError) {
+                portAudioErr(err);
+            }
         }
 
-        // http://portaudio.com/docs/v19-doxydocs/portaudio_8h.html#a443ad16338191af364e3be988014cbbe
-        err = Pa_OpenStream(&stream, &inputParameters, nullptr, device.def_sample_rate, paFramesPerBufferUnspecified, paClipOff, paTestCallback, &data);
+        qInfo() << QString::fromStdString(data.message);
+        err = Pa_SetStreamFinishedCallback(stream, &streamFinished);
         if (err != paNoError) {
             portAudioErr(err);
         }
+
+        err = Pa_StartStream(stream);
+        if (err != paNoError) {
+            portAudioErr(err);
+        }
+
+        Pa_Sleep(AUDIO_TEST_SAMPLE_LENGTH_SEC * 1000);
+        err = Pa_StopStream(stream);
+        if (err != paNoError) {
+            portAudioErr(err);
+        }
+
+        err = Pa_CloseStream(stream);
+        if (err != paNoError) {
+            portAudioErr(err);
+        }
+
+        // http://portaudio.com/docs/v19-doxydocs/initializing_portaudio.html
+        // Pa_Terminate();
+        qInfo() << tr("Audio test sample finished.");
+    } catch (const portaudio::PaException &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText()), QMessageBox::Ok);
+    } catch (const portaudio::PaCppException &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("A generic exception has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+    } catch (...) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), QMessageBox::Ok);
     }
 
-    qInfo() << QString::fromStdString(data.message);
-    err = Pa_SetStreamFinishedCallback(stream, &streamFinished);
-    if (err != paNoError) {
-        portAudioErr(err);
-    }
-
-    err = Pa_StartStream(stream);
-    if (err != paNoError) {
-        portAudioErr(err);
-    }
-
-    Pa_Sleep(AUDIO_TEST_SAMPLE_LENGTH_SEC * 1000);
-    err = Pa_StopStream(stream);
-    if (err != paNoError) {
-        portAudioErr(err);
-    }
-
-    err = Pa_CloseStream(stream);
-    if (err != paNoError) {
-        portAudioErr(err);
-    }
-
-    // http://portaudio.com/docs/v19-doxydocs/initializing_portaudio.html
-    // Pa_Terminate();
-    qInfo() << tr("Audio test sample finished.");
+    return;
 }
 
 /**
@@ -724,6 +738,28 @@ portaudio::SampleDataFormat AudioDevices::sampleFormatConvert(const unsigned lon
     }
 
     return portaudio::INT16;
+}
+
+/**
+ * @brief AudioDevices::portAudioVersionNumber returns the actual version of PortAudio
+ * itself, as a QString().
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return
+ */
+QString AudioDevices::portAudioVersionNumber()
+{
+    return QString::number(portAudioSys->version());
+}
+
+/**
+ * @brief AudioDevices::portAudioVersionText returns version-specific information about
+ * PortAudio itself, as a QString().
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return
+ */
+QString AudioDevices::portAudioVersionText()
+{
+    return QString(portAudioSys->versionText());
 }
 
 /**

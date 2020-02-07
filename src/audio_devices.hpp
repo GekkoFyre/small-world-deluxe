@@ -48,6 +48,7 @@
 #include <string>
 #include <memory>
 #include <mutex>
+#include <QString>
 
 #ifdef _WIN32
 #include "src/string_funcs_windows.hpp"
@@ -61,8 +62,8 @@ class AudioDevices : public QObject {
     Q_OBJECT
 
 public:
-    explicit AudioDevices(std::shared_ptr<GekkoFyre::DekodeDb> gkDb, std::shared_ptr<GekkoFyre::FileIo> filePtr,
-                          QObject *parent = nullptr);
+    explicit AudioDevices(portaudio::System &pa_sys, std::shared_ptr<GekkoFyre::DekodeDb> gkDb,
+                          std::shared_ptr<GekkoFyre::FileIo> filePtr, QObject *parent = nullptr);
     ~AudioDevices();
 
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> initPortAudio();
@@ -77,10 +78,13 @@ public:
     double vuMeter();
     portaudio::SampleDataFormat sampleFormatConvert(const unsigned long sample_rate);
 
+    QString portAudioVersionNumber();
+    QString portAudioVersionText();
+
 private:
+    portaudio::System *portAudioSys;
     std::shared_ptr<DekodeDb> gkDekodeDb;
     std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
-    // std::unique_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     static std::mutex spectro_mutex;                           // Mutex for the spectrometer side of things
     static std::mutex audio_mutex;                             // Mutex for general audio device work
 
