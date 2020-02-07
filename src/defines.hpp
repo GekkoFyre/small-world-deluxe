@@ -95,6 +95,8 @@ extern "C"
 
 namespace GekkoFyre {
 
+#define GK_EXIT_TIMEOUT (5)                             // The amount of time, in seconds, to leave 'Small World Deluxe' hanging upon exit before terminating forcefully!
+
 #define AUDIO_OUTPUT_MAX_VOL_SIMPLE (100)               // The maximum volume in simple units (i.e. non decible units)
 #define AUDIO_OUTPUT_CHANNEL_MAX_LIMIT (1024)
 #define AUDIO_OUTPUT_CHANNEL_MIN_LIMIT (-1024)

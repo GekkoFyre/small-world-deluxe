@@ -275,170 +275,6 @@ std::vector<double> AudioDevices::enumSupportedStdSampleRates(const PaStreamPara
 }
 
 /**
- * @brief AudioDevices::enumAudioDevices
- * @author PortAudio <http://portaudio.com/docs/v19-doxydocs/pa__devs_8c_source.html>
- * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param inputParameters
- * @param outputParameters
- * @return
- */
-std::vector<GkDevice> AudioDevices::enumAudioDevices()
-{
-    std::vector<GkDevice> audio_devices;
-    std::vector<GkDevice> audio_devices_cleaned;
-    PaStreamParameters inputParameters;
-    PaStreamParameters outputParameters;
-    int numDevices, defaultDisplayed;
-    const PaDeviceInfo *deviceInfo;
-    std::string vers_info;
-    PaError err;
-
-    err = Pa_Initialize();
-    if(err != paNoError) {
-        std::cerr << tr("ERROR: Pa_Initialize returned 0x%1").arg(QString::number(err)).toStdString() << std::endl;
-        goto error;
-    }
-
-    numDevices = Pa_GetDeviceCount();
-    if (numDevices < 0) {
-        std::cerr << tr("ERROR: Pa_GetDeviceCount returned 0x").arg(QString::number(numDevices)).toStdString() << std::endl;
-        err = numDevices;
-        goto error;
-    }
-
-    std::cout << tr("Number of devices = %1").arg(QString::number(numDevices)).toStdString() << std::endl;
-    for (int i = 0; i < numDevices; ++i) {
-        GkDevice device;
-        deviceInfo = Pa_GetDeviceInfo(i);
-        std::cout << tr("--------------------------------------- Device #%1").arg(QString::number(i)).toStdString() << std::endl;
-        device.dev_number = i;
-        device.default_dev = false;
-        device.device_info = const_cast<PaDeviceInfo*>(deviceInfo);
-
-        // Mark global and API specific default devices
-        defaultDisplayed = 0;
-        if (i == Pa_GetDefaultInputDevice()) {
-            std::cout << tr("[ Default input").toStdString();
-            defaultDisplayed = 1;
-        } else if (i == Pa_GetHostApiInfo(deviceInfo->hostApi)->defaultInputDevice) {
-            const PaHostApiInfo *hostInfo = Pa_GetHostApiInfo(deviceInfo->hostApi);
-            std::string hostInfoStr = hostInfo->name;
-            std::cout << tr("[ Default %1 Input").arg(QString::fromStdString(hostInfoStr)).toStdString();
-            defaultDisplayed = 1;
-            device.default_dev = true;
-        }
-
-        if (i == Pa_GetDefaultOutputDevice()) {
-            printf((defaultDisplayed ? "," : "["));
-            std::cout << tr(" Default Output").toStdString();
-            defaultDisplayed = 1;
-        } else if (i == Pa_GetHostApiInfo(deviceInfo->hostApi)->defaultOutputDevice) {
-            const PaHostApiInfo *hostInfo = Pa_GetHostApiInfo(deviceInfo->hostApi);
-            printf((defaultDisplayed ? "," : "["));
-            std::string hostInfoStr = hostInfo->name;
-            std::cout << tr(" Default %1 Output").arg(QString::fromStdString(hostInfoStr)).toStdString();
-            defaultDisplayed = 1;
-            device.default_dev = true;
-        }
-
-        if (defaultDisplayed) {
-            std::cout << "]" << std::endl;
-            device.default_disp = true;
-        } else {
-            device.default_disp = false;
-        }
-
-        // Default values for ASIO specific information
-        device.asio_min_latency = -1;
-        device.asio_max_latency = -1;
-        device.asio_granularity = -1;
-        device.asio_pref_latency = -1;
-
-        #ifdef WIN32
-        #ifdef PA_USE_ASIO
-        // ASIO specific latency information
-        if (Pa_GetHostApiInfo(deviceInfo->hostApi)->type == paASIO) {
-            long minLatency, maxLatency, preferredLatency, granularity;
-            err = PaAsio_GetAvailableLatencyValues(i, &minLatency, &maxLatency, &preferredLatency, &granularity);
-            device.asio_min_latency = minLatency;
-            device.asio_max_latency = maxLatency;
-            device.asio_granularity = granularity;
-            device.asio_pref_latency = preferredLatency;
-            device.asio_err = err;
-        }
-        #endif // PA_USE_ASIO
-        #endif // WIN32
-
-        device.def_sample_rate = deviceInfo->defaultSampleRate;
-
-        // Poll for standard sample rates
-        // https://stackoverflow.com/questions/43068268/difference-between-paint32-paint16-paint24-pafloat32-etc
-        inputParameters.device = i;
-        inputParameters.channelCount = deviceInfo->maxInputChannels;
-        inputParameters.sampleFormat = device.def_sample_rate;
-        inputParameters.suggestedLatency = Pa_GetDeviceInfo(inputParameters.device)->defaultHighInputLatency;
-        inputParameters.hostApiSpecificStreamInfo = nullptr;
-
-        outputParameters.device = i;
-        outputParameters.channelCount = deviceInfo->maxOutputChannels;
-        outputParameters.sampleFormat = device.def_sample_rate;
-        outputParameters.suggestedLatency = Pa_GetDeviceInfo(outputParameters.device)->defaultHighOutputLatency;
-        outputParameters.hostApiSpecificStreamInfo = nullptr;
-
-        device.host_type_id = Pa_GetHostApiInfo(deviceInfo->hostApi)->type;
-
-        // WARNING: Do not modify the settings below unless you know what you are doing!
-        if (device.device_info->name[1]) {
-            device.dev_output_channel_count = outputParameters.channelCount;
-            device.dev_input_channel_count = inputParameters.channelCount;
-
-            if (inputParameters.channelCount > 0) {
-                device.is_output_dev = false;
-                device.supp_sample_rates = enumSupportedStdSampleRates(&inputParameters, nullptr);
-                device.stream_parameters = inputParameters;
-                // Pa_GetHostApiInfo(deviceInfo->hostApi)->defaultInputDevice;
-
-                audio_devices.push_back(device);
-            } else if (outputParameters.channelCount > 0) {
-                device.is_output_dev = true;
-                device.supp_sample_rates = enumSupportedStdSampleRates(nullptr, &outputParameters);
-                device.stream_parameters = outputParameters;
-                // Pa_GetHostApiInfo(deviceInfo->hostApi)->defaultOutputDevice;
-
-                audio_devices.push_back(device);
-            } else {
-                device.is_output_dev = boost::tribool::indeterminate_value;
-                device.supp_sample_rates = enumSupportedStdSampleRates(&inputParameters, &outputParameters);
-
-                audio_devices.push_back(device);
-            }
-        }
-    }
-
-    // Clean the list of any erroneous devices that have wacky and unrealistic values
-    for (const auto &device: audio_devices) {
-        std::string audio_dev_name = device.device_info->name;
-        if ((!audio_dev_name.empty()) && (device.default_disp)) {
-            if ((device.dev_input_channel_count < AUDIO_INPUT_CHANNEL_MAX_LIMIT) && (device.dev_input_channel_count > AUDIO_INPUT_CHANNEL_MIN_LIMIT)) {
-                if ((device.dev_output_channel_count < AUDIO_OUTPUT_CHANNEL_MAX_LIMIT) && (device.dev_output_channel_count > AUDIO_OUTPUT_CHANNEL_MIN_LIMIT)) {
-                    audio_devices_cleaned.push_back(device);
-                }
-            }
-        }
-    }
-
-    // http://portaudio.com/docs/v19-doxydocs/initializing_portaudio.html
-    return audio_devices_cleaned;
-
-    error:
-    // Pa_Terminate();
-    std::string err_msg = Pa_GetErrorText(err);
-    std::cerr << tr("Error number: %1").arg(QString::number(err)).toStdString() << std::endl;
-    std::cerr << tr("Error message: %1").arg(QString::fromStdString(err_msg)).toStdString() << std::endl;
-    throw std::runtime_error(tr("An issue was encountered while enumerating audio devices!\n\n%1").arg(QString::fromStdString(err_msg)).toStdString());
-}
-
-/**
  * @brief AudioDevices::enumAudioDevicesCpp
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return
@@ -455,6 +291,10 @@ std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp()
             std::ostringstream audio_device_name;
             const PaDeviceInfo *deviceInfo;
             GkDevice device;
+            device.default_dev = false;
+            device.default_disp = false;
+            device.is_output_dev = false;
+            device.dev_err = paNoError;
             device.dev_number = device_number;
 
             if ((*i).isSystemDefaultInputDevice()) {
@@ -488,22 +328,27 @@ std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp()
             device.dev_name_formatted = audio_device_name.str();
             device.host_type_id = Pa_GetHostApiInfo(deviceInfo->hostApi)->type;
 
-            #ifdef WIN32
-            //
-            // ASIO specific settings
-            //
-            if ((*i).hostApi().typeId() == paASIO) {
-                portaudio::AsioDeviceAdapter asio_device(*i);
-                device.asio_min_buffer_size = asio_device.minBufferSize();
-                device.asio_max_buffer_size = asio_device.maxBufferSize();
-                device.asio_pref_buffer_size = asio_device.preferredBufferSize();
-                if (asio_device.granularity() != -1) {
-                    device.asio_granularity = asio_device.granularity();
-                } else {
-                    device.asio_granularity = -1;
-                }
+            if (Pa_GetHostApiInfo(deviceInfo->hostApi)->defaultInputDevice) {
+                //
+                // Input device
+                //
+                device.default_dev = true;
             }
-            #endif // WIN32
+
+            if (Pa_GetHostApiInfo(deviceInfo->hostApi)->defaultOutputDevice) {
+                //
+                // Output device
+                //
+                device.default_dev = true;
+            }
+
+            if (!Pa_GetHostApiInfo(deviceInfo->hostApi)->defaultInputDevice &&
+                    !Pa_GetHostApiInfo(deviceInfo->hostApi)->defaultOutputDevice) {
+                //
+                // Not the default audio device
+                //
+                device.default_dev = false;
+            }
 
             //
             // Default sample rate
@@ -520,18 +365,79 @@ std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp()
                                                                           sampleFormatConvert(device.def_sample_rate),
                                                                           true, 0.0, nullptr);
 
-            device.dev_input_channel_count = inputParameters.numChannels();
-            device.dev_output_channel_count = outputParameters.numChannels();
+            if (inputParameters.numChannels() > 0) {
+                device.dev_input_channel_count = inputParameters.numChannels();
+            } else {
+                device.dev_input_channel_count = -1;
+            }
+
+            if (outputParameters.numChannels() > 0) {
+                device.dev_output_channel_count = outputParameters.numChannels();
+            } else {
+                device.dev_output_channel_count = -1;
+            }
+
             if (device.dev_input_channel_count > 0) {
+                //
+                // Input device
+                //
                 device.is_output_dev = false;
                 device.stream_parameters = *inputParameters.paStreamParameters();
+                device.supp_sample_rates = enumSupportedStdSampleRates(inputParameters.paStreamParameters(), nullptr);
             } else if (device.dev_output_channel_count > 0) {
+                //
+                // Output device
+                //
                 device.is_output_dev = true;
                 device.stream_parameters = *outputParameters.paStreamParameters();
+                device.supp_sample_rates = enumSupportedStdSampleRates(nullptr, outputParameters.paStreamParameters());
             } else {
+                //
+                // Unable to determine whether just input or output device, so therefore assume it's both!
+                //
                 device.is_output_dev = boost::tribool::indeterminate_value;
                 device.stream_parameters = PaStreamParameters();
+                device.supp_sample_rates = enumSupportedStdSampleRates(inputParameters.paStreamParameters(),
+                                                                       outputParameters.paStreamParameters());
             }
+
+            #ifdef WIN32
+            //
+            // ASIO specific settings
+            //
+            if ((*i).hostApi().typeId() == paASIO) {
+                portaudio::AsioDeviceAdapter asio_device(*i);
+                device.asio_min_buffer_size = asio_device.minBufferSize();
+                device.asio_max_buffer_size = asio_device.maxBufferSize();
+                device.asio_pref_buffer_size = asio_device.preferredBufferSize();
+
+                if (device.is_output_dev) {
+                    //
+                    // Output device
+                    //
+                    device.asio_min_latency = asio_device.device().defaultLowOutputLatency();
+                    device.asio_max_latency = asio_device.device().defaultHighOutputLatency();
+                } else if (!device.is_output_dev) {
+                    //
+                    // Input device
+                    //
+                    device.asio_min_latency = asio_device.device().defaultLowInputLatency();
+                    device.asio_max_latency = asio_device.device().defaultHighInputLatency();
+                } else {
+                    //
+                    // Unable to determine whether just input or output device, so therefore assume it's both!
+                    //
+                    device.asio_min_latency = -1; // Not an optimal value!
+                    device.asio_max_latency = -1; // Not an optimal value!
+                }
+
+                if (asio_device.granularity() != -1) {
+                    device.asio_granularity = asio_device.granularity();
+                } else {
+                    device.asio_granularity = -1;
+                }
+            }
+            #endif // WIN32
 
             audio_devices_vec.push_back(device);
             ++device_number;
@@ -928,6 +834,6 @@ void AudioDevices::portAudioErr(const PaError &err)
         QMessageBox::warning(nullptr, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), QMessageBox::Ok);
     }
 
-    QApplication::exit(-5);
+    QApplication::exit(EXIT_FAILURE);
     return;
 }
