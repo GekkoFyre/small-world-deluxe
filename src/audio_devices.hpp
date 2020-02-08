@@ -77,6 +77,7 @@ public:
     double vuMeter();
     portaudio::SampleDataFormat sampleFormatConvert(const unsigned long sample_rate);
 
+    std::vector<Database::Settings::Audio::GkDevice> filterAudioDevices(const std::vector<Database::Settings::Audio::GkDevice> &audio_devices_vec);
     QString portAudioVersionNumber();
     QString portAudioVersionText();
 
@@ -84,8 +85,11 @@ private:
     portaudio::System *portAudioSys;
     std::shared_ptr<DekodeDb> gkDekodeDb;
     std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
-    static std::mutex spectro_mutex;                           // Mutex for the spectrometer side of things
-    static std::mutex audio_mutex;                             // Mutex for general audio device work
+
+    //
+    // Mutexes
+    //
+    std::mutex enumAudioMtx;
 
     static int paTestCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
                               const PaStreamCallbackTimeInfo* timeInfo, PaStreamCallbackFlags statusFlags,

@@ -42,50 +42,17 @@
 #include <cmath>
 #include <sstream>
 #include <cstdlib>
+#include <cstring>
 #include <algorithm>
 #include <QString>
 #include <QDebug>
 #include <QMessageBox>
 #include <QApplication>
 
-#ifdef _WIN32
-#include <stringapiset.h>
-
-#elif __linux__
-#endif
-
 using namespace GekkoFyre;
 using namespace Database;
 using namespace Settings;
 using namespace Audio;
-
-#define ARRAY_LEN(x) ((int) (sizeof (x) / sizeof (x [0])))
-
-#define CHECK_HR(x) if (FAILED(x)) { goto done; }
-
-#ifndef SAFE_RELEASE
-#define SAFE_RELEASE(x) \
-   if(x != NULL)        \
-   {                    \
-      x->Release();     \
-      x = NULL;         \
-   }
-#endif
-
-#ifndef SAFE_ARRAY_DELETE
-#define SAFE_ARRAY_DELETE(x) \
-   if(x != NULL)             \
-   {                         \
-      delete[] x;            \
-      x = NULL;              \
-   }
-#endif
-
-// https://docs.microsoft.com/en-us/windows/win32/learnwin32/learn-to-program-for-windows
-// https://docs.microsoft.com/en-us/cpp/cpp/declspec?view=vs-2019
-
-std::mutex GekkoFyre::AudioDevices::spectro_mutex;
-std::mutex GekkoFyre::AudioDevices::audio_mutex;
 
 /**
  * @brief AudioDevices::AudioDevices
@@ -93,7 +60,7 @@ std::mutex GekkoFyre::AudioDevices::audio_mutex;
  * @note Core Audio APIs <https://docs.microsoft.com/en-us/windows/win32/api/_coreaudio/index>
  */
 AudioDevices::AudioDevices(portaudio::System &pa_sys, std::shared_ptr<DekodeDb> gkDb, std::shared_ptr<GekkoFyre::FileIo> filePtr,
-                           QObject *parent) : QObject(parent)
+                           QObject *parent)
 {
     portAudioSys = &pa_sys;
     gkDekodeDb = gkDb;
@@ -120,7 +87,7 @@ std::vector<GkDevice> AudioDevices::initPortAudio()
     int chosen_output_dev = 0;
     int chosen_input_dev = 0;
 
-    enum_devices = enumAudioDevicesCpp();
+    enum_devices = filterAudioDevices(enumAudioDevicesCpp());
     chosen_output_dev = gkDekodeDb->read_audio_device_settings(true);
     chosen_input_dev = gkDekodeDb->read_audio_device_settings(false);
 
@@ -216,7 +183,7 @@ std::vector<GkDevice> AudioDevices::defaultAudioDevices()
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> enum_devices;
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> exported_devices;
 
-    enum_devices = enumAudioDevicesCpp();
+    enum_devices = filterAudioDevices(enumAudioDevicesCpp());
     for (const auto &device: enum_devices) {
         if (device.default_dev == true) {
             // We have a default device!
@@ -286,6 +253,8 @@ std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp()
         int device_number = 0;                                          // The index number for the input/output audio device in question
 
         for (portaudio::System::DeviceIterator i = portAudioSys->devicesBegin(); i != portAudioSys->devicesEnd(); ++i) {
+            std::lock_guard<std::mutex> audio_guard(enumAudioMtx);
+
             // Mark both global and API specific default audio devices
             bool default_disp = false;
             std::ostringstream audio_device_name;
@@ -572,47 +541,8 @@ void AudioDevices::volumeSetting()
  */
 double AudioDevices::vuMeter()
 {
+    // TODO: Implement this section!
     double ret_vol = 0;
-
-    /*
-    HRESULT hr = S_OK;
-    IMMDevice *pDevice = nullptr;
-    IMMDeviceEnumerator *pEnumerator = nullptr;
-    IAudioSessionControl *pSessionControl = nullptr;
-    IAudioSessionControl2 *pSessionControl2 = nullptr;
-    IAudioSessionManager *pSessionManager = nullptr;
-
-    CHECK_HR(hr = CoInitialize(nullptr));
-
-    // Create the device enumerator
-    CHECK_HR(hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, __uuidof(MMDeviceEnumerator), (void**)&pEnumerator));
-
-    // Get the default audio device.
-    CHECK_HR(hr = pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pDevice));
-
-    // Get the audio client.
-    CHECK_HR(hr = pDevice->Activate(__uuidof(IID_IAudioSessionManager), CLSCTX_ALL, NULL, (void**)&pSessionManager));
-
-    // Get a reference to the session manager.
-    CHECK_HR(hr = pSessionManager->GetAudioSessionControl(GUID_NULL, FALSE, &pSessionControl));
-
-    // Get the extended session control interface pointer.
-    CHECK_HR(hr = pSessionControl->QueryInterface(__uuidof(IAudioSessionControl2));
-
-    // Check whether this is a system sound.
-    CHECK_HR(hr = pSessionControl2->IsSystemSoundsSession());
-
-    // If it is a system sound, opt out of the default
-    // stream attenuation experience.
-    CHECK_HR(hr = pSessionControl2->SetDuckingPreference(TRUE));
-
-    done:
-    // Clean up
-    SAFE_RELEASE(pSessionControl2);
-    SAFE_RELEASE(pSessionControl);
-    SAFE_RELEASE(pEnumerator);
-    SAFE_RELEASE(pDevice);
-    */
 
     return ret_vol;
 }
@@ -644,6 +574,48 @@ portaudio::SampleDataFormat AudioDevices::sampleFormatConvert(const unsigned lon
     }
 
     return portaudio::INT16;
+}
+
+/**
+ * @brief AudioDevices::filterAudioDevices Filters the enumerated list of audio devices so as
+ * to remove duplicates, badly named listings, etc.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param audio_devices_vec The list of audio devices to be filtered.
+ * @return The list of devices that have been through the filtering process.
+ */
+std::vector<GkDevice> AudioDevices::filterAudioDevices(const std::vector<GkDevice> &audio_devices_vec)
+{
+    try {
+        std::mutex device_loop_mtx;
+        std::vector<std::string> device_name_list;
+        std::vector<GkDevice> unique_devices;
+
+        std::lock_guard<std::mutex> lck_guard(device_loop_mtx);
+        for (const auto &device: audio_devices_vec) {
+            device_name_list.push_back(device.device_info->name);
+        }
+
+        std::sort(device_name_list.begin(), device_name_list.end());
+        device_name_list.erase(std::unique(device_name_list.begin(), device_name_list.end()), device_name_list.end());
+
+        auto filtered = std::remove_if(device_name_list.begin(), device_name_list.end(), [](const auto& s) { return s.find_first_of(")") == std::string::npos; });
+        device_name_list.erase(filtered, device_name_list.end());
+
+        for (const auto &name: device_name_list) {
+            for (const auto &device: audio_devices_vec) {
+                if (std::strcmp(name.c_str(), device.device_info->name) == 0) {
+                    unique_devices.push_back(device);
+                }
+            }
+        }
+
+        return unique_devices;
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("A fatal error was encountered while enumerating audio devices within your system:\n\n%1").arg(e.what()),
+                             QMessageBox::Ok);
+    }
+
+    return std::vector<GkDevice>();
 }
 
 /**

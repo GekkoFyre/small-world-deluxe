@@ -43,6 +43,7 @@
 #include "src/audio_devices.hpp"
 #include "src/pa_mic.hpp"
 #include "src/radiolibs.hpp"
+#include "dialogsettings.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/future.hpp>
@@ -161,6 +162,11 @@ private:
     bool btn_radio_tx_halt;
     bool btn_radio_tune;
     bool btn_radio_monitor;
+
+    //
+    // QDialog's
+    //
+    QPointer<DialogSettings> dlg_settings;
 
     void radioStats(GekkoFyre::AmateurRadio::Control::Radio *radio_dev);
 
