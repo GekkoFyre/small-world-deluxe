@@ -37,7 +37,6 @@
 
 #include "mainwindow.hpp"
 #include "ui_mainwindow.h"
-#include "dialogsettings.hpp"
 #include "aboutdialog.hpp"
 #include "spectrodialog.hpp"
 #include "src/pa_audio_buf.hpp"
@@ -141,6 +140,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             throw std::runtime_error(tr("Unable to find settings database; we've lost its location! Aborting...").toStdString());
         }
 
+        // Initialize PortAudio!
+        gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(portaudio_sys, dekodeDb, fileIo, this);
+        pref_audio_devices = gkAudioDevices->initPortAudio();
+
         // Initialize the Hamlib 'radio' struct
         radio = new AmateurRadio::Control::Radio;
         std::string rand_file_name = fileIo->create_random_string(8);
@@ -175,11 +178,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         final_baud_rate = radio->dev_baud_rate;
         radio->verbosity = RIG_DEBUG_BUG;
 
-        // Initialize sub-systems such as PortAudio and Hamlib!
-        gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(portaudio_sys, dekodeDb, fileIo, this);
-        pref_audio_devices = gkAudioDevices->initPortAudio();
+        // Initialize Hamlib!
         radio->is_open = false;
         rig_thread = std::async(std::launch::async, &RadioLibs::init_rig, gkRadioLibs, radio->rig_model, def_com_port.toStdString(), final_baud_rate, radio->verbosity);
+
+        //
+        // QDialog's
+        //
+        dlg_settings = new DialogSettings(dekodeDb, fileIo, gkAudioDevices, gkRadioLibs, this);
 
         timer = new QTimer(this);
         connect(timer, SIGNAL(timeout()), this, SLOT(infoBar()));
@@ -423,10 +429,9 @@ void MainWindow::on_actionShow_Waterfall_toggled(bool arg1)
  */
 void MainWindow::on_action_Settings_triggered()
 {
-    QPointer<DialogSettings> dlg_settings = new DialogSettings(dekodeDb, fileIo, nullptr, gkRadioLibs, this);
     dlg_settings->setWindowFlags(Qt::Window);
-    dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
-    QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
+    dlg_settings->setAttribute(Qt::WA_DeleteOnClose, false);
+    // QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
     dlg_settings->show();
 }
 
@@ -496,10 +501,9 @@ void MainWindow::on_actionPlay_triggered()
 
 void MainWindow::on_actionSettings_triggered()
 {
-    QPointer<DialogSettings> dlg_settings = new DialogSettings(dekodeDb, fileIo, nullptr, gkRadioLibs, this);
     dlg_settings->setWindowFlags(Qt::Window);
-    dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
-    QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
+    dlg_settings->setAttribute(Qt::WA_DeleteOnClose, false);
+    // QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
     dlg_settings->show();
 }
 

@@ -43,17 +43,6 @@
 
 namespace fs = boost::filesystem;
 
-void signal_handler(int signal)
-{
-    if (signal == SIGABRT) {
-        std::cerr << "SIGABRT received" << std::endl;
-    } else {
-        std::cerr << "Unexpected signal " << signal << " received" << std::endl;
-    }
-
-    std::_Exit(EXIT_FAILURE);
-}
-
 int main(int argc, char *argv[])
 {
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
