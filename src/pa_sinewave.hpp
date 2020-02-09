@@ -39,41 +39,24 @@
 
 #include "src/defines.hpp"
 #include <portaudio.h>
-#include <memory>
-#include <vector>
-#include <string>
+#include <portaudiocpp/PortAudioCpp.hxx>
 
 namespace GekkoFyre {
 
-class PaAudioBuf : private std::vector<short> {
-
-    typedef short T;
-    typedef std::vector<short> vector;
+class PaSinewave {
 
 public:
-    explicit PaAudioBuf(int size_hint);
-    virtual ~PaAudioBuf();
+    PaSinewave(int table_size);
+    virtual ~PaSinewave();
 
-    using vector::push_back;
-    using vector::operator[];
-    using vector::begin;
-    using vector::end;
-    using vector::size;
-    using vector::clear;
-    PaAudioBuf operator*(const PaAudioBuf &) const;
-    PaAudioBuf operator+(const PaAudioBuf &) const;
-    PaAudioBuf();
-
-    int playbackCallback(const void *input_buffer, void *output_buffer, unsigned long frames_per_buffer,
-                         const PaStreamCallbackTimeInfo *time_info, PaStreamCallbackFlags status_flags);
-    int recordCallback(const void *input_buffer, void *output_buffer, unsigned long frames_per_buffer,
-                       const PaStreamCallbackTimeInfo *time_info, PaStreamCallbackFlags status_flags);
-    void writeToFile(const std::string &file_name);
-    void resetPlayback();
+    int generate(const void *input_buffer, void *output_buffer, unsigned long frames_per_buffer,
+                 const PaStreamCallbackTimeInfo *timing_info, PaStreamCallbackFlags status_flags);
 
 private:
-    std::vector<short> rec_samples;
-    std::vector<short>::iterator playback_iter;
+    float *table;
+    int tableSize;
+    int leftPhase;
+    int rightPhase;
 
 };
 };

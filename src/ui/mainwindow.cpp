@@ -39,7 +39,6 @@
 #include "ui_mainwindow.h"
 #include "aboutdialog.hpp"
 #include "spectrodialog.hpp"
-#include "src/pa_audio_buf.hpp"
 #include <portaudiocpp/PortAudioCpp.hxx>
 #include <boost/exception/all.hpp>
 #include <boost/chrono/chrono.hpp>
@@ -113,8 +112,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         btn_radio_tune = false;
         btn_radio_monitor = false;
 
+        // Initialize the PortAudio subsystem!
         portaudio::AutoSystem auto_sys;                                         // For some weird reason unbeknownst to us, this has to exist
-        portaudio::System &portaudio_sys = portaudio::System::instance();       // Begin an audio device session
+        portaudio_sys = new portaudio::System(portaudio::System::instance());   // Begin an audio device session
 
         rig_load_all_backends();
 
@@ -140,9 +140,35 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             throw std::runtime_error(tr("Unable to find settings database; we've lost its location! Aborting...").toStdString());
         }
 
-        // Initialize PortAudio!
-        gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(portaudio_sys, dekodeDb, fileIo, this);
+        //
+        // Initialize our own PortAudio libraries and associated buffers!
+        //
+        gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(*portaudio_sys, dekodeDb, fileIo, gkAudioBuf_input, gkAudioBuf_output, this);
         pref_audio_devices = gkAudioDevices->initPortAudio();
+        GkDevice output_dev;
+        GkDevice input_dev;
+
+        for (const auto &device: pref_audio_devices) {
+            // Now filter out what is the input and output device selectively!
+            if (device.is_output_dev) {
+                // Output device
+                output_dev = device;
+            } else {
+                // Input device
+                input_dev = device;
+            }
+        }
+
+        if (output_dev.device_info == nullptr) {
+            throw std::runtime_error(tr("An error was encountered whilst enumerating your audio devices!").toStdString());
+        }
+
+        if (input_dev.device_info == nullptr) {
+            throw std::runtime_error(tr("An error was encountered whilst enumerating your audio devices!").toStdString());
+        }
+
+        gkAudioBuf_input = new PaAudioBuf(input_dev.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS);
+        gkAudioBuf_output = new PaAudioBuf(output_dev.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS);
 
         // Initialize the Hamlib 'radio' struct
         radio = new AmateurRadio::Control::Radio;
@@ -226,8 +252,20 @@ MainWindow::~MainWindow()
     }
 
     delete db;
-    delete timer;
-    Pa_Terminate();
+
+    if (gkAudioBuf_input != nullptr) {
+        delete gkAudioBuf_input;
+    }
+
+    if (gkAudioBuf_output != nullptr) {
+        delete gkAudioBuf_output;
+    }
+
+    if (timer != nullptr) {
+        delete timer;
+    }
+
+    portaudio_sys->terminate();
 
     if (radio != nullptr) {
         if (radio->is_open) {
@@ -577,7 +615,7 @@ void MainWindow::paMicProcBackground(const GkDevice &input_audio_device)
 
         while (btn_radio_rx) {
             result = gkPaMic->recordInputDevice(input_audio_device, &micStream, &input_dev_rec_buffer[0],
-                                                AUDIO_MIC_INPUT_RECRD_SECS);
+                                                AUDIO_BUFFER_STREAMING_SECS);
 
             // Create a rolling buffer
             if (input_dev_rec_buffer->size() >= (input_audio_device.def_sample_rate * 60)) {

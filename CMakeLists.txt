@@ -305,11 +305,13 @@ endif()
 if(WIN32)
     set(GALAXY_SRC_CPP
         src/spectro_fftw.cpp
-        src/pa_audio_buf.cpp)
+        src/pa_audio_buf.cpp
+        src/pa_sinewave.cpp)
 elseif(UNIX)
     set(GALAXY_SRC_CPP
         src/spectro_fftw.cpp
-        src/pa_audio_buf.cpp)
+        src/pa_audio_buf.cpp
+        src/pa_sinewave.cpp)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()
@@ -318,12 +320,14 @@ if(WIN32)
     set(GALAXY_SRC_HEADERS
         src/defines.hpp
         src/spectro_fftw.hpp
-        src/pa_audio_buf.hpp)
+        src/pa_audio_buf.hpp
+        src/pa_sinewave.hpp)
 elseif(UNIX)
     set(GALAXY_SRC_HEADERS
         src/defines.hpp
         src/spectro_fftw.hpp
-        src/pa_audio_buf.hpp)
+        src/pa_audio_buf.hpp
+        src/pa_sinewave.hpp)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()
