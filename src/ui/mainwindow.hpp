@@ -43,6 +43,7 @@
 #include "src/audio_devices.hpp"
 #include "src/pa_mic.hpp"
 #include "src/radiolibs.hpp"
+#include "src/pa_audio_buf.hpp"
 #include "dialogsettings.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/thread/thread.hpp>
@@ -135,6 +136,10 @@ private:
     std::shared_ptr<GekkoFyre::PaMic> gkPaMic;
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GekkoFyre::RadioLibs> gkRadioLibs;
+
+    portaudio::System *portaudio_sys;
+    GekkoFyre::PaAudioBuf *gkAudioBuf_input;
+    GekkoFyre::PaAudioBuf *gkAudioBuf_output;
 
     //
     // Multithreading

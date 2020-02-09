@@ -40,6 +40,8 @@
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
 #include "src/file_io.hpp"
+#include "src/pa_audio_buf.hpp"
+#include <portaudio.h>
 #include <portaudiocpp/PortAudioCpp.hxx>
 #include <portaudiocpp/AsioDeviceAdapter.hxx>
 #include <portaudiocpp/SampleDataFormat.hxx>
@@ -63,7 +65,8 @@ class AudioDevices : public QObject {
 
 public:
     explicit AudioDevices(portaudio::System &pa_sys, std::shared_ptr<GekkoFyre::DekodeDb> gkDb,
-                          std::shared_ptr<GekkoFyre::FileIo> filePtr, QObject *parent = nullptr);
+                          std::shared_ptr<GekkoFyre::FileIo> filePtr, GekkoFyre::PaAudioBuf *inputBuf,
+                          PaAudioBuf *outputBuf, QObject *parent = nullptr);
     ~AudioDevices();
 
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> initPortAudio();
@@ -72,10 +75,14 @@ public:
                                                     const PaStreamParameters *outputParameters);
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> enumAudioDevicesCpp();
     void portAudioErr(const PaError &err);
-    void testSinewave(const GekkoFyre::Database::Settings::Audio::GkDevice &device);
     void volumeSetting();
     double vuMeter();
     portaudio::SampleDataFormat sampleFormatConvert(const unsigned long sample_rate);
+
+    PaStreamCallbackResult testSinewave(const GekkoFyre::Database::Settings::Audio::GkDevice &device,
+                                        const bool &is_output_dev = true, const bool &stereo = true);
+    PaStreamCallbackResult openPlaybackStream(const GekkoFyre::Database::Settings::Audio::GkDevice &device, const bool &stereo = true);
+    PaStreamCallbackResult openRecordStream(const GekkoFyre::Database::Settings::Audio::GkDevice &device, const bool &stereo = true);
 
     std::vector<Database::Settings::Audio::GkDevice> filterAudioDevices(const std::vector<Database::Settings::Audio::GkDevice> &audio_devices_vec);
     QString portAudioVersionNumber();
@@ -85,18 +92,10 @@ private:
     portaudio::System *portAudioSys;
     std::shared_ptr<DekodeDb> gkDekodeDb;
     std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
+    GekkoFyre::PaAudioBuf *gkAudioBuf_input;
+    GekkoFyre::PaAudioBuf *gkAudioBuf_output;
 
-    //
-    // Mutexes
-    //
-    std::mutex enumAudioMtx;
-
-    static int paTestCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
-                              const PaStreamCallbackTimeInfo* timeInfo, PaStreamCallbackFlags statusFlags,
-                              void *userData);
-    static void streamFinished(void *userData);
-    bool filterAudioInputEnum(const PaHostApiTypeId &host_api_type);
-    bool filterAudioOutputEnum(const PaHostApiTypeId &host_api_type);
+    bool filterAudioEnum(const PaHostApiTypeId &host_api_type);
 
 };
 };

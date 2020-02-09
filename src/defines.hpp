@@ -95,7 +95,7 @@ extern "C"
 
 namespace GekkoFyre {
 
-#define GK_EXIT_TIMEOUT (5)                             // The amount of time, in seconds, to leave 'Small World Deluxe' hanging upon exit before terminating forcefully!
+#define GK_EXIT_TIMEOUT (6)                             // The amount of time, in seconds, to leave 'Small World Deluxe' hanging upon exit before terminating forcefully!
 
 #define AUDIO_OUTPUT_MAX_VOL_SIMPLE (100)               // The maximum volume in simple units (i.e. non decible units)
 #define AUDIO_OUTPUT_CHANNEL_MAX_LIMIT (1024)
@@ -107,7 +107,8 @@ namespace GekkoFyre {
 #define AUDIO_TEST_SAMPLE_TABLE_SIZE (200)
 #define AUDIO_SPEC_FLOOR_DECIBELS (-180.0)
 
-#define AUDIO_MIC_INPUT_RECRD_SECS (1)
+#define AUDIO_BUFFER_STREAMING_SECS (15)
+#define AUDIO_SINE_WAVE_PLAYBACK_SECS (3)               // Play the sine wave test sample for three seconds!
 
 // Mostly regarding FFTW functions
 #define AUDIO_SIGNAL_LENGTH (2048)
@@ -218,13 +219,6 @@ namespace Database {
                 PaDeviceInfo *device_info;              // All information pertaining to this audio device
                 PaStreamParameters stream_parameters;   // Device-specific information such as the sample format, etc.
                 PaHostApiTypeId host_type_id;
-            };
-
-            struct paTestData {
-                float sine[AUDIO_TEST_SAMPLE_TABLE_SIZE];
-                int left_phase;
-                int right_phase;
-                std::string message;
             };
         }
     }

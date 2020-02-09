@@ -310,53 +310,81 @@ GkDevice DekodeDb::read_audio_details_settings(const bool &is_output_device)
     read_options.verify_checksums = true;
 
     if (is_output_device) {
+        //
         // Output audio device
+        //
         std::string output_id;
         std::string output_def_sample_rate;
         std::string output_channel_count;
         std::string output_sel_channels;
-        // std::string output_dev_name;
         std::string output_def_sys_device;
 
         status = db->Get(read_options, "AudioOutputId", &output_id);
         status = db->Get(read_options, "AudioOutputDefSampleRate", &output_def_sample_rate);
         status = db->Get(read_options, "AudioOutputChannelCount", &output_channel_count);
         status = db->Get(read_options, "AudioOutputSelChannels", &output_sel_channels);
-        // status = db->Get(read_options, "AudioOutputDevName", &output_dev_name);
         status = db->Get(read_options, "AudioOutputDefSysDevice", &output_def_sys_device);
 
         bool def_sys_device = boolStr(output_def_sys_device);
 
-        audio_device.dev_number = std::stoi(output_id);
-        audio_device.def_sample_rate = std::stod(output_def_sample_rate);
-        audio_device.dev_output_channel_count = std::stoi(output_channel_count);
-        audio_device.sel_channels = convertAudioChannelsInt(std::stoi(output_sel_channels));
+        //
+        // Test to see if the following are empty or not
+        //
+        if (!output_id.empty()) {
+            audio_device.dev_number = std::stoi(output_id);
+        }
+
+        if (!output_def_sample_rate.empty()) {
+            audio_device.def_sample_rate = std::stod(output_def_sample_rate);
+        }
+
+        if (!output_channel_count.empty()) {
+            audio_device.dev_output_channel_count = std::stoi(output_channel_count);
+        }
+
+        if (!output_sel_channels.empty()) {
+            audio_device.sel_channels = convertAudioChannelsInt(std::stoi(output_sel_channels));
+        }
+
         audio_device.default_dev = def_sys_device;
-        // audio_device.device_info->name = output_dev_name;
     } else {
+        //
         // Input audio device
+        //
         std::string input_id;
         std::string input_def_sample_rate;
         std::string input_channel_count;
         std::string input_sel_channels;
-        // std::string input_dev_name;
         std::string input_def_sys_device;
 
         status = db->Get(read_options, "AudioInputId", &input_id);
         status = db->Get(read_options, "AudioInputDefSampleRate", &input_def_sample_rate);
         status = db->Get(read_options, "AudioInputChannelCount", &input_channel_count);
         status = db->Get(read_options, "AudioInputSelChannels", &input_sel_channels);
-        // status = db->Get(read_options, "AudioInputDevName", &input_dev_name);
         status = db->Get(read_options, "AudioInputDefSysDevice", &input_def_sys_device);
 
         bool def_sys_device = boolStr(input_def_sys_device);
 
-        audio_device.dev_number = std::stoi(input_id);
-        audio_device.def_sample_rate = std::stod(input_def_sample_rate);
-        audio_device.dev_output_channel_count = std::stoi(input_channel_count);
-        audio_device.sel_channels = convertAudioChannelsInt(std::stoi(input_sel_channels));
+        //
+        // Test to see if the following are empty or not
+        //
+        if (!input_id.empty()) {
+            audio_device.dev_number = std::stoi(input_id);
+        }
+
+        if (!input_def_sample_rate.empty()) {
+            audio_device.def_sample_rate = std::stod(input_def_sample_rate);
+        }
+
+        if (!input_channel_count.empty()) {
+            audio_device.dev_output_channel_count = std::stoi(input_channel_count);
+        }
+
+        if (!input_sel_channels.empty()) {
+            audio_device.sel_channels = convertAudioChannelsInt(std::stoi(input_sel_channels));
+        }
+
         audio_device.default_dev = def_sys_device;
-        // audio_device.device_info->name = input_dev_name;
     }
 
     return audio_device;

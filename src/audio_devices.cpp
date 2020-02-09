@@ -36,6 +36,8 @@
  ****************************************************************************************************/
 
 #include "audio_devices.hpp"
+#include "pa_sinewave.hpp"
+#include <portaudiocpp/MemFunCallbackStream.hxx>
 #include <iostream>
 #include <cstdio>
 #include <exception>
@@ -60,11 +62,14 @@ using namespace Audio;
  * @note Core Audio APIs <https://docs.microsoft.com/en-us/windows/win32/api/_coreaudio/index>
  */
 AudioDevices::AudioDevices(portaudio::System &pa_sys, std::shared_ptr<DekodeDb> gkDb, std::shared_ptr<GekkoFyre::FileIo> filePtr,
+                           PaAudioBuf *inputBuf, PaAudioBuf *outputBuf,
                            QObject *parent)
 {
     portAudioSys = &pa_sys;
     gkDekodeDb = gkDb;
     gkFileIo = filePtr;
+    gkAudioBuf_input = inputBuf;
+    gkAudioBuf_output = outputBuf;
 }
 
 AudioDevices::~AudioDevices()
@@ -251,9 +256,10 @@ std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp()
     try {
         std::vector<GkDevice> audio_devices_vec;                        // The vector responsible for storage all audio device sessions
         int device_number = 0;                                          // The index number for the input/output audio device in question
+        std::mutex enum_audio_dev_mtx;
 
         for (portaudio::System::DeviceIterator i = portAudioSys->devicesBegin(); i != portAudioSys->devicesEnd(); ++i) {
-            std::lock_guard<std::mutex> audio_guard(enumAudioMtx);
+            std::lock_guard<std::mutex> audio_guard(enum_audio_dev_mtx);
 
             // Mark both global and API specific default audio devices
             bool default_disp = false;
@@ -427,92 +433,69 @@ std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp()
 }
 
 /**
- * @brief AudioDevices::testSinewave
- * @author PortAudio <http://portaudio.com/docs/v19-doxydocs/paex__sine_8c_source.html>
+ * @brief AudioDevices::testSinewave Performs a sinewave test on the given input/output audio device.
  * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param audio_device
- * @param outputParameters
- * @see GekkoFyre::AudioDevices::paTestCallback()
- * @return
+ * @param device The audio device in question to perform the sinewave test on.
+ * @param output_buffer Where the data for said test will be stored and outputted towards.
+ * @param table_size
+ * @param mono_sound Is this test going to be run in mono or stereo?
+ * @return If the sinewave test was successful or not, and if so, to carry on with normal processes afterwards.
  */
-void AudioDevices::testSinewave(const GkDevice &device)
+PaStreamCallbackResult AudioDevices::testSinewave(const GkDevice &device, const bool &is_output_dev, const bool &stereo)
 {
     try {
-        PaStream *stream;
-        PaError err;
-        paTestData data;
-        PaStreamParameters outputParameters;
-        PaStreamParameters inputParameters;
-        if (device.is_output_dev == true) {
-            outputParameters = device.stream_parameters;
+        std::mutex test_sinewave_mtx;
+        int numChannels = -1;
+        portaudio::SampleDataFormat prefOutputLatency = sampleFormatConvert(portAudioSys->deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)).defaultLowOutputLatency());
+        portaudio::SampleDataFormat prefInputLatency = sampleFormatConvert(portAudioSys->deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)).defaultLowInputLatency());
+        PaSinewave gkPaSinewave(AUDIO_TEST_SAMPLE_TABLE_SIZE);
+
+        std::lock_guard<std::mutex> lck_guard(test_sinewave_mtx);
+        if (stereo) {
+            // TRUE
+            numChannels = 2;
         } else {
-            inputParameters = device.stream_parameters;
+            // FALSE
+            numChannels = 1;
         }
 
-        qInfo() << tr("Audio Test: output sine wave. SR = %1, BufSize = %2").arg(QString::number(device.def_sample_rate))
-                   .arg(QString::number(AUDIO_FRAMES_PER_BUFFER));
-
-        // Initialise sinusoidal wavetable
-        for (int i = 0; i < AUDIO_TEST_SAMPLE_TABLE_SIZE; i++) {
-            data.sine[i] = ((float)sin(((double)i/(double)AUDIO_TEST_SAMPLE_TABLE_SIZE) * M_PI * 2.));
+        if (numChannels <= 0) {
+            throw std::invalid_argument(tr("Invalid number of audio channels provided for sinewave test!").toStdString());
         }
 
-        data.left_phase = data.right_phase = 0;
+        if (is_output_dev) {
+            //
+            // Speakers output stream
+            //
+            portaudio::DirectionSpecificStreamParameters outputParams(portAudioSys->deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)),
+                                                                   numChannels, sampleFormatConvert(device.def_sample_rate), false, prefInputLatency, nullptr);
+            portaudio::StreamParameters playbackParams(portaudio::DirectionSpecificStreamParameters::null(), outputParams, sampleFormatConvert(device.def_sample_rate),
+                                                       AUDIO_FRAMES_PER_BUFFER, paClipOff);
+            portaudio::MemFunCallbackStream<PaSinewave> streamPlaybackSine(playbackParams, gkPaSinewave, &PaSinewave::generate);
 
-        err = Pa_Initialize();
-        if (err != paNoError) {
-            portAudioErr(err);
-        }
+            streamPlaybackSine.start();
+            portAudioSys->sleep(AUDIO_SINE_WAVE_PLAYBACK_SECS * 1000); // Play the audio sample wave for the desired amount of seconds!
+            streamPlaybackSine.stop();
+            streamPlaybackSine.close();
 
-        if (device.is_output_dev == true) {
-            if (outputParameters.device == paNoDevice) {
-                std::cerr << tr("Error: No default output device has been chosen!").toStdString() << std::endl;
-                portAudioErr(err);
-            }
-
-            // http://portaudio.com/docs/v19-doxydocs/portaudio_8h.html#a443ad16338191af364e3be988014cbbe
-            err = Pa_OpenStream(&stream, nullptr, &outputParameters, device.def_sample_rate, paFramesPerBufferUnspecified, paClipOff, paTestCallback, &data);
-            if (err != paNoError) {
-                portAudioErr(err);
-            }
+            return paContinue;
         } else {
-            if (inputParameters.device == paNoDevice) {
-                std::cerr << tr("Error: No default output device has been chosen!").toStdString() << std::endl;
-                portAudioErr(err);
-            }
+            //
+            // Recording input stream
+            //
+            portaudio::DirectionSpecificStreamParameters inputParamsRecord(portAudioSys->deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)),
+                                                                           numChannels, sampleFormatConvert(device.def_sample_rate), false, prefOutputLatency, nullptr);
+            portaudio::StreamParameters recordParams(inputParamsRecord, portaudio::DirectionSpecificStreamParameters::null(), sampleFormatConvert(device.def_sample_rate),
+                                                     AUDIO_FRAMES_PER_BUFFER, paClipOff);
+            portaudio::MemFunCallbackStream<PaSinewave> streamRecordSine(recordParams, gkPaSinewave, &PaSinewave::generate);
 
-            // http://portaudio.com/docs/v19-doxydocs/portaudio_8h.html#a443ad16338191af364e3be988014cbbe
-            err = Pa_OpenStream(&stream, &inputParameters, nullptr, device.def_sample_rate, paFramesPerBufferUnspecified, paClipOff, paTestCallback, &data);
-            if (err != paNoError) {
-                portAudioErr(err);
-            }
+            streamRecordSine.start();
+            portAudioSys->sleep(AUDIO_SINE_WAVE_PLAYBACK_SECS * 1000); // Play the audio sample wave for the desired amount of seconds!
+            streamRecordSine.stop();
+            streamRecordSine.close();
+
+            return paContinue;
         }
-
-        qInfo() << QString::fromStdString(data.message);
-        err = Pa_SetStreamFinishedCallback(stream, &streamFinished);
-        if (err != paNoError) {
-            portAudioErr(err);
-        }
-
-        err = Pa_StartStream(stream);
-        if (err != paNoError) {
-            portAudioErr(err);
-        }
-
-        Pa_Sleep(AUDIO_TEST_SAMPLE_LENGTH_SEC * 1000);
-        err = Pa_StopStream(stream);
-        if (err != paNoError) {
-            portAudioErr(err);
-        }
-
-        err = Pa_CloseStream(stream);
-        if (err != paNoError) {
-            portAudioErr(err);
-        }
-
-        // http://portaudio.com/docs/v19-doxydocs/initializing_portaudio.html
-        // Pa_Terminate();
-        qInfo() << tr("Audio test sample finished.");
     } catch (const portaudio::PaException &e) {
         QMessageBox::warning(nullptr, tr("Error!"), tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText()), QMessageBox::Ok);
     } catch (const portaudio::PaCppException &e) {
@@ -523,7 +506,7 @@ void AudioDevices::testSinewave(const GkDevice &device)
         QMessageBox::warning(nullptr, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), QMessageBox::Ok);
     }
 
-    return;
+    return paAbort;
 }
 
 /**
@@ -574,6 +557,117 @@ portaudio::SampleDataFormat AudioDevices::sampleFormatConvert(const unsigned lon
     }
 
     return portaudio::INT16;
+}
+
+/**
+ * @brief AudioDevices::openPlaybackStream
+ * @param device
+ * @param stereo
+ * @return
+ */
+PaStreamCallbackResult AudioDevices::openPlaybackStream(const GkDevice &device, const bool &stereo)
+{
+    try {
+        std::mutex playback_stream_mtx;
+        int numChannels = -1;
+        portaudio::SampleDataFormat prefOutputLatency = sampleFormatConvert(portAudioSys->deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)).defaultLowOutputLatency());
+
+        std::lock_guard<std::mutex> lck_guard(playback_stream_mtx);
+        if (stereo) {
+            // TRUE
+            numChannels = 2;
+        } else {
+            // FALSE
+            numChannels = 1;
+        }
+
+        if (numChannels <= 0) {
+            throw std::invalid_argument(tr("Invalid number of audio channels provided for sinewave test!").toStdString());
+        }
+
+        //
+        // Speakers output stream
+        //
+        portaudio::DirectionSpecificStreamParameters outputParams(portAudioSys->deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)),
+                                                               numChannels, sampleFormatConvert(device.def_sample_rate), false, prefOutputLatency, nullptr);
+        portaudio::StreamParameters playbackParams(portaudio::DirectionSpecificStreamParameters::null(), outputParams, sampleFormatConvert(device.def_sample_rate),
+                                                   AUDIO_FRAMES_PER_BUFFER, paClipOff);
+        portaudio::MemFunCallbackStream<PaAudioBuf> streamPlayback(playbackParams, *gkAudioBuf_output, &PaAudioBuf::playbackCallback);
+
+        gkAudioBuf_output->resetPlayback();
+        streamPlayback.start();
+        while (streamPlayback.isActive()) {
+            portAudioSys->sleep(100);
+        }
+
+        streamPlayback.stop();
+        streamPlayback.close();
+
+        return paContinue;
+    } catch (const portaudio::PaException &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText()), QMessageBox::Ok);
+    } catch (const portaudio::PaCppException &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("A generic exception has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+    } catch (...) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), QMessageBox::Ok);
+    }
+
+    return paAbort;
+}
+
+/**
+ * @brief AudioDevices::openRecordStream
+ * @param device
+ * @param stereo
+ * @return
+ */
+PaStreamCallbackResult AudioDevices::openRecordStream(const GkDevice &device, const bool &stereo)
+{
+    try {
+        std::mutex record_stream_mtx;
+        int numChannels = -1;
+        portaudio::SampleDataFormat prefInputLatency = sampleFormatConvert(portAudioSys->deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)).defaultLowInputLatency());
+
+        std::lock_guard<std::mutex> lck_guard(record_stream_mtx);
+        if (stereo) {
+            // TRUE
+            numChannels = 2;
+        } else {
+            // FALSE
+            numChannels = 1;
+        }
+
+        if (numChannels <= 0) {
+            throw std::invalid_argument(tr("Invalid number of audio channels provided for sinewave test!").toStdString());
+        }
+
+        //
+        // Recording input stream
+        //
+        portaudio::DirectionSpecificStreamParameters inputParamsRecord(portAudioSys->deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)),
+                                                                       numChannels, sampleFormatConvert(device.def_sample_rate), false, prefInputLatency, nullptr);
+        portaudio::StreamParameters recordParams(inputParamsRecord, portaudio::DirectionSpecificStreamParameters::null(), sampleFormatConvert(device.def_sample_rate),
+                                                 AUDIO_FRAMES_PER_BUFFER, paClipOff);
+        portaudio::MemFunCallbackStream<PaAudioBuf> streamRecord(recordParams, *gkAudioBuf_input, &PaAudioBuf::recordCallback);
+
+        streamRecord.start();
+        streamRecord.stop();
+        streamRecord.close();
+
+        return paContinue;
+    } catch (const portaudio::PaException &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText()), QMessageBox::Ok);
+    } catch (const portaudio::PaCppException &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("A generic exception has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+    } catch (...) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), QMessageBox::Ok);
+    }
+
+    return paAbort;
 }
 
 /**
@@ -641,111 +735,12 @@ QString AudioDevices::portAudioVersionText()
 }
 
 /**
- * @brief AudioDevices::paTestCallback This is called by the PortAudio engine when audio is needed.
- * @author PortAudio <http://portaudio.com/docs/v19-doxydocs/paex__sine_8c_source.html>
- * @param inputBuffer
- * @param outputBuffer
- * @param framesPerBuffer
- * @param timeInfo
- * @param statusFlags
- * @param userData
- * @note It may called at the interrupt level on some machines so don't do anything that could mess up
- * the system like calling malloc() or free().
- * @see GekkoFyre::AudioDevices::enumAudioDevices(), GekkoFyre::AudioDevices::streamFinished()
- * @return
- */
-int AudioDevices::paTestCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
-                                 const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags,
-                                 void *userData)
-{
-    paTestData *data = (paTestData*)userData;
-    float *out = (float*)outputBuffer;
-
-    (void) timeInfo; // Prevent unused variable warnings
-    (void) statusFlags;
-    (void) inputBuffer;
-
-    for (unsigned long i = 0; i < framesPerBuffer; ++i) {
-        *out++ = data->sine[data->left_phase];  // Left channel
-        *out++ = data->sine[data->right_phase]; // Right channel
-        data->left_phase += 1;
-        if (data->left_phase >= AUDIO_TEST_SAMPLE_TABLE_SIZE) {
-            data->left_phase -= AUDIO_TEST_SAMPLE_TABLE_SIZE;
-        }
-
-        data->right_phase += 3; // Higher pitch so we can distinguish left and right
-
-        if (data->right_phase >= AUDIO_TEST_SAMPLE_TABLE_SIZE) {
-            data->right_phase -= AUDIO_TEST_SAMPLE_TABLE_SIZE;
-        }
-    }
-
-    return paContinue;
-}
-
-/**
- * @brief AudioDevices::streamFinished This routine is called by portaudio when playback is done.
- * @author PortAudio <http://portaudio.com/docs/v19-doxydocs/paex__sine_8c_source.html>
- * @param userData
- * @see GekkoFyre::AudioDevices::paTestCallback()
- */
-void AudioDevices::streamFinished(void *userData)
-{
-    paTestData *data = (paTestData *) userData;
-    qInfo() << tr("Stream Completed: %1").arg(QString::fromStdString(data->message));
-}
-
-/**
- * @brief AudioDevices::filterAudioInputEnum
+ * @brief AudioDevices::filterAudioEnum
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param host_api_type
  * @return
  */
-bool AudioDevices::filterAudioInputEnum(const PaHostApiTypeId &host_api_type)
-{
-    switch (host_api_type) {
-    case paInDevelopment:
-        return false;
-    case paDirectSound:
-        return false;
-    case paMME:
-        return true;
-    case paASIO:
-        return false;
-    case paSoundManager:
-        return false;
-    case paCoreAudio:
-        return false;
-    case paOSS:
-        return false;
-    case paALSA:
-        return false;
-    case paAL:
-        return false;
-    case paBeOS:
-        return false;
-    case paWDMKS:
-        return false;
-    case paJACK:
-        return false;
-    case paWASAPI:
-        return false;
-    case paAudioScienceHPI:
-        return false;
-    default:
-        return false;
-    }
-
-    return false;
-}
-
-/**
- * @brief AudioDevices::filterAudioOutputEnum
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param host_api_type
- * @return
- */
-bool AudioDevices::filterAudioOutputEnum(const PaHostApiTypeId &host_api_type)
+bool AudioDevices::filterAudioEnum(const PaHostApiTypeId &host_api_type)
 {
     switch (host_api_type) {
     case paInDevelopment:

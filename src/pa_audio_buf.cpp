@@ -37,8 +37,8 @@
 
 #include "pa_audio_buf.hpp"
 #include <iostream>
+#include <mutex>
 
-using namespace GekkoFyre;
 using namespace GekkoFyre;
 using namespace Database;
 using namespace Settings;
@@ -47,12 +47,13 @@ using namespace Audio;
 /**
  * @brief PaAudioBuf::PaAudioBuf processes the audio buffering and memory handling functions for PortAudio.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param parent
+ * @param size_hint
  */
 PaAudioBuf::PaAudioBuf(int size_hint) : std::vector<short>(rec_samples)
 {
-    if (size_hint > 0)
+    if (size_hint > 0) {
         rec_samples.reserve(size_hint);
+    }
 
     playback_iter = rec_samples.begin();
 }
@@ -61,26 +62,70 @@ PaAudioBuf::~PaAudioBuf()
 {}
 
 /**
+ * @brief PaAudioBuf::playbackCallback
+ * @author Keith Vertanen <https://www.keithv.com/software/portaudio/>
+ * @param input_buffer
+ * @param input_buffer
+ * @param frames_per_buffer
+ * @param time_info
+ * @param status_flags
+ * @return
+ */
+int PaAudioBuf::playbackCallback(const void *input_buffer, void *output_buffer, unsigned long frames_per_buffer, const PaStreamCallbackTimeInfo *time_info, PaStreamCallbackFlags status_flags)
+{
+    short**	data_mem = (short**)output_buffer;
+    unsigned long i_output = 0;
+    std::mutex playback_loop_mtx;
+
+    if (output_buffer == nullptr) {
+        return paComplete;
+    }
+
+    // Output samples until we either have satified the caller, or we run out
+    while (i_output < frames_per_buffer) {
+        std::lock_guard<std::mutex> lck_guard(playback_loop_mtx);
+        if (playback_iter == rec_samples.end()) {
+            // Fill out buffer with zeros
+            while (i_output < frames_per_buffer) {
+                data_mem[0][i_output] = (short)0;
+                i_output++;
+            }
+
+            return paComplete;
+        }
+
+        data_mem[0][i_output] = (short) *playback_iter;
+        playback_iter++;
+        i_output++;
+    }
+
+    return paContinue;
+}
+
+/**
  * @brief PaAudioBuf::recordCallback is responsible for copying PortAudio data (i.e. input audio device) to the
  * memory, asynchronously.
  * @author Keith Vertanen <https://www.keithv.com/software/portaudio/>
  * @param input_buffer
- * @param putput_buffer
+ * @param output_buffer
  * @param frames_per_buffer
  * @param time_info
  * @param status_flags
  * @param user_data
  * @return
  */
-int PaAudioBuf::recordCallback(const void* input_buffer, void* putput_buffer, unsigned long frames_per_buffer,
+int PaAudioBuf::recordCallback(const void* input_buffer, void* output_buffer, unsigned long frames_per_buffer,
                           const PaStreamCallbackTimeInfo* time_info, PaStreamCallbackFlags status_flags)
 {
     short** data_mem = (short**)input_buffer;
+    std::mutex record_loop_mtx;
+
     if (input_buffer == nullptr) {
         return paContinue;
     }
 
     for (unsigned long i = 0; i < frames_per_buffer; i++) {
+        std::lock_guard<std::mutex> lck_guard(record_loop_mtx);
         rec_samples.push_back(data_mem[0][i]);
     }
 
