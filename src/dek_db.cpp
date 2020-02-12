@@ -168,7 +168,7 @@ void DekodeDb::write_audio_device_settings(const GkDevice &value, const QString 
 
     if (is_output_device) {
         // Unique identifier for the chosen output audio device
-        batch.Put("AudioOutputId", std::to_string(value.dev_number));
+        batch.Put("AudioOutputId", std::to_string(value.stream_parameters.device));
         batch.Put("AudioOutputDefSampleRate", std::to_string(value.def_sample_rate));
         batch.Put("AudioOutputChannelCount", std::to_string(value.dev_output_channel_count));
         batch.Put("AudioOutputSelChannels", std::to_string(value.sel_channels));
@@ -180,7 +180,7 @@ void DekodeDb::write_audio_device_settings(const GkDevice &value, const QString 
         batch.Put("AudioOutputDefSysDevice", is_default);
     } else {
         // Unique identifier for the chosen input audio device
-        batch.Put("AudioInputId", std::to_string(value.dev_number));
+        batch.Put("AudioInputId", std::to_string(value.stream_parameters.device));
         batch.Put("AudioInputDefSampleRate", std::to_string(value.def_sample_rate));
         batch.Put("AudioInputChannelCount", std::to_string(value.dev_input_channel_count));
         batch.Put("AudioInputSelChannels", std::to_string(value.sel_channels));
@@ -289,6 +289,8 @@ int DekodeDb::read_audio_device_settings(const bool &is_output_device)
     int ret_val = 0;
     if (!value.empty()) {
             ret_val = std::stoi(value);
+    } else {
+        ret_val = -1;
     }
 
     return ret_val;

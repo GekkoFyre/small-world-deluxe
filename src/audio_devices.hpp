@@ -74,6 +74,7 @@ public:
     std::vector<double> enumSupportedStdSampleRates(const PaStreamParameters *inputParameters,
                                                     const PaStreamParameters *outputParameters);
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> enumAudioDevicesCpp();
+    GekkoFyre::Database::Settings::Audio::GkDevice gatherAudioDeviceDetails(const portaudio::Device &pa_device);
     void portAudioErr(const PaError &err);
     void volumeSetting();
     double vuMeter();
