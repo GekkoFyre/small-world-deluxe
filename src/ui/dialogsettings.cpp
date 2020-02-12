@@ -210,10 +210,20 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         //
         int curr_input_device = ui->comboBox_soundcard_input->currentIndex();
         if (curr_input_device == 0) {
+            //
             // User has not chosen an input audio device preference yet!
+            // Therefore choose the default device on the system...
+            //
+            for (auto device: avail_input_audio_devs.toStdMap()) {
+                if (!device.second.is_output_dev) {
+                    if (device.second.default_dev) {
+                        curr_input_device = device.first;
+                    }
+                }
+            }
         } else {
             // An input audio device preference has been made...
-            if (curr_input_device != 0) {
+            if (curr_input_device > 0) {
                 for (auto device: avail_input_audio_devs.toStdMap()) {
                     if (curr_input_device == device.first) {
                         // We now have our currently selected input audio device
@@ -226,10 +236,20 @@ void DialogSettings::on_pushButton_submit_config_clicked()
 
         int curr_output_device = ui->comboBox_soundcard_output->currentIndex();
         if (curr_output_device == 0) {
-            // User has not chosen an output audio device preference yet!
+            //
+            // User has not chosen an input audio device preference yet!
+            // Therefore choose the default device on the system...
+            //
+            for (auto device: avail_input_audio_devs.toStdMap()) {
+                if (device.second.is_output_dev) {
+                    if (device.second.default_dev) {
+                        curr_input_device = device.first;
+                    }
+                }
+            }
         } else {
             // An output audio device preference has been made...
-            if (curr_output_device != 0) {
+            if (curr_output_device > 0) {
                 for (auto device: avail_output_audio_devs.toStdMap()) {
                     if (curr_output_device == device.first) {
                         // We now have our currently selected output audio device
@@ -350,53 +370,40 @@ void DialogSettings::prefill_audio_devices(const std::vector<GkDevice> &audio_de
         ui->comboBox_soundcard_input->insertItem(0, tr("No audio device selected"));
         ui->comboBox_soundcard_output->insertItem(0, tr("No audio device selected"));
 
-        int input_audio_devs = 0;
-        int output_audio_devs = 0;
-        int output_dev_identifier = gkDekodeDb->read_audio_device_settings(true);
-        int input_dev_identifier = gkDekodeDb->read_audio_device_settings(false);
+        int output_identifier = gkDekodeDb->read_audio_device_settings(true);
+        int input_identifier = gkDekodeDb->read_audio_device_settings(false);
 
-        // List audio sound-cards/chipsets by device
         for (const auto &device: audio_devices_vec) {
-            if (!device.is_output_dev) {
-                // Audio device is an input
-                ++input_audio_devs;
-
-                std::string audio_dev_name = device.device_info->name;
-                if (!audio_dev_name.empty()) {
-                    ui->comboBox_soundcard_input->insertItem(input_audio_devs, QString::fromStdString(audio_dev_name));
-                    avail_input_audio_devs.insert(input_audio_devs, device);
-                }
-
-                if (input_audio_devs == 1) {
-                    chosen_input_audio_dev = device;
-                }
-            } else if (device.is_output_dev == true) {
+            if (device.is_output_dev) {
+                //
                 // Audio device is an output
-                ++output_audio_devs;
-
+                //
                 std::string audio_dev_name = device.device_info->name;
                 if (!audio_dev_name.empty()) {
-                    ui->comboBox_soundcard_output->insertItem(output_audio_devs, QString::fromStdString(audio_dev_name));
-                    avail_output_audio_devs.insert(output_audio_devs, device);
-                }
-
-                if (output_audio_devs == 1) {
-                    chosen_output_audio_dev = device;
+                    ui->comboBox_soundcard_output->insertItem(device.stream_parameters.device, QString::fromStdString(audio_dev_name));
+                    avail_output_audio_devs.insert(device.stream_parameters.device, device);
                 }
             } else {
-                // boost::tribool::indeterminate_value
+                //
+                // Audio device is an input
+                //
+                std::string audio_dev_name = device.device_info->name;
+                if (!audio_dev_name.empty()) {
+                    ui->comboBox_soundcard_input->insertItem(device.stream_parameters.device, QString::fromStdString(audio_dev_name));
+                    avail_input_audio_devs.insert(device.stream_parameters.device, device);
+                }
             }
         }
 
         // Select the user's chosen audio input devices, if one has been previously chosen
         // and saved as a setting...
-        for (const auto &device: avail_input_audio_devs.toStdMap()) {
-            if (!device.second.is_output_dev) { // Do not change this! Weird bugs occur otherwise...
-                if ((input_dev_identifier > 0) && !(input_dev_identifier < 0)) {
+        for (const auto &input_device: avail_input_audio_devs.toStdMap()) {
+            if (!input_device.second.is_output_dev) { // Do not change this! Weird bugs occur otherwise...
+                if ((input_identifier >= 0) && !(input_identifier < 0)) {
                     // We have a saved input device within our settings database
-                    if (device.second.dev_number == input_dev_identifier) {
-                        ui->comboBox_soundcard_input->setCurrentIndex(device.first);
-                        chosen_input_audio_dev = device.second;
+                    if (input_device.second.dev_number == input_identifier) {
+                        ui->comboBox_soundcard_input->setCurrentIndex(input_device.first);
+                        chosen_input_audio_dev = input_device.second;
                     }
                 }
             }
@@ -404,13 +411,13 @@ void DialogSettings::prefill_audio_devices(const std::vector<GkDevice> &audio_de
 
         // Select the user's chosen audio output devices, if one has been previously chosen
         // and saved as a setting...
-        for (const auto &device: avail_output_audio_devs.toStdMap()) {
-            if (device.second.is_output_dev) { // Do not change this! Weird bugs occur otherwise...
-                if ((output_dev_identifier > 0) && !(output_dev_identifier < 0)) {
+        for (const auto &output_device: avail_output_audio_devs.toStdMap()) {
+            if (output_device.second.is_output_dev) { // Do not change this! Weird bugs occur otherwise...
+                if ((output_identifier >= 0) && !(output_identifier < 0)) {
                     // We have a saved output device within our settings database
-                    if (device.second.dev_number == output_dev_identifier) {
-                        ui->comboBox_soundcard_output->setCurrentIndex(device.first);
-                        chosen_output_audio_dev = device.second;
+                    if (output_device.second.dev_number == output_identifier) {
+                        ui->comboBox_soundcard_output->setCurrentIndex(output_device.first);
+                        chosen_output_audio_dev = output_device.second;
                     }
                 }
             }

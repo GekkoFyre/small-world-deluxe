@@ -85,95 +85,66 @@ AudioDevices::~AudioDevices()
  */
 std::vector<GkDevice> AudioDevices::initPortAudio()
 {
-    std::vector<GkDevice> enum_devices;
-    std::vector<GkDevice> device_export;
+    try {
+        std::vector<GkDevice> enum_devices;
+        std::vector<GkDevice> device_export;
 
-    // The number of this device; this was saved to the Google LevelDB database as the user's preference
-    int chosen_output_dev = 0;
-    int chosen_input_dev = 0;
+        // The number of this device; this was saved to the Google LevelDB database as the user's preference
+        int chosen_output_dev = 0;
+        int chosen_input_dev = 0;
 
-    enum_devices = filterAudioDevices(enumAudioDevicesCpp());
-    chosen_output_dev = gkDekodeDb->read_audio_device_settings(true);
-    chosen_input_dev = gkDekodeDb->read_audio_device_settings(false);
+        chosen_output_dev = gkDekodeDb->read_audio_device_settings(true);
+        chosen_input_dev = gkDekodeDb->read_audio_device_settings(false);
 
-    if ((chosen_output_dev == 0) && (chosen_input_dev == 0)) {
-        // No user preferences have been saved yet!
         bool output_dev_exists = false;
         bool input_dev_exists = false;
         enum_devices = defaultAudioDevices();
-        for (const auto &device: enum_devices) {
-            if ((device.is_output_dev == true) && (output_dev_exists == false)) {
-                // We are dealing with an output device
-                device_export.push_back(device);
-                output_dev_exists = true;
-            }
-
-            if ((device.is_output_dev) == false && (input_dev_exists == false)) {
-                // We are dealing with an input device
-                device_export.push_back(device);
-                input_dev_exists = true;
-            }
-        }
-    } else {
-        // User preferences have indeed been saved!
-        GkDevice output_device = gkDekodeDb->read_audio_details_settings(true);
-        GkDevice input_device = gkDekodeDb->read_audio_details_settings(false);
-
-        size_t total_output_devices = 0;
-        size_t total_input_devices = 0;
-        size_t output_dev_counter = 0;
-        size_t input_dev_counter = 0;
-        size_t total_audio_devics = enum_devices.size();
-
-        // Count the number of input and output audio devices that have been enumerated
-        for (const auto &device: enum_devices) {
-            if ((chosen_output_dev > 0) && (output_device.is_output_dev == true)) { // Check to make sure that the preference does exist
-                ++output_dev_counter;
-            }
-
-            if ((chosen_input_dev > 0) && (input_device.is_output_dev == false)) { // Check to make sure that the preference does exist
-                ++input_dev_counter;
-            }
-        }
-
-        if (output_dev_counter <= total_audio_devics) {
-            total_output_devices = output_dev_counter;
-        } else {
-            throw std::runtime_error(tr("There is a miscount in the number of output audio devices!").toStdString());
-        }
-
-        if (input_dev_counter <= total_audio_devics) {
-            total_input_devices = input_dev_counter;
-        } else {
-            throw std::runtime_error(tr("There is a miscount in the number of input audio devices!").toStdString());
-        }
-
-        size_t loop_counter = 0;
-        for (const auto &device: enum_devices) {
-            if (chosen_output_dev != 0) { // Check to make sure that the preference does exist
-                if ((chosen_output_dev == device.dev_number) || (total_output_devices <= loop_counter)) {
-                    // Grab the saved user preference for the output audio device
+        if (chosen_output_dev < 0) {
+            //
+            // Output audio device
+            //
+            for (const auto &device: enum_devices) {
+                if (device.default_dev && device.is_output_dev && !output_dev_exists) {
                     device_export.push_back(device);
+                    output_dev_exists = true;
                 }
             }
+        } else {
+            // Gather more details about the chosen audio device
+            int output_dev = gkDekodeDb->read_audio_device_settings(true);
+            portaudio::Device &index = portAudioSys->deviceByIndex(output_dev);
+            GkDevice output_dev_details = gatherAudioDeviceDetails(index);
+        }
 
-            if (chosen_input_dev != 0) { // Check to make sure that the preference does exist
-                if ((chosen_input_dev == device.dev_number) || (total_input_devices <= loop_counter)) {
-                    // Grab the saved user preference for the input audio device
+        if (chosen_input_dev < 0) {
+            //
+            // Input audio device
+            //
+            for (const auto &device: enum_devices) {
+                if (device.default_dev && !device.is_output_dev && !input_dev_exists) {
                     device_export.push_back(device);
+                    input_dev_exists = true;
                 }
             }
-
-            ++loop_counter;
-
-            // Exit the loop early if we have all of our audio devices
-            if ((device_export.size() >= 2) || (total_output_devices >= loop_counter) || (total_input_devices >= loop_counter)) {
-                break;
-            }
+        } else {
+            // Gather more details about the chosen audio device
+            int input_dev = gkDekodeDb->read_audio_device_settings(false);
+            portaudio::Device &index = portAudioSys->deviceByIndex(input_dev);
+            GkDevice input_dev_details = gatherAudioDeviceDetails(index);
         }
+
+        return device_export;
+    } catch (const portaudio::PaException &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText()), QMessageBox::Ok);
+    } catch (const portaudio::PaCppException &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("A generic exception has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+    } catch (...) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), QMessageBox::Ok);
     }
 
-    return device_export;
+    return std::vector<GkDevice>();
 }
 
 /**
@@ -433,13 +404,41 @@ std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp()
 }
 
 /**
+ * @brief AudioDevices::gatherAudioDeviceDetails Gathers further details on the audio device in question.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param device_index The index of the audio device in question.
+ * @return A GkDevice struct is returned.
+ */
+GkDevice AudioDevices::gatherAudioDeviceDetails(const portaudio::Device &pa_device)
+{
+    try {
+        auto enum_devices_vec = enumAudioDevicesCpp();
+
+        for (const auto &device: enum_devices_vec) {
+            if (pa_device.index() == device.stream_parameters.device) {
+                return device;
+            }
+        }
+    } catch (const portaudio::PaException &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText()), QMessageBox::Ok);
+    } catch (const portaudio::PaCppException &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("A generic exception has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+    } catch (...) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), QMessageBox::Ok);
+    }
+
+    return GkDevice();
+}
+
+/**
  * @brief AudioDevices::testSinewave Performs a sinewave test on the given input/output audio device.
- * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param device The audio device in question to perform the sinewave test on.
- * @param output_buffer Where the data for said test will be stored and outputted towards.
- * @param table_size
- * @param mono_sound Is this test going to be run in mono or stereo?
- * @return If the sinewave test was successful or not, and if so, to carry on with normal processes afterwards.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param device
+ * @param is_output_dev
+ * @param stereo
+ * @return
  */
 PaStreamCallbackResult AudioDevices::testSinewave(const GkDevice &device, const bool &is_output_dev, const bool &stereo)
 {
@@ -469,9 +468,9 @@ PaStreamCallbackResult AudioDevices::testSinewave(const GkDevice &device, const 
             //
             portaudio::DirectionSpecificStreamParameters outputParams(portAudioSys->deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)),
                                                                    numChannels, sampleFormatConvert(device.def_sample_rate), false, prefInputLatency, nullptr);
-            portaudio::StreamParameters playbackParams(portaudio::DirectionSpecificStreamParameters::null(), outputParams, sampleFormatConvert(device.def_sample_rate),
-                                                       AUDIO_FRAMES_PER_BUFFER, paClipOff);
-            portaudio::MemFunCallbackStream<PaSinewave> streamPlaybackSine(playbackParams, gkPaSinewave, &PaSinewave::generate);
+            portaudio::StreamParameters playbackBeep(portaudio::DirectionSpecificStreamParameters::null(), outputParams, sampleFormatConvert(device.def_sample_rate),
+                                                     AUDIO_FRAMES_PER_BUFFER, paClipOff);
+            portaudio::MemFunCallbackStream<PaSinewave> streamPlaybackSine(playbackBeep, gkPaSinewave, &PaSinewave::generate);
 
             streamPlaybackSine.start();
             portAudioSys->sleep(AUDIO_SINE_WAVE_PLAYBACK_SECS * 1000); // Play the audio sample wave for the desired amount of seconds!
@@ -487,6 +486,7 @@ PaStreamCallbackResult AudioDevices::testSinewave(const GkDevice &device, const 
                                                                            numChannels, sampleFormatConvert(device.def_sample_rate), false, prefOutputLatency, nullptr);
             portaudio::StreamParameters recordParams(inputParamsRecord, portaudio::DirectionSpecificStreamParameters::null(), sampleFormatConvert(device.def_sample_rate),
                                                      AUDIO_FRAMES_PER_BUFFER, paClipOff);
+
             portaudio::MemFunCallbackStream<PaSinewave> streamRecordSine(recordParams, gkPaSinewave, &PaSinewave::generate);
 
             streamRecordSine.start();
@@ -698,7 +698,11 @@ std::vector<GkDevice> AudioDevices::filterAudioDevices(const std::vector<GkDevic
         for (const auto &name: device_name_list) {
             for (const auto &device: audio_devices_vec) {
                 if (std::strcmp(name.c_str(), device.device_info->name) == 0) {
-                    unique_devices.push_back(device);
+                    if (device.device_info->maxInputChannels > 0 || device.device_info->maxOutputChannels > 0) {
+                        if (device.device_info->hostApi > 0) {
+                            unique_devices.push_back(device);
+                        }
+                    }
                 }
             }
         }
