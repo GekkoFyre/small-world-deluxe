@@ -97,11 +97,14 @@ DialogSettings::DialogSettings(std::shared_ptr<DekodeDb> dkDb, std::shared_ptr<G
         prefill_avail_com_ports(status_com_ports);
         prefill_avail_usb_ports(status_usb_devices);
 
-        std::vector<GkDevice> audio_devices = gkAudioDevices->filterAudioDevices(gkAudioDevices->enumAudioDevicesCpp());
+        portaudio::AutoSystem autoSys;
+        portAudioSys = new portaudio::System(portaudio::System::instance());
+
+        std::vector<GkDevice> audio_devices = gkAudioDevices->filterAudioDevices(gkAudioDevices->enumAudioDevicesCpp(*portAudioSys));
         prefill_audio_devices(audio_devices);
 
-        ui->label_pa_version->setText(gkAudioDevices->portAudioVersionNumber());
-        ui->textEdit_pa_version_text->setText(gkAudioDevices->portAudioVersionText());
+        ui->label_pa_version->setText(gkAudioDevices->portAudioVersionNumber(*portAudioSys));
+        ui->textEdit_pa_version_text->setText(gkAudioDevices->portAudioVersionText(*portAudioSys));
 
         prefill_com_baud_speed(GekkoFyre::AmateurRadio::com_baud_rates::BAUD1200);
         prefill_com_baud_speed(GekkoFyre::AmateurRadio::com_baud_rates::BAUD2400);
@@ -115,8 +118,14 @@ DialogSettings::DialogSettings(std::shared_ptr<DekodeDb> dkDb, std::shared_ptr<G
         if (gkDekodeDb.get() != nullptr) {
             read_settings();
         }
+    } catch (const portaudio::PaException &e) {
+        QMessageBox::warning(this, tr("Error!"), tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText()), QMessageBox::Ok);
+    } catch (const portaudio::PaCppException &e) {
+        QMessageBox::warning(this, tr("Error!"), tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
     } catch (const std::exception &e) {
-        QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
+        QMessageBox::warning(this, tr("Error!"), tr("A generic exception has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+    } catch (...) {
+        QMessageBox::warning(this, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), QMessageBox::Ok);
     }
 }
 
@@ -128,6 +137,7 @@ DialogSettings::~DialogSettings()
 {
     delete rig_comboBox;
     delete mfg_comboBox;
+    portAudioSys->terminate();
     delete ui;
 }
 
@@ -364,7 +374,7 @@ QMultiMap<rig_model_t, std::tuple<QString, QString, AmateurRadio::rig_type>> Dia
  * @param audio_devices The available audio devices on the user's system, as a typical std::vector.
  * @see GekkoFyre::AudioDevices::enumAudioDevices()
  */
-void DialogSettings::prefill_audio_devices(const std::vector<GkDevice> &audio_devices_vec)
+void DialogSettings::prefill_audio_devices(std::vector<GkDevice> audio_devices_vec)
 {
     try {
         ui->comboBox_soundcard_input->insertItem(0, tr("No audio device selected"));
@@ -373,25 +383,31 @@ void DialogSettings::prefill_audio_devices(const std::vector<GkDevice> &audio_de
         int output_identifier = gkDekodeDb->read_audio_device_settings(true);
         int input_identifier = gkDekodeDb->read_audio_device_settings(false);
 
-        for (const auto &device: audio_devices_vec) {
-            if (device.is_output_dev) {
-                //
-                // Audio device is an output
-                //
-                std::string audio_dev_name = device.device_info->name;
-                if (!audio_dev_name.empty()) {
-                    ui->comboBox_soundcard_output->insertItem(device.stream_parameters.device, QString::fromStdString(audio_dev_name));
-                    avail_output_audio_devs.insert(device.stream_parameters.device, device);
+        for (const auto device: audio_devices_vec) {
+            if (device.device_info->hostApi >= 0) {
+                if (device.is_output_dev) {
+                    //
+                    // Audio device is an output
+                    //
+                    std::string audio_dev_name = device.device_info->name;
+                    if (!audio_dev_name.empty()) {
+                        ui->comboBox_soundcard_output->insertItem(device.stream_parameters.device, QString::fromStdString(audio_dev_name),
+                                                                  device.stream_parameters.device);
+                        avail_output_audio_devs.insert(device.stream_parameters.device, device);
+                    }
+                } else {
+                    //
+                    // Audio device is an input
+                    //
+                    std::string audio_dev_name = device.device_info->name;
+                    if (!audio_dev_name.empty()) {
+                        ui->comboBox_soundcard_input->insertItem(device.stream_parameters.device, QString::fromStdString(audio_dev_name),
+                                                                 device.stream_parameters.device);
+                        avail_input_audio_devs.insert(device.stream_parameters.device, device);
+                    }
                 }
             } else {
-                //
-                // Audio device is an input
-                //
-                std::string audio_dev_name = device.device_info->name;
-                if (!audio_dev_name.empty()) {
-                    ui->comboBox_soundcard_input->insertItem(device.stream_parameters.device, QString::fromStdString(audio_dev_name));
-                    avail_input_audio_devs.insert(device.stream_parameters.device, device);
-                }
+                throw std::runtime_error(tr("Given audio devices are nullptr! Small World Deluxe may not work correctly if you continue...").toStdString());
             }
         }
 
@@ -422,8 +438,14 @@ void DialogSettings::prefill_audio_devices(const std::vector<GkDevice> &audio_de
                 }
             }
         }
+    } catch (const portaudio::PaException &e) {
+        QMessageBox::warning(this, tr("Error!"), tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText()), QMessageBox::Ok);
+    } catch (const portaudio::PaCppException &e) {
+        QMessageBox::warning(this, tr("Error!"), tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
     } catch (const std::exception &e) {
-        QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
+        QMessageBox::warning(this, tr("Error!"), tr("A generic exception has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+    } catch (...) {
+        QMessageBox::warning(this, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), QMessageBox::Ok);
     }
 
     return;
@@ -777,6 +799,11 @@ void DialogSettings::on_pushButton_input_sound_test_clicked()
 void DialogSettings::on_pushButton_output_sound_test_clicked()
 {
     try {
+        if (ui->comboBox_soundcard_output->currentIndex() == 0) {
+            QMessageBox::information(this, tr("Information"), tr("You may not perform an audio test on this dialog choice!"), QMessageBox::Ok);
+            return;
+        }
+
         QMessageBox msgBox;
         msgBox.setWindowTitle(tr("Information"));
         msgBox.setText(tr("Upon accepting this informative message, a short sinusoidal audio tone will play for 3 seconds. Please "
@@ -788,15 +815,21 @@ void DialogSettings::on_pushButton_output_sound_test_clicked()
         int ret = msgBox.exec();
 
         if (ret == QMessageBox::Ok) {
-            gkAudioDevices->testSinewave(chosen_output_audio_dev);
+            gkAudioDevices->testSinewave(*portAudioSys, chosen_output_audio_dev);
             QMessageBox::information(this, tr("Finished"), tr("The audio test has now finished."), QMessageBox::Ok);
         } else if (ret == QMessageBox::Abort) {
             QMessageBox::information(this, tr("Aborted"), tr("The operation has been terminated."), QMessageBox::Ok);
         } else {
             return;
         }
+    } catch (const portaudio::PaException &e) {
+        QMessageBox::warning(this, tr("Error!"), tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText()), QMessageBox::Ok);
+    } catch (const portaudio::PaCppException &e) {
+        QMessageBox::warning(this, tr("Error!"), tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
     } catch (const std::exception &e) {
-        QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
+        QMessageBox::warning(this, tr("Error!"), tr("A generic exception has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+    } catch (...) {
+        QMessageBox::warning(this, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), QMessageBox::Ok);
     }
 
     return;
@@ -827,9 +860,28 @@ void DialogSettings::on_comboBox_soundcard_input_currentIndexChanged(int index)
  */
 void DialogSettings::on_comboBox_soundcard_output_currentIndexChanged(int index)
 {
-    for (const auto &device: avail_output_audio_devs.toStdMap()) {
-        if (device.first == index) {
-            chosen_output_audio_dev = device.second;
+    Q_UNUSED(index);
+    try {
+        int actual_index = ui->comboBox_soundcard_output->currentData().toInt();
+        for (const auto &device: avail_output_audio_devs.toStdMap()) {
+            if (device.first == actual_index) {
+                GkDevice chosen_output;
+                chosen_output = device.second;
+                chosen_output = gkAudioDevices->gatherAudioDeviceDetails(*portAudioSys, actual_index);
+                chosen_output_audio_dev = chosen_output;
+
+                return;
+            }
         }
+    } catch (const portaudio::PaException &e) {
+        QMessageBox::warning(this, tr("Error!"), tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText()), QMessageBox::Ok);
+    } catch (const portaudio::PaCppException &e) {
+        QMessageBox::warning(this, tr("Error!"), tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), tr("A generic exception has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+    } catch (...) {
+        QMessageBox::warning(this, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), QMessageBox::Ok);
     }
+
+    return;
 }

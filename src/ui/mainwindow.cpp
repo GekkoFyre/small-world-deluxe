@@ -112,10 +112,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         btn_radio_tune = false;
         btn_radio_monitor = false;
 
-        // Initialize the PortAudio subsystem!
-        portaudio::AutoSystem auto_sys;                                         // For some weird reason unbeknownst to us, this has to exist
-        portaudio_sys = new portaudio::System(portaudio::System::instance());   // Begin an audio device session
-
         rig_load_all_backends();
 
         // Create path to file-database
@@ -143,8 +139,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize our own PortAudio libraries and associated buffers!
         //
-        gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(*portaudio_sys, dekodeDb, fileIo, gkAudioBuf_input, gkAudioBuf_output, this);
-        pref_audio_devices = gkAudioDevices->initPortAudio();
+        portaudio::AutoSystem autoSys;
+        portaudio::System &portAudioSys = portaudio::System::instance();
+
+        gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(dekodeDb, fileIo, gkAudioBuf_input, gkAudioBuf_output, this);
+        pref_audio_devices = gkAudioDevices->initPortAudio(portAudioSys);
+        portAudioSys.terminate();
         GkDevice output_dev;
         GkDevice input_dev;
 
@@ -264,8 +264,6 @@ MainWindow::~MainWindow()
     if (timer != nullptr) {
         delete timer;
     }
-
-    portaudio_sys->terminate();
 
     if (radio != nullptr) {
         if (radio->is_open) {

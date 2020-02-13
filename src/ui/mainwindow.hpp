@@ -137,7 +137,9 @@ private:
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GekkoFyre::RadioLibs> gkRadioLibs;
 
-    portaudio::System *portaudio_sys;
+    //
+    // PortAudio initialization and buffers
+    //
     GekkoFyre::PaAudioBuf *gkAudioBuf_input;
     GekkoFyre::PaAudioBuf *gkAudioBuf_output;
 
