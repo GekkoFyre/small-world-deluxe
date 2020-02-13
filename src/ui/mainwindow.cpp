@@ -433,7 +433,7 @@ void MainWindow::appTerminating()
     // https://docs.microsoft.com/en-us/windows/win32/dlgbox/using-dialog-boxes
     // https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-messagebox
     //
-    MessageBox(nullptr, tr("Please wait as the application terminates.").toStdString().c_str(), tr("Aborting...").toStdString().c_str(), MB_ICONINFORMATION);
+    MessageBox(nullptr, tr("Please wait as the application terminates.").toStdString().c_str(), tr("Aborting...").toStdString().c_str(), MB_ICONINFORMATION | MB_OK);
     #elif __linux__
     // TODO: Program a version for Linux/Unix systems!
     #endif

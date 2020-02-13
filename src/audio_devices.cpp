@@ -451,8 +451,8 @@ PaStreamCallbackResult AudioDevices::testSinewave(portaudio::System &portAudioSy
             throw std::runtime_error(tr("The PortAudio library has not been properly initialized!").toStdString());
         }
 
-        PaTime prefOutputLatency = portAudioSys.deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)).defaultLowOutputLatency();
-        PaTime prefInputLatency = portAudioSys.deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)).defaultLowInputLatency();
+        PaTime prefOutputLatency = portAudioSys.deviceByIndex(device.stream_parameters.device).defaultLowOutputLatency();
+        PaTime prefInputLatency = portAudioSys.deviceByIndex(device.stream_parameters.device).defaultLowInputLatency();
         PaSinewave gkPaSinewave(AUDIO_TEST_SAMPLE_TABLE_SIZE);
 
         if (is_output_dev) {
@@ -463,8 +463,8 @@ PaStreamCallbackResult AudioDevices::testSinewave(portaudio::System &portAudioSy
                 throw std::invalid_argument(tr("Invalid number of output channels provided!").toStdString());
             }
 
-            portaudio::DirectionSpecificStreamParameters outputParams(portAudioSys.deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)),
-                                                                   device.dev_output_channel_count, sampleFormatConvert(device.def_sample_rate), false, prefOutputLatency, nullptr);
+            portaudio::DirectionSpecificStreamParameters outputParams(portAudioSys.deviceByIndex(device.stream_parameters.device),
+                                                                   device.dev_output_channel_count, portaudio::FLOAT32, false, prefOutputLatency, nullptr);
             portaudio::StreamParameters playbackBeep(portaudio::DirectionSpecificStreamParameters::null(), outputParams, device.def_sample_rate,
                                                      AUDIO_FRAMES_PER_BUFFER, paClipOff);
             portaudio::MemFunCallbackStream<PaSinewave> streamPlaybackSine(playbackBeep, gkPaSinewave, &PaSinewave::generate);
@@ -483,7 +483,7 @@ PaStreamCallbackResult AudioDevices::testSinewave(portaudio::System &portAudioSy
                 throw std::invalid_argument(tr("Invalid number of input channels provided!").toStdString());
             }
 
-            portaudio::DirectionSpecificStreamParameters inputParamsRecord(portAudioSys.deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)),
+            portaudio::DirectionSpecificStreamParameters inputParamsRecord(portAudioSys.deviceByIndex(device.stream_parameters.device),
                                                                            device.dev_input_channel_count, sampleFormatConvert(device.def_sample_rate), false, prefInputLatency, nullptr);
             portaudio::StreamParameters recordParams(inputParamsRecord, portaudio::DirectionSpecificStreamParameters::null(), device.def_sample_rate,
                                                      AUDIO_FRAMES_PER_BUFFER, paClipOff);
@@ -573,7 +573,7 @@ PaStreamCallbackResult AudioDevices::openPlaybackStream(portaudio::System &portA
         if (gkAudioBuf_output != nullptr) {
             std::mutex playback_stream_mtx;
             int numChannels = -1;
-            portaudio::SampleDataFormat prefOutputLatency = sampleFormatConvert(portAudioSys.deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)).defaultLowOutputLatency());
+            portaudio::SampleDataFormat prefOutputLatency = sampleFormatConvert(portAudioSys.deviceByIndex(device.stream_parameters.device).defaultLowOutputLatency());
 
             std::lock_guard<std::mutex> lck_guard(playback_stream_mtx);
             if (stereo) {
@@ -591,7 +591,7 @@ PaStreamCallbackResult AudioDevices::openPlaybackStream(portaudio::System &portA
             //
             // Speakers output stream
             //
-            portaudio::DirectionSpecificStreamParameters outputParams(portAudioSys.deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)),
+            portaudio::DirectionSpecificStreamParameters outputParams(portAudioSys.deviceByIndex(device.stream_parameters.device),
                                                                    numChannels, sampleFormatConvert(device.def_sample_rate), false, prefOutputLatency, nullptr);
             portaudio::StreamParameters playbackParams(portaudio::DirectionSpecificStreamParameters::null(), outputParams, sampleFormatConvert(device.def_sample_rate),
                                                        AUDIO_FRAMES_PER_BUFFER, paClipOff);
@@ -636,7 +636,7 @@ PaStreamCallbackResult AudioDevices::openRecordStream(portaudio::System &portAud
         if (gkAudioBuf_input != nullptr) {
             std::mutex record_stream_mtx;
             int numChannels = -1;
-            portaudio::SampleDataFormat prefInputLatency = sampleFormatConvert(portAudioSys.deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)).defaultLowInputLatency());
+            portaudio::SampleDataFormat prefInputLatency = sampleFormatConvert(portAudioSys.deviceByIndex(device.stream_parameters.device).defaultLowInputLatency());
 
             std::lock_guard<std::mutex> lck_guard(record_stream_mtx);
             if (stereo) {
@@ -654,7 +654,7 @@ PaStreamCallbackResult AudioDevices::openRecordStream(portaudio::System &portAud
             //
             // Recording input stream
             //
-            portaudio::DirectionSpecificStreamParameters inputParamsRecord(portAudioSys.deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)),
+            portaudio::DirectionSpecificStreamParameters inputParamsRecord(portAudioSys.deviceByIndex(device.stream_parameters.device),
                                                                            numChannels, sampleFormatConvert(device.def_sample_rate), false, prefInputLatency, nullptr);
             portaudio::StreamParameters recordParams(inputParamsRecord, portaudio::DirectionSpecificStreamParameters::null(), sampleFormatConvert(device.def_sample_rate),
                                                      AUDIO_FRAMES_PER_BUFFER, paClipOff);
