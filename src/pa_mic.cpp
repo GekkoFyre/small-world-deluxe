@@ -81,7 +81,7 @@ bool PaMic::recordInputDevice(const GkDevice &device, PaStream *stream, std::vec
         portaudio::System &sys = portaudio::System::instance();
 
         std::cout << tr("Opening a recording stream on: %1").arg(device.device_info->name).toStdString() << std::endl;
-        portaudio::DirectionSpecificStreamParameters inParamsRecord(sys.deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)),
+        portaudio::DirectionSpecificStreamParameters inParamsRecord(sys.deviceByIndex(device.stream_parameters.device),
                                                                     device.dev_input_channel_count, gkAudioDevices->sampleFormatConvert(device.def_sample_rate),
                                                                     false, device.device_info->defaultLowInputLatency, nullptr);
         portaudio::StreamParameters paramsRecord(inParamsRecord, portaudio::DirectionSpecificStreamParameters::null(),
