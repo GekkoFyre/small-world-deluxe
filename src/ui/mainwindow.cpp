@@ -146,44 +146,34 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         portaudio::AutoSystem autoSys;
         gkPortAudioInit = new portaudio::System(portaudio::System::instance());
 
-        buffer_output_dev.dev_output_channel_count = -1;
-        buffer_input_dev.dev_input_channel_count = -1;
-        buffer_output_dev.def_sample_rate = -1;
-        buffer_input_dev.def_sample_rate = -1;
-
-        buffer_output_dev = dekodeDb->read_audio_details_settings(true);
-        buffer_input_dev = dekodeDb->read_audio_details_settings(false);
-
-        if (buffer_output_dev.dev_output_channel_count > 0 && buffer_output_dev.def_sample_rate > 0) {
-            gkAudioBuf_output = new PaAudioBuf(buffer_output_dev.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS);
-        }
-
-        if (buffer_input_dev.dev_input_channel_count > 0 && buffer_input_dev.def_sample_rate > 0) {
-            gkAudioBuf_input = new PaAudioBuf(buffer_input_dev.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS);
-        }
-
-        gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(dekodeDb, fileIo, gkAudioBuf_input, gkAudioBuf_output, this);
-        pref_audio_devices = gkAudioDevices->initPortAudio(gkPortAudioInit);
-        GkDevice output_dev;
-        GkDevice input_dev;
+        gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(dekodeDb, fileIo, this);
+        auto pref_audio_devices = gkAudioDevices->initPortAudio(gkPortAudioInit);
 
         for (const auto &device: pref_audio_devices) {
             // Now filter out what is the input and output device selectively!
             if (device.is_output_dev) {
                 // Output device
-                output_dev = device;
+                pref_output_device = device;
             } else {
                 // Input device
-                input_dev = device;
+                pref_input_device = device;
             }
         }
 
-        if (output_dev.device_info == nullptr) {
+        if (pref_output_device.device_info == nullptr) {
             throw std::runtime_error(tr("An error was encountered whilst enumerating your audio devices!").toStdString());
         }
 
-        if (input_dev.device_info == nullptr) {
+        if (pref_input_device.device_info == nullptr) {
             throw std::runtime_error(tr("An error was encountered whilst enumerating your audio devices!").toStdString());
+        }
+
+        if (pref_output_device.dev_output_channel_count > 0 && pref_output_device.def_sample_rate > 0) {
+            gkAudioBuf_output = new PaAudioBuf(pref_output_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS);
+        }
+
+        if (pref_input_device.dev_input_channel_count > 0 && pref_input_device.def_sample_rate > 0) {
+            gkAudioBuf_input = new PaAudioBuf(pref_input_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS);
         }
 
         // Initialize the Hamlib 'radio' struct
@@ -268,11 +258,11 @@ MainWindow::~MainWindow()
     delete db;
     gkPortAudioInit->terminate();
 
-    if (buffer_input_dev.dev_input_channel_count > 0 && buffer_input_dev.def_sample_rate > 0) {
+    if (pref_input_device.dev_input_channel_count > 0 && pref_input_device.def_sample_rate > 0) {
         delete gkAudioBuf_input;
     }
 
-    if (buffer_output_dev.dev_output_channel_count > 0 && buffer_output_dev.def_sample_rate > 0) {
+    if (pref_output_device.dev_output_channel_count > 0 && pref_output_device.def_sample_rate > 0) {
         delete gkAudioBuf_output;
     }
 
@@ -336,10 +326,7 @@ void MainWindow::on_action_Open_triggered()
  */
 void MainWindow::procVuMeter(const GkDevice &audio_stream)
 {
-    for (const auto &device: pref_audio_devices) {
-        // gkAudioDevices->vuMeter(device.dev_output_channel_count, 1, 100, 3, );
-        return;
-    }
+    return;
 }
 
 /**
@@ -601,50 +588,19 @@ void MainWindow::radioStats(AmateurRadio::Control::Radio *radio_dev)
     return;
 }
 
-/**
- * @brief MainWindow::grabDefPaInputDevice returns either the chosen input device as designated by the user, or
- * the best possible choice as can be enumerated on the user's computing system.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @return Hopefully an audio input device of some kind, let alone one that works.
- */
-GkDevice MainWindow::grabDefPaInputDevice()
-{
-    GkDevice input_audio_dev;
-
-    try {
-        // The spectrometer and other functions must listen to the chosen *input* audio device
-        for (const auto &device: pref_audio_devices) {
-            if (device.is_output_dev == false) {
-                input_audio_dev = device;
-                break;
-            }
-        }
-    } catch (const std::exception &e) {
-        throw e.what();
-    }
-
-    return input_audio_dev;
-}
-
 void MainWindow::paMicProcBackground(const GkDevice &input_audio_device)
 {
     try {
-        //
-        // When the buffer is full after a minute's worth of data, it will be cleared and ready to fill up again!
-        //
-        gkPaMic = std::make_shared<GekkoFyre::PaMic>(gkAudioDevices, this);
-        std::vector<PaAudioBuf> *input_dev_rec_buffer = new std::vector<PaAudioBuf>();
-        bool result = false;
+        portaudio::MemFunCallbackStream<PaAudioBuf> *streamRecord = nullptr;
+        PaStreamCallbackResult result = gkAudioDevices->openRecordStream(*gkPortAudioInit, gkAudioBuf_output,
+                                                                         input_audio_device, streamRecord, false);
 
-        while (btn_radio_rx) {
-            result = gkPaMic->recordInputDevice(input_audio_device, &micStream, &input_dev_rec_buffer[0],
-                                                AUDIO_BUFFER_STREAMING_SECS);
-
-            // Create a rolling buffer
-            if (input_dev_rec_buffer->size() >= (input_audio_device.def_sample_rate * 60)) {
-                input_dev_rec_buffer->clear();
-            }
+        while (streamRecord->isOpen() || btn_radio_rx) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }
+
+        streamRecord->stop();
+        streamRecord->close();
     } catch (const std::exception &e) {
         print_exception(e);
     }
@@ -685,27 +641,31 @@ void MainWindow::on_pushButton_radio_receive_clicked()
 {
     try {
         if (!btn_radio_rx) {
-            auto input_audio_dev = grabDefPaInputDevice();
-            if (input_audio_dev.stream_parameters.device != paNoDevice) {
-                if (input_audio_dev.is_output_dev == boost::tribool::false_value) {
-                    if (input_audio_dev.device_info->maxInputChannels > 0) {
-                        if ((input_audio_dev.device_info->name != nullptr)) {
+            if (pref_input_device.stream_parameters.device != paNoDevice) {
+                if (pref_input_device.is_output_dev == boost::tribool::false_value) {
+                    if (pref_input_device.device_info->maxInputChannels > 0) {
+                        if ((pref_input_device.device_info->name != nullptr)) {
                             // Set the QPushButton to 'Green'
                             changePushButtonColor(ui->pushButton_radio_receive, false);
                             btn_radio_rx = true;
 
-                            tInputDev = boost::thread(&MainWindow::paMicProcBackground, this, input_audio_dev);
+                            tInputDev = boost::thread(&MainWindow::paMicProcBackground, this, pref_input_device);
                             tInputDev.detach();
                             return;
+                        } else {
+                            throw std::runtime_error(tr("The PortAudio library has not been properly initialized!").toStdString());
                         }
+                    } else {
+                        QMessageBox::warning(this, tr("Invalid device!"), tr("An invalid audio device has been provided. Please select another."), QMessageBox::Ok);
+                        return;
                     }
                 }
             } else {
-                QMessageBox::warning(this, tr("Unavailable device!"), tr("No default input device!"), QMessageBox::Ok);
+                QMessageBox::warning(this, tr("Unavailable device!"), tr("No default input device! Please select one from the settings."), QMessageBox::Ok);
                 return;
             }
 
-            QMessageBox::warning(this, tr("Unavailable device!"), tr("You must firstly configure an appropriate **input** sound device."),
+            QMessageBox::warning(this, tr("Unavailable device!"), tr("You must firstly configure an appropriate **input** sound device. Please select one from the settings."),
                                  QMessageBox::Ok);
             return;
         } else {
