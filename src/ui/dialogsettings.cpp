@@ -74,9 +74,6 @@ DialogSettings::DialogSettings(std::shared_ptr<DekodeDb> dkDb,
         autoSys.initialize();
         gkPortAudioInit = new portaudio::System(portaudio::System::instance());
 
-        chosen_input_index = -1;
-        chosen_output_index = -1;
-
         gkRadioLibs = radioPtr;
         gkDekodeDb = dkDb;
         gkFileIo = filePtr;
@@ -226,59 +223,16 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         gkDekodeDb->write_rig_settings(QString::number(post_write_delay), radio_cfg::PostWriteDelay);
 
         //
-        // Audio Settings
+        // Input Device
         //
-        int curr_input_device = ui->comboBox_soundcard_input->currentIndex();
-        if (curr_input_device == 0) {
-            //
-            // User has not chosen an input audio device preference yet!
-            // Therefore choose the default device on the system...
-            //
-            for (auto device: avail_input_audio_devs.toStdMap()) {
-                if (!device.second.is_output_dev) {
-                    if (device.second.default_dev) {
-                        curr_input_device = device.first;
-                    }
-                }
-            }
-        } else {
-            // An input audio device preference has been made...
-            if (curr_input_device > 0) {
-                for (auto device: avail_input_audio_devs.toStdMap()) {
-                    if (curr_input_device == device.first) {
-                        // We now have our currently selected input audio device
-                        device.second.sel_channels = gkDekodeDb->convertAudioChannelsInt(curr_input_device_channels);
-                        gkDekodeDb->write_audio_device_settings(device.second, QString::number(curr_input_device), false);
-                    }
-                }
-            }
-        }
+        chosen_input_audio_dev.sel_channels = gkDekodeDb->convertAudioChannelsInt(curr_input_device_channels);
+        gkDekodeDb->write_audio_device_settings(chosen_input_audio_dev, QString::number(chosen_input_audio_dev.dev_number), false);
 
-        int curr_output_device = ui->comboBox_soundcard_output->currentIndex();
-        if (curr_output_device == 0) {
-            //
-            // User has not chosen an input audio device preference yet!
-            // Therefore choose the default device on the system...
-            //
-            for (auto device: avail_input_audio_devs.toStdMap()) {
-                if (device.second.is_output_dev) {
-                    if (device.second.default_dev) {
-                        curr_input_device = device.first;
-                    }
-                }
-            }
-        } else {
-            // An output audio device preference has been made...
-            if (curr_output_device > 0) {
-                for (auto device: avail_output_audio_devs.toStdMap()) {
-                    if (curr_output_device == device.first) {
-                        // We now have our currently selected output audio device
-                        device.second.sel_channels = gkDekodeDb->convertAudioChannelsInt(curr_output_device_channels);
-                        gkDekodeDb->write_audio_device_settings(device.second, QString::number(curr_output_device), true);
-                    }
-                }
-            }
-        }
+        //
+        // Output Device
+        //
+        chosen_output_audio_dev.sel_channels = gkDekodeDb->convertAudioChannelsInt(curr_output_device_channels);
+        gkDekodeDb->write_audio_device_settings(chosen_output_audio_dev, QString::number(chosen_output_audio_dev.dev_number), true);
 
         QMessageBox::information(this, tr("Thank you"), tr("Your settings have been saved."), QMessageBox::Ok);
         this->close();
@@ -421,31 +375,31 @@ void DialogSettings::prefill_audio_devices(std::vector<GkDevice> audio_devices_v
             }
         }
 
+        //
+        // Collect the indexes for each QComboBox, for both input/output audio devices!
+        //
+        QMap<int, int> input_dev_indexes = collectComboBoxIndexes(ui->comboBox_soundcard_input);
+        QMap<int, int> output_dev_indexes = collectComboBoxIndexes(ui->comboBox_soundcard_output);
+
         // Select the user's chosen audio input devices, if one has been previously chosen
         // and saved as a setting...
-        for (const auto &input_device: avail_input_audio_devs.toStdMap()) {
-            if (!input_device.second.is_output_dev) { // Do not change this! Weird bugs occur otherwise...
-                if ((input_identifier >= 0) && !(input_identifier < 0)) {
-                    // We have a saved input device within our settings database
-                    if (input_device.second.dev_number == input_identifier) {
-                        ui->comboBox_soundcard_input->setCurrentIndex(input_device.first);
-                        chosen_input_audio_dev = input_device.second;
-                    }
-                }
+        GkDevice input_device = gkAudioDevices->gatherAudioDeviceDetails(gkPortAudioInit, input_identifier);
+        for (const auto &input_index: input_dev_indexes.toStdMap()) {
+            if (input_device.dev_number == input_index.first) {
+                ui->comboBox_soundcard_input->setCurrentIndex(input_index.second);
+                chosen_input_audio_dev = input_device;
+                break;
             }
         }
 
         // Select the user's chosen audio output devices, if one has been previously chosen
         // and saved as a setting...
-        for (const auto output_device: avail_output_audio_devs.toStdMap()) {
-            if (output_device.second.is_output_dev) { // Do not change this! Weird bugs occur otherwise...
-                if ((output_identifier >= 0) && !(output_identifier < 0)) {
-                    // We have a saved output device within our settings database
-                    if (output_device.second.dev_number == output_identifier) {
-                        ui->comboBox_soundcard_output->setCurrentIndex(output_device.first);
-                        chosen_output_audio_dev = output_device.second;
-                    }
-                }
+        GkDevice output_device = gkAudioDevices->gatherAudioDeviceDetails(gkPortAudioInit, output_identifier);
+        for (const auto &output_index: output_dev_indexes.toStdMap()) {
+            if (output_device.dev_number == output_index.first) {
+                ui->comboBox_soundcard_output->setCurrentIndex(output_index.second);
+                chosen_output_audio_dev = output_device;
+                break;
             }
         }
     } catch (const portaudio::PaException &e) {
@@ -459,6 +413,37 @@ void DialogSettings::prefill_audio_devices(std::vector<GkDevice> audio_devices_v
     }
 
     return;
+}
+
+/**
+ * @brief DialogSettings::collectComboBoxIndexes Collects the actual item index (i.e. GkDevice::dev_number()), and
+ * returns it as a QMap<int, int>().
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param combo_box The QComboBox to be processed in question.
+ * @return A QMap<int, int>() with the key being the GkDevice::dev_number() and the value being the QComboBox index.
+ */
+QMap<int, int> DialogSettings::collectComboBoxIndexes(const QComboBox *combo_box)
+{
+    try {
+        if (combo_box != nullptr) {
+            std::mutex index_loop_mtx;
+            int combo_box_size = combo_box->count();
+            QMap<int, int> collected_indexes;
+
+            for (int i = 0; i < combo_box_size; ++i) {
+                std::lock_guard<std::mutex> lck_guard(index_loop_mtx);
+                int actual_index = combo_box->itemData(i).toInt();
+                collected_indexes.insert(actual_index, i);
+            }
+
+            return collected_indexes;
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), tr("An error was encountered whilst processing QComboBoxes:\n\n%1").arg(e.what()),
+                             QMessageBox::Ok);
+    }
+
+    return QMap<int, int>();
 }
 
 /**
@@ -854,11 +839,30 @@ void DialogSettings::on_pushButton_output_sound_test_clicked()
  */
 void DialogSettings::on_comboBox_soundcard_input_currentIndexChanged(int index)
 {
-    for (const auto &device: avail_input_audio_devs.toStdMap()) {
-        if (device.first == index) {
-            chosen_input_audio_dev = device.second;
+    try {
+        int actual_index = ui->comboBox_soundcard_input->currentData().toInt();
+        for (const auto &device: avail_input_audio_devs.toStdMap()) {
+            if (device.first == actual_index) {
+                GkDevice chosen_input;
+                chosen_input = device.second;
+                chosen_input = gkAudioDevices->gatherAudioDeviceDetails(gkPortAudioInit, actual_index);
+
+                chosen_input_audio_dev = chosen_input;
+
+                return;
+            }
         }
+    } catch (const portaudio::PaException &e) {
+        QMessageBox::warning(this, tr("Error!"), tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText()), QMessageBox::Ok);
+    } catch (const portaudio::PaCppException &e) {
+        QMessageBox::warning(this, tr("Error!"), tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), tr("A generic exception has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+    } catch (...) {
+        QMessageBox::warning(this, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), QMessageBox::Ok);
     }
+
+    return;
 }
 
 /**

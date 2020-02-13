@@ -64,8 +64,7 @@ class AudioDevices : public QObject {
     Q_OBJECT
 
 public:
-    explicit AudioDevices(std::shared_ptr<GekkoFyre::DekodeDb> gkDb, std::shared_ptr<GekkoFyre::FileIo> filePtr,
-                          GekkoFyre::PaAudioBuf *inputBuf, PaAudioBuf *outputBuf, QObject *parent = nullptr);
+    explicit AudioDevices(std::shared_ptr<GekkoFyre::DekodeDb> gkDb, std::shared_ptr<GekkoFyre::FileIo> filePtr, QObject *parent = nullptr);
     ~AudioDevices();
 
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> initPortAudio(portaudio::System *portAudioSys);
@@ -82,9 +81,12 @@ public:
 
     PaStreamCallbackResult testSinewave(portaudio::System &portAudioSys, const Database::Settings::Audio::GkDevice device,
                                         const bool &is_output_dev = true);
-    PaStreamCallbackResult openPlaybackStream(portaudio::System &portAudioSys, const GekkoFyre::Database::Settings::Audio::GkDevice &device,
+    PaStreamCallbackResult openPlaybackStream(portaudio::System &portAudioSys, GekkoFyre::PaAudioBuf *audio_buf,
+                                              const GekkoFyre::Database::Settings::Audio::GkDevice &device,
                                               const bool &stereo = true);
-    PaStreamCallbackResult openRecordStream(portaudio::System &portAudioSys, const GekkoFyre::Database::Settings::Audio::GkDevice &device,
+    PaStreamCallbackResult openRecordStream(portaudio::System &portAudioSys, GekkoFyre::PaAudioBuf *audio_buf,
+                                            const GekkoFyre::Database::Settings::Audio::GkDevice &device,
+                                            portaudio::MemFunCallbackStream<PaAudioBuf> *streamRecord,
                                             const bool &stereo = true);
 
     std::vector<Database::Settings::Audio::GkDevice> filterAudioDevices(const std::vector<Database::Settings::Audio::GkDevice> audio_devices_vec);
@@ -94,8 +96,6 @@ public:
 private:
     std::shared_ptr<DekodeDb> gkDekodeDb;
     std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
-    GekkoFyre::PaAudioBuf *gkAudioBuf_input;
-    GekkoFyre::PaAudioBuf *gkAudioBuf_output;
 
     bool filterAudioEnum(const PaHostApiTypeId &host_api_type);
 

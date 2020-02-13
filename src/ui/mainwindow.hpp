@@ -141,10 +141,10 @@ private:
     // PortAudio initialization and buffers
     //
     portaudio::System *gkPortAudioInit;
-    GekkoFyre::Database::Settings::Audio::GkDevice buffer_output_dev;
-    GekkoFyre::Database::Settings::Audio::GkDevice buffer_input_dev;
-    GekkoFyre::PaAudioBuf *gkAudioBuf_input;
-    GekkoFyre::PaAudioBuf *gkAudioBuf_output;
+    GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
+    GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
+    GekkoFyre::PaAudioBuf *gkAudioBuf_input;    // For playback devices
+    GekkoFyre::PaAudioBuf *gkAudioBuf_output;   // For recording devices
 
     //
     // Multithreading
@@ -153,7 +153,6 @@ private:
     std::future<GekkoFyre::AmateurRadio::Control::Radio *> rig_thread;
     boost::thread tInputDev;
 
-    std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> pref_audio_devices; // The configured audio devices for the user's system
     GekkoFyre::AmateurRadio::Control::Radio *radio;
     QTimer *timer;
 
@@ -175,7 +174,6 @@ private:
 
     void radioStats(GekkoFyre::AmateurRadio::Control::Radio *radio_dev);
 
-    GekkoFyre::Database::Settings::Audio::GkDevice grabDefPaInputDevice();
     void paMicProcBackground(const GekkoFyre::Database::Settings::Audio::GkDevice &input_audio_device);
     void procVuMeter(const GekkoFyre::Database::Settings::Audio::GkDevice &audio_stream);
 

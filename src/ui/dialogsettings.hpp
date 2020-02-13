@@ -87,6 +87,7 @@ private:
 
     portaudio::AutoSystem autoSys;
     portaudio::System *gkPortAudioInit;
+
     std::shared_ptr<GekkoFyre::RadioLibs> gkRadioLibs;
     std::shared_ptr<GekkoFyre::DekodeDb> gkDekodeDb;
     std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
@@ -110,14 +111,12 @@ private:
     GekkoFyre::Database::Settings::Audio::GkDevice chosen_input_audio_dev;
     GekkoFyre::Database::Settings::Audio::GkDevice chosen_output_audio_dev;
 
-    int chosen_input_index;
-    int chosen_output_index;
-
     static int prefill_rig_selection(const rig_caps *caps, void *data);
     static QMultiMap<rig_model_t, std::tuple<QString, QString, GekkoFyre::AmateurRadio::rig_type>> init_model_names();
 
     void prefill_audio_devices(std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> audio_devices_vec);
 
+    QMap<int, int> collectComboBoxIndexes(const QComboBox *combo_box);
     void prefill_avail_com_ports(const QMap<tstring, std::pair<tstring, boost::tribool>> &com_ports);
     void prefill_avail_usb_ports(const std::vector<GekkoFyre::Database::Settings::UsbPort> usb_devices);
     void prefill_com_baud_speed(const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate);
@@ -126,4 +125,3 @@ private:
                                  const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate = GekkoFyre::AmateurRadio::com_baud_rates::BAUD9600);
     bool read_settings();
 };
-
