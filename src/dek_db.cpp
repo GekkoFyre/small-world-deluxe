@@ -334,18 +334,28 @@ GkDevice DekodeDb::read_audio_details_settings(const bool &is_output_device)
         //
         if (!output_id.empty()) {
             audio_device.dev_number = std::stoi(output_id);
+        } else {
+            audio_device.dev_number = -1;
         }
 
         if (!output_def_sample_rate.empty()) {
             audio_device.def_sample_rate = std::stod(output_def_sample_rate);
+        } else {
+            audio_device.def_sample_rate = 0.0;
         }
 
         if (!output_channel_count.empty()) {
             audio_device.dev_output_channel_count = std::stoi(output_channel_count);
+            audio_device.dev_input_channel_count = 0;
+        } else {
+            audio_device.dev_output_channel_count = 0;
+            audio_device.dev_input_channel_count = 0;
         }
 
         if (!output_sel_channels.empty()) {
             audio_device.sel_channels = convertAudioChannelsInt(std::stoi(output_sel_channels));
+        } else {
+            audio_device.sel_channels = audio_channels::Unknown;
         }
 
         audio_device.default_dev = def_sys_device;
@@ -372,18 +382,28 @@ GkDevice DekodeDb::read_audio_details_settings(const bool &is_output_device)
         //
         if (!input_id.empty()) {
             audio_device.dev_number = std::stoi(input_id);
+        } else {
+            audio_device.dev_number = -1;
         }
 
         if (!input_def_sample_rate.empty()) {
             audio_device.def_sample_rate = std::stod(input_def_sample_rate);
+        } else {
+            audio_device.def_sample_rate = 0.0;
         }
 
         if (!input_channel_count.empty()) {
-            audio_device.dev_output_channel_count = std::stoi(input_channel_count);
+            audio_device.dev_input_channel_count = std::stoi(input_channel_count);
+            audio_device.dev_output_channel_count = 0;
+        } else {
+            audio_device.dev_input_channel_count = 0;
+            audio_device.dev_output_channel_count = 0;
         }
 
         if (!input_sel_channels.empty()) {
             audio_device.sel_channels = convertAudioChannelsInt(std::stoi(input_sel_channels));
+        } else {
+            audio_device.sel_channels = audio_channels::Unknown;
         }
 
         audio_device.default_dev = def_sys_device;

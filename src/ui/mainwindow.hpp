@@ -140,6 +140,9 @@ private:
     //
     // PortAudio initialization and buffers
     //
+    portaudio::System *gkPortAudioInit;
+    GekkoFyre::Database::Settings::Audio::GkDevice buffer_output_dev;
+    GekkoFyre::Database::Settings::Audio::GkDevice buffer_input_dev;
     GekkoFyre::PaAudioBuf *gkAudioBuf_input;
     GekkoFyre::PaAudioBuf *gkAudioBuf_output;
 
@@ -170,11 +173,6 @@ private:
     bool btn_radio_tune;
     bool btn_radio_monitor;
 
-    //
-    // QDialog's
-    //
-    QPointer<DialogSettings> dlg_settings;
-
     void radioStats(GekkoFyre::AmateurRadio::Control::Radio *radio_dev);
 
     GekkoFyre::Database::Settings::Audio::GkDevice grabDefPaInputDevice();
@@ -187,4 +185,5 @@ private:
     void createStatusBar(const QString &statusMsg = "");
     bool steadyTimer(const int &seconds);
     void print_exception(const std::exception &e, int level = 0);
+    void appTerminating();
 };

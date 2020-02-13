@@ -68,20 +68,20 @@ public:
                           GekkoFyre::PaAudioBuf *inputBuf, PaAudioBuf *outputBuf, QObject *parent = nullptr);
     ~AudioDevices();
 
-    std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> initPortAudio(portaudio::System &portAudioSys);
-    std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> defaultAudioDevices(portaudio::System &portAudioSys);
+    std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> initPortAudio(portaudio::System *portAudioSys);
+    std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> defaultAudioDevices(portaudio::System *portAudioSys);
     std::vector<double> enumSupportedStdSampleRates(const PaStreamParameters *inputParameters,
                                                     const PaStreamParameters *outputParameters);
-    std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> enumAudioDevicesCpp(portaudio::System &portAudioSys);
-    GekkoFyre::Database::Settings::Audio::GkDevice gatherAudioDeviceDetails(portaudio::System &portAudioSys,
+    std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> enumAudioDevicesCpp(portaudio::System *portAudioSys);
+    GekkoFyre::Database::Settings::Audio::GkDevice gatherAudioDeviceDetails(portaudio::System *portAudioSys,
                                                                             const PaDeviceIndex &pa_index);
     void portAudioErr(const PaError &err);
     void volumeSetting();
     double vuMeter();
     portaudio::SampleDataFormat sampleFormatConvert(const unsigned long sample_rate);
 
-    PaStreamCallbackResult testSinewave(portaudio::System &portAudioSys, const GekkoFyre::Database::Settings::Audio::GkDevice &device,
-                                        const bool &is_output_dev = true, const bool &stereo = true);
+    PaStreamCallbackResult testSinewave(portaudio::System &portAudioSys, const Database::Settings::Audio::GkDevice device,
+                                        const bool &is_output_dev = true);
     PaStreamCallbackResult openPlaybackStream(portaudio::System &portAudioSys, const GekkoFyre::Database::Settings::Audio::GkDevice &device,
                                               const bool &stereo = true);
     PaStreamCallbackResult openRecordStream(portaudio::System &portAudioSys, const GekkoFyre::Database::Settings::Audio::GkDevice &device,

@@ -55,6 +55,10 @@
 #include <QDate>
 #include <QTimer>
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 using namespace GekkoFyre;
 using namespace Database;
 using namespace Settings;
@@ -140,11 +144,26 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // Initialize our own PortAudio libraries and associated buffers!
         //
         portaudio::AutoSystem autoSys;
-        portaudio::System &portAudioSys = portaudio::System::instance();
+        gkPortAudioInit = new portaudio::System(portaudio::System::instance());
+
+        buffer_output_dev.dev_output_channel_count = -1;
+        buffer_input_dev.dev_input_channel_count = -1;
+        buffer_output_dev.def_sample_rate = -1;
+        buffer_input_dev.def_sample_rate = -1;
+
+        buffer_output_dev = dekodeDb->read_audio_details_settings(true);
+        buffer_input_dev = dekodeDb->read_audio_details_settings(false);
+
+        if (buffer_output_dev.dev_output_channel_count > 0 && buffer_output_dev.def_sample_rate > 0) {
+            gkAudioBuf_output = new PaAudioBuf(buffer_output_dev.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS);
+        }
+
+        if (buffer_input_dev.dev_input_channel_count > 0 && buffer_input_dev.def_sample_rate > 0) {
+            gkAudioBuf_input = new PaAudioBuf(buffer_input_dev.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS);
+        }
 
         gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(dekodeDb, fileIo, gkAudioBuf_input, gkAudioBuf_output, this);
-        pref_audio_devices = gkAudioDevices->initPortAudio(portAudioSys);
-        portAudioSys.terminate();
+        pref_audio_devices = gkAudioDevices->initPortAudio(gkPortAudioInit);
         GkDevice output_dev;
         GkDevice input_dev;
 
@@ -166,9 +185,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         if (input_dev.device_info == nullptr) {
             throw std::runtime_error(tr("An error was encountered whilst enumerating your audio devices!").toStdString());
         }
-
-        gkAudioBuf_input = new PaAudioBuf(input_dev.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS);
-        gkAudioBuf_output = new PaAudioBuf(output_dev.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS);
 
         // Initialize the Hamlib 'radio' struct
         radio = new AmateurRadio::Control::Radio;
@@ -208,11 +224,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         radio->is_open = false;
         rig_thread = std::async(std::launch::async, &RadioLibs::init_rig, gkRadioLibs, radio->rig_model, def_com_port.toStdString(), final_baud_rate, radio->verbosity);
 
-        //
-        // QDialog's
-        //
-        dlg_settings = new DialogSettings(dekodeDb, fileIo, gkAudioDevices, gkRadioLibs, this);
-
         timer = new QTimer(this);
         connect(timer, SIGNAL(timeout()), this, SLOT(infoBar()));
         timer->start(1000);
@@ -237,6 +248,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
  */
 MainWindow::~MainWindow()
 {
+    boost::thread appTerm = boost::thread(&MainWindow::appTerminating, this);
+    appTerm.detach();
+
     // https://www.boost.org/doc/libs/1_72_0/doc/html/thread/thread_management.html
     if (tInputDev.try_join_for(boost::chrono::milliseconds(5000))) {
         tInputDev.join();
@@ -252,12 +266,13 @@ MainWindow::~MainWindow()
     }
 
     delete db;
+    gkPortAudioInit->terminate();
 
-    if (gkAudioBuf_input != nullptr) {
+    if (buffer_input_dev.dev_input_channel_count > 0 && buffer_input_dev.def_sample_rate > 0) {
         delete gkAudioBuf_input;
     }
 
-    if (gkAudioBuf_output != nullptr) {
+    if (buffer_output_dev.dev_output_channel_count > 0 && buffer_output_dev.def_sample_rate > 0) {
         delete gkAudioBuf_output;
     }
 
@@ -271,22 +286,10 @@ MainWindow::~MainWindow()
             rig_cleanup(radio->rig); // Cleanup memory
         }
 
-        //
-        // If we have to wait more than 5 seconds for this library to terminate, then simply abort!
-        //
-        std::future<bool> counter = std::async(std::launch::async, &MainWindow::steadyTimer, this, GK_EXIT_TIMEOUT);
-        if (counter.get()) {
-            //
-            // Exit without cleaning up resoruces because otherwise, we are going to be waiting a long time
-            // for the program to finish...
-            // https://en.cppreference.com/w/cpp/utility/program/abort
-            //
-            std::quick_exit(EXIT_FAILURE); // TODO: Implement code that deals with this in a much nicer manner
-        }
-
         delete radio;
     }
 
+    appTerm.join();
     delete ui;
 }
 
@@ -419,6 +422,26 @@ void MainWindow::print_exception(const std::exception &e, int level)
 }
 
 /**
+ * @brief MainWindow::appTerminating A QMessageBox() to show when the application is
+ * terminating (i.e. exiting normally).
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::appTerminating()
+{
+    #ifdef _WIN32
+    //
+    // https://docs.microsoft.com/en-us/windows/win32/dlgbox/using-dialog-boxes
+    // https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-messagebox
+    //
+    MessageBox(nullptr, tr("Please wait as the application terminates.").toStdString().c_str(), tr("Aborting...").toStdString().c_str(), MB_ICONINFORMATION);
+    #elif __linux__
+    // TODO: Program a version for Linux/Unix systems!
+    #endif
+
+    return;
+}
+
+/**
  * @brief MainWindow::on_actionCheck_for_Updates_triggered
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
@@ -465,9 +488,10 @@ void MainWindow::on_actionShow_Waterfall_toggled(bool arg1)
  */
 void MainWindow::on_action_Settings_triggered()
 {
+    QPointer<DialogSettings> dlg_settings = new DialogSettings(dekodeDb, fileIo, gkAudioDevices, gkRadioLibs, this);
     dlg_settings->setWindowFlags(Qt::Window);
-    dlg_settings->setAttribute(Qt::WA_DeleteOnClose, false);
-    // QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
+    dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
+    QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
     dlg_settings->show();
 }
 
@@ -537,9 +561,10 @@ void MainWindow::on_actionPlay_triggered()
 
 void MainWindow::on_actionSettings_triggered()
 {
+    QPointer<DialogSettings> dlg_settings = new DialogSettings(dekodeDb, fileIo, gkAudioDevices, gkRadioLibs, this);
     dlg_settings->setWindowFlags(Qt::Window);
-    dlg_settings->setAttribute(Qt::WA_DeleteOnClose, false);
-    // QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
+    dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
+    QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
     dlg_settings->show();
 }
 
