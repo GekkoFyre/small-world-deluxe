@@ -61,11 +61,9 @@ using namespace Audio;
  * @param parent
  * @note Core Audio APIs <https://docs.microsoft.com/en-us/windows/win32/api/_coreaudio/index>
  */
-AudioDevices::AudioDevices(portaudio::System &pa_sys, std::shared_ptr<DekodeDb> gkDb, std::shared_ptr<GekkoFyre::FileIo> filePtr,
-                           PaAudioBuf *inputBuf, PaAudioBuf *outputBuf,
-                           QObject *parent)
+AudioDevices::AudioDevices(std::shared_ptr<DekodeDb> gkDb, std::shared_ptr<GekkoFyre::FileIo> filePtr,
+                           PaAudioBuf *inputBuf, PaAudioBuf *outputBuf, QObject *parent)
 {
-    portAudioSys = &pa_sys;
     gkDekodeDb = gkDb;
     gkFileIo = filePtr;
     gkAudioBuf_input = inputBuf;
@@ -83,11 +81,12 @@ AudioDevices::~AudioDevices()
  * @return A typical std::vector containing the audio device information, one each for input and output, of what soundcard
  * the application should make use of when this function is executed.
  */
-std::vector<GkDevice> AudioDevices::initPortAudio()
+std::vector<GkDevice> AudioDevices::initPortAudio(portaudio::System &portAudioSys)
 {
     try {
         std::vector<GkDevice> enum_devices;
         std::vector<GkDevice> device_export;
+        std::mutex init_port_audio_mtx;
 
         // The number of this device; this was saved to the Google LevelDB database as the user's preference
         int chosen_output_dev = 0;
@@ -98,12 +97,13 @@ std::vector<GkDevice> AudioDevices::initPortAudio()
 
         bool output_dev_exists = false;
         bool input_dev_exists = false;
-        enum_devices = defaultAudioDevices();
+        enum_devices = defaultAudioDevices(portAudioSys);
         if (chosen_output_dev < 0) {
             //
             // Output audio device
             //
             for (const auto &device: enum_devices) {
+                std::lock_guard<std::mutex> lck_guard(init_port_audio_mtx);
                 if (device.default_dev && device.is_output_dev && !output_dev_exists) {
                     device_export.push_back(device);
                     output_dev_exists = true;
@@ -111,9 +111,9 @@ std::vector<GkDevice> AudioDevices::initPortAudio()
             }
         } else {
             // Gather more details about the chosen audio device
-            int output_dev = gkDekodeDb->read_audio_device_settings(true);
-            portaudio::Device &index = portAudioSys->deviceByIndex(output_dev);
-            GkDevice output_dev_details = gatherAudioDeviceDetails(index);
+            std::lock_guard<std::mutex> lck_guard(init_port_audio_mtx);
+            PaDeviceIndex output_dev = gkDekodeDb->read_audio_device_settings(true);
+            GkDevice output_dev_details = gatherAudioDeviceDetails(portAudioSys, output_dev);
         }
 
         if (chosen_input_dev < 0) {
@@ -121,6 +121,7 @@ std::vector<GkDevice> AudioDevices::initPortAudio()
             // Input audio device
             //
             for (const auto &device: enum_devices) {
+                std::lock_guard<std::mutex> lck_guard(init_port_audio_mtx);
                 if (device.default_dev && !device.is_output_dev && !input_dev_exists) {
                     device_export.push_back(device);
                     input_dev_exists = true;
@@ -128,9 +129,9 @@ std::vector<GkDevice> AudioDevices::initPortAudio()
             }
         } else {
             // Gather more details about the chosen audio device
-            int input_dev = gkDekodeDb->read_audio_device_settings(false);
-            portaudio::Device &index = portAudioSys->deviceByIndex(input_dev);
-            GkDevice input_dev_details = gatherAudioDeviceDetails(index);
+            std::lock_guard<std::mutex> lck_guard(init_port_audio_mtx);
+            PaDeviceIndex input_dev = gkDekodeDb->read_audio_device_settings(false);
+            GkDevice input_dev_details = gatherAudioDeviceDetails(portAudioSys, input_dev);
         }
 
         return device_export;
@@ -154,12 +155,12 @@ std::vector<GkDevice> AudioDevices::initPortAudio()
  * @return The default audio devices for a user's system.
  * @see GekkoFyre::AudioDevices::initPortAudio()
  */
-std::vector<GkDevice> AudioDevices::defaultAudioDevices()
+std::vector<GkDevice> AudioDevices::defaultAudioDevices(portaudio::System &portAudioSys)
 {
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> enum_devices;
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> exported_devices;
 
-    enum_devices = filterAudioDevices(enumAudioDevicesCpp());
+    enum_devices = filterAudioDevices(enumAudioDevicesCpp(portAudioSys));
     for (const auto &device: enum_devices) {
         if (device.default_dev == true) {
             // We have a default device!
@@ -222,14 +223,14 @@ std::vector<double> AudioDevices::enumSupportedStdSampleRates(const PaStreamPara
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return
  */
-std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp()
+std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp(portaudio::System &portAudioSys)
 {
     try {
         std::vector<GkDevice> audio_devices_vec;                        // The vector responsible for storage all audio device sessions
         int device_number = 0;                                          // The index number for the input/output audio device in question
         std::mutex enum_audio_dev_mtx;
 
-        for (portaudio::System::DeviceIterator i = portAudioSys->devicesBegin(); i != portAudioSys->devicesEnd(); ++i) {
+        for (portaudio::System::DeviceIterator i = portAudioSys.devicesBegin(); i != portAudioSys.devicesEnd(); ++i) {
             std::lock_guard<std::mutex> audio_guard(enum_audio_dev_mtx);
 
             // Mark both global and API specific default audio devices
@@ -409,13 +410,13 @@ std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp()
  * @param device_index The index of the audio device in question.
  * @return A GkDevice struct is returned.
  */
-GkDevice AudioDevices::gatherAudioDeviceDetails(const portaudio::Device &pa_device)
+GkDevice AudioDevices::gatherAudioDeviceDetails(portaudio::System &portAudioSys, const PaDeviceIndex &pa_index)
 {
     try {
-        auto enum_devices_vec = enumAudioDevicesCpp();
+        auto enum_devices_vec = enumAudioDevicesCpp(portAudioSys);
 
         for (const auto &device: enum_devices_vec) {
-            if (pa_device.index() == device.stream_parameters.device) {
+            if (pa_index == device.stream_parameters.device) {
                 return device;
             }
         }
@@ -440,13 +441,14 @@ GkDevice AudioDevices::gatherAudioDeviceDetails(const portaudio::Device &pa_devi
  * @param stereo
  * @return
  */
-PaStreamCallbackResult AudioDevices::testSinewave(const GkDevice &device, const bool &is_output_dev, const bool &stereo)
+PaStreamCallbackResult AudioDevices::testSinewave(portaudio::System &portAudioSys, const GkDevice &device,
+                                                  const bool &is_output_dev, const bool &stereo)
 {
     try {
         std::mutex test_sinewave_mtx;
         int numChannels = -1;
-        portaudio::SampleDataFormat prefOutputLatency = sampleFormatConvert(portAudioSys->deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)).defaultLowOutputLatency());
-        portaudio::SampleDataFormat prefInputLatency = sampleFormatConvert(portAudioSys->deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)).defaultLowInputLatency());
+        portaudio::SampleDataFormat prefOutputLatency = sampleFormatConvert(portAudioSys.deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)).defaultLowOutputLatency());
+        portaudio::SampleDataFormat prefInputLatency = sampleFormatConvert(portAudioSys.deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)).defaultLowInputLatency());
         PaSinewave gkPaSinewave(AUDIO_TEST_SAMPLE_TABLE_SIZE);
 
         std::lock_guard<std::mutex> lck_guard(test_sinewave_mtx);
@@ -466,14 +468,14 @@ PaStreamCallbackResult AudioDevices::testSinewave(const GkDevice &device, const 
             //
             // Speakers output stream
             //
-            portaudio::DirectionSpecificStreamParameters outputParams(portAudioSys->deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)),
+            portaudio::DirectionSpecificStreamParameters outputParams(portAudioSys.deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)),
                                                                    numChannels, sampleFormatConvert(device.def_sample_rate), false, prefInputLatency, nullptr);
             portaudio::StreamParameters playbackBeep(portaudio::DirectionSpecificStreamParameters::null(), outputParams, sampleFormatConvert(device.def_sample_rate),
                                                      AUDIO_FRAMES_PER_BUFFER, paClipOff);
             portaudio::MemFunCallbackStream<PaSinewave> streamPlaybackSine(playbackBeep, gkPaSinewave, &PaSinewave::generate);
 
             streamPlaybackSine.start();
-            portAudioSys->sleep(AUDIO_SINE_WAVE_PLAYBACK_SECS * 1000); // Play the audio sample wave for the desired amount of seconds!
+            portAudioSys.sleep(AUDIO_SINE_WAVE_PLAYBACK_SECS * 1000); // Play the audio sample wave for the desired amount of seconds!
             streamPlaybackSine.stop();
             streamPlaybackSine.close();
 
@@ -482,7 +484,7 @@ PaStreamCallbackResult AudioDevices::testSinewave(const GkDevice &device, const 
             //
             // Recording input stream
             //
-            portaudio::DirectionSpecificStreamParameters inputParamsRecord(portAudioSys->deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)),
+            portaudio::DirectionSpecificStreamParameters inputParamsRecord(portAudioSys.deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)),
                                                                            numChannels, sampleFormatConvert(device.def_sample_rate), false, prefOutputLatency, nullptr);
             portaudio::StreamParameters recordParams(inputParamsRecord, portaudio::DirectionSpecificStreamParameters::null(), sampleFormatConvert(device.def_sample_rate),
                                                      AUDIO_FRAMES_PER_BUFFER, paClipOff);
@@ -490,7 +492,7 @@ PaStreamCallbackResult AudioDevices::testSinewave(const GkDevice &device, const 
             portaudio::MemFunCallbackStream<PaSinewave> streamRecordSine(recordParams, gkPaSinewave, &PaSinewave::generate);
 
             streamRecordSine.start();
-            portAudioSys->sleep(AUDIO_SINE_WAVE_PLAYBACK_SECS * 1000); // Play the audio sample wave for the desired amount of seconds!
+            portAudioSys.sleep(AUDIO_SINE_WAVE_PLAYBACK_SECS * 1000); // Play the audio sample wave for the desired amount of seconds!
             streamRecordSine.stop();
             streamRecordSine.close();
 
@@ -565,12 +567,13 @@ portaudio::SampleDataFormat AudioDevices::sampleFormatConvert(const unsigned lon
  * @param stereo
  * @return
  */
-PaStreamCallbackResult AudioDevices::openPlaybackStream(const GkDevice &device, const bool &stereo)
+PaStreamCallbackResult AudioDevices::openPlaybackStream(portaudio::System &portAudioSys,
+                                                        const GkDevice &device, const bool &stereo)
 {
     try {
         std::mutex playback_stream_mtx;
         int numChannels = -1;
-        portaudio::SampleDataFormat prefOutputLatency = sampleFormatConvert(portAudioSys->deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)).defaultLowOutputLatency());
+        portaudio::SampleDataFormat prefOutputLatency = sampleFormatConvert(portAudioSys.deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)).defaultLowOutputLatency());
 
         std::lock_guard<std::mutex> lck_guard(playback_stream_mtx);
         if (stereo) {
@@ -588,7 +591,7 @@ PaStreamCallbackResult AudioDevices::openPlaybackStream(const GkDevice &device, 
         //
         // Speakers output stream
         //
-        portaudio::DirectionSpecificStreamParameters outputParams(portAudioSys->deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)),
+        portaudio::DirectionSpecificStreamParameters outputParams(portAudioSys.deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)),
                                                                numChannels, sampleFormatConvert(device.def_sample_rate), false, prefOutputLatency, nullptr);
         portaudio::StreamParameters playbackParams(portaudio::DirectionSpecificStreamParameters::null(), outputParams, sampleFormatConvert(device.def_sample_rate),
                                                    AUDIO_FRAMES_PER_BUFFER, paClipOff);
@@ -597,7 +600,7 @@ PaStreamCallbackResult AudioDevices::openPlaybackStream(const GkDevice &device, 
         gkAudioBuf_output->resetPlayback();
         streamPlayback.start();
         while (streamPlayback.isActive()) {
-            portAudioSys->sleep(100);
+            portAudioSys.sleep(100);
         }
 
         streamPlayback.stop();
@@ -623,12 +626,13 @@ PaStreamCallbackResult AudioDevices::openPlaybackStream(const GkDevice &device, 
  * @param stereo
  * @return
  */
-PaStreamCallbackResult AudioDevices::openRecordStream(const GkDevice &device, const bool &stereo)
+PaStreamCallbackResult AudioDevices::openRecordStream(portaudio::System &portAudioSys,
+                                                      const GkDevice &device, const bool &stereo)
 {
     try {
         std::mutex record_stream_mtx;
         int numChannels = -1;
-        portaudio::SampleDataFormat prefInputLatency = sampleFormatConvert(portAudioSys->deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)).defaultLowInputLatency());
+        portaudio::SampleDataFormat prefInputLatency = sampleFormatConvert(portAudioSys.deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)).defaultLowInputLatency());
 
         std::lock_guard<std::mutex> lck_guard(record_stream_mtx);
         if (stereo) {
@@ -646,7 +650,7 @@ PaStreamCallbackResult AudioDevices::openRecordStream(const GkDevice &device, co
         //
         // Recording input stream
         //
-        portaudio::DirectionSpecificStreamParameters inputParamsRecord(portAudioSys->deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)),
+        portaudio::DirectionSpecificStreamParameters inputParamsRecord(portAudioSys.deviceByIndex(Pa_HostApiDeviceIndexToDeviceIndex(device.device_info->hostApi, 0)),
                                                                        numChannels, sampleFormatConvert(device.def_sample_rate), false, prefInputLatency, nullptr);
         portaudio::StreamParameters recordParams(inputParamsRecord, portaudio::DirectionSpecificStreamParameters::null(), sampleFormatConvert(device.def_sample_rate),
                                                  AUDIO_FRAMES_PER_BUFFER, paClipOff);
@@ -677,7 +681,7 @@ PaStreamCallbackResult AudioDevices::openRecordStream(const GkDevice &device, co
  * @param audio_devices_vec The list of audio devices to be filtered.
  * @return The list of devices that have been through the filtering process.
  */
-std::vector<GkDevice> AudioDevices::filterAudioDevices(const std::vector<GkDevice> &audio_devices_vec)
+std::vector<GkDevice> AudioDevices::filterAudioDevices(const std::vector<GkDevice> audio_devices_vec)
 {
     try {
         std::mutex device_loop_mtx;
@@ -722,9 +726,10 @@ std::vector<GkDevice> AudioDevices::filterAudioDevices(const std::vector<GkDevic
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return
  */
-QString AudioDevices::portAudioVersionNumber()
+QString AudioDevices::portAudioVersionNumber(const portaudio::System &portAudioSys)
 {
-    return QString::number(portAudioSys->version());
+    int version_ret = portAudioSys.version();
+    return QString::number(version_ret);
 }
 
 /**
@@ -733,9 +738,10 @@ QString AudioDevices::portAudioVersionNumber()
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return
  */
-QString AudioDevices::portAudioVersionText()
+QString AudioDevices::portAudioVersionText(const portaudio::System &portAudioSys)
 {
-    return QString(portAudioSys->versionText());
+    std::string version_text_ret = portAudioSys.versionText();
+    return QString::fromStdString(version_text_ret);
 }
 
 /**

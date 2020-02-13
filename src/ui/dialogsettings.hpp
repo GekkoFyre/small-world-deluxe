@@ -85,6 +85,7 @@ private slots:
 private:
     Ui::DialogSettings *ui;
 
+    portaudio::System *portAudioSys;
     std::shared_ptr<GekkoFyre::RadioLibs> gkRadioLibs;
     std::shared_ptr<GekkoFyre::DekodeDb> gkDekodeDb;
     std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
@@ -111,7 +112,7 @@ private:
     static int prefill_rig_selection(const rig_caps *caps, void *data);
     static QMultiMap<rig_model_t, std::tuple<QString, QString, GekkoFyre::AmateurRadio::rig_type>> init_model_names();
 
-    void prefill_audio_devices(const std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> &audio_devices_vec);
+    void prefill_audio_devices(std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> audio_devices_vec);
 
     void prefill_avail_com_ports(const QMap<tstring, std::pair<tstring, boost::tribool>> &com_ports);
     void prefill_avail_usb_ports(const std::vector<GekkoFyre::Database::Settings::UsbPort> usb_devices);
