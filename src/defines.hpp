@@ -167,7 +167,8 @@ namespace Database {
             Mono,
             Left,
             Right,
-            Both
+            Both,
+            Unknown
         };
 
         enum general_stat_cfg {

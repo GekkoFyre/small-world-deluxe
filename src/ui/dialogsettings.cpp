@@ -59,7 +59,8 @@ QVector<QString> DialogSettings::unique_mfgs = { "None" };
  * @param filePtr
  * @param parent
  */
-DialogSettings::DialogSettings(std::shared_ptr<DekodeDb> dkDb, std::shared_ptr<GekkoFyre::FileIo> filePtr,
+DialogSettings::DialogSettings(std::shared_ptr<DekodeDb> dkDb,
+                               std::shared_ptr<GekkoFyre::FileIo> filePtr,
                                std::shared_ptr<GekkoFyre::AudioDevices> audioDevices,
                                std::shared_ptr<GekkoFyre::RadioLibs> radioPtr, QWidget *parent)
     : QDialog(parent), ui(new Ui::DialogSettings)
@@ -67,6 +68,15 @@ DialogSettings::DialogSettings(std::shared_ptr<DekodeDb> dkDb, std::shared_ptr<G
     ui->setupUi(this);
 
     try {
+        //
+        // Initialize PortAudio for Settings Dialog!
+        //
+        autoSys.initialize();
+        gkPortAudioInit = new portaudio::System(portaudio::System::instance());
+
+        chosen_input_index = -1;
+        chosen_output_index = -1;
+
         gkRadioLibs = radioPtr;
         gkDekodeDb = dkDb;
         gkFileIo = filePtr;
@@ -97,14 +107,11 @@ DialogSettings::DialogSettings(std::shared_ptr<DekodeDb> dkDb, std::shared_ptr<G
         prefill_avail_com_ports(status_com_ports);
         prefill_avail_usb_ports(status_usb_devices);
 
-        portaudio::AutoSystem autoSys;
-        portAudioSys = new portaudio::System(portaudio::System::instance());
-
-        std::vector<GkDevice> audio_devices = gkAudioDevices->filterAudioDevices(gkAudioDevices->enumAudioDevicesCpp(*portAudioSys));
+        std::vector<GkDevice> audio_devices = gkAudioDevices->filterAudioDevices(gkAudioDevices->enumAudioDevicesCpp(gkPortAudioInit));
         prefill_audio_devices(audio_devices);
 
-        ui->label_pa_version->setText(gkAudioDevices->portAudioVersionNumber(*portAudioSys));
-        ui->textEdit_pa_version_text->setText(gkAudioDevices->portAudioVersionText(*portAudioSys));
+        ui->label_pa_version->setText(gkAudioDevices->portAudioVersionNumber(*gkPortAudioInit));
+        ui->textEdit_pa_version_text->setText(gkAudioDevices->portAudioVersionText(*gkPortAudioInit));
 
         prefill_com_baud_speed(GekkoFyre::AmateurRadio::com_baud_rates::BAUD1200);
         prefill_com_baud_speed(GekkoFyre::AmateurRadio::com_baud_rates::BAUD2400);
@@ -137,7 +144,10 @@ DialogSettings::~DialogSettings()
 {
     delete rig_comboBox;
     delete mfg_comboBox;
-    portAudioSys->terminate();
+
+    autoSys.terminate();
+    gkPortAudioInit->terminate();
+
     delete ui;
 }
 
@@ -427,7 +437,7 @@ void DialogSettings::prefill_audio_devices(std::vector<GkDevice> audio_devices_v
 
         // Select the user's chosen audio output devices, if one has been previously chosen
         // and saved as a setting...
-        for (const auto &output_device: avail_output_audio_devs.toStdMap()) {
+        for (const auto output_device: avail_output_audio_devs.toStdMap()) {
             if (output_device.second.is_output_dev) { // Do not change this! Weird bugs occur otherwise...
                 if ((output_identifier >= 0) && !(output_identifier < 0)) {
                     // We have a saved output device within our settings database
@@ -815,7 +825,7 @@ void DialogSettings::on_pushButton_output_sound_test_clicked()
         int ret = msgBox.exec();
 
         if (ret == QMessageBox::Ok) {
-            gkAudioDevices->testSinewave(*portAudioSys, chosen_output_audio_dev);
+            gkAudioDevices->testSinewave(*gkPortAudioInit, chosen_output_audio_dev, true);
             QMessageBox::information(this, tr("Finished"), tr("The audio test has now finished."), QMessageBox::Ok);
         } else if (ret == QMessageBox::Abort) {
             QMessageBox::information(this, tr("Aborted"), tr("The operation has been terminated."), QMessageBox::Ok);
@@ -863,11 +873,12 @@ void DialogSettings::on_comboBox_soundcard_output_currentIndexChanged(int index)
     Q_UNUSED(index);
     try {
         int actual_index = ui->comboBox_soundcard_output->currentData().toInt();
-        for (const auto &device: avail_output_audio_devs.toStdMap()) {
+        for (const auto device: avail_output_audio_devs.toStdMap()) {
             if (device.first == actual_index) {
                 GkDevice chosen_output;
                 chosen_output = device.second;
-                chosen_output = gkAudioDevices->gatherAudioDeviceDetails(*portAudioSys, actual_index);
+                chosen_output = gkAudioDevices->gatherAudioDeviceDetails(gkPortAudioInit, actual_index);
+
                 chosen_output_audio_dev = chosen_output;
 
                 return;
