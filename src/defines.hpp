@@ -121,7 +121,7 @@ namespace GekkoFyre {
 typedef std::vector<char> char_array;
 
 namespace Filesystem {
-    constexpr char resourceFile[] = "sworld_res.rcc";
+    constexpr char resourceFile[] = "resources.rcc";
     constexpr char fileName[] = "settings.db";          // The filename for the database itself which is TAR archived and compressed
     constexpr char dbFolder[] = "settings_db_temp";     // The filename for the intermittently alive, database folder
     constexpr char tarExtension[] = ".tar";             // The file extension given to (mostly uncompressed) TAR archive
@@ -217,7 +217,7 @@ namespace Database {
                 int dev_output_channel_count;           // The number of channels this OUTPUT audio device supports
                 audio_channels sel_channels;            // The selected audio channel configuration
                 PaError asio_err;                       // ASIO specific error related information
-                PaDeviceInfo *device_info;              // All information pertaining to this audio device
+                PaDeviceInfo device_info;               // All information pertaining to this audio device
                 PaStreamParameters stream_parameters;   // Device-specific information such as the sample format, etc.
                 PaHostApiTypeId host_type_id;
             };

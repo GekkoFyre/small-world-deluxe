@@ -172,7 +172,7 @@ void DekodeDb::write_audio_device_settings(const GkDevice &value, const QString 
         batch.Put("AudioOutputDefSampleRate", std::to_string(value.def_sample_rate));
         batch.Put("AudioOutputChannelCount", std::to_string(value.dev_output_channel_count));
         batch.Put("AudioOutputSelChannels", std::to_string(value.sel_channels));
-        batch.Put("AudioOutputDevName", value.device_info->name);
+        batch.Put("AudioOutputDevName", value.device_info.name);
 
         // Determine if this is the default output device for the system and if so, convert
         // the boolean value to a std::string suitable for database storage.
@@ -184,7 +184,7 @@ void DekodeDb::write_audio_device_settings(const GkDevice &value, const QString 
         batch.Put("AudioInputDefSampleRate", std::to_string(value.def_sample_rate));
         batch.Put("AudioInputChannelCount", std::to_string(value.dev_input_channel_count));
         batch.Put("AudioInputSelChannels", std::to_string(value.sel_channels));
-        batch.Put("AudioInputDevName", value.device_info->name);
+        batch.Put("AudioInputDevName", value.device_info.name);
 
         // Determine if this is the default input device for the system and if so, convert
         // the boolean value to a std::string suitable for database storage.
