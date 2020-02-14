@@ -104,6 +104,11 @@ DialogSettings::DialogSettings(std::shared_ptr<DekodeDb> dkDb,
         prefill_avail_com_ports(status_com_ports);
         prefill_avail_usb_ports(status_usb_devices);
 
+        if (status_com_ports.size() > 0) {
+            // Select the initial COM port and load it into memory
+            on_comboBox_com_port_currentIndexChanged(ui->comboBox_com_port->currentIndex());
+        }
+
         std::vector<GkDevice> audio_devices = gkAudioDevices->filterAudioDevices(gkAudioDevices->enumAudioDevicesCpp(gkPortAudioInit));
         prefill_audio_devices(audio_devices);
 
@@ -190,9 +195,9 @@ void DialogSettings::on_pushButton_submit_config_clicked()
                 if (com_device == sel_port.second) {
                     if (sel_port.first == avail_port.second.first) {
                         #ifdef _WIN32
-                        chosen_com_port = avail_port.first; // The chosen serial device uses its own name as a reference
+                        chosen_com_port = sel_port.first; // The chosen serial device uses its own name as a reference
                         #elif __linux__
-                        chosen_com_port = avail_port.second.first; // The chosen serial device uses a Target Path as reference
+                        chosen_com_port = sel_port.first; // The chosen serial device uses a Target Path as reference
                         #endif
                         break;
                     }
@@ -348,12 +353,12 @@ void DialogSettings::prefill_audio_devices(std::vector<GkDevice> audio_devices_v
         int input_identifier = gkDekodeDb->read_audio_device_settings(false);
 
         for (const auto device: audio_devices_vec) {
-            if (device.device_info->hostApi >= 0) {
+            if (device.device_info.hostApi >= 0) {
                 if (device.is_output_dev) {
                     //
                     // Audio device is an output
                     //
-                    std::string audio_dev_name = device.device_info->name;
+                    std::string audio_dev_name = device.device_info.name;
                     if (!audio_dev_name.empty()) {
                         ui->comboBox_soundcard_output->insertItem(device.stream_parameters.device, QString::fromStdString(audio_dev_name),
                                                                   device.stream_parameters.device);
@@ -363,7 +368,7 @@ void DialogSettings::prefill_audio_devices(std::vector<GkDevice> audio_devices_v
                     //
                     // Audio device is an input
                     //
-                    std::string audio_dev_name = device.device_info->name;
+                    std::string audio_dev_name = device.device_info.name;
                     if (!audio_dev_name.empty()) {
                         ui->comboBox_soundcard_input->insertItem(device.stream_parameters.device, QString::fromStdString(audio_dev_name),
                                                                  device.stream_parameters.device);

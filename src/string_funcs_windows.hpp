@@ -41,6 +41,10 @@
 #include <QObject>
 #include <string>
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 namespace GekkoFyre {
 
 class StringFuncs : public QObject {
@@ -53,6 +57,7 @@ public:
     static std::string multiByteFromWide(LPCWSTR pwsz, UINT cp);
     static std::wstring strToWStrWin(const std::string &s);
     std::wstring removeSpecialChars(std::wstring wstr);
+    bool modalDlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon);
 
 };
 };

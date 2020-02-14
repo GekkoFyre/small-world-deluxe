@@ -100,6 +100,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         ui->action_Settings->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/settings-flat.svg"));
         ui->actionCheck_for_Updates->setIcon(QIcon(":/resources/contrib/images/vector/purchased/iconfinder_chemistry_226643.svg"));
 
+        hwnd_terminating_msg_box = nullptr;
+
         //
         // Create a status bar at the bottom of the window with a default message
         // https://doc.qt.io/qt-5/qstatusbar.html
@@ -143,13 +145,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize our own PortAudio libraries and associated buffers!
         //
-        portaudio::AutoSystem autoSys;
+        autoSys.initialize();
         gkPortAudioInit = new portaudio::System(portaudio::System::instance());
 
-        gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(dekodeDb, fileIo, this);
+        gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(dekodeDb, fileIo, gkStringFuncs, this);
         auto pref_audio_devices = gkAudioDevices->initPortAudio(gkPortAudioInit);
 
-        for (const auto &device: pref_audio_devices) {
+        for (const auto device: pref_audio_devices) {
             // Now filter out what is the input and output device selectively!
             if (device.is_output_dev) {
                 // Output device
@@ -158,14 +160,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 // Input device
                 pref_input_device = device;
             }
-        }
-
-        if (pref_output_device.device_info == nullptr) {
-            throw std::runtime_error(tr("An error was encountered whilst enumerating your audio devices!").toStdString());
-        }
-
-        if (pref_input_device.device_info == nullptr) {
-            throw std::runtime_error(tr("An error was encountered whilst enumerating your audio devices!").toStdString());
         }
 
         if (pref_output_device.dev_output_channel_count > 0 && pref_output_device.def_sample_rate > 0) {
@@ -280,6 +274,7 @@ MainWindow::~MainWindow()
     }
 
     appTerm.join();
+    DestroyWindow(hwnd_terminating_msg_box);
     delete ui;
 }
 
@@ -364,6 +359,23 @@ void MainWindow::createStatusBar(const QString &statusMsg)
     }
 }
 
+bool MainWindow::changeStatusBarMsg(const QString &statusMsg)
+{
+    if (statusBar()->currentMessage().isEmpty()) {
+        if (!statusMsg.isEmpty() || !statusMsg.isNull()) {
+            statusBar()->showMessage(statusMsg, 5000);
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        statusBar()->clearMessage();
+        return changeStatusBarMsg(statusMsg);
+    }
+
+    return false;
+}
+
 /**
  * @brief MainWindow::steadyTimer is a simple duration timer that returns TRUE upon reaching a set duration that
  * is stated in milliseconds.
@@ -416,13 +428,9 @@ void MainWindow::print_exception(const std::exception &e, int level)
 void MainWindow::appTerminating()
 {
     #ifdef _WIN32
-    //
-    // https://docs.microsoft.com/en-us/windows/win32/dlgbox/using-dialog-boxes
-    // https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-messagebox
-    //
-    MessageBox(nullptr, tr("Please wait as the application terminates.").toStdString().c_str(), tr("Aborting...").toStdString().c_str(), MB_ICONINFORMATION | MB_OK);
+    MessageBox(hwnd_terminating_msg_box, tr("Please wait as the application terminates.").toStdString().c_str(), tr("Aborting...").toStdString().c_str(), MB_ICONINFORMATION | MB_OK);
     #elif __linux__
-    // TODO: Program a version for Linux/Unix systems!
+    // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
     #endif
 
     return;
@@ -588,24 +596,37 @@ void MainWindow::radioStats(AmateurRadio::Control::Radio *radio_dev)
     return;
 }
 
-void MainWindow::paMicProcBackground(const GkDevice &input_audio_device)
+PaStreamCallbackResult MainWindow::paMicProcBackground(const GkDevice &input_audio_device)
 {
     try {
         portaudio::MemFunCallbackStream<PaAudioBuf> *streamRecord = nullptr;
-        PaStreamCallbackResult result = gkAudioDevices->openRecordStream(*gkPortAudioInit, gkAudioBuf_output,
-                                                                         input_audio_device, streamRecord, false);
+        PaStreamCallbackResult result = gkAudioDevices->openRecordStream(*gkPortAudioInit, &gkAudioBuf_output,
+                                                                         input_audio_device, &streamRecord, false);
 
-        while (streamRecord->isOpen() || btn_radio_rx) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        if (streamRecord != nullptr) {
+            while (streamRecord->isOpen() && btn_radio_rx) {
+                continue;
+            }
+
+            streamRecord->stop();
+            streamRecord->close();
+
+            if (tInputDev.try_join_for(boost::chrono::milliseconds(5000))) {
+                tInputDev.join();
+            } else {
+                tInputDev.interrupt();
+            }
+
+            return result;
+        } else {
+            return paAbort;
         }
-
-        streamRecord->stop();
-        streamRecord->close();
     } catch (const std::exception &e) {
-        print_exception(e);
+        QMessageBox::warning(this, tr("Error!"), tr("An error occurred during the recording of an input audio stream:\n\n%1").arg(e.what()),
+                             QMessageBox::Ok);
     }
 
-    return;
+    return paAbort;
 }
 
 void MainWindow::on_actionSave_Decoded_Ab_triggered()
@@ -639,18 +660,26 @@ void MainWindow::on_pushButton_bridge_input_audio_clicked()
 
 void MainWindow::on_pushButton_radio_receive_clicked()
 {
+    //
+    // TODO: Implement a timer so this button can only be pressed every several
+    // seconds, as according to the boost::thread() function...
+    //
+
     try {
         if (!btn_radio_rx) {
             if (pref_input_device.stream_parameters.device != paNoDevice) {
                 if (pref_input_device.is_output_dev == boost::tribool::false_value) {
-                    if (pref_input_device.device_info->maxInputChannels > 0) {
-                        if ((pref_input_device.device_info->name != nullptr)) {
+                    if (pref_input_device.device_info.maxInputChannels > 0) {
+                        if ((pref_input_device.device_info.name != nullptr)) {
                             // Set the QPushButton to 'Green'
                             changePushButtonColor(ui->pushButton_radio_receive, false);
                             btn_radio_rx = true;
 
                             tInputDev = boost::thread(&MainWindow::paMicProcBackground, this, pref_input_device);
                             tInputDev.detach();
+
+                            changeStatusBarMsg(tr("Receiving audio..."));
+
                             return;
                         } else {
                             throw std::runtime_error(tr("The PortAudio library has not been properly initialized!").toStdString());
@@ -672,6 +701,9 @@ void MainWindow::on_pushButton_radio_receive_clicked()
             // Set the QPushButton to 'Red'
             changePushButtonColor(ui->pushButton_radio_receive, true);
             btn_radio_rx = false;
+
+            changeStatusBarMsg(tr("No longer receiving audio!"));
+
             return;
         }
     } catch (const std::exception &e) {

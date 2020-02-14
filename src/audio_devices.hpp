@@ -50,6 +50,8 @@
 #include <string>
 #include <memory>
 #include <mutex>
+#include <future>
+#include <thread>
 #include <QString>
 
 #ifdef _WIN32
@@ -64,7 +66,8 @@ class AudioDevices : public QObject {
     Q_OBJECT
 
 public:
-    explicit AudioDevices(std::shared_ptr<GekkoFyre::DekodeDb> gkDb, std::shared_ptr<GekkoFyre::FileIo> filePtr, QObject *parent = nullptr);
+    explicit AudioDevices(std::shared_ptr<GekkoFyre::DekodeDb> gkDb, std::shared_ptr<GekkoFyre::FileIo> filePtr,
+                          std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs, QObject *parent = nullptr);
     ~AudioDevices();
 
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> initPortAudio(portaudio::System *portAudioSys);
@@ -84,10 +87,9 @@ public:
     PaStreamCallbackResult openPlaybackStream(portaudio::System &portAudioSys, GekkoFyre::PaAudioBuf *audio_buf,
                                               const GekkoFyre::Database::Settings::Audio::GkDevice &device,
                                               const bool &stereo = true);
-    PaStreamCallbackResult openRecordStream(portaudio::System &portAudioSys, GekkoFyre::PaAudioBuf *audio_buf,
+    PaStreamCallbackResult openRecordStream(portaudio::System &portAudioSys, PaAudioBuf **audio_buf,
                                             const GekkoFyre::Database::Settings::Audio::GkDevice &device,
-                                            portaudio::MemFunCallbackStream<PaAudioBuf> *streamRecord,
-                                            const bool &stereo = true);
+                                            portaudio::MemFunCallbackStream<PaAudioBuf> **stream_record_ptr, const bool &stereo = true);
 
     std::vector<Database::Settings::Audio::GkDevice> filterAudioDevices(const std::vector<Database::Settings::Audio::GkDevice> audio_devices_vec);
     QString portAudioVersionNumber(const portaudio::System &portAudioSys);
@@ -96,6 +98,7 @@ public:
 private:
     std::shared_ptr<DekodeDb> gkDekodeDb;
     std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
+    std::shared_ptr<StringFuncs> gkStringFuncs;
 
     bool filterAudioEnum(const PaHostApiTypeId &host_api_type);
 

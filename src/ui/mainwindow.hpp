@@ -46,7 +46,7 @@
 #include "src/pa_audio_buf.hpp"
 #include "dialogsettings.hpp"
 #include <boost/filesystem.hpp>
-#include <boost/thread/thread.hpp>
+#include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
 #include <memory>
 #include <ctime>
@@ -138,8 +138,14 @@ private:
     std::shared_ptr<GekkoFyre::RadioLibs> gkRadioLibs;
 
     //
+    // Window Handlers for Microsoft message boxes
+    //
+    HWND hwnd_terminating_msg_box;
+
+    //
     // PortAudio initialization and buffers
     //
+    portaudio::AutoSystem autoSys;
     portaudio::System *gkPortAudioInit;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
@@ -174,13 +180,14 @@ private:
 
     void radioStats(GekkoFyre::AmateurRadio::Control::Radio *radio_dev);
 
-    void paMicProcBackground(const GekkoFyre::Database::Settings::Audio::GkDevice &input_audio_device);
+    PaStreamCallbackResult paMicProcBackground(const GekkoFyre::Database::Settings::Audio::GkDevice &input_audio_device);
     void procVuMeter(const GekkoFyre::Database::Settings::Audio::GkDevice &audio_stream);
 
     void changePushButtonColor(QPointer<QPushButton> push_button, const bool &green_result = true,
                                const bool &color_blind_mode = false);
 
     void createStatusBar(const QString &statusMsg = "");
+    bool changeStatusBarMsg(const QString &statusMsg = "");
     bool steadyTimer(const int &seconds);
     void print_exception(const std::exception &e, int level = 0);
     void appTerminating();

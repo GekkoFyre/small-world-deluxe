@@ -267,7 +267,7 @@ qt5_wrap_ui(UI_HEADERS
     src/ui/aboutdialog.ui
     src/ui/spectrodialog.ui)
 
-# qt5_add_resources(UI_RESOURCES src/smallworld_res.qrc)
+qt5_add_resources(UI_RESOURCES src/sworld_res.qrc)
 
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_BINARY_DIR})
@@ -337,8 +337,8 @@ add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_
 target_link_libraries(galaxy Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Charts Qt5::Test Threads::Threads ${OpenCV_LIBS} ${LIBS})
 
 # rcc -no-compress -binary smallworld_res.qrc -o smallworld_res.rcc
-# qt5_add_binary_resources(resources src/smallworld_res.qrc OPTIONS -no-compress)
-# add_dependencies(galaxy resources)
+qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)
+add_dependencies(galaxy resources)
 
 add_executable(smallworld
     src/main.cpp

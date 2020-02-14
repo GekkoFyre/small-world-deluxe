@@ -61,10 +61,12 @@ using namespace Audio;
  * @param parent
  * @note Core Audio APIs <https://docs.microsoft.com/en-us/windows/win32/api/_coreaudio/index>
  */
-AudioDevices::AudioDevices(std::shared_ptr<DekodeDb> gkDb, std::shared_ptr<GekkoFyre::FileIo> filePtr, QObject *parent)
+AudioDevices::AudioDevices(std::shared_ptr<DekodeDb> gkDb, std::shared_ptr<GekkoFyre::FileIo> filePtr,
+                           std::shared_ptr<StringFuncs> stringFuncs, QObject *parent)
 {
     gkDekodeDb = gkDb;
     gkFileIo = filePtr;
+    gkStringFuncs = stringFuncs;
 }
 
 AudioDevices::~AudioDevices()
@@ -111,6 +113,7 @@ std::vector<GkDevice> AudioDevices::initPortAudio(portaudio::System *portAudioSy
             std::lock_guard<std::mutex> lck_guard(init_port_audio_mtx);
             PaDeviceIndex output_dev = gkDekodeDb->read_audio_device_settings(true);
             GkDevice output_dev_details = gatherAudioDeviceDetails(portAudioSys, output_dev);
+            device_export.push_back(output_dev_details);
         }
 
         if (chosen_input_dev < 0) {
@@ -129,6 +132,7 @@ std::vector<GkDevice> AudioDevices::initPortAudio(portaudio::System *portAudioSy
             std::lock_guard<std::mutex> lck_guard(init_port_audio_mtx);
             PaDeviceIndex input_dev = gkDekodeDb->read_audio_device_settings(false);
             GkDevice input_dev_details = gatherAudioDeviceDetails(portAudioSys, input_dev);
+            device_export.push_back(input_dev_details);
         }
 
         return device_export;
@@ -267,7 +271,7 @@ std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp(portaudio::System *portA
             // Grab the unique Device Info
             //
             deviceInfo = Pa_GetDeviceInfo((*i).index());
-            device.device_info = const_cast<PaDeviceInfo*>(deviceInfo);
+            device.device_info = *const_cast<PaDeviceInfo*>(deviceInfo);
 
             device.dev_name_formatted = audio_device_name.str();
             device.host_type_id = Pa_GetHostApiInfo(deviceInfo->hostApi)->type;
@@ -444,9 +448,6 @@ PaStreamCallbackResult AudioDevices::testSinewave(portaudio::System &portAudioSy
     try {
         std::mutex test_sinewave_mtx;
         std::lock_guard<std::mutex> lck_guard(test_sinewave_mtx);
-        if (device.device_info == nullptr) {
-            throw std::runtime_error(tr("The PortAudio library has not been properly initialized!").toStdString());
-        }
 
         PaTime prefOutputLatency = portAudioSys.deviceByIndex(device.stream_parameters.device).defaultLowOutputLatency();
         PaTime prefInputLatency = portAudioSys.deviceByIndex(device.stream_parameters.device).defaultLowInputLatency();
@@ -618,9 +619,9 @@ PaStreamCallbackResult AudioDevices::openPlaybackStream(portaudio::System &portA
  * @param stereo
  * @return
  */
-PaStreamCallbackResult AudioDevices::openRecordStream(portaudio::System &portAudioSys, PaAudioBuf *audio_buf,
+PaStreamCallbackResult AudioDevices::openRecordStream(portaudio::System &portAudioSys, PaAudioBuf **audio_buf,
                                                       const GkDevice &device,
-                                                      portaudio::MemFunCallbackStream<PaAudioBuf> *streamRecord,
+                                                      portaudio::MemFunCallbackStream<PaAudioBuf> **stream_record_ptr,
                                                       const bool &stereo)
 {
     try {
@@ -633,31 +634,51 @@ PaStreamCallbackResult AudioDevices::openRecordStream(portaudio::System &portAud
             // Recording input stream
             //
             portaudio::DirectionSpecificStreamParameters inputParamsRecord(portAudioSys.deviceByIndex(device.stream_parameters.device),
-                                                                           device.dev_output_channel_count, portaudio::FLOAT32,
+                                                                           device.dev_input_channel_count, portaudio::FLOAT32,
                                                                            false, prefInputLatency, nullptr);
             portaudio::StreamParameters recordParams(inputParamsRecord, portaudio::DirectionSpecificStreamParameters::null(), device.def_sample_rate,
                                                      AUDIO_FRAMES_PER_BUFFER, paClipOff);
-            streamRecord = new portaudio::MemFunCallbackStream<PaAudioBuf>(recordParams, *audio_buf, &PaAudioBuf::recordCallback);
+            portaudio::MemFunCallbackStream<PaAudioBuf> *streamRecord = new portaudio::MemFunCallbackStream<PaAudioBuf>(recordParams, **audio_buf, &PaAudioBuf::recordCallback);
 
-            while (streamRecord->isOpen()) {
-                portAudioSys.sleep(1 * 1000); // Sleep for a single second
-            }
-
-            // streamRecord->stop();
-            // streamRecord->close();
+            *stream_record_ptr = streamRecord;
+            streamRecord->start();
 
             return paContinue;
         } else {
             throw std::runtime_error(tr("You must firstly choose an input audio device within the settings!").toStdString());
         }
     } catch (const portaudio::PaException &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText()), QMessageBox::Ok);
+        #ifdef _WIN32
+        HWND hwnd = nullptr;
+        gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), tr("[ PortAudio ] %1").arg(e.paErrorText()), MB_ICONERROR);
+        DestroyWindow(hwnd);
+        #elif __linux__
+        // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
+        #endif
     } catch (const portaudio::PaCppException &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+        #ifdef _WIN32
+        HWND hwnd = nullptr;
+        gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), tr("[ PortAudioCpp ] %1").arg(e.what()), MB_ICONERROR);
+        DestroyWindow(hwnd);
+        #elif __linux__
+        // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
+        #endif
     } catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), tr("A generic exception has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+        #ifdef _WIN32
+        HWND hwnd = nullptr;
+        gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), tr("[ Generic exception ] %1").arg(e.what()), MB_ICONERROR);
+        DestroyWindow(hwnd);
+        #elif __linux__
+        // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
+        #endif
     } catch (...) {
-        QMessageBox::warning(nullptr, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), QMessageBox::Ok);
+        #ifdef _WIN32
+        HWND hwnd = nullptr;
+        gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), MB_ICONERROR);
+        DestroyWindow(hwnd);
+        #elif __linux__
+        // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
+        #endif
     }
 
     return paAbort;
@@ -679,7 +700,7 @@ std::vector<GkDevice> AudioDevices::filterAudioDevices(const std::vector<GkDevic
 
         std::lock_guard<std::mutex> lck_guard(device_loop_mtx);
         for (const auto &device: audio_devices_vec) {
-            device_name_list.push_back(device.device_info->name);
+            device_name_list.push_back(device.device_info.name);
         }
 
         std::sort(device_name_list.begin(), device_name_list.end());
@@ -690,9 +711,9 @@ std::vector<GkDevice> AudioDevices::filterAudioDevices(const std::vector<GkDevic
 
         for (const auto &name: device_name_list) {
             for (const auto &device: audio_devices_vec) {
-                if (std::strcmp(name.c_str(), device.device_info->name) == 0) {
-                    if (device.device_info->maxInputChannels > 0 || device.device_info->maxOutputChannels > 0) {
-                        if (device.device_info->hostApi > 0) {
+                if (std::strcmp(name.c_str(), device.device_info.name) == 0) {
+                    if (device.device_info.maxInputChannels > 0 || device.device_info.maxOutputChannels > 0) {
+                        if (device.device_info.hostApi > 0) {
                             unique_devices.push_back(device);
                         }
                     }

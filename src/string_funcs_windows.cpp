@@ -107,3 +107,29 @@ std::wstring StringFuncs::removeSpecialChars(std::wstring wstr)
     wstr.erase(std::remove_if(wstr.begin(), wstr.end(), [](char ch){ return !::iswalnum(ch); }), wstr.end());
     return wstr;
 }
+
+/**
+ * @brief StringFuncs::modalDlgBoxOk Creates a modal message box within the Win32 API, with an OK button.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @note <https://docs.microsoft.com/en-us/windows/win32/dlgbox/using-dialog-boxes#creating-a-modal-dialog-box>
+ * <https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-messagebox>
+ * @param hinst
+ * @return Whether the OK button was selected or not.
+ */
+bool StringFuncs::modalDlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon)
+{
+    //
+    // https://docs.microsoft.com/en-us/windows/win32/winmsg/using-windows
+    // TODO: Make this dialog modal
+    //
+    int msgBoxId = MessageBox(hwnd, msgTxt.toStdString().c_str(), title.toStdString().c_str(), icon | MB_OK);
+
+    switch (msgBoxId) {
+    case IDOK:
+        return true;
+    default:
+        return false;
+    }
+
+    return false;
+}
