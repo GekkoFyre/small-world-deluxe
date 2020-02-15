@@ -56,8 +56,9 @@
 #include <QMainWindow>
 #include <QPushButton>
 #include <QPointer>
-#include <QMultiMap>
 #include <QChart>
+#include <QString>
+#include <QStringList>
 
 #ifdef __cplusplus
 extern "C"
@@ -113,7 +114,7 @@ private slots:
     void on_actionView_Graphs_triggered();
 
     void infoBar();
-    void updateVuMeter(const double &volumePctg);
+    void uponExit();
 
     //
     // QPushButtons that contain a logic state of some sort and are therefore displayed as
@@ -123,12 +124,28 @@ private slots:
     void on_pushButton_bridge_input_audio_clicked();
     void on_pushButton_radio_receive_clicked();
     void on_pushButton_radio_transmit_clicked();
-    void on_pushButton_radio_tune_clicked();
     void on_pushButton_radio_tx_halt_clicked();
     void on_pushButton_radio_monitor_clicked();
 
+    //
+    // Audio/Volume related controls
+    //
+    void updateVuMeter(const double &volumePctg);
+    void on_verticalSlider_vol_control_sliderMoved(int position);
+    void on_pushButton_radio_tune_clicked(bool checked);
+
+    //
+    // QComboBox'es
+    //
+    void on_comboBox_select_frequency_activated(int index);
+    void on_comboBox_select_digital_mode_activated(int index);
+
+protected slots:
+    void closeEvent(QCloseEvent *event);
+
 signals:
     void updateVolume(const double &volumePctg);
+    void gkExitApp();
 
 private:
     Ui::MainWindow *ui;
@@ -136,7 +153,7 @@ private:
     leveldb::DB *db;
     boost::filesystem::path save_db_path;
     std::shared_ptr<GekkoFyre::FileIo> fileIo;
-    std::shared_ptr<GekkoFyre::DekodeDb> dekodeDb;
+    std::shared_ptr<GekkoFyre::GkLevelDb> GkDb;
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
     std::shared_ptr<GekkoFyre::PaMic> gkPaMic;
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
@@ -156,7 +173,6 @@ private:
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
     GekkoFyre::PaAudioBuf *gkAudioBuf_input;    // For playback devices
     GekkoFyre::PaAudioBuf *gkAudioBuf_output;   // For recording devices
-    portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *streamRecord;
 
     //
     // Multithreading
@@ -187,10 +203,12 @@ private:
     void radioStats(GekkoFyre::AmateurRadio::Control::Radio *radio_dev);
 
     PaStreamCallbackResult paMicProcBackground(const GekkoFyre::Database::Settings::Audio::GkDevice &input_audio_device);
-    void procVuMeter();
+    void procVuMeter(portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *stream);
 
     void changePushButtonColor(QPointer<QPushButton> push_button, const bool &green_result = true,
                                const bool &color_blind_mode = false);
+    QStringList getAmateurBands();
+    bool prefillAmateurBands();
 
     void createStatusBar(const QString &statusMsg = "");
     bool changeStatusBarMsg(const QString &statusMsg = "");

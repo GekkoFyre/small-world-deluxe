@@ -61,7 +61,7 @@ using namespace Audio;
  * @param parent
  * @note Core Audio APIs <https://docs.microsoft.com/en-us/windows/win32/api/_coreaudio/index>
  */
-AudioDevices::AudioDevices(std::shared_ptr<DekodeDb> gkDb, std::shared_ptr<GekkoFyre::FileIo> filePtr,
+AudioDevices::AudioDevices(std::shared_ptr<GkLevelDb> gkDb, std::shared_ptr<GekkoFyre::FileIo> filePtr,
                            std::shared_ptr<StringFuncs> stringFuncs, QObject *parent)
 {
     gkDekodeDb = gkDb;

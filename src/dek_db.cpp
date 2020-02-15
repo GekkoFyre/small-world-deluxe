@@ -45,7 +45,6 @@
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
 #include <sstream>
-#include <string>
 #include <vector>
 #include <ctime>
 #include <cstring>
@@ -58,13 +57,13 @@ using namespace Settings;
 using namespace Audio;
 namespace fs = boost::filesystem;
 
-DekodeDb::DekodeDb(leveldb::DB *db_ptr, std::shared_ptr<FileIo> filePtr, QObject *parent) : QObject(parent)
+GkLevelDb::GkLevelDb(leveldb::DB *db_ptr, std::shared_ptr<FileIo> filePtr, QObject *parent) : QObject(parent)
 {
     db = db_ptr;
     fileIo = filePtr;
 }
 
-DekodeDb::~DekodeDb()
+GkLevelDb::~GkLevelDb()
 {}
 
 /**
@@ -73,7 +72,7 @@ DekodeDb::~DekodeDb()
  * @param value
  * @param key
  */
-void DekodeDb::write_rig_settings(const QString &value, const Database::Settings::radio_cfg &key)
+void GkLevelDb::write_rig_settings(const QString &value, const Database::Settings::radio_cfg &key)
 {
     // Put key-value
 
@@ -161,7 +160,7 @@ void DekodeDb::write_rig_settings(const QString &value, const Database::Settings
  * @param key
  * @param is_output_device
  */
-void DekodeDb::write_audio_device_settings(const GkDevice &value, const QString &key, const bool &is_output_device)
+void GkLevelDb::write_audio_device_settings(const GkDevice &value, const QString &key, const bool &is_output_device)
 {
     leveldb::WriteBatch batch;
     leveldb::Status status;
@@ -205,11 +204,40 @@ void DekodeDb::write_audio_device_settings(const GkDevice &value, const QString 
 }
 
 /**
+ * @brief DekodeDb::write_mainwindow_settings
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value
+ * @param key
+ */
+void GkLevelDb::write_mainwindow_settings(const QString &value, const general_mainwindow_cfg &key)
+{
+    leveldb::WriteBatch batch;
+    leveldb::Status status;
+
+    using namespace Database::Settings;
+    switch (key) {
+    case general_mainwindow_cfg::WindowMaximized:
+        batch.Put("WindowMaximized", value.toStdString());
+        break;
+    case general_mainwindow_cfg::WindowHSize:
+        batch.Put("WindowHSize", value.toStdString());
+        break;
+    case general_mainwindow_cfg::WindowVSize:
+        batch.Put("WindowVSize", value.toStdString());
+        break;
+    default:
+        return;
+    }
+
+    return;
+}
+
+/**
  * @brief DekodeDb::read_rig_settings
  * @param key
  * @return
  */
-QString DekodeDb::read_rig_settings(const Database::Settings::radio_cfg &key)
+QString GkLevelDb::read_rig_settings(const Database::Settings::radio_cfg &key)
 {
     leveldb::Status status;
     leveldb::ReadOptions read_options;
@@ -270,7 +298,7 @@ QString DekodeDb::read_rig_settings(const Database::Settings::radio_cfg &key)
  * @return Outputs an int that is internally referred to as the `dev_number`, regarding the
  * `GekkoFyre::Database::Settings::Audio::Device` structure in `define.hpp`.
  */
-int DekodeDb::read_audio_device_settings(const bool &is_output_device)
+int GkLevelDb::read_audio_device_settings(const bool &is_output_device)
 {
     std::mutex read_audio_dev_mtx;
     leveldb::Status status;
@@ -305,7 +333,7 @@ int DekodeDb::read_audio_device_settings(const bool &is_output_device)
  * @param is_output_device Whether we are dealing with an output or input audio device.
  * @return The struct, `GekkoFyre::Database::Settings::Audio::Device`.
  */
-GkDevice DekodeDb::read_audio_details_settings(const bool &is_output_device)
+GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
 {
     GkDevice audio_device;
     leveldb::Status status;
@@ -415,12 +443,45 @@ GkDevice DekodeDb::read_audio_details_settings(const bool &is_output_device)
 }
 
 /**
+ * @brief DekodeDb::read_mainwindow_settings
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param key
+ * @return
+ */
+QString GkLevelDb::read_mainwindow_settings(const general_mainwindow_cfg &key)
+{
+    GkDevice audio_device;
+    leveldb::Status status;
+    leveldb::ReadOptions read_options;
+
+    read_options.verify_checksums = true;
+    std::string output = "";
+
+    using namespace Database::Settings;
+    switch (key) {
+    case general_mainwindow_cfg::WindowMaximized:
+        status = db->Get(read_options, "WindowMaximized", &output);
+        return QString::fromStdString(output);
+    case general_mainwindow_cfg::WindowHSize:
+        status = db->Get(read_options, "WindowHSize", &output);
+        return QString::fromStdString(output);
+    case general_mainwindow_cfg::WindowVSize:
+        status = db->Get(read_options, "WindowVSize", &output);
+        return QString::fromStdString(output);
+    default:
+        return QString::fromStdString(output);
+    }
+
+    return QString::fromStdString(output);
+}
+
+/**
  * @brief DekodeDb::convertAudioChannelsInt
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param audio_channel_sel
  * @return
  */
-audio_channels DekodeDb::convertAudioChannelsInt(const int &audio_channel_sel)
+audio_channels GkLevelDb::convertAudioChannelsInt(const int &audio_channel_sel)
 {
     audio_channels ret = Mono;
     switch (audio_channel_sel) {
@@ -450,7 +511,7 @@ audio_channels DekodeDb::convertAudioChannelsInt(const int &audio_channel_sel)
  * @param is_true Whether we are dealing with a true or false situation.
  * @return The enumerated boolean value.
  */
-std::string DekodeDb::boolEnum(const bool &is_true)
+std::string GkLevelDb::boolEnum(const bool &is_true)
 {
     switch (is_true) {
     case true:
@@ -469,7 +530,7 @@ std::string DekodeDb::boolEnum(const bool &is_true)
  * @param is_true Whether we are dealing with a true or false situation.
  * @return The boolean value itself.
  */
-bool DekodeDb::boolStr(const std::string &is_true)
+bool GkLevelDb::boolStr(const std::string &is_true)
 {
     // TODO: Maybe convert to a Boost C++ tribool?
 

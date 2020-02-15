@@ -41,26 +41,29 @@
 #include "src/file_io.hpp"
 #include <leveldb/db.h>
 #include <leveldb/status.h>
-#include <QObject>
 #include <memory>
+#include <string>
+#include <QObject>
 #include <QString>
 
 namespace GekkoFyre {
 
-class DekodeDb : public QObject {
+class GkLevelDb : public QObject {
     Q_OBJECT
 
 public:
-    explicit DekodeDb(leveldb::DB *db_ptr, std::shared_ptr<GekkoFyre::FileIo> filePtr, QObject *parent = nullptr);
-    ~DekodeDb();
+    explicit GkLevelDb(leveldb::DB *db_ptr, std::shared_ptr<GekkoFyre::FileIo> filePtr, QObject *parent = nullptr);
+    ~GkLevelDb();
 
     void write_rig_settings(const QString &value, const Database::Settings::radio_cfg &key);
     void write_audio_device_settings(const GekkoFyre::Database::Settings::Audio::GkDevice &value, const QString &key,
                                      const bool &is_output_device);
+    void write_mainwindow_settings(const QString &value, const Database::Settings::general_mainwindow_cfg &key);
 
     QString read_rig_settings(const Database::Settings::radio_cfg &key);
     int read_audio_device_settings(const bool &is_output_device);
     GekkoFyre::Database::Settings::Audio::GkDevice read_audio_details_settings(const bool &is_output_device);
+    QString read_mainwindow_settings(const Database::Settings::general_mainwindow_cfg &key);
 
 
     GekkoFyre::Database::Settings::audio_channels convertAudioChannelsInt(const int &audio_channel_sel);

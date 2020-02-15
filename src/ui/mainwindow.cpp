@@ -64,6 +64,7 @@ using namespace GekkoFyre;
 using namespace Database;
 using namespace Settings;
 using namespace Audio;
+using namespace AmateurRadio;
 
 namespace fs = boost::filesystem;
 
@@ -144,11 +145,44 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         if (!save_db_path.empty()) {
             status = leveldb::DB::Open(options, save_db_path.string(), &db);
-            dekodeDb = std::make_shared<GekkoFyre::DekodeDb>(db, fileIo, this);
-            gkRadioLibs = std::make_shared<GekkoFyre::RadioLibs>(fileIo, gkStringFuncs, dekodeDb, this);
+            GkDb = std::make_shared<GekkoFyre::GkLevelDb>(db, fileIo, this);
+            gkRadioLibs = std::make_shared<GekkoFyre::RadioLibs>(fileIo, gkStringFuncs, GkDb, this);
         } else {
             throw std::runtime_error(tr("Unable to find settings database; we've lost its location! Aborting...").toStdString());
         }
+
+        //
+        // Load settings for QMainWindow
+        //
+        int window_width = GkDb->read_mainwindow_settings(general_mainwindow_cfg::WindowHSize).toInt();
+        int window_height = GkDb->read_mainwindow_settings(general_mainwindow_cfg::WindowVSize).toInt();
+        bool window_maximized = GkDb->read_mainwindow_settings(general_mainwindow_cfg::WindowMaximized).toInt();
+
+        // Set the x-axis size of QMainWindow
+        if (window_width >= MIN_MAIN_WINDOW_WIDTH) {
+            this->window()->size().setWidth(window_width);
+        }
+
+        // Set the y-axis size of QMainWindow
+        if (window_height >= MIN_MAIN_WINDOW_HEIGHT) {
+            this->window()->size().setHeight(window_height);
+        }
+
+        // Whether to maximize the QMainWindow or not
+        if (window_maximized == 1) {
+            this->window()->showMaximized();
+        } else if (window_maximized == 0) {
+            this->window()->showNormal();
+        } else {
+            window_maximized = false;
+        }
+
+        //
+        // Collect settings from QMainWindow, among other miscellaneous settings, upon termination of Small World Deluxe!
+        //
+        QObject::connect(this, SIGNAL(exit()), this, SLOT(uponExit()));
+        QObject::connect(this, SIGNAL(abort()), this, SLOT(uponExit()));
+        QObject::connect(this, SIGNAL(gkExitApp()), this, SLOT(uponExit()));
 
         //
         // Initialize our own PortAudio libraries and associated buffers!
@@ -156,7 +190,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         autoSys.initialize();
         gkPortAudioInit = new portaudio::System(portaudio::System::instance());
 
-        gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(dekodeDb, fileIo, gkStringFuncs, this);
+        gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(GkDb, fileIo, gkStringFuncs, this);
         auto pref_audio_devices = gkAudioDevices->initPortAudio(gkPortAudioInit);
 
         for (const auto device: pref_audio_devices) {
@@ -178,8 +212,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             gkAudioBuf_input = new PaAudioBuf(pref_input_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS);
         }
 
-        streamRecord = nullptr; // For the receiving of microphone (audio device) input
+        //
+        // Volume Meter
+        //
         QObject::connect(this, SIGNAL(updateVolume(double)), this, SLOT(updateVuMeter(double)));
+
+        //
+        // QMainWindow widgets
+        //
+        prefillAmateurBands();
 
         // Initialize the Hamlib 'radio' struct
         radio = new AmateurRadio::Control::Radio;
@@ -188,12 +229,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         radio->rig_file = rig_file_path_tmp.string();
 
         QString def_com_port = gkRadioLibs->initComPorts();
-        QString comDevice = dekodeDb->read_rig_settings(radio_cfg::ComDevice);
+        QString comDevice = GkDb->read_rig_settings(radio_cfg::ComDevice);
         if (!comDevice.isEmpty()) {
             def_com_port = comDevice;
         }
 
-        QString model = dekodeDb->read_rig_settings(radio_cfg::RigModel);
+        QString model = GkDb->read_rig_settings(radio_cfg::RigModel);
         if (!model.isEmpty() || !model.isNull()) {
             radio->rig_model = model.toInt();
         } else {
@@ -204,7 +245,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             radio->rig_model = 1;
         }
 
-        QString com_baud_rate = dekodeDb->read_rig_settings(radio_cfg::ComBaudRate);
+        QString com_baud_rate = GkDb->read_rig_settings(radio_cfg::ComBaudRate);
         AmateurRadio::com_baud_rates final_baud_rate = AmateurRadio::com_baud_rates::BAUD9600;
         if (!com_baud_rate.isEmpty() || !com_baud_rate.isNull()) {
             radio->dev_baud_rate = gkRadioLibs->convertBaudRateInt(com_baud_rate.toInt());
@@ -332,13 +373,13 @@ void MainWindow::on_action_Open_triggered()
  * @brief MainWindow::procVuMeter controls the volume meter on QMainWindow.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void MainWindow::procVuMeter()
+void MainWindow::procVuMeter(portaudio::MemFunCallbackStream<PaAudioBuf> *stream)
 {
     try {
         std::mutex proc_vu_meter_mtx;
         std::lock_guard<std::mutex> lck_guard(proc_vu_meter_mtx);
         size_t buffer_size_total = pref_input_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS;
-        while (streamRecord->isOpen() && btn_radio_rx) {
+        while (stream->isOpen() && btn_radio_rx) {
             //
             // Controls how often the volume meter should update/refresh, in milliseconds!
             //
@@ -382,6 +423,57 @@ void MainWindow::changePushButtonColor(QPointer<QPushButton> push_button, const 
 
     // TODO: Implement color-blind mode!
     return;
+}
+
+/**
+ * @brief MainWindow::getAmateurBands Gathers all of the requisite amateur radio bands that
+ * apply to Small World Deluxe and outputs them as a QStringList().
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return The amateur radio bands that apply to the workings of Small World Deluxe, as a QStringList().
+ */
+QStringList MainWindow::getAmateurBands()
+{
+    try {
+        QStringList bands;
+        bands.push_back(gkRadioLibs->translateBandsToStr(bands::BAND160));
+        bands.push_back(gkRadioLibs->translateBandsToStr(bands::BAND80));
+        bands.push_back(gkRadioLibs->translateBandsToStr(bands::BAND60));
+        bands.push_back(gkRadioLibs->translateBandsToStr(bands::BAND40));
+        bands.push_back(gkRadioLibs->translateBandsToStr(bands::BAND30));
+        bands.push_back(gkRadioLibs->translateBandsToStr(bands::BAND20));
+        bands.push_back(gkRadioLibs->translateBandsToStr(bands::BAND17));
+        bands.push_back(gkRadioLibs->translateBandsToStr(bands::BAND15));
+        bands.push_back(gkRadioLibs->translateBandsToStr(bands::BAND12));
+        bands.push_back(gkRadioLibs->translateBandsToStr(bands::BAND10));
+        bands.push_back(gkRadioLibs->translateBandsToStr(bands::BAND6));
+        bands.push_back(gkRadioLibs->translateBandsToStr(bands::BAND2));
+
+        return bands;
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
+    return QStringList();
+}
+
+/**
+ * @brief MainWindow::prefillAmateurBands fills out any relevant QComboBox'es with the requisite amateur
+ * radio bands that apply to Small World Deluxe.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return Whether the operation was a success or not.
+ */
+bool MainWindow::prefillAmateurBands()
+{
+    auto amateur_bands = getAmateurBands();
+    if (!amateur_bands.isEmpty()) {
+        ui->comboBox_select_frequency->addItems(amateur_bands);
+
+        return true;
+    } else {
+        return false;
+    }
+
+    return false;
 }
 
 /**
@@ -527,7 +619,7 @@ void MainWindow::on_actionShow_Waterfall_toggled(bool arg1)
  */
 void MainWindow::on_action_Settings_triggered()
 {
-    QPointer<DialogSettings> dlg_settings = new DialogSettings(dekodeDb, fileIo, gkAudioDevices, gkRadioLibs, this);
+    QPointer<DialogSettings> dlg_settings = new DialogSettings(GkDb, fileIo, gkAudioDevices, gkRadioLibs, this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
@@ -600,7 +692,7 @@ void MainWindow::on_actionPlay_triggered()
 
 void MainWindow::on_actionSettings_triggered()
 {
-    QPointer<DialogSettings> dlg_settings = new DialogSettings(dekodeDb, fileIo, gkAudioDevices, gkRadioLibs, this);
+    QPointer<DialogSettings> dlg_settings = new DialogSettings(GkDb, fileIo, gkAudioDevices, gkRadioLibs, this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
@@ -632,6 +724,19 @@ void MainWindow::infoBar()
     ui->label_curr_utc_date->setText(curr_utc_date_str);
 }
 
+/**
+ * @brief MainWindow::uponExit performs a number of functions upon exit of the application.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::uponExit()
+{
+    GkDb->write_mainwindow_settings(QString::number(this->window()->size().width()), general_mainwindow_cfg::WindowHSize);
+    GkDb->write_mainwindow_settings(QString::number(this->window()->size().height()), general_mainwindow_cfg::WindowVSize);
+    GkDb->write_mainwindow_settings(QString::number(this->window()->isMaximized()), general_mainwindow_cfg::WindowMaximized);
+
+    QApplication::exit(EXIT_SUCCESS);
+}
+
 void MainWindow::updateVuMeter(const double &volumePctg)
 {
     ui->progressBar_spect_vu_meter->setValue(volumePctg);
@@ -654,28 +759,37 @@ PaStreamCallbackResult MainWindow::paMicProcBackground(const GkDevice &input_aud
         std::mutex pa_mic_bckgrnd_mtx;
         std::lock_guard<std::mutex> lck_guard(pa_mic_bckgrnd_mtx);
         std::thread vu_meter;
+        portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *streamRecord = nullptr; // For the receiving of microphone (audio device) input
         PaStreamCallbackResult result = gkAudioDevices->openRecordStream(*gkPortAudioInit, &gkAudioBuf_output,
                                                                          input_audio_device, &streamRecord, false);
 
         if (streamRecord != nullptr) {
             if (streamRecord->isOpen() && btn_radio_rx) {
-                vu_meter = std::thread(&MainWindow::procVuMeter, this);
+                vu_meter = std::thread(&MainWindow::procVuMeter, this, streamRecord);
                 vu_meter.detach();
             }
 
-            while (streamRecord->isOpen() && btn_radio_rx) {
-                continue;
+            while (btn_radio_rx) {
+                if (streamRecord->isOpen()) {
+                    continue;
+                }
+
+                break;
             }
 
-            streamRecord->stop();
-            streamRecord->close();
-            vu_meter.join();
+            if (streamRecord->isOpen()) {
+                streamRecord->stop();
+                streamRecord->close();
+            }
 
+            vu_meter.join();
             if (tInputDev.try_join_for(boost::chrono::milliseconds(5000))) {
                 tInputDev.join();
             } else {
                 tInputDev.interrupt();
             }
+
+            emit updateVolume(0);
 
             return result;
         } else {
@@ -739,7 +853,7 @@ void MainWindow::on_pushButton_radio_receive_clicked()
                             tInputDev = boost::thread(&MainWindow::paMicProcBackground, this, pref_input_device);
                             tInputDev.detach();
 
-                            changeStatusBarMsg(tr("Receiving audio..."));
+                            changeStatusBarMsg(tr("Please wait! Beginning to receive audio..."));
 
                             return;
                         } else {
@@ -790,21 +904,6 @@ void MainWindow::on_pushButton_radio_transmit_clicked()
     return;
 }
 
-void MainWindow::on_pushButton_radio_tune_clicked()
-{
-    if (!btn_radio_tune) {
-        // Set the QPushButton to 'Green'
-        changePushButtonColor(ui->pushButton_radio_tune, false);
-        btn_radio_tune = true;
-    } else {
-        // Set the QPushButton to 'Red'
-        changePushButtonColor(ui->pushButton_radio_tune, true);
-        btn_radio_tune = false;
-    }
-
-    return;
-}
-
 void MainWindow::on_pushButton_radio_tx_halt_clicked()
 {
     if (!btn_radio_tx_halt) {
@@ -830,6 +929,58 @@ void MainWindow::on_pushButton_radio_monitor_clicked()
         // Set the QPushButton to 'Red'
         changePushButtonColor(ui->pushButton_radio_monitor, true);
         btn_radio_monitor = false;
+    }
+
+    return;
+}
+
+/**
+ * @brief MainWindow::on_verticalSlider_vol_control_sliderMoved gives a reading for when the volume
+ * controller (measured in dBm) is changed/moved.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param position The position of the volume controller on the scale, as measured from -100 to 0 dBm.
+ */
+void MainWindow::on_verticalSlider_vol_control_sliderMoved(int position)
+{
+    Q_UNUSED(position);
+    return;
+}
+
+void MainWindow::on_comboBox_select_frequency_activated(int index)
+{
+    Q_UNUSED(index);
+    return;
+}
+
+void MainWindow::on_comboBox_select_digital_mode_activated(int index)
+{
+    Q_UNUSED(index);
+    return;
+}
+
+/**
+ * @brief MainWindow::closeEvent is called upon having the Exit button in the extreme top-right being chosen.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param event
+ */
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    emit gkExitApp();
+    event->ignore();
+}
+
+void MainWindow::on_pushButton_radio_tune_clicked(bool checked)
+{
+    Q_UNUSED(checked);
+
+    if (!btn_radio_tune) {
+        // Set the QPushButton to 'Green'
+        changePushButtonColor(ui->pushButton_radio_tune, false);
+        btn_radio_tune = true;
+    } else {
+        // Set the QPushButton to 'Red'
+        changePushButtonColor(ui->pushButton_radio_tune, true);
+        btn_radio_tune = false;
     }
 
     return;

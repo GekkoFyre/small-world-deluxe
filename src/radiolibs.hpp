@@ -63,7 +63,7 @@ class RadioLibs : public QObject {
 
 public:
     explicit RadioLibs(std::shared_ptr<GekkoFyre::FileIo> filePtr, std::shared_ptr<GekkoFyre::StringFuncs> stringPtr,
-            std::shared_ptr<DekodeDb> dkDb, QObject *parent = nullptr);
+            std::shared_ptr<GkLevelDb> dkDb, QObject *parent = nullptr);
     ~RadioLibs() override;
 
     static int convertBaudRateEnum(const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate);
@@ -75,10 +75,11 @@ public:
     AmateurRadio::Control::Radio *init_rig(const rig_model_t &rig_model, const std::string &com_port,
                                            const GekkoFyre::AmateurRadio::com_baud_rates &com_baud_rate,
                                            const rig_debug_level_e &verbosity);
+    QString translateBandsToStr(const AmateurRadio::bands &band);
 
 private:
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
-    std::shared_ptr<GekkoFyre::DekodeDb> gkDekodeDb;
+    std::shared_ptr<GekkoFyre::GkLevelDb> gkDekodeDb;
     std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
 
     static void hamlibStatus(const int &retcode);

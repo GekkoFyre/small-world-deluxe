@@ -63,7 +63,7 @@ class DialogSettings : public QDialog
     Q_OBJECT
 
 public:
-    explicit DialogSettings(std::shared_ptr<GekkoFyre::DekodeDb> dkDb,
+    explicit DialogSettings(std::shared_ptr<GekkoFyre::GkLevelDb> dkDb,
                             std::shared_ptr<GekkoFyre::FileIo> filePtr,
                             std::shared_ptr<GekkoFyre::AudioDevices> audioDevices,
                             std::shared_ptr<GekkoFyre::RadioLibs> radioPtr,
@@ -89,7 +89,7 @@ private:
     portaudio::System *gkPortAudioInit;
 
     std::shared_ptr<GekkoFyre::RadioLibs> gkRadioLibs;
-    std::shared_ptr<GekkoFyre::DekodeDb> gkDekodeDb;
+    std::shared_ptr<GekkoFyre::GkLevelDb> gkDekodeDb;
     std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
     static QComboBox *rig_comboBox;

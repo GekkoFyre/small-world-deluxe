@@ -66,7 +66,7 @@ class AudioDevices : public QObject {
     Q_OBJECT
 
 public:
-    explicit AudioDevices(std::shared_ptr<GekkoFyre::DekodeDb> gkDb, std::shared_ptr<GekkoFyre::FileIo> filePtr,
+    explicit AudioDevices(std::shared_ptr<GekkoFyre::GkLevelDb> gkDb, std::shared_ptr<GekkoFyre::FileIo> filePtr,
                           std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs, QObject *parent = nullptr);
     ~AudioDevices();
 
@@ -96,7 +96,7 @@ public:
     QString portAudioVersionText(const portaudio::System &portAudioSys);
 
 private:
-    std::shared_ptr<DekodeDb> gkDekodeDb;
+    std::shared_ptr<GkLevelDb> gkDekodeDb;
     std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
     std::shared_ptr<StringFuncs> gkStringFuncs;
 

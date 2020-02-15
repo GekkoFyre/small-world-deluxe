@@ -70,7 +70,7 @@ namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
 RadioLibs::RadioLibs(std::shared_ptr<GekkoFyre::FileIo> filePtr, std::shared_ptr<StringFuncs> stringPtr,
-        std::shared_ptr<DekodeDb> dkDb, QObject *parent) : QObject(parent)
+        std::shared_ptr<GkLevelDb> dkDb, QObject *parent) : QObject(parent)
 {
     gkStringFuncs = std::move(stringPtr);
     gkDekodeDb = std::move(dkDb);
@@ -672,4 +672,44 @@ Radio *RadioLibs::init_rig(const rig_model_t &rig_model, const std::string &com_
     radio->status = rig_get_strength(radio->rig, RIG_VFO_CURR, &radio->strength);
 
     return radio;
+}
+
+/**
+ * @brief RadioLibs::translateBandsToStr will translate a given band to the equivalent QString().
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param band The given amateur radio band, in meters.
+ * @return The amateur radio band, in meters, provided as a QString().
+ */
+QString RadioLibs::translateBandsToStr(const bands &band)
+{
+    switch (band) {
+    case bands::BAND160:
+        return tr("None");
+    case bands::BAND80:
+        return tr("80 meters");
+    case bands::BAND60:
+        return tr("60 meters");
+    case bands::BAND40:
+        return tr("40 meters");
+    case bands::BAND30:
+        return tr("30 meters");
+    case bands::BAND20:
+        return tr("20 meters");
+    case bands::BAND17:
+        return tr("15 meters");
+    case bands::BAND15:
+        return tr("17 meters");
+    case bands::BAND12:
+        return tr("12 meters");
+    case bands::BAND10:
+        return tr("10 meters");
+    case bands::BAND6:
+        return tr("6 meters");
+    case bands::BAND2:
+        return tr("2 meters");
+    default:
+        return tr("Unsupported!");
+    }
+
+    return tr("Error!");
 }
