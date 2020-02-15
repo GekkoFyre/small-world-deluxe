@@ -38,16 +38,172 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include <qwt_plot.h>
+#include <qwt_plot_spectrogram.h>
+#include <qwt_color_map.h>
+#include <qwt_plot_spectrogram.h>
+#include <qwt_scale_widget.h>
+#include <qwt_scale_draw.h>
+#include <qwt_plot_zoomer.h>
+#include <qwt_plot_panner.h>
+#include <qwt_plot_layout.h>
+#include <qwt_plot_renderer.h>
 #include <QObject>
+#include <QtCharts>
+#include <QPointer>
+#include <QtPrintSupport/QPrinter>
+#include <QtPrintSupport/QPrintDialog>
+#include <QtNumeric>
+#include <QtGlobal>
 
 namespace GekkoFyre {
 
-class SpectroGui : public QObject {
+class SpectroGui : public QObject, QwtPlot {
     Q_OBJECT
 
 public:
-    explicit SpectroGui(QObject *parent = nullptr);
+    SpectroGui(QWidget *parent = nullptr);
     ~SpectroGui() override;
 
+public Q_SLOTS:
+    void showContour(const int &toggled);
+    void showSpectrogram(const bool &toggled);
+    void setColorMap(const int &idx);
+    void setAlpha(const int &alpha);
+
+private:
+    QwtPlotSpectrogram *gkSpectrogram;
+
+    int gkMapType;
+    int gkAlpha;
 };
+
+class MyZoomer: public QwtPlotZoomer {
+
+public:
+    MyZoomer(QWidget *canvas): QwtPlotZoomer(canvas) {
+        setTrackerMode(AlwaysOn);
+    }
+
+    virtual QwtText trackerTextF(const QPointF &pos) const {
+        QColor bg(Qt::white);
+        bg.setAlpha(200);
+
+        QwtText text = QwtPlotZoomer::trackerTextF(pos);
+        text.setBackgroundBrush( QBrush(bg));
+        return text;
+    }
+};
+
+class SpectrogramData: public QwtRasterData {
+
+public:
+    SpectrogramData() {
+        setInterval(Qt::XAxis, QwtInterval(-1.5, 1.5));
+        setInterval(Qt::YAxis, QwtInterval(-1.5, 1.5));
+        setInterval(Qt::ZAxis, QwtInterval(0.0, 10.0));
+    }
+
+    virtual double value(double x, double y) const {
+        const double c = 0.842;
+
+        const double v1 = (x * x + (y - c) * (y + c));
+        const double v2 = (x * (y + c) + x * (y + c));
+
+        return (1.0 / (v1 * v1 + v2 * v2));
+    }
+};
+
+class LinearColorMapRGB: public QwtLinearColorMap {
+
+public:
+    LinearColorMapRGB(): QwtLinearColorMap(Qt::darkCyan, Qt::red, QwtColorMap::RGB) {
+        addColorStop(0.1, Qt::cyan);
+        addColorStop(0.6, Qt::green);
+        addColorStop(0.95, Qt::yellow);
+    }
+};
+
+class LinearColorMapIndexed: public QwtLinearColorMap {
+
+public:
+    LinearColorMapIndexed(): QwtLinearColorMap(Qt::darkCyan, Qt::red, QwtColorMap::Indexed) {
+        addColorStop(0.1, Qt::cyan);
+        addColorStop(0.6, Qt::green);
+        addColorStop(0.95, Qt::yellow);
+    }
+};
+
+class HueColorMap: public QwtColorMap {
+
+public:
+    HueColorMap(): gkHue1(0), gkHue2(359), gkSaturation(150), gkHueValue(200) {
+        updateTable();
+    }
+
+    virtual QRgb rgb(const QwtInterval &interval, double value) const {
+        if (qIsNaN(value)) {
+            return 0u;
+        }
+
+        const double width = interval.width();
+        if (width <= 0) {
+            return 0u;
+        }
+
+        if (value <= interval.minValue()) {
+            return gkHueRgbMin;
+        }
+
+        if (value >= interval.maxValue()) {
+            return gkHueRgbMax;
+        }
+
+        const double ratio = (value - interval.minValue()) / width;
+        int hue = gkHue1 + qRound(ratio * (gkHue2 - gkHue1));
+
+        if (hue >= 360) {
+            hue -= 360;
+
+            if (hue >= 360) {
+                hue = hue % 360;
+            }
+        }
+
+        return gkHueRgbTable[hue];
+    }
+
+    virtual unsigned char colorIndex(const QwtInterval &qwt_interval, double dbl_value) const {
+        //
+        // Indexed colours are currently unsupported!
+        //
+
+        Q_UNUSED(qwt_interval);
+        Q_UNUSED(dbl_value);
+
+        return 0;
+    }
+
+private:
+    void updateTable() {
+        for (int i = 0; i < 360; ++i) {
+            gkHueRgbTable[i] = QColor::fromHsv( i, gkSaturation, gkHueValue ).rgb();
+        }
+
+        gkHueRgbMin = gkHueRgbTable[gkHue1 % 360];
+        gkHueRgbMax = gkHueRgbTable[gkHue2 % 360];
+    }
+
+    int gkHue1, gkHue2, gkSaturation, gkHueValue;
+    QRgb gkHueRgbMin, gkHueRgbMax, gkHueRgbTable[360];
+};
+
+class AlphaColorMap: public QwtAlphaColorMap {
+
+public:
+    AlphaColorMap() {
+        setColor(QColor("SteelBlue"));
+    }
+};
+
 };

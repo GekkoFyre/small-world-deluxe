@@ -222,6 +222,14 @@ else()
     message(SEND_ERROR "The 'FFTW' mathematics library could not be found!")
 endif(FFTW_FOUND)
 
+find_package(QWT REQUIRED)
+if (QWT_FOUND)
+    include_directories(${QWT_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${QWT_LIBRARIES})
+else()
+    message(SEND_ERROR "The 'QWT' graphing/charting library could not be found!")
+endif(QWT_FOUND)
+
 set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-arcs -ftest-coverage")
 
 # set up a mapping so that the Release configuration for the Qt imported target is

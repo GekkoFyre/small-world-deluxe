@@ -319,7 +319,14 @@ namespace AmateurRadio {
 }
 
 namespace Spectrograph {
-    // http://ofdsp.blogspot.com/2011/08/short-time-fourier-transform-with-fftw3.html
+    enum ColorMap
+    {
+        RGBMap,
+        IndexMap,
+        HueMap,
+        AlphaMap
+    };
+
     struct RawFFT {
         fftw_complex *chunk_forward_0;
         fftw_complex *chunk_forward_1;
