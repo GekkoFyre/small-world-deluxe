@@ -101,8 +101,8 @@ std::vector<GkDevice> AudioDevices::initPortAudio(portaudio::System *portAudioSy
             //
             // Output audio device
             //
+            std::lock_guard<std::mutex> lck_guard(init_port_audio_mtx);
             for (const auto &device: enum_devices) {
-                std::lock_guard<std::mutex> lck_guard(init_port_audio_mtx);
                 if (device.default_dev && device.is_output_dev && !output_dev_exists) {
                     device_export.push_back(device);
                     output_dev_exists = true;
@@ -120,8 +120,8 @@ std::vector<GkDevice> AudioDevices::initPortAudio(portaudio::System *portAudioSy
             //
             // Input audio device
             //
+            std::lock_guard<std::mutex> lck_guard(init_port_audio_mtx);
             for (const auto &device: enum_devices) {
-                std::lock_guard<std::mutex> lck_guard(init_port_audio_mtx);
                 if (device.default_dev && !device.is_output_dev && !input_dev_exists) {
                     device_export.push_back(device);
                     input_dev_exists = true;
@@ -231,9 +231,8 @@ std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp(portaudio::System *portA
         int device_number = 0;                                          // The index number for the input/output audio device in question
         std::mutex enum_audio_dev_mtx;
 
+        std::lock_guard<std::mutex> audio_guard(enum_audio_dev_mtx);
         for (portaudio::System::DeviceIterator i = portAudioSys->devicesBegin(); i != portAudioSys->devicesEnd(); ++i) {
-            std::lock_guard<std::mutex> audio_guard(enum_audio_dev_mtx);
-
             // Mark both global and API specific default audio devices
             bool default_disp = false;
             std::ostringstream audio_device_name;

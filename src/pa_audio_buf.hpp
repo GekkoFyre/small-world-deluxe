@@ -54,26 +54,28 @@ public:
     explicit PaAudioBuf(int size_hint);
     virtual ~PaAudioBuf();
 
+    PaAudioBuf operator*(const PaAudioBuf &) const;
+    PaAudioBuf operator+(const PaAudioBuf &) const;
+
     using vector::push_back;
     using vector::operator[];
     using vector::begin;
     using vector::end;
     using vector::size;
     using vector::clear;
-    PaAudioBuf operator*(const PaAudioBuf &) const;
-    PaAudioBuf operator+(const PaAudioBuf &) const;
-    PaAudioBuf();
 
     int playbackCallback(const void *input_buffer, void *output_buffer, unsigned long frames_per_buffer,
                          const PaStreamCallbackTimeInfo *time_info, PaStreamCallbackFlags status_flags);
     int recordCallback(const void *input_buffer, void *output_buffer, unsigned long frames_per_buffer,
                        const PaStreamCallbackTimeInfo *time_info, PaStreamCallbackFlags status_flags);
-    void writeToFile(const std::string &file_name);
+    short writeToMemory(const int &idx);
     void resetPlayback();
 
 private:
-    std::vector<short> rec_samples;
-    std::vector<short>::iterator playback_iter;
+    std::vector<short> rec_samples;               // Contains the 24-bit mono samples
+    std::vector<short>::iterator playback_iter;   // Tracks position during playback
+
+    void dlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon);
 
 };
 };

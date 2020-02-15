@@ -49,6 +49,7 @@
 #include <functional>
 #include <cstdlib>
 #include <chrono>
+#include <random>
 #include <QWidget>
 #include <QResource>
 #include <QMessageBox>
@@ -107,6 +108,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // https://doc.qt.io/qt-5/qstatusbar.html
         //
         createStatusBar();
+
+        //
+        // Configure the volume meter!
+        //
+        ui->progressBar_spect_vu_meter->setMinimum(0);
+        ui->progressBar_spect_vu_meter->setMaximum(100);
+        ui->progressBar_spect_vu_meter->setValue(0);
 
         //
         // Initialize the default logic state on all applicable QPushButtons within QMainWindow.
@@ -170,6 +178,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             gkAudioBuf_input = new PaAudioBuf(pref_input_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS);
         }
 
+        streamRecord = nullptr; // For the receiving of microphone (audio device) input
+        QObject::connect(this, SIGNAL(updateVolume(double)), this, SLOT(updateVuMeter(double)));
+
         // Initialize the Hamlib 'radio' struct
         radio = new AmateurRadio::Control::Radio;
         std::string rand_file_name = fileIo->create_random_string(8);
@@ -232,6 +243,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
  */
 MainWindow::~MainWindow()
 {
+    std::mutex main_win_termination_mtx;
+    std::lock_guard<std::mutex> lck_guard(main_win_termination_mtx);
+
     boost::thread appTerm = boost::thread(&MainWindow::appTerminating, this);
     appTerm.detach();
 
@@ -315,12 +329,37 @@ void MainWindow::on_action_Open_triggered()
 }
 
 /**
- * @brief MainWindow::procVuMeter
+ * @brief MainWindow::procVuMeter controls the volume meter on QMainWindow.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param audio_stream
  */
-void MainWindow::procVuMeter(const GkDevice &audio_stream)
+void MainWindow::procVuMeter()
 {
+    try {
+        std::mutex proc_vu_meter_mtx;
+        std::lock_guard<std::mutex> lck_guard(proc_vu_meter_mtx);
+        size_t buffer_size_total = pref_input_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS;
+        while (streamRecord->isOpen() && btn_radio_rx) {
+            //
+            // Controls how often the volume meter should update/refresh, in milliseconds!
+            //
+            std::this_thread::sleep_for(std::chrono::duration(std::chrono::milliseconds(AUDIO_VU_METER_UPDATE_MILLISECS)));
+
+            std::random_device dev;
+            std::mt19937 rng(dev());
+            std::uniform_int_distribution<int> dist(1, buffer_size_total);
+            double idx_result = gkAudioBuf_output->writeToMemory(dist(rng));
+            if (idx_result >= 0) {
+                // We have a audio sample!
+                double percentage = ((idx_result / 32768) * 100);
+                emit updateVolume(percentage);
+            }
+        }
+    } catch (const std::exception &e) {
+        HWND hwnd_proc_vu_meter = nullptr;
+        gkStringFuncs->modalDlgBoxOk(hwnd_proc_vu_meter, tr("Error!"), e.what(), MB_ICONERROR);
+        DestroyWindow(hwnd_proc_vu_meter);
+    }
+
     return;
 }
 
@@ -387,6 +426,8 @@ bool MainWindow::changeStatusBarMsg(const QString &statusMsg)
 bool MainWindow::steadyTimer(const int &seconds)
 {
     try {
+        std::mutex steady_timer_mtx;
+        std::lock_guard<std::mutex> lck_guard(steady_timer_mtx);
         std::chrono::steady_clock::time_point t_counter = std::chrono::steady_clock::now();
         std::chrono::duration<int> time_span;
 
@@ -427,6 +468,9 @@ void MainWindow::print_exception(const std::exception &e, int level)
  */
 void MainWindow::appTerminating()
 {
+    std::mutex app_terminating_mtx;
+    std::lock_guard<std::mutex> lck_guard(app_terminating_mtx);
+
     #ifdef _WIN32
     MessageBox(hwnd_terminating_msg_box, tr("Please wait as the application terminates.").toStdString().c_str(), tr("Aborting...").toStdString().c_str(), MB_ICONINFORMATION | MB_OK);
     #elif __linux__
@@ -570,6 +614,9 @@ void MainWindow::on_actionSettings_triggered()
  */
 void MainWindow::infoBar()
 {
+    std::mutex info_bar_mtx;
+    std::lock_guard<std::mutex> lck_guard(info_bar_mtx);
+
     std::ostringstream oss_utc_time;
     oss_utc_time.imbue(std::locale(tr("en_US.utf8").toStdString()));
     std::time_t curr_time = std::time(nullptr);
@@ -583,6 +630,11 @@ void MainWindow::infoBar()
     QString curr_utc_date_str = QString::fromStdString(oss_utc_date.str());
     ui->label_curr_utc_time->setText(curr_utc_time_str);
     ui->label_curr_utc_date->setText(curr_utc_date_str);
+}
+
+void MainWindow::updateVuMeter(const double &volumePctg)
+{
+    ui->progressBar_spect_vu_meter->setValue(volumePctg);
 }
 
 /**
@@ -599,17 +651,25 @@ void MainWindow::radioStats(AmateurRadio::Control::Radio *radio_dev)
 PaStreamCallbackResult MainWindow::paMicProcBackground(const GkDevice &input_audio_device)
 {
     try {
-        portaudio::MemFunCallbackStream<PaAudioBuf> *streamRecord = nullptr;
+        std::mutex pa_mic_bckgrnd_mtx;
+        std::lock_guard<std::mutex> lck_guard(pa_mic_bckgrnd_mtx);
+        std::thread vu_meter;
         PaStreamCallbackResult result = gkAudioDevices->openRecordStream(*gkPortAudioInit, &gkAudioBuf_output,
                                                                          input_audio_device, &streamRecord, false);
 
         if (streamRecord != nullptr) {
+            if (streamRecord->isOpen() && btn_radio_rx) {
+                vu_meter = std::thread(&MainWindow::procVuMeter, this);
+                vu_meter.detach();
+            }
+
             while (streamRecord->isOpen() && btn_radio_rx) {
                 continue;
             }
 
             streamRecord->stop();
             streamRecord->close();
+            vu_meter.join();
 
             if (tInputDev.try_join_for(boost::chrono::milliseconds(5000))) {
                 tInputDev.join();
@@ -622,8 +682,9 @@ PaStreamCallbackResult MainWindow::paMicProcBackground(const GkDevice &input_aud
             return paAbort;
         }
     } catch (const std::exception &e) {
-        QMessageBox::warning(this, tr("Error!"), tr("An error occurred during the recording of an input audio stream:\n\n%1").arg(e.what()),
-                             QMessageBox::Ok);
+        HWND hwnd_pa_mic_background;
+        gkStringFuncs->modalDlgBoxOk(hwnd_pa_mic_background, tr("Error!"), tr("An error occurred during the recording of an input audio stream:\n\n%1").arg(e.what()), MB_ICONERROR);
+        DestroyWindow(hwnd_pa_mic_background);
     }
 
     return paAbort;

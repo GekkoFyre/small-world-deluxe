@@ -272,10 +272,12 @@ QString DekodeDb::read_rig_settings(const Database::Settings::radio_cfg &key)
  */
 int DekodeDb::read_audio_device_settings(const bool &is_output_device)
 {
+    std::mutex read_audio_dev_mtx;
     leveldb::Status status;
     leveldb::ReadOptions read_options;
     std::string value;
 
+    std::lock_guard<std::mutex> lck_guard(read_audio_dev_mtx);
     read_options.verify_checksums = true;
 
     if (is_output_device) {
