@@ -113,8 +113,12 @@ std::wstring StringFuncs::removeSpecialChars(std::wstring wstr)
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @note <https://docs.microsoft.com/en-us/windows/win32/dlgbox/using-dialog-boxes#creating-a-modal-dialog-box>
  * <https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-messagebox>
- * @param hinst
+ * @param hwnd
+ * @param title
+ * @param msgTxt
+ * @param icon
  * @return Whether the OK button was selected or not.
+ * @see GekkoFyre::PaAudioBuf::dlgBoxOk().
  */
 bool StringFuncs::modalDlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon)
 {

@@ -37,7 +37,12 @@
 
 #include "pa_audio_buf.hpp"
 #include <iostream>
+#include <exception>
 #include <mutex>
+
+#ifdef _WIN32
+#include <Windows.h>
+#endif
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -47,10 +52,14 @@ using namespace Audio;
 /**
  * @brief PaAudioBuf::PaAudioBuf processes the audio buffering and memory handling functions for PortAudio.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @note <http://portaudio.com/docs/v19-doxydocs-dev/pa__ringbuffer_8h.html>
+ * <http://portaudio.com/docs/v19-doxydocs-dev/group__test__src.html>
  * @param size_hint
  */
 PaAudioBuf::PaAudioBuf(int size_hint) : std::vector<short>(rec_samples)
 {
+    std::mutex pa_audio_buf_mtx;
+    std::lock_guard<std::mutex> lck_guard(pa_audio_buf_mtx);
     if (size_hint > 0) {
         rec_samples.reserve(size_hint);
     }
@@ -71,19 +80,20 @@ PaAudioBuf::~PaAudioBuf()
  * @param status_flags
  * @return
  */
-int PaAudioBuf::playbackCallback(const void *input_buffer, void *output_buffer, unsigned long frames_per_buffer, const PaStreamCallbackTimeInfo *time_info, PaStreamCallbackFlags status_flags)
+int PaAudioBuf::playbackCallback(const void *input_buffer, void *output_buffer, unsigned long frames_per_buffer,
+                                 const PaStreamCallbackTimeInfo *time_info, PaStreamCallbackFlags status_flags)
 {
     short**	data_mem = (short**)output_buffer;
     unsigned long i_output = 0;
     std::mutex playback_loop_mtx;
 
+    std::lock_guard<std::mutex> lck_guard(playback_loop_mtx);
     if (output_buffer == nullptr) {
         return paComplete;
     }
 
     // Output samples until we either have satified the caller, or we run out
     while (i_output < frames_per_buffer) {
-        std::lock_guard<std::mutex> lck_guard(playback_loop_mtx);
         if (playback_iter == rec_samples.end()) {
             // Fill out buffer with zeros
             while (i_output < frames_per_buffer) {
@@ -120,12 +130,12 @@ int PaAudioBuf::recordCallback(const void* input_buffer, void* output_buffer, un
     short** data_mem = (short**)input_buffer;
     std::mutex record_loop_mtx;
 
+    std::lock_guard<std::mutex> lck_guard(record_loop_mtx);
     if (input_buffer == nullptr) {
         return paContinue;
     }
 
     for (unsigned long i = 0; i < frames_per_buffer; i++) {
-        std::lock_guard<std::mutex> lck_guard(record_loop_mtx);
         rec_samples.push_back(data_mem[0][i]);
     }
 
@@ -137,10 +147,31 @@ int PaAudioBuf::recordCallback(const void* input_buffer, void* output_buffer, un
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param file_name
  */
-void PaAudioBuf::writeToFile(const std::string &file_name)
+short PaAudioBuf::writeToMemory(const int &idx)
 {
-    // TODO: Write the code for this section!
-    return;
+    try {
+        std::mutex mem_buffer_mtx;
+        short idx_rec_sample;
+        std::lock_guard<std::mutex> lck_guard(mem_buffer_mtx);
+
+        for (size_t i = 0; i < rec_samples.size(); ++i) {
+            if (i == idx) {
+                idx_rec_sample = rec_samples.at(i);
+
+                return idx_rec_sample;
+            }
+
+            continue;
+        }
+
+        return -1;
+    } catch (const std::exception &e) {
+        HWND hwnd_write_memory;
+        dlgBoxOk(hwnd_write_memory, "Error!", e.what(), MB_ICONERROR);
+        DestroyWindow(hwnd_write_memory);
+    }
+
+    return -1;
 }
 
 /**
@@ -148,6 +179,25 @@ void PaAudioBuf::writeToFile(const std::string &file_name)
  */
 void PaAudioBuf::resetPlayback()
 {
+    std::mutex reset_playback_mtx;
+    std::lock_guard<std::mutex> lck_guard(reset_playback_mtx);
     playback_iter = rec_samples.begin();
+    return;
+}
+
+/**
+ * @brief PaAudioBuf::dlgBoxOk Creates a modal message box within the Win32 API, with an OK button.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @note <https://docs.microsoft.com/en-us/windows/win32/dlgbox/using-dialog-boxes#creating-a-modal-dialog-box>
+ * <https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-messagebox>
+ * @param hwnd
+ * @param title
+ * @param msgTxt
+ * @param icon
+ * @see GekkoFyre::StringFuncs::modalDlgBoxOk().
+ */
+void PaAudioBuf::dlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon)
+{
+    MessageBox(hwnd, msgTxt.toStdString().c_str(), title.toStdString().c_str(), icon | MB_OK);
     return;
 }

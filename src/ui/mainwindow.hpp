@@ -52,6 +52,7 @@
 #include <ctime>
 #include <thread>
 #include <future>
+#include <mutex>
 #include <QMainWindow>
 #include <QPushButton>
 #include <QPointer>
@@ -112,6 +113,7 @@ private slots:
     void on_actionView_Graphs_triggered();
 
     void infoBar();
+    void updateVuMeter(const double &volumePctg);
 
     //
     // QPushButtons that contain a logic state of some sort and are therefore displayed as
@@ -124,6 +126,9 @@ private slots:
     void on_pushButton_radio_tune_clicked();
     void on_pushButton_radio_tx_halt_clicked();
     void on_pushButton_radio_monitor_clicked();
+
+signals:
+    void updateVolume(const double &volumePctg);
 
 private:
     Ui::MainWindow *ui;
@@ -151,6 +156,7 @@ private:
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
     GekkoFyre::PaAudioBuf *gkAudioBuf_input;    // For playback devices
     GekkoFyre::PaAudioBuf *gkAudioBuf_output;   // For recording devices
+    portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *streamRecord;
 
     //
     // Multithreading
@@ -181,7 +187,7 @@ private:
     void radioStats(GekkoFyre::AmateurRadio::Control::Radio *radio_dev);
 
     PaStreamCallbackResult paMicProcBackground(const GekkoFyre::Database::Settings::Audio::GkDevice &input_audio_device);
-    void procVuMeter(const GekkoFyre::Database::Settings::Audio::GkDevice &audio_stream);
+    void procVuMeter();
 
     void changePushButtonColor(QPointer<QPushButton> push_button, const bool &green_result = true,
                                const bool &color_blind_mode = false);
