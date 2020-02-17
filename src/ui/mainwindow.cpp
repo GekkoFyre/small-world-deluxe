@@ -207,8 +207,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
 
         if (pref_input_device.dev_input_channel_count > 0 && pref_input_device.def_sample_rate > 0) {
-            gkAudioBuf_input = new PaAudioBuf(pref_input_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS,
-                                              gkAudioBuf_input_vec);
+            const size_t input_buffer_size = pref_input_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS;
+            gkAudioBuf_input_vec = new std::vector<short>(input_buffer_size + 1);
+            gkAudioBuf_input = new PaAudioBuf((input_buffer_size + 1), gkAudioBuf_input_vec);
         }
 
         //
@@ -293,6 +294,8 @@ MainWindow::~MainWindow()
     std::mutex main_win_termination_mtx;
     std::lock_guard<std::mutex> lck_guard(main_win_termination_mtx);
 
+    btn_radio_rx = false;
+
     boost::thread appTerm = boost::thread(&MainWindow::appTerminating, this);
     appTerm.detach();
 
@@ -314,6 +317,7 @@ MainWindow::~MainWindow()
     gkPortAudioInit->terminate();
 
     if (pref_input_device.dev_input_channel_count > 0 && pref_input_device.def_sample_rate > 0) {
+        delete gkAudioBuf_input_vec;
         delete gkAudioBuf_input;
     }
 
@@ -380,7 +384,7 @@ void MainWindow::procVuMeter(PaAudioBuf *buffer, portaudio::MemFunCallbackStream
     try {
         std::mutex proc_vu_meter_mtx;
         std::lock_guard<std::mutex> lck_guard(proc_vu_meter_mtx);
-        size_t buffer_size_total = pref_input_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS;
+        const size_t buffer_size_total = pref_input_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS;
         while (stream->isOpen() && btn_radio_rx) {
             //
             // Controls how often the volume meter should update/refresh, in milliseconds!
@@ -389,7 +393,7 @@ void MainWindow::procVuMeter(PaAudioBuf *buffer, portaudio::MemFunCallbackStream
 
             std::random_device dev;
             std::mt19937 rng(dev());
-            std::uniform_int_distribution<int> dist(1, buffer_size_total);
+            std::uniform_int_distribution<int> dist(1, (buffer_size_total + 1));
             double idx_result = buffer->writeToMemory(dist(rng));
             if (idx_result >= 0) {
                 // We have a audio sample!
@@ -483,42 +487,88 @@ bool MainWindow::prefillAmateurBands()
  * the lifecycle of data updates between QMainWindow() and SpectroGui().
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void MainWindow::spectrographCallback(const GkDevice &device, std::vector<short> buffer_vec,
+void MainWindow::spectrographCallback(const GkDevice &device, std::vector<short> *buffer_vec,
                                       portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *stream)
 {
-    std::lock_guard<std::mutex> lck_guard(spectrograph_callback_mtx);
-    std::unique_ptr<GekkoFyre::SpectroFFTW> spectro_fftw = std::make_unique<GekkoFyre::SpectroFFTW>(this);
-    std::vector<double> conv_data;
-    Spectrograph::RawFFT waterfall_fft_data;
+    try {
+        std::lock_guard<std::mutex> lck_guard(spectrograph_callback_mtx);
+        std::unique_ptr<GekkoFyre::SpectroFFTW> spectro_fftw = std::make_unique<GekkoFyre::SpectroFFTW>(this);
+        std::vector<double> conv_data;
+        std::vector<Spectrograph::RawFFT> fft_data;
 
-    size_t buffer_size_total = device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS;
-    std::vector<short> waterfall_data;
+        const size_t buffer_size_total = device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS;
+        while (stream->isOpen() && btn_radio_rx) {
+            if (buffer_vec->size() == (buffer_size_total + 1)) {
+                for (const auto &data: *buffer_vec) {
+                    conv_data.push_back(data);
+                    if (conv_data.size() == buffer_size_total) {
+                        break;
+                    } else {
+                        continue;
+                    }
+                }
+            }
 
-    while (stream->isOpen() && btn_radio_rx) {
-        if (buffer_vec.size() == (buffer_size_total - 1)) {
-            // Dump the contents of the buffer!
-            waterfall_data = buffer_vec;
+            //
+            // Set the y-axis of the graph (i.e. the time) to advance at the speed
+            // of how often the audio buffer is filled.
+            //
+            std::this_thread::sleep_for(std::chrono::duration(std::chrono::milliseconds(AUDIO_BUFFER_STREAMING_SECS * 1000)));
+            gkSpectroGui->gkSpectrogram->setYAxis(std::time(0));
+            gkSpectroGui->replot();
 
-            for (const auto &waterfall: waterfall_data) {
-                conv_data.push_back(waterfall);
+            if (conv_data.size() == buffer_size_total) {
+                Spectrograph::RawFFT waterfall_fft_data;
+                waterfall_fft_data = spectro_fftw->stft(&conv_data, 2048, gkSpectroGui->width(), 2048);
+
+                fft_data.push_back(waterfall_fft_data);
+
+                // Erase the std::vector() and its elements
+                conv_data.clear();
+                conv_data.shrink_to_fit();
+            }
+
+            if (fft_data.size() > 0) {
+                for (size_t x_axis = 0; x_axis < fft_data.size(); ++x_axis) {
+                    for (size_t y_axis = 0; y_axis < fft_data.size(); ++y_axis) {
+                        gkSpectroGui->gkSpectrogram->setXAxis(fft_data.data()->chunk_forward_0[x_axis][y_axis]);
+                        gkSpectroGui->replot();
+                    }
+                }
             }
         }
-
-        //
-        // Set the y-axis of the graph (i.e. the time) to advance at the speed
-        // of how often the audio buffer is filled.
-        //
-        std::this_thread::sleep_for(std::chrono::duration(std::chrono::milliseconds(AUDIO_BUFFER_STREAMING_SECS * 1000)));
-        gkSpectroGui->gkSpectrogram->setYAxis(std::time(0));
-        gkSpectroGui->replot();
-
-        if (conv_data.size() == buffer_size_total) {
-            waterfall_fft_data = spectro_fftw->stft(&conv_data, 2048, gkSpectroGui->width(), 2048);
-
-            // Erase the std::vector() and its elements
-            conv_data.clear();
-            conv_data.shrink_to_fit();
-        }
+    } catch (const portaudio::PaException &e) {
+        #ifdef _WIN32
+        HWND hwnd = nullptr;
+        gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), tr("[ PortAudio ] %1").arg(e.paErrorText()), MB_ICONERROR);
+        DestroyWindow(hwnd);
+        #elif __linux__
+        // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
+        #endif
+    } catch (const portaudio::PaCppException &e) {
+        #ifdef _WIN32
+        HWND hwnd = nullptr;
+        gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), tr("[ PortAudioCpp ] %1").arg(e.what()), MB_ICONERROR);
+        DestroyWindow(hwnd);
+        #elif __linux__
+        // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
+        #endif
+    } catch (const std::exception &e) {
+        #ifdef _WIN32
+        HWND hwnd = nullptr;
+        gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), tr("[ Generic exception ] %1").arg(e.what()), MB_ICONERROR);
+        DestroyWindow(hwnd);
+        #elif __linux__
+        // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
+        #endif
+    } catch (...) {
+        #ifdef _WIN32
+        HWND hwnd = nullptr;
+        gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), MB_ICONERROR);
+        DestroyWindow(hwnd);
+        #elif __linux__
+        // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
+        #endif
     }
 
     return;
@@ -817,10 +867,11 @@ PaStreamCallbackResult MainWindow::paMicProcBackground(const GkDevice &input_aud
 {
     try {
         GekkoFyre::PaAudioBuf *gkAudioBuf_output; // For recording devices
-        std::vector<short> input_buffer_vec;
+        const size_t input_buffer_size = pref_input_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS;
+        std::vector<short> *input_buffer_vec = new std::vector<short>(input_buffer_size + 1);
 
         if (pref_output_device.dev_output_channel_count > 0 && pref_output_device.def_sample_rate > 0) {
-            gkAudioBuf_output = new PaAudioBuf((pref_output_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS), input_buffer_vec);
+            gkAudioBuf_output = new PaAudioBuf((input_buffer_size + 1), input_buffer_vec);
         }
 
         std::mutex pa_mic_bckgrnd_mtx;

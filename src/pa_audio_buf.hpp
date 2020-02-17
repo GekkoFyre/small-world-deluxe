@@ -51,7 +51,7 @@ class PaAudioBuf : private std::vector<short> {
     typedef std::vector<short> vector;
 
 public:
-    PaAudioBuf(int size_hint, std::vector<short> rec_samples = std::vector<short>());
+    PaAudioBuf(int size_hint, std::vector<short> *rec_samples_vec);
     virtual ~PaAudioBuf();
 
     PaAudioBuf operator*(const PaAudioBuf &) const;
@@ -66,14 +66,14 @@ public:
     int recordCallback(const void *input_buffer, void *output_buffer, unsigned long frames_per_buffer,
                        const PaStreamCallbackTimeInfo *time_info, PaStreamCallbackFlags status_flags);
     short writeToMemory(const int &idx);
-    std::vector<short> dumpMemory(const Database::Settings::Audio::GkDevice &device);
+    std::vector<short> *dumpMemory(const Database::Settings::Audio::GkDevice &device);
     void resetPlayback();
     virtual void clear();
     virtual size_t size();
     virtual short at(const short &idx);
 
 private:
-    std::vector<short> rec_samples;               // Contains the 16-bit mono samples
+    std::vector<short> *rec_samples_vec;               // Contains the 16-bit mono samples
     std::vector<short>::iterator playback_iter;   // Tracks position during playback
 
     void dlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon);

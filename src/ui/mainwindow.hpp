@@ -173,7 +173,7 @@ private:
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
     GekkoFyre::PaAudioBuf *gkAudioBuf_input;    // For playback devices
-    std::vector<short> gkAudioBuf_input_vec;
+    std::vector<short> *gkAudioBuf_input_vec;
 
     //
     // Multithreading
@@ -217,7 +217,7 @@ private:
     bool prefillAmateurBands();
 
     void spectrographCallback(const GekkoFyre::Database::Settings::Audio::GkDevice &device,
-                              std::vector<short> buffer_vec,
+                              std::vector<short> *buffer_vec,
                               portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *stream);
 
     void createStatusBar(const QString &statusMsg = "");
