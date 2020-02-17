@@ -206,18 +206,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             }
         }
 
-        if (pref_input_device.dev_input_channel_count > 0 && pref_input_device.def_sample_rate > 0) {
-            const size_t input_buffer_size = pref_input_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS;
-            gkAudioBuf_input_vec = new std::vector<short>(input_buffer_size + 1);
-            gkAudioBuf_input = new PaAudioBuf((input_buffer_size + 1), gkAudioBuf_input_vec);
-        }
-
         //
         // Initialize the Waterfall / Spectrograph
         //
         gkSpectroGui = new GekkoFyre::SpectroGui(this);
         ui->verticalLayout_11->addWidget(gkSpectroGui);
         gkSpectroGui->setColorMap(254);
+
+        QObject::connect(this, SIGNAL(updateSpectroTiming(const int &, portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *)),
+                         this, SLOT(manageSpectroTiming(const int &, portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *)));
+        QObject::connect(this, SIGNAL(updateSpectroData(const int &, portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *)),
+                         this, SLOT(manageSpectroData(const int &, portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *)));
+        QObject::connect(this, SIGNAL(updatePlot()), this, SLOT(refreshSpectroGui()));
+        QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), this, SLOT(stopRecordingInput(const bool &, const int &)));
 
         //
         // Volume Meter
@@ -294,7 +295,7 @@ MainWindow::~MainWindow()
     std::mutex main_win_termination_mtx;
     std::lock_guard<std::mutex> lck_guard(main_win_termination_mtx);
 
-    btn_radio_rx = false;
+    emit stopRecording(true, 5000);
 
     boost::thread appTerm = boost::thread(&MainWindow::appTerminating, this);
     appTerm.detach();
@@ -315,11 +316,6 @@ MainWindow::~MainWindow()
 
     delete db;
     gkPortAudioInit->terminate();
-
-    if (pref_input_device.dev_input_channel_count > 0 && pref_input_device.def_sample_rate > 0) {
-        delete gkAudioBuf_input_vec;
-        delete gkAudioBuf_input;
-    }
 
     if (timer != nullptr) {
         delete timer;
@@ -385,7 +381,7 @@ void MainWindow::procVuMeter(PaAudioBuf *buffer, portaudio::MemFunCallbackStream
         std::mutex proc_vu_meter_mtx;
         std::lock_guard<std::mutex> lck_guard(proc_vu_meter_mtx);
         const size_t buffer_size_total = pref_input_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS;
-        while (stream->isOpen() && btn_radio_rx) {
+        while (stream->isActive() && btn_radio_rx) {
             //
             // Controls how often the volume meter should update/refresh, in milliseconds!
             //
@@ -394,7 +390,7 @@ void MainWindow::procVuMeter(PaAudioBuf *buffer, portaudio::MemFunCallbackStream
             std::random_device dev;
             std::mt19937 rng(dev());
             std::uniform_int_distribution<int> dist(1, (buffer_size_total + 1));
-            double idx_result = buffer->writeToMemory(dist(rng));
+            double idx_result = buffer->at(dist(rng));
             if (idx_result >= 0) {
                 // We have a audio sample!
                 double percentage = ((idx_result / 32768) * 100);
@@ -494,11 +490,12 @@ void MainWindow::spectrographCallback(const GkDevice &device, std::vector<short>
         std::lock_guard<std::mutex> lck_guard(spectrograph_callback_mtx);
         std::unique_ptr<GekkoFyre::SpectroFFTW> spectro_fftw = std::make_unique<GekkoFyre::SpectroFFTW>(this);
         std::vector<double> conv_data;
+        std::time_t curr_epoch;
         std::vector<Spectrograph::RawFFT> fft_data;
 
         const size_t buffer_size_total = device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS;
-        while (stream->isOpen() && btn_radio_rx) {
-            if (buffer_vec->size() == (buffer_size_total + 1)) {
+        while (stream->isActive() && btn_radio_rx) {
+            if (buffer_vec->size() >= (buffer_size_total + 1)) {
                 for (const auto &data: *buffer_vec) {
                     conv_data.push_back(data);
                     if (conv_data.size() == buffer_size_total) {
@@ -514,13 +511,14 @@ void MainWindow::spectrographCallback(const GkDevice &device, std::vector<short>
             // of how often the audio buffer is filled.
             //
             std::this_thread::sleep_for(std::chrono::duration(std::chrono::milliseconds(AUDIO_BUFFER_STREAMING_SECS * 1000)));
-            gkSpectroGui->gkSpectrogram->setYAxis(std::time(0));
-            gkSpectroGui->replot();
+            curr_epoch = std::time(0);
+            emit updateSpectroTiming(curr_epoch, stream);
 
-            if (conv_data.size() == buffer_size_total) {
+            if (conv_data.size() >= buffer_size_total) {
                 Spectrograph::RawFFT waterfall_fft_data;
-                waterfall_fft_data = spectro_fftw->stft(&conv_data, 2048, gkSpectroGui->width(), 2048);
+                waterfall_fft_data = spectro_fftw->stft(&conv_data, AUDIO_SIGNAL_LENGTH, gkSpectroGui->gkSpectrogram->xAxis(), FFTW_HOP_SIZE);
 
+                // Add the calculated values to a std::vector<Spectrograph::RawFFT>().
                 fft_data.push_back(waterfall_fft_data);
 
                 // Erase the std::vector() and its elements
@@ -531,8 +529,7 @@ void MainWindow::spectrographCallback(const GkDevice &device, std::vector<short>
             if (fft_data.size() > 0) {
                 for (size_t x_axis = 0; x_axis < fft_data.size(); ++x_axis) {
                     for (size_t y_axis = 0; y_axis < fft_data.size(); ++y_axis) {
-                        gkSpectroGui->gkSpectrogram->setXAxis(fft_data.data()->chunk_forward_0[x_axis][y_axis]);
-                        gkSpectroGui->replot();
+                        emit updateSpectroData(fft_data.data()->chunk_forward_0[x_axis][y_axis], stream);
                     }
                 }
             }
@@ -866,16 +863,17 @@ void MainWindow::radioStats(AmateurRadio::Control::Radio *radio_dev)
 PaStreamCallbackResult MainWindow::paMicProcBackground(const GkDevice &input_audio_device)
 {
     try {
+        std::mutex pa_mic_bckgrnd_mtx;
+        std::lock_guard<std::mutex> lck_guard(pa_mic_bckgrnd_mtx);
+
         GekkoFyre::PaAudioBuf *gkAudioBuf_output; // For recording devices
         const size_t input_buffer_size = pref_input_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS;
         std::vector<short> *input_buffer_vec = new std::vector<short>(input_buffer_size + 1);
 
         if (pref_output_device.dev_output_channel_count > 0 && pref_output_device.def_sample_rate > 0) {
-            gkAudioBuf_output = new PaAudioBuf((input_buffer_size + 1), input_buffer_vec);
+            gkAudioBuf_output = new PaAudioBuf((input_buffer_size + 1), input_buffer_vec, btn_radio_rx);
         }
 
-        std::mutex pa_mic_bckgrnd_mtx;
-        std::lock_guard<std::mutex> lck_guard(pa_mic_bckgrnd_mtx);
         std::thread vu_meter;
         std::thread spectro_thread;
         portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *streamRecord = nullptr; // For the receiving of microphone (audio device) input
@@ -895,6 +893,8 @@ PaStreamCallbackResult MainWindow::paMicProcBackground(const GkDevice &input_aud
 
             while (btn_radio_rx) {
                 if (streamRecord->isOpen()) {
+                    // So that this thread doesn't hog too much performance..,
+                    std::this_thread::sleep_for(std::chrono::duration(std::chrono::milliseconds(200)));
                     continue;
                 }
 
@@ -912,12 +912,6 @@ PaStreamCallbackResult MainWindow::paMicProcBackground(const GkDevice &input_aud
 
             if (spectro_thread.joinable()) {
                 spectro_thread.join();
-            }
-
-            if (tInputDev.try_join_for(boost::chrono::milliseconds(5000))) {
-                tInputDev.join();
-            } else {
-                tInputDev.interrupt();
             }
 
             emit updateVolume(0);
@@ -983,7 +977,7 @@ void MainWindow::on_pushButton_radio_receive_clicked()
                         if ((pref_input_device.device_info.name != nullptr)) {
                             // Set the QPushButton to 'Green'
                             changePushButtonColor(ui->pushButton_radio_receive, false);
-                            btn_radio_rx = true;
+                            emit stopRecording(false);
 
                             tInputDev = boost::thread(&MainWindow::paMicProcBackground, this, pref_input_device);
                             tInputDev.detach();
@@ -1010,7 +1004,7 @@ void MainWindow::on_pushButton_radio_receive_clicked()
         } else {
             // Set the QPushButton to 'Red'
             changePushButtonColor(ui->pushButton_radio_receive, true);
-            btn_radio_rx = false;
+            emit stopRecording(true, 5000);
 
             changeStatusBarMsg(tr("No longer receiving audio!"));
 
@@ -1104,6 +1098,35 @@ void MainWindow::closeEvent(QCloseEvent *event)
     event->ignore();
 }
 
+/**
+ * @brief MainWindow::stopRecordingInput The idea of this function is to stop recording of
+ * all input audio devices upon activation, globally, across all threads.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param recording_is_stopped A toggle switch that tells the function whether to stop
+ * recording of input audio devices or not.
+ * @param wait_time How long to wait for the thread to terminate safely before forcing
+ * a termination/interrupt.
+ * @return If recording of input audio devices have actually stopped or not.
+ */
+bool MainWindow::stopRecordingInput(const bool &recording_is_stopped, const int &wait_time)
+{
+    if (recording_is_stopped) {
+        btn_radio_rx = false;
+
+        if (tInputDev.try_join_for(boost::chrono::milliseconds(wait_time))) {
+            tInputDev.join();
+            return true;
+        } else {
+            tInputDev.interrupt();
+            return true;
+        }
+    } else {
+        btn_radio_rx = true;
+    }
+
+    return false;
+}
+
 void MainWindow::on_pushButton_radio_tune_clicked(bool checked)
 {
     Q_UNUSED(checked);
@@ -1117,6 +1140,71 @@ void MainWindow::on_pushButton_radio_tune_clicked(bool checked)
         changePushButtonColor(ui->pushButton_radio_tune, true);
         btn_radio_tune = false;
     }
+
+    return;
+}
+
+bool MainWindow::manageSpectroTiming(const int &y_axis, portaudio::MemFunCallbackStream<PaAudioBuf> *stream)
+{
+    try {
+        //
+        // This controls the timing of the spectrogram / waterfall!
+        //
+        if (stream->isOpen() && stream->isActive()) {
+            gkSpectroGui->gkSpectrogram->setYAxis(y_axis);
+            return true;
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), tr("A problem has been encountered in the spectrogram's timing mechanism:\n\n%1").arg(e.what()),
+                             QMessageBox::Ok);
+    }
+
+    return false;
+}
+
+bool MainWindow::manageSpectroData(const int &x_axis, portaudio::MemFunCallbackStream<PaAudioBuf> *stream)
+{
+    try {
+        //
+        // This controls the data of the spectrogram / waterfall!
+        //
+        if (stream->isOpen() && stream->isActive()) {
+            gkSpectroGui->gkSpectrogram->setXAxis(x_axis);
+            return true;
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), tr("A problem has been encountered in the spectrogram's data update mechanism:\n\n%1").arg(e.what()),
+                             QMessageBox::Ok);
+    }
+
+    return false;
+}
+
+bool MainWindow::refreshSpectroGui()
+{
+    try {
+        //
+        // Refresh the spectrogram / waterfall plot itself!
+        //
+        gkSpectroGui->replot();
+
+        return true;
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), tr("A problem has been encountered in the spectrogram's GUI refreshing mechanism:\n\n%1").arg(e.what()),
+                             QMessageBox::Ok);
+    }
+
+
+    return false;
+}
+
+/**
+ * @brief MainWindow::on_action_Print_triggered Controls the print(er) settings.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::on_action_Print_triggered()
+{
+    QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
 
     return;
 }

@@ -829,6 +829,8 @@ QPushButton:disabled {
     </property>
     <addaction name="action_Open"/>
     <addaction name="separator"/>
+    <addaction name="action_Print"/>
+    <addaction name="separator"/>
     <addaction name="actionE_xit"/>
    </widget>
    <widget class="QMenu" name="menu_Configure">
@@ -1106,6 +1108,11 @@ QPushButton:disabled {
    </property>
    <property name="toolTip">
     <string>Your output speakers (i.e. the stereo speakers that play music from YouTube, etc.)</string>
+   </property>
+  </action>
+  <action name="action_Print">
+   <property name="text">
+    <string>&amp;Print...</string>
    </property>
   </action>
  </widget>

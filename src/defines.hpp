@@ -113,9 +113,11 @@ namespace GekkoFyre {
 #define AUDIO_SINE_WAVE_PLAYBACK_SECS (3)               // Play the sine wave test sample for three seconds!
 #define AUDIO_VU_METER_UPDATE_MILLISECS (500)           // How often the volume meter should update, in milliseconds.
 
+//
 // Mostly regarding FFTW functions
-#define AUDIO_SIGNAL_LENGTH (2048)
-#define FFTW_HOP_SIZE (128)
+//
+#define AUDIO_SIGNAL_LENGTH (2048)                      // For audio applications, '2048' seems to be a good length.
+#define FFTW_HOP_SIZE (128)                             // Choose a smaller hop-size if you want a higher resolution! Needs to be a power of two.
 
 #ifndef M_PI
 #define M_PI (3.14159265358979323846) /* pi */

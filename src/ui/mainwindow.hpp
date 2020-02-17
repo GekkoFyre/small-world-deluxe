@@ -135,16 +135,33 @@ private slots:
     void on_pushButton_radio_tune_clicked(bool checked);
 
     //
+    // Graphing / Spectrogram / Waterfall
+    //
+    bool manageSpectroTiming(const int &y_axis, portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *stream);
+    bool manageSpectroData(const int &x_axis, portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *stream);
+    bool refreshSpectroGui();
+
+    //
     // QComboBox'es
     //
     void on_comboBox_select_frequency_activated(int index);
     void on_comboBox_select_digital_mode_activated(int index);
 
+    void on_action_Print_triggered();
+
 protected slots:
     void closeEvent(QCloseEvent *event);
 
+public slots:
+    bool stopRecordingInput(const bool &recording_is_stopped, const int &wait_time = 5000);
+
 signals:
     void updateVolume(const double &volumePctg);
+    bool updateSpectroTiming(const int &y_axis, portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *stream);
+    bool updateSpectroData(const int &x_axis, portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *stream);
+    bool updatePlot();
+    void toggleRecording(const bool &is_rec_input);
+    bool stopRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
     void gkExitApp();
 
 private:
@@ -172,8 +189,6 @@ private:
     portaudio::System *gkPortAudioInit;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
-    GekkoFyre::PaAudioBuf *gkAudioBuf_input;    // For playback devices
-    std::vector<short> *gkAudioBuf_input_vec;
 
     //
     // Multithreading
