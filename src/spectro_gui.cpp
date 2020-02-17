@@ -36,6 +36,11 @@
  ****************************************************************************************************/
 
 #include "spectro_gui.hpp"
+#include <qwt_scale_widget.h>
+#include <qwt_scale_draw.h>
+#include <qwt_plot_panner.h>
+#include <qwt_plot_layout.h>
+#include <qwt_plot_renderer.h>
 #include <cmath>
 #include <memory>
 #include <QList>
@@ -50,6 +55,9 @@ using namespace Spectrograph;
  */
 SpectroGui::SpectroGui(QWidget *parent) : QwtPlot(parent), gkAlpha(255)
 {
+    std::mutex spectro_main_mtx;
+    std::lock_guard<std::mutex> lck_guard(spectro_main_mtx);
+
     gkSpectrogram = new QwtPlotSpectrogram();
     gkSpectrogram->setRenderThreadCount(0); // use system specific thread count
     gkSpectrogram->setCachePolicy(QwtPlotRasterItem::PaintCache);
@@ -67,7 +75,7 @@ SpectroGui::SpectroGui(QWidget *parent) : QwtPlot(parent), gkAlpha(255)
 
     // A color bar on the right axis
     QwtScaleWidget *right_axis = axisWidget(QwtPlot::yRight);
-    right_axis->setTitle(tr("Intensity"));
+    right_axis->setTitle("Intensity");
     right_axis->setColorBarEnabled(true);
 
     setAxisScale(QwtPlot::yRight, z_interval.minValue(), z_interval.maxValue());
@@ -109,10 +117,13 @@ SpectroGui::SpectroGui(QWidget *parent) : QwtPlot(parent), gkAlpha(255)
 }
 
 SpectroGui::~SpectroGui()
-{}
+{
+    delete gkSpectrogram;
+}
 
 void SpectroGui::showContour(const int &toggled)
 {
+    std::lock_guard<std::mutex> lck_guard(spectro_gui_mtx);
     gkSpectrogram->setDisplayMode(QwtPlotSpectrogram::ContourMode, toggled);
     replot();
 
@@ -121,6 +132,7 @@ void SpectroGui::showContour(const int &toggled)
 
 void SpectroGui::showSpectrogram(const bool &toggled)
 {
+    std::lock_guard<std::mutex> lck_guard(spectro_gui_mtx);
     gkSpectrogram->setDisplayMode(QwtPlotSpectrogram::ImageMode, toggled);
     gkSpectrogram->setDefaultContourPen(toggled ? QPen(Qt::black, 0) : QPen(Qt::NoPen));
 
@@ -131,6 +143,8 @@ void SpectroGui::showSpectrogram(const bool &toggled)
 
 void SpectroGui::setColorMap(const int &idx)
 {
+    std::lock_guard<std::mutex> lck_guard(spectro_gui_mtx);
+
     QwtScaleWidget *axis = axisWidget(QwtPlot::yRight);
     const QwtInterval z_interval = gkSpectrogram->data()->interval(Qt::ZAxis);
 
@@ -151,12 +165,6 @@ void SpectroGui::setColorMap(const int &idx)
             axis->setColorMap(z_interval, new AlphaColorMap());
             break;
         }
-    case ColorMap::IndexMap:
-        {
-            gkSpectrogram->setColorMap( new LinearColorMapIndexed() );
-            axis->setColorMap( z_interval, new LinearColorMapIndexed() );
-            break;
-        }
     case ColorMap::RGBMap:
         break;
     default:
@@ -174,6 +182,8 @@ void SpectroGui::setColorMap(const int &idx)
 
 void SpectroGui::setAlpha(const int &alpha)
 {
+    std::lock_guard<std::mutex> lck_guard(spectro_gui_mtx);
+
     //
     // It does not make sense to set an alpha value in combination with a colour map
     // interpolating the alpha value.
@@ -187,4 +197,14 @@ void SpectroGui::setAlpha(const int &alpha)
     }
 
     return;
+}
+
+void SpectroGui::setTheme(const QColor &colour)
+{
+    std::mutex spectro_theme_mtx;
+    std::lock_guard<std::mutex> lck_guard(spectro_theme_mtx);
+
+    std::unique_ptr<QwtPlotZoomer> zoomer = std::make_unique<MyZoomer>(canvas());
+    zoomer->setRubberBandPen(colour);
+    zoomer->setTrackerPen(colour);
 }

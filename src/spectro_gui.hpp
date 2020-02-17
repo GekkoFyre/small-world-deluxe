@@ -38,44 +38,42 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include <qwt.h>
 #include <qwt_plot.h>
 #include <qwt_plot_spectrogram.h>
-#include <qwt_color_map.h>
-#include <qwt_plot_spectrogram.h>
-#include <qwt_scale_widget.h>
-#include <qwt_scale_draw.h>
 #include <qwt_plot_zoomer.h>
-#include <qwt_plot_panner.h>
-#include <qwt_plot_layout.h>
-#include <qwt_plot_renderer.h>
+#include <qwt_color_map.h>
+#include <mutex>
 #include <QObject>
-#include <QtCharts>
-#include <QPointer>
-#include <QtPrintSupport/QPrinter>
-#include <QtPrintSupport/QPrintDialog>
-#include <QtNumeric>
-#include <QtGlobal>
+#include <QWidget>
 
 namespace GekkoFyre {
 
-class SpectroGui : public QObject, QwtPlot {
-    Q_OBJECT
+//
+// http://www.setnode.com/blog/qt-staticmetaobject-is-not-a-member-of/
+//
+class SpectroGui: public QwtPlot {
 
 public:
     SpectroGui(QWidget *parent = nullptr);
     ~SpectroGui() override;
 
-public Q_SLOTS:
+    QwtPlotSpectrogram *gkSpectrogram;
+
     void showContour(const int &toggled);
     void showSpectrogram(const bool &toggled);
     void setColorMap(const int &idx);
     void setAlpha(const int &alpha);
+    void setTheme(const QColor &colour);
 
 private:
-    QwtPlotSpectrogram *gkSpectrogram;
-
     int gkMapType;
     int gkAlpha;
+
+    //
+    // Mutexes
+    //
+    std::mutex spectro_gui_mtx;
 };
 
 class MyZoomer: public QwtPlotZoomer {
@@ -118,16 +116,6 @@ class LinearColorMapRGB: public QwtLinearColorMap {
 
 public:
     LinearColorMapRGB(): QwtLinearColorMap(Qt::darkCyan, Qt::red, QwtColorMap::RGB) {
-        addColorStop(0.1, Qt::cyan);
-        addColorStop(0.6, Qt::green);
-        addColorStop(0.95, Qt::yellow);
-    }
-};
-
-class LinearColorMapIndexed: public QwtLinearColorMap {
-
-public:
-    LinearColorMapIndexed(): QwtLinearColorMap(Qt::darkCyan, Qt::red, QwtColorMap::Indexed) {
         addColorStop(0.1, Qt::cyan);
         addColorStop(0.6, Qt::green);
         addColorStop(0.95, Qt::yellow);

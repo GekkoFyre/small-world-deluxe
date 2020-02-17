@@ -44,6 +44,7 @@
 #include "src/pa_mic.hpp"
 #include "src/radiolibs.hpp"
 #include "src/pa_audio_buf.hpp"
+#include "src/spectro_gui.hpp"
 #include "dialogsettings.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
@@ -56,7 +57,6 @@
 #include <QMainWindow>
 #include <QPushButton>
 #include <QPointer>
-#include <QChart>
 #include <QString>
 #include <QStringList>
 
@@ -111,7 +111,7 @@ private slots:
     void on_actionPlay_triggered();
     void on_actionSettings_triggered();
     void on_actionSave_Decoded_Ab_triggered();
-    void on_actionView_Graphs_triggered();
+    void on_actionView_Spectrogram_Controller_triggered();
 
     void infoBar();
     void uponExit();
@@ -158,6 +158,7 @@ private:
     std::shared_ptr<GekkoFyre::PaMic> gkPaMic;
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GekkoFyre::RadioLibs> gkRadioLibs;
+    QPointer<GekkoFyre::SpectroGui> gkSpectroGui;
 
     //
     // Window Handlers for Microsoft message boxes
@@ -172,7 +173,7 @@ private:
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
     GekkoFyre::PaAudioBuf *gkAudioBuf_input;    // For playback devices
-    GekkoFyre::PaAudioBuf *gkAudioBuf_output;   // For recording devices
+    std::vector<short> gkAudioBuf_input_vec;
 
     //
     // Multithreading
@@ -186,6 +187,11 @@ private:
 
     PaError err = paNoError;
     std::shared_ptr<PaStream> micStream;
+
+    //
+    // Mutexes
+    //
+    std::mutex spectrograph_callback_mtx;
 
     //
     // This sub-section contains all the boolean variables pertaining to the QPushButtons on QMainWindow that
@@ -203,12 +209,16 @@ private:
     void radioStats(GekkoFyre::AmateurRadio::Control::Radio *radio_dev);
 
     PaStreamCallbackResult paMicProcBackground(const GekkoFyre::Database::Settings::Audio::GkDevice &input_audio_device);
-    void procVuMeter(portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *stream);
+    void procVuMeter(GekkoFyre::PaAudioBuf *buffer, portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *stream);
 
     void changePushButtonColor(QPointer<QPushButton> push_button, const bool &green_result = true,
                                const bool &color_blind_mode = false);
     QStringList getAmateurBands();
     bool prefillAmateurBands();
+
+    void spectrographCallback(const GekkoFyre::Database::Settings::Audio::GkDevice &device,
+                              std::vector<short> buffer_vec,
+                              portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *stream);
 
     void createStatusBar(const QString &statusMsg = "");
     bool changeStatusBarMsg(const QString &statusMsg = "");

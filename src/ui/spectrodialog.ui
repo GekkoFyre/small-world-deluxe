@@ -19,9 +19,9 @@
   <property name="windowTitle">
    <string>Spectrographical Controls</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
+  <layout class="QHBoxLayout" name="horizontalLayout">
    <item>
-    <widget class="QFrame" name="frame">
+    <widget class="QFrame" name="frame_spectro_controls">
      <property name="frameShape">
       <enum>QFrame::StyledPanel</enum>
      </property>
@@ -68,8 +68,23 @@
       </item>
       <item row="3" column="1">
        <widget class="QSlider" name="horizontalSlider_freq_zoom">
+        <property name="maximum">
+         <number>254</number>
+        </property>
+        <property name="pageStep">
+         <number>8</number>
+        </property>
+        <property name="value">
+         <number>0</number>
+        </property>
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="tickPosition">
+         <enum>QSlider::TicksBelow</enum>
+        </property>
+        <property name="tickInterval">
+         <number>16</number>
         </property>
        </widget>
       </item>
@@ -100,30 +115,49 @@
        </spacer>
       </item>
       <item row="5" column="0">
-       <widget class="QLabel" name="label_colour_map">
+       <widget class="QLabel" name="labelcontrol_colour">
         <property name="text">
-         <string>Colour Map: </string>
+         <string>Colour: </string>
         </property>
        </widget>
       </item>
       <item row="5" column="1">
-       <widget class="QComboBox" name="comboBox_colour_map"/>
-      </item>
-      <item row="6" column="0">
-       <spacer name="horizontalSpacer_3">
+       <widget class="QSlider" name="horizontalSlider_control_colour">
+        <property name="toolTip">
+         <string>Control the colour values of the spectrogram.</string>
+        </property>
+        <property name="maximum">
+         <number>254</number>
+        </property>
+        <property name="pageStep">
+         <number>8</number>
+        </property>
+        <property name="value">
+         <number>254</number>
+        </property>
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
+        <property name="invertedAppearance">
+         <bool>true</bool>
         </property>
-       </spacer>
+        <property name="tickPosition">
+         <enum>QSlider::TicksBelow</enum>
+        </property>
+        <property name="tickInterval">
+         <number>16</number>
+        </property>
+       </widget>
       </item>
-      <item row="6" column="1">
-       <spacer name="horizontalSpacer_4">
+      <item row="6" column="0">
+       <widget class="QLabel" name="label_ui_theme">
+        <property name="text">
+         <string>Theme: </string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="0">
+       <spacer name="horizontalSpacer_10">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
@@ -136,28 +170,7 @@
        </spacer>
       </item>
       <item row="7" column="1">
-       <widget class="QPushButton" name="pushButton_apply">
-        <property name="text">
-         <string>Apply</string>
-        </property>
-       </widget>
-      </item>
-      <item row="8" column="1">
-       <widget class="QPushButton" name="pushButton_reset">
-        <property name="text">
-         <string>Reset</string>
-        </property>
-       </widget>
-      </item>
-      <item row="9" column="1">
-       <widget class="QPushButton" name="pushButton_exit">
-        <property name="text">
-         <string>Exit</string>
-        </property>
-       </widget>
-      </item>
-      <item row="7" column="0">
-       <spacer name="horizontalSpacer_5">
+       <spacer name="horizontalSpacer_9">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
@@ -170,6 +183,92 @@
        </spacer>
       </item>
       <item row="8" column="0">
+       <spacer name="horizontalSpacer_8">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="8" column="1">
+       <widget class="QPushButton" name="pushButton_contour">
+        <property name="text">
+         <string>Contour</string>
+        </property>
+       </widget>
+      </item>
+      <item row="9" column="0">
+       <spacer name="horizontalSpacer_11">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="9" column="1">
+       <widget class="QPushButton" name="pushButton_activate_spectro">
+        <property name="text">
+         <string>Activate Spectrogram</string>
+        </property>
+       </widget>
+      </item>
+      <item row="10" column="0">
+       <spacer name="horizontalSpacer_3">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="10" column="1">
+       <spacer name="horizontalSpacer_4">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="11" column="0">
+       <spacer name="horizontalSpacer_5">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="11" column="1">
+       <widget class="QPushButton" name="pushButton_apply">
+        <property name="text">
+         <string>Apply</string>
+        </property>
+       </widget>
+      </item>
+      <item row="12" column="0">
        <spacer name="horizontalSpacer_6">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -182,7 +281,14 @@
         </property>
        </spacer>
       </item>
-      <item row="9" column="0">
+      <item row="12" column="1">
+       <widget class="QPushButton" name="pushButton_reset">
+        <property name="text">
+         <string>Reset</string>
+        </property>
+       </widget>
+      </item>
+      <item row="13" column="0">
        <spacer name="horizontalSpacer_7">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -194,6 +300,54 @@
          </size>
         </property>
        </spacer>
+      </item>
+      <item row="13" column="1">
+       <widget class="QPushButton" name="pushButton_exit">
+        <property name="text">
+         <string>Exit</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="1">
+       <widget class="QComboBox" name="comboBox_ui_theme">
+        <property name="toolTip">
+         <string>Change the 'theme' of the spectrograph.</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QFrame" name="frame_spectro_sliders">
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QSlider" name="verticalSlider_control_alpha">
+        <property name="toolTip">
+         <string>Control the colour values of the spectrogram.</string>
+        </property>
+        <property name="maximum">
+         <number>254</number>
+        </property>
+        <property name="pageStep">
+         <number>8</number>
+        </property>
+        <property name="value">
+         <number>254</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="tickInterval">
+         <number>16</number>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>

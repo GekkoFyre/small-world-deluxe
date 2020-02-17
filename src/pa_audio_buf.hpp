@@ -51,28 +51,29 @@ class PaAudioBuf : private std::vector<short> {
     typedef std::vector<short> vector;
 
 public:
-    explicit PaAudioBuf(int size_hint);
+    PaAudioBuf(int size_hint, std::vector<short> rec_samples = std::vector<short>());
     virtual ~PaAudioBuf();
 
     PaAudioBuf operator*(const PaAudioBuf &) const;
     PaAudioBuf operator+(const PaAudioBuf &) const;
 
     using vector::push_back;
-    using vector::operator[];
     using vector::begin;
     using vector::end;
-    using vector::size;
-    using vector::clear;
 
     int playbackCallback(const void *input_buffer, void *output_buffer, unsigned long frames_per_buffer,
                          const PaStreamCallbackTimeInfo *time_info, PaStreamCallbackFlags status_flags);
     int recordCallback(const void *input_buffer, void *output_buffer, unsigned long frames_per_buffer,
                        const PaStreamCallbackTimeInfo *time_info, PaStreamCallbackFlags status_flags);
     short writeToMemory(const int &idx);
+    std::vector<short> dumpMemory(const Database::Settings::Audio::GkDevice &device);
     void resetPlayback();
+    virtual void clear();
+    virtual size_t size();
+    virtual short at(const short &idx);
 
 private:
-    std::vector<short> rec_samples;               // Contains the 24-bit mono samples
+    std::vector<short> rec_samples;               // Contains the 16-bit mono samples
     std::vector<short>::iterator playback_iter;   // Tracks position during playback
 
     void dlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon);

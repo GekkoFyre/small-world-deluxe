@@ -38,20 +38,13 @@
 #include "spectrodialog.hpp"
 #include "ui_spectrodialog.h"
 
-SpectroDialog::SpectroDialog(QWidget *parent) :
-    QDialog(parent),
-    ui(new Ui::SpectroDialog)
+SpectroDialog::SpectroDialog(QPointer<GekkoFyre::SpectroGui> spectroGui, QWidget *parent) :
+    QDialog(parent), ui(new Ui::SpectroDialog)
 {
     ui->setupUi(this);
     this->adjustSize(); // Resize to contents
 
-    // Make the window frameless
-    // setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
-    // this->setMask(QRegion(this->rect()));
-
-    // Make the window transparent
-    // setAttribute(Qt::WA_NoSystemBackground);
-    // setAttribute(Qt::WA_TranslucentBackground);
+    gkSpectroGui = spectroGui;
 }
 
 SpectroDialog::~SpectroDialog()
@@ -60,12 +53,59 @@ SpectroDialog::~SpectroDialog()
 }
 
 void SpectroDialog::on_pushButton_apply_clicked()
-{}
+{
+    return;
+}
 
 void SpectroDialog::on_pushButton_reset_clicked()
-{}
+{
+    return;
+}
 
 void SpectroDialog::on_pushButton_exit_clicked()
 {
     this->close();
+}
+
+void SpectroDialog::on_pushButton_contour_toggled(bool checked)
+{
+    gkSpectroGui->showContour(checked);
+
+    return;
+}
+
+void SpectroDialog::on_pushButton_activate_spectro_toggled(bool checked)
+{
+    return;
+}
+
+void SpectroDialog::on_comboBox_colour_map_currentIndexChanged(int index)
+{
+    return;
+}
+
+void SpectroDialog::on_comboBox_fft_size_currentIndexChanged(int index)
+{
+    return;
+}
+
+void SpectroDialog::on_verticalSlider_control_alpha_valueChanged(int value)
+{
+    gkSpectroGui->setAlpha(value);
+
+    return;
+}
+
+void SpectroDialog::on_horizontalSlider_control_colour_valueChanged(int value)
+{
+    gkSpectroGui->setColorMap(value);
+
+    return;
+}
+
+void SpectroDialog::on_comboBox_ui_theme_activated(int index)
+{
+    gkSpectroGui->setTheme(Qt::darkBlue);
+
+    return;
 }

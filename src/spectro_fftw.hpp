@@ -38,19 +38,21 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include <QObject>
 #include <vector>
 
 namespace GekkoFyre {
 
-class SpectroFFTW {
-
+class SpectroFFTW: public QObject {
+    Q_OBJECT
 private:
-    void hamming(int winLength, double *buffer);
+    void hanning(int winLength, double *buffer);
 
 public:
-    explicit SpectroFFTW();
+    explicit SpectroFFTW(QObject *parent = nullptr);
     ~SpectroFFTW();
 
+public slots:
     Spectrograph::RawFFT stft(std::vector<double> *signal, int signalLength, int windowSize, int hopSize);
 
 };

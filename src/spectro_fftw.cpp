@@ -48,7 +48,7 @@ using namespace GekkoFyre;
  * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param parent
  */
-SpectroFFTW::SpectroFFTW()
+SpectroFFTW::SpectroFFTW(QObject *parent) : QObject(parent)
 {}
 
 SpectroFFTW::~SpectroFFTW()
@@ -61,7 +61,7 @@ SpectroFFTW::~SpectroFFTW()
  * @param winLength The horizontal length of the window, in pixels.
  * @param buffer The ensuing buffer that's created.
  */
-void SpectroFFTW::hamming(int winLength, double *buffer)
+void SpectroFFTW::hanning(int winLength, double *buffer)
 {
     for (int i = 0; i < winLength; ++i) {
         buffer[i] = 0.54 - (0.46 * cos(2 * M_PI * (i / ((winLength - 1) * 1.0))));
@@ -93,7 +93,7 @@ Spectrograph::RawFFT SpectroFFTW::stft(std::vector<double> *signal, int signalLe
 
     // Create a 'hamming window' of appropriate length
     double *window = new double[windowSize];
-    hamming(windowSize, window);
+    hanning(windowSize, window);
 
     int chunkPosition = 0;
     int readIndex;

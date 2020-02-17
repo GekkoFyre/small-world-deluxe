@@ -56,10 +56,11 @@ using namespace Audio;
  * <http://portaudio.com/docs/v19-doxydocs-dev/group__test__src.html>
  * @param size_hint
  */
-PaAudioBuf::PaAudioBuf(int size_hint) : std::vector<short>(rec_samples)
+PaAudioBuf::PaAudioBuf(int size_hint, std::vector<short> rec_samples) : std::vector<short>(rec_samples)
 {
     std::mutex pa_audio_buf_mtx;
     std::lock_guard<std::mutex> lck_guard(pa_audio_buf_mtx);
+
     if (size_hint > 0) {
         rec_samples.reserve(size_hint);
     }
@@ -175,6 +176,29 @@ short PaAudioBuf::writeToMemory(const int &idx)
 }
 
 /**
+ * @brief PaAudioBuf::dumpMemory Will dump the contents of the buffer when it reaches the target
+ * size, before starting over again.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return The entire contents of the buffer once having reached the target size.
+ */
+std::vector<short> PaAudioBuf::dumpMemory(const GkDevice &device)
+{
+    try {
+        // Have we filled the buffer?
+        if (device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS == rec_samples.size()) {
+            // The buffer is full!
+            return rec_samples;
+        }
+    } catch (const std::exception &e) {
+        HWND hwnd_dump_memory;
+        dlgBoxOk(hwnd_dump_memory, "Error!", e.what(), MB_ICONERROR);
+        DestroyWindow(hwnd_dump_memory);
+    }
+
+    return std::vector<short>();
+}
+
+/**
  * @brief PaAudioBuf::resetPlayback
  */
 void PaAudioBuf::resetPlayback()
@@ -183,6 +207,33 @@ void PaAudioBuf::resetPlayback()
     std::lock_guard<std::mutex> lck_guard(reset_playback_mtx);
     playback_iter = rec_samples.begin();
     return;
+}
+
+void PaAudioBuf::clear()
+{
+    rec_samples.clear();
+
+    return;
+}
+
+size_t PaAudioBuf::size()
+{
+    size_t rec_samples_size = 0;
+    if (!rec_samples.empty()) {
+        rec_samples_size = rec_samples.size();
+        return rec_samples_size;
+    }
+
+    return 0;
+}
+
+short PaAudioBuf::at(const short &idx)
+{
+    if (!rec_samples.empty()) {
+        return rec_samples.at(idx);
+    }
+
+    return 0;
 }
 
 /**

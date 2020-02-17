@@ -927,7 +927,7 @@ QPushButton:disabled {
    <addaction name="separator"/>
    <addaction name="actionSave_Decoded_Ab"/>
    <addaction name="separator"/>
-   <addaction name="actionView_Graphs"/>
+   <addaction name="actionView_Spectrogram_Controller"/>
    <addaction name="separator"/>
    <addaction name="actionSettings"/>
   </widget>
@@ -1081,12 +1081,12 @@ QPushButton:disabled {
     <string>Ctrl+S</string>
    </property>
   </action>
-  <action name="actionView_Graphs">
+  <action name="actionView_Spectrogram_Controller">
    <property name="text">
-    <string>View Graphs</string>
+    <string>View Spectrogram Controller</string>
    </property>
    <property name="toolTip">
-    <string>View charts/graphs concerning statistics related to your rig</string>
+    <string>View the controller for your waterfall display / spectrogram.</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+G</string>

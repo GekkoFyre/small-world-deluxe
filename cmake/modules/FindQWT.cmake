@@ -42,7 +42,7 @@ find_path(QWT_INCLUDE_DIR NAMES "qwt.h"
             HINTS ${PC_QWT_INCLUDEDIR} ${PC_QWT_INCLUDE_DIRS}
             PATH_SUFFIXES qwt)
 
-find_library(QWT_LIBRARY NAMES "qwt" "libqwt" "qwtd" "libqwtd"
+find_library(QWT_LIBRARY NAMES "libqwtd" "qwtd" "libqwt" "qwt"
             HINTS ${PC_QWT_LIBDIR} ${PC_QWT_LIBRARY_DIRS})
 
 include(FindPackageHandleStandardArgs)

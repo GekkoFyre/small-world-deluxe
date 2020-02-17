@@ -244,6 +244,7 @@ if(WIN32)
         src/ui/mainwindow.hpp
         src/ui/dialogsettings.hpp
         src/ui/aboutdialog.hpp
+        src/spectro_fftw.hpp
         src/ui/spectrodialog.hpp
         src/radiolibs.hpp
         src/dek_db.hpp
@@ -257,6 +258,7 @@ elseif(UNIX)
         src/ui/mainwindow.hpp
         src/ui/dialogsettings.hpp
         src/ui/aboutdialog.hpp
+        src/spectro_fftw.hpp
         src/ui/spectrodialog.hpp
         src/radiolibs.hpp
         src/dek_db.hpp
@@ -285,6 +287,7 @@ if(WIN32)
         src/ui/mainwindow.cpp
         src/ui/dialogsettings.cpp
         src/ui/aboutdialog.cpp
+        src/spectro_fftw.cpp
         src/ui/spectrodialog.cpp
         src/radiolibs.cpp
         src/dek_db.cpp
@@ -298,6 +301,7 @@ elseif(UNIX)
         src/ui/mainwindow.cpp
         src/ui/dialogsettings.cpp
         src/ui/aboutdialog.cpp
+        src/spectro_fftw.cpp
         src/ui/spectrodialog.cpp
         src/radiolibs.cpp
         src/dek_db.cpp
@@ -312,12 +316,10 @@ endif()
 
 if(WIN32)
     set(GALAXY_SRC_CPP
-        src/spectro_fftw.cpp
         src/pa_audio_buf.cpp
         src/pa_sinewave.cpp)
 elseif(UNIX)
     set(GALAXY_SRC_CPP
-        src/spectro_fftw.cpp
         src/pa_audio_buf.cpp
         src/pa_sinewave.cpp)
 elseif(APPLE)
@@ -327,13 +329,11 @@ endif()
 if(WIN32)
     set(GALAXY_SRC_HEADERS
         src/defines.hpp
-        src/spectro_fftw.hpp
         src/pa_audio_buf.hpp
         src/pa_sinewave.hpp)
 elseif(UNIX)
     set(GALAXY_SRC_HEADERS
         src/defines.hpp
-        src/spectro_fftw.hpp
         src/pa_audio_buf.hpp
         src/pa_sinewave.hpp)
 elseif(APPLE)
@@ -342,7 +342,9 @@ endif()
 
 add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_SRC_HEADERS} ${UI_HEADERS})
 
-target_link_libraries(galaxy Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Charts Qt5::Test Threads::Threads ${OpenCV_LIBS} ${LIBS})
+set_property(TARGET galaxy PROPERTY AUTOMOC ON)
+
+target_link_libraries(galaxy Qt5::Widgets Qt5::Core Qt5::Gui Threads::Threads ${LIBS})
 
 # rcc -no-compress -binary smallworld_res.qrc -o smallworld_res.rcc
 qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)

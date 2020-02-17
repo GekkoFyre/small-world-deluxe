@@ -37,7 +37,11 @@
 
 #pragma once
 
+#include "src/defines.hpp"
+#include "src/spectro_gui.hpp"
 #include <QDialog>
+#include <QString>
+#include <QPointer>
 
 namespace Ui {
 class SpectroDialog;
@@ -48,15 +52,24 @@ class SpectroDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit SpectroDialog(QWidget *parent = nullptr);
+    explicit SpectroDialog(QPointer<GekkoFyre::SpectroGui> spectroGui, QWidget *parent = nullptr);
     ~SpectroDialog();
 
 private slots:
     void on_pushButton_apply_clicked();
     void on_pushButton_reset_clicked();
     void on_pushButton_exit_clicked();
+    void on_pushButton_contour_toggled(bool checked);
+    void on_pushButton_activate_spectro_toggled(bool checked);
+    void on_comboBox_colour_map_currentIndexChanged(int index);
+    void on_comboBox_fft_size_currentIndexChanged(int index);
+    void on_verticalSlider_control_alpha_valueChanged(int value);
+    void on_horizontalSlider_control_colour_valueChanged(int value);
+
+    void on_comboBox_ui_theme_activated(int index);
 
 private:
     Ui::SpectroDialog *ui;
+    QPointer<GekkoFyre::SpectroGui> gkSpectroGui;
 };
 

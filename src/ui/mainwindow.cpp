@@ -39,7 +39,9 @@
 #include "ui_mainwindow.h"
 #include "aboutdialog.hpp"
 #include "spectrodialog.hpp"
+#include "src/spectro_fftw.hpp"
 #include <portaudiocpp/PortAudioCpp.hxx>
+#include <qwt_color_map.h>
 #include <boost/exception/all.hpp>
 #include <boost/chrono/chrono.hpp>
 #include <string>
@@ -95,7 +97,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         ui->actionPlay->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/play-rounded-flat.svg"));
         ui->actionSave_Decoded_Ab->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/clipboard-flat.svg"));
         ui->actionSettings->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/settings-flat.svg"));
-        ui->actionView_Graphs->setIcon(QIcon(":/resources/contrib/images/vector/purchased/iconfinder_Graph-Decrease_378375.svg"));
+        ui->actionView_Spectrogram_Controller->setIcon(QIcon(":/resources/contrib/images/vector/purchased/iconfinder_Graph-Decrease_378375.svg"));
 
         ui->action_Open->setIcon(QIcon(":/resources/contrib/images/vector/purchased/iconfinder_archive_226655.svg"));
         ui->actionE_xit->setIcon(QIcon(":/resources/contrib/images/vector/purchased/iconfinder_turn_off_on_power_181492.svg"));
@@ -204,13 +206,17 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             }
         }
 
-        if (pref_output_device.dev_output_channel_count > 0 && pref_output_device.def_sample_rate > 0) {
-            gkAudioBuf_output = new PaAudioBuf(pref_output_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS);
+        if (pref_input_device.dev_input_channel_count > 0 && pref_input_device.def_sample_rate > 0) {
+            gkAudioBuf_input = new PaAudioBuf(pref_input_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS,
+                                              gkAudioBuf_input_vec);
         }
 
-        if (pref_input_device.dev_input_channel_count > 0 && pref_input_device.def_sample_rate > 0) {
-            gkAudioBuf_input = new PaAudioBuf(pref_input_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS);
-        }
+        //
+        // Initialize the Waterfall / Spectrograph
+        //
+        gkSpectroGui = new GekkoFyre::SpectroGui(this);
+        ui->verticalLayout_11->addWidget(gkSpectroGui);
+        gkSpectroGui->setColorMap(254);
 
         //
         // Volume Meter
@@ -311,10 +317,6 @@ MainWindow::~MainWindow()
         delete gkAudioBuf_input;
     }
 
-    if (pref_output_device.dev_output_channel_count > 0 && pref_output_device.def_sample_rate > 0) {
-        delete gkAudioBuf_output;
-    }
-
     if (timer != nullptr) {
         delete timer;
     }
@@ -373,7 +375,7 @@ void MainWindow::on_action_Open_triggered()
  * @brief MainWindow::procVuMeter controls the volume meter on QMainWindow.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void MainWindow::procVuMeter(portaudio::MemFunCallbackStream<PaAudioBuf> *stream)
+void MainWindow::procVuMeter(PaAudioBuf *buffer, portaudio::MemFunCallbackStream<PaAudioBuf> *stream)
 {
     try {
         std::mutex proc_vu_meter_mtx;
@@ -388,7 +390,7 @@ void MainWindow::procVuMeter(portaudio::MemFunCallbackStream<PaAudioBuf> *stream
             std::random_device dev;
             std::mt19937 rng(dev());
             std::uniform_int_distribution<int> dist(1, buffer_size_total);
-            double idx_result = gkAudioBuf_output->writeToMemory(dist(rng));
+            double idx_result = buffer->writeToMemory(dist(rng));
             if (idx_result >= 0) {
                 // We have a audio sample!
                 double percentage = ((idx_result / 32768) * 100);
@@ -474,6 +476,52 @@ bool MainWindow::prefillAmateurBands()
     }
 
     return false;
+}
+
+/**
+ * @brief MainWindow::spectrographCallback is meant to be launched into a new thread, and manages
+ * the lifecycle of data updates between QMainWindow() and SpectroGui().
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::spectrographCallback(const GkDevice &device, std::vector<short> buffer_vec,
+                                      portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *stream)
+{
+    std::lock_guard<std::mutex> lck_guard(spectrograph_callback_mtx);
+    std::unique_ptr<GekkoFyre::SpectroFFTW> spectro_fftw = std::make_unique<GekkoFyre::SpectroFFTW>(this);
+    std::vector<double> conv_data;
+    Spectrograph::RawFFT waterfall_fft_data;
+
+    size_t buffer_size_total = device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS;
+    std::vector<short> waterfall_data;
+
+    while (stream->isOpen() && btn_radio_rx) {
+        if (buffer_vec.size() == (buffer_size_total - 1)) {
+            // Dump the contents of the buffer!
+            waterfall_data = buffer_vec;
+
+            for (const auto &waterfall: waterfall_data) {
+                conv_data.push_back(waterfall);
+            }
+        }
+
+        //
+        // Set the y-axis of the graph (i.e. the time) to advance at the speed
+        // of how often the audio buffer is filled.
+        //
+        std::this_thread::sleep_for(std::chrono::duration(std::chrono::milliseconds(AUDIO_BUFFER_STREAMING_SECS * 1000)));
+        gkSpectroGui->gkSpectrogram->setYAxis(std::time(0));
+        gkSpectroGui->replot();
+
+        if (conv_data.size() == buffer_size_total) {
+            waterfall_fft_data = spectro_fftw->stft(&conv_data, 2048, gkSpectroGui->width(), 2048);
+
+            // Erase the std::vector() and its elements
+            conv_data.clear();
+            conv_data.shrink_to_fit();
+        }
+    }
+
+    return;
 }
 
 /**
@@ -610,7 +658,19 @@ void MainWindow::on_actionSet_Offset_triggered()
  */
 void MainWindow::on_actionShow_Waterfall_toggled(bool arg1)
 {
-    QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+    try {
+        // QWT is started!
+    } catch (const portaudio::PaException &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText()), QMessageBox::Ok);
+    } catch (const portaudio::PaCppException &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("A generic exception has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+    } catch (...) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), QMessageBox::Ok);
+    }
+
+    return;
 }
 
 /**
@@ -756,17 +816,30 @@ void MainWindow::radioStats(AmateurRadio::Control::Radio *radio_dev)
 PaStreamCallbackResult MainWindow::paMicProcBackground(const GkDevice &input_audio_device)
 {
     try {
+        GekkoFyre::PaAudioBuf *gkAudioBuf_output; // For recording devices
+        std::vector<short> input_buffer_vec;
+
+        if (pref_output_device.dev_output_channel_count > 0 && pref_output_device.def_sample_rate > 0) {
+            gkAudioBuf_output = new PaAudioBuf((pref_output_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS), input_buffer_vec);
+        }
+
         std::mutex pa_mic_bckgrnd_mtx;
         std::lock_guard<std::mutex> lck_guard(pa_mic_bckgrnd_mtx);
         std::thread vu_meter;
+        std::thread spectro_thread;
         portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *streamRecord = nullptr; // For the receiving of microphone (audio device) input
         PaStreamCallbackResult result = gkAudioDevices->openRecordStream(*gkPortAudioInit, &gkAudioBuf_output,
                                                                          input_audio_device, &streamRecord, false);
 
         if (streamRecord != nullptr) {
             if (streamRecord->isOpen() && btn_radio_rx) {
-                vu_meter = std::thread(&MainWindow::procVuMeter, this, streamRecord);
+                vu_meter = std::thread(&MainWindow::procVuMeter, this, gkAudioBuf_output, streamRecord);
                 vu_meter.detach();
+
+                spectro_thread = std::thread(&MainWindow::spectrographCallback, this,
+                                             input_audio_device, input_buffer_vec,
+                                             streamRecord);
+                spectro_thread.detach();
             }
 
             while (btn_radio_rx) {
@@ -782,7 +855,14 @@ PaStreamCallbackResult MainWindow::paMicProcBackground(const GkDevice &input_aud
                 streamRecord->close();
             }
 
-            vu_meter.join();
+            if (vu_meter.joinable()) {
+                vu_meter.join();
+            }
+
+            if (spectro_thread.joinable()) {
+                spectro_thread.join();
+            }
+
             if (tInputDev.try_join_for(boost::chrono::milliseconds(5000))) {
                 tInputDev.join();
             } else {
@@ -790,6 +870,10 @@ PaStreamCallbackResult MainWindow::paMicProcBackground(const GkDevice &input_aud
             }
 
             emit updateVolume(0);
+
+            if (pref_output_device.dev_output_channel_count > 0 && pref_output_device.def_sample_rate > 0) {
+                delete gkAudioBuf_output;
+            }
 
             return result;
         } else {
@@ -809,9 +893,9 @@ void MainWindow::on_actionSave_Decoded_Ab_triggered()
     return;
 }
 
-void MainWindow::on_actionView_Graphs_triggered()
+void MainWindow::on_actionView_Spectrogram_Controller_triggered()
 {
-    QPointer<SpectroDialog> dlg_spectro = new SpectroDialog(this);
+    QPointer<SpectroDialog> dlg_spectro = new SpectroDialog(gkSpectroGui, this);
     dlg_spectro->setWindowFlags(Qt::Tool | Qt::Dialog);
     dlg_spectro->show();
 

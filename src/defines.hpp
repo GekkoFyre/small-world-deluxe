@@ -109,9 +109,9 @@ namespace GekkoFyre {
 #define AUDIO_TEST_SAMPLE_TABLE_SIZE (200)
 #define AUDIO_SPEC_FLOOR_DECIBELS (-180.0)
 
-#define AUDIO_BUFFER_STREAMING_SECS (3)
+#define AUDIO_BUFFER_STREAMING_SECS (1)
 #define AUDIO_SINE_WAVE_PLAYBACK_SECS (3)               // Play the sine wave test sample for three seconds!
-#define AUDIO_VU_METER_UPDATE_MILLISECS (500)                // How often the volume meter should update, in milliseconds.
+#define AUDIO_VU_METER_UPDATE_MILLISECS (500)           // How often the volume meter should update, in milliseconds.
 
 // Mostly regarding FFTW functions
 #define AUDIO_SIGNAL_LENGTH (2048)
@@ -333,10 +333,13 @@ namespace Spectrograph {
     };
 
     struct Window {
-        struct axis {
-            int rows;
-            int cols;
-        };
+        int y;
+        int x;
+    };
+
+    struct Graphing {
+        RawFFT fft;
+        Window axis;
     };
 }
 };
