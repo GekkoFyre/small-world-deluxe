@@ -39,6 +39,8 @@
 #include <iostream>
 #include <exception>
 #include <mutex>
+#include <algorithm>
+#include <iterator>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -184,12 +186,11 @@ size_t PaAudioBuf::size() const
 short PaAudioBuf::at(const short &idx) const
 {
     short ret_value = 0;
+    std::mutex pa_audio_buf_loc_mtx;
+    std::lock_guard<std::mutex> lck_guard(pa_audio_buf_loc_mtx);
     if (rec_samples_ptr != nullptr) {
         if (!rec_samples_ptr->empty()) {
-            if (idx <= buffer_size) {
-                std::mutex pa_audio_buf_loc_mtx;
-                std::lock_guard<std::mutex> lck_guard(pa_audio_buf_loc_mtx);
-
+            if (idx <= buffer_size && idx >= 0) {
                 size_t counter = 0;
                 for (const auto &sample: *rec_samples_ptr) {
                     if (counter == idx) {
@@ -201,8 +202,6 @@ short PaAudioBuf::at(const short &idx) const
                 }
 
                 return ret_value;
-            }  else {
-                throw std::invalid_argument("Specified index larger than given audio buffer size!");
             }
         }
     }
@@ -298,7 +297,7 @@ bool PaAudioBuf::clear() const
 {
     if (rec_samples_ptr != nullptr) {
         if (!rec_samples_ptr->empty()) {
-            rec_samples_ptr->clear();
+            rec_samples_ptr->erase(rec_samples_ptr->begin(), (rec_samples_ptr->begin() + buffer_size));
 
             if (rec_samples_ptr->empty()) {
                 return true;
@@ -309,14 +308,38 @@ bool PaAudioBuf::clear() const
     return false;
 }
 
+std::vector<short> PaAudioBuf::linearize() const
+{
+    if (rec_samples_ptr != nullptr) {
+        if (!rec_samples_ptr->empty()) {
+            std::vector<short> ret_value;
+            auto circ_ptr_temp = rec_samples_ptr->linearize();
+            std::copy(circ_ptr_temp, (circ_ptr_temp + buffer_size), std::back_inserter(ret_value));
+            rec_samples_ptr->erase(rec_samples_ptr->begin(), (rec_samples_ptr->begin() + buffer_size));
+
+            return ret_value;
+        }
+    }
+
+    return std::vector<short>();
+}
+
 boost::circular_buffer<short, std::allocator<short>>::iterator PaAudioBuf::begin() const
 {
-    return rec_samples_ptr->begin();
+    if (rec_samples_ptr != nullptr) {
+        return rec_samples_ptr->begin();
+    }
+
+    return boost::circular_buffer<short, std::allocator<short>>::iterator();
 }
 
 boost::circular_buffer<short, std::allocator<short>>::iterator PaAudioBuf::end() const
 {
-    return rec_samples_ptr->end();
+    if (rec_samples_ptr != nullptr) {
+        return rec_samples_ptr->end();
+    }
+
+    return boost::circular_buffer<short, std::allocator<short>>::iterator();
 }
 
 /**

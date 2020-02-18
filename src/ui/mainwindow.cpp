@@ -387,10 +387,8 @@ void MainWindow::procVuMeter(const size_t &buffer_size, PaAudioBuf *audio_buf,
             //
             std::this_thread::sleep_for(std::chrono::duration(std::chrono::milliseconds(AUDIO_VU_METER_UPDATE_MILLISECS)));
 
-            std::random_device dev;
-            std::mt19937 rng(dev());
-            std::uniform_int_distribution<int> dist(1, (buffer_size));
-            double idx_result = audio_buf->at(dist(rng));
+            const size_t rand_num = fileIo->generateRandInteger(1, buffer_size, (buffer_size - 1));
+            double idx_result = audio_buf->at(rand_num);
             if (idx_result >= 0) {
                 // We have a audio sample!
                 double percentage = ((idx_result / 32768) * 100);
@@ -501,17 +499,20 @@ void MainWindow::spectrographCallback(PaAudioBuf *audio_buf, portaudio::MemFunCa
             curr_epoch = std::time(0);
             emit updateSpectroTiming(curr_epoch, stream);
 
-            Spectrograph::RawFFT waterfall_fft_data;
-            std::vector<double> conv_data(audio_buf->begin(), audio_buf->end());
-            waterfall_fft_data = spectro_fftw->stft(&conv_data, AUDIO_SIGNAL_LENGTH, gkSpectroGui->gkSpectrogram->xAxis(), FFTW_HOP_SIZE);
+            std::vector<short> raw_audio_data = audio_buf->linearize();
+            if (!raw_audio_data.empty()) {
+                Spectrograph::RawFFT waterfall_fft_data;
+                std::vector<double> conv_audio_data(raw_audio_data.begin(), raw_audio_data.end());
+                waterfall_fft_data = spectro_fftw->stft(&conv_audio_data, AUDIO_SIGNAL_LENGTH, gkSpectroGui->gkSpectrogram->xAxis(), FFTW_HOP_SIZE);
 
-            // Add the calculated values to a std::vector<Spectrograph::RawFFT>().
-            fft_data.push_back(waterfall_fft_data);
+                // Add the calculated values to a std::vector<Spectrograph::RawFFT>().
+                fft_data.push_back(waterfall_fft_data);
 
-            if (fft_data.size() > 0) {
-                for (size_t x_axis = 0; x_axis < fft_data.size(); ++x_axis) {
-                    for (size_t y_axis = 0; y_axis < fft_data.size(); ++y_axis) {
-                        emit updateSpectroData(fft_data.data()->chunk_forward_0[x_axis][y_axis], stream);
+                if (fft_data.size() > 0) {
+                    for (size_t x_axis = 0; x_axis < fft_data.size(); ++x_axis) {
+                        for (size_t y_axis = 0; y_axis < fft_data.size(); ++y_axis) {
+                            emit updateSpectroData(fft_data.data()->chunk_forward_0[x_axis][y_axis], stream);
+                        }
                     }
                 }
             }
@@ -864,7 +865,8 @@ PaStreamCallbackResult MainWindow::paMicProcBackground(const GkDevice &input_aud
 
         if (streamRecord != nullptr) {
             if (streamRecord->isOpen() && btn_radio_rx) {
-                vu_meter = std::thread(&MainWindow::procVuMeter, this, gkAudioBuf_output, streamRecord);
+                vu_meter = std::thread(&MainWindow::procVuMeter, this, input_buffer_size, gkAudioBuf_output,
+                                       streamRecord);
                 vu_meter.detach();
 
                 spectro_thread = std::thread(&MainWindow::spectrographCallback, this, gkAudioBuf_output,

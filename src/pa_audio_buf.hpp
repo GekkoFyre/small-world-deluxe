@@ -48,22 +48,7 @@
 
 namespace GekkoFyre {
 
-template<typename T, typename Container=boost::circular_buffer<T> >
-class iterable_circ_buffer : public boost::circular_buffer<T,Container> {
-
-public:
-    typedef typename Container::iterator iterator;
-    typedef typename Container::const_iterator const_iterator;
-
-    typename Container::const_iterator begin() const { return this->begin(); }
-    typename Container::const_iterator end() const { return this->end(); }
-
-    typename Container::iterator begin() { return this->begin(); }
-    typename Container::iterator end() { return this->end(); }
-
-};
-
-class PaAudioBuf : private iterable_circ_buffer<short> {
+class PaAudioBuf : private boost::circular_buffer<short> {
 
     typedef short T;
     typedef boost::circular_buffer<short> circular_buffer;
@@ -92,6 +77,7 @@ public:
     virtual void swap(boost::circular_buffer<short> data_idx_1) noexcept;
     virtual bool empty() const;
     virtual bool clear() const;
+    virtual std::vector<short> linearize() const;
     virtual iterator begin() const;
     virtual iterator end() const;
 

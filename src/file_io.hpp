@@ -58,6 +58,8 @@ public:
             const std::vector<std::string> &dirsToSkip = { });
     static bool checkSettingsExist(const bool &is_file, const boost::filesystem::path &fileName = GekkoFyre::Filesystem::fileName);
 
+    size_t generateRandInteger(const size_t &min_integer_size, const size_t &max_integer_size,
+                               const size_t &desired_result_less_than) const;
     static std::string create_random_string(size_t length);
     boost::filesystem::path dummy_path();
 
