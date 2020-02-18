@@ -38,6 +38,7 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include "src/dek_db.hpp"
 #include "src/audio_devices.hpp"
 #include "src/pa_audio_buf.hpp"
 #include <portaudio.h>
@@ -51,7 +52,8 @@ class PaMic : public QObject {
     Q_OBJECT
 
 public:
-    explicit PaMic(std::shared_ptr<GekkoFyre::AudioDevices> gkAudio, QObject *parent = nullptr);
+    explicit PaMic(std::shared_ptr<GekkoFyre::AudioDevices> gkAudio, std::shared_ptr<GekkoFyre::GkLevelDb> dbPtr,
+                   QObject *parent = nullptr);
     ~PaMic() override;
 
     bool recordInputDevice(const Database::Settings::Audio::GkDevice &device, PaStream *stream,
@@ -59,6 +61,7 @@ public:
 
 private:
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
+    std::shared_ptr<GekkoFyre::GkLevelDb> gkDb;
 
 };
 };

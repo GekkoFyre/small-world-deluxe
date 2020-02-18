@@ -66,7 +66,8 @@ public:
     QString read_mainwindow_settings(const Database::Settings::general_mainwindow_cfg &key);
 
 
-    GekkoFyre::Database::Settings::audio_channels convertAudioChannelsInt(const int &audio_channel_sel);
+    GekkoFyre::Database::Settings::audio_channels convertAudioChannelsEnum(const int &audio_channel_sel);
+    int convertAudioChannelsInt(const GekkoFyre::Database::Settings::audio_channels &channel_enum) const;
 
 private:
     std::shared_ptr<GekkoFyre::FileIo> fileIo;

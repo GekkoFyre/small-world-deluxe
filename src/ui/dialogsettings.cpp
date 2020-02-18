@@ -230,13 +230,13 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         //
         // Input Device
         //
-        chosen_input_audio_dev.sel_channels = gkDekodeDb->convertAudioChannelsInt(curr_input_device_channels);
+        chosen_input_audio_dev.sel_channels = gkDekodeDb->convertAudioChannelsEnum(curr_input_device_channels);
         gkDekodeDb->write_audio_device_settings(chosen_input_audio_dev, QString::number(chosen_input_audio_dev.dev_number), false);
 
         //
         // Output Device
         //
-        chosen_output_audio_dev.sel_channels = gkDekodeDb->convertAudioChannelsInt(curr_output_device_channels);
+        chosen_output_audio_dev.sel_channels = gkDekodeDb->convertAudioChannelsEnum(curr_output_device_channels);
         gkDekodeDb->write_audio_device_settings(chosen_output_audio_dev, QString::number(chosen_output_audio_dev.dev_number), true);
 
         QMessageBox::information(this, tr("Thank you"), tr("Your settings have been saved."), QMessageBox::Ok);

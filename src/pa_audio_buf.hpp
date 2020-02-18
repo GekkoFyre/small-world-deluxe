@@ -39,43 +39,65 @@
 
 #include "src/defines.hpp"
 #include <portaudio.h>
+#include <boost/circular_buffer.hpp>
+#include <boost/circular_buffer/allocators.hpp>
+#include <boost/iterator.hpp>
 #include <memory>
 #include <vector>
 #include <string>
 
 namespace GekkoFyre {
 
-class PaAudioBuf : private std::vector<short> {
-
-    typedef short T;
-    typedef std::vector<short> vector;
+template<typename T, typename Container=boost::circular_buffer<T> >
+class iterable_circ_buffer : public boost::circular_buffer<T,Container> {
 
 public:
-    PaAudioBuf(size_t size_hint, std::vector<short> *rec_samples, const bool &is_rec_active);
+    typedef typename Container::iterator iterator;
+    typedef typename Container::const_iterator const_iterator;
+
+    typename Container::const_iterator begin() const { return this->begin(); }
+    typename Container::const_iterator end() const { return this->end(); }
+
+    typename Container::iterator begin() { return this->begin(); }
+    typename Container::iterator end() { return this->end(); }
+
+};
+
+class PaAudioBuf : private iterable_circ_buffer<short> {
+
+    typedef short T;
+    typedef boost::circular_buffer<short> circular_buffer;
+
+public:
+    PaAudioBuf(size_t size_hint, const bool &is_rec_active);
     virtual ~PaAudioBuf();
 
     PaAudioBuf operator*(const PaAudioBuf &) const;
     PaAudioBuf operator+(const PaAudioBuf &) const;
 
-    using vector::push_back;
-    using vector::begin;
-    using vector::end;
-
-    size_t buffer_size;
-
     int playbackCallback(const void *input_buffer, void *output_buffer, unsigned long frames_per_buffer,
                          const PaStreamCallbackTimeInfo *time_info, PaStreamCallbackFlags status_flags);
     int recordCallback(const void *input_buffer, void *output_buffer, unsigned long frames_per_buffer,
                        const PaStreamCallbackTimeInfo *time_info, PaStreamCallbackFlags status_flags);
-    std::vector<short> *dumpMemory(const size_t &buffer_size);
-    void resetPlayback();
-    virtual void clear();
-    virtual size_t size();
-    virtual short at(const short &idx);
+    std::vector<short> dumpMemory() const;
+
+    virtual size_t size() const;
+    virtual short at(const short &idx) const;
+    virtual short front() const;
+    virtual short back() const;
+    virtual void push_back(const short &data);
+    virtual void push_front(const short &data);
+    virtual void pop_front();
+    virtual void pop_back();
+    virtual void swap(boost::circular_buffer<short> data_idx_1) noexcept;
+    virtual bool empty() const;
+    virtual bool clear() const;
+    virtual iterator begin() const;
+    virtual iterator end() const;
 
 private:
-    std::vector<short> *rec_samples_ptr;          // Contains the 16-bit mono samples
-    std::vector<short>::iterator playback_iter;   // Tracks position during playback
+    boost::circular_buffer<short> *rec_samples_ptr;     // Contains the 16-bit mono samples
+    size_t buffer_size;
 
     void dlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon);
 

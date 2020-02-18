@@ -49,11 +49,13 @@
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
+#include <boost/circular_buffer.hpp>
 #include <memory>
 #include <ctime>
 #include <thread>
 #include <future>
 #include <mutex>
+#include <queue>
 #include <QMainWindow>
 #include <QPushButton>
 #include <QPointer>
@@ -224,15 +226,15 @@ private:
     void radioStats(GekkoFyre::AmateurRadio::Control::Radio *radio_dev);
 
     PaStreamCallbackResult paMicProcBackground(const GekkoFyre::Database::Settings::Audio::GkDevice &input_audio_device);
-    void procVuMeter(GekkoFyre::PaAudioBuf *buffer, portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *stream);
+    void procVuMeter(const size_t &buffer_size, GekkoFyre::PaAudioBuf *audio_buf,
+                     portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *stream);
 
     void changePushButtonColor(QPointer<QPushButton> push_button, const bool &green_result = true,
                                const bool &color_blind_mode = false);
     QStringList getAmateurBands();
     bool prefillAmateurBands();
 
-    void spectrographCallback(const GekkoFyre::Database::Settings::Audio::GkDevice &device,
-                              std::vector<short> *buffer_vec,
+    void spectrographCallback(GekkoFyre::PaAudioBuf *audio_buf,
                               portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *stream);
 
     void createStatusBar(const QString &statusMsg = "");

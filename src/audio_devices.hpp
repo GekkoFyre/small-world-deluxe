@@ -52,6 +52,7 @@
 #include <mutex>
 #include <future>
 #include <thread>
+#include <queue>
 #include <QString>
 
 #ifdef _WIN32

@@ -50,9 +50,11 @@ using namespace Audio;
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param parent
  */
-PaMic::PaMic(std::shared_ptr<AudioDevices> gkAudio, QObject *parent) : QObject(parent)
+PaMic::PaMic(std::shared_ptr<AudioDevices> gkAudio, std::shared_ptr<GkLevelDb> dbPtr, QObject *parent)
+    : QObject(parent)
 {
     gkAudioDevices = gkAudio;
+    gkDb = dbPtr;
 }
 
 PaMic::~PaMic()
@@ -73,9 +75,9 @@ bool PaMic::recordInputDevice(const GkDevice &device, PaStream *stream, std::vec
 {
     try {
         // Create an object that is used for recording data (i.e. buffering)
-        const size_t audio_buffer_size = device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS;
-        std::vector<short> *audioBufVec = new std::vector<short>(audio_buffer_size + 1);
-        PaAudioBuf *audioBuf = new PaAudioBuf((audio_buffer_size + 1), audioBufVec, true); // TODO: Change these values to something more meaningful!
+        const size_t audio_buffer_size = ((device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS) *
+                                          gkDb->convertAudioChannelsInt(device.sel_channels));
+        PaAudioBuf *audioBuf = new PaAudioBuf(audio_buffer_size, true); // TODO: Change these values to something more meaningful!
 
         std::cout << tr("Setting up PortAudio for recording from input audio device...").toStdString() << std::endl;
 

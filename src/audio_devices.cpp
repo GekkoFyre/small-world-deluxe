@@ -582,7 +582,6 @@ PaStreamCallbackResult AudioDevices::openPlaybackStream(portaudio::System &portA
                                                        AUDIO_FRAMES_PER_BUFFER, paClipOff);
             portaudio::MemFunCallbackStream<PaAudioBuf> streamPlayback(playbackParams, *audio_buf, &PaAudioBuf::playbackCallback);
 
-            audio_buf->resetPlayback();
             streamPlayback.start();
             while (streamPlayback.isActive()) {
                 portAudioSys.sleep(100);

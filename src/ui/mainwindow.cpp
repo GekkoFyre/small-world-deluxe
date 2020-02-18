@@ -375,12 +375,12 @@ void MainWindow::on_action_Open_triggered()
  * @brief MainWindow::procVuMeter controls the volume meter on QMainWindow.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void MainWindow::procVuMeter(PaAudioBuf *buffer, portaudio::MemFunCallbackStream<PaAudioBuf> *stream)
+void MainWindow::procVuMeter(const size_t &buffer_size, PaAudioBuf *audio_buf,
+                             portaudio::MemFunCallbackStream<PaAudioBuf> *stream)
 {
     try {
         std::mutex proc_vu_meter_mtx;
         std::lock_guard<std::mutex> lck_guard(proc_vu_meter_mtx);
-        const size_t buffer_size_total = pref_input_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS;
         while (stream->isActive() && btn_radio_rx) {
             //
             // Controls how often the volume meter should update/refresh, in milliseconds!
@@ -389,8 +389,8 @@ void MainWindow::procVuMeter(PaAudioBuf *buffer, portaudio::MemFunCallbackStream
 
             std::random_device dev;
             std::mt19937 rng(dev());
-            std::uniform_int_distribution<int> dist(1, (buffer_size_total + 1));
-            double idx_result = buffer->at(dist(rng));
+            std::uniform_int_distribution<int> dist(1, (buffer_size));
+            double idx_result = audio_buf->at(dist(rng));
             if (idx_result >= 0) {
                 // We have a audio sample!
                 double percentage = ((idx_result / 32768) * 100);
@@ -483,28 +483,15 @@ bool MainWindow::prefillAmateurBands()
  * the lifecycle of data updates between QMainWindow() and SpectroGui().
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void MainWindow::spectrographCallback(const GkDevice &device, std::vector<short> *buffer_vec,
-                                      portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *stream)
+void MainWindow::spectrographCallback(PaAudioBuf *audio_buf, portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *stream)
 {
     try {
         std::lock_guard<std::mutex> lck_guard(spectrograph_callback_mtx);
         std::unique_ptr<GekkoFyre::SpectroFFTW> spectro_fftw = std::make_unique<GekkoFyre::SpectroFFTW>(this);
-        std::vector<double> conv_data;
         std::time_t curr_epoch;
         std::vector<Spectrograph::RawFFT> fft_data;
 
-        const size_t buffer_size_total = device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS;
         while (stream->isActive() && btn_radio_rx) {
-            if (buffer_vec->size() >= (buffer_size_total + 1)) {
-                for (const auto &data: *buffer_vec) {
-                    conv_data.push_back(data);
-                    if (conv_data.size() == buffer_size_total) {
-                        break;
-                    } else {
-                        continue;
-                    }
-                }
-            }
 
             //
             // Set the y-axis of the graph (i.e. the time) to advance at the speed
@@ -514,17 +501,12 @@ void MainWindow::spectrographCallback(const GkDevice &device, std::vector<short>
             curr_epoch = std::time(0);
             emit updateSpectroTiming(curr_epoch, stream);
 
-            if (conv_data.size() >= buffer_size_total) {
-                Spectrograph::RawFFT waterfall_fft_data;
-                waterfall_fft_data = spectro_fftw->stft(&conv_data, AUDIO_SIGNAL_LENGTH, gkSpectroGui->gkSpectrogram->xAxis(), FFTW_HOP_SIZE);
+            Spectrograph::RawFFT waterfall_fft_data;
+            std::vector<double> conv_data(audio_buf->begin(), audio_buf->end());
+            waterfall_fft_data = spectro_fftw->stft(&conv_data, AUDIO_SIGNAL_LENGTH, gkSpectroGui->gkSpectrogram->xAxis(), FFTW_HOP_SIZE);
 
-                // Add the calculated values to a std::vector<Spectrograph::RawFFT>().
-                fft_data.push_back(waterfall_fft_data);
-
-                // Erase the std::vector() and its elements
-                conv_data.clear();
-                conv_data.shrink_to_fit();
-            }
+            // Add the calculated values to a std::vector<Spectrograph::RawFFT>().
+            fft_data.push_back(waterfall_fft_data);
 
             if (fft_data.size() > 0) {
                 for (size_t x_axis = 0; x_axis < fft_data.size(); ++x_axis) {
@@ -867,11 +849,11 @@ PaStreamCallbackResult MainWindow::paMicProcBackground(const GkDevice &input_aud
         std::lock_guard<std::mutex> lck_guard(pa_mic_bckgrnd_mtx);
 
         GekkoFyre::PaAudioBuf *gkAudioBuf_output; // For recording devices
-        const size_t input_buffer_size = pref_input_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS;
-        std::vector<short> *input_buffer_vec = new std::vector<short>(input_buffer_size + 1);
+        const size_t input_buffer_size = ((pref_input_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS) *
+                                          GkDb->convertAudioChannelsInt(pref_input_device.sel_channels));
 
         if (pref_output_device.dev_output_channel_count > 0 && pref_output_device.def_sample_rate > 0) {
-            gkAudioBuf_output = new PaAudioBuf((input_buffer_size + 1), input_buffer_vec, btn_radio_rx);
+            gkAudioBuf_output = new PaAudioBuf(input_buffer_size, btn_radio_rx);
         }
 
         std::thread vu_meter;
@@ -885,8 +867,7 @@ PaStreamCallbackResult MainWindow::paMicProcBackground(const GkDevice &input_aud
                 vu_meter = std::thread(&MainWindow::procVuMeter, this, gkAudioBuf_output, streamRecord);
                 vu_meter.detach();
 
-                spectro_thread = std::thread(&MainWindow::spectrographCallback, this,
-                                             input_audio_device, input_buffer_vec,
+                spectro_thread = std::thread(&MainWindow::spectrographCallback, this, gkAudioBuf_output,
                                              streamRecord);
                 spectro_thread.detach();
             }

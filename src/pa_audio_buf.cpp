@@ -56,23 +56,13 @@ using namespace Audio;
  * <http://portaudio.com/docs/v19-doxydocs-dev/group__test__src.html>
  * @param size_hint
  */
-PaAudioBuf::PaAudioBuf(size_t size_hint, std::vector<short> *rec_samples, const bool &is_rec_active)
-    : std::vector<short>(*rec_samples)
+PaAudioBuf::PaAudioBuf(size_t size_hint, const bool &is_rec_active)
 {
     std::mutex pa_audio_buf_mtx;
     std::lock_guard<std::mutex> lck_guard(pa_audio_buf_mtx);
 
     buffer_size = size_hint;
-    rec_samples = new std::vector<short>(buffer_size + 1);
-    rec_samples_ptr = new std::vector<short>(buffer_size + 1);
-
-    rec_samples = rec_samples_ptr;
-
-    if (buffer_size > 0) {
-        rec_samples->reserve(buffer_size + 1);
-    }
-
-    playback_iter = rec_samples->begin();
+    rec_samples_ptr = new boost::circular_buffer<short>(buffer_size);
 }
 
 PaAudioBuf::~PaAudioBuf()
@@ -96,15 +86,16 @@ int PaAudioBuf::playbackCallback(const void *input_buffer, void *output_buffer, 
     short**	data_mem = (short**)output_buffer;
     unsigned long i_output = 0;
     std::mutex playback_loop_mtx;
-
     std::lock_guard<std::mutex> lck_guard(playback_loop_mtx);
+
     if (output_buffer == nullptr) {
         return paComplete;
     }
 
     // Output samples until we either have satified the caller, or we run out
+    auto it = rec_samples_ptr->begin();
     while (i_output < frames_per_buffer) {
-        if (playback_iter == rec_samples_ptr->end()) {
+        if (it == rec_samples_ptr->end()) {
             // Fill out buffer with zeros
             while (i_output < frames_per_buffer) {
                 data_mem[0][i_output] = (short)0;
@@ -114,8 +105,8 @@ int PaAudioBuf::playbackCallback(const void *input_buffer, void *output_buffer, 
             return paComplete;
         }
 
-        data_mem[0][i_output] = (short) *playback_iter;
-        playback_iter++;
+        data_mem[0][i_output] = (short) *it;
+        ++it;
         i_output++;
     }
 
@@ -139,8 +130,8 @@ int PaAudioBuf::recordCallback(const void* input_buffer, void* output_buffer, un
 {
     short** data_mem = (short**)input_buffer;
     std::mutex record_loop_mtx;
-
     std::lock_guard<std::mutex> lck_guard(record_loop_mtx);
+
     if (input_buffer == nullptr) {
         return paContinue;
     }
@@ -158,45 +149,28 @@ int PaAudioBuf::recordCallback(const void* input_buffer, void* output_buffer, un
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return The entire contents of the buffer once having reached the target size.
  */
-std::vector<short> *PaAudioBuf::dumpMemory(const size_t &buffer_size)
+std::vector<short> PaAudioBuf::dumpMemory() const
 {
-    try {
-        // Have we filled the buffer?
-        while (buffer_size < rec_samples_ptr->size()) {
-            if (buffer_size == rec_samples_ptr->size()) {
-                // The buffer is full!
-                return rec_samples_ptr;
+    if (rec_samples_ptr != nullptr) {
+        if (!rec_samples_ptr->empty()) {
+            std::mutex pa_buf_dup_mem_mtx;
+            std::lock_guard<std::mutex> lck_guard(pa_buf_dup_mem_mtx);
+
+            std::vector<short> ret_vec;
+            ret_vec.reserve(buffer_size + 1);
+
+            for (auto it = rec_samples_ptr->begin(); it != rec_samples_ptr->end(); ++it) {
+                ret_vec.push_back(*it);
             }
+
+            return ret_vec;
         }
-    } catch (const std::exception &e) {
-        HWND hwnd_dump_memory;
-        dlgBoxOk(hwnd_dump_memory, "Error!", e.what(), MB_ICONERROR);
-        DestroyWindow(hwnd_dump_memory);
     }
 
-    std::vector<short> *empty_vec = new std::vector<short>(0);
-    return empty_vec;
+    return std::vector<short>();
 }
 
-/**
- * @brief PaAudioBuf::resetPlayback
- */
-void PaAudioBuf::resetPlayback()
-{
-    std::mutex reset_playback_mtx;
-    std::lock_guard<std::mutex> lck_guard(reset_playback_mtx);
-    playback_iter = rec_samples_ptr->begin();
-    return;
-}
-
-void PaAudioBuf::clear()
-{
-    rec_samples_ptr->clear();
-
-    return;
-}
-
-size_t PaAudioBuf::size()
+size_t PaAudioBuf::size() const
 {
     size_t rec_samples_size = 0;
     if (!rec_samples_ptr->empty()) {
@@ -204,23 +178,145 @@ size_t PaAudioBuf::size()
         return rec_samples_size;
     }
 
-    return 0;
+    return rec_samples_size;
 }
 
-short PaAudioBuf::at(const short &idx)
+short PaAudioBuf::at(const short &idx) const
 {
-    if (!rec_samples_ptr->empty()) {
-        if (idx <= buffer_size) {
-            if (rec_samples_ptr->size() > buffer_size) { // Stops the vector from growing too large and out-of-bounds
-                rec_samples_ptr->clear();
-                rec_samples_ptr->shrink_to_fit();
-            }
+    short ret_value = 0;
+    if (rec_samples_ptr != nullptr) {
+        if (!rec_samples_ptr->empty()) {
+            if (idx <= buffer_size) {
+                std::mutex pa_audio_buf_loc_mtx;
+                std::lock_guard<std::mutex> lck_guard(pa_audio_buf_loc_mtx);
 
-            return rec_samples_ptr->at(idx);
+                size_t counter = 0;
+                for (const auto &sample: *rec_samples_ptr) {
+                    if (counter == idx) {
+                        ret_value = sample;
+                        break;
+                    }
+
+                    ++counter;
+                }
+
+                return ret_value;
+            }  else {
+                throw std::invalid_argument("Specified index larger than given audio buffer size!");
+            }
+        }
+    }
+
+    return ret_value;
+}
+
+short PaAudioBuf::front() const
+{
+    if (rec_samples_ptr != nullptr) {
+        if (!rec_samples_ptr->empty()) {
+            return rec_samples_ptr->front();
         }
     }
 
     return 0;
+}
+
+short PaAudioBuf::back() const
+{
+    if (rec_samples_ptr != nullptr) {
+        if (!rec_samples_ptr->empty()) {
+            return rec_samples_ptr->back();
+        }
+    }
+
+    return 0;
+}
+
+void PaAudioBuf::push_back(const short &data)
+{
+    if (rec_samples_ptr != nullptr) {
+        rec_samples_ptr->push_back(data);
+    }
+
+    return;
+}
+
+void PaAudioBuf::push_front(const short &data)
+{
+    if (rec_samples_ptr != nullptr) {
+        rec_samples_ptr->push_front(data);
+    }
+
+    return;
+}
+
+void PaAudioBuf::pop_front()
+{
+    if (rec_samples_ptr != nullptr) {
+        if (!rec_samples_ptr->empty()) {
+            rec_samples_ptr->pop_front();
+        }
+    }
+
+    return;
+}
+
+void PaAudioBuf::pop_back()
+{
+    if (rec_samples_ptr != nullptr) {
+        if (!rec_samples_ptr->empty()) {
+            rec_samples_ptr->pop_back();
+        }
+    }
+
+    return;
+}
+
+void PaAudioBuf::swap(boost::circular_buffer<short> data_idx_1) noexcept
+{
+    if (rec_samples_ptr != nullptr) {
+        rec_samples_ptr->swap(data_idx_1);
+    }
+
+    return;
+}
+
+bool PaAudioBuf::empty() const
+{
+    if (rec_samples_ptr != nullptr) {
+        if (rec_samples_ptr->empty()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    return false;
+}
+
+bool PaAudioBuf::clear() const
+{
+    if (rec_samples_ptr != nullptr) {
+        if (!rec_samples_ptr->empty()) {
+            rec_samples_ptr->clear();
+
+            if (rec_samples_ptr->empty()) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+boost::circular_buffer<short, std::allocator<short>>::iterator PaAudioBuf::begin() const
+{
+    return rec_samples_ptr->begin();
+}
+
+boost::circular_buffer<short, std::allocator<short>>::iterator PaAudioBuf::end() const
+{
+    return rec_samples_ptr->end();
 }
 
 /**

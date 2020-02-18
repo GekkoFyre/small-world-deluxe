@@ -383,7 +383,7 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
         }
 
         if (!output_sel_channels.empty()) {
-            audio_device.sel_channels = convertAudioChannelsInt(std::stoi(output_sel_channels));
+            audio_device.sel_channels = convertAudioChannelsEnum(std::stoi(output_sel_channels));
         } else {
             audio_device.sel_channels = audio_channels::Unknown;
         }
@@ -431,7 +431,7 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
         }
 
         if (!input_sel_channels.empty()) {
-            audio_device.sel_channels = convertAudioChannelsInt(std::stoi(input_sel_channels));
+            audio_device.sel_channels = convertAudioChannelsEnum(std::stoi(input_sel_channels));
         } else {
             audio_device.sel_channels = audio_channels::Unknown;
         }
@@ -476,12 +476,13 @@ QString GkLevelDb::read_mainwindow_settings(const general_mainwindow_cfg &key)
 }
 
 /**
- * @brief DekodeDb::convertAudioChannelsInt
+ * @brief DekodeDb::convertAudioChannelsEnum converts from an index given by
+ * a QComboBox and not by a specific amount of channels.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param audio_channel_sel
- * @return
+ * @param audio_channel_sel The index as given by a QComboBox.
+ * @return The relevant channel enumerator.
  */
-audio_channels GkLevelDb::convertAudioChannelsInt(const int &audio_channel_sel)
+audio_channels GkLevelDb::convertAudioChannelsEnum(const int &audio_channel_sel)
 {
     audio_channels ret = Mono;
     switch (audio_channel_sel) {
@@ -503,6 +504,32 @@ audio_channels GkLevelDb::convertAudioChannelsInt(const int &audio_channel_sel)
     }
 
     return ret;
+}
+
+/**
+ * @brief GkLevelDb::convertAudioChannelsInt converts from an enumerator to the
+ * given amounts of *actual* audio channels, as an integer.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param channel_enum The channels as an enumerator, which itself is calculated by
+ * a given QComboBox index.
+ * @return The amount of channels, given as an integer.
+ */
+int GkLevelDb::convertAudioChannelsInt(const audio_channels &channel_enum) const
+{
+    switch (channel_enum) {
+    case Mono:
+        return 1;
+    case Left:
+        return 1;
+    case Right:
+        return 1;
+    case Both:
+        return 2;
+    default:
+        return 1;
+    }
+
+    return -1;
 }
 
 /**
