@@ -250,8 +250,10 @@ if(WIN32)
         src/dek_db.hpp
         src/file_io.hpp
         src/audio_devices.hpp
+        src/pa_audio_buf.hpp
         src/spectro_gui.hpp
         src/pa_mic.hpp
+        src/pa_mic_background.hpp
         src/string_funcs_windows.hpp)
 elseif(UNIX)
     qt5_wrap_cpp(UI_MOC
@@ -264,8 +266,10 @@ elseif(UNIX)
         src/dek_db.hpp
         src/file_io.hpp
         src/audio_devices.hpp
+        src/pa_audio_buf.hpp
         src/spectro_gui.hpp
         src/pa_mic.hpp
+        src/pa_mic_background.hpp
         src/string_funcs_linux.hpp)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
@@ -293,8 +297,10 @@ if(WIN32)
         src/dek_db.cpp
         src/file_io.cpp
         src/audio_devices.cpp
+        src/pa_audio_buf.cpp
         src/spectro_gui.cpp
         src/pa_mic.cpp
+        src/pa_mic_background.cpp
         src/string_funcs_windows.cpp)
 elseif(UNIX)
     set(GALAXY_UI_CPP
@@ -307,8 +313,10 @@ elseif(UNIX)
         src/dek_db.cpp
         src/file_io.cpp
         src/audio_devices.cpp
+        src/pa_audio_buf.cpp
         src/spectro_gui.cpp
         src/pa_mic.cpp
+        src/pa_mic_background.cpp
         src/string_funcs_linux.cpp)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
@@ -316,11 +324,9 @@ endif()
 
 if(WIN32)
     set(GALAXY_SRC_CPP
-        src/pa_audio_buf.cpp
         src/pa_sinewave.cpp)
 elseif(UNIX)
     set(GALAXY_SRC_CPP
-        src/pa_audio_buf.cpp
         src/pa_sinewave.cpp)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
@@ -329,12 +335,10 @@ endif()
 if(WIN32)
     set(GALAXY_SRC_HEADERS
         src/defines.hpp
-        src/pa_audio_buf.hpp
         src/pa_sinewave.hpp)
 elseif(UNIX)
     set(GALAXY_SRC_HEADERS
         src/defines.hpp
-        src/pa_audio_buf.hpp
         src/pa_sinewave.hpp)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")

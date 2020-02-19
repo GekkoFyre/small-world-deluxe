@@ -58,7 +58,7 @@ using namespace Audio;
  * <http://portaudio.com/docs/v19-doxydocs-dev/group__test__src.html>
  * @param size_hint
  */
-PaAudioBuf::PaAudioBuf(size_t size_hint, const bool &is_rec_active)
+PaAudioBuf::PaAudioBuf(size_t size_hint, QObject *parent)
 {
     std::mutex pa_audio_buf_mtx;
     std::lock_guard<std::mutex> lck_guard(pa_audio_buf_mtx);
@@ -188,7 +188,7 @@ short PaAudioBuf::at(const short &idx) const
     short ret_value = 0;
     std::mutex pa_audio_buf_loc_mtx;
     std::lock_guard<std::mutex> lck_guard(pa_audio_buf_loc_mtx);
-    if (rec_samples_ptr != nullptr) {
+    if (rec_samples_ptr != nullptr && is_rec_active) {
         if (!rec_samples_ptr->empty()) {
             if (idx <= buffer_size && idx >= 0) {
                 size_t counter = 0;
@@ -310,7 +310,10 @@ bool PaAudioBuf::clear() const
 
 std::vector<short> PaAudioBuf::linearize() const
 {
-    if (rec_samples_ptr != nullptr) {
+    std::mutex pa_audio_buf_lin_mtx;
+    std::lock_guard<std::mutex> lck_guard(pa_audio_buf_lin_mtx);
+
+    if (rec_samples_ptr != nullptr && is_rec_active) {
         if (!rec_samples_ptr->empty()) {
             std::vector<short> ret_value;
             auto circ_ptr_temp = rec_samples_ptr->linearize();
@@ -340,6 +343,20 @@ boost::circular_buffer<short, std::allocator<short>>::iterator PaAudioBuf::end()
     }
 
     return boost::circular_buffer<short, std::allocator<short>>::iterator();
+}
+
+void PaAudioBuf::abortRecording(const bool &recording_is_stopped, const int &wait_time)
+{
+    std::mutex pa_audio_buf_rec_mtx;
+    std::lock_guard<std::mutex> lck_guard(pa_audio_buf_rec_mtx);
+
+    if (recording_is_stopped) {
+        is_rec_active = false;
+    } else {
+        is_rec_active = true;
+    }
+
+    return;
 }
 
 /**

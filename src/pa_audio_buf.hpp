@@ -42,23 +42,26 @@
 #include <boost/circular_buffer.hpp>
 #include <boost/circular_buffer/allocators.hpp>
 #include <boost/iterator.hpp>
+#include <QObject>
 #include <memory>
 #include <vector>
 #include <string>
 
 namespace GekkoFyre {
 
-class PaAudioBuf : private boost::circular_buffer<short> {
-
+class PaAudioBuf : public QObject, private boost::circular_buffer<short> {
+    Q_OBJECT
     typedef short T;
     typedef boost::circular_buffer<short> circular_buffer;
 
 public:
-    PaAudioBuf(size_t size_hint, const bool &is_rec_active);
+    explicit PaAudioBuf(size_t size_hint, QObject *parent = nullptr);
     virtual ~PaAudioBuf();
 
     PaAudioBuf operator*(const PaAudioBuf &) const;
     PaAudioBuf operator+(const PaAudioBuf &) const;
+
+    bool is_rec_active;
 
     int playbackCallback(const void *input_buffer, void *output_buffer, unsigned long frames_per_buffer,
                          const PaStreamCallbackTimeInfo *time_info, PaStreamCallbackFlags status_flags);
@@ -80,6 +83,9 @@ public:
     virtual std::vector<short> linearize() const;
     virtual iterator begin() const;
     virtual iterator end() const;
+
+public slots:
+    void abortRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
 
 private:
     boost::circular_buffer<short> *rec_samples_ptr;     // Contains the 16-bit mono samples

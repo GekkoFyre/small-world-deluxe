@@ -52,19 +52,30 @@ namespace GekkoFyre {
 //
 // http://www.setnode.com/blog/qt-staticmetaobject-is-not-a-member-of/
 //
-class SpectroGui: public QwtPlot {
+class SpectroGui: public QwtPlot, private QwtRasterData {
 
 public:
     SpectroGui(QWidget *parent = nullptr);
     ~SpectroGui() override;
 
-    QwtPlotSpectrogram *gkSpectrogram;
+    std::unique_ptr<QwtPlotSpectrogram> gkSpectrogram;
+    QwtScaleWidget *axis_y_right;
 
     void showContour(const int &toggled);
     void showSpectrogram(const bool &toggled);
     void setColorMap(const int &idx);
     void setAlpha(const int &alpha);
     void setTheme(const QColor &colour);
+    bool insertData2D(const double &x_axis, const double &y_axis) const;
+
+    virtual double value(double x, double y) const override {
+        const double c = 0.842;
+
+        const double v1 = (x * x + (y - c) * (y + c));
+        const double v2 = (x * (y + c) + x * (y + c));
+
+        return (1.0 / (v1 * v1 + v2 * v2));
+    }
 
 private:
     int gkMapType;
@@ -90,25 +101,6 @@ public:
         QwtText text = QwtPlotZoomer::trackerTextF(pos);
         text.setBackgroundBrush( QBrush(bg));
         return text;
-    }
-};
-
-class SpectrogramData: public QwtRasterData {
-
-public:
-    SpectrogramData() {
-        setInterval(Qt::XAxis, QwtInterval(-1.5, 1.5));
-        setInterval(Qt::YAxis, QwtInterval(-1.5, 1.5));
-        setInterval(Qt::ZAxis, QwtInterval(0.0, 10.0));
-    }
-
-    virtual double value(double x, double y) const {
-        const double c = 0.842;
-
-        const double v1 = (x * x + (y - c) * (y + c));
-        const double v2 = (x * (y + c) + x * (y + c));
-
-        return (1.0 / (v1 * v1 + v2 * v2));
     }
 };
 

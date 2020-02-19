@@ -57,7 +57,7 @@ public:
     ~PaMic() override;
 
     bool recordInputDevice(const Database::Settings::Audio::GkDevice &device, PaStream *stream,
-                           std::vector<PaAudioBuf> *rec_data, const int &buffer_sec_record = 30);
+                           std::vector<short> *rec_data, const int &buffer_sec_record = 30);
 
 private:
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;

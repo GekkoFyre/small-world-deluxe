@@ -70,14 +70,14 @@ PaMic::~PaMic()
  * @note <https://github.com/EddieRingle/portaudio/blob/master/examples/paex_record.c>
  * <https://github.com/EddieRingle/portaudio/blob/master/test/patest_read_record.c>
  */
-bool PaMic::recordInputDevice(const GkDevice &device, PaStream *stream, std::vector<PaAudioBuf> *rec_data,
+bool PaMic::recordInputDevice(const GkDevice &device, PaStream *stream, std::vector<short> *rec_data,
                               const int &buffer_sec_record)
 {
     try {
         // Create an object that is used for recording data (i.e. buffering)
         const size_t audio_buffer_size = ((device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS) *
                                           gkDb->convertAudioChannelsInt(device.sel_channels));
-        PaAudioBuf *audioBuf = new PaAudioBuf(audio_buffer_size, true); // TODO: Change these values to something more meaningful!
+        std::unique_ptr<PaAudioBuf> audioBuf = std::make_unique<PaAudioBuf>(audio_buffer_size, this); // TODO: Change these values to something more meaningful!
 
         std::cout << tr("Setting up PortAudio for recording from input audio device...").toStdString() << std::endl;
 
@@ -94,7 +94,7 @@ bool PaMic::recordInputDevice(const GkDevice &device, PaStream *stream, std::vec
 
         while (Pa_IsStreamActive(stream) == 1) {
             for (int j = 0; j < audioBuf->size(); ++j) {
-                rec_data->push_back(audioBuf[j]);
+                rec_data->push_back(audioBuf->at(j));
             }
 
             rec_data->clear();

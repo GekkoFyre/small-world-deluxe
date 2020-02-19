@@ -45,6 +45,7 @@
 #include "src/radiolibs.hpp"
 #include "src/pa_audio_buf.hpp"
 #include "src/spectro_gui.hpp"
+#include "src/pa_mic_background.hpp"
 #include "dialogsettings.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
@@ -55,7 +56,6 @@
 #include <thread>
 #include <future>
 #include <mutex>
-#include <queue>
 #include <QMainWindow>
 #include <QPushButton>
 #include <QPointer>
@@ -114,6 +114,7 @@ private slots:
     void on_actionSettings_triggered();
     void on_actionSave_Decoded_Ab_triggered();
     void on_actionView_Spectrogram_Controller_triggered();
+    void on_action_Print_triggered();
 
     void infoBar();
     void uponExit();
@@ -149,8 +150,6 @@ private slots:
     void on_comboBox_select_frequency_activated(int index);
     void on_comboBox_select_digital_mode_activated(int index);
 
-    void on_action_Print_triggered();
-
 protected slots:
     void closeEvent(QCloseEvent *event);
 
@@ -162,7 +161,6 @@ signals:
     bool updateSpectroTiming(const int &y_axis, portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *stream);
     bool updateSpectroData(const int &x_axis, portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *stream);
     bool updatePlot();
-    void toggleRecording(const bool &is_rec_input);
     bool stopRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
     void gkExitApp();
 
@@ -178,6 +176,7 @@ private:
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GekkoFyre::RadioLibs> gkRadioLibs;
     QPointer<GekkoFyre::SpectroGui> gkSpectroGui;
+    QPointer<GekkoFyre::paMicProcBackground> paMicProcBackground;
 
     //
     // Window Handlers for Microsoft message boxes
@@ -206,11 +205,6 @@ private:
     std::shared_ptr<PaStream> micStream;
 
     //
-    // Mutexes
-    //
-    std::mutex spectrograph_callback_mtx;
-
-    //
     // This sub-section contains all the boolean variables pertaining to the QPushButtons on QMainWindow that
     // possess a logic state of some kind. If the button holds a TRUE value, it'll be 'Green' in colour, otherwise
     // it'll appear 'Red' in order to display its FALSE value.
@@ -225,17 +219,10 @@ private:
 
     void radioStats(GekkoFyre::AmateurRadio::Control::Radio *radio_dev);
 
-    PaStreamCallbackResult paMicProcBackground(const GekkoFyre::Database::Settings::Audio::GkDevice &input_audio_device);
-    void procVuMeter(const size_t &buffer_size, GekkoFyre::PaAudioBuf *audio_buf,
-                     portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *stream);
-
     void changePushButtonColor(QPointer<QPushButton> push_button, const bool &green_result = true,
                                const bool &color_blind_mode = false);
     QStringList getAmateurBands();
     bool prefillAmateurBands();
-
-    void spectrographCallback(GekkoFyre::PaAudioBuf *audio_buf,
-                              portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *stream);
 
     void createStatusBar(const QString &statusMsg = "");
     bool changeStatusBarMsg(const QString &statusMsg = "");
