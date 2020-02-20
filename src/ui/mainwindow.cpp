@@ -127,6 +127,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         btn_radio_tune = false;
         btn_radio_monitor = false;
 
+        rx_vol_control_selected = false;
+        global_rx_audio_volume = 0.0;
+        global_tx_audio_volume = 0.0;
+
         rig_load_all_backends();
 
         // Create path to file-database
@@ -218,7 +222,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Volume Meter
         //
-        QObject::connect(this, SIGNAL(updateVolume(double)), this, SLOT(updateVuMeter(double)));
+        QObject::connect(this, SIGNAL(refreshVuMeter(double)), this, SLOT(updateVuMeter(double)));
 
         //
         // QMainWindow widgets
@@ -270,14 +274,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         const size_t audio_buffer_size = ((pref_input_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS) *
                                           GkDb->convertAudioChannelsInt(pref_input_device.sel_channels));
         QPointer<GekkoFyre::PaAudioBuf> audio_buf = new GekkoFyre::PaAudioBuf(audio_buffer_size, this);
-        paMicProcBackground = new GekkoFyre::paMicProcBackground(gkPortAudioInit, audio_buf, gkAudioDevices, gkStringFuncs, fileIo, gkSpectroGui,
-                                                                 pref_input_device, audio_buffer_size, this);
+        paMicProcBackground = new GekkoFyre::paMicProcBackground(gkPortAudioInit, audio_buf, gkAudioDevices, gkStringFuncs, fileIo, GkDb,
+                                                                 gkSpectroGui, pref_input_device, audio_buffer_size, this);
 
-        QObject::connect(paMicProcBackground, SIGNAL(updatePlot()), this, SIGNAL(updatePlot()));
-        QObject::connect(paMicProcBackground, SIGNAL(updateSpectroData(const QVector<double> &, const int &)), this, SIGNAL(updateSpectroData(const QVector<double> &, const int &)));
-        QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), paMicProcBackground, SIGNAL(stopRecording(const bool &, const int &)));
-        QObject::connect(paMicProcBackground, SIGNAL(updateVolume(const double &)), this, SIGNAL(updateVolume(const double &)));
+        QObject::connect(paMicProcBackground, SIGNAL(updatePlot()), this, SLOT(refreshSpectroGui()));
+        QObject::connect(paMicProcBackground, SIGNAL(updateSpectroData(const QVector<double> &, const int &)), this, SLOT(manageSpectroData(const QVector<double> &, const int &)));
+        QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), paMicProcBackground, SLOT(abortRecording(const bool &, const int &)));
+        QObject::connect(paMicProcBackground, SIGNAL(updateVolume(const double &)), this, SLOT(updateVuMeter(const double &)));
         QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), audio_buf, SLOT(abortRecording(const bool &, const int &)));
+
+        QObject::connect(ui->verticalSlider_vol_control, SIGNAL(valueChanged(int)), this, SLOT(updateVolMeterTooltip(const int &)));
 
         std::thread t1(&MainWindow::infoBar, this);
         t1.detach();
@@ -709,9 +715,39 @@ void MainWindow::uponExit()
     QApplication::exit(EXIT_SUCCESS);
 }
 
+/**
+ * @brief MainWindow::updateVuMeter updates/refreshes the widget on the left-hand side of the
+ * QMainWindow which displays the volume level at any immediate time.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param volumePctg The volume percentage for the QWidget meter to be set towards.
+ */
 void MainWindow::updateVuMeter(const double &volumePctg)
 {
     ui->progressBar_spect_vu_meter->setValue(volumePctg);
+}
+
+/**
+ * @brief MainWindow::updateVolMeterTooltip updates the tooltip on the volume slider to the right-hand
+ * side of QMainWindow as it is moved up/down, reflecting the actually set volume percentage.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value The given volume, as a percentage.
+ */
+void MainWindow::updateVolMeterTooltip(const int &value)
+{
+    ui->verticalSlider_vol_control->setToolTip(tr("Volume: %1\%").arg(QString::number(value)));
+
+    return;
+}
+
+/**
+ * @brief MainWindow::updateVolIndex controls the volume of a PortAudio stream through
+ * a, '0.0 <-> 1.0', sized floating point index.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param percentage The volume percentage that's to be converted to an index.
+ */
+void MainWindow::updateVolIndex(const int &percentage)
+{
+    return;
 }
 
 /**
@@ -858,18 +894,6 @@ void MainWindow::on_pushButton_radio_monitor_clicked()
     return;
 }
 
-/**
- * @brief MainWindow::on_verticalSlider_vol_control_sliderMoved gives a reading for when the volume
- * controller (measured in dBm) is changed/moved.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param position The position of the volume controller on the scale, as measured from -100 to 0 dBm.
- */
-void MainWindow::on_verticalSlider_vol_control_sliderMoved(int position)
-{
-    Q_UNUSED(position);
-    return;
-}
-
 void MainWindow::on_comboBox_select_frequency_activated(int index)
 {
     Q_UNUSED(index);
@@ -974,6 +998,18 @@ bool MainWindow::refreshSpectroGui()
 void MainWindow::on_action_Print_triggered()
 {
     QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+
+    return;
+}
+
+void MainWindow::on_verticalSlider_vol_control_valueChanged(int value)
+{
+    return;
+}
+
+void MainWindow::on_checkBox_rx_tx_vol_toggle_stateChanged(int arg1)
+{
+    rx_vol_control_selected = arg1;
 
     return;
 }

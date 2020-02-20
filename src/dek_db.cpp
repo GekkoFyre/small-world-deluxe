@@ -532,6 +532,24 @@ int GkLevelDb::convertAudioChannelsInt(const audio_channels &channel_enum) const
     return -1;
 }
 
+bool GkLevelDb::convertAudioEnumIsStereo(const audio_channels &channel_enum) const
+{
+    switch (channel_enum) {
+    case Mono:
+        return false;
+    case Left:
+        return false;
+    case Right:
+        return false;
+    case Both:
+        return true;
+    default:
+        return false;
+    }
+
+    return false;
+}
+
 /**
  * @brief DekodeDb::boolEnum Will enumerate a boolean value to an std::string, ready for use within a database.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>

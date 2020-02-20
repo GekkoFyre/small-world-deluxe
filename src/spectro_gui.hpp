@@ -61,7 +61,7 @@ public:
     ~SpectroGui() override;
 
     std::unique_ptr<QwtPlotSpectrogram> gkSpectrogram;
-    std::unique_ptr<QwtMatrixRasterData> gkMatrixRaster;
+    QwtMatrixRasterData *gkMatrixRaster;
     QwtScaleWidget *axis_y_right;
 
     void showContour(const int &toggled);

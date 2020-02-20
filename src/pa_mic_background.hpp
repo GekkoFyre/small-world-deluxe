@@ -43,6 +43,7 @@
 #include "src/pa_audio_buf.hpp"
 #include "src/file_io.hpp"
 #include "src/spectro_gui.hpp"
+#include "src/dek_db.hpp"
 #include "src/string_funcs_windows.hpp"
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
@@ -65,6 +66,7 @@ public:
                         std::shared_ptr<GekkoFyre::AudioDevices> audioDev,
                         std::shared_ptr<GekkoFyre::StringFuncs> stringFunc,
                         std::shared_ptr<GekkoFyre::FileIo> fileIo,
+                        std::shared_ptr<GkLevelDb> levelDb,
                         QPointer<GekkoFyre::SpectroGui> spectroGui,
                         const GekkoFyre::Database::Settings::Audio::GkDevice &pref_input_device,
                         const size_t input_buffer_size, QObject *parent = nullptr);
@@ -89,6 +91,7 @@ private:
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDev;
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
+    std::shared_ptr<GkLevelDb> gkDb;
     QPointer<GekkoFyre::SpectroGui> gkSpectroGui;
 
     //

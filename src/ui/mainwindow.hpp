@@ -135,8 +135,11 @@ private slots:
     // Audio/Volume related controls
     //
     void updateVuMeter(const double &volumePctg);
-    void on_verticalSlider_vol_control_sliderMoved(int position);
+    void updateVolMeterTooltip(const int &value);
+    void updateVolIndex(const int &percentage);
     void on_pushButton_radio_tune_clicked(bool checked);
+    void on_verticalSlider_vol_control_valueChanged(int value);
+    void on_checkBox_rx_tx_vol_toggle_stateChanged(int arg1);
 
     //
     // Graphing / Spectrogram / Waterfall
@@ -157,7 +160,8 @@ public slots:
     bool stopRecordingInput(const bool &recording_is_stopped, const int &wait_time = 5000);
 
 signals:
-    void updateVolume(const double &volumePctg);
+    void refreshVuMeter(const double &volumePctg);
+    void updatePaVol(const int &percentage);
     bool updateSpectroData(const QVector<double> &values, const int &num_columns);
     bool updatePlot();
     bool stopRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
@@ -189,6 +193,13 @@ private:
     portaudio::System *gkPortAudioInit;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
+
+    //
+    // Audio sub-system
+    //
+    bool rx_vol_control_selected;
+    double global_rx_audio_volume;
+    double global_tx_audio_volume;
 
     //
     // Multithreading

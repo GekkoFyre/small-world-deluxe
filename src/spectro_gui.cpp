@@ -45,6 +45,7 @@
 #include <memory>
 #include <QList>
 #include <QColormap>
+#include <QPointer>
 
 using namespace GekkoFyre;
 using namespace Spectrograph;
@@ -60,7 +61,7 @@ SpectroGui::SpectroGui(QWidget *parent) : QwtPlot(parent), gkAlpha(255)
     std::lock_guard<std::mutex> lck_guard(spectro_main_mtx);
 
     gkSpectrogram = std::make_unique<QwtPlotSpectrogram>();
-    gkMatrixRaster = std::make_unique<QwtMatrixRasterData>();
+    gkMatrixRaster = new QwtMatrixRasterData();
     gkSpectrogram->setRenderThreadCount(0); // use system specific thread count
     gkSpectrogram->setCachePolicy(QwtPlotRasterItem::PaintCache);
 
@@ -102,11 +103,11 @@ SpectroGui::SpectroGui(QWidget *parent) : QwtPlot(parent), gkAlpha(255)
     // Ctrl + Right-click will zoom out to full-size
     //
 
-    QwtPlotZoomer *zoomer = new MyZoomer(canvas());
+    QPointer<QwtPlotZoomer> zoomer = new MyZoomer(canvas());
     zoomer->setMousePattern(QwtEventPattern::MouseSelect2, Qt::RightButton, Qt::ControlModifier);
     zoomer->setMousePattern(QwtEventPattern::MouseSelect3, Qt::RightButton);
 
-    QwtPlotPanner *panner = new QwtPlotPanner(canvas());
+    std::unique_ptr<QwtPlotPanner> panner = std::make_unique<QwtPlotPanner>(canvas());
     panner->setAxisEnabled(QwtPlot::yRight, false);
     panner->setMouseButton(Qt::MidButton);
 
@@ -116,7 +117,7 @@ SpectroGui::SpectroGui(QWidget *parent) : QwtPlot(parent), gkAlpha(255)
     //
 
     const QFontMetrics fm(axisWidget(QwtPlot::yLeft)->font());
-    QwtScaleDraw *sd = axisScaleDraw(QwtPlot::yLeft);
+    QwtScaleDraw *sd = axisScaleDraw(QwtPlot::yLeft); // Note: This pointer is cleaned up automatically
     sd->setMinimumExtent(fm.width("100.00"));
 
     const QColor c(Qt::darkBlue);
@@ -232,7 +233,7 @@ void SpectroGui::setMatrixData(const QVector<double> &values, int numColumns)
     gkMatrixRaster->setInterval(Qt::ZAxis, QwtInterval(minValue, maxValue));
 
     gkMatrixRaster->setValueMatrix(values, numColumns);
-    gkSpectrogram->setData(gkMatrixRaster.get());
+    gkSpectrogram->setData(gkMatrixRaster);
 
     const QwtInterval zInterval = gkSpectrogram->data()->interval(Qt::ZAxis);
     setAxisScale(QwtPlot::yRight, zInterval.minValue(), zInterval.maxValue());

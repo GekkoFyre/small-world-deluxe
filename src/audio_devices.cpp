@@ -632,7 +632,7 @@ PaStreamCallbackResult AudioDevices::openRecordStream(portaudio::System &portAud
             // Recording input stream
             //
             portaudio::DirectionSpecificStreamParameters inputParamsRecord(portAudioSys.deviceByIndex(device.stream_parameters.device),
-                                                                           device.dev_input_channel_count, portaudio::FLOAT32,
+                                                                           device.dev_input_channel_count, portaudio::INT16,
                                                                            false, prefInputLatency, nullptr);
             portaudio::StreamParameters recordParams(inputParamsRecord, portaudio::DirectionSpecificStreamParameters::null(), device.def_sample_rate,
                                                      AUDIO_FRAMES_PER_BUFFER, paClipOff);

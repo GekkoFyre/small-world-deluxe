@@ -68,6 +68,7 @@ public:
 
     GekkoFyre::Database::Settings::audio_channels convertAudioChannelsEnum(const int &audio_channel_sel);
     int convertAudioChannelsInt(const GekkoFyre::Database::Settings::audio_channels &channel_enum) const;
+    bool convertAudioEnumIsStereo(const GekkoFyre::Database::Settings::audio_channels &channel_enum) const;
 
 private:
     std::shared_ptr<GekkoFyre::FileIo> fileIo;

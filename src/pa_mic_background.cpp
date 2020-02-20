@@ -57,6 +57,7 @@ paMicProcBackground::paMicProcBackground(portaudio::System *paInit, QPointer<PaA
                                          std::shared_ptr<AudioDevices> audioDev,
                                          std::shared_ptr<GekkoFyre::StringFuncs> stringFunc,
                                          std::shared_ptr<FileIo> fileIo,
+                                         std::shared_ptr<GekkoFyre::GkLevelDb> levelDb,
                                          QPointer<SpectroGui> spectroGui,
                                          const GkDevice &pref_input_device,
                                          const size_t input_buffer_size, QObject *parent) : QObject(parent)
@@ -70,6 +71,7 @@ paMicProcBackground::paMicProcBackground(portaudio::System *paInit, QPointer<PaA
         gkFileIo = fileIo;
         gkSpectroGui = spectroGui;
         gkAudioBuf = audio_buf;
+        gkDb = levelDb;
 
         sel_input_device = pref_input_device;
         audio_buffer_size = input_buffer_size;
@@ -79,7 +81,7 @@ paMicProcBackground::paMicProcBackground(portaudio::System *paInit, QPointer<PaA
                          SLOT(abortRecording(const bool &, const int &)));
 
         streamRecord = nullptr; // For the receiving of microphone (audio device) input
-        gkAudioDev->openRecordStream(*paInit, &gkAudioBuf, sel_input_device, &streamRecord, false);
+        gkAudioDev->openRecordStream(*paInit, &gkAudioBuf, sel_input_device, &streamRecord, gkDb->convertAudioEnumIsStereo(sel_input_device.sel_channels));
 
         emit updateVolume(0);
 
@@ -118,6 +120,8 @@ void paMicProcBackground::initRecording()
             spectro_thread.detach();
 
             threads_already_open = true;
+
+            return;
         }
     }
 
@@ -143,6 +147,7 @@ void paMicProcBackground::abortRecording(const bool &recording_is_stopped, const
             }
         }
 
+        emit updateVolume(0);
         threads_already_open = false;
 
         return;
