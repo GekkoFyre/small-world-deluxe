@@ -190,7 +190,6 @@ void paMicProcBackground::spectrographCallback(PaAudioBuf *audio_buf, portaudio:
         std::mutex spectrograph_callback_mtx;
         std::lock_guard<std::mutex> lck_guard(spectrograph_callback_mtx);
         std::unique_ptr<GekkoFyre::SpectroFFTW> spectro_fftw = std::make_unique<GekkoFyre::SpectroFFTW>(this);
-        std::time_t curr_epoch;
         std::vector<Spectrograph::RawFFT> fft_data;
 
         while (stream->isOpen()) {
@@ -198,11 +197,8 @@ void paMicProcBackground::spectrographCallback(PaAudioBuf *audio_buf, portaudio:
             // Set the y-axis of the graph (i.e. the time) to advance at the speed
             // of how often the audio buffer is filled.
             //
-            std::this_thread::sleep_for(std::chrono::duration(std::chrono::milliseconds(AUDIO_BUFFER_STREAMING_SECS * 1000)));
-            curr_epoch = std::time(0);
-            emit updateSpectroTiming(curr_epoch, stream);
 
-            std::vector<short> raw_audio_data = audio_buf->linearize();
+            std::vector<short> raw_audio_data = audio_buf->dumpMemory();
             if (!raw_audio_data.empty()) {
                 Spectrograph::RawFFT waterfall_fft_data;
                 std::vector<double> conv_audio_data(raw_audio_data.begin(), raw_audio_data.end());
@@ -215,7 +211,7 @@ void paMicProcBackground::spectrographCallback(PaAudioBuf *audio_buf, portaudio:
                     for (size_t x_axis = 0; x_axis < fft_data.size(); ++x_axis) {
                         for (size_t y_axis = 0; y_axis < fft_data.size(); ++y_axis) {
                             emit updateSpectroData(fft_data.data()->chunk_forward_0[x_axis][y_axis], stream);
-                            emit updatePlot();
+                            // emit updatePlot();
                         }
                     }
                 }

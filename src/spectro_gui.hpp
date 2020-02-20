@@ -43,22 +43,25 @@
 #include <qwt_plot_spectrogram.h>
 #include <qwt_plot_zoomer.h>
 #include <qwt_color_map.h>
+#include <qwt_matrix_raster_data.h>
 #include <mutex>
 #include <QObject>
 #include <QWidget>
+#include <QVector>
 
 namespace GekkoFyre {
 
 //
 // http://www.setnode.com/blog/qt-staticmetaobject-is-not-a-member-of/
 //
-class SpectroGui: public QwtPlot, private QwtRasterData {
+class SpectroGui: public QwtPlot, private QwtMatrixRasterData {
 
 public:
     SpectroGui(QWidget *parent = nullptr);
     ~SpectroGui() override;
 
     std::unique_ptr<QwtPlotSpectrogram> gkSpectrogram;
+    std::unique_ptr<QwtMatrixRasterData> gkMatrixRaster;
     QwtScaleWidget *axis_y_right;
 
     void showContour(const int &toggled);
@@ -76,6 +79,8 @@ public:
 
         return (1.0 / (v1 * v1 + v2 * v2));
     }
+
+    virtual void setMatrixData(const QVector<double> &values, int numColumns);
 
 private:
     int gkMapType;

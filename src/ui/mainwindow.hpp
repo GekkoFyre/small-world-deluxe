@@ -61,6 +61,7 @@
 #include <QPointer>
 #include <QString>
 #include <QStringList>
+#include <QVector>
 
 #ifdef __cplusplus
 extern "C"
@@ -140,8 +141,7 @@ private slots:
     //
     // Graphing / Spectrogram / Waterfall
     //
-    bool manageSpectroTiming(const int &y_axis, portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *stream);
-    bool manageSpectroData(const int &x_axis, portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *stream);
+    bool manageSpectroData(const QVector<double> &values, const int &num_columns);
     bool refreshSpectroGui();
 
     //
@@ -158,8 +158,7 @@ public slots:
 
 signals:
     void updateVolume(const double &volumePctg);
-    bool updateSpectroTiming(const int &y_axis, portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *stream);
-    bool updateSpectroData(const int &x_axis, portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *stream);
+    bool updateSpectroData(const QVector<double> &values, const int &num_columns);
     bool updatePlot();
     bool stopRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
     void gkExitApp();
@@ -195,14 +194,11 @@ private:
     // Multithreading
     // https://www.boost.org/doc/libs/1_72_0/doc/html/thread/thread_management.html
     //
+    std::timed_mutex btn_record_mtx;
     std::future<GekkoFyre::AmateurRadio::Control::Radio *> rig_thread;
-    boost::thread tInputDev;
 
     GekkoFyre::AmateurRadio::Control::Radio *radio;
     QTimer *timer;
-
-    PaError err = paNoError;
-    std::shared_ptr<PaStream> micStream;
 
     //
     // This sub-section contains all the boolean variables pertaining to the QPushButtons on QMainWindow that

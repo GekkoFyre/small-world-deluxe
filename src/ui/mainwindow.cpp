@@ -211,10 +211,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         ui->verticalLayout_11->addWidget(gkSpectroGui);
         gkSpectroGui->setColorMap(254);
 
-        QObject::connect(this, SIGNAL(updateSpectroTiming(const int &, portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *)),
-                         this, SLOT(manageSpectroTiming(const int &, portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *)));
-        QObject::connect(this, SIGNAL(updateSpectroData(const int &, portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *)),
-                         this, SLOT(manageSpectroData(const int &, portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *)));
+        QObject::connect(this, SIGNAL(updateSpectroData(const QVector<double> &, const int &)), this, SLOT(manageSpectroData(const QVector<double> &, const int &)));
         QObject::connect(this, SIGNAL(updatePlot()), this, SLOT(refreshSpectroGui()));
         QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), this, SLOT(stopRecordingInput(const bool &, const int &)));
 
@@ -275,14 +272,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QPointer<GekkoFyre::PaAudioBuf> audio_buf = new GekkoFyre::PaAudioBuf(audio_buffer_size, this);
         paMicProcBackground = new GekkoFyre::paMicProcBackground(gkPortAudioInit, audio_buf, gkAudioDevices, gkStringFuncs, fileIo, gkSpectroGui,
                                                                  pref_input_device, audio_buffer_size, this);
+
         QObject::connect(paMicProcBackground, SIGNAL(updatePlot()), this, SIGNAL(updatePlot()));
-        QObject::connect(paMicProcBackground, SIGNAL(stopRecording(const bool &, const int &)), this, SIGNAL(stopRecording(const bool &, const int &)));
-        QObject::connect(paMicProcBackground, SIGNAL(updateSpectroData(const int &, portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *)), this,
-                         SIGNAL(updateSpectroData(const int &, portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *)));
-        QObject::connect(paMicProcBackground, SIGNAL(updateSpectroTiming(const int &, portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *)), this,
-                         SIGNAL(updateSpectroTiming(const int &, portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *)));
+        QObject::connect(paMicProcBackground, SIGNAL(updateSpectroData(const QVector<double> &, const int &)), this, SIGNAL(updateSpectroData(const QVector<double> &, const int &)));
+        QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), paMicProcBackground, SIGNAL(stopRecording(const bool &, const int &)));
         QObject::connect(paMicProcBackground, SIGNAL(updateVolume(const double &)), this, SIGNAL(updateVolume(const double &)));
-        QObject::connect(this, SIGNAL(), paMicProcBackground, SLOT());
         QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), audio_buf, SLOT(abortRecording(const bool &, const int &)));
 
         std::thread t1(&MainWindow::infoBar, this);
@@ -312,20 +306,6 @@ MainWindow::~MainWindow()
 
     boost::thread appTerm = boost::thread(&MainWindow::appTerminating, this);
     appTerm.detach();
-
-    // https://www.boost.org/doc/libs/1_72_0/doc/html/thread/thread_management.html
-    if (tInputDev.try_join_for(boost::chrono::milliseconds(5000))) {
-        tInputDev.join();
-    } else {
-        tInputDev.interrupt();
-    }
-
-    if (micStream.get() != nullptr) {
-        err = Pa_CloseStream(&micStream);
-        if (err != paNoError) {
-            gkAudioDevices->portAudioErr(err);
-        }
-    }
 
     delete db;
     gkPortAudioInit->terminate();
@@ -782,7 +762,9 @@ void MainWindow::on_pushButton_radio_receive_clicked()
     //
 
     try {
+        std::unique_lock<std::timed_mutex> btn_record_lck(btn_record_mtx, std::defer_lock);
         if (!btn_radio_rx) {
+            btn_record_lck.lock();
             if (pref_input_device.stream_parameters.device != paNoDevice) {
                 if (pref_input_device.is_output_dev == boost::tribool::false_value) {
                     if (pref_input_device.device_info.maxInputChannels > 0) {
@@ -816,6 +798,10 @@ void MainWindow::on_pushButton_radio_receive_clicked()
             emit stopRecording(true, 5000);
 
             changeStatusBarMsg(tr("No longer receiving audio!"));
+
+            if (!btn_record_lck.try_lock()) {
+                btn_record_lck.unlock();
+            }
 
             return;
         }
@@ -921,14 +907,6 @@ bool MainWindow::stopRecordingInput(const bool &recording_is_stopped, const int 
 {
     if (recording_is_stopped) {
         btn_radio_rx = false;
-
-        if (tInputDev.try_join_for(boost::chrono::milliseconds(wait_time))) {
-            tInputDev.join();
-            return true;
-        } else {
-            tInputDev.interrupt();
-            return true;
-        }
     } else {
         btn_radio_rx = true;
     }
@@ -953,32 +931,14 @@ void MainWindow::on_pushButton_radio_tune_clicked(bool checked)
     return;
 }
 
-bool MainWindow::manageSpectroTiming(const int &y_axis, portaudio::MemFunCallbackStream<PaAudioBuf> *stream)
-{
-    try {
-        //
-        // This controls the timing of the spectrogram / waterfall!
-        //
-        if (stream->isOpen() && stream->isActive()) {
-            gkSpectroGui->gkSpectrogram->setYAxis(y_axis);
-            return true;
-        }
-    } catch (const std::exception &e) {
-        QMessageBox::warning(this, tr("Error!"), tr("A problem has been encountered in the spectrogram's timing mechanism:\n\n%1").arg(e.what()),
-                             QMessageBox::Ok);
-    }
-
-    return false;
-}
-
-bool MainWindow::manageSpectroData(const int &x_axis, portaudio::MemFunCallbackStream<PaAudioBuf> *stream)
+bool MainWindow::manageSpectroData(const QVector<double> &values, const int &num_columns)
 {
     try {
         //
         // This controls the data of the spectrogram / waterfall!
         //
-        if (stream->isOpen() && stream->isActive()) {
-            gkSpectroGui->gkSpectrogram->setXAxis(x_axis);
+        if (!values.isEmpty()) {
+            gkSpectroGui->setMatrixData(values, num_columns);
             return true;
         }
     } catch (const std::exception &e) {

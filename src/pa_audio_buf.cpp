@@ -161,6 +161,8 @@ std::vector<short> PaAudioBuf::dumpMemory() const
             std::vector<short> ret_vec;
             ret_vec.reserve(buffer_size + 1);
 
+            rec_samples_ptr->linearize();
+
             for (auto it = rec_samples_ptr->begin(); it != rec_samples_ptr->end(); ++it) {
                 ret_vec.push_back(*it);
             }
@@ -306,25 +308,6 @@ bool PaAudioBuf::clear() const
     }
 
     return false;
-}
-
-std::vector<short> PaAudioBuf::linearize() const
-{
-    std::mutex pa_audio_buf_lin_mtx;
-    std::lock_guard<std::mutex> lck_guard(pa_audio_buf_lin_mtx);
-
-    if (rec_samples_ptr != nullptr && is_rec_active) {
-        if (!rec_samples_ptr->empty()) {
-            std::vector<short> ret_value;
-            auto circ_ptr_temp = rec_samples_ptr->linearize();
-            std::copy(circ_ptr_temp, (circ_ptr_temp + buffer_size), std::back_inserter(ret_value));
-            rec_samples_ptr->erase(rec_samples_ptr->begin(), (rec_samples_ptr->begin() + buffer_size));
-
-            return ret_value;
-        }
-    }
-
-    return std::vector<short>();
 }
 
 boost::circular_buffer<short, std::allocator<short>>::iterator PaAudioBuf::begin() const

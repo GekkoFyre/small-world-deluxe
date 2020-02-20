@@ -39,6 +39,7 @@
 #include <fftw3.h>
 #include <cmath>
 #include <memory>
+#include <QMessageBox>
 
 using namespace GekkoFyre;
 
@@ -82,67 +83,75 @@ void SpectroFFTW::hanning(int winLength, double *buffer)
 Spectrograph::RawFFT SpectroFFTW::stft(std::vector<double> *signal, int signalLength, int windowSize, int hopSize)
 {
     Spectrograph::RawFFT raw_fft;
-    fftw_complex *data, *fft_result;
-    fftw_plan plan_forward;
-    int i;
 
-    data = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * windowSize);
-    fft_result = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * windowSize);
+    try {
+        fftw_plan plan_forward;
+        int i;
+        fftw_complex *data, *fft_result;
 
-    plan_forward = fftw_plan_dft_1d(windowSize, data, fft_result, FFTW_FORWARD, FFTW_ESTIMATE);
+        data = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * windowSize);
+        fft_result = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * windowSize);
 
-    // Create a 'hamming window' of appropriate length
-    double *window = new double[windowSize];
-    hanning(windowSize, window);
+        plan_forward = fftw_plan_dft_1d(windowSize, data, fft_result, FFTW_FORWARD, FFTW_ESTIMATE);
 
-    int chunkPosition = 0;
-    int readIndex;
+        // Create a 'hamming window' of appropriate length
+        double *window = new double[windowSize];
+        hanning(windowSize, window);
 
-    // Should we stop reading in chunks?
-    int bStop = 0;
+        int chunkPosition = 0;
+        int readIndex;
 
-    int numChunks = 0;
+        // Should we stop reading in chunks?
+        int bStop = 0;
 
-    // Process each chunk of the signal
-    while (chunkPosition < signalLength && !bStop) {
-        // Copy the chunk into our buffer
-        for (i = 0; i < windowSize; i++) {
-            readIndex = chunkPosition + i;
+        int numChunks = 0;
 
-            if (readIndex < signalLength) {
-                // Note the windowing!
-                data[i][0] = (*signal)[readIndex] * window[i];
-                data[i][1] = 0.0;
-            } else {
-                // we have read beyond the signal, so zero-pad it!
+        // Process each chunk of the signal
+        while (chunkPosition < signalLength && !bStop) {
+            // Copy the chunk into our buffer
+            for (i = 0; i < windowSize; i++) {
+                readIndex = chunkPosition + i;
 
-                data[i][0] = 0.0;
-                data[i][1] = 0.0;
+                if (readIndex < signalLength) {
+                    // Note the windowing!
+                    data[i][0] = (*signal)[readIndex] * window[i];
+                    data[i][1] = 0.0;
+                } else {
+                    // we have read beyond the signal, so zero-pad it!
 
-                bStop = 1;
+                    data[i][0] = 0.0;
+                    data[i][1] = 0.0;
+
+                    bStop = 1;
+                }
             }
+
+            // Perform the FFT on our chunk
+            fftw_execute(plan_forward);
+
+            raw_fft.chunk_forward_0 = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * windowSize);
+            raw_fft.chunk_forward_1 = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * windowSize);
+
+            for (i = 0; i < (windowSize / 2) + 1; i++) {
+                raw_fft.chunk_forward_0[i][0];
+                raw_fft.chunk_forward_1[i][1];
+            }
+
+            chunkPosition += hopSize;
+            numChunks++;
         }
 
-        // Perform the FFT on our chunk
-        fftw_execute(plan_forward);
+        fftw_destroy_plan(plan_forward);
 
-        raw_fft.chunk_forward_0 = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * windowSize);
-        raw_fft.chunk_forward_1 = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * windowSize);
+        // fftw_free(data);
+        // fftw_free(fft_result);
+        delete[] window;
 
-        for (i = 0; i < (windowSize / 2) + 1; i++) {
-            raw_fft.chunk_forward_0[i][0];
-            raw_fft.chunk_forward_1[i][1];
-        }
-
-        chunkPosition += hopSize;
-        numChunks++;
+        return raw_fft;
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("An error has occurred whilst calculating STFT data:\n\n%1").arg(e.what()),
+                             QMessageBox::Ok);
     }
-
-    fftw_destroy_plan(plan_forward);
-
-    // fftw_free(data);
-    // fftw_free(fft_result);
-    delete[] window;
 
     return raw_fft;
 }

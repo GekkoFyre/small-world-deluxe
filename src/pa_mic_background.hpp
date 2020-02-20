@@ -71,7 +71,6 @@ public:
     ~paMicProcBackground() override;
 
 signals:
-    bool updateSpectroTiming(const int &y_axis, portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *stream);
     bool updateSpectroData(const int &x_axis, portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *stream);
     bool stopRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
     bool updatePlot();

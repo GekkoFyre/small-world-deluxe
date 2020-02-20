@@ -80,7 +80,6 @@ public:
     virtual void swap(boost::circular_buffer<short> data_idx_1) noexcept;
     virtual bool empty() const;
     virtual bool clear() const;
-    virtual std::vector<short> linearize() const;
     virtual iterator begin() const;
     virtual iterator end() const;
 
