@@ -38,22 +38,34 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include "src/dek_db.hpp"
+#include <fftw3.h>
 #include <QObject>
+#include <QVector>
 #include <vector>
+#include <memory>
+#include <mutex>
 
 namespace GekkoFyre {
 
 class SpectroFFTW: public QObject {
     Q_OBJECT
-private:
-    void hanning(int winLength, double *buffer);
 
 public:
-    explicit SpectroFFTW(QObject *parent = nullptr);
+    explicit SpectroFFTW(std::shared_ptr<GekkoFyre::GkLevelDb> database, const size_t &buffer_size,
+                         QObject *parent = nullptr);
     ~SpectroFFTW();
 
 public slots:
-    Spectrograph::RawFFT stft(std::vector<double> *signal, int signalLength, int windowSize, int hopSize);
+    QVector<Spectrograph::RawFFT> stft(std::vector<double> *signal, int signal_length, int window_size, int hop_size);
+
+private:
+    std::shared_ptr<GekkoFyre::GkLevelDb> gkDb;
+    size_t audio_buffer_size;
+    int no_of_windows;
+    std::mutex calc_stft_mtx;
+
+    void hanning(int win_length, double *buffer);
 
 };
 };

@@ -39,6 +39,7 @@
 #include "src/spectro_fftw.hpp"
 #include <portaudiocpp/PortAudioCpp.hxx>
 #include <iostream>
+#include <vector>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -194,31 +195,35 @@ void paMicProcBackground::spectrographCallback(PaAudioBuf *audio_buf, portaudio:
     try {
         std::mutex spectrograph_callback_mtx;
         std::lock_guard<std::mutex> lck_guard(spectrograph_callback_mtx);
-        std::unique_ptr<GekkoFyre::SpectroFFTW> spectro_fftw = std::make_unique<GekkoFyre::SpectroFFTW>(this);
-        std::vector<Spectrograph::RawFFT> fft_data;
+        std::unique_ptr<GekkoFyre::SpectroFFTW> spectro_fftw = std::make_unique<GekkoFyre::SpectroFFTW>(gkDb, audio_buffer_size, this);
 
         while (stream->isOpen()) {
-            //
-            // Set the y-axis of the graph (i.e. the time) to advance at the speed
-            // of how often the audio buffer is filled.
-            //
-
             std::vector<short> raw_audio_data = audio_buf->dumpMemory();
             if (!raw_audio_data.empty()) {
-                Spectrograph::RawFFT waterfall_fft_data;
+                int window_size = gkSpectroGui->gkSpectrogram->xAxis();
+                QVector<Spectrograph::RawFFT> waterfall_fft_data; // Key is the 'frame buffer', whilst the value is the 'power'
                 std::vector<double> conv_audio_data(raw_audio_data.begin(), raw_audio_data.end());
-                waterfall_fft_data = spectro_fftw->stft(&conv_audio_data, AUDIO_SIGNAL_LENGTH, gkSpectroGui->gkSpectrogram->xAxis(), FFTW_HOP_SIZE);
+                waterfall_fft_data = spectro_fftw->stft(&conv_audio_data, AUDIO_SIGNAL_LENGTH,
+                                                        window_size, FFTW_HOP_SIZE);
 
-                // Add the calculated values to a std::vector<Spectrograph::RawFFT>().
-                fft_data.push_back(waterfall_fft_data);
-
-                if (fft_data.size() > 0) {
-                    for (size_t x_axis = 0; x_axis < fft_data.size(); ++x_axis) {
-                        for (size_t y_axis = 0; y_axis < fft_data.size(); ++y_axis) {
-                            emit updateSpectroData(fft_data.data()->chunk_forward_0[x_axis][y_axis], stream);
-                            // emit updatePlot();
+                if (!waterfall_fft_data.empty()) {
+                    QVector<double> x_values;
+                    size_t counter = 0;
+                    for (size_t i = 0; i < waterfall_fft_data.size(); ++i) {
+                        for (size_t j = 0; j < window_size; ++j) {
+                            // Break up the data!
+                            x_values.push_back(*waterfall_fft_data.at(i).chunk_forward_0[j]);
+                            ++counter;
                         }
                     }
+
+                    emit updateSpectroData(x_values, counter);
+
+                    counter = 0;
+                    x_values.clear();
+                    x_values.shrink_to_fit();
+                    conv_audio_data.clear();
+                    conv_audio_data.shrink_to_fit();
                 }
             }
         }

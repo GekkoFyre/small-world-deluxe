@@ -36,12 +36,13 @@
  ****************************************************************************************************/
 
 #include "spectro_fftw.hpp"
-#include <fftw3.h>
 #include <cmath>
-#include <memory>
 #include <QMessageBox>
 
 using namespace GekkoFyre;
+using namespace Database;
+using namespace Settings;
+using namespace Audio;
 
 /**
  * @brief SpectroFFTW::SpectroFFTW
@@ -49,109 +50,124 @@ using namespace GekkoFyre;
  * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param parent
  */
-SpectroFFTW::SpectroFFTW(QObject *parent) : QObject(parent)
-{}
+SpectroFFTW::SpectroFFTW(std::shared_ptr<GekkoFyre::GkLevelDb> database, const size_t &buffer_size,
+                         QObject *parent) : QObject(parent)
+{
+    gkDb = database;
+    audio_buffer_size = buffer_size;
+}
 
 SpectroFFTW::~SpectroFFTW()
 {}
-
-/**
- * @brief SpectroFFTW::hamming performs the calculations for the overall window size of the spectrogram.
- * @author Jack Schaedler <http://ofdsp.blogspot.com/2011/08/short-time-fourier-transform-with-fftw3.html>
- * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param winLength The horizontal length of the window, in pixels.
- * @param buffer The ensuing buffer that's created.
- */
-void SpectroFFTW::hanning(int winLength, double *buffer)
-{
-    for (int i = 0; i < winLength; ++i) {
-        buffer[i] = 0.54 - (0.46 * cos(2 * M_PI * (i / ((winLength - 1) * 1.0))));
-    }
-
-    return;
-}
 
 /**
  * @brief SpectroFFTW::stft performs the base Short-time Fourier transform calculations needed for the spectrographs.
  * @author Jack Schaedler <http://ofdsp.blogspot.com/2011/08/short-time-fourier-transform-with-fftw3.html>
  * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param signal The calculated, output STFT data.
- * @param signalLength
- * @param windowSize
- * @param hopSize
+ * @param signal_length
+ * @param window_size
+ * @param hop_size
+ * @return
  */
-Spectrograph::RawFFT SpectroFFTW::stft(std::vector<double> *signal, int signalLength, int windowSize, int hopSize)
+QVector<Spectrograph::RawFFT> SpectroFFTW::stft(std::vector<double> *signal, int signal_length, int window_size, int hop_size)
 {
-    Spectrograph::RawFFT raw_fft;
+    std::lock_guard<std::mutex> lck_guard(calc_stft_mtx);
+    QVector<Spectrograph::RawFFT> raw_fft_vec;
 
     try {
         fftw_plan plan_forward;
-        int i;
-        fftw_complex *data, *fft_result;
+        int i = 0;
+        fftw_complex *data, *fft_result, *ifft_result;
 
-        data = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * windowSize);
-        fft_result = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * windowSize);
+        data = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * window_size);
+        fft_result = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * window_size);
+        ifft_result = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * window_size);
 
-        plan_forward = fftw_plan_dft_1d(windowSize, data, fft_result, FFTW_FORWARD, FFTW_ESTIMATE);
+        plan_forward = fftw_plan_dft_1d(window_size, data, fft_result, FFTW_FORWARD, FFTW_ESTIMATE);
 
         // Create a 'hamming window' of appropriate length
-        double *window = new double[windowSize];
-        hanning(windowSize, window);
+        double *window = new double[window_size];
+        hanning(window_size, window);
 
         int chunkPosition = 0;
-        int readIndex;
+        int readIndex = 0;
 
         // Should we stop reading in chunks?
-        int bStop = 0;
-
+        bool bStop = false;
         int numChunks = 0;
 
         // Process each chunk of the signal
-        while (chunkPosition < signalLength && !bStop) {
+        while (chunkPosition < signal_length && !bStop) {
             // Copy the chunk into our buffer
-            for (i = 0; i < windowSize; i++) {
+            for (i = 0; i < window_size; i++) {
                 readIndex = chunkPosition + i;
 
-                if (readIndex < signalLength) {
+                if (readIndex < signal_length) {
                     // Note the windowing!
                     data[i][0] = (*signal)[readIndex] * window[i];
                     data[i][1] = 0.0;
                 } else {
-                    // we have read beyond the signal, so zero-pad it!
-
+                    // We have read beyond the signal, so zero-pad it!
                     data[i][0] = 0.0;
                     data[i][1] = 0.0;
 
-                    bStop = 1;
+                    bStop = true;
                 }
             }
 
             // Perform the FFT on our chunk
             fftw_execute(plan_forward);
 
-            raw_fft.chunk_forward_0 = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * windowSize);
-            raw_fft.chunk_forward_1 = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * windowSize);
+            Spectrograph::RawFFT raw_fft;
+            raw_fft.chunk_forward_0 = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * window_size);
+            raw_fft.chunk_forward_1 = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * window_size);
 
-            for (i = 0; i < (windowSize / 2) + 1; i++) {
-                raw_fft.chunk_forward_0[i][0];
-                raw_fft.chunk_forward_1[i][1];
+            //
+            // Copy the first ((window_size / 2) + 1) data points into your spectrogram.
+            // We do this because the FFT output is mirrored about the nyquist frequency,
+            // so the second half of the data is redundant. This is how Matlab's
+            // spectrogram routine works.
+            //
+            for (i = 0; i < ((window_size / 2) + 1); i++) {
+                raw_fft.chunk_forward_0[i][0] = fft_result[i][0];
+                raw_fft.chunk_forward_1[i][1] = fft_result[i][1];
+
+                raw_fft_vec.push_back(raw_fft);
             }
 
-            chunkPosition += hopSize;
+            chunkPosition += hop_size;
             numChunks++;
         }
 
         fftw_destroy_plan(plan_forward);
 
-        // fftw_free(data);
-        // fftw_free(fft_result);
+        fftw_free(data);
+        fftw_free(fft_result);
+        fftw_free(ifft_result);
+
         delete[] window;
 
-        return raw_fft;
+        return raw_fft_vec;
     } catch (const std::exception &e) {
         QMessageBox::warning(nullptr, tr("Error!"), tr("An error has occurred whilst calculating STFT data:\n\n%1").arg(e.what()),
                              QMessageBox::Ok);
     }
 
-    return raw_fft;
+    return raw_fft_vec;
+}
+
+/**
+ * @brief SpectroFFTW::hanning
+ * @author Jack Schaedler <http://ofdsp.blogspot.com/2011/08/short-time-fourier-transform-with-fftw3.html>
+ * @param win_length
+ * @param buffer
+ */
+void SpectroFFTW::hanning(int win_length, double *buffer)
+{
+    for (int i = 0; i < win_length; ++i) {
+        buffer[i] = 0.54 - (0.46 * cos(2 * M_PI * (i / ((win_length - 1) * 1.0))));
+    }
+
+    return;
 }
