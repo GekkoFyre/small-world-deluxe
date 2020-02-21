@@ -215,7 +215,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         ui->verticalLayout_11->addWidget(gkSpectroGui);
         gkSpectroGui->setColorMap(254);
 
-        QObject::connect(this, SIGNAL(updateSpectroData(const QVector<double> &, const int &)), this, SLOT(manageSpectroData(const QVector<double> &, const int &)));
+        QObject::connect(this, SIGNAL(updateSpectroData(const std::vector<double> &, const int &)), this, SLOT(manageSpectroData(const std::vector<double> &, const int &)));
         QObject::connect(this, SIGNAL(updatePlot()), this, SLOT(refreshSpectroGui()));
         QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), this, SLOT(stopRecordingInput(const bool &, const int &)));
 
@@ -277,12 +277,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         paMicProcBackground = new GekkoFyre::paMicProcBackground(gkPortAudioInit, audio_buf, gkAudioDevices, gkStringFuncs, fileIo, GkDb,
                                                                  gkSpectroGui, pref_input_device, audio_buffer_size, this);
 
-        QObject::connect(paMicProcBackground, SIGNAL(updatePlot()), this, SLOT(refreshSpectroGui()));
-        QObject::connect(paMicProcBackground, SIGNAL(updateSpectroData(const QVector<double> &, const int &)), this, SLOT(manageSpectroData(const QVector<double> &, const int &)));
         QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), paMicProcBackground, SLOT(abortRecording(const bool &, const int &)));
         QObject::connect(paMicProcBackground, SIGNAL(updateVolume(const double &)), this, SLOT(updateVuMeter(const double &)));
         QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), audio_buf, SLOT(abortRecording(const bool &, const int &)));
-
         QObject::connect(ui->verticalSlider_vol_control, SIGNAL(valueChanged(int)), this, SLOT(updateVolMeterTooltip(const int &)));
 
         std::thread t1(&MainWindow::infoBar, this);
@@ -734,7 +731,7 @@ void MainWindow::updateVuMeter(const double &volumePctg)
  */
 void MainWindow::updateVolMeterTooltip(const int &value)
 {
-    ui->verticalSlider_vol_control->setToolTip(tr("Volume: %1\%").arg(QString::number(value)));
+    ui->verticalSlider_vol_control->setToolTip(tr("Volume: %1%").arg(QString::number(value)));
 
     return;
 }
@@ -953,42 +950,6 @@ void MainWindow::on_pushButton_radio_tune_clicked(bool checked)
     }
 
     return;
-}
-
-bool MainWindow::manageSpectroData(const QVector<double> &values, const int &num_columns)
-{
-    try {
-        //
-        // This controls the data of the spectrogram / waterfall!
-        //
-        if (!values.isEmpty()) {
-            gkSpectroGui->setMatrixData(values, num_columns);
-            return true;
-        }
-    } catch (const std::exception &e) {
-        QMessageBox::warning(this, tr("Error!"), tr("A problem has been encountered in the spectrogram's data update mechanism:\n\n%1").arg(e.what()),
-                             QMessageBox::Ok);
-    }
-
-    return false;
-}
-
-bool MainWindow::refreshSpectroGui()
-{
-    try {
-        //
-        // Refresh the spectrogram / waterfall plot itself!
-        //
-        gkSpectroGui->replot();
-
-        return true;
-    } catch (const std::exception &e) {
-        QMessageBox::warning(this, tr("Error!"), tr("A problem has been encountered in the spectrogram's GUI refreshing mechanism:\n\n%1").arg(e.what()),
-                             QMessageBox::Ok);
-    }
-
-
-    return false;
 }
 
 /**

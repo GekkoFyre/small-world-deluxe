@@ -45,9 +45,9 @@
 #include <qwt_color_map.h>
 #include <qwt_matrix_raster_data.h>
 #include <mutex>
+#include <vector>
 #include <QObject>
 #include <QWidget>
-#include <QVector>
 
 namespace GekkoFyre {
 
@@ -80,7 +80,7 @@ public:
         return (1.0 / (v1 * v1 + v2 * v2));
     }
 
-    virtual void setMatrixData(const QVector<double> &values, int numColumns);
+    virtual void setMatrixData(const std::vector<double> &values, int numColumns);
 
 private:
     int gkMapType;

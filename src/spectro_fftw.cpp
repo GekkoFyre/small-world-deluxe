@@ -50,11 +50,12 @@ using namespace Audio;
  * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param parent
  */
-SpectroFFTW::SpectroFFTW(std::shared_ptr<GekkoFyre::GkLevelDb> database, const size_t &buffer_size,
+SpectroFFTW::SpectroFFTW(std::shared_ptr<GekkoFyre::GkLevelDb> database,
+                         std::shared_ptr<GekkoFyre::StringFuncs> stringFunc,
                          QObject *parent) : QObject(parent)
 {
     gkDb = database;
-    audio_buffer_size = buffer_size;
+    gkStringFuncs = stringFunc;
 }
 
 SpectroFFTW::~SpectroFFTW()
@@ -70,10 +71,10 @@ SpectroFFTW::~SpectroFFTW()
  * @param hop_size
  * @return
  */
-QVector<Spectrograph::RawFFT> SpectroFFTW::stft(std::vector<double> *signal, int signal_length, int window_size, int hop_size)
+std::vector<Spectrograph::RawFFT> SpectroFFTW::stft(std::vector<double> *signal, int signal_length, int window_size, int hop_size)
 {
     std::lock_guard<std::mutex> lck_guard(calc_stft_mtx);
-    QVector<Spectrograph::RawFFT> raw_fft_vec;
+    std::vector<Spectrograph::RawFFT> raw_fft_vec;
 
     try {
         fftw_plan plan_forward;

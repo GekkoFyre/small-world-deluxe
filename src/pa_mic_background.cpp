@@ -39,7 +39,6 @@
 #include "src/spectro_fftw.hpp"
 #include <portaudiocpp/PortAudioCpp.hxx>
 #include <iostream>
-#include <vector>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -78,8 +77,7 @@ paMicProcBackground::paMicProcBackground(portaudio::System *paInit, QPointer<PaA
         audio_buffer_size = input_buffer_size;
         threads_already_open = false;
 
-        QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), this,
-                         SLOT(abortRecording(const bool &, const int &)));
+        QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), this, SLOT(abortRecording(const bool &, const int &)));
 
         streamRecord = nullptr; // For the receiving of microphone (audio device) input
         gkAudioDev->openRecordStream(*paInit, &gkAudioBuf, sel_input_device, &streamRecord, gkDb->convertAudioEnumIsStereo(sel_input_device.sel_channels));
@@ -195,19 +193,19 @@ void paMicProcBackground::spectrographCallback(PaAudioBuf *audio_buf, portaudio:
     try {
         std::mutex spectrograph_callback_mtx;
         std::lock_guard<std::mutex> lck_guard(spectrograph_callback_mtx);
-        std::unique_ptr<GekkoFyre::SpectroFFTW> spectro_fftw = std::make_unique<GekkoFyre::SpectroFFTW>(gkDb, audio_buffer_size, this);
+        std::unique_ptr<GekkoFyre::SpectroFFTW> spectro_fftw = std::make_unique<GekkoFyre::SpectroFFTW>(gkDb, gkStringFuncs, this);
 
         while (stream->isOpen()) {
             std::vector<short> raw_audio_data = audio_buf->dumpMemory();
             if (!raw_audio_data.empty()) {
                 int window_size = gkSpectroGui->gkSpectrogram->xAxis();
-                QVector<Spectrograph::RawFFT> waterfall_fft_data; // Key is the 'frame buffer', whilst the value is the 'power'
+                std::vector<Spectrograph::RawFFT> waterfall_fft_data; // Key is the 'frame buffer', whilst the value is the 'power'
                 std::vector<double> conv_audio_data(raw_audio_data.begin(), raw_audio_data.end());
                 waterfall_fft_data = spectro_fftw->stft(&conv_audio_data, AUDIO_SIGNAL_LENGTH,
                                                         window_size, FFTW_HOP_SIZE);
 
                 if (!waterfall_fft_data.empty()) {
-                    QVector<double> x_values;
+                    std::vector<double> x_values;
                     size_t counter = 0;
                     for (size_t i = 0; i < waterfall_fft_data.size(); ++i) {
                         for (size_t j = 0; j < window_size; ++j) {
@@ -217,7 +215,7 @@ void paMicProcBackground::spectrographCallback(PaAudioBuf *audio_buf, portaudio:
                         }
                     }
 
-                    emit updateSpectroData(x_values, counter);
+                    gkSpectroGui->setMatrixData(x_values, counter);
 
                     counter = 0;
                     x_values.clear();

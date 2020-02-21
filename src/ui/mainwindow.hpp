@@ -61,7 +61,6 @@
 #include <QPointer>
 #include <QString>
 #include <QStringList>
-#include <QVector>
 
 #ifdef __cplusplus
 extern "C"
@@ -142,12 +141,6 @@ private slots:
     void on_checkBox_rx_tx_vol_toggle_stateChanged(int arg1);
 
     //
-    // Graphing / Spectrogram / Waterfall
-    //
-    bool manageSpectroData(const QVector<double> &values, const int &num_columns);
-    bool refreshSpectroGui();
-
-    //
     // QComboBox'es
     //
     void on_comboBox_select_frequency_activated(int index);
@@ -162,9 +155,8 @@ public slots:
 signals:
     void refreshVuMeter(const double &volumePctg);
     void updatePaVol(const int &percentage);
-    bool updateSpectroData(const QVector<double> &values, const int &num_columns);
-    bool updatePlot();
-    bool stopRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
+    void updatePlot();
+    void stopRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
     void gkExitApp();
 
 private:

@@ -49,12 +49,12 @@
 #include <boost/thread/future.hpp>
 #include <portaudio.h>
 #include <QObject>
+#include <QPointer>
 #include <memory>
 #include <mutex>
 #include <thread>
 #include <future>
-#include <QPointer>
-#include <QVector>
+#include <vector>
 
 namespace GekkoFyre {
 
@@ -73,9 +73,7 @@ public:
     ~paMicProcBackground() override;
 
 signals:
-    bool updateSpectroData(const QVector<double> &values, const int &num_columns);
-    bool stopRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
-    bool updatePlot();
+    void stopRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
     void updateVolume(const double &volumePctg);
 
 public slots:

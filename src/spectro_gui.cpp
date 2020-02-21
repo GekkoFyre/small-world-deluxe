@@ -46,6 +46,7 @@
 #include <QList>
 #include <QColormap>
 #include <QPointer>
+#include <QVector>
 
 using namespace GekkoFyre;
 using namespace Spectrograph;
@@ -222,7 +223,7 @@ bool SpectroGui::insertData2D(const double &x_axis, const double &y_axis) const
     return false;
 }
 
-void SpectroGui::setMatrixData(const QVector<double> &values, int numColumns)
+void SpectroGui::setMatrixData(const std::vector<double> &values, int numColumns)
 {
     size_t rows = (values.size() / numColumns);
     gkMatrixRaster->setInterval(Qt::XAxis, QwtInterval(0, numColumns));
@@ -232,11 +233,14 @@ void SpectroGui::setMatrixData(const QVector<double> &values, int numColumns)
     double maxValue = *std::max_element(std::begin(values), std::end(values));
     gkMatrixRaster->setInterval(Qt::ZAxis, QwtInterval(minValue, maxValue));
 
-    gkMatrixRaster->setValueMatrix(values, numColumns);
+    QVector<double> x_axis_conv(values.begin(), values.end());
+    gkMatrixRaster->setValueMatrix(x_axis_conv, numColumns);
     gkSpectrogram->setData(gkMatrixRaster);
 
     const QwtInterval zInterval = gkSpectrogram->data()->interval(Qt::ZAxis);
     setAxisScale(QwtPlot::yRight, zInterval.minValue(), zInterval.maxValue());
 
+    x_axis_conv.clear();
+    x_axis_conv.shrink_to_fit();
     setColorMap(gkMapType);
 }

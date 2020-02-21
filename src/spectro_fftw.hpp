@@ -39,9 +39,9 @@
 
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
+#include "src/string_funcs_windows.hpp"
 #include <fftw3.h>
 #include <QObject>
-#include <QVector>
 #include <vector>
 #include <memory>
 #include <mutex>
@@ -52,17 +52,18 @@ class SpectroFFTW: public QObject {
     Q_OBJECT
 
 public:
-    explicit SpectroFFTW(std::shared_ptr<GekkoFyre::GkLevelDb> database, const size_t &buffer_size,
+    explicit SpectroFFTW(std::shared_ptr<GekkoFyre::GkLevelDb> database,
+                         std::shared_ptr<GekkoFyre::StringFuncs> stringFunc,
                          QObject *parent = nullptr);
     ~SpectroFFTW();
 
 public slots:
-    QVector<Spectrograph::RawFFT> stft(std::vector<double> *signal, int signal_length, int window_size, int hop_size);
+    std::vector<Spectrograph::RawFFT> stft(std::vector<double> *signal, int signal_length, int window_size, int hop_size);
 
 private:
     std::shared_ptr<GekkoFyre::GkLevelDb> gkDb;
-    size_t audio_buffer_size;
-    int no_of_windows;
+    std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
+
     std::mutex calc_stft_mtx;
 
     void hanning(int win_length, double *buffer);
