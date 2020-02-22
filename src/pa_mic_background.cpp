@@ -58,9 +58,9 @@ paMicProcBackground::paMicProcBackground(portaudio::System *paInit, QPointer<PaA
                                          std::shared_ptr<GekkoFyre::StringFuncs> stringFunc,
                                          std::shared_ptr<FileIo> fileIo,
                                          std::shared_ptr<GekkoFyre::GkLevelDb> levelDb,
-                                         QPointer<SpectroGui> spectroGui,
                                          const GkDevice &pref_input_device,
-                                         const size_t input_buffer_size, QObject *parent) : QObject(parent)
+                                         const size_t input_buffer_size, const int &window_size,
+                                         QObject *parent) : QObject(parent)
 {
     try {
         std::mutex pa_mic_mtx;
@@ -69,9 +69,9 @@ paMicProcBackground::paMicProcBackground(portaudio::System *paInit, QPointer<PaA
         gkAudioDev = audioDev;
         gkStringFuncs = stringFunc;
         gkFileIo = fileIo;
-        gkSpectroGui = spectroGui;
         gkAudioBuf = audio_buf;
         gkDb = levelDb;
+        hanning_window_size = window_size;
 
         sel_input_device = pref_input_device;
         audio_buffer_size = input_buffer_size;
@@ -198,24 +198,23 @@ void paMicProcBackground::spectrographCallback(PaAudioBuf *audio_buf, portaudio:
         while (stream->isOpen()) {
             std::vector<short> raw_audio_data = audio_buf->dumpMemory();
             if (!raw_audio_data.empty()) {
-                int window_size = gkSpectroGui->gkSpectrogram->xAxis();
                 std::vector<Spectrograph::RawFFT> waterfall_fft_data; // Key is the 'frame buffer', whilst the value is the 'power'
                 std::vector<double> conv_audio_data(raw_audio_data.begin(), raw_audio_data.end());
                 waterfall_fft_data = spectro_fftw->stft(&conv_audio_data, AUDIO_SIGNAL_LENGTH,
-                                                        window_size, FFTW_HOP_SIZE);
+                                                        hanning_window_size, FFTW_HOP_SIZE);
 
                 if (!waterfall_fft_data.empty()) {
                     std::vector<double> x_values;
                     size_t counter = 0;
                     for (size_t i = 0; i < waterfall_fft_data.size(); ++i) {
-                        for (size_t j = 0; j < window_size; ++j) {
+                        for (size_t j = 0; j < hanning_window_size; ++j) {
                             // Break up the data!
                             x_values.push_back(*waterfall_fft_data.at(i).chunk_forward_0[j]);
                             ++counter;
                         }
                     }
 
-                    gkSpectroGui->setMatrixData(x_values, counter);
+                    emit updateWaterfall(x_values, counter);
 
                     counter = 0;
                     x_values.clear();

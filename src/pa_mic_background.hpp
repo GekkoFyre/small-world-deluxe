@@ -67,14 +67,14 @@ public:
                         std::shared_ptr<GekkoFyre::StringFuncs> stringFunc,
                         std::shared_ptr<GekkoFyre::FileIo> fileIo,
                         std::shared_ptr<GkLevelDb> levelDb,
-                        QPointer<GekkoFyre::SpectroGui> spectroGui,
                         const GekkoFyre::Database::Settings::Audio::GkDevice &pref_input_device,
-                        const size_t input_buffer_size, QObject *parent = nullptr);
+                        const size_t input_buffer_size, const int &window_size, QObject *parent = nullptr);
     ~paMicProcBackground() override;
 
 signals:
     void stopRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
     void updateVolume(const double &volumePctg);
+    void updateWaterfall(const std::vector<double> &data, const size_t &num_lines);
 
 public slots:
     void abortRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
@@ -90,7 +90,6 @@ private:
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
     std::shared_ptr<GkLevelDb> gkDb;
-    QPointer<GekkoFyre::SpectroGui> gkSpectroGui;
 
     //
     // Miscellaneous Pointers
@@ -104,6 +103,7 @@ private:
     //
     boost::thread vu_meter;
     boost::thread spectro_thread;
+    int hanning_window_size;
 
     void initRecording();
     void procVuMeter(const size_t &buffer_size, GekkoFyre::PaAudioBuf *audio_buf,

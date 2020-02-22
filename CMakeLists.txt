@@ -236,45 +236,6 @@ set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-arcs -ftest-c
 # used in the COVERAGE CMake configuration.
 set_target_properties(Qt5::Core PROPERTIES MAP_IMPORTED_CONFIG_COVERAGE "RELEASE")
 
-#
-# https://stackoverflow.com/questions/25989448/implementing-qt-project-through-cmake/25990278
-#
-if(WIN32)
-    qt5_wrap_cpp(UI_MOC
-        src/ui/mainwindow.hpp
-        src/ui/dialogsettings.hpp
-        src/ui/aboutdialog.hpp
-        src/spectro_fftw.hpp
-        src/ui/spectrodialog.hpp
-        src/radiolibs.hpp
-        src/dek_db.hpp
-        src/file_io.hpp
-        src/audio_devices.hpp
-        src/pa_audio_buf.hpp
-        src/spectro_gui.hpp
-        src/pa_mic.hpp
-        src/pa_mic_background.hpp
-        src/string_funcs_windows.hpp)
-elseif(UNIX)
-    qt5_wrap_cpp(UI_MOC
-        src/ui/mainwindow.hpp
-        src/ui/dialogsettings.hpp
-        src/ui/aboutdialog.hpp
-        src/spectro_fftw.hpp
-        src/ui/spectrodialog.hpp
-        src/radiolibs.hpp
-        src/dek_db.hpp
-        src/file_io.hpp
-        src/audio_devices.hpp
-        src/pa_audio_buf.hpp
-        src/spectro_gui.hpp
-        src/pa_mic.hpp
-        src/pa_mic_background.hpp
-        src/string_funcs_linux.hpp)
-elseif(APPLE)
-    message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
-endif()
-
 qt5_wrap_ui(UI_HEADERS
     src/ui/mainwindow.ui
     src/ui/dialogsettings.ui
@@ -335,14 +296,44 @@ endif()
 if(WIN32)
     set(GALAXY_SRC_HEADERS
         src/defines.hpp
-        src/pa_sinewave.hpp)
+        src/pa_sinewave.hpp
+        src/ui/mainwindow.hpp
+        src/ui/dialogsettings.hpp
+        src/ui/aboutdialog.hpp
+        src/spectro_fftw.hpp
+        src/ui/spectrodialog.hpp
+        src/radiolibs.hpp
+        src/dek_db.hpp
+        src/file_io.hpp
+        src/audio_devices.hpp
+        src/pa_audio_buf.hpp
+        src/spectro_gui.hpp
+        src/pa_mic.hpp
+        src/pa_mic_background.hpp
+        src/string_funcs_windows.hpp)
 elseif(UNIX)
     set(GALAXY_SRC_HEADERS
         src/defines.hpp
-        src/pa_sinewave.hpp)
+        src/pa_sinewave.hpp
+        src/ui/mainwindow.hpp
+        src/ui/dialogsettings.hpp
+        src/ui/aboutdialog.hpp
+        src/spectro_fftw.hpp
+        src/ui/spectrodialog.hpp
+        src/radiolibs.hpp
+        src/dek_db.hpp
+        src/file_io.hpp
+        src/audio_devices.hpp
+        src/pa_audio_buf.hpp
+        src/spectro_gui.hpp
+        src/pa_mic.hpp
+        src/pa_mic_background.hpp
+        src/string_funcs_linux.hpp)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()
+
+add_definitions("-DQWT_DLL")
 
 add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_SRC_HEADERS} ${UI_HEADERS})
 

@@ -73,10 +73,11 @@ SpectroFFTW::~SpectroFFTW()
  */
 std::vector<Spectrograph::RawFFT> SpectroFFTW::stft(std::vector<double> *signal, int signal_length, int window_size, int hop_size)
 {
-    std::lock_guard<std::mutex> lck_guard(calc_stft_mtx);
+    std::unique_lock<std::timed_mutex> lck_guard(calc_stft_mtx, std::defer_lock);
     std::vector<Spectrograph::RawFFT> raw_fft_vec;
 
     try {
+        std::lock(calc_stft_mtx, calc_hanning_mtx);
         fftw_plan plan_forward;
         int i = 0;
         fftw_complex *data, *fft_result, *ifft_result;
@@ -151,8 +152,9 @@ std::vector<Spectrograph::RawFFT> SpectroFFTW::stft(std::vector<double> *signal,
 
         return raw_fft_vec;
     } catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), tr("An error has occurred whilst calculating STFT data:\n\n%1").arg(e.what()),
-                             QMessageBox::Ok);
+        HWND hwnd_stft_calc;
+        gkStringFuncs->modalDlgBoxOk(hwnd_stft_calc, tr("Error!"), tr("An error has occurred during the calculation of STFT data!\n\n%1").arg(e.what()), MB_ICONERROR);
+        DestroyWindow(hwnd_stft_calc);
     }
 
     return raw_fft_vec;
@@ -166,6 +168,7 @@ std::vector<Spectrograph::RawFFT> SpectroFFTW::stft(std::vector<double> *signal,
  */
 void SpectroFFTW::hanning(int win_length, double *buffer)
 {
+    std::unique_lock<std::timed_mutex> lck_guard(calc_hanning_mtx, std::defer_lock);
     for (int i = 0; i < win_length; ++i) {
         buffer[i] = 0.54 - (0.46 * cos(2 * M_PI * (i / ((win_length - 1) * 1.0))));
     }

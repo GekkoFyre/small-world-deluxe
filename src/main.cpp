@@ -41,8 +41,6 @@
 #include <csignal>
 #include <QApplication>
 
-namespace fs = boost::filesystem;
-
 int main(int argc, char *argv[])
 {
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);

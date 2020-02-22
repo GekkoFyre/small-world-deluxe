@@ -36,6 +36,8 @@
  ****************************************************************************************************/
 
 #include "spectro_gui.hpp"
+#include <boost/exception/all.hpp>
+#include <boost/thread.hpp>
 #include <qwt_scale_widget.h>
 #include <qwt_scale_draw.h>
 #include <qwt_plot_panner.h>
@@ -47,6 +49,7 @@
 #include <QColormap>
 #include <QPointer>
 #include <QVector>
+#include <QTimer>
 
 using namespace GekkoFyre;
 using namespace Spectrograph;
@@ -61,12 +64,21 @@ SpectroGui::SpectroGui(QWidget *parent) : QwtPlot(parent), gkAlpha(255)
     std::mutex spectro_main_mtx;
     std::lock_guard<std::mutex> lck_guard(spectro_main_mtx);
 
+    gkMapType = 0;
+
+    const size_t actual_num_threads = boost::thread::hardware_concurrency();
+    size_t threads_to_use = 0;
+    if ((actual_num_threads / 4) >= 2) {
+        threads_to_use = (actual_num_threads / 4);
+    } else {
+        threads_to_use = 2;
+    }
+
     gkSpectrogram = std::make_unique<QwtPlotSpectrogram>();
-    gkMatrixRaster = new QwtMatrixRasterData();
-    gkSpectrogram->setRenderThreadCount(0); // use system specific thread count
+    gkSpectrogram->setRenderThreadCount(threads_to_use); // use system specific thread count
     gkSpectrogram->setCachePolicy(QwtPlotRasterItem::PaintCache);
 
-    axis_y_right = axisWidget(QwtPlot::yRight);
+    axis_y_right = new QwtScaleWidget(axisWidget(QwtPlot::yRight));
 
     QList<double> contour_levels;
     for (double level = 0.5; level < 10.0; level += 1.0) {
@@ -131,7 +143,8 @@ SpectroGui::~SpectroGui()
 
 void SpectroGui::showContour(const int &toggled)
 {
-    std::lock_guard<std::mutex> lck_guard(spectro_gui_mtx);
+    std::mutex spectro_contour_mtx;
+    std::lock_guard<std::mutex> lck_guard(spectro_contour_mtx);
     gkSpectrogram->setDisplayMode(QwtPlotSpectrogram::ContourMode, toggled);
     replot();
 
@@ -140,7 +153,8 @@ void SpectroGui::showContour(const int &toggled)
 
 void SpectroGui::showSpectrogram(const bool &toggled)
 {
-    std::lock_guard<std::mutex> lck_guard(spectro_gui_mtx);
+    std::mutex spectro_show_mtx;
+    std::lock_guard<std::mutex> lck_guard(spectro_show_mtx);
     gkSpectrogram->setDisplayMode(QwtPlotSpectrogram::ImageMode, toggled);
     gkSpectrogram->setDefaultContourPen(toggled ? QPen(Qt::black, 0) : QPen(Qt::NoPen));
 
@@ -151,7 +165,8 @@ void SpectroGui::showSpectrogram(const bool &toggled)
 
 void SpectroGui::setColorMap(const int &idx)
 {
-    std::lock_guard<std::mutex> lck_guard(spectro_gui_mtx);
+    std::mutex spectro_color_mtx;
+    std::lock_guard<std::mutex> lck_guard(spectro_color_mtx);
     const QwtInterval z_interval = gkSpectrogram->data()->interval(Qt::ZAxis);
 
     gkMapType = idx;
@@ -188,7 +203,8 @@ void SpectroGui::setColorMap(const int &idx)
 
 void SpectroGui::setAlpha(const int &alpha)
 {
-    std::lock_guard<std::mutex> lck_guard(spectro_gui_mtx);
+    std::mutex spectro_alpha_mtx;
+    std::lock_guard<std::mutex> lck_guard(spectro_alpha_mtx);
 
     //
     // It does not make sense to set an alpha value in combination with a colour map
@@ -215,32 +231,29 @@ void SpectroGui::setTheme(const QColor &colour)
     zoomer->setTrackerPen(colour);
 }
 
-bool SpectroGui::insertData2D(const double &x_axis, const double &y_axis) const
-{
-    // QwtMatrixRasterData *raster;
-    // gkSpectrogram->setData();
-
-    return false;
-}
-
 void SpectroGui::setMatrixData(const std::vector<double> &values, int numColumns)
 {
+    std::mutex spectro_matrix_data_mtx;
+    std::lock_guard<std::mutex> lck_guard(spectro_matrix_data_mtx);
+
     size_t rows = (values.size() / numColumns);
-    gkMatrixRaster->setInterval(Qt::XAxis, QwtInterval(0, numColumns));
-    gkMatrixRaster->setInterval(Qt::YAxis, QwtInterval(0, rows));
+    this->setInterval(Qt::XAxis, QwtInterval(0, numColumns));
+    this->setInterval(Qt::YAxis, QwtInterval(0, rows));
 
     double minValue = *std::min_element(std::begin(values), std::end(values));
     double maxValue = *std::max_element(std::begin(values), std::end(values));
-    gkMatrixRaster->setInterval(Qt::ZAxis, QwtInterval(minValue, maxValue));
+    this->setInterval(Qt::ZAxis, QwtInterval(minValue, maxValue));
 
     QVector<double> x_axis_conv(values.begin(), values.end());
-    gkMatrixRaster->setValueMatrix(x_axis_conv, numColumns);
-    gkSpectrogram->setData(gkMatrixRaster);
+    this->setValueMatrix(x_axis_conv, numColumns);
+    gkSpectrogram->setData(this);
 
     const QwtInterval zInterval = gkSpectrogram->data()->interval(Qt::ZAxis);
     setAxisScale(QwtPlot::yRight, zInterval.minValue(), zInterval.maxValue());
 
     x_axis_conv.clear();
     x_axis_conv.shrink_to_fit();
-    setColorMap(gkMapType);
+    // setColorMap(gkMapType);
+
+    replot();
 }

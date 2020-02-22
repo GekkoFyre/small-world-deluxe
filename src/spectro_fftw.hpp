@@ -45,6 +45,7 @@
 #include <vector>
 #include <memory>
 #include <mutex>
+#include <thread>
 
 namespace GekkoFyre {
 
@@ -64,7 +65,8 @@ private:
     std::shared_ptr<GekkoFyre::GkLevelDb> gkDb;
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
 
-    std::mutex calc_stft_mtx;
+    std::timed_mutex calc_stft_mtx;
+    std::timed_mutex calc_hanning_mtx;
 
     void hanning(int win_length, double *buffer);
 

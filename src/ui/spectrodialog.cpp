@@ -69,7 +69,7 @@ void SpectroDialog::on_pushButton_exit_clicked()
 
 void SpectroDialog::on_pushButton_contour_toggled(bool checked)
 {
-    gkSpectroGui->showContour(checked);
+    // gkSpectroGui->showContour(checked);
 
     return;
 }

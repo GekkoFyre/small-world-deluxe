@@ -61,6 +61,7 @@
 #include <QPointer>
 #include <QString>
 #include <QStringList>
+#include <QMetaType>
 
 #ifdef __cplusplus
 extern "C"
@@ -151,6 +152,7 @@ protected slots:
 
 public slots:
     bool stopRecordingInput(const bool &recording_is_stopped, const int &wait_time = 5000);
+    void updateSpectroData(const std::vector<double> &data, const size_t &num_lines);
 
 signals:
     void refreshVuMeter(const double &volumePctg);
@@ -229,3 +231,6 @@ private:
     void print_exception(const std::exception &e, int level = 0);
     void appTerminating();
 };
+
+Q_DECLARE_METATYPE(std::vector<double>);
+Q_DECLARE_METATYPE(size_t);

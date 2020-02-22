@@ -55,13 +55,12 @@ namespace GekkoFyre {
 // http://www.setnode.com/blog/qt-staticmetaobject-is-not-a-member-of/
 //
 class SpectroGui: public QwtPlot, private QwtMatrixRasterData {
-
+    Q_OBJECT
 public:
     SpectroGui(QWidget *parent = nullptr);
     ~SpectroGui() override;
 
     std::unique_ptr<QwtPlotSpectrogram> gkSpectrogram;
-    QwtMatrixRasterData *gkMatrixRaster;
     QwtScaleWidget *axis_y_right;
 
     void showContour(const int &toggled);
@@ -69,7 +68,6 @@ public:
     void setColorMap(const int &idx);
     void setAlpha(const int &alpha);
     void setTheme(const QColor &colour);
-    bool insertData2D(const double &x_axis, const double &y_axis) const;
 
     virtual double value(double x, double y) const override {
         const double c = 0.842;
@@ -89,7 +87,6 @@ private:
     //
     // Mutexes
     //
-    std::mutex spectro_gui_mtx;
 };
 
 class MyZoomer: public QwtPlotZoomer {
@@ -104,7 +101,7 @@ public:
         bg.setAlpha(200);
 
         QwtText text = QwtPlotZoomer::trackerTextF(pos);
-        text.setBackgroundBrush( QBrush(bg));
+        text.setBackgroundBrush(QBrush(bg));
         return text;
     }
 };

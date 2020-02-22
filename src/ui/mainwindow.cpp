@@ -78,6 +78,8 @@ namespace fs = boost::filesystem;
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    qRegisterMetaType<std::vector<double>>("std::vector<double>");
+    qRegisterMetaType<size_t>("size_t");
 
     try {
         // Initialize QMainWindow to a full-screen after a single second!
@@ -184,8 +186,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Collect settings from QMainWindow, among other miscellaneous settings, upon termination of Small World Deluxe!
         //
-        QObject::connect(this, SIGNAL(exit()), this, SLOT(uponExit()));
-        QObject::connect(this, SIGNAL(abort()), this, SLOT(uponExit()));
         QObject::connect(this, SIGNAL(gkExitApp()), this, SLOT(uponExit()));
 
         //
@@ -215,13 +215,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         ui->verticalLayout_11->addWidget(gkSpectroGui);
         gkSpectroGui->setColorMap(254);
 
-        QObject::connect(this, SIGNAL(updateSpectroData(const std::vector<double> &, const int &)), this, SLOT(manageSpectroData(const std::vector<double> &, const int &)));
-        QObject::connect(this, SIGNAL(updatePlot()), this, SLOT(refreshSpectroGui()));
+        //
+        // Sound & Audio Devices
+        //
         QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), this, SLOT(stopRecordingInput(const bool &, const int &)));
-
-        //
-        // Volume Meter
-        //
         QObject::connect(this, SIGNAL(refreshVuMeter(double)), this, SLOT(updateVuMeter(double)));
 
         //
@@ -271,16 +268,18 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         connect(timer, SIGNAL(timeout()), this, SLOT(infoBar()));
         timer->start(1000);
 
+        const size_t spectro_window_size = gkSpectroGui->gkSpectrogram->xAxis();
         const size_t audio_buffer_size = ((pref_input_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS) *
                                           GkDb->convertAudioChannelsInt(pref_input_device.sel_channels));
         QPointer<GekkoFyre::PaAudioBuf> audio_buf = new GekkoFyre::PaAudioBuf(audio_buffer_size, this);
         paMicProcBackground = new GekkoFyre::paMicProcBackground(gkPortAudioInit, audio_buf, gkAudioDevices, gkStringFuncs, fileIo, GkDb,
-                                                                 gkSpectroGui, pref_input_device, audio_buffer_size, this);
+                                                                 pref_input_device, audio_buffer_size, spectro_window_size, nullptr);
 
         QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), paMicProcBackground, SLOT(abortRecording(const bool &, const int &)));
         QObject::connect(paMicProcBackground, SIGNAL(updateVolume(const double &)), this, SLOT(updateVuMeter(const double &)));
         QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), audio_buf, SLOT(abortRecording(const bool &, const int &)));
         QObject::connect(ui->verticalSlider_vol_control, SIGNAL(valueChanged(int)), this, SLOT(updateVolMeterTooltip(const int &)));
+        QObject::connect(paMicProcBackground, SIGNAL(updateWaterfall(const std::vector<double> &, const size_t &)), this, SLOT(updateSpectroData(const std::vector<double> &, const size_t &)));
 
         std::thread t1(&MainWindow::infoBar, this);
         t1.detach();
@@ -933,6 +932,22 @@ bool MainWindow::stopRecordingInput(const bool &recording_is_stopped, const int 
     }
 
     return false;
+}
+
+void MainWindow::updateSpectroData(const std::vector<double> &data, const size_t &num_lines)
+{
+    try {
+        if (!data.empty()) {
+            gkSpectroGui->setMatrixData(data, num_lines);
+
+            return;
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), tr("An issue has occurred whilst updating the spectrograph:\n\n%1").arg(e.what()),
+                             QMessageBox::Ok);
+    }
+
+    return;
 }
 
 void MainWindow::on_pushButton_radio_tune_clicked(bool checked)
