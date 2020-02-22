@@ -50,11 +50,9 @@ using namespace Audio;
  * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param parent
  */
-SpectroFFTW::SpectroFFTW(std::shared_ptr<GekkoFyre::GkLevelDb> database,
-                         std::shared_ptr<GekkoFyre::StringFuncs> stringFunc,
+SpectroFFTW::SpectroFFTW(std::shared_ptr<GekkoFyre::StringFuncs> stringFunc,
                          QObject *parent) : QObject(parent)
 {
-    gkDb = database;
     gkStringFuncs = stringFunc;
 }
 

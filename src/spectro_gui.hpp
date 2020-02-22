@@ -57,17 +57,21 @@ namespace GekkoFyre {
 class SpectroGui: public QwtPlot, private QwtMatrixRasterData {
     Q_OBJECT
 public:
-    SpectroGui(QWidget *parent = nullptr);
+    SpectroGui(const int &num_data_points, QWidget *parent = nullptr);
     ~SpectroGui() override;
 
-    std::unique_ptr<QwtPlotSpectrogram> gkSpectrogram;
+    QwtPlotSpectrogram *gkSpectrogram;
     QwtScaleWidget *axis_y_right;
 
     void showContour(const int &toggled);
     void showSpectrogram(const bool &toggled);
-    void setColorMap(const int &idx);
+    void setColorMap(const Spectrograph::ColorMap &map);
     void setAlpha(const int &alpha);
     void setTheme(const QColor &colour);
+
+    void setYAxisRange(const double &y_min, const double &y_max);
+    void setXAxisRange(const double &x_min, const double &x_max);
+    void setZAxisRange(const double &z_min, const double &z_max);
 
     virtual double value(double x, double y) const override {
         const double c = 0.842;
@@ -83,6 +87,14 @@ public:
 private:
     int gkMapType;
     int gkAlpha;
+    int x_axis_data_points;
+
+    double x_min_;
+    double x_max_;
+    double y_min_;
+    double y_max_;
+    double z_min_;
+    double z_max_;
 
     //
     // Mutexes

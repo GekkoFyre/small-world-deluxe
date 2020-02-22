@@ -193,7 +193,7 @@ void paMicProcBackground::spectrographCallback(PaAudioBuf *audio_buf, portaudio:
     try {
         std::mutex spectrograph_callback_mtx;
         std::lock_guard<std::mutex> lck_guard(spectrograph_callback_mtx);
-        std::unique_ptr<GekkoFyre::SpectroFFTW> spectro_fftw = std::make_unique<GekkoFyre::SpectroFFTW>(gkDb, gkStringFuncs, this);
+        std::unique_ptr<GekkoFyre::SpectroFFTW> spectro_fftw = std::make_unique<GekkoFyre::SpectroFFTW>(gkStringFuncs, this);
 
         while (stream->isOpen()) {
             std::vector<short> raw_audio_data = audio_buf->dumpMemory();
@@ -222,6 +222,8 @@ void paMicProcBackground::spectrographCallback(PaAudioBuf *audio_buf, portaudio:
                     conv_audio_data.clear();
                     conv_audio_data.shrink_to_fit();
                 }
+            } else {
+                continue;
             }
         }
     } catch (const std::exception &e) {

@@ -37,37 +37,39 @@
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="QComboBox" name="comboBox_fft_size"/>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="label_fps">
-        <property name="text">
-         <string>FPS: </string>
+       <widget class="QComboBox" name="comboBox_fft_size">
+        <property name="toolTip">
+         <string>Be careful! This particular setting controls the resolution of the spectrogram / waterfall, and therefore
+the performance penalty enacted onto your computer.</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
-       <widget class="QComboBox" name="comboBox_fps"/>
-      </item>
-      <item row="2" column="0">
+      <item row="1" column="0">
        <widget class="QLabel" name="label_timing">
         <property name="text">
          <string>Timing: </string>
         </property>
        </widget>
       </item>
-      <item row="2" column="1">
-       <widget class="QComboBox" name="comboBox_timing"/>
+      <item row="1" column="1">
+       <widget class="QComboBox" name="comboBox_timing">
+        <property name="toolTip">
+         <string>This determines how often the spectrogram / waterfall is refreshed.</string>
+        </property>
+       </widget>
       </item>
-      <item row="3" column="0">
+      <item row="2" column="0">
        <widget class="QLabel" name="label_freq_zoom">
         <property name="text">
          <string>Freq. Zoom: </string>
         </property>
        </widget>
       </item>
-      <item row="3" column="1">
+      <item row="2" column="1">
        <widget class="QSlider" name="horizontalSlider_freq_zoom">
+        <property name="toolTip">
+         <string>Control the 'zoom' level of the spectrogram / waterfall.</string>
+        </property>
         <property name="maximum">
          <number>254</number>
         </property>
@@ -88,7 +90,7 @@
         </property>
        </widget>
       </item>
-      <item row="4" column="0">
+      <item row="3" column="0">
        <spacer name="horizontalSpacer">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -101,7 +103,7 @@
         </property>
        </spacer>
       </item>
-      <item row="4" column="1">
+      <item row="3" column="1">
        <spacer name="horizontalSpacer_2">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -114,49 +116,36 @@
         </property>
        </spacer>
       </item>
-      <item row="5" column="0">
+      <item row="4" column="0">
        <widget class="QLabel" name="labelcontrol_colour">
         <property name="text">
          <string>Colour: </string>
         </property>
        </widget>
       </item>
-      <item row="5" column="1">
-       <widget class="QSlider" name="horizontalSlider_control_colour">
+      <item row="4" column="1">
+       <widget class="QComboBox" name="comboBox_colour_map">
         <property name="toolTip">
-         <string>Control the colour values of the spectrogram.</string>
+         <string>Control how the data is represented on the spectrogram / waterfall.</string>
         </property>
-        <property name="maximum">
-         <number>254</number>
-        </property>
-        <property name="pageStep">
-         <number>8</number>
-        </property>
-        <property name="value">
-         <number>254</number>
-        </property>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="invertedAppearance">
-         <bool>true</bool>
-        </property>
-        <property name="tickPosition">
-         <enum>QSlider::TicksBelow</enum>
-        </property>
-        <property name="tickInterval">
-         <number>16</number>
-        </property>
+        <item>
+         <property name="text">
+          <string>Hue Mapping</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>RGB Mapping</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Alpha Mapping</string>
+         </property>
+        </item>
        </widget>
       </item>
-      <item row="6" column="0">
-       <widget class="QLabel" name="label_ui_theme">
-        <property name="text">
-         <string>Theme: </string>
-        </property>
-       </widget>
-      </item>
-      <item row="7" column="0">
+      <item row="5" column="0">
        <spacer name="horizontalSpacer_10">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -169,7 +158,7 @@
         </property>
        </spacer>
       </item>
-      <item row="7" column="1">
+      <item row="5" column="1">
        <spacer name="horizontalSpacer_9">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -182,7 +171,7 @@
         </property>
        </spacer>
       </item>
-      <item row="8" column="0">
+      <item row="6" column="0">
        <spacer name="horizontalSpacer_8">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -195,14 +184,14 @@
         </property>
        </spacer>
       </item>
-      <item row="8" column="1">
+      <item row="6" column="1">
        <widget class="QPushButton" name="pushButton_contour">
         <property name="text">
          <string>Contour</string>
         </property>
        </widget>
       </item>
-      <item row="9" column="0">
+      <item row="7" column="0">
        <spacer name="horizontalSpacer_11">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -215,14 +204,17 @@
         </property>
        </spacer>
       </item>
-      <item row="9" column="1">
+      <item row="7" column="1">
        <widget class="QPushButton" name="pushButton_activate_spectro">
+        <property name="toolTip">
+         <string>(De)activate the spectrogram / waterfall as needed.</string>
+        </property>
         <property name="text">
          <string>Activate Spectrogram</string>
         </property>
        </widget>
       </item>
-      <item row="10" column="0">
+      <item row="8" column="0">
        <spacer name="horizontalSpacer_3">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -235,7 +227,7 @@
         </property>
        </spacer>
       </item>
-      <item row="10" column="1">
+      <item row="8" column="1">
        <spacer name="horizontalSpacer_4">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -248,7 +240,7 @@
         </property>
        </spacer>
       </item>
-      <item row="11" column="0">
+      <item row="9" column="0">
        <spacer name="horizontalSpacer_5">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -261,14 +253,43 @@
         </property>
        </spacer>
       </item>
-      <item row="11" column="1">
+      <item row="9" column="1">
        <widget class="QPushButton" name="pushButton_apply">
+        <property name="toolTip">
+         <string>Apply the current state of your settings.</string>
+        </property>
         <property name="text">
          <string>Apply</string>
         </property>
        </widget>
       </item>
-      <item row="12" column="0">
+      <item row="10" column="0">
+       <spacer name="horizontalSpacer_12">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="10" column="1">
+       <widget class="QPushButton" name="pushButton_export_graph">
+        <property name="toolTip">
+         <string>Export the spectrograph / waterfall and its internal data.</string>
+        </property>
+        <property name="text">
+         <string>Export</string>
+        </property>
+        <property name="autoRepeatDelay">
+         <number>2000</number>
+        </property>
+       </widget>
+      </item>
+      <item row="11" column="0">
        <spacer name="horizontalSpacer_6">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -281,14 +302,17 @@
         </property>
        </spacer>
       </item>
-      <item row="12" column="1">
+      <item row="11" column="1">
        <widget class="QPushButton" name="pushButton_reset">
+        <property name="toolTip">
+         <string>Reset the controls and settings back to their default state.</string>
+        </property>
         <property name="text">
          <string>Reset</string>
         </property>
        </widget>
       </item>
-      <item row="13" column="0">
+      <item row="12" column="0">
        <spacer name="horizontalSpacer_7">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -301,17 +325,13 @@
         </property>
        </spacer>
       </item>
-      <item row="13" column="1">
+      <item row="12" column="1">
        <widget class="QPushButton" name="pushButton_exit">
+        <property name="toolTip">
+         <string>Exit just this dialog window.</string>
+        </property>
         <property name="text">
          <string>Exit</string>
-        </property>
-       </widget>
-      </item>
-      <item row="6" column="1">
-       <widget class="QComboBox" name="comboBox_ui_theme">
-        <property name="toolTip">
-         <string>Change the 'theme' of the spectrograph.</string>
         </property>
        </widget>
       </item>

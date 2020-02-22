@@ -38,7 +38,6 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/dek_db.hpp"
 #include "src/string_funcs_windows.hpp"
 #include <fftw3.h>
 #include <QObject>
@@ -53,8 +52,7 @@ class SpectroFFTW: public QObject {
     Q_OBJECT
 
 public:
-    explicit SpectroFFTW(std::shared_ptr<GekkoFyre::GkLevelDb> database,
-                         std::shared_ptr<GekkoFyre::StringFuncs> stringFunc,
+    explicit SpectroFFTW(std::shared_ptr<GekkoFyre::StringFuncs> stringFunc,
                          QObject *parent = nullptr);
     ~SpectroFFTW();
 
@@ -62,7 +60,6 @@ public slots:
     std::vector<Spectrograph::RawFFT> stft(std::vector<double> *signal, int signal_length, int window_size, int hop_size);
 
 private:
-    std::shared_ptr<GekkoFyre::GkLevelDb> gkDb;
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
 
     std::timed_mutex calc_stft_mtx;

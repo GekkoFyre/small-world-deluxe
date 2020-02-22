@@ -211,9 +211,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the Waterfall / Spectrograph
         //
-        gkSpectroGui = new GekkoFyre::SpectroGui(this);
+        gkSpectroGui = new GekkoFyre::SpectroGui(64, this);
         ui->verticalLayout_11->addWidget(gkSpectroGui);
-        gkSpectroGui->setColorMap(254);
+        gkSpectroGui->setColorMap(Spectrograph::ColorMap::HueMap);
 
         //
         // Sound & Audio Devices

@@ -64,9 +64,8 @@ private slots:
     void on_comboBox_colour_map_currentIndexChanged(int index);
     void on_comboBox_fft_size_currentIndexChanged(int index);
     void on_verticalSlider_control_alpha_valueChanged(int value);
-    void on_horizontalSlider_control_colour_valueChanged(int value);
 
-    void on_comboBox_ui_theme_activated(int index);
+    void on_pushButton_export_graph_clicked();
 
 private:
     Ui::SpectroDialog *ui;

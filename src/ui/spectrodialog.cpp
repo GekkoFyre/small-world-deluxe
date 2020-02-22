@@ -37,6 +37,9 @@
 
 #include "spectrodialog.hpp"
 #include "ui_spectrodialog.h"
+#include <QMessageBox>
+
+using namespace GekkoFyre;
 
 SpectroDialog::SpectroDialog(QPointer<GekkoFyre::SpectroGui> spectroGui, QWidget *parent) :
     QDialog(parent), ui(new Ui::SpectroDialog)
@@ -69,7 +72,7 @@ void SpectroDialog::on_pushButton_exit_clicked()
 
 void SpectroDialog::on_pushButton_contour_toggled(bool checked)
 {
-    // gkSpectroGui->showContour(checked);
+    gkSpectroGui->showContour(checked);
 
     return;
 }
@@ -81,6 +84,21 @@ void SpectroDialog::on_pushButton_activate_spectro_toggled(bool checked)
 
 void SpectroDialog::on_comboBox_colour_map_currentIndexChanged(int index)
 {
+    switch (index) {
+    case 0:
+        gkSpectroGui->setColorMap(Spectrograph::ColorMap::HueMap);
+        return;
+    case 1:
+        gkSpectroGui->setColorMap(Spectrograph::ColorMap::RGBMap);
+        return;
+    case 2:
+        gkSpectroGui->setColorMap(Spectrograph::ColorMap::AlphaMap);
+        return;
+    default:
+        gkSpectroGui->setColorMap(Spectrograph::ColorMap::HueMap);
+        return;
+    }
+
     return;
 }
 
@@ -96,16 +114,9 @@ void SpectroDialog::on_verticalSlider_control_alpha_valueChanged(int value)
     return;
 }
 
-void SpectroDialog::on_horizontalSlider_control_colour_valueChanged(int value)
+void SpectroDialog::on_pushButton_export_graph_clicked()
 {
-    gkSpectroGui->setColorMap(value);
-
-    return;
-}
-
-void SpectroDialog::on_comboBox_ui_theme_activated(int index)
-{
-    gkSpectroGui->setTheme(Qt::darkBlue);
+    QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
 
     return;
 }
