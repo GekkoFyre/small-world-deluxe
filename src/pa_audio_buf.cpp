@@ -38,7 +38,6 @@
 #include "pa_audio_buf.hpp"
 #include <iostream>
 #include <exception>
-#include <mutex>
 #include <algorithm>
 #include <iterator>
 
@@ -60,7 +59,6 @@ using namespace Audio;
  */
 PaAudioBuf::PaAudioBuf(size_t size_hint, QObject *parent)
 {
-    std::mutex pa_audio_buf_mtx;
     std::lock_guard<std::mutex> lck_guard(pa_audio_buf_mtx);
 
     buffer_size = size_hint;
@@ -85,10 +83,9 @@ PaAudioBuf::~PaAudioBuf()
 int PaAudioBuf::playbackCallback(const void *input_buffer, void *output_buffer, unsigned long frames_per_buffer,
                                  const PaStreamCallbackTimeInfo *time_info, PaStreamCallbackFlags status_flags)
 {
+    std::lock_guard<std::mutex> lck_guard(playback_loop_mtx);
     short**	data_mem = (short**)output_buffer;
     unsigned long i_output = 0;
-    std::mutex playback_loop_mtx;
-    std::lock_guard<std::mutex> lck_guard(playback_loop_mtx);
 
     if (output_buffer == nullptr) {
         return paComplete;
@@ -130,9 +127,8 @@ int PaAudioBuf::playbackCallback(const void *input_buffer, void *output_buffer, 
 int PaAudioBuf::recordCallback(const void* input_buffer, void* output_buffer, unsigned long frames_per_buffer,
                           const PaStreamCallbackTimeInfo* time_info, PaStreamCallbackFlags status_flags)
 {
-    short** data_mem = (short**)input_buffer;
-    std::mutex record_loop_mtx;
     std::lock_guard<std::mutex> lck_guard(record_loop_mtx);
+    short** data_mem = (short**)input_buffer;
 
     if (input_buffer == nullptr) {
         return paContinue;
@@ -151,17 +147,13 @@ int PaAudioBuf::recordCallback(const void* input_buffer, void* output_buffer, un
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return The entire contents of the buffer once having reached the target size.
  */
-std::vector<short> PaAudioBuf::dumpMemory() const
+std::vector<short> PaAudioBuf::dumpMemory()
 {
+    std::lock_guard<std::mutex> lck_guard(pa_buf_dup_mem_mtx);
+    std::vector<short> ret_vec;
     if (rec_samples_ptr != nullptr) {
         if (!rec_samples_ptr->empty()) {
-            std::mutex pa_buf_dup_mem_mtx;
-            std::lock_guard<std::mutex> lck_guard(pa_buf_dup_mem_mtx);
-
-            std::vector<short> ret_vec;
-            ret_vec.reserve(buffer_size + 1);
-
-            rec_samples_ptr->linearize();
+            // rec_samples_ptr->linearize();
 
             for (auto it = rec_samples_ptr->begin(); it != rec_samples_ptr->end(); ++it) {
                 ret_vec.push_back(*it);
@@ -171,7 +163,8 @@ std::vector<short> PaAudioBuf::dumpMemory() const
         }
     }
 
-    return std::vector<short>();
+    ret_vec = fillVecZeros(buffer_size);
+    return ret_vec;
 }
 
 size_t PaAudioBuf::size() const
@@ -185,11 +178,10 @@ size_t PaAudioBuf::size() const
     return rec_samples_size;
 }
 
-short PaAudioBuf::at(const short &idx) const
+short PaAudioBuf::at(const short &idx)
 {
-    short ret_value = 0;
-    std::mutex pa_audio_buf_loc_mtx;
     std::lock_guard<std::mutex> lck_guard(pa_audio_buf_loc_mtx);
+    short ret_value = 0;
     if (rec_samples_ptr != nullptr && is_rec_active) {
         if (!rec_samples_ptr->empty()) {
             if (idx <= buffer_size && idx >= 0) {
@@ -330,7 +322,6 @@ boost::circular_buffer<short, std::allocator<short>>::iterator PaAudioBuf::end()
 
 void PaAudioBuf::abortRecording(const bool &recording_is_stopped, const int &wait_time)
 {
-    std::mutex pa_audio_buf_rec_mtx;
     std::lock_guard<std::mutex> lck_guard(pa_audio_buf_rec_mtx);
 
     if (recording_is_stopped) {
@@ -357,4 +348,25 @@ void PaAudioBuf::dlgBoxOk(const HWND &hwnd, const QString &title, const QString 
 {
     MessageBox(hwnd, msgTxt.toStdString().c_str(), title.toStdString().c_str(), icon | MB_OK);
     return;
+}
+
+/**
+ * @brief PaAudioBuf::fillVecZeros The idea of this is to fill an std::vector() with all zeroes
+ * when there is nothing else to return but this, so the program doesn't output an exception
+ * otherwise.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param buf_size How large to make the std::vector().
+ * @return The outputted std::vector() that's now filled with zeroes.
+ */
+std::vector<short> PaAudioBuf::fillVecZeros(const int &buf_size)
+{
+    std::lock_guard<std::mutex> lck_guard(fill_vec_zeroes_mtx);
+    std::vector<short> ret_vec;
+    ret_vec.reserve(buf_size);
+
+    for (size_t i = 0; i < buf_size; ++i) {
+        ret_vec.push_back(0);
+    }
+
+    return ret_vec;
 }

@@ -46,6 +46,8 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <mutex>
+#include <thread>
 
 namespace GekkoFyre {
 
@@ -67,10 +69,10 @@ public:
                          const PaStreamCallbackTimeInfo *time_info, PaStreamCallbackFlags status_flags);
     int recordCallback(const void *input_buffer, void *output_buffer, unsigned long frames_per_buffer,
                        const PaStreamCallbackTimeInfo *time_info, PaStreamCallbackFlags status_flags);
-    std::vector<short> dumpMemory() const;
+    std::vector<short> dumpMemory();
 
     virtual size_t size() const;
-    virtual short at(const short &idx) const;
+    virtual short at(const short &idx);
     virtual short front() const;
     virtual short back() const;
     virtual void push_back(const short &data);
@@ -90,7 +92,19 @@ private:
     boost::circular_buffer<short> *rec_samples_ptr;     // Contains the 16-bit mono samples
     size_t buffer_size;
 
+    //
+    // Mutexes
+    //
+    std::mutex pa_audio_buf_loc_mtx;
+    std::mutex pa_buf_dup_mem_mtx;
+    std::mutex pa_audio_buf_rec_mtx;
+    std::mutex playback_loop_mtx;
+    std::mutex record_loop_mtx;
+    std::mutex pa_audio_buf_mtx;
+    std::mutex fill_vec_zeroes_mtx;
+
     void dlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon);
+    std::vector<short> fillVecZeros(const int &buf_size);
 
 };
 };

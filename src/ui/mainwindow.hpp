@@ -187,6 +187,7 @@ private:
     portaudio::System *gkPortAudioInit;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
+    QPointer<GekkoFyre::PaAudioBuf> pref_input_audio_buf;
 
     //
     // Audio sub-system

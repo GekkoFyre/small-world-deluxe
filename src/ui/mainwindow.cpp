@@ -271,13 +271,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         const size_t spectro_window_size = gkSpectroGui->gkSpectrogram->xAxis();
         const size_t audio_buffer_size = ((pref_input_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS) *
                                           GkDb->convertAudioChannelsInt(pref_input_device.sel_channels));
-        QPointer<GekkoFyre::PaAudioBuf> audio_buf = new GekkoFyre::PaAudioBuf(audio_buffer_size, this);
-        paMicProcBackground = new GekkoFyre::paMicProcBackground(gkPortAudioInit, audio_buf, gkAudioDevices, gkStringFuncs, fileIo, GkDb,
+        pref_input_audio_buf = new GekkoFyre::PaAudioBuf(audio_buffer_size, this);
+        paMicProcBackground = new GekkoFyre::paMicProcBackground(gkPortAudioInit, pref_input_audio_buf, gkAudioDevices, gkStringFuncs, fileIo, GkDb,
                                                                  pref_input_device, audio_buffer_size, spectro_window_size, nullptr);
 
         QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), paMicProcBackground, SLOT(abortRecording(const bool &, const int &)));
         QObject::connect(paMicProcBackground, SIGNAL(updateVolume(const double &)), this, SLOT(updateVuMeter(const double &)));
-        QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), audio_buf, SLOT(abortRecording(const bool &, const int &)));
+        QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), pref_input_audio_buf, SLOT(abortRecording(const bool &, const int &)));
         QObject::connect(ui->verticalSlider_vol_control, SIGNAL(valueChanged(int)), this, SLOT(updateVolMeterTooltip(const int &)));
         QObject::connect(paMicProcBackground, SIGNAL(updateWaterfall(const std::vector<double> &, const size_t &)), this, SLOT(updateSpectroData(const std::vector<double> &, const size_t &)));
 
@@ -308,6 +308,12 @@ MainWindow::~MainWindow()
 
     boost::thread appTerm = boost::thread(&MainWindow::appTerminating, this);
     appTerm.detach();
+
+    if (pref_input_device.dev_input_channel_count > 0 && pref_input_device.def_sample_rate > 0) {
+        if (pref_input_audio_buf != nullptr) {
+            delete pref_input_audio_buf;
+        }
+    }
 
     delete db;
     gkPortAudioInit->terminate();

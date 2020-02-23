@@ -102,10 +102,6 @@ paMicProcBackground::~paMicProcBackground()
         streamRecord->stop();
         streamRecord->close();
     }
-
-    if (sel_input_device.dev_output_channel_count > 0 && sel_input_device.def_sample_rate > 0) {
-        delete gkAudioBuf;
-    }
 }
 
 void paMicProcBackground::initRecording()
@@ -221,9 +217,9 @@ void paMicProcBackground::spectrographCallback(PaAudioBuf *audio_buf, portaudio:
                     x_values.shrink_to_fit();
                     conv_audio_data.clear();
                     conv_audio_data.shrink_to_fit();
+                    raw_audio_data.clear();
+                    raw_audio_data.shrink_to_fit();
                 }
-            } else {
-                continue;
             }
         }
     } catch (const std::exception &e) {

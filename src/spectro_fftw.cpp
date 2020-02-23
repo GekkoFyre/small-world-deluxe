@@ -148,6 +148,7 @@ std::vector<Spectrograph::RawFFT> SpectroFFTW::stft(std::vector<double> *signal,
 
         delete[] window;
 
+        calc_stft_mtx.unlock();
         return raw_fft_vec;
     } catch (const std::exception &e) {
         HWND hwnd_stft_calc;
@@ -155,6 +156,7 @@ std::vector<Spectrograph::RawFFT> SpectroFFTW::stft(std::vector<double> *signal,
         DestroyWindow(hwnd_stft_calc);
     }
 
+    calc_stft_mtx.unlock();
     return raw_fft_vec;
 }
 
@@ -211,5 +213,6 @@ void SpectroFFTW::hanning(int win_length, double *buffer)
         buffer[i] = 0.54 - (0.46 * cos(2 * M_PI * (i / ((win_length - 1) * 1.0))));
     }
 
+    calc_hanning_mtx.unlock();
     return;
 }
