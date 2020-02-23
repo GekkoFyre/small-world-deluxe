@@ -158,6 +158,46 @@ std::vector<Spectrograph::RawFFT> SpectroFFTW::stft(std::vector<double> *signal,
     return raw_fft_vec;
 }
 
+float *SpectroFFTW::calcPower(const std::vector<float> &audio_samples, const size_t &buffer_size, const int &window_size, const int &feed_rate)
+{
+    //
+    // TODO: Finish coding this!
+    //
+    double *frame_buffer = nullptr;
+    fftw_complex *spectrum;
+    fftw_plan p;
+    const int no_of_windows = ((buffer_size - (window_size - feed_rate)) / feed_rate);
+    float **power = new float*[no_of_windows];;
+
+    const int fft_order = std::ceil(std::logf(window_size) / std::logf(2.0f));
+    const int fft_len = 1 << fft_order;
+
+    // Allocate buffer for calculated complex spectrum of each window
+    spectrum = (fftw_complex*)fftw_malloc(fft_len * sizeof(fftw_complex));
+
+    // The real to complex fft plan
+    p = fftw_plan_dft_r2c_1d(fft_len, frame_buffer, spectrum, FFTW_ESTIMATE);
+
+    // powerSpectrum(fft_result, fft_len);
+
+    return *power;
+}
+
+float *SpectroFFTW::powerSpectrum(fftw_complex *spectrum, int N)
+{
+    float *power = nullptr;
+
+    for (int k = 1; k < ((N + 1) / 2); ++k) {
+        power[k] = (spectrum[k][0] * spectrum[k][0] + spectrum[k][1] * spectrum[k][1]);
+
+        if (N % 2 == 0) {
+            power[N/2] = (spectrum[N/2][0] * spectrum[N/2][0]); // Nyquist frequency
+        }
+    }
+
+    return power;
+}
+
 /**
  * @brief SpectroFFTW::hanning
  * @author Jack Schaedler <http://ofdsp.blogspot.com/2011/08/short-time-fourier-transform-with-fftw3.html>

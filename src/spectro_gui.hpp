@@ -62,10 +62,11 @@ public:
 
     QwtPlotSpectrogram *gkSpectrogram;
     QwtScaleWidget *axis_y_right;
+    QwtInterval *z_interval;
 
     void showContour(const int &toggled);
     void showSpectrogram(const bool &toggled);
-    void setColorMap(const Spectrograph::ColorMap &map);
+    void setColorMap(const Spectrograph::GkColorMap &map);
     void setAlpha(const int &alpha);
     void setTheme(const QColor &colour);
 
@@ -96,9 +97,7 @@ private:
     double z_min_;
     double z_max_;
 
-    //
-    // Mutexes
-    //
+    bool z_axis_set;
 };
 
 class MyZoomer: public QwtPlotZoomer {

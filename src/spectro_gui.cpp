@@ -67,6 +67,7 @@ SpectroGui::SpectroGui(const int &num_data_points, QWidget *parent) : QwtPlot(pa
     std::lock_guard<std::mutex> lck_guard(spectro_main_mtx);
 
     gkMapType = 0;
+    z_axis_set = false;
 
     const size_t actual_num_threads = boost::thread::hardware_concurrency();
     size_t threads_to_use = 0;
@@ -82,6 +83,8 @@ SpectroGui::SpectroGui(const int &num_data_points, QWidget *parent) : QwtPlot(pa
     gkSpectrogram->attach(this);
 
     axis_y_right = new QwtScaleWidget(axisWidget(QwtPlot::yRight));
+    axis_y_right->setHidden(true);
+    z_interval = new QwtInterval(interval(Qt::ZAxis));
 
     QList<double> contour_levels;
     for (double level = 0.5; level < 10.0; level += 1.0) {
@@ -89,26 +92,17 @@ SpectroGui::SpectroGui(const int &num_data_points, QWidget *parent) : QwtPlot(pa
     }
 
     gkSpectrogram->setContourLevels(contour_levels);
-    gkSpectrogram->setData(this);
-    gkSpectrogram->attach(this);
-
-    this->setInterval(Qt::XAxis, QwtInterval(-1.5, 1.5));
-    this->setInterval(Qt::YAxis, QwtInterval(-1.5, 1.5));
-    this->setInterval(Qt::ZAxis, QwtInterval(0.0, 10.0));
-
-    const QwtInterval z_interval = gkSpectrogram->data()->interval(Qt::ZAxis);
 
     // A color bar on the right axis
-    QwtScaleWidget *right_axis = axisWidget(QwtPlot::yRight);
-    right_axis->setTitle("Intensity");
-    right_axis->setColorBarEnabled(true);
-
-    setAxisScale(QwtPlot::yRight, z_interval.minValue(), z_interval.maxValue());
-    enableAxis(QwtPlot::yRight);
+    // QwtScaleWidget *right_axis = axisWidget(QwtPlot::yRight);
+    // right_axis->setTitle("Intensity");
+    // right_axis->setColorBarWidth(40);
+    // right_axis->setColorBarEnabled(true);
+    // right_axis->setColorMap(*z_interval, new HueColorMap());
 
     plotLayout()->setAlignCanvasToScales(true);
 
-    setColorMap(ColorMap::RGBMap);
+    setColorMap(GkColorMap::HueMap);
 
     //
     // Instructions!
@@ -166,35 +160,35 @@ void SpectroGui::showSpectrogram(const bool &toggled)
     return;
 }
 
-void SpectroGui::setColorMap(const Spectrograph::ColorMap &map)
+void SpectroGui::setColorMap(const Spectrograph::GkColorMap &map)
 {
     std::mutex spectro_color_mtx;
     std::lock_guard<std::mutex> lck_guard(spectro_color_mtx);
-    const QwtInterval z_interval = gkSpectrogram->data()->interval(Qt::ZAxis);
 
-    gkMapType = Spectrograph::ColorMap::HueMap;
+    gkMapType = Spectrograph::GkColorMap::HueMap;
 
     int alpha = gkAlpha;
     switch (map) {
-    case ColorMap::HueMap:
+    case GkColorMap::HueMap:
         {
             gkSpectrogram->setColorMap(new HueColorMap());
-            axis_y_right->setColorMap(z_interval, new HueColorMap());
+            axis_y_right->setColorMap(*z_interval, new HueColorMap());
             break;
         }
-    case ColorMap::AlphaMap:
+    case GkColorMap::AlphaMap:
         {
             alpha = 255;
             gkSpectrogram->setColorMap(new AlphaColorMap());
-            axis_y_right->setColorMap(z_interval, new AlphaColorMap());
+            axis_y_right->setColorMap(*z_interval, new AlphaColorMap());
             break;
         }
-    case ColorMap::RGBMap:
+    case GkColorMap::RGBMap:
         break;
     default:
         {
             gkSpectrogram->setColorMap(new LinearColorMapRGB());
-            axis_y_right->setColorMap(z_interval, new LinearColorMapRGB());
+            axis_y_right->setColorMap(*z_interval, new LinearColorMapRGB());
+            break;
         }
     }
 
@@ -216,7 +210,7 @@ void SpectroGui::setAlpha(const int &alpha)
 
     gkAlpha = alpha;
 
-    if (gkMapType != ColorMap::AlphaMap) {
+    if (gkMapType != GkColorMap::AlphaMap) {
         gkSpectrogram->setAlpha(alpha);
         replot();
     }
@@ -244,7 +238,7 @@ void SpectroGui::setYAxisRange(const double &y_min, const double &y_max)
     y_min_ = y_min;
     y_max_ = y_max;
 
-    this->setInterval(Qt::YAxis, QwtInterval(y_min_, y_max_));
+    setInterval(Qt::YAxis, QwtInterval(y_min_, y_max_));
     plotLayout()->setAlignCanvasToScales(true);
     replot();
 
@@ -261,7 +255,7 @@ void SpectroGui::setXAxisRange(const double &x_min, const double &x_max)
     x_min_ = x_min;
     x_max_ = x_max;
 
-    this->setInterval(Qt::XAxis, QwtInterval(x_min_, x_max_));
+    setInterval(Qt::XAxis, QwtInterval(x_min_, x_max_));
     plotLayout()->setAlignCanvasToScales(true);
     replot();
 
@@ -275,12 +269,21 @@ void SpectroGui::setXAxisRange(const double &x_min, const double &x_max)
  */
 void SpectroGui::setZAxisRange(const double &z_min, const double &z_max)
 {
-    z_min_ = z_min;
-    z_max_ = z_max;
+    if (std::isgreaterequal(z_min, 0.0)) {
+        if (z_min < z_min_) {
+            z_min_ = z_min;
+        }
+    }
 
-    this->setInterval(Qt::ZAxis, QwtInterval(z_min_, z_max_));
+    if (z_max > z_max_) {
+        z_max_ = z_max;
+    }
+
+    setInterval(Qt::ZAxis, QwtInterval(z_min_, z_max_));
     plotLayout()->setAlignCanvasToScales(true);
     replot();
+
+    z_axis_set = true;
 
     return;
 }
@@ -296,18 +299,20 @@ void SpectroGui::setMatrixData(const std::vector<double> &values, int numColumns
 
     double minValue = *std::min_element(std::begin(values), std::end(values));
     double maxValue = *std::max_element(std::begin(values), std::end(values));
+
     setZAxisRange(minValue, maxValue);
+    setAxisScale(QwtPlot::yRight, z_min_, z_max_);
+
+    enableAxis(QwtPlot::yRight, true);
+    updateAxes();
 
     QVector<double> x_axis_conv(values.begin(), values.end());
-    this->setValueMatrix(x_axis_conv, numColumns);
+    setValueMatrix(x_axis_conv, numColumns);
     gkSpectrogram->setData(this);
-
-    const QwtInterval zInterval = gkSpectrogram->data()->interval(Qt::ZAxis);
-    setAxisScale(QwtPlot::yRight, zInterval.minValue(), zInterval.maxValue());
 
     x_axis_conv.clear();
     x_axis_conv.shrink_to_fit();
-    setColorMap(Spectrograph::ColorMap::HueMap);
+    setColorMap(Spectrograph::GkColorMap::HueMap);
 
     replot();
 }

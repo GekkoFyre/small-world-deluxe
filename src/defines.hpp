@@ -321,7 +321,7 @@ namespace AmateurRadio {
 }
 
 namespace Spectrograph {
-    enum ColorMap
+    enum GkColorMap
     {
         RGBMap,
         IndexMap,

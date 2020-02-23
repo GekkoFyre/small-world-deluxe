@@ -58,6 +58,8 @@ public:
 
 public slots:
     std::vector<Spectrograph::RawFFT> stft(std::vector<double> *signal, int signal_length, int window_size, int hop_size);
+    float *calcPower(const std::vector<float> &audio_samples, const size_t &buffer_size, const int &window_size,
+                     const int &feed_rate);
 
 private:
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
@@ -66,6 +68,7 @@ private:
     std::timed_mutex calc_hanning_mtx;
 
     void hanning(int win_length, double *buffer);
+    float *powerSpectrum(fftw_complex *spectrum, int N);
 
 };
 };

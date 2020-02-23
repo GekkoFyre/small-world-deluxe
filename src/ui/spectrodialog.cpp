@@ -86,16 +86,16 @@ void SpectroDialog::on_comboBox_colour_map_currentIndexChanged(int index)
 {
     switch (index) {
     case 0:
-        gkSpectroGui->setColorMap(Spectrograph::ColorMap::HueMap);
+        gkSpectroGui->setColorMap(Spectrograph::GkColorMap::HueMap);
         return;
     case 1:
-        gkSpectroGui->setColorMap(Spectrograph::ColorMap::RGBMap);
+        gkSpectroGui->setColorMap(Spectrograph::GkColorMap::RGBMap);
         return;
     case 2:
-        gkSpectroGui->setColorMap(Spectrograph::ColorMap::AlphaMap);
+        gkSpectroGui->setColorMap(Spectrograph::GkColorMap::AlphaMap);
         return;
     default:
-        gkSpectroGui->setColorMap(Spectrograph::ColorMap::HueMap);
+        gkSpectroGui->setColorMap(Spectrograph::GkColorMap::HueMap);
         return;
     }
 

@@ -213,7 +213,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         gkSpectroGui = new GekkoFyre::SpectroGui(64, this);
         ui->verticalLayout_11->addWidget(gkSpectroGui);
-        gkSpectroGui->setColorMap(Spectrograph::ColorMap::HueMap);
+        gkSpectroGui->setColorMap(Spectrograph::GkColorMap::HueMap);
 
         //
         // Sound & Audio Devices
