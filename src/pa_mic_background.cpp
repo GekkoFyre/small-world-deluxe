@@ -167,12 +167,14 @@ void paMicProcBackground::procVuMeter(const size_t &buffer_size, PaAudioBuf *aud
             //
             std::this_thread::sleep_for(std::chrono::duration(std::chrono::milliseconds(AUDIO_VU_METER_UPDATE_MILLISECS)));
 
-            const size_t rand_num = gkFileIo->generateRandInteger(1, buffer_size, (buffer_size - 1));
-            double idx_result = audio_buf->at(rand_num);
-            if (idx_result >= 0) {
-                // We have a audio sample!
-                double percentage = ((idx_result / 32768) * 100);
-                emit updateVolume(percentage);
+            if (audio_buf != nullptr) {
+                const size_t rand_num = gkFileIo->generateRandInteger(1, buffer_size, (buffer_size - 1));
+                double idx_result = audio_buf->at(rand_num);
+                if (idx_result >= 0) {
+                    // We have a audio sample!
+                    double percentage = ((idx_result / 32768) * 100);
+                    emit updateVolume(percentage);
+                }
             }
         }
     } catch (const std::exception &e) {
@@ -197,28 +199,11 @@ void paMicProcBackground::spectrographCallback(PaAudioBuf *audio_buf, portaudio:
                 std::vector<Spectrograph::RawFFT> waterfall_fft_data; // Key is the 'frame buffer', whilst the value is the 'power'
                 std::vector<double> conv_audio_data(raw_audio_data.begin(), raw_audio_data.end());
                 waterfall_fft_data = spectro_fftw->stft(&conv_audio_data, AUDIO_SIGNAL_LENGTH,
-                                                        hanning_window_size, FFTW_HOP_SIZE);
+                                                        hanning_window_size, FFTW_HOP_SIZE,
+                                                        audio_buffer_size, 1);
 
                 if (!waterfall_fft_data.empty()) {
-                    std::vector<double> x_values;
-                    size_t counter = 0;
-                    for (size_t i = 0; i < waterfall_fft_data.size(); ++i) {
-                        for (size_t j = 0; j < hanning_window_size; ++j) {
-                            // Break up the data!
-                            x_values.push_back(*waterfall_fft_data.at(i).chunk_forward_0[j]);
-                            ++counter;
-                        }
-                    }
-
-                    emit updateWaterfall(x_values, counter);
-
-                    counter = 0;
-                    x_values.clear();
-                    x_values.shrink_to_fit();
-                    conv_audio_data.clear();
-                    conv_audio_data.shrink_to_fit();
-                    raw_audio_data.clear();
-                    raw_audio_data.shrink_to_fit();
+                    emit updateWaterfall(waterfall_fft_data, hanning_window_size, audio_buffer_size);
                 }
             }
         }

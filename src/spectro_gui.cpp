@@ -44,11 +44,9 @@
 #include <qwt_plot_layout.h>
 #include <qwt_plot_renderer.h>
 #include <cmath>
-#include <memory>
 #include <algorithm>
 #include <QList>
 #include <QColormap>
-#include <QPointer>
 #include <QVector>
 #include <QTimer>
 
@@ -60,14 +58,15 @@ using namespace Spectrograph;
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param parent
  */
-SpectroGui::SpectroGui(const int &num_data_points, QWidget *parent) : QwtPlot(parent), gkAlpha(255),
-    x_axis_data_points(num_data_points)
+SpectroGui::SpectroGui(QWidget *parent) : QwtPlot(parent), gkAlpha(255)
 {
     std::mutex spectro_main_mtx;
     std::lock_guard<std::mutex> lck_guard(spectro_main_mtx);
 
     gkMapType = 0;
     z_axis_set = false;
+
+    QObject::connect(this, SIGNAL(refresh()), this, SLOT(updateSpectro()));
 
     const size_t actual_num_threads = boost::thread::hardware_concurrency();
     size_t threads_to_use = 0;
@@ -82,9 +81,12 @@ SpectroGui::SpectroGui(const int &num_data_points, QWidget *parent) : QwtPlot(pa
     gkSpectrogram->setCachePolicy(QwtPlotRasterItem::PaintCache);
     gkSpectrogram->attach(this);
 
+    gkMatrixRaster = new QwtMatrixRasterData();
+    gkSpectrogram->setData(gkMatrixRaster);
+
     axis_y_right = new QwtScaleWidget(axisWidget(QwtPlot::yRight));
     axis_y_right->setHidden(true);
-    z_interval = new QwtInterval(interval(Qt::ZAxis));
+    z_interval = new QwtInterval(gkMatrixRaster->interval(Qt::ZAxis));
 
     QList<double> contour_levels;
     for (double level = 0.5; level < 10.0; level += 1.0) {
@@ -94,15 +96,15 @@ SpectroGui::SpectroGui(const int &num_data_points, QWidget *parent) : QwtPlot(pa
     gkSpectrogram->setContourLevels(contour_levels);
 
     // A color bar on the right axis
-    // QwtScaleWidget *right_axis = axisWidget(QwtPlot::yRight);
-    // right_axis->setTitle("Intensity");
-    // right_axis->setColorBarWidth(40);
-    // right_axis->setColorBarEnabled(true);
-    // right_axis->setColorMap(*z_interval, new HueColorMap());
+    QwtScaleWidget *right_axis = axisWidget(QwtPlot::yRight);
+    right_axis->setTitle("Intensity");
+    right_axis->setColorBarWidth(40);
+    right_axis->setColorBarEnabled(true);
+    right_axis->setColorMap(*z_interval, new LinearColorMapRGB());
 
     plotLayout()->setAlignCanvasToScales(true);
 
-    setColorMap(GkColorMap::HueMap);
+    setColorMap(GkColorMap::RGBMap);
 
     //
     // Instructions!
@@ -113,11 +115,11 @@ SpectroGui::SpectroGui(const int &num_data_points, QWidget *parent) : QwtPlot(pa
     // Ctrl + Right-click will zoom out to full-size
     //
 
-    QPointer<QwtPlotZoomer> zoomer = new MyZoomer(canvas());
+    zoomer = new MyZoomer(canvas());
     zoomer->setMousePattern(QwtEventPattern::MouseSelect2, Qt::RightButton, Qt::ControlModifier);
     zoomer->setMousePattern(QwtEventPattern::MouseSelect3, Qt::RightButton);
 
-    std::unique_ptr<QwtPlotPanner> panner = std::make_unique<QwtPlotPanner>(canvas());
+    QwtPlotPanner *panner = new QwtPlotPanner(canvas());
     panner->setAxisEnabled(QwtPlot::yRight, false);
     panner->setMouseButton(Qt::MidButton);
 
@@ -143,7 +145,8 @@ void SpectroGui::showContour(const int &toggled)
     std::mutex spectro_contour_mtx;
     std::lock_guard<std::mutex> lck_guard(spectro_contour_mtx);
     gkSpectrogram->setDisplayMode(QwtPlotSpectrogram::ContourMode, toggled);
-    replot();
+
+    emit refresh();
 
     return;
 }
@@ -155,7 +158,7 @@ void SpectroGui::showSpectrogram(const bool &toggled)
     gkSpectrogram->setDisplayMode(QwtPlotSpectrogram::ImageMode, toggled);
     gkSpectrogram->setDefaultContourPen(toggled ? QPen(Qt::black, 0) : QPen(Qt::NoPen));
 
-    replot();
+    emit refresh();
 
     return;
 }
@@ -165,7 +168,7 @@ void SpectroGui::setColorMap(const Spectrograph::GkColorMap &map)
     std::mutex spectro_color_mtx;
     std::lock_guard<std::mutex> lck_guard(spectro_color_mtx);
 
-    gkMapType = Spectrograph::GkColorMap::HueMap;
+    gkMapType = Spectrograph::GkColorMap::RGBMap;
 
     int alpha = gkAlpha;
     switch (map) {
@@ -193,7 +196,8 @@ void SpectroGui::setColorMap(const Spectrograph::GkColorMap &map)
     }
 
     gkSpectrogram->setAlpha(alpha);
-    replot();
+
+    emit refresh();
 
     return;
 }
@@ -212,7 +216,8 @@ void SpectroGui::setAlpha(const int &alpha)
 
     if (gkMapType != GkColorMap::AlphaMap) {
         gkSpectrogram->setAlpha(alpha);
-        replot();
+
+        emit refresh();
     }
 
     return;
@@ -223,7 +228,7 @@ void SpectroGui::setTheme(const QColor &colour)
     std::mutex spectro_theme_mtx;
     std::lock_guard<std::mutex> lck_guard(spectro_theme_mtx);
 
-    std::unique_ptr<QwtPlotZoomer> zoomer = std::make_unique<MyZoomer>(canvas());
+    QwtPlotZoomer *zoomer = new MyZoomer(canvas());
     zoomer->setRubberBandPen(colour);
     zoomer->setTrackerPen(colour);
 }
@@ -238,9 +243,10 @@ void SpectroGui::setYAxisRange(const double &y_min, const double &y_max)
     y_min_ = y_min;
     y_max_ = y_max;
 
-    setInterval(Qt::YAxis, QwtInterval(y_min_, y_max_));
+    gkMatrixRaster->setInterval(Qt::YAxis, QwtInterval(y_min_, y_max_));
     plotLayout()->setAlignCanvasToScales(true);
-    replot();
+
+    emit refresh();
 
     return;
 }
@@ -255,9 +261,10 @@ void SpectroGui::setXAxisRange(const double &x_min, const double &x_max)
     x_min_ = x_min;
     x_max_ = x_max;
 
-    setInterval(Qt::XAxis, QwtInterval(x_min_, x_max_));
+    gkMatrixRaster->setInterval(Qt::XAxis, QwtInterval(x_min_, x_max_));
     plotLayout()->setAlignCanvasToScales(true);
-    replot();
+
+    emit refresh();
 
     return;
 }
@@ -279,40 +286,63 @@ void SpectroGui::setZAxisRange(const double &z_min, const double &z_max)
         z_max_ = z_max;
     }
 
-    setInterval(Qt::ZAxis, QwtInterval(z_min_, z_max_));
+    gkMatrixRaster->setInterval(Qt::ZAxis, QwtInterval(z_min_, z_max_));
     plotLayout()->setAlignCanvasToScales(true);
-    replot();
 
+    emit refresh();
     z_axis_set = true;
 
     return;
 }
 
-void SpectroGui::setMatrixData(const std::vector<double> &values, int numColumns)
+void SpectroGui::setMatrixData(const std::vector<RawFFT> &values, const int &hanning_window_size,
+                               const size_t &buffer_size)
 {
     std::mutex spectro_matrix_data_mtx;
     std::lock_guard<std::mutex> lck_guard(spectro_matrix_data_mtx);
 
-    size_t rows = (values.size() / numColumns);
+    const size_t numColumns = values.size();
+    std::vector<double> x_values;
+    for (size_t i = 0; i < values.size(); ++i) {
+        for (size_t j = 0; j < hanning_window_size; ++j) {
+            short x_axis_val = *values.at(i).chunk_forward_0[j];
+            x_values.push_back(x_axis_val);
+        }
+    }
+
+    std::vector<short> x_values_modified(x_values.size() / 2);
+    copy_every_nth(x_values.begin(), x_values.end(), x_values_modified.begin(), 2);
+
+    size_t rows = (buffer_size / numColumns);
     setXAxisRange(0, numColumns);
     setYAxisRange(0, rows);
 
-    double minValue = *std::min_element(std::begin(values), std::end(values));
-    double maxValue = *std::max_element(std::begin(values), std::end(values));
+    double minValue = *std::min_element(std::begin(x_values_modified), std::end(x_values_modified));
+    double maxValue = *std::max_element(std::begin(x_values_modified), std::end(x_values_modified));
 
     setZAxisRange(minValue, maxValue);
     setAxisScale(QwtPlot::yRight, z_min_, z_max_);
 
     enableAxis(QwtPlot::yRight, true);
-    updateAxes();
 
-    QVector<double> x_axis_conv(values.begin(), values.end());
-    setValueMatrix(x_axis_conv, numColumns);
-    gkSpectrogram->setData(this);
+    QVector<double> x_axis_conv(x_values_modified.begin(), x_values_modified.end());
+    gkMatrixRaster->setValueMatrix(x_axis_conv, numColumns);
 
     x_axis_conv.clear();
     x_axis_conv.shrink_to_fit();
-    setColorMap(Spectrograph::GkColorMap::HueMap);
+    x_values.clear();
+    x_values.shrink_to_fit();
+    x_values_modified.clear();
+    x_values_modified.shrink_to_fit();
+    setColorMap(Spectrograph::GkColorMap::RGBMap);
 
+    emit refresh();
+}
+
+void SpectroGui::updateSpectro()
+{
+    updateAxes();
     replot();
+
+    return;
 }

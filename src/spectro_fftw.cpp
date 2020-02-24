@@ -69,7 +69,8 @@ SpectroFFTW::~SpectroFFTW()
  * @param hop_size
  * @return
  */
-std::vector<Spectrograph::RawFFT> SpectroFFTW::stft(std::vector<double> *signal, int signal_length, int window_size, int hop_size)
+std::vector<Spectrograph::RawFFT> SpectroFFTW::stft(std::vector<double> *signal, int signal_length, int window_size,
+                                                    int hop_size, const size_t &audio_buffer_size, const int &feed_rate)
 {
     std::unique_lock<std::timed_mutex> lck_guard(calc_stft_mtx, std::defer_lock);
     std::vector<Spectrograph::RawFFT> raw_fft_vec;
@@ -79,6 +80,13 @@ std::vector<Spectrograph::RawFFT> SpectroFFTW::stft(std::vector<double> *signal,
         fftw_plan plan_forward;
         int i = 0;
         fftw_complex *data, *fft_result, *ifft_result;
+
+        const size_t no_of_windows = ((audio_buffer_size - (window_size - feed_rate)) / feed_rate);
+        int fft_order = 0;
+
+        // Calculate FFT length => next power of 2
+        fft_order = std::ceil(std::logf(window_size) / std::logf(2.0f));
+        const int fft_len = 1 << fft_order;
 
         data = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * window_size);
         fft_result = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * window_size);
@@ -132,7 +140,7 @@ std::vector<Spectrograph::RawFFT> SpectroFFTW::stft(std::vector<double> *signal,
             for (i = 0; i < ((window_size / 2) + 1); i++) {
                 raw_fft.chunk_forward_0[i][0] = fft_result[i][0];
                 raw_fft.chunk_forward_1[i][1] = fft_result[i][1];
-
+                raw_fft.power = powerSpectrum(raw_fft.chunk_forward_0, fft_len);
                 raw_fft_vec.push_back(raw_fft);
             }
 
@@ -160,44 +168,18 @@ std::vector<Spectrograph::RawFFT> SpectroFFTW::stft(std::vector<double> *signal,
     return raw_fft_vec;
 }
 
-float *SpectroFFTW::calcPower(const std::vector<float> &audio_samples, const size_t &buffer_size, const int &window_size, const int &feed_rate)
+std::vector<float> SpectroFFTW::powerSpectrum(fftw_complex *spectrum, int N)
 {
-    //
-    // TODO: Finish coding this!
-    //
-    double *frame_buffer = nullptr;
-    fftw_complex *spectrum;
-    fftw_plan p;
-    const int no_of_windows = ((buffer_size - (window_size - feed_rate)) / feed_rate);
-    float **power = new float*[no_of_windows];;
-
-    const int fft_order = std::ceil(std::logf(window_size) / std::logf(2.0f));
-    const int fft_len = 1 << fft_order;
-
-    // Allocate buffer for calculated complex spectrum of each window
-    spectrum = (fftw_complex*)fftw_malloc(fft_len * sizeof(fftw_complex));
-
-    // The real to complex fft plan
-    p = fftw_plan_dft_r2c_1d(fft_len, frame_buffer, spectrum, FFTW_ESTIMATE);
-
-    // powerSpectrum(fft_result, fft_len);
-
-    return *power;
-}
-
-float *SpectroFFTW::powerSpectrum(fftw_complex *spectrum, int N)
-{
-    float *power = nullptr;
-
+    std::vector<float> ret_val;
     for (int k = 1; k < ((N + 1) / 2); ++k) {
-        power[k] = (spectrum[k][0] * spectrum[k][0] + spectrum[k][1] * spectrum[k][1]);
+        ret_val.push_back(spectrum[k][0] * spectrum[k][0] + spectrum[k][1] * spectrum[k][1]);
 
         if (N % 2 == 0) {
-            power[N/2] = (spectrum[N/2][0] * spectrum[N/2][0]); // Nyquist frequency
+            ret_val.push_back(spectrum[N/2][0] * spectrum[N/2][0]); // Nyquist frequency
         }
     }
 
-    return power;
+    return ret_val;
 }
 
 /**

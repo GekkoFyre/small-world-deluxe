@@ -74,7 +74,7 @@ public:
 signals:
     void stopRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
     void updateVolume(const double &volumePctg);
-    void updateWaterfall(const std::vector<double> &data, const size_t &num_lines);
+    void updateWaterfall(const std::vector<GekkoFyre::Spectrograph::RawFFT> &data, const int &hanning_window_size, const size_t &buffer_size);
 
 public slots:
     void abortRecording(const bool &recording_is_stopped, const int &wait_time = 5000);

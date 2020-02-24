@@ -89,19 +89,8 @@ public slots:
     void abortRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
 
 private:
-    boost::circular_buffer<short> *rec_samples_ptr;     // Contains the 16-bit mono samples
+    std::unique_ptr<boost::circular_buffer<short>> rec_samples_ptr;     // Contains the 16-bit mono samples
     size_t buffer_size;
-
-    //
-    // Mutexes
-    //
-    std::mutex pa_audio_buf_loc_mtx;
-    std::mutex pa_buf_dup_mem_mtx;
-    std::mutex pa_audio_buf_rec_mtx;
-    std::mutex playback_loop_mtx;
-    std::mutex record_loop_mtx;
-    std::mutex pa_audio_buf_mtx;
-    std::mutex fill_vec_zeroes_mtx;
 
     void dlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon);
     std::vector<short> fillVecZeros(const int &buf_size);

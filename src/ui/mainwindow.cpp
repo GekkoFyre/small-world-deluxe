@@ -78,7 +78,7 @@ namespace fs = boost::filesystem;
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    qRegisterMetaType<std::vector<double>>("std::vector<double>");
+    qRegisterMetaType<std::vector<GekkoFyre::Spectrograph::RawFFT>>("std::vector<GekkoFyre::Spectrograph::RawFFT>");
     qRegisterMetaType<size_t>("size_t");
 
     try {
@@ -103,8 +103,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         ui->actionE_xit->setIcon(QIcon(":/resources/contrib/images/vector/purchased/iconfinder_turn_off_on_power_181492.svg"));
         ui->action_Settings->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/settings-flat.svg"));
         ui->actionCheck_for_Updates->setIcon(QIcon(":/resources/contrib/images/vector/purchased/iconfinder_chemistry_226643.svg"));
-
-        hwnd_terminating_msg_box = nullptr;
 
         //
         // Create a status bar at the bottom of the window with a default message
@@ -211,7 +209,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the Waterfall / Spectrograph
         //
-        gkSpectroGui = new GekkoFyre::SpectroGui(64, this);
+        gkSpectroGui = new GekkoFyre::SpectroGui(this);
         ui->verticalLayout_11->addWidget(gkSpectroGui);
         gkSpectroGui->setColorMap(Spectrograph::GkColorMap::HueMap);
 
@@ -279,7 +277,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QObject::connect(paMicProcBackground, SIGNAL(updateVolume(const double &)), this, SLOT(updateVuMeter(const double &)));
         QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), pref_input_audio_buf, SLOT(abortRecording(const bool &, const int &)));
         QObject::connect(ui->verticalSlider_vol_control, SIGNAL(valueChanged(int)), this, SLOT(updateVolMeterTooltip(const int &)));
-        QObject::connect(paMicProcBackground, SIGNAL(updateWaterfall(const std::vector<double> &, const size_t &)), this, SLOT(updateSpectroData(const std::vector<double> &, const size_t &)));
+        QObject::connect(paMicProcBackground, SIGNAL(updateWaterfall(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const int &, const size_t &)), this,
+                         SLOT(updateSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const int &, const size_t &)));
 
         std::thread t1(&MainWindow::infoBar, this);
         t1.detach();
@@ -306,9 +305,6 @@ MainWindow::~MainWindow()
 
     emit stopRecording(true, 5000);
 
-    boost::thread appTerm = boost::thread(&MainWindow::appTerminating, this);
-    appTerm.detach();
-
     if (pref_input_device.dev_input_channel_count > 0 && pref_input_device.def_sample_rate > 0) {
         if (pref_input_audio_buf != nullptr) {
             delete pref_input_audio_buf;
@@ -331,8 +327,6 @@ MainWindow::~MainWindow()
         delete radio;
     }
 
-    appTerm.join();
-    DestroyWindow(hwnd_terminating_msg_box);
     delete ui;
 }
 
@@ -519,25 +513,6 @@ void MainWindow::print_exception(const std::exception &e, int level)
     } catch (const std::exception &e) {
         print_exception(e, level + 1);
     } catch (...) {}
-}
-
-/**
- * @brief MainWindow::appTerminating A QMessageBox() to show when the application is
- * terminating (i.e. exiting normally).
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void MainWindow::appTerminating()
-{
-    std::mutex app_terminating_mtx;
-    std::lock_guard<std::mutex> lck_guard(app_terminating_mtx);
-
-    #ifdef _WIN32
-    MessageBox(hwnd_terminating_msg_box, tr("Please wait as the application terminates.").toStdString().c_str(), tr("Aborting...").toStdString().c_str(), MB_ICONINFORMATION | MB_OK);
-    #elif __linux__
-    // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
-    #endif
-
-    return;
 }
 
 /**
@@ -940,11 +915,12 @@ bool MainWindow::stopRecordingInput(const bool &recording_is_stopped, const int 
     return false;
 }
 
-void MainWindow::updateSpectroData(const std::vector<double> &data, const size_t &num_lines)
+void MainWindow::updateSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &data,
+                                   const int &hanning_window_size, const size_t &buffer_size)
 {
     try {
         if (!data.empty()) {
-            gkSpectroGui->setMatrixData(data, num_lines);
+            gkSpectroGui->setMatrixData(data, hanning_window_size, buffer_size);
 
             return;
         }

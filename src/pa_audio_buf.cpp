@@ -59,16 +59,15 @@ using namespace Audio;
  */
 PaAudioBuf::PaAudioBuf(size_t size_hint, QObject *parent)
 {
+    std::mutex pa_audio_buf_mtx;
     std::lock_guard<std::mutex> lck_guard(pa_audio_buf_mtx);
 
     buffer_size = size_hint;
-    rec_samples_ptr = new boost::circular_buffer<short>(buffer_size);
+    rec_samples_ptr = std::make_unique<boost::circular_buffer<short>>(buffer_size);
 }
 
 PaAudioBuf::~PaAudioBuf()
-{
-    delete rec_samples_ptr;
-}
+{}
 
 /**
  * @brief PaAudioBuf::playbackCallback
@@ -83,6 +82,7 @@ PaAudioBuf::~PaAudioBuf()
 int PaAudioBuf::playbackCallback(const void *input_buffer, void *output_buffer, unsigned long frames_per_buffer,
                                  const PaStreamCallbackTimeInfo *time_info, PaStreamCallbackFlags status_flags)
 {
+    std::mutex playback_loop_mtx;
     std::lock_guard<std::mutex> lck_guard(playback_loop_mtx);
     short**	data_mem = (short**)output_buffer;
     unsigned long i_output = 0;
@@ -127,6 +127,7 @@ int PaAudioBuf::playbackCallback(const void *input_buffer, void *output_buffer, 
 int PaAudioBuf::recordCallback(const void* input_buffer, void* output_buffer, unsigned long frames_per_buffer,
                           const PaStreamCallbackTimeInfo* time_info, PaStreamCallbackFlags status_flags)
 {
+    std::mutex record_loop_mtx;
     std::lock_guard<std::mutex> lck_guard(record_loop_mtx);
     short** data_mem = (short**)input_buffer;
 
@@ -149,6 +150,7 @@ int PaAudioBuf::recordCallback(const void* input_buffer, void* output_buffer, un
  */
 std::vector<short> PaAudioBuf::dumpMemory()
 {
+    std::mutex pa_buf_dup_mem_mtx;
     std::lock_guard<std::mutex> lck_guard(pa_buf_dup_mem_mtx);
     std::vector<short> ret_vec;
     if (rec_samples_ptr != nullptr) {
@@ -180,6 +182,7 @@ size_t PaAudioBuf::size() const
 
 short PaAudioBuf::at(const short &idx)
 {
+    std::mutex pa_audio_buf_loc_mtx;
     std::lock_guard<std::mutex> lck_guard(pa_audio_buf_loc_mtx);
     short ret_value = 0;
     if (rec_samples_ptr != nullptr && is_rec_active) {
@@ -322,6 +325,7 @@ boost::circular_buffer<short, std::allocator<short>>::iterator PaAudioBuf::end()
 
 void PaAudioBuf::abortRecording(const bool &recording_is_stopped, const int &wait_time)
 {
+    std::mutex pa_audio_buf_rec_mtx;
     std::lock_guard<std::mutex> lck_guard(pa_audio_buf_rec_mtx);
 
     if (recording_is_stopped) {
@@ -360,6 +364,7 @@ void PaAudioBuf::dlgBoxOk(const HWND &hwnd, const QString &title, const QString 
  */
 std::vector<short> PaAudioBuf::fillVecZeros(const int &buf_size)
 {
+    std::mutex fill_vec_zeroes_mtx;
     std::lock_guard<std::mutex> lck_guard(fill_vec_zeroes_mtx);
     std::vector<short> ret_vec;
     ret_vec.reserve(buf_size);

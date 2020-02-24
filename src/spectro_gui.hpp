@@ -54,13 +54,15 @@ namespace GekkoFyre {
 //
 // http://www.setnode.com/blog/qt-staticmetaobject-is-not-a-member-of/
 //
-class SpectroGui: public QwtPlot, private QwtMatrixRasterData {
+class SpectroGui: public QwtPlot, public QwtPlotSpectrogram, public QwtMatrixRasterData {
     Q_OBJECT
 public:
-    SpectroGui(const int &num_data_points, QWidget *parent = nullptr);
+    SpectroGui(QWidget *parent = nullptr);
     ~SpectroGui() override;
 
     QwtPlotSpectrogram *gkSpectrogram;
+    QwtMatrixRasterData *gkMatrixRaster;
+    QwtPlotZoomer *zoomer;
     QwtScaleWidget *axis_y_right;
     QwtInterval *z_interval;
 
@@ -74,6 +76,9 @@ public:
     void setXAxisRange(const double &x_min, const double &x_max);
     void setZAxisRange(const double &z_min, const double &z_max);
 
+    virtual void setMatrixData(const std::vector<Spectrograph::RawFFT> &values, const int &hanning_window_size,
+                               const size_t &buffer_size);
+
     virtual double value(double x, double y) const override {
         const double c = 0.842;
 
@@ -83,12 +88,15 @@ public:
         return (1.0 / (v1 * v1 + v2 * v2));
     }
 
-    virtual void setMatrixData(const std::vector<double> &values, int numColumns);
+private slots:
+    void updateSpectro();
+
+signals:
+    void refresh();
 
 private:
     int gkMapType;
     int gkAlpha;
-    int x_axis_data_points;
 
     double x_min_;
     double x_max_;
@@ -98,6 +106,15 @@ private:
     double z_max_;
 
     bool z_axis_set;
+
+    template<class in_it, class out_it>
+    out_it copy_every_nth(in_it b, in_it e, out_it r, size_t n) {
+        for (size_t i = distance(b, e) / n; --i; advance (b, n)) {
+            *r++ = *b;
+        }
+
+        return r;
+    }
 };
 
 class MyZoomer: public QwtPlotZoomer {

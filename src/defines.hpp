@@ -117,7 +117,7 @@ namespace GekkoFyre {
 // Mostly regarding FFTW functions
 //
 #define AUDIO_SIGNAL_LENGTH (2048)                      // For audio applications, '2048' seems to be a good length.
-#define FFTW_HOP_SIZE (128)                             // Choose a smaller hop-size if you want a higher resolution! Needs to be a power of two.
+#define FFTW_HOP_SIZE (8)                               // Choose a smaller hop-size if you want a higher resolution! Needs to be a power of two.
 
 #ifndef M_PI
 #define M_PI (3.14159265358979323846) /* pi */
@@ -332,7 +332,7 @@ namespace Spectrograph {
     struct RawFFT {
         fftw_complex *chunk_forward_0;
         fftw_complex *chunk_forward_1;
-        float *power;
+        std::vector<float> power;
     };
 
     struct Window {
