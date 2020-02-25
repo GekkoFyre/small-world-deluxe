@@ -41,6 +41,7 @@
 #include "spectrodialog.hpp"
 #include <portaudiocpp/PortAudioCpp.hxx>
 #include <qwt_color_map.h>
+#include <qwt_scale_engine.h>
 #include <boost/exception/all.hpp>
 #include <boost/chrono/chrono.hpp>
 #include <string>
@@ -212,6 +213,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         gkSpectroGui = new GekkoFyre::SpectroGui(this);
         ui->verticalLayout_11->addWidget(gkSpectroGui);
         gkSpectroGui->setColorMap(Spectrograph::GkColorMap::HueMap);
+        // gkSpectroGui->setAxisScaleEngine(QwtPlot::xBottom, new QwtLogScaleEngine());
+        gkSpectroGui->setAxisAutoScale(QwtPlot::yLeft);
+        gkSpectroGui->setEnabled(true);
 
         //
         // Sound & Audio Devices

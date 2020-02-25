@@ -48,6 +48,8 @@ SpectroDialog::SpectroDialog(QPointer<GekkoFyre::SpectroGui> spectroGui, QWidget
     this->adjustSize(); // Resize to contents
 
     gkSpectroGui = spectroGui;
+
+    QObject::connect(ui->pushButton_activate_spectro, SIGNAL(toggled(bool)), gkSpectroGui, SLOT(showSpectrogram(bool)));
 }
 
 SpectroDialog::~SpectroDialog()

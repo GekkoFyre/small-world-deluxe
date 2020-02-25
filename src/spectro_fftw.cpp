@@ -76,85 +76,86 @@ std::vector<Spectrograph::RawFFT> SpectroFFTW::stft(std::vector<double> *signal,
     std::vector<Spectrograph::RawFFT> raw_fft_vec;
 
     try {
-        std::lock(calc_stft_mtx, calc_hanning_mtx);
-        fftw_plan plan_forward;
-        int i = 0;
-        fftw_complex *data, *fft_result, *ifft_result;
+        if (calc_stft_mtx.try_lock()) {
+            fftw_plan plan_forward;
+            int i = 0;
+            fftw_complex *data, *fft_result, *ifft_result;
 
-        const size_t no_of_windows = ((audio_buffer_size - (window_size - feed_rate)) / feed_rate);
-        int fft_order = 0;
+            const size_t no_of_windows = ((audio_buffer_size - (window_size - feed_rate)) / feed_rate);
+            int fft_order = 0;
 
-        // Calculate FFT length => next power of 2
-        fft_order = std::ceil(std::logf(window_size) / std::logf(2.0f));
-        const int fft_len = 1 << fft_order;
+            // Calculate FFT length => next power of 2
+            fft_order = std::ceil(std::logf(window_size) / std::logf(2.0f));
+            const int fft_len = 1 << fft_order;
 
-        data = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * window_size);
-        fft_result = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * window_size);
-        ifft_result = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * window_size);
+            data = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * window_size);
+            fft_result = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * window_size);
+            ifft_result = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * window_size);
 
-        plan_forward = fftw_plan_dft_1d(window_size, data, fft_result, FFTW_FORWARD, FFTW_ESTIMATE);
+            plan_forward = fftw_plan_dft_1d(window_size, data, fft_result, FFTW_FORWARD, FFTW_ESTIMATE);
 
-        // Create a 'hamming window' of appropriate length
-        double *window = new double[window_size];
-        hanning(window_size, window);
+            // Create a 'hamming window' of appropriate length
+            double *window = new double[window_size];
+            hanning(window_size, window);
 
-        int chunkPosition = 0;
-        int readIndex = 0;
+            int chunkPosition = 0;
+            int readIndex = 0;
 
-        // Should we stop reading in chunks?
-        bool bStop = false;
-        int numChunks = 0;
+            // Should we stop reading in chunks?
+            bool bStop = false;
+            int numChunks = 0;
 
-        // Process each chunk of the signal
-        while (chunkPosition < signal_length && !bStop) {
-            // Copy the chunk into our buffer
-            for (i = 0; i < window_size; i++) {
-                readIndex = chunkPosition + i;
+            // Process each chunk of the signal
+            while (chunkPosition < signal_length && !bStop) {
+                // Copy the chunk into our buffer
+                for (i = 0; i < window_size; i++) {
+                    readIndex = chunkPosition + i;
 
-                if (readIndex < signal_length) {
-                    // Note the windowing!
-                    data[i][0] = (*signal)[readIndex] * window[i];
-                    data[i][1] = 0.0;
-                } else {
-                    // We have read beyond the signal, so zero-pad it!
-                    data[i][0] = 0.0;
-                    data[i][1] = 0.0;
+                    if (readIndex < signal->size()) {
+                        // Note the windowing!
+                        data[i][0] = (*signal)[readIndex] * window[i];
+                        data[i][1] = 0.0;
+                    } else {
+                        // We have read beyond the signal, so zero-pad it!
+                        data[i][0] = 0.0;
+                        data[i][1] = 0.0;
 
-                    bStop = true;
+                        bStop = true;
+                    }
                 }
+
+                // Perform the FFT on our chunk
+                fftw_execute(plan_forward);
+
+                Spectrograph::RawFFT raw_fft;
+                raw_fft.chunk_forward_0 = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * window_size);
+                raw_fft.chunk_forward_1 = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * window_size);
+
+                //
+                // Copy the first ((window_size / 2) + 1) data points into your spectrogram.
+                // We do this because the FFT output is mirrored about the nyquist frequency,
+                // so the second half of the data is redundant. This is how Matlab's
+                // spectrogram routine works.
+                //
+                for (i = 0; i < ((window_size / 2) + 1); i++) {
+                    raw_fft.chunk_forward_0[i][0] = fft_result[i][0];
+                    raw_fft.chunk_forward_1[i][1] = fft_result[i][1];
+                    raw_fft.power = powerSpectrum(raw_fft.chunk_forward_0, fft_len);
+                    raw_fft_vec.push_back(raw_fft);
+                }
+
+                chunkPosition += hop_size;
+                numChunks++;
             }
 
-            // Perform the FFT on our chunk
-            fftw_execute(plan_forward);
+            fftw_destroy_plan(plan_forward);
 
-            Spectrograph::RawFFT raw_fft;
-            raw_fft.chunk_forward_0 = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * window_size);
-            raw_fft.chunk_forward_1 = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * window_size);
+            fftw_free(data);
+            fftw_free(fft_result);
+            fftw_free(ifft_result);
 
-            //
-            // Copy the first ((window_size / 2) + 1) data points into your spectrogram.
-            // We do this because the FFT output is mirrored about the nyquist frequency,
-            // so the second half of the data is redundant. This is how Matlab's
-            // spectrogram routine works.
-            //
-            for (i = 0; i < ((window_size / 2) + 1); i++) {
-                raw_fft.chunk_forward_0[i][0] = fft_result[i][0];
-                raw_fft.chunk_forward_1[i][1] = fft_result[i][1];
-                raw_fft.power = powerSpectrum(raw_fft.chunk_forward_0, fft_len);
-                raw_fft_vec.push_back(raw_fft);
-            }
-
-            chunkPosition += hop_size;
-            numChunks++;
+            delete[] window;
         }
-
-        fftw_destroy_plan(plan_forward);
-
-        fftw_free(data);
-        fftw_free(fft_result);
-        fftw_free(ifft_result);
-
-        delete[] window;
 
         calc_stft_mtx.unlock();
         return raw_fft_vec;
@@ -191,8 +192,11 @@ std::vector<float> SpectroFFTW::powerSpectrum(fftw_complex *spectrum, int N)
 void SpectroFFTW::hanning(int win_length, double *buffer)
 {
     std::unique_lock<std::timed_mutex> lck_guard(calc_hanning_mtx, std::defer_lock);
-    for (int i = 0; i < win_length; ++i) {
-        buffer[i] = 0.54 - (0.46 * cos(2 * M_PI * (i / ((win_length - 1) * 1.0))));
+
+    if (calc_hanning_mtx.try_lock()) {
+        for (int i = 0; i < win_length; ++i) {
+            buffer[i] = 0.54 - (0.46 * cos(2 * M_PI * (i / ((win_length - 1) * 1.0))));
+        }
     }
 
     calc_hanning_mtx.unlock();

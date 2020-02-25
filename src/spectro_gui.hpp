@@ -44,17 +44,45 @@
 #include <qwt_plot_zoomer.h>
 #include <qwt_color_map.h>
 #include <qwt_matrix_raster_data.h>
+#include <qwt_plot_canvas.h>
+#include <qwt_raster_data.h>
+#include <qwt_interval.h>
+#include <boost/thread.hpp>
 #include <mutex>
 #include <vector>
+#include <chrono>
 #include <QObject>
 #include <QWidget>
+#include <QVector>
 
 namespace GekkoFyre {
 
-//
-// http://www.setnode.com/blog/qt-staticmetaobject-is-not-a-member-of/
-//
-class SpectroGui: public QwtPlot, public QwtPlotSpectrogram, public QwtMatrixRasterData {
+class RasterDataTestFunc: public QwtMatrixRasterData {
+
+public:
+    RasterDataTestFunc() {
+        const double matrix[] = {
+            1, 2, 4, 1,
+            6, 3, 5, 2,
+            4, 2, 1, 5,
+            5, 4, 2, 3
+        };
+
+        QVector<double> values;
+        for (uint i = 0; i < sizeof(matrix) / sizeof(double); ++i) {
+            values += matrix[i];
+        }
+
+        const int numColumns = 4;
+        setValueMatrix(values, numColumns);
+
+        setInterval(Qt::XAxis, QwtInterval(-0.5, 3.5, QwtInterval::ExcludeMaximum));
+        setInterval(Qt::YAxis, QwtInterval(-0.5, 3.5, QwtInterval::ExcludeMaximum));
+        setInterval(Qt::ZAxis, QwtInterval(1.0, 6.0));
+    }
+};
+
+class SpectroGui: public QwtPlot, private QwtPlotSpectrogram, private QwtMatrixRasterData {
     Q_OBJECT
 public:
     SpectroGui(QWidget *parent = nullptr);
@@ -62,22 +90,27 @@ public:
 
     QwtPlotSpectrogram *gkSpectrogram;
     QwtMatrixRasterData *gkMatrixRaster;
+    QwtPlotCanvas *gkCanvas;
     QwtPlotZoomer *zoomer;
     QwtScaleWidget *axis_y_right;
     QwtInterval *z_interval;
 
+    bool time_already_set;
+
     void showContour(const int &toggled);
-    void showSpectrogram(const bool &toggled);
     void setColorMap(const Spectrograph::GkColorMap &map);
     void setAlpha(const int &alpha);
     void setTheme(const QColor &colour);
 
-    void setYAxisRange(const double &y_min, const double &y_max);
     void setXAxisRange(const double &x_min, const double &x_max);
+    void setYAxisRange(const double &y_min, const double &y_max);
     void setZAxisRange(const double &z_min, const double &z_max);
+    void setTimeFlow(const std::chrono::system_clock::time_point &time_start,
+                     const std::chrono::system_clock::time_point &time_curr);
 
     virtual void setMatrixData(const std::vector<Spectrograph::RawFFT> &values, const int &hanning_window_size,
                                const size_t &buffer_size);
+    virtual void setResampleMode(int mode);
 
     virtual double value(double x, double y) const override {
         const double c = 0.842;
@@ -88,15 +121,26 @@ public:
         return (1.0 / (v1 * v1 + v2 * v2));
     }
 
+public slots:
+    void showSpectrogram(const bool &toggled);
+
 private slots:
     void updateSpectro();
+    void modifyAxisInterval();
+    void manageTimeFlow();
 
 signals:
     void refresh();
 
 private:
-    int gkMapType;
+    GekkoFyre::Spectrograph::GkColorMap gkMapType;
     int gkAlpha;
+
+    //
+    // Threads
+    //
+    boost::thread manage_time_flow;
+    boost::thread modify_axis_interval;
 
     double x_min_;
     double x_max_;
@@ -104,8 +148,6 @@ private:
     double y_max_;
     double z_min_;
     double z_max_;
-
-    bool z_axis_set;
 
     template<class in_it, class out_it>
     out_it copy_every_nth(in_it b, in_it e, out_it r, size_t n) {
@@ -117,10 +159,10 @@ private:
     }
 };
 
-class MyZoomer: public QwtPlotZoomer {
+class GkZoomer: public QwtPlotZoomer {
 
 public:
-    MyZoomer(QWidget *canvas): QwtPlotZoomer(canvas) {
+    GkZoomer(QWidget *canvas): QwtPlotZoomer(canvas) {
         setTrackerMode(AlwaysOn);
     }
 
@@ -138,9 +180,11 @@ class LinearColorMapRGB: public QwtLinearColorMap {
 
 public:
     LinearColorMapRGB(): QwtLinearColorMap(Qt::darkCyan, Qt::red, QwtColorMap::RGB) {
-        addColorStop(0.1, Qt::cyan);
-        addColorStop(0.6, Qt::green);
-        addColorStop(0.95, Qt::yellow);
+        addColorStop(0.2, Qt::blue);
+        addColorStop(0.4, Qt::cyan);
+        addColorStop(0.6, Qt::yellow);
+        addColorStop(0.8, Qt::red);
+        addColorStop(1.0, Qt::darkRed);
     }
 };
 
@@ -215,5 +259,4 @@ public:
         setColor(QColor("SteelBlue"));
     }
 };
-
 };

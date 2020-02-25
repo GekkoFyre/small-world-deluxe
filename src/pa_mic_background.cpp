@@ -204,6 +204,7 @@ void paMicProcBackground::spectrographCallback(PaAudioBuf *audio_buf, portaudio:
 
                 if (!waterfall_fft_data.empty()) {
                     emit updateWaterfall(waterfall_fft_data, hanning_window_size, audio_buffer_size);
+                    // std::this_thread::sleep_for(std::chrono::duration(std::chrono::milliseconds(AUDIO_SPECTRO_UPDATE_MILLISECS)));
                 }
             }
         }
