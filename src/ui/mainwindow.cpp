@@ -208,7 +208,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the Waterfall / Spectrograph
         //
-        gkSpectroGui = new GekkoFyre::SpectroGui(this);
+        gkSpectroGui = new GekkoFyre::SpectroGui(gkStringFuncs, this);
         ui->verticalLayout_11->addWidget(gkSpectroGui);
         gkSpectroGui->setEnabled(true);
 
@@ -265,7 +265,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         connect(timer, SIGNAL(timeout()), this, SLOT(infoBar()));
         timer->start(1000);
 
-        const size_t spectro_window_size = gkSpectroGui->gkSpectrogram->xAxis();
+        const size_t spectro_window_size = gkSpectroGui->window()->size().rwidth();
         const size_t audio_buffer_size = ((pref_input_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS) *
                                           GkDb->convertAudioChannelsInt(pref_input_device.sel_channels));
         pref_input_audio_buf = new GekkoFyre::PaAudioBuf(audio_buffer_size, this);

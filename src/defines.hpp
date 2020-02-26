@@ -98,6 +98,7 @@ namespace GekkoFyre {
 #define GK_EXIT_TIMEOUT (6)                             // The amount of time, in seconds, to leave 'Small World Deluxe' hanging upon exit before terminating forcefully!
 #define MIN_MAIN_WINDOW_WIDTH (1024)
 #define MIN_MAIN_WINDOW_HEIGHT (768)
+#define MAX_TOLERATE_WINDOW_WIDTH (16384)               // This value is mostly for error correction purposes.
 
 #define AUDIO_OUTPUT_MAX_VOL_SIMPLE (100)               // The maximum volume in simple units (i.e. non decible units)
 #define AUDIO_OUTPUT_CHANNEL_MAX_LIMIT (1024)
@@ -114,12 +115,14 @@ namespace GekkoFyre {
 #define AUDIO_VU_METER_UPDATE_MILLISECS (500)           // How often the volume meter should update, in milliseconds.
 #define AUDIO_SPECTRO_UPDATE_MILLISECS (1000)           // How often the spectrograph / waterfall should update, in milliseconds.
 
+#define CPP_MULTITHREADING_REFRESH_CYCLE (250)          // The amount of time, in milliseconds, to allow for STFT `std::future` calculations to refresh the waiting while-loop.
+#define CPP_MULTITHREADING_TIMEOUT (15000)              // The amount of time, in milliseconds, to allow for STFT calculations to continue before interrupting (i.e. to 'timeout').
 //
 // Mostly regarding FFTW functions
 //
-#define AUDIO_SIGNAL_LENGTH (32768)                      // For audio applications, '2048' seems to be a good length.
-#define FFTW_HOP_SIZE (32)                               // Choose a smaller hop-size if you want a higher resolution! Needs to be a power of two.
-#define SPECTRO_BANDWIDTH_SIZE (2048)                    // The size and bandwidth of the spectrograph / waterfall window, in hertz.
+#define AUDIO_SIGNAL_LENGTH (2048)                      // For audio applications, '2048' seems to be a good length.
+#define FFTW_HOP_SIZE (1024)                              // Choose a smaller hop-size if you want a higher resolution! Needs to be a power of two.
+#define SPECTRO_BANDWIDTH_SIZE (2048)                   // The size and bandwidth of the spectrograph / waterfall window, in hertz.
 
 #ifndef M_PI
 #define M_PI (3.14159265358979323846) /* pi */

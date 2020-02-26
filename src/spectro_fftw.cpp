@@ -81,12 +81,12 @@ std::vector<Spectrograph::RawFFT> SpectroFFTW::stft(std::vector<double> *signal,
             int i = 0;
             fftw_complex *data, *fft_result, *ifft_result;
 
-            const size_t no_of_windows = ((audio_buffer_size - (window_size - feed_rate)) / feed_rate);
-            int fft_order = 0;
+            // const size_t no_of_windows = ((audio_buffer_size - (window_size - feed_rate)) / feed_rate);
+            // int fft_order = 0;
 
             // Calculate FFT length => next power of 2
-            fft_order = std::ceil(std::logf(window_size) / std::logf(2.0f));
-            const int fft_len = 1 << fft_order;
+            // fft_order = std::ceil(std::logf(window_size) / std::logf(2.0f));
+            // const int fft_len = 1 << fft_order;
 
             data = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * window_size);
             fft_result = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * window_size);
@@ -140,7 +140,7 @@ std::vector<Spectrograph::RawFFT> SpectroFFTW::stft(std::vector<double> *signal,
                 for (i = 0; i < ((window_size / 2) + 1); i++) {
                     raw_fft.chunk_forward_0[i][0] = fft_result[i][0];
                     raw_fft.chunk_forward_1[i][1] = fft_result[i][1];
-                    raw_fft.power = powerSpectrum(raw_fft.chunk_forward_0, fft_len);
+                    // raw_fft.power = powerSpectrum(raw_fft.chunk_forward_0, fft_len);
                     raw_fft_vec.push_back(raw_fft);
                 }
 

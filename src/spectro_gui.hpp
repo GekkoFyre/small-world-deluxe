@@ -38,6 +38,7 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include "src/string_funcs_windows.hpp"
 #include <qwt.h>
 #include <qwt_plot.h>
 #include <qwt_plot_spectrogram.h>
@@ -85,7 +86,7 @@ public:
 class SpectroGui: public QwtPlot, private QwtPlotSpectrogram, public QwtMatrixRasterData {
     Q_OBJECT
 public:
-    SpectroGui(QWidget *parent = nullptr);
+    SpectroGui(std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs, QWidget *parent = nullptr);
     ~SpectroGui() override;
 
     QwtPlotSpectrogram *gkSpectrogram;
@@ -95,6 +96,9 @@ public:
     void setTheme(const QColor &colour);
     void applyData(const std::vector<Spectrograph::RawFFT> &values, const int &hanning_window_size,
                    const size_t &buffer_size);
+    void preparePlot();
+    void resetAxisRanges();
+    int calcWindowWidth();
 
     virtual void setResampleMode(int mode);
     virtual double value(double x, double y) const override {
@@ -119,6 +123,7 @@ private:
     QwtInterval x_interval;
     QwtInterval y_interval;
 
+    std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     GekkoFyre::Spectrograph::GkColorMap gkMapType;
     int gkAlpha;
     bool time_already_set;
