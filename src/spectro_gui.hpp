@@ -50,17 +50,16 @@
 #include <boost/thread.hpp>
 #include <mutex>
 #include <vector>
-#include <chrono>
 #include <QObject>
 #include <QWidget>
 #include <QVector>
 
 namespace GekkoFyre {
 
-class RasterDataTestFunc: public QwtMatrixRasterData {
+class SpectroRasterData: public QwtMatrixRasterData {
 
 public:
-    RasterDataTestFunc() {
+    SpectroRasterData() {
         const double matrix[] = {
             1, 2, 4, 1,
             6, 3, 5, 2,
@@ -82,36 +81,22 @@ public:
     }
 };
 
-class SpectroGui: public QwtPlot, private QwtPlotSpectrogram, private QwtMatrixRasterData {
+class SpectroGui: public QwtPlot, private QwtPlotSpectrogram, public QwtMatrixRasterData {
     Q_OBJECT
 public:
     SpectroGui(QWidget *parent = nullptr);
     ~SpectroGui() override;
 
     QwtPlotSpectrogram *gkSpectrogram;
-    QwtMatrixRasterData *gkMatrixRaster;
-    QwtPlotCanvas *gkCanvas;
-    QwtPlotZoomer *zoomer;
-    QwtScaleWidget *axis_y_right;
-    QwtInterval *z_interval;
-
-    bool time_already_set;
 
     void showContour(const int &toggled);
     void setColorMap(const Spectrograph::GkColorMap &map);
     void setAlpha(const int &alpha);
     void setTheme(const QColor &colour);
+    void applyData(const std::vector<Spectrograph::RawFFT> &values, const int &hanning_window_size,
+                   const size_t &buffer_size);
 
-    void setXAxisRange(const double &x_min, const double &x_max);
-    void setYAxisRange(const double &y_min, const double &y_max);
-    void setZAxisRange(const double &z_min, const double &z_max);
-    void setTimeFlow(const std::chrono::system_clock::time_point &time_start,
-                     const std::chrono::system_clock::time_point &time_curr);
-
-    virtual void setMatrixData(const std::vector<Spectrograph::RawFFT> &values, const int &hanning_window_size,
-                               const size_t &buffer_size);
     virtual void setResampleMode(int mode);
-
     virtual double value(double x, double y) const override {
         const double c = 0.842;
 
@@ -126,21 +111,24 @@ public slots:
 
 private slots:
     void updateSpectro();
-    void modifyAxisInterval();
-    void manageTimeFlow();
 
 signals:
     void refresh();
 
 private:
+    QwtMatrixRasterData *gkMatrixRaster;
+    QwtPlotZoomer *zoomer;
+    QwtInterval z_interval;
+
     GekkoFyre::Spectrograph::GkColorMap gkMapType;
     int gkAlpha;
+    bool time_already_set;
 
     //
     // Threads
     //
-    boost::thread manage_time_flow;
-    boost::thread modify_axis_interval;
+    // boost::thread set_time_flow;
+    // boost::thread modify_axis_interval;
 
     double x_min_;
     double x_max_;
@@ -179,12 +167,24 @@ public:
 class LinearColorMapRGB: public QwtLinearColorMap {
 
 public:
-    LinearColorMapRGB(): QwtLinearColorMap(Qt::darkCyan, Qt::red, QwtColorMap::RGB) {
-        addColorStop(0.2, Qt::blue);
-        addColorStop(0.4, Qt::cyan);
-        addColorStop(0.6, Qt::yellow);
-        addColorStop(0.8, Qt::red);
-        addColorStop(1.0, Qt::darkRed);
+    LinearColorMapRGB(const QwtInterval &rgb_values): QwtLinearColorMap(Qt::darkCyan, Qt::red, QwtColorMap::RGB) {
+        addColorStop((rgb_values.maxValue() * 1.00), Qt::blue);
+        addColorStop((rgb_values.maxValue() * 1.25), Qt::cyan);
+        addColorStop((rgb_values.maxValue() * 1.50), Qt::yellow);
+        addColorStop((rgb_values.maxValue() * 1.75), Qt::red);
+        addColorStop((rgb_values.maxValue() * 2.00), Qt::darkRed);
+    }
+};
+
+class LinearColorMapIndexed: public QwtLinearColorMap {
+
+public:
+    LinearColorMapIndexed(const QwtInterval &rgb_values): QwtLinearColorMap(Qt::darkCyan, Qt::red, QwtColorMap::Indexed) {
+        addColorStop((rgb_values.maxValue() * 1.00), Qt::blue);
+        addColorStop((rgb_values.maxValue() * 1.25), Qt::cyan);
+        addColorStop((rgb_values.maxValue() * 1.50), Qt::yellow);
+        addColorStop((rgb_values.maxValue() * 1.75), Qt::red);
+        addColorStop((rgb_values.maxValue() * 2.00), Qt::darkRed);
     }
 };
 

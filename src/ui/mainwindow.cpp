@@ -40,8 +40,6 @@
 #include "aboutdialog.hpp"
 #include "spectrodialog.hpp"
 #include <portaudiocpp/PortAudioCpp.hxx>
-#include <qwt_color_map.h>
-#include <qwt_scale_engine.h>
 #include <boost/exception/all.hpp>
 #include <boost/chrono/chrono.hpp>
 #include <string>
@@ -212,9 +210,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         gkSpectroGui = new GekkoFyre::SpectroGui(this);
         ui->verticalLayout_11->addWidget(gkSpectroGui);
-        gkSpectroGui->setColorMap(Spectrograph::GkColorMap::HueMap);
-        // gkSpectroGui->setAxisScaleEngine(QwtPlot::xBottom, new QwtLogScaleEngine());
-        gkSpectroGui->setAxisAutoScale(QwtPlot::yLeft);
         gkSpectroGui->setEnabled(true);
 
         //
@@ -924,7 +919,7 @@ void MainWindow::updateSpectroData(const std::vector<GekkoFyre::Spectrograph::Ra
 {
     try {
         if (!data.empty()) {
-            gkSpectroGui->setMatrixData(data, hanning_window_size, buffer_size);
+            gkSpectroGui->applyData(data, hanning_window_size, buffer_size);
 
             return;
         }
