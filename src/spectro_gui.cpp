@@ -65,6 +65,7 @@ SpectroGui::SpectroGui(QWidget *parent) : gkAlpha(255)
     std::mutex spectro_main_mtx;
     std::lock_guard<std::mutex> lck_guard(spectro_main_mtx);
 
+    gkMatrixRaster = new QwtMatrixRasterData();
     gkSpectrogram = new QwtPlotSpectrogram();
     gkSpectrogram->setRenderThreadCount(0); // Use system specific thread count
     gkSpectrogram->setCachePolicy(QwtPlotRasterItem::PaintCache);
@@ -74,9 +75,14 @@ SpectroGui::SpectroGui(QWidget *parent) : gkAlpha(255)
         contourLevels += level;
     }
 
+    x_interval.setMinValue(-0.5);
+    x_interval.setMaxValue(3.5);
+    y_interval.setMinValue(-0.5);
+    y_interval.setMaxValue(3.5);
+
     gkSpectrogram->setContourLevels(contourLevels);
 
-    gkSpectrogram->setData(new SpectroRasterData());
+    gkSpectrogram->setData(gkMatrixRaster);
     gkSpectrogram->attach(this);
 
     const QwtInterval zInterval = gkSpectrogram->data()->interval(Qt::ZAxis);
@@ -90,8 +96,6 @@ SpectroGui::SpectroGui(QWidget *parent) : gkAlpha(255)
     enableAxis(QwtPlot::yRight);
 
     plotLayout()->setAlignCanvasToScales(true);
-
-    setColorMap(Spectrograph::GkColorMap::RGBMap);
 
     //
     // Instructions!
@@ -114,11 +118,23 @@ SpectroGui::SpectroGui(QWidget *parent) : gkAlpha(255)
     zoomer->setRubberBandPen(c);
     zoomer->setTrackerPen(c);
 
-    emit refresh();
+    QTimer *calc_interval_timer = new QTimer(this);
+    QObject::connect(calc_interval_timer, SIGNAL(timeout()), this, SLOT(calcInterval()));
+    calc_interval_timer->start(AUDIO_SPECTRO_UPDATE_MILLISECS);
+
+    calc_interval_thread = boost::thread(&SpectroGui::calcInterval, this);
+    calc_interval_thread.detach();
+
+    gkSpectrogram->invalidateCache();
+    replot();
 }
 
 SpectroGui::~SpectroGui()
-{}
+{
+    if (calc_interval_thread.joinable()) {
+        calc_interval_thread.join();
+    }
+}
 
 void SpectroGui::showContour(const int &toggled)
 {
@@ -126,7 +142,9 @@ void SpectroGui::showContour(const int &toggled)
     std::lock_guard<std::mutex> lck_guard(spectro_contour_mtx);
 
     gkSpectrogram->setDisplayMode(QwtPlotSpectrogram::ContourMode, toggled);
-    emit refresh();
+
+    gkSpectrogram->invalidateCache();
+    replot();
 
     return;
 }
@@ -138,7 +156,9 @@ void SpectroGui::showSpectrogram(const bool &toggled)
 
     gkSpectrogram->setDisplayMode(QwtPlotSpectrogram::ImageMode, toggled);
     gkSpectrogram->setDefaultContourPen(toggled ? QPen(Qt::black, 0) : QPen(Qt::NoPen));
-    emit refresh();
+
+    gkSpectrogram->invalidateCache();
+    replot();
 
     return;
 }
@@ -183,7 +203,8 @@ void SpectroGui::setColorMap(const Spectrograph::GkColorMap &map)
     }
     gkSpectrogram->setAlpha( alpha );
 
-    emit refresh();
+    gkSpectrogram->invalidateCache();
+    replot();
 
     return;
 }
@@ -203,7 +224,8 @@ void SpectroGui::setAlpha(const int &alpha)
     if (gkMapType != GkColorMap::AlphaMap) {
         gkSpectrogram->setAlpha(alpha);
 
-        emit refresh();
+        gkSpectrogram->invalidateCache();
+        replot();
     }
 
     return;
@@ -248,17 +270,12 @@ void SpectroGui::applyData(const std::vector<RawFFT> &values, const int &hanning
     std::vector<short> x_values_modified(x_values.size() / 2);
     copy_every_nth(x_values.begin(), x_values.end(), x_values_modified.begin(), 2);
 
-    // const size_t numColumns = x_values_modified.size();
-    // const size_t rows = (buffer_size / numColumns);
     const size_t y_axis_size = SPECTRO_BANDWIDTH_SIZE; // The amount of bandwidth we wish to display on the spectrograph / waterfall
+    double min_x_val = *std::min_element(std::begin(x_values_modified), std::end(x_values_modified));
+    double max_x_val = *std::max_element(std::begin(x_values_modified), std::end(x_values_modified));
 
-    //
-    // Update the intervals for both the x-axis and z-axis. The y-axis is instead handled
-    // by the functions, SpectroGui::manageTimeFlow() and SpectroGui::setTimeFlow().
-    //
-    // setXAxisRange(0, SPECTRO_BANDWIDTH_SIZE);
-    // setYAxisRange(-1.5, (maxZValue / 2));
-    // setZAxisRange(-3, maxZValue);
+    x_interval.setMinValue(min_x_val / 2);
+    x_interval.setMaxValue(max_x_val / 2);
 
     size_t bandwidth_counter = 0;
     static size_t y_axis_incr = 0; // Calculates how many columns we are filling up within the spectrograph / waterfall
@@ -288,7 +305,8 @@ void SpectroGui::applyData(const std::vector<RawFFT> &values, const int &hanning
     x_values_modified.shrink_to_fit();
     setColorMap(gkMapType);
 
-    emit refresh();
+    gkSpectrogram->invalidateCache();
+    replot();
 }
 
 void SpectroGui::setResampleMode(int mode)
@@ -296,13 +314,17 @@ void SpectroGui::setResampleMode(int mode)
     SpectroRasterData *rasterData = static_cast<SpectroRasterData *>(gkSpectrogram->data());
     rasterData->setResampleMode(static_cast<QwtMatrixRasterData::ResampleMode>(mode));
 
-    emit refresh();
+    gkSpectrogram->invalidateCache();
+    replot();
 }
 
-void SpectroGui::updateSpectro()
+void SpectroGui::calcInterval()
 {
+    setInterval(Qt::XAxis, QwtInterval(x_interval.minValue(), x_interval.maxValue(), QwtInterval::ExcludeMaximum));
+    setInterval(Qt::YAxis, QwtInterval(y_interval.minValue(), y_interval.maxValue(), QwtInterval::ExcludeMaximum));
+    setInterval(Qt::ZAxis, QwtInterval(z_interval.minValue(), z_interval.maxValue()));
+
     gkSpectrogram->invalidateCache();
-    // updateAxes();
     replot();
 
     return;

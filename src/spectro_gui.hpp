@@ -110,15 +110,14 @@ public slots:
     void showSpectrogram(const bool &toggled);
 
 private slots:
-    void updateSpectro();
-
-signals:
-    void refresh();
+    void calcInterval();
 
 private:
     QwtMatrixRasterData *gkMatrixRaster;
     QwtPlotZoomer *zoomer;
     QwtInterval z_interval;
+    QwtInterval x_interval;
+    QwtInterval y_interval;
 
     GekkoFyre::Spectrograph::GkColorMap gkMapType;
     int gkAlpha;
@@ -127,15 +126,7 @@ private:
     //
     // Threads
     //
-    // boost::thread set_time_flow;
-    // boost::thread modify_axis_interval;
-
-    double x_min_;
-    double x_max_;
-    double y_min_;
-    double y_max_;
-    double z_min_;
-    double z_max_;
+    boost::thread calc_interval_thread;
 
     template<class in_it, class out_it>
     out_it copy_every_nth(in_it b, in_it e, out_it r, size_t n) {
@@ -180,9 +171,9 @@ class LinearColorMapIndexed: public QwtLinearColorMap {
 
 public:
     LinearColorMapIndexed(const QwtInterval &rgb_values): QwtLinearColorMap(Qt::darkCyan, Qt::red, QwtColorMap::Indexed) {
-        addColorStop((rgb_values.maxValue() * 1.00), Qt::blue);
-        addColorStop((rgb_values.maxValue() * 1.25), Qt::cyan);
-        addColorStop((rgb_values.maxValue() * 1.50), Qt::yellow);
+        addColorStop((rgb_values.maxValue() * 1.00), Qt::cyan);
+        addColorStop((rgb_values.maxValue() * 1.25), Qt::yellow);
+        addColorStop((rgb_values.maxValue() * 1.50), Qt::darkYellow);
         addColorStop((rgb_values.maxValue() * 1.75), Qt::red);
         addColorStop((rgb_values.maxValue() * 2.00), Qt::darkRed);
     }
