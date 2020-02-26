@@ -75,11 +75,6 @@ SpectroGui::SpectroGui(QWidget *parent) : gkAlpha(255)
         contourLevels += level;
     }
 
-    x_interval.setMinValue(-0.5);
-    x_interval.setMaxValue(3.5);
-    y_interval.setMinValue(-0.5);
-    y_interval.setMaxValue(3.5);
-
     gkSpectrogram->setContourLevels(contourLevels);
 
     gkSpectrogram->setData(gkMatrixRaster);
@@ -96,6 +91,14 @@ SpectroGui::SpectroGui(QWidget *parent) : gkAlpha(255)
     enableAxis(QwtPlot::yRight);
 
     plotLayout()->setAlignCanvasToScales(true);
+
+    //
+    // Set the type of colour-map used!
+    //
+    QwtScaleWidget *axis = axisWidget(QwtPlot::yRight);
+    z_interval = gkSpectrogram->data()->interval(Qt::ZAxis);
+    gkSpectrogram->setColorMap(new LinearColorMapRGB(z_interval));
+    axis->setColorMap(z_interval, new LinearColorMapRGB(z_interval));
 
     //
     // Instructions!
@@ -124,6 +127,11 @@ SpectroGui::SpectroGui(QWidget *parent) : gkAlpha(255)
 
     calc_interval_thread = boost::thread(&SpectroGui::calcInterval, this);
     calc_interval_thread.detach();
+
+    x_interval.setMinValue(-0.5);
+    x_interval.setMaxValue(3.5);
+    y_interval.setMinValue(-0.5);
+    y_interval.setMaxValue(3.5);
 
     gkSpectrogram->invalidateCache();
     replot();
@@ -156,52 +164,6 @@ void SpectroGui::showSpectrogram(const bool &toggled)
 
     gkSpectrogram->setDisplayMode(QwtPlotSpectrogram::ImageMode, toggled);
     gkSpectrogram->setDefaultContourPen(toggled ? QPen(Qt::black, 0) : QPen(Qt::NoPen));
-
-    gkSpectrogram->invalidateCache();
-    replot();
-
-    return;
-}
-
-void SpectroGui::setColorMap(const Spectrograph::GkColorMap &map)
-{
-    std::mutex spectro_color_mtx;
-    std::lock_guard<std::mutex> lck_guard(spectro_color_mtx);
-
-    QwtScaleWidget *axis = axisWidget(QwtPlot::yRight);
-    z_interval = gkSpectrogram->data()->interval(Qt::ZAxis);
-
-    int alpha = gkAlpha;
-    switch(map)
-    {
-        case Spectrograph::GkColorMap::HueMap:
-            {
-                gkSpectrogram->setColorMap(new HueColorMap());
-                axis->setColorMap(z_interval, new HueColorMap());
-                break;
-            }
-        case Spectrograph::GkColorMap::AlphaMap:
-            {
-                alpha = 255;
-                gkSpectrogram->setColorMap(new AlphaColorMap());
-                axis->setColorMap(z_interval, new AlphaColorMap());
-                break;
-            }
-        case Spectrograph::GkColorMap::IndexMap:
-            {
-                gkSpectrogram->setColorMap(new LinearColorMapIndexed(z_interval));
-                axis->setColorMap(z_interval, new LinearColorMapIndexed(z_interval));
-                break;
-            }
-        case Spectrograph::GkColorMap::RGBMap:
-        default:
-            {
-                gkSpectrogram->setColorMap(new LinearColorMapRGB(z_interval));
-                axis->setColorMap(z_interval, new LinearColorMapRGB(z_interval));
-                break;
-            }
-    }
-    gkSpectrogram->setAlpha( alpha );
 
     gkSpectrogram->invalidateCache();
     replot();
@@ -274,8 +236,8 @@ void SpectroGui::applyData(const std::vector<RawFFT> &values, const int &hanning
     double min_x_val = *std::min_element(std::begin(x_values_modified), std::end(x_values_modified));
     double max_x_val = *std::max_element(std::begin(x_values_modified), std::end(x_values_modified));
 
-    x_interval.setMinValue(min_x_val / 2);
-    x_interval.setMaxValue(max_x_val / 2);
+    x_interval.setMinValue(std::abs(min_x_val / 2));
+    x_interval.setMaxValue(std::abs(max_x_val / 2));
 
     size_t bandwidth_counter = 0;
     static size_t y_axis_incr = 0; // Calculates how many columns we are filling up within the spectrograph / waterfall
@@ -295,6 +257,16 @@ void SpectroGui::applyData(const std::vector<RawFFT> &values, const int &hanning
         }
     }
 
+    //
+    // Black magic is abound in these parts...
+    //
+    x_interval.setMaxValue(y_axis_incr);
+    y_interval.setMaxValue(y_axis_incr);
+    z_interval.setMaxValue((y_axis_incr * y_axis_incr) * (y_axis_incr * y_axis_incr));
+    x_interval.setMinValue(0);
+    y_interval.setMinValue(0);
+    z_interval.setMinValue(0);
+
     gkMatrixRaster->setValueMatrix(conv_x_values, y_axis_incr);
 
     conv_x_values.clear();
@@ -303,7 +275,6 @@ void SpectroGui::applyData(const std::vector<RawFFT> &values, const int &hanning
     x_values.shrink_to_fit();
     x_values_modified.clear();
     x_values_modified.shrink_to_fit();
-    setColorMap(gkMapType);
 
     gkSpectrogram->invalidateCache();
     replot();
@@ -320,9 +291,9 @@ void SpectroGui::setResampleMode(int mode)
 
 void SpectroGui::calcInterval()
 {
-    setInterval(Qt::XAxis, QwtInterval(x_interval.minValue(), x_interval.maxValue(), QwtInterval::ExcludeMaximum));
-    setInterval(Qt::YAxis, QwtInterval(y_interval.minValue(), y_interval.maxValue(), QwtInterval::ExcludeMaximum));
-    setInterval(Qt::ZAxis, QwtInterval(z_interval.minValue(), z_interval.maxValue()));
+    gkMatrixRaster->setInterval(Qt::XAxis, QwtInterval(x_interval.minValue(), x_interval.maxValue(), QwtInterval::ExcludeMaximum));
+    gkMatrixRaster->setInterval(Qt::YAxis, QwtInterval(y_interval.minValue(), y_interval.maxValue(), QwtInterval::ExcludeMaximum));
+    gkMatrixRaster->setInterval(Qt::ZAxis, QwtInterval(z_interval.minValue(), z_interval.maxValue()));
 
     gkSpectrogram->invalidateCache();
     replot();

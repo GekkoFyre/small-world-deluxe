@@ -84,26 +84,6 @@ void SpectroDialog::on_pushButton_activate_spectro_toggled(bool checked)
     return;
 }
 
-void SpectroDialog::on_comboBox_colour_map_currentIndexChanged(int index)
-{
-    switch (index) {
-    case 0:
-        gkSpectroGui->setColorMap(Spectrograph::GkColorMap::HueMap);
-        return;
-    case 1:
-        gkSpectroGui->setColorMap(Spectrograph::GkColorMap::RGBMap);
-        return;
-    case 2:
-        gkSpectroGui->setColorMap(Spectrograph::GkColorMap::AlphaMap);
-        return;
-    default:
-        gkSpectroGui->setColorMap(Spectrograph::GkColorMap::HueMap);
-        return;
-    }
-
-    return;
-}
-
 void SpectroDialog::on_comboBox_fft_size_currentIndexChanged(int index)
 {
     return;

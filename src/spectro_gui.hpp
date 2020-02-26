@@ -50,6 +50,7 @@
 #include <boost/thread.hpp>
 #include <mutex>
 #include <vector>
+#include <cstdlib>
 #include <QObject>
 #include <QWidget>
 #include <QVector>
@@ -90,7 +91,6 @@ public:
     QwtPlotSpectrogram *gkSpectrogram;
 
     void showContour(const int &toggled);
-    void setColorMap(const Spectrograph::GkColorMap &map);
     void setAlpha(const int &alpha);
     void setTheme(const QColor &colour);
     void applyData(const std::vector<Spectrograph::RawFFT> &values, const int &hanning_window_size,

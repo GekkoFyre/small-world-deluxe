@@ -61,7 +61,6 @@ private slots:
     void on_pushButton_exit_clicked();
     void on_pushButton_contour_toggled(bool checked);
     void on_pushButton_activate_spectro_toggled(bool checked);
-    void on_comboBox_colour_map_currentIndexChanged(int index);
     void on_comboBox_fft_size_currentIndexChanged(int index);
     void on_verticalSlider_control_alpha_valueChanged(int value);
 
