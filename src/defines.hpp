@@ -43,6 +43,7 @@
 #include <portaudiocpp/Device.hxx>
 #include <portaudiocpp/AsioDeviceAdapter.hxx>
 #include <boost/logic/tribool.hpp>
+#include <qwt_interval.h>
 #include <vector>
 #include <string>
 #include <locale>
@@ -50,6 +51,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <QString>
+#include <QVector>
 
 #ifdef _WIN32
 #include <winsdkver.h>
@@ -121,7 +123,7 @@ namespace GekkoFyre {
 // Mostly regarding FFTW functions
 //
 #define AUDIO_SIGNAL_LENGTH (2048)                      // For audio applications, '2048' seems to be a good length.
-#define FFTW_HOP_SIZE (1024)                              // Choose a smaller hop-size if you want a higher resolution! Needs to be a power of two.
+#define FFTW_HOP_SIZE (8192)                            // Choose a smaller hop-size if you want a higher resolution! Needs to be a power of two.
 #define SPECTRO_BANDWIDTH_SIZE (2048)                   // The size and bandwidth of the spectrograph / waterfall window, in hertz.
 
 #ifndef M_PI
@@ -348,6 +350,23 @@ namespace Spectrograph {
     struct Graphing {
         RawFFT fft;
         Window axis;
+    };
+
+    //
+    // Used for the raster/matrix data calculations within the spectrograph/waterfall of QMainWindow!
+    //
+    struct MatrixData {
+        QVector<double> x_axis_calculations;
+        size_t y_axis_incr;
+        QwtInterval z_interval;
+        QwtInterval x_interval;
+        QwtInterval y_interval;
+        double min_x_axis_val;
+        double max_x_axis_val;
+        size_t num_cols;
+        size_t num_cols_double_pwr;
+        size_t y_axis_size;
+        size_t x_axis_size;
     };
 }
 };

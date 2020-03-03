@@ -37,6 +37,8 @@
 
 #include "spectro_gui.hpp"
 #include <boost/exception/all.hpp>
+#include <boost/asio.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 #include <qwt_scale_widget.h>
 #include <qwt_scale_draw.h>
 #include <qwt_plot_panner.h>
@@ -47,6 +49,7 @@
 #include <qwt_date_scale_draw.h>
 #include <cmath>
 #include <algorithm>
+#include <utility>
 #include <QList>
 #include <QColormap>
 #include <QTimer>
@@ -90,6 +93,8 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QWidget *parent
         gkSpectrogram->attach(this);
 
         const QwtInterval zInterval = gkSpectrogram->data()->interval(Qt::ZAxis);
+        QObject::connect(this, SIGNAL(sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const int &, const size_t &)),
+                         this, SLOT(applyData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const int &, const size_t &)));
 
         // A color bar on the right axis
         QwtScaleWidget *rightAxis = axisWidget( QwtPlot::yRight );
@@ -216,19 +221,31 @@ void SpectroGui::setTheme(const QColor &colour)
     zoomer->setTrackerPen(colour);
 }
 
-/**
- * @brief SpectroGui::applyData Updates the spectrograph / waterfall with the relevant data samples
- * as required, inserting the calculated FFT results into a value matrix.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param values The actual, STFT calculations themselves.
- * @param hanning_window_size The size of the calculated hanning window, required for calculating the
- * requisite FFT samples.
- * @param buffer_size The size of the audio buffer itself.
- */
-void SpectroGui::applyData(const std::vector<RawFFT> &values, const int &hanning_window_size, const size_t &buffer_size)
+MatrixData SpectroGui::calcMatrixData(const std::vector<RawFFT> &values, const int &hanning_window_size,
+                                      const size_t &buffer_size)
 {
-    std::mutex spectro_matrix_data_mtx;
-    std::lock_guard<std::mutex> lck_guard(spectro_matrix_data_mtx);
+    std::mutex spectro_calc_matrix_data_mtx;
+    std::lock_guard<std::mutex> lck_guard(spectro_calc_matrix_data_mtx);
+
+    //
+    // Set the default values, so there should hopefully be no errors for anything being empty/nullptr!
+    //
+    QwtInterval default_data;
+    default_data.setMaxValue(0);
+    default_data.setMinValue(0);
+
+    MatrixData matrix_ret_data;
+    matrix_ret_data.x_axis_calculations = QVector<double>();
+    matrix_ret_data.y_axis_incr = 0;
+    matrix_ret_data.num_cols = 0;
+    matrix_ret_data.num_cols_double_pwr = 0;
+    matrix_ret_data.min_x_axis_val = 0;
+    matrix_ret_data.max_x_axis_val = 0;
+    matrix_ret_data.y_axis_size = 0;
+    matrix_ret_data.x_axis_size = 0;
+    matrix_ret_data.z_interval = default_data;
+    matrix_ret_data.y_interval = default_data;
+    matrix_ret_data.x_interval = default_data;
 
     try {
         std::vector<double> x_values;
@@ -246,12 +263,9 @@ void SpectroGui::applyData(const std::vector<RawFFT> &values, const int &hanning
         std::vector<short> x_values_modified(x_values.size() / 2);
         copy_every_nth(x_values.begin(), x_values.end(), x_values_modified.begin(), 2);
 
-        const size_t y_axis_size = SPECTRO_BANDWIDTH_SIZE; // The amount of bandwidth we wish to display on the spectrograph / waterfall
-        double min_x_val = *std::min_element(std::begin(x_values_modified), std::end(x_values_modified));
-        double max_x_val = *std::max_element(std::begin(x_values_modified), std::end(x_values_modified));
-
-        x_interval.setMinValue(std::abs(min_x_val / 2));
-        x_interval.setMaxValue(std::abs(max_x_val / 2));
+        matrix_ret_data.y_axis_size = SPECTRO_BANDWIDTH_SIZE; // The amount of bandwidth we wish to display on the spectrograph / waterfall
+        matrix_ret_data.min_x_axis_val = *std::min_element(std::begin(x_values_modified), std::end(x_values_modified));
+        matrix_ret_data.max_x_axis_val = *std::max_element(std::begin(x_values_modified), std::end(x_values_modified));
 
         size_t bandwidth_counter = 0;
         static size_t y_axis_incr = 0; // Calculates how many columns we are filling up within the spectrograph / waterfall
@@ -265,13 +279,14 @@ void SpectroGui::applyData(const std::vector<RawFFT> &values, const int &hanning
             // Every time we fill up a line to the amount of bandwidth we wish to
             // show, go to the next column...
             //
-            if (bandwidth_counter % y_axis_size == 0) {
+            if (bandwidth_counter % matrix_ret_data.y_axis_size == 0) {
                 bandwidth_counter = 0;
                 ++y_axis_incr;
             }
         }
 
-        gkMatrixRaster->setValueMatrix(conv_x_values, y_axis_incr);
+        matrix_ret_data.x_axis_calculations = conv_x_values;
+        matrix_ret_data.y_axis_incr = y_axis_incr;
 
         //
         // Black magic is abound in these parts...
@@ -279,8 +294,12 @@ void SpectroGui::applyData(const std::vector<RawFFT> &values, const int &hanning
         const size_t num_cols = y_axis_incr;
         const size_t num_cols_pwr = (y_axis_incr * y_axis_incr);
         const size_t num_cols_double_pwr = (num_cols_pwr * num_cols_pwr);
-        y_interval.setMaxValue(num_cols);
-        z_interval.setMaxValue(num_cols_double_pwr);
+
+        matrix_ret_data.num_cols = num_cols;
+        matrix_ret_data.num_cols_double_pwr = num_cols_double_pwr;
+
+        matrix_ret_data.y_interval.setMaxValue(num_cols);
+        matrix_ret_data.z_interval.setMaxValue(num_cols_double_pwr);
 
         conv_x_values.clear();
         conv_x_values.shrink_to_fit();
@@ -288,8 +307,44 @@ void SpectroGui::applyData(const std::vector<RawFFT> &values, const int &hanning
         x_values.shrink_to_fit();
         x_values_modified.clear();
         x_values_modified.shrink_to_fit();
+    } catch (const std::exception &e) {
+        HWND hwnd_spectro_calc_matrix;
+        gkStringFuncs->modalDlgBoxOk(hwnd_spectro_calc_matrix, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
+        DestroyWindow(hwnd_spectro_calc_matrix);
+    }
 
-        replot();
+    return matrix_ret_data;
+}
+
+/**
+ * @brief SpectroGui::applyData Updates the spectrograph / waterfall with the relevant data samples
+ * as required, inserting the calculated FFT results into a value matrix.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param values The actual, STFT calculations themselves.
+ * @param hanning_window_size The size of the calculated hanning window, required for calculating the
+ * requisite FFT samples.
+ * @param buffer_size The size of the audio buffer itself.
+ */
+void SpectroGui::applyData(const std::vector<RawFFT> &values, const int &hanning_window_size, const size_t &buffer_size)
+{
+    try {
+        // Start a new thread since it will block the current (GUI-based) thread otherwise...
+        std::future<MatrixData> calc_matrix_thread = std::async(std::launch::async, std::bind(&SpectroGui::calcMatrixData, this, values, hanning_window_size, buffer_size));
+        const MatrixData calc_data = calc_matrix_thread.get(); // TODO: Current source of blocking the GUI-thread; need to fix!
+
+        x_interval.setMinValue(std::abs(calc_data.min_x_axis_val / 2));
+        x_interval.setMaxValue(std::abs(calc_data.max_x_axis_val / 2));
+
+        gkMatrixRaster->setValueMatrix(calc_data.x_axis_calculations, calc_data.y_axis_incr);
+
+        y_interval.setMaxValue(calc_data.num_cols);
+        z_interval.setMaxValue(calc_data.num_cols_double_pwr);
+
+        if (!spectrograph_data.empty()) {
+            // TODO: Something with this important vector!
+        }
+
+        spectrograph_data.push_back(calc_data);
     } catch (const std::exception &e) {
         HWND hwnd_spectro_apply_data;
         gkStringFuncs->modalDlgBoxOk(hwnd_spectro_apply_data, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);

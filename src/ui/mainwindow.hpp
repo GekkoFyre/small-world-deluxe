@@ -56,6 +56,7 @@
 #include <thread>
 #include <future>
 #include <mutex>
+#include <vector>
 #include <QMainWindow>
 #include <QPushButton>
 #include <QPointer>
@@ -161,6 +162,7 @@ signals:
     void updatePlot();
     void stopRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
     void gkExitApp();
+    void sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values, const int &hanning_window_size, const size_t &buffer_size);
 
 private:
     Ui::MainWindow *ui;

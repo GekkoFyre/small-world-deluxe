@@ -49,9 +49,12 @@
 #include <qwt_raster_data.h>
 #include <qwt_interval.h>
 #include <boost/thread.hpp>
+#include <boost/thread/future.hpp>
 #include <mutex>
 #include <vector>
 #include <cstdlib>
+#include <thread>
+#include <future>
 #include <QObject>
 #include <QWidget>
 #include <QVector>
@@ -94,11 +97,6 @@ public:
     void showContour(const int &toggled);
     void setAlpha(const int &alpha);
     void setTheme(const QColor &colour);
-    void applyData(const std::vector<Spectrograph::RawFFT> &values, const int &hanning_window_size,
-                   const size_t &buffer_size);
-    void preparePlot();
-    void resetAxisRanges();
-    int calcWindowWidth();
 
     virtual void setResampleMode(int mode);
     virtual double value(double x, double y) const override {
@@ -112,9 +110,14 @@ public:
 
 public slots:
     void showSpectrogram(const bool &toggled);
+    void applyData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values, const int &hanning_window_size,
+                   const size_t &buffer_size);
 
 private slots:
     void calcInterval();
+
+signals:
+    void sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values, const int &hanning_window_size, const size_t &buffer_size);
 
 private:
     QwtMatrixRasterData *gkMatrixRaster;
@@ -127,6 +130,8 @@ private:
     GekkoFyre::Spectrograph::GkColorMap gkMapType;
     int gkAlpha;
     bool time_already_set;
+
+    std::vector<Spectrograph::MatrixData> spectrograph_data;
 
     //
     // Threads
@@ -141,6 +146,13 @@ private:
 
         return r;
     }
+
+    Spectrograph::MatrixData calcMatrixData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values,
+                                            const int &hanning_window_size, const size_t &buffer_size);
+
+    void preparePlot();
+    void resetAxisRanges();
+    int calcWindowWidth();
 };
 
 class GkZoomer: public QwtPlotZoomer {

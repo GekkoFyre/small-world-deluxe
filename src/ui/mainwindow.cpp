@@ -211,6 +211,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         gkSpectroGui = new GekkoFyre::SpectroGui(gkStringFuncs, this);
         ui->verticalLayout_11->addWidget(gkSpectroGui);
         gkSpectroGui->setEnabled(true);
+        QObject::connect(this, SIGNAL(sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const int &, const size_t &)),
+                         gkSpectroGui, SIGNAL(sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const int &, const size_t &)));
 
         //
         // Sound & Audio Devices
@@ -919,7 +921,8 @@ void MainWindow::updateSpectroData(const std::vector<GekkoFyre::Spectrograph::Ra
 {
     try {
         if (!data.empty()) {
-            gkSpectroGui->applyData(data, hanning_window_size, buffer_size);
+            // auto fut_spectro_gui_apply_data = std::async(std::launch::async, std::bind(&SpectroGui::applyData, gkSpectroGui, data, hanning_window_size, buffer_size));
+            emit sendSpectroData(data, hanning_window_size, buffer_size);
 
             return;
         }
