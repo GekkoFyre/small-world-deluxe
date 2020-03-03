@@ -117,8 +117,6 @@ namespace GekkoFyre {
 #define AUDIO_VU_METER_UPDATE_MILLISECS (500)           // How often the volume meter should update, in milliseconds.
 #define AUDIO_SPECTRO_UPDATE_MILLISECS (1000)           // How often the spectrograph / waterfall should update, in milliseconds.
 
-#define CPP_MULTITHREADING_REFRESH_CYCLE (250)          // The amount of time, in milliseconds, to allow for STFT `std::future` calculations to refresh the waiting while-loop.
-#define CPP_MULTITHREADING_TIMEOUT (15000)              // The amount of time, in milliseconds, to allow for STFT calculations to continue before interrupting (i.e. to 'timeout').
 //
 // Mostly regarding FFTW functions
 //

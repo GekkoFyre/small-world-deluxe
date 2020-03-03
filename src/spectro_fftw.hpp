@@ -45,6 +45,7 @@
 #include <memory>
 #include <mutex>
 #include <thread>
+#include <future>
 
 namespace GekkoFyre {
 
@@ -56,9 +57,9 @@ public:
                          QObject *parent = nullptr);
     ~SpectroFFTW();
 
-public slots:
-    std::vector<Spectrograph::RawFFT> stft(std::vector<double> *signal, int signal_length, int window_size,
-                                           int hop_size, const size_t &audio_buffer_size, const int &feed_rate);
+    void stft(std::vector<double> *signal, int signal_length, int window_size, int hop_size,
+              const size_t &audio_buffer_size, const int &feed_rate,
+              std::promise<std::vector<Spectrograph::RawFFT>> ret_data_promise);
 
 private:
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;

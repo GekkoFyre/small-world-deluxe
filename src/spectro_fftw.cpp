@@ -69,8 +69,9 @@ SpectroFFTW::~SpectroFFTW()
  * @param hop_size
  * @return
  */
-std::vector<Spectrograph::RawFFT> SpectroFFTW::stft(std::vector<double> *signal, int signal_length, int window_size,
-                                                    int hop_size, const size_t &audio_buffer_size, const int &feed_rate)
+void SpectroFFTW::stft(std::vector<double> *signal, int signal_length, int window_size,
+                       int hop_size, const size_t &audio_buffer_size, const int &feed_rate,
+                       std::promise<std::vector<Spectrograph::RawFFT>> ret_data_promise)
 {
     std::unique_lock<std::timed_mutex> lck_guard(calc_stft_mtx, std::defer_lock);
     std::vector<Spectrograph::RawFFT> raw_fft_vec;
@@ -157,8 +158,9 @@ std::vector<Spectrograph::RawFFT> SpectroFFTW::stft(std::vector<double> *signal,
             delete[] window;
         }
 
+        ret_data_promise.set_value(raw_fft_vec);
         calc_stft_mtx.unlock();
-        return raw_fft_vec;
+        return;
     } catch (const std::exception &e) {
         HWND hwnd_stft_calc;
         gkStringFuncs->modalDlgBoxOk(hwnd_stft_calc, tr("Error!"), tr("An error has occurred during the calculation of STFT data!\n\n%1").arg(e.what()), MB_ICONERROR);
@@ -166,7 +168,7 @@ std::vector<Spectrograph::RawFFT> SpectroFFTW::stft(std::vector<double> *signal,
     }
 
     calc_stft_mtx.unlock();
-    return raw_fft_vec;
+    return;
 }
 
 std::vector<float> SpectroFFTW::powerSpectrum(fftw_complex *spectrum, int N)
