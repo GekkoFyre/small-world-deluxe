@@ -153,7 +153,8 @@ protected slots:
 
 public slots:
     bool stopRecordingInput(const bool &recording_is_stopped, const int &wait_time = 5000);
-    void updateSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &data, const int &hanning_window_size,
+    void updateSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &data,
+                           const std::vector<short> &raw_audio_data, const int &hanning_window_size,
                            const size_t &buffer_size);
 
 signals:
@@ -162,7 +163,9 @@ signals:
     void updatePlot();
     void stopRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
     void gkExitApp();
-    void sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values, const int &hanning_window_size, const size_t &buffer_size);
+    void sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values,
+                         const std::vector<short> &raw_audio_data, const int &hanning_window_size,
+                         const size_t &buffer_size);
 
 private:
     Ui::MainWindow *ui;
@@ -219,7 +222,7 @@ private:
 
     void radioStats(GekkoFyre::AmateurRadio::Control::Radio *radio_dev);
 
-    void changePushButtonColor(QPointer<QPushButton> push_button, const bool &green_result = true,
+    void changePushButtonColor(const QPointer<QPushButton> &push_button, const bool &green_result = true,
                                const bool &color_blind_mode = false);
     QStringList getAmateurBands();
     bool prefillAmateurBands();
@@ -231,4 +234,5 @@ private:
 };
 
 Q_DECLARE_METATYPE(std::vector<GekkoFyre::Spectrograph::RawFFT>);
+Q_DECLARE_METATYPE(std::vector<short>);
 Q_DECLARE_METATYPE(size_t);

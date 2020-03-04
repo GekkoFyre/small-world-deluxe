@@ -50,6 +50,7 @@
 #include <QDebug>
 #include <QMessageBox>
 #include <QApplication>
+#include <utility>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -64,9 +65,9 @@ using namespace Audio;
 AudioDevices::AudioDevices(std::shared_ptr<GkLevelDb> gkDb, std::shared_ptr<GekkoFyre::FileIo> filePtr,
                            std::shared_ptr<StringFuncs> stringFuncs, QObject *parent)
 {
-    gkDekodeDb = gkDb;
-    gkFileIo = filePtr;
-    gkStringFuncs = stringFuncs;
+    gkDekodeDb = std::move(gkDb);
+    gkFileIo = std::move(filePtr);
+    gkStringFuncs = std::move(stringFuncs);
 }
 
 AudioDevices::~AudioDevices()
@@ -697,6 +698,7 @@ std::vector<GkDevice> AudioDevices::filterAudioDevices(const std::vector<GkDevic
         std::vector<GkDevice> unique_devices;
 
         std::lock_guard<std::mutex> lck_guard(device_loop_mtx);
+        device_name_list.reserve(audio_devices_vec.size());
         for (const auto &device: audio_devices_vec) {
             device_name_list.push_back(device.device_info.name);
         }

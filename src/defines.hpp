@@ -50,8 +50,10 @@
 #include <vector>
 #include <cstdlib>
 #include <cstdio>
+#include <memory>
 #include <QString>
 #include <QVector>
+#include <QPointer>
 
 #ifdef _WIN32
 #include <winsdkver.h>
@@ -123,6 +125,14 @@ namespace GekkoFyre {
 #define AUDIO_SIGNAL_LENGTH (2048)                      // For audio applications, '2048' seems to be a good length.
 #define FFTW_HOP_SIZE (8192)                            // Choose a smaller hop-size if you want a higher resolution! Needs to be a power of two.
 #define SPECTRO_BANDWIDTH_SIZE (2048)                   // The size and bandwidth of the spectrograph / waterfall window, in hertz.
+
+//
+// Concerns spectrograph / waterfall calculations and settings
+//
+#define SPECTRO_TIME_HORIZON (60)
+#define SPECTRO_SAMPLING_FREQ (2048)
+#define SPECTRO_WINDOW_WIDTH (64)
+#define SPECTRO_Z_MAXIMUM (120)
 
 #ifndef M_PI
 #define M_PI (3.14159265358979323846) /* pi */
@@ -354,7 +364,7 @@ namespace Spectrograph {
     // Used for the raster/matrix data calculations within the spectrograph/waterfall of QMainWindow!
     //
     struct MatrixData {
-        QVector<double> x_axis_calculations;
+        QVector<double> z_data_calcs;
         size_t y_axis_incr;
         QwtInterval z_interval;
         QwtInterval x_interval;

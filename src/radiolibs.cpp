@@ -256,7 +256,7 @@ QMap<tstring, std::pair<tstring, boost::tribool>> RadioLibs::status_com_ports()
     try {
         TCHAR lpTargetPath[5000]; // buffer to store the path of the COM ports
         DWORD test;
-        bool gotPort = 0; // in case the COM port is not found
+        bool gotPort = false; // in case the COM port is not found
 
         for (int i = 0; i < 255; i++) {
             CString str;
@@ -270,7 +270,7 @@ QMap<tstring, std::pair<tstring, boost::tribool>> RadioLibs::status_com_ports()
             // Test the return value and error if any
             if (test != 0) { // QueryDosDevice returns zero if it didn't find an object
                 com_map.insert(key, std::make_pair(targetPathStr, true));
-                gotPort = 1;
+                gotPort = true;
             }
 
             if (::GetLastError() == ERROR_INSUFFICIENT_BUFFER) {

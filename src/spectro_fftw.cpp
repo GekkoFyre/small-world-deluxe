@@ -38,7 +38,7 @@
 #include "spectro_fftw.hpp"
 #include <cmath>
 #include <QMessageBox>
-
+#include <utility> 
 using namespace GekkoFyre;
 using namespace Database;
 using namespace Settings;
@@ -53,7 +53,7 @@ using namespace Audio;
 SpectroFFTW::SpectroFFTW(std::shared_ptr<GekkoFyre::StringFuncs> stringFunc,
                          QObject *parent) : QObject(parent)
 {
-    gkStringFuncs = stringFunc;
+    gkStringFuncs = std::move(stringFunc);
 }
 
 SpectroFFTW::~SpectroFFTW()

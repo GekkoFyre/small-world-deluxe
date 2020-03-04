@@ -78,6 +78,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 {
     ui->setupUi(this);
     qRegisterMetaType<std::vector<GekkoFyre::Spectrograph::RawFFT>>("std::vector<GekkoFyre::Spectrograph::RawFFT>");
+    qRegisterMetaType<std::vector<short>>("std::vector<short>");
     qRegisterMetaType<size_t>("size_t");
 
     try {
@@ -194,7 +195,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(GkDb, fileIo, gkStringFuncs, this);
         auto pref_audio_devices = gkAudioDevices->initPortAudio(gkPortAudioInit);
 
-        for (const auto device: pref_audio_devices) {
+        for (const auto &device: pref_audio_devices) {
             // Now filter out what is the input and output device selectively!
             if (device.is_output_dev) {
                 // Output device
@@ -211,8 +212,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         gkSpectroGui = new GekkoFyre::SpectroGui(gkStringFuncs, this);
         ui->verticalLayout_11->addWidget(gkSpectroGui);
         gkSpectroGui->setEnabled(true);
-        QObject::connect(this, SIGNAL(sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const int &, const size_t &)),
-                         gkSpectroGui, SIGNAL(sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const int &, const size_t &)));
+        QObject::connect(this, SIGNAL(sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const std::vector<short> &, const int &, const size_t &)),
+                         gkSpectroGui, SIGNAL(sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const std::vector<short> &, const int &, const size_t &)));
 
         //
         // Sound & Audio Devices
@@ -278,8 +279,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QObject::connect(paMicProcBackground, SIGNAL(updateVolume(const double &)), this, SLOT(updateVuMeter(const double &)));
         QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), pref_input_audio_buf, SLOT(abortRecording(const bool &, const int &)));
         QObject::connect(ui->verticalSlider_vol_control, SIGNAL(valueChanged(int)), this, SLOT(updateVolMeterTooltip(const int &)));
-        QObject::connect(paMicProcBackground, SIGNAL(updateWaterfall(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const int &, const size_t &)), this,
-                         SLOT(updateSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const int &, const size_t &)));
+        QObject::connect(paMicProcBackground, SIGNAL(updateWaterfall(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const std::vector<short> &, const int &, const size_t &)), this,
+                         SLOT(updateSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const std::vector<short> &, const int &, const size_t &)));
 
         std::thread t1(&MainWindow::infoBar, this);
         t1.detach();
@@ -374,7 +375,8 @@ void MainWindow::on_action_Open_triggered()
  * @param green_result Whether to make the QPushButton in question Green or Red.
  * @param color_blind_mode Not yet implemented!
  */
-void MainWindow::changePushButtonColor(QPointer<QPushButton> push_button, const bool &green_result, const bool &color_blind_mode)
+void MainWindow::changePushButtonColor(const QPointer<QPushButton> &push_button, const bool &green_result,
+                                       const bool &color_blind_mode)
 {
     if (green_result) {
         // Change QPushButton to a shade of darkish 'Green'
@@ -917,12 +919,13 @@ bool MainWindow::stopRecordingInput(const bool &recording_is_stopped, const int 
 }
 
 void MainWindow::updateSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &data,
+                                   const std::vector<short> &raw_audio_data,
                                    const int &hanning_window_size, const size_t &buffer_size)
 {
     try {
         if (!data.empty()) {
             // auto fut_spectro_gui_apply_data = std::async(std::launch::async, std::bind(&SpectroGui::applyData, gkSpectroGui, data, hanning_window_size, buffer_size));
-            emit sendSpectroData(data, hanning_window_size, buffer_size);
+            emit sendSpectroData(data, raw_audio_data, hanning_window_size, buffer_size);
 
             return;
         }

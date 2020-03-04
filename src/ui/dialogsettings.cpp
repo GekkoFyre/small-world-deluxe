@@ -41,6 +41,7 @@
 #include <set>
 #include <QStringList>
 #include <QMessageBox>
+#include <utility>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -74,10 +75,10 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
         autoSys.initialize();
         gkPortAudioInit = new portaudio::System(portaudio::System::instance());
 
-        gkRadioLibs = radioPtr;
-        gkDekodeDb = dkDb;
-        gkFileIo = filePtr;
-        gkAudioDevices = audioDevices;
+        gkRadioLibs = std::move(radioPtr);
+        gkDekodeDb = std::move(dkDb);
+        gkFileIo = std::move(filePtr);
+        gkAudioDevices = std::move(audioDevices);
 
         rig_comboBox = ui->comboBox_rig_selection;
         mfg_comboBox = ui->comboBox_brand_selection;
@@ -104,7 +105,7 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
         prefill_avail_com_ports(status_com_ports);
         prefill_avail_usb_ports(status_usb_devices);
 
-        if (status_com_ports.size() > 0) {
+        if (!status_com_ports.empty()) {
             // Select the initial COM port and load it into memory
             on_comboBox_com_port_currentIndexChanged(ui->comboBox_com_port->currentIndex());
         }
@@ -882,7 +883,7 @@ void DialogSettings::on_comboBox_soundcard_output_currentIndexChanged(int index)
     Q_UNUSED(index);
     try {
         int actual_index = ui->comboBox_soundcard_output->currentData().toInt();
-        for (const auto device: avail_output_audio_devs.toStdMap()) {
+        for (const auto &device: avail_output_audio_devs.toStdMap()) {
             if (device.first == actual_index) {
                 GkDevice chosen_output;
                 chosen_output = device.second;

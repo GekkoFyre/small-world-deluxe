@@ -38,6 +38,7 @@
 #include "spectrodialog.hpp"
 #include "ui_spectrodialog.h"
 #include <QMessageBox>
+#include <utility>
 
 using namespace GekkoFyre;
 
@@ -47,7 +48,7 @@ SpectroDialog::SpectroDialog(QPointer<GekkoFyre::SpectroGui> spectroGui, QWidget
     ui->setupUi(this);
     this->adjustSize(); // Resize to contents
 
-    gkSpectroGui = spectroGui;
+    gkSpectroGui = std::move(spectroGui);
 
     QObject::connect(ui->pushButton_activate_spectro, SIGNAL(toggled(bool)), gkSpectroGui, SLOT(showSpectrogram(bool)));
 }

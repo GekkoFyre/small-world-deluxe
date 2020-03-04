@@ -110,28 +110,39 @@ public:
 
 public slots:
     void showSpectrogram(const bool &toggled);
-    void applyData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values, const int &hanning_window_size,
+    void applyData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values,
+                   const std::vector<short> &raw_audio_data, const int &hanning_window_size,
                    const size_t &buffer_size);
 
 private slots:
     void calcInterval();
 
 signals:
-    void sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values, const int &hanning_window_size, const size_t &buffer_size);
+    void sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values,
+                         const std::vector<short> &raw_audio_data, const int &hanning_window_size,
+                         const size_t &buffer_size);
 
 private:
     QwtMatrixRasterData *gkMatrixRaster;
     QwtPlotZoomer *zoomer;
+    QwtScaleWidget *rightAxis;
     QwtInterval z_interval;
     QwtInterval x_interval;
     QwtInterval y_interval;
 
+    int spectro_window_width;
+    double autoscaleValueUpdated;
+
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     GekkoFyre::Spectrograph::GkColorMap gkMapType;
     int gkAlpha;
+    bool calc_first_data;       // Whether we have made our first calculation or not
     bool time_already_set;
+    bool already_read_data;
 
-    std::vector<Spectrograph::MatrixData> spectrograph_data;
+    std::unique_ptr<QVector<double>> z_data_history;
+    std::unique_ptr<QVector<double>> time_data_history;
+    std::vector<short> raw_plot_data;
 
     //
     // Threads
@@ -147,8 +158,14 @@ private:
         return r;
     }
 
-    Spectrograph::MatrixData calcMatrixData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values,
-                                            const int &hanning_window_size, const size_t &buffer_size);
+    void calcMatrixData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values,
+                        const int &hanning_window_size, const size_t &buffer_size,
+                        std::promise<Spectrograph::MatrixData> matrix_data_promise);
+    void appendData();
+    void removeStaleData();
+    void clearPlots();
+    void plotNewData();
+    double resetAutoscaleVal();
 
     void preparePlot();
     void resetAxisRanges();
@@ -176,23 +193,13 @@ class LinearColorMapRGB: public QwtLinearColorMap {
 
 public:
     LinearColorMapRGB(const QwtInterval &rgb_values): QwtLinearColorMap(Qt::darkCyan, Qt::red, QwtColorMap::RGB) {
-        addColorStop((rgb_values.maxValue() * 1.00), Qt::blue);
-        addColorStop((rgb_values.maxValue() * 1.25), Qt::cyan);
-        addColorStop((rgb_values.maxValue() * 1.50), Qt::yellow);
-        addColorStop((rgb_values.maxValue() * 1.75), Qt::red);
-        addColorStop((rgb_values.maxValue() * 2.00), Qt::darkRed);
-    }
-};
-
-class LinearColorMapIndexed: public QwtLinearColorMap {
-
-public:
-    LinearColorMapIndexed(const QwtInterval &rgb_values): QwtLinearColorMap(Qt::darkCyan, Qt::red, QwtColorMap::Indexed) {
-        addColorStop((rgb_values.maxValue() * 1.00), Qt::cyan);
-        addColorStop((rgb_values.maxValue() * 1.25), Qt::yellow);
-        addColorStop((rgb_values.maxValue() * 1.50), Qt::darkYellow);
-        addColorStop((rgb_values.maxValue() * 1.75), Qt::red);
-        addColorStop((rgb_values.maxValue() * 2.00), Qt::darkRed);
+        setColorInterval(QColor(0, 0, 30), QColor(0.5 * 255, 0, 0));
+        addColorStop(0.00, Qt::white);
+        addColorStop(0.20, Qt::blue);
+        addColorStop(0.40, Qt::cyan);
+        addColorStop(0.60, Qt::yellow);
+        addColorStop(0.80, Qt::red);
+        addColorStop(1.00, Qt::darkRed);
     }
 };
 

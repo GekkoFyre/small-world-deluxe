@@ -62,7 +62,7 @@ class paMicProcBackground : public QObject {
     Q_OBJECT
 
 public:
-    paMicProcBackground(portaudio::System *paInit, QPointer<GekkoFyre::PaAudioBuf> audio_buf,
+    paMicProcBackground(portaudio::System *paInit, const QPointer<GekkoFyre::PaAudioBuf> &audio_buf,
                         std::shared_ptr<GekkoFyre::AudioDevices> audioDev,
                         std::shared_ptr<GekkoFyre::StringFuncs> stringFunc,
                         std::shared_ptr<GekkoFyre::FileIo> fileIo,
@@ -74,7 +74,9 @@ public:
 signals:
     void stopRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
     void updateVolume(const double &volumePctg);
-    void updateWaterfall(const std::vector<GekkoFyre::Spectrograph::RawFFT> &data, const int &hanning_window_size, const size_t &buffer_size);
+    void updateWaterfall(const std::vector<GekkoFyre::Spectrograph::RawFFT> &data,
+                         const std::vector<short> &raw_audio_data,
+                         const int &hanning_window_size, const size_t &buffer_size);
 
 public slots:
     void abortRecording(const bool &recording_is_stopped, const int &wait_time = 5000);

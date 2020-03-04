@@ -38,6 +38,7 @@
 #include "pa_mic.hpp"
 #include <portaudiocpp/PortAudioCpp.hxx>
 #include <iostream>
+#include <utility> 
 
 using namespace GekkoFyre;
 using namespace GekkoFyre;
@@ -53,8 +54,8 @@ using namespace Audio;
 PaMic::PaMic(std::shared_ptr<AudioDevices> gkAudio, std::shared_ptr<GkLevelDb> dbPtr, QObject *parent)
     : QObject(parent)
 {
-    gkAudioDevices = gkAudio;
-    gkDb = dbPtr;
+    gkAudioDevices = std::move(gkAudio);
+    gkDb = std::move(dbPtr);
 }
 
 PaMic::~PaMic()

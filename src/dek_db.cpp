@@ -45,6 +45,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
 #include <sstream>
+#include <utility>
 #include <vector>
 #include <ctime>
 #include <cstring>
@@ -60,7 +61,7 @@ namespace fs = boost::filesystem;
 GkLevelDb::GkLevelDb(leveldb::DB *db_ptr, std::shared_ptr<FileIo> filePtr, QObject *parent) : QObject(parent)
 {
     db = db_ptr;
-    fileIo = filePtr;
+    fileIo = std::move(filePtr);
 }
 
 GkLevelDb::~GkLevelDb()

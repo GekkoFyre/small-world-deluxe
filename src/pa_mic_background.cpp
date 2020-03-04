@@ -54,7 +54,7 @@ using namespace Audio;
  * @param input_buffer_size
  * @param parent
  */
-paMicProcBackground::paMicProcBackground(portaudio::System *paInit, QPointer<PaAudioBuf> audio_buf,
+paMicProcBackground::paMicProcBackground(portaudio::System *paInit, const QPointer<PaAudioBuf> &audio_buf,
                                          std::shared_ptr<AudioDevices> audioDev,
                                          std::shared_ptr<GekkoFyre::StringFuncs> stringFunc,
                                          std::shared_ptr<FileIo> fileIo,
@@ -67,11 +67,11 @@ paMicProcBackground::paMicProcBackground(portaudio::System *paInit, QPointer<PaA
         std::mutex pa_mic_mtx;
         std::lock_guard<std::mutex> lck_guard(pa_mic_mtx);
 
-        gkAudioDev = audioDev;
-        gkStringFuncs = stringFunc;
-        gkFileIo = fileIo;
+        gkAudioDev = std::move(audioDev);
+        gkStringFuncs = std::move(stringFunc);
+        gkFileIo = std::move(fileIo);
         gkAudioBuf = audio_buf;
-        gkDb = levelDb;
+        gkDb = std::move(levelDb);
         hanning_window_size = window_size;
 
         sel_input_device = pref_input_device;
@@ -207,7 +207,7 @@ void paMicProcBackground::spectrographCallback(PaAudioBuf *audio_buf, portaudio:
                 waterfall_fft_data = stft_future.get();
 
                 if (!waterfall_fft_data.empty()) {
-                    emit updateWaterfall(waterfall_fft_data, hanning_window_size, audio_buffer_size);
+                    emit updateWaterfall(waterfall_fft_data, raw_audio_data, hanning_window_size, audio_buffer_size);
                     stft_thread.join();
                 }
 
