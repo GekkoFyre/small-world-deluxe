@@ -143,7 +143,7 @@ private:
     QwtInterval x_interval;
     QwtInterval y_interval;
 
-    int spectro_window_width;
+    size_t num_rows;
     double autoscaleValueUpdated;
 
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
@@ -153,6 +153,7 @@ private:
     bool time_already_set;
     bool already_read_data;
 
+    GekkoFyre::Spectrograph::MatrixData calc_z_history;
     std::unique_ptr<QVector<double>> z_data_history;
     std::unique_ptr<QVector<double>> time_data_history;
     std::vector<short> raw_plot_data;

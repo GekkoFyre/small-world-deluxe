@@ -231,21 +231,17 @@ void SpectroFFTW::calcPwrTest(const size_t &num_periods, const int &win_size)
  * @return The calculated Power Density Spectrum values.
  * @note <https://stackoverflow.com/questions/24696122/calculating-the-power-spectral-density/24739037>
  */
-std::vector<float> SpectroFFTW::powerSpectrum(fftw_complex *tds, const int &win_size)
+std::vector<double> SpectroFFTW::powerSpectrum(fftw_complex *tds, const int &win_size)
 {
     std::mutex calc_pwr_spectrum_mtx;
     std::lock_guard<std::mutex> lck_guard(calc_pwr_spectrum_mtx);
 
-    std::vector<float> ret_val;
-    for (int k = 1; k < ((win_size + 1) / 2); ++k) {
-        ret_val.push_back(tds[k][0] * tds[k][0] + tds[k][1] * tds[k][1]);
-
-        if (win_size % 2 == 0) {
-            ret_val.push_back(tds[win_size/2][0] * tds[win_size/2][0]); // Nyquist frequency
-        }
+    std::vector<double> power_spectrum;
+    for (size_t i = 0; i < (win_size / 2); ++i) {
+        power_spectrum.push_back(((tds[i][0] * tds[i][0]) + (tds[win_size - i][0] * tds[win_size - i][0])));
     }
 
-    return ret_val;
+    return power_spectrum;
 }
 
 /**

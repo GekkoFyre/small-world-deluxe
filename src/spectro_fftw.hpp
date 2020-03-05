@@ -71,7 +71,7 @@ private:
     void hanning(int win_length, double *buffer);
 
     void calcPwrTest(const size_t &num_periods, const int &win_size);
-    std::vector<float> powerSpectrum(fftw_complex *tds, const int &win_size);
+    std::vector<double> powerSpectrum(fftw_complex *tds, const int &win_size);
 
 };
 };

@@ -73,11 +73,6 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QWidget *parent
     try {
         gkStringFuncs = std::move(stringFuncs);
 
-        //
-        // Calculate the width of the x-axis on the spectrograph
-        //
-        spectro_window_width = calcWindowWidth();
-
         gkMatrixRaster = new QwtMatrixRasterData();
         gkSpectrogram = new QwtPlotSpectrogram();
         gkSpectrogram->setRenderThreadCount(0); // Use system specific thread count
@@ -361,7 +356,7 @@ void SpectroGui::appendData()
     time_data_history->append(time_now.toTime_t() + time_now.time().msec() / 1000.0);
     while (time_data_history->back() - time_data_history->front() > SPECTRO_TIME_HORIZON) {
         time_data_history->pop_front();
-        z_data_history->remove(0, std::fminl(spectro_window_width, z_data_history->size()));
+        z_data_history->remove(0, std::fminl(calc_z_history.num_cols, z_data_history->size()));
     }
 
     return;
@@ -431,6 +426,7 @@ double SpectroGui::resetAutoscaleVal()
  * @param hanning_window_size The size of the calculated hanning window, required for calculating the
  * requisite FFT samples.
  * @param buffer_size The size of the audio buffer itself.
+ * @note <https://www.qtcentre.org/threads/67219-How-to-implement-QwtPlotSpectrogram-with-QwtMatrixRasterData>
  */
 void SpectroGui::applyData(const std::vector<RawFFT> &values,
                            const std::vector<short> &raw_audio_data, const int &hanning_window_size,
@@ -441,19 +437,16 @@ void SpectroGui::applyData(const std::vector<RawFFT> &values,
         std::promise<MatrixData> calc_matrix_promise;
         std::future<MatrixData> calc_matrix_future = calc_matrix_promise.get_future();
         std::thread calc_matrix_thread(&SpectroGui::calcMatrixData, this, values, hanning_window_size, buffer_size, std::move(calc_matrix_promise));
-        const MatrixData calc_z_history = calc_matrix_future.get(); // TODO: Current source of blocking the GUI-thread; need to fix!
+        calc_z_history = calc_matrix_future.get(); // TODO: Current source of blocking the GUI-thread; need to fix!
 
         raw_plot_data = raw_audio_data;
-
-        const int new_window_width = calc_z_history.z_data_calcs.size(); // FFT output is already half, so no need to divide this value by two!
-        if (new_window_width != spectro_window_width) {
-            spectro_window_width = new_window_width;
-        }
+        num_rows = (calc_z_history.z_data_calcs.size() / calc_z_history.num_cols);
 
         z_interval.setMinValue(std::abs(calc_z_history.min_z_axis_val / 2));
         z_interval.setMaxValue(std::abs(calc_z_history.max_z_axis_val / 2));
 
-        gkMatrixRaster->setValueMatrix(calc_z_history.z_data_calcs, spectro_window_width);
+        gkMatrixRaster->setValueMatrix(calc_z_history.z_data_calcs, calc_z_history.num_cols);
+        gkSpectrogram->setData(gkMatrixRaster);
         if (!calc_first_data) {
             calc_first_data = true;
         }
@@ -461,7 +454,10 @@ void SpectroGui::applyData(const std::vector<RawFFT> &values,
         y_interval.setMaxValue(calc_z_history.num_cols);
         x_interval.setMaxValue(calc_z_history.num_cols_double_pwr);
 
+        setAxisScale(QwtPlot::yRight, z_interval.minValue(), z_interval.maxValue());
+
         calc_matrix_thread.join();
+        replot();
 
         return;
     } catch (const std::exception &e) {
@@ -535,8 +531,8 @@ void SpectroGui::calcInterval()
     std::mutex spectro_calc_interval_mtx;
     std::lock_guard<std::mutex> lck_guard(spectro_calc_interval_mtx);
 
-    gkMatrixRaster->setInterval(Qt::XAxis, QwtInterval(x_interval.minValue(), x_interval.maxValue(), QwtInterval::ExcludeMaximum));
-    gkMatrixRaster->setInterval(Qt::YAxis, QwtInterval(y_interval.minValue(), y_interval.maxValue(), QwtInterval::ExcludeMaximum));
+    gkMatrixRaster->setInterval(Qt::XAxis, QwtInterval(x_interval.minValue(), calc_z_history.num_cols, QwtInterval::ExcludeMaximum));
+    gkMatrixRaster->setInterval(Qt::YAxis, QwtInterval(y_interval.minValue(), num_rows, QwtInterval::ExcludeMaximum));
     gkMatrixRaster->setInterval(Qt::ZAxis, QwtInterval(z_interval.minValue(), z_interval.maxValue()));
     resetAxisRanges();
 
