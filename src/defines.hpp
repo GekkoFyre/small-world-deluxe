@@ -117,7 +117,6 @@ namespace GekkoFyre {
 #define AUDIO_BUFFER_STREAMING_SECS (1)
 #define AUDIO_SINE_WAVE_PLAYBACK_SECS (3)               // Play the sine wave test sample for three seconds!
 #define AUDIO_VU_METER_UPDATE_MILLISECS (500)           // How often the volume meter should update, in milliseconds.
-#define AUDIO_SPECTRO_UPDATE_MILLISECS (1000)           // How often the spectrograph / waterfall should update, in milliseconds.
 
 //
 // Mostly regarding FFTW functions
@@ -129,10 +128,11 @@ namespace GekkoFyre {
 //
 // Concerns spectrograph / waterfall calculations and settings
 //
-#define SPECTRO_TIME_HORIZON (60)
-#define SPECTRO_SAMPLING_FREQ (2048)
-#define SPECTRO_WINDOW_WIDTH (64)
-#define SPECTRO_Z_MAXIMUM (120)
+#define SPECTRO_TIME_UPDATE_MILLISECS (1000)            // How often the spectrograph / waterfall should update, in milliseconds.
+#define SPECTRO_TIME_HORIZON (60)                       // Not sure what this is, as it has been reverse engineered from something else.
+#define SPECTRO_SAMPLING_FREQ (2048)                    // The audio frequency that we are sampling at for the spectrograph.
+#define SPECTRO_WINDOW_WIDTH (64)                       // The width, or rather, the x-axis of the spectrograph.
+#define SPECTRO_Z_MAXIMUM (120)                         // The maximum z-interval, or rather, color interval to be expected.
 
 #ifndef M_PI
 #define M_PI (3.14159265358979323846) /* pi */
@@ -369,8 +369,8 @@ namespace Spectrograph {
         QwtInterval z_interval;
         QwtInterval x_interval;
         QwtInterval y_interval;
-        double min_x_axis_val;
-        double max_x_axis_val;
+        double min_z_axis_val;
+        double max_z_axis_val;
         size_t num_cols;
         size_t num_cols_double_pwr;
         size_t y_axis_size;

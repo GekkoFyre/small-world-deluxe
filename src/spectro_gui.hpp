@@ -58,6 +58,7 @@
 #include <QObject>
 #include <QWidget>
 #include <QVector>
+#include <QMouseEvent>
 
 namespace GekkoFyre {
 
@@ -86,8 +87,20 @@ public:
     }
 };
 
-class SpectroGui: public QwtPlot, private QwtPlotSpectrogram, public QwtMatrixRasterData {
+class GkSpectrograph: public QwtPlot {
     Q_OBJECT
+
+public:
+    GkSpectrograph(QWidget *parent = nullptr);
+    ~GkSpectrograph();
+
+protected:
+    void mouseDoubleClickEvent(QMouseEvent *e);
+};
+
+class SpectroGui: public GkSpectrograph, private QwtPlotSpectrogram, public QwtMatrixRasterData {
+    Q_OBJECT
+
 public:
     SpectroGui(std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs, QWidget *parent = nullptr);
     ~SpectroGui() override;

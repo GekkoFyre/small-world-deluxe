@@ -211,7 +211,7 @@ void paMicProcBackground::spectrographCallback(PaAudioBuf *audio_buf, portaudio:
                     stft_thread.join();
                 }
 
-                std::this_thread::sleep_for(std::chrono::duration(std::chrono::milliseconds(AUDIO_SPECTRO_UPDATE_MILLISECS)));
+                std::this_thread::sleep_for(std::chrono::duration(std::chrono::milliseconds(SPECTRO_TIME_UPDATE_MILLISECS)));
             }
         }
     } catch (const std::exception &e) {

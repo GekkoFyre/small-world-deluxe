@@ -921,12 +921,21 @@ QPushButton:disabled {
     <property name="title">
      <string>Sa&amp;ve</string>
     </property>
+    <widget class="QMenu" name="menuSave_Spectrograph_as_Bitmap">
+     <property name="title">
+      <string>Save Spectrograph as &amp;Bitmap</string>
+     </property>
+     <addaction name="action_Copy_to_Clipboard"/>
+     <addaction name="actionSave_as_File"/>
+    </widget>
     <addaction name="actionSave_Decoded"/>
     <addaction name="actionSave_All"/>
     <addaction name="separator"/>
     <addaction name="actionOpen_Save_Directory"/>
     <addaction name="separator"/>
     <addaction name="actionDelete_all_wav_files_in_Save_Directory"/>
+    <addaction name="separator"/>
+    <addaction name="menuSave_Spectrograph_as_Bitmap"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Configure"/>
@@ -1138,6 +1147,16 @@ QPushButton:disabled {
   <action name="action_Print">
    <property name="text">
     <string>&amp;Print...</string>
+   </property>
+  </action>
+  <action name="action_Copy_to_Clipboard">
+   <property name="text">
+    <string>&amp;Copy to Clipboard</string>
+   </property>
+  </action>
+  <action name="actionSave_as_File">
+   <property name="text">
+    <string>Save as &amp;File</string>
    </property>
   </action>
  </widget>

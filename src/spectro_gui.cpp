@@ -119,6 +119,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QWidget *parent
         plotLayout()->setAlignCanvasToScales(true);
 
         //
+        // https://qwt.sourceforge.io/class_qwt_matrix_raster_data.html#a69db38d8f920edb9dc3f0953ca16db8f
         // Set the type of colour-map used!
         //
         QwtScaleWidget *axis = axisWidget(QwtPlot::yRight);
@@ -149,7 +150,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QWidget *parent
 
         QTimer *calc_interval_timer = new QTimer(this);
         QObject::connect(calc_interval_timer, SIGNAL(timeout()), this, SLOT(calcInterval()));
-        calc_interval_timer->start(AUDIO_SPECTRO_UPDATE_MILLISECS);
+        calc_interval_timer->start(SPECTRO_TIME_UPDATE_MILLISECS);
 
         calc_interval_thread = boost::thread(&SpectroGui::calcInterval, this);
         calc_interval_thread.detach();
@@ -176,6 +177,14 @@ SpectroGui::~SpectroGui()
         calc_interval_thread.join();
     }
 
+    //
+    // Do not delete the raster data, as this is done by the spectrogram's destructor anyway
+    //
+
+    delete zoomer;
+    delete rightAxis;
+
+    gkSpectrogram->detach();
     delete gkSpectrogram;
 }
 
@@ -256,8 +265,8 @@ void SpectroGui::calcMatrixData(const std::vector<RawFFT> &values, const int &ha
     matrix_ret_data.y_axis_incr = 0;
     matrix_ret_data.num_cols = 0;
     matrix_ret_data.num_cols_double_pwr = 0;
-    matrix_ret_data.min_x_axis_val = 0;
-    matrix_ret_data.max_x_axis_val = 0;
+    matrix_ret_data.min_z_axis_val = 0;
+    matrix_ret_data.max_z_axis_val = 0;
     matrix_ret_data.y_axis_size = 0;
     matrix_ret_data.x_axis_size = 0;
     matrix_ret_data.z_interval = default_data;
@@ -281,8 +290,8 @@ void SpectroGui::calcMatrixData(const std::vector<RawFFT> &values, const int &ha
         copy_every_nth(x_values.begin(), x_values.end(), x_values_modified.begin(), 2);
 
         matrix_ret_data.y_axis_size = SPECTRO_BANDWIDTH_SIZE; // The amount of bandwidth we wish to display on the spectrograph / waterfall
-        matrix_ret_data.min_x_axis_val = *std::min_element(std::begin(x_values_modified), std::end(x_values_modified));
-        matrix_ret_data.max_x_axis_val = *std::max_element(std::begin(x_values_modified), std::end(x_values_modified));
+        matrix_ret_data.min_z_axis_val = *std::min_element(std::begin(x_values_modified), std::end(x_values_modified));
+        matrix_ret_data.max_z_axis_val = *std::max_element(std::begin(x_values_modified), std::end(x_values_modified));
 
         size_t bandwidth_counter = 0;
         static size_t y_axis_incr = 0; // Calculates how many columns we are filling up within the spectrograph / waterfall
@@ -369,6 +378,8 @@ void SpectroGui::removeStaleData()
 
 void SpectroGui::clearPlots()
 {
+    time_data_history->clear();
+    time_data_history->shrink_to_fit();
     z_data_history->clear();
     z_data_history->shrink_to_fit();
     resetAxisRanges();
@@ -389,7 +400,7 @@ void SpectroGui::plotNewData()
         // Plot new data
 
         // Check autoscale as for some reason, `QwtSpectrogram` doesn't support autoscale
-        if (z_interval.maxValue() == 0) {
+        if (std::fabs(z_interval.maxValue()) == 0.0f) {
             double new_value = resetAutoscaleVal();
             if (new_value != 0) {
                 rightAxis->setColorMap(QwtInterval(0, new_value), new LinearColorMapRGB(z_interval));
@@ -437,8 +448,8 @@ void SpectroGui::applyData(const std::vector<RawFFT> &values, const std::vector<
             spectro_window_width = new_window_width;
         }
 
-        x_interval.setMinValue(std::abs(calc_z_history.min_x_axis_val / 2));
-        x_interval.setMaxValue(std::abs(calc_z_history.max_x_axis_val / 2));
+        z_interval.setMinValue(std::abs(calc_z_history.min_z_axis_val / 2));
+        z_interval.setMaxValue(std::abs(calc_z_history.max_z_axis_val / 2));
 
         gkMatrixRaster->setValueMatrix(calc_z_history.z_data_calcs, spectro_window_width);
         if (!calc_first_data) {
@@ -446,7 +457,7 @@ void SpectroGui::applyData(const std::vector<RawFFT> &values, const std::vector<
         }
 
         y_interval.setMaxValue(calc_z_history.num_cols);
-        z_interval.setMaxValue(calc_z_history.num_cols_double_pwr);
+        x_interval.setMaxValue(calc_z_history.num_cols_double_pwr);
 
         calc_matrix_thread.join();
 
@@ -468,10 +479,15 @@ void SpectroGui::applyData(const std::vector<RawFFT> &values, const std::vector<
 void SpectroGui::preparePlot()
 {
     x_interval.setMaxValue(SPECTRO_BANDWIDTH_SIZE);
-    x_interval.setMinValue(0);
-    y_interval.setMaxValue(1024); // TODO: Just a temporary figure for the y-axis
-    y_interval.setMinValue(0);
-    z_interval.setMinValue(0);
+    x_interval.setMinValue(0.00);
+    y_interval.setMaxValue(1024.00); // TODO: Just a temporary figure for the y-axis
+    y_interval.setMinValue(0.00);
+
+    //
+    // Color map values
+    //
+    z_interval.setMinValue(0.00);
+    // z_interval.setMaxValue(1.00);
 
     resetAxisRanges();
 
@@ -521,6 +537,28 @@ void SpectroGui::calcInterval()
     gkMatrixRaster->setInterval(Qt::YAxis, QwtInterval(y_interval.minValue(), y_interval.maxValue(), QwtInterval::ExcludeMaximum));
     gkMatrixRaster->setInterval(Qt::ZAxis, QwtInterval(z_interval.minValue(), z_interval.maxValue()));
     resetAxisRanges();
+
+    return;
+}
+
+/**
+ * @brief GkSpectrograph::mouseDoubleClickEvent
+ * @param e
+ * @note <http://dronin.org/doxygen/ground/html/scopegadgetwidget_8cpp_source.html>
+ */
+GkSpectrograph::GkSpectrograph(QWidget *parent)
+{}
+
+GkSpectrograph::~GkSpectrograph()
+{}
+
+void GkSpectrograph::mouseDoubleClickEvent(QMouseEvent *e)
+{
+    // Reset the zoom-level of the spectrograph upon double-click of the mouse
+    setAxisAutoScale(QwtPlot::yLeft, true);
+
+    update();
+    QwtPlot::mouseDoubleClickEvent(e);
 
     return;
 }
