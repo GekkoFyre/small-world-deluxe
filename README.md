@@ -29,15 +29,15 @@ Following is a short list of features, both planned and partially already implem
 
 Please note that what is displayed just below may/perhaps be awfully out-of-date. If you want to see how `Small World Deluxe` currently looks, then we advise you to [download the latest release](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/releases), or if one is not available, then to please wait and until a sufficient version *is* available. The *lack of a release* means that we're not stable enough yet.
 
-![smallworld_mainwindow_1](assets\images\screenshots\smallworld_mainwindow_1.png)
+![smallworld_mainwindow_1](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/raw/31826c3b962ddb12429aa6f62a0b3885ef836436/assets/images/screenshots/smallworld_mainwindow_1.png)
 
-![smallworld_settingsdialog_1](assets\images\screenshots\smallworld_settingsdialog_1.png)
+![smallworld_settingsdialog_1](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/raw/31826c3b962ddb12429aa6f62a0b3885ef836436/assets/images/screenshots/smallworld_settingsdialog_1.png)
 
-![smallworld_settingsdialog_2](assets\images\screenshots\smallworld_settingsdialog_2.png)
+![smallworld_settingsdialog_2](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/raw/31826c3b962ddb12429aa6f62a0b3885ef836436/assets/images/screenshots/smallworld_settingsdialog_2.png)
 
-![smallworld_settingsdialog_3](assets\images\screenshots\smallworld_settingsdialog_3.png)
+![smallworld_settingsdialog_3](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/raw/31826c3b962ddb12429aa6f62a0b3885ef836436/assets/images/screenshots/smallworld_settingsdialog_3.png)
 
-![smallworld_settingsdialog_4](assets\images\screenshots\smallworld_settingsdialog_4.png)
+![smallworld_settingsdialog_4](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/raw/31826c3b962ddb12429aa6f62a0b3885ef836436/assets/images/screenshots/smallworld_settingsdialog_4.png)
 
 ------
 
