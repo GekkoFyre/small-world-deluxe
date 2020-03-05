@@ -197,19 +197,35 @@ void paMicProcBackground::spectrographCallback(PaAudioBuf *audio_buf, portaudio:
         while (stream->isOpen()) {
             std::vector<short> raw_audio_data = audio_buf->dumpMemory();
             if (!raw_audio_data.empty()) {
-                std::vector<Spectrograph::RawFFT> waterfall_fft_data; // Key is the 'frame buffer', whilst the value is the 'power'
+                std::vector<Spectrograph::RawFFT> power_density_data;
+                std::vector<Spectrograph::RawFFT> waterfall_fft_data;
                 std::vector<double> conv_audio_data(raw_audio_data.begin(), raw_audio_data.end());
 
                 std::promise<std::vector<Spectrograph::RawFFT>> stft_promise;
                 std::future<std::vector<Spectrograph::RawFFT>> stft_future = stft_promise.get_future();
 
-                std::thread stft_thread(&SpectroFFTW::stft, spectro_fftw, &conv_audio_data, AUDIO_SIGNAL_LENGTH, hanning_window_size, FFTW_HOP_SIZE, audio_buffer_size, 1, std::move(stft_promise));
+                std::thread stft_thread(&SpectroFFTW::stft, spectro_fftw, &conv_audio_data, AUDIO_SIGNAL_LENGTH, hanning_window_size, FFTW_HOP_SIZE, 1, std::move(stft_promise));
                 waterfall_fft_data = stft_future.get();
 
-                if (!waterfall_fft_data.empty()) {
-                    emit updateWaterfall(waterfall_fft_data, raw_audio_data, hanning_window_size, audio_buffer_size);
-                    stft_thread.join();
+                std::promise<std::vector<Spectrograph::RawFFT>> pds_promise;
+                std::future<std::vector<Spectrograph::RawFFT>> pds_future = pds_promise.get_future();
+
+                std::thread pds_thread(&SpectroFFTW::calcPwr, spectro_fftw, waterfall_fft_data, hanning_window_size, std::move(pds_promise));
+                power_density_data = pds_future.get();
+
+                //
+                // The Waterfall FFT data vector is no longer needed, since the power density information has been
+                // added to the other one. May as well clear and shrink it then to save memory!
+                //
+                waterfall_fft_data.clear();
+                waterfall_fft_data.shrink_to_fit();
+
+                if (!power_density_data.empty()) {
+                    emit updateWaterfall(power_density_data, raw_audio_data, hanning_window_size, audio_buffer_size);
                 }
+
+                stft_thread.join();
+                pds_thread.join();
 
                 std::this_thread::sleep_for(std::chrono::duration(std::chrono::milliseconds(SPECTRO_TIME_UPDATE_MILLISECS)));
             }

@@ -38,7 +38,8 @@
 #include "spectro_fftw.hpp"
 #include <cmath>
 #include <QMessageBox>
-#include <utility> 
+#include <utility>
+
 using namespace GekkoFyre;
 using namespace Database;
 using namespace Settings;
@@ -68,11 +69,14 @@ SpectroFFTW::~SpectroFFTW()
  * @param window_size
  * @param hop_size
  * @return
+ * @note <https://dsp.stackexchange.com/questions/10062/when-should-i-calculate-psd-instead-of-plain-fft-magnitude-spectrum>
  */
 void SpectroFFTW::stft(std::vector<double> *signal, int signal_length, int window_size,
-                       int hop_size, const size_t &audio_buffer_size, const int &feed_rate,
+                       int hop_size, const int &feed_rate,
                        std::promise<std::vector<Spectrograph::RawFFT>> ret_data_promise)
 {
+    Q_UNUSED(feed_rate);
+
     std::unique_lock<std::timed_mutex> lck_guard(calc_stft_mtx, std::defer_lock);
     std::vector<Spectrograph::RawFFT> raw_fft_vec;
 
@@ -171,14 +175,73 @@ void SpectroFFTW::stft(std::vector<double> *signal, int signal_length, int windo
     return;
 }
 
-std::vector<float> SpectroFFTW::powerSpectrum(fftw_complex *spectrum, int N)
+/**
+ * @brief SpectroFFTW::calcPwr
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param tds
+ * @param win_size
+ * @param pds_data_promise
+ * @see GekkoFyre::SpectroFFTW::powerSpectrum().
+ */
+void SpectroFFTW::calcPwr(const std::vector<Spectrograph::RawFFT> &tds, const int &win_size,
+                          std::promise<std::vector<Spectrograph::RawFFT>> pds_data_promise)
 {
-    std::vector<float> ret_val;
-    for (int k = 1; k < ((N + 1) / 2); ++k) {
-        ret_val.push_back(spectrum[k][0] * spectrum[k][0] + spectrum[k][1] * spectrum[k][1]);
+    std::mutex calc_pwr_handler_mtx;
+    std::lock_guard<std::mutex> lck_guard(calc_pwr_handler_mtx);
+    std::vector<Spectrograph::RawFFT> stft_data = tds;
 
-        if (N % 2 == 0) {
-            ret_val.push_back(spectrum[N/2][0] * spectrum[N/2][0]); // Nyquist frequency
+    if (!stft_data.empty()) {
+        for (size_t i = 0; i < tds.size(); ++i) {
+            stft_data.at(i).power_density_spectrum = powerSpectrum(stft_data.at(i).chunk_forward_0, win_size);
+        }
+    }
+
+    pds_data_promise.set_value(stft_data);
+    return;
+}
+
+/**
+ * @brief SpectroFFTW::calcPwrTest For performing tests with GekkoFyre::SpectroFFTW::calcPwr() and
+ * the like.
+ * @author Hartmut Pfitzinger <https://stackoverflow.com/questions/24696122/calculating-the-power-spectral-density/24739037>
+ * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param num_periods The number of sinusoidal periods to generate at a given time.
+ * @param win_size A window size of `512` will mean that a single sinusoidal period will have
+ * exactly 512 samples, 2 => 256, 3 => 512 / 3, , 4 => 128, etc. This way, you are able to generate
+ * energy at a specific spectral line.
+ * @note <https://stackoverflow.com/questions/24696122/calculating-the-power-spectral-density/24739037>
+ * @see GekkoFyre::SpectroFFTW::powerSpectrum(), GekkoFyre::SpectroFFTW::calcPwr().
+ */
+void SpectroFFTW::calcPwrTest(const size_t &num_periods, const int &win_size)
+{
+    for (size_t N = 0; N < win_size; ++N) {
+        double value = 0;
+        value = std::fabs(std::sin((2 * M_PI * num_periods * N) / win_size));
+    }
+
+    return;
+}
+
+/**
+ * @brief SpectroFFTW::powerSpectrum
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param tds The Time Domain Signal, as calculated originally by GekkoFyre::SpectroFFTW::stft().
+ * @param win_size Be sure to keep this the same as the one used in any previous FFT-related functions. But
+ * please note that this is NOT the calculated result of the hanning window.
+ * @return The calculated Power Density Spectrum values.
+ * @note <https://stackoverflow.com/questions/24696122/calculating-the-power-spectral-density/24739037>
+ */
+std::vector<float> SpectroFFTW::powerSpectrum(fftw_complex *tds, const int &win_size)
+{
+    std::mutex calc_pwr_spectrum_mtx;
+    std::lock_guard<std::mutex> lck_guard(calc_pwr_spectrum_mtx);
+
+    std::vector<float> ret_val;
+    for (int k = 1; k < ((win_size + 1) / 2); ++k) {
+        ret_val.push_back(tds[k][0] * tds[k][0] + tds[k][1] * tds[k][1]);
+
+        if (win_size % 2 == 0) {
+            ret_val.push_back(tds[win_size/2][0] * tds[win_size/2][0]); // Nyquist frequency
         }
     }
 

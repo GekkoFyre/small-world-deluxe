@@ -919,8 +919,8 @@ bool MainWindow::stopRecordingInput(const bool &recording_is_stopped, const int 
 }
 
 void MainWindow::updateSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &data,
-                                   const std::vector<short> &raw_audio_data,
-                                   const int &hanning_window_size, const size_t &buffer_size)
+                                   const std::vector<short> &raw_audio_data, const int &hanning_window_size,
+                                   const size_t &buffer_size)
 {
     try {
         if (!data.empty()) {

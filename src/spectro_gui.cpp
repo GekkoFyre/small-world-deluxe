@@ -277,7 +277,7 @@ void SpectroGui::calcMatrixData(const std::vector<RawFFT> &values, const int &ha
         std::vector<double> x_values;
         for (size_t i = 0; i < values.size(); ++i) {
             for (size_t j = 0; j < hanning_window_size; ++j) {
-                const short x_axis_val = *values.at(i).chunk_forward_0[j];
+                const short x_axis_val = values.at(i).chunk_forward_0[j][0];
                 x_values.push_back(x_axis_val);
             }
         }
@@ -432,7 +432,9 @@ double SpectroGui::resetAutoscaleVal()
  * requisite FFT samples.
  * @param buffer_size The size of the audio buffer itself.
  */
-void SpectroGui::applyData(const std::vector<RawFFT> &values, const std::vector<short> &raw_audio_data, const int &hanning_window_size, const size_t &buffer_size)
+void SpectroGui::applyData(const std::vector<RawFFT> &values,
+                           const std::vector<short> &raw_audio_data, const int &hanning_window_size,
+                           const size_t &buffer_size)
 {
     try {
         // Start a new thread since it will block the current (GUI-based) thread otherwise...

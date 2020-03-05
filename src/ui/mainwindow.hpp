@@ -154,8 +154,8 @@ protected slots:
 public slots:
     bool stopRecordingInput(const bool &recording_is_stopped, const int &wait_time = 5000);
     void updateSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &data,
-                           const std::vector<short> &raw_audio_data, const int &hanning_window_size,
-                           const size_t &buffer_size);
+                           const std::vector<short> &raw_audio_data,
+                           const int &hanning_window_size, const size_t &buffer_size);
 
 signals:
     void refreshVuMeter(const double &volumePctg);
@@ -164,8 +164,8 @@ signals:
     void stopRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
     void gkExitApp();
     void sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values,
-                         const std::vector<short> &raw_audio_data, const int &hanning_window_size,
-                         const size_t &buffer_size);
+                         const std::vector<short> &raw_audio_data,
+                         const int &hanning_window_size, const size_t &buffer_size);
 
 private:
     Ui::MainWindow *ui;

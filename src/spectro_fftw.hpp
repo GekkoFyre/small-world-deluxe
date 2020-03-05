@@ -57,9 +57,10 @@ public:
                          QObject *parent = nullptr);
     ~SpectroFFTW();
 
-    void stft(std::vector<double> *signal, int signal_length, int window_size, int hop_size,
-              const size_t &audio_buffer_size, const int &feed_rate,
+    void stft(std::vector<double> *signal, int signal_length, int window_size, int hop_size, const int &feed_rate,
               std::promise<std::vector<Spectrograph::RawFFT>> ret_data_promise);
+    void calcPwr(const std::vector<Spectrograph::RawFFT> &tds, const int &win_size,
+                 std::promise<std::vector<Spectrograph::RawFFT> > pds_data_promise);
 
 private:
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
@@ -68,7 +69,9 @@ private:
     std::timed_mutex calc_hanning_mtx;
 
     void hanning(int win_length, double *buffer);
-    std::vector<float> powerSpectrum(fftw_complex *spectrum, int N);
+
+    void calcPwrTest(const size_t &num_periods, const int &win_size);
+    std::vector<float> powerSpectrum(fftw_complex *tds, const int &win_size);
 
 };
 };

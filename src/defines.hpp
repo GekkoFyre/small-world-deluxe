@@ -347,7 +347,7 @@ namespace Spectrograph {
     struct RawFFT {
         fftw_complex *chunk_forward_0;
         fftw_complex *chunk_forward_1;
-        std::vector<float> power;
+        std::vector<float> power_density_spectrum;
     };
 
     struct Window {

@@ -124,16 +124,16 @@ public:
 public slots:
     void showSpectrogram(const bool &toggled);
     void applyData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values,
-                   const std::vector<short> &raw_audio_data, const int &hanning_window_size,
-                   const size_t &buffer_size);
+                   const std::vector<short> &raw_audio_data,
+                   const int &hanning_window_size, const size_t &buffer_size);
 
 private slots:
     void calcInterval();
 
 signals:
     void sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values,
-                         const std::vector<short> &raw_audio_data, const int &hanning_window_size,
-                         const size_t &buffer_size);
+                         const std::vector<short> &raw_audio_data,
+                         const int &hanning_window_size, const size_t &buffer_size);
 
 private:
     QwtMatrixRasterData *gkMatrixRaster;
