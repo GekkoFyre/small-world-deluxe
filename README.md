@@ -11,6 +11,34 @@ As a software project just only recently borne mid-July, 2019, `Small World` is 
 
 In the near future, we wish to implement *pattern recognition techniques* into `Small World` so that it may interpret audio streams that contain even a significant amount of noise, as a good pair of ears would almost otherwise do so. We believe that by doing this, we will be going a step higher than most programs of this sort have done in the past, and even in the present.
 
+#### Current/Planned Features
+
+Following is a short list of features, both planned and partially already implemented in some fashion, that we have for this project. We are always taking on new ideas, paradigms, and/or perspectives so please, we invite you to contribute towards `Small World Deluxe` in any manner that you are able towards.
+
+- The ability to use highly compressed, yet rich with decently sounding audio output with regards to voice, audio codecs originally meant for telephony OTA (i.e. over-the-air).
+  - This will allow digital communication primarily on the shortwave frequencies over great distances to far away places in the world from your own location, with excellent error correction features and so on.
+- A functioning spectrograph / waterfall that will give you a highly detailed view of current signaling conditions, both outgoing (TX) and incoming (RX). We are [focusing a great deal of effort on this feature](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/issues/3) so far and hope to have a working version soon!
+- The ability to record/playback [WAV](https://en.wikipedia.org/wiki/WAV)/[MP3](https://en.wikipedia.org/wiki/MP3)/[OGG](https://xiph.org/vorbis/)/etc files.
+- A dialog rich with customization options and settings that you can configure to your heart's desire.
+- Easily send messages to others throughout the world and efficiently make sense of the information you receive in-turn.
+- Convenient and easy-to-use dialog windows that are made with the [Qt5 project](https://www.qt.io/developers), which is the standard within the computing industry for cross-platform software applications.
+- As hinted at just above, this software application is cross-platform with excellent support for both [Linux](https://ubuntu.com/) and [Microsoft Windows 7 through to 10](https://www.microsoft.com/).
+  - There is planned support for [Microsoft Windows XP](https://www.microsoft.com/) and [Macintosh OS/X](https://www.apple.com/macos), so stay tuned!
+
+##### Screenshots
+
+Please note that what is displayed just below may/perhaps be awfully out-of-date. If you want to see how `Small World Deluxe` currently looks, then we advise you to [download the latest release](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/releases), or if one is not available, then to please wait and until a sufficient version *is* available. The *lack of a release* means that we're not stable enough yet.
+
+![smallworld_mainwindow_1](assets\images\screenshots\smallworld_mainwindow_1.png)
+
+![smallworld_settingsdialog_1](assets\images\screenshots\smallworld_settingsdialog_1.png)
+
+![smallworld_settingsdialog_2](assets\images\screenshots\smallworld_settingsdialog_2.png)
+
+![smallworld_settingsdialog_3](assets\images\screenshots\smallworld_settingsdialog_3.png)
+
+![smallworld_settingsdialog_4](assets\images\screenshots\smallworld_settingsdialog_4.png)
+
 ------
 
 #### Binaries
