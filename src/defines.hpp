@@ -122,8 +122,9 @@ namespace GekkoFyre {
 // Mostly regarding FFTW functions
 //
 #define AUDIO_SIGNAL_LENGTH (2048)                      // For audio applications, '2048' seems to be a good length.
-#define FFTW_HOP_SIZE (16384)                            // Choose a smaller hop-size if you want a higher resolution! Needs to be a power of two.
-#define SPECTRO_BANDWIDTH_SIZE (2048)                   // The size and bandwidth of the spectrograph / waterfall window, in hertz.
+#define FFTW_HOP_SIZE (16384)                           // Choose a smaller hop-size if you want a higher resolution! Needs to be a power of two.
+#define SPECTRO_BANDWIDTH_MAX_SIZE (2048)               // The size and bandwidth of the spectrograph / waterfall window, in hertz.
+#define SPECTRO_BANDWIDTH_MIN_SIZE (125)                // The size and bandwidth of the spectrograph / waterfall window, in hertz.
 
 //
 // Concerns spectrograph / waterfall calculations and settings

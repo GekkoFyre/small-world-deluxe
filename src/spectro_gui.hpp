@@ -48,6 +48,11 @@
 #include <qwt_plot_canvas.h>
 #include <qwt_raster_data.h>
 #include <qwt_interval.h>
+#include <qwt_scale_widget.h>
+#include <qwt_scale_draw.h>
+#include <qwt_scale_engine.h>
+#include <qwt_date_scale_engine.h>
+#include <qwt_date_scale_draw.h>
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
 #include <mutex>
@@ -232,6 +237,8 @@ private:
     QwtMatrixRasterData *gkMatrixRaster;
     QwtPlotZoomer *zoomer;
     LinearColorMapRGB *colour_map;
+    QwtDateScaleDraw *date_scale_draw;
+    QwtDateScaleEngine *date_scale_engine;
     QwtInterval z_interval;
     QwtInterval x_interval;
     QwtInterval y_interval;
@@ -244,11 +251,16 @@ private:
     int gkAlpha;                                                // Controls the alpha value of the waterfall chart.
     bool calc_first_data;                                       // Whether we have made our first calculation or not.
     bool already_read_data;
+    qint64 spectro_begin_time;
     qint64 spectro_latest_update;                               // The latest time for when the spectrograph was updated with new data/information.
 
     GekkoFyre::Spectrograph::MatrixData calc_z_history;
     std::unique_ptr<QVector<double>> time_data_history;
     std::vector<short> raw_plot_data;
+
+    size_t y_axis_num_minor_steps;
+    size_t y_axis_num_major_steps;
+    double y_axis_step_size;
 
     //
     // Threads
