@@ -97,17 +97,8 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QWidget *parent
         gkSpectrogram->setData(gkMatrixRaster);
         gkSpectrogram->attach(this);
 
-        const QwtInterval zInterval = gkSpectrogram->data()->interval(Qt::ZAxis);
         QObject::connect(this, SIGNAL(sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const std::vector<short> &, const int &, const size_t &)),
                          this, SLOT(applyData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const std::vector<short> &, const int &, const size_t &)));
-
-        // A color bar on the right axis
-        rightAxis = axisWidget(QwtPlot::yRight);
-        rightAxis->setTitle("Intensity");
-        rightAxis->setColorBarEnabled(true);
-
-        setAxisScale(QwtPlot::yRight, zInterval.minValue(), zInterval.maxValue());
-        enableAxis(QwtPlot::yRight);
 
         plotLayout()->setAlignCanvasToScales(true);
 
@@ -115,28 +106,36 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QWidget *parent
         // https://qwt.sourceforge.io/class_qwt_matrix_raster_data.html#a69db38d8f920edb9dc3f0953ca16db8f
         // Set the type of colour-map used!
         //
-        QwtScaleWidget *axis = axisWidget(QwtPlot::yRight);
         z_interval = gkSpectrogram->data()->interval(Qt::ZAxis);
         colour_map = new LinearColorMapRGB(z_interval);
         gkSpectrogram->setColorMap(colour_map);
-        axis->setColorMap(z_interval, colour_map);
 
         //
-        // Setup x-axis scaling
+        // Setup y-axis scaling
         //
         QwtDateScaleDraw *date_scale_draw = new QwtDateScaleDraw(Qt::OffsetFromUTC);
         QwtDateScaleEngine *date_scale_engine = new QwtDateScaleEngine(Qt::OffsetFromUTC);
-        date_scale_draw->setDateFormat(QwtDate::Second, "mm:ss");
+        date_scale_draw->setTimeSpec(Qt::TimeSpec::OffsetFromUTC);
+        date_scale_engine->setTimeSpec(Qt::TimeSpec::OffsetFromUTC);
+        date_scale_draw->setDateFormat(QwtDate::Second, tr("hh:mm:ss"));
         date_scale_draw->setUtcOffset(QDateTime::currentMSecsSinceEpoch() / 1000);
 
         setAxisScaleDraw(QwtPlot::yLeft, date_scale_draw);
         setAxisScaleEngine(QwtPlot::yLeft, date_scale_engine);
+        // setAxisTitle(QwtPlot::yLeft, tr("Date & Time"));
         setAxisMaxMajor(QwtPlot::yLeft, 0);
-        setAxisMaxMinor(QwtPlot::yLeft, 10);
+        setAxisMaxMinor(QwtPlot::yLeft, 10.00);
 
         QTimer *date_plotter = new QTimer(this);
         QObject::connect(date_plotter, SIGNAL(timeout()), this, SLOT(appendDateTime()));
         date_plotter->start(SPECTRO_TIME_UPDATE_MILLISECS);
+
+        //
+        // Setup x-axis scaling
+        //
+        setAxisTitle(QwtPlot::xBottom, tr("Frequency (Hz)"));
+        setAxisLabelRotation(QwtPlot::xBottom, -50.0); // Puts the label markings (i.e. frequency response labels) at an angle
+        setAxisLabelAlignment(QwtPlot::xBottom, Qt::AlignCenter | Qt::AlignBottom);
 
         //
         // Instructions!
@@ -152,7 +151,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QWidget *parent
         zoomer->setMousePattern(QwtEventPattern::MouseSelect3, Qt::RightButton);
 
         QwtPlotPanner *panner = new QwtPlotPanner(canvas());
-        panner->setAxisEnabled(QwtPlot::yRight, false);
+        panner->setAxisEnabled(QwtPlot::xBottom, false);
         panner->setMouseButton(Qt::MidButton);
 
         const QColor c(Qt::darkBlue);
@@ -193,10 +192,7 @@ SpectroGui::~SpectroGui()
     //
 
     delete zoomer;
-    delete rightAxis;
-
-    // gkSpectrogram->detach();
-    // delete gkSpectrogram;
+    delete gkSpectrogram;
 }
 
 void SpectroGui::showContour(const int &toggled)
@@ -343,8 +339,6 @@ void SpectroGui::calcMatrixData(const std::vector<RawFFT> &values, const int &ha
  */
 void SpectroGui::appendDateTime()
 {
-    static size_t spectro_timing_counter = 0;
-
     /*
     QDateTime time_now = QDateTime::currentDateTimeUtc();
 
@@ -372,30 +366,6 @@ void SpectroGui::clearPlots()
     time_data_history->clear();
     time_data_history->shrink_to_fit();
     resetAxisRanges();
-
-    return;
-}
-
-/**
- * @brief SpectroGui::plotNewData
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void SpectroGui::plotNewData()
-{
-    removeStaleData();
-
-    // Check for any new data
-    if (!already_read_data) {
-        // Plot new data
-
-        // Check autoscale as for some reason, `QwtSpectrogram` doesn't support autoscale
-        if (std::fabs(z_interval.maxValue()) == 0.0f) {
-            double new_value = resetAutoscaleVal();
-            if (new_value != 0) {
-                rightAxis->setColorMap(QwtInterval(0, new_value), colour_map);
-            }
-        }
-    }
 
     return;
 }
@@ -454,10 +424,8 @@ void SpectroGui::applyData(const std::vector<RawFFT> &values,
             calc_first_data = true;
         }
 
-        y_interval.setMaxValue(num_rows);
-        x_interval.setMaxValue(calc_z_history.window_size);
-
-        setAxisScale(QwtPlot::yRight, z_interval.minValue(), z_interval.maxValue());
+        y_interval.setMaxValue(10.00);
+        x_interval.setMaxValue(SPECTRO_BANDWIDTH_SIZE);
 
         calc_matrix_thread.join();
         replot();
@@ -481,16 +449,8 @@ void SpectroGui::preparePlot()
 {
     x_interval.setMaxValue(SPECTRO_BANDWIDTH_SIZE);
     x_interval.setMinValue(0.00);
-    y_interval.setMaxValue(1024.00); // TODO: Just a temporary figure for the y-axis
+    y_interval.setMaxValue(10.00); // TODO: Just a temporary figure for the y-axis
     y_interval.setMinValue(0.00);
-
-    //
-    // Color map values
-    //
-    z_interval.setMinValue(0.00);
-    // z_interval.setMaxValue(1.00);
-
-    resetAxisRanges();
 
     return;
 }
@@ -502,10 +462,9 @@ void SpectroGui::preparePlot()
  */
 void SpectroGui::resetAxisRanges()
 {
-    // plot()->setAutoReplot(false);
-    // setAxisScale(QwtPlot::yLeft, 0, 1024, 128);
-    // setAxisScale(QwtPlot::yRight, 0, 12, 3);
-    // setAxisScale(QwtPlot::xBottom, 0, 2048, 256);
+    plot()->setAutoReplot(false);
+    setAxisScale(QwtPlot::yLeft, y_interval.minValue(), y_interval.maxValue(), 1);     // Dates & Timing
+    setAxisScale(QwtPlot::xBottom, 0, 2048, 256);   // Frequency (Hz)
 
     return;
 }
@@ -567,7 +526,7 @@ void SpectroGui::calcInterval()
     gkMatrixRaster->setInterval(Qt::XAxis, QwtInterval(x_interval.minValue(), x_interval.maxValue(), QwtInterval::ExcludeMaximum));
     gkMatrixRaster->setInterval(Qt::YAxis, QwtInterval(y_interval.minValue(), y_interval.maxValue(), QwtInterval::ExcludeMaximum));
     gkMatrixRaster->setInterval(Qt::ZAxis, QwtInterval(z_interval.minValue(), z_interval.maxValue()));
-    resetAxisRanges();
+    replot();
 
     return;
 }

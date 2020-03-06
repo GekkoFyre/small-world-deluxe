@@ -231,7 +231,6 @@ signals:
 private:
     QwtMatrixRasterData *gkMatrixRaster;
     QwtPlotZoomer *zoomer;
-    QwtScaleWidget *rightAxis;
     LinearColorMapRGB *colour_map;
     QwtInterval z_interval;
     QwtInterval x_interval;
@@ -270,7 +269,6 @@ private:
                         std::promise<Spectrograph::MatrixData> matrix_data_promise);
     void removeStaleData();
     void clearPlots();
-    void plotNewData();
     double resetAutoscaleVal();
 
     void preparePlot();
