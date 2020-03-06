@@ -146,6 +146,10 @@ void SpectroFFTW::stft(std::vector<double> *signal, int signal_length, int windo
                     raw_fft.chunk_forward_0[i][0] = fft_result[i][0];
                     raw_fft.chunk_forward_1[i][1] = fft_result[i][1];
                     // raw_fft.power = powerSpectrum(raw_fft.chunk_forward_0, fft_len);
+
+                    raw_fft.hanning_win = *window;
+                    raw_fft.window_size = window_size;
+
                     raw_fft_vec.push_back(raw_fft);
                 }
 

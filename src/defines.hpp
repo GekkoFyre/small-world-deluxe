@@ -122,7 +122,7 @@ namespace GekkoFyre {
 // Mostly regarding FFTW functions
 //
 #define AUDIO_SIGNAL_LENGTH (2048)                      // For audio applications, '2048' seems to be a good length.
-#define FFTW_HOP_SIZE (8192)                            // Choose a smaller hop-size if you want a higher resolution! Needs to be a power of two.
+#define FFTW_HOP_SIZE (16384)                            // Choose a smaller hop-size if you want a higher resolution! Needs to be a power of two.
 #define SPECTRO_BANDWIDTH_SIZE (2048)                   // The size and bandwidth of the spectrograph / waterfall window, in hertz.
 
 //
@@ -130,9 +130,6 @@ namespace GekkoFyre {
 //
 #define SPECTRO_TIME_UPDATE_MILLISECS (1000)            // How often the spectrograph / waterfall should update, in milliseconds.
 #define SPECTRO_TIME_HORIZON (60)                       // Not sure what this is, as it has been reverse engineered from something else.
-#define SPECTRO_SAMPLING_FREQ (2048)                    // The audio frequency that we are sampling at for the spectrograph.
-#define SPECTRO_WINDOW_WIDTH (64)                       // The width, or rather, the x-axis of the spectrograph.
-#define SPECTRO_Z_MAXIMUM (120)                         // The maximum z-interval, or rather, color interval to be expected.
 
 #ifndef M_PI
 #define M_PI (3.14159265358979323846) /* pi */
@@ -348,6 +345,8 @@ namespace Spectrograph {
         fftw_complex *chunk_forward_0;
         fftw_complex *chunk_forward_1;
         std::vector<double> power_density_spectrum;
+        double hanning_win;
+        size_t window_size;
     };
 
     struct Window {
@@ -360,21 +359,24 @@ namespace Spectrograph {
         Window axis;
     };
 
+    struct AxisData {
+        QwtInterval z_interval;             // Interval values for the z-axis.
+        QwtInterval x_interval;             // Interval values for the x-axis.
+        QwtInterval y_interval;             // Interval values for the y-axis.
+    };
+
     //
     // Used for the raster/matrix data calculations within the spectrograph/waterfall of QMainWindow!
     //
     struct MatrixData {
-        QVector<double> z_data_calcs;
-        size_t y_axis_incr;
-        QwtInterval z_interval;
-        QwtInterval x_interval;
-        QwtInterval y_interval;
-        double min_z_axis_val;
-        double max_z_axis_val;
-        size_t num_cols;
-        size_t num_cols_double_pwr;
-        size_t y_axis_size;
-        size_t x_axis_size;
+        QVector<double> z_data_calcs;       // STFT (i.e. Fast Fourier Transformation) calculations as processed by GekkoFyre::SpectroFFTW::stft().
+        QwtInterval z_interval;             // Interval values for the z-axis.
+        QwtInterval x_interval;             // Interval values for the x-axis.
+        QwtInterval y_interval;             // Interval values for the y-axis.
+        double min_z_axis_val;              // Most minimum value as presented by the z-axis (the coloration portion).
+        double max_z_axis_val;              // Most maximum value as presented by the z-axis (the coloration portion).
+        size_t window_size;                 // The value as passed towards GekkoFyre::SpectroFFTW::stft().
+        size_t hanning_win;                 // The 'window hanning' value.
     };
 }
 };
