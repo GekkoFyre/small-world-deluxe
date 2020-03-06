@@ -59,6 +59,7 @@
 #include <QObject>
 #include <QWidget>
 #include <QVector>
+#include <QDateTime>
 #include <QMouseEvent>
 
 namespace GekkoFyre {
@@ -241,12 +242,12 @@ private:
 
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     GekkoFyre::Spectrograph::GkColorMap gkMapType;
-    int gkAlpha;
-    bool calc_first_data;       // Whether we have made our first calculation or not
-    bool time_already_set;
+    int gkAlpha;                                                // Controls the alpha value of the waterfall chart.
+    bool calc_first_data;                                       // Whether we have made our first calculation or not.
     bool already_read_data;
+    qint64 spectro_latest_update;                               // The latest time for when the spectrograph was updated with new data/information.
 
-    std::unique_ptr<GekkoFyre::Spectrograph::MatrixData> calc_z_history;
+    GekkoFyre::Spectrograph::MatrixData calc_z_history;
     std::unique_ptr<QVector<double>> time_data_history;
     std::vector<short> raw_plot_data;
 
@@ -275,6 +276,8 @@ private:
     void preparePlot();
     void resetAxisRanges();
     int calcWindowWidth();
+
+    QVector<double> convMapToVec(const QMap<qint64, std::pair<QVector<double>, Spectrograph::GkAxisData> > &z_calc_information);
 };
 
 class GkZoomer: public QwtPlotZoomer {

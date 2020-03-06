@@ -359,7 +359,7 @@ namespace Spectrograph {
         Window axis;
     };
 
-    struct AxisData {
+    struct GkAxisData {
         QwtInterval z_interval;             // Interval values for the z-axis.
         QwtInterval x_interval;             // Interval values for the x-axis.
         QwtInterval y_interval;             // Interval values for the y-axis.
@@ -369,14 +369,11 @@ namespace Spectrograph {
     // Used for the raster/matrix data calculations within the spectrograph/waterfall of QMainWindow!
     //
     struct MatrixData {
-        QVector<double> z_data_calcs;       // STFT (i.e. Fast Fourier Transformation) calculations as processed by GekkoFyre::SpectroFFTW::stft().
-        QwtInterval z_interval;             // Interval values for the z-axis.
-        QwtInterval x_interval;             // Interval values for the x-axis.
-        QwtInterval y_interval;             // Interval values for the y-axis.
-        double min_z_axis_val;              // Most minimum value as presented by the z-axis (the coloration portion).
-        double max_z_axis_val;              // Most maximum value as presented by the z-axis (the coloration portion).
-        size_t window_size;                 // The value as passed towards GekkoFyre::SpectroFFTW::stft().
-        size_t hanning_win;                 // The 'window hanning' value.
+        QMap<qint64, std::pair<QVector<double>, GkAxisData>> z_data_calcs;      // STFT (i.e. Fast Fourier Transformation) calculations as processed by GekkoFyre::SpectroFFTW::stft().
+        double min_z_axis_val;                                                  // Most minimum value as presented by the z-axis (the coloration portion).
+        double max_z_axis_val;                                                  // Most maximum value as presented by the z-axis (the coloration portion).
+        size_t window_size;                                                     // The value as passed towards GekkoFyre::SpectroFFTW::stft().
+        size_t hanning_win;                                                     // The 'window hanning' value.
     };
 }
 };

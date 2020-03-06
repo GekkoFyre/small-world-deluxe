@@ -52,7 +52,6 @@
 #include <QList>
 #include <QColormap>
 #include <QTimer>
-#include <QDateTime>
 
 using namespace GekkoFyre;
 using namespace Spectrograph;
@@ -134,8 +133,6 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QWidget *parent
         setAxisScaleEngine(QwtPlot::yLeft, date_scale_engine);
         setAxisMaxMajor(QwtPlot::yLeft, 0);
         setAxisMaxMinor(QwtPlot::yLeft, 10);
-
-        replot();
 
         QTimer *date_plotter = new QTimer(this);
         QObject::connect(date_plotter, SIGNAL(timeout()), this, SLOT(appendDateTime()));
@@ -275,13 +272,14 @@ void SpectroGui::calcMatrixData(const std::vector<RawFFT> &values, const int &ha
     default_data.setMinValue(0);
 
     MatrixData matrix_ret_data;
-    matrix_ret_data.z_data_calcs = QVector<double>();
+    GkAxisData axis_data;
+    matrix_ret_data.z_data_calcs = QMap<qint64, std::pair<QVector<double>, GkAxisData>>();
     matrix_ret_data.window_size = 0;
     matrix_ret_data.min_z_axis_val = 0;
     matrix_ret_data.max_z_axis_val = 0;
-    matrix_ret_data.z_interval = default_data;
-    matrix_ret_data.y_interval = default_data;
-    matrix_ret_data.x_interval = default_data;
+    axis_data.z_interval = default_data;
+    axis_data.y_interval = default_data;
+    axis_data.x_interval = default_data;
 
     try {
         std::vector<double> x_values;
@@ -313,9 +311,11 @@ void SpectroGui::calcMatrixData(const std::vector<RawFFT> &values, const int &ha
             }
         }
 
-        matrix_ret_data.z_data_calcs = conv_x_values;
+        qint64 time_now = QDateTime::currentMSecsSinceEpoch();
+        spectro_latest_update = time_now;
+        matrix_ret_data.z_data_calcs.insert(time_now, std::make_pair(conv_x_values, axis_data));
         matrix_ret_data.window_size = values.at(0).window_size;
-        matrix_ret_data.z_interval.setMaxValue(matrix_ret_data.window_size);
+        axis_data.z_interval.setMaxValue(matrix_ret_data.window_size);
 
         conv_x_values.clear();
         conv_x_values.shrink_to_fit();
@@ -346,12 +346,12 @@ void SpectroGui::appendDateTime()
     static size_t spectro_timing_counter = 0;
 
     /*
-    QDateTime time_now = QDateTime::currentDateTime();
+    QDateTime time_now = QDateTime::currentDateTimeUtc();
 
     time_data_history->append(time_now.toTime_t() + time_now.time().msec() / 1000.0);
     while (time_data_history->back() - time_data_history->front() > SPECTRO_TIME_HORIZON) {
         time_data_history->pop_front();
-        z_data_history->remove(0, std::fminl(calc_z_history->num_cols, z_data_history->size()));
+        z_data_history->remove(0, std::fminl(calc_z_history.num_cols, z_data_history->size()));
     }
     */
 
@@ -432,22 +432,30 @@ void SpectroGui::applyData(const std::vector<RawFFT> &values,
         std::future<MatrixData> calc_matrix_future = calc_matrix_promise.get_future();
         std::thread calc_matrix_thread(&SpectroGui::calcMatrixData, this, values, hanning_window_size, buffer_size, std::move(calc_matrix_promise));
         auto matrix_data = calc_matrix_future.get(); // TODO: Current source of blocking the GUI-thread; need to fix!
-        calc_z_history = std::make_unique<MatrixData>(matrix_data);
+
+        for (const auto &mapped_data: matrix_data.z_data_calcs.toStdMap()) {
+            calc_z_history.z_data_calcs.insert(mapped_data.first, mapped_data.second);
+        }
+
+        calc_z_history.min_z_axis_val = matrix_data.min_z_axis_val;
+        calc_z_history.max_z_axis_val = matrix_data.max_z_axis_val;
+        calc_z_history.window_size = matrix_data.window_size;
+        calc_z_history.hanning_win = matrix_data.hanning_win;
 
         raw_plot_data = raw_audio_data;
-        num_rows = (calc_z_history->z_data_calcs.size() / calc_z_history->window_size);
+        num_rows = (calc_z_history.z_data_calcs.size() / calc_z_history.window_size);
 
-        z_interval.setMinValue(std::abs(calc_z_history->min_z_axis_val));
-        z_interval.setMaxValue(std::abs(calc_z_history->max_z_axis_val));
+        z_interval.setMinValue(std::abs(calc_z_history.min_z_axis_val));
+        z_interval.setMaxValue(std::abs(calc_z_history.max_z_axis_val));
 
-        gkMatrixRaster->setValueMatrix(calc_z_history->z_data_calcs, calc_z_history->window_size);
+        gkMatrixRaster->setValueMatrix(convMapToVec(calc_z_history.z_data_calcs), calc_z_history.window_size);
         gkSpectrogram->setData(gkMatrixRaster);
         if (!calc_first_data) {
             calc_first_data = true;
         }
 
         y_interval.setMaxValue(num_rows);
-        x_interval.setMaxValue(calc_z_history->window_size);
+        x_interval.setMaxValue(calc_z_history.window_size);
 
         setAxisScale(QwtPlot::yRight, z_interval.minValue(), z_interval.maxValue());
 
@@ -510,6 +518,36 @@ int SpectroGui::calcWindowWidth()
     } else {
         return -1;
     }
+}
+
+/**
+ * @brief SpectroGui::convMapToVec returns the FFT data from the mapped z-axis information.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param z_calc_information The stored and mapped results of the calculated FFT z-axis info.
+ * @return The to be extracted 2D vector.
+ */
+QVector<double> SpectroGui::convMapToVec(const QMap<qint64, std::pair<QVector<double>, GkAxisData>> &z_calc_information)
+{
+    try {
+        QVector<double> ret_val;
+        for (const auto &curr_data: z_calc_information.toStdMap()) {
+            //
+            // This data is relevant to the current time on the user's local system, in
+            // the UTC timezone.
+            //
+            if (curr_data.first == spectro_latest_update) {
+                ret_val = curr_data.second.first;
+            }
+        }
+
+        return ret_val;
+    } catch (const std::exception &e) {
+        HWND hwnd_spectro_conv_vec;
+        gkStringFuncs->modalDlgBoxOk(hwnd_spectro_conv_vec, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
+        DestroyWindow(hwnd_spectro_conv_vec);
+    }
+
+    return QVector<double>();
 }
 
 void SpectroGui::setResampleMode(int mode)
