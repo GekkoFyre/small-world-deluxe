@@ -63,21 +63,9 @@ void SpectroDialog::on_pushButton_apply_clicked()
     return;
 }
 
-void SpectroDialog::on_pushButton_reset_clicked()
-{
-    return;
-}
-
 void SpectroDialog::on_pushButton_exit_clicked()
 {
     this->close();
-}
-
-void SpectroDialog::on_pushButton_contour_toggled(bool checked)
-{
-    gkSpectroGui->showContour(checked);
-
-    return;
 }
 
 void SpectroDialog::on_pushButton_activate_spectro_toggled(bool checked)
@@ -101,5 +89,10 @@ void SpectroDialog::on_pushButton_export_graph_clicked()
 {
     QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
 
+    return;
+}
+
+void SpectroDialog::on_pushButton_print_graph_clicked()
+{
     return;
 }

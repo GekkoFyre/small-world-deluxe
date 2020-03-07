@@ -36,15 +36,11 @@
  ****************************************************************************************************/
 
 #include "spectro_gui.hpp"
-#include <boost/exception/all.hpp>
-#include <boost/asio.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
 #include <qwt_plot_panner.h>
 #include <qwt_plot_layout.h>
 #include <qwt_plot_renderer.h>
 #include <algorithm>
 #include <utility>
-#include <QList>
 #include <QColormap>
 #include <QTimer>
 
@@ -82,13 +78,6 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         // These are said to use quite a few system resources!
         gkSpectrogram->setRenderHint(QwtPlotItem::RenderAntialiased);
         gkMatrixRaster->setResampleMode(ResampleMode::BilinearInterpolation);
-
-        /*
-        QList<double> contourLevels;
-        for (double level = 0.5; level < 10.0; level += 1.0) {
-            contourLevels += level;
-        }
-        */
 
         gkSpectrogram->setData(gkMatrixRaster);
         gkSpectrogram->attach(this);
@@ -136,13 +125,13 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         QObject::connect(date_plotter, SIGNAL(timeout()), this, SLOT(appendDateTime()));
         date_plotter->start(SPECTRO_REFRESH_CYCLE_MILLISECS);
 
-        right_axis = axisWidget(QwtPlot::yRight);
+        right_axis = axisWidget(QwtPlot::xTop);
         right_axis->setTitle(tr("Intensity"));
-        right_axis->setColorBarWidth(32);
+        right_axis->setColorBarWidth(16);
         right_axis->setColorBarEnabled(true);
         right_axis->setColorMap(gkSpectrogram->data()->interval(Qt::ZAxis), colour_map);
         right_axis->setEnabled(true);
-        enableAxis(QwtPlot::yRight);
+        enableAxis(QwtPlot::xTop);
 
         //
         // Setup x-axis scaling
@@ -178,7 +167,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         QObject::connect(refresh_data_timer, SIGNAL(timeout()), this, SLOT(refreshData()));
         refresh_data_timer->start(SPECTRO_REFRESH_CYCLE_MILLISECS);
 
-        refresh_data_thread = boost::thread(&SpectroGui::refreshData, this);
+        refresh_data_thread = std::thread(&SpectroGui::refreshData, this);
         refresh_data_thread.detach();
 
         QObject::connect(this, SIGNAL(stopSpectroRecv()), this, SLOT(stopSpectro()));
@@ -217,17 +206,6 @@ SpectroGui::~SpectroGui()
     delete date_scale_draw;
     delete date_scale_engine;
     delete gkSpectrogram;
-}
-
-void SpectroGui::showContour(const int &toggled)
-{
-    std::mutex spectro_contour_mtx;
-    std::lock_guard<std::mutex> lck_guard(spectro_contour_mtx);
-
-    gkSpectrogram->setDisplayMode(QwtPlotSpectrogram::ContourMode, toggled);
-    replot();
-
-    return;
 }
 
 void SpectroGui::showSpectrogram(const bool &toggled)
@@ -321,7 +299,7 @@ void SpectroGui::calcMatrixData(const std::vector<RawFFT> &values, const int &ha
                 // Warning: Do not delete the following without a very good reason!
                 //
                 gkMatrixRaster->setInterval(Qt::ZAxis, QwtInterval(0, x_values_modified[i]));
-                setAxisScale(QwtPlot::yRight, 0, x_values_modified[i]);
+                setAxisScale(QwtPlot::xTop, 0, x_values_modified[i]);
             }
         }
 
@@ -342,7 +320,7 @@ void SpectroGui::calcMatrixData(const std::vector<RawFFT> &values, const int &ha
         x_values_modified.clear();
         x_values_modified.shrink_to_fit();
     } catch (const std::exception &e) {
-        HWND hwnd_spectro_calc_matrix;
+        HWND hwnd_spectro_calc_matrix = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd_spectro_calc_matrix, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd_spectro_calc_matrix);
     }
@@ -466,6 +444,11 @@ void SpectroGui::applyData(const std::vector<RawFFT> &values,
 
         for (const auto &mapped_data: matrix_data.z_data_calcs.toStdMap()) {
             calc_z_history.z_data_calcs.insert(mapped_data.first, mapped_data.second);
+        }
+
+        // Copy the timing data into the more permanent buffer...
+        if (!matrix_data.timing.empty()) {
+            calc_z_history.timing.assign(matrix_data.timing.begin(), matrix_data.timing.end());
         }
 
         calc_z_history.min_z_axis_val = matrix_data.min_z_axis_val;
@@ -634,18 +617,20 @@ QVector<double> SpectroGui::mergeVecsForMatrix(const QMap<qint64, std::pair<QVec
  * @param z_history_data The saved history buffer to be read.
  * @return The analyzed time.
  */
-qint64 SpectroGui::getEarliestPlottedTime(const QMap<qint64, std::pair<QVector<double>, GkAxisData>> &z_calc_data)
+qint64 SpectroGui::getEarliestPlottedTime(const std::vector<GkTimingData> &timing_info)
 {
     std::mutex spectro_earliest_plot_time_mtx;
     std::lock_guard<std::mutex> lck_guard(spectro_earliest_plot_time_mtx);
 
     qint64 earliest_plot_time = 0;
-    if (!z_calc_data.empty()) {
-        auto merged_vecs = mergeVecsForMatrix(z_calc_data);
-        if (!merged_vecs.empty()) {
-            // Extract the earliest plotted time
-            earliest_plot_time = *std::min_element(std::begin(merged_vecs), std::end(merged_vecs));
+    if (!timing_info.empty()) {
+
+        std::vector<qint64> tmp_timing_data;
+        for (const auto &timing: timing_info) {
+            tmp_timing_data.push_back(timing.curr_time);
         }
+
+        earliest_plot_time = *std::min_element(std::begin(tmp_timing_data), std::end(tmp_timing_data));
     }
 
     return earliest_plot_time;
@@ -658,18 +643,20 @@ qint64 SpectroGui::getEarliestPlottedTime(const QMap<qint64, std::pair<QVector<d
  * @param z_history_data The saved history buffer to be read.
  * @return The analyzed time.
  */
-qint64 SpectroGui::getLatestPlottedTime(const QMap<qint64, std::pair<QVector<double>, GkAxisData>> &z_calc_data)
+qint64 SpectroGui::getLatestPlottedTime(const std::vector<GkTimingData> &timing_info)
 {
     std::mutex spectro_latest_plot_time_mtx;
     std::lock_guard<std::mutex> lck_guard(spectro_latest_plot_time_mtx);
 
     qint64 latest_plot_time = 0;
-    if (!z_calc_data.empty()) {
-        auto merged_vecs = mergeVecsForMatrix(z_calc_data);
-        if (!merged_vecs.empty()) {
-            // Extract the latest plotted time
-            latest_plot_time = *std::max_element(std::begin(merged_vecs), std::end(merged_vecs));
+    if (!timing_info.empty()) {
+
+        std::vector<qint64> tmp_timing_data;
+        for (const auto &timing: timing_info) {
+            tmp_timing_data.push_back(timing.curr_time);
         }
+
+        latest_plot_time = *std::max_element(std::begin(tmp_timing_data), std::end(tmp_timing_data));
     }
 
     return latest_plot_time;
@@ -697,6 +684,9 @@ void SpectroGui::calcInterval()
                                                        calc_z_history.curr_axis_info.z_interval.maxValue()));
     right_axis->setColorMap(QwtInterval(calc_z_history.curr_axis_info.z_interval.minValue(),
                                         calc_z_history.curr_axis_info.z_interval.maxValue()), colour_map);
+
+    setAxisScale(QwtPlot::yLeft, (getLatestPlottedTime(calc_z_history.timing) - SPECTRO_Y_AXIS_SIZE),
+                 getLatestPlottedTime(calc_z_history.timing), SPECTRO_REFRESH_CYCLE_MILLISECS);
 
     plotLayout()->setAlignCanvasToScales(true);
     return;

@@ -172,26 +172,6 @@ the performance penalty enacted onto your computer.</string>
        </spacer>
       </item>
       <item row="6" column="0">
-       <spacer name="horizontalSpacer_8">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item row="6" column="1">
-       <widget class="QPushButton" name="pushButton_contour">
-        <property name="text">
-         <string>Contour</string>
-        </property>
-       </widget>
-      </item>
-      <item row="7" column="0">
        <spacer name="horizontalSpacer_11">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -204,7 +184,7 @@ the performance penalty enacted onto your computer.</string>
         </property>
        </spacer>
       </item>
-      <item row="7" column="1">
+      <item row="6" column="1">
        <widget class="QPushButton" name="pushButton_activate_spectro">
         <property name="toolTip">
          <string>(De)activate the spectrogram / waterfall as needed.</string>
@@ -214,7 +194,7 @@ the performance penalty enacted onto your computer.</string>
         </property>
        </widget>
       </item>
-      <item row="8" column="0">
+      <item row="7" column="0">
        <spacer name="horizontalSpacer_3">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -227,7 +207,7 @@ the performance penalty enacted onto your computer.</string>
         </property>
        </spacer>
       </item>
-      <item row="8" column="1">
+      <item row="7" column="1">
        <spacer name="horizontalSpacer_4">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -240,7 +220,7 @@ the performance penalty enacted onto your computer.</string>
         </property>
        </spacer>
       </item>
-      <item row="9" column="0">
+      <item row="8" column="0">
        <spacer name="horizontalSpacer_5">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -253,7 +233,7 @@ the performance penalty enacted onto your computer.</string>
         </property>
        </spacer>
       </item>
-      <item row="9" column="1">
+      <item row="8" column="1">
        <widget class="QPushButton" name="pushButton_apply">
         <property name="toolTip">
          <string>Apply the current state of your settings.</string>
@@ -263,7 +243,7 @@ the performance penalty enacted onto your computer.</string>
         </property>
        </widget>
       </item>
-      <item row="10" column="0">
+      <item row="9" column="0">
        <spacer name="horizontalSpacer_12">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -276,7 +256,7 @@ the performance penalty enacted onto your computer.</string>
         </property>
        </spacer>
       </item>
-      <item row="10" column="1">
+      <item row="9" column="1">
        <widget class="QPushButton" name="pushButton_export_graph">
         <property name="toolTip">
          <string>Export the spectrograph / waterfall and its internal data.</string>
@@ -289,8 +269,8 @@ the performance penalty enacted onto your computer.</string>
         </property>
        </widget>
       </item>
-      <item row="11" column="0">
-       <spacer name="horizontalSpacer_6">
+      <item row="10" column="0">
+       <spacer name="horizontalSpacer_8">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
@@ -302,17 +282,14 @@ the performance penalty enacted onto your computer.</string>
         </property>
        </spacer>
       </item>
-      <item row="11" column="1">
-       <widget class="QPushButton" name="pushButton_reset">
-        <property name="toolTip">
-         <string>Reset the controls and settings back to their default state.</string>
-        </property>
+      <item row="10" column="1">
+       <widget class="QPushButton" name="pushButton_print_graph">
         <property name="text">
-         <string>Reset</string>
+         <string>Print</string>
         </property>
        </widget>
       </item>
-      <item row="12" column="0">
+      <item row="11" column="0">
        <spacer name="horizontalSpacer_7">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -325,7 +302,7 @@ the performance penalty enacted onto your computer.</string>
         </property>
        </spacer>
       </item>
-      <item row="12" column="1">
+      <item row="11" column="1">
        <widget class="QPushButton" name="pushButton_exit">
         <property name="toolTip">
          <string>Exit just this dialog window.</string>

@@ -53,8 +53,6 @@
 #include <qwt_scale_engine.h>
 #include <qwt_date_scale_engine.h>
 #include <qwt_date_scale_draw.h>
-#include <boost/thread.hpp>
-#include <boost/thread/future.hpp>
 #include <mutex>
 #include <vector>
 #include <cstdlib>
@@ -205,7 +203,6 @@ public:
 
     QwtPlotSpectrogram *gkSpectrogram;
 
-    void showContour(const int &toggled);
     void setAlpha(const int &alpha);
     void setTheme(const QColor &colour);
 
@@ -271,7 +268,7 @@ private:
     //
     // Threads
     //
-    boost::thread refresh_data_thread;
+    std::thread refresh_data_thread;
 
     template<class in_it, class out_it>
     out_it copy_every_nth(in_it b, in_it e, out_it r, size_t n) {
@@ -292,8 +289,8 @@ private:
 
     QVector<double> convMapToVec(const QMap<qint64, std::pair<QVector<double>, Spectrograph::GkAxisData>> &z_calc_information);
     QVector<double> mergeVecsForMatrix(const QMap<qint64, std::pair<QVector<double>, Spectrograph::GkAxisData>> &z_calc_data);
-    qint64 getEarliestPlottedTime(const QMap<qint64, std::pair<QVector<double>, Spectrograph::GkAxisData>> &z_calc_data);
-    qint64 getLatestPlottedTime(const QMap<qint64, std::pair<QVector<double>, Spectrograph::GkAxisData>> &z_calc_data);
+    qint64 getEarliestPlottedTime(const std::vector<Spectrograph::GkTimingData> &timing_info);
+    qint64 getLatestPlottedTime(const std::vector<Spectrograph::GkTimingData> &timing_info);
 };
 
 class GkZoomer: public QwtPlotZoomer {

@@ -134,6 +134,7 @@ namespace GekkoFyre {
 #define SPECTRO_TIME_UPDATE_MILLISECS (15000)           // How often, in milliseconds, the spectrograph updates the timing information on the y-axis.
 #define SPECTRO_TIME_HORIZON (60)                       // Not sure what this is, as it has been reverse engineered from something else.
 #define SPECTRO_MAX_BUFFER_SIZE (10)                    // The maximum number of items to store within the buffers associated with the spectrograph.
+#define SPECTRO_Y_AXIS_SIZE (10000)                     // The maximum size of the y-axis, in milliseconds, given that it is based on a timescale.
 
 #ifndef M_PI
 #define M_PI (3.14159265358979323846) /* pi */
