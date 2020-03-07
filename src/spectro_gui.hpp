@@ -224,6 +224,7 @@ public slots:
     void applyData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values,
                    const std::vector<short> &raw_audio_data,
                    const int &hanning_window_size, const size_t &buffer_size);
+    void stopSpectro();
 
 protected slots:
     void calcInterval();
@@ -234,6 +235,7 @@ signals:
     void sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values,
                          const std::vector<short> &raw_audio_data,
                          const int &hanning_window_size, const size_t &buffer_size);
+    void stopSpectroRecv();
 
 private:
     QwtMatrixRasterData *gkMatrixRaster;
@@ -256,13 +258,18 @@ private:
     qint64 spectro_latest_update;                               // The latest time for when the spectrograph was updated with new data/information.
 
     Spectrograph::MatrixData calc_z_history;
-    std::unique_ptr<QVector<double>> time_data_history;
     std::vector<short> raw_plot_data;
 
     size_t y_axis_num_minor_steps;
     size_t y_axis_num_major_steps;
     double y_axis_step_size;
     bool enablePlotRefresh;
+
+    //
+    // Date & Timing
+    //
+    QTimer *date_plotter;
+    QTimer *refresh_data_timer;
 
     //
     // Threads

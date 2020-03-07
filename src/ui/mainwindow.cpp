@@ -214,6 +214,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         gkSpectroGui->setEnabled(true);
         QObject::connect(this, SIGNAL(sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const std::vector<short> &, const int &, const size_t &)),
                          gkSpectroGui, SIGNAL(sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const std::vector<short> &, const int &, const size_t &)));
+        QObject::connect(paMicProcBackground, SIGNAL(stopRecording()), gkSpectroGui, SIGNAL(stopSpectroRecv()));
 
         //
         // Sound & Audio Devices

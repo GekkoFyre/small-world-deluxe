@@ -63,6 +63,7 @@
 #include <QString>
 #include <QStringList>
 #include <QMetaType>
+#include <QDateTime>
 
 #ifdef __cplusplus
 extern "C"
@@ -206,6 +207,7 @@ private:
 
     GekkoFyre::AmateurRadio::Control::Radio *radio;
     QTimer *timer;
+    // QDateTime spectro_gui_init_start; // The very first time for when the spectrograph is initialized by the user!
 
     //
     // This sub-section contains all the boolean variables pertaining to the QPushButtons on QMainWindow that

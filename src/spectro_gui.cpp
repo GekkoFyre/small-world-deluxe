@@ -90,7 +90,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         gkSpectrogram->setData(gkMatrixRaster);
         gkSpectrogram->attach(this);
 
-        const qint64 start_time = QDateTime::currentMSecsSinceEpoch();
+        const static qint64 start_time = QDateTime::currentMSecsSinceEpoch();
         spectro_begin_time = start_time;
         spectro_latest_update = start_time; // Set the initial value for this too!
         enablePlotRefresh = false;
@@ -129,7 +129,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         date_scale_engine->divideScale(spectro_begin_time, spectro_latest_update, y_axis_num_major_steps,
                                        y_axis_num_minor_steps, y_axis_step_size);
 
-        QTimer *date_plotter = new QTimer(this);
+        date_plotter = new QTimer(this);
         QObject::connect(date_plotter, SIGNAL(timeout()), this, SLOT(appendDateTime()));
         date_plotter->start(SPECTRO_TIME_UPDATE_MILLISECS);
 
@@ -170,12 +170,14 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         zoomer->setRubberBandPen(c);
         zoomer->setTrackerPen(c);
 
-        QTimer *refresh_data_timer = new QTimer(this);
+        refresh_data_timer = new QTimer(this);
         QObject::connect(refresh_data_timer, SIGNAL(timeout()), this, SLOT(refreshData()));
         refresh_data_timer->start(SPECTRO_REFRESH_CYCLE_MILLISECS);
 
         refresh_data_thread = boost::thread(&SpectroGui::refreshData, this);
         refresh_data_thread.detach();
+
+        QObject::connect(this, SIGNAL(stopSpectroRecv()), this, SLOT(stopSpectro()));
 
         //
         // Prepares the spectrograph / waterfall for the receiving of new data!
@@ -196,6 +198,8 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
 
 SpectroGui::~SpectroGui()
 {
+    emit stopSpectroRecv();
+
     if (refresh_data_thread.joinable()) {
         refresh_data_thread.join();
     }
@@ -284,6 +288,7 @@ void SpectroGui::calcMatrixData(const std::vector<RawFFT> &values, const int &ha
 
     MatrixData matrix_ret_data;
     GkAxisData axis_data;
+    GkTimingData timing_data;
     matrix_ret_data.z_data_calcs = QMap<qint64, std::pair<QVector<double>, GkAxisData>>();
     matrix_ret_data.window_size = 0;
     matrix_ret_data.min_z_axis_val = 0;
@@ -291,6 +296,9 @@ void SpectroGui::calcMatrixData(const std::vector<RawFFT> &values, const int &ha
     axis_data.z_interval = default_data;
     axis_data.y_interval = default_data;
     axis_data.x_interval = default_data;
+    timing_data.relative_start_time = 0;
+    timing_data.relative_stop_time = 0;
+    timing_data.curr_time = 0;
 
     try {
         std::vector<double> x_values;
@@ -323,6 +331,9 @@ void SpectroGui::calcMatrixData(const std::vector<RawFFT> &values, const int &ha
 
         qint64 time_now = QDateTime::currentMSecsSinceEpoch();
         spectro_latest_update = time_now;
+        timing_data.curr_time = time_now;
+        timing_data.relative_start_time = spectro_begin_time;
+
         matrix_ret_data.z_data_calcs.insert(time_now, std::make_pair(conv_x_values, axis_data));
         matrix_ret_data.window_size = values.at(0).window_size;
         axis_data.z_interval.setMaxValue(matrix_ret_data.window_size);
@@ -399,6 +410,29 @@ void SpectroGui::refreshData()
         replot();
         enablePlotRefresh = false;
     }
+
+    return;
+}
+
+/**
+ * @brief SpectroGui::stopSpectroRecv disables the receiving of audio data and stops any
+ * functionality within the spectrograph itself, effectively disabling it.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void SpectroGui::stopSpectro()
+{
+    date_plotter->stop();
+    refresh_data_timer->stop();
+
+    calc_z_history.z_data_calcs.clear();
+    calc_z_history.timing.clear();
+    calc_z_history.timing.shrink_to_fit();
+    raw_plot_data.clear();
+    raw_plot_data.shrink_to_fit();
+
+    gkMatrixRaster->discardRaster();
+    gkSpectrogram->invalidateCache();
+    replot();
 
     return;
 }

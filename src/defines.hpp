@@ -364,9 +364,9 @@ namespace Spectrograph {
     };
 
     struct GkAxisData {
-        QwtInterval z_interval;             // Interval values for the z-axis.
-        QwtInterval x_interval;             // Interval values for the x-axis.
-        QwtInterval y_interval;             // Interval values for the y-axis.
+        QwtInterval z_interval;                                                 // Interval values for the z-axis.
+        QwtInterval x_interval;                                                 // Interval values for the x-axis.
+        QwtInterval y_interval;                                                 // Interval values for the y-axis.
     };
 
     struct GkTimingData {
