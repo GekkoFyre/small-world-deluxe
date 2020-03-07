@@ -75,7 +75,6 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
 
         already_read_data = false;
         calc_first_data = false;
-        time_data_history = std::make_unique<QVector<double>>();
 
         // These are said to use quite a few system resources!
         gkSpectrogram->setRenderHint(QwtPlotItem::RenderAntialiased);
@@ -94,6 +93,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         const qint64 start_time = QDateTime::currentMSecsSinceEpoch();
         spectro_begin_time = start_time;
         spectro_latest_update = start_time; // Set the initial value for this too!
+        enablePlotRefresh = false;
 
         QObject::connect(this, SIGNAL(sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const std::vector<short> &, const int &, const size_t &)),
                          this, SLOT(applyData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const std::vector<short> &, const int &, const size_t &)));
@@ -170,14 +170,12 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         zoomer->setRubberBandPen(c);
         zoomer->setTrackerPen(c);
 
-        QTimer *calc_interval_timer = new QTimer(this);
-        QObject::connect(calc_interval_timer, SIGNAL(timeout()), this, SLOT(calcInterval()));
-        calc_interval_timer->start(SPECTRO_REFRESH_CYCLE_MILLISECS);
+        QTimer *refresh_data_timer = new QTimer(this);
+        QObject::connect(refresh_data_timer, SIGNAL(timeout()), this, SLOT(refreshData()));
+        refresh_data_timer->start(SPECTRO_REFRESH_CYCLE_MILLISECS);
 
-        calc_interval_thread = boost::thread(&SpectroGui::calcInterval, this);
-        calc_interval_thread.detach();
-
-        plotLayout()->setAlignCanvasToScales(true);
+        refresh_data_thread = boost::thread(&SpectroGui::refreshData, this);
+        refresh_data_thread.detach();
 
         //
         // Prepares the spectrograph / waterfall for the receiving of new data!
@@ -185,6 +183,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         preparePlot();
 
         gkSpectrogram->invalidateCache();
+        plotLayout()->setAlignCanvasToScales(true);
         replot();
     } catch (const std::exception &e) {
         HWND hwnd_spectro_gui_main;
@@ -197,8 +196,8 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
 
 SpectroGui::~SpectroGui()
 {
-    if (calc_interval_thread.joinable()) {
-        calc_interval_thread.join();
+    if (refresh_data_thread.joinable()) {
+        refresh_data_thread.join();
     }
 
     //
@@ -368,19 +367,38 @@ void SpectroGui::appendDateTime()
 }
 
 /**
- * @brief SpectroGui::removeStaleData
+ * @brief SpectroGui::refreshData
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void SpectroGui::removeStaleData()
+void SpectroGui::refreshData()
 {
-    return;
-}
+    std::mutex spectro_refresh_data_mtx;
+    std::lock_guard<std::mutex> lck_guard(spectro_refresh_data_mtx);
 
-void SpectroGui::clearPlots()
-{
-    time_data_history->clear();
-    time_data_history->shrink_to_fit();
-    resetAxisRanges();
+    if ((calc_z_history.timing.size() > SPECTRO_MAX_BUFFER_SIZE) ||
+            (calc_z_history.z_data_calcs.size() > SPECTRO_MAX_BUFFER_SIZE)) {
+        if (!enablePlotRefresh) {
+            enablePlotRefresh = true;
+        }
+    }
+
+    // Clear the data buffers if they are too large, and over a defined size
+    while (calc_z_history.timing.size() > SPECTRO_MAX_BUFFER_SIZE) {
+        // Remove the excess data from the very beginning!
+        calc_z_history.timing.erase(calc_z_history.timing.begin());
+    }
+
+    // Clear the data buffers if they are too large, and over a defined size
+    while (calc_z_history.z_data_calcs.size() > SPECTRO_MAX_BUFFER_SIZE) {
+        // Remove the excess data from the very beginning!
+        calc_z_history.z_data_calcs.erase(calc_z_history.z_data_calcs.begin());
+    }
+
+    if (enablePlotRefresh) {
+        calcInterval();
+        replot();
+        enablePlotRefresh = false;
+    }
 
     return;
 }
@@ -538,8 +556,6 @@ void SpectroGui::calcInterval()
     right_axis->setColorMap(QwtInterval(z_interval.minValue(), z_interval.maxValue()), colour_map);
 
     plotLayout()->setAlignCanvasToScales(true);
-    replot();
-
     return;
 }
 

@@ -228,6 +228,7 @@ public slots:
 protected slots:
     void calcInterval();
     void appendDateTime();
+    void refreshData();
 
 signals:
     void sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values,
@@ -261,11 +262,12 @@ private:
     size_t y_axis_num_minor_steps;
     size_t y_axis_num_major_steps;
     double y_axis_step_size;
+    bool enablePlotRefresh;
 
     //
     // Threads
     //
-    boost::thread calc_interval_thread;
+    boost::thread refresh_data_thread;
 
     template<class in_it, class out_it>
     out_it copy_every_nth(in_it b, in_it e, out_it r, size_t n) {
@@ -279,8 +281,6 @@ private:
     void calcMatrixData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values,
                         const int &hanning_window_size, const size_t &buffer_size,
                         std::promise<Spectrograph::MatrixData> matrix_data_promise);
-    void removeStaleData();
-    void clearPlots();
 
     void preparePlot();
     void resetAxisRanges();
