@@ -54,6 +54,7 @@
 #include <QString>
 #include <QVector>
 #include <QPointer>
+#include <QDateTime>
 
 #ifdef _WIN32
 #include <winsdkver.h>
@@ -129,7 +130,8 @@ namespace GekkoFyre {
 //
 // Concerns spectrograph / waterfall calculations and settings
 //
-#define SPECTRO_TIME_UPDATE_MILLISECS (1000)            // How often the spectrograph / waterfall should update, in milliseconds.
+#define SPECTRO_REFRESH_CYCLE_MILLISECS (1000)          // How often the spectrograph / waterfall should update, in milliseconds.
+#define SPECTRO_TIME_UPDATE_MILLISECS (15000)           // How often, in milliseconds, the spectrograph updates the timing information on the y-axis.
 #define SPECTRO_TIME_HORIZON (60)                       // Not sure what this is, as it has been reverse engineered from something else.
 
 #ifndef M_PI
@@ -366,11 +368,19 @@ namespace Spectrograph {
         QwtInterval y_interval;             // Interval values for the y-axis.
     };
 
+    struct GkTimingData {
+        qint64 relative_start_time;                                             // The 'relative starting time' for when the spectrograph was initialized.
+        qint64 relative_stop_time;                                              // The 'relative stopping time' for when the spectrograph was deinitialized.
+        qint64 curr_time;                                                       // The more up-to-date time, as a UNIX epoch.
+    };
+
     //
     // Used for the raster/matrix data calculations within the spectrograph/waterfall of QMainWindow!
     //
     struct MatrixData {
         QMap<qint64, std::pair<QVector<double>, GkAxisData>> z_data_calcs;      // STFT (i.e. Fast Fourier Transformation) calculations as processed by GekkoFyre::SpectroFFTW::stft().
+        std::vector<GkTimingData> timing;                                       // Information that pertains to timing as it relates to the spectrograph / waterfall.
+        qint64 actual_start_time;                                               // The actual starting time at which the spectrograph was initialized.
         double min_z_axis_val;                                                  // Most minimum value as presented by the z-axis (the coloration portion).
         double max_z_axis_val;                                                  // Most maximum value as presented by the z-axis (the coloration portion).
         size_t window_size;                                                     // The value as passed towards GekkoFyre::SpectroFFTW::stft().

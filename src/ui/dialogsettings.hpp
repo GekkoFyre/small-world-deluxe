@@ -81,6 +81,7 @@ private slots:
     void on_pushButton_output_sound_test_clicked();
     void on_comboBox_soundcard_input_currentIndexChanged(int index);
     void on_comboBox_soundcard_output_currentIndexChanged(int index);
+    void on_spinBox_spectro_render_thread_settings_valueChanged(int arg1);
 
 private:
     Ui::DialogSettings *ui;

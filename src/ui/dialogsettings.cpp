@@ -906,3 +906,10 @@ void DialogSettings::on_comboBox_soundcard_output_currentIndexChanged(int index)
 
     return;
 }
+
+void DialogSettings::on_spinBox_spectro_render_thread_settings_valueChanged(int arg1)
+{
+    Q_UNUSED(arg1);
+
+    return;
+}

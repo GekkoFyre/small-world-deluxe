@@ -199,7 +199,8 @@ class SpectroGui: public GkSpectrograph, private QwtPlotSpectrogram, public QwtM
     Q_OBJECT
 
 public:
-    SpectroGui(std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs, QWidget *parent = nullptr);
+    SpectroGui(std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs, const bool &enablePanner = false,
+               const bool &enableZoomer = false, QWidget *parent = nullptr);
     ~SpectroGui() override;
 
     QwtPlotSpectrogram *gkSpectrogram;
@@ -239,12 +240,11 @@ private:
     LinearColorMapRGB *colour_map;
     QwtDateScaleDraw *date_scale_draw;
     QwtDateScaleEngine *date_scale_engine;
+    QwtScaleWidget *right_axis;
     QwtInterval z_interval;
     QwtInterval x_interval;
     QwtInterval y_interval;
-
     size_t num_rows;
-    double autoscaleValueUpdated;
 
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     GekkoFyre::Spectrograph::GkColorMap gkMapType;
@@ -254,7 +254,7 @@ private:
     qint64 spectro_begin_time;
     qint64 spectro_latest_update;                               // The latest time for when the spectrograph was updated with new data/information.
 
-    GekkoFyre::Spectrograph::MatrixData calc_z_history;
+    Spectrograph::MatrixData calc_z_history;
     std::unique_ptr<QVector<double>> time_data_history;
     std::vector<short> raw_plot_data;
 
@@ -281,7 +281,6 @@ private:
                         std::promise<Spectrograph::MatrixData> matrix_data_promise);
     void removeStaleData();
     void clearPlots();
-    double resetAutoscaleVal();
 
     void preparePlot();
     void resetAxisRanges();

@@ -340,6 +340,113 @@
                       </widget>
                      </item>
                      <item>
+                      <widget class="QGroupBox" name="groupBox_spectro_settings">
+                       <property name="title">
+                        <string>Spectrograph / Waterfall</string>
+                       </property>
+                       <layout class="QFormLayout" name="formLayout_7">
+                        <item row="0" column="0">
+                         <widget class="QLabel" name="label_spectro_render_thread_settings">
+                          <property name="text">
+                           <string>Number Rendering Threads: </string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="0" column="1">
+                         <widget class="QSpinBox" name="spinBox_spectro_render_thread_settings">
+                          <property name="toolTip">
+                           <string>Be careful! Setting this too high can cause system instability.</string>
+                          </property>
+                          <property name="minimum">
+                           <number>2</number>
+                          </property>
+                          <property name="maximum">
+                           <number>128</number>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="1">
+                         <widget class="QFrame" name="frame_spectro_settings_checkbox">
+                          <property name="frameShape">
+                           <enum>QFrame::StyledPanel</enum>
+                          </property>
+                          <property name="frameShadow">
+                           <enum>QFrame::Raised</enum>
+                          </property>
+                          <layout class="QHBoxLayout" name="horizontalLayout_6">
+                           <property name="spacing">
+                            <number>0</number>
+                           </property>
+                           <property name="leftMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="topMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="rightMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="bottomMargin">
+                            <number>0</number>
+                           </property>
+                           <item>
+                            <widget class="QFrame" name="frame_spectro_inner_enable_panning">
+                             <property name="frameShape">
+                              <enum>QFrame::StyledPanel</enum>
+                             </property>
+                             <property name="frameShadow">
+                              <enum>QFrame::Raised</enum>
+                             </property>
+                             <layout class="QVBoxLayout" name="verticalLayout_25">
+                              <item>
+                               <widget class="QCheckBox" name="checkBox_enable_panning">
+                                <property name="text">
+                                 <string>Enable Panning</string>
+                                </property>
+                               </widget>
+                              </item>
+                             </layout>
+                            </widget>
+                           </item>
+                           <item>
+                            <widget class="QFrame" name="frame_spectro_inner_enable_zooming">
+                             <property name="frameShape">
+                              <enum>QFrame::StyledPanel</enum>
+                             </property>
+                             <property name="frameShadow">
+                              <enum>QFrame::Raised</enum>
+                             </property>
+                             <layout class="QVBoxLayout" name="verticalLayout_24">
+                              <item>
+                               <widget class="QCheckBox" name="checkBox_enable_zooming">
+                                <property name="text">
+                                 <string>Enable Zooming</string>
+                                </property>
+                               </widget>
+                              </item>
+                             </layout>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                        <item row="1" column="0">
+                         <spacer name="horizontalSpacer_7">
+                          <property name="orientation">
+                           <enum>Qt::Horizontal</enum>
+                          </property>
+                          <property name="sizeHint" stdset="0">
+                           <size>
+                            <width>40</width>
+                            <height>20</height>
+                           </size>
+                          </property>
+                         </spacer>
+                        </item>
+                       </layout>
+                      </widget>
+                     </item>
+                     <item>
                       <widget class="QGroupBox" name="groupBox_db_save_loc">
                        <property name="title">
                         <string>Settings Database</string>

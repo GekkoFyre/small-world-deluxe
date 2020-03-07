@@ -57,7 +57,8 @@ using namespace Spectrograph;
  * @param parent
  * @note <http://dronin.org/doxygen/ground/html/plotdata_8h_source.html>
  */
-SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QWidget *parent)
+SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &enablePanner,
+                       const bool &enableZoomer, QWidget *parent)
     : gkAlpha(255)
 {
     std::mutex spectro_main_mtx;
@@ -74,20 +75,18 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QWidget *parent
 
         already_read_data = false;
         calc_first_data = false;
-        autoscaleValueUpdated = 0;
         time_data_history = std::make_unique<QVector<double>>();
 
         // These are said to use quite a few system resources!
         gkSpectrogram->setRenderHint(QwtPlotItem::RenderAntialiased);
         gkMatrixRaster->setResampleMode(ResampleMode::BilinearInterpolation);
 
+        /*
         QList<double> contourLevels;
         for (double level = 0.5; level < 10.0; level += 1.0) {
             contourLevels += level;
         }
-
-        gkSpectrogram->setContourLevels(contourLevels);
-        gkSpectrogram->setDisplayMode(QwtPlotSpectrogram::ImageMode, true);
+        */
 
         gkSpectrogram->setData(gkMatrixRaster);
         gkSpectrogram->attach(this);
@@ -98,8 +97,6 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QWidget *parent
 
         QObject::connect(this, SIGNAL(sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const std::vector<short> &, const int &, const size_t &)),
                          this, SLOT(applyData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const std::vector<short> &, const int &, const size_t &)));
-
-        plotLayout()->setAlignCanvasToScales(true);
 
         //
         // https://qwt.sourceforge.io/class_qwt_matrix_raster_data.html#a69db38d8f920edb9dc3f0953ca16db8f
@@ -112,6 +109,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QWidget *parent
         //
         // Setup y-axis scaling
         // https://www.qtcentre.org/threads/55345-QwtPlot-problem-with-date-time-label-at-major-ticks
+        // https://stackoverflow.com/questions/57342087/qwtplotspectrogram-with-log-scales
         //
         date_scale_draw = new QwtDateScaleDraw(Qt::UTC);
         date_scale_engine = new QwtDateScaleEngine(Qt::UTC);
@@ -135,6 +133,13 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QWidget *parent
         QObject::connect(date_plotter, SIGNAL(timeout()), this, SLOT(appendDateTime()));
         date_plotter->start(SPECTRO_TIME_UPDATE_MILLISECS);
 
+        right_axis = axisWidget(QwtPlot::yRight);
+        right_axis->setTitle(tr("Intensity"));
+        right_axis->setColorBarEnabled(true);
+        right_axis->setColorMap(gkSpectrogram->data()->interval(Qt::ZAxis), colour_map);
+        right_axis->setEnabled(true);
+        enableAxis(QwtPlot::yRight);
+
         //
         // Setup x-axis scaling
         //
@@ -154,10 +159,12 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QWidget *parent
         zoomer = new GkZoomer(canvas());
         zoomer->setMousePattern(QwtEventPattern::MouseSelect2, Qt::RightButton, Qt::ControlModifier);
         zoomer->setMousePattern(QwtEventPattern::MouseSelect3, Qt::RightButton);
+        zoomer->setEnabled(enableZoomer);
 
         QwtPlotPanner *panner = new QwtPlotPanner(canvas());
         panner->setAxisEnabled(QwtPlot::xBottom, false);
         panner->setMouseButton(Qt::MidButton);
+        panner->setEnabled(enablePanner);
 
         const QColor c(Qt::darkBlue);
         zoomer->setRubberBandPen(c);
@@ -165,10 +172,12 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QWidget *parent
 
         QTimer *calc_interval_timer = new QTimer(this);
         QObject::connect(calc_interval_timer, SIGNAL(timeout()), this, SLOT(calcInterval()));
-        calc_interval_timer->start(SPECTRO_TIME_UPDATE_MILLISECS);
+        calc_interval_timer->start(SPECTRO_REFRESH_CYCLE_MILLISECS);
 
         calc_interval_thread = boost::thread(&SpectroGui::calcInterval, this);
         calc_interval_thread.detach();
+
+        plotLayout()->setAlignCanvasToScales(true);
 
         //
         // Prepares the spectrograph / waterfall for the receiving of new data!
@@ -310,7 +319,6 @@ void SpectroGui::calcMatrixData(const std::vector<RawFFT> &values, const int &ha
 
             if (x_values_modified[i] > gkMatrixRaster->interval(Qt::ZAxis).maxValue()) {
                 gkMatrixRaster->setInterval(Qt::ZAxis, QwtInterval(0, x_values_modified[i]));
-                autoscaleValueUpdated = x_values_modified[i];
             }
         }
 
@@ -378,18 +386,6 @@ void SpectroGui::clearPlots()
 }
 
 /**
- * @brief SpectroGui::resetAutoscaleVal
- * @return
- */
-double SpectroGui::resetAutoscaleVal()
-{
-    double tmp_val = autoscaleValueUpdated;
-    autoscaleValueUpdated = 0;
-
-    return tmp_val;
-}
-
-/**
  * @brief SpectroGui::applyData Updates the spectrograph / waterfall with the relevant data samples
  * as required, inserting the calculated FFT results into a value matrix.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -397,7 +393,9 @@ double SpectroGui::resetAutoscaleVal()
  * @param hanning_window_size The size of the calculated hanning window, required for calculating the
  * requisite FFT samples.
  * @param buffer_size The size of the audio buffer itself.
- * @note <https://www.qtcentre.org/threads/67219-How-to-implement-QwtPlotSpectrogram-with-QwtMatrixRasterData>
+ * @note <https://www.qtcentre.org/threads/67219-How-to-implement-QwtPlotSpectrogram-with-QwtMatrixRasterData>,
+ * <https://qwt.sourceforge.io/class_qwt_date_scale_draw.html>,
+ * <https://qwt.sourceforge.io/class_qwt_date_scale_engine.html>
  */
 void SpectroGui::applyData(const std::vector<RawFFT> &values,
                            const std::vector<short> &raw_audio_data, const int &hanning_window_size,
@@ -537,6 +535,9 @@ void SpectroGui::calcInterval()
     gkMatrixRaster->setInterval(Qt::XAxis, QwtInterval(x_interval.minValue(), x_interval.maxValue()));
     gkMatrixRaster->setInterval(Qt::YAxis, QwtInterval(y_interval.minValue(), y_interval.maxValue()));
     gkMatrixRaster->setInterval(Qt::ZAxis, QwtInterval(z_interval.minValue(), z_interval.maxValue()));
+    right_axis->setColorMap(QwtInterval(z_interval.minValue(), z_interval.maxValue()), colour_map);
+
+    plotLayout()->setAlignCanvasToScales(true);
     replot();
 
     return;

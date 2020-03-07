@@ -209,7 +209,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the Waterfall / Spectrograph
         //
-        gkSpectroGui = new GekkoFyre::SpectroGui(gkStringFuncs, this);
+        gkSpectroGui = new GekkoFyre::SpectroGui(gkStringFuncs, true, false, this);
         ui->verticalLayout_11->addWidget(gkSpectroGui);
         gkSpectroGui->setEnabled(true);
         QObject::connect(this, SIGNAL(sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const std::vector<short> &, const int &, const size_t &)),
