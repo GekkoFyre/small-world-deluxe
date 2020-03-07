@@ -394,15 +394,19 @@ void SpectroGui::refreshData()
     }
 
     // Clear the data buffers if they are too large, and over a defined size
-    while (calc_z_history.timing.size() > SPECTRO_MAX_BUFFER_SIZE) {
-        // Remove the excess data from the very beginning!
-        calc_z_history.timing.erase(calc_z_history.timing.begin());
+    if (!calc_z_history.timing.empty()) {
+        while (calc_z_history.timing.size() > SPECTRO_MAX_BUFFER_SIZE) {
+            // Remove the excess data from the very beginning!
+            calc_z_history.timing.erase(calc_z_history.timing.begin());
+        }
     }
 
     // Clear the data buffers if they are too large, and over a defined size
-    while (calc_z_history.z_data_calcs.size() > SPECTRO_MAX_BUFFER_SIZE) {
-        // Remove the excess data from the very beginning!
-        calc_z_history.z_data_calcs.erase(calc_z_history.z_data_calcs.begin());
+    if (!calc_z_history.z_data_calcs.empty()) {
+        while (calc_z_history.z_data_calcs.size() > SPECTRO_MAX_BUFFER_SIZE) {
+            // Remove the excess data from the very beginning!
+            calc_z_history.z_data_calcs.erase(calc_z_history.z_data_calcs.begin());
+        }
     }
 
     if (enablePlotRefresh) {
@@ -557,6 +561,7 @@ QVector<double> SpectroGui::convMapToVec(const QMap<qint64, std::pair<QVector<do
             //
             if (curr_data.first == spectro_latest_update) {
                 ret_val = curr_data.second.first;
+                break;
             }
         }
 
@@ -565,6 +570,34 @@ QVector<double> SpectroGui::convMapToVec(const QMap<qint64, std::pair<QVector<do
         HWND hwnd_spectro_conv_vec;
         gkStringFuncs->modalDlgBoxOk(hwnd_spectro_conv_vec, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd_spectro_conv_vec);
+    }
+
+    return QVector<double>();
+}
+
+/**
+ * @brief SpectroGui::mergeVecsForMatrix
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param z_calc_information
+ * @return
+ * @see GekkoFyre::SpectroGui::applyData().
+ */
+QVector<double> SpectroGui::mergeVecsForMatrix(const QMap<qint64, std::pair<QVector<double>, GkAxisData>> &z_calc_information)
+{
+    try {
+        QVector<double> merged_data;
+        for (const auto &to_merge: z_calc_information.toStdMap()) {
+            //
+            // Merge all the disparate vectors into one, big vector!
+            //
+            std::copy(to_merge.second.first.begin(), to_merge.second.first.end(), std::back_inserter(merged_data));
+        }
+
+        return merged_data;
+    } catch (const std::exception &e) {
+        HWND hwnd_spectro_merge_vec;
+        gkStringFuncs->modalDlgBoxOk(hwnd_spectro_merge_vec, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
+        DestroyWindow(hwnd_spectro_merge_vec);
     }
 
     return QVector<double>();

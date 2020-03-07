@@ -36,10 +36,18 @@
  ****************************************************************************************************/
 
 #include "src/ui/mainwindow.hpp"
+#include <boost/exception/all.hpp>
+#include <boost/filesystem.hpp>
 #include <iostream>
 #include <cstdlib>
 #include <csignal>
 #include <QApplication>
+#include <QSplashScreen>
+#include <QTimer>
+#include <QWidget>
+#include <QResource>
+
+namespace fs = boost::filesystem;
 
 int main(int argc, char *argv[])
 {
@@ -47,9 +55,24 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
 
     QCoreApplication::setOrganizationName("GekkoFyre Networks");
-    QCoreApplication::setOrganizationDomain("https://gekkofyre.io/");
+    QCoreApplication::setOrganizationDomain("https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe");
     QCoreApplication::setApplicationName("Small World Deluxe");
     QCoreApplication::setApplicationVersion("0.0.1");
+
+    fs::path slash = "/";
+    fs::path native_slash = slash.make_preferred().native();
+    fs::path resource_path = fs::path(QCoreApplication::applicationDirPath().toStdString() + native_slash.string()  + GekkoFyre::Filesystem::resourceFile);
+    QResource::registerResource(QString::fromStdString(resource_path.string())); // https://doc.qt.io/qt-5/resources.html
+
+    //
+    // Display a splash screen!
+    //
+    QPixmap pixmap(":/resources/contrib/images/vector/gekkofyre-networks/rionquosue/logo_blank_border_text_square_rionquosue.svg");
+    int width = pixmap.width();
+    int height = pixmap.height();
+    QSplashScreen splash(pixmap.scaled((width / 2), (height / 2), Qt::KeepAspectRatio), Qt::WindowStaysOnTopHint);
+    splash.show();
+    QTimer::singleShot(3000, &splash, &QWidget::close);
 
     MainWindow w;
     w.show();

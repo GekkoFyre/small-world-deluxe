@@ -293,7 +293,8 @@ private:
     void resetAxisRanges();
     int calcWindowWidth();
 
-    QVector<double> convMapToVec(const QMap<qint64, std::pair<QVector<double>, Spectrograph::GkAxisData> > &z_calc_information);
+    QVector<double> convMapToVec(const QMap<qint64, std::pair<QVector<double>, Spectrograph::GkAxisData>> &z_calc_information);
+    QVector<double> mergeVecsForMatrix(const QMap<qint64, std::pair<QVector<double>, Spectrograph::GkAxisData>> &z_calc_information);
 };
 
 class GkZoomer: public QwtPlotZoomer {
