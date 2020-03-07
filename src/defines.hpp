@@ -123,7 +123,7 @@ namespace GekkoFyre {
 // Mostly regarding FFTW functions
 //
 #define AUDIO_SIGNAL_LENGTH (2048)                      // For audio applications, '2048' seems to be a good length.
-#define FFTW_HOP_SIZE (16384)                           // Choose a smaller hop-size if you want a higher resolution! Needs to be a power of two.
+#define FFTW_HOP_SIZE (32768)                           // Choose a smaller hop-size if you want a higher resolution! Needs to be a power of two.
 #define SPECTRO_BANDWIDTH_MAX_SIZE (2048)               // The size and bandwidth of the spectrograph / waterfall window, in hertz.
 #define SPECTRO_BANDWIDTH_MIN_SIZE (125)                // The size and bandwidth of the spectrograph / waterfall window, in hertz.
 
@@ -381,6 +381,7 @@ namespace Spectrograph {
     struct MatrixData {
         QMap<qint64, std::pair<QVector<double>, GkAxisData>> z_data_calcs;      // STFT (i.e. Fast Fourier Transformation) calculations as processed by GekkoFyre::SpectroFFTW::stft().
         std::vector<GkTimingData> timing;                                       // Information that pertains to timing as it relates to the spectrograph / waterfall.
+        GkAxisData curr_axis_info;                                              // Information that pertains to the axis' and their intervals as of the immediate moment.
         qint64 actual_start_time;                                               // The actual starting time at which the spectrograph was initialized.
         double min_z_axis_val;                                                  // Most minimum value as presented by the z-axis (the coloration portion).
         double max_z_axis_val;                                                  // Most maximum value as presented by the z-axis (the coloration portion).

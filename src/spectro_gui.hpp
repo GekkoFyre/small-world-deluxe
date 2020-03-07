@@ -244,9 +244,6 @@ private:
     QwtDateScaleDraw *date_scale_draw;
     QwtDateScaleEngine *date_scale_engine;
     QwtScaleWidget *right_axis;
-    QwtInterval z_interval;
-    QwtInterval x_interval;
-    QwtInterval y_interval;
     size_t num_rows;
 
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
@@ -290,11 +287,13 @@ private:
                         std::promise<Spectrograph::MatrixData> matrix_data_promise);
 
     void preparePlot();
-    void resetAxisRanges();
     int calcWindowWidth();
+    Spectrograph::MatrixData setDefMatrixStrucVals();
 
     QVector<double> convMapToVec(const QMap<qint64, std::pair<QVector<double>, Spectrograph::GkAxisData>> &z_calc_information);
-    QVector<double> mergeVecsForMatrix(const QMap<qint64, std::pair<QVector<double>, Spectrograph::GkAxisData>> &z_calc_information);
+    QVector<double> mergeVecsForMatrix(const QMap<qint64, std::pair<QVector<double>, Spectrograph::GkAxisData>> &z_calc_data);
+    qint64 getEarliestPlottedTime(const QMap<qint64, std::pair<QVector<double>, Spectrograph::GkAxisData>> &z_calc_data);
+    qint64 getLatestPlottedTime(const QMap<qint64, std::pair<QVector<double>, Spectrograph::GkAxisData>> &z_calc_data);
 };
 
 class GkZoomer: public QwtPlotZoomer {

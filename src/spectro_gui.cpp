@@ -67,6 +67,9 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
     try {
         gkStringFuncs = std::move(stringFuncs);
 
+        // Initialize the structure!
+        calc_z_history = setDefMatrixStrucVals();
+
         gkMatrixRaster = new QwtMatrixRasterData();
         gkSpectrogram = new QwtPlotSpectrogram();
         gkSpectrogram->setRenderThreadCount(0); // Use system specific thread count
@@ -102,8 +105,8 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         // https://qwt.sourceforge.io/class_qwt_matrix_raster_data.html#a69db38d8f920edb9dc3f0953ca16db8f
         // Set the type of colour-map used!
         //
-        z_interval = gkSpectrogram->data()->interval(Qt::ZAxis);
-        colour_map = new LinearColorMapRGB(z_interval);
+        calc_z_history.curr_axis_info.z_interval = gkSpectrogram->data()->interval(Qt::ZAxis);
+        colour_map = new LinearColorMapRGB(calc_z_history.curr_axis_info.z_interval);
         gkSpectrogram->setColorMap(colour_map);
 
         //
@@ -131,10 +134,11 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
 
         date_plotter = new QTimer(this);
         QObject::connect(date_plotter, SIGNAL(timeout()), this, SLOT(appendDateTime()));
-        date_plotter->start(SPECTRO_TIME_UPDATE_MILLISECS);
+        date_plotter->start(SPECTRO_REFRESH_CYCLE_MILLISECS);
 
         right_axis = axisWidget(QwtPlot::yRight);
         right_axis->setTitle(tr("Intensity"));
+        right_axis->setColorBarWidth(32);
         right_axis->setColorBarEnabled(true);
         right_axis->setColorMap(gkSpectrogram->data()->interval(Qt::ZAxis), colour_map);
         right_axis->setEnabled(true);
@@ -184,8 +188,9 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         //
         preparePlot();
 
-        gkSpectrogram->invalidateCache();
+        setAutoReplot(false);
         plotLayout()->setAlignCanvasToScales(true);
+        gkSpectrogram->invalidateCache();
         replot();
     } catch (const std::exception &e) {
         HWND hwnd_spectro_gui_main;
@@ -279,26 +284,9 @@ void SpectroGui::calcMatrixData(const std::vector<RawFFT> &values, const int &ha
     std::mutex spectro_calc_matrix_data_mtx;
     std::lock_guard<std::mutex> lck_guard(spectro_calc_matrix_data_mtx);
 
-    //
-    // Set the default values, so there should hopefully be no errors for anything being empty/nullptr!
-    //
-    QwtInterval default_data;
-    default_data.setMaxValue(0);
-    default_data.setMinValue(0);
-
-    MatrixData matrix_ret_data;
-    GkAxisData axis_data;
+    MatrixData matrix_ret_data = setDefMatrixStrucVals();
     GkTimingData timing_data;
-    matrix_ret_data.z_data_calcs = QMap<qint64, std::pair<QVector<double>, GkAxisData>>();
-    matrix_ret_data.window_size = 0;
-    matrix_ret_data.min_z_axis_val = 0;
-    matrix_ret_data.max_z_axis_val = 0;
-    axis_data.z_interval = default_data;
-    axis_data.y_interval = default_data;
-    axis_data.x_interval = default_data;
-    timing_data.relative_start_time = 0;
-    timing_data.relative_stop_time = 0;
-    timing_data.curr_time = 0;
+    GkAxisData axis_data;
 
     try {
         std::vector<double> x_values;
@@ -319,13 +307,21 @@ void SpectroGui::calcMatrixData(const std::vector<RawFFT> &values, const int &ha
         matrix_ret_data.min_z_axis_val = *std::min_element(std::begin(x_values_modified), std::end(x_values_modified));
         matrix_ret_data.max_z_axis_val = *std::max_element(std::begin(x_values_modified), std::end(x_values_modified));
 
+        if (std::isnan(matrix_ret_data.min_z_axis_val) || std::isnan(matrix_ret_data.max_z_axis_val)) {
+            throw std::runtime_error(tr("The minimum or maximum value given for the z-axis is NaN!").toStdString());
+        }
+
         QVector<double> conv_x_values;
         for (int i = 0; i < x_values_modified.size(); ++i) {
             const short x_axis_val = x_values_modified.at(i);
             conv_x_values.push_back((double)x_axis_val); // Convert from `short` to `double`
 
             if (x_values_modified[i] > gkMatrixRaster->interval(Qt::ZAxis).maxValue()) {
+                //
+                // Warning: Do not delete the following without a very good reason!
+                //
                 gkMatrixRaster->setInterval(Qt::ZAxis, QwtInterval(0, x_values_modified[i]));
+                setAxisScale(QwtPlot::yRight, 0, x_values_modified[i]);
             }
         }
 
@@ -334,9 +330,10 @@ void SpectroGui::calcMatrixData(const std::vector<RawFFT> &values, const int &ha
         timing_data.curr_time = time_now;
         timing_data.relative_start_time = spectro_begin_time;
 
+        matrix_ret_data.timing.push_back(timing_data);
+        axis_data.z_interval.setMaxValue(matrix_ret_data.window_size);
         matrix_ret_data.z_data_calcs.insert(time_now, std::make_pair(conv_x_values, axis_data));
         matrix_ret_data.window_size = values.at(0).window_size;
-        axis_data.z_interval.setMaxValue(matrix_ret_data.window_size);
 
         conv_x_values.clear();
         conv_x_values.shrink_to_fit();
@@ -457,6 +454,9 @@ void SpectroGui::applyData(const std::vector<RawFFT> &values,
                            const std::vector<short> &raw_audio_data, const int &hanning_window_size,
                            const size_t &buffer_size)
 {
+    std::mutex spectro_apply_data_mtx;
+    std::lock_guard<std::mutex> lck_guard(spectro_apply_data_mtx);
+
     try {
         // Start a new thread since it will block the current (GUI-based) thread otherwise...
         std::promise<MatrixData> calc_matrix_promise;
@@ -476,19 +476,18 @@ void SpectroGui::applyData(const std::vector<RawFFT> &values,
         raw_plot_data = raw_audio_data;
         num_rows = (calc_z_history.z_data_calcs.size() / calc_z_history.window_size);
 
-        z_interval.setMinValue(std::abs(calc_z_history.min_z_axis_val));
-        z_interval.setMaxValue(std::abs(calc_z_history.max_z_axis_val));
+        calc_z_history.curr_axis_info.z_interval.setMinValue(std::abs(calc_z_history.min_z_axis_val));
+        calc_z_history.curr_axis_info.z_interval.setMaxValue(std::abs(calc_z_history.max_z_axis_val));
 
         gkMatrixRaster->setValueMatrix(convMapToVec(calc_z_history.z_data_calcs), calc_z_history.window_size);
-        gkSpectrogram->setData(gkMatrixRaster);
         if (!calc_first_data) {
             calc_first_data = true;
         }
 
-        y_interval.setMinValue(spectro_begin_time);
-        y_interval.setMaxValue(spectro_latest_update);
-        x_interval.setMinValue(SPECTRO_BANDWIDTH_MIN_SIZE);
-        x_interval.setMaxValue(SPECTRO_BANDWIDTH_MAX_SIZE);
+        calc_z_history.curr_axis_info.y_interval.setMinValue(spectro_begin_time);
+        calc_z_history.curr_axis_info.y_interval.setMaxValue(spectro_latest_update);
+        calc_z_history.curr_axis_info.x_interval.setMinValue(SPECTRO_BANDWIDTH_MIN_SIZE);
+        calc_z_history.curr_axis_info.x_interval.setMaxValue(SPECTRO_BANDWIDTH_MAX_SIZE);
 
         calc_matrix_thread.join();
         replot();
@@ -510,26 +509,10 @@ void SpectroGui::applyData(const std::vector<RawFFT> &values,
  */
 void SpectroGui::preparePlot()
 {
-    y_interval.setMinValue(spectro_begin_time);
-    y_interval.setMaxValue(spectro_latest_update); // TODO: Just a temporary figure for the y-axis
-    x_interval.setMinValue(SPECTRO_BANDWIDTH_MIN_SIZE);
-    x_interval.setMaxValue(SPECTRO_BANDWIDTH_MAX_SIZE);
-
-    return;
-}
-
-/**
- * @brief SpectroGui::resetAxisRanges returns the y, x, and z axis' back to their default
- * starting values.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void SpectroGui::resetAxisRanges()
-{
-    plot()->setAutoReplot(false);
-    setAxisScale(QwtPlot::xBottom, 0, 2048, 256);   // Frequency (Hz)
-    setAxisMaxMajor(QwtPlot::yLeft, spectro_latest_update);
-    date_scale_engine->divideScale(spectro_begin_time, spectro_latest_update, y_axis_num_major_steps,
-                                   y_axis_num_minor_steps, y_axis_step_size);
+    calc_z_history.curr_axis_info.y_interval.setMinValue(spectro_begin_time);
+    calc_z_history.curr_axis_info.y_interval.setMaxValue(spectro_latest_update); // TODO: Just a temporary figure for the y-axis
+    calc_z_history.curr_axis_info.x_interval.setMinValue(SPECTRO_BANDWIDTH_MIN_SIZE);
+    calc_z_history.curr_axis_info.x_interval.setMaxValue(SPECTRO_BANDWIDTH_MAX_SIZE);
 
     return;
 }
@@ -545,6 +528,37 @@ int SpectroGui::calcWindowWidth()
 }
 
 /**
+ * @brief SpectroGui::setDefMatrixStrucVals Initializes the `GekkoFyre::Spectrograph::MatrixData()` structure, in
+ * order to hopefully avoid errors and/or exceptions down the line.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return The initialized `GekkoFyre::Spectrograph::MatrixData()` structure.
+ */
+MatrixData SpectroGui::setDefMatrixStrucVals()
+{
+    //
+    // Set the default values, so there should hopefully be no errors for anything being empty/nullptr!
+    //
+    QwtInterval default_data;
+    default_data.setMaxValue(0);
+    default_data.setMinValue(0);
+
+    MatrixData matrix_ret_data;
+    GkAxisData axis_data;
+    matrix_ret_data.z_data_calcs = QMap<qint64, std::pair<QVector<double>, GkAxisData>>();
+    matrix_ret_data.window_size = 0;
+    matrix_ret_data.min_z_axis_val = 0;
+    matrix_ret_data.max_z_axis_val = 0;
+    axis_data.z_interval = default_data;
+    axis_data.y_interval = default_data;
+    axis_data.x_interval = default_data;
+
+    matrix_ret_data.curr_axis_info = axis_data;
+    matrix_ret_data.timing = std::vector<GkTimingData>();
+
+    return matrix_ret_data;
+}
+
+/**
  * @brief SpectroGui::convMapToVec returns the FFT data from the mapped z-axis information.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param z_calc_information The stored and mapped results of the calculated FFT z-axis info.
@@ -552,6 +566,9 @@ int SpectroGui::calcWindowWidth()
  */
 QVector<double> SpectroGui::convMapToVec(const QMap<qint64, std::pair<QVector<double>, GkAxisData>> &z_calc_information)
 {
+    std::mutex spectro_conv_map_vec_mtx;
+    std::lock_guard<std::mutex> lck_guard(spectro_conv_map_vec_mtx);
+
     try {
         QVector<double> ret_val;
         for (const auto &curr_data: z_calc_information.toStdMap()) {
@@ -582,18 +599,25 @@ QVector<double> SpectroGui::convMapToVec(const QMap<qint64, std::pair<QVector<do
  * @return
  * @see GekkoFyre::SpectroGui::applyData().
  */
-QVector<double> SpectroGui::mergeVecsForMatrix(const QMap<qint64, std::pair<QVector<double>, GkAxisData>> &z_calc_information)
+QVector<double> SpectroGui::mergeVecsForMatrix(const QMap<qint64, std::pair<QVector<double>, GkAxisData>> &z_calc_data)
 {
-    try {
-        QVector<double> merged_data;
-        for (const auto &to_merge: z_calc_information.toStdMap()) {
-            //
-            // Merge all the disparate vectors into one, big vector!
-            //
-            std::copy(to_merge.second.first.begin(), to_merge.second.first.end(), std::back_inserter(merged_data));
-        }
+    std::mutex spectro_merge_vecs_matrix_mtx;
+    std::lock_guard<std::mutex> lck_guard(spectro_merge_vecs_matrix_mtx);
 
-        return merged_data;
+    try {
+        if (!z_calc_data.empty()) {
+            QVector<double> merged_data;
+            for (const auto &to_merge: z_calc_data.toStdMap()) {
+                if (!to_merge.second.first.empty()) {
+                    //
+                    // Merge all the disparate vectors into one, big vector!
+                    //
+                    std::copy(to_merge.second.first.begin(), to_merge.second.first.end(), std::back_inserter(merged_data));
+                }
+            }
+
+            return merged_data;
+        }
     } catch (const std::exception &e) {
         HWND hwnd_spectro_merge_vec;
         gkStringFuncs->modalDlgBoxOk(hwnd_spectro_merge_vec, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
@@ -601,6 +625,54 @@ QVector<double> SpectroGui::mergeVecsForMatrix(const QMap<qint64, std::pair<QVec
     }
 
     return QVector<double>();
+}
+
+/**
+ * @brief SpectroGui::getEarliestPlottedTime garners the earliest plotted time from the saved
+ * history buffer.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param z_history_data The saved history buffer to be read.
+ * @return The analyzed time.
+ */
+qint64 SpectroGui::getEarliestPlottedTime(const QMap<qint64, std::pair<QVector<double>, GkAxisData>> &z_calc_data)
+{
+    std::mutex spectro_earliest_plot_time_mtx;
+    std::lock_guard<std::mutex> lck_guard(spectro_earliest_plot_time_mtx);
+
+    qint64 earliest_plot_time = 0;
+    if (!z_calc_data.empty()) {
+        auto merged_vecs = mergeVecsForMatrix(z_calc_data);
+        if (!merged_vecs.empty()) {
+            // Extract the earliest plotted time
+            earliest_plot_time = *std::min_element(std::begin(merged_vecs), std::end(merged_vecs));
+        }
+    }
+
+    return earliest_plot_time;
+}
+
+/**
+ * @brief SpectroGui::getLatestPlottedTime garners the latest plotted time from the saved
+ * history buffer.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param z_history_data The saved history buffer to be read.
+ * @return The analyzed time.
+ */
+qint64 SpectroGui::getLatestPlottedTime(const QMap<qint64, std::pair<QVector<double>, GkAxisData>> &z_calc_data)
+{
+    std::mutex spectro_latest_plot_time_mtx;
+    std::lock_guard<std::mutex> lck_guard(spectro_latest_plot_time_mtx);
+
+    qint64 latest_plot_time = 0;
+    if (!z_calc_data.empty()) {
+        auto merged_vecs = mergeVecsForMatrix(z_calc_data);
+        if (!merged_vecs.empty()) {
+            // Extract the latest plotted time
+            latest_plot_time = *std::max_element(std::begin(merged_vecs), std::end(merged_vecs));
+        }
+    }
+
+    return latest_plot_time;
 }
 
 void SpectroGui::setResampleMode(int mode)
@@ -617,10 +689,14 @@ void SpectroGui::calcInterval()
     std::mutex spectro_calc_interval_mtx;
     std::lock_guard<std::mutex> lck_guard(spectro_calc_interval_mtx);
 
-    gkMatrixRaster->setInterval(Qt::XAxis, QwtInterval(x_interval.minValue(), x_interval.maxValue()));
-    gkMatrixRaster->setInterval(Qt::YAxis, QwtInterval(y_interval.minValue(), y_interval.maxValue()));
-    gkMatrixRaster->setInterval(Qt::ZAxis, QwtInterval(z_interval.minValue(), z_interval.maxValue()));
-    right_axis->setColorMap(QwtInterval(z_interval.minValue(), z_interval.maxValue()), colour_map);
+    gkMatrixRaster->setInterval(Qt::XAxis, QwtInterval(calc_z_history.curr_axis_info.x_interval.minValue(),
+                                                       calc_z_history.curr_axis_info.x_interval.maxValue()));
+    gkMatrixRaster->setInterval(Qt::YAxis, QwtInterval(calc_z_history.curr_axis_info.y_interval.minValue(),
+                                                       calc_z_history.curr_axis_info.y_interval.maxValue()));
+    gkMatrixRaster->setInterval(Qt::ZAxis, QwtInterval(calc_z_history.curr_axis_info.z_interval.minValue(),
+                                                       calc_z_history.curr_axis_info.z_interval.maxValue()));
+    right_axis->setColorMap(QwtInterval(calc_z_history.curr_axis_info.z_interval.minValue(),
+                                        calc_z_history.curr_axis_info.z_interval.maxValue()), colour_map);
 
     plotLayout()->setAlignCanvasToScales(true);
     return;
