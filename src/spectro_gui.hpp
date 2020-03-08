@@ -225,7 +225,6 @@ public slots:
 
 protected slots:
     void calcInterval();
-    void appendDateTime();
     void refreshData();
 
 signals:
@@ -284,7 +283,6 @@ private:
                         std::promise<Spectrograph::MatrixData> matrix_data_promise);
 
     void preparePlot();
-    int calcWindowWidth();
     Spectrograph::MatrixData setDefMatrixStrucVals();
 
     QVector<double> convMapToVec(const QMap<qint64, std::pair<QVector<double>, Spectrograph::GkAxisData>> &z_calc_information);

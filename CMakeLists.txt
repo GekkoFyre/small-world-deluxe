@@ -230,6 +230,14 @@ else()
     message(SEND_ERROR "The 'QWT' graphing/charting library could not be found!")
 endif(QWT_FOUND)
 
+find_package(OggVorbis REQUIRED)
+if (OggVorbis_FOUND)
+    include_directories(${OggVorbis_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${OggVorbis_LIBRARIES})
+else()
+    message(SEND_ERROR "The 'OggVorbis' audio (de-/en-)coding library could not be found!")
+endif(OggVorbis_FOUND)
+
 set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-arcs -ftest-coverage")
 
 # set up a mapping so that the Release configuration for the Qt imported target is
@@ -262,6 +270,8 @@ if(WIN32)
         src/spectro_gui.cpp
         src/pa_mic.cpp
         src/pa_mic_background.cpp
+        src/gk_audio_encoding.cpp
+        src/gk_audio_decoding.cpp
         src/string_funcs_windows.cpp)
 elseif(UNIX)
     set(GALAXY_UI_CPP
@@ -278,6 +288,8 @@ elseif(UNIX)
         src/spectro_gui.cpp
         src/pa_mic.cpp
         src/pa_mic_background.cpp
+        src/gk_audio_encoding.cpp
+        src/gk_audio_decoding.cpp
         src/string_funcs_linux.cpp)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
@@ -310,6 +322,8 @@ if(WIN32)
         src/spectro_gui.hpp
         src/pa_mic.hpp
         src/pa_mic_background.hpp
+        src/gk_audio_encoding.hpp
+        src/gk_audio_decoding.hpp
         src/string_funcs_windows.hpp)
 elseif(UNIX)
     set(GALAXY_SRC_HEADERS
@@ -328,6 +342,8 @@ elseif(UNIX)
         src/spectro_gui.hpp
         src/pa_mic.hpp
         src/pa_mic_background.hpp
+        src/gk_audio_encoding.hpp
+        src/gk_audio_decoding.hpp
         src/string_funcs_linux.hpp)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")

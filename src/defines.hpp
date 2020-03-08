@@ -386,7 +386,7 @@ namespace Spectrograph {
         qint64 actual_start_time;                                               // The actual starting time at which the spectrograph was initialized.
         double min_z_axis_val;                                                  // Most minimum value as presented by the z-axis (the coloration portion).
         double max_z_axis_val;                                                  // Most maximum value as presented by the z-axis (the coloration portion).
-        size_t window_size;                                                     // The value as passed towards GekkoFyre::SpectroFFTW::stft().
+        int window_size;                                                        // The value as passed towards GekkoFyre::SpectroFFTW::stft().
         size_t hanning_win;                                                     // The 'window hanning' value.
     };
 }

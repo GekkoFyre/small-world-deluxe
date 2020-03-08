@@ -47,6 +47,8 @@
 #include "src/spectro_gui.hpp"
 #include "src/pa_mic_background.hpp"
 #include "dialogsettings.hpp"
+#include "src/gk_audio_encoding.hpp"
+#include "src/gk_audio_decoding.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>

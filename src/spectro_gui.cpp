@@ -311,7 +311,7 @@ void SpectroGui::calcMatrixData(const std::vector<RawFFT> &values, const int &ha
         matrix_ret_data.timing.push_back(timing_data);
         axis_data.z_interval.setMaxValue(matrix_ret_data.window_size);
         matrix_ret_data.z_data_calcs.insert(time_now, std::make_pair(conv_x_values, axis_data));
-        matrix_ret_data.window_size = values.at(0).window_size;
+        matrix_ret_data.window_size = canvas()->width();
 
         conv_x_values.clear();
         conv_x_values.shrink_to_fit();
@@ -320,35 +320,12 @@ void SpectroGui::calcMatrixData(const std::vector<RawFFT> &values, const int &ha
         x_values_modified.clear();
         x_values_modified.shrink_to_fit();
     } catch (const std::exception &e) {
-        HWND hwnd_spectro_calc_matrix = nullptr;
+        HWND hwnd_spectro_calc_matrix;
         gkStringFuncs->modalDlgBoxOk(hwnd_spectro_calc_matrix, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd_spectro_calc_matrix);
     }
 
     matrix_data_promise.set_value(matrix_ret_data);
-    return;
-}
-
-/**
- * @brief SpectroGui::appendDateTime inserts date and timing information into the spectrogram
- * chart, so that the user is aware of when and even possibly where certain signals were sent.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @note <http://dronin.org/doxygen/ground/html/spectrogramplotdata_8cpp_source.html>,
- * <http://dronin.org/doxygen/ground/html/spectrogramscopeconfig_8cpp_source.html>,
- * <https://www.qtcentre.org/threads/61510-Continuous-x-axis-qwt-realtime-plot>
- */
-void SpectroGui::appendDateTime()
-{
-    /*
-    QDateTime time_now = QDateTime::currentDateTimeUtc();
-
-    time_data_history->append(time_now.toTime_t() + time_now.time().msec() / 1000.0);
-    while (time_data_history->back() - time_data_history->front() > SPECTRO_TIME_HORIZON) {
-        time_data_history->pop_front();
-        z_data_history->remove(0, std::fminl(calc_z_history.num_cols, z_data_history->size()));
-    }
-    */
-
     return;
 }
 
@@ -451,9 +428,15 @@ void SpectroGui::applyData(const std::vector<RawFFT> &values,
             calc_z_history.timing.assign(matrix_data.timing.begin(), matrix_data.timing.end());
         }
 
+        //
+        // Calculate the actual window size, as divided by the time (left y-axis) interval...
+        //
+        const size_t divide_window_by = (SPECTRO_Y_AXIS_SIZE / 1000);
+        const size_t actual_window_size = (matrix_data.window_size / divide_window_by);
+
         calc_z_history.min_z_axis_val = matrix_data.min_z_axis_val;
         calc_z_history.max_z_axis_val = matrix_data.max_z_axis_val;
-        calc_z_history.window_size = matrix_data.window_size;
+        calc_z_history.window_size = actual_window_size;
         calc_z_history.hanning_win = matrix_data.hanning_win;
 
         raw_plot_data = raw_audio_data;
@@ -462,9 +445,26 @@ void SpectroGui::applyData(const std::vector<RawFFT> &values,
         calc_z_history.curr_axis_info.z_interval.setMinValue(std::abs(calc_z_history.min_z_axis_val));
         calc_z_history.curr_axis_info.z_interval.setMaxValue(std::abs(calc_z_history.max_z_axis_val));
 
-        gkMatrixRaster->setValueMatrix(convMapToVec(calc_z_history.z_data_calcs), calc_z_history.window_size);
         if (!calc_first_data) {
             calc_first_data = true;
+        }
+
+        static size_t y_axis_counter = 0;
+        static size_t x_axis_counter = 0;
+        if (!calc_z_history.z_data_calcs.empty() && enablePlotRefresh) {
+            for (const auto &raster: calc_z_history.z_data_calcs) {
+                if (raster.first.empty()) {
+                    for (const auto &data: raster.first) {
+                        ++x_axis_counter;
+                        gkMatrixRaster->setValue(y_axis_counter, x_axis_counter, data);
+
+                        if (x_axis_counter == calc_z_history.window_size) {
+                            x_axis_counter = 0;
+                            ++y_axis_counter;
+                        }
+                    }
+                }
+            }
         }
 
         calc_z_history.curr_axis_info.y_interval.setMinValue(spectro_begin_time);
@@ -498,16 +498,6 @@ void SpectroGui::preparePlot()
     calc_z_history.curr_axis_info.x_interval.setMaxValue(SPECTRO_BANDWIDTH_MAX_SIZE);
 
     return;
-}
-
-int SpectroGui::calcWindowWidth()
-{
-    const int window_width = this->window()->size().rwidth();
-    if ((window_width > 0) && (window_width <= MAX_TOLERATE_WINDOW_WIDTH)) {
-        return window_width;
-    } else {
-        return -1;
-    }
 }
 
 /**
@@ -624,7 +614,6 @@ qint64 SpectroGui::getEarliestPlottedTime(const std::vector<GkTimingData> &timin
 
     qint64 earliest_plot_time = 0;
     if (!timing_info.empty()) {
-
         std::vector<qint64> tmp_timing_data;
         for (const auto &timing: timing_info) {
             tmp_timing_data.push_back(timing.curr_time);
@@ -650,7 +639,6 @@ qint64 SpectroGui::getLatestPlottedTime(const std::vector<GkTimingData> &timing_
 
     qint64 latest_plot_time = 0;
     if (!timing_info.empty()) {
-
         std::vector<qint64> tmp_timing_data;
         for (const auto &timing: timing_info) {
             tmp_timing_data.push_back(timing.curr_time);
