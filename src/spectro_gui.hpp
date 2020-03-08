@@ -221,17 +221,16 @@ public slots:
     void applyData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values,
                    const std::vector<short> &raw_audio_data,
                    const int &hanning_window_size, const size_t &buffer_size);
-    void stopSpectro();
+    void stopSpectro(const bool &recording_is_stopped, const int &wait_time = 5000);
 
 protected slots:
-    void calcInterval();
     void refreshData();
 
 signals:
     void sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values,
                          const std::vector<short> &raw_audio_data,
                          const int &hanning_window_size, const size_t &buffer_size);
-    void stopSpectroRecv();
+    void stopSpectroRecv(const bool &recording_is_stopped, const int &wait_time = 5000);
 
 private:
     QwtMatrixRasterData *gkMatrixRaster;
@@ -283,6 +282,7 @@ private:
                         std::promise<Spectrograph::MatrixData> matrix_data_promise);
 
     void preparePlot();
+    void calcInterval();
     Spectrograph::MatrixData setDefMatrixStrucVals();
 
     QVector<double> convMapToVec(const QMap<qint64, std::pair<QVector<double>, Spectrograph::GkAxisData>> &z_calc_information);

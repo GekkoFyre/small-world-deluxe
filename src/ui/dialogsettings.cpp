@@ -652,6 +652,10 @@ bool DialogSettings::read_settings()
         QString writeDelay = gkDekodeDb->read_rig_settings(radio_cfg::WriteDelay);
         QString postWriteDelay = gkDekodeDb->read_rig_settings(radio_cfg::PostWriteDelay);
 
+        QString logsDirLoc = gkDekodeDb->read_misc_audio_settings(audio_cfg::LogsDirLoc);
+        QString audioRecLoc = gkDekodeDb->read_misc_audio_settings(audio_cfg::AudioRecLoc);
+        QString settingsDbLoc = gkDekodeDb->read_misc_audio_settings(audio_cfg::settingsDbLoc);
+
         /*
         if (!rigModel.isEmpty()) {
             ui->comboBox_rig_selection->setCurrentIndex(rigModel.toInt());
@@ -712,6 +716,18 @@ bool DialogSettings::read_settings()
 
         if (!postWriteDelay.isEmpty()) {
             ui->spinBox_subopt_post_write_delay->setValue(postWriteDelay.toInt());
+        }
+
+        if (!logsDirLoc.isEmpty()) {
+            ui->lineEdit_audio_logs_save_dir->setText(logsDirLoc);
+        }
+
+        if (!audioRecLoc.isEmpty()) {
+            ui->lineEdit_audio_save_loc->setText(audioRecLoc);
+        }
+
+        if (!settingsDbLoc.isEmpty()) {
+            ui->lineEdit_db_save_loc_2->setText(settingsDbLoc);
         }
 
         return true;
@@ -789,6 +805,7 @@ void DialogSettings::on_pushButton_audio_save_loc_clicked()
 
     if (!dirName.isEmpty()) {
         ui->lineEdit_audio_save_loc->setText(dirName);
+        gkDekodeDb->write_misc_audio_settings(ui->lineEdit_audio_save_loc->text(), audio_cfg::AudioRecLoc);
     }
 
     return;
@@ -941,6 +958,7 @@ void DialogSettings::on_pushButton_db_save_loc_2_clicked()
 
     if (!dirName.isEmpty()) {
         ui->lineEdit_db_save_loc_2->setText(dirName);
+        gkDekodeDb->write_misc_audio_settings(ui->lineEdit_db_save_loc_2->text(), audio_cfg::settingsDbLoc);
     }
 
     return;
@@ -954,6 +972,7 @@ void DialogSettings::on_pushButton_audio_logs_save_dir_clicked()
 
     if (!dirName.isEmpty()) {
         ui->lineEdit_audio_logs_save_dir->setText(dirName);
+        gkDekodeDb->write_misc_audio_settings(ui->lineEdit_audio_logs_save_dir->text(), audio_cfg::AudioRecLoc);
     }
 
     return;

@@ -121,10 +121,6 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         date_scale_engine->divideScale(spectro_begin_time, spectro_latest_update, y_axis_num_major_steps,
                                        y_axis_num_minor_steps, y_axis_step_size);
 
-        date_plotter = new QTimer(this);
-        QObject::connect(date_plotter, SIGNAL(timeout()), this, SLOT(appendDateTime()));
-        date_plotter->start(SPECTRO_REFRESH_CYCLE_MILLISECS);
-
         right_axis = axisWidget(QwtPlot::xTop);
         right_axis->setTitle(tr("Intensity"));
         right_axis->setColorBarWidth(16);
@@ -170,7 +166,8 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         refresh_data_thread = std::thread(&SpectroGui::refreshData, this);
         refresh_data_thread.detach();
 
-        QObject::connect(this, SIGNAL(stopSpectroRecv()), this, SLOT(stopSpectro()));
+        QObject::connect(this, SIGNAL(stopSpectroRecv(const bool &, const int &)),
+                         this, SLOT(stopSpectro(const bool &, const int &)));
 
         //
         // Prepares the spectrograph / waterfall for the receiving of new data!
@@ -192,7 +189,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
 
 SpectroGui::~SpectroGui()
 {
-    emit stopSpectroRecv();
+    emit stopSpectroRecv(true);
 
     if (refresh_data_thread.joinable()) {
         refresh_data_thread.join();
@@ -364,7 +361,6 @@ void SpectroGui::refreshData()
     if (enablePlotRefresh) {
         calcInterval();
         replot();
-        enablePlotRefresh = false;
     }
 
     return;
@@ -375,9 +371,11 @@ void SpectroGui::refreshData()
  * functionality within the spectrograph itself, effectively disabling it.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void SpectroGui::stopSpectro()
+void SpectroGui::stopSpectro(const bool &recording_is_stopped, const int &wait_time)
 {
-    date_plotter->stop();
+    Q_UNUSED(recording_is_stopped);
+    Q_UNUSED(wait_time);
+
     refresh_data_timer->stop();
 
     calc_z_history.z_data_calcs.clear();
@@ -465,6 +463,8 @@ void SpectroGui::applyData(const std::vector<RawFFT> &values,
                     }
                 }
             }
+
+            enablePlotRefresh = false;
         }
 
         calc_z_history.curr_axis_info.y_interval.setMinValue(spectro_begin_time);
@@ -666,8 +666,11 @@ void SpectroGui::calcInterval()
 
     gkMatrixRaster->setInterval(Qt::XAxis, QwtInterval(calc_z_history.curr_axis_info.x_interval.minValue(),
                                                        calc_z_history.curr_axis_info.x_interval.maxValue()));
-    gkMatrixRaster->setInterval(Qt::YAxis, QwtInterval(calc_z_history.curr_axis_info.y_interval.minValue(),
-                                                       calc_z_history.curr_axis_info.y_interval.maxValue()));
+
+    // TODO: This code below causes the application to crash quite severely! Not sure why...
+    // gkMatrixRaster->setInterval(Qt::YAxis, QwtInterval(calc_z_history.curr_axis_info.y_interval.minValue(),
+    //                                                    calc_z_history.curr_axis_info.y_interval.maxValue()));
+
     gkMatrixRaster->setInterval(Qt::ZAxis, QwtInterval(calc_z_history.curr_axis_info.z_interval.minValue(),
                                                        calc_z_history.curr_axis_info.z_interval.maxValue()));
     right_axis->setColorMap(QwtInterval(calc_z_history.curr_axis_info.z_interval.minValue(),

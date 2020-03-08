@@ -76,7 +76,6 @@ GkLevelDb::~GkLevelDb()
 void GkLevelDb::write_rig_settings(const QString &value, const Database::Settings::radio_cfg &key)
 {
     // Put key-value
-
     leveldb::WriteBatch batch;
     leveldb::Status status;
 
@@ -228,6 +227,59 @@ void GkLevelDb::write_mainwindow_settings(const QString &value, const general_ma
         break;
     default:
         return;
+    }
+
+    return;
+}
+
+/**
+ * @brief GkLevelDb::write_audio_cfg_settings
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value
+ * @param key
+ */
+void GkLevelDb::write_misc_audio_settings(const QString &value, const audio_cfg &key)
+{
+    // Put key-value
+    leveldb::WriteBatch batch;
+    leveldb::Status status;
+
+    switch (key) {
+    case audio_cfg::soundcardInput:
+        batch.Put("SoundcardInput", value.toStdString());
+        break;
+    case audio_cfg::soundcardOutput:
+        batch.Put("SoundcardOutput", value.toStdString());
+        break;
+    case audio_cfg::settingsDbLoc:
+        batch.Put("UserProfileDbLoc", value.toStdString());
+        break;
+    case audio_cfg::LogsDirLoc:
+        batch.Put("UserLogsLoc", value.toStdString());
+        break;
+    case audio_cfg::AudioRecLoc:
+        batch.Put("AudioRecSaveLoc", value.toStdString());
+        break;
+    case audio_cfg::AudioInputChannels:
+        batch.Put("AudioInputChannels", value.toStdString());
+        break;
+    case audio_cfg::AudioOutputChannels:
+        batch.Put("AudioOutputChannels", value.toStdString());
+        break;
+    }
+
+    std::time_t curr_time = std::time(nullptr);
+    std::stringstream ss;
+    ss << curr_time;
+    batch.Put("CurrTime", ss.str());
+
+    leveldb::WriteOptions write_options;
+    write_options.sync = true;
+
+    status = db->Write(write_options, &batch);
+
+    if (!status.ok()) { // Abort because of error!
+        throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
     }
 
     return;
@@ -474,6 +526,41 @@ QString GkLevelDb::read_mainwindow_settings(const general_mainwindow_cfg &key)
     }
 
     return QString::fromStdString(output);
+}
+
+QString GkLevelDb::read_misc_audio_settings(const audio_cfg &key)
+{
+    leveldb::Status status;
+    leveldb::ReadOptions read_options;
+    std::string value = "";
+
+    read_options.verify_checksums = true;
+
+    switch (key) {
+    case audio_cfg::soundcardInput:
+        status = db->Get(read_options, "SoundcardInput", &value);
+        break;
+    case audio_cfg::soundcardOutput:
+        status = db->Get(read_options, "SoundcardOutput", &value);
+        break;
+    case audio_cfg::settingsDbLoc:
+        status = db->Get(read_options, "UserProfileDbLoc", &value);
+        break;
+    case audio_cfg::LogsDirLoc:
+        status = db->Get(read_options, "UserLogsLoc", &value);
+        break;
+    case audio_cfg::AudioRecLoc:
+        status = db->Get(read_options, "AudioRecSaveLoc", &value);
+        break;
+    case audio_cfg::AudioInputChannels:
+        status = db->Get(read_options, "AudioInputChannels", &value);
+        break;
+    case audio_cfg::AudioOutputChannels:
+        status = db->Get(read_options, "AudioOutputChannels", &value);
+        break;
+    }
+
+    return QString::fromStdString(value);
 }
 
 /**
