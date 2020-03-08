@@ -42,9 +42,10 @@
 #include <random>
 #include <iostream>
 #include <cstring>
+#include <utility>
+#include <fstream>
 #include <QMessageBox>
 #include <QString>
-#include <utility>
 
 using namespace GekkoFyre;
 namespace fs = boost::filesystem;
@@ -196,8 +197,9 @@ size_t FileIo::generateRandInteger(const size_t &min_integer_size, const size_t 
 }
 
 /**
- * @brief FileIo::get_file_contents Grabs the contents of a file and adds it to a std::string().
- * @author Originally authored by the Google Snappy team: https://github.com/google/snappy
+ * @brief FileIo::get_file_contents Grabs the contents of a file and adds it to a std::string(), in
+ * a way that should be portable across operating systems.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param filePath The path of the file to be grabbed.
  * @return Whether The data contents within of the grabbed file in question.
  */
@@ -205,23 +207,17 @@ std::string FileIo::get_file_contents(const boost::filesystem::path &filePath)
 {
     try {
         if (fs::is_regular_file(filePath)) {
-            FILE* fp = fopen(filePath.string().c_str(), "rb");
-            if (fp == nullptr) {
-                throw std::invalid_argument(tr("Error encountered with opening filestream: %1\n\nAborting...").arg(QString::fromStdString(filePath.string())).toStdString());
-            }
+            std::ifstream ifs (filePath.c_str(), std::ios::in | std::ios::binary | std::ios::ate);
 
-            std::fseek(fp, 0, SEEK_END);
-            long long int len = std::ftell(fp);
-            if (len < 0) {
-                throw std::invalid_argument(tr("Error encountered with reading filestream: %1\n\nAborting...").arg(QString::fromStdString(filePath.string())).toStdString());
-            }
+            std::ifstream::pos_type file_size = ifs.tellg();
+            ifs.seekg(0, std::ios::beg);
 
-            std::fseek(fp, 0, SEEK_SET);
-            std::string contents(len + 1, '\n'); // https://github.com/facebook/leveldb/blob/master/db/version_set.cc [ CURRENT file does not end with newline ]
-            std::fread(&contents[0], 1, len, fp);
+            std::vector<char> bytes(file_size);
+            ifs.read(bytes.data(), file_size);
 
-            fclose(fp);
-            return contents;
+            return std::string(bytes.data(), file_size);
+        } else {
+            throw std::invalid_argument(tr("Invalid file provided!").toStdString());
         }
     } catch (const std::exception &e) {
         QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);

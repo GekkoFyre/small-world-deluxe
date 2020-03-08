@@ -36,9 +36,52 @@
  ****************************************************************************************************/
 
 #include "gk_audio_decoding.hpp"
+#include <boost/exception/all.hpp>
 
-GekkoFyre::GkAudioDecoding::GkAudioDecoding(QObject *parent)
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#include <vorbis/codec.h>
+#include <vorbis/vorbisenc.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <math.h>
+
+#ifdef __cplusplus
+}
+#endif
+
+using namespace GekkoFyre;
+namespace fs = boost::filesystem;
+namespace sys = boost::system;
+
+GkAudioDecoding::GkAudioDecoding(portaudio::System *paInit,
+                                 std::shared_ptr<FileIo> fileIo,
+                                 std::shared_ptr<AudioDevices> audioDevs,
+                                 QPointer<PaAudioBuf> audio_buf,
+                                 std::shared_ptr<StringFuncs> stringFuncs,
+                                 Database::Settings::Audio::GkDevice output_device,
+                                 QObject *parent)
+{
+    gkFileIo = fileIo;
+    gkAudioDevices = audioDevs;
+    gkAudioBuf = audio_buf;
+    gkStringFuncs = stringFuncs;
+
+    gkPaInit = paInit;
+    gkOutputDev = output_device;
+}
+
+GkAudioDecoding::~GkAudioDecoding()
 {}
 
-GekkoFyre::GkAudioDecoding::~GkAudioDecoding()
-{}
+std::string GkAudioDecoding::readOgg(const fs::path &filePath)
+{
+    auto file_contents = gkFileIo->get_file_contents(filePath);
+
+    return 0;
+}

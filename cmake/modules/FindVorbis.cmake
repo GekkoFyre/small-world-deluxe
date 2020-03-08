@@ -35,20 +35,20 @@
 #
 
 find_package(PkgConfig)
-pkg_check_modules(PC_OggVorbis QUIET oggvorbis)
-set(OggVorbis_DEFINITIONS ${PC_OggVorbis_CFLAGS_OTHER})
+pkg_check_modules(PC_Vorbis QUIET vorbis)
+set(Vorbis_DEFINITIONS ${PC_Vorbis_CFLAGS_OTHER})
 
-find_path(OggVorbis_INCLUDE_DIR NAMES "vorbis/vorbisenc.h" "vorbis/vorbisfile.h"
-            HINTS ${PC_OggVorbis_INCLUDEDIR} ${PC_OggVorbis_INCLUDE_DIRS}
-            PATH_SUFFIXES oggvorbis)
+find_path(Vorbis_INCLUDE_DIR NAMES "vorbis/vorbisenc.h" "vorbis/vorbisfile.h"
+            HINTS ${PC_Vorbis_INCLUDEDIR} ${PC_Vorbis_INCLUDE_DIRS}
+            PATH_SUFFIXES vorbis)
 
-find_library(OggVorbis_LIBRARY NAMES "vorbis_static" "libvorbis_static" "libvorbis" "vorbis"
-            HINTS ${PC_OggVorbis_LIBDIR} ${PC_OggVorbis_LIBRARY_DIRS})
+find_library(Vorbis_LIBRARY NAMES "vorbis_static" "libvorbis_static" "libvorbis" "vorbis"
+            HINTS ${PC_Vorbis_LIBDIR} ${PC_Vorbis_LIBRARY_DIRS})
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(OggVorbis DEFAULT_MSG OggVorbis_LIBRARY OggVorbis_INCLUDE_DIR)
+find_package_handle_standard_args(Vorbis DEFAULT_MSG Vorbis_LIBRARY Vorbis_INCLUDE_DIR)
 
-mark_as_advanced(OggVorbis_INCLUDE_DIR OggVorbis_LIBRARY)
+mark_as_advanced(Vorbis_INCLUDE_DIR Vorbis_LIBRARY)
 
-set(OggVorbis_LIBRARIES ${OggVorbis_LIBRARY})
-set(OggVorbis_INCLUDE_DIRS ${OggVorbis_INCLUDE_DIR})
+set(Vorbis_LIBRARIES ${Vorbis_LIBRARY})
+set(Vorbis_INCLUDE_DIRS ${Vorbis_INCLUDE_DIR})

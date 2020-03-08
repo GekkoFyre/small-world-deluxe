@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
     QCoreApplication::setOrganizationName("GekkoFyre Networks");
     QCoreApplication::setOrganizationDomain("https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe");
     QCoreApplication::setApplicationName("Small World Deluxe");
-    QCoreApplication::setApplicationVersion("0.0.1");
+    QCoreApplication::setApplicationVersion(SMALL_WORLD_DELUXE_APP_VERSION);
 
     fs::path slash = "/";
     fs::path native_slash = slash.make_preferred().native();

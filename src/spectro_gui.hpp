@@ -97,7 +97,7 @@ class GkSpectrograph: public QwtPlot {
 
 public:
     GkSpectrograph(QWidget *parent = nullptr);
-    ~GkSpectrograph();
+    virtual ~GkSpectrograph();
 
 protected:
     void mouseDoubleClickEvent(QMouseEvent *e);

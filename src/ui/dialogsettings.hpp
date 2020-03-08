@@ -73,14 +73,16 @@ public:
 private slots:
     void on_pushButton_submit_config_clicked();
     void on_pushButton_cancel_config_clicked();
-    void on_comboBox_brand_selection_currentIndexChanged(const QString &arg1);
-    void on_comboBox_com_port_currentIndexChanged(int index);
     void on_pushButton_db_save_loc_clicked();
     void on_pushButton_audio_save_loc_clicked();
     void on_pushButton_input_sound_test_clicked();
     void on_pushButton_output_sound_test_clicked();
+    void on_pushButton_db_save_loc_2_clicked();
+    void on_pushButton_audio_logs_save_dir_clicked();
     void on_comboBox_soundcard_input_currentIndexChanged(int index);
     void on_comboBox_soundcard_output_currentIndexChanged(int index);
+    void on_comboBox_brand_selection_currentIndexChanged(const QString &arg1);
+    void on_comboBox_com_port_currentIndexChanged(int index);
     void on_spinBox_spectro_render_thread_settings_valueChanged(int arg1);
 
 private:

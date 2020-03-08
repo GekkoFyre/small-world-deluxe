@@ -63,11 +63,12 @@ public:
     static std::string create_random_string(size_t length);
     boost::filesystem::path dummy_path();
 
+    std::string get_file_contents(const boost::filesystem::path &filePath);
+
 protected:
     static std::vector<boost::filesystem::path> analyze_dir(const boost::filesystem::path &dirPath, const std::vector<std::string> &dirsToSkip = { });
 
 private:
-    static std::string get_file_contents(const boost::filesystem::path &filePath);
     static std::string init_random_string(size_t length, std::function<char(void)> rand_char);
     static char_array charset();
 

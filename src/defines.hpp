@@ -42,9 +42,11 @@
 #include <portaudiocpp/SampleDataFormat.hxx>
 #include <portaudiocpp/Device.hxx>
 #include <portaudiocpp/AsioDeviceAdapter.hxx>
+#include <boost/exception/all.hpp>
 #include <boost/logic/tribool.hpp>
 #include <qwt_interval.h>
 #include <vector>
+#include <exception>
 #include <string>
 #include <locale>
 #include <vector>
@@ -104,6 +106,7 @@ namespace GekkoFyre {
 #define MIN_MAIN_WINDOW_WIDTH (1024)
 #define MIN_MAIN_WINDOW_HEIGHT (768)
 #define MAX_TOLERATE_WINDOW_WIDTH (16384)               // This value is mostly for error correction purposes.
+#define SMALL_WORLD_DELUXE_APP_VERSION ("0.0.1")        // The current application version of Small World Deluxe
 
 #define AUDIO_OUTPUT_MAX_VOL_SIMPLE (100)               // The maximum volume in simple units (i.e. non decible units)
 #define AUDIO_OUTPUT_CHANNEL_MAX_LIMIT (1024)
@@ -135,6 +138,11 @@ namespace GekkoFyre {
 #define SPECTRO_TIME_HORIZON (60)                       // Not sure what this is, as it has been reverse engineered from something else.
 #define SPECTRO_MAX_BUFFER_SIZE (10)                    // The maximum number of items to store within the buffers associated with the spectrograph.
 #define SPECTRO_Y_AXIS_SIZE (10000)                     // The maximum size of the y-axis, in milliseconds, given that it is based on a timescale.
+
+//
+// Audio encoding/decoding
+//
+#define AUDIO_CODECS_OGG_VORBIS_ENCODE_QUALITY (1.0)    // The quality at which to encode an Ogg Vorbis file!
 
 #ifndef M_PI
 #define M_PI (3.14159265358979323846) /* pi */
@@ -388,6 +396,14 @@ namespace Spectrograph {
         double max_z_axis_val;                                                  // Most maximum value as presented by the z-axis (the coloration portion).
         int window_size;                                                        // The value as passed towards GekkoFyre::SpectroFFTW::stft().
         size_t hanning_win;                                                     // The 'window hanning' value.
+    };
+}
+
+namespace GkAudioFramework {
+    enum CodecSupport {
+        PCM,
+        OggVorbis,
+        Unknown
     };
 }
 };

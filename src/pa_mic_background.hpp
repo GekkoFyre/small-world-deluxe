@@ -48,6 +48,7 @@
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
 #include <portaudio.h>
+#include <portaudiocpp/System.hxx>
 #include <QObject>
 #include <QPointer>
 #include <memory>

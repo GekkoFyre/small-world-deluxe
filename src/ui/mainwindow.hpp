@@ -181,6 +181,8 @@ private:
     std::shared_ptr<GekkoFyre::PaMic> gkPaMic;
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GekkoFyre::RadioLibs> gkRadioLibs;
+    std::shared_ptr<GekkoFyre::GkAudioEncoding> gkAudioEncoding;
+    std::shared_ptr<GekkoFyre::GkAudioDecoding> gkAudioDecoding;
     QPointer<GekkoFyre::SpectroGui> gkSpectroGui;
     QPointer<GekkoFyre::paMicProcBackground> paMicProcBackground;
 
@@ -192,6 +194,7 @@ private:
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
     QPointer<GekkoFyre::PaAudioBuf> pref_input_audio_buf;
+    QPointer<GekkoFyre::PaAudioBuf> pref_output_audio_buf;
 
     //
     // Audio sub-system

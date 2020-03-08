@@ -269,11 +269,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         timer->start(1000);
 
         const size_t spectro_window_size = gkSpectroGui->window()->size().rwidth();
-        const size_t audio_buffer_size = ((pref_input_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS) *
+        const size_t input_audio_buffer_size = ((pref_input_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS) *
                                           GkDb->convertAudioChannelsInt(pref_input_device.sel_channels));
-        pref_input_audio_buf = new GekkoFyre::PaAudioBuf(audio_buffer_size, this);
+        pref_input_audio_buf = new GekkoFyre::PaAudioBuf(input_audio_buffer_size, this);
         paMicProcBackground = new GekkoFyre::paMicProcBackground(gkPortAudioInit, pref_input_audio_buf, gkAudioDevices, gkStringFuncs, fileIo, GkDb,
-                                                                 pref_input_device, audio_buffer_size, spectro_window_size, nullptr);
+                                                                 pref_input_device, input_audio_buffer_size, spectro_window_size, nullptr);
 
         QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), paMicProcBackground, SLOT(abortRecording(const bool &, const int &)));
         QObject::connect(paMicProcBackground, SIGNAL(updateVolume(const double &)), this, SLOT(updateVuMeter(const double &)));
@@ -284,6 +284,20 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         std::thread t1(&MainWindow::infoBar, this);
         t1.detach();
+
+        //
+        // Setup the audio encoding/decoding libraries!
+        //
+        const size_t output_audio_buffer_size = ((pref_output_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS) *
+                                          GkDb->convertAudioChannelsInt(pref_output_device.sel_channels));
+        pref_output_audio_buf = new GekkoFyre::PaAudioBuf(output_audio_buffer_size, this);
+
+        gkAudioEncoding = std::make_shared<GkAudioEncoding>(gkPortAudioInit, fileIo, gkAudioDevices,
+                                                            pref_input_audio_buf, gkStringFuncs,
+                                                            pref_input_device, this);
+        gkAudioDecoding = std::make_shared<GkAudioDecoding>(gkPortAudioInit, fileIo, gkAudioDevices,
+                                                            pref_output_audio_buf, gkStringFuncs,
+                                                            pref_output_device, this);
 
         if (radio->freq >= 0.0) {
             ui->label_freq_large->setText(QString::number(radio->freq));

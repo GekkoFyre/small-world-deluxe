@@ -38,7 +38,19 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include "src/file_io.hpp"
+#include "src/audio_devices.hpp"
+#include "src/pa_audio_buf.hpp"
+#include "src/string_funcs_windows.hpp"
+#include <boost/filesystem.hpp>
+#include <portaudio.h>
+#include <portaudiocpp/System.hxx>
+#include <memory>
+#include <string>
+#include <future>
+#include <thread>
 #include <QObject>
+#include <QPointer>
 
 namespace GekkoFyre {
 
@@ -46,8 +58,24 @@ class GkAudioDecoding : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkAudioDecoding(QObject *parent = nullptr);
+    explicit GkAudioDecoding(portaudio::System *paInit, std::shared_ptr<GekkoFyre::FileIo> fileIo,
+                             std::shared_ptr<GekkoFyre::AudioDevices> audioDevs,
+                             QPointer<GekkoFyre::PaAudioBuf> audio_buf,
+                             std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs,
+                             GekkoFyre::Database::Settings::Audio::GkDevice output_device,
+                             QObject *parent = nullptr);
     virtual ~GkAudioDecoding();
+
+private:
+    std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
+    std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
+    QPointer<GekkoFyre::PaAudioBuf> gkAudioBuf;
+    std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
+
+    portaudio::System *gkPaInit;
+    GekkoFyre::Database::Settings::Audio::GkDevice gkOutputDev;
+
+    std::string readOgg(const boost::filesystem::path &filePath);
 
 };
 };

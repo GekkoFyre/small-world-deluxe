@@ -41,6 +41,8 @@
 #include <set>
 #include <QStringList>
 #include <QMessageBox>
+#include <QFileDialog>
+#include <QStandardPaths>
 #include <utility>
 
 using namespace GekkoFyre;
@@ -773,7 +775,17 @@ void DialogSettings::on_pushButton_db_save_loc_clicked()
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void DialogSettings::on_pushButton_audio_save_loc_clicked()
-{}
+{
+    QString dirName = QFileDialog::getExistingDirectory(this, tr("Choose a location to save audio files"),
+                                                        QStandardPaths::writableLocation(QStandardPaths::HomeLocation),
+                                                        QFileDialog::ShowDirsOnly);
+
+    if (!dirName.isEmpty()) {
+        ui->lineEdit_audio_save_loc->setText(dirName);
+    }
+
+    return;
+}
 
 /**
  * @brief DialogSettings::on_pushButton_input_sound_test_clicked
@@ -910,6 +922,32 @@ void DialogSettings::on_comboBox_soundcard_output_currentIndexChanged(int index)
 void DialogSettings::on_spinBox_spectro_render_thread_settings_valueChanged(int arg1)
 {
     Q_UNUSED(arg1);
+
+    return;
+}
+
+void DialogSettings::on_pushButton_db_save_loc_2_clicked()
+{
+    QString dirName = QFileDialog::getExistingDirectory(this, tr("Choose a location to save audio files"),
+                                                        QStandardPaths::writableLocation(QStandardPaths::HomeLocation),
+                                                        QFileDialog::ShowDirsOnly);
+
+    if (!dirName.isEmpty()) {
+        ui->lineEdit_db_save_loc_2->setText(dirName);
+    }
+
+    return;
+}
+
+void DialogSettings::on_pushButton_audio_logs_save_dir_clicked()
+{
+    QString dirName = QFileDialog::getExistingDirectory(this, tr("Choose a location to save audio files"),
+                                                        QStandardPaths::writableLocation(QStandardPaths::HomeLocation),
+                                                        QFileDialog::ShowDirsOnly);
+
+    if (!dirName.isEmpty()) {
+        ui->lineEdit_audio_logs_save_dir->setText(dirName);
+    }
 
     return;
 }
