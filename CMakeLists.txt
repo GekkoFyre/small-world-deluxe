@@ -256,7 +256,8 @@ qt5_wrap_ui(UI_HEADERS
     src/ui/mainwindow.ui
     src/ui/dialogsettings.ui
     src/ui/aboutdialog.ui
-    src/ui/spectrodialog.ui)
+    src/ui/spectrodialog.ui
+    src/ui/gkaudioplaydialog.ui)
 
 qt5_add_resources(UI_RESOURCES src/sworld_res.qrc)
 
@@ -280,7 +281,8 @@ if(WIN32)
         src/pa_mic_background.cpp
         src/gk_audio_encoding.cpp
         src/gk_audio_decoding.cpp
-        src/string_funcs_windows.cpp)
+        src/string_funcs_windows.cpp
+        src/ui/gkaudioplaydialog.cpp)
 elseif(UNIX)
     set(GALAXY_UI_CPP
         src/ui/mainwindow.cpp
@@ -298,7 +300,8 @@ elseif(UNIX)
         src/pa_mic_background.cpp
         src/gk_audio_encoding.cpp
         src/gk_audio_decoding.cpp
-        src/string_funcs_linux.cpp)
+        src/string_funcs_linux.cpp
+        src/ui/gkaudioplaydialog.cpp)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()
@@ -332,7 +335,8 @@ if(WIN32)
         src/pa_mic_background.hpp
         src/gk_audio_encoding.hpp
         src/gk_audio_decoding.hpp
-        src/string_funcs_windows.hpp)
+        src/string_funcs_windows.hpp
+        src/ui/gkaudioplaydialog.hpp)
 elseif(UNIX)
     set(GALAXY_SRC_HEADERS
         src/defines.hpp
@@ -352,7 +356,8 @@ elseif(UNIX)
         src/pa_mic_background.hpp
         src/gk_audio_encoding.hpp
         src/gk_audio_decoding.hpp
-        src/string_funcs_linux.hpp)
+        src/string_funcs_linux.hpp
+        src/ui/gkaudioplaydialog.hpp)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()

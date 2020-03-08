@@ -551,6 +551,28 @@ bool GkLevelDb::convertAudioEnumIsStereo(const audio_channels &channel_enum) con
     return false;
 }
 
+QString GkLevelDb::convAudioBitrateToStr(const GkAudioFramework::Bitrate &bitrate)
+{
+    switch (bitrate) {
+    case GkAudioFramework::Bitrate::VBR:
+        return tr("Variable bitrate (i.e. VBR)");
+    case GkAudioFramework::Bitrate::Kbps64:
+        return tr("64 Kbps");
+    case GkAudioFramework::Bitrate::Kbps128:
+        return tr("128 Kbps");
+    case GkAudioFramework::Bitrate::Kbps192:
+        return tr("192 Kbps");
+    case GkAudioFramework::Bitrate::Kbps256:
+        return tr("256 Kbps");
+    case GkAudioFramework::Bitrate::Kbps320:
+        return tr("320 Kbps");
+    default:
+        return tr("Variable bitrate (i.e. VBR)");
+    }
+
+    return tr("Variable bitrate (i.e. VBR)");
+}
+
 /**
  * @brief DekodeDb::boolEnum Will enumerate a boolean value to an std::string, ready for use within a database.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>

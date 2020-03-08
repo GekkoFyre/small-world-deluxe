@@ -38,49 +38,21 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/file_io.hpp"
-#include "src/audio_devices.hpp"
-#include "src/pa_audio_buf.hpp"
-#include "src/string_funcs_windows.hpp"
-#include "src/dek_db.hpp"
-#include <boost/filesystem.hpp>
-#include <portaudio.h>
-#include <portaudiocpp/System.hxx>
-#include <memory>
-#include <string>
-#include <future>
-#include <thread>
-#include <QObject>
-#include <QPointer>
+#include <QDialog>
 
-namespace GekkoFyre {
+namespace Ui {
+class GkAudioPlayDialog;
+}
 
-class GkAudioEncoding : public QObject {
+class GkAudioPlayDialog : public QDialog
+{
     Q_OBJECT
 
 public:
-    explicit GkAudioEncoding(portaudio::System *paInit, std::shared_ptr<GekkoFyre::FileIo> fileIo,
-                             std::shared_ptr<GekkoFyre::AudioDevices> audioDevs,
-                             QPointer<PaAudioBuf> audio_buf,
-                             std::shared_ptr<GekkoFyre::GkLevelDb> database,
-                             std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs,
-                             GekkoFyre::Database::Settings::Audio::GkDevice input_device,
-                             QObject *parent = nullptr);
-    virtual ~GkAudioEncoding();
-
-    void recordAudioFile(const boost::filesystem::path &filePath);
+    explicit GkAudioPlayDialog(QWidget *parent = nullptr);
+    ~GkAudioPlayDialog();
 
 private:
-    std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
-    std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
-    QPointer<GekkoFyre::PaAudioBuf> gkAudioBuf;
-    std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
-    std::shared_ptr<GkLevelDb> gkDb;
-
-    portaudio::System *gkPaInit;
-    GekkoFyre::Database::Settings::Audio::GkDevice gkInputDev;
-
-    bool recordOggVorbis(const boost::filesystem::path &filePath);
-
+    Ui::GkAudioPlayDialog *ui;
 };
-};
+

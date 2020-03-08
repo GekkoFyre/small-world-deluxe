@@ -37,7 +37,7 @@
  
 #pragma once
 
-#include "defines.hpp"
+#include "src/defines.hpp"
 #include <QObject>
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>

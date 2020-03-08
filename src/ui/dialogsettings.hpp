@@ -84,6 +84,7 @@ private slots:
     void on_comboBox_brand_selection_currentIndexChanged(const QString &arg1);
     void on_comboBox_com_port_currentIndexChanged(int index);
     void on_spinBox_spectro_render_thread_settings_valueChanged(int arg1);
+    void on_horizontalSlider_encoding_audio_quality_valueChanged(int value);
 
 private:
     Ui::DialogSettings *ui;
@@ -118,6 +119,7 @@ private:
     static QMultiMap<rig_model_t, std::tuple<QString, QString, GekkoFyre::AmateurRadio::rig_type>> init_model_names();
 
     void prefill_audio_devices(std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> audio_devices_vec);
+    void prefill_audio_encode_comboboxes();
 
     QMap<int, int> collectComboBoxIndexes(const QComboBox *combo_box);
     void prefill_avail_com_ports(const QMap<tstring, std::pair<tstring, boost::tribool>> &com_ports);

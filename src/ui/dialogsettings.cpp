@@ -423,6 +423,13 @@ void DialogSettings::prefill_audio_devices(std::vector<GkDevice> audio_devices_v
     return;
 }
 
+void DialogSettings::prefill_audio_encode_comboboxes()
+{
+    // gkDekodeDb->convAudioBitrateToStr();
+
+    return;
+}
+
 /**
  * @brief DialogSettings::collectComboBoxIndexes Collects the actual item index (i.e. GkDevice::dev_number()), and
  * returns it as a QMap<int, int>().
@@ -949,5 +956,10 @@ void DialogSettings::on_pushButton_audio_logs_save_dir_clicked()
         ui->lineEdit_audio_logs_save_dir->setText(dirName);
     }
 
+    return;
+}
+
+void DialogSettings::on_horizontalSlider_encoding_audio_quality_valueChanged(int value)
+{
     return;
 }

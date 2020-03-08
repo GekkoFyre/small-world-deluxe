@@ -293,10 +293,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         pref_output_audio_buf = new GekkoFyre::PaAudioBuf(output_audio_buffer_size, this);
 
         gkAudioEncoding = std::make_shared<GkAudioEncoding>(gkPortAudioInit, fileIo, gkAudioDevices,
-                                                            pref_input_audio_buf, gkStringFuncs,
+                                                            pref_input_audio_buf, GkDb, gkStringFuncs,
                                                             pref_input_device, this);
         gkAudioDecoding = std::make_shared<GkAudioDecoding>(gkPortAudioInit, fileIo, gkAudioDevices,
-                                                            pref_output_audio_buf, gkStringFuncs,
+                                                            pref_output_audio_buf, GkDb, gkStringFuncs,
                                                             pref_output_device, this);
 
         if (radio->freq >= 0.0) {

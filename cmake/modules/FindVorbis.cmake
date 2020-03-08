@@ -45,10 +45,13 @@ find_path(Vorbis_INCLUDE_DIR NAMES "vorbis/vorbisenc.h" "vorbis/vorbisfile.h"
 find_library(Vorbis_LIBRARY NAMES "vorbis_static" "libvorbis_static" "libvorbis" "vorbis"
             HINTS ${PC_Vorbis_LIBDIR} ${PC_Vorbis_LIBRARY_DIRS})
 
+find_library(VorbisFile_LIBRARY NAMES "vorbisfile_static" "libvorbisfile_static" "vorbisfile" "libvorbisfile"
+            HINTS ${PC_Vorbis_LIBDIR} ${PC_Vorbis_LIBRARY_DIRS})
+
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Vorbis DEFAULT_MSG Vorbis_LIBRARY Vorbis_INCLUDE_DIR)
+find_package_handle_standard_args(Vorbis DEFAULT_MSG Vorbis_LIBRARY VorbisFile_LIBRARY Vorbis_INCLUDE_DIR)
 
-mark_as_advanced(Vorbis_INCLUDE_DIR Vorbis_LIBRARY)
+mark_as_advanced(Vorbis_INCLUDE_DIR Vorbis_LIBRARY VorbisFile_LIBRARY)
 
-set(Vorbis_LIBRARIES ${Vorbis_LIBRARY})
+set(Vorbis_LIBRARIES ${Vorbis_LIBRARY} ${VorbisFile_LIBRARY})
 set(Vorbis_INCLUDE_DIRS ${Vorbis_INCLUDE_DIR})

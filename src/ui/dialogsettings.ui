@@ -855,6 +855,83 @@
                  </item>
                 </layout>
                </widget>
+               <widget class="QWidget" name="tab_audio_encoding_settings">
+                <attribute name="title">
+                 <string>Recorder</string>
+                </attribute>
+                <layout class="QVBoxLayout" name="verticalLayout_26">
+                 <item>
+                  <widget class="QFrame" name="frame_audio_encoding_settings_inner">
+                   <property name="frameShape">
+                    <enum>QFrame::StyledPanel</enum>
+                   </property>
+                   <property name="frameShadow">
+                    <enum>QFrame::Raised</enum>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_27">
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <item>
+                     <widget class="QGroupBox" name="groupBox_encoding_settings">
+                      <property name="title">
+                       <string>Encoding</string>
+                      </property>
+                      <layout class="QFormLayout" name="formLayout_14">
+                       <item row="0" column="0">
+                        <widget class="QLabel" name="label_encoding_audio_quality">
+                         <property name="text">
+                          <string>Audio Quality: </string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="0" column="1">
+                        <widget class="QSlider" name="horizontalSlider_encoding_audio_quality">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="1" column="0">
+                        <widget class="QLabel" name="label_encoding_audio_bitrate">
+                         <property name="text">
+                          <string>Bitrate: </string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="1" column="1">
+                        <widget class="QComboBox" name="comboBox_encoding_audio_bitrate"/>
+                       </item>
+                      </layout>
+                     </widget>
+                    </item>
+                    <item>
+                     <spacer name="verticalSpacer_7">
+                      <property name="orientation">
+                       <enum>Qt::Vertical</enum>
+                      </property>
+                      <property name="sizeHint" stdset="0">
+                       <size>
+                        <width>20</width>
+                        <height>40</height>
+                       </size>
+                      </property>
+                     </spacer>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
                <widget class="QWidget" name="tab_audio_api_details">
                 <attribute name="title">
                  <string>API Info</string>

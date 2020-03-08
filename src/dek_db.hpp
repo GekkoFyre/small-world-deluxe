@@ -70,6 +70,8 @@ public:
     int convertAudioChannelsInt(const GekkoFyre::Database::Settings::audio_channels &channel_enum) const;
     bool convertAudioEnumIsStereo(const GekkoFyre::Database::Settings::audio_channels &channel_enum) const;
 
+    QString convAudioBitrateToStr(const GekkoFyre::GkAudioFramework::Bitrate &bitrate);
+
 private:
     std::shared_ptr<GekkoFyre::FileIo> fileIo;
     leveldb::DB *db;

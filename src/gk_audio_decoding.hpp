@@ -42,6 +42,8 @@
 #include "src/audio_devices.hpp"
 #include "src/pa_audio_buf.hpp"
 #include "src/string_funcs_windows.hpp"
+#include "src/dek_db.hpp"
+#include <ogg/os_types.h>
 #include <boost/filesystem.hpp>
 #include <portaudio.h>
 #include <portaudiocpp/System.hxx>
@@ -49,6 +51,7 @@
 #include <string>
 #include <future>
 #include <thread>
+#include <vector>
 #include <QObject>
 #include <QPointer>
 
@@ -61,21 +64,29 @@ public:
     explicit GkAudioDecoding(portaudio::System *paInit, std::shared_ptr<GekkoFyre::FileIo> fileIo,
                              std::shared_ptr<GekkoFyre::AudioDevices> audioDevs,
                              QPointer<GekkoFyre::PaAudioBuf> audio_buf,
+                             std::shared_ptr<GekkoFyre::GkLevelDb> database,
                              std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs,
                              GekkoFyre::Database::Settings::Audio::GkDevice output_device,
                              QObject *parent = nullptr);
     virtual ~GkAudioDecoding();
+
+    GekkoFyre::GkAudioFramework::AudioFileInfo gatherOggInfo(const boost::filesystem::path &filePath,
+                                                             boost::system::error_code &ec);
+    GekkoFyre::GkAudioFramework::AudioFileInfo initAudioFileInfoStruct();
 
 private:
     std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
     QPointer<GekkoFyre::PaAudioBuf> gkAudioBuf;
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
+    std::shared_ptr<GkLevelDb> gkDb;
 
     portaudio::System *gkPaInit;
     GekkoFyre::Database::Settings::Audio::GkDevice gkOutputDev;
 
-    std::string readOgg(const boost::filesystem::path &filePath);
+    static size_t readOgg(void *buffer, size_t element_size, size_t element_count, void *data_source);
+    static int seekOgg(void *data_source, ogg_int64_t offset, int origin);
+    static long tellOgg(void *data_source);
 
 };
 };

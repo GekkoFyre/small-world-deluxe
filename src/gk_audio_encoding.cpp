@@ -47,6 +47,7 @@ extern "C"
 
 #include <vorbis/codec.h>
 #include <vorbis/vorbisenc.h>
+#include <vorbis/vorbisfile.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -58,6 +59,7 @@ extern "C"
 #endif
 
 using namespace GekkoFyre;
+using namespace GkAudioFramework;
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
@@ -65,6 +67,7 @@ GkAudioEncoding::GkAudioEncoding(portaudio::System *paInit,
                                  std::shared_ptr<FileIo> fileIo,
                                  std::shared_ptr<AudioDevices> audioDevs,
                                  QPointer<PaAudioBuf> audio_buf,
+                                 std::shared_ptr<GkLevelDb> database,
                                  std::shared_ptr<StringFuncs> stringFuncs,
                                  Database::Settings::Audio::GkDevice input_device,
                                  QObject *parent)
@@ -73,6 +76,7 @@ GkAudioEncoding::GkAudioEncoding(portaudio::System *paInit,
     gkAudioDevices = audioDevs;
     gkAudioBuf = audio_buf;
     gkStringFuncs = stringFuncs;
+    gkDb = database;
 
     gkPaInit = paInit;
     gkInputDev = input_device;
@@ -137,7 +141,7 @@ bool GkAudioEncoding::recordOggVorbis(const fs::path &filePath)
             // Also pick a random serial number; that way we can more likely build
             // chained streams just by concatenation.
             //
-            srand(time(NULL));
+            srand(time(nullptr));
             ogg_stream_init(&os, rand());
 
             //

@@ -44,6 +44,7 @@
 #include <portaudiocpp/AsioDeviceAdapter.hxx>
 #include <boost/exception/all.hpp>
 #include <boost/logic/tribool.hpp>
+#include <boost/filesystem.hpp>
 #include <qwt_interval.h>
 #include <vector>
 #include <exception>
@@ -404,6 +405,27 @@ namespace GkAudioFramework {
         PCM,
         OggVorbis,
         Unknown
+    };
+
+    enum Bitrate {
+        VBR,
+        Kbps64,
+        Kbps128,
+        Kbps192,
+        Kbps256,
+        Kbps320,
+        Default
+    };
+
+    struct AudioFileInfo {
+        boost::filesystem::path audio_file_path;                                // The path to the audio file itself, if known.
+        bool is_output;                                                         // Are we dealing with this as an input or output file?
+        double sample_rate;                                                     // The sample rate of the file.
+        CodecSupport type_codec;                                                // The codec of the audio file, if known.
+        Database::Settings::audio_channels num_audio_channels;                  // The number of audio channels (i.e. if stereo or mono).
+        long bitrate_lower;                                                     // The lower end of the bitrate scale for the specified file.
+        long bitrate_upper;                                                     // The upper end of the bitrate scale for the specified file.
+        long bitrate_nominal;                                                   // The nominal bitrate for the specified file.
     };
 }
 };
