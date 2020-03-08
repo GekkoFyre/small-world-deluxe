@@ -46,9 +46,10 @@
 #include "src/pa_audio_buf.hpp"
 #include "src/spectro_gui.hpp"
 #include "src/pa_mic_background.hpp"
-#include "dialogsettings.hpp"
+#include "src/ui/dialogsettings.hpp"
 #include "src/gk_audio_encoding.hpp"
 #include "src/gk_audio_decoding.hpp"
+#include "src/ui/gkaudioplaydialog.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
@@ -185,6 +186,7 @@ private:
     std::shared_ptr<GekkoFyre::GkAudioDecoding> gkAudioDecoding;
     QPointer<GekkoFyre::SpectroGui> gkSpectroGui;
     QPointer<GekkoFyre::paMicProcBackground> paMicProcBackground;
+    QPointer<GkAudioPlayDialog> gkAudioPlayDlg;
 
     //
     // PortAudio initialization and buffers

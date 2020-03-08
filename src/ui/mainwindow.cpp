@@ -299,6 +299,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                                             pref_output_audio_buf, GkDb, gkStringFuncs,
                                                             pref_output_device, this);
 
+        gkAudioPlayDlg = new GkAudioPlayDialog(GkDb, gkAudioDecoding, gkAudioDevices, fileIo, this);
+
         if (radio->freq >= 0.0) {
             ui->label_freq_large->setText(QString::number(radio->freq));
         } else {
@@ -660,7 +662,11 @@ void MainWindow::on_actionRecord_triggered()
 {}
 
 void MainWindow::on_actionPlay_triggered()
-{}
+{
+    gkAudioPlayDlg->setWindowFlags(Qt::Window);
+    gkAudioPlayDlg->setAttribute(Qt::WA_DeleteOnClose, false);
+    gkAudioPlayDlg->show();
+}
 
 void MainWindow::on_actionSettings_triggered()
 {

@@ -38,7 +38,12 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include "src/dek_db.hpp"
+#include "src/gk_audio_decoding.hpp"
+#include "src/audio_devices.hpp"
+#include "src/file_io.hpp"
 #include <QDialog>
+#include <memory>
 
 namespace Ui {
 class GkAudioPlayDialog;
@@ -49,10 +54,29 @@ class GkAudioPlayDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit GkAudioPlayDialog(QWidget *parent = nullptr);
+    explicit GkAudioPlayDialog(std::shared_ptr<GekkoFyre::GkLevelDb> database,
+                               std::shared_ptr<GekkoFyre::GkAudioDecoding> audio_decoding,
+                               std::shared_ptr<GekkoFyre::AudioDevices> audio_devices,
+                               std::shared_ptr<GekkoFyre::FileIo> file_io,
+                               QWidget *parent = nullptr);
     ~GkAudioPlayDialog();
+
+private slots:
+    void on_pushButton_reset_clicked();
+    void on_pushButton_close_clicked();
+    void on_pushButton_playback_play_clicked();
+    void on_pushButton_playback_stop_clicked();
+    void on_pushButton_playback_skip_back_clicked();
+    void on_pushButton_playback_skip_forward_clicked();
+    void on_pushButton_playback_browse_file_loc_clicked();
 
 private:
     Ui::GkAudioPlayDialog *ui;
+
+    std::shared_ptr<GekkoFyre::GkLevelDb> gkDb;
+    std::shared_ptr<GekkoFyre::GkAudioDecoding> gkAudioDecode;
+    std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevs;
+    std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
+
 };
 

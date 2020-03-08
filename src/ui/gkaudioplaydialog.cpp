@@ -40,14 +40,58 @@
 
 using namespace GekkoFyre;
 
-GkAudioPlayDialog::GkAudioPlayDialog(QWidget *parent) :
+GkAudioPlayDialog::GkAudioPlayDialog(std::shared_ptr<GkLevelDb> database,
+                                     std::shared_ptr<GkAudioDecoding> audio_decoding,
+                                     std::shared_ptr<AudioDevices> audio_devices,
+                                     std::shared_ptr<FileIo> file_io,
+                                     QWidget *parent) :
     QDialog(parent),
     ui(new Ui::GkAudioPlayDialog)
 {
     ui->setupUi(this);
+
+    gkDb = database;
+    gkAudioDecode = audio_decoding;
+    gkAudioDevs = audio_devices;
+    gkFileIo = file_io;
 }
 
 GkAudioPlayDialog::~GkAudioPlayDialog()
 {
     delete ui;
+}
+
+void GkAudioPlayDialog::on_pushButton_reset_clicked()
+{
+    return;
+}
+
+void GkAudioPlayDialog::on_pushButton_close_clicked()
+{
+    return;
+}
+
+void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
+{
+    return;
+}
+
+void GkAudioPlayDialog::on_pushButton_playback_stop_clicked()
+{
+    return;
+}
+
+void GkAudioPlayDialog::on_pushButton_playback_skip_back_clicked()
+{
+    return;
+}
+
+void GkAudioPlayDialog::on_pushButton_playback_skip_forward_clicked()
+{
+    return;
+}
+
+void GkAudioPlayDialog::on_pushButton_playback_browse_file_loc_clicked()
+{
+    return;
 }
