@@ -122,22 +122,25 @@ boost::filesystem::path FileIo::dummy_path()
 std::vector<fs::path> FileIo::analyze_dir(const boost::filesystem::path &dirPath, const std::vector<std::string> &dirsToSkip)
 {
     sys::error_code err;
-    if (fs::exists(dirPath, err)) {
-        if (fs::is_directory(dirPath, err)) {
-            std::vector<fs::path> dir_list = boost_dir_iterator(dirPath, err, dirsToSkip);
-            if (err) {
-                throw std::runtime_error(err.message());
-            }
+    try {
+        if (fs::exists(dirPath, err)) {
+            if (fs::is_directory(dirPath, err)) {
+                std::vector<fs::path> dir_list = boost_dir_iterator(dirPath, err, dirsToSkip);
+                if (err) {
+                    throw std::runtime_error(err.message());
+                }
 
-            if (!dir_list.empty()) {
-                std::cout << tr("Successfully analyzed directories and files.").toStdString() << std::endl;
-                return dir_list;
+                if (!dir_list.empty()) {
+                    std::cout << tr("Successfully analyzed directories and files.").toStdString() << std::endl;
+                    return dir_list;
+                }
             }
         }
+    } catch (const sys::system_error &e) {
+        err = e.code();
+        QMessageBox::warning(nullptr, tr("Error!"), tr("Issue encountered with analyzing directories and files! Error:\n\n%1").arg(err.message().c_str()),
+                             QMessageBox::Ok);
     }
-
-    std::cerr << tr("Issue encountered with analyzing directories and files! Error: %1")
-                 .arg(QString::fromStdString(err.message())).toStdString() << std::endl;
 
     return std::vector<fs::path>();
 }
@@ -174,8 +177,9 @@ bool FileIo::checkSettingsExist(const bool &is_file, const boost::filesystem::pa
         } else {
             throw ec.message();
         }
-    } catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+    } catch (const sys::system_error &e) {
+        ec = e.code();
+        QMessageBox::warning(nullptr, tr("Error!"), ec.message().c_str(), QMessageBox::Ok);
     }
 
     return false;

@@ -101,6 +101,8 @@ private:
     static QMultiMap<rig_model_t, std::tuple<QString, QString, GekkoFyre::AmateurRadio::rig_type>> radio_model_names; // Values: MFG, Model, Rig Type.
     static QVector<QString> unique_mfgs;
 
+    double audio_quality_val;
+
     // A QMap where the COM/Serial port name itself is the key and the value is the Target Path plus a
     // Boost C++ triboolean that signifies whether the port is active or not
     QMap<tstring, std::pair<tstring, boost::tribool>> status_com_ports;
@@ -129,4 +131,5 @@ private:
     void get_device_port_details(const tstring &port, const tstring &device,
                                  const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate = GekkoFyre::AmateurRadio::com_baud_rates::BAUD9600);
     bool read_settings();
+    inline QString defaultDirectory(const QString &base_path, const bool &use_native_slashes = false, const QString &append_dir = "SmallWorld");
 };
