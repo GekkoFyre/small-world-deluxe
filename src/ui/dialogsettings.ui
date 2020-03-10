@@ -547,7 +547,7 @@
                   <number>0</number>
                  </property>
                  <item>
-                  <widget class="QFrame" name="frame_1_audio">
+                  <widget class="QFrame" name="frame_audio_config">
                    <property name="frameShape">
                     <enum>QFrame::StyledPanel</enum>
                    </property>
@@ -556,299 +556,324 @@
                    </property>
                    <layout class="QVBoxLayout" name="verticalLayout_5">
                     <item>
-                     <widget class="QGroupBox" name="groupBox_soundcard">
-                      <property name="title">
-                       <string>Soundcard</string>
+                     <widget class="QScrollArea" name="scrollArea_audio_config">
+                      <property name="frameShadow">
+                       <enum>QFrame::Plain</enum>
                       </property>
-                      <layout class="QFormLayout" name="formLayout_3">
-                       <item row="0" column="0">
-                        <widget class="QLabel" name="label_soundcard_input">
-                         <property name="text">
-                          <string>Input: </string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="1" column="0">
-                        <widget class="QLabel" name="label_soundcard_output">
-                         <property name="text">
-                          <string>Output: </string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="0" column="1">
-                        <widget class="QFrame" name="frame_input_sound">
-                         <property name="frameShape">
-                          <enum>QFrame::StyledPanel</enum>
-                         </property>
-                         <property name="frameShadow">
-                          <enum>QFrame::Raised</enum>
-                         </property>
-                         <layout class="QHBoxLayout" name="horizontalLayout_9">
-                          <property name="leftMargin">
-                           <number>0</number>
+                      <property name="horizontalScrollBarPolicy">
+                       <enum>Qt::ScrollBarAlwaysOff</enum>
+                      </property>
+                      <property name="widgetResizable">
+                       <bool>true</bool>
+                      </property>
+                      <widget class="QWidget" name="scrollAreaWidgetContents_audio_config">
+                       <property name="geometry">
+                        <rect>
+                         <x>0</x>
+                         <y>0</y>
+                         <width>630</width>
+                         <height>368</height>
+                        </rect>
+                       </property>
+                       <layout class="QVBoxLayout" name="verticalLayout_29">
+                        <item>
+                         <widget class="QGroupBox" name="groupBox_soundcard">
+                          <property name="title">
+                           <string>Soundcard</string>
                           </property>
-                          <property name="topMargin">
-                           <number>0</number>
+                          <layout class="QFormLayout" name="formLayout_3">
+                           <item row="0" column="0">
+                            <widget class="QLabel" name="label_soundcard_input">
+                             <property name="text">
+                              <string>Input: </string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="1" column="0">
+                            <widget class="QLabel" name="label_soundcard_output">
+                             <property name="text">
+                              <string>Output: </string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="0" column="1">
+                            <widget class="QFrame" name="frame_input_sound">
+                             <property name="frameShape">
+                              <enum>QFrame::StyledPanel</enum>
+                             </property>
+                             <property name="frameShadow">
+                              <enum>QFrame::Raised</enum>
+                             </property>
+                             <layout class="QHBoxLayout" name="horizontalLayout_9">
+                              <property name="leftMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="topMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="rightMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="bottomMargin">
+                               <number>0</number>
+                              </property>
+                              <item>
+                               <widget class="QComboBox" name="comboBox_soundcard_input">
+                                <property name="toolTip">
+                                 <string>The input channel for your soundcard, which can be anything from a microphone or in this case, possibly a radio rig.</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QPushButton" name="pushButton_input_sound_test">
+                                <property name="sizePolicy">
+                                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                                  <horstretch>0</horstretch>
+                                  <verstretch>0</verstretch>
+                                 </sizepolicy>
+                                </property>
+                                <property name="toolTip">
+                                 <string>Play an audio sample</string>
+                                </property>
+                                <property name="text">
+                                 <string>Test</string>
+                                </property>
+                                <property name="autoDefault">
+                                 <bool>false</bool>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QComboBox" name="comboBox_soundcard_input_channels">
+                                <property name="sizePolicy">
+                                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                                  <horstretch>0</horstretch>
+                                  <verstretch>0</verstretch>
+                                 </sizepolicy>
+                                </property>
+                                <item>
+                                 <property name="text">
+                                  <string>Mono</string>
+                                 </property>
+                                </item>
+                                <item>
+                                 <property name="text">
+                                  <string>Left</string>
+                                 </property>
+                                </item>
+                                <item>
+                                 <property name="text">
+                                  <string>Right</string>
+                                 </property>
+                                </item>
+                                <item>
+                                 <property name="text">
+                                  <string>Both</string>
+                                 </property>
+                                </item>
+                               </widget>
+                              </item>
+                             </layout>
+                            </widget>
+                           </item>
+                           <item row="1" column="1">
+                            <widget class="QFrame" name="frame_output_sound">
+                             <property name="frameShape">
+                              <enum>QFrame::StyledPanel</enum>
+                             </property>
+                             <property name="frameShadow">
+                              <enum>QFrame::Raised</enum>
+                             </property>
+                             <layout class="QHBoxLayout" name="horizontalLayout_10">
+                              <property name="leftMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="topMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="rightMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="bottomMargin">
+                               <number>0</number>
+                              </property>
+                              <item>
+                               <widget class="QComboBox" name="comboBox_soundcard_output">
+                                <property name="toolTip">
+                                 <string>The output channel to your soundcard, where sounds produced from your computer are sent outwards to an external device, whether it be speakers or possibly in this case, a radio rig for transmission.</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QPushButton" name="pushButton_output_sound_test">
+                                <property name="sizePolicy">
+                                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                                  <horstretch>0</horstretch>
+                                  <verstretch>0</verstretch>
+                                 </sizepolicy>
+                                </property>
+                                <property name="toolTip">
+                                 <string>Play an audio sample</string>
+                                </property>
+                                <property name="text">
+                                 <string>Test</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QComboBox" name="comboBox_soundcard_output_channels">
+                                <property name="sizePolicy">
+                                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                                  <horstretch>0</horstretch>
+                                  <verstretch>0</verstretch>
+                                 </sizepolicy>
+                                </property>
+                                <item>
+                                 <property name="text">
+                                  <string>Mono</string>
+                                 </property>
+                                </item>
+                                <item>
+                                 <property name="text">
+                                  <string>Left</string>
+                                 </property>
+                                </item>
+                                <item>
+                                 <property name="text">
+                                  <string>Right</string>
+                                 </property>
+                                </item>
+                                <item>
+                                 <property name="text">
+                                  <string>Both</string>
+                                 </property>
+                                </item>
+                               </widget>
+                              </item>
+                             </layout>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QGroupBox" name="groupBox_audio_cfg_settings">
+                          <property name="title">
+                           <string>Audio Settings</string>
                           </property>
-                          <property name="rightMargin">
-                           <number>0</number>
+                          <layout class="QVBoxLayout" name="verticalLayout_21">
+                           <item>
+                            <widget class="QFrame" name="frame_audio_cfg_settings">
+                             <property name="frameShape">
+                              <enum>QFrame::StyledPanel</enum>
+                             </property>
+                             <property name="frameShadow">
+                              <enum>QFrame::Raised</enum>
+                             </property>
+                             <layout class="QFormLayout" name="formLayout">
+                              <property name="horizontalSpacing">
+                               <number>0</number>
+                              </property>
+                              <property name="verticalSpacing">
+                               <number>7</number>
+                              </property>
+                              <property name="leftMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="topMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="rightMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="bottomMargin">
+                               <number>0</number>
+                              </property>
+                              <item row="0" column="0">
+                               <widget class="QCheckBox" name="checkBox_formatted_audio_devices">
+                                <property name="toolTip">
+                                 <string>Whether you want the audio devices to appear in a formatted manner or not.</string>
+                                </property>
+                                <property name="text">
+                                 <string>Formatted Audio Devices</string>
+                                </property>
+                               </widget>
+                              </item>
+                             </layout>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QGroupBox" name="groupBox_audio_save_loc">
+                          <property name="title">
+                           <string>Audio Recordings Save Directory</string>
                           </property>
-                          <property name="bottomMargin">
-                           <number>0</number>
+                          <layout class="QFormLayout" name="formLayout_6">
+                           <item row="0" column="0">
+                            <widget class="QLabel" name="label_audio_save_loc">
+                             <property name="text">
+                              <string>Location: </string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="0" column="1">
+                            <widget class="QFrame" name="frame_audio_save_loc">
+                             <property name="frameShape">
+                              <enum>QFrame::StyledPanel</enum>
+                             </property>
+                             <property name="frameShadow">
+                              <enum>QFrame::Raised</enum>
+                             </property>
+                             <layout class="QHBoxLayout" name="horizontalLayout_4">
+                              <property name="spacing">
+                               <number>7</number>
+                              </property>
+                              <property name="leftMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="topMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="rightMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="bottomMargin">
+                               <number>0</number>
+                              </property>
+                              <item>
+                               <widget class="QLineEdit" name="lineEdit_audio_save_loc"/>
+                              </item>
+                              <item>
+                               <widget class="QPushButton" name="pushButton_audio_save_loc">
+                                <property name="text">
+                                 <string>Browse</string>
+                                </property>
+                               </widget>
+                              </item>
+                             </layout>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                        <item>
+                         <spacer name="verticalSpacer">
+                          <property name="orientation">
+                           <enum>Qt::Vertical</enum>
                           </property>
-                          <item>
-                           <widget class="QComboBox" name="comboBox_soundcard_input">
-                            <property name="toolTip">
-                             <string>The input channel for your soundcard, which can be anything from a microphone or in this case, possibly a radio rig.</string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item>
-                           <widget class="QPushButton" name="pushButton_input_sound_test">
-                            <property name="sizePolicy">
-                             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                              <horstretch>0</horstretch>
-                              <verstretch>0</verstretch>
-                             </sizepolicy>
-                            </property>
-                            <property name="toolTip">
-                             <string>Play an audio sample</string>
-                            </property>
-                            <property name="text">
-                             <string>Test</string>
-                            </property>
-                            <property name="autoDefault">
-                             <bool>false</bool>
-                            </property>
-                           </widget>
-                          </item>
-                          <item>
-                           <widget class="QComboBox" name="comboBox_soundcard_input_channels">
-                            <property name="sizePolicy">
-                             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                              <horstretch>0</horstretch>
-                              <verstretch>0</verstretch>
-                             </sizepolicy>
-                            </property>
-                            <item>
-                             <property name="text">
-                              <string>Mono</string>
-                             </property>
-                            </item>
-                            <item>
-                             <property name="text">
-                              <string>Left</string>
-                             </property>
-                            </item>
-                            <item>
-                             <property name="text">
-                              <string>Right</string>
-                             </property>
-                            </item>
-                            <item>
-                             <property name="text">
-                              <string>Both</string>
-                             </property>
-                            </item>
-                           </widget>
-                          </item>
-                         </layout>
-                        </widget>
-                       </item>
-                       <item row="1" column="1">
-                        <widget class="QFrame" name="frame_output_sound">
-                         <property name="frameShape">
-                          <enum>QFrame::StyledPanel</enum>
-                         </property>
-                         <property name="frameShadow">
-                          <enum>QFrame::Raised</enum>
-                         </property>
-                         <layout class="QHBoxLayout" name="horizontalLayout_10">
-                          <property name="leftMargin">
-                           <number>0</number>
+                          <property name="sizeHint" stdset="0">
+                           <size>
+                            <width>20</width>
+                            <height>40</height>
+                           </size>
                           </property>
-                          <property name="topMargin">
-                           <number>0</number>
-                          </property>
-                          <property name="rightMargin">
-                           <number>0</number>
-                          </property>
-                          <property name="bottomMargin">
-                           <number>0</number>
-                          </property>
-                          <item>
-                           <widget class="QComboBox" name="comboBox_soundcard_output">
-                            <property name="toolTip">
-                             <string>The output channel to your soundcard, where sounds produced from your computer are sent outwards to an external device, whether it be speakers or possibly in this case, a radio rig for transmission.</string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item>
-                           <widget class="QPushButton" name="pushButton_output_sound_test">
-                            <property name="sizePolicy">
-                             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                              <horstretch>0</horstretch>
-                              <verstretch>0</verstretch>
-                             </sizepolicy>
-                            </property>
-                            <property name="toolTip">
-                             <string>Play an audio sample</string>
-                            </property>
-                            <property name="text">
-                             <string>Test</string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item>
-                           <widget class="QComboBox" name="comboBox_soundcard_output_channels">
-                            <property name="sizePolicy">
-                             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                              <horstretch>0</horstretch>
-                              <verstretch>0</verstretch>
-                             </sizepolicy>
-                            </property>
-                            <item>
-                             <property name="text">
-                              <string>Mono</string>
-                             </property>
-                            </item>
-                            <item>
-                             <property name="text">
-                              <string>Left</string>
-                             </property>
-                            </item>
-                            <item>
-                             <property name="text">
-                              <string>Right</string>
-                             </property>
-                            </item>
-                            <item>
-                             <property name="text">
-                              <string>Both</string>
-                             </property>
-                            </item>
-                           </widget>
-                          </item>
-                         </layout>
-                        </widget>
-                       </item>
-                      </layout>
+                         </spacer>
+                        </item>
+                       </layout>
+                      </widget>
                      </widget>
-                    </item>
-                    <item>
-                     <widget class="QGroupBox" name="groupBox_audio_cfg_settings">
-                      <property name="title">
-                       <string>Audio Settings</string>
-                      </property>
-                      <layout class="QVBoxLayout" name="verticalLayout_21">
-                       <item>
-                        <widget class="QFrame" name="frame_audio_cfg_settings">
-                         <property name="frameShape">
-                          <enum>QFrame::StyledPanel</enum>
-                         </property>
-                         <property name="frameShadow">
-                          <enum>QFrame::Raised</enum>
-                         </property>
-                         <layout class="QFormLayout" name="formLayout">
-                          <property name="horizontalSpacing">
-                           <number>0</number>
-                          </property>
-                          <property name="verticalSpacing">
-                           <number>7</number>
-                          </property>
-                          <property name="leftMargin">
-                           <number>0</number>
-                          </property>
-                          <property name="topMargin">
-                           <number>0</number>
-                          </property>
-                          <property name="rightMargin">
-                           <number>0</number>
-                          </property>
-                          <property name="bottomMargin">
-                           <number>0</number>
-                          </property>
-                          <item row="0" column="0">
-                           <widget class="QCheckBox" name="checkBox_formatted_audio_devices">
-                            <property name="toolTip">
-                             <string>Whether you want the audio devices to appear in a formatted manner or not.</string>
-                            </property>
-                            <property name="text">
-                             <string>Formatted Audio Devices</string>
-                            </property>
-                           </widget>
-                          </item>
-                         </layout>
-                        </widget>
-                       </item>
-                      </layout>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QGroupBox" name="groupBox_audio_save_loc">
-                      <property name="title">
-                       <string>Audio Recordings Save Directory</string>
-                      </property>
-                      <layout class="QFormLayout" name="formLayout_6">
-                       <item row="0" column="0">
-                        <widget class="QLabel" name="label_audio_save_loc">
-                         <property name="text">
-                          <string>Location: </string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="0" column="1">
-                        <widget class="QFrame" name="frame_audio_save_loc">
-                         <property name="frameShape">
-                          <enum>QFrame::StyledPanel</enum>
-                         </property>
-                         <property name="frameShadow">
-                          <enum>QFrame::Raised</enum>
-                         </property>
-                         <layout class="QHBoxLayout" name="horizontalLayout_4">
-                          <property name="spacing">
-                           <number>7</number>
-                          </property>
-                          <property name="leftMargin">
-                           <number>0</number>
-                          </property>
-                          <property name="topMargin">
-                           <number>0</number>
-                          </property>
-                          <property name="rightMargin">
-                           <number>0</number>
-                          </property>
-                          <property name="bottomMargin">
-                           <number>0</number>
-                          </property>
-                          <item>
-                           <widget class="QLineEdit" name="lineEdit_audio_save_loc"/>
-                          </item>
-                          <item>
-                           <widget class="QPushButton" name="pushButton_audio_save_loc">
-                            <property name="text">
-                             <string>Browse</string>
-                            </property>
-                           </widget>
-                          </item>
-                         </layout>
-                        </widget>
-                       </item>
-                      </layout>
-                     </widget>
-                    </item>
-                    <item>
-                     <spacer name="verticalSpacer">
-                      <property name="orientation">
-                       <enum>Qt::Vertical</enum>
-                      </property>
-                      <property name="sizeHint" stdset="0">
-                       <size>
-                        <width>20</width>
-                        <height>40</height>
-                       </size>
-                      </property>
-                     </spacer>
                     </item>
                    </layout>
                   </widget>
@@ -861,122 +886,147 @@
                 </attribute>
                 <layout class="QVBoxLayout" name="verticalLayout_26">
                  <item>
-                  <widget class="QFrame" name="frame_audio_encoding_settings_inner">
-                   <property name="frameShape">
-                    <enum>QFrame::StyledPanel</enum>
-                   </property>
+                  <widget class="QScrollArea" name="scrollArea_audio_recorder_config">
                    <property name="frameShadow">
-                    <enum>QFrame::Raised</enum>
+                    <enum>QFrame::Plain</enum>
                    </property>
-                   <layout class="QVBoxLayout" name="verticalLayout_27">
-                    <property name="leftMargin">
-                     <number>0</number>
+                   <property name="horizontalScrollBarPolicy">
+                    <enum>Qt::ScrollBarAlwaysOff</enum>
+                   </property>
+                   <property name="widgetResizable">
+                    <bool>true</bool>
+                   </property>
+                   <widget class="QWidget" name="scrollAreaWidgetContents_audio_recorder_config">
+                    <property name="geometry">
+                     <rect>
+                      <x>0</x>
+                      <y>0</y>
+                      <width>204</width>
+                      <height>119</height>
+                     </rect>
                     </property>
-                    <property name="topMargin">
-                     <number>0</number>
-                    </property>
-                    <property name="rightMargin">
-                     <number>0</number>
-                    </property>
-                    <property name="bottomMargin">
-                     <number>0</number>
-                    </property>
-                    <item>
-                     <widget class="QGroupBox" name="groupBox_encoding_settings">
-                      <property name="title">
-                       <string>Encoding</string>
-                      </property>
-                      <layout class="QFormLayout" name="formLayout_14">
-                       <item row="0" column="0">
-                        <widget class="QLabel" name="label_encoding_audio_quality">
-                         <property name="text">
-                          <string>Audio Quality: </string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="1" column="0">
-                        <widget class="QLabel" name="label_encoding_audio_bitrate">
-                         <property name="text">
-                          <string>Bitrate: </string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="1" column="1">
-                        <widget class="QComboBox" name="comboBox_encoding_audio_bitrate"/>
-                       </item>
-                       <item row="0" column="1">
-                        <widget class="QFrame" name="frame_encoding_audio_quality">
-                         <property name="frameShape">
-                          <enum>QFrame::StyledPanel</enum>
-                         </property>
-                         <property name="frameShadow">
-                          <enum>QFrame::Raised</enum>
-                         </property>
-                         <layout class="QHBoxLayout" name="horizontalLayout_14">
-                          <property name="leftMargin">
-                           <number>0</number>
+                    <layout class="QVBoxLayout" name="verticalLayout_28">
+                     <item>
+                      <widget class="QFrame" name="frame_audio_encoding_settings_inner">
+                       <property name="frameShape">
+                        <enum>QFrame::StyledPanel</enum>
+                       </property>
+                       <property name="frameShadow">
+                        <enum>QFrame::Raised</enum>
+                       </property>
+                       <layout class="QVBoxLayout" name="verticalLayout_27">
+                        <property name="leftMargin">
+                         <number>0</number>
+                        </property>
+                        <property name="topMargin">
+                         <number>0</number>
+                        </property>
+                        <property name="rightMargin">
+                         <number>0</number>
+                        </property>
+                        <property name="bottomMargin">
+                         <number>0</number>
+                        </property>
+                        <item>
+                         <widget class="QGroupBox" name="groupBox_encoding_settings">
+                          <property name="title">
+                           <string>Encoding</string>
                           </property>
-                          <property name="topMargin">
-                           <number>0</number>
+                          <layout class="QFormLayout" name="formLayout_14">
+                           <item row="0" column="0">
+                            <widget class="QLabel" name="label_encoding_audio_quality">
+                             <property name="text">
+                              <string>Audio Quality: </string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="1" column="0">
+                            <widget class="QLabel" name="label_encoding_audio_bitrate">
+                             <property name="text">
+                              <string>Bitrate: </string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="1" column="1">
+                            <widget class="QComboBox" name="comboBox_encoding_audio_bitrate"/>
+                           </item>
+                           <item row="0" column="1">
+                            <widget class="QFrame" name="frame_encoding_audio_quality">
+                             <property name="frameShape">
+                              <enum>QFrame::StyledPanel</enum>
+                             </property>
+                             <property name="frameShadow">
+                              <enum>QFrame::Raised</enum>
+                             </property>
+                             <layout class="QHBoxLayout" name="horizontalLayout_14">
+                              <property name="leftMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="topMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="rightMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="bottomMargin">
+                               <number>0</number>
+                              </property>
+                              <item>
+                               <widget class="QSlider" name="horizontalSlider_encoding_audio_quality">
+                                <property name="minimum">
+                                 <number>1</number>
+                                </property>
+                                <property name="maximum">
+                                 <number>10</number>
+                                </property>
+                                <property name="pageStep">
+                                 <number>2</number>
+                                </property>
+                                <property name="value">
+                                 <number>10</number>
+                                </property>
+                                <property name="orientation">
+                                 <enum>Qt::Horizontal</enum>
+                                </property>
+                                <property name="tickPosition">
+                                 <enum>QSlider::TicksBelow</enum>
+                                </property>
+                                <property name="tickInterval">
+                                 <number>1</number>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QLabel" name="label_encoding_audio_quality_value">
+                                <property name="text">
+                                 <string>1.0</string>
+                                </property>
+                               </widget>
+                              </item>
+                             </layout>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                        <item>
+                         <spacer name="verticalSpacer_7">
+                          <property name="orientation">
+                           <enum>Qt::Vertical</enum>
                           </property>
-                          <property name="rightMargin">
-                           <number>0</number>
+                          <property name="sizeHint" stdset="0">
+                           <size>
+                            <width>20</width>
+                            <height>40</height>
+                           </size>
                           </property>
-                          <property name="bottomMargin">
-                           <number>0</number>
-                          </property>
-                          <item>
-                           <widget class="QSlider" name="horizontalSlider_encoding_audio_quality">
-                            <property name="minimum">
-                             <number>1</number>
-                            </property>
-                            <property name="maximum">
-                             <number>10</number>
-                            </property>
-                            <property name="pageStep">
-                             <number>2</number>
-                            </property>
-                            <property name="value">
-                             <number>10</number>
-                            </property>
-                            <property name="orientation">
-                             <enum>Qt::Horizontal</enum>
-                            </property>
-                            <property name="tickPosition">
-                             <enum>QSlider::TicksBelow</enum>
-                            </property>
-                            <property name="tickInterval">
-                             <number>1</number>
-                            </property>
-                           </widget>
-                          </item>
-                          <item>
-                           <widget class="QLabel" name="label_encoding_audio_quality_value">
-                            <property name="text">
-                             <string>1.0</string>
-                            </property>
-                           </widget>
-                          </item>
-                         </layout>
-                        </widget>
-                       </item>
-                      </layout>
-                     </widget>
-                    </item>
-                    <item>
-                     <spacer name="verticalSpacer_7">
-                      <property name="orientation">
-                       <enum>Qt::Vertical</enum>
-                      </property>
-                      <property name="sizeHint" stdset="0">
-                       <size>
-                        <width>20</width>
-                        <height>40</height>
-                       </size>
-                      </property>
-                     </spacer>
-                    </item>
-                   </layout>
+                         </spacer>
+                        </item>
+                       </layout>
+                      </widget>
+                     </item>
+                    </layout>
+                   </widget>
                   </widget>
                  </item>
                 </layout>
@@ -1235,38 +1285,24 @@
             </attribute>
             <layout class="QVBoxLayout" name="verticalLayout_12">
              <item>
-              <widget class="QScrollArea" name="scrollArea_radio_rig_settings">
-               <property name="frameShadow">
-                <enum>QFrame::Plain</enum>
+              <widget class="QTabWidget" name="tabWidget_2">
+               <property name="currentIndex">
+                <number>0</number>
                </property>
-               <property name="horizontalScrollBarPolicy">
-                <enum>Qt::ScrollBarAlwaysOff</enum>
-               </property>
-               <property name="widgetResizable">
-                <bool>true</bool>
-               </property>
-               <widget class="QWidget" name="scrollAreaWidgetContents_2">
-                <property name="geometry">
-                 <rect>
-                  <x>0</x>
-                  <y>0</y>
-                  <width>656</width>
-                  <height>417</height>
-                 </rect>
-                </property>
-                <layout class="QVBoxLayout" name="verticalLayout_20">
+               <widget class="QWidget" name="tab">
+                <attribute name="title">
+                 <string>Rig</string>
+                </attribute>
+                <layout class="QVBoxLayout" name="verticalLayout_10">
                  <item>
-                  <widget class="QFrame" name="frame_2_rig_top">
+                  <widget class="QFrame" name="frame_2">
                    <property name="frameShape">
                     <enum>QFrame::StyledPanel</enum>
                    </property>
                    <property name="frameShadow">
                     <enum>QFrame::Raised</enum>
                    </property>
-                   <layout class="QHBoxLayout" name="horizontalLayout_2">
-                    <property name="spacing">
-                     <number>0</number>
-                    </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_30">
                     <property name="leftMargin">
                      <number>0</number>
                     </property>
@@ -1280,351 +1316,470 @@
                      <number>0</number>
                     </property>
                     <item>
-                     <widget class="QGroupBox" name="groupBox_rig_top_basic">
-                      <property name="title">
-                       <string>Basic</string>
+                     <widget class="QScrollArea" name="scrollArea_2">
+                      <property name="frameShadow">
+                       <enum>QFrame::Plain</enum>
                       </property>
-                      <layout class="QHBoxLayout" name="horizontalLayout_3">
-                       <item>
-                        <widget class="QFrame" name="frame_rig_left">
-                         <property name="sizePolicy">
-                          <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                           <horstretch>50</horstretch>
-                           <verstretch>0</verstretch>
-                          </sizepolicy>
-                         </property>
-                         <property name="frameShape">
-                          <enum>QFrame::StyledPanel</enum>
-                         </property>
-                         <property name="frameShadow">
-                          <enum>QFrame::Raised</enum>
-                         </property>
-                         <layout class="QFormLayout" name="formLayout_10">
-                          <property name="horizontalSpacing">
-                           <number>0</number>
+                      <property name="horizontalScrollBarPolicy">
+                       <enum>Qt::ScrollBarAlwaysOff</enum>
+                      </property>
+                      <property name="widgetResizable">
+                       <bool>true</bool>
+                      </property>
+                      <widget class="QWidget" name="scrollAreaWidgetContents_2">
+                       <property name="geometry">
+                        <rect>
+                         <x>0</x>
+                         <y>0</y>
+                         <width>609</width>
+                         <height>372</height>
+                        </rect>
+                       </property>
+                       <layout class="QVBoxLayout" name="verticalLayout_33">
+                        <item>
+                         <widget class="QFrame" name="frame_rig_top">
+                          <property name="frameShape">
+                           <enum>QFrame::StyledPanel</enum>
                           </property>
-                          <property name="verticalSpacing">
-                           <number>7</number>
+                          <property name="frameShadow">
+                           <enum>QFrame::Raised</enum>
                           </property>
-                          <property name="leftMargin">
-                           <number>0</number>
-                          </property>
-                          <property name="topMargin">
-                           <number>0</number>
-                          </property>
-                          <property name="rightMargin">
-                           <number>11</number>
-                          </property>
-                          <property name="bottomMargin">
-                           <number>0</number>
-                          </property>
-                          <item row="0" column="0">
-                           <widget class="QLabel" name="label_brand_selection">
-                            <property name="text">
-                             <string>Brand: </string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="0" column="1">
-                           <widget class="QComboBox" name="comboBox_brand_selection"/>
-                          </item>
-                          <item row="1" column="0">
-                           <widget class="QLabel" name="label_rig_selection">
-                            <property name="text">
-                             <string>Rig: </string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="1" column="1">
-                           <widget class="QComboBox" name="comboBox_rig_selection"/>
-                          </item>
-                          <item row="2" column="1">
-                           <widget class="QFrame" name="frame_rig_left_inner_subopt_2">
-                            <property name="frameShape">
-                             <enum>QFrame::StyledPanel</enum>
-                            </property>
-                            <property name="frameShadow">
-                             <enum>QFrame::Raised</enum>
-                            </property>
-                            <layout class="QHBoxLayout" name="horizontalLayout_7">
-                             <property name="spacing">
-                              <number>0</number>
+                          <layout class="QHBoxLayout" name="horizontalLayout_16">
+                           <property name="spacing">
+                            <number>0</number>
+                           </property>
+                           <property name="leftMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="topMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="rightMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="bottomMargin">
+                            <number>0</number>
+                           </property>
+                           <item>
+                            <widget class="QGroupBox" name="groupBox_rig_top_basic">
+                             <property name="title">
+                              <string>Basic</string>
                              </property>
-                             <property name="leftMargin">
-                              <number>0</number>
-                             </property>
-                             <property name="topMargin">
-                              <number>0</number>
-                             </property>
-                             <property name="rightMargin">
-                              <number>0</number>
-                             </property>
-                             <property name="bottomMargin">
-                              <number>0</number>
-                             </property>
-                             <item>
-                              <widget class="QFrame" name="frame_left_subopt_3">
-                               <property name="frameShape">
-                                <enum>QFrame::StyledPanel</enum>
-                               </property>
-                               <property name="frameShadow">
-                                <enum>QFrame::Raised</enum>
-                               </property>
-                               <layout class="QVBoxLayout" name="verticalLayout_10">
-                                <item>
-                                 <widget class="QLabel" name="label_subopt_retries">
-                                  <property name="text">
-                                   <string>Retries: </string>
-                                  </property>
-                                 </widget>
-                                </item>
-                                <item>
-                                 <widget class="QSpinBox" name="spinBox_subopt_retries">
-                                  <property name="maximum">
-                                   <number>15</number>
-                                  </property>
-                                 </widget>
-                                </item>
-                                <item>
-                                 <widget class="QLabel" name="label_subopt_write_delay">
-                                  <property name="text">
-                                   <string>Write Delay:</string>
-                                  </property>
-                                 </widget>
-                                </item>
-                                <item>
-                                 <widget class="QSpinBox" name="spinBox_subopt_write_delay">
-                                  <property name="maximum">
-                                   <number>600</number>
-                                  </property>
-                                 </widget>
-                                </item>
-                               </layout>
-                              </widget>
-                             </item>
-                             <item>
-                              <widget class="QFrame" name="frame_left_subopt_4">
-                               <property name="frameShape">
-                                <enum>QFrame::StyledPanel</enum>
-                               </property>
-                               <property name="frameShadow">
-                                <enum>QFrame::Raised</enum>
-                               </property>
-                               <layout class="QVBoxLayout" name="verticalLayout_11">
-                                <item>
-                                 <widget class="QLabel" name="label_subopt_retry_interv">
-                                  <property name="text">
-                                   <string>Retry Interval: </string>
-                                  </property>
-                                 </widget>
-                                </item>
-                                <item>
-                                 <widget class="QSpinBox" name="spinBox_subopt_retry_interv">
-                                  <property name="maximum">
-                                   <number>86400</number>
-                                  </property>
-                                 </widget>
-                                </item>
-                                <item>
-                                 <widget class="QLabel" name="label_subopt_post_write_delay">
-                                  <property name="text">
-                                   <string>Post write delay: </string>
-                                  </property>
-                                 </widget>
-                                </item>
-                                <item>
-                                 <widget class="QSpinBox" name="spinBox_subopt_post_write_delay">
-                                  <property name="maximum">
-                                   <number>600</number>
-                                  </property>
-                                 </widget>
-                                </item>
-                               </layout>
-                              </widget>
-                             </item>
-                            </layout>
-                           </widget>
-                          </item>
-                          <item row="3" column="0">
-                           <widget class="QLabel" name="label_flow_control">
-                            <property name="text">
-                             <string>Flow Control: </string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="3" column="1">
-                           <widget class="QComboBox" name="comboBox_flow_control">
-                            <item>
-                             <property name="text">
-                              <string>None</string>
-                             </property>
-                            </item>
-                            <item>
-                             <property name="text">
-                              <string>RTS/CTS</string>
-                             </property>
-                            </item>
-                            <item>
-                             <property name="text">
-                              <string>XON/XOFF</string>
-                             </property>
-                            </item>
-                           </widget>
-                          </item>
-                         </layout>
-                        </widget>
-                       </item>
-                       <item>
-                        <widget class="QFrame" name="frame_rig_right">
-                         <property name="sizePolicy">
-                          <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                           <horstretch>50</horstretch>
-                           <verstretch>0</verstretch>
-                          </sizepolicy>
-                         </property>
-                         <property name="frameShape">
-                          <enum>QFrame::StyledPanel</enum>
-                         </property>
-                         <property name="frameShadow">
-                          <enum>QFrame::Raised</enum>
-                         </property>
-                         <layout class="QFormLayout" name="formLayout_9">
-                          <property name="horizontalSpacing">
-                           <number>0</number>
+                             <layout class="QHBoxLayout" name="horizontalLayout_17">
+                              <item>
+                               <widget class="QFrame" name="frame_rig_left">
+                                <property name="sizePolicy">
+                                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                                  <horstretch>50</horstretch>
+                                  <verstretch>0</verstretch>
+                                 </sizepolicy>
+                                </property>
+                                <property name="frameShape">
+                                 <enum>QFrame::StyledPanel</enum>
+                                </property>
+                                <property name="frameShadow">
+                                 <enum>QFrame::Raised</enum>
+                                </property>
+                                <layout class="QFormLayout" name="formLayout_16">
+                                 <property name="horizontalSpacing">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="verticalSpacing">
+                                  <number>7</number>
+                                 </property>
+                                 <property name="leftMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="topMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="rightMargin">
+                                  <number>11</number>
+                                 </property>
+                                 <property name="bottomMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <item row="0" column="0">
+                                  <widget class="QLabel" name="label_brand_selection">
+                                   <property name="text">
+                                    <string>Brand: </string>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                 <item row="0" column="1">
+                                  <widget class="QComboBox" name="comboBox_brand_selection"/>
+                                 </item>
+                                 <item row="1" column="0">
+                                  <widget class="QLabel" name="label_rig_selection">
+                                   <property name="text">
+                                    <string>Rig: </string>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                 <item row="1" column="1">
+                                  <widget class="QComboBox" name="comboBox_rig_selection"/>
+                                 </item>
+                                 <item row="2" column="1">
+                                  <widget class="QFrame" name="frame_rig_left_inner_subopt">
+                                   <property name="frameShape">
+                                    <enum>QFrame::StyledPanel</enum>
+                                   </property>
+                                   <property name="frameShadow">
+                                    <enum>QFrame::Raised</enum>
+                                   </property>
+                                   <layout class="QHBoxLayout" name="horizontalLayout_18">
+                                    <property name="spacing">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="leftMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="topMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="rightMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="bottomMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <item>
+                                     <widget class="QFrame" name="frame_left_subopt_5">
+                                      <property name="frameShape">
+                                       <enum>QFrame::StyledPanel</enum>
+                                      </property>
+                                      <property name="frameShadow">
+                                       <enum>QFrame::Raised</enum>
+                                      </property>
+                                      <layout class="QVBoxLayout" name="verticalLayout_31">
+                                       <item>
+                                        <widget class="QLabel" name="label_subopt_retries_2">
+                                         <property name="text">
+                                          <string>Retries: </string>
+                                         </property>
+                                        </widget>
+                                       </item>
+                                       <item>
+                                        <widget class="QSpinBox" name="spinBox_subopt_retries">
+                                         <property name="maximum">
+                                          <number>15</number>
+                                         </property>
+                                        </widget>
+                                       </item>
+                                       <item>
+                                        <widget class="QLabel" name="label_subopt_write_delay_2">
+                                         <property name="text">
+                                          <string>Write Delay:</string>
+                                         </property>
+                                        </widget>
+                                       </item>
+                                       <item>
+                                        <widget class="QSpinBox" name="spinBox_subopt_write_delay">
+                                         <property name="maximum">
+                                          <number>600</number>
+                                         </property>
+                                        </widget>
+                                       </item>
+                                      </layout>
+                                     </widget>
+                                    </item>
+                                    <item>
+                                     <widget class="QFrame" name="frame_left_subopt">
+                                      <property name="frameShape">
+                                       <enum>QFrame::StyledPanel</enum>
+                                      </property>
+                                      <property name="frameShadow">
+                                       <enum>QFrame::Raised</enum>
+                                      </property>
+                                      <layout class="QVBoxLayout" name="verticalLayout_32">
+                                       <item>
+                                        <widget class="QLabel" name="label_subopt_retry_interv">
+                                         <property name="text">
+                                          <string>Retry Interval: </string>
+                                         </property>
+                                        </widget>
+                                       </item>
+                                       <item>
+                                        <widget class="QSpinBox" name="spinBox_subopt_retry_interv">
+                                         <property name="maximum">
+                                          <number>86400</number>
+                                         </property>
+                                        </widget>
+                                       </item>
+                                       <item>
+                                        <widget class="QLabel" name="label_subopt_post_write_delay">
+                                         <property name="text">
+                                          <string>Post write delay: </string>
+                                         </property>
+                                        </widget>
+                                       </item>
+                                       <item>
+                                        <widget class="QSpinBox" name="spinBox_subopt_post_write_delay">
+                                         <property name="maximum">
+                                          <number>600</number>
+                                         </property>
+                                        </widget>
+                                       </item>
+                                      </layout>
+                                     </widget>
+                                    </item>
+                                   </layout>
+                                  </widget>
+                                 </item>
+                                 <item row="3" column="0">
+                                  <widget class="QLabel" name="label_flow_control">
+                                   <property name="text">
+                                    <string>Flow Control: </string>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                 <item row="3" column="1">
+                                  <widget class="QComboBox" name="comboBox_flow_control">
+                                   <item>
+                                    <property name="text">
+                                     <string>None</string>
+                                    </property>
+                                   </item>
+                                   <item>
+                                    <property name="text">
+                                     <string>RTS/CTS</string>
+                                    </property>
+                                   </item>
+                                   <item>
+                                    <property name="text">
+                                     <string>XON/XOFF</string>
+                                    </property>
+                                   </item>
+                                  </widget>
+                                 </item>
+                                </layout>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QFrame" name="frame_rig_right">
+                                <property name="sizePolicy">
+                                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                                  <horstretch>50</horstretch>
+                                  <verstretch>0</verstretch>
+                                 </sizepolicy>
+                                </property>
+                                <property name="frameShape">
+                                 <enum>QFrame::StyledPanel</enum>
+                                </property>
+                                <property name="frameShadow">
+                                 <enum>QFrame::Raised</enum>
+                                </property>
+                                <layout class="QFormLayout" name="formLayout_17">
+                                 <property name="horizontalSpacing">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="leftMargin">
+                                  <number>11</number>
+                                 </property>
+                                 <property name="topMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="rightMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="bottomMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <item row="0" column="0">
+                                  <widget class="QLabel" name="label_com_port">
+                                   <property name="text">
+                                    <string>Port: </string>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                 <item row="0" column="1">
+                                  <widget class="QComboBox" name="comboBox_com_port"/>
+                                 </item>
+                                 <item row="1" column="0">
+                                  <widget class="QLabel" name="label_baud_rate">
+                                   <property name="text">
+                                    <string>Baud Rate: </string>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                 <item row="1" column="1">
+                                  <widget class="QComboBox" name="comboBox_baud_rate"/>
+                                 </item>
+                                 <item row="3" column="0">
+                                  <widget class="QLabel" name="label_stop_bits">
+                                   <property name="text">
+                                    <string>Stop bits: </string>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                 <item row="3" column="1">
+                                  <widget class="QSpinBox" name="spinBox_stop_bits"/>
+                                 </item>
+                                 <item row="4" column="0">
+                                  <widget class="QLabel" name="label_polling_interv">
+                                   <property name="text">
+                                    <string>Polling Inter.: </string>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                 <item row="4" column="1">
+                                  <widget class="QSpinBox" name="spinBox_polling_interv"/>
+                                 </item>
+                                 <item row="5" column="0">
+                                  <spacer name="horizontalSpacer_3">
+                                   <property name="orientation">
+                                    <enum>Qt::Horizontal</enum>
+                                   </property>
+                                   <property name="sizeHint" stdset="0">
+                                    <size>
+                                     <width>40</width>
+                                     <height>20</height>
+                                    </size>
+                                   </property>
+                                  </spacer>
+                                 </item>
+                                 <item row="6" column="0">
+                                  <widget class="QLabel" name="label_mode_delay">
+                                   <property name="text">
+                                    <string>Mode Delay: </string>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                 <item row="6" column="1">
+                                  <widget class="QSpinBox" name="spinBox_mode_delay"/>
+                                 </item>
+                                 <item row="7" column="0">
+                                  <widget class="QLabel" name="label_rig_sideband">
+                                   <property name="text">
+                                    <string>Sideband: </string>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                 <item row="7" column="1">
+                                  <widget class="QComboBox" name="comboBox_rig_sideband"/>
+                                 </item>
+                                 <item row="8" column="1">
+                                  <widget class="QCheckBox" name="checkBox_cw_lsb_mode">
+                                   <property name="text">
+                                    <string>CW is LSB mode</string>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                 <item row="2" column="1">
+                                  <widget class="QLineEdit" name="lineEdit_device_port_name">
+                                   <property name="maxLength">
+                                    <number>16384</number>
+                                   </property>
+                                   <property name="readOnly">
+                                    <bool>true</bool>
+                                   </property>
+                                   <property name="placeholderText">
+                                    <string>N/A</string>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                 <item row="2" column="0">
+                                  <widget class="QLabel" name="label_device_port_name">
+                                   <property name="text">
+                                    <string>Device: </string>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                </layout>
+                               </widget>
+                              </item>
+                             </layout>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QFrame" name="frame_rig_bottom">
+                          <property name="frameShape">
+                           <enum>QFrame::StyledPanel</enum>
                           </property>
-                          <property name="leftMargin">
-                           <number>11</number>
+                          <property name="frameShadow">
+                           <enum>QFrame::Raised</enum>
                           </property>
-                          <property name="topMargin">
-                           <number>0</number>
+                          <layout class="QHBoxLayout" name="horizontalLayout_15">
+                           <property name="spacing">
+                            <number>0</number>
+                           </property>
+                           <property name="leftMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="topMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="rightMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="bottomMargin">
+                            <number>0</number>
+                           </property>
+                           <item>
+                            <widget class="QGroupBox" name="groupBox_rig_bottom_advanced">
+                             <property name="title">
+                              <string>Advanced</string>
+                             </property>
+                             <layout class="QFormLayout" name="formLayout_15">
+                              <item row="0" column="0">
+                               <widget class="QLabel" name="label_adv_ptt_cmd">
+                                <property name="text">
+                                 <string>PTT Command: </string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="0" column="1">
+                               <widget class="QLineEdit" name="lineEdit_adv_ptt_cmd">
+                                <property name="placeholderText">
+                                 <string>For advanced users only!</string>
+                                </property>
+                               </widget>
+                              </item>
+                             </layout>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                        <item>
+                         <spacer name="verticalSpacer_6">
+                          <property name="orientation">
+                           <enum>Qt::Vertical</enum>
                           </property>
-                          <property name="rightMargin">
-                           <number>0</number>
+                          <property name="sizeHint" stdset="0">
+                           <size>
+                            <width>20</width>
+                            <height>40</height>
+                           </size>
                           </property>
-                          <property name="bottomMargin">
-                           <number>0</number>
-                          </property>
-                          <item row="0" column="0">
-                           <widget class="QLabel" name="label_com_port">
-                            <property name="text">
-                             <string>Port: </string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="0" column="1">
-                           <widget class="QComboBox" name="comboBox_com_port"/>
-                          </item>
-                          <item row="1" column="0">
-                           <widget class="QLabel" name="label_baud_rate">
-                            <property name="text">
-                             <string>Baud Rate: </string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="1" column="1">
-                           <widget class="QComboBox" name="comboBox_baud_rate"/>
-                          </item>
-                          <item row="3" column="0">
-                           <widget class="QLabel" name="label_stop_bits">
-                            <property name="text">
-                             <string>Stop bits: </string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="3" column="1">
-                           <widget class="QSpinBox" name="spinBox_stop_bits"/>
-                          </item>
-                          <item row="4" column="0">
-                           <widget class="QLabel" name="label_polling_interv">
-                            <property name="text">
-                             <string>Polling Inter.: </string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="4" column="1">
-                           <widget class="QSpinBox" name="spinBox_polling_interv"/>
-                          </item>
-                          <item row="5" column="0">
-                           <spacer name="horizontalSpacer_3">
-                            <property name="orientation">
-                             <enum>Qt::Horizontal</enum>
-                            </property>
-                            <property name="sizeHint" stdset="0">
-                             <size>
-                              <width>40</width>
-                              <height>20</height>
-                             </size>
-                            </property>
-                           </spacer>
-                          </item>
-                          <item row="6" column="0">
-                           <widget class="QLabel" name="label_mode_delay">
-                            <property name="text">
-                             <string>Mode Delay: </string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="6" column="1">
-                           <widget class="QSpinBox" name="spinBox_mode_delay"/>
-                          </item>
-                          <item row="7" column="0">
-                           <widget class="QLabel" name="label_rig_sideband">
-                            <property name="text">
-                             <string>Sideband: </string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="7" column="1">
-                           <widget class="QComboBox" name="comboBox_rig_sideband"/>
-                          </item>
-                          <item row="8" column="1">
-                           <widget class="QCheckBox" name="checkBox_cw_lsb_mode">
-                            <property name="text">
-                             <string>CW is LSB mode</string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="2" column="1">
-                           <widget class="QLineEdit" name="lineEdit_device_port_name">
-                            <property name="maxLength">
-                             <number>16384</number>
-                            </property>
-                            <property name="readOnly">
-                             <bool>true</bool>
-                            </property>
-                            <property name="placeholderText">
-                             <string>N/A</string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="2" column="0">
-                           <widget class="QLabel" name="label_device_port_name">
-                            <property name="text">
-                             <string>Device: </string>
-                            </property>
-                           </widget>
-                          </item>
-                         </layout>
-                        </widget>
-                       </item>
-                      </layout>
+                         </spacer>
+                        </item>
+                       </layout>
+                      </widget>
                      </widget>
                     </item>
                    </layout>
                   </widget>
                  </item>
+                </layout>
+               </widget>
+               <widget class="QWidget" name="tab_2">
+                <attribute name="title">
+                 <string>API Info</string>
+                </attribute>
+                <layout class="QVBoxLayout" name="verticalLayout_34">
                  <item>
-                  <widget class="QFrame" name="frame_2_rig_bottom">
+                  <widget class="QFrame" name="frame_3">
                    <property name="frameShape">
                     <enum>QFrame::StyledPanel</enum>
                    </property>
                    <property name="frameShadow">
                     <enum>QFrame::Raised</enum>
                    </property>
-                   <layout class="QHBoxLayout" name="horizontalLayout_8">
-                    <property name="spacing">
-                     <number>0</number>
-                    </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_35">
                     <property name="leftMargin">
                      <number>0</number>
                     </property>
@@ -1638,43 +1793,30 @@
                      <number>0</number>
                     </property>
                     <item>
-                     <widget class="QGroupBox" name="groupBox_rig_bottom_advanced">
-                      <property name="title">
-                       <string>Advanced</string>
+                     <widget class="QScrollArea" name="scrollArea_3">
+                      <property name="frameShadow">
+                       <enum>QFrame::Plain</enum>
                       </property>
-                      <layout class="QFormLayout" name="formLayout_11">
-                       <item row="0" column="0">
-                        <widget class="QLabel" name="label_adv_ptt_cmd">
-                         <property name="text">
-                          <string>PTT Command: </string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="0" column="1">
-                        <widget class="QLineEdit" name="lineEdit_adv_ptt_cmd">
-                         <property name="placeholderText">
-                          <string>For advanced users only!</string>
-                         </property>
-                        </widget>
-                       </item>
-                      </layout>
+                      <property name="horizontalScrollBarPolicy">
+                       <enum>Qt::ScrollBarAlwaysOff</enum>
+                      </property>
+                      <property name="widgetResizable">
+                       <bool>true</bool>
+                      </property>
+                      <widget class="QWidget" name="scrollAreaWidgetContents_4">
+                       <property name="geometry">
+                        <rect>
+                         <x>0</x>
+                         <y>0</y>
+                         <width>98</width>
+                         <height>28</height>
+                        </rect>
+                       </property>
+                      </widget>
                      </widget>
                     </item>
                    </layout>
                   </widget>
-                 </item>
-                 <item>
-                  <spacer name="verticalSpacer_6">
-                   <property name="orientation">
-                    <enum>Qt::Vertical</enum>
-                   </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>20</width>
-                     <height>40</height>
-                    </size>
-                   </property>
-                  </spacer>
                  </item>
                 </layout>
                </widget>
