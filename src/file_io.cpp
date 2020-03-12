@@ -45,9 +45,14 @@
 #include <utility>
 #include <fstream>
 #include <QMessageBox>
-#include <QString>
+#include <QVariant>
 
 using namespace GekkoFyre;
+using namespace Database;
+using namespace Settings;
+using namespace Audio;
+using namespace AmateurRadio;
+
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
@@ -56,9 +61,11 @@ namespace sys = boost::system;
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param parent N/A.
  */
-FileIo::FileIo(QObject *parent)
+FileIo::FileIo(std::shared_ptr<QSettings> settings, QObject *parent)
 {
     Q_UNUSED(parent);
+
+    gkSettings = settings;
 }
 
 FileIo::~FileIo()
@@ -185,6 +192,58 @@ bool FileIo::checkSettingsExist(const bool &is_file, const boost::filesystem::pa
     return false;
 }
 
+/**
+ * @brief FileIo::write_initial_settings
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value
+ * @param key
+ */
+void FileIo::write_initial_settings(const QString &value, const Database::Settings::init_cfg &key)
+{
+    switch (key) {
+    case DbName:
+        gkSettings->setValue(Settings::dbName, value);
+        break;
+    case DbExt:
+        gkSettings->setValue(Settings::dbExt, value);
+        break;
+    case DbLoc:
+        gkSettings->setValue(Settings::dbLoc, value);
+        break;
+    default:
+        return;
+    }
+
+    return;
+}
+
+/**
+ * @brief FileIo::read_initial_settings
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param key
+ * @return
+ */
+QString FileIo::read_initial_settings(const Database::Settings::init_cfg &key)
+{
+    QVariant value;
+
+    switch (key) {
+    case DbName:
+        value = gkSettings->value(Settings::dbName, Filesystem::fileName);
+        break;
+    case DbExt:
+        value = gkSettings->value(Settings::dbExt, "");
+        break;
+    case DbLoc:
+        value = gkSettings->value(Settings::dbLoc, "");
+        break;
+    default:
+        return "";
+    }
+
+    return value.toString();
+}
+
 size_t FileIo::generateRandInteger(const size_t &min_integer_size, const size_t &max_integer_size,
                                    const size_t &desired_result_less_than) const
 {
@@ -225,6 +284,53 @@ std::string FileIo::get_file_contents(const boost::filesystem::path &filePath)
         }
     } catch (const std::exception &e) {
         QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
+    return "";
+}
+
+/**
+ * @brief FileIo::defaultDirectory creates a default directory for Small World Deluxe in the
+ * specified, given directory as one of the parameters. This is simply a helper function.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param base_path The base path for which to create the new directory.
+ * @param use_native_slashes Whether to use native file-path slashes for the given user's
+ * operating system or not.
+ * @param append_dir The new directory that's to be created.
+ * @return The final, full directory path that has been created in the end with the given
+ * native slashes or not.
+ */
+QString FileIo::defaultDirectory(const QString &base_path, const bool &use_native_slashes, const QString &append_dir)
+{
+    sys::error_code ec;
+
+    try {
+        fs::path base_dir = base_path.toStdString();
+        fs::path new_dir;
+        fs::path slash = "/";
+        fs::path native_slash;
+
+        if (use_native_slashes) {
+            // Use the 'slashes' that are preferred by the host's operating system...
+            native_slash = slash.make_preferred().native();
+        } else {
+            // Use the programmer's choice...
+            native_slash = slash;
+        }
+
+        if (!append_dir.isEmpty()) {
+            if (fs::exists(base_dir, ec) && fs::is_directory(base_dir, ec)) {
+                new_dir = fs::path(base_dir.string() + native_slash.string() + append_dir.toStdString());
+                if (!fs::exists(new_dir, ec)) {
+                    fs::create_directory((base_dir.string() + native_slash.string() + append_dir.toStdString()), ec);
+                }
+            }
+        }
+
+        return QString::fromStdString(new_dir.string());
+    } catch (const sys::system_error &e) {
+        ec = e.code();
+        QMessageBox::warning(nullptr, tr("Error!"), ec.message().c_str(), QMessageBox::Ok);
     }
 
     return "";

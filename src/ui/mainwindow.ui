@@ -868,7 +868,18 @@ QPushButton:disabled {
     <property name="title">
      <string>&amp;View</string>
     </property>
+    <widget class="QMenu" name="menuCl_ear_Logs">
+     <property name="title">
+      <string>Cl&amp;ear Logs</string>
+     </property>
+     <addaction name="action_All"/>
+     <addaction name="separator"/>
+     <addaction name="action_Incoming"/>
+     <addaction name="action_Outgoing"/>
+    </widget>
     <addaction name="actionShow_Waterfall"/>
+    <addaction name="separator"/>
+    <addaction name="menuCl_ear_Logs"/>
    </widget>
    <widget class="QMenu" name="menu_Help">
     <property name="title">
@@ -971,25 +982,40 @@ QPushButton:disabled {
    <property name="text">
     <string>&amp;Open</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
   </action>
   <action name="actionE_xit">
    <property name="text">
     <string>E&amp;xit</string>
+   </property>
+   <property name="shortcut">
+    <string>Esc</string>
    </property>
   </action>
   <action name="actionCheck_for_Updates">
    <property name="text">
     <string>Check for &amp;Updates</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+U</string>
+   </property>
   </action>
   <action name="action_About_Dekoder">
    <property name="text">
     <string>&amp;About SWD</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+A</string>
+   </property>
   </action>
   <action name="actionSet_Offset">
    <property name="text">
     <string>Set Offset...</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+S</string>
    </property>
   </action>
   <action name="actionShow_Waterfall">
@@ -999,25 +1025,40 @@ QPushButton:disabled {
    <property name="text">
     <string>Show Waterfall</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+W</string>
+   </property>
   </action>
   <action name="action_Settings">
    <property name="text">
     <string>&amp;Settings</string>
+   </property>
+   <property name="shortcut">
+    <string>F1</string>
    </property>
   </action>
   <action name="actionSave_Decoded">
    <property name="text">
     <string>Save Decoded</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
   </action>
   <action name="actionSave_All">
    <property name="text">
     <string>Save All</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+S</string>
+   </property>
   </action>
   <action name="actionOpen_Save_Directory">
    <property name="text">
     <string>Open Save Directory</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Alt+O</string>
    </property>
   </action>
   <action name="actionDelete_all_wav_files_in_Save_Directory">
@@ -1092,7 +1133,7 @@ QPushButton:disabled {
     <string>Play a WAV file from your system disk</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+P</string>
+    <string>Ctrl+Shift+P</string>
    </property>
   </action>
   <action name="actionSettings">
@@ -1148,6 +1189,9 @@ QPushButton:disabled {
    <property name="text">
     <string>&amp;Print...</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
+   </property>
   </action>
   <action name="action_Copy_to_Clipboard">
    <property name="text">
@@ -1157,6 +1201,30 @@ QPushButton:disabled {
   <action name="actionSave_as_File">
    <property name="text">
     <string>Save as &amp;File</string>
+   </property>
+  </action>
+  <action name="action_All">
+   <property name="text">
+    <string>&amp;All</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+A</string>
+   </property>
+  </action>
+  <action name="action_Incoming">
+   <property name="text">
+    <string>&amp;Incoming</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+I</string>
+   </property>
+  </action>
+  <action name="action_Outgoing">
+   <property name="text">
+    <string>&amp;Outgoing</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+O</string>
    </property>
   </action>
  </widget>

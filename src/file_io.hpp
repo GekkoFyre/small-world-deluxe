@@ -38,12 +38,15 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include <QObject>
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
 #include <functional>
 #include <vector>
 #include <string>
+#include <memory>
+#include <QObject>
+#include <QString>
+#include <QSettings>
 
 namespace GekkoFyre {
 
@@ -51,12 +54,15 @@ class FileIo : public QObject {
     Q_OBJECT
 
 public:
-    explicit FileIo(QObject *parent = nullptr);
+    explicit FileIo(std::shared_ptr<QSettings> settings, QObject *parent = nullptr);
     ~FileIo() override;
 
     static std::vector<boost::filesystem::path> boost_dir_iterator(const boost::filesystem::path &dirPath, boost::system::error_code ec,
             const std::vector<std::string> &dirsToSkip = { });
     static bool checkSettingsExist(const bool &is_file, const boost::filesystem::path &fileName = GekkoFyre::Filesystem::fileName);
+
+    void write_initial_settings(const QString &value, const GekkoFyre::Database::Settings::init_cfg &key);
+    QString read_initial_settings(const GekkoFyre::Database::Settings::init_cfg &key);
 
     size_t generateRandInteger(const size_t &min_integer_size, const size_t &max_integer_size,
                                const size_t &desired_result_less_than) const;
@@ -64,11 +70,15 @@ public:
     boost::filesystem::path dummy_path();
 
     std::string get_file_contents(const boost::filesystem::path &filePath);
+    QString defaultDirectory(const QString &base_path, const bool &use_native_slashes = false,
+                             const QString &append_dir = Filesystem::defaultDirAppend);
 
 protected:
     static std::vector<boost::filesystem::path> analyze_dir(const boost::filesystem::path &dirPath, const std::vector<std::string> &dirsToSkip = { });
 
 private:
+    std::shared_ptr<QSettings> gkSettings;
+
     static std::string init_random_string(size_t length, std::function<char(void)> rand_char);
     static char_array charset();
 

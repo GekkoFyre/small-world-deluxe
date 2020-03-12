@@ -42,7 +42,6 @@
 #include <portaudiocpp/PortAudioCpp.hxx>
 #include <boost/exception/all.hpp>
 #include <boost/chrono/chrono.hpp>
-#include <string>
 #include <sstream>
 #include <iostream>
 #include <cmath>
@@ -52,6 +51,8 @@
 #include <QWidget>
 #include <QResource>
 #include <QMessageBox>
+#include <QFileDialog>
+#include <QStandardPaths>
 #include <QDate>
 #include <QTimer>
 
@@ -66,6 +67,7 @@ using namespace Audio;
 using namespace AmateurRadio;
 
 namespace fs = boost::filesystem;
+namespace sys = boost::system;
 
 /**
  * @brief MainWindow::MainWindow
@@ -103,6 +105,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         ui->action_Settings->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/settings-flat.svg"));
         ui->actionCheck_for_Updates->setIcon(QIcon(":/resources/contrib/images/vector/purchased/iconfinder_chemistry_226643.svg"));
 
+        sw_settings = std::make_shared<QSettings>(QSettings::SystemScope, General::companyName,
+                                                  General::productName, this);
+
         //
         // Create a status bar at the bottom of the window with a default message
         // https://doc.qt.io/qt-5/qstatusbar.html
@@ -132,12 +137,44 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         rig_load_all_backends();
 
-        // Create path to file-database
-        save_db_path = fs::path(fs::current_path().string() + native_slash.string() + Filesystem::fileName); // Path to save final database towards
-
         // Create class pointers
-        fileIo = std::make_shared<GekkoFyre::FileIo>(this);
+        fileIo = std::make_shared<GekkoFyre::FileIo>(sw_settings, this);
         gkStringFuncs = std::make_shared<GekkoFyre::StringFuncs>(this);
+
+        //
+        // Settings database-related logic
+        //
+        QString init_settings_db_loc = fileIo->read_initial_settings(init_cfg::DbLoc);
+        QString init_settings_db_name = fileIo->read_initial_settings(init_cfg::DbName);
+
+        // Create path to file-database
+        sys::error_code ec;
+        try {
+            if (!init_settings_db_loc.isEmpty() && !init_settings_db_name.isEmpty()) {
+                // A path has already been created, or should've been, and is stored in the QSetting's
+                std::string tmp_db_loc = init_settings_db_loc.toStdString();
+                std::string tmp_db_name = init_settings_db_name.toStdString();
+                fs::path new_path = fs::path(tmp_db_loc + native_slash.string() + tmp_db_name); // Path to save final database towards
+                if (fs::exists(tmp_db_loc, ec) && fs::is_directory(tmp_db_loc, ec)) { // Verify parent directory exists and is a directory itself
+                    // Directory presently exists
+                    save_db_path = new_path;
+                } else {
+                    // Directory does not exist despite been saved as a setting, so we must create it first!
+                    fs::create_directory(new_path, ec); // Create directory
+                    if (fs::exists(new_path, ec)) { // Verify that the newly created directory does exist
+                        save_db_path = new_path; // Export variable as success!
+                    }
+                }
+            } else {
+                // We need to create a new, default path since this is likely the first time the application has started...
+                fs::path dir_to_append = fs::path(Filesystem::defaultDirAppend + native_slash.string() + Filesystem::fileName);
+                save_db_path = fileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
+                                                        true, QString::fromStdString(dir_to_append.string())).toStdString(); // Path to save final database towards
+            }
+        } catch (const sys::system_error &e) {
+            ec = e.code();
+            throw std::runtime_error(ec.message().c_str());
+        }
 
         // Some basic optimizations; this is the easiest way to get Google LevelDB to perform well
         leveldb::Options options;
@@ -594,7 +631,8 @@ void MainWindow::on_actionShow_Waterfall_toggled(bool arg1)
  */
 void MainWindow::on_action_Settings_triggered()
 {
-    QPointer<DialogSettings> dlg_settings = new DialogSettings(GkDb, fileIo, gkAudioDevices, gkRadioLibs, this);
+    QPointer<DialogSettings> dlg_settings = new DialogSettings(GkDb, fileIo, gkAudioDevices, gkRadioLibs,
+                                                               sw_settings, this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
@@ -671,7 +709,8 @@ void MainWindow::on_actionPlay_triggered()
 
 void MainWindow::on_actionSettings_triggered()
 {
-    QPointer<DialogSettings> dlg_settings = new DialogSettings(GkDb, fileIo, gkAudioDevices, gkRadioLibs, this);
+    QPointer<DialogSettings> dlg_settings = new DialogSettings(GkDb, fileIo, gkAudioDevices, gkRadioLibs,
+                                                               sw_settings, this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
@@ -995,5 +1034,20 @@ void MainWindow::on_checkBox_rx_tx_vol_toggle_stateChanged(int arg1)
 {
     rx_vol_control_selected = arg1;
 
+    return;
+}
+
+void MainWindow::on_action_All_triggered()
+{
+    return;
+}
+
+void MainWindow::on_action_Incoming_triggered()
+{
+    return;
+}
+
+void MainWindow::on_action_Outgoing_triggered()
+{
     return;
 }

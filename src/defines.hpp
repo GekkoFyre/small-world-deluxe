@@ -107,7 +107,6 @@ namespace GekkoFyre {
 #define MIN_MAIN_WINDOW_WIDTH (1024)
 #define MIN_MAIN_WINDOW_HEIGHT (768)
 #define MAX_TOLERATE_WINDOW_WIDTH (16384)               // This value is mostly for error correction purposes.
-#define SMALL_WORLD_DELUXE_APP_VERSION ("0.0.1")        // The current application version of Small World Deluxe
 
 #define AUDIO_OUTPUT_MAX_VOL_SIMPLE (100)               // The maximum volume in simple units (i.e. non decible units)
 #define AUDIO_OUTPUT_CHANNEL_MAX_LIMIT (1024)
@@ -151,10 +150,19 @@ namespace GekkoFyre {
 
 typedef std::vector<char> char_array;
 
+namespace General {
+    constexpr char companyName[] = "GekkoFyre Networks";
+    constexpr char productName[] = "Small World Deluxe";
+    constexpr char appVersion[] = "0.0.1";
+    constexpr char appRelease[] = "Pre-alpha";
+    constexpr char codeRepository[] = "https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe";
+}
+
 namespace Filesystem {
     constexpr char resourceFile[] = "resources.rcc";
-    constexpr char fileName[] = "settings.db";          // The filename for the database itself which is TAR archived and compressed
-    constexpr char dbFolder[] = "settings_db_temp";     // The filename for the intermittently alive, database folder
+
+    constexpr char defaultDirAppend[] = "SmallWorld";   // The dir to append at the end of a default path, such as within the user's profile directory.
+    constexpr char fileName[] = "settings";             // The filename for the database itself which is TAR archived and compressed
     constexpr char tarExtension[] = ".tar";             // The file extension given to (mostly uncompressed) TAR archive
     constexpr char tmpExtension[] = ".tmp";             // The file extension give to temporary files
     constexpr char file_storage[] = "files.ini";        // Where the names of the files will be stored, regarding ZLIB compression
@@ -164,6 +172,16 @@ namespace Filesystem {
 
 namespace Database {
     namespace Settings {
+        constexpr char dbName[] = "Database/DbName";
+        constexpr char dbExt[] = "Database/DbExt";
+        constexpr char dbLoc[] = "Database/DbLoc";
+
+        enum init_cfg {                                 // The initial configuration that will be used by Small World Deluxe, through <QSettings> so that Google LevelDB maybe initialized.
+            DbName,                                     // The name of the initial, Google LevelDB database.
+            DbExt,                                      // The file extension (if any) of the Google LevelDB database.
+            DbLoc                                       // The location of the Google LevelDB database.
+        };
+
         enum radio_cfg {
             RigBrand,
             RigModel,

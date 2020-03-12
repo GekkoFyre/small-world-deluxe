@@ -481,10 +481,10 @@
                             <number>0</number>
                            </property>
                            <item>
-                            <widget class="QLineEdit" name="lineEdit_db_save_loc_2"/>
+                            <widget class="QLineEdit" name="lineEdit_db_save_loc"/>
                            </item>
                            <item>
-                            <widget class="QPushButton" name="pushButton_db_save_loc_2">
+                            <widget class="QPushButton" name="pushButton_db_save_loc">
                              <property name="text">
                               <string>Browse</string>
                              </property>

@@ -35,6 +35,7 @@
  **
  ****************************************************************************************************/
 
+#include "src/defines.hpp"
 #include "src/ui/mainwindow.hpp"
 #include <boost/exception/all.hpp>
 #include <boost/filesystem.hpp>
@@ -54,10 +55,10 @@ int main(int argc, char *argv[])
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QApplication a(argc, argv);
 
-    QCoreApplication::setOrganizationName("GekkoFyre Networks");
-    QCoreApplication::setOrganizationDomain("https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe");
-    QCoreApplication::setApplicationName("Small World Deluxe");
-    QCoreApplication::setApplicationVersion(SMALL_WORLD_DELUXE_APP_VERSION);
+    QCoreApplication::setOrganizationName(GekkoFyre::General::companyName);
+    QCoreApplication::setOrganizationDomain(GekkoFyre::General::codeRepository);
+    QCoreApplication::setApplicationName(GekkoFyre::General::productName);
+    QCoreApplication::setApplicationVersion(GekkoFyre::General::appVersion);
 
     fs::path slash = "/";
     fs::path native_slash = slash.make_preferred().native();

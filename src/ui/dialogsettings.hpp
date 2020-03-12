@@ -53,6 +53,7 @@
 #include <QVector>
 #include <QMultiMap>
 #include <QComboBox>
+#include <QSettings>
 
 namespace Ui {
 class DialogSettings;
@@ -67,6 +68,7 @@ public:
                             std::shared_ptr<GekkoFyre::FileIo> filePtr,
                             std::shared_ptr<GekkoFyre::AudioDevices> audioDevices,
                             std::shared_ptr<GekkoFyre::RadioLibs> radioPtr,
+                            std::shared_ptr<QSettings> settings,
                             QWidget *parent = nullptr);
     ~DialogSettings();
 
@@ -77,7 +79,6 @@ private slots:
     void on_pushButton_audio_save_loc_clicked();
     void on_pushButton_input_sound_test_clicked();
     void on_pushButton_output_sound_test_clicked();
-    void on_pushButton_db_save_loc_2_clicked();
     void on_pushButton_audio_logs_save_dir_clicked();
     void on_comboBox_soundcard_input_currentIndexChanged(int index);
     void on_comboBox_soundcard_output_currentIndexChanged(int index);
@@ -120,6 +121,8 @@ private:
     static int prefill_rig_selection(const rig_caps *caps, void *data);
     static QMultiMap<rig_model_t, std::tuple<QString, QString, GekkoFyre::AmateurRadio::rig_type>> init_model_names();
 
+    std::shared_ptr<QSettings> gkSettings;
+
     void prefill_audio_devices(std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> audio_devices_vec);
     void prefill_audio_encode_comboboxes();
 
@@ -131,5 +134,4 @@ private:
     void get_device_port_details(const tstring &port, const tstring &device,
                                  const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate = GekkoFyre::AmateurRadio::com_baud_rates::BAUD9600);
     bool read_settings();
-    inline QString defaultDirectory(const QString &base_path, const bool &use_native_slashes = false, const QString &append_dir = "SmallWorld");
 };

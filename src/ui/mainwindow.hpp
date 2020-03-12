@@ -54,12 +54,16 @@
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
 #include <boost/circular_buffer.hpp>
+#include <leveldb/db.h>
+#include <leveldb/status.h>
+#include <leveldb/options.h>
 #include <memory>
 #include <ctime>
 #include <thread>
 #include <future>
 #include <mutex>
 #include <vector>
+#include <string>
 #include <QMainWindow>
 #include <QPushButton>
 #include <QPointer>
@@ -67,6 +71,7 @@
 #include <QStringList>
 #include <QMetaType>
 #include <QDateTime>
+#include <QSettings>
 
 #ifdef __cplusplus
 extern "C"
@@ -121,6 +126,9 @@ private slots:
     void on_actionSave_Decoded_Ab_triggered();
     void on_actionView_Spectrogram_Controller_triggered();
     void on_action_Print_triggered();
+    void on_action_All_triggered();
+    void on_action_Incoming_triggered();
+    void on_action_Outgoing_triggered();
 
     void infoBar();
     void uponExit();
@@ -187,6 +195,8 @@ private:
     QPointer<GekkoFyre::SpectroGui> gkSpectroGui;
     QPointer<GekkoFyre::paMicProcBackground> paMicProcBackground;
     QPointer<GkAudioPlayDialog> gkAudioPlayDlg;
+
+    std::shared_ptr<QSettings> sw_settings;
 
     //
     // PortAudio initialization and buffers

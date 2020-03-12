@@ -73,7 +73,8 @@ QVector<QString> DialogSettings::unique_mfgs = { "None" };
 DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
                                std::shared_ptr<GekkoFyre::FileIo> filePtr,
                                std::shared_ptr<GekkoFyre::AudioDevices> audioDevices,
-                               std::shared_ptr<GekkoFyre::RadioLibs> radioPtr, QWidget *parent)
+                               std::shared_ptr<GekkoFyre::RadioLibs> radioPtr,
+                               std::shared_ptr<QSettings> settings, QWidget *parent)
     : QDialog(parent), ui(new Ui::DialogSettings)
 {
     ui->setupUi(this);
@@ -89,6 +90,8 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
         gkDekodeDb = std::move(dkDb);
         gkFileIo = std::move(filePtr);
         gkAudioDevices = std::move(audioDevices);
+
+        gkSettings = settings;
 
         rig_comboBox = ui->comboBox_rig_selection;
         mfg_comboBox = ui->comboBox_brand_selection;
@@ -237,6 +240,12 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         gkDekodeDb->write_rig_settings(QString::number(retry_interv), radio_cfg::RetryInterv);
         gkDekodeDb->write_rig_settings(QString::number(write_delay), radio_cfg::WriteDelay);
         gkDekodeDb->write_rig_settings(QString::number(post_write_delay), radio_cfg::PostWriteDelay);
+
+        //
+        // Operating System's own Settings (e.g. the registry under Microsoft Windows)
+        //
+        gkFileIo->write_initial_settings(Filesystem::fileName, init_cfg::DbName);
+        gkFileIo->write_initial_settings(ui->lineEdit_db_save_loc->text(), init_cfg::DbLoc);
 
         //
         // Input Device
@@ -730,21 +739,21 @@ bool DialogSettings::read_settings()
             ui->lineEdit_audio_logs_save_dir->setText(logsDirLoc);
         } else {
             // Point to a default directory...
-            ui->lineEdit_audio_logs_save_dir->setText(defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)));
+            ui->lineEdit_audio_logs_save_dir->setText(gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)));
         }
 
         if (!audioRecLoc.isEmpty()) {
             ui->lineEdit_audio_save_loc->setText(audioRecLoc);
         } else {
             // Point to a default directory...
-            ui->lineEdit_audio_save_loc->setText(defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::MusicLocation)));
+            ui->lineEdit_audio_save_loc->setText(gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::MusicLocation)));
         }
 
         if (!settingsDbLoc.isEmpty()) {
-            ui->lineEdit_db_save_loc_2->setText(settingsDbLoc);
+            ui->lineEdit_db_save_loc->setText(settingsDbLoc);
         } else {
             // Point to a default directory...
-            ui->lineEdit_db_save_loc_2->setText(defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)));
+            ui->lineEdit_db_save_loc->setText(gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)));
         }
 
         return true;
@@ -753,43 +762,6 @@ bool DialogSettings::read_settings()
     }
 
     return false;
-}
-
-QString DialogSettings::defaultDirectory(const QString &base_path, const bool &use_native_slashes,
-                                         const QString &append_dir)
-{
-    sys::error_code ec;
-
-    try {
-        fs::path base_dir = base_path.toStdString();
-        fs::path new_dir;
-        fs::path slash = "/";
-        fs::path native_slash;
-
-        if (use_native_slashes) {
-            // Use the 'slashes' that are preferred by the host's operating system...
-            native_slash = slash.make_preferred().native();
-        } else {
-            // Use the programmer's choice...
-            native_slash = slash;
-        }
-
-        if (!append_dir.isEmpty()) {
-            if (fs::exists(base_dir, ec) && fs::is_directory(base_dir, ec)) {
-                new_dir = fs::path(base_dir.string() + native_slash.string() + append_dir.toStdString());
-                if (!fs::exists(new_dir, ec)) {
-                    fs::create_directory((base_dir.string() + native_slash.string() + append_dir.toStdString()), ec);
-                }
-            }
-        }
-
-        return QString::fromStdString(new_dir.string());
-    } catch (const sys::system_error &e) {
-        ec = e.code();
-        QMessageBox::warning(this, tr("Error!"), ec.message().c_str(), QMessageBox::Ok);
-    }
-
-    return "";
 }
 
 /**
@@ -845,7 +817,18 @@ void DialogSettings::on_comboBox_com_port_currentIndexChanged(int index)
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void DialogSettings::on_pushButton_db_save_loc_clicked()
-{}
+{
+    QString dirName = QFileDialog::getExistingDirectory(this, tr("Choose a location to save the SWD application database"),
+                                                        gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation), true),
+                                                        QFileDialog::ShowDirsOnly);
+
+    if (!dirName.isEmpty()) {
+        ui->lineEdit_db_save_loc->setText(dirName);
+        gkDekodeDb->write_misc_audio_settings(ui->lineEdit_db_save_loc->text(), audio_cfg::settingsDbLoc);
+    }
+
+    return;
+}
 
 /**
  * @brief DialogSettings::on_pushButton_audio_save_loc_clicked
@@ -854,7 +837,7 @@ void DialogSettings::on_pushButton_db_save_loc_clicked()
 void DialogSettings::on_pushButton_audio_save_loc_clicked()
 {
     QString dirName = QFileDialog::getExistingDirectory(this, tr("Choose a location to save audio files"),
-                                                        defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::MusicLocation), true),
+                                                        gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::MusicLocation), true),
                                                         QFileDialog::ShowDirsOnly);
 
     if (!dirName.isEmpty()) {
@@ -1004,24 +987,10 @@ void DialogSettings::on_spinBox_spectro_render_thread_settings_valueChanged(int 
     return;
 }
 
-void DialogSettings::on_pushButton_db_save_loc_2_clicked()
-{
-    QString dirName = QFileDialog::getExistingDirectory(this, tr("Choose a location to save audio files"),
-                                                        defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation), true),
-                                                        QFileDialog::ShowDirsOnly);
-
-    if (!dirName.isEmpty()) {
-        ui->lineEdit_db_save_loc_2->setText(dirName);
-        gkDekodeDb->write_misc_audio_settings(ui->lineEdit_db_save_loc_2->text(), audio_cfg::settingsDbLoc);
-    }
-
-    return;
-}
-
 void DialogSettings::on_pushButton_audio_logs_save_dir_clicked()
 {
-    QString dirName = QFileDialog::getExistingDirectory(this, tr("Choose a location to save audio files"),
-                                                        defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation), true),
+    QString dirName = QFileDialog::getExistingDirectory(this, tr("Choose a location to save data logs"),
+                                                        gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation), true),
                                                         QFileDialog::ShowDirsOnly);
 
     if (!dirName.isEmpty()) {

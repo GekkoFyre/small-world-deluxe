@@ -44,19 +44,22 @@
 #include <leveldb/write_batch.h>
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
+#include <QMessageBox>
 #include <sstream>
 #include <utility>
 #include <vector>
 #include <ctime>
 #include <cstring>
 #include <QDebug>
-#include <QMessageBox>
+#include <QVariant>
 
 using namespace GekkoFyre;
 using namespace Database;
 using namespace Settings;
 using namespace Audio;
+
 namespace fs = boost::filesystem;
+namespace sys = boost::system;
 
 GkLevelDb::GkLevelDb(leveldb::DB *db_ptr, std::shared_ptr<FileIo> filePtr, QObject *parent) : QObject(parent)
 {

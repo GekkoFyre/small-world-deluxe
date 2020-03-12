@@ -129,7 +129,7 @@ bool GkAudioEncoding::recordOggVorbis(const fs::path &filePath)
             // Add a comment to the encoded file!
             vorbis_comment_init(&vc);
             vorbis_comment_add_tag(&vc, tr("Small World Deluxe").toStdString().c_str(),
-                                   tr("Encoded with Small World Deluxe v%1").arg(SMALL_WORLD_DELUXE_APP_VERSION)
+                                   tr("Encoded with Small World Deluxe v%1").arg(General::appVersion)
                                    .toStdString().c_str());
 
             // Setup the analysis state and auxiliary encoding storage

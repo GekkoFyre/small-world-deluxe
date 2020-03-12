@@ -52,7 +52,8 @@ class GkLevelDb : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkLevelDb(leveldb::DB *db_ptr, std::shared_ptr<GekkoFyre::FileIo> filePtr, QObject *parent = nullptr);
+    explicit GkLevelDb(leveldb::DB *db_ptr, std::shared_ptr<GekkoFyre::FileIo> filePtr,
+                       QObject *parent = nullptr);
     ~GkLevelDb();
 
     void write_rig_settings(const QString &value, const Database::Settings::radio_cfg &key);
@@ -66,7 +67,6 @@ public:
     GekkoFyre::Database::Settings::Audio::GkDevice read_audio_details_settings(const bool &is_output_device);
     QString read_mainwindow_settings(const Database::Settings::general_mainwindow_cfg &key);
     QString read_misc_audio_settings(const GekkoFyre::Database::Settings::audio_cfg &key);
-
 
     GekkoFyre::Database::Settings::audio_channels convertAudioChannelsEnum(const int &audio_channel_sel);
     int convertAudioChannelsInt(const GekkoFyre::Database::Settings::audio_channels &channel_enum) const;
