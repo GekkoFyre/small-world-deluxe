@@ -169,6 +169,20 @@ std::vector<short> PaAudioBuf::dumpMemory()
     return ret_vec;
 }
 
+std::vector<signed char> PaAudioBuf::prepOggVorbisBuf()
+{
+    std::mutex pa_prep_vorbis_buf_mtx;
+    std::lock_guard<std::mutex> lck_guard(pa_prep_vorbis_buf_mtx);
+
+    auto pa_buf_data = dumpMemory();
+    std::vector<signed char> vorbis_buf;
+
+    vorbis_buf.reserve(pa_buf_data.size());
+    vorbis_buf.assign(pa_buf_data.begin(), pa_buf_data.end());
+
+    return vorbis_buf;
+}
+
 size_t PaAudioBuf::size() const
 {
     size_t rec_samples_size = 0;

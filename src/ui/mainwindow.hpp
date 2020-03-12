@@ -39,9 +39,10 @@
 
 #include "src/defines.hpp"
 #include "src/file_io.hpp"
-#include "src/dek_db.hpp"
 #include "src/audio_devices.hpp"
 #include "src/pa_mic.hpp"
+#include "src/gk_cli.hpp"
+#include "src/dek_db.hpp"
 #include "src/radiolibs.hpp"
 #include "src/pa_audio_buf.hpp"
 #include "src/spectro_gui.hpp"
@@ -66,6 +67,7 @@
 #include <string>
 #include <QMainWindow>
 #include <QPushButton>
+#include <QCommandLineParser>
 #include <QPointer>
 #include <QString>
 #include <QStringList>
@@ -192,11 +194,13 @@ private:
     std::shared_ptr<GekkoFyre::RadioLibs> gkRadioLibs;
     std::shared_ptr<GekkoFyre::GkAudioEncoding> gkAudioEncoding;
     std::shared_ptr<GekkoFyre::GkAudioDecoding> gkAudioDecoding;
+    std::shared_ptr<GekkoFyre::GkCli> gkCli;
     QPointer<GekkoFyre::SpectroGui> gkSpectroGui;
     QPointer<GekkoFyre::paMicProcBackground> paMicProcBackground;
     QPointer<GkAudioPlayDialog> gkAudioPlayDlg;
 
     std::shared_ptr<QSettings> sw_settings;
+    std::shared_ptr<QCommandLineParser> gkCliParser;
 
     //
     // PortAudio initialization and buffers

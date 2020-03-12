@@ -37,6 +37,7 @@
 
 #include "pa_sinewave.hpp"
 #include <iostream>
+#include <ostream>
 #include <mutex>
 #include <cmath>
 #include <exception>

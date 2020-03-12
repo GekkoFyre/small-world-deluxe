@@ -60,6 +60,11 @@ extern "C"
 
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
+using namespace Database;
+using namespace Settings;
+using namespace Audio;
+using namespace AmateurRadio;
+
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
@@ -85,13 +90,35 @@ GkAudioEncoding::GkAudioEncoding(portaudio::System *paInit,
 GkAudioEncoding::~GkAudioEncoding()
 {}
 
-void GkAudioEncoding::recordAudioFile(const boost::filesystem::path &filePath)
+/**
+ * @brief GkAudioEncoding::recordAudioFile
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param filePath
+ * @param codec
+ * @param bitrate
+ */
+void GkAudioEncoding::recordAudioFile(const boost::filesystem::path &filePath, const CodecSupport &codec,
+                                      const Bitrate &bitrate)
 {
     std::mutex record_audio_file_mtx;
     std::lock_guard<std::mutex> lck_guard(record_audio_file_mtx);
 
+    bool ret = false;
     try {
-        // Enter data here
+        if (codec == OggVorbis) {
+            // Using Ogg Vorbis
+            // bool ret = recordOggVorbis();
+            if (!ret) {
+                throw std::runtime_error(tr("Unknown error while recording with Ogg Vorbis!").toStdString());
+            }
+        } else if (codec == FLAC) {
+            // Using FLAC
+        } else if (codec == PCM) {
+            // Using PCM
+        } else {
+            // Unknown!
+            throw std::invalid_argument(tr("Recording with unknown media (i.e. codec) format!").toStdString());
+        }
     } catch (const std::exception &e) {
         HWND hwnd_record_audio_file_vec;
         gkStringFuncs->modalDlgBoxOk(hwnd_record_audio_file_vec, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
@@ -101,6 +128,12 @@ void GkAudioEncoding::recordAudioFile(const boost::filesystem::path &filePath)
     return;
 }
 
+/**
+ * @brief GkAudioEncoding::recordOggVorbis
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param filePath
+ * @return
+ */
 bool GkAudioEncoding::recordOggVorbis(const fs::path &filePath)
 {
     std::mutex record_ogg_vorbis_mtx;
@@ -128,8 +161,8 @@ bool GkAudioEncoding::recordOggVorbis(const fs::path &filePath)
 
             // Add a comment to the encoded file!
             vorbis_comment_init(&vc);
-            vorbis_comment_add_tag(&vc, tr("Small World Deluxe").toStdString().c_str(),
-                                   tr("Encoded with Small World Deluxe v%1").arg(General::appVersion)
+            vorbis_comment_add_tag(&vc, General::productName,
+                                   tr("Encoded with %1 (v%2)").arg(General::productName).arg(General::appVersion)
                                    .toStdString().c_str());
 
             // Setup the analysis state and auxiliary encoding storage

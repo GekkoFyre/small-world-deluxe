@@ -170,6 +170,18 @@ namespace Filesystem {
     constexpr char linux_sys_tty[] = "/sys/class/tty/"; // The location of the TTY-devices under most major Linux distributions
 }
 
+namespace System {
+    namespace Cli {
+        enum CommandLineParseResult
+        {
+            CommandLineOk,
+            CommandLineError,
+            CommandLineVersionRequested,
+            CommandLineHelpRequested
+        };
+    }
+}
+
 namespace Database {
     namespace Settings {
         constexpr char dbName[] = "Database/DbName";
@@ -422,10 +434,13 @@ namespace GkAudioFramework {
     enum CodecSupport {
         PCM,
         OggVorbis,
+        FLAC,
         Unknown
     };
 
     enum Bitrate {
+        LosslessCompressed,
+        LosslessUncompressed,
         VBR,
         Kbps64,
         Kbps128,

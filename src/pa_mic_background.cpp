@@ -199,7 +199,9 @@ void paMicProcBackground::spectrographCallback(PaAudioBuf *audio_buf, portaudio:
             if (!raw_audio_data.empty()) {
                 std::vector<Spectrograph::RawFFT> power_density_data;
                 std::vector<Spectrograph::RawFFT> waterfall_fft_data;
-                std::vector<double> conv_audio_data(raw_audio_data.begin(), raw_audio_data.end());
+                std::vector<double> conv_audio_data;
+                conv_audio_data.reserve(raw_audio_data.size());
+                conv_audio_data.assign(raw_audio_data.begin(), raw_audio_data.end());
 
                 std::promise<std::vector<Spectrograph::RawFFT>> stft_promise;
                 std::future<std::vector<Spectrograph::RawFFT>> stft_future = stft_promise.get_future();

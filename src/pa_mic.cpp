@@ -38,6 +38,7 @@
 #include "pa_mic.hpp"
 #include <portaudiocpp/PortAudioCpp.hxx>
 #include <iostream>
+#include <ostream>
 #include <utility> 
 
 using namespace GekkoFyre;

@@ -281,6 +281,7 @@ if(WIN32)
         src/pa_mic_background.cpp
         src/gk_audio_encoding.cpp
         src/gk_audio_decoding.cpp
+        src/gk_cli.cpp
         src/string_funcs_windows.cpp
         src/ui/gkaudioplaydialog.cpp)
 elseif(UNIX)
@@ -300,6 +301,7 @@ elseif(UNIX)
         src/pa_mic_background.cpp
         src/gk_audio_encoding.cpp
         src/gk_audio_decoding.cpp
+        src/gk_cli.cpp
         src/string_funcs_linux.cpp
         src/ui/gkaudioplaydialog.cpp)
 elseif(APPLE)
@@ -335,6 +337,7 @@ if(WIN32)
         src/pa_mic_background.hpp
         src/gk_audio_encoding.hpp
         src/gk_audio_decoding.hpp
+        src/gk_cli.hpp
         src/string_funcs_windows.hpp
         src/ui/gkaudioplaydialog.hpp)
 elseif(UNIX)
@@ -356,6 +359,7 @@ elseif(UNIX)
         src/pa_mic_background.hpp
         src/gk_audio_encoding.hpp
         src/gk_audio_decoding.hpp
+        src/gk_cli.hpp
         src/string_funcs_linux.hpp
         src/ui/gkaudioplaydialog.hpp)
 elseif(APPLE)

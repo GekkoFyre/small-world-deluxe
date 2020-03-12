@@ -61,6 +61,11 @@ extern "C"
 
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
+using namespace Database;
+using namespace Settings;
+using namespace Audio;
+using namespace AmateurRadio;
+
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
 

@@ -39,6 +39,7 @@
 #include "pa_sinewave.hpp"
 #include <portaudiocpp/MemFunCallbackStream.hxx>
 #include <iostream>
+#include <ostream>
 #include <cstdio>
 #include <exception>
 #include <cmath>

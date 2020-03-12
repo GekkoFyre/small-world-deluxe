@@ -41,6 +41,7 @@
 #include <algorithm>
 #include <random>
 #include <iostream>
+#include <ostream>
 #include <cstring>
 #include <utility>
 #include <fstream>

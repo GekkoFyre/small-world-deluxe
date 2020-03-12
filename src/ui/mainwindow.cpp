@@ -44,6 +44,7 @@
 #include <boost/chrono/chrono.hpp>
 #include <sstream>
 #include <iostream>
+#include <ostream>
 #include <cmath>
 #include <functional>
 #include <cstdlib>
@@ -190,6 +191,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         } else {
             throw std::runtime_error(tr("Unable to find settings database; we've lost its location! Aborting...").toStdString());
         }
+
+        //
+        // Setup the CLI parser and its settings!
+        // https://doc.qt.io/qt-5/qcommandlineparser.html
+        //
+        gkCliParser = std::make_shared<QCommandLineParser>();
+        gkCli = std::make_shared<GekkoFyre::GkCli>(gkCliParser, fileIo, GkDb, gkRadioLibs, this);
+
+        std::unique_ptr<QString> error_msg = std::make_unique<QString>("");
+        gkCli->parseCommandLine(error_msg.get());
 
         //
         // Load settings for QMainWindow
