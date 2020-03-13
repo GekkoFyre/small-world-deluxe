@@ -39,6 +39,7 @@
 #include <boost/exception/all.hpp>
 #include <vector>
 #include <fstream>
+#include <QStandardPaths>
 
 #ifdef __cplusplus
 extern "C"
@@ -68,23 +69,31 @@ using namespace AmateurRadio;
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
-GkAudioEncoding::GkAudioEncoding(portaudio::System *paInit,
-                                 std::shared_ptr<FileIo> fileIo,
-                                 std::shared_ptr<AudioDevices> audioDevs,
+#define OGG_VORBIS_READ (1024)
+
+GkAudioEncoding::GkAudioEncoding(std::shared_ptr<FileIo> fileIo,
                                  QPointer<PaAudioBuf> audio_buf,
                                  std::shared_ptr<GkLevelDb> database,
+                                 QPointer<GekkoFyre::SpectroGui> spectroGui,
                                  std::shared_ptr<StringFuncs> stringFuncs,
                                  Database::Settings::Audio::GkDevice input_device,
                                  QObject *parent)
 {
     gkFileIo = fileIo;
-    gkAudioDevices = audioDevs;
     gkAudioBuf = audio_buf;
     gkStringFuncs = stringFuncs;
     gkDb = database;
-
-    gkPaInit = paInit;
     gkInputDev = input_device;
+    gkSpectroGui = spectroGui;
+
+    recordingActive = false;
+
+    QObject::connect(gkSpectroGui, SIGNAL(stopSpectroRecv(const bool &, const int &)),
+                     this, SLOT(stopRecording(const bool &, const int &)));
+    QObject::connect(this, SIGNAL(recAudioFrameOgg(const std::vector<signed char> &, const int &, const boost::filesystem::path &)),
+                     this, SLOT(oggVorbisBuf(const std::vector<signed char> &, const int &, const boost::filesystem::path &)));
+    QObject::connect(this, SIGNAL(submitOggVorbisBuf(const std::vector<signed char> &, const boost::filesystem::path &)),
+                     this, SLOT(recordOggVorbis(const std::vector<signed char> &, const boost::filesystem::path &)));
 }
 
 GkAudioEncoding::~GkAudioEncoding()
@@ -103,13 +112,23 @@ void GkAudioEncoding::recordAudioFile(const boost::filesystem::path &filePath, c
     std::mutex record_audio_file_mtx;
     std::lock_guard<std::mutex> lck_guard(record_audio_file_mtx);
 
-    bool ret = false;
     try {
+        fs::path default_path = fs::path(gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::MusicLocation), true).toStdString());
+
         if (codec == OggVorbis) {
             // Using Ogg Vorbis
-            // bool ret = recordOggVorbis();
-            if (!ret) {
-                throw std::runtime_error(tr("Unknown error while recording with Ogg Vorbis!").toStdString());
+            std::promise<std::vector<signed char>> ogg_frame_promise;
+            std::future<std::vector<signed char>> ogg_frame_future = ogg_frame_promise.get_future();
+
+            while (recordingActive) {
+                ogg_audio_frame_thread = std::thread(&PaAudioBuf::prepOggVorbisBuf, gkAudioBuf, std::move(ogg_frame_promise));
+                std::vector<signed char> audio_frame_vec = ogg_frame_future.get();
+
+                if (audio_frame_vec.empty()) {
+                    throw std::runtime_error(tr("Audio data buffer frame is empty!").toStdString());
+                }
+
+                emit recAudioFrameOgg(audio_frame_vec, AUDIO_CODECS_OGG_VORBIS_BUFFER_SIZE, default_path);
             }
         } else if (codec == FLAC) {
             // Using FLAC
@@ -128,21 +147,30 @@ void GkAudioEncoding::recordAudioFile(const boost::filesystem::path &filePath, c
     return;
 }
 
+void GkAudioEncoding::stopRecording(const bool &recording_is_stopped, const int &wait_time)
+{
+    Q_UNUSED(wait_time);
+    recordingActive = recording_is_stopped;
+
+    return;
+}
+
 /**
  * @brief GkAudioEncoding::recordOggVorbis
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param audio_frame_buf
  * @param filePath
  * @return
  */
-bool GkAudioEncoding::recordOggVorbis(const fs::path &filePath)
+void GkAudioEncoding::recordOggVorbis(const std::vector<signed char> &audio_frame_buf, const fs::path &filePath)
 {
     std::mutex record_ogg_vorbis_mtx;
     std::lock_guard<std::mutex> lck_guard(record_ogg_vorbis_mtx);
 
     try {
-        if (gkPaInit != nullptr) {
-            #define READ (1024)
-            signed char read_buffer[(READ * 4) + 44];
+        if (!audio_frame_buf.empty()) {
+            signed char read_buffer[(OGG_VORBIS_READ * 4) + 44];
+            size_t buf_size = ((OGG_VORBIS_READ * 4) + 44);
             ogg_stream_state os;            // Take physical pages, weld into a logical stream of packets.
             ogg_page og;                    // One Ogg bitstream page. Vorbis packets are inside.
             ogg_packet op;                  // One raw packet of data for decode.
@@ -209,28 +237,37 @@ bool GkAudioEncoding::recordOggVorbis(const fs::path &filePath)
 
             while (!eos) {
                 long i;
-                long bytes = fread(read_buffer, 1, (READ * 4), stdin); // Stereo hardwired here
-                if (bytes == 0) {
-                    //
-                    // End of file.  This can be done implicitly in the mainline,
-                    // but it's easier to see here in non-clever fashion.
-                    // Tell the library we're at end of stream so that it can handle
-                    // the last frame and mark end of stream in the output properly.
-                    //
-                    vorbis_analysis_wrote(&vd, 0);
-                } else {
-                    // Data to encode
-                    // Expose the buffer to submit data
-                    float **buffer = vorbis_analysis_buffer(&vd, READ);
 
-                    // Uninterleave samples
-                    for (i = 0; i < bytes / 4; ++i) {
-                        buffer[0][i] = ((read_buffer[i * 4 + 1] << 8) | (0x00ff&(int)read_buffer[i * 4])) / 32768.f;
-                        buffer[1][i] = ((read_buffer[i * 4 + 3] << 8) | (0x00ff&(int)read_buffer[i * 4 + 2])) / 32768.f;
+                for (size_t j = 0; j < audio_frame_buf.size(); ++j) {
+                    for (size_t k = 0; k < buf_size; ++k) {
+                        // Break up the data!
+                        read_buffer[k] = audio_frame_buf[j];
+                        // j += k;
                     }
 
-                    // Tell the library how much we actually submitted
-                    vorbis_analysis_wrote(&vd, i);
+                    long bytes = fread(read_buffer, 1, (OGG_VORBIS_READ * 4), stdin); // Stereo hardwired here
+                    if (bytes == 0) {
+                        //
+                        // End of file.  This can be done implicitly in the mainline,
+                        // but it's easier to see here in non-clever fashion.
+                        // Tell the library we're at end of stream so that it can handle
+                        // the last frame and mark end of stream in the output properly.
+                        //
+                        vorbis_analysis_wrote(&vd, 0);
+                    } else {
+                        // Data to encode
+                        // Expose the buffer to submit data
+                        float **buffer = vorbis_analysis_buffer(&vd, OGG_VORBIS_READ);
+
+                        // Uninterleave samples
+                        for (i = 0; i < bytes / 4; ++i) {
+                            buffer[0][i] = ((read_buffer[i * 4 + 1] << 8) | (0x00ff&(int)read_buffer[i * 4])) / 32768.f;
+                            buffer[1][i] = ((read_buffer[i * 4 + 3] << 8) | (0x00ff&(int)read_buffer[i * 4 + 2])) / 32768.f;
+                        }
+
+                        // Tell the library how much we actually submitted
+                        vorbis_analysis_wrote(&vd, i);
+                    }
                 }
 
                 // Vorbis does some data preanalysis, then divvies up blocks for
@@ -273,7 +310,7 @@ bool GkAudioEncoding::recordOggVorbis(const fs::path &filePath)
             vorbis_comment_clear(&vc);
             vorbis_info_clear(&vi);
 
-            return true;
+            return;
         }
     } catch (const std::exception &e) {
         HWND hwnd_record_ogg_vorbis_vec;
@@ -281,5 +318,31 @@ bool GkAudioEncoding::recordOggVorbis(const fs::path &filePath)
         DestroyWindow(hwnd_record_ogg_vorbis_vec);
     }
 
-    return false;
+    return;
+}
+
+void GkAudioEncoding::recordPcm(const std::vector<short> &audio_rec, const boost::filesystem::path &filePath)
+{
+    Q_UNUSED(filePath);
+    Q_UNUSED(audio_rec);
+
+    return;
+}
+
+void GkAudioEncoding::recordFlac(const std::vector<short> &audio_rec, const boost::filesystem::path &filePath)
+{
+    Q_UNUSED(filePath);
+    Q_UNUSED(audio_rec);
+
+    return;
+}
+
+void GkAudioEncoding::oggVorbisBuf(const std::vector<signed char> &audio_rec, const int &buf_size,
+                                   const boost::filesystem::path &filePath)
+{
+    std::vector<signed char> total_buf;
+
+    emit submitOggVorbisBuf(total_buf, filePath);
+
+    return;
 }

@@ -341,11 +341,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                           GkDb->convertAudioChannelsInt(pref_output_device.sel_channels));
         pref_output_audio_buf = new GekkoFyre::PaAudioBuf(output_audio_buffer_size, this);
 
-        gkAudioEncoding = std::make_shared<GkAudioEncoding>(gkPortAudioInit, fileIo, gkAudioDevices,
-                                                            pref_input_audio_buf, GkDb, gkStringFuncs,
-                                                            pref_input_device, this);
-        gkAudioDecoding = std::make_shared<GkAudioDecoding>(gkPortAudioInit, fileIo, gkAudioDevices,
-                                                            pref_output_audio_buf, GkDb, gkStringFuncs,
+        gkAudioEncoding = std::make_shared<GkAudioEncoding>(fileIo, pref_input_audio_buf, GkDb, gkSpectroGui,
+                                                            gkStringFuncs, pref_input_device, this);
+        gkAudioDecoding = std::make_shared<GkAudioDecoding>(fileIo, pref_output_audio_buf, GkDb, gkStringFuncs,
                                                             pref_output_device, this);
 
         gkAudioPlayDlg = new GkAudioPlayDialog(GkDb, gkAudioDecoding, gkAudioDevices, fileIo, this);
@@ -686,30 +684,15 @@ void MainWindow::on_actionDelete_all_wav_files_in_Save_Directory_triggered()
     QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
 }
 
-void MainWindow::on_actionUSB_triggered(bool checked)
-{
-    ui->actionLSB->setChecked(false);
-}
-
-void MainWindow::on_actionLSB_triggered(bool checked)
-{
-    ui->actionUSB->setChecked(false);
-}
-
-void MainWindow::on_actionAM_triggered(bool checked)
-{}
-
-void MainWindow::on_actionFM_triggered(bool checked)
-{}
-
-void MainWindow::on_actionSSB_triggered(bool checked)
-{}
-
-void MainWindow::on_actionCW_triggered(bool checked)
-{}
-
 void MainWindow::on_actionRecord_triggered()
-{}
+{
+    return;
+}
+
+void MainWindow::on_actionRecord_toggled(bool arg1)
+{
+    return;
+}
 
 void MainWindow::on_actionPlay_triggered()
 {
@@ -1059,6 +1042,40 @@ void MainWindow::on_action_Incoming_triggered()
 }
 
 void MainWindow::on_action_Outgoing_triggered()
+{
+    return;
+}
+
+void MainWindow::on_actionUSB_toggled(bool arg1)
+{
+    ui->actionUSB->setChecked(arg1);
+
+    return;
+}
+
+void MainWindow::on_actionLSB_toggled(bool arg1)
+{
+    ui->actionLSB->setChecked(arg1);
+
+    return;
+}
+
+void MainWindow::on_actionAM_toggled(bool arg1)
+{
+    return;
+}
+
+void MainWindow::on_actionFM_toggled(bool arg1)
+{
+    return;
+}
+
+void MainWindow::on_actionSSB_toggled(bool arg1)
+{
+    return;
+}
+
+void MainWindow::on_actionCW_toggled(bool arg1)
 {
     return;
 }

@@ -39,7 +39,7 @@
 
 #include "src/defines.hpp"
 #include "src/file_io.hpp"
-#include "src/audio_devices.hpp"
+#include "src/spectro_gui.hpp"
 #include "src/pa_audio_buf.hpp"
 #include "src/string_funcs_windows.hpp"
 #include "src/dek_db.hpp"
@@ -59,10 +59,10 @@ class GkAudioEncoding : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkAudioEncoding(portaudio::System *paInit, std::shared_ptr<GekkoFyre::FileIo> fileIo,
-                             std::shared_ptr<GekkoFyre::AudioDevices> audioDevs,
-                             QPointer<PaAudioBuf> audio_buf,
+    explicit GkAudioEncoding(std::shared_ptr<GekkoFyre::FileIo> fileIo,
+                             QPointer<PaAudioBuf> input_audio_buf,
                              std::shared_ptr<GekkoFyre::GkLevelDb> database,
+                             QPointer<SpectroGui> spectroGui,
                              std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs,
                              GekkoFyre::Database::Settings::Audio::GkDevice input_device,
                              QObject *parent = nullptr);
@@ -71,17 +71,42 @@ public:
     void recordAudioFile(const boost::filesystem::path &filePath, const GkAudioFramework::CodecSupport &codec,
                          const GkAudioFramework::Bitrate &bitrate);
 
+signals:
+    void recAudioFrameOgg(const std::vector<signed char> &audio_rec, const int &buf_size,
+                          const boost::filesystem::path &filePath);
+    void recAudioFramePcm(const std::vector<short> &audio_rec, const int &buf_size,
+                          const boost::filesystem::path &filePath);
+    void recAudioFrameFlac(const std::vector<short> &audio_rec, const int &buf_size,
+                           const boost::filesystem::path &filePath);
+
+    void submitOggVorbisBuf(const std::vector<signed char> &audio_frame_buf, const boost::filesystem::path &filePath);
+    void submitPcmBuf(const std::vector<short> &audio_rec, const boost::filesystem::path &filePath);
+    void submitFlacBuf(const std::vector<short> &audio_rec, const boost::filesystem::path &filePath);
+
+private slots:
+    void stopRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
+
+    void oggVorbisBuf(const std::vector<signed char> &audio_rec, const int &buf_size,
+                      const boost::filesystem::path &filePath);
+
+    void recordOggVorbis(const std::vector<signed char> &audio_frame_buf, const boost::filesystem::path &filePath);
+    void recordPcm(const std::vector<short> &audio_rec, const boost::filesystem::path &filePath);
+    void recordFlac(const std::vector<short> &audio_rec, const boost::filesystem::path &filePath);
+
 private:
     std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
-    std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
+    QPointer<GekkoFyre::SpectroGui> gkSpectroGui;
     QPointer<GekkoFyre::PaAudioBuf> gkAudioBuf;
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GkLevelDb> gkDb;
-
-    portaudio::System *gkPaInit;
     GekkoFyre::Database::Settings::Audio::GkDevice gkInputDev;
 
-    bool recordOggVorbis(const boost::filesystem::path &filePath);
+    bool recordingActive;
+
+    //
+    // Threads
+    //
+    std::thread ogg_audio_frame_thread;
 
 };
 };

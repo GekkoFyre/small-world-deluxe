@@ -61,8 +61,7 @@ class GkAudioDecoding : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkAudioDecoding(portaudio::System *paInit, std::shared_ptr<GekkoFyre::FileIo> fileIo,
-                             std::shared_ptr<GekkoFyre::AudioDevices> audioDevs,
+    explicit GkAudioDecoding(std::shared_ptr<GekkoFyre::FileIo> fileIo,
                              QPointer<GekkoFyre::PaAudioBuf> audio_buf,
                              std::shared_ptr<GekkoFyre::GkLevelDb> database,
                              std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs,
@@ -76,12 +75,9 @@ public:
 
 private:
     std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
-    std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
     QPointer<GekkoFyre::PaAudioBuf> gkAudioBuf;
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GkLevelDb> gkDb;
-
-    portaudio::System *gkPaInit;
     GekkoFyre::Database::Settings::Audio::GkDevice gkOutputDev;
 
     static size_t readOgg(void *buffer, size_t element_size, size_t element_count, void *data_source);

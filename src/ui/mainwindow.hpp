@@ -110,18 +110,11 @@ private slots:
     void on_actionCheck_for_Updates_triggered();
     void on_action_About_Dekoder_triggered();
     void on_actionSet_Offset_triggered();
-    void on_actionShow_Waterfall_toggled(bool arg1);
     void on_action_Settings_triggered();
     void on_actionSave_Decoded_triggered();
     void on_actionSave_All_triggered();
     void on_actionOpen_Save_Directory_triggered();
     void on_actionDelete_all_wav_files_in_Save_Directory_triggered();
-    void on_actionUSB_triggered(bool checked);
-    void on_actionLSB_triggered(bool checked);
-    void on_actionAM_triggered(bool checked);
-    void on_actionFM_triggered(bool checked);
-    void on_actionSSB_triggered(bool checked);
-    void on_actionCW_triggered(bool checked);
     void on_actionRecord_triggered();
     void on_actionPlay_triggered();
     void on_actionSettings_triggered();
@@ -131,6 +124,15 @@ private slots:
     void on_action_All_triggered();
     void on_action_Incoming_triggered();
     void on_action_Outgoing_triggered();
+
+    void on_actionShow_Waterfall_toggled(bool arg1);
+    void on_actionRecord_toggled(bool arg1);
+    void on_actionUSB_toggled(bool arg1);
+    void on_actionLSB_toggled(bool arg1);
+    void on_actionAM_toggled(bool arg1);
+    void on_actionFM_toggled(bool arg1);
+    void on_actionSSB_toggled(bool arg1);
+    void on_actionCW_toggled(bool arg1);
 
     void infoBar();
     void uponExit();

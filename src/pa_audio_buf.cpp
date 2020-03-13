@@ -169,18 +169,34 @@ std::vector<short> PaAudioBuf::dumpMemory()
     return ret_vec;
 }
 
-std::vector<signed char> PaAudioBuf::prepOggVorbisBuf()
+/**
+ * @brief PaAudioBuf::prepOggVorbisBuf prepares an audio frame within the constraints as
+ * those set forth by the Ogg Vorbis library for an audio buffer, for which this function
+ * exports the data as.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return A data frame suitable to be used right away by the Ogg Vorbis library for recording, with
+ * only small modifications needed to fit within the constraints of its data I/O buffer afterword.
+ */
+void PaAudioBuf::prepOggVorbisBuf(std::promise<std::vector<signed char>> vorbis_buf)
 {
     std::mutex pa_prep_vorbis_buf_mtx;
     std::lock_guard<std::mutex> lck_guard(pa_prep_vorbis_buf_mtx);
 
     auto pa_buf_data = dumpMemory();
-    std::vector<signed char> vorbis_buf;
+    if (!pa_buf_data.empty()) {
+        std::vector<signed char> vorbis_buf_tmp;
 
-    vorbis_buf.reserve(pa_buf_data.size());
-    vorbis_buf.assign(pa_buf_data.begin(), pa_buf_data.end());
+        vorbis_buf_tmp.reserve(pa_buf_data.size());
+        vorbis_buf_tmp.assign(pa_buf_data.begin(), pa_buf_data.end());
 
-    return vorbis_buf;
+        vorbis_buf.set_value(vorbis_buf_tmp);
+
+        return;
+    } else {
+        throw std::runtime_error(tr("Audio data buffer frame is empty!").toStdString());
+    }
+
+    return;
 }
 
 size_t PaAudioBuf::size() const

@@ -69,22 +69,18 @@ using namespace AmateurRadio;
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
-GkAudioDecoding::GkAudioDecoding(portaudio::System *paInit,
-                                 std::shared_ptr<FileIo> fileIo,
-                                 std::shared_ptr<AudioDevices> audioDevs,
-                                 QPointer<PaAudioBuf> audio_buf,
+GkAudioDecoding::GkAudioDecoding(std::shared_ptr<FileIo> fileIo,
+                                 QPointer<PaAudioBuf> output_audio_buf,
                                  std::shared_ptr<GkLevelDb> database,
                                  std::shared_ptr<StringFuncs> stringFuncs,
                                  Database::Settings::Audio::GkDevice output_device,
                                  QObject *parent)
 {
     gkFileIo = fileIo;
-    gkAudioDevices = audioDevs;
-    gkAudioBuf = audio_buf;
+    gkAudioBuf = output_audio_buf;
     gkStringFuncs = stringFuncs;
     gkDb = database;
 
-    gkPaInit = paInit;
     gkOutputDev = output_device;
 }
 
