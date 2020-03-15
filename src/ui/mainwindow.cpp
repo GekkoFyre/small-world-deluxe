@@ -341,11 +341,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                           GkDb->convertAudioChannelsInt(pref_output_device.sel_channels));
         pref_output_audio_buf = new GekkoFyre::PaAudioBuf(output_audio_buffer_size, this);
 
-        gkAudioEncoding = std::make_shared<GkAudioEncoding>(fileIo, pref_input_audio_buf, GkDb, gkSpectroGui,
-                                                            gkStringFuncs, pref_input_device, this);
-        gkAudioDecoding = std::make_shared<GkAudioDecoding>(fileIo, pref_output_audio_buf, GkDb, gkStringFuncs,
-                                                            pref_output_device, this);
+        gkAudioEncoding = new GkAudioEncoding(fileIo, pref_input_audio_buf, GkDb, gkSpectroGui,
+                                              gkStringFuncs, pref_input_device, this);
+        gkAudioDecoding = new GkAudioDecoding(fileIo, pref_output_audio_buf, GkDb, gkStringFuncs,
+                                              pref_output_device, this);
 
+        QObject::connect(this, SIGNAL(recordToAudioCodec(const bool &)), gkAudioEncoding, SLOT(startRecording(const bool &)));
+        QObject::connect(this, SIGNAL(recordToAudioCodec(const bool &)), this, SLOT(stopAudioCodecRec(const bool &)));
         gkAudioPlayDlg = new GkAudioPlayDialog(GkDb, gkAudioDecoding, gkAudioDevices, fileIo, this);
 
         if (radio->freq >= 0.0) {
@@ -369,6 +371,7 @@ MainWindow::~MainWindow()
     std::lock_guard<std::mutex> lck_guard(main_win_termination_mtx);
 
     emit stopRecording(true, 5000);
+    emit recordToAudioCodec(false);
 
     if (pref_input_device.dev_input_channel_count > 0 && pref_input_device.def_sample_rate > 0) {
         if (pref_input_audio_buf != nullptr) {
@@ -689,8 +692,54 @@ void MainWindow::on_actionRecord_triggered()
     return;
 }
 
+/**
+ * @brief MainWindow::on_actionRecord_toggled begins recording of the given audio buffer into a
+ * specified audio codec (i.e. Ogg Vorbis, FLAC, PCM, etc.), which is saved as a file into a
+ * given output directory.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1 Whether to start recording or halt recording.
+ */
 void MainWindow::on_actionRecord_toggled(bool arg1)
 {
+    emit recordToAudioCodec(arg1);
+    sys::error_code ec;
+
+    try {
+        if (arg1) {
+            QString audioRecLoc = GkDb->read_misc_audio_settings(audio_cfg::AudioRecLoc);
+            fs::path audio_rec_path;
+
+            if (!audioRecLoc.isEmpty()) {
+                // There exists a given path that has been saved previously in the settings, perhaps by the user...
+                audio_rec_path = fs::path(audioRecLoc.toStdString());
+            } else {
+                // We must create a new, default path by scratch...
+                audio_rec_path = fs::path(fileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::MusicLocation)).toStdString());
+            }
+
+            if (fs::exists(audio_rec_path, ec) && fs::is_directory(audio_rec_path, ec)) {
+                // The given path already exists! Nothing more needs to be done with it...
+            } else {
+                // We need to create this given path firstly...
+                if (!fs::create_directory(audio_rec_path, ec)) {
+                    throw std::runtime_error(tr("An issue was encountered while creating a path for audio file storage!").toStdString());
+                }
+            }
+
+            rec_audio_codec_thread = std::thread(&GkAudioEncoding::recordAudioFile, gkAudioEncoding, audio_rec_path,
+                                         GkAudioFramework::CodecSupport::OggVorbis,
+                                         GkAudioFramework::Bitrate::VBR);
+            rec_audio_codec_thread.detach();
+
+            return;
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
+    } catch (const sys::system_error &e) {
+        ec = e.code();
+        QMessageBox::warning(this, tr("Error!"), ec.message().c_str(), QMessageBox::Ok);
+    }
+
     return;
 }
 
@@ -747,6 +796,22 @@ void MainWindow::uponExit()
     GkDb->write_mainwindow_settings(QString::number(this->window()->isMaximized()), general_mainwindow_cfg::WindowMaximized);
 
     QApplication::exit(EXIT_SUCCESS);
+}
+
+/**
+ * @brief MainWindow::stopAudioCodecRec
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param recording_is_started
+ */
+void MainWindow::stopAudioCodecRec(const bool &recording_is_started)
+{
+    if (!recording_is_started) {
+        if (rec_audio_codec_thread.joinable()) {
+            rec_audio_codec_thread.join();
+        }
+    }
+
+    return;
 }
 
 /**
@@ -953,7 +1018,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 /**
  * @brief MainWindow::stopRecordingInput The idea of this function is to stop recording of
- * all input audio devices upon activation, globally, across all threads.
+ * all input audio devices related to the spectrograph / waterfall upon activation,
+ * globally, across all threads.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param recording_is_stopped A toggle switch that tells the function whether to stop
  * recording of input audio devices or not.
@@ -972,6 +1038,14 @@ bool MainWindow::stopRecordingInput(const bool &recording_is_stopped, const int 
     return false;
 }
 
+/**
+ * @brief MainWindow::updateSpectroData
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param data
+ * @param raw_audio_data
+ * @param hanning_window_size
+ * @param buffer_size
+ */
 void MainWindow::updateSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &data,
                                    const std::vector<short> &raw_audio_data, const int &hanning_window_size,
                                    const size_t &buffer_size)

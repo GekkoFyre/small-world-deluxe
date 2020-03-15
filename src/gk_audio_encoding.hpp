@@ -73,23 +73,29 @@ public:
 
 signals:
     void recAudioFrameOgg(const std::vector<signed char> &audio_rec, const int &buf_size,
+                          const GkAudioFramework::Bitrate &bitrate,
                           const boost::filesystem::path &filePath);
     void recAudioFramePcm(const std::vector<short> &audio_rec, const int &buf_size,
                           const boost::filesystem::path &filePath);
     void recAudioFrameFlac(const std::vector<short> &audio_rec, const int &buf_size,
                            const boost::filesystem::path &filePath);
 
-    void submitOggVorbisBuf(const std::vector<signed char> &audio_frame_buf, const boost::filesystem::path &filePath);
+    void submitOggVorbisBuf(const std::vector<signed char> &audio_frame_buf,
+                            const GkAudioFramework::Bitrate &bitrate,
+                            const boost::filesystem::path &filePath);
     void submitPcmBuf(const std::vector<short> &audio_rec, const boost::filesystem::path &filePath);
     void submitFlacBuf(const std::vector<short> &audio_rec, const boost::filesystem::path &filePath);
 
 private slots:
-    void stopRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
+    void startRecording(const bool &recording_is_started);
 
-    void oggVorbisBuf(const std::vector<signed char> &audio_rec, const int &buf_size,
+    void oggVorbisBuf(std::vector<signed char> &audio_rec, const int &buf_size,
+                      const GkAudioFramework::Bitrate &bitrate,
                       const boost::filesystem::path &filePath);
 
-    void recordOggVorbis(const std::vector<signed char> &audio_frame_buf, const boost::filesystem::path &filePath);
+    void recordOggVorbis(const std::vector<signed char> &audio_frame_buf,
+                         const GkAudioFramework::Bitrate &bitrate,
+                         const boost::filesystem::path &filePath);
     void recordPcm(const std::vector<short> &audio_rec, const boost::filesystem::path &filePath);
     void recordFlac(const std::vector<short> &audio_rec, const boost::filesystem::path &filePath);
 
@@ -102,6 +108,7 @@ private:
     GekkoFyre::Database::Settings::Audio::GkDevice gkInputDev;
 
     bool recordingActive;
+    static size_t ogg_buf_counter;
 
     //
     // Threads

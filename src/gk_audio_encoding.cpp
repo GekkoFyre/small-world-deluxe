@@ -39,6 +39,8 @@
 #include <boost/exception/all.hpp>
 #include <vector>
 #include <fstream>
+#include <iterator>
+#include <algorithm>
 #include <QStandardPaths>
 
 #ifdef __cplusplus
@@ -71,6 +73,9 @@ namespace sys = boost::system;
 
 #define OGG_VORBIS_READ (1024)
 
+// Static variables
+size_t GkAudioEncoding::ogg_buf_counter = 0;
+
 GkAudioEncoding::GkAudioEncoding(std::shared_ptr<FileIo> fileIo,
                                  QPointer<PaAudioBuf> audio_buf,
                                  std::shared_ptr<GkLevelDb> database,
@@ -87,13 +92,12 @@ GkAudioEncoding::GkAudioEncoding(std::shared_ptr<FileIo> fileIo,
     gkSpectroGui = spectroGui;
 
     recordingActive = false;
+    ogg_buf_counter = 0;
 
-    QObject::connect(gkSpectroGui, SIGNAL(stopSpectroRecv(const bool &, const int &)),
-                     this, SLOT(stopRecording(const bool &, const int &)));
-    QObject::connect(this, SIGNAL(recAudioFrameOgg(const std::vector<signed char> &, const int &, const boost::filesystem::path &)),
-                     this, SLOT(oggVorbisBuf(const std::vector<signed char> &, const int &, const boost::filesystem::path &)));
-    QObject::connect(this, SIGNAL(submitOggVorbisBuf(const std::vector<signed char> &, const boost::filesystem::path &)),
-                     this, SLOT(recordOggVorbis(const std::vector<signed char> &, const boost::filesystem::path &)));
+    QObject::connect(this, SIGNAL(recAudioFrameOgg(const std::vector<signed char> &, const int &, const Bitrate &, const boost::filesystem::path &)),
+                     this, SLOT(oggVorbisBuf(const std::vector<signed char> &, const int &, const Bitrate &, const boost::filesystem::path &)));
+    QObject::connect(this, SIGNAL(submitOggVorbisBuf(const std::vector<signed char> &, const Bitrate &, const boost::filesystem::path &)),
+                     this, SLOT(recordOggVorbis(const std::vector<signed char> &, const Bitrate &, const boost::filesystem::path &)));
 }
 
 GkAudioEncoding::~GkAudioEncoding()
@@ -128,7 +132,7 @@ void GkAudioEncoding::recordAudioFile(const boost::filesystem::path &filePath, c
                     throw std::runtime_error(tr("Audio data buffer frame is empty!").toStdString());
                 }
 
-                emit recAudioFrameOgg(audio_frame_vec, AUDIO_CODECS_OGG_VORBIS_BUFFER_SIZE, default_path);
+                emit recAudioFrameOgg(audio_frame_vec, AUDIO_CODECS_OGG_VORBIS_BUFFER_SIZE, bitrate, default_path);
             }
         } else if (codec == FLAC) {
             // Using FLAC
@@ -147,10 +151,9 @@ void GkAudioEncoding::recordAudioFile(const boost::filesystem::path &filePath, c
     return;
 }
 
-void GkAudioEncoding::stopRecording(const bool &recording_is_stopped, const int &wait_time)
+void GkAudioEncoding::startRecording(const bool &recording_is_started)
 {
-    Q_UNUSED(wait_time);
-    recordingActive = recording_is_stopped;
+    recordingActive = recording_is_started;
 
     return;
 }
@@ -162,7 +165,9 @@ void GkAudioEncoding::stopRecording(const bool &recording_is_stopped, const int 
  * @param filePath
  * @return
  */
-void GkAudioEncoding::recordOggVorbis(const std::vector<signed char> &audio_frame_buf, const fs::path &filePath)
+void GkAudioEncoding::recordOggVorbis(const std::vector<signed char> &audio_frame_buf,
+                                      const Bitrate &bitrate,
+                                      const fs::path &filePath)
 {
     std::mutex record_ogg_vorbis_mtx;
     std::lock_guard<std::mutex> lck_guard(record_ogg_vorbis_mtx);
@@ -337,12 +342,28 @@ void GkAudioEncoding::recordFlac(const std::vector<short> &audio_rec, const boos
     return;
 }
 
-void GkAudioEncoding::oggVorbisBuf(const std::vector<signed char> &audio_rec, const int &buf_size,
+void GkAudioEncoding::oggVorbisBuf(std::vector<signed char> &audio_rec, const int &buf_size,
+                                   const Bitrate &bitrate,
                                    const boost::filesystem::path &filePath)
 {
     std::vector<signed char> total_buf;
+    while (ogg_buf_counter < buf_size) {
+        total_buf.insert(std::end(total_buf), std::begin(audio_rec), std::end(audio_rec));
 
-    emit submitOggVorbisBuf(total_buf, filePath);
+        //
+        // Remove the elements from the std::vector (i.e. `audio_rec`) that are already present
+        // within `total_buf`.
+        //
+        auto pred = [&total_buf](const signed char &key)->bool {
+            return std::find(total_buf.begin(), total_buf.end(), key) != total_buf.end();
+        };
+
+        audio_rec.erase(std::remove_if(audio_rec.begin(), audio_rec.end(), pred), audio_rec.end());
+        ogg_buf_counter += audio_rec.size();
+    }
+
+    emit submitOggVorbisBuf(total_buf, bitrate, filePath);
+    ogg_buf_counter = 0;
 
     return;
 }

@@ -134,9 +134,6 @@ private slots:
     void on_actionSSB_toggled(bool arg1);
     void on_actionCW_toggled(bool arg1);
 
-    void infoBar();
-    void uponExit();
-
     //
     // QPushButtons that contain a logic state of some sort and are therefore displayed as
     // the color, "Green", when TRUE and the color, "Red", when FALSE. Note: May possibly
@@ -164,6 +161,11 @@ private slots:
     void on_comboBox_select_frequency_activated(int index);
     void on_comboBox_select_digital_mode_activated(int index);
 
+    void infoBar();
+    void uponExit();
+
+    void stopAudioCodecRec(const bool &recording_is_started);
+
 protected slots:
     void closeEvent(QCloseEvent *event);
 
@@ -178,6 +180,7 @@ signals:
     void updatePaVol(const int &percentage);
     void updatePlot();
     void stopRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
+    void recordToAudioCodec(const bool &recording_is_started);
     void gkExitApp();
     void sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values,
                          const std::vector<short> &raw_audio_data,
@@ -194,9 +197,9 @@ private:
     std::shared_ptr<GekkoFyre::PaMic> gkPaMic;
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GekkoFyre::RadioLibs> gkRadioLibs;
-    std::shared_ptr<GekkoFyre::GkAudioEncoding> gkAudioEncoding;
-    std::shared_ptr<GekkoFyre::GkAudioDecoding> gkAudioDecoding;
     std::shared_ptr<GekkoFyre::GkCli> gkCli;
+    QPointer<GekkoFyre::GkAudioEncoding> gkAudioEncoding;
+    QPointer<GekkoFyre::GkAudioDecoding> gkAudioDecoding;
     QPointer<GekkoFyre::SpectroGui> gkSpectroGui;
     QPointer<GekkoFyre::paMicProcBackground> paMicProcBackground;
     QPointer<GkAudioPlayDialog> gkAudioPlayDlg;
@@ -227,6 +230,7 @@ private:
     //
     std::timed_mutex btn_record_mtx;
     std::future<GekkoFyre::AmateurRadio::Control::Radio *> rig_thread;
+    std::thread rec_audio_codec_thread;
 
     GekkoFyre::AmateurRadio::Control::Radio *radio;
     QTimer *timer;

@@ -41,7 +41,7 @@
 using namespace GekkoFyre;
 
 GkAudioPlayDialog::GkAudioPlayDialog(std::shared_ptr<GkLevelDb> database,
-                                     std::shared_ptr<GkAudioDecoding> audio_decoding,
+                                     QPointer<GkAudioDecoding> audio_decoding,
                                      std::shared_ptr<AudioDevices> audio_devices,
                                      std::shared_ptr<FileIo> file_io,
                                      QWidget *parent) :
