@@ -43,7 +43,11 @@
 #include "src/audio_devices.hpp"
 #include "src/file_io.hpp"
 #include <memory>
+#include <string>
+#include <vector>
+#include <QObject>
 #include <QDialog>
+#include <QString>
 #include <QPointer>
 
 namespace Ui {
@@ -65,11 +69,13 @@ public:
 private slots:
     void on_pushButton_reset_clicked();
     void on_pushButton_close_clicked();
-    void on_pushButton_playback_play_clicked();
     void on_pushButton_playback_stop_clicked();
-    void on_pushButton_playback_skip_back_clicked();
-    void on_pushButton_playback_skip_forward_clicked();
     void on_pushButton_playback_browse_file_loc_clicked();
+
+    void on_pushButton_playback_record_toggled(bool checked);
+    void on_pushButton_playback_play_toggled(bool checked);
+    void on_pushButton_playback_skip_forward_toggled(bool checked);
+    void on_pushButton_playback_skip_back_toggled(bool checked);
 
 private:
     Ui::GkAudioPlayDialog *ui;
@@ -78,6 +84,9 @@ private:
     QPointer<GekkoFyre::GkAudioDecoding> gkAudioDecode;
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevs;
     std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
+
+signals:
+    void beginRecording(const bool &recording_is_started);
 
 };
 

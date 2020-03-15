@@ -346,9 +346,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         gkAudioDecoding = new GkAudioDecoding(fileIo, pref_output_audio_buf, GkDb, gkStringFuncs,
                                               pref_output_device, this);
 
-        QObject::connect(this, SIGNAL(recordToAudioCodec(const bool &)), gkAudioEncoding, SLOT(startRecording(const bool &)));
-        QObject::connect(this, SIGNAL(recordToAudioCodec(const bool &)), this, SLOT(stopAudioCodecRec(const bool &)));
         gkAudioPlayDlg = new GkAudioPlayDialog(GkDb, gkAudioDecoding, gkAudioDevices, fileIo, this);
+        QObject::connect(gkAudioPlayDlg, SIGNAL(beginRecording(const bool &)), this, SLOT(stopAudioCodecRec(const bool &)));
+        QObject::connect(gkAudioPlayDlg, SIGNAL(beginRecording(const bool &)), gkAudioEncoding, SLOT(startRecording(const bool &)));
 
         if (radio->freq >= 0.0) {
             ui->label_freq_large->setText(QString::number(radio->freq));
@@ -702,43 +702,6 @@ void MainWindow::on_actionRecord_triggered()
 void MainWindow::on_actionRecord_toggled(bool arg1)
 {
     emit recordToAudioCodec(arg1);
-    sys::error_code ec;
-
-    try {
-        if (arg1) {
-            QString audioRecLoc = GkDb->read_misc_audio_settings(audio_cfg::AudioRecLoc);
-            fs::path audio_rec_path;
-
-            if (!audioRecLoc.isEmpty()) {
-                // There exists a given path that has been saved previously in the settings, perhaps by the user...
-                audio_rec_path = fs::path(audioRecLoc.toStdString());
-            } else {
-                // We must create a new, default path by scratch...
-                audio_rec_path = fs::path(fileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::MusicLocation)).toStdString());
-            }
-
-            if (fs::exists(audio_rec_path, ec) && fs::is_directory(audio_rec_path, ec)) {
-                // The given path already exists! Nothing more needs to be done with it...
-            } else {
-                // We need to create this given path firstly...
-                if (!fs::create_directory(audio_rec_path, ec)) {
-                    throw std::runtime_error(tr("An issue was encountered while creating a path for audio file storage!").toStdString());
-                }
-            }
-
-            rec_audio_codec_thread = std::thread(&GkAudioEncoding::recordAudioFile, gkAudioEncoding, audio_rec_path,
-                                         GkAudioFramework::CodecSupport::OggVorbis,
-                                         GkAudioFramework::Bitrate::VBR);
-            rec_audio_codec_thread.detach();
-
-            return;
-        }
-    } catch (const std::exception &e) {
-        QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
-    } catch (const sys::system_error &e) {
-        ec = e.code();
-        QMessageBox::warning(this, tr("Error!"), ec.message().c_str(), QMessageBox::Ok);
-    }
 
     return;
 }
@@ -805,11 +768,8 @@ void MainWindow::uponExit()
  */
 void MainWindow::stopAudioCodecRec(const bool &recording_is_started)
 {
-    if (!recording_is_started) {
-        if (rec_audio_codec_thread.joinable()) {
-            rec_audio_codec_thread.join();
-        }
-    }
+    // TODO: Enter code related to recording codecs here!
+    Q_UNUSED(recording_is_started);
 
     return;
 }

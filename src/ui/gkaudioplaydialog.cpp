@@ -37,8 +37,19 @@
 
 #include "gkaudioplaydialog.hpp"
 #include "ui_gkaudioplaydialog.h"
+#include <boost/filesystem.hpp>
+#include <boost/exception/all.hpp>
+#include <exception>
+#include <QSettings>
+#include <QMessageBox>
 
 using namespace GekkoFyre;
+using namespace Database;
+using namespace Settings;
+using namespace Audio;
+
+namespace fs = boost::filesystem;
+namespace sys = boost::system;
 
 GkAudioPlayDialog::GkAudioPlayDialog(std::shared_ptr<GkLevelDb> database,
                                      QPointer<GkAudioDecoding> audio_decoding,
@@ -61,18 +72,23 @@ GkAudioPlayDialog::~GkAudioPlayDialog()
     delete ui;
 }
 
+/**
+ * @brief GkAudioPlayDialog::on_pushButton_reset_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
 void GkAudioPlayDialog::on_pushButton_reset_clicked()
 {
+    //
+    // Return everything back to its previous state, or as close to it as possible!
+    //
+
     return;
 }
 
 void GkAudioPlayDialog::on_pushButton_close_clicked()
 {
-    return;
-}
+    this->close();
 
-void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
-{
     return;
 }
 
@@ -81,17 +97,32 @@ void GkAudioPlayDialog::on_pushButton_playback_stop_clicked()
     return;
 }
 
-void GkAudioPlayDialog::on_pushButton_playback_skip_back_clicked()
-{
-    return;
-}
-
-void GkAudioPlayDialog::on_pushButton_playback_skip_forward_clicked()
-{
-    return;
-}
-
 void GkAudioPlayDialog::on_pushButton_playback_browse_file_loc_clicked()
 {
+    return;
+}
+
+void GkAudioPlayDialog::on_pushButton_playback_record_toggled(bool checked)
+{
+    emit beginRecording(checked);
+
+    return;
+}
+
+void GkAudioPlayDialog::on_pushButton_playback_play_toggled(bool checked)
+{
+    Q_UNUSED(checked);
+    return;
+}
+
+void GkAudioPlayDialog::on_pushButton_playback_skip_forward_toggled(bool checked)
+{
+    Q_UNUSED(checked);
+    return;
+}
+
+void GkAudioPlayDialog::on_pushButton_playback_skip_back_toggled(bool checked)
+{
+    Q_UNUSED(checked);
     return;
 }

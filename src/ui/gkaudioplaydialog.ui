@@ -36,18 +36,262 @@
         </property>
         <widget class="QWidget" name="tab_playback">
          <attribute name="title">
-          <string>Playback</string>
+          <string>Playback &amp;&amp; Record</string>
          </attribute>
          <layout class="QVBoxLayout" name="verticalLayout_3">
           <item>
-           <widget class="QFrame" name="frame_playback_inner">
-            <property name="frameShape">
-             <enum>QFrame::StyledPanel</enum>
-            </property>
+           <widget class="QScrollArea" name="scrollArea">
             <property name="frameShadow">
-             <enum>QFrame::Raised</enum>
+             <enum>QFrame::Plain</enum>
             </property>
-            <layout class="QVBoxLayout" name="verticalLayout_4">
+            <property name="horizontalScrollBarPolicy">
+             <enum>Qt::ScrollBarAlwaysOff</enum>
+            </property>
+            <property name="widgetResizable">
+             <bool>true</bool>
+            </property>
+            <widget class="QWidget" name="scrollAreaWidgetContents">
+             <property name="geometry">
+              <rect>
+               <x>0</x>
+               <y>0</y>
+               <width>555</width>
+               <height>424</height>
+              </rect>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_4">
+              <item>
+               <widget class="QGroupBox" name="groupBox_playback_file_details">
+                <property name="title">
+                 <string>File Details</string>
+                </property>
+                <layout class="QFormLayout" name="formLayout">
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="label_playback_file_loc">
+                   <property name="text">
+                    <string>Location: </string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QFrame" name="frame_playback_file_location">
+                   <property name="frameShape">
+                    <enum>QFrame::StyledPanel</enum>
+                   </property>
+                   <property name="frameShadow">
+                    <enum>QFrame::Raised</enum>
+                   </property>
+                   <layout class="QHBoxLayout" name="horizontalLayout_2">
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <item>
+                     <widget class="QLineEdit" name="lineEdit_playback_file_location">
+                      <property name="readOnly">
+                       <bool>true</bool>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QPushButton" name="pushButton_playback_browse_file_loc">
+                      <property name="text">
+                       <string>Browse</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item row="1" column="0">
+                  <widget class="QLabel" name="label_playback_file_size">
+                   <property name="text">
+                    <string>File Size: </string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="1">
+                  <widget class="QLineEdit" name="lineEdit_playback_file_size">
+                   <property name="readOnly">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QGroupBox" name="groupBox_playback_recording">
+                <property name="title">
+                 <string>Recording</string>
+                </property>
+                <layout class="QFormLayout" name="formLayout_3">
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="label_playback_rec_codec">
+                   <property name="text">
+                    <string>Codec: </string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QComboBox" name="comboBox_playback_rec_codec"/>
+                 </item>
+                 <item row="1" column="0">
+                  <widget class="QLabel" name="label_playback_rec_bitrate">
+                   <property name="text">
+                    <string>Bitrate: </string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="1">
+                  <widget class="QComboBox" name="comboBox_playback_rec_bitrate"/>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QGroupBox" name="groupBox_playback_controls">
+                <property name="title">
+                 <string>Controls</string>
+                </property>
+                <layout class="QHBoxLayout" name="horizontalLayout_3">
+                 <item>
+                  <widget class="QPushButton" name="pushButton_playback_skip_forward">
+                   <property name="text">
+                    <string>&gt;&gt;</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="pushButton_playback_play">
+                   <property name="text">
+                    <string>Play</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="pushButton_playback_record">
+                   <property name="text">
+                    <string>Record</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="pushButton_playback_stop">
+                   <property name="text">
+                    <string>Stop</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="pushButton_playback_skip_back">
+                   <property name="text">
+                    <string>&lt;&lt;</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QGroupBox" name="groupBox_playback_information">
+                <property name="title">
+                 <string>Information</string>
+                </property>
+                <layout class="QFormLayout" name="formLayout_2">
+                 <item row="1" column="0">
+                  <widget class="QLabel" name="label_playback_audio_codec">
+                   <property name="text">
+                    <string>Audio Codec: </string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="1">
+                  <widget class="QLineEdit" name="lineEdit_playback_audio_codec">
+                   <property name="readOnly">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="0">
+                  <widget class="QLabel" name="label_playback_bitrate">
+                   <property name="text">
+                    <string>Bitrate: </string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="1">
+                  <widget class="QLineEdit" name="lineEdit_playback_bitrate">
+                   <property name="readOnly">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="3" column="0">
+                  <widget class="QLabel" name="label_playback_no_channels">
+                   <property name="text">
+                    <string>No. Channels: </string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="3" column="1">
+                  <widget class="QLineEdit" name="lineEdit_playback_no_channels">
+                   <property name="readOnly">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QProgressBar" name="progressBar_playback">
+                   <property name="value">
+                    <number>0</number>
+                   </property>
+                   <property name="textVisible">
+                    <bool>false</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="0">
+                  <spacer name="horizontalSpacer_6">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="tab_api_info">
+         <attribute name="title">
+          <string>API Info</string>
+         </attribute>
+         <layout class="QVBoxLayout" name="verticalLayout_5">
+          <item>
+           <widget class="QGroupBox" name="groupBox_audio_api_details">
+            <property name="title">
+             <string>Details</string>
+            </property>
+            <layout class="QHBoxLayout" name="horizontalLayout_11">
              <property name="leftMargin">
               <number>0</number>
              </property>
@@ -61,157 +305,229 @@
               <number>0</number>
              </property>
              <item>
-              <widget class="QGroupBox" name="groupBox_playback_file_details">
-               <property name="title">
-                <string>File Details</string>
+              <widget class="QFrame" name="frame_api_details">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
                </property>
-               <layout class="QFormLayout" name="formLayout">
-                <item row="0" column="0">
-                 <widget class="QLabel" name="label_playback_file_loc">
-                  <property name="text">
-                   <string>Location: </string>
+               <property name="frameShape">
+                <enum>QFrame::StyledPanel</enum>
+               </property>
+               <property name="frameShadow">
+                <enum>QFrame::Raised</enum>
+               </property>
+               <layout class="QVBoxLayout" name="verticalLayout_15">
+                <item>
+                 <spacer name="horizontalSpacer_4">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
                   </property>
-                 </widget>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
                 </item>
-                <item row="0" column="1">
-                 <widget class="QFrame" name="frame_playback_file_location">
+               </layout>
+              </widget>
+             </item>
+             <item>
+              <widget class="QFrame" name="frame_api_details_2">
+               <property name="frameShape">
+                <enum>QFrame::StyledPanel</enum>
+               </property>
+               <property name="frameShadow">
+                <enum>QFrame::Raised</enum>
+               </property>
+               <layout class="QVBoxLayout" name="verticalLayout_13">
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <widget class="QFrame" name="frame_api_details_inner">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
                   <property name="frameShape">
                    <enum>QFrame::StyledPanel</enum>
                   </property>
                   <property name="frameShadow">
                    <enum>QFrame::Raised</enum>
                   </property>
-                  <layout class="QHBoxLayout" name="horizontalLayout_2">
-                   <property name="leftMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="topMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="rightMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="bottomMargin">
-                    <number>0</number>
-                   </property>
+                  <layout class="QVBoxLayout" name="verticalLayout_17">
                    <item>
-                    <widget class="QLineEdit" name="lineEdit_playback_file_location">
-                     <property name="readOnly">
-                      <bool>true</bool>
+                    <spacer name="verticalSpacer_2">
+                     <property name="orientation">
+                      <enum>Qt::Vertical</enum>
                      </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>20</width>
+                       <height>91</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QFrame" name="frame_api_details_inner_2">
+                  <property name="frameShape">
+                   <enum>QFrame::StyledPanel</enum>
+                  </property>
+                  <property name="frameShadow">
+                   <enum>QFrame::Raised</enum>
+                  </property>
+                  <layout class="QVBoxLayout" name="verticalLayout_16">
+                   <item>
+                    <widget class="QFrame" name="frame">
+                     <property name="frameShape">
+                      <enum>QFrame::StyledPanel</enum>
+                     </property>
+                     <property name="frameShadow">
+                      <enum>QFrame::Raised</enum>
+                     </property>
+                     <layout class="QHBoxLayout" name="horizontalLayout_13">
+                      <item>
+                       <spacer name="horizontalSpacer_5">
+                        <property name="orientation">
+                         <enum>Qt::Horizontal</enum>
+                        </property>
+                        <property name="sizeHint" stdset="0">
+                         <size>
+                          <width>40</width>
+                          <height>20</height>
+                         </size>
+                        </property>
+                       </spacer>
+                      </item>
+                      <item>
+                       <widget class="QLabel" name="label_version_holder">
+                        <property name="text">
+                         <string>Version:</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QLabel" name="label_pa_version">
+                        <property name="text">
+                         <string>&lt;version&gt;</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <spacer name="horizontalSpacer_3">
+                        <property name="orientation">
+                         <enum>Qt::Horizontal</enum>
+                        </property>
+                        <property name="sizeHint" stdset="0">
+                         <size>
+                          <width>40</width>
+                          <height>20</height>
+                         </size>
+                        </property>
+                       </spacer>
+                      </item>
+                     </layout>
                     </widget>
                    </item>
                    <item>
-                    <widget class="QPushButton" name="pushButton_playback_browse_file_loc">
-                     <property name="text">
-                      <string>Browse</string>
+                    <widget class="QTextEdit" name="textEdit_pa_version_text">
+                     <property name="documentTitle">
+                      <string notr="true"/>
+                     </property>
+                     <property name="undoRedoEnabled">
+                      <bool>false</bool>
+                     </property>
+                     <property name="readOnly">
+                      <bool>true</bool>
+                     </property>
+                     <property name="placeholderText">
+                      <string>&lt;PortAudio version information&gt;</string>
                      </property>
                     </widget>
                    </item>
                   </layout>
                  </widget>
                 </item>
-                <item row="1" column="0">
-                 <widget class="QLabel" name="label_playback_file_size">
-                  <property name="text">
-                   <string>File Size: </string>
+                <item>
+                 <widget class="QFrame" name="frame_api_details_inner_3">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
                   </property>
-                 </widget>
-                </item>
-                <item row="1" column="1">
-                 <widget class="QLineEdit" name="lineEdit_playback_file_size">
-                  <property name="readOnly">
-                   <bool>true</bool>
+                  <property name="frameShape">
+                   <enum>QFrame::StyledPanel</enum>
                   </property>
+                  <property name="frameShadow">
+                   <enum>QFrame::Raised</enum>
+                  </property>
+                  <layout class="QVBoxLayout" name="verticalLayout_18">
+                   <item>
+                    <spacer name="verticalSpacer_4">
+                     <property name="orientation">
+                      <enum>Qt::Vertical</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>20</width>
+                       <height>91</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                  </layout>
                  </widget>
                 </item>
                </layout>
               </widget>
              </item>
              <item>
-              <widget class="QGroupBox" name="groupBox_playback_controls">
-               <property name="title">
-                <string>Controls</string>
+              <widget class="QFrame" name="frame_api_details_3">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
                </property>
-               <layout class="QHBoxLayout" name="horizontalLayout_3">
-                <item>
-                 <widget class="QPushButton" name="pushButton_playback_skip_forward">
-                  <property name="text">
-                   <string>&gt;&gt;</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="pushButton_playback_play">
-                  <property name="text">
-                   <string>Play</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="pushButton_playback_stop">
-                  <property name="text">
-                   <string>Stop</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="pushButton_playback_skip_back">
-                  <property name="text">
-                   <string>&lt;&lt;</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </widget>
-             </item>
-             <item>
-              <widget class="QGroupBox" name="groupBox_playback_information">
-               <property name="title">
-                <string>Information</string>
+               <property name="frameShape">
+                <enum>QFrame::StyledPanel</enum>
                </property>
-               <layout class="QFormLayout" name="formLayout_2">
-                <item row="0" column="0">
-                 <widget class="QLabel" name="label_playback_audio_codec">
-                  <property name="text">
-                   <string>Audio Codec: </string>
+               <property name="frameShadow">
+                <enum>QFrame::Raised</enum>
+               </property>
+               <layout class="QVBoxLayout" name="verticalLayout_14">
+                <item>
+                 <spacer name="horizontalSpacer_2">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
                   </property>
-                 </widget>
-                </item>
-                <item row="0" column="1">
-                 <widget class="QLineEdit" name="lineEdit_playback_audio_codec">
-                  <property name="readOnly">
-                   <bool>true</bool>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
                   </property>
-                 </widget>
-                </item>
-                <item row="1" column="0">
-                 <widget class="QLabel" name="label_playback_bitrate">
-                  <property name="text">
-                   <string>Bitrate: </string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="1">
-                 <widget class="QLineEdit" name="lineEdit_playback_bitrate">
-                  <property name="readOnly">
-                   <bool>true</bool>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="0">
-                 <widget class="QLabel" name="label_playback_no_channels">
-                  <property name="text">
-                   <string>No. Channels: </string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="1">
-                 <widget class="QLineEdit" name="lineEdit_playback_no_channels">
-                  <property name="readOnly">
-                   <bool>true</bool>
-                  </property>
-                 </widget>
+                 </spacer>
                 </item>
                </layout>
               </widget>
@@ -219,25 +535,7 @@
             </layout>
            </widget>
           </item>
-          <item>
-           <spacer name="verticalSpacer">
-            <property name="orientation">
-             <enum>Qt::Vertical</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>20</width>
-              <height>40</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
          </layout>
-        </widget>
-        <widget class="QWidget" name="tab_api_info">
-         <attribute name="title">
-          <string>API Info</string>
-         </attribute>
         </widget>
        </widget>
       </item>

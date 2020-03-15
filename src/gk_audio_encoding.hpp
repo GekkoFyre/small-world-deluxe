@@ -68,11 +68,10 @@ public:
                              QObject *parent = nullptr);
     virtual ~GkAudioEncoding();
 
-    void recordAudioFile(const boost::filesystem::path &filePath, const GkAudioFramework::CodecSupport &codec,
-                         const GkAudioFramework::Bitrate &bitrate);
+    void recordAudioFile(const GkAudioFramework::CodecSupport &codec, const GkAudioFramework::Bitrate &bitrate);
 
 signals:
-    void recAudioFrameOgg(const std::vector<signed char> &audio_rec, const int &buf_size,
+    void recAudioFrameOgg(std::vector<signed char> &audio_rec, const int &buf_size,
                           const GkAudioFramework::Bitrate &bitrate,
                           const boost::filesystem::path &filePath);
     void recAudioFramePcm(const std::vector<short> &audio_rec, const int &buf_size,
@@ -117,3 +116,6 @@ private:
 
 };
 };
+
+Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::Bitrate);
+Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::CodecSupport);

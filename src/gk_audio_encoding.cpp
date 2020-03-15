@@ -42,6 +42,7 @@
 #include <iterator>
 #include <algorithm>
 #include <QStandardPaths>
+#include <QMessageBox>
 
 #ifdef __cplusplus
 extern "C"
@@ -84,6 +85,9 @@ GkAudioEncoding::GkAudioEncoding(std::shared_ptr<FileIo> fileIo,
                                  Database::Settings::Audio::GkDevice input_device,
                                  QObject *parent)
 {
+    qRegisterMetaType<GekkoFyre::GkAudioFramework::Bitrate>("GekkoFyre::GkAudioFramework::Bitrate");
+    qRegisterMetaType<GekkoFyre::GkAudioFramework::CodecSupport>("GekkoFyre::GkAudioFramework::CodecSupport");
+
     gkFileIo = fileIo;
     gkAudioBuf = audio_buf;
     gkStringFuncs = stringFuncs;
@@ -94,10 +98,10 @@ GkAudioEncoding::GkAudioEncoding(std::shared_ptr<FileIo> fileIo,
     recordingActive = false;
     ogg_buf_counter = 0;
 
-    QObject::connect(this, SIGNAL(recAudioFrameOgg(const std::vector<signed char> &, const int &, const Bitrate &, const boost::filesystem::path &)),
-                     this, SLOT(oggVorbisBuf(const std::vector<signed char> &, const int &, const Bitrate &, const boost::filesystem::path &)));
-    QObject::connect(this, SIGNAL(submitOggVorbisBuf(const std::vector<signed char> &, const Bitrate &, const boost::filesystem::path &)),
-                     this, SLOT(recordOggVorbis(const std::vector<signed char> &, const Bitrate &, const boost::filesystem::path &)));
+    QObject::connect(this, SIGNAL(recAudioFrameOgg(std::vector<signed char> &, const int &, const GkAudioFramework::Bitrate &, const boost::filesystem::path &)),
+                     this, SLOT(oggVorbisBuf(std::vector<signed char> &, const int &, const GkAudioFramework::Bitrate &, const boost::filesystem::path &)));
+    QObject::connect(this, SIGNAL(submitOggVorbisBuf(const std::vector<signed char> &, const GkAudioFramework::Bitrate &, const boost::filesystem::path &)),
+                     this, SLOT(recordOggVorbis(const std::vector<signed char> &, const GkAudioFramework::Bitrate &, const boost::filesystem::path &)));
 }
 
 GkAudioEncoding::~GkAudioEncoding()
@@ -110,14 +114,34 @@ GkAudioEncoding::~GkAudioEncoding()
  * @param codec
  * @param bitrate
  */
-void GkAudioEncoding::recordAudioFile(const boost::filesystem::path &filePath, const CodecSupport &codec,
-                                      const Bitrate &bitrate)
+void GkAudioEncoding::recordAudioFile(const CodecSupport &codec, const Bitrate &bitrate)
 {
     std::mutex record_audio_file_mtx;
     std::lock_guard<std::mutex> lck_guard(record_audio_file_mtx);
+    sys::error_code ec;
 
     try {
         fs::path default_path = fs::path(gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::MusicLocation), true).toStdString());
+
+        QString audioRecLoc = gkDb->read_misc_audio_settings(audio_cfg::AudioRecLoc);
+        fs::path audio_rec_path;
+
+        if (!audioRecLoc.isEmpty()) {
+            // There exists a given path that has been saved previously in the settings, perhaps by the user...
+            audio_rec_path = fs::path(audioRecLoc.toStdString());
+        } else {
+            // We must create a new, default path by scratch...
+            audio_rec_path = fs::path(gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::MusicLocation)).toStdString());
+        }
+
+        if (fs::exists(audio_rec_path, ec) && fs::is_directory(audio_rec_path, ec)) {
+            // The given path already exists! Nothing more needs to be done with it...
+        } else {
+            // We need to create this given path firstly...
+            if (!fs::create_directory(audio_rec_path, ec)) {
+                throw std::runtime_error(tr("An issue was encountered while creating a path for audio file storage!").toStdString());
+            }
+        }
 
         if (codec == OggVorbis) {
             // Using Ogg Vorbis
@@ -132,7 +156,7 @@ void GkAudioEncoding::recordAudioFile(const boost::filesystem::path &filePath, c
                     throw std::runtime_error(tr("Audio data buffer frame is empty!").toStdString());
                 }
 
-                emit recAudioFrameOgg(audio_frame_vec, AUDIO_CODECS_OGG_VORBIS_BUFFER_SIZE, bitrate, default_path);
+                emit recAudioFrameOgg(audio_frame_vec, AUDIO_CODECS_OGG_VORBIS_BUFFER_SIZE, bitrate, audio_rec_path);
             }
         } else if (codec == FLAC) {
             // Using FLAC
@@ -143,9 +167,10 @@ void GkAudioEncoding::recordAudioFile(const boost::filesystem::path &filePath, c
             throw std::invalid_argument(tr("Recording with unknown media (i.e. codec) format!").toStdString());
         }
     } catch (const std::exception &e) {
-        HWND hwnd_record_audio_file_vec;
-        gkStringFuncs->modalDlgBoxOk(hwnd_record_audio_file_vec, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
-        DestroyWindow(hwnd_record_audio_file_vec);
+        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+    } catch (const sys::system_error &e) {
+        ec = e.code();
+        QMessageBox::warning(nullptr, tr("Error!"), ec.message().c_str(), QMessageBox::Ok);
     }
 
     return;

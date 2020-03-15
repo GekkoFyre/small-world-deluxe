@@ -230,7 +230,6 @@ private:
     //
     std::timed_mutex btn_record_mtx;
     std::future<GekkoFyre::AmateurRadio::Control::Radio *> rig_thread;
-    std::thread rec_audio_codec_thread;
 
     GekkoFyre::AmateurRadio::Control::Radio *radio;
     QTimer *timer;
