@@ -45,6 +45,7 @@ image: burningdaylight/docker-mingw-qt5:latest
 
 stages:
     - sworld_debug_ubuntu_x86_64
+    - test
     - sworld_debug_mingw_x86_64
     - test
 
@@ -56,82 +57,6 @@ include:
 variables:
     SAST_DISABLE_DIND: "true"
     DS_DISABLE_DIND: "true"
-
-### --------------------------------------------------------------------------------------------------- ###
-
-before_script:
-    - mkdir -p third-party
-    - cd third-party
-    - wget http://git.savannah.gnu.org/cgit/texinfo.git/snapshot/texinfo-6.6.tar.gz
-    - tar -xvzf texinfo-6.6.tar.gz
-    - cd texinfo-6.6
-    - sh ./autogen.sh
-    - ./configure --host=x86_64-w64-mingw32 --target=x86_64-w64-mingw32 && make -j 4 && sudo make install
-    - cd ./..
-    - git clone https://github.com/libusb/libusb-compat-0.1.git
-    - cd libusb-compat-0.1 && sh bootstrap.sh && ./configure --host=x86_64-w64-mingw32 --target=x86_64-w64-mingw32 && make -j 4 && make check && sudo make install
-    - cd ./..
-    - wget https://github.com/Hamlib/Hamlib/releases/download/3.3/hamlib-3.3.tar.gz
-    - tar -xvzf hamlib-3.3.tar.gz
-    - cd hamlib-3.3 && sudo ./configure --host=x86_64-w64-mingw32 --target=x86_64-w64-mingw32 && make -j 4 && sudo make install
-    - cd ./../..
-
-sworld_debug_ubuntu_x86_64:
-    stage: sworld_debug_ubuntu_x86_64
-    image: burningdaylight/docker-mingw-qt5:latest
-    cache:
-        paths:
-            - "binaries/*.deb"
-    tags:
-        - "debug-build"
-    script:
-        - pacman -Syu
-        - pacman -Sy boost
-        - pacman -Sy boost-libs
-        - pacman -Sy qt5-base
-        - pacman -Sy qt5-imageformats
-        - pacman -Sy qt5-multimedia
-        - pacman -Sy qt5-sensors
-        - pacman -Sy qt5-serialbus
-        - pacman -Sy qt5-serialport
-        - pacman -Sy qt5-svg
-        - pacman -Sy qt5-systems
-        - pacman -Sy qt5-tools
-        - pacman -Sy qt5-translations
-        - pacman -Sy qt5-wayland
-        - pacman -Sy qt5-xmlpatterns
-        - pacman -Sy portaudio
-        - pacman -Sy zstd
-        - pacman -Sy leveldb
-        - pacman -Sy lz4
-        - pacman -Sy zlib
-        - pacman -Sy libusb
-        - pacman -Sy fftw
-        - pacman -Sy qwt
-        - pacman -Sy qwtpolar
-        - pacman -Sy libogg
-        - pacman -Sy libvorbis
-        - pacman -Sy texinfo
-        - pacman -Sy hamlib
-        - yay -S --noedit mingw-w64-zstd
-        - yay -S --noedit mingw-w64-lz4
-        - yay -S --noedit mingw-w64-zlib
-        - yay -S --noedit mingw-w64-leveldb
-        - yay -S --noedit mingw-w64-portaudio
-        - yay -S --noedit mingw-w64-libusb
-        - yay -S --noedit mingw-w64-fftw
-        - yay -S --noedit mingw-w64-qwt
-        - yay -S --noedit mingw-w64-libogg
-        - yay -S --noedit mingw-w64-libvorbis
-        - mkdir -p artifact-build
-        - cp -v /builds/amateur-radio/small-world-deluxe/src/sworld_res.rcc /builds/amateur-radio/small-world-deluxe/artifact-build/sworld_res.rcc
-        - cd artifact-build
-        - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug ..
-        - make -j 4
-        - cd ..
-    after_script:
-        - echo "Finished execution of both the Linux build and the primary stage!"
-    when: always
 
 ### --------------------------------------------------------------------------------------------------- ###
 
@@ -147,21 +72,95 @@ sworld_debug_mingw_x86_64:
     tags:
         - "debug-build"
     script:
+        - pacman -Sy
         - pacman -Syu
+        - yay -S --noedit mingw-w64-zstd
+        - yay -S --noedit mingw-w64-lz4
+        - yay -S --noedit mingw-w64-zlib
+        - yay -S --noedit mingw-w64-leveldb
+        - yay -S --noedit mingw-w64-portaudio
+        - yay -S --noedit mingw-w64-libusb
+        - yay -S --noedit mingw-w64-fftw
+        - yay -S --noedit mingw-w64-qwt
+        - yay -S --noedit mingw-w64-libogg
+        - yay -S --noedit mingw-w64-libvorbis
+        - mkdir -p third-party
+        - cd third-party
+        - wget http://git.savannah.gnu.org/cgit/texinfo.git/snapshot/texinfo-6.6.tar.gz
+        - tar -xvzf texinfo-6.6.tar.gz
+        - cd texinfo-6.6
+        - sh ./autogen.sh
+        - ./configure --host=x86_64-w64-mingw32 --target=x86_64-w64-mingw32 && make -j 4 && sudo make install
+        - cd ./..
+        - git clone https://github.com/libusb/libusb-compat-0.1.git
+        - cd libusb-compat-0.1 && sh bootstrap.sh && ./configure --host=x86_64-w64-mingw32 --target=x86_64-w64-mingw32 && make -j 4 && make check && sudo make install
+        - cd ./..
+        - wget https://github.com/Hamlib/Hamlib/releases/download/3.3/hamlib-3.3.tar.gz
+        - tar -xvzf hamlib-3.3.tar.gz
+        - cd hamlib-3.3 && ./configure --host=x86_64-w64-mingw32 --target=x86_64-w64-mingw32 && make -j 4 && sudo make install
+        - cd ./..
         - wget http://www.portaudio.com/archives/pa_stable_v190600_20161030.tgz
         - tar -xvzf pa_stable_v190600_20161030.tgz
         - cd portaudio && cd bindings/cpp && ./configure --host=x86_64-w64-mingw32 --target=x86_64-w64-mingw32 && make -j 4 && sudo make install
         - cd ./../../..
         - mkdir -p artifact-build
-        - cp -v /builds/amateur-radio/small-world-deluxe/src/sworld_res.rcc /builds/amateur-radio/small-world-deluxe/artifact-build/sworld_res.rcc
         - cd artifact-build
         - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE="~/toolchains/x86_64-w64-mingw32_linux.cmake" ..
         - make -j 4
         - cd ..
     after_script:
-        - echo "Finished execution of Microsoft Window's (i.e. MinGW) build and secondary stage!"
+        - echo "Finished execution of Microsoft Window's (i.e. MinGW) build and primary stage!"
     dependencies:
         - sworld_debug_ubuntu_x86_64
+    when: always
+
+### --------------------------------------------------------------------------------------------------- ###
+
+sworld_debug_ubuntu_x86_64:
+    stage: sworld_debug_ubuntu_x86_64
+    image: ubuntu/ubuntu:latest
+    cache:
+        paths:
+            - "binaries/*.deb"
+    tags:
+        - "debug-build"
+    script:
+        - pacman -Sy
+        - pacman -Syu
+        - pacman -S boost
+        - pacman -S boost-libs
+        - pacman -S qt5-base
+        - pacman -S qt5-imageformats
+        - pacman -S qt5-multimedia
+        - pacman -S qt5-sensors
+        - pacman -S qt5-serialbus
+        - pacman -S qt5-serialport
+        - pacman -S qt5-svg
+        - pacman -S qt5-systems
+        - pacman -S qt5-tools
+        - pacman -S qt5-translations
+        - pacman -S qt5-wayland
+        - pacman -S qt5-xmlpatterns
+        - pacman -S portaudio
+        - pacman -S zstd
+        - pacman -S leveldb
+        - pacman -S lz4
+        - pacman -S zlib
+        - pacman -S libusb
+        - pacman -S fftw
+        - pacman -S qwt
+        - pacman -S qwtpolar
+        - pacman -S libogg
+        - pacman -S libvorbis
+        - pacman -S texinfo
+        - pacman -S hamlib
+        - mkdir -p artifact-build
+        - cd artifact-build
+        - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug ..
+        - make -j 4
+        - cd ..
+    after_script:
+        - echo "Finished execution of both the Linux build and the secondary stage!"
     when: always
 
 ### --------------------------------------------------------------------------------------------------- ###
@@ -170,8 +169,6 @@ sworld_debug_mingw_x86_64:
 # https://github.com/antiagainst/codeclimate-cppcheck
 #
 spotbugs-sast:
-    dependencies:
-        - sworld_debug_mingw_x86_64
     script:
         - /analyzer run -compile=false
     variables:
