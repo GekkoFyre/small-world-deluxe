@@ -46,7 +46,7 @@ image: burningdaylight/docker-mingw-qt5:latest
 stages:
     - sworld_debug_ubuntu_x86_64
     - sworld_debug_mingw_x86_64
-    - spotbugs-sast
+    - test
 
 include:
     - template: SAST.gitlab-ci.yml
