@@ -12,7 +12,7 @@
 #   then thank you from the bottom of our hearts for making use of our hard work, sweat
 #   and tears in whatever you are implementing this into!
 #
-#   Copyright (C) 2019. GekkoFyre.
+#   Copyright (C) 2020. GekkoFyre.
 #
 #   Small World Deluxe is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -31,30 +31,34 @@
 #   The latest source code updates can be obtained from [ 1 ] below at your
 #   discretion. A web-browser or the 'git' application may be required.
 #
-#   [ 1 ] - https://git.gekkofyre.io/amateur-radio/small-world-deluxe
+#   [ 1 ] - https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe
 #
 
 #
-# https://docs.gitlab.com/ee/ci/yaml/
-# https://gitlab.com/gitlab-org/gitlab-runner/issues/248
-# https://stackoverflow.com/questions/19383887/how-to-use-sudo-in-build-script-for-gitlab-ci
+# https://hub.docker.com/r/burningdaylight/docker-mingw-qt5
+# https://www.archlinux.org/packages/
 #
 
 ### --------------------------------------------------------------------------------------------------- ###
+
+image: burningdaylight/docker-mingw-qt5:latest
 
 stages:
     - sworld_debug_ubuntu_x86_64
-    - sworld_cpplint_ubuntu_x86_64
     - sworld_debug_mingw_x86_64
+    - spotbugs-sast
+
+include:
+    - template: SAST.gitlab-ci.yml
+    - template: Dependency-Scanning.gitlab-ci.yml
+    - template: License-Scanning.gitlab-ci.yml
+
+variables:
+    SAST_DISABLE_DIND: "true"
+    DS_DISABLE_DIND: "true"
 
 ### --------------------------------------------------------------------------------------------------- ###
 
-#
-# For MinGW libraries
-# https://hub.docker.com/r/mmozeiko/mingw-w64/dockerfile
-# https://sourceforge.net/p/mingw-w64/wiki2/CrossQuickstart/
-# http://files.ettus.com/manual/page_build_guide.html
-#
 before_script:
     - mkdir -p third-party
     - cd third-party
@@ -74,63 +78,104 @@ before_script:
 
 sworld_debug_ubuntu_x86_64:
     stage: sworld_debug_ubuntu_x86_64
-    image: gekkofyre/ubuntu:latest
+    image: burningdaylight/docker-mingw-qt5:latest
     cache:
         paths:
             - "binaries/*.deb"
     tags:
         - "debug-build"
     script:
+        - pacman -Syu
+        - pacman -Sy boost
+        - pacman -Sy boost-libs
+        - pacman -Sy qt5-base
+        - pacman -Sy qt5-imageformats
+        - pacman -Sy qt5-multimedia
+        - pacman -Sy qt5-sensors
+        - pacman -Sy qt5-serialbus
+        - pacman -Sy qt5-serialport
+        - pacman -Sy qt5-svg
+        - pacman -Sy qt5-systems
+        - pacman -Sy qt5-tools
+        - pacman -Sy qt5-translations
+        - pacman -Sy qt5-wayland
+        - pacman -Sy qt5-xmlpatterns
+        - pacman -Sy portaudio
+        - pacman -Sy zstd
+        - pacman -Sy leveldb
+        - pacman -Sy lz4
+        - pacman -Sy zlib
+        - pacman -Sy libusb
+        - pacman -Sy fftw
+        - pacman -Sy qwt
+        - pacman -Sy qwtpolar
+        - pacman -Sy libogg
+        - pacman -Sy libvorbis
+        - pacman -Sy texinfo
+        - pacman -Sy hamlib
+        - yay -S --noedit mingw-w64-zstd
+        - yay -S --noedit mingw-w64-lz4
+        - yay -S --noedit mingw-w64-zlib
+        - yay -S --noedit mingw-w64-leveldb
+        - yay -S --noedit mingw-w64-portaudio
+        - yay -S --noedit mingw-w64-libusb
+        - yay -S --noedit mingw-w64-fftw
+        - yay -S --noedit mingw-w64-qwt
+        - yay -S --noedit mingw-w64-libogg
+        - yay -S --noedit mingw-w64-libvorbis
         - mkdir -p artifact-build
         - cp -v /builds/amateur-radio/small-world-deluxe/src/sworld_res.rcc /builds/amateur-radio/small-world-deluxe/artifact-build/sworld_res.rcc
         - cd artifact-build
         - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug ..
         - make -j 4
         - cd ..
-    when: always
-
-#
-# https://gitlab.com/gitlab-org/gitlab-ee/issues/3985
-# https://github.com/antiagainst/codeclimate-cppcheck
-#
-sworld_cpplint_ubuntu_x86_64:
-    stage: sworld_cpplint_ubuntu_x86_64
-    image: gekkofyre/ubuntu:latest
-    cache:
-        paths:
-            - "binaries/*.deb"
-    tags:
-        - "debug-build"
-    before_script:
-        - echo "Executing cppLint"
-    script:
-        - sudo apt-get update -y
-        - sudo apt-get install -y python-pip
-        - sudo python -m pip install cpplint
-        - "cpplint --filter=-whitespace,-legal/copyright,-readability/multiline_comment /builds/amateur-radio/small-world-deluxe/src/main.cpp"
     after_script:
-        - echo "Finished execution of cppLint"
+        - echo "Finished execution of both the Linux build and the primary stage!"
     when: always
-    dependencies:
-        - sworld_debug_ubuntu_x86_64
 
 ### --------------------------------------------------------------------------------------------------- ###
 
+#
+# https://code.gekkofyre.io/help/user/application_security/sast/index
+#
 sworld_debug_mingw_x86_64:
     stage: sworld_debug_mingw_x86_64
-    image: gekkofyre/archlinux:smallworld
+    image: burningdaylight/docker-mingw-qt5:latest
     cache:
         paths:
             - "binaries/*.exe"
     tags:
         - "debug-build"
     script:
+        - pacman -Syu
+        - wget http://www.portaudio.com/archives/pa_stable_v190600_20161030.tgz
+        - tar -xvzf pa_stable_v190600_20161030.tgz
+        - cd portaudio && cd bindings/cpp && ./configure --host=x86_64-w64-mingw32 --target=x86_64-w64-mingw32 && make -j 4 && sudo make install
+        - cd ./../../..
         - mkdir -p artifact-build
         - cp -v /builds/amateur-radio/small-world-deluxe/src/sworld_res.rcc /builds/amateur-radio/small-world-deluxe/artifact-build/sworld_res.rcc
         - cd artifact-build
         - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE="~/toolchains/x86_64-w64-mingw32_linux.cmake" ..
         - make -j 4
         - cd ..
+    after_script:
+        - echo "Finished execution of Microsoft Window's (i.e. MinGW) build and secondary stage!"
     dependencies:
         - sworld_debug_ubuntu_x86_64
     when: always
+
+### --------------------------------------------------------------------------------------------------- ###
+
+#
+# https://github.com/antiagainst/codeclimate-cppcheck
+#
+spotbugs-sast:
+    dependencies:
+        - sworld_debug_mingw_x86_64
+    script:
+        - /analyzer run -compile=false
+    variables:
+        SAST_GOSEC_LEVEL: 2
+    artifacts:
+        reports:
+            sast: gl-sast-report.json
