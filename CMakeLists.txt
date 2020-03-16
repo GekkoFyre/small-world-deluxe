@@ -111,7 +111,7 @@ else()
     message(FATAL_ERROR "Could not find the Threads library!")
 endif(Threads_FOUND)
 
-find_package(Qt5 COMPONENTS Core Gui Widgets Charts Test REQUIRED)
+find_package(Qt5 COMPONENTS Core Gui Widgets Test REQUIRED)
 
 set(Boost_USE_STATIC_LIBS ON CACHE BOOL "Use static libraries when linking Boost C++.")
 set(Boost_USE_MULTITHREADED ON CACHE BOOL "Use multithreaded libraries when linking Boost C++.")

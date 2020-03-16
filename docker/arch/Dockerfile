@@ -12,7 +12,7 @@
 #   then thank you from the bottom of our hearts for making use of our hard work, sweat
 #   and tears in whatever you are implementing this into!
 #
-#   Copyright (C) 2019. GekkoFyre.
+#   Copyright (C) 2020. GekkoFyre.
 #
 #   Small World Deluxe is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -31,12 +31,39 @@
 #   The latest source code updates can be obtained from [ 1 ] below at your
 #   discretion. A web-browser or the 'git' application may be required.
 #
-#   [ 1 ] - https://git.gekkofyre.io/amateur-radio/small-world-deluxe
+#   [ 1 ] - https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe
 #
 
-#
-# https://wiki.archlinux.org/index.php/Official_repositories#multilib
-#
-    
-# Uncomment the requisite line in `pacman.conf` and enable the `multilib` repository
-sed -i "/\[multilib\]/,/Include/"'s/^#//' /etc/pacman.conf
+# Download base image and add the proper labels
+FROM burningdaylight/docker-mingw-qt5:latest
+LABEL maintainer="Phobos D'thorga <phobos.gekko@gekkofyre.io>"
+LABEL vendor="GekkoFyre Networks"
+LABEL version="1.0"
+LABEL description="See our GitLab repository for more details: <https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe>"
+
+# Check for updates and if any, do an upgrade...
+RUN pacman -Sy --noconfirm --needed
+RUN pacman -Syu --noconfirm --needed
+
+RUN sudo 'yay -S --noconfirm "mingw-w64-zstd"'
+RUN sudo 'yay -S --noconfirm "mingw-w64-lz4"'
+RUN sudo 'yay -S --noconfirm "mingw-w64-zlib"'
+RUN sudo 'yay -S --noconfirm "mingw-w64-leveldb"'
+RUN sudo 'yay -S --noconfirm "mingw-w64-portaudio"'
+RUN sudo 'yay -S --noconfirm "mingw-w64-winpthreads"'
+RUN sudo 'yay -S --noconfirm "mingw-w64-libusb"'
+RUN sudo 'yay -S --noconfirm "mingw-w64-gflags"'
+RUN sudo 'yay -S --noconfirm "mingw-w64-fftw"'
+RUN sudo 'yay -S --noconfirm "mingw-w64-qwt"'
+RUN sudo 'yay -S --noconfirm "mingw-w64-libogg"'
+RUN sudo 'yay -S --noconfirm "mingw-w64-libvorbis"'
+
+# Cleanup any unneeded temporary files on the system
+RUN sudo 'yay -Sc --noconfirm'
+RUN pacman -Sc --noconfirm
+
+# Make sure to generate development package database used for devel update
+RUN sudo 'yay -Y --noconfirm --gendb'
+
+# Print system statistics before finally signing-off!
+RUN yay -Ps --noconfirm

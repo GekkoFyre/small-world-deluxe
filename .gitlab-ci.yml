@@ -74,6 +74,19 @@ sworld_debug_mingw_x86_64:
     script:
         - sudo pacman -Sy --noconfirm
         - sudo pacman -Syu --noconfirm
+        - yay -S mingw-w64-qt5-base --noconfirm
+        - yay -S mingw-w64-qt5-tools --noconfirm
+        - yay -S mingw-w64-qt5-serialport --noconfirm
+        - yay -S mingw-w64-qt5-sensors --noconfirm
+        - yay -S mingw-w64-qt5-imageformats --noconfirm
+        - yay -S mingw-w64-qt5-translations --noconfirm
+        - yay -S mingw-w64-qt5-svg --noconfirm
+        - yay -S mingw-w64-qt5-multimedia --noconfirm
+        - yay -S mingw-w64-qt5-xmlpatterns --noconfirm
+        - yay -S mingw-w64-qt5-winextras --noconfirm
+        - yay -S mingw-w64-qt5-charts --noconfirm
+        - yay -S mingw-w64-qt5-3d --noconfirm
+        - yay -S mingw-w64-qt5-connectivity --noconfirm
         - yay -S mingw-w64-zstd --noconfirm
         - yay -S mingw-w64-lz4 --noconfirm
         - yay -S mingw-w64-zlib --noconfirm
@@ -90,18 +103,18 @@ sworld_debug_mingw_x86_64:
         - tar -xvzf texinfo-6.6.tar.gz
         - cd texinfo-6.6
         - sh ./autogen.sh
-        - ./configure --host=x86_64-w64-mingw32 --target=x86_64-w64-mingw32 && make -j 4 && sudo make install
+        - ./configure --host=x86_64-w64-mingw32 --target=x86_64-w64-mingw32 && make -j 4 && make install
         - cd ./..
         - git clone https://github.com/libusb/libusb-compat-0.1.git
-        - cd libusb-compat-0.1 && sh bootstrap.sh && ./configure --host=x86_64-w64-mingw32 --target=x86_64-w64-mingw32 && make -j 4 && make check && sudo make install
+        - cd libusb-compat-0.1 && sh bootstrap.sh && ./configure --host=x86_64-w64-mingw32 --target=x86_64-w64-mingw32 && make -j 4 && make check && make install
         - cd ./..
         - wget https://github.com/Hamlib/Hamlib/releases/download/3.3/hamlib-3.3.tar.gz
         - tar -xvzf hamlib-3.3.tar.gz
-        - cd hamlib-3.3 && ./configure --host=x86_64-w64-mingw32 --target=x86_64-w64-mingw32 && make -j 4 && sudo make install
+        - cd hamlib-3.3 && ./configure --host=x86_64-w64-mingw32 --target=x86_64-w64-mingw32 && make -j 4 && make install
         - cd ./..
         - wget http://www.portaudio.com/archives/pa_stable_v190600_20161030.tgz
         - tar -xvzf pa_stable_v190600_20161030.tgz
-        - cd portaudio && cd bindings/cpp && ./configure --host=x86_64-w64-mingw32 --target=x86_64-w64-mingw32 && make -j 4 && sudo make install
+        - cd portaudio && cd bindings/cpp && ./configure --host=x86_64-w64-mingw32 --target=x86_64-w64-mingw32 && make -j 4 && make install
         - cd ./../../..
         - mkdir -p artifact-build
         - cd artifact-build
@@ -141,6 +154,7 @@ sworld_debug_linux_x86_64:
         - sudo pacman -S qt5-translations --noconfirm
         - sudo pacman -S qt5-wayland --noconfirm
         - sudo pacman -S qt5-xmlpatterns --noconfirm
+        - sudo pacman -S qtspell --noconfirm
         - sudo pacman -S portaudio --noconfirm
         - sudo pacman -S zstd --noconfirm
         - sudo pacman -S leveldb --noconfirm
