@@ -45,7 +45,6 @@ image: burningdaylight/docker-mingw-qt5:latest
 
 stages:
     - sworld_debug_ubuntu_x86_64
-    - test
     - sworld_debug_mingw_x86_64
     - test
 
@@ -72,18 +71,18 @@ sworld_debug_mingw_x86_64:
     tags:
         - "debug-build"
     script:
-        - sudo pacman -Sy
-        - sudo pacman -Syu
-        - sudo yay -S --noedit mingw-w64-zstd
-        - sudo yay -S --noedit mingw-w64-lz4
-        - sudo yay -S --noedit mingw-w64-zlib
-        - sudo yay -S --noedit mingw-w64-leveldb
-        - sudo yay -S --noedit mingw-w64-portaudio
-        - sudo yay -S --noedit mingw-w64-libusb
-        - sudo yay -S --noedit mingw-w64-fftw
-        - sudo yay -S --noedit mingw-w64-qwt
-        - sudo yay -S --noedit mingw-w64-libogg
-        - sudo yay -S --noedit mingw-w64-libvorbis
+        - sudo pacman -Sy --noconfirm
+        - sudo pacman -Syu --noconfirm
+        - sudo yay -S --noedit mingw-w64-zstd --noconfirm
+        - sudo yay -S --noedit mingw-w64-lz4 --noconfirm
+        - sudo yay -S --noedit mingw-w64-zlib --noconfirm
+        - sudo yay -S --noedit mingw-w64-leveldb --noconfirm
+        - sudo yay -S --noedit mingw-w64-portaudio --noconfirm
+        - sudo yay -S --noedit mingw-w64-libusb --noconfirm
+        - sudo yay -S --noedit mingw-w64-fftw --noconfirm
+        - sudo yay -S --noedit mingw-w64-qwt --noconfirm
+        - sudo yay -S --noedit mingw-w64-libogg --noconfirm
+        - sudo yay -S --noedit mingw-w64-libvorbis --noconfirm
         - mkdir -p third-party
         - cd third-party
         - wget http://git.savannah.gnu.org/cgit/texinfo.git/snapshot/texinfo-6.6.tar.gz
@@ -125,35 +124,35 @@ sworld_debug_ubuntu_x86_64:
     tags:
         - "debug-build"
     script:
-        - sudo pacman -Sy
-        - sudo pacman -Syu
-        - sudo pacman -S boost
-        - sudo pacman -S boost-libs
-        - sudo pacman -S qt5-base
-        - sudo pacman -S qt5-imageformats
-        - sudo pacman -S qt5-multimedia
-        - sudo pacman -S qt5-sensors
-        - sudo pacman -S qt5-serialbus
-        - sudo pacman -S qt5-serialport
-        - sudo pacman -S qt5-svg
-        - sudo pacman -S qt5-systems
-        - sudo pacman -S qt5-tools
-        - sudo pacman -S qt5-translations
-        - sudo pacman -S qt5-wayland
-        - sudo pacman -S qt5-xmlpatterns
-        - sudo pacman -S portaudio
-        - sudo pacman -S zstd
-        - sudo pacman -S leveldb
-        - sudo pacman -S lz4
-        - sudo pacman -S zlib
-        - sudo pacman -S libusb
-        - sudo pacman -S fftw
-        - sudo pacman -S qwt
-        - sudo pacman -S qwtpolar
-        - sudo pacman -S libogg
-        - sudo pacman -S libvorbis
-        - sudo pacman -S texinfo
-        - sudo pacman -S hamlib
+        - sudo pacman -Sy --noconfirm
+        - sudo pacman -Syu --noconfirm
+        - sudo pacman -S boost --noconfirm
+        - sudo pacman -S boost-libs --noconfirm
+        - sudo pacman -S qt5-base --noconfirm
+        - sudo pacman -S qt5-imageformats --noconfirm
+        - sudo pacman -S qt5-multimedia --noconfirm
+        - sudo pacman -S qt5-sensors --noconfirm
+        - sudo pacman -S qt5-serialbus --noconfirm
+        - sudo pacman -S qt5-serialport --noconfirm
+        - sudo pacman -S qt5-svg --noconfirm
+        - sudo pacman -S qt5-systems --noconfirm
+        - sudo pacman -S qt5-tools --noconfirm
+        - sudo pacman -S qt5-translations --noconfirm
+        - sudo pacman -S qt5-wayland --noconfirm
+        - sudo pacman -S qt5-xmlpatterns --noconfirm
+        - sudo pacman -S portaudio --noconfirm
+        - sudo pacman -S zstd --noconfirm
+        - sudo pacman -S leveldb --noconfirm
+        - sudo pacman -S lz4 --noconfirm
+        - sudo pacman -S zlib --noconfirm
+        - sudo pacman -S libusb --noconfirm
+        - sudo pacman -S fftw --noconfirm
+        - sudo pacman -S qwt --noconfirm
+        - sudo pacman -S qwtpolar --noconfirm
+        - sudo pacman -S libogg --noconfirm
+        - sudo pacman -S libvorbis --noconfirm
+        - sudo pacman -S texinfo --noconfirm
+        - sudo pacman -S hamlib --noconfirm
         - mkdir -p artifact-build
         - cd artifact-build
         - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug ..
