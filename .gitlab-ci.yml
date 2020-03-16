@@ -73,16 +73,16 @@ sworld_debug_mingw_x86_64:
     script:
         - sudo pacman -Sy --noconfirm
         - sudo pacman -Syu --noconfirm
-        - sudo yay -S --noedit mingw-w64-zstd --noconfirm
-        - sudo yay -S --noedit mingw-w64-lz4 --noconfirm
-        - sudo yay -S --noedit mingw-w64-zlib --noconfirm
-        - sudo yay -S --noedit mingw-w64-leveldb --noconfirm
-        - sudo yay -S --noedit mingw-w64-portaudio --noconfirm
-        - sudo yay -S --noedit mingw-w64-libusb --noconfirm
-        - sudo yay -S --noedit mingw-w64-fftw --noconfirm
-        - sudo yay -S --noedit mingw-w64-qwt --noconfirm
-        - sudo yay -S --noedit mingw-w64-libogg --noconfirm
-        - sudo yay -S --noedit mingw-w64-libvorbis --noconfirm
+        - yay -S --noedit mingw-w64-zstd --noconfirm
+        - yay -S --noedit mingw-w64-lz4 --noconfirm
+        - yay -S --noedit mingw-w64-zlib --noconfirm
+        - yay -S --noedit mingw-w64-leveldb --noconfirm
+        - yay -S --noedit mingw-w64-portaudio --noconfirm
+        - yay -S --noedit mingw-w64-libusb --noconfirm
+        - yay -S --noedit mingw-w64-fftw --noconfirm
+        - yay -S --noedit mingw-w64-qwt --noconfirm
+        - yay -S --noedit mingw-w64-libogg --noconfirm
+        - yay -S --noedit mingw-w64-libvorbis --noconfirm
         - mkdir -p third-party
         - cd third-party
         - wget http://git.savannah.gnu.org/cgit/texinfo.git/snapshot/texinfo-6.6.tar.gz
@@ -117,7 +117,7 @@ sworld_debug_mingw_x86_64:
 
 sworld_debug_ubuntu_x86_64:
     stage: sworld_debug_ubuntu_x86_64
-    image: ubuntu/ubuntu:latest
+    image: ubuntu:latest
     cache:
         paths:
             - "binaries/*.deb"
@@ -175,3 +175,4 @@ spotbugs-sast:
     artifacts:
         reports:
             sast: gl-sast-report.json
+    allow_failure: true
