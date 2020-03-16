@@ -72,18 +72,18 @@ sworld_debug_mingw_x86_64:
     tags:
         - "debug-build"
     script:
-        - pacman -Sy
-        - pacman -Syu
-        - yay -S --noedit mingw-w64-zstd
-        - yay -S --noedit mingw-w64-lz4
-        - yay -S --noedit mingw-w64-zlib
-        - yay -S --noedit mingw-w64-leveldb
-        - yay -S --noedit mingw-w64-portaudio
-        - yay -S --noedit mingw-w64-libusb
-        - yay -S --noedit mingw-w64-fftw
-        - yay -S --noedit mingw-w64-qwt
-        - yay -S --noedit mingw-w64-libogg
-        - yay -S --noedit mingw-w64-libvorbis
+        - sudo pacman -Sy
+        - sudo pacman -Syu
+        - sudo yay -S --noedit mingw-w64-zstd
+        - sudo yay -S --noedit mingw-w64-lz4
+        - sudo yay -S --noedit mingw-w64-zlib
+        - sudo yay -S --noedit mingw-w64-leveldb
+        - sudo yay -S --noedit mingw-w64-portaudio
+        - sudo yay -S --noedit mingw-w64-libusb
+        - sudo yay -S --noedit mingw-w64-fftw
+        - sudo yay -S --noedit mingw-w64-qwt
+        - sudo yay -S --noedit mingw-w64-libogg
+        - sudo yay -S --noedit mingw-w64-libvorbis
         - mkdir -p third-party
         - cd third-party
         - wget http://git.savannah.gnu.org/cgit/texinfo.git/snapshot/texinfo-6.6.tar.gz
@@ -125,35 +125,35 @@ sworld_debug_ubuntu_x86_64:
     tags:
         - "debug-build"
     script:
-        - pacman -Sy
-        - pacman -Syu
-        - pacman -S boost
-        - pacman -S boost-libs
-        - pacman -S qt5-base
-        - pacman -S qt5-imageformats
-        - pacman -S qt5-multimedia
-        - pacman -S qt5-sensors
-        - pacman -S qt5-serialbus
-        - pacman -S qt5-serialport
-        - pacman -S qt5-svg
-        - pacman -S qt5-systems
-        - pacman -S qt5-tools
-        - pacman -S qt5-translations
-        - pacman -S qt5-wayland
-        - pacman -S qt5-xmlpatterns
-        - pacman -S portaudio
-        - pacman -S zstd
-        - pacman -S leveldb
-        - pacman -S lz4
-        - pacman -S zlib
-        - pacman -S libusb
-        - pacman -S fftw
-        - pacman -S qwt
-        - pacman -S qwtpolar
-        - pacman -S libogg
-        - pacman -S libvorbis
-        - pacman -S texinfo
-        - pacman -S hamlib
+        - sudo pacman -Sy
+        - sudo pacman -Syu
+        - sudo pacman -S boost
+        - sudo pacman -S boost-libs
+        - sudo pacman -S qt5-base
+        - sudo pacman -S qt5-imageformats
+        - sudo pacman -S qt5-multimedia
+        - sudo pacman -S qt5-sensors
+        - sudo pacman -S qt5-serialbus
+        - sudo pacman -S qt5-serialport
+        - sudo pacman -S qt5-svg
+        - sudo pacman -S qt5-systems
+        - sudo pacman -S qt5-tools
+        - sudo pacman -S qt5-translations
+        - sudo pacman -S qt5-wayland
+        - sudo pacman -S qt5-xmlpatterns
+        - sudo pacman -S portaudio
+        - sudo pacman -S zstd
+        - sudo pacman -S leveldb
+        - sudo pacman -S lz4
+        - sudo pacman -S zlib
+        - sudo pacman -S libusb
+        - sudo pacman -S fftw
+        - sudo pacman -S qwt
+        - sudo pacman -S qwtpolar
+        - sudo pacman -S libogg
+        - sudo pacman -S libvorbis
+        - sudo pacman -S texinfo
+        - sudo pacman -S hamlib
         - mkdir -p artifact-build
         - cd artifact-build
         - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug ..
