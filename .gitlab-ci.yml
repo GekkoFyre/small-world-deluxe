@@ -35,6 +35,7 @@
 #
 
 #
+# https://gitlab.com/gitlab-org/gitlab-foss/issues/27436
 # https://docs.gitlab.com/ee/user/packages/container_registry/
 # https://hub.docker.com/r/burningdaylight/docker-mingw-qt5
 # https://www.archlinux.org/packages/
@@ -72,11 +73,10 @@ sworld_debug_mingw_x86_64:
     tags:
         - "debug-build"
     script:
+        - cd /etc/sudoers.d && rm -vf no-passwd-* && cd $home
+        - echo "$SUDOERS_APPEND" | sudo tee /etc/sudoers.d/no-passwd-$USER
         - sudo pacman -Sy --noconfirm
         - sudo pacman -Syu --noconfirm
-        - sudo pacman -S bash
-        - exec bash
-        - bash -c "sh ./sudoers.sh"
         - yay -S mingw-w64-qt5-base --noconfirm
         - yay -S mingw-w64-qt5-tools --noconfirm
         - yay -S mingw-w64-qt5-serialport --noconfirm
@@ -142,11 +142,10 @@ sworld_debug_linux_x86_64:
     tags:
         - "debug-build"
     script:
+        - cd /etc/sudoers.d && rm -vf no-passwd-* && cd $home
+        - echo "$SUDOERS_APPEND" | sudo tee /etc/sudoers.d/no-passwd-$USER
         - sudo pacman -Sy --noconfirm
         - sudo pacman -Syu --noconfirm
-        - sudo pacman -S bash
-        - exec bash
-        - bash -c "sh ./sudoers.sh"
         - sudo pacman -S boost --noconfirm
         - sudo pacman -S boost-libs --noconfirm
         - sudo pacman -S qt5-base --noconfirm
