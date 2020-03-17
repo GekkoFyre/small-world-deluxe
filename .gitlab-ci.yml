@@ -72,10 +72,11 @@ sworld_debug_mingw_x86_64:
     tags:
         - "debug-build"
     script:
-        - cd /etc/sudoers.d && rm -vf no-passwd-* && cd $home
-        - echo "$USER ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/no-passwd-$USER
         - sudo pacman -Sy --noconfirm
         - sudo pacman -Syu --noconfirm
+        - sudo pacman -S bash
+        - exec bash
+        - bash -c "sh ./sudoers.sh"
         - yay -S mingw-w64-qt5-base --noconfirm
         - yay -S mingw-w64-qt5-tools --noconfirm
         - yay -S mingw-w64-qt5-serialport --noconfirm
@@ -99,26 +100,24 @@ sworld_debug_mingw_x86_64:
         - yay -S mingw-w64-qwt --noconfirm
         - yay -S mingw-w64-libogg --noconfirm
         - yay -S mingw-w64-libvorbis --noconfirm
-        - sudo pacman -S bash
-        - exec bash
         - mkdir -p third-party
         - cd third-party
         - wget http://git.savannah.gnu.org/cgit/texinfo.git/snapshot/texinfo-6.6.tar.gz
         - tar -xvzf texinfo-6.6.tar.gz
         - cd texinfo-6.6
         - sh ./autogen.sh
-        - ./configure --host=x86_64-w64-mingw32 --target=x86_64-w64-mingw32 && make -j 4 && bash -c 'sudo make install'
+        - ./configure --host=x86_64-w64-mingw32 --target=x86_64-w64-mingw32 && make -j 4 && sudo make install
         - cd ./..
         - git clone https://github.com/libusb/libusb-compat-0.1.git
-        - cd libusb-compat-0.1 && sh bootstrap.sh && ./configure --host=x86_64-w64-mingw32 --target=x86_64-w64-mingw32 && make -j 4 && make check && bash -c 'sudo make install'
+        - cd libusb-compat-0.1 && sh bootstrap.sh && ./configure --host=x86_64-w64-mingw32 --target=x86_64-w64-mingw32 && make -j 4 && make check && sudo make install
         - cd ./..
         - wget https://github.com/Hamlib/Hamlib/releases/download/3.3/hamlib-3.3.tar.gz
         - tar -xvzf hamlib-3.3.tar.gz
-        - cd hamlib-3.3 && ./configure --host=x86_64-w64-mingw32 --target=x86_64-w64-mingw32 && make -j 4 && bash -c 'sudo make install'
+        - cd hamlib-3.3 && ./configure --host=x86_64-w64-mingw32 --target=x86_64-w64-mingw32 && make -j 4 && sudo make install
         - cd ./..
         - wget http://www.portaudio.com/archives/pa_stable_v190600_20161030.tgz
         - tar -xvzf pa_stable_v190600_20161030.tgz
-        - cd portaudio && cd bindings/cpp && ./configure --host=x86_64-w64-mingw32 --target=x86_64-w64-mingw32 && make -j 4 && bash -c 'sudo make install'
+        - cd portaudio && cd bindings/cpp && ./configure --host=x86_64-w64-mingw32 --target=x86_64-w64-mingw32 && make -j 4 && sudo make install
         - cd ./../../..
         - sudo strip --remove-section=.note.ABI-tag /usr/lib64/libQt5Core.so.5
         - mkdir -p artifact-build
@@ -143,10 +142,11 @@ sworld_debug_linux_x86_64:
     tags:
         - "debug-build"
     script:
-        - cd /etc/sudoers.d && rm -vf no-passwd-* && cd $home
-        - echo "$USER ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/no-passwd-$USER
         - sudo pacman -Sy --noconfirm
         - sudo pacman -Syu --noconfirm
+        - sudo pacman -S bash
+        - exec bash
+        - bash -c "sh ./sudoers.sh"
         - sudo pacman -S boost --noconfirm
         - sudo pacman -S boost-libs --noconfirm
         - sudo pacman -S qt5-base --noconfirm
@@ -175,9 +175,7 @@ sworld_debug_linux_x86_64:
         - sudo pacman -S libvorbis --noconfirm
         - sudo pacman -S texinfo --noconfirm
         - sudo pacman -S hamlib --noconfirm
-        - sudo pacman -S bash
-        - exec bash
-        - bash -c 'sudo strip --remove-section=.note.ABI-tag /usr/lib64/libQt5Core.so.5'
+        - sudo strip --remove-section=.note.ABI-tag /usr/lib64/libQt5Core.so.5'
         - mkdir -p artifact-build
         - cd artifact-build
         - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug ..
