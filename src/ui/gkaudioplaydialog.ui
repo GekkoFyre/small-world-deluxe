@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>640</width>
-    <height>480</height>
+    <height>652</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -55,8 +55,8 @@
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>555</width>
-               <height>424</height>
+               <width>576</width>
+               <height>511</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -69,7 +69,7 @@
                  <item row="0" column="0">
                   <widget class="QLabel" name="label_playback_file_loc">
                    <property name="text">
-                    <string>Location: </string>
+                    <string>Location:        </string>
                    </property>
                   </widget>
                  </item>
@@ -114,7 +114,7 @@
                  <item row="1" column="0">
                   <widget class="QLabel" name="label_playback_file_size">
                    <property name="text">
-                    <string>File Size: </string>
+                    <string>File Size:        </string>
                    </property>
                   </widget>
                  </item>
@@ -137,7 +137,7 @@
                  <item row="0" column="0">
                   <widget class="QLabel" name="label_playback_rec_codec">
                    <property name="text">
-                    <string>Codec: </string>
+                    <string>Codec:           </string>
                    </property>
                   </widget>
                  </item>
@@ -147,7 +147,7 @@
                  <item row="1" column="0">
                   <widget class="QLabel" name="label_playback_rec_bitrate">
                    <property name="text">
-                    <string>Bitrate: </string>
+                    <string>Bitrate:          </string>
                    </property>
                   </widget>
                  </item>

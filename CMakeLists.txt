@@ -111,7 +111,7 @@ else()
     message(FATAL_ERROR "Could not find the Threads library!")
 endif(Threads_FOUND)
 
-find_package(Qt5 COMPONENTS Core Gui Widgets Test REQUIRED)
+find_package(Qt5 COMPONENTS Core Gui Widgets PrintSupport Test REQUIRED)
 
 set(Boost_USE_STATIC_LIBS ON CACHE BOOL "Use static libraries when linking Boost C++.")
 set(Boost_USE_MULTITHREADED ON CACHE BOOL "Use multithreaded libraries when linking Boost C++.")
@@ -372,7 +372,7 @@ add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
 
-target_link_libraries(galaxy Qt5::Widgets Qt5::Core Qt5::Gui Threads::Threads ${LIBS})
+target_link_libraries(galaxy Qt5::Widgets Qt5::Core Qt5::Gui Qt5::PrintSupport Threads::Threads ${LIBS})
 
 # rcc -no-compress -binary smallworld_res.qrc -o smallworld_res.rcc
 qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)

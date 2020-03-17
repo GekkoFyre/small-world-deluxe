@@ -69,6 +69,7 @@
 #include <QPushButton>
 #include <QCommandLineParser>
 #include <QPointer>
+#include <QPrinter>
 #include <QString>
 #include <QStringList>
 #include <QMetaType>
@@ -115,7 +116,6 @@ private slots:
     void on_actionSave_All_triggered();
     void on_actionOpen_Save_Directory_triggered();
     void on_actionDelete_all_wav_files_in_Save_Directory_triggered();
-    void on_actionRecord_triggered();
     void on_actionPlay_triggered();
     void on_actionSettings_triggered();
     void on_actionSave_Decoded_Ab_triggered();
@@ -124,9 +124,9 @@ private slots:
     void on_action_All_triggered();
     void on_action_Incoming_triggered();
     void on_action_Outgoing_triggered();
+    void on_actionPrint_triggered();
 
     void on_actionShow_Waterfall_toggled(bool arg1);
-    void on_actionRecord_toggled(bool arg1);
     void on_actionUSB_toggled(bool arg1);
     void on_actionLSB_toggled(bool arg1);
     void on_actionAM_toggled(bool arg1);
@@ -180,7 +180,6 @@ signals:
     void updatePaVol(const int &percentage);
     void updatePlot();
     void stopRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
-    void recordToAudioCodec(const bool &recording_is_started);
     void gkExitApp();
     void sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values,
                          const std::vector<short> &raw_audio_data,
@@ -206,6 +205,7 @@ private:
 
     std::shared_ptr<QSettings> sw_settings;
     std::shared_ptr<QCommandLineParser> gkCliParser;
+    std::shared_ptr<QPrinter> printer;
 
     //
     // PortAudio initialization and buffers

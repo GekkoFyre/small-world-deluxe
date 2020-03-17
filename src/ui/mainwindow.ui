@@ -969,10 +969,10 @@ QPushButton:disabled {
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="actionRecord"/>
    <addaction name="actionPlay"/>
    <addaction name="separator"/>
    <addaction name="actionSave_Decoded_Ab"/>
+   <addaction name="actionPrint"/>
    <addaction name="separator"/>
    <addaction name="actionView_Spectrogram_Controller"/>
    <addaction name="separator"/>
@@ -1225,6 +1225,17 @@ QPushButton:disabled {
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+O</string>
+   </property>
+  </action>
+  <action name="actionPrint">
+   <property name="text">
+    <string>Print</string>
+   </property>
+   <property name="toolTip">
+    <string>Print out a transcript of your conversations</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
    </property>
   </action>
  </widget>

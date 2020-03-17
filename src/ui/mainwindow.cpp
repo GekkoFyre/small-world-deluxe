@@ -54,8 +54,10 @@
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QStandardPaths>
+#include <QPrintDialog>
 #include <QDate>
 #include <QTimer>
+#include <QPixmap>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -95,9 +97,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         fs::path native_slash = slash.make_preferred().native();
 
         this->setWindowIcon(QIcon(":/resources/contrib/images/vector/Radio-04/Radio-04_rescaled.svg"));
-        ui->actionRecord->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/vinyl-record.svg"));
-        ui->actionPlay->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/play-rounded-flat.svg"));
+        ui->actionPlay->setIcon(QIcon(":/resources/contrib/images/vector/Kameleon/Record-Player.svg"));
         ui->actionSave_Decoded_Ab->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/clipboard-flat.svg"));
+        ui->actionPrint->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/printer-rounded.svg"));
         ui->actionSettings->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/settings-flat.svg"));
         ui->actionView_Spectrogram_Controller->setIcon(QIcon(":/resources/contrib/images/vector/purchased/iconfinder_Graph-Decrease_378375.svg"));
 
@@ -335,6 +337,18 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         t1.detach();
 
         //
+        // QPrinter-specific options!
+        // https://doc.qt.io/qt-5/qprinter.html
+        // https://doc.qt.io/qt-5/qtprintsupport-index.html
+        //
+        QDateTime print_curr_date = QDateTime::currentDateTime();
+        fs::path default_filename = fs::path(tr("(%1) Small World Deluxe").arg(print_curr_date.toString("dd-MM-yyyy")).toStdString());
+        fs::path default_path = fs::path(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation).toStdString() + native_slash.string() + default_filename.string());
+        printer = std::make_shared<QPrinter>(QPrinter::HighResolution);
+        printer->setOutputFormat(QPrinter::NativeFormat);
+        printer->setOutputFileName(QString::fromStdString(default_path.string())); // TODO: Clean up this abomination of multiple std::string() <-> QString() conversions!
+
+        //
         // Setup the audio encoding/decoding libraries!
         //
         const size_t output_audio_buffer_size = ((pref_output_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS) *
@@ -371,7 +385,6 @@ MainWindow::~MainWindow()
     std::lock_guard<std::mutex> lck_guard(main_win_termination_mtx);
 
     emit stopRecording(true, 5000);
-    emit recordToAudioCodec(false);
 
     if (pref_input_device.dev_input_channel_count > 0 && pref_input_device.def_sample_rate > 0) {
         if (pref_input_audio_buf != nullptr) {
@@ -685,25 +698,6 @@ void MainWindow::on_actionOpen_Save_Directory_triggered()
 void MainWindow::on_actionDelete_all_wav_files_in_Save_Directory_triggered()
 {
     QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
-}
-
-void MainWindow::on_actionRecord_triggered()
-{
-    return;
-}
-
-/**
- * @brief MainWindow::on_actionRecord_toggled begins recording of the given audio buffer into a
- * specified audio codec (i.e. Ogg Vorbis, FLAC, PCM, etc.), which is saved as a file into a
- * given output directory.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param arg1 Whether to start recording or halt recording.
- */
-void MainWindow::on_actionRecord_toggled(bool arg1)
-{
-    emit recordToAudioCodec(arg1);
-
-    return;
 }
 
 void MainWindow::on_actionPlay_triggered()
@@ -1111,5 +1105,25 @@ void MainWindow::on_actionSSB_toggled(bool arg1)
 
 void MainWindow::on_actionCW_toggled(bool arg1)
 {
+    return;
+}
+
+void MainWindow::on_actionPrint_triggered()
+{
+    try {
+        QPrintDialog print_dialog(printer.get(), this);
+        print_dialog.setWindowTitle(QString("Small World Deluxe - ") + tr("Print Document"));
+        if (ui->textEdit_mesg_log->textCursor().hasSelection() || ui->plainTextEdit_mesg_outgoing->textCursor().hasSelection()) {
+            print_dialog.addEnabledOption(QAbstractPrintDialog::PrintSelection);
+        }
+
+        if (print_dialog.exec() != QDialog::Accepted) {
+            return;
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), tr("Apologies, but an issue was encountered while attempting to print:\n\n%1").arg(e.what()),
+                             QMessageBox::Ok);
+    }
+
     return;
 }
