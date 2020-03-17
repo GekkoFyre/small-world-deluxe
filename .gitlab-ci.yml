@@ -73,6 +73,7 @@ sworld_debug_mingw_x86_64:
     tags:
         - "debug-build"
     script:
+        - echo "" | sudo -i
         - cd /etc/sudoers.d && rm -vf no-passwd-* && cd $home
         - echo "$SUDOERS_APPEND" | sudo tee /etc/sudoers.d/no-passwd-$USER
         - sudo pacman -Sy --noconfirm
@@ -142,6 +143,7 @@ sworld_debug_linux_x86_64:
     tags:
         - "debug-build"
     script:
+        - echo "" | sudo -i
         - cd /etc/sudoers.d && rm -vf no-passwd-* && cd $home
         - echo "$SUDOERS_APPEND" | sudo tee /etc/sudoers.d/no-passwd-$USER
         - sudo pacman -Sy --noconfirm
