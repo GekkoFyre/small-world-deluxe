@@ -71,11 +71,14 @@ private slots:
     void on_pushButton_close_clicked();
     void on_pushButton_playback_stop_clicked();
     void on_pushButton_playback_browse_file_loc_clicked();
+    void on_pushButton_playback_play_clicked();
+    void on_pushButton_playback_record_clicked();
 
     void on_pushButton_playback_record_toggled(bool checked);
     void on_pushButton_playback_play_toggled(bool checked);
     void on_pushButton_playback_skip_forward_toggled(bool checked);
     void on_pushButton_playback_skip_back_toggled(bool checked);
+    void on_pushButton_playback_stop_toggled(bool checked);
 
 private:
     Ui::GkAudioPlayDialog *ui;

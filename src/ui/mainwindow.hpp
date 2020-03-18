@@ -223,6 +223,7 @@ private:
     bool rx_vol_control_selected;
     double global_rx_audio_volume;
     double global_tx_audio_volume;
+    bool recording_in_progress;
 
     //
     // Multithreading

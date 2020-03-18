@@ -230,6 +230,9 @@ else()
     message(SEND_ERROR "The 'QWT' graphing/charting library could not be found!")
 endif(QWT_FOUND)
 
+#
+# https://xiph.org/vorbis/
+#
 find_package(Vorbis REQUIRED)
 if (Vorbis_FOUND)
     include_directories(${Vorbis_INCLUDE_DIRS})
@@ -238,6 +241,9 @@ else()
     message(SEND_ERROR "The 'Vorbis' audio (de-/en-)coding library could not be found!")
 endif(Vorbis_FOUND)
 
+#
+# https://xiph.org/vorbis/
+#
 find_package(Ogg REQUIRED)
 if (Ogg_FOUND)
     include_directories(${Ogg_INCLUDE_DIRS})
@@ -245,6 +251,17 @@ if (Ogg_FOUND)
 else()
     message(SEND_ERROR "The 'Ogg' audio (de-/en-)coding library could not be found!")
 endif(Ogg_FOUND)
+
+#
+# http://opus-codec.org/
+#
+find_package(Opus REQUIRED)
+if (Opus_FOUND)
+    include_directories(${Opus_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${Opus_LIBRARIES})
+else()
+    message(SEND_ERROR "The 'Opus' audio (de-/en-)coding library could not be found!")
+endif(Opus_FOUND)
 
 set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-arcs -ftest-coverage")
 

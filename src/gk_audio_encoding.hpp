@@ -48,15 +48,49 @@
 #include <portaudiocpp/System.hxx>
 #include <memory>
 #include <string>
+#include <vector>
 #include <future>
 #include <thread>
+#include <exception>
+#include <iostream>
+#include <ostream>
 #include <QObject>
 #include <QPointer>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#include <opus.h>
+#include <stdint.h>
+
+#ifdef __cplusplus
+}
+#endif
 
 namespace GekkoFyre {
 
 class GkAudioEncoding : public QObject {
     Q_OBJECT
+
+private:
+    struct OpusErrorException: public virtual std::exception {
+        OpusErrorException(int code) : code(code) {}
+        const char *what() const noexcept;
+
+    private:
+        const int code;
+    };
+
+    struct OpusState {
+        OpusState(int max_frame_size, int max_payload_bytes, int channels): out(max_frame_size * channels),
+            fbytes(max_frame_size * channels * sizeof(decltype(out)::value_type)), data(max_payload_bytes) {}
+        std::vector<short> out;
+        std::vector<unsigned char> fbytes, data;
+        int32_t frameno = 0;
+        bool lost_prev = true;
+    };
 
 public:
     explicit GkAudioEncoding(std::shared_ptr<GekkoFyre::FileIo> fileIo,
@@ -85,9 +119,10 @@ signals:
     void submitPcmBuf(const std::vector<short> &audio_rec, const boost::filesystem::path &filePath);
     void submitFlacBuf(const std::vector<short> &audio_rec, const boost::filesystem::path &filePath);
 
-private slots:
+public slots:
     void startRecording(const bool &recording_is_started);
 
+private slots:
     void oggVorbisBuf(std::vector<signed char> &audio_rec, const int &buf_size,
                       const GkAudioFramework::Bitrate &bitrate,
                       const boost::filesystem::path &filePath);
@@ -106,13 +141,16 @@ private:
     std::shared_ptr<GkLevelDb> gkDb;
     GekkoFyre::Database::Settings::Audio::GkDevice gkInputDev;
 
-    bool recordingActive;
+    bool recording_in_progress;
     static size_t ogg_buf_counter;
+    std::unique_ptr<OpusState> opus_state;
 
     //
     // Threads
     //
     std::thread ogg_audio_frame_thread;
+
+    static uint32_t char_to_int(char ch[4]);
 
 };
 };

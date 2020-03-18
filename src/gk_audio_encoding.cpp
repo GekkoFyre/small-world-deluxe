@@ -37,7 +37,6 @@
 
 #include "gk_audio_encoding.hpp"
 #include <boost/exception/all.hpp>
-#include <vector>
 #include <fstream>
 #include <iterator>
 #include <algorithm>
@@ -52,6 +51,7 @@ extern "C"
 #include <vorbis/codec.h>
 #include <vorbis/vorbisenc.h>
 #include <vorbis/vorbisfile.h>
+#include <opus_multistream.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -95,7 +95,8 @@ GkAudioEncoding::GkAudioEncoding(std::shared_ptr<FileIo> fileIo,
     gkInputDev = input_device;
     gkSpectroGui = spectroGui;
 
-    recordingActive = false;
+    opus_state = std::make_unique<OpusState>(AUDIO_FRAMES_PER_BUFFER, AUDIO_CODECS_OPUS_MAX_PACKETS, gkInputDev.dev_input_channel_count);
+    recording_in_progress = false;
     ogg_buf_counter = 0;
 
     QObject::connect(this, SIGNAL(recAudioFrameOgg(std::vector<signed char> &, const int &, const GkAudioFramework::Bitrate &, const boost::filesystem::path &)),
@@ -148,7 +149,7 @@ void GkAudioEncoding::recordAudioFile(const CodecSupport &codec, const Bitrate &
             std::promise<std::vector<signed char>> ogg_frame_promise;
             std::future<std::vector<signed char>> ogg_frame_future = ogg_frame_promise.get_future();
 
-            while (recordingActive) {
+            while (recording_in_progress) {
                 ogg_audio_frame_thread = std::thread(&PaAudioBuf::prepOggVorbisBuf, gkAudioBuf, std::move(ogg_frame_promise));
                 std::vector<signed char> audio_frame_vec = ogg_frame_future.get();
 
@@ -158,6 +159,8 @@ void GkAudioEncoding::recordAudioFile(const CodecSupport &codec, const Bitrate &
 
                 emit recAudioFrameOgg(audio_frame_vec, AUDIO_CODECS_OGG_VORBIS_BUFFER_SIZE, bitrate, audio_rec_path);
             }
+        } else if (codec == Opus) {
+            // Using Opus
         } else if (codec == FLAC) {
             // Using FLAC
         } else if (codec == PCM) {
@@ -178,7 +181,7 @@ void GkAudioEncoding::recordAudioFile(const CodecSupport &codec, const Bitrate &
 
 void GkAudioEncoding::startRecording(const bool &recording_is_started)
 {
-    recordingActive = recording_is_started;
+    recording_in_progress = recording_is_started;
 
     return;
 }
@@ -367,6 +370,21 @@ void GkAudioEncoding::recordFlac(const std::vector<short> &audio_rec, const boos
     return;
 }
 
+/**
+ * @brief GkAudioEncoding::char_to_int
+ * @author sehe <https://stackoverflow.com/questions/16496288/decoding-opus-audio-data>
+ * @param ch
+ * @return
+ * @note The author suggests reading with `boost::spirit::big_dword` or similar instead.
+ */
+uint32_t GkAudioEncoding::char_to_int(char ch[])
+{
+    return static_cast<uint32_t>(static_cast<unsigned char>(ch[0])<<24) |
+               static_cast<uint32_t>(static_cast<unsigned char>(ch[1])<<16) |
+               static_cast<uint32_t>(static_cast<unsigned char>(ch[2])<< 8) |
+            static_cast<uint32_t>(static_cast<unsigned char>(ch[3])<< 0);
+}
+
 void GkAudioEncoding::oggVorbisBuf(std::vector<signed char> &audio_rec, const int &buf_size,
                                    const Bitrate &bitrate,
                                    const boost::filesystem::path &filePath)
@@ -391,4 +409,9 @@ void GkAudioEncoding::oggVorbisBuf(std::vector<signed char> &audio_rec, const in
     ogg_buf_counter = 0;
 
     return;
+}
+
+const char *GkAudioEncoding::OpusErrorException::what() const noexcept
+{
+    return opus_strerror(code);
 }

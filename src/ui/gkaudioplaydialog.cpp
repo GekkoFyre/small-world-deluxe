@@ -105,13 +105,15 @@ void GkAudioPlayDialog::on_pushButton_playback_browse_file_loc_clicked()
 void GkAudioPlayDialog::on_pushButton_playback_record_toggled(bool checked)
 {
     emit beginRecording(checked);
+    ui->pushButton_playback_record->setChecked(checked);
 
     return;
 }
 
 void GkAudioPlayDialog::on_pushButton_playback_play_toggled(bool checked)
 {
-    Q_UNUSED(checked);
+    ui->pushButton_playback_play->setChecked(checked);
+
     return;
 }
 
@@ -124,5 +126,38 @@ void GkAudioPlayDialog::on_pushButton_playback_skip_forward_toggled(bool checked
 void GkAudioPlayDialog::on_pushButton_playback_skip_back_toggled(bool checked)
 {
     Q_UNUSED(checked);
+    return;
+}
+
+/**
+ * @brief GkAudioPlayDialog::on_pushButton_playback_play_clicked disable any recording in progress
+ * upon being clicked.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
+{
+    return;
+}
+
+/**
+ * @brief GkAudioPlayDialog::on_pushButton_playback_record_clicked disable any playback in progress
+ * upon being clicked.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkAudioPlayDialog::on_pushButton_playback_record_clicked()
+{
+    return;
+}
+
+/**
+ * @brief GkAudioPlayDialog::on_pushButton_playback_stop_toggled stop all playback and recording
+ * at this moment.
+ * @param checked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkAudioPlayDialog::on_pushButton_playback_stop_toggled(bool checked)
+{
+    ui->pushButton_playback_stop->setChecked(checked);
+
     return;
 }

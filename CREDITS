@@ -22,10 +22,6 @@ LZ4 by various
     <https://github.com/lz4/lz4>
         BSD 2-Clause License & GNU General Public License (GPL, version 2)
 
-Snappy by Google
-    <https://github.com/google/snappy>
-        Creative Commons Attribution 3.0 License (CC-BY-3.0)
-
 LevelDB by Google
     <https://github.com/google/leveldb>
         BSD 3-clause License
@@ -46,6 +42,18 @@ FFTW by Matteo Frigo & Steven G. Johnson et al.
     <http://www.fftw.org/>
         GNU General Public License (GPL, version 2)
 
-OpenCV by the OpenCV Team
-    <https://opencv.org/>
+libvorbis by Xiph.org
+    <https://www.xiph.org/vorbis/>
         BSD 3-clause License
+
+libogg by Xiph.org
+    <https://www.xiph.org/vorbis/>
+        BSD 3-clause License
+
+libopus by Xiph.org et al.
+    <http://opus-codec.org/>
+        BSD 3-clause License
+
+Qwt by Uwe Rathmann & Josef Wilgen et al.
+    <https://qwt.sourceforge.io/>
+        GNU Lesser General Public License (LGPL, version 2.1)

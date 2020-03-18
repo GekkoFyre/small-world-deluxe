@@ -52,7 +52,7 @@ public:
     ~AboutDialog();
 
 private slots:
-    void on_buttonBox_accepted();
+    void on_buttonBox_close_rejected();
 
 private:
     Ui::AboutDialog *ui;

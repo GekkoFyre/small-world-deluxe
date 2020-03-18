@@ -73,7 +73,7 @@ sworld_debug_mingw_x86_64:
     tags:
         - "debug-build"
     script:
-        - echo "" | sudo -S
+        - echo "" | sudo -s
         - cd /etc/sudoers.d && rm -vf no-passwd-* && cd $home
         - echo "$SUDOERS_APPEND" | sudo tee /etc/sudoers.d/no-passwd-$USER
         - sudo pacman -Sy --noconfirm
@@ -101,6 +101,8 @@ sworld_debug_mingw_x86_64:
         - yay -S mingw-w64-qwt --noconfirm
         - yay -S mingw-w64-libogg --noconfirm
         - yay -S mingw-w64-libvorbis --noconfirm
+        - yay -S mingw-w64-opus --noconfirm
+        - yay -S mingw-w64-opusfile --noconfirm
         - mkdir -p third-party
         - cd third-party
         - wget http://git.savannah.gnu.org/cgit/texinfo.git/snapshot/texinfo-6.6.tar.gz
@@ -143,7 +145,7 @@ sworld_debug_linux_x86_64:
     tags:
         - "debug-build"
     script:
-        - echo "" | sudo -S
+        - echo "" | sudo -s
         - cd /etc/sudoers.d && rm -vf no-passwd-* && cd $home
         - echo "$SUDOERS_APPEND" | sudo tee /etc/sudoers.d/no-passwd-$USER
         - sudo pacman -Sy --noconfirm
@@ -174,6 +176,9 @@ sworld_debug_linux_x86_64:
         - sudo pacman -S qwtpolar --noconfirm
         - sudo pacman -S libogg --noconfirm
         - sudo pacman -S libvorbis --noconfirm
+        - sudo pacman -S opus --noconfirm
+        - sudo pacman -S opusfile --noconfirm
+        - sudo pacman -S opus-tools --noconfirm
         - sudo pacman -S texinfo --noconfirm
         - sudo pacman -S hamlib --noconfirm
         - sudo strip --remove-section=.note.ABI-tag /usr/lib64/libQt5Core.so.5'

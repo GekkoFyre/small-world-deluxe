@@ -144,6 +144,7 @@ namespace GekkoFyre {
 //
 #define AUDIO_CODECS_OGG_VORBIS_ENCODE_QUALITY (1.0)    // The quality at which to encode an Ogg Vorbis file!
 #define AUDIO_CODECS_OGG_VORBIS_BUFFER_SIZE (64 * 1024) // The buffering size for each frame, in kilobytes, to be used with Ogg Vorbis encoding.
+#define AUDIO_CODECS_OPUS_MAX_PACKETS (1500)            // Not sure what this is for but it seems to be necessary!
 
 #ifndef M_PI
 #define M_PI (3.14159265358979323846) /* pi */
@@ -435,6 +436,7 @@ namespace GkAudioFramework {
     enum CodecSupport {
         PCM,
         OggVorbis,
+        Opus,
         FLAC,
         Unknown
     };

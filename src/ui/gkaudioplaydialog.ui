@@ -165,6 +165,9 @@
                 <layout class="QHBoxLayout" name="horizontalLayout_3">
                  <item>
                   <widget class="QPushButton" name="pushButton_playback_skip_forward">
+                   <property name="toolTip">
+                    <string>Move forward in playback by 10 seconds.</string>
+                   </property>
                    <property name="text">
                     <string>&gt;&gt;</string>
                    </property>
@@ -172,6 +175,24 @@
                  </item>
                  <item>
                   <widget class="QPushButton" name="pushButton_playback_play">
+                   <property name="styleSheet">
+                    <string notr="true">QPushButton:pressed {
+    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(60, 186, 162, 255), stop:1 rgba(98, 211, 162, 255))
+}
+
+QPushButton {
+     background-color: #B80000; border: 1px solid black;
+     border-radius: 5px;
+     border-width: 1px;
+     padding: 6px;
+     font: bold;
+     color: white;
+}
+
+QPushButton:disabled {
+    background-color: rgb(170, 170, 127)
+}</string>
+                   </property>
                    <property name="text">
                     <string>Play</string>
                    </property>
@@ -179,6 +200,24 @@
                  </item>
                  <item>
                   <widget class="QPushButton" name="pushButton_playback_record">
+                   <property name="styleSheet">
+                    <string notr="true">QPushButton:pressed {
+    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(60, 186, 162, 255), stop:1 rgba(98, 211, 162, 255))
+}
+
+QPushButton {
+     background-color: #B80000; border: 1px solid black;
+     border-radius: 5px;
+     border-width: 1px;
+     padding: 6px;
+     font: bold;
+     color: white;
+}
+
+QPushButton:disabled {
+    background-color: rgb(170, 170, 127)
+}</string>
+                   </property>
                    <property name="text">
                     <string>Record</string>
                    </property>
@@ -186,6 +225,24 @@
                  </item>
                  <item>
                   <widget class="QPushButton" name="pushButton_playback_stop">
+                   <property name="styleSheet">
+                    <string notr="true">QPushButton:pressed {
+    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(60, 186, 162, 255), stop:1 rgba(98, 211, 162, 255))
+}
+
+QPushButton {
+     background-color: #B80000; border: 1px solid black;
+     border-radius: 5px;
+     border-width: 1px;
+     padding: 6px;
+     font: bold;
+     color: white;
+}
+
+QPushButton:disabled {
+    background-color: rgb(170, 170, 127)
+}</string>
+                   </property>
                    <property name="text">
                     <string>Stop</string>
                    </property>
@@ -193,6 +250,9 @@
                  </item>
                  <item>
                   <widget class="QPushButton" name="pushButton_playback_skip_back">
+                   <property name="toolTip">
+                    <string>Move backwards in playback by 10 seconds.</string>
+                   </property>
                    <property name="text">
                     <string>&lt;&lt;</string>
                    </property>

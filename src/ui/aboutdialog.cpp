@@ -43,7 +43,7 @@ AboutDialog::AboutDialog(QWidget *parent) :
     ui(new Ui::AboutDialog)
 {
     ui->setupUi(this);
-    ui->pushButton_icon->setIcon(QIcon(":/resources/contrib/images/vector/Radio-04/Radio-04_rescaled.svg"));
+    ui->pushButton_icon->setIcon(QIcon(":/resources/contrib/images/vector/purchased/2020-03/iconfinder_293_Frequency_News_Radio_5711690.svg"));
     ui->pushButton_icon->setIconSize(QSize(96, 96));
 }
 
@@ -52,7 +52,7 @@ AboutDialog::~AboutDialog()
     delete ui;
 }
 
-void AboutDialog::on_buttonBox_accepted()
+void AboutDialog::on_buttonBox_close_rejected()
 {
     this->close();
 }

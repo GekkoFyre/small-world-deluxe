@@ -39,6 +39,11 @@
 #include <boost/exception/all.hpp>
 #include <fstream>
 #include <iomanip>
+#include <sstream>
+#include <ostream>
+#include <istream>
+#include <iostream>
+#include <ios>
 
 #ifdef __cplusplus
 extern "C"
@@ -49,6 +54,7 @@ extern "C"
 #include <vorbis/codec.h>
 #include <vorbis/vorbisenc.h>
 #include <vorbis/vorbisfile.h>
+#include <opus_multistream.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -82,6 +88,8 @@ GkAudioDecoding::GkAudioDecoding(std::shared_ptr<FileIo> fileIo,
     gkDb = database;
 
     gkOutputDev = output_device;
+
+    opus_state = std::make_unique<OpusState>(AUDIO_FRAMES_PER_BUFFER, AUDIO_CODECS_OPUS_MAX_PACKETS, gkOutputDev.dev_output_channel_count);
 }
 
 GkAudioDecoding::~GkAudioDecoding()
@@ -154,6 +162,99 @@ AudioFileInfo GkAudioDecoding::initAudioFileInfoStruct()
 }
 
 /**
+ * @brief GkAudioDecoding::char_to_int
+ * @author sehe <https://stackoverflow.com/questions/16496288/decoding-opus-audio-data>
+ * @param ch
+ * @return
+ */
+uint32_t GkAudioDecoding::char_to_int(char ch[])
+{
+    return static_cast<uint32_t>(static_cast<unsigned char>(ch[0])<<24) |
+               static_cast<uint32_t>(static_cast<unsigned char>(ch[1])<<16) |
+               static_cast<uint32_t>(static_cast<unsigned char>(ch[2])<< 8) |
+            static_cast<uint32_t>(static_cast<unsigned char>(ch[3])<< 0);
+}
+
+/**
+ * @brief GkAudioDecoding::decodeOpusFrame
+ * @author sehe <https://stackoverflow.com/questions/16496288/decoding-opus-audio-data>
+ * @param file_in
+ * @param file_out
+ * @return
+ */
+bool GkAudioDecoding::decodeOpusFrame(std::istream &file_in, std::ostream &file_out)
+{
+    char ch[4] = { 0 };
+
+    if (!file_in.read(ch, 4) && file_in.eof()) {
+        return false;
+    }
+
+    uint32_t len = char_to_int(ch);
+
+    if(len > opus_state->data.size()) {
+        throw std::runtime_error(tr("Invalid payload length").toStdString());
+    }
+
+    file_in.read(ch, 4);
+    const uint32_t enc_final_range = char_to_int(ch);
+    const auto data = reinterpret_cast<char *>(&opus_state->data.front());
+
+    size_t read = 0ul;
+    for (auto append_position = data; file_in && read < len; append_position += read) {
+        read += file_in.readsome(append_position, len - read);
+    }
+
+    if (read < len) {
+        QString read_error_msg = tr("Ran out of input, expecting %1 bytes but instead, got %2 at %3!")
+                .arg(QString::number(len)).arg(QString::number(read)).arg(file_in.tellg());
+        throw std::runtime_error(read_error_msg.toStdString());
+    }
+
+    int output_samples;
+    const bool lost = (len == 0);
+    if (lost) {
+        opus_decoder_ctl(_decoder.get(), OPUS_GET_LAST_PACKET_DURATION(&output_samples));
+    } else {
+        output_samples = opus_max_frame_size;
+    }
+
+    output_samples = opus_decode(_decoder.get(), lost ? NULL : opus_state->data.data(), len, opus_state->out.data(), output_samples, 0);
+    if (output_samples > 0) {
+        for (int i = 0; i < (output_samples) * gkOutputDev.dev_output_channel_count; i++) {
+            short s;
+            s = opus_state->out[i];
+            opus_state->fbytes[2 * i]   = s&0xFF;
+            opus_state->fbytes[2 * i + 1] = (s >> 8)&0xFF;
+        }
+
+        if (!file_out.write(reinterpret_cast<char *>(opus_state->fbytes.data()), sizeof(short) * gkOutputDev.dev_output_channel_count * output_samples)) {
+            throw std::runtime_error(tr("Error writing").toStdString());
+        }
+    } else {
+        throw OpusErrorException(output_samples); // Negative return is error code...
+    }
+
+    uint32_t dec_final_range;
+    opus_decoder_ctl(_decoder.get(), OPUS_GET_FINAL_RANGE(&dec_final_range));
+
+    // Compare final range encoder range values of encoder and decoder
+    if(enc_final_range != 0 && !lost && !opus_state->lost_prev && dec_final_range != enc_final_range) {
+        std::ostringstream oss;
+        oss << tr("Error: Range coder state mismatch between encoder and decoder in frame ").toStdString() << opus_state->frameno << ": " <<
+               "0x" << std::setw(8) << std::setfill('0') << std::hex << (unsigned long)enc_final_range <<
+               "0x" << std::setw(8) << std::setfill('0') << std::hex << (unsigned long)dec_final_range;
+
+        throw std::runtime_error(oss.str());
+    }
+
+    opus_state->lost_prev = lost;
+    opus_state->frameno++;
+
+    return true;
+}
+
+/**
  * @brief GkAudioDecoding::readOgg
  * @author Daniel Wolf <https://stackoverflow.com/questions/52121854/how-to-use-ov-open-callbacks-to-open-an-ogg-vorbis-file-from-a-stream>
  * @param buffer
@@ -215,4 +316,9 @@ long GkAudioDecoding::tellOgg(void *data_source)
     assert(position >= 0);
 
     return static_cast<long>(position);
+}
+
+const char *GkAudioDecoding::OpusErrorException::what() const noexcept
+{
+    return opus_strerror(code);
 }

@@ -52,13 +52,45 @@
 #include <future>
 #include <thread>
 #include <vector>
+#include <exception>
 #include <QObject>
+#include <QString>
 #include <QPointer>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#include <opus.h>
+#include <stdint.h>
+
+#ifdef __cplusplus
+}
+#endif
 
 namespace GekkoFyre {
 
 class GkAudioDecoding : public QObject {
     Q_OBJECT
+
+private:
+    struct OpusErrorException: public virtual std::exception {
+        OpusErrorException(int code) : code(code) {}
+        const char *what() const noexcept;
+
+    private:
+        const int code;
+    };
+
+    struct OpusState {
+        OpusState(int max_frame_size, int max_payload_bytes, int channels): out(max_frame_size * channels),
+            fbytes(max_frame_size * channels * sizeof(decltype(out)::value_type)), data(max_payload_bytes) {}
+        std::vector<short> out;
+        std::vector<unsigned char> fbytes, data;
+        int32_t frameno = 0;
+        bool lost_prev = true;
+    };
 
 public:
     explicit GkAudioDecoding(std::shared_ptr<GekkoFyre::FileIo> fileIo,
@@ -79,6 +111,19 @@ private:
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GkLevelDb> gkDb;
     GekkoFyre::Database::Settings::Audio::GkDevice gkOutputDev;
+
+    struct OpusDecoderDeleter {
+        void operator()(OpusDecoder *opusDecoder) const {
+            opus_decoder_destroy(opusDecoder);
+        }
+    };
+
+    std::unique_ptr<OpusDecoder, OpusDecoderDeleter> _decoder;
+    std::unique_ptr<OpusState> opus_state;
+    const int opus_max_frame_size = AUDIO_FRAMES_PER_BUFFER;
+
+    static uint32_t char_to_int(char ch[4]);
+    bool decodeOpusFrame(std::istream &file_in, std::ostream &file_out);
 
     static size_t readOgg(void *buffer, size_t element_size, size_t element_count, void *data_source);
     static int seekOgg(void *data_source, ogg_int64_t offset, int origin);
