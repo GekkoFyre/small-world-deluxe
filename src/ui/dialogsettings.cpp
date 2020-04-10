@@ -92,6 +92,11 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
         gkAudioDevices = std::move(audioDevices);
 
         gkSettings = settings;
+        usb_ports_active = false;
+        com_ports_active = false;
+
+        QObject::connect(this, SIGNAL(usbPortsDisabled(const bool &)), this, SLOT(disableUsbPorts(const bool &)));
+        QObject::connect(this, SIGNAL(comPortsDisabled(const bool &)), this, SLOT(disableComPorts(const bool &)));
 
         rig_comboBox = ui->comboBox_rig_selection;
         mfg_comboBox = ui->comboBox_brand_selection;
@@ -114,7 +119,7 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
         // devices separately. This is because within the GekkoFyre::RadioLibs namespace, there are
         // also two separate functions for enumerating out these ports!
         status_com_ports = gkRadioLibs->status_com_ports();
-        status_usb_devices = gkRadioLibs->findUsbPorts();
+        status_usb_devices = gkRadioLibs->initUsbPorts();
         prefill_avail_com_ports(status_com_ports);
         prefill_avail_usb_ports(status_usb_devices);
 
@@ -492,7 +497,7 @@ void DialogSettings::prefill_avail_com_ports(const QMap<tstring, std::pair<tstri
     try {
         if (!com_ports.empty()) {
             int counter = 0;
-            enable_device_port_options(true); // Enable all GUI widgets relating to COM/Serial Ports
+            emit comPortsDisabled(true); // Enable all GUI widgets relating to COM/Serial Ports
             for (const auto &port: com_ports.toStdMap()) {
                 #ifdef _UNICODE
                 if (port.second.value == port.second.true_value) {
@@ -533,7 +538,7 @@ void DialogSettings::prefill_avail_com_ports(const QMap<tstring, std::pair<tstri
                 }
             }
         } else {
-            enable_device_port_options(false); // Disable all GUI widgets relating to COM/Serial Ports
+            emit comPortsDisabled(false);
         }
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
@@ -550,6 +555,20 @@ void DialogSettings::prefill_avail_com_ports(const QMap<tstring, std::pair<tstri
  */
 void DialogSettings::prefill_avail_usb_ports(const std::vector<UsbPort> usb_devices)
 {
+    using namespace Database::Settings;
+
+    try {
+        if (!usb_devices.empty()) {
+            // USB devices are not empty!
+            emit usbPortsDisabled(true);
+        } else {
+            // There exists no USB devices...
+            emit usbPortsDisabled(false);
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
     return;
 }
 
@@ -599,18 +618,25 @@ void DialogSettings::prefill_com_baud_speed(const AmateurRadio::com_baud_rates &
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param enable
  */
-void DialogSettings::enable_device_port_options(const bool &enable)
+void DialogSettings::enable_device_port_options()
 {
-    ui->comboBox_com_port->setEnabled(enable);
-    ui->comboBox_baud_rate->setEnabled(enable);
-    ui->spinBox_stop_bits->setEnabled(enable);
-    ui->spinBox_polling_interv->setEnabled(enable);
-    ui->spinBox_mode_delay->setEnabled(enable);
+    bool widget_enable = false;
+    if (usb_ports_active == false && com_ports_active == false) {
+        widget_enable = false;
+    } else {
+        widget_enable = true;
+    }
 
-    ui->spinBox_subopt_retries->setEnabled(enable);
-    ui->spinBox_subopt_retry_interv->setEnabled(enable);
-    ui->spinBox_subopt_write_delay->setEnabled(enable);
-    ui->spinBox_subopt_post_write_delay->setEnabled(enable);
+    ui->comboBox_com_port->setEnabled(widget_enable);
+    ui->comboBox_baud_rate->setEnabled(widget_enable);
+    ui->spinBox_stop_bits->setEnabled(widget_enable);
+    ui->spinBox_polling_interv->setEnabled(widget_enable);
+    ui->spinBox_mode_delay->setEnabled(widget_enable);
+
+    ui->spinBox_subopt_retries->setEnabled(widget_enable);
+    ui->spinBox_subopt_retry_interv->setEnabled(widget_enable);
+    ui->spinBox_subopt_write_delay->setEnabled(widget_enable);
+    ui->spinBox_subopt_post_write_delay->setEnabled(widget_enable);
 
     return;
 }
@@ -1007,6 +1033,22 @@ void DialogSettings::on_horizontalSlider_encoding_audio_quality_valueChanged(int
     std::ostringstream oss;
     oss << std::setprecision(2) << audio_quality_val;
     ui->label_encoding_audio_quality_value->setText(QString::fromStdString(oss.str()));
+
+    return;
+}
+
+void DialogSettings::disableUsbPorts(const bool &active)
+{
+    usb_ports_active = active;
+    enable_device_port_options();
+
+    return;
+}
+
+void DialogSettings::disableComPorts(const bool &active)
+{
+    com_ports_active = active;
+    enable_device_port_options();
 
     return;
 }

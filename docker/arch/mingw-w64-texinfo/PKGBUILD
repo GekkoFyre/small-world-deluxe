@@ -1,0 +1,37 @@
+#
+# Maintainer: Christopher McGill of GekkoFyre Networks <phobos.gekko@gekkofyre.io>
+# https://gekkofyre.io/
+#
+
+_reponame=texinfo
+pkgname=mingw-w64-$_reponame
+pkgver=6.7
+pkgrel=1
+pkgdesc='Texinfo is the official documentation format of the GNU project.'
+arch=('any')
+url='https://www.gnu.org/software/texinfo/'
+license=('GPLv3')
+makedepends=('mingw-w64-gcc' 'mingw-w64-configure')
+source=(texinfo-$pkgver.tar.gz::http://ftp.gnu.org/gnu/texinfo/texinfo-$pkgver.tar.gz)
+md5sums=('f0c1782f68ef73738d74bd1e9e30793a')
+options=(!buildflags staticlibs !strip !buildflags)
+
+_architectures='i686-w64-mingw32 x86_64-w64-mingw32'
+
+build() {
+  cd "${srcdir}/texinfo-${pkgver}"
+  for _arch in ${_architectures}; do
+    mkdir -p build-${_arch} && pushd build-${_arch}
+    ${_arch}-configure
+    make
+    popd
+  done
+}
+
+package() {
+  for _arch in ${_architectures}; do
+    cd "${srcdir}/texinfo-${pkgver}/build-${_arch}"
+    make DESTDIR="$pkgdir" install
+    rm -r "$pkgdir/usr/${_arch}/share"
+  done
+}

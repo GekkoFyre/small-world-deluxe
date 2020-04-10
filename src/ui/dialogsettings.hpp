@@ -87,6 +87,13 @@ private slots:
     void on_spinBox_spectro_render_thread_settings_valueChanged(int arg1);
     void on_horizontalSlider_encoding_audio_quality_valueChanged(int value);
 
+    void disableUsbPorts(const bool &active);
+    void disableComPorts(const bool &active);
+
+signals:
+    void usbPortsDisabled(const bool &active);
+    void comPortsDisabled(const bool &active);
+
 private:
     Ui::DialogSettings *ui;
 
@@ -109,6 +116,9 @@ private:
     QMap<tstring, std::pair<tstring, boost::tribool>> status_com_ports;
     std::vector<GekkoFyre::Database::Settings::UsbPort> status_usb_devices;
 
+    bool com_ports_active;
+    bool usb_ports_active;
+
     // First value is the Target Path while the second is the currentIndex within the QComboBox
     QMap<tstring, int> available_com_ports; // For tracking the *available* Device Ports (i.e. COM/Serial/RS232/USB) that the user can choose from...
 
@@ -130,7 +140,7 @@ private:
     void prefill_avail_com_ports(const QMap<tstring, std::pair<tstring, boost::tribool>> &com_ports);
     void prefill_avail_usb_ports(const std::vector<GekkoFyre::Database::Settings::UsbPort> usb_devices);
     void prefill_com_baud_speed(const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate);
-    void enable_device_port_options(const bool &enable);
+    void enable_device_port_options();
     void get_device_port_details(const tstring &port, const tstring &device,
                                  const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate = GekkoFyre::AmateurRadio::com_baud_rates::BAUD9600);
     bool read_settings();
