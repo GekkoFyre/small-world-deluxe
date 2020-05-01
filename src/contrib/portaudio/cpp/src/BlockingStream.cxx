@@ -1,9 +1,9 @@
-#include "portaudiocpp/BlockingStream.hxx"
+#include "src/contrib/portaudio/cpp/include/portaudiocpp/BlockingStream.hxx"
 
 #include "portaudio.h"
 
-#include "portaudiocpp/StreamParameters.hxx"
-#include "portaudiocpp/Exception.hxx"
+#include "src/contrib/portaudio/cpp/include/portaudiocpp/StreamParameters.hxx"
+#include "src/contrib/portaudio/cpp/include/portaudiocpp/Exception.hxx"
 
 namespace portaudio
 {

@@ -1,8 +1,8 @@
-#include "portaudiocpp/StreamParameters.hxx"
+#include "src/contrib/portaudio/cpp/include/portaudiocpp/StreamParameters.hxx"
 
 #include <cstddef>
 
-#include "portaudiocpp/Device.hxx"
+#include "src/contrib/portaudio/cpp/include/portaudiocpp/Device.hxx"
 
 namespace portaudio
 {
