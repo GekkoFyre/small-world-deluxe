@@ -7,23 +7,26 @@
 |  **Status**  | [![pipeline status](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/badges/develop/pipeline.svg)](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/commits/develop) | [![pipeline status](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/badges/master/pipeline.svg)](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/commits/master) |
 | **Coverage** | [![coverage report](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/badges/develop/coverage.svg)](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/commits/develop) | [![coverage report](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/badges/master/coverage.svg)](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/commits/master) |
 
-As a software project just only recently borne mid-July, 2019, `Small World` is a 'new age' weak-signal digital communicator powered by low bit-rate, digital voice codecs originally meant for [telephony](https://en.wikipedia.org/wiki/Telephony). Typical usage requires a radio transceiver with [SSB support](https://en.wikipedia.org/wiki/Single-sideband_modulation) and a [personal computer](https://en.wikipedia.org/wiki/Personal_computer) with a capable sound-card. Said computer must also be powerful enough to be running a modern [operating system](https://en.wikipedia.org/wiki/Operating_system) that is still supported with regular updates.
+As a software project just only recently borne mid-July, 2019, `Small World` is a 'new age' weak-signal digital communicator powered by low bit-rate, digital voice codecs that are either originally meant for [telephony](https://en.wikipedia.org/wiki/Telephony) or are born out of such. Typical usage requires a radio transceiver with [SSB support](https://en.wikipedia.org/wiki/Single-sideband_modulation) and a [personal computer](https://en.wikipedia.org/wiki/Personal_computer) with a capable sound-card. Said computer must also be powerful enough to be running a modern [operating system](https://en.wikipedia.org/wiki/Operating_system) that is still supported with regular updates.
 
 In the near future, we wish to implement *pattern recognition techniques* into `Small World` so that it may interpret audio streams that contain even a significant amount of noise, as a good pair of ears would almost otherwise do so. We believe that by doing this, we will be going a step higher than most programs of this sort have done in the past, and even in the present.
+
+We are presently implementing support for [codec2](https://github.com/drowe67/codec2/blob/master/README_ofdm.txt) as the Orthogonal Frequency Division Multiplexed (OFDM) modem of choice at this stage so that we may then begin implementing more advanced features much more quickly and easily. We don't shy away from the fact that we rely on libraries developed by others, where possible; why re-invent the wheel when the work has already been done for you?
 
 #### Current/Planned Features
 
 Following is a short list of features, both planned and partially already implemented in some fashion, that we have for this project. We are always taking on new ideas, paradigms, and/or perspectives so please, we invite you to contribute towards `Small World Deluxe` in any manner that you are able towards.
 
-- The ability to use highly compressed, yet rich with decently sounding audio output with regards to voice, audio codecs originally meant for telephony OTA (i.e. over-the-air).
+- The ability to use highly compressed, yet decently sounding audio output with regards to voice, such as the aforementioned `codec2`.
   - This will allow digital communication primarily on the shortwave frequencies over great distances to far away places in the world from your own location, with excellent error correction features and so on.
 - A functioning spectrograph / waterfall that will give you a highly detailed view of current signaling conditions, both outgoing (TX) and incoming (RX). We are [focusing a great deal of effort on this feature](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/issues/3) so far and hope to have a working version soon!
-- The ability to record/playback [WAV](https://en.wikipedia.org/wiki/WAV)/[MP3](https://en.wikipedia.org/wiki/MP3)/[OGG](https://xiph.org/vorbis/)/etc files.
+- The ability to record/playback [WAV](https://en.wikipedia.org/wiki/WAV)/[OGG](https://xiph.org/vorbis/)/[Opus](https://opus-codec.org/)/etc files. These are not meant for real-time communications due to the inherent latency issues therein of these codecs and the requirement for a high-performance computer to keep up.
 - A dialog rich with customization options and settings that you can configure to your heart's desire.
 - Easily send messages to others throughout the world and efficiently make sense of the information you receive in-turn.
 - Convenient and easy-to-use dialog windows that are made with the [Qt5 project](https://www.qt.io/developers), which is the standard within the computing industry for cross-platform software applications.
 - As hinted at just above, this software application is cross-platform with excellent support for both [Linux](https://ubuntu.com/) and [Microsoft Windows 7 through to 10](https://www.microsoft.com/).
   - There is planned support for [Microsoft Windows XP](https://www.microsoft.com/) and [Macintosh OS/X](https://www.apple.com/macos), so stay tuned!
+- Make extensive use of the [PortAudio project](http://www.portaudio.com/) for easy cross-compatibility between `Linux`, `Macintosh OS/X`, and `Microsoft Windows` systems.
 
 ##### Screenshots
 

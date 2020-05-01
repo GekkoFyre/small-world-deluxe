@@ -154,9 +154,16 @@ endif(LEVELDB_FOUND)
 
 find_package(PortAudio REQUIRED)
 if (PortAudio_FOUND)
-    if(GFYRE_PA_USE_ASIO)
-        add_definitions(-DPA_USE_ASIO=1)
-        message(STATUS "Enabled the `PA_USE_ASIO` build option!")
+    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSYS" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MINGW")
+        # Enable `PA_USE_ASIO` by default, since this allows for the lowest latency possible with the audio pathways!
+        if(GFYRE_PA_USE_ASIO)
+            add_definitions(-DPA_USE_ASIO=1)
+            message(STATUS "Enabled the `PA_USE_ASIO` build option!")
+        endif()
+    else()
+        # Disable `PA_USE_ASIO` because we are dealing with a system other than Microsoft Windows, where ASIO is unsupported...
+        add_definitions(-DPA_USE_ASIO=0)
+        message(STATUS "Disabled the `PA_USE_ASIO` build option because we are not dealing with a supported Microsoft Windows system!")
     endif()
 
     include_directories(${PortAudio_INCLUDE_DIRS})
@@ -164,14 +171,6 @@ if (PortAudio_FOUND)
 else()
     message(FATAL_ERROR "The 'PortAudio' sound library could not be found!")
 endif(PortAudio_FOUND)
-
-find_package(PortAudioCpp REQUIRED)
-if (PortAudioCpp_FOUND)
-    include_directories(${PortAudioCpp_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${PortAudioCpp_LIBRARIES})
-else()
-    message(FATAL_ERROR "The C++ bindings for PortAudio could not be found!")
-endif(PortAudioCpp_FOUND)
 
 find_package(Hamlib REQUIRED)
 if (HAMLIB_FOUND)
@@ -389,7 +388,44 @@ add_dependencies(galaxy resources)
 add_executable(smallworld
     src/main.cpp
     src/contrib/RS232/rs232.h
-    src/contrib/RS232/rs232.c)
+    src/contrib/RS232/rs232.c
+    src/contrib/portaudio/cpp/include/portaudiocpp/AsioDeviceAdapter.hxx
+    src/contrib/portaudio/cpp/include/portaudiocpp/AutoSystem.hxx
+    src/contrib/portaudio/cpp/include/portaudiocpp/BlockingStream.hxx
+    src/contrib/portaudio/cpp/include/portaudiocpp/CallbackInterface.hxx
+    src/contrib/portaudio/cpp/include/portaudiocpp/CallbackStream.hxx
+    src/contrib/portaudio/cpp/include/portaudiocpp/CFunCallbackStream.hxx
+    src/contrib/portaudio/cpp/include/portaudiocpp/CppFunCallbackStream.hxx
+    src/contrib/portaudio/cpp/include/portaudiocpp/Device.hxx
+    src/contrib/portaudio/cpp/include/portaudiocpp/DirectionSpecificStreamParameters.hxx
+    src/contrib/portaudio/cpp/include/portaudiocpp/Exception.hxx
+    src/contrib/portaudio/cpp/include/portaudiocpp/HostApi.hxx
+    src/contrib/portaudio/cpp/include/portaudiocpp/InterfaceCallbackStream.hxx
+    src/contrib/portaudio/cpp/include/portaudiocpp/MemFunCallbackStream.hxx
+    src/contrib/portaudio/cpp/include/portaudiocpp/PortAudioCpp.hxx
+    src/contrib/portaudio/cpp/include/portaudiocpp/SampleDataFormat.hxx
+    src/contrib/portaudio/cpp/include/portaudiocpp/Stream.hxx
+    src/contrib/portaudio/cpp/include/portaudiocpp/StreamParameters.hxx
+    src/contrib/portaudio/cpp/include/portaudiocpp/System.hxx
+    src/contrib/portaudio/cpp/include/portaudiocpp/SystemDeviceIterator.hxx
+    src/contrib/portaudio/cpp/include/portaudiocpp/SystemHostApiIterator.hxx
+    src/contrib/portaudio/cpp/src/AsioDeviceAdapter.cxx
+    src/contrib/portaudio/cpp/src/BlockingStream.cxx
+    src/contrib/portaudio/cpp/src/CallbackInterface.cxx
+    src/contrib/portaudio/cpp/src/CallbackStream.cxx
+    src/contrib/portaudio/cpp/src/CFunCallbackStream.cxx
+    src/contrib/portaudio/cpp/src/CppFunCallbackStream.cxx
+    src/contrib/portaudio/cpp/src/Device.cxx
+    src/contrib/portaudio/cpp/src/DirectionSpecificStreamParameters.cxx
+    src/contrib/portaudio/cpp/src/Exception.cxx
+    src/contrib/portaudio/cpp/src/HostApi.cxx
+    src/contrib/portaudio/cpp/src/InterfaceCallbackStream.cxx
+    src/contrib/portaudio/cpp/src/MemFunCallbackStream.cxx
+    src/contrib/portaudio/cpp/src/Stream.cxx
+    src/contrib/portaudio/cpp/src/StreamParameters.cxx
+    src/contrib/portaudio/cpp/src/System.cxx
+    src/contrib/portaudio/cpp/src/SystemDeviceIterator.cxx
+    src/contrib/portaudio/cpp/src/SystemHostApiIterator.cxx)
 
 target_link_libraries(smallworld galaxy)
 

@@ -43,10 +43,10 @@
 #include "src/pa_audio_buf.hpp"
 #include "src/string_funcs_windows.hpp"
 #include "src/dek_db.hpp"
+#include "src/contrib/portaudio/cpp/include/portaudiocpp/System.hxx"
 #include <ogg/os_types.h>
 #include <boost/filesystem.hpp>
 #include <portaudio.h>
-#include <portaudiocpp/System.hxx>
 #include <memory>
 #include <string>
 #include <future>

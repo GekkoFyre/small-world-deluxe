@@ -45,10 +45,10 @@
 #include "src/spectro_gui.hpp"
 #include "src/dek_db.hpp"
 #include "src/string_funcs_windows.hpp"
+#include "src/contrib/portaudio/cpp/include/portaudiocpp/System.hxx"
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
 #include <portaudio.h>
-#include <portaudiocpp/System.hxx>
 #include <QObject>
 #include <QPointer>
 #include <memory>
