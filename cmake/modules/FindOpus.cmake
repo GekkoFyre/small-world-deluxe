@@ -39,7 +39,7 @@ pkg_check_modules(PC_Opus QUIET opus)
 set(Opus_DEFINITIONS ${PC_Opus_CFLAGS_OTHER})
 
 find_path(Opus_INCLUDE_DIR NAMES "opus.h" "opus_multistream.h"
-            HINTS ${PC_Opus_INCLUDEDIR} ${PC_Opus_INCLUDE_DIRS}
+            HINTS ${PC_Opus_INCLUDE_DIR} ${PC_Opus_INCLUDE_DIRS}
             PATH_SUFFIXES opus)
 
 find_library(Opus_LIBRARY NAMES "opus" "libopus"

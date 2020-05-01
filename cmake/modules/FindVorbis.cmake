@@ -39,7 +39,7 @@ pkg_check_modules(PC_Vorbis QUIET vorbis)
 set(Vorbis_DEFINITIONS ${PC_Vorbis_CFLAGS_OTHER})
 
 find_path(Vorbis_INCLUDE_DIR NAMES "vorbis/vorbisenc.h" "vorbis/vorbisfile.h"
-            HINTS ${PC_Vorbis_INCLUDEDIR} ${PC_Vorbis_INCLUDE_DIRS}
+            HINTS ${PC_Vorbis_INCLUDE_DIR} ${PC_Vorbis_INCLUDE_DIRS}
             PATH_SUFFIXES vorbis)
 
 find_library(Vorbis_LIBRARY NAMES "vorbis_static" "libvorbis_static" "libvorbis" "vorbis"

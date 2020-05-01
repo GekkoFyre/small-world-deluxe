@@ -39,7 +39,7 @@ pkg_check_modules(PC_PortAudio QUIET portaudio)
 set(PortAudio_DEFINITIONS ${PC_PortAudio_CFLAGS_OTHER})
 
 find_path(PortAudio_INCLUDE_DIR NAMES "portaudio.h"
-            HINTS ${PC_PortAudio_INCLUDEDIR} ${PC_PortAudio_INCLUDE_DIRS}
+            HINTS ${PC_PortAudio_INCLUDE_DIR} ${PC_PortAudio_INCLUDE_DIRS}
             PATH_SUFFIXES portaudio)
 
 find_library(PortAudio_LIBRARY NAMES "portaudio" "libportaudio" "portaudio_static_x64" "portaudio_x64" "portaudio_x86" "portaudio_static_x86"

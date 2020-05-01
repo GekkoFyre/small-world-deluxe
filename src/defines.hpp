@@ -41,7 +41,6 @@
 #include <portaudiocpp/PortAudioCpp.hxx>
 #include <portaudiocpp/SampleDataFormat.hxx>
 #include <portaudiocpp/Device.hxx>
-#include <portaudiocpp/AsioDeviceAdapter.hxx>
 #include <boost/exception/all.hpp>
 #include <boost/logic/tribool.hpp>
 #include <boost/filesystem.hpp>
@@ -61,10 +60,12 @@
 
 #ifdef _WIN32
 #include <winsdkver.h>
-#include <atlbase.h>
-#include <atlstr.h>
 #include <Windows.h>
 #include <tchar.h> // https://linuxgazette.net/147/pfeiffer.html
+#if defined(_MSC_VER) && (_MSC_VER > 1900)
+#include <atlbase.h>
+#include <atlstr.h>
+#endif
 #endif
 
 #ifdef __cplusplus
@@ -79,8 +80,11 @@ extern "C"
 #ifdef _WIN32
 #include <libusb.h>
     typedef std::wstring gkwstring;
+#if defined(_MSC_VER) && (_MSC_VER > 1915)
 #ifdef PA_USE_ASIO
 #include "pa_asio.h"
+#include <portaudiocpp/AsioDeviceAdapter.hxx>
+#endif
 #endif
 #elif __linux__
 #include <libusb-1.0/libusb.h>

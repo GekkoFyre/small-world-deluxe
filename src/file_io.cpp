@@ -42,7 +42,6 @@
 #include <random>
 #include <iostream>
 #include <ostream>
-#include <cstring>
 #include <utility>
 #include <fstream>
 #include <QMessageBox>

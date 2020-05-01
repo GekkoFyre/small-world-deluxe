@@ -144,30 +144,6 @@ else()
     message(FATAL_ERROR "The required 'Boost C++' libraries are either not installed, or not multithreaded and/or of not an up-to-date version. Boost C++ 1.54.0 is the minimally required version.")
 endif(Boost_FOUND)
 
-find_package(ZSTD REQUIRED)
-if (ZSTD_FOUND)
-    include_directories(${ZSTD_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${ZSTD_LIBRARIES})
-else()
-    message(SEND_ERROR "The 'ZSTD' compression library could not be found!")
-endif(ZSTD_FOUND)
-
-find_package(LZ4 REQUIRED)
-if (LZ4_FOUND)
-    include_directories(${LZ4_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${LZ4_LIBRARIES})
-else()
-    message(SEND_ERROR "The 'LZ4' compression library could not be found!")
-endif(LZ4_FOUND)
-
-find_package(ZLIB REQUIRED)
-if (ZLIB_FOUND)
-    include_directories(${ZLIB_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${ZLIB_LIBRARIES})
-else()
-    message(SEND_ERROR "The 'ZLIB' compression library could not be found!")
-endif(ZLIB_FOUND)
-
 find_package(LevelDB REQUIRED)
 if (LEVELDB_FOUND)
     include_directories(${LEVELDB_INCLUDE_DIRS})
@@ -207,12 +183,12 @@ else()
 endif(HAMLIB_FOUND)
 
 find_package(USB REQUIRED)
-if (LIBUSB_FOUND)
+if (USB_FOUND)
     include_directories(${LIBUSB_INCLUDE_DIRS})
     set(LIBS ${LIBS} ${LIBUSB_LIBRARIES})
 else()
     message(FATAL_ERROR "The 'libusb' USB system library could not be found!")
-endif(LIBUSB_FOUND)
+endif(USB_FOUND)
 
 find_package(FFTW REQUIRED)
 if (FFTW_FOUND)
@@ -263,6 +239,17 @@ else()
     message(SEND_ERROR "The 'Opus' audio (de-/en-)coding library could not be found!")
 endif(Opus_FOUND)
 
+#
+# https://github.com/drowe67/codec2/blob/master/README_ofdm.txt
+#
+find_package(Codec2 REQUIRED)
+if (CODEC2_FOUND)
+    include_directories(${CODEC2_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${CODEC2_LIBRARIES})
+else()
+    message(SEND_ERROR "The 'codec2' digital voice OFDM modem for HF SSB could not be found!")
+endif(CODEC2_FOUND)
+
 set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-arcs -ftest-coverage")
 
 # set up a mapping so that the Release configuration for the Qt imported target is
@@ -299,6 +286,7 @@ if(WIN32)
         src/gk_audio_encoding.cpp
         src/gk_audio_decoding.cpp
         src/gk_cli.cpp
+        src/gk_modem.cpp
         src/string_funcs_windows.cpp
         src/ui/gkaudioplaydialog.cpp)
 elseif(UNIX)
@@ -319,6 +307,7 @@ elseif(UNIX)
         src/gk_audio_encoding.cpp
         src/gk_audio_decoding.cpp
         src/gk_cli.cpp
+        src/gk_modem.cpp
         src/string_funcs_linux.cpp
         src/ui/gkaudioplaydialog.cpp)
 elseif(APPLE)
@@ -355,6 +344,7 @@ if(WIN32)
         src/gk_audio_encoding.hpp
         src/gk_audio_decoding.hpp
         src/gk_cli.hpp
+        src/gk_modem.hpp
         src/string_funcs_windows.hpp
         src/ui/gkaudioplaydialog.hpp)
 elseif(UNIX)
@@ -377,6 +367,7 @@ elseif(UNIX)
         src/gk_audio_encoding.hpp
         src/gk_audio_decoding.hpp
         src/gk_cli.hpp
+        src/gk_modem.hpp
         src/string_funcs_linux.hpp
         src/ui/gkaudioplaydialog.hpp)
 elseif(APPLE)
@@ -418,4 +409,3 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     target_compile_options(galaxy PUBLIC "/W1 /GL")
     endif()
 endif()
-

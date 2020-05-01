@@ -39,7 +39,7 @@ pkg_check_modules(PC_FFTW QUIET fftw3)
 set(FFTW_DEFINITIONS ${PC_FFTW_CFLAGS_OTHER})
 
 find_path(FFTW_INCLUDE_DIR NAMES "fftw3.h" "fftw.h"
-            HINTS ${PC_FFTW_INCLUDEDIR} ${PC_FFTW_INCLUDE_DIRS}
+            HINTS ${PC_FFTW_INCLUDE_DIR} ${PC_FFTW_INCLUDE_DIRS}
             PATH_SUFFIXES fftw3)
 
 find_library(FFTW_LIBRARY NAMES "fftw3" "libfftw3" "fftw" "libfftw"

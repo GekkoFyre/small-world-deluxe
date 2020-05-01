@@ -43,7 +43,6 @@
 #include "src/pa_audio_buf.hpp"
 #include <portaudio.h>
 #include <portaudiocpp/PortAudioCpp.hxx>
-#include <portaudiocpp/AsioDeviceAdapter.hxx>
 #include <portaudiocpp/SampleDataFormat.hxx>
 #include <QObject>
 #include <vector>

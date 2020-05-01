@@ -39,7 +39,7 @@ pkg_check_modules(PC_Ogg QUIET ogg)
 set(Ogg_DEFINITIONS ${PC_Ogg_CFLAGS_OTHER})
 
 find_path(Ogg_INCLUDE_DIR NAMES "ogg/ogg.h" "ogg/os_types.h"
-            HINTS ${PC_Ogg_INCLUDEDIR} ${PC_Ogg_INCLUDE_DIRS}
+            HINTS ${PC_Ogg_INCLUDE_DIR} ${PC_Ogg_INCLUDE_DIRS}
             PATH_SUFFIXES ogg)
 
 find_library(Ogg_LIBRARY NAMES "ogg_static" "libogg_static" "ogg" "libogg"

@@ -39,7 +39,7 @@ pkg_check_modules(PC_LIBZSTD QUIET libzstd)
 set(LIBZSTD_DEFINITIONS ${PC_LIBZSTD_CFLAGS_OTHER})
 
 find_path(LIBZSTD_INCLUDE_DIR NAMES "zstd.h"
-            HINTS ${PC_LIBZSTD_INCLUDEDIR} ${PC_LIBZSTD_INCLUDE_DIRS}
+            HINTS ${PC_LIBZSTD_INCLUDE_DIR} ${PC_LIBZSTD_INCLUDE_DIRS}
             PATH_SUFFIXES libzstd)
 
 find_library(LIBZSTD_LIBRARY NAMES "zstd_static" "libzstd_static" "zstd" "libzstd"

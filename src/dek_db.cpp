@@ -49,7 +49,6 @@
 #include <utility>
 #include <vector>
 #include <ctime>
-#include <cstring>
 #include <QDebug>
 #include <QVariant>
 

@@ -136,7 +136,7 @@ AudioFileInfo GkAudioDecoding::gatherOggInfo(const boost::filesystem::path &file
             }
         }
     } catch (const std::exception &e) {
-        HWND hwnd_gather_ogg_info;
+        HWND hwnd_gather_ogg_info = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd_gather_ogg_info, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd_gather_ogg_info);
     }

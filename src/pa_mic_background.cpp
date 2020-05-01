@@ -87,7 +87,7 @@ paMicProcBackground::paMicProcBackground(portaudio::System *paInit, const QPoint
 
         return;
     } catch (const std::exception &e) {
-        HWND hwnd_mic_proc_background;
+        HWND hwnd_mic_proc_background = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd_mic_proc_background, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd_mic_proc_background);
     }
@@ -233,7 +233,7 @@ void paMicProcBackground::spectrographCallback(PaAudioBuf *audio_buf, portaudio:
             }
         }
     } catch (const std::exception &e) {
-        HWND hwnd_spectro_graph_background;
+        HWND hwnd_spectro_graph_background = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd_spectro_graph_background, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd_spectro_graph_background);
     }

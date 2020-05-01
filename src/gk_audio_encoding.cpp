@@ -169,11 +169,11 @@ void GkAudioEncoding::recordAudioFile(const CodecSupport &codec, const Bitrate &
             // Unknown!
             throw std::invalid_argument(tr("Recording with unknown media (i.e. codec) format!").toStdString());
         }
-    } catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
     } catch (const sys::system_error &e) {
         ec = e.code();
         QMessageBox::warning(nullptr, tr("Error!"), ec.message().c_str(), QMessageBox::Ok);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
     }
 
     return;
@@ -346,7 +346,7 @@ void GkAudioEncoding::recordOggVorbis(const std::vector<signed char> &audio_fram
             return;
         }
     } catch (const std::exception &e) {
-        HWND hwnd_record_ogg_vorbis_vec;
+        HWND hwnd_record_ogg_vorbis_vec = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd_record_ogg_vorbis_vec, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd_record_ogg_vorbis_vec);
     }

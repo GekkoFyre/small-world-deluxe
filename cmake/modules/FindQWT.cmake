@@ -39,7 +39,7 @@ pkg_check_modules(PC_QWT QUIET qwt)
 set(QWT_DEFINITIONS ${PC_QWT_CFLAGS_OTHER})
 
 find_path(QWT_INCLUDE_DIR NAMES "qwt.h"
-            HINTS ${PC_QWT_INCLUDEDIR} ${PC_QWT_INCLUDE_DIRS}
+            HINTS ${PC_QWT_INCLUDE_DIR} ${PC_QWT_INCLUDE_DIRS}
             PATH_SUFFIXES qwt)
 
 find_library(QWT_LIBRARY NAMES "libqwtd" "qwtd" "libqwt" "qwt"

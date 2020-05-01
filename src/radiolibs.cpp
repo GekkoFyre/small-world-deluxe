@@ -252,6 +252,7 @@ QMap<tstring, std::pair<tstring, boost::tribool>> RadioLibs::status_com_ports()
 {
     QMap<tstring, std::pair<tstring, boost::tribool>> com_map;
 
+    #if defined(_MSC_VER) && (_MSC_VER > 1900)
     #ifdef _WIN32
     try {
         TCHAR lpTargetPath[5000]; // buffer to store the path of the COM ports
@@ -289,7 +290,8 @@ QMap<tstring, std::pair<tstring, boost::tribool>> RadioLibs::status_com_ports()
         QMessageBox::warning(nullptr, tr("Error!"), tr("An issue was encountered whilst determining COM/Serial/RS-232 port status:\n\n%1")
                              .arg(QString::number(AtlHresultFromWin32(e.m_hr))), QMessageBox::Ok);
     }
-    #elif __linux__
+    #endif
+    #elif __linux__ || __MINGW32__
     try {
         // Scan through `/sys/class/tty` as it contains all the TTY-devices within the system
         sys::error_code ec;
@@ -304,8 +306,8 @@ QMap<tstring, std::pair<tstring, boost::tribool>> RadioLibs::status_com_ports()
 
         for (const auto &device: dirent) {
             fs::path device_stem = device.stem();
-            if (std::strcmp(device_stem.c_str(), "..") != 0) {
-                if (std::strcmp(device_stem.c_str(), ".") != 0) {
+            if (std::strcmp(device_stem.string().c_str(), "..") != 0) {
+                if (std::strcmp(device_stem.string().c_str(), ".") != 0) {
                     // Construct full absolute file path
                     fs::path device_dir = sys_dir;
                     device_dir += device_stem;

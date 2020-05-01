@@ -39,14 +39,14 @@ pkg_check_modules(PC_LEVELDB QUIET leveldb)
 set(LEVELDB_DEFINITIONS ${PC_LEVELDB_CFLAGS_OTHER})
 
 find_path(LEVELDB_INCLUDE_DIR NAMES "leveldb/db.h"
-            HINTS ${PC_LEVELDB_INCLUDEDIR} ${PC_LEVELDB_INCLUDE_DIRS}
+            HINTS ${PC_LEVELDB_INCLUDE_DIR} ${PC_LEVELDB_INCLUDE_DIRS}
             PATH_SUFFIXES leveldb)
 
 find_library(LEVELDB_LIBRARY NAMES "leveldb" "libleveldb"
             HINTS ${PC_LEVELDB_LIBDIR} ${PC_LEVELDB_LIBRARY_DIRS})
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(LEVELDB DEFAULT_MSG LEVELDB_LIBRARY LEVELDB_INCLUDE_DIR)
+find_package_handle_standard_args(LevelDB DEFAULT_MSG LEVELDB_LIBRARY LEVELDB_INCLUDE_DIR)
 
 mark_as_advanced(LEVELDB_INCLUDE_DIR LEVELDB_LIBRARY)
 

@@ -53,15 +53,17 @@ Be sure to check back often for further updates!
 
 To begin with, you will need to install the following dependencies along with the [GCC Toolchain](https://gcc.gnu.org/) or [LLVM/Clang](https://clang.llvm.org/):
 
-- `CMake`
-- `Boost C++` [ these must be *static* **and also** *multithreaded* libraries, unless you modify CMake's instructions ]
-- `libzstd-devel`
-- `lz4-devel`
-- `zlib-devel`
-- `libusb-devel`
-- `leveldb-devel`
-- `HamLib` C++ [ development libraries ]
-- `Qt5` [ development libraries ]
+- `CMake` [ [Build process managerial software](https://cmake.org/) ]
+- `Boost C++` [ [development libraries](https://www.boost.org/) that must be *static* **and also** *multithreaded* libraries, unless you modify CMake's instructions ]
+- `libusb-devel` [ [development libraries](https://github.com/libusb/libusb) ]
+- `libusb-compat` [ [compatibility libraries](https://github.com/libusb/libusb-compat-0.1) ]
+- `leveldb-devel` [ [development libraries](https://github.com/google/leveldb) for NoSQL information storage [by Google](https://www.google.com/) ]
+- `HamLib` C++ [ [development libraries](https://hamlib.github.io/) for communicating with amateur radio transceiver rigs ]
+- `Qt5` [ [development libraries](https://www.qt.io/) ]
+- `Ogg Vorbis`  [audio codec libraries](https://xiph.org/vorbis/) along with the related `Opus` libraries
+- `codec2` [ [Orthogonal Frequency Division Multiplexed (OFDM) modem](https://github.com/drowe67/codec2/blob/master/README_ofdm.txt) for [HF SSB](https://en.wikipedia.org/wiki/Single-sideband_modulation) ]
+- `Qwt` [ [graphing libraries](https://qwt.sourceforge.io/) for the instrumental display of information ]
+- `FFTW` [ [libraries for computing the discrete Fourier transform (DFT)](http://fftw.org/) in one or more dimensions ]
 
 And for Linux-based systems in particular, you will further require the following:
 
@@ -77,7 +79,11 @@ Once the operation has finished, the last two commands are `make -j$(nproc)` and
 
 ##### Microsoft Windows 8/10
 
-~~Compilation should be straightforward given the above instructions and the fact that we have provided a [CMake](https://cmake.org/) build file~~. We've now learned from experience that compiling anything under Microsoft Windows is a grim undertaking that should only be performed by the best prepared of us. If you are encountering difficulties of any kind, please [download a binary release](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/releases) for this platform instead.
+If you wish to compile your own binaries for the more recent releases of Microsoft Windows (8/10), since those are the only officially supported versions of said operating system ([we support Linux too!](#linux-and-similar)), you will have to make use of [MinGW](http://www.mingw.org/) or even possibly [Cygwin](https://www.cygwin.com/) for the compilation process.
+
+This is due to the fact that we use `codec2` for our [OFDM modem of choice](https://en.wikipedia.org/wiki/Orthogonal_frequency-division_multiplexing) with regards to communications, and it itself cannot be compiled with [Microsoft Visual Studio](https://visualstudio.microsoft.com/) from our experiences. The authors do not seem to support it in any capacity at least with MinGW being the official route of choice for Microsoft Windows.
+
+Speaking as the author of Small World Deluxe, compilation proceeds completely okay with a recently updated MinGW installation provided you have all the requisite libraries installed. But even if you are unsure of everything required being installed or not, then CMake/GCC does an alright job at letting you know what is left.
 
 #### GitLab Runner & CI/CD
 

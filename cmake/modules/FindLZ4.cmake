@@ -39,7 +39,7 @@ pkg_check_modules(PC_LIBLZ4 QUIET liblz4)
 set(LIBLZ4_DEFINITIONS ${PC_LIBLZ4_CFLAGS_OTHER})
 
 find_path(LIBLZ4_INCLUDE_DIR NAMES "lz4.h" "lz4hc.h"
-            HINTS ${PC_LIBLZ4_INCLUDEDIR} ${PC_LIBLZ4_INCLUDE_DIRS}
+            HINTS ${PC_LIBLZ4_INCLUDE_DIR} ${PC_LIBLZ4_INCLUDE_DIRS}
             PATH_SUFFIXES liblz4)
 
 find_library(LIBLZ4_LIBRARY NAMES "lz4_static" "liblz4_static" "lz4" "liblz4"

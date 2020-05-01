@@ -39,14 +39,14 @@ pkg_check_modules(PC_LIBUSB QUIET libusb)
 set(USB_DEFINITIONS ${PC_LIBUSB_CFLAGS_OTHER})
 
 find_path(LIBUSB_INCLUDE_DIR NAMES "libusb.h" "libusb-1.0/libusb.h"
-            HINTS ${PC_LIBUSB_INCLUDEDIR} ${PC_LIBUSB_INCLUDE_DIRS}
+            HINTS ${PC_LIBUSB_INCLUDE_DIR} ${PC_LIBUSB_INCLUDE_DIRS}
             PATH_SUFFIXES libusb)
 
 find_library(LIBUSB_LIBRARY NAMES "libusb-1.0" "libusb" "usb" "usb-1.0"
             HINTS ${PC_LIBUSB_LIBDIR} ${PC_LIBUSB_LIBRARY_DIRS})
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(LIBUSB DEFAULT_MSG LIBUSB_LIBRARY LIBUSB_INCLUDE_DIR)
+find_package_handle_standard_args(USB DEFAULT_MSG LIBUSB_LIBRARY LIBUSB_INCLUDE_DIR)
 
 mark_as_advanced(LIBUSB_INCLUDE_DIR LIBUSB_LIBRARY)
 

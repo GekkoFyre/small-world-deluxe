@@ -45,7 +45,6 @@
 #include <cmath>
 #include <sstream>
 #include <cstdlib>
-#include <cstring>
 #include <algorithm>
 #include <QString>
 #include <QDebug>
@@ -350,11 +349,13 @@ std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp(portaudio::System *portA
                                                                        outputParameters.paStreamParameters());
             }
 
-            #ifdef WIN32
             //
             // ASIO specific settings
             //
             if ((*i).hostApi().typeId() == paASIO) {
+                #ifdef WIN32
+                #if defined(_MSC_VER) && (_MSC_VER > 1915)
+                #ifdef PA_USE_ASIO
                 portaudio::AsioDeviceAdapter asio_device(*i);
                 device.asio_min_buffer_size = asio_device.minBufferSize();
                 device.asio_max_buffer_size = asio_device.maxBufferSize();
@@ -385,8 +386,10 @@ std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp(portaudio::System *portA
                 } else {
                     device.asio_granularity = -1;
                 }
+                #endif
+                #endif
+                #endif // WIN32
             }
-            #endif // WIN32
 
             audio_devices_vec.push_back(device);
             ++device_number;

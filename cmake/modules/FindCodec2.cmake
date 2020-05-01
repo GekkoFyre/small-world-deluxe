@@ -35,20 +35,23 @@
 #
 
 find_package(PkgConfig)
-pkg_check_modules(PC_PortAudioCpp QUIET portaudiocpp)
-set(PortAudioCpp_DEFINITIONS ${PC_PortAudioCpp_CFLAGS_OTHER})
+pkg_check_modules(PC_CODEC2 "codec2")
+set(CODEC2_DEFINITIONS ${PC_CODEC2_CFLAGS_OTHER})
 
-find_path(PortAudioCpp_INCLUDE_DIR NAMES "portaudiocpp/PortAudioCpp.hxx"
-          HINTS ${PC_PortAudioCpp_INCLUDE_DIR} ${PC_PortAudioCpp_INCLUDE_DIRS}
-          PATH_SUFFIXES portaudiocpp)
+find_path(CODEC2_INCLUDE_DIR
+    NAMES "codec2/codec2.h"
+    HINTS ${PC_CODEC2_INCLUDE_DIR} ${PC_CODEC2_INCLUDE_DIRS}
+    PATHS "/usr/local/include" "/usr/include")
 
-find_library(PortAudioCpp_LIBRARY NAMES "portaudiocpp-vc7_1-d" "portaudiocpp-vc7_1" "portaudiocpp"
-             HINTS ${PC_PortAudioCpp_LIBDIR} ${PC_PortAudioCpp_LIBRARY_DIRS})
+find_library(CODEC2_LIBRARY
+    NAMES  "codec2" "libcodec"
+    HINTS ${PC_CODEC2_LIBDIR} ${PC_CODEC2_LIBRARY_DIRS}
+    PATHS "/usr/local/lib" "/usr/local/lib64" "/usr/lib" "/usr/lib64")
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(PortAudioCpp DEFAULT_MSG PortAudioCpp_LIBRARY PortAudioCpp_INCLUDE_DIR)
+find_package_handle_standard_args(Codec2 DEFAULT_MSG CODEC2_LIBRARY CODEC2_INCLUDE_DIR)
 
-mark_as_advanced(PortAudioCpp_INCLUDE_DIR PortAudioCpp_LIBRARY)
+mark_as_advanced(CODEC2_INCLUDE_DIR CODEC2_LIBRARY)
 
-set(PortAudioCpp_LIBRARIES ${PortAudioCpp_LIBRARY})
-set(PortAudioCpp_INCLUDE_DIRS ${PortAudioCpp_INCLUDE_DIR})
+set(CODEC2_LIBRARIES ${CODEC2_LIBRARY})
+set(CODEC2_INCLUDE_DIRS ${CODEC2_INCLUDE_DIR})
