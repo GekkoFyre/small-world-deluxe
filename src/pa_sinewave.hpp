@@ -39,7 +39,7 @@
 
 #include "src/defines.hpp"
 #include <portaudio.h>
-#include "src/contrib/portaudio/cpp/include/portaudiocpp/PortAudioCpp.hxx"
+#include <portaudiocpp/PortAudioCpp.hxx>
 
 namespace GekkoFyre {
 

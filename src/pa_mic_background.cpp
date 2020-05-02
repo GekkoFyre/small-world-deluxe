@@ -37,7 +37,7 @@
 
 #include "pa_mic_background.hpp"
 #include "src/spectro_fftw.hpp"
-#include "src/contrib/portaudio/cpp/include/portaudiocpp/PortAudioCpp.hxx"
+#include <portaudiocpp/PortAudioCpp.hxx>
 #include <iostream>
 #include <utility>
 

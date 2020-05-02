@@ -5,7 +5,7 @@
 
 #include "portaudio.h"
 
-#include "src/contrib/portaudio/cpp/include/portaudiocpp/Stream.hxx"
+#include "portaudiocpp/Stream.hxx"
 
 // ---------------------------------------------------------------------------------------
 

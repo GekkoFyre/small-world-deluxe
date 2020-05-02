@@ -180,6 +180,14 @@ else()
     message(FATAL_ERROR "The 'PortAudio' sound library could not be found!")
 endif(PortAudio_FOUND)
 
+find_package(PortAudioCpp REQUIRED)
+if (PortAudioCpp_FOUND)
+    include_directories(${PortAudioCpp_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${PortAudioCpp_LIBRARIES})
+else()
+    message(FATAL_ERROR "The C++ bindings for PortAudio could not be found! You must compile this separately from the code found within: 'src\contrib\portaudio\cpp'.")
+endif(PortAudioCpp_FOUND)
+
 find_package(Hamlib REQUIRED)
 if (HAMLIB_FOUND)
     include_directories(${HAMLIB_INCLUDE_DIRS})
@@ -323,42 +331,10 @@ endif()
 
 if(WIN32)
     set(GALAXY_SRC_CPP
-        src/pa_sinewave.cpp
-        src/contrib/portaudio/cpp/src/BlockingStream.cxx
-        src/contrib/portaudio/cpp/src/CallbackInterface.cxx
-        src/contrib/portaudio/cpp/src/CallbackStream.cxx
-        src/contrib/portaudio/cpp/src/CFunCallbackStream.cxx
-        src/contrib/portaudio/cpp/src/CppFunCallbackStream.cxx
-        src/contrib/portaudio/cpp/src/Device.cxx
-        src/contrib/portaudio/cpp/src/DirectionSpecificStreamParameters.cxx
-        src/contrib/portaudio/cpp/src/Exception.cxx
-        src/contrib/portaudio/cpp/src/HostApi.cxx
-        src/contrib/portaudio/cpp/src/InterfaceCallbackStream.cxx
-        src/contrib/portaudio/cpp/src/MemFunCallbackStream.cxx
-        src/contrib/portaudio/cpp/src/Stream.cxx
-        src/contrib/portaudio/cpp/src/StreamParameters.cxx
-        src/contrib/portaudio/cpp/src/System.cxx
-        src/contrib/portaudio/cpp/src/SystemDeviceIterator.cxx
-        src/contrib/portaudio/cpp/src/SystemHostApiIterator.cxx)
+        src/pa_sinewave.cpp)
 elseif(UNIX)
     set(GALAXY_SRC_CPP
-        src/pa_sinewave.cpp
-        src/contrib/portaudio/cpp/src/BlockingStream.cxx
-        src/contrib/portaudio/cpp/src/CallbackInterface.cxx
-        src/contrib/portaudio/cpp/src/CallbackStream.cxx
-        src/contrib/portaudio/cpp/src/CFunCallbackStream.cxx
-        src/contrib/portaudio/cpp/src/CppFunCallbackStream.cxx
-        src/contrib/portaudio/cpp/src/Device.cxx
-        src/contrib/portaudio/cpp/src/DirectionSpecificStreamParameters.cxx
-        src/contrib/portaudio/cpp/src/Exception.cxx
-        src/contrib/portaudio/cpp/src/HostApi.cxx
-        src/contrib/portaudio/cpp/src/InterfaceCallbackStream.cxx
-        src/contrib/portaudio/cpp/src/MemFunCallbackStream.cxx
-        src/contrib/portaudio/cpp/src/Stream.cxx
-        src/contrib/portaudio/cpp/src/StreamParameters.cxx
-        src/contrib/portaudio/cpp/src/System.cxx
-        src/contrib/portaudio/cpp/src/SystemDeviceIterator.cxx
-        src/contrib/portaudio/cpp/src/SystemHostApiIterator.cxx)
+        src/pa_sinewave.cpp)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()
@@ -385,26 +361,7 @@ if(WIN32)
         src/gk_cli.hpp
         src/gk_modem.hpp
         src/string_funcs_windows.hpp
-        src/ui/gkaudioplaydialog.hpp
-        src/contrib/portaudio/cpp/include/portaudiocpp/AutoSystem.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/BlockingStream.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/CallbackInterface.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/CallbackStream.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/CFunCallbackStream.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/CppFunCallbackStream.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/Device.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/DirectionSpecificStreamParameters.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/Exception.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/HostApi.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/InterfaceCallbackStream.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/MemFunCallbackStream.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/PortAudioCpp.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/SampleDataFormat.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/Stream.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/StreamParameters.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/System.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/SystemDeviceIterator.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/SystemHostApiIterator.hxx)
+        src/ui/gkaudioplaydialog.hpp)
 elseif(UNIX)
     set(GALAXY_SRC_HEADERS
         src/defines.hpp
@@ -427,37 +384,9 @@ elseif(UNIX)
         src/gk_cli.hpp
         src/gk_modem.hpp
         src/string_funcs_linux.hpp
-        src/ui/gkaudioplaydialog.hpp
-        src/contrib/portaudio/cpp/include/portaudiocpp/AutoSystem.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/BlockingStream.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/CallbackInterface.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/CallbackStream.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/CFunCallbackStream.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/CppFunCallbackStream.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/Device.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/DirectionSpecificStreamParameters.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/Exception.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/HostApi.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/InterfaceCallbackStream.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/MemFunCallbackStream.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/PortAudioCpp.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/SampleDataFormat.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/Stream.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/StreamParameters.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/System.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/SystemDeviceIterator.hxx
-        src/contrib/portaudio/cpp/include/portaudiocpp/SystemHostApiIterator.hxx)
+        src/ui/gkaudioplaydialog.hpp)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
-endif()
-
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSYS" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MINGW")
-    if(GFYRE_PA_USE_ASIO)
-        set(GALAXY_SRC_HEADERS ${GALAXY_SRC_HEADERS}
-        src/contrib/portaudio/cpp/include/portaudiocpp/AsioDeviceAdapter.hxx)
-        set(GALAXY_SRC_CPP ${GALAXY_SRC_CPP}
-        src/contrib/portaudio/cpp/src/AsioDeviceAdapter.cxx)
-    endif()
 endif()
 
 add_definitions("-DQWT_DLL")

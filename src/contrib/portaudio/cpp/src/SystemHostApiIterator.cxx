@@ -1,4 +1,4 @@
-#include "src/contrib/portaudio/cpp/include/portaudiocpp/SystemHostApiIterator.hxx"
+#include "portaudiocpp/SystemHostApiIterator.hxx"
 
 namespace portaudio
 {

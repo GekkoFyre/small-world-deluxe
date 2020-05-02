@@ -1,4 +1,4 @@
-#include "src/contrib/portaudio/cpp/include/portaudiocpp/CallbackStream.hxx"
+#include "portaudiocpp/CallbackStream.hxx"
 
 namespace portaudio
 {

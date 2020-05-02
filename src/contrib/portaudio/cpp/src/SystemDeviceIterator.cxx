@@ -1,4 +1,4 @@
-#include "src/contrib/portaudio/cpp/include/portaudiocpp/SystemDeviceIterator.hxx"
+#include "portaudiocpp/SystemDeviceIterator.hxx"
 
 namespace portaudio
 {

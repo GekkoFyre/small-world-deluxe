@@ -37,9 +37,9 @@
 
 #pragma once
 
-#include "src/contrib/portaudio/cpp/include/portaudiocpp/PortAudioCpp.hxx"
-#include "src/contrib/portaudio/cpp/include/portaudiocpp/SampleDataFormat.hxx"
-#include "src/contrib/portaudio/cpp/include/portaudiocpp/Device.hxx"
+#include <portaudiocpp/PortAudioCpp.hxx>
+#include <portaudiocpp/SampleDataFormat.hxx>
+#include <portaudiocpp/Device.hxx>
 #include <fftw3.h>
 #include <boost/exception/all.hpp>
 #include <boost/logic/tribool.hpp>
@@ -83,7 +83,7 @@ extern "C"
 #if defined(_MSC_VER) && (_MSC_VER > 1915)
 #ifdef PA_USE_ASIO
 #include "pa_asio.h"
-#include "src/contrib/portaudio/cpp/include/portaudiocpp/AsioDeviceAdapter.hxx"
+#include <portaudiocpp/AsioDeviceAdapter.hxx>
 #endif
 #endif
 #elif __linux__

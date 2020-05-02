@@ -1,10 +1,10 @@
-#include "src/contrib/portaudio/cpp/include/portaudiocpp/Device.hxx"
+#include "portaudiocpp/Device.hxx"
 
 #include <cstddef>
 
-#include "src/contrib/portaudio/cpp/include/portaudiocpp/HostApi.hxx"
-#include "src/contrib/portaudio/cpp/include/portaudiocpp/System.hxx"
-#include "src/contrib/portaudio/cpp/include/portaudiocpp/Exception.hxx"
+#include "portaudiocpp/HostApi.hxx"
+#include "portaudiocpp/System.hxx"
+#include "portaudiocpp/Exception.hxx"
 
 namespace portaudio
 {

@@ -1,4 +1,4 @@
-#include "src/contrib/portaudio/cpp/include/portaudiocpp/Exception.hxx"
+#include "portaudiocpp/Exception.hxx"
 
 namespace portaudio
 {

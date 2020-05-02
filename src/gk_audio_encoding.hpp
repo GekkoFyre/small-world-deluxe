@@ -42,7 +42,7 @@
 #include "src/spectro_gui.hpp"
 #include "src/pa_audio_buf.hpp"
 #include "src/dek_db.hpp"
-#include "src/contrib/portaudio/cpp/include/portaudiocpp/System.hxx"
+#include <portaudiocpp/System.hxx>
 #include <boost/filesystem.hpp>
 #include <portaudio.h>
 #include <memory>

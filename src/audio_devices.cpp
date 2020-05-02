@@ -37,7 +37,7 @@
 
 #include "audio_devices.hpp"
 #include "pa_sinewave.hpp"
-#include "src/contrib/portaudio/cpp/include/portaudiocpp/MemFunCallbackStream.hxx"
+#include <portaudiocpp/MemFunCallbackStream.hxx>
 #include <iostream>
 #include <ostream>
 #include <cstdio>

@@ -5,7 +5,7 @@
 
 #include "portaudio.h"
 
-#include "src/contrib/portaudio/cpp/include/portaudiocpp/DirectionSpecificStreamParameters.hxx"
+#include "portaudiocpp/DirectionSpecificStreamParameters.hxx"
 
 // ---------------------------------------------------------------------------------------
 
