@@ -222,10 +222,12 @@ void SpectroFFTW::calcPwr(const std::vector<Spectrograph::RawFFT> &tds, const in
  */
 void SpectroFFTW::calcPwrTest(const size_t &num_periods, const int &win_size)
 {
+    /*
     for (size_t N = 0; N < win_size; ++N) {
         double value = 0;
         value = std::fabs(std::sin((2 * M_PI * num_periods * N) / win_size));
     }
+    */
 
     return;
 }
