@@ -87,9 +87,13 @@ paMicProcBackground::paMicProcBackground(portaudio::System *paInit, const QPoint
 
         return;
     } catch (const std::exception &e) {
+        #ifdef _WIN32
         HWND hwnd_mic_proc_background = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd_mic_proc_background, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd_mic_proc_background);
+        #elif __linux__
+        // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
+        #endif
     }
 
     return;
@@ -179,9 +183,13 @@ void paMicProcBackground::procVuMeter(const size_t &buffer_size, PaAudioBuf *aud
             }
         }
     } catch (const std::exception &e) {
+        #ifdef _WIN32
         HWND hwnd_proc_vu_meter = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd_proc_vu_meter, tr("Error!"), e.what(), MB_ICONERROR);
         DestroyWindow(hwnd_proc_vu_meter);
+        #elif __linux__
+        // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
+        #endif
     }
 
     return;
@@ -233,9 +241,13 @@ void paMicProcBackground::spectrographCallback(PaAudioBuf *audio_buf, portaudio:
             }
         }
     } catch (const std::exception &e) {
+        #ifdef _WIN32
         HWND hwnd_spectro_graph_background = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd_spectro_graph_background, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd_spectro_graph_background);
+        #elif __linux__
+        // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
+        #endif
     }
 
     return;

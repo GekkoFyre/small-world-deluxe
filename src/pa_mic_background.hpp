@@ -44,7 +44,6 @@
 #include "src/file_io.hpp"
 #include "src/spectro_gui.hpp"
 #include "src/dek_db.hpp"
-#include "src/string_funcs_windows.hpp"
 #include "src/contrib/portaudio/cpp/include/portaudiocpp/System.hxx"
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
@@ -56,6 +55,12 @@
 #include <thread>
 #include <future>
 #include <vector>
+
+#ifdef _WIN32
+#include "src/string_funcs_windows.hpp"
+#elif __linux__
+#include "src/string_funcs_linux.hpp"
+#endif
 
 namespace GekkoFyre {
 

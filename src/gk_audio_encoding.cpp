@@ -351,9 +351,13 @@ void GkAudioEncoding::recordOggVorbis(const std::vector<signed char> &audio_fram
             return;
         }
     } catch (const std::exception &e) {
+        #ifdef _WIN32
         HWND hwnd_record_ogg_vorbis_vec = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd_record_ogg_vorbis_vec, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd_record_ogg_vorbis_vec);
+        #elif __linux__
+        // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
+        #endif
     }
 
     return;

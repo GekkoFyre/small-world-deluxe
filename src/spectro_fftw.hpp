@@ -38,7 +38,6 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/string_funcs_windows.hpp"
 #include <fftw3.h>
 #include <QObject>
 #include <vector>
@@ -46,6 +45,12 @@
 #include <mutex>
 #include <thread>
 #include <future>
+
+#ifdef _WIN32
+#include "src/string_funcs_windows.hpp"
+#elif __linux__
+#include "src/string_funcs_linux.hpp"
+#endif
 
 namespace GekkoFyre {
 

@@ -49,5 +49,7 @@ public:
     explicit StringFuncs(QObject *parent = nullptr);
     ~StringFuncs() override;
 
+    bool modalDlgBoxOk(const QString &title, const QString &msgTxt, const int &icon);
+
 };
 };

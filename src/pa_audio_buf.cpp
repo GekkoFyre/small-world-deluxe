@@ -368,23 +368,6 @@ void PaAudioBuf::abortRecording(const bool &recording_is_stopped, const int &wai
 }
 
 /**
- * @brief PaAudioBuf::dlgBoxOk Creates a modal message box within the Win32 API, with an OK button.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @note <https://docs.microsoft.com/en-us/windows/win32/dlgbox/using-dialog-boxes#creating-a-modal-dialog-box>
- * <https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-messagebox>
- * @param hwnd
- * @param title
- * @param msgTxt
- * @param icon
- * @see GekkoFyre::StringFuncs::modalDlgBoxOk().
- */
-void PaAudioBuf::dlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon)
-{
-    MessageBox(hwnd, msgTxt.toStdString().c_str(), title.toStdString().c_str(), icon | MB_OK);
-    return;
-}
-
-/**
  * @brief PaAudioBuf::fillVecZeros The idea of this is to fill an std::vector() with all zeroes
  * when there is nothing else to return but this, so the program doesn't output an exception
  * otherwise.

@@ -377,7 +377,7 @@ void DialogSettings::prefill_audio_devices(std::vector<GkDevice> audio_devices_v
         int output_identifier = gkDekodeDb->read_audio_device_settings(true);
         int input_identifier = gkDekodeDb->read_audio_device_settings(false);
 
-        for (const auto device: audio_devices_vec) {
+        for (const auto &device: audio_devices_vec) {
             if (device.device_info.hostApi >= 0) {
                 if (device.is_output_dev) {
                     //

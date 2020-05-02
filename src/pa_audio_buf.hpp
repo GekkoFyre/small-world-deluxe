@@ -94,7 +94,6 @@ private:
     std::unique_ptr<boost::circular_buffer<short>> rec_samples_ptr;     // Contains the 16-bit mono samples
     size_t buffer_size;
 
-    void dlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon);
     std::vector<short> fillVecZeros(const int &buf_size);
 
 };

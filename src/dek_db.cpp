@@ -670,10 +670,9 @@ QString GkLevelDb::convAudioBitrateToStr(const GkAudioFramework::Bitrate &bitrat
  */
 std::string GkLevelDb::boolEnum(const bool &is_true)
 {
-    switch (is_true) {
-    case true:
+    if (is_true) {
         return "true";
-    case false:
+    } else {
         return "false";
     }
 

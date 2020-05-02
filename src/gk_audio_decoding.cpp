@@ -136,9 +136,13 @@ AudioFileInfo GkAudioDecoding::gatherOggInfo(const boost::filesystem::path &file
             }
         }
     } catch (const std::exception &e) {
+        #ifdef _WIN32
         HWND hwnd_gather_ogg_info = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd_gather_ogg_info, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd_gather_ogg_info);
+        #elif __linux__
+        // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
+        #endif
     }
 
     return audio_file_info;

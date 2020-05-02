@@ -179,9 +179,13 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         gkSpectrogram->invalidateCache();
         replot();
     } catch (const std::exception &e) {
+        #ifdef _WIN32
         HWND hwnd_spectro_gui_main = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd_spectro_gui_main, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd_spectro_gui_main);
+        #elif __linux__
+        // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
+        #endif
     }
 
     return;
@@ -317,9 +321,13 @@ void SpectroGui::calcMatrixData(const std::vector<RawFFT> &values, const int &ha
         x_values_modified.clear();
         x_values_modified.shrink_to_fit();
     } catch (const std::exception &e) {
+        #ifdef _WIN32
         HWND hwnd_spectro_calc_matrix = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd_spectro_calc_matrix, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd_spectro_calc_matrix);
+        #elif __linux__
+        // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
+        #endif
     }
 
     matrix_data_promise.set_value(matrix_ret_data);
@@ -477,9 +485,13 @@ void SpectroGui::applyData(const std::vector<RawFFT> &values,
 
         return;
     } catch (const std::exception &e) {
+        #ifdef _WIN32
         HWND hwnd_spectro_apply_data = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd_spectro_apply_data, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd_spectro_apply_data);
+        #elif __linux__
+        // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
+        #endif
     }
 
     return;
@@ -557,9 +569,13 @@ QVector<double> SpectroGui::convMapToVec(const QMap<qint64, std::pair<QVector<do
 
         return ret_val;
     } catch (const std::exception &e) {
+        #ifdef _WIN32
         HWND hwnd_spectro_conv_vec = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd_spectro_conv_vec, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd_spectro_conv_vec);
+        #elif __linux__
+        // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
+        #endif
     }
 
     return QVector<double>();
@@ -592,9 +608,13 @@ QVector<double> SpectroGui::mergeVecsForMatrix(const QMap<qint64, std::pair<QVec
             return merged_data;
         }
     } catch (const std::exception &e) {
+        #ifdef _WIN32
         HWND hwnd_spectro_merge_vec = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd_spectro_merge_vec, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd_spectro_merge_vec);
+        #elif __linux__
+        // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
+        #endif
     }
 
     return QVector<double>();

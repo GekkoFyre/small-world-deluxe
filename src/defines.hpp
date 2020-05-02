@@ -73,12 +73,12 @@ extern "C"
 {
 #endif
 
+#include <libusb.h>
 #include <hamlib/rig.h>
 #include <hamlib/riglist.h>
 #include <portaudio.h>
 
 #ifdef _WIN32
-#include <libusb.h>
     typedef std::wstring gkwstring;
 #if defined(_MSC_VER) && (_MSC_VER > 1915)
 #ifdef PA_USE_ASIO

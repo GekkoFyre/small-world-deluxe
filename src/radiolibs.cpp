@@ -49,8 +49,11 @@ extern "C"
 {
 #endif
 
+#include <libusb.h>
+
 #ifdef _WIN32
 #elif __linux__
+#include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>

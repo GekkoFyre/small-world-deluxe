@@ -38,7 +38,6 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/string_funcs_windows.hpp"
 #include <qwt.h>
 #include <qwt_plot.h>
 #include <qwt_plot_spectrogram.h>
@@ -64,6 +63,12 @@
 #include <QVector>
 #include <QDateTime>
 #include <QMouseEvent>
+
+#ifdef _WIN32
+#include "src/string_funcs_windows.hpp"
+#elif __linux__
+#include "src/string_funcs_linux.hpp"
+#endif
 
 namespace GekkoFyre {
 

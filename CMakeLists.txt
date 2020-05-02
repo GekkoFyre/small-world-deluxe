@@ -385,11 +385,10 @@ target_link_libraries(galaxy Qt5::Widgets Qt5::Core Qt5::Gui Qt5::PrintSupport T
 qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)
 add_dependencies(galaxy resources)
 
-add_executable(smallworld
+set(SWRLD_EXEC ${SWRLD_EXEC}
     src/main.cpp
     src/contrib/RS232/rs232.h
     src/contrib/RS232/rs232.c
-    src/contrib/portaudio/cpp/include/portaudiocpp/AsioDeviceAdapter.hxx
     src/contrib/portaudio/cpp/include/portaudiocpp/AutoSystem.hxx
     src/contrib/portaudio/cpp/include/portaudiocpp/BlockingStream.hxx
     src/contrib/portaudio/cpp/include/portaudiocpp/CallbackInterface.hxx
@@ -409,7 +408,6 @@ add_executable(smallworld
     src/contrib/portaudio/cpp/include/portaudiocpp/System.hxx
     src/contrib/portaudio/cpp/include/portaudiocpp/SystemDeviceIterator.hxx
     src/contrib/portaudio/cpp/include/portaudiocpp/SystemHostApiIterator.hxx
-    src/contrib/portaudio/cpp/src/AsioDeviceAdapter.cxx
     src/contrib/portaudio/cpp/src/BlockingStream.cxx
     src/contrib/portaudio/cpp/src/CallbackInterface.cxx
     src/contrib/portaudio/cpp/src/CallbackStream.cxx
@@ -427,14 +425,24 @@ add_executable(smallworld
     src/contrib/portaudio/cpp/src/SystemDeviceIterator.cxx
     src/contrib/portaudio/cpp/src/SystemHostApiIterator.cxx)
 
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSYS" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MINGW")
+    if(GFYRE_PA_USE_ASIO)
+        set(SWRLD_EXEC ${SWRLD_EXEC}
+        src/contrib/portaudio/cpp/include/portaudiocpp/AsioDeviceAdapter.hxx
+        src/contrib/portaudio/cpp/src/AsioDeviceAdapter.cxx)
+    endif()
+endif()
+
+add_executable(smallworld ${SWRLD_EXEC})
+
 target_link_libraries(smallworld galaxy)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # Using regular Clang or AppleClang
-    target_compile_options(galaxy PUBLIC -Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context)
+    target_compile_options(galaxy PUBLIC -Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     # Using GCC
-    target_compile_options(galaxy PUBLIC -Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context)
+    target_compile_options(galaxy PUBLIC -Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
     # Using Intel C++
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
