@@ -105,7 +105,7 @@ endif(${GFYRE_PACKAGE_MAINTAINER} EQUAL ON)
 
 find_package(PortAudio REQUIRED)
 if (PortAudio_FOUND)
-    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSYS" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MINGW")
+    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSYS" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MINGW" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         # Enable `PA_USE_ASIO` by default, since this allows for the lowest latency possible with the audio pathways!
         if(GFYRE_PA_USE_ASIO)
             add_definitions(-DPA_USE_ASIO=1)
@@ -128,7 +128,7 @@ set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-arcs -ftest-c
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_BINARY_DIR})
 
-if(WIN32)
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSYS" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MINGW" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     set(GALAXY_SRC_CPP
         src/BlockingStream.cxx
         src/CallbackInterface.cxx
@@ -150,7 +150,7 @@ elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()
 
-if(WIN32)
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSYS" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MINGW")
     set(GALAXY_SRC_HEADERS
         include/portaudiocpp/AutoSystem.hxx
         include/portaudiocpp/BlockingStream.hxx
@@ -186,7 +186,16 @@ endif()
 
 add_library(portaudiocpp STATIC ${GALAXY_SRC_CPP} ${GALAXY_SRC_HEADERS})
 target_include_directories(portaudiocpp PUBLIC include)
-target_link_libraries(portaudiocpp ${LIBS})
+target_link_libraries(portaudiocpp PUBLIC ${LIBS})
+
+include(CMakePackageConfigHelpers)
+include(GNUInstallDirs)
+# install(EXPORT portaudiocpp)
+install(TARGETS portaudiocpp
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}\portaudiocpp
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}\portaudiocpp
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}\portaudiocpp
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}\portaudiocpp)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # Using regular Clang or AppleClang
