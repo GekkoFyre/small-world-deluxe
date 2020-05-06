@@ -88,6 +88,14 @@ This is due to the fact that we use `codec2` for our [OFDM modem of choice](http
 
 Speaking as the author of Small World Deluxe, compilation proceeds completely okay with a recently updated MinGW installation provided you have all the requisite libraries installed. But even if you are unsure of everything required being installed or not, then CMake/GCC does an alright job at letting you know what is left.
 
+##### Notes for users of Microsoft Windows
+
+Some notes to consider are that you should download a binary release for [Hamlib from their official Git repository](https://github.com/Hamlib/Hamlib/releases) instead of attempting a compilation yourself; this will save many otherwise lost hours and much misery. Also be sure to read the documentation under `src/contrib/portaudio/cpp` on how you should proceed with compilation of [PortAudio](http://portaudio.com/) and its C++ bindings, since we provide altered code for this purpose under said directory. You will require this in order to compile [Small World Deluxe](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe) on your own. Otherwise, wait and until we eventually provide a binary release for Microsoft Windows ourselves.
+
+Once you have successfully compiled Small World Deluxe, you may need to copy over some shared DLLs towards the directory where the executable is located, in order to successfully open the application without errors and/or crashing. You can determine what specific DLLs are required by using a program such as [Dependency Walker](http://www.dependencywalker.com/), which is extremely useful for this particular task.
+
+Because Dependency Walker is a third-party program, we do not provide any support as such nor are we affiliated with their authors and/or coders in any way. We simply like the tools they have freely provided (at the time of writing) and highly recommend them in their current form.
+
 #### GitLab Runner & CI/CD
 
 In order to aid with Continuous Integration and the use of GitLab Runner with our weak-signal project for the greater [Amateur Radio](https://en.wikipedia.org/wiki/Amateur_radio) community, we will soon be [creating our own Docker image(s) that we'll be uploading to the code repository](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/container_registry) here at [GekkoFyre Networks](https://gekkofyre.io/). This is a newer feature that has been recently introduced to [GitLab](https://gitlab.com/) and we hope to make use of it as soon as possible!

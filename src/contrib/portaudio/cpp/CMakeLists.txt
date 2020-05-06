@@ -469,6 +469,7 @@ ENDIF()
 add_library(portaudiocpp_static STATIC ${GALAXY_SRC_CPP} ${GALAXY_SRC_HEADERS})
 target_include_directories(portaudiocpp_static PUBLIC include)
 target_link_libraries(portaudiocpp_static PUBLIC portaudio_static)
+set_target_properties(portaudiocpp_static PROPERTIES OUTPUT_NAME portaudiocpp)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # Using regular Clang or AppleClang
