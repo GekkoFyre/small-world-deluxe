@@ -59,12 +59,6 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/")
 
 option(GFYRE_PACKAGE_MAINTAINER "Are you a package maintainer? If so, set this option to `ON`! It'll enable specific build settings to make your life easier." ON)
 
-if(WIN32)
-    option(GFYRE_PA_USE_ASIO "Enable the ASIO sub-library option with PortAudio, which is recommended for Microsoft Windows systems <http://portaudio.com/docs/v19-doxydocs-dev/compile_windows_asio_msvc.html>." ON)
-else()
-    option(GFYRE_PA_USE_ASIO "Enable the ASIO sub-library option with PortAudio, which is recommended for Microsoft Windows systems <http://portaudio.com/docs/v19-doxydocs-dev/compile_windows_asio_msvc.html>." OFF)
-endif()
-
 #
 # Determine the current version of Microsoft Windows in use, if that is indeed the operating system.
 # Then proceed to build specifically for that operating system, provided the right flags have been set.
@@ -105,18 +99,6 @@ endif(${GFYRE_PACKAGE_MAINTAINER} EQUAL ON)
 
 find_package(PortAudio REQUIRED)
 if (PortAudio_FOUND)
-    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSYS" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MINGW" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-        # Enable `PA_USE_ASIO` by default, since this allows for the lowest latency possible with the audio pathways!
-        if(GFYRE_PA_USE_ASIO)
-            add_definitions(-DPA_USE_ASIO=1)
-            message(STATUS "Enabled the `PA_USE_ASIO` build option!")
-        endif()
-    else()
-        # Disable `PA_USE_ASIO` because we are dealing with a system other than Microsoft Windows, where ASIO is unsupported...
-        add_definitions(-DPA_USE_ASIO=0)
-        message(STATUS "Disabled the `PA_USE_ASIO` build option because we are not dealing with a supported Microsoft Windows system!")
-    endif()
-
     include_directories(${PortAudio_INCLUDE_DIRS})
     set(LIBS ${LIBS} ${PortAudio_LIBRARIES})
 else()
@@ -130,6 +112,7 @@ include_directories(${PROJECT_BINARY_DIR})
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSYS" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MINGW" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     set(GALAXY_SRC_CPP
+        src/AsioDeviceAdapter.cxx
         src/BlockingStream.cxx
         src/CallbackInterface.cxx
         src/CallbackStream.cxx
@@ -152,6 +135,7 @@ endif()
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSYS" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MINGW")
     set(GALAXY_SRC_HEADERS
+        include/portaudiocpp/AsioDeviceAdapter.hxx
         include/portaudiocpp/AutoSystem.hxx
         include/portaudiocpp/BlockingStream.hxx
         include/portaudiocpp/CallbackInterface.hxx
@@ -175,27 +159,11 @@ elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()
 
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSYS" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MINGW")
-    if(GFYRE_PA_USE_ASIO)
-        set(GALAXY_SRC_HEADERS ${GALAXY_SRC_HEADERS}
-        include/portaudiocpp/AsioDeviceAdapter.hxx)
-        set(GALAXY_SRC_CPP ${GALAXY_SRC_CPP}
-        src/AsioDeviceAdapter.cxx)
-    endif()
-endif()
-
+include(CMakePackageConfigHelpers)
+include(GNUInstallDirs)
 add_library(portaudiocpp STATIC ${GALAXY_SRC_CPP} ${GALAXY_SRC_HEADERS})
 target_include_directories(portaudiocpp PUBLIC include)
 target_link_libraries(portaudiocpp PUBLIC ${LIBS})
-
-include(CMakePackageConfigHelpers)
-include(GNUInstallDirs)
-# install(EXPORT portaudiocpp)
-install(TARGETS portaudiocpp
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}\portaudiocpp
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}\portaudiocpp
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}\portaudiocpp
-        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}\portaudiocpp)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # Using regular Clang or AppleClang
