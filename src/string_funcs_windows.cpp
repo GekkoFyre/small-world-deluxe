@@ -126,7 +126,7 @@ bool StringFuncs::modalDlgBoxOk(const HWND &hwnd, const QString &title, const QS
     // https://docs.microsoft.com/en-us/windows/win32/winmsg/using-windows
     // TODO: Make this dialog modal
     //
-    int msgBoxId = MessageBox(hwnd, msgTxt.toStdString().c_str(), title.toStdString().c_str(), icon | MB_OK);
+    int msgBoxId = MessageBoxA(hwnd, msgTxt.toStdString().c_str(), title.toStdString().c_str(), icon | MB_OK);
 
     switch (msgBoxId) {
     case IDOK:

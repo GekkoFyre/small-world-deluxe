@@ -39,6 +39,8 @@
 #include "src/ui/mainwindow.hpp"
 #include <boost/exception/all.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/locale.hpp>
+#include <boost/locale/generator.hpp>
 #include <exception>
 #include <iostream>
 #include <cstdlib>
@@ -57,8 +59,13 @@ namespace fs = boost::filesystem;
 int main(int argc, char *argv[])
 {
     try {
-        std::setlocale(LC_ALL, "en_US.UTF-8"); // For C & C++ where synced with stdio
-        std::locale::global(std::locale("en_US.UTF-8")); // For only C++
+        #ifdef _WIN32
+        // We wish to enforce the encoding on Microsoft Windows (typically UTF-8)
+        std::locale::global(boost::locale::generator().generate("C"));
+        #else
+        // This suffices for Linux, Apple OS/X, etc.
+        std::locale::global(std::locale::classic());
+        #endif
         std::cout << "Setting the locale has succeeded." << std::endl;
     } catch (const std::exception &e) {
         std::cout << QString("Setting the locale has failed!\n\n%1").arg(QString::fromStdString(e.what())).toStdString() << std::endl;

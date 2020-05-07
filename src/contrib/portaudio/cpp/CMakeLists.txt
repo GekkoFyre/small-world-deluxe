@@ -473,16 +473,16 @@ set_target_properties(portaudiocpp_static PROPERTIES OUTPUT_NAME portaudiocpp)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # Using regular Clang or AppleClang
-    target_compile_options(portaudio_static PUBLIC -Wno-unused-variable)
-    target_compile_options(portaudiocpp_static PUBLIC -Wno-unused-variable)
+    target_compile_options(portaudio_static PUBLIC -Wno-unused-variable -enable-clocale)
+    target_compile_options(portaudiocpp_static PUBLIC -Wno-unused-variable -enable-clocale)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     # Using GCC
-    target_compile_options(portaudio_static PUBLIC -Wno-unused-variable)
-    target_compile_options(portaudiocpp_static PUBLIC -Wno-unused-variable)
+    target_compile_options(portaudio_static PUBLIC -Wno-unused-variable -enable-clocale)
+    target_compile_options(portaudiocpp_static PUBLIC -Wno-unused-variable -enable-clocale)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MINGW")
     # Using MinGW
-    target_compile_options(portaudio_static PUBLIC -Wno-unused-variable)
-    target_compile_options(portaudiocpp_static PUBLIC -Wno-unused-variable)
+    target_compile_options(portaudio_static PUBLIC -Wno-unused-variable -enable-clocale)
+    target_compile_options(portaudiocpp_static PUBLIC -Wno-unused-variable -enable-clocale)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
     # Using Intel C++
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")

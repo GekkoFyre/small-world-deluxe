@@ -54,6 +54,10 @@ libopus by Xiph.org et al.
     <http://opus-codec.org/>
         BSD 3-clause License
 
+libiconv by GNU Free Software Foundation
+    <https://www.gnu.org/software/libiconv/>
+        GNU Lesser General Public License (LGPL, version 3)
+
 Qwt by Uwe Rathmann & Josef Wilgen et al.
     <https://qwt.sourceforge.io/>
         GNU Lesser General Public License (LGPL, version 2.1)

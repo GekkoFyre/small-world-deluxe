@@ -118,8 +118,10 @@ set(Boost_USE_MULTITHREADED ON CACHE BOOL "Use multithreaded libraries when link
 set(Boost_USE_STATIC_RUNTIME OFF CACHE BOOL "Use static runtime when linking Boost C++.")
 find_package(Boost 1.54.0 REQUIRED COMPONENTS "filesystem"
                                               "system"
+                                              "exception"
                                               "thread"
-                                              "chrono")
+                                              "chrono"
+                                              "locale")
                                               
 if(WIN32)
     if(${GFYRE_PACKAGE_MAINTAINER} EQUAL ON)
@@ -264,6 +266,14 @@ if (CODEC2_FOUND)
 else()
     message(SEND_ERROR "The 'codec2' digital voice OFDM modem for HF SSB could not be found!")
 endif(CODEC2_FOUND)
+
+find_package(Iconv REQUIRED)
+if (Iconv_FOUND)
+    include_directories(${Iconv_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${Iconv_LIBRARIES})
+else()
+    message(SEND_ERROR "The 'libiconv' character encoding and conversion library could not be found!")
+endif(Iconv_FOUND)
 
 set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-arcs -ftest-coverage")
 
@@ -410,12 +420,16 @@ add_executable(smallworld ${SWRLD_EXEC})
 
 target_link_libraries(smallworld galaxy)
 
+#
+# https://stackoverflow.com/questions/23995019/what-is-the-modern-method-for-setting-general-compile-flags-in-cmake
+# https://stackoverflow.com/questions/20105167/c-error-failure-localefacet-s-create-c-locale-name-not-valid-when-runni
+#
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # Using regular Clang or AppleClang
-    target_compile_options(galaxy PUBLIC -Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context)
+    target_compile_options(galaxy PUBLIC -Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -enable-clocale)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     # Using GCC
-    target_compile_options(galaxy PUBLIC -Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context)
+    target_compile_options(galaxy PUBLIC -Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -enable-clocale)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
     # Using Intel C++
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
