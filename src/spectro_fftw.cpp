@@ -170,10 +170,11 @@ void SpectroFFTW::stft(std::vector<double> *signal, int signal_length, int windo
         calc_stft_mtx.unlock();
         return;
     } catch (const std::exception &e) {
-        #ifdef _WIN32
+        #if defined(_MSC_VER) && (_MSC_VER > 1900)
         HWND hwnd_stft_calc = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd_stft_calc, tr("Error!"), tr("An error has occurred during the calculation of STFT data!\n\n%1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd_stft_calc);
+        #elif __MINGW32__
         #elif __linux__
         // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
         #endif

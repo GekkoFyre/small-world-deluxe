@@ -293,108 +293,74 @@ qt5_add_resources(UI_RESOURCES src/sworld_res.qrc)
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_BINARY_DIR})
 
+set(GALAXY_UI_CPP
+    ${GALAXY_UI_CPP}
+    src/ui/mainwindow.cpp
+    src/ui/dialogsettings.cpp
+    src/ui/aboutdialog.cpp
+    src/spectro_fftw.cpp
+    src/ui/spectrodialog.cpp
+    src/radiolibs.cpp
+    src/dek_db.cpp
+    src/file_io.cpp
+    src/audio_devices.cpp
+    src/pa_audio_buf.cpp
+    src/spectro_gui.cpp
+    src/pa_mic.cpp
+    src/pa_mic_background.cpp
+    src/gk_audio_encoding.cpp
+    src/gk_audio_decoding.cpp
+    src/gk_cli.cpp
+    src/gk_modem.cpp
+    src/ui/gkaudioplaydialog.cpp)
+
 if(WIN32)
     set(GALAXY_UI_CPP
-        src/ui/mainwindow.cpp
-        src/ui/dialogsettings.cpp
-        src/ui/aboutdialog.cpp
-        src/spectro_fftw.cpp
-        src/ui/spectrodialog.cpp
-        src/radiolibs.cpp
-        src/dek_db.cpp
-        src/file_io.cpp
-        src/audio_devices.cpp
-        src/pa_audio_buf.cpp
-        src/spectro_gui.cpp
-        src/pa_mic.cpp
-        src/pa_mic_background.cpp
-        src/gk_audio_encoding.cpp
-        src/gk_audio_decoding.cpp
-        src/gk_cli.cpp
-        src/gk_modem.cpp
-        src/string_funcs_windows.cpp
-        src/ui/gkaudioplaydialog.cpp)
+        ${GALAXY_UI_CPP}
+        src/string_funcs_windows.cpp)
 elseif(UNIX)
     set(GALAXY_UI_CPP
-        src/ui/mainwindow.cpp
-        src/ui/dialogsettings.cpp
-        src/ui/aboutdialog.cpp
-        src/spectro_fftw.cpp
-        src/ui/spectrodialog.cpp
-        src/radiolibs.cpp
-        src/dek_db.cpp
-        src/file_io.cpp
-        src/audio_devices.cpp
-        src/pa_audio_buf.cpp
-        src/spectro_gui.cpp
-        src/pa_mic.cpp
-        src/pa_mic_background.cpp
-        src/gk_audio_encoding.cpp
-        src/gk_audio_decoding.cpp
-        src/gk_cli.cpp
-        src/gk_modem.cpp
-        src/string_funcs_linux.cpp
-        src/ui/gkaudioplaydialog.cpp)
+        ${GALAXY_UI_CPP}
+        src/string_funcs_linux.cpp)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()
 
-if(WIN32)
-    set(GALAXY_SRC_CPP
-        src/pa_sinewave.cpp)
-elseif(UNIX)
-    set(GALAXY_SRC_CPP
-        src/pa_sinewave.cpp)
-elseif(APPLE)
-    message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
-endif()
+set(GALAXY_SRC_CPP
+    ${GALAXY_SRC_CPP}
+    src/pa_sinewave.cpp)
+
+set(GALAXY_SRC_HEADERS
+    ${GALAXY_SRC_HEADERS}
+    src/defines.hpp
+    src/pa_sinewave.hpp
+    src/ui/mainwindow.hpp
+    src/ui/dialogsettings.hpp
+    src/ui/aboutdialog.hpp
+    src/spectro_fftw.hpp
+    src/ui/spectrodialog.hpp
+    src/radiolibs.hpp
+    src/dek_db.hpp
+    src/file_io.hpp
+    src/audio_devices.hpp
+    src/pa_audio_buf.hpp
+    src/spectro_gui.hpp
+    src/pa_mic.hpp
+    src/pa_mic_background.hpp
+    src/gk_audio_encoding.hpp
+    src/gk_audio_decoding.hpp
+    src/gk_cli.hpp
+    src/gk_modem.hpp
+    src/ui/gkaudioplaydialog.hpp)
 
 if(WIN32)
     set(GALAXY_SRC_HEADERS
-        src/defines.hpp
-        src/pa_sinewave.hpp
-        src/ui/mainwindow.hpp
-        src/ui/dialogsettings.hpp
-        src/ui/aboutdialog.hpp
-        src/spectro_fftw.hpp
-        src/ui/spectrodialog.hpp
-        src/radiolibs.hpp
-        src/dek_db.hpp
-        src/file_io.hpp
-        src/audio_devices.hpp
-        src/pa_audio_buf.hpp
-        src/spectro_gui.hpp
-        src/pa_mic.hpp
-        src/pa_mic_background.hpp
-        src/gk_audio_encoding.hpp
-        src/gk_audio_decoding.hpp
-        src/gk_cli.hpp
-        src/gk_modem.hpp
-        src/string_funcs_windows.hpp
-        src/ui/gkaudioplaydialog.hpp)
+        ${GALAXY_SRC_HEADERS}
+        src/string_funcs_windows.hpp)
 elseif(UNIX)
     set(GALAXY_SRC_HEADERS
-        src/defines.hpp
-        src/pa_sinewave.hpp
-        src/ui/mainwindow.hpp
-        src/ui/dialogsettings.hpp
-        src/ui/aboutdialog.hpp
-        src/spectro_fftw.hpp
-        src/ui/spectrodialog.hpp
-        src/radiolibs.hpp
-        src/dek_db.hpp
-        src/file_io.hpp
-        src/audio_devices.hpp
-        src/pa_audio_buf.hpp
-        src/spectro_gui.hpp
-        src/pa_mic.hpp
-        src/pa_mic_background.hpp
-        src/gk_audio_encoding.hpp
-        src/gk_audio_decoding.hpp
-        src/gk_cli.hpp
-        src/gk_modem.hpp
-        src/string_funcs_linux.hpp
-        src/ui/gkaudioplaydialog.hpp)
+        ${GALAXY_SRC_HEADERS}
+        src/string_funcs_linux.hpp)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()

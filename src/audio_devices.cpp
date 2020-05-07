@@ -651,34 +651,38 @@ PaStreamCallbackResult AudioDevices::openRecordStream(portaudio::System &portAud
             throw std::runtime_error(tr("You must firstly choose an input audio device within the settings!").toStdString());
         }
     } catch (const portaudio::PaException &e) {
-        #ifdef _WIN32
+        #if defined(_MSC_VER) && (_MSC_VER > 1900)
         HWND hwnd = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), tr("[ PortAudio ] %1").arg(e.paErrorText()), MB_ICONERROR);
         DestroyWindow(hwnd);
+        #elif __MINGW32__
         #elif __linux__
         // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
         #endif
     } catch (const portaudio::PaCppException &e) {
-        #ifdef _WIN32
+        #if defined(_MSC_VER) && (_MSC_VER > 1900)
         HWND hwnd = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), tr("[ PortAudioCpp ] %1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd);
+        #elif __MINGW32__
         #elif __linux__
         // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
         #endif
     } catch (const std::exception &e) {
-        #ifdef _WIN32
+        #if defined(_MSC_VER) && (_MSC_VER > 1900)
         HWND hwnd = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), tr("[ Generic exception ] %1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd);
+        #elif __MINGW32__
         #elif __linux__
         // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
         #endif
     } catch (...) {
-        #ifdef _WIN32
+        #if defined(_MSC_VER) && (_MSC_VER > 1900)
         HWND hwnd = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), MB_ICONERROR);
         DestroyWindow(hwnd);
+        #elif __MINGW32__
         #elif __linux__
         // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
         #endif
