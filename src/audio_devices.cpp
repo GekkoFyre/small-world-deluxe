@@ -631,14 +631,14 @@ PaStreamCallbackResult AudioDevices::openRecordStream(portaudio::System &portAud
         if (audio_buf != nullptr) {
             std::mutex record_stream_mtx;
             std::lock_guard<std::mutex> lck_guard(record_stream_mtx);
-            portaudio::SampleDataFormat prefInputLatency = sampleFormatConvert(portAudioSys.deviceByIndex(device.stream_parameters.device).defaultLowInputLatency());
+            portaudio::SampleDataFormat prefDataFormat = sampleFormatConvert(portAudioSys.deviceByIndex(device.stream_parameters.device).defaultLowInputLatency());
 
             //
             // Recording input stream
             //
             portaudio::DirectionSpecificStreamParameters inputParamsRecord(portAudioSys.deviceByIndex(device.stream_parameters.device),
-                                                                           device.dev_input_channel_count, portaudio::INT16,
-                                                                           false, prefInputLatency, nullptr);
+                                                                           device.dev_input_channel_count, prefDataFormat,
+                                                                           false, device.asio_pref_latency, nullptr);
             portaudio::StreamParameters recordParams(inputParamsRecord, portaudio::DirectionSpecificStreamParameters::null(), device.def_sample_rate,
                                                      AUDIO_FRAMES_PER_BUFFER, paClipOff);
             portaudio::MemFunCallbackStream<PaAudioBuf> *streamRecord = new portaudio::MemFunCallbackStream<PaAudioBuf>(recordParams, **audio_buf, &PaAudioBuf::recordCallback);

@@ -39,12 +39,16 @@
 #include "src/ui/mainwindow.hpp"
 #include <boost/exception/all.hpp>
 #include <boost/filesystem.hpp>
+#include <exception>
 #include <iostream>
 #include <cstdlib>
 #include <csignal>
+#include <locale>
+#include <clocale>
 #include <QApplication>
 #include <QSplashScreen>
 #include <QTimer>
+#include <QString>
 #include <QWidget>
 #include <QResource>
 
@@ -52,6 +56,14 @@ namespace fs = boost::filesystem;
 
 int main(int argc, char *argv[])
 {
+    try {
+        std::setlocale(LC_ALL, "en_US.UTF-8"); // For C & C++ where synced with stdio
+        std::locale::global(std::locale("en_US.UTF-8")); // For only C++
+        std::cout << "Setting the locale has succeeded." << std::endl;
+    } catch (const std::exception &e) {
+        std::cout << QString("Setting the locale has failed!\n\n%1").arg(QString::fromStdString(e.what())).toStdString() << std::endl;
+    }
+
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QApplication a(argc, argv);
 

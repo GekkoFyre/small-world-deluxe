@@ -13,7 +13,7 @@ In the near future, we wish to implement *pattern recognition techniques* into `
 
 We are presently implementing support for [codec2](https://github.com/drowe67/codec2/blob/master/README_ofdm.txt) as the Orthogonal Frequency Division Multiplexed (OFDM) modem of choice at this stage so that we may then begin implementing more advanced features much more quickly and easily. We don't shy away from the fact that we rely on libraries developed by others, where possible; why re-invent the wheel when the work has already been done for you?
 
-#### Current/Planned Features
+#### Current / Planned Features
 
 Following is a short list of features, both planned and partially already implemented in some fashion, that we have for this project. We are always taking on new ideas, paradigms, and/or perspectives so please, we invite you to contribute towards `Small World Deluxe` in any manner that you are able towards.
 
@@ -104,7 +104,13 @@ You can be rest assured that we'll keep this Docker image updated as need be.
 
 ------
 
-#### How may I contribute to the project?
+#### Miscellaneous Notes & Troubleshooting
+
+##### Receiving error(s) that's related to something about a `locale`?
+
+If you receive an error that's similar to, `Setting the locale has failed!`, or even possibly, `locale::facet::_S_create_c_locale name not valid`, then the locale that has been configured for your system of choice may not be set correctly. [This particular article from Stack Overflow](https://stackoverflow.com/a/10236868/4293625) may help you in your endeavors but if not, you will have to [open an issue with the Small World Deluxe team over at their Git repository](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/issues), where we will be happy to help you and your particular system of choice.
+
+##### How may I contribute to the project?
 
 You may contribute to `Small World Deluxe` in a number of ways, and they don't all necessarily require you to be a computer programmer of skill either!
 
@@ -116,11 +122,11 @@ Although if you do have skills with regard to computer programming and would lik
 
 ***At the moment though, the program is only in a semi-workable state. We will advise on this page once testing of Small World Deluxe can be recommended and/or begin as the application itself  becomes more usable, bit-by-bit. We thank you for your understanding!***
 
-#### Who are the authors?
+##### Who are the authors?
 
 Please refer to the files, `AUTHORS` and `CREDITS`.
 
-#### What programming language is Small World written in?
+##### What programming language is Small World written in?
 
 At present, it is largely written in `C++` with small amounts of `C` here and there. The libraries themselves might contain other bits from differing languages though, mind you :)
 
@@ -128,11 +134,11 @@ For the build script, so that you may boot-load `makefiles` into your choice of 
 
 We also use `YAML` for CI/CD with [GitLab Runner](https://docs.gitlab.com/runner/), for example.
 
-#### Is there a release date?
+##### Is there a release date?
 
 There is no firm date for when `Small World` may be released as a 'stable product' and at this point in time, we simply wish to work on the project in our free time and see what happens.
 
-#### Verified operating systems
+##### Verified operating systems
 
 We have verified, `Small World Deluxe`, to be working okay on the following operating systems:
 
@@ -143,7 +149,7 @@ We have verified, `Small World Deluxe`, to be working okay on the following oper
 
 Please remember that this is not a complete list!
 
-#### Unsupported operating systems
+##### Unsupported operating systems
 
 The following operating systems are currently unsupported at this stage:
 
