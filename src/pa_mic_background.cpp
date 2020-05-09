@@ -91,9 +91,8 @@ paMicProcBackground::paMicProcBackground(portaudio::System *paInit, const QPoint
         HWND hwnd_mic_proc_background = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd_mic_proc_background, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd_mic_proc_background);
-        #elif __MINGW32__
-        #elif __linux__
-        // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
+        #else
+        gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()));
         #endif
     }
 
@@ -188,9 +187,8 @@ void paMicProcBackground::procVuMeter(const size_t &buffer_size, PaAudioBuf *aud
         HWND hwnd_proc_vu_meter = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd_proc_vu_meter, tr("Error!"), e.what(), MB_ICONERROR);
         DestroyWindow(hwnd_proc_vu_meter);
-        #elif __MINGW32__
-        #elif __linux__
-        // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
+        #else
+        gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
         #endif
     }
 
@@ -247,9 +245,8 @@ void paMicProcBackground::spectrographCallback(PaAudioBuf *audio_buf, portaudio:
         HWND hwnd_spectro_graph_background = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd_spectro_graph_background, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd_spectro_graph_background);
-        #elif __MINGW32__
-        #elif __linux__
-        // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
+        #else
+        gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()));
         #endif
     }
 

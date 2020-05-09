@@ -237,6 +237,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QObject::connect(this, SIGNAL(gkExitApp()), this, SLOT(uponExit()));
 
         //
+        // Initialize the custom QMessageBox library that always runs on the GUI thread
+        //
+        gkMsgBoxThread = QSharedPointer<GekkoFyre::GkMsgBoxThread>(new GekkoFyre::GkMsgBoxThread(this), &QObject::deleteLater);
+
+        //
         // Initialize our own PortAudio libraries and associated buffers!
         //
         autoSys.initialize();

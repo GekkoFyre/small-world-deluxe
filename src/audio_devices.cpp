@@ -655,36 +655,32 @@ PaStreamCallbackResult AudioDevices::openRecordStream(portaudio::System &portAud
         HWND hwnd = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), tr("[ PortAudio ] %1").arg(e.paErrorText()), MB_ICONERROR);
         DestroyWindow(hwnd);
-        #elif __MINGW32__
-        #elif __linux__
-        // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
+        #else
+        gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("[ PortAudio ] %1").arg(e.paErrorText()));
         #endif
     } catch (const portaudio::PaCppException &e) {
         #if defined(_MSC_VER) && (_MSC_VER > 1900)
         HWND hwnd = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), tr("[ PortAudioCpp ] %1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd);
-        #elif __MINGW32__
-        #elif __linux__
-        // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
+        #else
+        gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("[ PortAudioCpp ] %1").arg(e.what()));
         #endif
     } catch (const std::exception &e) {
         #if defined(_MSC_VER) && (_MSC_VER > 1900)
         HWND hwnd = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), tr("[ Generic exception ] %1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd);
-        #elif __MINGW32__
-        #elif __linux__
-        // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
+        #else
+        gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("[ Generic exception ] %1").arg(e.what()));
         #endif
     } catch (...) {
         #if defined(_MSC_VER) && (_MSC_VER > 1900)
         HWND hwnd = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), MB_ICONERROR);
         DestroyWindow(hwnd);
-        #elif __MINGW32__
-        #elif __linux__
-        // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
+        #else
+        gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("An unknown exception has occurred. There are no further details."));
         #endif
     }
 

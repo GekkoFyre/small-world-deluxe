@@ -183,9 +183,8 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         HWND hwnd_spectro_gui_main = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd_spectro_gui_main, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd_spectro_gui_main);
-        #elif __MINGW32__
-        #elif __linux__
-        // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
+        #else
+        gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()));
         #endif
     }
 
@@ -326,9 +325,8 @@ void SpectroGui::calcMatrixData(const std::vector<RawFFT> &values, const int &ha
         HWND hwnd_spectro_calc_matrix = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd_spectro_calc_matrix, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd_spectro_calc_matrix);
-        #elif __MINGW32__
-        #elif __linux__
-        // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
+        #else
+        gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()));
         #endif
     }
 
@@ -491,9 +489,8 @@ void SpectroGui::applyData(const std::vector<RawFFT> &values,
         HWND hwnd_spectro_apply_data = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd_spectro_apply_data, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd_spectro_apply_data);
-        #elif __MINGW32__
-        #elif __linux__
-        // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
+        #else
+        gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()));
         #endif
     }
 
@@ -576,9 +573,8 @@ QVector<double> SpectroGui::convMapToVec(const QMap<qint64, std::pair<QVector<do
         HWND hwnd_spectro_conv_vec = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd_spectro_conv_vec, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd_spectro_conv_vec);
-        #elif __MINGW32__
-        #elif __linux__
-        // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
+        #else
+        gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()));
         #endif
     }
 
@@ -616,9 +612,8 @@ QVector<double> SpectroGui::mergeVecsForMatrix(const QMap<qint64, std::pair<QVec
         HWND hwnd_spectro_merge_vec = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd_spectro_merge_vec, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd_spectro_merge_vec);
-        #elif __MINGW32__
-        #elif __linux__
-        // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
+        #else
+        gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()));
         #endif
     }
 

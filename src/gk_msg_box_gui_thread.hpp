@@ -39,17 +39,37 @@
 
 #include "src/defines.hpp"
 #include <QObject>
+#include <QWidget>
+#include <QMessageBox>
+#include <QSemaphore>
+#include <QString>
+#include <QThread>
 
 namespace GekkoFyre {
 
-class StringFuncs : public QObject {
+class GkMsgBoxThread : public QThread {
     Q_OBJECT
 
 public:
-    explicit StringFuncs(QObject *parent = nullptr);
-    ~StringFuncs();
+    explicit GkMsgBoxThread(QObject *parent = nullptr);
+    ~GkMsgBoxThread();
 
-    bool modalDlgBoxOk(const QString &title, const QString &msgTxt, const int &icon);
+    int guiMsgBox(QWidget *parent, const QString &title, const QString &text,
+                  QMessageBox::StandardButtons buttons = QMessageBox::Ok,
+                  QMessageBox::StandardButtons defaultButton = QMessageBox::NoButton);
+
+private slots:
+    void on_guiMsgBox(QWidget *parent, const QString &title, const QString &text, QMessageBox::StandardButtons buttons,
+                      QMessageBox::StandardButtons defaultButton);
+
+signals:
+    void guiMsgBoxSig(QWidget *parent, const QString &title, const QString &text,
+                      QMessageBox::StandardButtons buttons,
+                      QMessageBox::StandardButtons defaultButton);
+
+protected:
+    QSemaphore uiRes;
+    int btnRes;
 
 };
 };

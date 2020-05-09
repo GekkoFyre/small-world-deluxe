@@ -35,21 +35,38 @@
  **
  ****************************************************************************************************/
 
-#pragma once
+#include "gk_msg_box_gui_thread.hpp"
 
-#include "src/defines.hpp"
-#include <QObject>
+using namespace GekkoFyre;
 
-namespace GekkoFyre {
+GkMsgBoxThread::GkMsgBoxThread(QObject *parent) : QThread(parent), uiRes(0), btnRes(QMessageBox::NoButton)
+{
+    //
+    // https://forum.qt.io/topic/54335/is-there-any-way-to-use-qmessagebox-in-the-other-thread/12
+    //
+    qRegisterMetaType<QMessageBox::StandardButtons>("QMessageBox::StandardButtons");
+    QObject::connect(this, SIGNAL(guiMsgBoxSig(QWidget *, const QString, const QString, QMessageBox::StandardButtons, QMessageBox::StandardButtons)),
+                     SLOT(on_guiMsgBox(QWidget *, const QString, const QString, QMessageBox::StandardButtons, QMessageBox::StandardButtons)));
+}
 
-class StringFuncs : public QObject {
-    Q_OBJECT
+GkMsgBoxThread::~GkMsgBoxThread()
+{}
 
-public:
-    explicit StringFuncs(QObject *parent = nullptr);
-    ~StringFuncs();
+void GkMsgBoxThread::on_guiMsgBox(QWidget *parent, const QString &title, const QString &text,
+                                  QMessageBox::StandardButtons buttons, QMessageBox::StandardButtons defaultButton)
+{
+    btnRes = QMessageBox::information(parent, title, text, buttons, defaultButton);
+    uiRes.release(1);
 
-    bool modalDlgBoxOk(const QString &title, const QString &msgTxt, const int &icon);
+    return;
+}
 
-};
-};
+int GkMsgBoxThread::guiMsgBox(QWidget *parent, const QString &title, const QString &text,
+                              QMessageBox::StandardButtons buttons, QMessageBox::StandardButtons defaultButton)
+{
+    QThread::exec();
+    emit guiMsgBoxSig(parent, title, text, buttons, defaultButton);
+    uiRes.acquire(1);
+
+    return btnRes;
+}

@@ -111,6 +111,8 @@ namespace GekkoFyre {
 #define MIN_MAIN_WINDOW_WIDTH (1024)
 #define MIN_MAIN_WINDOW_HEIGHT (768)
 #define MAX_TOLERATE_WINDOW_WIDTH (16384)               // This value is mostly for error correction purposes.
+#define DLG_BOX_WINDOW_WIDTH (480)                      // The width of non-Qt generated dialog boxes
+#define DLG_BOX_WINDOW_HEIGHT (120)                     // The height of non-Qt generated dialog boxes
 
 #define AUDIO_OUTPUT_MAX_VOL_SIMPLE (100)               // The maximum volume in simple units (i.e. non decible units)
 #define AUDIO_OUTPUT_CHANNEL_MAX_LIMIT (1024)

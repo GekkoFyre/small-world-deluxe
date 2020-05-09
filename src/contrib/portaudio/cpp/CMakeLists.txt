@@ -451,6 +451,9 @@ elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()
 
+#
+# The below is required for when we decide to start programming an install target for this CMake script!
+#
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 

@@ -34,7 +34,7 @@
 #   [ 1 ] - https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe
 #
 
-cmake_minimum_required(VERSION 3.1.0 FATAL_ERROR) # This version is needed to properly search for libpthreads
+cmake_minimum_required(VERSION 3.5 FATAL_ERROR) # This version is needed to properly search for libpthreads
 
 # https://gitlab.kitware.com/cmake/community/wikis/doc/cmake/Useful-Variables#system-compiler-information
 if(${CMAKE_VERSION} VERSION_GREATER "3.15.0")
@@ -62,25 +62,38 @@ if(CMAKE_VERSION VERSION_LESS "3.7.0")
     set(CMAKE_INCLUDE_CURRENT_DIR ON)
 endif()
 
-set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/")
+set(CMAKE_MODULE_PATH
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/";
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/third-party/basic-c-sdl-project/cmake/sdl2/")
 
 option(GFYRE_PACKAGE_MAINTAINER "Are you a package maintainer? If so, set this option to `ON`! It'll enable specific build settings to make your life easier." ON)
+# option(GFYRE_BUILD_STATIC "Build Small World Deluxe as a static library/package. This will result in a larger executable at the benefit of requiring less DLL dependencies.")
+# option(GFYRE_BUILD_SHARED "Build Small World Deluxe as a shared library/package. This will result in a smaller executable at the cost of requiring further DLL dependencies.")
 
-if(WIN32)
+#
+# Detect if we are dealing with the Linux operating system and not Apple OS/X
+#
+if(UNIX AND NOT APPLE)
+    set(LINUX TRUE)
+endif()
+
+if(WIN32 OR MSYS OR MINGW)
     option(GFYRE_PA_USE_ASIO "Enable the ASIO sub-library option with PortAudio, which is recommended for Microsoft Windows systems <http://portaudio.com/docs/v19-doxydocs-dev/compile_windows_asio_msvc.html>." ON)
 else()
     option(GFYRE_PA_USE_ASIO "Enable the ASIO sub-library option with PortAudio, which is recommended for Microsoft Windows systems <http://portaudio.com/docs/v19-doxydocs-dev/compile_windows_asio_msvc.html>." OFF)
 endif()
+
+option(GFYRE_ENABLE_PVS_STUDIO "Enable the static analysis of the Small World Deluxe project via PVS-Studio. More details can be found here: https://github.com/viva64/pvs-studio-cmake-examples" OFF)
 
 #
 # Determine the current version of Microsoft Windows in use, if that is indeed the operating system.
 # Then proceed to build specifically for that operating system, provided the right flags have been set.
 # https://stackoverflow.com/questions/9742003/platform-detection-in-cmake
 #
-if(WIN32)
+if(WIN32 OR MSYS OR MINGW)
     if(${GFYRE_PACKAGE_MAINTAINER} EQUAL OFF)
         macro(get_WIN32_WINNT version)
-            if (WIN32 AND CMAKE_SYSTEM_VERSION)
+            if (WIN32 OR MSYS OR MINGW AND CMAKE_SYSTEM_VERSION)
                 set(ver ${CMAKE_SYSTEM_VERSION})
                 string(REPLACE "." "" ver ${ver})
                 string(REGEX REPLACE "([0-9])" "0\\1" ver ${ver})
@@ -100,7 +113,7 @@ endif()
 # https://stackoverflow.com/questions/33991918/link-to-pthread-library-using-cmake-in-clion
 # Find 'libpthreads'
 #
-if (UNIX)
+if (LINUX)
     set(THREADS_PREFER_PTHREAD_FLAG ON)
 endif()
 set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -123,15 +136,15 @@ find_package(Boost 1.54.0 REQUIRED COMPONENTS "filesystem"
                                               "chrono"
                                               "locale")
                                               
-if(WIN32)
+if(WIN32 OR MSYS OR MINGW)
     if(${GFYRE_PACKAGE_MAINTAINER} EQUAL ON)
         message(STATUS "Using package maintainer settings.")
-        if (${CMAKE_SYSTEM_NAME} MATCHES "Windows" OR "cygwin" OR "mingw")
+        if (MSYS OR MINGW OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
             # http://stackoverflow.com/questions/9742003/platform-detection-in-cmake
             add_definitions(-D_WIN32_WINNT=NTDDI_VISTASP1)
         endif()
-    endif(${GFYRE_PACKAGE_MAINTAINER} EQUAL ON)
-endif(WIN32)
+    endif()
+endif()
 
 if(${GFYRE_PACKAGE_MAINTAINER} EQUAL ON)
     set(BUILD_SHARED_LIBS ON)
@@ -145,6 +158,22 @@ if (Boost_FOUND)
 else()
     message(FATAL_ERROR "The required 'Boost C++' libraries are either not installed, or not multithreaded and/or of not an up-to-date version. Boost C++ 1.54.0 is the minimally required version.")
 endif(Boost_FOUND)
+
+#
+# Don't forget to include SDLmain.h and SDLmain.m your project for the
+# OS X framework based version.  (Other versions link to -lSDLmain which
+# this module will try to find on your behalf.) Also for OS X, this
+# module will automatically add the -framework Cocoa on your behalf.
+#
+if (LINUX OR MSYS OR MINGW)
+    find_package(SDL2 REQUIRED)
+    if (SDL2MAIN_FOUND AND SDL2_VERSION_STRING MATCHES "2.*.*")
+        include_directories(${SDL2_INCLUDE_DIRS})
+        set(LIBS ${LIBS} ${SDL2_LIBRARIES})
+    else()
+        message(SEND_ERROR "The cross-platform Simple DirectMedia Layer (libSDL2) library could not be found!")
+    endif()
+endif()
 
 find_package(ZLIB REQUIRED)
 if (ZLIB_FOUND)
@@ -164,16 +193,19 @@ endif(LEVELDB_FOUND)
 
 find_package(PortAudio REQUIRED)
 if (PortAudio_FOUND)
-    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSYS" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MINGW")
+    if(WIN32 OR MSYS OR MINGW)
         # Enable `PA_USE_ASIO` by default, since this allows for the lowest latency possible with the audio pathways!
         if(GFYRE_PA_USE_ASIO)
             add_definitions(-DPA_USE_ASIO=1)
             message(STATUS "Enabled the `PA_USE_ASIO` build option!")
+        else()
+            add_definitions(-DPA_USE_ASIO=0)
+            message(STATUS "IMPORTANT!!! It has been decided by the user to DISABLE the `PA_USE_ASIO` option, despite it being supported by the given operating system and/or compilation tools.")
         endif()
     else()
         # Disable `PA_USE_ASIO` because we are dealing with a system other than Microsoft Windows, where ASIO is unsupported...
         add_definitions(-DPA_USE_ASIO=0)
-        message(STATUS "Disabled the `PA_USE_ASIO` build option because we are not dealing with a supported Microsoft Windows system!")
+        message(STATUS "IMPORTANT!!! The `PA_USE_ASIO` build option has been DISABLED because we are not dealing with a supported Microsoft Windows system!")
     endif()
 
     include_directories(${PortAudio_INCLUDE_DIRS})
@@ -298,8 +330,9 @@ set(GALAXY_UI_CPP
     src/ui/mainwindow.cpp
     src/ui/dialogsettings.cpp
     src/ui/aboutdialog.cpp
-    src/spectro_fftw.cpp
+    src/ui/gkaudioplaydialog.cpp
     src/ui/spectrodialog.cpp
+    src/spectro_fftw.cpp
     src/radiolibs.cpp
     src/dek_db.cpp
     src/file_io.cpp
@@ -312,13 +345,14 @@ set(GALAXY_UI_CPP
     src/gk_audio_decoding.cpp
     src/gk_cli.cpp
     src/gk_modem.cpp
-    src/ui/gkaudioplaydialog.cpp)
+    src/gk_msg_box_gui_thread.cpp
+    src/contrib/RS232/rs232.c)
 
-if(WIN32)
+if(WIN32 OR MSYS OR MINGW)
     set(GALAXY_UI_CPP
         ${GALAXY_UI_CPP}
         src/string_funcs_windows.cpp)
-elseif(UNIX)
+elseif(LINUX)
     set(GALAXY_UI_CPP
         ${GALAXY_UI_CPP}
         src/string_funcs_linux.cpp)
@@ -333,12 +367,13 @@ set(GALAXY_SRC_CPP
 set(GALAXY_SRC_HEADERS
     ${GALAXY_SRC_HEADERS}
     src/defines.hpp
-    src/pa_sinewave.hpp
     src/ui/mainwindow.hpp
     src/ui/dialogsettings.hpp
     src/ui/aboutdialog.hpp
-    src/spectro_fftw.hpp
+    src/ui/gkaudioplaydialog.hpp
     src/ui/spectrodialog.hpp
+    src/pa_sinewave.hpp
+    src/spectro_fftw.hpp
     src/radiolibs.hpp
     src/dek_db.hpp
     src/file_io.hpp
@@ -351,13 +386,14 @@ set(GALAXY_SRC_HEADERS
     src/gk_audio_decoding.hpp
     src/gk_cli.hpp
     src/gk_modem.hpp
-    src/ui/gkaudioplaydialog.hpp)
+    src/gk_msg_box_gui_thread.hpp
+    src/contrib/RS232/rs232.h)
 
-if(WIN32)
+if(WIN32 OR MSYS OR MINGW)
     set(GALAXY_SRC_HEADERS
         ${GALAXY_SRC_HEADERS}
         src/string_funcs_windows.hpp)
-elseif(UNIX)
+elseif(LINUX)
     set(GALAXY_SRC_HEADERS
         ${GALAXY_SRC_HEADERS}
         src/string_funcs_linux.hpp)
@@ -367,10 +403,14 @@ endif()
 
 add_definitions("-DQWT_DLL")
 
+#
+# The below is required for when we decide to start programming an install target for this CMake script!
+#
+include(CMakePackageConfigHelpers)
+include(GNUInstallDirs)
+
 add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_SRC_HEADERS} ${UI_HEADERS})
-
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
-
 target_link_libraries(galaxy Qt5::Widgets Qt5::Core Qt5::Gui Qt5::PrintSupport Threads::Threads ${LIBS})
 
 # rcc -no-compress -binary smallworld_res.qrc -o smallworld_res.rcc
@@ -378,12 +418,9 @@ qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)
 add_dependencies(galaxy resources)
 
 set(SWRLD_EXEC ${SWRLD_EXEC}
-    src/main.cpp
-    src/contrib/RS232/rs232.h
-    src/contrib/RS232/rs232.c)
+    src/main.cpp)
 
 add_executable(smallworld ${SWRLD_EXEC})
-
 target_link_libraries(smallworld galaxy)
 
 #
@@ -401,8 +438,19 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     # Using Microsoft Visual Studio C++
     if(CMAKE_BUILD_TYPE MATCHES "Debug")
-    target_compile_options(galaxy PUBLIC "/W1")
+    target_compile_options(galaxy PUBLIC "/W1 /MP")
     elseif(CMAKE_BUILD_TYPE MATCHES "Release")
-    target_compile_options(galaxy PUBLIC "/W1 /GL")
+    target_compile_options(galaxy PUBLIC "/W1 /GL /MP")
     endif()
+endif()
+
+if (GFYRE_ENABLE_PVS_STUDIO)
+    include(PVS-Studio.cmake)
+    pvs_studio_add_target(TARGET swd.analyze
+                          FORMAT tasklist
+                          ANALYZE ${PROJECT_NAME}
+                          LOG swd.tasks)
+    message(STATUS "Enabled static analysis with PVS-Studio!")
+else()
+    message(STATUS "Disabled static analysis with PVS-Studio!")
 endif()
