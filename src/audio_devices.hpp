@@ -43,7 +43,6 @@
 #include "src/pa_audio_buf.hpp"
 #include <portaudiocpp/PortAudioCpp.hxx>
 #include <portaudiocpp/SampleDataFormat.hxx>
-#include <portaudio.h>
 #include <QObject>
 #include <vector>
 #include <string>
@@ -58,6 +57,17 @@
 #include "src/string_funcs_windows.hpp"
 #elif __linux__
 #include "src/string_funcs_linux.hpp"
+#endif
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#include <portaudio.h>
+
+#ifdef __cplusplus
+} // extern "C"
 #endif
 
 namespace GekkoFyre {

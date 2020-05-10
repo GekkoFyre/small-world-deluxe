@@ -95,8 +95,6 @@ std::vector<GkDevice> AudioDevices::initPortAudio(portaudio::System *portAudioSy
         chosen_output_dev = gkDekodeDb->read_audio_device_settings(true);
         chosen_input_dev = gkDekodeDb->read_audio_device_settings(false);
 
-        bool output_dev_exists = false;
-        bool input_dev_exists = false;
         enum_devices = defaultAudioDevices(portAudioSys);
         if (chosen_output_dev < 0) {
             //
@@ -104,9 +102,8 @@ std::vector<GkDevice> AudioDevices::initPortAudio(portaudio::System *portAudioSy
             //
             std::lock_guard<std::mutex> lck_guard(init_port_audio_mtx);
             for (const auto &device: enum_devices) {
-                if (device.default_dev && device.is_output_dev && !output_dev_exists) {
+                if (device.default_dev && device.is_output_dev) { // Is an output device!
                     device_export.push_back(device);
-                    output_dev_exists = true;
                 }
             }
         } else {
@@ -123,9 +120,8 @@ std::vector<GkDevice> AudioDevices::initPortAudio(portaudio::System *portAudioSy
             //
             std::lock_guard<std::mutex> lck_guard(init_port_audio_mtx);
             for (const auto &device: enum_devices) {
-                if (device.default_dev && !device.is_output_dev && !input_dev_exists) {
+                if (device.default_dev && !device.is_output_dev) { // Is an input device!
                     device_export.push_back(device);
-                    input_dev_exists = true;
                 }
             }
         } else {
@@ -354,7 +350,6 @@ std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp(portaudio::System *portA
             //
             if ((*i).hostApi().typeId() == paASIO) {
                 #ifdef WIN32
-                #if defined(_MSC_VER) && (_MSC_VER > 1915)
                 #ifdef PA_USE_ASIO
                 portaudio::AsioDeviceAdapter asio_device(*i);
                 device.asio_min_buffer_size = asio_device.minBufferSize();
@@ -386,8 +381,7 @@ std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp(portaudio::System *portA
                 } else {
                     device.asio_granularity = -1;
                 }
-                #endif
-                #endif
+                #endif // PA_USE_ASIO
                 #endif // WIN32
             }
 

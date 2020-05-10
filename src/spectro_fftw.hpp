@@ -70,8 +70,8 @@ public:
 private:
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
 
-    std::timed_mutex calc_stft_mtx;
-    std::timed_mutex calc_hanning_mtx;
+    std::mutex calc_stft_mtx;
+    std::mutex calc_hanning_mtx;
 
     void hanning(int win_length, double *buffer);
 

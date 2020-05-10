@@ -58,6 +58,13 @@ endif()
 option(GFYRE_PACKAGE_MAINTAINER "Are you a package maintainer? If so, set this option to `ON`! It'll enable specific build settings to make your life easier." ON)
 
 #
+# Detect if we are dealing with the Linux operating system and not Apple OS/X
+#
+if(UNIX AND NOT APPLE)
+    set(LINUX TRUE)
+endif()
+
+#
 # Determine the current version of Microsoft Windows in use, if that is indeed the operating system.
 # Then proceed to build specifically for that operating system, provided the right flags have been set.
 # https://stackoverflow.com/questions/9742003/platform-detection-in-cmake
@@ -81,15 +88,15 @@ if(WIN32)
     endif(${GFYRE_PACKAGE_MAINTAINER} EQUAL OFF)
 endif()
                                               
-if(WIN32)
+if(WIN32 OR MSYS OR MINGW)
     if(${GFYRE_PACKAGE_MAINTAINER} EQUAL ON)
         message(STATUS "Using package maintainer settings.")
-        if (${CMAKE_SYSTEM_NAME} MATCHES "Windows" OR "cygwin" OR "mingw")
+        if (MSYS OR MINGW OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
             # http://stackoverflow.com/questions/9742003/platform-detection-in-cmake
             add_definitions(-D_WIN32_WINNT=NTDDI_VISTASP1)
         endif()
-    endif(${GFYRE_PACKAGE_MAINTAINER} EQUAL ON)
-endif(WIN32)
+    endif()
+endif()
 
 if(${GFYRE_PACKAGE_MAINTAINER} EQUAL ON)
     set(BUILD_SHARED_LIBS ON)
@@ -268,7 +275,7 @@ ELSE()
 
     IF(APPLE)
         message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
-    ELSEIF(UNIX)
+    ELSEIF(LINUX)
 
         FIND_PACKAGE(Jack)
         IF(JACK_FOUND)
@@ -402,7 +409,7 @@ IF(PA_BUILD_EXAMPLES)
     SUBDIRS(examples)
 ENDIF()
 
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSYS" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MINGW" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+if(WIN32 OR MSYS OR MINGW OR LINUX)
     set(GALAXY_SRC_CPP
         src/AsioDeviceAdapter.cxx
         src/BlockingStream.cxx
@@ -425,7 +432,7 @@ elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()
 
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSYS" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MINGW")
+if(WIN32 OR MSYS OR MINGW OR LINUX)
     set(GALAXY_SRC_HEADERS
         include/portaudiocpp/AsioDeviceAdapter.hxx
         include/portaudiocpp/AutoSystem.hxx
@@ -480,10 +487,6 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     target_compile_options(portaudiocpp_static PUBLIC -Wno-unused-variable -enable-clocale)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     # Using GCC
-    target_compile_options(portaudio_static PUBLIC -Wno-unused-variable -enable-clocale)
-    target_compile_options(portaudiocpp_static PUBLIC -Wno-unused-variable -enable-clocale)
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MINGW")
-    # Using MinGW
     target_compile_options(portaudio_static PUBLIC -Wno-unused-variable -enable-clocale)
     target_compile_options(portaudiocpp_static PUBLIC -Wno-unused-variable -enable-clocale)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")

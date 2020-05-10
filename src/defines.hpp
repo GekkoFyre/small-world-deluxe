@@ -59,6 +59,12 @@
 #include <QDateTime>
 
 #ifdef _WIN32
+
+#ifdef PA_USE_ASIO
+#include <pa_asio.h>
+#include <portaudiocpp/AsioDeviceAdapter.hxx>
+#endif
+
 #include <winsdkver.h>
 #include <Windows.h>
 #include <tchar.h> // https://linuxgazette.net/147/pfeiffer.html
@@ -81,10 +87,6 @@ extern "C"
 #ifdef _WIN32
     typedef std::wstring gkwstring;
 #if defined(_MSC_VER) && (_MSC_VER > 1915)
-#ifdef PA_USE_ASIO
-#include "pa_asio.h"
-#include <portaudiocpp/AsioDeviceAdapter.hxx>
-#endif
 #endif
 #elif __linux__
 #include <libusb-1.0/libusb.h>
@@ -92,7 +94,7 @@ extern "C"
 #endif
 
 #ifdef __cplusplus
-}
+} // extern "C"
 #endif
 
 #if defined(_MSC_VER) && (_MSC_VER < 1900)

@@ -45,7 +45,7 @@ cmake_policy(SET CMP0074 NEW)
 cmake_policy(SET CMP0054 NEW)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 
-project(SmallWorld C CXX)
+project(smallworld C CXX)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CXX_STANDARD 17)
@@ -75,12 +75,6 @@ option(GFYRE_PACKAGE_MAINTAINER "Are you a package maintainer? If so, set this o
 #
 if(UNIX AND NOT APPLE)
     set(LINUX TRUE)
-endif()
-
-if(WIN32 OR MSYS OR MINGW)
-    option(GFYRE_PA_USE_ASIO "Enable the ASIO sub-library option with PortAudio, which is recommended for Microsoft Windows systems <http://portaudio.com/docs/v19-doxydocs-dev/compile_windows_asio_msvc.html>." ON)
-else()
-    option(GFYRE_PA_USE_ASIO "Enable the ASIO sub-library option with PortAudio, which is recommended for Microsoft Windows systems <http://portaudio.com/docs/v19-doxydocs-dev/compile_windows_asio_msvc.html>." OFF)
 endif()
 
 option(GFYRE_ENABLE_PVS_STUDIO "Enable the static analysis of the Small World Deluxe project via PVS-Studio. More details can be found here: https://github.com/viva64/pvs-studio-cmake-examples" OFF)
@@ -195,17 +189,10 @@ find_package(PortAudio REQUIRED)
 if (PortAudio_FOUND)
     if(WIN32 OR MSYS OR MINGW)
         # Enable `PA_USE_ASIO` by default, since this allows for the lowest latency possible with the audio pathways!
-        if(GFYRE_PA_USE_ASIO)
-            add_definitions(-DPA_USE_ASIO=1)
-            message(STATUS "Enabled the `PA_USE_ASIO` build option!")
-        else()
-            add_definitions(-DPA_USE_ASIO=0)
-            message(STATUS "IMPORTANT!!! It has been decided by the user to DISABLE the `PA_USE_ASIO` option, despite it being supported by the given operating system and/or compilation tools.")
-        endif()
+        option(PA_USE_ASIO "Enable support for ASIO. This is recommended for Microsoft Windows operating systems." ON)
     else()
         # Disable `PA_USE_ASIO` because we are dealing with a system other than Microsoft Windows, where ASIO is unsupported...
-        add_definitions(-DPA_USE_ASIO=0)
-        message(STATUS "IMPORTANT!!! The `PA_USE_ASIO` build option has been DISABLED because we are not dealing with a supported Microsoft Windows system!")
+        option(PA_USE_ASIO "Disable support for ASIO. This is recommended for operating systems other than Microsoft Windows." OFF)
     endif()
 
     include_directories(${PortAudio_INCLUDE_DIRS})
@@ -446,10 +433,10 @@ endif()
 
 if (GFYRE_ENABLE_PVS_STUDIO)
     include(PVS-Studio.cmake)
-    pvs_studio_add_target(TARGET swd.analyze
-                          FORMAT tasklist
-                          ANALYZE ${PROJECT_NAME}
-                          LOG swd.tasks)
+    pvs_studio_add_target(TARGET smallworld.analyze ALL
+                          OUTPUT FORMAT errorfile
+                          ANALYZE smallworld galaxy
+                          LOG swd.err)
     message(STATUS "Enabled static analysis with PVS-Studio!")
 else()
     message(STATUS "Disabled static analysis with PVS-Studio!")

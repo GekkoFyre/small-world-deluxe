@@ -250,14 +250,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(GkDb, fileIo, gkStringFuncs, this);
         auto pref_audio_devices = gkAudioDevices->initPortAudio(gkPortAudioInit);
 
-        for (const auto &device: pref_audio_devices) {
-            // Now filter out what is the input and output device selectively!
-            if (device.is_output_dev) {
-                // Output device
-                pref_output_device = device;
-            } else {
-                // Input device
-                pref_input_device = device;
+        if (!pref_audio_devices.empty()) {
+            for (const auto &device: pref_audio_devices) {
+                // Now filter out what is the input and output device selectively!
+                if (device.is_output_dev) {
+                    // Output device
+                    pref_output_device = device;
+                } else {
+                    // Input device
+                    pref_input_device = device;
+                }
             }
         }
 
@@ -323,24 +325,26 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         connect(timer, SIGNAL(timeout()), this, SLOT(infoBar()));
         timer->start(1000);
 
-        const size_t spectro_window_size = gkSpectroGui->window()->size().rwidth();
-        const size_t input_audio_buffer_size = ((pref_input_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS) *
-                                          GkDb->convertAudioChannelsInt(pref_input_device.sel_channels));
-        pref_input_audio_buf = new GekkoFyre::PaAudioBuf(input_audio_buffer_size, this);
-        paMicProcBackground = new GekkoFyre::paMicProcBackground(gkPortAudioInit, pref_input_audio_buf, gkAudioDevices, gkStringFuncs, fileIo, GkDb,
-                                                                 pref_input_device, input_audio_buffer_size, spectro_window_size, nullptr);
+        if (!pref_audio_devices.empty()) {
+            const size_t spectro_window_size = gkSpectroGui->window()->size().rwidth();
+            const size_t input_audio_buffer_size = ((pref_input_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS) *
+                                              GkDb->convertAudioChannelsInt(pref_input_device.sel_channels));
+            pref_input_audio_buf = new GekkoFyre::PaAudioBuf(input_audio_buffer_size, this);
+            paMicProcBackground = new GekkoFyre::paMicProcBackground(gkPortAudioInit, pref_input_audio_buf, gkAudioDevices, gkStringFuncs, fileIo, GkDb,
+                                                                     pref_input_device, input_audio_buffer_size, spectro_window_size, nullptr);
 
-        //
-        // Spectrograph signals and slots
-        //
-        QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), paMicProcBackground, SLOT(abortRecording(const bool &, const int &)));
-        QObject::connect(paMicProcBackground, SIGNAL(updateVolume(const double &)), this, SLOT(updateVuMeter(const double &)));
-        QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), pref_input_audio_buf, SLOT(abortRecording(const bool &, const int &)));
-        QObject::connect(ui->verticalSlider_vol_control, SIGNAL(valueChanged(int)), this, SLOT(updateVolMeterTooltip(const int &)));
-        QObject::connect(paMicProcBackground, SIGNAL(updateWaterfall(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const std::vector<short> &, const int &, const size_t &)),
-                         this, SLOT(updateSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const std::vector<short> &, const int &, const size_t &)));
-        QObject::connect(paMicProcBackground, SIGNAL(stopRecording(const bool &, const int &)),
-                         gkSpectroGui, SIGNAL(stopSpectroRecv(const bool &, const int &)));
+            //
+            // Spectrograph signals and slots
+            //
+            QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), paMicProcBackground, SLOT(abortRecording(const bool &, const int &)));
+            QObject::connect(paMicProcBackground, SIGNAL(updateVolume(const double &)), this, SLOT(updateVuMeter(const double &)));
+            QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), pref_input_audio_buf, SLOT(abortRecording(const bool &, const int &)));
+            QObject::connect(ui->verticalSlider_vol_control, SIGNAL(valueChanged(int)), this, SLOT(updateVolMeterTooltip(const int &)));
+            QObject::connect(paMicProcBackground, SIGNAL(updateWaterfall(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const std::vector<short> &, const int &, const size_t &)),
+                             this, SLOT(updateSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const std::vector<short> &, const int &, const size_t &)));
+            QObject::connect(paMicProcBackground, SIGNAL(stopRecording(const bool &, const int &)),
+                             gkSpectroGui, SIGNAL(stopSpectroRecv(const bool &, const int &)));
+        }
 
         std::thread t1(&MainWindow::infoBar, this);
         t1.detach();
@@ -357,24 +361,28 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         printer->setOutputFormat(QPrinter::NativeFormat);
         printer->setOutputFileName(QString::fromStdString(default_path.string())); // TODO: Clean up this abomination of multiple std::string() <-> QString() conversions!
 
-        //
-        // Setup the audio encoding/decoding libraries!
-        //
-        const size_t output_audio_buffer_size = ((pref_output_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS) *
-                                          GkDb->convertAudioChannelsInt(pref_output_device.sel_channels));
-        pref_output_audio_buf = new GekkoFyre::PaAudioBuf(output_audio_buffer_size, this);
+        if (!pref_audio_devices.empty()) {
+            //
+            // Setup the audio encoding/decoding libraries!
+            //
+            const size_t output_audio_buffer_size = ((pref_output_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS) *
+                                              GkDb->convertAudioChannelsInt(pref_output_device.sel_channels));
+            pref_output_audio_buf = new GekkoFyre::PaAudioBuf(output_audio_buffer_size, this);
 
-        gkAudioEncoding = new GkAudioEncoding(fileIo, pref_input_audio_buf, GkDb, gkSpectroGui,
-                                              gkStringFuncs, pref_input_device, this);
-        gkAudioDecoding = new GkAudioDecoding(fileIo, pref_output_audio_buf, GkDb, gkStringFuncs,
-                                              pref_output_device, this);
+            gkAudioEncoding = new GkAudioEncoding(fileIo, pref_input_audio_buf, GkDb, gkSpectroGui,
+                                                  gkStringFuncs, pref_input_device, this);
+            gkAudioDecoding = new GkAudioDecoding(fileIo, pref_output_audio_buf, GkDb, gkStringFuncs,
+                                                  pref_output_device, this);
 
-        //
-        // Audio encoding signals and slots
-        //
-        gkAudioPlayDlg = new GkAudioPlayDialog(GkDb, gkAudioDecoding, gkAudioDevices, fileIo, this);
-        QObject::connect(gkAudioPlayDlg, SIGNAL(beginRecording(const bool &)), this, SLOT(stopAudioCodecRec(const bool &)));
-        QObject::connect(gkAudioPlayDlg, SIGNAL(beginRecording(const bool &)), gkAudioEncoding, SLOT(startRecording(const bool &)));
+            //
+            // Audio encoding signals and slots
+            //
+            gkAudioPlayDlg = new GkAudioPlayDialog(GkDb, gkAudioDecoding, gkAudioDevices, fileIo, this);
+            QObject::connect(gkAudioPlayDlg, SIGNAL(beginRecording(const bool &)), this, SLOT(stopAudioCodecRec(const bool &)));
+            QObject::connect(gkAudioPlayDlg, SIGNAL(beginRecording(const bool &)), gkAudioEncoding, SLOT(startRecording(const bool &)));
+        } else {
+            QMessageBox::information(this, tr("Important!"), tr("No audio devices have been detected!"), QMessageBox::Ok);
+        }
 
         if (radio->freq >= 0.0) {
             ui->label_freq_large->setText(QString::number(radio->freq));

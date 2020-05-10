@@ -77,7 +77,7 @@ void SpectroFFTW::stft(std::vector<double> *signal, int signal_length, int windo
 {
     Q_UNUSED(feed_rate);
 
-    std::unique_lock<std::timed_mutex> lck_guard(calc_stft_mtx, std::defer_lock);
+    std::lock_guard<std::mutex> lck_guard(calc_stft_mtx);
     std::vector<Spectrograph::RawFFT> raw_fft_vec;
 
     try {
@@ -262,7 +262,7 @@ std::vector<double> SpectroFFTW::powerSpectrum(fftw_complex *tds, const int &win
  */
 void SpectroFFTW::hanning(int win_length, double *buffer)
 {
-    std::unique_lock<std::timed_mutex> lck_guard(calc_hanning_mtx, std::defer_lock);
+    std::lock_guard<std::mutex> lck_guard(calc_hanning_mtx);
 
     if (calc_hanning_mtx.try_lock()) {
         for (int i = 0; i < win_length; ++i) {

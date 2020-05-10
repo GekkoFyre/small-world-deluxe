@@ -38,7 +38,6 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include <portaudio.h>
 #include <boost/circular_buffer.hpp>
 #include <boost/circular_buffer/allocators.hpp>
 #include <boost/iterator.hpp>
@@ -49,6 +48,17 @@
 #include <thread>
 #include <future>
 #include <mutex>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#include <portaudio.h>
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 namespace GekkoFyre {
 
