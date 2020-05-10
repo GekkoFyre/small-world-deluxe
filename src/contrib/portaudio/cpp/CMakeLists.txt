@@ -34,7 +34,7 @@
 #   [ 1 ] - https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe
 #
 
-cmake_minimum_required(VERSION 3.1.0 FATAL_ERROR) # This version is needed to properly search for libpthreads
+cmake_minimum_required(VERSION 3.5 FATAL_ERROR) # This version is needed to properly search for libpthreads
 
 # https://gitlab.kitware.com/cmake/community/wikis/doc/cmake/Useful-Variables#system-compiler-information
 if(${CMAKE_VERSION} VERSION_GREATER "3.15.0")
@@ -494,10 +494,10 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     # Using Microsoft Visual Studio C++
     if(CMAKE_BUILD_TYPE MATCHES "Debug")
-    target_compile_options(portaudio_static PUBLIC "/W1")
-    target_compile_options(portaudiocpp_static PUBLIC "/W1")
+    target_compile_options(portaudio_static PUBLIC "/W1 /MP")
+    target_compile_options(portaudiocpp_static PUBLIC "/W1 /MP")
     elseif(CMAKE_BUILD_TYPE MATCHES "Release")
-    target_compile_options(portaudio_static PUBLIC "/W1 /GL")
-    target_compile_options(portaudiocpp_static PUBLIC "/W1 /GL")
+    target_compile_options(portaudio_static PUBLIC "/W1 /GL /MP")
+    target_compile_options(portaudiocpp_static PUBLIC "/W1 /GL /MP")
     endif()
 endif()

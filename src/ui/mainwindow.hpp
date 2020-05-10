@@ -50,7 +50,6 @@
 #include "src/ui/dialogsettings.hpp"
 #include "src/gk_audio_encoding.hpp"
 #include "src/gk_audio_decoding.hpp"
-#include "src/gk_msg_box_gui_thread.hpp"
 #include "src/ui/gkaudioplaydialog.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
@@ -203,12 +202,11 @@ private:
     QPointer<GekkoFyre::GkAudioDecoding> gkAudioDecoding;
     QPointer<GekkoFyre::SpectroGui> gkSpectroGui;
     QPointer<GekkoFyre::paMicProcBackground> paMicProcBackground;
-    QSharedPointer<GekkoFyre::GkMsgBoxThread> gkMsgBoxThread;
     QPointer<GkAudioPlayDialog> gkAudioPlayDlg;
 
     std::shared_ptr<QSettings> sw_settings;
     std::shared_ptr<QCommandLineParser> gkCliParser;
-    std::shared_ptr<QPrinter> printer;
+    // std::shared_ptr<QPrinter> printer;
 
     //
     // PortAudio initialization and buffers

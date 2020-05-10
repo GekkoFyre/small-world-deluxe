@@ -350,7 +350,7 @@ std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp(portaudio::System *portA
             //
             if ((*i).hostApi().typeId() == paASIO) {
                 #ifdef WIN32
-                #ifdef PA_USE_ASIO
+                #if PA_USE_ASIO
                 portaudio::AsioDeviceAdapter asio_device(*i);
                 device.asio_min_buffer_size = asio_device.minBufferSize();
                 device.asio_max_buffer_size = asio_device.maxBufferSize();
