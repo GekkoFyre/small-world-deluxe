@@ -195,6 +195,12 @@ if (PortAudio_FOUND)
         option(PA_USE_ASIO "Disable support for ASIO. This is recommended for operating systems other than Microsoft Windows." OFF)
     endif()
 
+    if (PA_USE_ASIO)
+        add_definitions(-DPA_USE_ASIO=1)
+    else()
+        add_definitions(-DPA_USE_ASIO=0)
+    endif()
+
     include_directories(${PortAudio_INCLUDE_DIRS})
     set(LIBS ${LIBS} ${PortAudio_LIBRARIES})
 else()
@@ -332,7 +338,6 @@ set(GALAXY_UI_CPP
     src/gk_audio_decoding.cpp
     src/gk_cli.cpp
     src/gk_modem.cpp
-    src/gk_msg_box_gui_thread.cpp
     src/contrib/RS232/rs232.c)
 
 if(WIN32 OR MSYS OR MINGW)
@@ -373,7 +378,6 @@ set(GALAXY_SRC_HEADERS
     src/gk_audio_decoding.hpp
     src/gk_cli.hpp
     src/gk_modem.hpp
-    src/gk_msg_box_gui_thread.hpp
     src/contrib/RS232/rs232.h)
 
 if(WIN32 OR MSYS OR MINGW)

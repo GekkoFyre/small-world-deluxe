@@ -60,7 +60,7 @@
 
 #ifdef _WIN32
 
-#ifdef PA_USE_ASIO
+#if PA_USE_ASIO
 #include <pa_asio.h>
 #include <portaudiocpp/AsioDeviceAdapter.hxx>
 #endif

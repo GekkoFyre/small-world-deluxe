@@ -46,6 +46,7 @@
 #include <fstream>
 #include <QMessageBox>
 #include <QVariant>
+#include <QStandardPaths>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -227,15 +228,18 @@ QString FileIo::read_initial_settings(const Database::Settings::init_cfg &key)
 {
     QVariant value;
 
+    fs::path slash = "/";
+    fs::path native_slash = slash.make_preferred().native();
+
     switch (key) {
     case DbName:
-        value = gkSettings->value(Settings::dbName, Filesystem::fileName);
+        value = gkSettings->value(Settings::dbName, QString::fromStdString(fs::path(Filesystem::defaultDirAppend + native_slash.string() + Filesystem::fileName).string()));
         break;
     case DbExt:
         value = gkSettings->value(Settings::dbExt, "");
         break;
     case DbLoc:
-        value = gkSettings->value(Settings::dbLoc, "");
+        value = gkSettings->value(Settings::dbLoc, QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation));
         break;
     default:
         return "";
@@ -322,7 +326,7 @@ QString FileIo::defaultDirectory(const QString &base_path, const bool &use_nativ
             if (fs::exists(base_dir, ec) && fs::is_directory(base_dir, ec)) {
                 new_dir = fs::path(base_dir.string() + native_slash.string() + append_dir.toStdString());
                 if (!fs::exists(new_dir, ec)) {
-                    fs::create_directory((base_dir.string() + native_slash.string() + append_dir.toStdString()), ec);
+                    fs::create_directories((base_dir.string() + native_slash.string() + append_dir.toStdString()), ec);
                 }
             }
         }
