@@ -43,4 +43,4 @@ StringFuncs::StringFuncs(QObject *parent) : QObject(parent)
 {}
 
 StringFuncs::~StringFuncs()
-= default;
+{}

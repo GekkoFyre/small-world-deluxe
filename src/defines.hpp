@@ -59,6 +59,12 @@
 #include <QDateTime>
 
 #ifdef _WIN32
+
+#if PA_USE_ASIO
+#include <pa_asio.h>
+#include <portaudiocpp/AsioDeviceAdapter.hxx>
+#endif
+
 #include <winsdkver.h>
 #include <Windows.h>
 #include <tchar.h> // https://linuxgazette.net/147/pfeiffer.html
@@ -81,10 +87,6 @@ extern "C"
 #ifdef _WIN32
     typedef std::wstring gkwstring;
 #if defined(_MSC_VER) && (_MSC_VER > 1915)
-#ifdef PA_USE_ASIO
-#include "pa_asio.h"
-#include <portaudiocpp/AsioDeviceAdapter.hxx>
-#endif
 #endif
 #elif __linux__
 #include <libusb-1.0/libusb.h>
@@ -92,7 +94,7 @@ extern "C"
 #endif
 
 #ifdef __cplusplus
-}
+} // extern "C"
 #endif
 
 #if defined(_MSC_VER) && (_MSC_VER < 1900)
@@ -111,6 +113,8 @@ namespace GekkoFyre {
 #define MIN_MAIN_WINDOW_WIDTH (1024)
 #define MIN_MAIN_WINDOW_HEIGHT (768)
 #define MAX_TOLERATE_WINDOW_WIDTH (16384)               // This value is mostly for error correction purposes.
+#define DLG_BOX_WINDOW_WIDTH (480)                      // The width of non-Qt generated dialog boxes
+#define DLG_BOX_WINDOW_HEIGHT (120)                     // The height of non-Qt generated dialog boxes
 
 #define AUDIO_OUTPUT_MAX_VOL_SIMPLE (100)               // The maximum volume in simple units (i.e. non decible units)
 #define AUDIO_OUTPUT_CHANNEL_MAX_LIMIT (1024)

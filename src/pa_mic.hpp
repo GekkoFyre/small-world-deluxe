@@ -41,10 +41,20 @@
 #include "src/dek_db.hpp"
 #include "src/audio_devices.hpp"
 #include "src/pa_audio_buf.hpp"
-#include <portaudio.h>
 #include <QObject>
 #include <memory>
 #include <vector>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#include <portaudio.h>
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 namespace GekkoFyre {
 

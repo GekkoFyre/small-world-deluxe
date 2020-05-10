@@ -35,7 +35,7 @@
 #
 
 find_package(PkgConfig)
-pkg_check_modules(PC_CODEC2 "codec2")
+pkg_check_modules(PC_CODEC2 QUIET "codec2")
 set(CODEC2_DEFINITIONS ${PC_CODEC2_CFLAGS_OTHER})
 
 find_path(CODEC2_INCLUDE_DIR

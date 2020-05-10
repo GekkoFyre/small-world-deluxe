@@ -40,9 +40,15 @@
 #include "src/defines.hpp"
 #include <QObject>
 #include <string>
+#include <memory>
 
 #ifdef _WIN32
 #include <Windows.h>
+#endif
+
+#ifdef __MINGW32__
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_stdinc.h>
 #endif
 
 namespace GekkoFyre {
@@ -58,6 +64,7 @@ public:
     static std::wstring strToWStrWin(const std::string &s);
     std::wstring removeSpecialChars(std::wstring wstr);
     bool modalDlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon);
+    bool modalDlgBoxLinux(Uint32 flags, const QString &title, const QString &msgTxt);
 
 };
 };

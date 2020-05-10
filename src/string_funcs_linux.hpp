@@ -47,7 +47,7 @@ class StringFuncs : public QObject {
 
 public:
     explicit StringFuncs(QObject *parent = nullptr);
-    ~StringFuncs() override;
+    ~StringFuncs();
 
     bool modalDlgBoxOk(const QString &title, const QString &msgTxt, const int &icon);
 

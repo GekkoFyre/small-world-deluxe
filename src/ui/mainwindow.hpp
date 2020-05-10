@@ -69,6 +69,7 @@
 #include <QPushButton>
 #include <QCommandLineParser>
 #include <QPointer>
+#include <QSharedPointer>
 #include <QPrinter>
 #include <QString>
 #include <QStringList>
@@ -205,7 +206,7 @@ private:
 
     std::shared_ptr<QSettings> sw_settings;
     std::shared_ptr<QCommandLineParser> gkCliParser;
-    std::shared_ptr<QPrinter> printer;
+    // std::shared_ptr<QPrinter> printer;
 
     //
     // PortAudio initialization and buffers

@@ -45,7 +45,6 @@
 #include <portaudiocpp/System.hxx>
 #include <ogg/os_types.h>
 #include <boost/filesystem.hpp>
-#include <portaudio.h>
 #include <memory>
 #include <string>
 #include <future>
@@ -69,9 +68,10 @@ extern "C"
 
 #include <opus.h>
 #include <stdint.h>
+#include <portaudio.h>
 
 #ifdef __cplusplus
-}
+} // extern "C"
 #endif
 
 namespace GekkoFyre {

@@ -159,25 +159,22 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 std::string tmp_db_loc = init_settings_db_loc.toStdString();
                 std::string tmp_db_name = init_settings_db_name.toStdString();
                 fs::path new_path = fs::path(tmp_db_loc + native_slash.string() + tmp_db_name); // Path to save final database towards
-                if (fs::exists(tmp_db_loc, ec) && fs::is_directory(tmp_db_loc, ec)) { // Verify parent directory exists and is a directory itself
+                if (fs::exists(new_path, ec) && fs::is_directory(tmp_db_loc, ec)) { // Verify parent directory exists and is a directory itself
                     // Directory presently exists
                     save_db_path = new_path;
                 } else {
                     // Directory does not exist despite been saved as a setting, so we must create it first!
-                    fs::create_directory(new_path, ec); // Create directory
-                    if (fs::exists(new_path, ec)) { // Verify that the newly created directory does exist
-                        save_db_path = new_path; // Export variable as success!
-                    }
+                    fs::path dir_to_append = fs::path(Filesystem::defaultDirAppend + native_slash.string() + Filesystem::fileName);
+                    save_db_path = fileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
+                                                                            true, QString::fromStdString(dir_to_append.string())).toStdString(); // Path to save final database towards
                 }
-            } else {
-                // We need to create a new, default path since this is likely the first time the application has started...
-                fs::path dir_to_append = fs::path(Filesystem::defaultDirAppend + native_slash.string() + Filesystem::fileName);
-                save_db_path = fileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
-                                                        true, QString::fromStdString(dir_to_append.string())).toStdString(); // Path to save final database towards
             }
         } catch (const sys::system_error &e) {
             ec = e.code();
-            throw std::runtime_error(ec.message().c_str());
+            std::cerr << tr("An issue has been encountered whilst initializing Google LevelDB!\n\n%1")
+                    .arg(QString::fromStdString(ec.message())).toStdString() << std::endl; // Because the QMessageBox doesn't always reliably display!
+            QMessageBox::warning(this, tr("Error!"), tr("An issue has been encountered whilst initializing Google LevelDB!\n\n%1")
+                                 .arg(QString::fromStdString(ec.message())), QMessageBox::Ok);
         }
 
         // Some basic optimizations; this is the easiest way to get Google LevelDB to perform well
@@ -192,7 +189,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             GkDb = std::make_shared<GekkoFyre::GkLevelDb>(db, fileIo, this);
             gkRadioLibs = std::make_shared<GekkoFyre::RadioLibs>(fileIo, gkStringFuncs, GkDb, this);
         } else {
-            throw std::runtime_error(tr("Unable to find settings database; we've lost its location! Aborting...").toStdString());
+            QMessageBox::warning(this, tr("Error!"), tr("Unable to find settings database; we've lost its location! Aborting..."), QMessageBox::Ok);
+            QApplication::exit(EXIT_FAILURE);
         }
 
         //
@@ -245,14 +243,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(GkDb, fileIo, gkStringFuncs, this);
         auto pref_audio_devices = gkAudioDevices->initPortAudio(gkPortAudioInit);
 
-        for (const auto &device: pref_audio_devices) {
-            // Now filter out what is the input and output device selectively!
-            if (device.is_output_dev) {
-                // Output device
-                pref_output_device = device;
-            } else {
-                // Input device
-                pref_input_device = device;
+        if (!pref_audio_devices.empty()) {
+            for (const auto &device: pref_audio_devices) {
+                // Now filter out what is the input and output device selectively!
+                if (device.is_output_dev) {
+                    // Output device
+                    pref_output_device = device;
+                } else {
+                    // Input device
+                    pref_input_device = device;
+                }
             }
         }
 
@@ -318,24 +318,26 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         connect(timer, SIGNAL(timeout()), this, SLOT(infoBar()));
         timer->start(1000);
 
-        const size_t spectro_window_size = gkSpectroGui->window()->size().rwidth();
-        const size_t input_audio_buffer_size = ((pref_input_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS) *
-                                          GkDb->convertAudioChannelsInt(pref_input_device.sel_channels));
-        pref_input_audio_buf = new GekkoFyre::PaAudioBuf(input_audio_buffer_size, this);
-        paMicProcBackground = new GekkoFyre::paMicProcBackground(gkPortAudioInit, pref_input_audio_buf, gkAudioDevices, gkStringFuncs, fileIo, GkDb,
-                                                                 pref_input_device, input_audio_buffer_size, spectro_window_size, nullptr);
+        if (!pref_audio_devices.empty()) {
+            const size_t spectro_window_size = gkSpectroGui->window()->size().rwidth();
+            const size_t input_audio_buffer_size = ((pref_input_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS) *
+                                              GkDb->convertAudioChannelsInt(pref_input_device.sel_channels));
+            pref_input_audio_buf = new GekkoFyre::PaAudioBuf(input_audio_buffer_size, this);
+            paMicProcBackground = new GekkoFyre::paMicProcBackground(gkPortAudioInit, pref_input_audio_buf, gkAudioDevices, gkStringFuncs, fileIo, GkDb,
+                                                                     pref_input_device, input_audio_buffer_size, spectro_window_size, nullptr);
 
-        //
-        // Spectrograph signals and slots
-        //
-        QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), paMicProcBackground, SLOT(abortRecording(const bool &, const int &)));
-        QObject::connect(paMicProcBackground, SIGNAL(updateVolume(const double &)), this, SLOT(updateVuMeter(const double &)));
-        QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), pref_input_audio_buf, SLOT(abortRecording(const bool &, const int &)));
-        QObject::connect(ui->verticalSlider_vol_control, SIGNAL(valueChanged(int)), this, SLOT(updateVolMeterTooltip(const int &)));
-        QObject::connect(paMicProcBackground, SIGNAL(updateWaterfall(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const std::vector<short> &, const int &, const size_t &)),
-                         this, SLOT(updateSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const std::vector<short> &, const int &, const size_t &)));
-        QObject::connect(paMicProcBackground, SIGNAL(stopRecording(const bool &, const int &)),
-                         gkSpectroGui, SIGNAL(stopSpectroRecv(const bool &, const int &)));
+            //
+            // Spectrograph signals and slots
+            //
+            QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), paMicProcBackground, SLOT(abortRecording(const bool &, const int &)));
+            QObject::connect(paMicProcBackground, SIGNAL(updateVolume(const double &)), this, SLOT(updateVuMeter(const double &)));
+            QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), pref_input_audio_buf, SLOT(abortRecording(const bool &, const int &)));
+            QObject::connect(ui->verticalSlider_vol_control, SIGNAL(valueChanged(int)), this, SLOT(updateVolMeterTooltip(const int &)));
+            QObject::connect(paMicProcBackground, SIGNAL(updateWaterfall(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const std::vector<short> &, const int &, const size_t &)),
+                             this, SLOT(updateSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const std::vector<short> &, const int &, const size_t &)));
+            QObject::connect(paMicProcBackground, SIGNAL(stopRecording(const bool &, const int &)),
+                             gkSpectroGui, SIGNAL(stopSpectroRecv(const bool &, const int &)));
+        }
 
         std::thread t1(&MainWindow::infoBar, this);
         t1.detach();
@@ -348,28 +350,31 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QDateTime print_curr_date = QDateTime::currentDateTime();
         fs::path default_filename = fs::path(tr("(%1) Small World Deluxe").arg(print_curr_date.toString("dd-MM-yyyy")).toStdString());
         fs::path default_path = fs::path(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation).toStdString() + native_slash.string() + default_filename.string());
-        printer = std::make_shared<QPrinter>(QPrinter::HighResolution);
-        printer->setOutputFormat(QPrinter::NativeFormat);
-        printer->setOutputFileName(QString::fromStdString(default_path.string())); // TODO: Clean up this abomination of multiple std::string() <-> QString() conversions!
 
-        //
-        // Setup the audio encoding/decoding libraries!
-        //
-        const size_t output_audio_buffer_size = ((pref_output_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS) *
-                                          GkDb->convertAudioChannelsInt(pref_output_device.sel_channels));
-        pref_output_audio_buf = new GekkoFyre::PaAudioBuf(output_audio_buffer_size, this);
+        // printer = std::make_shared<QPrinter>(QPrinter::HighResolution);
+        // printer->setOutputFormat(QPrinter::NativeFormat);
+        // printer->setOutputFileName(QString::fromStdString(default_path.string())); // TODO: Clean up this abomination of multiple std::string() <-> QString() conversions!
 
-        gkAudioEncoding = new GkAudioEncoding(fileIo, pref_input_audio_buf, GkDb, gkSpectroGui,
-                                              gkStringFuncs, pref_input_device, this);
-        gkAudioDecoding = new GkAudioDecoding(fileIo, pref_output_audio_buf, GkDb, gkStringFuncs,
-                                              pref_output_device, this);
+        if (!pref_audio_devices.empty()) {
+            //
+            // Setup the audio encoding/decoding libraries!
+            //
+            const size_t output_audio_buffer_size = ((pref_output_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS) *
+                                              GkDb->convertAudioChannelsInt(pref_output_device.sel_channels));
+            pref_output_audio_buf = new GekkoFyre::PaAudioBuf(output_audio_buffer_size, this);
 
-        //
-        // Audio encoding signals and slots
-        //
-        gkAudioPlayDlg = new GkAudioPlayDialog(GkDb, gkAudioDecoding, gkAudioDevices, fileIo, this);
-        QObject::connect(gkAudioPlayDlg, SIGNAL(beginRecording(const bool &)), this, SLOT(stopAudioCodecRec(const bool &)));
-        QObject::connect(gkAudioPlayDlg, SIGNAL(beginRecording(const bool &)), gkAudioEncoding, SLOT(startRecording(const bool &)));
+            gkAudioEncoding = new GkAudioEncoding(fileIo, pref_input_audio_buf, GkDb, gkSpectroGui,
+                                                  gkStringFuncs, pref_input_device, this);
+            gkAudioDecoding = new GkAudioDecoding(fileIo, pref_output_audio_buf, GkDb, gkStringFuncs,
+                                                  pref_output_device, this);
+
+            //
+            // Audio encoding signals and slots
+            //
+            gkAudioPlayDlg = new GkAudioPlayDialog(GkDb, gkAudioDecoding, gkAudioDevices, fileIo, this);
+            QObject::connect(gkAudioPlayDlg, SIGNAL(beginRecording(const bool &)), this, SLOT(stopAudioCodecRec(const bool &)));
+            QObject::connect(gkAudioPlayDlg, SIGNAL(beginRecording(const bool &)), gkAudioEncoding, SLOT(startRecording(const bool &)));
+        }
 
         if (radio->freq >= 0.0) {
             ui->label_freq_large->setText(QString::number(radio->freq));
@@ -377,7 +382,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             ui->label_freq_large->setText(tr("N/A"));
         }
     } catch (const std::exception &e) {
-        QMessageBox::warning(parent, tr("Error!"), e.what(), QMessageBox::Ok);
+        QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
     }
 }
@@ -1116,6 +1121,7 @@ void MainWindow::on_actionCW_toggled(bool arg1)
 
 void MainWindow::on_actionPrint_triggered()
 {
+    /*
     try {
         QPrintDialog print_dialog(printer.get(), this);
         print_dialog.setWindowTitle(QString("Small World Deluxe - ") + tr("Print Document"));
@@ -1130,6 +1136,7 @@ void MainWindow::on_actionPrint_triggered()
         QMessageBox::warning(this, tr("Error!"), tr("Apologies, but an issue was encountered while attempting to print:\n\n%1").arg(e.what()),
                              QMessageBox::Ok);
     }
+    */
 
     return;
 }
