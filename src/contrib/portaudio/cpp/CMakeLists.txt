@@ -58,6 +58,13 @@ endif()
 option(GFYRE_PACKAGE_MAINTAINER "Are you a package maintainer? If so, set this option to `ON`! It'll enable specific build settings to make your life easier." ON)
 
 #
+# Detect if we are dealing with the Linux operating system and not Apple OS/X
+#
+if(UNIX AND NOT APPLE)
+    set(LINUX TRUE)
+endif()
+
+#
 # Determine the current version of Microsoft Windows in use, if that is indeed the operating system.
 # Then proceed to build specifically for that operating system, provided the right flags have been set.
 # https://stackoverflow.com/questions/9742003/platform-detection-in-cmake
@@ -81,15 +88,15 @@ if(WIN32)
     endif(${GFYRE_PACKAGE_MAINTAINER} EQUAL OFF)
 endif()
                                               
-if(WIN32)
+if(WIN32 OR MSYS OR MINGW)
     if(${GFYRE_PACKAGE_MAINTAINER} EQUAL ON)
         message(STATUS "Using package maintainer settings.")
-        if (${CMAKE_SYSTEM_NAME} MATCHES "Windows" OR "cygwin" OR "mingw")
+        if (MSYS OR MINGW OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
             # http://stackoverflow.com/questions/9742003/platform-detection-in-cmake
             add_definitions(-D_WIN32_WINNT=NTDDI_VISTASP1)
         endif()
-    endif(${GFYRE_PACKAGE_MAINTAINER} EQUAL ON)
-endif(WIN32)
+    endif()
+endif()
 
 if(${GFYRE_PACKAGE_MAINTAINER} EQUAL ON)
     set(BUILD_SHARED_LIBS ON)
@@ -178,7 +185,7 @@ if(WIN32)
         SET(PA_PRIVATE_INCLUDE_PATHS ${PA_PRIVATE_INCLUDE_PATHS} ${ASIOSDK_ROOT_DIR}/common)
         SET(PA_PRIVATE_INCLUDE_PATHS ${PA_PRIVATE_INCLUDE_PATHS} ${ASIOSDK_ROOT_DIR}/host)
         SET(PA_PRIVATE_INCLUDE_PATHS ${PA_PRIVATE_INCLUDE_PATHS} ${ASIOSDK_ROOT_DIR}/host/pc)
-        SET(PA_ASIO_SOURCES src/hostapi/asio/pa_asio.cpp src/hostapi/asio/iasiothiscallresolver.cpp)
+        SET(PA_ASIO_SOURCES ./../../src/hostapi/asio/pa_asio.cpp ./../../src/hostapi/asio/iasiothiscallresolver.cpp)
         SET(PA_ASIOSDK_SOURCES ${ASIOSDK_ROOT_DIR}/common/asio.cpp ${ASIOSDK_ROOT_DIR}/host/pc/asiolist.cpp ${ASIOSDK_ROOT_DIR}/host/asiodrivers.cpp)
         SOURCE_GROUP("hostapi\\ASIO" FILES ${PA_ASIO_SOURCES})
         SOURCE_GROUP("hostapi\\ASIO\\ASIOSDK" FILES ${PA_ASIOSDK_SOURCES})
@@ -203,8 +210,8 @@ if(WIN32)
         IF(PA_USE_DIRECTSOUNDFULLDUPLEXCREATE)
             SET(PA_PRIVATE_COMPILE_DEFINITIONS ${PA_PRIVATE_COMPILE_DEFINITIONS} PAWIN_USE_DIRECTSOUNDFULLDUPLEXCREATE)
         ENDIF()
-        SET(PA_DS_INCLUDES src/hostapi/dsound/pa_win_ds_dynlink.h)
-        SET(PA_DS_SOURCES src/hostapi/dsound/pa_win_ds.c src/hostapi/dsound/pa_win_ds_dynlink.c)
+        SET(PA_DS_INCLUDES ./../../src/hostapi/dsound/pa_win_ds_dynlink.h)
+        SET(PA_DS_SOURCES ./../../src/hostapi/dsound/pa_win_ds.c ./../../src/hostapi/dsound/pa_win_ds_dynlink.c)
         SOURCE_GROUP("hostapi\\dsound" FILES ${PA_DS_INCLUDES} ${PA_DS_SOURCES})
         SET(PA_PUBLIC_INCLUDES ${PA_PUBLIC_INCLUDES} ./../../include/pa_win_ds.h ./../../include/pa_win_waveformat.h)
         SET(PA_PRIVATE_INCLUDES ${PA_PRIVATE_INCLUDES} ${PA_DS_INCLUDES})
@@ -214,7 +221,7 @@ if(WIN32)
 
     OPTION(PA_USE_WMME "Enable support for MME" ON)
     IF(PA_USE_WMME)
-        SET(PA_WMME_SOURCES src/hostapi/wmme/pa_win_wmme.c)
+        SET(PA_WMME_SOURCES ./../../src/hostapi/wmme/pa_win_wmme.c)
         SOURCE_GROUP("hostapi\\wmme" FILES ${PA_WMME_SOURCES})
         SET(PA_PUBLIC_INCLUDES ${PA_PUBLIC_INCLUDES} ./../../include/pa_win_wmme.h ./../../include/pa_win_waveformat.h)
         SET(PA_SOURCES ${PA_SOURCES} ${PA_WMME_SOURCES})
@@ -226,7 +233,7 @@ if(WIN32)
     # support needs to be disabled.
     OPTION(PA_USE_WASAPI "Enable support for WASAPI" ON)
     IF(PA_USE_WASAPI)
-        SET(PA_WASAPI_SOURCES src/hostapi/wasapi/pa_win_wasapi.c)
+        SET(PA_WASAPI_SOURCES ./../../src/hostapi/wasapi/pa_win_wasapi.c)
         SOURCE_GROUP("hostapi\\wasapi" FILES ${PA_WASAPI_SOURCES})
         SET(PA_PUBLIC_INCLUDES ${PA_PUBLIC_INCLUDES} ./../../include/pa_win_wasapi.h ./../../include/pa_win_waveformat.h)
         SET(PA_SOURCES ${PA_SOURCES} ${PA_WASAPI_SOURCES})
@@ -237,7 +244,7 @@ if(WIN32)
 
     OPTION(PA_USE_WDMKS "Enable support for WDMKS" ON)
     IF(PA_USE_WDMKS)
-        SET(PA_WDMKS_SOURCES src/hostapi/wdmks/pa_win_wdmks.c)
+        SET(PA_WDMKS_SOURCES ./../../src/hostapi/wdmks/pa_win_wdmks.c)
         SOURCE_GROUP("hostapi\\wdmks" FILES ${PA_WDMKS_SOURCES})
         SET(PA_PUBLIC_INCLUDES ${PA_PUBLIC_INCLUDES} ./../../include/pa_win_wdmks.h)
         SET(PA_SOURCES ${PA_SOURCES} ${PA_WDMKS_SOURCES})
@@ -261,14 +268,14 @@ if(WIN32)
 
 ELSE()
 
-    SET(PA_PRIVATE_INCLUDE_PATHS ${PA_PRIVATE_INCLUDE_PATHS} src/os/unix)
+    SET(PA_PRIVATE_INCLUDE_PATHS ${PA_PRIVATE_INCLUDE_PATHS} ./../../src/os/unix)
     SET(PA_PLATFORM_SOURCES ./../../src/os/unix/pa_unix_hostapis.c ./../../src/os/unix/pa_unix_util.c)
     SOURCE_GROUP("os\\unix" FILES ${PA_PLATFORM_SOURCES})
     SET(PA_SOURCES ${PA_SOURCES} ${PA_PLATFORM_SOURCES})
 
     IF(APPLE)
         message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
-    ELSEIF(UNIX)
+    ELSEIF(LINUX)
 
         FIND_PACKAGE(Jack)
         IF(JACK_FOUND)
@@ -402,7 +409,7 @@ IF(PA_BUILD_EXAMPLES)
     SUBDIRS(examples)
 ENDIF()
 
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSYS" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MINGW" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+if(WIN32 OR MSYS OR MINGW OR LINUX)
     set(GALAXY_SRC_CPP
         src/AsioDeviceAdapter.cxx
         src/BlockingStream.cxx
@@ -425,7 +432,7 @@ elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()
 
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSYS" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MINGW")
+if(WIN32 OR MSYS OR MINGW OR LINUX)
     set(GALAXY_SRC_HEADERS
         include/portaudiocpp/AsioDeviceAdapter.hxx
         include/portaudiocpp/AutoSystem.hxx
@@ -451,6 +458,9 @@ elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()
 
+#
+# The below is required for when we decide to start programming an install target for this CMake script!
+#
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
@@ -473,16 +483,12 @@ set_target_properties(portaudiocpp_static PROPERTIES OUTPUT_NAME portaudiocpp)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # Using regular Clang or AppleClang
-    target_compile_options(portaudio_static PUBLIC -Wno-unused-variable)
-    target_compile_options(portaudiocpp_static PUBLIC -Wno-unused-variable)
+    target_compile_options(portaudio_static PUBLIC -Wno-unused-variable -enable-clocale)
+    target_compile_options(portaudiocpp_static PUBLIC -Wno-unused-variable -enable-clocale)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     # Using GCC
-    target_compile_options(portaudio_static PUBLIC -Wno-unused-variable)
-    target_compile_options(portaudiocpp_static PUBLIC -Wno-unused-variable)
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MINGW")
-    # Using MinGW
-    target_compile_options(portaudio_static PUBLIC -Wno-unused-variable)
-    target_compile_options(portaudiocpp_static PUBLIC -Wno-unused-variable)
+    target_compile_options(portaudio_static PUBLIC -Wno-unused-variable -enable-clocale)
+    target_compile_options(portaudiocpp_static PUBLIC -Wno-unused-variable -enable-clocale)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
     # Using Intel C++
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")

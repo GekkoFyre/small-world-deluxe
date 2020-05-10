@@ -77,7 +77,7 @@ void SpectroFFTW::stft(std::vector<double> *signal, int signal_length, int windo
 {
     Q_UNUSED(feed_rate);
 
-    std::unique_lock<std::timed_mutex> lck_guard(calc_stft_mtx, std::defer_lock);
+    std::lock_guard<std::mutex> lck_guard(calc_stft_mtx);
     std::vector<Spectrograph::RawFFT> raw_fft_vec;
 
     try {
@@ -170,12 +170,12 @@ void SpectroFFTW::stft(std::vector<double> *signal, int signal_length, int windo
         calc_stft_mtx.unlock();
         return;
     } catch (const std::exception &e) {
-        #ifdef _WIN32
+        #if defined(_MSC_VER) && (_MSC_VER > 1900)
         HWND hwnd_stft_calc = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd_stft_calc, tr("Error!"), tr("An error has occurred during the calculation of STFT data!\n\n%1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd_stft_calc);
-        #elif __linux__
-        // TODO: Program a MessageBox that's suitable and thread-safe for Linux/Unix systems!
+        #else
+        gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("An error has occurred during the calculation of STFT data!\n\n%1").arg(e.what()));
         #endif
     }
 
@@ -262,7 +262,7 @@ std::vector<double> SpectroFFTW::powerSpectrum(fftw_complex *tds, const int &win
  */
 void SpectroFFTW::hanning(int win_length, double *buffer)
 {
-    std::unique_lock<std::timed_mutex> lck_guard(calc_hanning_mtx, std::defer_lock);
+    std::lock_guard<std::mutex> lck_guard(calc_hanning_mtx);
 
     if (calc_hanning_mtx.try_lock()) {
         for (int i = 0; i < win_length; ++i) {

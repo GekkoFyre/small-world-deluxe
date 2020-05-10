@@ -579,11 +579,12 @@ Radio *RadioLibs::init_rig(const rig_model_t &rig_model, const std::string &com_
 
     // Instantiate the rig
     radio->rig = rig_init(rig_model);
-    rig_debug(verbosity, "Backend version: %s, Status: %s\n\n", radio->rig->caps->version, rig_strstatus(radio->rig->caps->status));
 
     if (radio->rig == nullptr) {
         throw std::runtime_error(tr("Unable to initialize Hamlib!").toStdString());
     }
+
+    rig_debug(verbosity, "Backend version: %s, Status: %s\n\n", radio->rig->caps->version, rig_strstatus(radio->rig->caps->status));
 
     // Setup serial port, baud rate, etc.
     fs::path slashes = "//./";

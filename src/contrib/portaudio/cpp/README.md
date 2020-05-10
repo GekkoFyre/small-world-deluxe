@@ -15,3 +15,19 @@ But in the same `MinGW` 64-bit shell as before, you need to create a `build` dir
 An install target for `make` has not been created at this stage yet by [Phobos D'thorga](https://code.gekkofyre.io/phobos-dthorga) (the author of Small World Deluxe) so you should find two files which are named (or at least similarly so) to, `libportaudiocpp_static.a` and `libportaudio.a`, within the build directory which need copying to a specific location. The location is, `mingw64/lib`, and you will need to also copy, `include/portaudiocpp`, towards, `mingw64/include`, otherwise the compilation of Small World Deluxe will not proceed correctly.
 
 If you wish to 'uninstall' PortAudio and its C++ bindings from your `MinGW` setup, simply delete the two aforementioned files along with its `include` directory, and you are good to go! Otherwise we are happy to answer any questions and/or issues you may have at the [Git repository for Small World Deluxe](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/issues).
+
+#### Notes about ASIO support with non-Microsoft (MSVC) compilers on Windows
+
+Please note that the following text below has been pulled directly from [the documentation that is provided with the PortAudio project](https://app.assembla.com/spaces/portaudio/git/source/master/src/hostapi/asio/ASIO-README.txt) itself. We at [GekkoFyre Networks](https://gekkofyre.io/) did not author this and therefore ascertain no responsibility.
+
+> [Steinberg](https://www.steinberg.net/en/company/developers.html) did not specify a calling convention in the IASIO interface definition. This causes the Microsoft compiler to use the proprietary `thiscall` convention which **is not** compatible **with** other compilers, such as compilers from **Borland** (**BCC** and **C++Builder**) and **GNU** (**gcc**). Steinberg's ASIO SDK will compile but crash on initialization if compiled with a **non-Microsoft compiler** on Windows.
+>
+> PortAudio solves this problem **using** the `iasiothiscallresolver` library which is included in the distribution. When building ASIO support for non-Microsoft compilers, be sure to compile and link with `iasiothiscallresolver.cpp`. Note that `iasiothiscallresolver` includes conditional directives which cause it to have no effect if it is compiled with a Microsoft compiler, or on the Macintosh.
+>
+> If you use `configure` and `make` (see above), this should be handled automatically for you.
+>
+> For further information about the IASIO `thiscall` problem **see this page**: http://www.rossbencina.com/code/iasio-thiscall-resolver
+
+------
+
+Copyright © 2006 to 2020 – [GekkoFyre Networks](https://gekkofyre.io/), All Rights Reserved.

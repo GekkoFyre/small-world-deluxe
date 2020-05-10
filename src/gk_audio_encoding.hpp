@@ -44,7 +44,6 @@
 #include "src/dek_db.hpp"
 #include <portaudiocpp/System.hxx>
 #include <boost/filesystem.hpp>
-#include <portaudio.h>
 #include <memory>
 #include <string>
 #include <vector>
@@ -69,9 +68,10 @@ extern "C"
 
 #include <opus.h>
 #include <stdint.h>
+#include <portaudio.h>
 
 #ifdef __cplusplus
-}
+} // extern "C"
 #endif
 
 namespace GekkoFyre {

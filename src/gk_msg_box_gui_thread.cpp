@@ -35,48 +35,38 @@
  **
  ****************************************************************************************************/
 
-#pragma once
+#include "gk_msg_box_gui_thread.hpp"
 
-#include "src/defines.hpp"
-#include <fftw3.h>
-#include <QObject>
-#include <vector>
-#include <memory>
-#include <mutex>
-#include <thread>
-#include <future>
+using namespace GekkoFyre;
 
-#ifdef _WIN32
-#include "src/string_funcs_windows.hpp"
-#elif __linux__
-#include "src/string_funcs_linux.hpp"
-#endif
+GkMsgBoxThread::GkMsgBoxThread(QObject *parent) : QThread(parent), uiRes(0), btnRes(QMessageBox::NoButton)
+{
+    //
+    // https://forum.qt.io/topic/54335/is-there-any-way-to-use-qmessagebox-in-the-other-thread/12
+    //
+    qRegisterMetaType<QMessageBox::StandardButtons>("QMessageBox::StandardButtons");
+    QObject::connect(this, SIGNAL(guiMsgBoxSig(QWidget *, const QString, const QString, QMessageBox::StandardButtons, QMessageBox::StandardButtons)),
+                     SLOT(on_guiMsgBox(QWidget *, const QString, const QString, QMessageBox::StandardButtons, QMessageBox::StandardButtons)));
+}
 
-namespace GekkoFyre {
+GkMsgBoxThread::~GkMsgBoxThread()
+{}
 
-class SpectroFFTW: public QObject {
-    Q_OBJECT
+void GkMsgBoxThread::on_guiMsgBox(QWidget *parent, const QString &title, const QString &text,
+                                  QMessageBox::StandardButtons buttons, QMessageBox::StandardButtons defaultButton)
+{
+    btnRes = QMessageBox::information(parent, title, text, buttons, defaultButton);
+    uiRes.release(1);
 
-public:
-    explicit SpectroFFTW(std::shared_ptr<GekkoFyre::StringFuncs> stringFunc,
-                         QObject *parent = nullptr);
-    ~SpectroFFTW();
+    return;
+}
 
-    void stft(std::vector<double> *signal, int signal_length, int window_size, int hop_size, const int &feed_rate,
-              std::promise<std::vector<Spectrograph::RawFFT>> ret_data_promise);
-    void calcPwr(const std::vector<Spectrograph::RawFFT> &tds, const int &win_size,
-                 std::promise<std::vector<Spectrograph::RawFFT> > pds_data_promise);
+int GkMsgBoxThread::guiMsgBox(QWidget *parent, const QString &title, const QString &text,
+                              QMessageBox::StandardButtons buttons, QMessageBox::StandardButtons defaultButton)
+{
+    QThread::exec();
+    emit guiMsgBoxSig(parent, title, text, buttons, defaultButton);
+    uiRes.acquire(1);
 
-private:
-    std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
-
-    std::mutex calc_stft_mtx;
-    std::mutex calc_hanning_mtx;
-
-    void hanning(int win_length, double *buffer);
-
-    void calcPwrTest(const size_t &num_periods, const int &win_size);
-    std::vector<double> powerSpectrum(fftw_complex *tds, const int &win_size);
-
-};
-};
+    return btnRes;
+}

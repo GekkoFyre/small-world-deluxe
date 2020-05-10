@@ -47,7 +47,6 @@
 #include <portaudiocpp/System.hxx>
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
-#include <portaudio.h>
 #include <QObject>
 #include <QPointer>
 #include <memory>
@@ -60,6 +59,17 @@
 #include "src/string_funcs_windows.hpp"
 #elif __linux__
 #include "src/string_funcs_linux.hpp"
+#endif
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#include <portaudio.h>
+
+#ifdef __cplusplus
+} // extern "C"
 #endif
 
 namespace GekkoFyre {

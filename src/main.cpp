@@ -39,19 +39,51 @@
 #include "src/ui/mainwindow.hpp"
 #include <boost/exception/all.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/locale.hpp>
+#include <boost/locale/generator.hpp>
+#include <exception>
 #include <iostream>
 #include <cstdlib>
 #include <csignal>
+#include <locale>
+#include <clocale>
 #include <QApplication>
 #include <QSplashScreen>
 #include <QTimer>
+#include <QString>
+#include <QLocale>
 #include <QWidget>
 #include <QResource>
+
+#ifdef __MINGW32__
+#include <SDL2/SDL.h>
+#endif
 
 namespace fs = boost::filesystem;
 
 int main(int argc, char *argv[])
 {
+    try {
+        #ifdef _WIN32
+        // We wish to enforce the encoding on Microsoft Windows (typically UTF-8)
+        std::locale::global(boost::locale::generator().generate("C"));
+        #else
+        // This suffices for Linux, Apple OS/X, etc.
+        std::locale::global(std::locale::classic());
+        #endif
+
+        //
+        // https://doc.qt.io/qt-5/qlocale.html
+        // Sets the default locale for Qt5 and its libraries
+        //
+        QLocale::setDefault(QLocale(QLocale::C, QLocale::UnitedStates));
+
+        std::cout << "Setting the locale has succeeded." << std::endl;
+    } catch (const std::exception &e) {
+        std::cout << QString("Setting the locale has failed!\n\n%1").arg(QString::fromStdString(e.what())).toStdString() << std::endl;
+        return -1;
+    }
+
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QApplication a(argc, argv);
 
@@ -64,6 +96,13 @@ int main(int argc, char *argv[])
     fs::path native_slash = slash.make_preferred().native();
     fs::path resource_path = fs::path(QCoreApplication::applicationDirPath().toStdString() + native_slash.string()  + GekkoFyre::Filesystem::resourceFile);
     QResource::registerResource(QString::fromStdString(resource_path.string())); // https://doc.qt.io/qt-5/resources.html
+
+    #ifdef __MINGW32__
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        std::cout << "Failed to initialize the SDL2 library!" << std::endl;
+        return -1;
+    }
+    #endif
 
     //
     // Display a splash screen!
