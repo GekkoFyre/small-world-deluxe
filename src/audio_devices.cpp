@@ -42,15 +42,15 @@
 #include <ostream>
 #include <cstdio>
 #include <exception>
-#include <cmath>
 #include <sstream>
 #include <cstdlib>
+#include <utility>
 #include <algorithm>
-#include <QString>
+#include <cmath>
 #include <QDebug>
+#include <QString>
 #include <QMessageBox>
 #include <QApplication>
-#include <utility>
 
 using namespace GekkoFyre;
 using namespace Database;
