@@ -128,7 +128,8 @@ find_package(Boost 1.54.0 REQUIRED COMPONENTS "filesystem"
                                               "exception"
                                               "thread"
                                               "chrono"
-                                              "locale")
+                                              "locale"
+                                              "random")
                                               
 if(WIN32 OR MSYS OR MINGW)
     if(${GFYRE_PACKAGE_MAINTAINER} EQUAL ON)
@@ -393,6 +394,54 @@ elseif(APPLE)
 endif()
 
 add_definitions("-DQWT_DLL")
+
+#
+# Check that the following for the applicable systems actually exist! Abort otherwise...
+# https://cmake.org/cmake/help/latest/module/CheckSymbolExists.html
+# https://cmake.org/cmake/help/latest/module/CheckCXXSymbolExists.html
+#
+# include(CheckSymbolExists)
+# include(CheckCXXSymbolExists)
+#
+include(CheckIncludeFile)
+include(CheckIncludeFileCXX)
+
+if(WIN32 OR MSYS OR MINGW OR LINUX OR UNIX)
+    check_include_file("stdio.h" HAVE_STDIO_H)
+    check_include_file("string.h" HAVE_CSTRING_H)
+    check_include_file("stdlib.h" HAVE_STDLIB_H)
+    check_include_file("stdint.h" HAVE_STDINT_H)
+    check_include_file("time.h" HAVE_CTIME_H)
+    check_include_file("math.h" HAVE_CMATH_H)
+endif()
+
+if(WIN32)
+    check_include_file_cxx("atlbase.h" HAVE_ATLBASE_H)
+    check_include_file_cxx("atlstr.h" HAVE_ATLSTR_H)
+endif()
+
+if(WIN32 OR MSYS OR MINGW)
+    check_include_file_cxx("Windows.h" HAVE_WINDOWS_H)
+    check_include_file_cxx("winsdkver.h" HAVE_WINSDKVER_H)
+    check_include_file_cxx("tchar.h" HAVE_TCHAR_H)
+    check_include_file_cxx("stringapiset.h" HAVE_STRINGAPISET_H)
+endif()
+
+if(LINUX OR MSYS OR MINGW)
+    check_include_file("termios.h" HAVE_TERMIOS_H)
+    check_include_file("unistd.h" HAVE_UNISTD_H)
+    check_include_file("fcntl.h" HAVE_FCNTL_H)
+    check_include_file("limits.h" HAVE_LIMITS_H)
+    check_include_file("errno.h" HAVE_ERRNO_H)
+    check_include_file("sys/ioctl.h" HAVE_IOCTL_H)
+    check_include_file("sys/types.h" HAVE_TYPES_H)
+    check_include_file("sys/stat.h" HAVE_STAT_H)
+    check_include_file("sys/file.h" HAVE_FILE_H)
+endif()
+
+if(LINUX)
+    check_include_file("linux/serial.h" HAVE_LSERIAL_H)
+endif()
 
 #
 # The below is required for when we decide to start programming an install target for this CMake script!

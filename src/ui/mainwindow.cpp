@@ -300,14 +300,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
 
         QString com_baud_rate = GkDb->read_rig_settings(radio_cfg::ComBaudRate);
-        AmateurRadio::com_baud_rates final_baud_rate = AmateurRadio::com_baud_rates::BAUD9600;
         if (!com_baud_rate.isEmpty() || !com_baud_rate.isNull()) {
             radio->dev_baud_rate = gkRadioLibs->convertBaudRateInt(com_baud_rate.toInt());
         } else {
             radio->dev_baud_rate = AmateurRadio::com_baud_rates::BAUD9600;
         }
 
-        final_baud_rate = radio->dev_baud_rate;
+        AmateurRadio::com_baud_rates final_baud_rate = radio->dev_baud_rate;
         radio->verbosity = RIG_DEBUG_BUG;
 
         // Initialize Hamlib!
@@ -406,10 +405,6 @@ MainWindow::~MainWindow()
 
     delete db;
     gkPortAudioInit->terminate();
-
-    if (timer != nullptr) {
-        delete timer;
-    }
 
     if (radio != nullptr) {
         if (radio->is_open) {
@@ -591,22 +586,6 @@ bool MainWindow::steadyTimer(const int &seconds)
     }
 
     return false;
-}
-
-/**
- * @brief MainWindow::print_exception
- * @author <https://en.cppreference.com/w/cpp/error/nested_exception>
- * @param e
- * @param level
- */
-void MainWindow::print_exception(const std::exception &e, int level)
-{
-    std::cerr << std::string(level, ' ') << "exception: " << e.what() << '\n';
-    try {
-        std::rethrow_if_nested(e);
-    } catch (const std::exception &e) {
-        print_exception(e, level + 1);
-    } catch (...) {}
 }
 
 /**

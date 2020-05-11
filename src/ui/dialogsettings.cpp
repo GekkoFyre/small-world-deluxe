@@ -949,7 +949,6 @@ void DialogSettings::on_comboBox_soundcard_input_currentIndexChanged(int index)
         for (const auto &device: avail_input_audio_devs.toStdMap()) {
             if (device.first == actual_index) {
                 GkDevice chosen_input;
-                chosen_input = device.second;
                 chosen_input = gkAudioDevices->gatherAudioDeviceDetails(gkPortAudioInit, actual_index);
 
                 chosen_input_audio_dev = chosen_input;
@@ -985,7 +984,6 @@ void DialogSettings::on_comboBox_soundcard_output_currentIndexChanged(int index)
         for (const auto &device: avail_output_audio_devs.toStdMap()) {
             if (device.first == actual_index) {
                 GkDevice chosen_output;
-                chosen_output = device.second;
                 chosen_output = gkAudioDevices->gatherAudioDeviceDetails(gkPortAudioInit, actual_index);
 
                 chosen_output_audio_dev = chosen_output;

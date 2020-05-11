@@ -234,7 +234,7 @@ private:
     std::future<GekkoFyre::AmateurRadio::Control::Radio *> rig_thread;
 
     GekkoFyre::AmateurRadio::Control::Radio *radio;
-    QTimer *timer;
+    QPointer<QTimer> timer;
     // QDateTime spectro_gui_init_start; // The very first time for when the spectrograph is initialized by the user!
 
     //
@@ -260,7 +260,6 @@ private:
     void createStatusBar(const QString &statusMsg = "");
     bool changeStatusBarMsg(const QString &statusMsg = "");
     bool steadyTimer(const int &seconds);
-    void print_exception(const std::exception &e, int level = 0);
 };
 
 Q_DECLARE_METATYPE(std::vector<GekkoFyre::Spectrograph::RawFFT>);
