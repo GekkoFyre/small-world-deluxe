@@ -5,11 +5,11 @@
 
 #include <portaudio.h>
 
-#include "portaudiocpp/CallbackStream.hxx"
-#include "portaudiocpp/CallbackInterface.hxx"
-#include "portaudiocpp/StreamParameters.hxx"
-#include "portaudiocpp/Exception.hxx"
-#include "portaudiocpp/InterfaceCallbackStream.hxx"
+#include <portaudiocpp/CallbackStream.hxx>
+#include <portaudiocpp/CallbackInterface.hxx>
+#include <portaudiocpp/StreamParameters.hxx>
+#include <portaudiocpp/Exception.hxx>
+#include <portaudiocpp/InterfaceCallbackStream.hxx>
 
 // ---------------------------------------------------------------------------------------
 

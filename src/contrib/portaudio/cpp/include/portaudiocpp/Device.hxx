@@ -7,7 +7,7 @@
 
 #include <portaudio.h>
 
-#include "portaudiocpp/SampleDataFormat.hxx"
+#include <portaudiocpp/SampleDataFormat.hxx>
 
 // ---------------------------------------------------------------------------------------
 

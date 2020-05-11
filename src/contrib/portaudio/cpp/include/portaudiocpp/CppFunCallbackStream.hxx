@@ -5,7 +5,7 @@
 
 #include <portaudio.h>
 
-#include "portaudiocpp/CallbackStream.hxx"
+#include <portaudiocpp/CallbackStream.hxx>
 
 // ---------------------------------------------------------------------------------------
 
