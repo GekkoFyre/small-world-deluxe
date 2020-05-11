@@ -718,19 +718,23 @@ void MainWindow::infoBar()
     std::mutex info_bar_mtx;
     std::lock_guard<std::mutex> lck_guard(info_bar_mtx);
 
-    std::ostringstream oss_utc_time;
-    oss_utc_time.imbue(std::locale(tr("en_US.utf8").toStdString()));
-    std::time_t curr_time = std::time(nullptr);
-    oss_utc_time << std::put_time(std::gmtime(&curr_time), "%T %p");
+    try {
+        std::ostringstream oss_utc_time;
+        std::time_t curr_time = std::time(nullptr);
+        oss_utc_time << std::put_time(std::gmtime(&curr_time), "%T %p");
 
-    std::ostringstream oss_utc_date;
-    oss_utc_date.imbue(std::locale(tr("en_US.utf8").toStdString()));
-    oss_utc_date << std::put_time(std::gmtime(&curr_time), "%F");
+        std::ostringstream oss_utc_date;
+        oss_utc_date << std::put_time(std::gmtime(&curr_time), "%F");
 
-    QString curr_utc_time_str = QString::fromStdString(oss_utc_time.str());
-    QString curr_utc_date_str = QString::fromStdString(oss_utc_date.str());
-    ui->label_curr_utc_time->setText(curr_utc_time_str);
-    ui->label_curr_utc_date->setText(curr_utc_date_str);
+        QString curr_utc_time_str = QString::fromStdString(oss_utc_time.str());
+        QString curr_utc_date_str = QString::fromStdString(oss_utc_date.str());
+        ui->label_curr_utc_time->setText(curr_utc_time_str);
+        ui->label_curr_utc_date->setText(curr_utc_date_str);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
+    return;
 }
 
 /**

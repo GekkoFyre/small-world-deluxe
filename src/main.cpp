@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
     try {
         #ifdef _WIN32
         // We wish to enforce the encoding on Microsoft Windows (typically UTF-8)
-        std::locale::global(boost::locale::generator().generate("C"));
+        std::locale::global(boost::locale::generator().generate("en_US.UTF-8"));
         #else
         // This suffices for Linux, Apple OS/X, etc.
         std::locale::global(std::locale::classic());
@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
         // https://doc.qt.io/qt-5/qlocale.html
         // Sets the default locale for Qt5 and its libraries
         //
-        QLocale::setDefault(QLocale(QLocale::C, QLocale::UnitedStates));
+        QLocale::setDefault(QLocale(QLocale::English, QLocale::UnitedStates));
 
         std::cout << "Setting the locale has succeeded." << std::endl;
     } catch (const std::exception &e) {
