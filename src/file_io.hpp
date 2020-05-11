@@ -40,10 +40,17 @@
 #include "src/defines.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
+#include <boost/random.hpp>
+#include <boost/random/random_device.hpp>
 #include <functional>
+#include <algorithm>
+#include <iterator>
 #include <vector>
+#include <random>
 #include <string>
 #include <memory>
+#include <limits>
+#include <array>
 #include <QObject>
 #include <QString>
 #include <QSettings>
@@ -66,7 +73,7 @@ public:
 
     size_t generateRandInteger(const size_t &min_integer_size, const size_t &max_integer_size,
                                const size_t &desired_result_less_than) const;
-    static std::string create_random_string(size_t length);
+    static std::string create_random_string(const size_t &len);
     boost::filesystem::path dummy_path();
 
     std::string get_file_contents(const boost::filesystem::path &filePath);
@@ -79,8 +86,18 @@ protected:
 private:
     std::shared_ptr<QSettings> gkSettings;
 
-    static std::string init_random_string(size_t length, std::function<char(void)> rand_char);
-    static char_array charset();
-
+    //
+    // Author: Konrad Rudolph <https://stackoverflow.com/a/444614/4293625>
+    //
+    template <typename T = boost::mt19937>
+    static auto random_generator() -> T {
+        auto constexpr seed_bits = sizeof(typename T::result_type) * T::state_size;
+        auto constexpr seed_len = seed_bits / std::numeric_limits<std::seed_seq::result_type>::digits;
+        auto seed = std::array<std::seed_seq::result_type, seed_len>{};
+        auto dev = boost::random_device{};
+        std::generate_n(begin(seed), seed_len, std::ref(dev));
+        auto seed_seq = std::seed_seq(std::begin(seed), std::end(seed));
+        return T{seed_seq};
+    }
 };
 };

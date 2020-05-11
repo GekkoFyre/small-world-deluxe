@@ -51,13 +51,14 @@ extern "C"
 
 #include <libusb.h>
 
-#ifdef _WIN32
+#if defined(_MSC_VER) && (_MSC_VER > 1900)
 #elif __linux__
+#include <sys/ioctl.h>
+#include <linux/serial.h>
+#else
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/ioctl.h>
-#include <linux/serial.h>
 #endif
 
 #ifdef __cplusplus

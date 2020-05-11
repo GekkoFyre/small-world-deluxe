@@ -1,7 +1,7 @@
 #ifndef INCLUDED_PORTAUDIO_STREAM_HXX
 #define INCLUDED_PORTAUDIO_STREAM_HXX
 
-#include "portaudio.h"
+#include <portaudio.h>
 
 // ---------------------------------------------------------------------------------------
 

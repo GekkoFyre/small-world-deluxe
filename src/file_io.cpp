@@ -38,12 +38,12 @@
 #include "file_io.hpp"
 #include <boost/range/iterator_range.hpp>
 #include <exception>
-#include <algorithm>
-#include <random>
 #include <iostream>
+#include <cctype>
 #include <ostream>
 #include <utility>
 #include <fstream>
+#include <cstdlib>
 #include <QMessageBox>
 #include <QVariant>
 #include <QStandardPaths>
@@ -74,34 +74,29 @@ FileIo::~FileIo()
 
 /**
  * @brief FileIo::create_random_string Creates a random string of given length
- * @author https://stackoverflow.com/users/13760/carl
+ * @author Konrad Rudolph <https://stackoverflow.com/a/444614/4293625>
  * @param length The given length of the random string
  * @see GekkoFyre::FileIo::init_random_string()
  * @return The generated random string.
  */
-std::string FileIo::create_random_string(size_t length)
+std::string FileIo::create_random_string(const size_t &len)
 {
-    const auto ch_set = charset();
-    std::default_random_engine rng(std::random_device{}());
-    std::uniform_int_distribution<> dist(0, ch_set.size()-1);
-    auto randchar = [ ch_set, &dist, &rng ](){return ch_set[ dist(rng) ];};
-    auto rand_string = init_random_string(length, std::function<char(void)>(randchar));
-    return rand_string;
-}
+    std::string result = "";
+    try {
+        static constexpr auto chars =
+            "0123456789"
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            "abcdefghijklmnopqrstuvwxyz";
+        thread_local auto rng = random_generator<>();
+        auto dist = std::uniform_int_distribution{{}, std::strlen(chars) - 1};
+        result = std::string(len, '\0');
+        std::generate_n(begin(result), len, [&]() { return chars[dist(rng)]; });
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("There appears to be an issue with the string randomizer...\n\n%1")
+                             .arg(e.what()), QMessageBox::Ok);
+    }
 
-/**
- * @brief FileIo::random_string Writes out a random string of any given length.
- * @author Carl <https://stackoverflow.com/questions/440133/how-do-i-create-a-random-alpha-numeric-string-in-c>
- * @param length The given length of the random string to be generated.
- * @param rand_char Characters to optionally use.
- * @see GekkoFyre::FileIo::create_random_string()
- * @return The generated random string.
- */
-std::string FileIo::init_random_string(size_t length, std::function<char(void)> rand_char)
-{
-    std::string str(length, 0);
-    std::generate_n(str.begin(), length, std::move(rand_char));
-    return str;
+    return result;
 }
 
 /**
@@ -252,7 +247,7 @@ size_t FileIo::generateRandInteger(const size_t &min_integer_size, const size_t 
                                    const size_t &desired_result_less_than) const
 {
     std::random_device dev;
-    std::mt19937 rng(dev());
+    boost::mt19937 rng(dev());
     std::uniform_int_distribution<size_t> dist(min_integer_size, max_integer_size);
     const size_t result = dist(rng);
 
@@ -338,24 +333,6 @@ QString FileIo::defaultDirectory(const QString &base_path, const bool &use_nativ
     }
 
     return "";
-}
-
-char_array FileIo::charset()
-{
-    return char_array(
-    {'0','1','2','3','4',
-    '5','6','7','8','9',
-    'A','B','C','D','E','F',
-    'G','H','I','J','K',
-    'L','M','N','O','P',
-    'Q','R','S','T','U',
-    'V','W','X','Y','Z',
-    'a','b','c','d','e','f',
-    'g','h','i','j','k',
-    'l','m','n','o','p',
-    'q','r','s','t','u',
-    'v','w','x','y','z'
-    });
 }
 
 /**

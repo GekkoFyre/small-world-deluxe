@@ -1,6 +1,6 @@
-#include "portaudiocpp/DirectionSpecificStreamParameters.hxx"
+#include <portaudiocpp/DirectionSpecificStreamParameters.hxx>
 
-#include "portaudiocpp/Device.hxx"
+#include <portaudiocpp/Device.hxx>
 
 namespace portaudio
 {

@@ -1,11 +1,11 @@
-#include "portaudiocpp/AsioDeviceAdapter.hxx"
+#include <portaudiocpp/AsioDeviceAdapter.hxx>
 
-#include "portaudio.h"
-#include "pa_asio.h"
+#include <portaudio.h>
+#include <pa_asio.h"
 
-#include "portaudiocpp/Device.hxx"
-#include "portaudiocpp/HostApi.hxx"
-#include "portaudiocpp/Exception.hxx"
+#include <portaudiocpp/Device.hxx>
+#include <portaudiocpp/HostApi.hxx>
+#include <portaudiocpp/Exception.hxx>
 
 namespace portaudio
 {
