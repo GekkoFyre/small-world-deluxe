@@ -292,6 +292,31 @@ endif(Iconv_FOUND)
 
 set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-arcs -ftest-coverage")
 
+#
+# Codec2 library
+#
+
+#
+# Set project version information. This should probably be done via external
+# file at some point.
+#
+set(CODEC2_VERSION_MAJOR 0)
+set(CODEC2_VERSION_MINOR 9)
+# Set to patch level if needed, otherwise leave FALSE.
+# Must be positive (non-zero) if set, since 0 == FALSE in CMake.
+set(CODEC2_VERSION_PATCH 2)
+set(CODEC2_VERSION "${CODEC2_VERSION_MAJOR}.${CODEC2_VERSION_MINOR}")
+# Patch level version bumps should not change API/ABI.
+set(SOVERSION "${CODEC2_VERSION_MAJOR}.${CODEC2_VERSION_MINOR}")
+if(CODEC2_VERSION_PATCH)
+    set(CODEC2_VERSION "${CODEC2_VERSION}.${CODEC2_VERSION_PATCH}")
+endif()
+message(STATUS "codec2 version: ${CODEC2_VERSION}")
+
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/codec2/src")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/codec2/unittest")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/codec2/misc")
+
 # set up a mapping so that the Release configuration for the Qt imported target is
 # used in the COVERAGE CMake configuration.
 set_target_properties(Qt5::Core PROPERTIES MAP_IMPORTED_CONFIG_COVERAGE "RELEASE")
