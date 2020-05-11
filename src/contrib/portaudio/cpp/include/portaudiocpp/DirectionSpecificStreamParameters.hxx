@@ -5,7 +5,7 @@
 
 #include <cstddef>
 
-#include "portaudio.h"
+#include <portaudio.h>
 
 #include "portaudiocpp/System.hxx"
 #include "portaudiocpp/SampleDataFormat.hxx"

@@ -1,6 +1,6 @@
 #include "portaudiocpp/BlockingStream.hxx"
 
-#include "portaudio.h"
+#include <portaudio.h>
 
 #include "portaudiocpp/StreamParameters.hxx"
 #include "portaudiocpp/Exception.hxx"

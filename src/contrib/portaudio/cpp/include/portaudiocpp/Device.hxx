@@ -5,7 +5,7 @@
 
 #include <iterator>
 
-#include "portaudio.h"
+#include <portaudio.h>
 
 #include "portaudiocpp/SampleDataFormat.hxx"
 

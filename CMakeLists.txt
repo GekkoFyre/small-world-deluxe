@@ -197,9 +197,9 @@ if (PortAudio_FOUND)
     endif()
 
     if (PA_USE_ASIO)
-        add_definitions(-DPA_USE_ASIO=1)
+        add_definitions(-DPA_USE_ASIO=ON)
     else()
-        add_definitions(-DPA_USE_ASIO=0)
+        add_definitions(-DPA_USE_ASIO=OFF)
     endif()
 
     include_directories(${PortAudio_INCLUDE_DIRS})

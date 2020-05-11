@@ -1,6 +1,6 @@
 #include "portaudiocpp/AsioDeviceAdapter.hxx"
 
-#include "portaudio.h"
+#include <portaudio.h>
 #include "pa_asio.h"
 
 #include "portaudiocpp/Device.hxx"

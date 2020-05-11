@@ -83,7 +83,7 @@
 
 // ---------------------------------------------------------------------------------------
 
-#include "portaudio.h"
+#include <portaudio.h>
 
 #include "portaudiocpp/AutoSystem.hxx"
 #include "portaudiocpp/BlockingStream.hxx"
