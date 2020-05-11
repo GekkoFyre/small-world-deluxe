@@ -1,8 +1,8 @@
 #include <iostream>
-#include "portaudiocpp/PortAudioCpp.hxx"
+#include <portaudiocpp/PortAudioCpp.hxx>
 
 #ifdef WIN32
-#include "portaudiocpp/AsioDeviceAdapter.hxx"
+#include <portaudiocpp/AsioDeviceAdapter.hxx>
 #endif
 
 // ---------------------------------------------------------------------------------------

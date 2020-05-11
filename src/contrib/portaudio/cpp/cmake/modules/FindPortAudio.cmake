@@ -40,10 +40,11 @@ set(PortAudio_DEFINITIONS ${PC_PortAudio_CFLAGS_OTHER})
 
 find_path(PortAudio_INCLUDE_DIR NAMES "portaudio.h"
             HINTS ${PC_PortAudio_INCLUDE_DIR} ${PC_PortAudio_INCLUDE_DIRS}
-            PATH_SUFFIXES portaudio)
+            PATHS "/usr/local/include" "/usr/include")
 
 find_library(PortAudio_LIBRARY NAMES "portaudio" "libportaudio" "portaudio_static_x64" "portaudio_x64" "portaudio_x86" "portaudio_static_x86"
-            HINTS ${PC_PortAudio_LIBDIR} ${PC_PortAudio_LIBRARY_DIRS})
+            HINTS ${PC_PortAudio_LIBDIR} ${PC_PortAudio_LIBRARY_DIRS}
+            PATHS "/usr/local/lib" "/usr/local/lib64" "/usr/lib" "/usr/lib64" "/mingw64/lib" "/mingw32/lib")
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(PortAudio DEFAULT_MSG PortAudio_LIBRARY PortAudio_INCLUDE_DIR)

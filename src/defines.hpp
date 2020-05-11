@@ -158,8 +158,6 @@ namespace GekkoFyre {
 #define M_PI (3.14159265358979323846) /* pi */
 #endif
 
-typedef std::vector<char> char_array;
-
 namespace General {
     constexpr char companyName[] = "GekkoFyre Networks";
     constexpr char productName[] = "Small World Deluxe";

@@ -5,7 +5,7 @@
 
 #include <exception>
 
-#include "portaudio.h"
+#include <portaudio.h>
 
 // ---------------------------------------------------------------------------------------
 

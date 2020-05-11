@@ -4,7 +4,7 @@
 #include <cmath>
 #include <cassert>
 #include <cstddef>
-#include "portaudiocpp/PortAudioCpp.hxx"
+#include <portaudiocpp/PortAudioCpp.hxx>
 
 // ---------------------------------------------------------------------------------------
 
