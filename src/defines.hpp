@@ -59,7 +59,6 @@
 #include <QDateTime>
 
 #ifdef _WIN32
-
 #if PA_USE_ASIO
 #include <pa_asio.h>
 #include <portaudiocpp/AsioDeviceAdapter.hxx>

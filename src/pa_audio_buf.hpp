@@ -49,17 +49,6 @@
 #include <future>
 #include <mutex>
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#include <portaudio.h>
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
-
 namespace GekkoFyre {
 
 class PaAudioBuf : public QObject, private boost::circular_buffer<short> {

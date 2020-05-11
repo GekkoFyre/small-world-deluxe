@@ -40,17 +40,6 @@
 #include "src/defines.hpp"
 #include <portaudiocpp/PortAudioCpp.hxx>
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#include <portaudio.h>
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
-
 namespace GekkoFyre {
 
 class PaSinewave {

@@ -68,7 +68,6 @@ extern "C"
 
 #include <opus.h>
 #include <stdint.h>
-#include <portaudio.h>
 
 #ifdef __cplusplus
 } // extern "C"

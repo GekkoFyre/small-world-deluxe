@@ -1,3 +1,6 @@
 [submodule "cmake/third-party/basic-c-sdl-project"]
 	path = cmake/third-party/basic-c-sdl-project
 	url = https://github.com/aminosbh/basic-c-sdl-project.git
+[submodule "src/contrib/codec2"]
+	path = src/contrib/codec2
+	url = https://github.com/drowe67/codec2.git

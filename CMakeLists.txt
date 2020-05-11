@@ -282,17 +282,6 @@ else()
     message(SEND_ERROR "The 'Opus' audio (de-/en-)coding library could not be found!")
 endif(Opus_FOUND)
 
-#
-# https://github.com/drowe67/codec2/blob/master/README_ofdm.txt
-#
-find_package(Codec2 REQUIRED)
-if (CODEC2_FOUND)
-    include_directories(${CODEC2_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${CODEC2_LIBRARIES})
-else()
-    message(SEND_ERROR "The 'codec2' digital voice OFDM modem for HF SSB could not be found!")
-endif(CODEC2_FOUND)
-
 find_package(Iconv REQUIRED)
 if (Iconv_FOUND)
     include_directories(${Iconv_INCLUDE_DIRS})

@@ -77,17 +77,6 @@
 #include <QDateTime>
 #include <QSettings>
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#include <portaudio.h>
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
-
 #ifdef _WIN32
 #include "src/string_funcs_windows.hpp"
 #elif __linux__

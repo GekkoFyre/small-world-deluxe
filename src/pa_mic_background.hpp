@@ -61,17 +61,6 @@
 #include "src/string_funcs_linux.hpp"
 #endif
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#include <portaudio.h>
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
-
 namespace GekkoFyre {
 
 class paMicProcBackground : public QObject {
