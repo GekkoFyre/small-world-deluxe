@@ -1,14 +1,14 @@
-#include <portaudiocpp/System.hxx>
+#include "portaudiocpp/System.hxx"
 
 #include <cstddef>
 #include <cassert>
 
-#include <portaudiocpp/HostApi.hxx>
-#include <portaudiocpp/Device.hxx>
-#include <portaudiocpp/Stream.hxx>
-#include <portaudiocpp/Exception.hxx>
-#include <portaudiocpp/SystemHostApiIterator.hxx>
-#include <portaudiocpp/SystemDeviceIterator.hxx>
+#include "portaudiocpp/HostApi.hxx"
+#include "portaudiocpp/Device.hxx"
+#include "portaudiocpp/Stream.hxx"
+#include "portaudiocpp/Exception.hxx"
+#include "portaudiocpp/SystemHostApiIterator.hxx"
+#include "portaudiocpp/SystemDeviceIterator.hxx"
 
 namespace portaudio
 {

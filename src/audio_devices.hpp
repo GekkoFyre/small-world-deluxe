@@ -41,8 +41,6 @@
 #include "src/dek_db.hpp"
 #include "src/file_io.hpp"
 #include "src/pa_audio_buf.hpp"
-#include <portaudiocpp/PortAudioCpp.hxx>
-#include <portaudiocpp/SampleDataFormat.hxx>
 #include <QObject>
 #include <vector>
 #include <string>

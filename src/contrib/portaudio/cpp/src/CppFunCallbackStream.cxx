@@ -1,7 +1,7 @@
-#include <portaudiocpp/CppFunCallbackStream.hxx>
+#include "portaudiocpp/CppFunCallbackStream.hxx"
 
-#include <portaudiocpp/StreamParameters.hxx>
-#include <portaudiocpp/Exception.hxx>
+#include "portaudiocpp/StreamParameters.hxx"
+#include "portaudiocpp/Exception.hxx"
 
 namespace portaudio
 {

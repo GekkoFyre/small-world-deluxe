@@ -6,7 +6,7 @@
 #include <iterator>
 #include <cstddef>
 
-#include <portaudiocpp/System.hxx>
+#include "portaudiocpp/System.hxx"
 
 // ---------------------------------------------------------------------------------------
 

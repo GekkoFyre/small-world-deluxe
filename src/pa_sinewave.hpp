@@ -38,7 +38,6 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include <portaudiocpp/PortAudioCpp.hxx>
 
 namespace GekkoFyre {
 

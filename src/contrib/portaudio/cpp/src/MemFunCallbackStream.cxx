@@ -1,4 +1,4 @@
-#include <portaudiocpp/MemFunCallbackStream.hxx>
+#include "portaudiocpp/MemFunCallbackStream.hxx"
 
 // (... template class ...)
 

@@ -37,9 +37,7 @@
 
 #pragma once
 
-#include <portaudiocpp/PortAudioCpp.hxx>
-#include <portaudiocpp/SampleDataFormat.hxx>
-#include <portaudiocpp/Device.hxx>
+#include "contrib/portaudio/cpp/include/portaudiocpp/PortAudioCpp.hxx"
 #include <fftw3.h>
 #include <boost/exception/all.hpp>
 #include <boost/logic/tribool.hpp>
@@ -59,9 +57,9 @@
 #include <QDateTime>
 
 #ifdef _WIN32
-#if PA_USE_ASIO
+#ifdef PA_USE_ASIO
 #include <pa_asio.h>
-#include <portaudiocpp/AsioDeviceAdapter.hxx>
+#include "contrib/portaudio/cpp/include/portaudiocpp/AsioDeviceAdapter.hxx"
 #endif
 
 #include <winsdkver.h>

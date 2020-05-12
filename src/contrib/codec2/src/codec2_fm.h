@@ -28,6 +28,7 @@
 #ifndef __CODEC2_FM__
 #define __CODEC2_FM__
 
+#include "./../../../defines.hpp"
 #include "comp.h"
 
 struct FM {

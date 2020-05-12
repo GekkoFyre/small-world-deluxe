@@ -9,6 +9,7 @@
 
 */
 
+#include "./../../../defines.hpp"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -29,7 +30,11 @@ int opt_exists(char *argv[], int argc, char opt[]) {
 */
 
 int main(int argc, char *argv[]) {
+    #if defined(_MSC_VER) && (_MSC_VER > 1900)
+    HFILE        *fin, *fout;
+    #else
     FILE        *fin, *fout;
+    #endif
     double	datain, dataout;
 
     if (argc < 3) {

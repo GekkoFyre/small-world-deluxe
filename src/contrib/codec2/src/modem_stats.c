@@ -27,6 +27,7 @@
 
 #include <assert.h>
 #include <math.h>
+#include "./../../../defines.hpp"
 #include "modem_stats.h"
 #include "codec2_fdmdv.h"
 

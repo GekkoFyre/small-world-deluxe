@@ -208,14 +208,6 @@ else()
     message(FATAL_ERROR "The 'PortAudio' sound library could not be found!")
 endif(PortAudio_FOUND)
 
-find_package(PortAudioCpp REQUIRED)
-if (PortAudioCpp_FOUND)
-    include_directories(${PortAudioCpp_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${PortAudioCpp_LIBRARIES})
-else()
-    message(FATAL_ERROR "The C++ bindings for PortAudio could not be found! You must compile this separately from the code found within: 'src\contrib\portaudio\cpp'.")
-endif(PortAudioCpp_FOUND)
-
 find_package(Hamlib REQUIRED)
 if (HAMLIB_FOUND)
     include_directories(${HAMLIB_INCLUDE_DIRS})
@@ -291,6 +283,30 @@ else()
 endif(Iconv_FOUND)
 
 set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-arcs -ftest-coverage")
+
+#
+# PortAudio's C++ bindings
+#
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/portaudio/cpp/include")
+set(GALAXY_UI_CPP
+    ${GALAXY_UI_CPP}
+    src/contrib/portaudio/cpp/src/AsioDeviceAdapter.cxx
+    src/contrib/portaudio/cpp/src/BlockingStream.cxx
+    src/contrib/portaudio/cpp/src/CallbackInterface.cxx
+    src/contrib/portaudio/cpp/src/CallbackStream.cxx
+    src/contrib/portaudio/cpp/src/CFunCallbackStream.cxx
+    src/contrib/portaudio/cpp/src/CppFunCallbackStream.cxx
+    src/contrib/portaudio/cpp/src/Device.cxx
+    src/contrib/portaudio/cpp/src/DirectionSpecificStreamParameters.cxx
+    src/contrib/portaudio/cpp/src/Exception.cxx
+    src/contrib/portaudio/cpp/src/HostApi.cxx
+    src/contrib/portaudio/cpp/src/InterfaceCallbackStream.cxx
+    src/contrib/portaudio/cpp/src/MemFunCallbackStream.cxx
+    src/contrib/portaudio/cpp/src/Stream.cxx
+    src/contrib/portaudio/cpp/src/StreamParameters.cxx
+    src/contrib/portaudio/cpp/src/System.cxx
+    src/contrib/portaudio/cpp/src/SystemDeviceIterator.cxx
+    src/contrib/portaudio/cpp/src/SystemHostApiIterator.cxx)
 
 #
 # Codec2 library

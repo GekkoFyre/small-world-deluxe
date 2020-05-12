@@ -42,7 +42,6 @@
 #include "src/audio_devices.hpp"
 #include "src/pa_audio_buf.hpp"
 #include "src/dek_db.hpp"
-#include <portaudiocpp/System.hxx>
 #include <ogg/os_types.h>
 #include <boost/filesystem.hpp>
 #include <memory>
