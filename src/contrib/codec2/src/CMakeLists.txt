@@ -66,7 +66,7 @@ if(CMAKE_CROSSCOMPILING)
     include(ExternalProject)
     ExternalProject_Add(codec2_native
        SOURCE_DIR ${CMAKE_SOURCE_DIR}
-       BUILD_COMMAND $(MAKE) generate_codebook
+       BUILD_COMMAND "${CMAKE_COMMAND} --build . --target generate_codebook"
        INSTALL_COMMAND ${CMAKE_COMMAND} -E copy src/generate_codebook ${CMAKE_CURRENT_BINARY_DIR}
     )
     add_executable(generate_codebook IMPORTED)

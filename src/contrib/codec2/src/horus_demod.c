@@ -38,8 +38,8 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <getopt.h>
 
+#include "./../../getopt.h"
 #include "horus_api.h"
 #include "fsk.h"
 #include "horus_l2.h"

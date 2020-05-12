@@ -311,11 +311,11 @@ set(GALAXY_UI_CPP
 #
 # Codec2 library
 #
-
 #
 # Set project version information. This should probably be done via external
 # file at some point.
 #
+set(CMAKE_REQUIRED_LIBRARIES m)
 set(CODEC2_VERSION_MAJOR 0)
 set(CODEC2_VERSION_MINOR 9)
 # Set to patch level if needed, otherwise leave FALSE.
@@ -328,6 +328,37 @@ if(CODEC2_VERSION_PATCH)
     set(CODEC2_VERSION "${CODEC2_VERSION}.${CODEC2_VERSION_PATCH}")
 endif()
 message(STATUS "codec2 version: ${CODEC2_VERSION}")
+
+if (MSYS OR MINGW OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+    option(CMAKE_CROSSCOMPILING "Build Codec2 as a cross-compiled library." OFF)
+endif()
+
+#
+# Find lpcnet library
+#
+if(LPCNET)
+    if(LPCNET_BUILD_DIR)
+        find_package(lpcnetfreedv REQUIRED
+            PATHS ${LPCNET_BUILD_DIR}
+            NO_DEFAULT_PATH
+            CONFIGS lpcnetfreedv.cmake
+        )
+        if(lpcnetfreedv_FOUND)
+            message(STATUS "liblpcnetfreedv found in build tree.")
+            add_definitions("-D__LPCNET__")
+        else()
+            message(FATAL_ERROR "LPCNet include/library not found in build tree.")
+        endif()
+    else()
+        find_package(lpcnetfreedv REQUIRED)
+        if(lpcnetfreedv_FOUND)
+            add_definitions("-D__LPCNET__")
+            message(STATUS "liblpcnetfreedv found.")
+        else()
+            message(FATAL_ERROR "lpcnetfreedv library not found.")
+        endif()
+    endif()
+endif()
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/codec2/src")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/codec2/unittest")
@@ -369,6 +400,7 @@ set(GALAXY_UI_CPP
     src/gk_audio_decoding.cpp
     src/gk_cli.cpp
     src/gk_modem.cpp
+    src/contrib/getopt.c
     src/contrib/RS232/rs232.c)
 
 if(WIN32 OR MSYS OR MINGW)
@@ -409,6 +441,7 @@ set(GALAXY_SRC_HEADERS
     src/gk_audio_decoding.hpp
     src/gk_cli.hpp
     src/gk_modem.hpp
+    src/contrib/getopt.h
     src/contrib/RS232/rs232.h)
 
 if(WIN32 OR MSYS OR MINGW)
