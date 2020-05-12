@@ -38,15 +38,8 @@
 #include "string_funcs_windows.hpp"
 #include <QSettings>
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
 #ifdef _WIN32
 #include <stringapiset.h>
-#endif
-#ifdef __cplusplus
-}
 #endif
 
 #ifdef __MINGW32__

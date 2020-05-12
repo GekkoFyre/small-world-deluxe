@@ -36,6 +36,7 @@
  ****************************************************************************************************/
 
 #include "pa_mic.hpp"
+#include "contrib/portaudio/cpp/include/portaudiocpp/PortAudioCpp.hxx"
 #include <iostream>
 #include <ostream>
 #include <utility> 

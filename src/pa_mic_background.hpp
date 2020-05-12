@@ -44,6 +44,7 @@
 #include "src/file_io.hpp"
 #include "src/spectro_gui.hpp"
 #include "src/dek_db.hpp"
+#include "contrib/portaudio/cpp/include/portaudiocpp/PortAudioCpp.hxx"
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
 #include <QObject>

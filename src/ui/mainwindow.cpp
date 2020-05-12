@@ -39,6 +39,7 @@
 #include "ui_mainwindow.h"
 #include "aboutdialog.hpp"
 #include "spectrodialog.hpp"
+#include "contrib/portaudio/cpp/include/portaudiocpp/PortAudioCpp.hxx"
 #include <boost/exception/all.hpp>
 #include <boost/chrono/chrono.hpp>
 #include <sstream>
@@ -46,7 +47,6 @@
 #include <ostream>
 #include <cmath>
 #include <functional>
-#include <cstdlib>
 #include <chrono>
 #include <QWidget>
 #include <QResource>

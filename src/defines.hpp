@@ -37,12 +37,8 @@
 
 #pragma once
 
-#include "contrib/portaudio/cpp/include/portaudiocpp/PortAudioCpp.hxx"
+#include <libusb.h>
 #include <fftw3.h>
-#include <boost/exception/all.hpp>
-#include <boost/logic/tribool.hpp>
-#include <boost/filesystem.hpp>
-#include <qwt_interval.h>
 #include <vector>
 #include <exception>
 #include <string>
@@ -76,10 +72,8 @@ extern "C"
 {
 #endif
 
-#include <libusb.h>
 #include <hamlib/rig.h>
 #include <hamlib/riglist.h>
-#include <portaudio.h>
 
 #ifdef _WIN32
     typedef std::wstring gkwstring;

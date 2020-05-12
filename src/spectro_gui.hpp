@@ -54,7 +54,6 @@
 #include <qwt_date_scale_draw.h>
 #include <mutex>
 #include <vector>
-#include <cstdlib>
 #include <cmath>
 #include <thread>
 #include <future>
