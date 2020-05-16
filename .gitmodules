@@ -4,3 +4,6 @@
 [submodule "src/contrib/libiconv-win-build"]
 	path = src/contrib/libiconv-win-build
 	url = https://github.com/kiyolee/libiconv-win-build.git
+[submodule "src/contrib/jtdx"]
+	path = src/contrib/jtdx
+	url = https://github.com/jtdx-project/jtdx.git
