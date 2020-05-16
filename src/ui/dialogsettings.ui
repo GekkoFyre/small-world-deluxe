@@ -122,8 +122,8 @@
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>632</width>
-                      <height>370</height>
+                      <width>595</width>
+                      <height>364</height>
                      </rect>
                     </property>
                     <property name="sizePolicy">
@@ -281,6 +281,69 @@
                  </item>
                 </layout>
                </widget>
+               <widget class="QWidget" name="tab_general_ui_radio_freqs">
+                <attribute name="title">
+                 <string>Frequencies</string>
+                </attribute>
+                <layout class="QVBoxLayout" name="verticalLayout_11">
+                 <item>
+                  <widget class="QScrollArea" name="scrollArea_ui_radio_freqs">
+                   <property name="frameShadow">
+                    <enum>QFrame::Plain</enum>
+                   </property>
+                   <property name="horizontalScrollBarPolicy">
+                    <enum>Qt::ScrollBarAlwaysOff</enum>
+                   </property>
+                   <property name="widgetResizable">
+                    <bool>true</bool>
+                   </property>
+                   <widget class="QWidget" name="scrollAreaWidgetContents_ui_radio_freqs">
+                    <property name="geometry">
+                     <rect>
+                      <x>0</x>
+                      <y>0</y>
+                      <width>616</width>
+                      <height>353</height>
+                     </rect>
+                    </property>
+                    <layout class="QVBoxLayout" name="verticalLayout_20">
+                     <item>
+                      <widget class="QGroupBox" name="groupBox_working_freqs">
+                       <property name="title">
+                        <string>Working Frequencies</string>
+                       </property>
+                       <layout class="QHBoxLayout" name="horizontalLayout_2">
+                        <item>
+                         <widget class="QTableWidget" name="tableWidget_working_freqs"/>
+                        </item>
+                        <item>
+                         <widget class="QGroupBox" name="groupBox_freq_calibration">
+                          <property name="title">
+                           <string>Frequency Calib.</string>
+                          </property>
+                         </widget>
+                        </item>
+                       </layout>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QGroupBox" name="groupBox_station_info_freqs">
+                       <property name="title">
+                        <string>Station Information</string>
+                       </property>
+                       <layout class="QVBoxLayout" name="verticalLayout_37">
+                        <item>
+                         <widget class="QTableWidget" name="tableWidget_station_info"/>
+                        </item>
+                       </layout>
+                      </widget>
+                     </item>
+                    </layout>
+                   </widget>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
                <widget class="QWidget" name="tab_general_app_ui">
                 <attribute name="title">
                  <string>User Interface</string>
@@ -302,8 +365,8 @@
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>632</width>
-                      <height>370</height>
+                      <width>595</width>
+                      <height>355</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_23">
@@ -571,8 +634,8 @@
                         <rect>
                          <x>0</x>
                          <y>0</y>
-                         <width>630</width>
-                         <height>368</height>
+                         <width>614</width>
+                         <height>351</height>
                         </rect>
                        </property>
                        <layout class="QVBoxLayout" name="verticalLayout_29">
@@ -901,8 +964,8 @@
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>204</width>
-                      <height>119</height>
+                      <width>212</width>
+                      <height>129</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_28">
@@ -1331,8 +1394,8 @@
                         <rect>
                          <x>0</x>
                          <y>0</y>
-                         <width>609</width>
-                         <height>372</height>
+                         <width>601</width>
+                         <height>394</height>
                         </rect>
                        </property>
                        <layout class="QVBoxLayout" name="verticalLayout_33">

@@ -174,6 +174,7 @@ signals:
     void sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values,
                          const std::vector<short> &raw_audio_data,
                          const int &hanning_window_size, const size_t &buffer_size);
+    void changeFreq(const bool &radio_locked, const GekkoFyre::AmateurRadio::Control::FreqChange &freq_change);
 
 private:
     Ui::MainWindow *ui;

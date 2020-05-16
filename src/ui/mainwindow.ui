@@ -547,7 +547,14 @@ QPushButton:disabled {
                 <item>
                  <layout class="QHBoxLayout" name="horizontalLayout_8">
                   <item>
-                   <widget class="QComboBox" name="comboBox_select_frequency"/>
+                   <widget class="QComboBox" name="comboBox_select_frequency">
+                    <property name="editable">
+                     <bool>true</bool>
+                    </property>
+                    <property name="duplicatesEnabled">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
                   </item>
                  </layout>
                 </item>
