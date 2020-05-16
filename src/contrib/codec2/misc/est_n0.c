@@ -10,11 +10,15 @@
 
 #include <assert.h>
 #include <complex.h>
-#include <getopt.h>
+#include "./../../getopt.h"
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "defines.h"
+
+#ifndef M_PI
+#define M_PI (3.14159265358979323846) /* pi */
+#endif
 
 int main(int argc, char *argv[]) {
     MODEL model;
@@ -61,7 +65,7 @@ int main(int argc, char *argv[]) {
 	for(float n0=0; n0<=P; n0+=0.25) {
 	    float error = 0.0;
 	    for(int m=1; m<=L; m++) {
-		complex diff = cexp(I*model.phi[m]) - cexp(I*n0*m*Wo);
+        complex diff = cexp(I*model.phi[m]) - cexp(I*n0*m*Wo);
 		error += log10(model.A[m])*cabs(diff)*cabs(diff);
 	    }
 	    if (error < best_error) {
@@ -71,7 +75,7 @@ int main(int argc, char *argv[]) {
 	}
 	if (extract) {
 	    for(int m=1; m<=L; m++) {
-		complex diff = cexp(I*model.phi[m])*cexp(-I*best_n0*m*Wo);		
+        complex diff = cexp(I*model.phi[m])*cexp(-I*best_n0*m*Wo);
 		model.phi[m] = carg(diff);
 	    }
 	    assert(fwrite(&model, sizeof(MODEL), 1, stdout));
@@ -81,10 +85,10 @@ int main(int argc, char *argv[]) {
 	    MODEL disp;
 	    assert(fread(&disp, sizeof(MODEL), 1, fdisp) == 1);
 	    for(int m=1; m<=L; m++) {
-		complex combined = cexp(I*disp.phi[m])*cexp(I*best_n0*m*Wo);		
+        complex combined = cexp(I*disp.phi[m])*cexp(I*best_n0*m*Wo);
 		model.phi[m] = carg(combined);
 	    }
-	    assert(fwrite(&model, sizeof(MODEL), 1, stdout));
+        assert(fwrite(&model, sizeof(MODEL), 1, stdout));
 	    wr++;
 	}
 	else

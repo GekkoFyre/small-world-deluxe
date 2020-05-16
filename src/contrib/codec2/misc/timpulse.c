@@ -13,6 +13,10 @@
 
 #define FS 8000
 
+#ifndef M_PI
+#define M_PI (3.14159265358979323846) /* pi */
+#endif
+
 int main(int argc, char *argv[]) {
     short buf[FS] = {0};
     float f0, n0;

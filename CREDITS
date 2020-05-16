@@ -65,3 +65,7 @@ libSDL2 by Cliff Matthews & Gabriel Jacobo et al.
 Qwt by Uwe Rathmann & Josef Wilgen et al.
     <https://qwt.sourceforge.io/>
         GNU Lesser General Public License (LGPL, version 2.1)
+
+getopt for Microsoft Windows by Chunde
+    <https://github.com/Chunde/getopt-for-windows>
+        GNU Lesser General Public License (LGPL, version 2.1)

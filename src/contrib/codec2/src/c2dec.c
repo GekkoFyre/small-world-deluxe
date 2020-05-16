@@ -34,7 +34,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <getopt.h>
+#include "./../../getopt.h"
 
 #define NONE          0  /* no bit errors                          */
 #define UNIFORM       1  /* random bit errors                      */

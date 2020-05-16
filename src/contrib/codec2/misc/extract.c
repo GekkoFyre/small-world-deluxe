@@ -8,7 +8,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <getopt.h>
+#include "./../../getopt.h"
 
 #define NB_FEATURES 55 /* number of cols per row */
 
@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
     float pred = 0.0;
     int removemean = 0;
     float lower = -1E32;
-    
+
     static struct option long_options[] = {
         {"startcol",   required_argument, 0, 's'},
         {"endcol",     required_argument, 0, 'e'},

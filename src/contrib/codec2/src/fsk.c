@@ -31,6 +31,10 @@
 
 \*---------------------------------------------------------------------------*/
 
+#ifndef M_PI
+#define M_PI (3.14159265358979323846) /* pi */
+#endif
+
 /* P oversampling rate constant -- should probably be init-time configurable */
 #define horus_P 8
 

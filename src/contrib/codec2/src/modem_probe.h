@@ -121,7 +121,7 @@ static inline void modem_probe_samp_c(char *name,COMP samp[],size_t cnt){
         return;
 }
 
-static inline void modem_probe_samp_cft(char *name,complex float samp[],size_t cnt){
+static inline void modem_probe_samp_cft(char *name,float samp[],size_t cnt){
         return;
 }
 

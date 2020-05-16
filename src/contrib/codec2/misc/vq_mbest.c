@@ -7,7 +7,7 @@
 */
 
 #include <assert.h>
-#include <getopt.h>
+#include "./../../getopt.h"
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>

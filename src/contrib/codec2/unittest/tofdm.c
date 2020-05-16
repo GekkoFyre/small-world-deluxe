@@ -34,7 +34,7 @@
 #include <string.h>
 #include <math.h>
 #include <complex.h>
-#include <getopt.h>
+#include "./../../getopt.h"
 
 #include "ofdm_internal.h"
 #include "codec2_ofdm.h"

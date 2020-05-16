@@ -32,7 +32,7 @@
 #include <string.h>
 #include <math.h>
 #include <errno.h>
-#include <getopt.h>
+#include "./../../getopt.h"
 
 #include "codec2_cohpsk.h"
 #include "cohpsk_defs.h"

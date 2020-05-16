@@ -144,7 +144,7 @@ uint32_t horus_nin(struct horus *hstates) {
 
 int horus_find_uw(struct horus *hstates, int n) {
     int i, j, corr, mx, mx_ind;
-    int rx_bits_mapped[n+hstates->uw_len];
+    int *rx_bits_mapped = malloc(n + hstates->uw_len);
     
     /* map rx_bits to +/-1 for UW search */
 
@@ -164,6 +164,8 @@ int horus_find_uw(struct horus *hstates, int n) {
             corr += rx_bits_mapped[i+j]*hstates->uw[j];
         }
         
+        free(rx_bits_mapped);
+
         /* peak pick maximum */
         
         if (corr > mx) {
@@ -281,7 +283,7 @@ int extract_horus_binary(struct horus *hstates, char hex_out[], int uw_loc) {
     int en = uw_loc + hstates->max_packet_len; /* last bit of max length packet  */
 
     int      j, b, nout;
-    uint8_t  rxpacket[hstates->max_packet_len];
+    uint8_t  *rxpacket = malloc(hstates->max_packet_len);
     uint8_t  rxbyte, *pout;
  
     /* convert bits to a packet of bytes */
@@ -345,6 +347,8 @@ int extract_horus_binary(struct horus *hstates, char hex_out[], int uw_loc) {
     if ( hstates->crc_ok) {
         hstates->total_payload_bits += HORUS_BINARY_NUM_PAYLOAD_BYTES;
     }
+
+    free(rxpacket);
     return hstates->crc_ok;
 }
 

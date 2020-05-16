@@ -288,8 +288,8 @@ set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-arcs -ftest-c
 # PortAudio's C++ bindings
 #
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/portaudio/cpp/include")
-set(GALAXY_UI_CPP
-    ${GALAXY_UI_CPP}
+set(GALAXY_PORTAUDIO_CPP
+    ${GALAXY_PORTAUDIO_CPP}
     src/contrib/portaudio/cpp/src/AsioDeviceAdapter.cxx
     src/contrib/portaudio/cpp/src/BlockingStream.cxx
     src/contrib/portaudio/cpp/src/CallbackInterface.cxx
@@ -307,6 +307,8 @@ set(GALAXY_UI_CPP
     src/contrib/portaudio/cpp/src/System.cxx
     src/contrib/portaudio/cpp/src/SystemDeviceIterator.cxx
     src/contrib/portaudio/cpp/src/SystemHostApiIterator.cxx)
+
+set_property(SOURCE ${GALAXY_PORTAUDIO_CPP} PROPERTY SKIP_AUTOUIC ON)
 
 #
 # Codec2 library
@@ -361,7 +363,6 @@ if(LPCNET)
 endif()
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/codec2/src")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/codec2/unittest")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/codec2/misc")
 
 # set up a mapping so that the Release configuration for the Qt imported target is
@@ -512,7 +513,7 @@ endif()
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
-add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_SRC_HEADERS} ${UI_HEADERS})
+add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_SRC_HEADERS} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP})
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
 target_link_libraries(galaxy Qt5::Widgets Qt5::Core Qt5::Gui Qt5::PrintSupport Threads::Threads ${LIBS})
 
@@ -532,18 +533,18 @@ target_link_libraries(smallworld galaxy)
 #
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # Using regular Clang or AppleClang
-    target_compile_options(galaxy PUBLIC -Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -enable-clocale)
+    add_compile_options(-Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -enable-clocale)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     # Using GCC
-    target_compile_options(galaxy PUBLIC -Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -enable-clocale)
+    add_compile_options(-Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -enable-clocale)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
     # Using Intel C++
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     # Using Microsoft Visual Studio C++
     if(CMAKE_BUILD_TYPE MATCHES "Debug")
-    target_compile_options(galaxy PUBLIC "/W1 /MP")
+    add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W1 /WX)
     elseif(CMAKE_BUILD_TYPE MATCHES "Release")
-    target_compile_options(galaxy PUBLIC "/W1 /GL /MP")
+    add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W1 /WX /GL)
     endif()
 endif()
 

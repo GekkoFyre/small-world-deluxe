@@ -483,7 +483,7 @@ void interleave(unsigned char *inout, int nbytes, int dir)
     uint16_t nbits = (uint16_t)nbytes*8;
     uint32_t i, j, n, ibit, ibyte, ishift, jbyte, jshift;
     uint32_t b;
-    unsigned char out[nbytes];
+    unsigned char *out = malloc(nbytes);
 
     memset(out, 0, nbytes);
            
@@ -531,6 +531,7 @@ void interleave(unsigned char *inout, int nbytes, int dir)
     }
  
     memcpy(inout, out, nbytes);
+    free(out);
 
     #ifdef DEBUG0
     printf("\nInterleaver Out:\n");
