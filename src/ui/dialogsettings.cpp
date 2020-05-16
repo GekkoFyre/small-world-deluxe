@@ -128,7 +128,7 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
             on_comboBox_com_port_currentIndexChanged(ui->comboBox_com_port->currentIndex());
         }
 
-        std::vector<GkDevice> audio_devices = gkAudioDevices->filterAudioDevices(gkAudioDevices->enumAudioDevicesCpp(gkPortAudioInit));
+        std::vector<GkDevice> audio_devices = gkAudioDevices->filterPortAudioHostType(gkAudioDevices->enumAudioDevicesCpp(gkPortAudioInit));
         prefill_audio_devices(audio_devices);
 
         ui->label_pa_version->setText(gkAudioDevices->portAudioVersionNumber(*gkPortAudioInit));

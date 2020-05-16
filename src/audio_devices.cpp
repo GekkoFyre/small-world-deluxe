@@ -38,11 +38,12 @@
 #include "audio_devices.hpp"
 #include "pa_sinewave.hpp"
 #include <iostream>
-#include <ostream>
 #include <cstdio>
 #include <exception>
 #include <sstream>
 #include <utility>
+#include <cstring>
+#include <ostream>
 #include <algorithm>
 #include <cmath>
 #include <QDebug>
@@ -156,7 +157,7 @@ std::vector<GkDevice> AudioDevices::defaultAudioDevices(portaudio::System *portA
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> enum_devices;
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> exported_devices;
 
-    enum_devices = filterAudioDevices(enumAudioDevicesCpp(portAudioSys));
+    enum_devices = filterPortAudioHostType(enumAudioDevicesCpp(portAudioSys));
     for (const auto &device: enum_devices) {
         if (device.default_dev == true) {
             // We have a default device!
@@ -215,9 +216,10 @@ std::vector<double> AudioDevices::enumSupportedStdSampleRates(const PaStreamPara
 }
 
 /**
- * @brief GekkoFyre::AudioDevices::AudioDevices::enumAudioDevices
+ * @brief GekkoFyre::AudioDevices::AudioDevices::enumAudioDevices The non-C++ version of AudioDevices::enumAudioDevicesCpp, which
+ * is useful for where the C++ bindings may not be used.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @return
+ * @return The found audio devices and their statistics.
  */
 std::vector<GkDevice> AudioDevices::enumAudioDevices()
 {
@@ -370,9 +372,9 @@ std::vector<GkDevice> AudioDevices::enumAudioDevices()
 }
 
 /**
- * @brief AudioDevices::enumAudioDevicesCpp
+ * @brief AudioDevices::enumAudioDevicesCpp Enumerate out all the findable audio devices within the user's computer system.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @return
+ * @return The found audio devices and their statistics.
  */
 std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp(portaudio::System *portAudioSys)
 {
@@ -835,44 +837,80 @@ PaStreamCallbackResult AudioDevices::openRecordStream(portaudio::System &portAud
 }
 
 /**
- * @brief AudioDevices::filterAudioDevices Filters the enumerated list of audio devices so as
- * to remove duplicates, badly named listings, etc.
+ * @brief AudioDevices::filterPortAudioHostType
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param audio_devices_vec The list of audio devices to be filtered.
- * @return The list of devices that have been through the filtering process.
+ * @param audio_devices_vec
+ * @return
  */
-std::vector<GkDevice> AudioDevices::filterAudioDevices(const std::vector<GkDevice> audio_devices_vec)
+std::vector<GkDevice> AudioDevices::filterPortAudioHostType(const std::vector<GkDevice> audio_devices_vec)
 {
     try {
-        std::mutex device_loop_mtx;
-        std::vector<std::string> device_name_list;
-        std::vector<GkDevice> unique_devices;
-
-        std::lock_guard<std::mutex> lck_guard(device_loop_mtx);
-        device_name_list.reserve(audio_devices_vec.size());
-        for (const auto &device: audio_devices_vec) {
-            device_name_list.push_back(device.device_info.name);
-        }
-
-        std::sort(device_name_list.begin(), device_name_list.end());
-        device_name_list.erase(std::unique(device_name_list.begin(), device_name_list.end()), device_name_list.end());
-
-        auto filtered = std::remove_if(device_name_list.begin(), device_name_list.end(), [](const auto& s) { return s.find_first_of(")") == std::string::npos; });
-        device_name_list.erase(filtered, device_name_list.end());
-
-        for (const auto &name: device_name_list) {
-            for (const auto &device: audio_devices_vec) {
-                if (std::strcmp(name.c_str(), device.device_info.name) == 0) {
-                    if (device.device_info.maxInputChannels > 0 || device.device_info.maxOutputChannels > 0) {
-                        if (device.device_info.hostApi > 0) {
-                            unique_devices.push_back(device);
-                        }
-                    }
+        std::vector<GkDevice> host_res;
+        for (const auto &audio_device: audio_devices_vec) {
+            #if _WIN32 || __MINGW32__
+            if (audio_device.host_type_id == PaHostApiTypeId::paASIO) {
+                // ASIO
+                // These are the most preferred, if available at all...
+                if (filterAudioEnumPreexisting(host_res, audio_device) == false) {
+                    host_res.push_back(audio_device);
                 }
+            } else if (audio_device.host_type_id == PaHostApiTypeId::paDirectSound) {
+                // DirectSound
+                // Second-most preferred!
+                if (filterAudioEnumPreexisting(host_res, audio_device) == false) {
+                    host_res.push_back(audio_device);
+                }
+            } else if (audio_device.host_type_id == PaHostApiTypeId::paMME) {
+                // MME
+                if (filterAudioEnumPreexisting(host_res, audio_device) == false) {
+                    host_res.push_back(audio_device);
+                }
+            } else if (audio_device.host_type_id == PaHostApiTypeId::paWDMKS) {
+                // WDMKS
+                if (filterAudioEnumPreexisting(host_res, audio_device) == false) {
+                    host_res.push_back(audio_device);
+                }
+            } else if (audio_device.host_type_id == PaHostApiTypeId::paWASAPI) {
+                // WASAPI
+                if (filterAudioEnumPreexisting(host_res, audio_device) == false) {
+                    host_res.push_back(audio_device);
+                }
+            } else {
+                // The default!
+                // We can throw away these results...
             }
+            #elif __linux__ || __MINGW32__
+            if (audio_device.host_type_id == PaHostApiTypeId::paALSA) {
+                // ALSA
+                // These are the most preferred, if available at all...
+                if (filterAudioEnumPreexisting(host_res, audio_device) == false) {
+                    host_res.push_back(audio_device);
+                }
+            } else if (audio_device.host_type_id == PaHostApiTypeId::paJACK) {
+                // JACK
+                // Second-most preferred!
+                if (filterAudioEnumPreexisting(host_res, audio_device) == false) {
+                    host_res.push_back(audio_device);
+                }
+            } else if (audio_device.host_type_id == PaHostApiTypeId::paOSS) {
+                // OSS?
+                // It is likely that we can throw away these results, unless I'm educated upon as to what this sub-system is...
+            } else {
+                // Unsupported!
+                // We can throw away these results...
+            }
+            #endif
         }
 
-        return unique_devices;
+        if (!host_res.empty()) {
+            #if _WIN32 || __MINGW32__
+            std::vector<GkDevice> filt_devices;
+            std::copy_if(host_res.begin(), host_res.end(), std::back_inserter(filt_devices), [](GkDevice dev) { return dev.device_info.hostApi == PaHostApiTypeId::paDirectSound; });
+            return filt_devices;
+            #elif __linux__
+            // TODO: Add Linux support as soon as possible!
+            #endif
+        }
     } catch (const std::exception &e) {
         QMessageBox::warning(nullptr, tr("Error!"), tr("A fatal error was encountered while enumerating audio devices within your system:\n\n%1").arg(e.what()),
                              QMessageBox::Ok);
@@ -906,47 +944,34 @@ QString AudioDevices::portAudioVersionText(const portaudio::System &portAudioSys
 }
 
 /**
- * @brief AudioDevices::filterAudioEnum
+ * @brief AudioDevices::filterAudioEnumPreexisting A simple function for seeing if a new addition to the `std::vector<GkDevice>` will
+ * add another value that is the exact same as a previous entry or at least, very similar.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param host_api_type
- * @return
+ * @param device_vec The enumerated audio devices to compare against.
+ * @param device_compare The comparison value to be used.
+ * @return Whether there was a comparison match or not.
  */
-bool AudioDevices::filterAudioEnum(const PaHostApiTypeId &host_api_type)
+bool AudioDevices::filterAudioEnumPreexisting(const std::vector<GkDevice> &device_vec, const GkDevice &device_compare)
 {
-    switch (host_api_type) {
-    case paInDevelopment:
-        return true;
-    case paDirectSound:
-        return true;
-    case paMME:
+    try {
+        //
+        // TODO: I have an idea to reimplement this with maybe using a points system? Dunno... need to ask a more seasoned coder.
+        //
+        if (!device_vec.empty()) {
+            for (const auto &audio_device: device_vec) {
+                if (std::strcmp(audio_device.device_info.name, device_compare.device_info.name) == 0) {
+                    return true;
+                }
+            }
+        }
+
         return false;
-    case paASIO:
-        return true;
-    case paSoundManager:
-        return true;
-    case paCoreAudio:
-        return true;
-    case paOSS:
-        return true;
-    case paALSA:
-        return true;
-    case paAL:
-        return true;
-    case paBeOS:
-        return true;
-    case paWDMKS:
-        return true;
-    case paJACK:
-        return true;
-    case paWASAPI:
-        return true;
-    case paAudioScienceHPI:
-        return true;
-    default:
-        return true;
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("A fatal error was encountered while enumerating audio devices within your system:\n\n%1").arg(e.what()),
+                             QMessageBox::Ok);
     }
 
-    return true;
+    return false;
 }
 
 /**
