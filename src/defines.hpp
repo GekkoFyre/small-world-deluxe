@@ -37,8 +37,12 @@
 
 #pragma once
 
-#include <libusb.h>
+#include <portaudiocpp/PortAudioCpp.hxx>
 #include <fftw3.h>
+#include <boost/exception/all.hpp>
+#include <boost/logic/tribool.hpp>
+#include <boost/filesystem.hpp>
+#include <qwt_interval.h>
 #include <vector>
 #include <exception>
 #include <string>
@@ -72,6 +76,7 @@ extern "C"
 {
 #endif
 
+#include <libusb.h>
 #include <hamlib/rig.h>
 #include <hamlib/riglist.h>
 

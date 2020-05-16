@@ -70,6 +70,8 @@ option(GFYRE_PACKAGE_MAINTAINER "Are you a package maintainer? If so, set this o
 # option(GFYRE_BUILD_STATIC "Build Small World Deluxe as a static library/package. This will result in a larger executable at the benefit of requiring less DLL dependencies.")
 # option(GFYRE_BUILD_SHARED "Build Small World Deluxe as a shared library/package. This will result in a smaller executable at the cost of requiring further DLL dependencies.")
 
+option(GFYRE_BUILD_CODEC2 "Build with support for Codec2 <https://github.com/drowe67/codec2>. *** NOTE! This is not a supported feature yet. ***" OFF)
+
 #
 # Detect if we are dealing with the Linux operating system and not Apple OS/X
 #
@@ -290,7 +292,6 @@ set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-arcs -ftest-c
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/portaudio/cpp/include")
 set(GALAXY_PORTAUDIO_CPP
     ${GALAXY_PORTAUDIO_CPP}
-    src/contrib/portaudio/cpp/src/AsioDeviceAdapter.cxx
     src/contrib/portaudio/cpp/src/BlockingStream.cxx
     src/contrib/portaudio/cpp/src/CallbackInterface.cxx
     src/contrib/portaudio/cpp/src/CallbackStream.cxx
@@ -308,62 +309,72 @@ set(GALAXY_PORTAUDIO_CPP
     src/contrib/portaudio/cpp/src/SystemDeviceIterator.cxx
     src/contrib/portaudio/cpp/src/SystemHostApiIterator.cxx)
 
-set_property(SOURCE ${GALAXY_PORTAUDIO_CPP} PROPERTY SKIP_AUTOUIC ON)
-
-#
-# Codec2 library
-#
-#
-# Set project version information. This should probably be done via external
-# file at some point.
-#
-set(CMAKE_REQUIRED_LIBRARIES m)
-set(CODEC2_VERSION_MAJOR 0)
-set(CODEC2_VERSION_MINOR 9)
-# Set to patch level if needed, otherwise leave FALSE.
-# Must be positive (non-zero) if set, since 0 == FALSE in CMake.
-set(CODEC2_VERSION_PATCH 2)
-set(CODEC2_VERSION "${CODEC2_VERSION_MAJOR}.${CODEC2_VERSION_MINOR}")
-# Patch level version bumps should not change API/ABI.
-set(SOVERSION "${CODEC2_VERSION_MAJOR}.${CODEC2_VERSION_MINOR}")
-if(CODEC2_VERSION_PATCH)
-    set(CODEC2_VERSION "${CODEC2_VERSION}.${CODEC2_VERSION_PATCH}")
-endif()
-message(STATUS "codec2 version: ${CODEC2_VERSION}")
-
-if (MSYS OR MINGW OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-    option(CMAKE_CROSSCOMPILING "Build Codec2 as a cross-compiled library." OFF)
-endif()
-
-#
-# Find lpcnet library
-#
-if(LPCNET)
-    if(LPCNET_BUILD_DIR)
-        find_package(lpcnetfreedv REQUIRED
-            PATHS ${LPCNET_BUILD_DIR}
-            NO_DEFAULT_PATH
-            CONFIGS lpcnetfreedv.cmake
-        )
-        if(lpcnetfreedv_FOUND)
-            message(STATUS "liblpcnetfreedv found in build tree.")
-            add_definitions("-D__LPCNET__")
-        else()
-            message(FATAL_ERROR "LPCNet include/library not found in build tree.")
-        endif()
-    else()
-        find_package(lpcnetfreedv REQUIRED)
-        if(lpcnetfreedv_FOUND)
-            add_definitions("-D__LPCNET__")
-            message(STATUS "liblpcnetfreedv found.")
-        else()
-            message(FATAL_ERROR "lpcnetfreedv library not found.")
-        endif()
+if(WIN32 OR MSYS OR MINGW)
+    if(PA_USE_ASIO)
+        set(GALAXY_PORTAUDIO_CPP
+            ${GALAXY_PORTAUDIO_CPP}
+            src/contrib/portaudio/cpp/src/AsioDeviceAdapter.cxx)
     endif()
 endif()
 
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/codec2/src")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/codec2/misc")
+set_property(SOURCE ${GALAXY_PORTAUDIO_CPP} PROPERTY SKIP_AUTOUIC ON)
+
+if(GFYRE_BUILD_CODEC2)
+    #
+    # Codec2 library
+    #
+    #
+    # Set project version information. This should probably be done via external
+    # file at some point.
+    #
+    set(CMAKE_REQUIRED_LIBRARIES m)
+    set(CODEC2_VERSION_MAJOR 0)
+    set(CODEC2_VERSION_MINOR 9)
+    # Set to patch level if needed, otherwise leave FALSE.
+    # Must be positive (non-zero) if set, since 0 == FALSE in CMake.
+    set(CODEC2_VERSION_PATCH 2)
+    set(CODEC2_VERSION "${CODEC2_VERSION_MAJOR}.${CODEC2_VERSION_MINOR}")
+    # Patch level version bumps should not change API/ABI.
+    set(SOVERSION "${CODEC2_VERSION_MAJOR}.${CODEC2_VERSION_MINOR}")
+    if(CODEC2_VERSION_PATCH)
+        set(CODEC2_VERSION "${CODEC2_VERSION}.${CODEC2_VERSION_PATCH}")
+    endif()
+    message(STATUS "codec2 version: ${CODEC2_VERSION}")
+
+    if (MSYS OR MINGW OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+        option(CMAKE_CROSSCOMPILING "Build Codec2 as a cross-compiled library." OFF)
+    endif()
+
+    #
+    # Find lpcnet library
+    #
+    if(LPCNET)
+        if(LPCNET_BUILD_DIR)
+            find_package(lpcnetfreedv REQUIRED
+                PATHS ${LPCNET_BUILD_DIR}
+                NO_DEFAULT_PATH
+                CONFIGS lpcnetfreedv.cmake
+            )
+            if(lpcnetfreedv_FOUND)
+                message(STATUS "liblpcnetfreedv found in build tree.")
+                add_definitions("-D__LPCNET__")
+            else()
+                message(FATAL_ERROR "LPCNet include/library not found in build tree.")
+            endif()
+        else()
+            find_package(lpcnetfreedv REQUIRED)
+            if(lpcnetfreedv_FOUND)
+                add_definitions("-D__LPCNET__")
+                message(STATUS "liblpcnetfreedv found.")
+            else()
+                message(FATAL_ERROR "lpcnetfreedv library not found.")
+            endif()
+        endif()
+    endif()
+    
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/codec2/src")
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/codec2/misc")
+endif(GFYRE_BUILD_CODEC2)
 
 # set up a mapping so that the Release configuration for the Qt imported target is
 # used in the COVERAGE CMake configuration.
@@ -542,9 +553,9 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     # Using Microsoft Visual Studio C++
     if(CMAKE_BUILD_TYPE MATCHES "Debug")
-    add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W1 /WX)
+    add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W3 /WX)
     elseif(CMAKE_BUILD_TYPE MATCHES "Release")
-    add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W1 /WX /GL)
+    add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W3 /WX /GL)
     endif()
 endif()
 
