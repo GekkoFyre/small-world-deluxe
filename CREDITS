@@ -10,6 +10,10 @@ Boost C++ Libraries by various
     <http://www.boost.org/>
         Boost Software License, v1
 
+JTDX by Joe Taylor, K1JT <k1jt@arrl.net>
+    <https://jtdx.tech/>
+        GNU General Public License (GPL, version 3)
+
 CMake (Cross Platform Makefile Generator) by Kitware
     <https://cmake.org/>
         BSD 3-clause License
@@ -54,9 +58,9 @@ libopus by Xiph.org et al.
     <http://opus-codec.org/>
         BSD 3-clause License
 
-libiconv by GNU Free Software Foundation
-    <https://www.gnu.org/software/libiconv/>
-        GNU Lesser General Public License (LGPL, version 3)
+libiconv-win-build by Bruno Haible
+    <https://github.com/kiyolee/libiconv-win-build/>
+        GNU General Public License (GPL, version 3)
 
 libSDL2 by Cliff Matthews & Gabriel Jacobo et al.
     <https://www.libsdl.org/>
@@ -64,4 +68,8 @@ libSDL2 by Cliff Matthews & Gabriel Jacobo et al.
 
 Qwt by Uwe Rathmann & Josef Wilgen et al.
     <https://qwt.sourceforge.io/>
+        GNU Lesser General Public License (LGPL, version 2.1)
+
+getopt for Microsoft Windows by Chunde
+    <https://github.com/Chunde/getopt-for-windows>
         GNU Lesser General Public License (LGPL, version 2.1)

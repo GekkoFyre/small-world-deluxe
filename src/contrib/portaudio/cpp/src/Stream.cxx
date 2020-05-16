@@ -1,9 +1,9 @@
-#include <portaudiocpp/Stream.hxx>
+#include "portaudiocpp/Stream.hxx"
 
 #include <cstddef>
 
-#include <portaudiocpp/Exception.hxx>
-#include <portaudiocpp/System.hxx>
+#include "portaudiocpp/Exception.hxx"
+#include "portaudiocpp/System.hxx"
 
 namespace portaudio
 {

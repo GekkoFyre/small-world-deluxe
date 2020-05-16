@@ -70,6 +70,8 @@ option(GFYRE_PACKAGE_MAINTAINER "Are you a package maintainer? If so, set this o
 # option(GFYRE_BUILD_STATIC "Build Small World Deluxe as a static library/package. This will result in a larger executable at the benefit of requiring less DLL dependencies.")
 # option(GFYRE_BUILD_SHARED "Build Small World Deluxe as a shared library/package. This will result in a smaller executable at the cost of requiring further DLL dependencies.")
 
+option(GFYRE_BUILD_CODEC2 "Build with support for Codec2 <https://github.com/drowe67/codec2>. *** NOTE! This is not a supported feature yet. ***" OFF)
+
 #
 # Detect if we are dealing with the Linux operating system and not Apple OS/X
 #
@@ -208,14 +210,6 @@ else()
     message(FATAL_ERROR "The 'PortAudio' sound library could not be found!")
 endif(PortAudio_FOUND)
 
-find_package(PortAudioCpp REQUIRED)
-if (PortAudioCpp_FOUND)
-    include_directories(${PortAudioCpp_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${PortAudioCpp_LIBRARIES})
-else()
-    message(FATAL_ERROR "The C++ bindings for PortAudio could not be found! You must compile this separately from the code found within: 'src\contrib\portaudio\cpp'.")
-endif(PortAudioCpp_FOUND)
-
 find_package(Hamlib REQUIRED)
 if (HAMLIB_FOUND)
     include_directories(${HAMLIB_INCLUDE_DIRS})
@@ -282,17 +276,6 @@ else()
     message(SEND_ERROR "The 'Opus' audio (de-/en-)coding library could not be found!")
 endif(Opus_FOUND)
 
-#
-# https://github.com/drowe67/codec2/blob/master/README_ofdm.txt
-#
-find_package(Codec2 REQUIRED)
-if (CODEC2_FOUND)
-    include_directories(${CODEC2_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${CODEC2_LIBRARIES})
-else()
-    message(SEND_ERROR "The 'codec2' digital voice OFDM modem for HF SSB could not be found!")
-endif(CODEC2_FOUND)
-
 find_package(Iconv REQUIRED)
 if (Iconv_FOUND)
     include_directories(${Iconv_INCLUDE_DIRS})
@@ -302,6 +285,96 @@ else()
 endif(Iconv_FOUND)
 
 set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-arcs -ftest-coverage")
+
+#
+# PortAudio's C++ bindings
+#
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/portaudio/cpp/include")
+set(GALAXY_PORTAUDIO_CPP
+    ${GALAXY_PORTAUDIO_CPP}
+    src/contrib/portaudio/cpp/src/BlockingStream.cxx
+    src/contrib/portaudio/cpp/src/CallbackInterface.cxx
+    src/contrib/portaudio/cpp/src/CallbackStream.cxx
+    src/contrib/portaudio/cpp/src/CFunCallbackStream.cxx
+    src/contrib/portaudio/cpp/src/CppFunCallbackStream.cxx
+    src/contrib/portaudio/cpp/src/Device.cxx
+    src/contrib/portaudio/cpp/src/DirectionSpecificStreamParameters.cxx
+    src/contrib/portaudio/cpp/src/Exception.cxx
+    src/contrib/portaudio/cpp/src/HostApi.cxx
+    src/contrib/portaudio/cpp/src/InterfaceCallbackStream.cxx
+    src/contrib/portaudio/cpp/src/MemFunCallbackStream.cxx
+    src/contrib/portaudio/cpp/src/Stream.cxx
+    src/contrib/portaudio/cpp/src/StreamParameters.cxx
+    src/contrib/portaudio/cpp/src/System.cxx
+    src/contrib/portaudio/cpp/src/SystemDeviceIterator.cxx
+    src/contrib/portaudio/cpp/src/SystemHostApiIterator.cxx)
+
+if(WIN32 OR MSYS OR MINGW)
+    if(PA_USE_ASIO)
+        set(GALAXY_PORTAUDIO_CPP
+            ${GALAXY_PORTAUDIO_CPP}
+            src/contrib/portaudio/cpp/src/AsioDeviceAdapter.cxx)
+    endif()
+endif()
+
+set_property(SOURCE ${GALAXY_PORTAUDIO_CPP} PROPERTY SKIP_AUTOUIC ON)
+
+if(GFYRE_BUILD_CODEC2)
+    #
+    # Codec2 library
+    #
+    #
+    # Set project version information. This should probably be done via external
+    # file at some point.
+    #
+    set(CMAKE_REQUIRED_LIBRARIES m)
+    set(CODEC2_VERSION_MAJOR 0)
+    set(CODEC2_VERSION_MINOR 9)
+    # Set to patch level if needed, otherwise leave FALSE.
+    # Must be positive (non-zero) if set, since 0 == FALSE in CMake.
+    set(CODEC2_VERSION_PATCH 2)
+    set(CODEC2_VERSION "${CODEC2_VERSION_MAJOR}.${CODEC2_VERSION_MINOR}")
+    # Patch level version bumps should not change API/ABI.
+    set(SOVERSION "${CODEC2_VERSION_MAJOR}.${CODEC2_VERSION_MINOR}")
+    if(CODEC2_VERSION_PATCH)
+        set(CODEC2_VERSION "${CODEC2_VERSION}.${CODEC2_VERSION_PATCH}")
+    endif()
+    message(STATUS "codec2 version: ${CODEC2_VERSION}")
+
+    if (MSYS OR MINGW OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+        option(CMAKE_CROSSCOMPILING "Build Codec2 as a cross-compiled library." OFF)
+    endif()
+
+    #
+    # Find lpcnet library
+    #
+    if(LPCNET)
+        if(LPCNET_BUILD_DIR)
+            find_package(lpcnetfreedv REQUIRED
+                PATHS ${LPCNET_BUILD_DIR}
+                NO_DEFAULT_PATH
+                CONFIGS lpcnetfreedv.cmake
+            )
+            if(lpcnetfreedv_FOUND)
+                message(STATUS "liblpcnetfreedv found in build tree.")
+                add_definitions("-D__LPCNET__")
+            else()
+                message(FATAL_ERROR "LPCNet include/library not found in build tree.")
+            endif()
+        else()
+            find_package(lpcnetfreedv REQUIRED)
+            if(lpcnetfreedv_FOUND)
+                add_definitions("-D__LPCNET__")
+                message(STATUS "liblpcnetfreedv found.")
+            else()
+                message(FATAL_ERROR "lpcnetfreedv library not found.")
+            endif()
+        endif()
+    endif()
+    
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/codec2/src")
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/codec2/misc")
+endif(GFYRE_BUILD_CODEC2)
 
 # set up a mapping so that the Release configuration for the Qt imported target is
 # used in the COVERAGE CMake configuration.
@@ -339,6 +412,7 @@ set(GALAXY_UI_CPP
     src/gk_audio_decoding.cpp
     src/gk_cli.cpp
     src/gk_modem.cpp
+    src/contrib/getopt.c
     src/contrib/RS232/rs232.c)
 
 if(WIN32 OR MSYS OR MINGW)
@@ -379,6 +453,7 @@ set(GALAXY_SRC_HEADERS
     src/gk_audio_decoding.hpp
     src/gk_cli.hpp
     src/gk_modem.hpp
+    src/contrib/getopt.h
     src/contrib/RS232/rs232.h)
 
 if(WIN32 OR MSYS OR MINGW)
@@ -449,7 +524,7 @@ endif()
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
-add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_SRC_HEADERS} ${UI_HEADERS})
+add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_SRC_HEADERS} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP})
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
 target_link_libraries(galaxy Qt5::Widgets Qt5::Core Qt5::Gui Qt5::PrintSupport Threads::Threads ${LIBS})
 
@@ -469,18 +544,18 @@ target_link_libraries(smallworld galaxy)
 #
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # Using regular Clang or AppleClang
-    target_compile_options(galaxy PUBLIC -Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -enable-clocale)
+    add_compile_options(-Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -enable-clocale)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     # Using GCC
-    target_compile_options(galaxy PUBLIC -Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -enable-clocale)
+    add_compile_options(-Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -enable-clocale)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
     # Using Intel C++
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     # Using Microsoft Visual Studio C++
     if(CMAKE_BUILD_TYPE MATCHES "Debug")
-    target_compile_options(galaxy PUBLIC "/W1 /MP")
+    add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W3 /WX)
     elseif(CMAKE_BUILD_TYPE MATCHES "Release")
-    target_compile_options(galaxy PUBLIC "/W1 /GL /MP")
+    add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W3 /WX /GL)
     endif()
 endif()
 

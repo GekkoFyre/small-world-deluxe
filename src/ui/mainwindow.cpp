@@ -39,7 +39,6 @@
 #include "ui_mainwindow.h"
 #include "aboutdialog.hpp"
 #include "spectrodialog.hpp"
-#include <portaudiocpp/PortAudioCpp.hxx>
 #include <boost/exception/all.hpp>
 #include <boost/chrono/chrono.hpp>
 #include <sstream>
@@ -47,7 +46,6 @@
 #include <ostream>
 #include <cmath>
 #include <functional>
-#include <cstdlib>
 #include <chrono>
 #include <QWidget>
 #include <QResource>
@@ -237,6 +235,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize our own PortAudio libraries and associated buffers!
         //
+        PaError err;
+        err = Pa_Initialize();
+        if (err != paNoError) {
+            throw std::runtime_error(tr("An error was encountered whilst initializing PortAudio!").toStdString());
+        }
+
         autoSys.initialize();
         gkPortAudioInit = new portaudio::System(portaudio::System::instance());
 
@@ -404,6 +408,8 @@ MainWindow::~MainWindow()
     }
 
     delete db;
+
+    autoSys.terminate();
     gkPortAudioInit->terminate();
 
     if (radio != nullptr) {
@@ -647,8 +653,8 @@ void MainWindow::on_actionShow_Waterfall_toggled(bool arg1)
  */
 void MainWindow::on_action_Settings_triggered()
 {
-    QPointer<DialogSettings> dlg_settings = new DialogSettings(GkDb, fileIo, gkAudioDevices, gkRadioLibs,
-                                                               sw_settings, this);
+    QPointer<DialogSettings> dlg_settings = new DialogSettings(GkDb, fileIo, gkAudioDevices, gkRadioLibs, sw_settings,
+                                                               gkPortAudioInit, this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
@@ -700,8 +706,8 @@ void MainWindow::on_actionPlay_triggered()
 
 void MainWindow::on_actionSettings_triggered()
 {
-    QPointer<DialogSettings> dlg_settings = new DialogSettings(GkDb, fileIo, gkAudioDevices, gkRadioLibs,
-                                                               sw_settings, this);
+    QPointer<DialogSettings> dlg_settings = new DialogSettings(GkDb, fileIo, gkAudioDevices, gkRadioLibs, sw_settings,
+                                                               gkPortAudioInit, this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));

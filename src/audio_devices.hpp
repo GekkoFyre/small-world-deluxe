@@ -41,8 +41,6 @@
 #include "src/dek_db.hpp"
 #include "src/file_io.hpp"
 #include "src/pa_audio_buf.hpp"
-#include <portaudiocpp/PortAudioCpp.hxx>
-#include <portaudiocpp/SampleDataFormat.hxx>
 #include <QObject>
 #include <vector>
 #include <string>
@@ -59,17 +57,6 @@
 #include "src/string_funcs_linux.hpp"
 #endif
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#include <portaudio.h>
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
-
 namespace GekkoFyre {
 
 class AudioDevices : public QObject {
@@ -84,6 +71,7 @@ public:
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> defaultAudioDevices(portaudio::System *portAudioSys);
     std::vector<double> enumSupportedStdSampleRates(const PaStreamParameters *inputParameters,
                                                     const PaStreamParameters *outputParameters);
+    std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> enumAudioDevices();
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> enumAudioDevicesCpp(portaudio::System *portAudioSys);
     GekkoFyre::Database::Settings::Audio::GkDevice gatherAudioDeviceDetails(portaudio::System *portAudioSys,
                                                                             const PaDeviceIndex &pa_index);

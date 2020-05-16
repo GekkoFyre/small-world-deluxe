@@ -74,7 +74,9 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
                                std::shared_ptr<GekkoFyre::FileIo> filePtr,
                                std::shared_ptr<GekkoFyre::AudioDevices> audioDevices,
                                std::shared_ptr<GekkoFyre::RadioLibs> radioPtr,
-                               std::shared_ptr<QSettings> settings, QWidget *parent)
+                               std::shared_ptr<QSettings> settings,
+                               portaudio::System *portAudioInit,
+                               QWidget *parent)
     : QDialog(parent), ui(new Ui::DialogSettings)
 {
     ui->setupUi(this);
@@ -83,9 +85,7 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
         //
         // Initialize PortAudio for Settings Dialog!
         //
-        autoSys.initialize();
-        gkPortAudioInit = new portaudio::System(portaudio::System::instance());
-
+        gkPortAudioInit = std::move(portAudioInit);
         gkRadioLibs = std::move(radioPtr);
         gkDekodeDb = std::move(dkDb);
         gkFileIo = std::move(filePtr);
@@ -165,9 +165,6 @@ DialogSettings::~DialogSettings()
 {
     delete rig_comboBox;
     delete mfg_comboBox;
-
-    autoSys.terminate();
-    gkPortAudioInit->terminate();
 
     delete ui;
 }

@@ -45,17 +45,6 @@
 #include <memory>
 #include <vector>
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#include <portaudio.h>
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
-
 namespace GekkoFyre {
 
 class PaMic : public QObject {

@@ -1,9 +1,9 @@
-#include <portaudiocpp/HostApi.hxx>
+#include "portaudiocpp/HostApi.hxx"
 
-#include <portaudiocpp/System.hxx>
-#include <portaudiocpp/Device.hxx>
-#include <portaudiocpp/SystemDeviceIterator.hxx>
-#include <portaudiocpp/Exception.hxx>
+#include "portaudiocpp/System.hxx"
+#include "portaudiocpp/Device.hxx"
+#include "portaudiocpp/SystemDeviceIterator.hxx"
+#include "portaudiocpp/Exception.hxx"
 
 namespace portaudio
 {
