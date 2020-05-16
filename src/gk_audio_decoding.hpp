@@ -42,7 +42,7 @@
 #include "src/audio_devices.hpp"
 #include "src/pa_audio_buf.hpp"
 #include "src/dek_db.hpp"
-#include <portaudiocpp/System.hxx>
+#include "contrib/portaudio/cpp/include/portaudiocpp/PortAudioCpp.hxx"
 #include <ogg/os_types.h>
 #include <boost/filesystem.hpp>
 #include <memory>
@@ -68,7 +68,6 @@ extern "C"
 
 #include <opus.h>
 #include <stdint.h>
-#include <portaudio.h>
 
 #ifdef __cplusplus
 } // extern "C"

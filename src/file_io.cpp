@@ -43,7 +43,6 @@
 #include <ostream>
 #include <utility>
 #include <fstream>
-#include <cstdlib>
 #include <QMessageBox>
 #include <QVariant>
 #include <QStandardPaths>

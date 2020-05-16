@@ -44,7 +44,7 @@
 #include "src/file_io.hpp"
 #include "src/spectro_gui.hpp"
 #include "src/dek_db.hpp"
-#include <portaudiocpp/System.hxx>
+#include "contrib/portaudio/cpp/include/portaudiocpp/PortAudioCpp.hxx"
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
 #include <QObject>
@@ -59,17 +59,6 @@
 #include "src/string_funcs_windows.hpp"
 #elif __linux__
 #include "src/string_funcs_linux.hpp"
-#endif
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#include <portaudio.h>
-
-#ifdef __cplusplus
-} // extern "C"
 #endif
 
 namespace GekkoFyre {

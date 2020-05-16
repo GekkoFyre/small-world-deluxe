@@ -69,6 +69,7 @@ public:
                             std::shared_ptr<GekkoFyre::AudioDevices> audioDevices,
                             std::shared_ptr<GekkoFyre::RadioLibs> radioPtr,
                             std::shared_ptr<QSettings> settings,
+                            portaudio::System *portAudioInit,
                             QWidget *parent = nullptr);
     ~DialogSettings();
 
@@ -97,7 +98,6 @@ signals:
 private:
     Ui::DialogSettings *ui;
 
-    portaudio::AutoSystem autoSys;
     portaudio::System *gkPortAudioInit;
 
     std::shared_ptr<GekkoFyre::RadioLibs> gkRadioLibs;

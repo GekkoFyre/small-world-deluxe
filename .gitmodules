@@ -1,3 +1,9 @@
 [submodule "cmake/third-party/basic-c-sdl-project"]
 	path = cmake/third-party/basic-c-sdl-project
 	url = https://github.com/aminosbh/basic-c-sdl-project.git
+[submodule "src/contrib/libiconv-win-build"]
+	path = src/contrib/libiconv-win-build
+	url = https://github.com/kiyolee/libiconv-win-build.git
+[submodule "src/contrib/jtdx"]
+	path = src/contrib/jtdx
+	url = https://github.com/jtdx-project/jtdx.git

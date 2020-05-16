@@ -63,8 +63,11 @@ public:
     static std::string multiByteFromWide(LPCWSTR pwsz, UINT cp);
     static std::wstring strToWStrWin(const std::string &s);
     std::wstring removeSpecialChars(std::wstring wstr);
+    #ifdef _WIN32
     bool modalDlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon);
+    #elif __linux__ || __MINGW32__
     bool modalDlgBoxLinux(Uint32 flags, const QString &title, const QString &msgTxt);
+    #endif
 
 };
 };
