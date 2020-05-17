@@ -77,6 +77,9 @@ public:
                                            const rig_debug_level_e &verbosity);
     QString translateBandsToStr(const AmateurRadio::bands &band);
 
+public slots:
+    void procFreqChange(const bool &radio_locked, const GekkoFyre::AmateurRadio::Control::FreqChange &freq_change);
+
 private:
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GekkoFyre::GkLevelDb> gkDekodeDb;

@@ -43,6 +43,7 @@
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QStandardPaths>
+#include <QTableWidgetItem>
 #include <utility>
 #include <exception>
 #include <set>
@@ -73,7 +74,7 @@ QVector<QString> DialogSettings::unique_mfgs = { "None" };
 DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
                                std::shared_ptr<GekkoFyre::FileIo> filePtr,
                                std::shared_ptr<GekkoFyre::AudioDevices> audioDevices,
-                               std::shared_ptr<GekkoFyre::RadioLibs> radioPtr,
+                               QPointer<GekkoFyre::RadioLibs> radioPtr,
                                std::shared_ptr<QSettings> settings,
                                portaudio::System *portAudioInit,
                                QWidget *parent)
@@ -111,7 +112,7 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
             mfg_comboBox->addItem(mfg);
         }
 
-        Q_ASSERT(gkRadioLibs.get() != nullptr);
+        Q_ASSERT(gkRadioLibs != nullptr);
 
         // Detect available COM ports on either Microsoft Windows, Linux, or even Apple Mac OS/X
         // Also detect the available USB devices of the audial type
@@ -142,6 +143,9 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
         prefill_com_baud_speed(GekkoFyre::AmateurRadio::com_baud_rates::BAUD38400);
         prefill_com_baud_speed(GekkoFyre::AmateurRadio::com_baud_rates::BAUD57600);
         prefill_com_baud_speed(GekkoFyre::AmateurRadio::com_baud_rates::BAUD115200);
+
+        init_working_freqs();
+        init_station_info();
 
         if (gkDekodeDb.get() != nullptr) {
             read_settings();
@@ -445,6 +449,54 @@ void DialogSettings::prefill_audio_devices(std::vector<GkDevice> audio_devices_v
 void DialogSettings::prefill_audio_encode_comboboxes()
 {
     // gkDekodeDb->convAudioBitrateToStr();
+
+    return;
+}
+
+void DialogSettings::init_working_freqs()
+{
+    try {
+        ui->tableWidget_working_freqs->setColumnCount(3);
+        ui->tableWidget_working_freqs->setRowCount(1);
+
+        QTableWidgetItem *header_iaru_region = new QTableWidgetItem(tr("IARU Region"));
+        QTableWidgetItem *header_digital_mode = new QTableWidgetItem(tr("Mode"));
+        QTableWidgetItem *header_frequency = new QTableWidgetItem(tr("Frequency"));
+
+        header_iaru_region->setTextAlignment(Qt::AlignHCenter);
+        header_digital_mode->setTextAlignment(Qt::AlignHCenter);
+        header_frequency->setTextAlignment(Qt::AlignHCenter);
+
+        ui->tableWidget_working_freqs->setItem(0, 0, header_iaru_region);
+        ui->tableWidget_working_freqs->setItem(0, 1, header_digital_mode);
+        ui->tableWidget_working_freqs->setItem(0, 2, header_frequency);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+void DialogSettings::init_station_info()
+{
+    try {
+        ui->tableWidget_station_info->setColumnCount(3);
+        ui->tableWidget_station_info->setRowCount(1);
+
+        QTableWidgetItem *header_band = new QTableWidgetItem(tr("Band"));
+        QTableWidgetItem *header_offset = new QTableWidgetItem(tr("Offset"));
+        QTableWidgetItem *header_antenna_desc = new QTableWidgetItem(tr("Antenna Description"));
+
+        header_band->setTextAlignment(Qt::AlignHCenter);
+        header_offset->setTextAlignment(Qt::AlignHCenter);
+        header_antenna_desc->setTextAlignment(Qt::AlignHCenter);
+
+        ui->tableWidget_station_info->setItem(0, 0, header_band);
+        ui->tableWidget_station_info->setItem(0, 1, header_offset);
+        ui->tableWidget_station_info->setItem(0, 2, header_antenna_desc);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
 
     return;
 }

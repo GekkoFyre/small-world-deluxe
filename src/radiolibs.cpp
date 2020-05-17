@@ -720,3 +720,8 @@ QString RadioLibs::translateBandsToStr(const bands &band)
 
     return tr("Error!");
 }
+
+void RadioLibs::procFreqChange(const bool &radio_locked, const FreqChange &freq_change)
+{
+    return;
+}

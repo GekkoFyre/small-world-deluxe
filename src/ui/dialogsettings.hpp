@@ -51,6 +51,7 @@
 #include <QString>
 #include <QMap>
 #include <QVector>
+#include <QPointer>
 #include <QMultiMap>
 #include <QComboBox>
 #include <QSettings>
@@ -67,7 +68,7 @@ public:
     explicit DialogSettings(std::shared_ptr<GekkoFyre::GkLevelDb> dkDb,
                             std::shared_ptr<GekkoFyre::FileIo> filePtr,
                             std::shared_ptr<GekkoFyre::AudioDevices> audioDevices,
-                            std::shared_ptr<GekkoFyre::RadioLibs> radioPtr,
+                            QPointer<GekkoFyre::RadioLibs> radioPtr,
                             std::shared_ptr<QSettings> settings,
                             portaudio::System *portAudioInit,
                             QWidget *parent = nullptr);
@@ -100,7 +101,7 @@ private:
 
     portaudio::System *gkPortAudioInit;
 
-    std::shared_ptr<GekkoFyre::RadioLibs> gkRadioLibs;
+    QPointer<GekkoFyre::RadioLibs> gkRadioLibs;
     std::shared_ptr<GekkoFyre::GkLevelDb> gkDekodeDb;
     std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
@@ -135,6 +136,8 @@ private:
 
     void prefill_audio_devices(std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> audio_devices_vec);
     void prefill_audio_encode_comboboxes();
+    void init_working_freqs();
+    void init_station_info();
 
     QMap<int, int> collectComboBoxIndexes(const QComboBox *combo_box);
     void prefill_avail_com_ports(const QMap<tstring, std::pair<tstring, boost::tribool>> &com_ports);
