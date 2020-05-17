@@ -73,9 +73,9 @@ public:
     std::vector<Database::Settings::UsbPort> initUsbPorts();
     std::vector<Database::Settings::UsbPort> findUsbPorts();
     QMap<tstring, std::pair<tstring, boost::tribool>> status_com_ports();
-    AmateurRadio::Control::Radio *init_rig(const rig_model_t &rig_model, const std::string &com_port,
-                                           const GekkoFyre::AmateurRadio::com_baud_rates &com_baud_rate,
-                                           const rig_debug_level_e &verbosity);
+    std::shared_ptr<AmateurRadio::Control::Radio> init_rig(const rig_model_t &rig_model, const std::string &com_port,
+                                                           const GekkoFyre::AmateurRadio::com_baud_rates &com_baud_rate,
+                                                           const rig_debug_level_e &verbosity);
     QString translateBandsToStr(const AmateurRadio::bands &band);
 
 public slots:

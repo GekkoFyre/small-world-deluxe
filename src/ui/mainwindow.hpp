@@ -227,11 +227,13 @@ private:
     // https://www.boost.org/doc/libs/1_72_0/doc/html/thread/thread_management.html
     //
     std::timed_mutex btn_record_mtx;
-    std::future<GekkoFyre::AmateurRadio::Control::Radio *> rig_thread;
+    std::future<std::shared_ptr<GekkoFyre::AmateurRadio::Control::Radio>> rig_thread;
 
+    //
+    // Miscellaneous
+    //
     std::shared_ptr<GekkoFyre::AmateurRadio::Control::Radio> gkRadioPtr;
     QPointer<QTimer> timer;
-    // QDateTime spectro_gui_init_start; // The very first time for when the spectrograph is initialized by the user!
 
     //
     // This sub-section contains all the boolean variables pertaining to the QPushButtons on QMainWindow that

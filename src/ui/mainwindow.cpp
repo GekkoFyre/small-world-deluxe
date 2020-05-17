@@ -290,7 +290,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         prefillAmateurBands();
 
-        // Initialize the Hamlib 'radio' struct
+        //
+        // Initialize the Hamlib radio control library!
+        //
         gkRadioPtr = std::make_shared<AmateurRadio::Control::Radio>();
 
         QString def_com_port = gkRadioLibs->initComPorts();
@@ -573,6 +575,7 @@ void MainWindow::radioInitStart(const QString &def_com_port)
         //
         gkRadioPtr->is_open = false;
         rig_thread = std::async(std::launch::async, &RadioLibs::init_rig, gkRadioLibs, gkRadioPtr->rig_model, def_com_port.toStdString(), final_baud_rate, gkRadioPtr->verbosity);
+        gkRadioPtr = rig_thread.get();
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
     }
@@ -587,7 +590,13 @@ void MainWindow::radioInitStart(const QString &def_com_port)
 bool MainWindow::radioInitTest(const QString &def_com_port)
 {
     try {
-        if (gkRadioPtr->rig == nullptr && gkRadioPtr->is_open == false) {
+        if (gkRadioPtr->rig == nullptr || !gkRadioPtr->is_open) {
+            throw std::runtime_error(tr("An unknown error was encountered whilst initializing the Hamlib libraries! "
+                                        "We advise you to restart Small World Deluxe for proper operation.").toStdString());
+        }
+
+        if ((gkRadioPtr->freq > 0.0 || gkRadioPtr->rig_model <= 0 || gkRadioPtr->status <= 0) ||
+                (def_com_port.isNull() || def_com_port.isEmpty())) {
             QMessageBox msg_rig_error;
             msg_rig_error.setWindowTitle(tr("Error!"));
             msg_rig_error.setText(tr("Small World Deluxe has experienced a rig control error!\n\nWould you like to reconfigure your settings?"));
@@ -608,9 +617,9 @@ bool MainWindow::radioInitTest(const QString &def_com_port)
             default:
                 return false;
             }
-        } else {
-            return true;
         }
+
+        return true;
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
     }

@@ -203,7 +203,8 @@ QString RadioLibs::initComPorts()
  */
 std::vector<UsbPort> RadioLibs::initUsbPorts()
 {
-    std::vector<UsbPort> usb_ports = findUsbPorts();
+    // TODO - Finish this section!
+    // std::vector<UsbPort> usb_ports = findUsbPorts();
     std::vector<UsbPort> filtered_ports;
 
     return filtered_ports;
@@ -571,10 +572,10 @@ void RadioLibs::registerComPort(std::list<std::string> &comList, std::list<std::
  * @param verbosity The kind of errors you wish for HamLib to report, whether they be at a debug level or only critical errors.
  * @note Ref: HamLib <https://github.com/Hamlib/Hamlib/>.
  */
-Radio *RadioLibs::init_rig(const rig_model_t &rig_model, const std::string &com_port,
-                           const com_baud_rates &com_baud_rate, const rig_debug_level_e &verbosity)
+std::shared_ptr<Radio> RadioLibs::init_rig(const rig_model_t &rig_model, const std::string &com_port,
+                                           const com_baud_rates &com_baud_rate, const rig_debug_level_e &verbosity)
 {
-    Radio *radio = new Radio;
+    std::shared_ptr<Radio> radio = std::make_shared<Radio>();
 
     // https://github.com/Hamlib/Hamlib/blob/master/tests/example.c
     // Set verbosity level
