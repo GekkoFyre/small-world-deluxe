@@ -82,6 +82,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     ui->setupUi(this);
     qRegisterMetaType<std::vector<GekkoFyre::Spectrograph::RawFFT>>("std::vector<GekkoFyre::Spectrograph::RawFFT>");
     qRegisterMetaType<GekkoFyre::AmateurRadio::Control::FreqChange>("GekkoFyre::AmateurRadio::Control::FreqChange");
+    qRegisterMetaType<GekkoFyre::AmateurRadio::Control::SettingsChange>("GekkoFyre::AmateurRadio::Control::SettingsChange");
     qRegisterMetaType<std::vector<short>>("std::vector<short>");
     qRegisterMetaType<size_t>("size_t");
 
@@ -93,7 +94,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         std::cout << QDate::currentDate().toString().toStdString() << std::endl;
 
         fs::path slash = "/";
-        fs::path native_slash = slash.make_preferred().native();
+        native_slash = slash.make_preferred().native();
 
         this->setWindowIcon(QIcon(":/resources/contrib/images/vector/purchased/2020-03/iconfinder_293_Frequency_News_Radio_5711690.svg"));
         ui->actionPlay->setIcon(QIcon(":/resources/contrib/images/vector/Kameleon/Record-Player.svg"));
@@ -186,7 +187,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         if (!save_db_path.empty()) {
             status = leveldb::DB::Open(options, save_db_path.string(), &db);
             GkDb = std::make_shared<GekkoFyre::GkLevelDb>(db, fileIo, this);
-            gkRadioLibs = new GekkoFyre::RadioLibs(fileIo, gkStringFuncs, GkDb, this);
+            gkRadioLibs = new GekkoFyre::RadioLibs(fileIo, gkStringFuncs, GkDb, gkRadioPtr, this);
         } else {
             QMessageBox::warning(this, tr("Error!"), tr("Unable to find settings database; we've lost its location! Aborting..."), QMessageBox::Ok);
             QApplication::exit(EXIT_FAILURE);
@@ -262,10 +263,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
 
         //
-        // Initialize the ability to change / modify frequencies
+        // Initialize the ability to change / modify frequencies and settings relating to Hamlib
         //
         QObject::connect(this, SIGNAL(changeFreq(const bool &, const GekkoFyre::AmateurRadio::Control::FreqChange &)),
                          gkRadioLibs, SLOT(procFreqChange(const bool &, const GekkoFyre::AmateurRadio::Control::FreqChange &)));
+        QObject::connect(this, SIGNAL(changeSettings(const bool &, const GekkoFyre::AmateurRadio::Control::SettingsChange &)),
+                         gkRadioLibs, SLOT(procSettingsChange(const bool &, const GekkoFyre::AmateurRadio::Control::SettingsChange &)));
 
         //
         // Initialize the Waterfall / Spectrograph
@@ -288,10 +291,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         prefillAmateurBands();
 
         // Initialize the Hamlib 'radio' struct
-        radio = std::make_shared<AmateurRadio::Control::Radio>();
-        std::string rand_file_name = fileIo->create_random_string(8);
-        fs::path rig_file_path_tmp = fs::path(fs::temp_directory_path().string() + native_slash.string() + rand_file_name + GekkoFyre::Filesystem::tmpExtension);
-        radio->rig_file = rig_file_path_tmp.string();
+        gkRadioPtr = std::make_shared<AmateurRadio::Control::Radio>();
 
         QString def_com_port = gkRadioLibs->initComPorts();
         QString comDevice = GkDb->read_rig_settings(radio_cfg::ComDevice);
@@ -299,30 +299,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             def_com_port = comDevice;
         }
 
-        QString model = GkDb->read_rig_settings(radio_cfg::RigModel);
-        if (!model.isEmpty() || !model.isNull()) {
-            radio->rig_model = model.toInt();
-        } else {
-            radio->rig_model = 1;
-        }
-
-        if (radio->rig_model <= 0) {
-            radio->rig_model = 1;
-        }
-
-        QString com_baud_rate = GkDb->read_rig_settings(radio_cfg::ComBaudRate);
-        if (!com_baud_rate.isEmpty() || !com_baud_rate.isNull()) {
-            radio->dev_baud_rate = gkRadioLibs->convertBaudRateInt(com_baud_rate.toInt());
-        } else {
-            radio->dev_baud_rate = AmateurRadio::com_baud_rates::BAUD9600;
-        }
-
-        AmateurRadio::com_baud_rates final_baud_rate = radio->dev_baud_rate;
-        radio->verbosity = RIG_DEBUG_BUG;
-
-        // Initialize Hamlib!
-        radio->is_open = false;
-        rig_thread = std::async(std::launch::async, &RadioLibs::init_rig, gkRadioLibs, radio->rig_model, def_com_port.toStdString(), final_baud_rate, radio->verbosity);
+        radioInitStart(def_com_port);
 
         timer = new QTimer(this);
         connect(timer, SIGNAL(timeout()), this, SLOT(infoBar()));
@@ -386,8 +363,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             QObject::connect(gkAudioPlayDlg, SIGNAL(beginRecording(const bool &)), gkAudioEncoding, SLOT(startRecording(const bool &)));
         }
 
-        if (radio->freq >= 0.0) {
-            ui->label_freq_large->setText(QString::number(radio->freq));
+        radioInitTest(def_com_port);
+
+        if (gkRadioPtr->freq >= 0.0) {
+            ui->label_freq_large->setText(QString::number(gkRadioPtr->freq));
         } else {
             ui->label_freq_large->setText(tr("N/A"));
         }
@@ -419,9 +398,9 @@ MainWindow::~MainWindow()
     autoSys.terminate();
     gkPortAudioInit->terminate();
 
-    if (radio->is_open) {
-        rig_close(radio->rig); // Close port
-        rig_cleanup(radio->rig); // Cleanup memory
+    if (gkRadioPtr->is_open) {
+        rig_close(gkRadioPtr->rig); // Close port
+        rig_cleanup(gkRadioPtr->rig); // Cleanup memory
     }
 
     delete ui;
@@ -531,6 +510,109 @@ bool MainWindow::prefillAmateurBands()
         return true;
     } else {
         return false;
+    }
+
+    return false;
+}
+
+/**
+ * @brief MainWindow::launchSettingsWin launches the Settings dialog! This is simply a helper function.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::launchSettingsWin()
+{
+    QPointer<DialogSettings> dlg_settings = new DialogSettings(GkDb, fileIo, gkAudioDevices, gkRadioLibs, sw_settings,
+                                                               gkPortAudioInit, this);
+    dlg_settings->setWindowFlags(Qt::Window);
+    dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
+    QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
+    dlg_settings->show();
+
+    return;
+}
+
+/**
+ * @brief MainWindow::radioInitStart initializes the Hamlib library and any associated libraries/functions!
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::radioInitStart(const QString &def_com_port)
+{
+    try {
+        std::string rand_file_name = fileIo->create_random_string(8);
+        fs::path rig_file_path_tmp = fs::path(fs::temp_directory_path().string() + native_slash.string() + rand_file_name + GekkoFyre::Filesystem::tmpExtension);
+        gkRadioPtr->rig_file = rig_file_path_tmp.string();
+
+        QString model = GkDb->read_rig_settings(radio_cfg::RigModel);
+        if (!model.isEmpty() || !model.isNull()) {
+            gkRadioPtr->rig_model = model.toInt();
+        } else {
+            gkRadioPtr->rig_model = 1;
+        }
+
+        if (gkRadioPtr->rig_model <= 0) {
+            gkRadioPtr->rig_model = 1;
+        }
+
+        QString com_baud_rate = GkDb->read_rig_settings(radio_cfg::ComBaudRate);
+        if (!com_baud_rate.isEmpty() || !com_baud_rate.isNull()) {
+            gkRadioPtr->dev_baud_rate = gkRadioLibs->convertBaudRateInt(com_baud_rate.toInt());
+        } else {
+            gkRadioPtr->dev_baud_rate = AmateurRadio::com_baud_rates::BAUD9600;
+        }
+
+        AmateurRadio::com_baud_rates final_baud_rate = gkRadioPtr->dev_baud_rate;
+
+        #ifdef GFYRE_HAMLIB_DBG_VERBOSITY_ENBL
+        radio->verbosity = RIG_DEBUG_VERBOSE;
+        #else
+        gkRadioPtr->verbosity = RIG_DEBUG_BUG;
+        #endif
+
+        //
+        // Initialize Hamlib!
+        //
+        gkRadioPtr->is_open = false;
+        rig_thread = std::async(std::launch::async, &RadioLibs::init_rig, gkRadioLibs, gkRadioPtr->rig_model, def_com_port.toStdString(), final_baud_rate, gkRadioPtr->verbosity);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
+ * @brief MainWindow::radioInitTest
+ * @return
+ */
+bool MainWindow::radioInitTest(const QString &def_com_port)
+{
+    try {
+        if (gkRadioPtr->rig == nullptr && gkRadioPtr->is_open == false) {
+            QMessageBox msg_rig_error;
+            msg_rig_error.setWindowTitle(tr("Error!"));
+            msg_rig_error.setText(tr("Small World Deluxe has experienced a rig control error!\n\nWould you like to reconfigure your settings?"));
+            msg_rig_error.setStandardButtons(QMessageBox::Ok | QMessageBox::Retry | QMessageBox::Cancel);
+            msg_rig_error.setDefaultButton(QMessageBox::Ok);
+            msg_rig_error.setIcon(QMessageBox::Icon::Warning);
+            int msg_rig_err_ret = msg_rig_error.exec();
+
+            switch (msg_rig_err_ret) {
+            case QMessageBox::Ok:
+                launchSettingsWin();
+                return false;
+            case QMessageBox::Retry:
+                radioInitStart(def_com_port);
+                return radioInitTest(def_com_port);
+            case QMessageBox::Cancel:
+                return false;
+            default:
+                return false;
+            }
+        } else {
+            return true;
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
     }
 
     return false;
@@ -651,17 +733,13 @@ void MainWindow::on_actionShow_Waterfall_toggled(bool arg1)
 }
 
 /**
- * @brief MainWindow::on_action_Settings_triggered
+ * @brief MainWindow::on_action_Settings_triggered is located on the drop-down menu at the top.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void MainWindow::on_action_Settings_triggered()
 {
-    QPointer<DialogSettings> dlg_settings = new DialogSettings(GkDb, fileIo, gkAudioDevices, gkRadioLibs, sw_settings,
-                                                               gkPortAudioInit, this);
-    dlg_settings->setWindowFlags(Qt::Window);
-    dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
-    QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
-    dlg_settings->show();
+    launchSettingsWin();
+    return;
 }
 
 /**
@@ -707,14 +785,13 @@ void MainWindow::on_actionPlay_triggered()
     gkAudioPlayDlg->show();
 }
 
+/**
+ * @brief MainWindow::on_actionSettings_triggered is located on the toolbar towards the top itself, where the larger icons are.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
 void MainWindow::on_actionSettings_triggered()
 {
-    QPointer<DialogSettings> dlg_settings = new DialogSettings(GkDb, fileIo, gkAudioDevices, gkRadioLibs, sw_settings,
-                                                               gkPortAudioInit, this);
-    dlg_settings->setWindowFlags(Qt::Window);
-    dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
-    QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
-    dlg_settings->show();
+    launchSettingsWin();
 }
 
 /**

@@ -366,6 +366,7 @@ namespace AmateurRadio {
             rig_model_t rig_model;          // Hamlib rig model
             rig_debug_level_e verbosity;    // The debug level and verbosity of Hamlib
             com_baud_rates dev_baud_rate;   // Communication device baud rate
+            hamlib_port_t port_details;     // Information concerning details about RS232 ports, etc.
             freq_t freq;                    // Rig's primary frequency
             value_t raw_strength;           // Raw strength of the S-meter
             value_t strength;               // Calculated strength of the S-meter
@@ -375,14 +376,22 @@ namespace AmateurRadio {
             int retcode;                    // Hamlib return code
             int isz;                        // No idea what this is for?
             unsigned int mwpower;           // Converted power reading to watts
-            rmode_t mode;                   // Unknown?
+            rmode_t mode;                   // The type of modulation that the transceiver is in, whether it be AM, FM, SSB, etc.
             pbwidth_t width;                // Bandwidth
         };
 
         struct FreqChange {                 // This structure is used when a frequency change is requested.
             Radio radio;                    // Details about the radio itself!
             freq_t new_freq;                // The new frequency to change towards!
-            QStringList msg_log;            // A typical message log of all the frequency changes that have been made over an application's lifecycle.
+        };
+
+        struct SettingsChange {
+            std::string rig_file;           // Hamlib rig temporary file
+            rig_model_t rig_model;          // Hamlib rig model
+            com_baud_rates dev_baud_rate;   // Communication device baud rate
+            hamlib_port_t port_details;     // Any new changes concerning details about RS232 ports, etc.
+            rmode_t mode;                   // The type of modulation that the transceiver is in, whether it be AM, FM, SSB, etc.
+            pbwidth_t width;                // Bandwidth
         };
     }
 }

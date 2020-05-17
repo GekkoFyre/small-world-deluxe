@@ -175,12 +175,12 @@ signals:
                          const std::vector<short> &raw_audio_data,
                          const int &hanning_window_size, const size_t &buffer_size);
     void changeFreq(const bool &radio_locked, const GekkoFyre::AmateurRadio::Control::FreqChange &freq_change);
+    void changeSettings(const bool &radio_locked, const GekkoFyre::AmateurRadio::Control::SettingsChange &settings_change);
 
 private:
     Ui::MainWindow *ui;
 
     leveldb::DB *db;
-    boost::filesystem::path save_db_path;
     std::shared_ptr<GekkoFyre::FileIo> fileIo;
     std::shared_ptr<GekkoFyre::GkLevelDb> GkDb;
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
@@ -197,6 +197,12 @@ private:
     std::shared_ptr<QSettings> sw_settings;
     std::shared_ptr<QCommandLineParser> gkCliParser;
     // std::shared_ptr<QPrinter> printer;
+
+    //
+    // Filesystem
+    //
+    boost::filesystem::path save_db_path;
+    boost::filesystem::path native_slash;
 
     //
     // PortAudio initialization and buffers
@@ -223,7 +229,7 @@ private:
     std::timed_mutex btn_record_mtx;
     std::future<GekkoFyre::AmateurRadio::Control::Radio *> rig_thread;
 
-    std::shared_ptr<GekkoFyre::AmateurRadio::Control::Radio> radio;
+    std::shared_ptr<GekkoFyre::AmateurRadio::Control::Radio> gkRadioPtr;
     QPointer<QTimer> timer;
     // QDateTime spectro_gui_init_start; // The very first time for when the spectrograph is initialized by the user!
 
@@ -247,6 +253,10 @@ private:
     QStringList getAmateurBands();
     bool prefillAmateurBands();
 
+    void launchSettingsWin();
+    void radioInitStart(const QString &def_com_port);
+    bool radioInitTest(const QString &def_com_port);
+
     void createStatusBar(const QString &statusMsg = "");
     bool changeStatusBarMsg(const QString &statusMsg = "");
     bool steadyTimer(const int &seconds);
@@ -254,5 +264,6 @@ private:
 
 Q_DECLARE_METATYPE(std::vector<GekkoFyre::Spectrograph::RawFFT>);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::Control::FreqChange);
+Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::Control::SettingsChange);
 Q_DECLARE_METATYPE(std::vector<short>);
 Q_DECLARE_METATYPE(size_t);
