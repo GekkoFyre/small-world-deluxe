@@ -81,6 +81,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 {
     ui->setupUi(this);
     qRegisterMetaType<std::vector<GekkoFyre::Spectrograph::RawFFT>>("std::vector<GekkoFyre::Spectrograph::RawFFT>");
+    qRegisterMetaType<GekkoFyre::AmateurRadio::Control::FreqChange>("GekkoFyre::AmateurRadio::Control::FreqChange");
     qRegisterMetaType<std::vector<short>>("std::vector<short>");
     qRegisterMetaType<size_t>("size_t");
 
@@ -185,7 +186,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         if (!save_db_path.empty()) {
             status = leveldb::DB::Open(options, save_db_path.string(), &db);
             GkDb = std::make_shared<GekkoFyre::GkLevelDb>(db, fileIo, this);
-            gkRadioLibs = std::make_shared<GekkoFyre::RadioLibs>(fileIo, gkStringFuncs, GkDb, this);
+            gkRadioLibs = new GekkoFyre::RadioLibs(fileIo, gkStringFuncs, GkDb, this);
         } else {
             QMessageBox::warning(this, tr("Error!"), tr("Unable to find settings database; we've lost its location! Aborting..."), QMessageBox::Ok);
             QApplication::exit(EXIT_FAILURE);
@@ -261,6 +262,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
 
         //
+        // Initialize the ability to change / modify frequencies
+        //
+        QObject::connect(this, SIGNAL(changeFreq(const bool &, const GekkoFyre::AmateurRadio::Control::FreqChange &)),
+                         gkRadioLibs, SLOT(procFreqChange(const bool &, const GekkoFyre::AmateurRadio::Control::FreqChange &)));
+
+        //
         // Initialize the Waterfall / Spectrograph
         //
         gkSpectroGui = new GekkoFyre::SpectroGui(gkStringFuncs, true, false, this);
@@ -281,7 +288,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         prefillAmateurBands();
 
         // Initialize the Hamlib 'radio' struct
-        radio = new AmateurRadio::Control::Radio;
+        radio = std::make_shared<AmateurRadio::Control::Radio>();
         std::string rand_file_name = fileIo->create_random_string(8);
         fs::path rig_file_path_tmp = fs::path(fs::temp_directory_path().string() + native_slash.string() + rand_file_name + GekkoFyre::Filesystem::tmpExtension);
         radio->rig_file = rig_file_path_tmp.string();
@@ -412,13 +419,9 @@ MainWindow::~MainWindow()
     autoSys.terminate();
     gkPortAudioInit->terminate();
 
-    if (radio != nullptr) {
-        if (radio->is_open) {
-            rig_close(radio->rig); // Close port
-            rig_cleanup(radio->rig); // Cleanup memory
-        }
-
-        delete radio;
+    if (radio->is_open) {
+        rig_close(radio->rig); // Close port
+        rig_cleanup(radio->rig); // Cleanup memory
     }
 
     delete ui;

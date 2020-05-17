@@ -55,6 +55,7 @@
 #include <QVector>
 #include <QPointer>
 #include <QDateTime>
+#include <QStringList>
 
 #ifdef _WIN32
 #ifdef PA_USE_ASIO
@@ -376,6 +377,12 @@ namespace AmateurRadio {
             unsigned int mwpower;           // Converted power reading to watts
             rmode_t mode;                   // Unknown?
             pbwidth_t width;                // Bandwidth
+        };
+
+        struct FreqChange {                 // This structure is used when a frequency change is requested.
+            Radio radio;                    // Details about the radio itself!
+            freq_t new_freq;                // The new frequency to change towards!
+            QStringList msg_log;            // A typical message log of all the frequency changes that have been made over an application's lifecycle.
         };
     }
 }

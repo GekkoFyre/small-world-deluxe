@@ -89,7 +89,7 @@ public:
                                             const GekkoFyre::Database::Settings::Audio::GkDevice &device,
                                             portaudio::MemFunCallbackStream<PaAudioBuf> **stream_record_ptr, const bool &stereo = true);
 
-    std::vector<Database::Settings::Audio::GkDevice> filterAudioDevices(const std::vector<Database::Settings::Audio::GkDevice> audio_devices_vec);
+    std::vector<Database::Settings::Audio::GkDevice> filterPortAudioHostType(const std::vector<Database::Settings::Audio::GkDevice> audio_devices_vec);
     QString portAudioVersionNumber(const portaudio::System &portAudioSys);
     QString portAudioVersionText(const portaudio::System &portAudioSys);
 
@@ -98,7 +98,8 @@ private:
     std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
     std::shared_ptr<StringFuncs> gkStringFuncs;
 
-    bool filterAudioEnum(const PaHostApiTypeId &host_api_type);
+    bool filterAudioEnumPreexisting(const std::vector<Database::Settings::Audio::GkDevice> &device_vec,
+                                    const Database::Settings::Audio::GkDevice &device_compare);
 
 };
 };

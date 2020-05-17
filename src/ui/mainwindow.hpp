@@ -174,6 +174,7 @@ signals:
     void sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values,
                          const std::vector<short> &raw_audio_data,
                          const int &hanning_window_size, const size_t &buffer_size);
+    void changeFreq(const bool &radio_locked, const GekkoFyre::AmateurRadio::Control::FreqChange &freq_change);
 
 private:
     Ui::MainWindow *ui;
@@ -185,8 +186,8 @@ private:
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
     std::shared_ptr<GekkoFyre::PaMic> gkPaMic;
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
-    std::shared_ptr<GekkoFyre::RadioLibs> gkRadioLibs;
     std::shared_ptr<GekkoFyre::GkCli> gkCli;
+    QPointer<GekkoFyre::RadioLibs> gkRadioLibs;
     QPointer<GekkoFyre::GkAudioEncoding> gkAudioEncoding;
     QPointer<GekkoFyre::GkAudioDecoding> gkAudioDecoding;
     QPointer<GekkoFyre::SpectroGui> gkSpectroGui;
@@ -222,7 +223,7 @@ private:
     std::timed_mutex btn_record_mtx;
     std::future<GekkoFyre::AmateurRadio::Control::Radio *> rig_thread;
 
-    GekkoFyre::AmateurRadio::Control::Radio *radio;
+    std::shared_ptr<GekkoFyre::AmateurRadio::Control::Radio> radio;
     QPointer<QTimer> timer;
     // QDateTime spectro_gui_init_start; // The very first time for when the spectrograph is initialized by the user!
 
@@ -252,5 +253,6 @@ private:
 };
 
 Q_DECLARE_METATYPE(std::vector<GekkoFyre::Spectrograph::RawFFT>);
+Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::Control::FreqChange);
 Q_DECLARE_METATYPE(std::vector<short>);
 Q_DECLARE_METATYPE(size_t);
