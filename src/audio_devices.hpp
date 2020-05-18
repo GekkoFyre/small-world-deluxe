@@ -50,6 +50,7 @@
 #include <thread>
 #include <queue>
 #include <QString>
+#include <QVector>
 
 #ifdef _WIN32
 #include "src/string_funcs_windows.hpp"
@@ -91,7 +92,7 @@ public:
 
     std::vector<Database::Settings::Audio::GkDevice> filterPortAudioHostType(const std::vector<Database::Settings::Audio::GkDevice> &audio_devices_vec);
     QString portAudioApiToStr(const PaHostApiTypeId &interface);
-    std::vector<PaHostApiTypeId> portAudioApiChooser(const std::vector<Database::Settings::Audio::GkDevice> &audio_devices_vec);
+    QVector<PaHostApiTypeId> portAudioApiChooser(const std::vector<Database::Settings::Audio::GkDevice> &audio_devices_vec);
 
     QString portAudioVersionNumber(const portaudio::System &portAudioSys);
     QString portAudioVersionText(const portaudio::System &portAudioSys);

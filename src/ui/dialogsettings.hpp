@@ -125,6 +125,7 @@ private:
     QMap<tstring, int> available_com_ports; // For tracking the *available* Device Ports (i.e. COM/Serial/RS232/USB) that the user can choose from...
 
     // The key corresponds to the position within the QComboBoxes
+    QMap<int, PaHostApiTypeId> avail_portaudio_api;
     QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> avail_input_audio_devs;
     QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> avail_output_audio_devs;
     GekkoFyre::Database::Settings::Audio::GkDevice chosen_input_audio_dev;
@@ -135,6 +136,7 @@ private:
 
     std::shared_ptr<QSettings> gkSettings;
 
+    void prefill_audio_api_avail(const QVector<PaHostApiTypeId> &portaudio_api_vec);
     void prefill_audio_devices(std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> audio_devices_vec);
     void prefill_audio_encode_comboboxes();
     void init_working_freqs();

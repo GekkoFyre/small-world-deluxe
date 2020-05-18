@@ -129,7 +129,12 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
             on_comboBox_com_port_currentIndexChanged(ui->comboBox_com_port->currentIndex());
         }
 
+        //
+        // Initialize PortAudio libraries!
+        //
         std::vector<GkDevice> audio_devices = gkAudioDevices->filterPortAudioHostType(gkAudioDevices->enumAudioDevicesCpp(gkPortAudioInit));
+        QVector<PaHostApiTypeId> portaudio_api_avail = gkAudioDevices->portAudioApiChooser(audio_devices);
+        prefill_audio_api_avail(portaudio_api_avail);
         prefill_audio_devices(audio_devices);
 
         ui->label_pa_version->setText(gkAudioDevices->portAudioVersionNumber(*gkPortAudioInit));
@@ -363,11 +368,47 @@ QMultiMap<rig_model_t, std::tuple<QString, QString, AmateurRadio::rig_type>> Dia
 }
 
 /**
+ * @brief DialogSettings::prefill_audio_api_avail Enumerates the available operating system's sound/multimedia APIs that
+ * are available to the user via PortAudio, all dependent on how Small World Deluxe and its associated libraries
+ * were compiled.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param portaudio_api The pre-sorted list of sound/multimedia APIs available to the user.
+ * @see AudioDevices::portAudioApiChooser(), AudioDevices::filterPortAudioHostType().
+ */
+void DialogSettings::prefill_audio_api_avail(const QVector<PaHostApiTypeId> &portaudio_api_vec)
+{
+    try {
+        // Garner the list of APIs!
+        if (!portaudio_api_vec.isEmpty()) {
+            size_t api_counter = 0;
+            for (const auto &pa_api: portaudio_api_vec) {
+                QString api_str_tmp = gkAudioDevices->portAudioApiToStr(pa_api);
+                ui->comboBox_soundcard_api->insertItem(api_counter, api_str_tmp, api_counter);
+                avail_portaudio_api.insert(api_counter, pa_api);
+                ++api_counter;
+            }
+        } else {
+            ui->comboBox_soundcard_api->insertItem(0, tr("No available APIs were detected!"), 0);
+        }
+    } catch (const portaudio::PaException &e) {
+        QMessageBox::warning(this, tr("Error!"), tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText()), QMessageBox::Ok);
+    } catch (const portaudio::PaCppException &e) {
+        QMessageBox::warning(this, tr("Error!"), tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), tr("A generic exception has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+    } catch (...) {
+        QMessageBox::warning(this, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
  * @brief DialogSettings::prefill_audio_devices Enumerates the audio deviecs on the user's
  * computer system.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param audio_devices The available audio devices on the user's system, as a typical std::vector.
- * @see GekkoFyre::AudioDevices::enumAudioDevices()
+ * @see GekkoFyre::AudioDevices::enumAudioDevices(), AudioDevices::filterPortAudioHostType().
  */
 void DialogSettings::prefill_audio_devices(std::vector<GkDevice> audio_devices_vec)
 {
