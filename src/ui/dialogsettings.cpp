@@ -662,6 +662,13 @@ void DialogSettings::prefill_com_baud_speed(const AmateurRadio::com_baud_rates &
     return;
 }
 
+void DialogSettings::prefill_soundcard_api()
+{
+    // ui->comboBox_soundcard_api;
+
+    return;
+}
+
 /**
  * @brief DialogSettings::enable_device_port_options
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -1071,6 +1078,11 @@ void DialogSettings::on_pushButton_audio_logs_save_dir_clicked()
         gkDekodeDb->write_misc_audio_settings(ui->lineEdit_audio_logs_save_dir->text(), audio_cfg::AudioRecLoc);
     }
 
+    return;
+}
+
+void DialogSettings::on_pushButton_soundcard_api_reload_clicked()
+{
     return;
 }
 

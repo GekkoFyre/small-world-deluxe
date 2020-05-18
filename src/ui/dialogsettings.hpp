@@ -82,6 +82,7 @@ private slots:
     void on_pushButton_input_sound_test_clicked();
     void on_pushButton_output_sound_test_clicked();
     void on_pushButton_audio_logs_save_dir_clicked();
+    void on_pushButton_soundcard_api_reload_clicked();
     void on_comboBox_soundcard_input_currentIndexChanged(int index);
     void on_comboBox_soundcard_output_currentIndexChanged(int index);
     void on_comboBox_brand_selection_currentIndexChanged(const QString &arg1);
@@ -143,6 +144,7 @@ private:
     void prefill_avail_com_ports(const QMap<tstring, std::pair<tstring, boost::tribool>> &com_ports);
     void prefill_avail_usb_ports(const std::vector<GekkoFyre::Database::Settings::UsbPort> usb_devices);
     void prefill_com_baud_speed(const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate);
+    void prefill_soundcard_api();
     void enable_device_port_options();
     void get_device_port_details(const tstring &port, const tstring &device,
                                  const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate = GekkoFyre::AmateurRadio::com_baud_rates::BAUD9600);
