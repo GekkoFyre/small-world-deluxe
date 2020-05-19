@@ -74,11 +74,13 @@ namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
 RadioLibs::RadioLibs(std::shared_ptr<GekkoFyre::FileIo> filePtr, std::shared_ptr<StringFuncs> stringPtr,
-        std::shared_ptr<GkLevelDb> dkDb, QObject *parent) : QObject(parent)
+                     std::shared_ptr<GkLevelDb> dkDb, std::shared_ptr<Radio> radioPtr,
+                     QObject *parent) : QObject(parent)
 {
     gkStringFuncs = std::move(stringPtr);
     gkDekodeDb = std::move(dkDb);
     gkFileIo = std::move(filePtr);
+    gkRadioPtr = std::move(radioPtr);
 }
 
 RadioLibs::~RadioLibs()
@@ -201,7 +203,8 @@ QString RadioLibs::initComPorts()
  */
 std::vector<UsbPort> RadioLibs::initUsbPorts()
 {
-    std::vector<UsbPort> usb_ports = findUsbPorts();
+    // TODO - Finish this section!
+    // std::vector<UsbPort> usb_ports = findUsbPorts();
     std::vector<UsbPort> filtered_ports;
 
     return filtered_ports;
@@ -569,10 +572,10 @@ void RadioLibs::registerComPort(std::list<std::string> &comList, std::list<std::
  * @param verbosity The kind of errors you wish for HamLib to report, whether they be at a debug level or only critical errors.
  * @note Ref: HamLib <https://github.com/Hamlib/Hamlib/>.
  */
-Radio *RadioLibs::init_rig(const rig_model_t &rig_model, const std::string &com_port,
-                           const com_baud_rates &com_baud_rate, const rig_debug_level_e &verbosity)
+std::shared_ptr<Radio> RadioLibs::init_rig(const rig_model_t &rig_model, const std::string &com_port,
+                                           const com_baud_rates &com_baud_rate, const rig_debug_level_e &verbosity)
 {
-    Radio *radio = new Radio;
+    std::shared_ptr<Radio> radio = std::make_shared<Radio>();
 
     // https://github.com/Hamlib/Hamlib/blob/master/tests/example.c
     // Set verbosity level
@@ -721,7 +724,60 @@ QString RadioLibs::translateBandsToStr(const bands &band)
     return tr("Error!");
 }
 
+/**
+ * @brief RadioLibs::procFreqChange will process a frequency change request upon receiving the right signal(s).
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param radio_locked Whether the transceiver rig is in a 'locked mode' or not.
+ * @param freq_change The details of the frequency change request.
+ */
 void RadioLibs::procFreqChange(const bool &radio_locked, const FreqChange &freq_change)
 {
+    try {
+        if (gkRadioPtr->rig == nullptr && gkRadioPtr->is_open == false) {
+            throw std::runtime_error(tr("Small World Deluxe has experienced a rig control error!").toStdString());
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
+ * @brief RadioLibs::procSettingsChange will process a change in settings regarding Hamlib upon receiving the right signal(s).
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param radio_locked Whether the transceiver rig is in a 'locked mode' or not.
+ * @param settings_change The details of the settings change request.
+ */
+void RadioLibs::procSettingsChange(const bool &radio_locked, const SettingsChange &settings_change)
+{
+    try {
+        if (gkRadioPtr->rig == nullptr && gkRadioPtr->is_open == false) {
+            throw std::runtime_error(tr("Small World Deluxe has experienced a rig control error!").toStdString());
+        }
+
+        if (!settings_change.rig_file.empty()) {
+            if (settings_change.rig_file != gkRadioPtr->rig_file) {
+                gkRadioPtr->rig_file = settings_change.rig_file;
+            }
+        }
+
+        if (settings_change.rig_model > 0) {
+            gkRadioPtr->rig_model = settings_change.rig_model;
+        }
+
+        gkRadioPtr->dev_baud_rate = settings_change.dev_baud_rate;
+        gkRadioPtr->port_details = settings_change.port_details;
+        gkRadioPtr->mode = settings_change.mode;
+        gkRadioPtr->width = settings_change.width;
+
+        //
+        // Process the changes, if necessary, for the RS232 ports
+        //
+        gkRadioPtr->rig_model = rig_probe(&gkRadioPtr->port_details);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
     return;
 }

@@ -72,6 +72,7 @@ set(CMAKE_MODULE_PATH
 option(GFYRE_PACKAGE_MAINTAINER "Are you a package maintainer? If so, set this option to `ON`! It'll enable specific build settings to make your life easier." ON)
 option(GFYRE_BUILD_STATIC "Build Small World Deluxe as a static library/package. This will result in a larger executable at the benefit of requiring less DLL dependencies." ON)
 option(GFYRE_BUILD_SHARED "*** This option is not fully developed yet! *** Build Small World Deluxe as a shared library/package. This will result in a smaller executable at the cost of requiring further DLL dependencies." OFF)
+option(GFYRE_HAMLIB_DBG_VERBOSITY "Enable DEBUG verbosity for the Hamlib library and its use throughout Small World Deluxe. *** Only recommended for programmers and/or possibly maintainers of the project itself! ***" OFF)
 option(GFYRE_BUILD_CODEC2 "*** This feature is in heavy development! *** Build with support for Codec2 <https://github.com/drowe67/codec2>." OFF)
 
 #
@@ -511,6 +512,11 @@ endif()
 
 if(LINUX)
     check_include_file("linux/serial.h" HAVE_LSERIAL_H)
+endif()
+
+if(GFYRE_HAMLIB_DBG_VERBOSITY)
+    message(STATUS "Enabled maximum verbosity with the Hamlib library throughout Small World Deluxe; debug mode now activated!")
+    add_definitions(-DGFYRE_HAMLIB_DBG_VERBOSITY_ENBL)
 endif()
 
 #

@@ -77,79 +77,83 @@ GkLevelDb::~GkLevelDb()
  */
 void GkLevelDb::write_rig_settings(const QString &value, const Database::Settings::radio_cfg &key)
 {
-    // Put key-value
-    leveldb::WriteBatch batch;
-    leveldb::Status status;
+    try {
+        // Put key-value
+        leveldb::WriteBatch batch;
+        leveldb::Status status;
 
-    using namespace Database::Settings;
-    switch (key) {
-    case radio_cfg::RigBrand:
-        batch.Put("RigBrand", value.toStdString());
-        break;
-    case radio_cfg::RigModel:
-        batch.Put("RigModel", value.toStdString());
-        break;
-    case radio_cfg::RigModelIndex:
-        batch.Put("RigModelIndex", value.toStdString());
-        break;
-    case radio_cfg::RigVersion:
-        batch.Put("RigVersion", value.toStdString());
-        break;
-    case radio_cfg::ComDevice:
-        batch.Put("ComDevice", value.toStdString());
-        break;
-    case radio_cfg::ComBaudRate:
-        batch.Put("ComBaudRate", value.toStdString());
-        break;
-    case radio_cfg::StopBits:
-        batch.Put("StopBits", value.toStdString());
-        break;
-    case radio_cfg::PollingInterval:
-        batch.Put("PollingInterval", value.toStdString());
-        break;
-    case radio_cfg::ModeDelay:
-        batch.Put("ModeDelay", value.toStdString());
-        break;
-    case radio_cfg::Sideband:
-        batch.Put("Sideband", value.toStdString());
-        break;
-    case radio_cfg::CWisLSB:
-        batch.Put("CWisLSB", value.toStdString());
-        break;
-    case radio_cfg::FlowControl:
-        batch.Put("FlowControl", value.toStdString());
-        break;
-    case radio_cfg::PTTCommand:
-        batch.Put("PTTCommand", value.toStdString());
-        break;
-    case radio_cfg::Retries:
-        batch.Put("Retries", value.toStdString());
-        break;
-    case radio_cfg::RetryInterv:
-        batch.Put("RetryInterv", value.toStdString());
-        break;
-    case radio_cfg::WriteDelay:
-        batch.Put("WriteDelay", value.toStdString());
-        break;
-    case radio_cfg::PostWriteDelay:
-        batch.Put("PostWriteDelay", value.toStdString());
-        break;
-    default:
-        return;
-    }
+        using namespace Database::Settings;
+        switch (key) {
+        case radio_cfg::RigBrand:
+            batch.Put("RigBrand", value.toStdString());
+            break;
+        case radio_cfg::RigModel:
+            batch.Put("RigModel", value.toStdString());
+            break;
+        case radio_cfg::RigModelIndex:
+            batch.Put("RigModelIndex", value.toStdString());
+            break;
+        case radio_cfg::RigVersion:
+            batch.Put("RigVersion", value.toStdString());
+            break;
+        case radio_cfg::ComDevice:
+            batch.Put("ComDevice", value.toStdString());
+            break;
+        case radio_cfg::ComBaudRate:
+            batch.Put("ComBaudRate", value.toStdString());
+            break;
+        case radio_cfg::StopBits:
+            batch.Put("StopBits", value.toStdString());
+            break;
+        case radio_cfg::PollingInterval:
+            batch.Put("PollingInterval", value.toStdString());
+            break;
+        case radio_cfg::ModeDelay:
+            batch.Put("ModeDelay", value.toStdString());
+            break;
+        case radio_cfg::Sideband:
+            batch.Put("Sideband", value.toStdString());
+            break;
+        case radio_cfg::CWisLSB:
+            batch.Put("CWisLSB", value.toStdString());
+            break;
+        case radio_cfg::FlowControl:
+            batch.Put("FlowControl", value.toStdString());
+            break;
+        case radio_cfg::PTTCommand:
+            batch.Put("PTTCommand", value.toStdString());
+            break;
+        case radio_cfg::Retries:
+            batch.Put("Retries", value.toStdString());
+            break;
+        case radio_cfg::RetryInterv:
+            batch.Put("RetryInterv", value.toStdString());
+            break;
+        case radio_cfg::WriteDelay:
+            batch.Put("WriteDelay", value.toStdString());
+            break;
+        case radio_cfg::PostWriteDelay:
+            batch.Put("PostWriteDelay", value.toStdString());
+            break;
+        default:
+            return;
+        }
 
-    std::time_t curr_time = std::time(nullptr);
-    std::stringstream ss;
-    ss << curr_time;
-    batch.Put("CurrTime", ss.str());
+        std::time_t curr_time = std::time(nullptr);
+        std::stringstream ss;
+        ss << curr_time;
+        batch.Put("CurrTime", ss.str());
 
-    leveldb::WriteOptions write_options;
-    write_options.sync = true;
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
 
-    status = db->Write(write_options, &batch);
+        status = db->Write(write_options, &batch);
 
-    if (!status.ok()) { // Abort because of error!
-        throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
     }
 
     return;
@@ -164,42 +168,46 @@ void GkLevelDb::write_rig_settings(const QString &value, const Database::Setting
  */
 void GkLevelDb::write_audio_device_settings(const GkDevice &value, const QString &key, const bool &is_output_device)
 {
-    leveldb::WriteBatch batch;
-    leveldb::Status status;
+    try {
+        leveldb::WriteBatch batch;
+        leveldb::Status status;
 
-    if (is_output_device) {
-        // Unique identifier for the chosen output audio device
-        batch.Put("AudioOutputId", std::to_string(value.stream_parameters.device));
-        batch.Put("AudioOutputDefSampleRate", std::to_string(value.def_sample_rate));
-        batch.Put("AudioOutputChannelCount", std::to_string(value.dev_output_channel_count));
-        batch.Put("AudioOutputSelChannels", std::to_string(value.sel_channels));
-        batch.Put("AudioOutputDevName", value.device_info.name);
+        if (is_output_device) {
+            // Unique identifier for the chosen output audio device
+            batch.Put("AudioOutputId", std::to_string(value.stream_parameters.device));
+            batch.Put("AudioOutputDefSampleRate", std::to_string(value.def_sample_rate));
+            batch.Put("AudioOutputChannelCount", std::to_string(value.dev_output_channel_count));
+            batch.Put("AudioOutputSelChannels", std::to_string(value.sel_channels));
+            batch.Put("AudioOutputDevName", value.device_info.name);
 
-        // Determine if this is the default output device for the system and if so, convert
-        // the boolean value to a std::string suitable for database storage.
-        std::string is_default = boolEnum(value.default_dev);
-        batch.Put("AudioOutputDefSysDevice", is_default);
-    } else {
-        // Unique identifier for the chosen input audio device
-        batch.Put("AudioInputId", std::to_string(value.stream_parameters.device));
-        batch.Put("AudioInputDefSampleRate", std::to_string(value.def_sample_rate));
-        batch.Put("AudioInputChannelCount", std::to_string(value.dev_input_channel_count));
-        batch.Put("AudioInputSelChannels", std::to_string(value.sel_channels));
-        batch.Put("AudioInputDevName", value.device_info.name);
+            // Determine if this is the default output device for the system and if so, convert
+            // the boolean value to a std::string suitable for database storage.
+            std::string is_default = boolEnum(value.default_dev);
+            batch.Put("AudioOutputDefSysDevice", is_default);
+        } else {
+            // Unique identifier for the chosen input audio device
+            batch.Put("AudioInputId", std::to_string(value.stream_parameters.device));
+            batch.Put("AudioInputDefSampleRate", std::to_string(value.def_sample_rate));
+            batch.Put("AudioInputChannelCount", std::to_string(value.dev_input_channel_count));
+            batch.Put("AudioInputSelChannels", std::to_string(value.sel_channels));
+            batch.Put("AudioInputDevName", value.device_info.name);
 
-        // Determine if this is the default input device for the system and if so, convert
-        // the boolean value to a std::string suitable for database storage.
-        std::string is_default = boolEnum(value.default_dev);
-        batch.Put("AudioInputDefSysDevice", is_default);
-    }
+            // Determine if this is the default input device for the system and if so, convert
+            // the boolean value to a std::string suitable for database storage.
+            std::string is_default = boolEnum(value.default_dev);
+            batch.Put("AudioInputDefSysDevice", is_default);
+        }
 
-    leveldb::WriteOptions write_options;
-    write_options.sync = true;
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
 
-    status = db->Write(write_options, &batch);
+        status = db->Write(write_options, &batch);
 
-    if (!status.ok()) { // Abort because of error!
-        throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
     }
 
     return;
@@ -213,22 +221,26 @@ void GkLevelDb::write_audio_device_settings(const GkDevice &value, const QString
  */
 void GkLevelDb::write_mainwindow_settings(const QString &value, const general_mainwindow_cfg &key)
 {
-    leveldb::WriteBatch batch;
-    leveldb::Status status;
+    try {
+        leveldb::WriteBatch batch;
+        leveldb::Status status;
 
-    using namespace Database::Settings;
-    switch (key) {
-    case general_mainwindow_cfg::WindowMaximized:
-        batch.Put("WindowMaximized", value.toStdString());
-        break;
-    case general_mainwindow_cfg::WindowHSize:
-        batch.Put("WindowHSize", value.toStdString());
-        break;
-    case general_mainwindow_cfg::WindowVSize:
-        batch.Put("WindowVSize", value.toStdString());
-        break;
-    default:
-        return;
+        using namespace Database::Settings;
+        switch (key) {
+        case general_mainwindow_cfg::WindowMaximized:
+            batch.Put("WindowMaximized", value.toStdString());
+            break;
+        case general_mainwindow_cfg::WindowHSize:
+            batch.Put("WindowHSize", value.toStdString());
+            break;
+        case general_mainwindow_cfg::WindowVSize:
+            batch.Put("WindowVSize", value.toStdString());
+            break;
+        default:
+            return;
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
     }
 
     return;
@@ -242,46 +254,50 @@ void GkLevelDb::write_mainwindow_settings(const QString &value, const general_ma
  */
 void GkLevelDb::write_misc_audio_settings(const QString &value, const audio_cfg &key)
 {
-    // Put key-value
-    leveldb::WriteBatch batch;
-    leveldb::Status status;
+    try {
+        // Put key-value
+        leveldb::WriteBatch batch;
+        leveldb::Status status;
 
-    switch (key) {
-    case audio_cfg::soundcardInput:
-        batch.Put("SoundcardInput", value.toStdString());
-        break;
-    case audio_cfg::soundcardOutput:
-        batch.Put("SoundcardOutput", value.toStdString());
-        break;
-    case audio_cfg::settingsDbLoc:
-        batch.Put("UserProfileDbLoc", value.toStdString());
-        break;
-    case audio_cfg::LogsDirLoc:
-        batch.Put("UserLogsLoc", value.toStdString());
-        break;
-    case audio_cfg::AudioRecLoc:
-        batch.Put("AudioRecSaveLoc", value.toStdString());
-        break;
-    case audio_cfg::AudioInputChannels:
-        batch.Put("AudioInputChannels", value.toStdString());
-        break;
-    case audio_cfg::AudioOutputChannels:
-        batch.Put("AudioOutputChannels", value.toStdString());
-        break;
-    }
+        switch (key) {
+        case audio_cfg::soundcardInput:
+            batch.Put("SoundcardInput", value.toStdString());
+            break;
+        case audio_cfg::soundcardOutput:
+            batch.Put("SoundcardOutput", value.toStdString());
+            break;
+        case audio_cfg::settingsDbLoc:
+            batch.Put("UserProfileDbLoc", value.toStdString());
+            break;
+        case audio_cfg::LogsDirLoc:
+            batch.Put("UserLogsLoc", value.toStdString());
+            break;
+        case audio_cfg::AudioRecLoc:
+            batch.Put("AudioRecSaveLoc", value.toStdString());
+            break;
+        case audio_cfg::AudioInputChannels:
+            batch.Put("AudioInputChannels", value.toStdString());
+            break;
+        case audio_cfg::AudioOutputChannels:
+            batch.Put("AudioOutputChannels", value.toStdString());
+            break;
+        }
 
-    std::time_t curr_time = std::time(nullptr);
-    std::stringstream ss;
-    ss << curr_time;
-    batch.Put("CurrTime", ss.str());
+        std::time_t curr_time = std::time(nullptr);
+        std::stringstream ss;
+        ss << curr_time;
+        batch.Put("CurrTime", ss.str());
 
-    leveldb::WriteOptions write_options;
-    write_options.sync = true;
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
 
-    status = db->Write(write_options, &batch);
+        status = db->Write(write_options, &batch);
 
-    if (!status.ok()) { // Abort because of error!
-        throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
     }
 
     return;
@@ -379,6 +395,149 @@ int GkLevelDb::read_audio_device_settings(const bool &is_output_device)
     }
 
     return ret_val;
+}
+
+/**
+ * @brief GkLevelDb::write_audio_api_settings Writes out the saved information concerning the user's choice of
+ * decided upon PortAudio API settings.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param interface The user's last chosen settings for the decided upon PortAudio API.
+ */
+void GkLevelDb::write_audio_api_settings(const PaHostApiTypeId &interface)
+{
+    try {
+        leveldb::WriteBatch batch;
+        leveldb::Status status;
+
+        batch.Put("AudioPortAudioAPISelection", portAudioApiToStr(interface).toStdString());
+
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
+
+        status = db->Write(write_options, &batch);
+
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkLevelDb::read_audio_api_settings Reads the saved information concerning the user's choice of decided
+ * upon PortAudio API settings.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return The user's last chosen settings for the decided upon PortAudio API.
+ */
+PaHostApiTypeId GkLevelDb::read_audio_api_settings()
+{
+    std::mutex read_audio_api_mtx;
+    leveldb::Status status;
+    leveldb::ReadOptions read_options;
+    std::string value;
+
+    std::lock_guard<std::mutex> lck_guard(read_audio_api_mtx);
+    read_options.verify_checksums = true;
+
+    status = db->Get(read_options, "AudioPortAudioAPISelection", &value);
+
+    if (!value.empty()) {
+        // Convert from `std::string` to `enum`!
+        return portAudioApiToEnum(QString::fromStdString(value));
+    }
+
+    return PaHostApiTypeId::paInDevelopment;
+}
+
+/**
+ * @brief GkLevelDb::portAudioApiToStr
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param interface
+ * @return
+ */
+QString GkLevelDb::portAudioApiToStr(const PaHostApiTypeId &interface)
+{
+    switch (interface) {
+    case PaHostApiTypeId::paDirectSound:
+        return tr("DirectSound");
+    case PaHostApiTypeId::paMME:
+        return tr("Microsoft Multimedia Environment (MME)");
+    case PaHostApiTypeId::paASIO:
+        return tr("ASIO");
+    case PaHostApiTypeId::paSoundManager:
+        return tr("Sound Manager");
+    case PaHostApiTypeId::paCoreAudio:
+        return tr("Core Audio");
+    case PaHostApiTypeId::paOSS:
+        return tr("OSS");
+    case PaHostApiTypeId::paALSA:
+        return tr("ALSA");
+    case PaHostApiTypeId::paAL:
+        return tr("AL");
+    case PaHostApiTypeId::paBeOS:
+        return tr("BeOS");
+    case PaHostApiTypeId::paWDMKS:
+        return tr("WDM/KS");
+    case PaHostApiTypeId::paJACK:
+        return tr("JACK");
+    case PaHostApiTypeId::paWASAPI:
+        return tr("Windows Audio Session API (WASAPI)");
+    case PaHostApiTypeId::paAudioScienceHPI:
+        return tr("AudioScience HPI");
+    case PaHostApiTypeId::paInDevelopment:
+        return tr("N/A");
+    default:
+        return tr("Unknown");
+    }
+
+    return tr("Unknown");
+}
+
+/**
+ * @brief GkLevelDb::portAudioApiToEnum converts the stored string value of the PortAudio API setting to the
+ * relevant enum value, for easier computation.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param interface
+ * @return The more easily computable enum value.
+ */
+PaHostApiTypeId GkLevelDb::portAudioApiToEnum(const QString &interface)
+{
+    if (!interface.isNull() && !interface.isEmpty()) {
+        if (interface == tr("DirectSound")) {
+            return PaHostApiTypeId::paDirectSound;
+        } else if (interface == tr("Microsoft Multimedia Environment (MME)")) {
+            return PaHostApiTypeId::paMME;
+        } else if (interface == tr("ASIO")) {
+            return PaHostApiTypeId::paASIO;
+        } else if (interface == tr("Sound Manager")) {
+            return PaHostApiTypeId::paSoundManager;
+        } else if (interface == tr("Core Audio")) {
+            return PaHostApiTypeId::paCoreAudio;
+        } else if (interface == tr("OSS")) {
+            return PaHostApiTypeId::paOSS;
+        } else if (interface == tr("ALSA")) {
+            return PaHostApiTypeId::paALSA;
+        } else if (interface == tr("AL")) {
+            return PaHostApiTypeId::paAL;
+        } else if (interface == tr("BeOS")) {
+            return PaHostApiTypeId::paBeOS;
+        } else if (interface == tr("WDM/KS")) {
+            return PaHostApiTypeId::paWDMKS;
+        } else if (interface == tr("JACK")) {
+            return PaHostApiTypeId::paJACK;
+        } else if (interface == tr("Windows Audio Session API (WASAPI)")) {
+            return PaHostApiTypeId::paWASAPI;
+        } else if (interface == tr("AudioScience HPI")) {
+            return PaHostApiTypeId::paAudioScienceHPI;
+        } else if (interface == tr("N/A")) {
+            return PaHostApiTypeId::paInDevelopment;
+        }
+    }
+
+    return PaHostApiTypeId::paInDevelopment;
 }
 
 /**

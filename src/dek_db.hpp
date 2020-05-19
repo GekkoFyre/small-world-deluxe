@@ -74,6 +74,11 @@ public:
 
     QString convAudioBitrateToStr(const GekkoFyre::GkAudioFramework::Bitrate &bitrate);
 
+    void write_audio_api_settings(const PaHostApiTypeId &interface);
+    PaHostApiTypeId read_audio_api_settings();
+    QString portAudioApiToStr(const PaHostApiTypeId &interface);
+    PaHostApiTypeId portAudioApiToEnum(const QString &interface);
+
 private:
     std::shared_ptr<GekkoFyre::FileIo> fileIo;
     leveldb::DB *db;

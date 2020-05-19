@@ -63,7 +63,8 @@ class RadioLibs : public QObject {
 
 public:
     explicit RadioLibs(std::shared_ptr<GekkoFyre::FileIo> filePtr, std::shared_ptr<GekkoFyre::StringFuncs> stringPtr,
-            std::shared_ptr<GkLevelDb> dkDb, QObject *parent = nullptr);
+                       std::shared_ptr<GkLevelDb> dkDb, std::shared_ptr<GekkoFyre::AmateurRadio::Control::Radio> radioPtr,
+                       QObject *parent = nullptr);
     ~RadioLibs() override;
 
     static int convertBaudRateEnum(const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate);
@@ -72,18 +73,20 @@ public:
     std::vector<Database::Settings::UsbPort> initUsbPorts();
     std::vector<Database::Settings::UsbPort> findUsbPorts();
     QMap<tstring, std::pair<tstring, boost::tribool>> status_com_ports();
-    AmateurRadio::Control::Radio *init_rig(const rig_model_t &rig_model, const std::string &com_port,
-                                           const GekkoFyre::AmateurRadio::com_baud_rates &com_baud_rate,
-                                           const rig_debug_level_e &verbosity);
+    std::shared_ptr<AmateurRadio::Control::Radio> init_rig(const rig_model_t &rig_model, const std::string &com_port,
+                                                           const GekkoFyre::AmateurRadio::com_baud_rates &com_baud_rate,
+                                                           const rig_debug_level_e &verbosity);
     QString translateBandsToStr(const AmateurRadio::bands &band);
 
 public slots:
     void procFreqChange(const bool &radio_locked, const GekkoFyre::AmateurRadio::Control::FreqChange &freq_change);
+    void procSettingsChange(const bool &radio_locked, const GekkoFyre::AmateurRadio::Control::SettingsChange &settings_change);
 
 private:
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GekkoFyre::GkLevelDb> gkDekodeDb;
     std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
+    std::shared_ptr<GekkoFyre::AmateurRadio::Control::Radio> gkRadioPtr;
 
     static void hamlibStatus(const int &retcode);
 
@@ -91,7 +94,7 @@ private:
     static std::string getDriver(const boost::filesystem::path &tty);
     static void probe_serial8250_comports(std::list<std::string> &comList, const std::list<std::string> &comList8250);
     static void registerComPort(std::list<std::string> &comList, std::list<std::string> &comList8250,
-            const boost::filesystem::path &dir);
+                                const boost::filesystem::path &dir);
 
 };
 };

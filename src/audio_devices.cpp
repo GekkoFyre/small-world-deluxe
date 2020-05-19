@@ -837,79 +837,116 @@ PaStreamCallbackResult AudioDevices::openRecordStream(portaudio::System &portAud
 }
 
 /**
- * @brief AudioDevices::filterPortAudioHostType
+ * @brief AudioDevices::filterPortAudioHostType filters out the audio/multimedia devices on the user's system as they relate
+ * to their associated operating system's API, via PortAudio. This is all dependent on how Small World Deluxe and its
+ * associated libraries were compiled.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param audio_devices_vec
- * @return
+ * @param audio_devices_vec The group of soundcard/multimedia devices to use as a base of which to filter from.
+ * @return The sorted soundcard/multimedia devices, filtered as per their API in relation to the operating system
+ * via PortAudio.
  */
-std::vector<GkDevice> AudioDevices::filterPortAudioHostType(const std::vector<GkDevice> audio_devices_vec)
+std::vector<GkDevice> AudioDevices::filterPortAudioHostType(const std::vector<GkDevice> &audio_devices_vec)
 {
     try {
-        std::vector<GkDevice> host_res;
-        for (const auto &audio_device: audio_devices_vec) {
-            #if _WIN32 || __MINGW32__
-            if (audio_device.host_type_id == PaHostApiTypeId::paASIO) {
-                // ASIO
-                // These are the most preferred, if available at all...
-                if (filterAudioEnumPreexisting(host_res, audio_device) == false) {
-                    host_res.push_back(audio_device);
-                }
-            } else if (audio_device.host_type_id == PaHostApiTypeId::paDirectSound) {
-                // DirectSound
-                // Second-most preferred!
-                if (filterAudioEnumPreexisting(host_res, audio_device) == false) {
-                    host_res.push_back(audio_device);
-                }
-            } else if (audio_device.host_type_id == PaHostApiTypeId::paMME) {
-                // MME
-                if (filterAudioEnumPreexisting(host_res, audio_device) == false) {
-                    host_res.push_back(audio_device);
-                }
-            } else if (audio_device.host_type_id == PaHostApiTypeId::paWDMKS) {
-                // WDMKS
-                if (filterAudioEnumPreexisting(host_res, audio_device) == false) {
-                    host_res.push_back(audio_device);
-                }
-            } else if (audio_device.host_type_id == PaHostApiTypeId::paWASAPI) {
-                // WASAPI
-                if (filterAudioEnumPreexisting(host_res, audio_device) == false) {
-                    host_res.push_back(audio_device);
-                }
-            } else {
-                // The default!
-                // We can throw away these results...
-            }
-            #elif __linux__ || __MINGW32__
-            if (audio_device.host_type_id == PaHostApiTypeId::paALSA) {
-                // ALSA
-                // These are the most preferred, if available at all...
-                if (filterAudioEnumPreexisting(host_res, audio_device) == false) {
-                    host_res.push_back(audio_device);
-                }
-            } else if (audio_device.host_type_id == PaHostApiTypeId::paJACK) {
-                // JACK
-                // Second-most preferred!
-                if (filterAudioEnumPreexisting(host_res, audio_device) == false) {
-                    host_res.push_back(audio_device);
-                }
-            } else if (audio_device.host_type_id == PaHostApiTypeId::paOSS) {
-                // OSS?
-                // It is likely that we can throw away these results, unless I'm educated upon as to what this sub-system is...
-            } else {
-                // Unsupported!
-                // We can throw away these results...
-            }
-            #endif
-        }
+        if (!audio_devices_vec.empty()) {
+            std::vector<GkDevice> host_res;
+            for (const auto &audio_device: audio_devices_vec) {
+                switch (audio_device.host_type_id) {
+                #if _WIN32 || __MINGW32__
+                case PaHostApiTypeId::paDirectSound:
+                    if (filterAudioEnumPreexisting(host_res, audio_device) == false) {
+                        host_res.push_back(audio_device);
+                    }
 
-        if (!host_res.empty()) {
-            #if _WIN32 || __MINGW32__
-            std::vector<GkDevice> filt_devices;
-            std::copy_if(host_res.begin(), host_res.end(), std::back_inserter(filt_devices), [](GkDevice dev) { return dev.device_info.hostApi == PaHostApiTypeId::paDirectSound; });
-            return filt_devices;
-            #elif __linux__
-            // TODO: Add Linux support as soon as possible!
-            #endif
+                    break;
+                case PaHostApiTypeId::paMME:
+                    if (filterAudioEnumPreexisting(host_res, audio_device) == false) {
+                        host_res.push_back(audio_device);
+                    }
+
+                    break;
+                case PaHostApiTypeId::paASIO:
+                    if (filterAudioEnumPreexisting(host_res, audio_device) == false) {
+                        host_res.push_back(audio_device);
+                    }
+
+                    break;
+                case PaHostApiTypeId::paWDMKS:
+                    if (filterAudioEnumPreexisting(host_res, audio_device) == false) {
+                        host_res.push_back(audio_device);
+                    }
+
+                    break;
+                case PaHostApiTypeId::paWASAPI:
+                    if (filterAudioEnumPreexisting(host_res, audio_device) == false) {
+                        host_res.push_back(audio_device);
+                    }
+
+                    break;
+                #elif __linux__ || __MINGW32__
+                case PaHostApiTypeId::paSoundManager:
+                    if (filterAudioEnumPreexisting(host_res, audio_device) == false) {
+                        host_res.push_back(audio_device);
+                    }
+
+                    break;
+                case PaHostApiTypeId::paCoreAudio:
+                    if (filterAudioEnumPreexisting(host_res, audio_device) == false) {
+                        host_res.push_back(audio_device);
+                    }
+
+                    break;
+                case PaHostApiTypeId::paJACK:
+                    if (filterAudioEnumPreexisting(host_res, audio_device) == false) {
+                        host_res.push_back(audio_device);
+                    }
+
+                    break;
+                case PaHostApiTypeId::paALSA:
+                    if (filterAudioEnumPreexisting(host_res, audio_device) == false) {
+                        host_res.push_back(audio_device);
+                    }
+
+                    break;
+                case PaHostApiTypeId::paAL:
+                    if (filterAudioEnumPreexisting(host_res, audio_device) == false) {
+                        host_res.push_back(audio_device);
+                    }
+
+                    break;
+                case PaHostApiTypeId::paBeOS:
+                    if (filterAudioEnumPreexisting(host_res, audio_device) == false) {
+                        host_res.push_back(audio_device);
+                    }
+
+                    break;
+                case PaHostApiTypeId::paOSS:
+                    if (filterAudioEnumPreexisting(host_res, audio_device) == false) {
+                        host_res.push_back(audio_device);
+                    }
+
+                    break;
+                #endif
+                case PaHostApiTypeId::paAudioScienceHPI:
+                    if (filterAudioEnumPreexisting(host_res, audio_device) == false) {
+                        host_res.push_back(audio_device);
+                    }
+
+                    break;
+                case PaHostApiTypeId::paInDevelopment:
+                    if (filterAudioEnumPreexisting(host_res, audio_device) == false) {
+                        host_res.push_back(audio_device);
+                    }
+
+                    break;
+                default:
+                    break;
+                }
+            }
+
+            if (!host_res.empty()) {
+                return host_res;
+            }
         }
     } catch (const std::exception &e) {
         QMessageBox::warning(nullptr, tr("Error!"), tr("A fatal error was encountered while enumerating audio devices within your system:\n\n%1").arg(e.what()),
@@ -917,6 +954,111 @@ std::vector<GkDevice> AudioDevices::filterPortAudioHostType(const std::vector<Gk
     }
 
     return std::vector<GkDevice>();
+}
+
+/**
+ * @brief AudioDevices::portAudioApiChooser will filter out and list the available operating system's sound/multimedia APIs that
+ * are available to the user via PortAudio, all dependent on how Small World Deluxe and its associated libraries were compiled.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param audio_devices_vec The group of soundcard/multimedia devices to use as a base of which to filter from.
+ * @return The sound/multimedia APIs available to the user, and which they'll be able to ultimately pick from within
+ * the Setting's Dialog.
+ * @see AudioDevices::filterPortAudioHostType().
+ */
+QVector<PaHostApiTypeId> AudioDevices::portAudioApiChooser(const std::vector<GkDevice> &audio_devices_vec)
+{
+    try {
+        if (!audio_devices_vec.empty()) {
+            QVector<PaHostApiTypeId> api_res;
+            for (const auto &audio_device: audio_devices_vec) {
+                switch (audio_device.host_type_id) {
+                case PaHostApiTypeId::paDirectSound:
+                    if (!api_res.contains(audio_device.host_type_id)) {
+                        api_res.push_back(PaHostApiTypeId::paDirectSound);
+                    }
+                    break;
+                case PaHostApiTypeId::paMME:
+                    if (!api_res.contains(audio_device.host_type_id)) {
+                        api_res.push_back(PaHostApiTypeId::paMME);
+                    }
+                    break;
+                case PaHostApiTypeId::paASIO:
+                    if (!api_res.contains(audio_device.host_type_id)) {
+                        api_res.push_back(PaHostApiTypeId::paASIO);
+                    }
+                    break;
+                case PaHostApiTypeId::paSoundManager:
+                    if (!api_res.contains(audio_device.host_type_id)) {
+                        api_res.push_back(PaHostApiTypeId::paSoundManager);
+                    }
+                    break;
+                case PaHostApiTypeId::paCoreAudio:
+                    if (!api_res.contains(audio_device.host_type_id)) {
+                        api_res.push_back(PaHostApiTypeId::paCoreAudio);
+                    }
+                    break;
+                case PaHostApiTypeId::paOSS:
+                    if (!api_res.contains(audio_device.host_type_id)) {
+                        api_res.push_back(PaHostApiTypeId::paOSS);
+                    }
+                    break;
+                case PaHostApiTypeId::paALSA:
+                    if (!api_res.contains(audio_device.host_type_id)) {
+                        api_res.push_back(PaHostApiTypeId::paALSA);
+                    }
+                    break;
+                case PaHostApiTypeId::paAL:
+                    if (!api_res.contains(audio_device.host_type_id)) {
+                        api_res.push_back(PaHostApiTypeId::paAL);
+                    }
+                    break;
+                case PaHostApiTypeId::paBeOS:
+                    if (!api_res.contains(audio_device.host_type_id)) {
+                        api_res.push_back(PaHostApiTypeId::paBeOS);
+                    }
+                    break;
+                case PaHostApiTypeId::paWDMKS:
+                    if (!api_res.contains(audio_device.host_type_id)) {
+                        api_res.push_back(PaHostApiTypeId::paWDMKS);
+                    }
+                    break;
+                case PaHostApiTypeId::paJACK:
+                    if (!api_res.contains(audio_device.host_type_id)) {
+                        api_res.push_back(PaHostApiTypeId::paJACK);
+                    }
+                    break;
+                case PaHostApiTypeId::paWASAPI:
+                    if (!api_res.contains(audio_device.host_type_id)) {
+                        api_res.push_back(PaHostApiTypeId::paWASAPI);
+                    }
+                    break;
+                case PaHostApiTypeId::paAudioScienceHPI:
+                    if (!api_res.contains(audio_device.host_type_id)) {
+                        api_res.push_back(PaHostApiTypeId::paAudioScienceHPI);
+                    }
+                    break;
+                case PaHostApiTypeId::paInDevelopment:
+                    if (!api_res.contains(audio_device.host_type_id)) {
+                        api_res.push_back(PaHostApiTypeId::paInDevelopment);
+                    }
+                    break;
+                default:
+                    break;
+                }
+            }
+
+            if (!api_res.empty()) {
+                // Filter for duplicates!
+                std::sort(api_res.begin(), api_res.end());
+                return api_res;
+            }
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("A fatal error was encountered while enumerating audio devices within your system:\n\n%1").arg(e.what()),
+                             QMessageBox::Ok);
+    }
+
+    return QVector<PaHostApiTypeId>();
 }
 
 /**
