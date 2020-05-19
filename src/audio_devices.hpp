@@ -91,7 +91,6 @@ public:
                                             portaudio::MemFunCallbackStream<PaAudioBuf> **stream_record_ptr, const bool &stereo = true);
 
     std::vector<Database::Settings::Audio::GkDevice> filterPortAudioHostType(const std::vector<Database::Settings::Audio::GkDevice> &audio_devices_vec);
-    QString portAudioApiToStr(const PaHostApiTypeId &interface);
     QVector<PaHostApiTypeId> portAudioApiChooser(const std::vector<Database::Settings::Audio::GkDevice> &audio_devices_vec);
 
     QString portAudioVersionNumber(const portaudio::System &portAudioSys);

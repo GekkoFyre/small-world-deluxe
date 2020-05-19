@@ -957,50 +957,6 @@ std::vector<GkDevice> AudioDevices::filterPortAudioHostType(const std::vector<Gk
 }
 
 /**
- * @brief AudioDevices::portAudioApiToStr
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param interface
- * @return
- */
-QString AudioDevices::portAudioApiToStr(const PaHostApiTypeId &interface)
-{
-    switch (interface) {
-    case PaHostApiTypeId::paDirectSound:
-        return tr("DirectSound");
-    case PaHostApiTypeId::paMME:
-        return tr("Microsoft Multimedia Environment (MME)");
-    case PaHostApiTypeId::paASIO:
-        return tr("ASIO");
-    case PaHostApiTypeId::paSoundManager:
-        return tr("Sound Manager");
-    case PaHostApiTypeId::paCoreAudio:
-        return tr("Core Audio");
-    case PaHostApiTypeId::paOSS:
-        return tr("OSS");
-    case PaHostApiTypeId::paALSA:
-        return tr("ALSA");
-    case PaHostApiTypeId::paAL:
-        return tr("AL");
-    case PaHostApiTypeId::paBeOS:
-        return tr("BeOS");
-    case PaHostApiTypeId::paWDMKS:
-        return tr("WDM/KS");
-    case PaHostApiTypeId::paJACK:
-        return tr("JACK");
-    case PaHostApiTypeId::paWASAPI:
-        return tr("Windows Audio Session API (WASAPI)");
-    case PaHostApiTypeId::paAudioScienceHPI:
-        return tr("AudioScience HPI");
-    case PaHostApiTypeId::paInDevelopment:
-        return tr("N/A");
-    default:
-        return tr("Unknown");
-    }
-
-    return tr("Unknown");
-}
-
-/**
  * @brief AudioDevices::portAudioApiChooser will filter out and list the available operating system's sound/multimedia APIs that
  * are available to the user via PortAudio, all dependent on how Small World Deluxe and its associated libraries were compiled.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>

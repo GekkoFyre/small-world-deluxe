@@ -164,6 +164,7 @@ public slots:
     void updateSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &data,
                            const std::vector<short> &raw_audio_data,
                            const int &hanning_window_size, const size_t &buffer_size);
+    void updateProgressBar(const bool &enable, const size_t &min, const size_t &max);
 
 signals:
     void refreshVuMeter(const double &volumePctg);

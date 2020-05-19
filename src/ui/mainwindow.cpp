@@ -1108,6 +1108,26 @@ void MainWindow::updateSpectroData(const std::vector<GekkoFyre::Spectrograph::Ra
     return;
 }
 
+/**
+ * @brief MainWindow::updateProgressBar will launch and manage a QProgressBar via signals and slots.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param enable Whether the QProgressBar should be displayed to the user or not via the GUI.
+ * @param min The most minimum value possible.
+ * @param max The most maximum value possible.
+ */
+void MainWindow::updateProgressBar(const bool &enable, const size_t &min, const size_t &max)
+{
+    try {
+        if (enable) {
+            // Launch the QProgressBar!
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
+    return;
+}
+
 void MainWindow::on_pushButton_radio_tune_clicked(bool checked)
 {
     Q_UNUSED(checked);

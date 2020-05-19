@@ -46,6 +46,7 @@
 #include <vector>
 #include <string>
 #include <tuple>
+#include <type_traits>
 #include <QSharedPointer>
 #include <QDialog>
 #include <QString>
@@ -85,6 +86,7 @@ private slots:
     void on_pushButton_soundcard_api_reload_clicked();
     void on_comboBox_soundcard_input_currentIndexChanged(int index);
     void on_comboBox_soundcard_output_currentIndexChanged(int index);
+    void on_comboBox_soundcard_api_currentIndexChanged(int index);
     void on_comboBox_brand_selection_currentIndexChanged(const QString &arg1);
     void on_comboBox_com_port_currentIndexChanged(int index);
     void on_spinBox_spectro_render_thread_settings_valueChanged(int arg1);
@@ -99,6 +101,14 @@ signals:
 
 private:
     Ui::DialogSettings *ui;
+
+    //
+    // Converts an object, such as an `enum`, to the underlying type (i.e. an `integer` in the given example)
+    //
+    template <typename E>
+    constexpr typename std::underlying_type<E>::type to_underlying(E e) noexcept {
+        return static_cast<typename std::underlying_type<E>::type>(e);
+    }
 
     portaudio::System *gkPortAudioInit;
 
