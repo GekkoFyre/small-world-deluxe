@@ -51,13 +51,13 @@
 
 namespace GekkoFyre {
 
-class PaAudioBuf : public QObject, private boost::circular_buffer<short> {
+class PaAudioBuf : public QObject, private boost::circular_buffer<int> {
     Q_OBJECT
-    typedef short T;
-    typedef boost::circular_buffer<short> circular_buffer;
+    typedef int T;
+    typedef boost::circular_buffer<int> circular_buffer;
 
 public:
-    explicit PaAudioBuf(size_t size_hint, QObject *parent = nullptr);
+    explicit PaAudioBuf(int size_hint, QObject *parent = nullptr);
     virtual ~PaAudioBuf();
 
     PaAudioBuf operator*(const PaAudioBuf &) const;
@@ -69,18 +69,18 @@ public:
                          const PaStreamCallbackTimeInfo *time_info, PaStreamCallbackFlags status_flags);
     int recordCallback(const void *input_buffer, void *output_buffer, unsigned long frames_per_buffer,
                        const PaStreamCallbackTimeInfo *time_info, PaStreamCallbackFlags status_flags);
-    std::vector<short> dumpMemory();
+    std::vector<int> dumpMemory();
     void prepOggVorbisBuf(std::promise<std::vector<signed char>> vorbis_buf);
 
     virtual size_t size() const;
-    virtual short at(const short &idx);
-    virtual short front() const;
-    virtual short back() const;
-    virtual void push_back(const short &data);
-    virtual void push_front(const short &data);
+    virtual int at(const int &idx);
+    virtual int front() const;
+    virtual int back() const;
+    virtual void push_back(const int &data);
+    virtual void push_front(const int &data);
     virtual void pop_front();
     virtual void pop_back();
-    virtual void swap(boost::circular_buffer<short> data_idx_1) noexcept;
+    virtual void swap(boost::circular_buffer<int> data_idx_1) noexcept;
     virtual bool empty() const;
     virtual bool clear() const;
     virtual iterator begin() const;
@@ -90,10 +90,10 @@ public slots:
     void abortRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
 
 private:
-    std::unique_ptr<boost::circular_buffer<short>> rec_samples_ptr;     // Contains the 16-bit mono samples
-    size_t buffer_size;
+    std::unique_ptr<boost::circular_buffer<int>> rec_samples_ptr;     // Contains the 16-bit mono samples
+    int buffer_size;
 
-    std::vector<short> fillVecZeros(const int &buf_size);
+    std::vector<int> fillVecZeros(const int &buf_size);
 
 };
 };

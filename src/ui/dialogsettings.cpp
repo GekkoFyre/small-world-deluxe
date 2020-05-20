@@ -477,25 +477,31 @@ void DialogSettings::prefill_audio_devices(std::vector<GkDevice> audio_devices_v
                 //
                 PaHostApiTypeId api_identifier = gkDekodeDb->read_audio_api_settings();
                 if (api_identifier != PaHostApiTypeId::paInDevelopment) {
-                    for (const auto &avail_api_idx: avail_portaudio_api.toStdMap()) {
-                        if (api_identifier == avail_api_idx.first) {
-                            ui->comboBox_soundcard_api->setCurrentIndex(api_identifier);
+                    int actual_api_idx = to_underlying(api_identifier);
+                    int counter = 0;
+                    for (const auto &pa_api_idx: avail_portaudio_api.toStdMap()) {
+                        if (pa_api_idx.first == actual_api_idx) {
+                            ui->comboBox_soundcard_api->setCurrentIndex(counter);
+                            on_comboBox_soundcard_api_currentIndexChanged();
+                            break;
                         }
-                    }
 
-                    on_comboBox_soundcard_api_currentIndexChanged(api_identifier);
+                        ++counter;
+                    }
                 }
 
                 //
                 // Input audio device for PortAudio!
                 //
                 int input_identifier = gkDekodeDb->read_audio_device_settings(false);
-                GkDevice input_device = gkAudioDevices->gatherAudioDeviceDetails(gkPortAudioInit, input_identifier);
-                for (const auto &input_idx: avail_input_audio_devs.toStdMap()) {
-                    if (ui->comboBox_soundcard_input->currentData().toInt() == input_identifier) {
-                        chosen_input_audio_dev = input_device;
-                    } else {
-                        chosen_input_audio_dev = input_idx.second;
+                if (input_identifier > 0) {
+                    GkDevice input_device = gkAudioDevices->gatherAudioDeviceDetails(gkPortAudioInit, input_identifier);
+                    for (const auto &input_idx: avail_input_audio_devs.toStdMap()) {
+                        if (input_idx.first == input_identifier) {
+                            chosen_input_audio_dev = input_device;
+                            ui->comboBox_soundcard_input->setCurrentIndex(input_identifier);
+                            break;
+                        }
                     }
                 }
 
@@ -503,12 +509,14 @@ void DialogSettings::prefill_audio_devices(std::vector<GkDevice> audio_devices_v
                 // Output audio device for PortAudio!
                 //
                 int output_identifier = gkDekodeDb->read_audio_device_settings(true);
-                GkDevice output_device = gkAudioDevices->gatherAudioDeviceDetails(gkPortAudioInit, output_identifier);
-                for (const auto &output_idx: avail_output_audio_devs.toStdMap()) {
-                    if (ui->comboBox_soundcard_output->currentData().toInt() == output_identifier) {
-                        chosen_output_audio_dev = output_device;
-                    } else {
-                        chosen_output_audio_dev = output_idx.second;
+                if (output_identifier > 0) {
+                    GkDevice output_device = gkAudioDevices->gatherAudioDeviceDetails(gkPortAudioInit, output_identifier);
+                    for (const auto &output_idx: avail_output_audio_devs.toStdMap()) {
+                        if (output_idx.first == output_identifier) {
+                            chosen_output_audio_dev = output_device;
+                            ui->comboBox_soundcard_output->setCurrentIndex(output_identifier);
+                            break;
+                        }
                     }
                 }
             } else {

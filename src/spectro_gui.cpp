@@ -87,8 +87,8 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         spectro_latest_update = start_time; // Set the initial value for this too!
         enablePlotRefresh = false;
 
-        QObject::connect(this, SIGNAL(sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const std::vector<short> &, const int &, const size_t &)),
-                         this, SLOT(applyData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const std::vector<short> &, const int &, const size_t &)));
+        QObject::connect(this, SIGNAL(sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const std::vector<int> &, const int &, const size_t &)),
+                         this, SLOT(applyData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const std::vector<int> &, const int &, const size_t &)));
 
         //
         // https://qwt.sourceforge.io/class_qwt_matrix_raster_data.html#a69db38d8f920edb9dc3f0953ca16db8f
@@ -412,7 +412,7 @@ void SpectroGui::stopSpectro(const bool &recording_is_stopped, const int &wait_t
  * <https://qwt.sourceforge.io/class_qwt_date_scale_engine.html>
  */
 void SpectroGui::applyData(const std::vector<RawFFT> &values,
-                           const std::vector<short> &raw_audio_data, const int &hanning_window_size,
+                           const std::vector<int> &raw_audio_data, const int &hanning_window_size,
                            const size_t &buffer_size)
 {
     std::mutex spectro_apply_data_mtx;

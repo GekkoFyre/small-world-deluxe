@@ -162,7 +162,7 @@ protected slots:
 public slots:
     bool stopRecordingInput(const bool &recording_is_stopped, const int &wait_time = 5000);
     void updateSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &data,
-                           const std::vector<short> &raw_audio_data,
+                           const std::vector<int> &raw_audio_data,
                            const int &hanning_window_size, const size_t &buffer_size);
     void updateProgressBar(const bool &enable, const size_t &min, const size_t &max);
 
@@ -173,7 +173,7 @@ signals:
     void stopRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
     void gkExitApp();
     void sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values,
-                         const std::vector<short> &raw_audio_data,
+                         const std::vector<int> &raw_audio_data,
                          const int &hanning_window_size, const size_t &buffer_size);
     void changeFreq(const bool &radio_locked, const GekkoFyre::AmateurRadio::Control::FreqChange &freq_change);
     void changeSettings(const bool &radio_locked, const GekkoFyre::AmateurRadio::Control::SettingsChange &settings_change);

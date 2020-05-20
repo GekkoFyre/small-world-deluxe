@@ -65,7 +65,7 @@ public:
     explicit RadioLibs(std::shared_ptr<GekkoFyre::FileIo> filePtr, std::shared_ptr<GekkoFyre::StringFuncs> stringPtr,
                        std::shared_ptr<GkLevelDb> dkDb, std::shared_ptr<GekkoFyre::AmateurRadio::Control::Radio> radioPtr,
                        QObject *parent = nullptr);
-    ~RadioLibs() override;
+    ~RadioLibs();
 
     static int convertBaudRateEnum(const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate);
     GekkoFyre::AmateurRadio::com_baud_rates convertBaudRateInt(const int &baud_rate_sel);
@@ -77,6 +77,7 @@ public:
                                                            const GekkoFyre::AmateurRadio::com_baud_rates &com_baud_rate,
                                                            const rig_debug_level_e &verbosity);
     QString translateBandsToStr(const AmateurRadio::bands &band);
+    QString hamlibModulEnumToStr(const rmode_t &modulation);
 
 public slots:
     void procFreqChange(const bool &radio_locked, const GekkoFyre::AmateurRadio::Control::FreqChange &freq_change);
