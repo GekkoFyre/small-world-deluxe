@@ -74,8 +74,7 @@ namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
 RadioLibs::RadioLibs(std::shared_ptr<GekkoFyre::FileIo> filePtr, std::shared_ptr<StringFuncs> stringPtr,
-                     std::shared_ptr<GkLevelDb> dkDb, std::shared_ptr<Radio> radioPtr,
-                     QObject *parent) : QObject(parent)
+                     std::shared_ptr<GkLevelDb> dkDb, std::shared_ptr<Radio> radioPtr, QObject *parent) : QObject(parent)
 {
     gkStringFuncs = std::move(stringPtr);
     gkDekodeDb = std::move(dkDb);
@@ -91,7 +90,7 @@ RadioLibs::~RadioLibs()
  * @param baud_rate The enumerator to be converted to an integer.
  * @return The integer output from a converted enumerator.
  */
-int RadioLibs::convertBaudRateEnum(const com_baud_rates &baud_rate)
+int RadioLibs::convertBaudRateInt(const com_baud_rates &baud_rate)
 {
     int ret = 0;
     switch (baud_rate) {
@@ -133,7 +132,7 @@ int RadioLibs::convertBaudRateEnum(const com_baud_rates &baud_rate)
  * @param baud_rate_sel The QComboBox selection to be converted.
  * @return The enumerator that was converted from a QComboBox selection (as read from a Google LevelDB database).
  */
-com_baud_rates RadioLibs::convertBaudRateInt(const int &baud_rate_sel)
+com_baud_rates RadioLibs::convertBaudRateEnum(const int &baud_rate_sel)
 {
     com_baud_rates ret = BAUD1200;
     switch (baud_rate_sel) {
@@ -201,49 +200,17 @@ QString RadioLibs::initComPorts()
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return Returns an array of possible USB devices on the user's system.
  */
-std::vector<UsbPort> RadioLibs::initUsbPorts()
+libusb_context *RadioLibs::initUsbLib()
 {
-    // TODO - Finish this section!
-    // std::vector<UsbPort> usb_ports = findUsbPorts();
-    std::vector<UsbPort> filtered_ports;
+    libusb_context *context;
+    int r;
 
-    return filtered_ports;
-}
-
-/**
- * @brief RadioLibs::findUsbPorts
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param composite Please see the following document <https://github.com/pololu/libusbp/blob/master/examples/lsport/lsport.cpp>
- * @note <https://github.com/pololu/libusbp/blob/master/examples/port_name/port_name.cpp>
- * @return
- */
-std::vector<UsbPort> RadioLibs::findUsbPorts()
-{
-    #ifdef _WIN32
-    unsigned char usb_path[MAX_PATH + 1];
-    #elif __linux__
-    unsigned char usb_path[8 * 1024];
-    #endif
-
-    std::vector<UsbDev> usb_dev = enumUsbDevices();
-    std::vector<UsbPort> usb_ports;
-    for (const auto &usb: usb_dev) {
-        UsbPort device;
-        device.port = libusb_get_port_number(usb.dev);
-        device.bus = libusb_get_bus_number(usb.dev);
-        usb_ports.push_back(device);
+    r = libusb_init(&context);
+    if (r < 0) {
+        throw std::runtime_error(tr("Unable to initialize `libusb` interface!").toStdString());
     }
 
-    std::vector<UsbPort> filtered_ports;
-    for (const auto &device: usb_ports) {
-        if (device.port > 0) {
-            if (!device.usb_enum.product.empty()) {
-                filtered_ports.push_back(device);
-            }
-        }
-    }
-
-    return filtered_ports;
+    return context;
 }
 
 /**
@@ -400,60 +367,83 @@ void RadioLibs::hamlibStatus(const int &retcode)
  * @note API Reference <http://libusb.sourceforge.net/api-1.0/>
  * @return
  */
-std::vector<UsbDev> RadioLibs::enumUsbDevices()
+std::vector<UsbPort> RadioLibs::enumUsbDevices(libusb_context *usb_ctx_ptr)
 {
-    std::vector<UsbDev> usb_vec;
+    std::vector<UsbPort> usb_vec;
+    libusb_device **devices;
+    UsbPort *usb = new UsbPort();
+    int dev_cnt = 0;
     try {
-        libusb_context *context;
-        libusb_device **devs;
-        ssize_t cnt;
-        int r;
+        int i = 0;
 
-        r = libusb_init(&context);
-        if (r < 0) {
+        dev_cnt = libusb_get_device_list(nullptr, &devices);
+        if (dev_cnt < 0) {
+            libusb_exit(usb_ctx_ptr);
             throw std::runtime_error(tr("Unable to initialize `libusb` interface!").toStdString());
         }
 
-        cnt = libusb_get_device_list(nullptr, &devs);
-        if (cnt < 0) {
-            throw std::runtime_error(tr("Unable to initialize `libusb` interface!").toStdString());
-        }
+        libusb_device *dev;
+        while ((dev = devices[i++]) != NULL) {
+            uint8_t path[8];
+            usb->usb_enum.dev = dev;
+            usb->usb_enum.context = usb_ctx_ptr;
 
-        for (int i = 0; devs[i]; ++i) {
-            UsbDev usb;
-            usb.dev = devs[i];
-            usb.handle = nullptr;
-            unsigned char string[256];
-            int ret;
-            uint8_t j;
-
-            usb.context = context;
-
-            ret = libusb_get_device_descriptor(usb.dev, &usb.config);
+            int ret = libusb_get_device_descriptor(usb->usb_enum.dev, &usb->usb_enum.config);
             if (ret < 0) {
                 throw std::runtime_error(tr("Unable to initialize `libusb` interface!").toStdString());
             }
 
-            ret = libusb_open(usb.dev, &usb.handle);
+            #ifdef _WIN32 || __MINGW32__
+            unsigned char string[MAX_PATH + 32];
+            #elif __linux__
+            // TODO: Fill this section out!
+            #endif
+
+            ret = libusb_open(usb->usb_enum.dev, &usb->usb_enum.handle);
             if (ret == LIBUSB_SUCCESS) {
-                if (usb.config.iManufacturer) {
-                    ret = libusb_get_string_descriptor_ascii(usb.handle, usb.config.iManufacturer, string, sizeof(string));
-                    usb.mfg = std::string(reinterpret_cast<const char*>(string), sizeof(string));
+                if (usb->usb_enum.config.iManufacturer) {
+                    ret = libusb_get_string_descriptor_ascii(usb->usb_enum.handle, usb->usb_enum.config.iManufacturer, string, sizeof(string));
+                    usb->usb_enum.mfg = std::string(reinterpret_cast<const char*>(string), sizeof(string));
                 }
 
-                if (usb.config.iProduct) {
-                    ret = libusb_get_string_descriptor_ascii(usb.handle, usb.config.iProduct, string, sizeof(string));
-                    usb.product = std::string(reinterpret_cast<const char*>(string), sizeof(string));
+                if (usb->usb_enum.config.iProduct) {
+                    ret = libusb_get_string_descriptor_ascii(usb->usb_enum.handle, usb->usb_enum.config.iProduct, string, sizeof(string));
+                    usb->usb_enum.product = std::string(reinterpret_cast<const char*>(string), sizeof(string));
                 }
             }
 
-            usb_vec.push_back(usb);
+            uint8_t ret_dev_bus = libusb_get_bus_number(dev);
+            if (ret_dev_bus == 0) {
+                throw std::runtime_error(tr("Error with initializing `libusb` interface! Unable to get BUS numbers.").toStdString());
+            }
+
+            uint8_t ret_dev_addr = libusb_get_device_address(dev);
+            if (ret_dev_addr == 0) {
+                throw std::runtime_error(tr("Error with initializing `libusb` interface! Unable to get Device Addresses.").toStdString());
+            }
+
+            int ret_port_num = libusb_get_port_numbers(dev, path, sizeof(path));
+            if (ret_port_num < 0) {
+                throw std::runtime_error(tr("Error with initializing `libusb` interface! Unable to get PORT numbers.").toStdString());
+            }
+
+            usb->bus = ret_dev_bus;
+            usb->addr = ret_dev_addr;
+            usb->port = ret_port_num;
+
+            usb_vec.push_back(*usb);
         }
     } catch (const std::exception &e) {
         QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
     }
 
-    return usb_vec;
+    delete usb;
+    libusb_free_device_list(devices, dev_cnt);
+    if (!usb_vec.empty()) {
+        return usb_vec;
+    }
+
+    return std::vector<UsbPort>();
 }
 
 /**
@@ -605,7 +595,7 @@ std::shared_ptr<Radio> RadioLibs::init_rig(const rig_model_t &rig_model, const s
     strncpy(radio->rig->state.rigport.pathname, radio->rig_file.c_str(), FILPATHLEN - 1);
 
     int baud_rate = 9600;
-    baud_rate = convertBaudRateEnum(com_baud_rate);
+    baud_rate = convertBaudRateInt(com_baud_rate);
 
     radio->rig->state.rigport.parm.serial.rate = baud_rate; // The BAUD Rate for the desired COM Port
 

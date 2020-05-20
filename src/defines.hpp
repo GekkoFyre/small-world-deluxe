@@ -48,9 +48,10 @@
 #include <string>
 #include <locale>
 #include <vector>
-#include <cstdlib>
 #include <cstdio>
 #include <memory>
+#include <cstdlib>
+#include <utility>
 #include <QString>
 #include <QVector>
 #include <QPointer>
@@ -266,6 +267,7 @@ namespace Database {
             UsbDev usb_enum;                            // The USB Device structure, as above
             uint8_t port;                               // The USB port number as determined by `libusb`
             uint8_t bus;                                // The USB BUS number as determined by `libusb`
+            uint8_t addr;                               // The USB port's own address as determined by 'libusb'
         };
 
         namespace Audio {

@@ -231,6 +231,11 @@ private:
     std::future<std::shared_ptr<GekkoFyre::AmateurRadio::Control::Radio>> rig_thread;
 
     //
+    // USB & RS232
+    //
+    libusb_context *usb_ctx_ptr;
+
+    //
     // Miscellaneous
     //
     std::shared_ptr<GekkoFyre::AmateurRadio::Control::Radio> gkRadioPtr;
