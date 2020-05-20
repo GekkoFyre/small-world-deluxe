@@ -57,13 +57,13 @@ using namespace Audio;
  * <http://portaudio.com/docs/v19-doxydocs-dev/group__test__src.html>
  * @param size_hint
  */
-PaAudioBuf::PaAudioBuf(size_t size_hint, QObject *parent)
+PaAudioBuf::PaAudioBuf(int size_hint, QObject *parent)
 {
     std::mutex pa_audio_buf_mtx;
     std::lock_guard<std::mutex> lck_guard(pa_audio_buf_mtx);
 
     buffer_size = size_hint;
-    rec_samples_ptr = std::make_unique<boost::circular_buffer<short>>(buffer_size);
+    rec_samples_ptr = std::make_unique<boost::circular_buffer<int>>(buffer_size);
 }
 
 PaAudioBuf::~PaAudioBuf()
@@ -84,7 +84,7 @@ int PaAudioBuf::playbackCallback(const void *input_buffer, void *output_buffer, 
 {
     std::mutex playback_loop_mtx;
     std::lock_guard<std::mutex> lck_guard(playback_loop_mtx);
-    short**	data_mem = (short**)output_buffer;
+    int**	data_mem = (int**)output_buffer;
     unsigned long i_output = 0;
 
     if (output_buffer == nullptr) {
@@ -97,14 +97,14 @@ int PaAudioBuf::playbackCallback(const void *input_buffer, void *output_buffer, 
         if (it == rec_samples_ptr->end()) {
             // Fill out buffer with zeros
             while (i_output < frames_per_buffer) {
-                data_mem[0][i_output] = (short)0;
+                data_mem[0][i_output] = (int)0;
                 i_output++;
             }
 
             return paComplete;
         }
 
-        data_mem[0][i_output] = (short) *it;
+        data_mem[0][i_output] = (int) *it;
         ++it;
         i_output++;
     }
@@ -129,7 +129,7 @@ int PaAudioBuf::recordCallback(const void* input_buffer, void* output_buffer, un
 {
     std::mutex record_loop_mtx;
     std::lock_guard<std::mutex> lck_guard(record_loop_mtx);
-    short** data_mem = (short**)input_buffer;
+    int** data_mem = (int**)input_buffer;
 
     if (input_buffer == nullptr) {
         return paContinue;
@@ -148,11 +148,11 @@ int PaAudioBuf::recordCallback(const void* input_buffer, void* output_buffer, un
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return The entire contents of the buffer once having reached the target size.
  */
-std::vector<short> PaAudioBuf::dumpMemory()
+std::vector<int> PaAudioBuf::dumpMemory()
 {
     std::mutex pa_buf_dup_mem_mtx;
     std::lock_guard<std::mutex> lck_guard(pa_buf_dup_mem_mtx);
-    std::vector<short> ret_vec;
+    std::vector<int> ret_vec;
     if (rec_samples_ptr != nullptr) {
         if (!rec_samples_ptr->empty()) {
             // rec_samples_ptr->linearize();
@@ -210,11 +210,11 @@ size_t PaAudioBuf::size() const
     return rec_samples_size;
 }
 
-short PaAudioBuf::at(const short &idx)
+int PaAudioBuf::at(const int &idx)
 {
     std::mutex pa_audio_buf_loc_mtx;
     std::lock_guard<std::mutex> lck_guard(pa_audio_buf_loc_mtx);
-    short ret_value = 0;
+    int ret_value = 0;
     if (rec_samples_ptr != nullptr && is_rec_active) {
         if (!rec_samples_ptr->empty()) {
             if (idx <= buffer_size && idx >= 0) {
@@ -236,7 +236,7 @@ short PaAudioBuf::at(const short &idx)
     return ret_value;
 }
 
-short PaAudioBuf::front() const
+int PaAudioBuf::front() const
 {
     if (rec_samples_ptr != nullptr) {
         if (!rec_samples_ptr->empty()) {
@@ -247,7 +247,7 @@ short PaAudioBuf::front() const
     return 0;
 }
 
-short PaAudioBuf::back() const
+int PaAudioBuf::back() const
 {
     if (rec_samples_ptr != nullptr) {
         if (!rec_samples_ptr->empty()) {
@@ -258,7 +258,7 @@ short PaAudioBuf::back() const
     return 0;
 }
 
-void PaAudioBuf::push_back(const short &data)
+void PaAudioBuf::push_back(const int &data)
 {
     if (rec_samples_ptr != nullptr) {
         rec_samples_ptr->push_back(data);
@@ -267,7 +267,7 @@ void PaAudioBuf::push_back(const short &data)
     return;
 }
 
-void PaAudioBuf::push_front(const short &data)
+void PaAudioBuf::push_front(const int &data)
 {
     if (rec_samples_ptr != nullptr) {
         rec_samples_ptr->push_front(data);
@@ -298,7 +298,7 @@ void PaAudioBuf::pop_back()
     return;
 }
 
-void PaAudioBuf::swap(boost::circular_buffer<short> data_idx_1) noexcept
+void PaAudioBuf::swap(boost::circular_buffer<int> data_idx_1) noexcept
 {
     if (rec_samples_ptr != nullptr) {
         rec_samples_ptr->swap(data_idx_1);
@@ -335,22 +335,22 @@ bool PaAudioBuf::clear() const
     return false;
 }
 
-boost::circular_buffer<short, std::allocator<short>>::iterator PaAudioBuf::begin() const
+boost::circular_buffer<int, std::allocator<int>>::iterator PaAudioBuf::begin() const
 {
     if (rec_samples_ptr != nullptr) {
         return rec_samples_ptr->begin();
     }
 
-    return boost::circular_buffer<short, std::allocator<short>>::iterator();
+    return boost::circular_buffer<int, std::allocator<int>>::iterator();
 }
 
-boost::circular_buffer<short, std::allocator<short>>::iterator PaAudioBuf::end() const
+boost::circular_buffer<int, std::allocator<int>>::iterator PaAudioBuf::end() const
 {
     if (rec_samples_ptr != nullptr) {
         return rec_samples_ptr->end();
     }
 
-    return boost::circular_buffer<short, std::allocator<short>>::iterator();
+    return boost::circular_buffer<int, std::allocator<int>>::iterator();
 }
 
 void PaAudioBuf::abortRecording(const bool &recording_is_stopped, const int &wait_time)
@@ -375,11 +375,11 @@ void PaAudioBuf::abortRecording(const bool &recording_is_stopped, const int &wai
  * @param buf_size How large to make the std::vector().
  * @return The outputted std::vector() that's now filled with zeroes.
  */
-std::vector<short> PaAudioBuf::fillVecZeros(const int &buf_size)
+std::vector<int> PaAudioBuf::fillVecZeros(const int &buf_size)
 {
     std::mutex fill_vec_zeroes_mtx;
     std::lock_guard<std::mutex> lck_guard(fill_vec_zeroes_mtx);
-    std::vector<short> ret_vec;
+    std::vector<int> ret_vec;
     ret_vec.reserve(buf_size);
 
     for (size_t i = 0; i < buf_size; ++i) {

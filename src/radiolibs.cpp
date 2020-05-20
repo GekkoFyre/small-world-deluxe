@@ -84,7 +84,7 @@ RadioLibs::RadioLibs(std::shared_ptr<GekkoFyre::FileIo> filePtr, std::shared_ptr
 }
 
 RadioLibs::~RadioLibs()
-= default;
+{}
 
 /**
  * @brief RadioLibs::convertBaudRateEnum Converts an enumerator to the given baud rate for a COM/Serial/RS-232 port.
@@ -632,36 +632,8 @@ std::shared_ptr<Radio> RadioLibs::init_rig(const rig_model_t &rig_model, const s
     // Current mode
     radio->status = rig_get_mode(radio->rig, RIG_VFO_CURR, &radio->mode, &radio->width);
 
-    // NOTE: These are meant to be translatable!
-    switch (radio->mode) {
-    case RIG_MODE_USB:
-        radio->mm = tr("USB").toStdString();
-        break;
-    case RIG_MODE_LSB:
-        radio->mm = tr("LSB").toStdString();
-        break;
-    case RIG_MODE_CW:
-        radio->mm = tr("CW").toStdString();
-        break;
-    case RIG_MODE_CWR:
-        radio->mm = tr("CWR").toStdString();
-        break;
-    case RIG_MODE_AM:
-        radio->mm = tr("AM").toStdString();
-        break;
-    case RIG_MODE_FM:
-        radio->mm = tr("FM").toStdString();
-        break;
-    case RIG_MODE_WFM:
-        radio->mm = tr("WFM").toStdString();
-        break;
-    case RIG_MODE_RTTY:
-        radio->mm = tr("RTTY").toStdString();
-        break;
-    default:
-        radio->mm = tr("Unrecongized").toStdString();
-        break;
-    }
+    // Determine the mode of modulation that's being currently used, and output as a textual value
+    radio->mm = hamlibModulEnumToStr(radio->mode).toStdString();
 
     std::cout << tr("Current mode: %1, width is %2\n\n").arg(QString::fromStdString(radio->mm)).arg(QString::number(radio->width)).toStdString();
 
@@ -722,6 +694,72 @@ QString RadioLibs::translateBandsToStr(const bands &band)
     }
 
     return tr("Error!");
+}
+
+/**
+ * @brief RadioLibs::hamlibModulEnumToStr converts the given Hamlib enums for modulation to their relatable
+ * textual value.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param modulation The given modulation, as a Hamlib enum.
+ * @return The same enum, but given as a textual value.
+ */
+QString RadioLibs::hamlibModulEnumToStr(const rmode_t &modulation)
+{
+    // NOTE: These are meant to be translatable!
+    switch (modulation) {
+    case rmode_t::RIG_MODE_NONE:
+        return tr("None");
+    case rmode_t::RIG_MODE_AM:
+        return tr("AM");
+    case rmode_t::RIG_MODE_CW:
+        return tr("CW");
+    case rmode_t::RIG_MODE_USB:
+        return tr("USB");
+    case rmode_t::RIG_MODE_LSB:
+        return tr("LSB");
+    case rmode_t::RIG_MODE_RTTY:
+        return tr("RTTY");
+    case rmode_t::RIG_MODE_FM:
+        return tr("FM");
+    case rmode_t::RIG_MODE_WFM:
+        return tr("Wide FM");
+    case rmode_t::RIG_MODE_CWR:
+        return tr("CWR");
+    case rmode_t::RIG_MODE_RTTYR:
+        return tr("RTTYR");
+    case rmode_t::RIG_MODE_AMS:
+        return tr("AMS");
+    case rmode_t::RIG_MODE_PKTLSB:
+        return tr("PKT/LSB");
+    case rmode_t::RIG_MODE_PKTUSB:
+        return tr("PKT/USB");
+    case rmode_t::RIG_MODE_PKTFM:
+        return tr("PKT/FM");
+    case rmode_t::RIG_MODE_ECSSUSB:
+        return tr("ECSS/USB");
+    case rmode_t::RIG_MODE_ECSSLSB:
+        return tr("ECSS/LSB");
+    case rmode_t::RIG_MODE_FAX:
+        return tr("FAX");
+    case rmode_t::RIG_MODE_SAM:
+        return tr("SAM");
+    case rmode_t::RIG_MODE_SAL:
+        return tr("SAL");
+    case rmode_t::RIG_MODE_SAH:
+        return tr("SAH");
+    case rmode_t::RIG_MODE_DSB:
+        return tr("DSB");
+    case rmode_t::RIG_MODE_FMN:
+        return tr("FM Narrow");
+    case rmode_t::RIG_MODE_PKTAM:
+        return tr("PKT/AM");
+    case rmode_t::RIG_MODE_TESTS_MAX:
+        return tr("TESTS_MAX");
+    default:
+        tr("N/A");
+    }
+
+    return tr("None");
 }
 
 /**

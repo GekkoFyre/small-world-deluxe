@@ -223,7 +223,7 @@ public:
 public slots:
     void showSpectrogram(const bool &toggled);
     void applyData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values,
-                   const std::vector<short> &raw_audio_data,
+                   const std::vector<int> &raw_audio_data,
                    const int &hanning_window_size, const size_t &buffer_size);
     void stopSpectro(const bool &recording_is_stopped, const int &wait_time = 5000);
 
@@ -232,7 +232,7 @@ protected slots:
 
 signals:
     void sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values,
-                         const std::vector<short> &raw_audio_data,
+                         const std::vector<int> &raw_audio_data,
                          const int &hanning_window_size, const size_t &buffer_size);
     void stopSpectroRecv(const bool &recording_is_stopped, const int &wait_time = 5000);
 
@@ -254,7 +254,7 @@ private:
     qint64 spectro_latest_update;                               // The latest time for when the spectrograph was updated with new data/information.
 
     Spectrograph::MatrixData calc_z_history;
-    std::vector<short> raw_plot_data;
+    std::vector<int> raw_plot_data;
 
     size_t y_axis_num_minor_steps;
     size_t y_axis_num_major_steps;
