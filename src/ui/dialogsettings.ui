@@ -1503,9 +1503,9 @@
                        <property name="geometry">
                         <rect>
                          <x>0</x>
-                         <y>-295</y>
+                         <y>0</y>
                          <width>673</width>
-                         <height>868</height>
+                         <height>716</height>
                         </rect>
                        </property>
                        <layout class="QVBoxLayout" name="verticalLayout_33">
@@ -1616,234 +1616,9 @@
                                     <property name="bottomMargin">
                                      <number>0</number>
                                     </property>
-                                    <item>
-                                     <widget class="QFrame" name="frame_left_subopt_5">
-                                      <property name="frameShape">
-                                       <enum>QFrame::StyledPanel</enum>
-                                      </property>
-                                      <property name="frameShadow">
-                                       <enum>QFrame::Raised</enum>
-                                      </property>
-                                      <layout class="QVBoxLayout" name="verticalLayout_31">
-                                       <item>
-                                        <widget class="QLabel" name="label_subopt_retries_2">
-                                         <property name="text">
-                                          <string>Retries: </string>
-                                         </property>
-                                        </widget>
-                                       </item>
-                                       <item>
-                                        <widget class="QSpinBox" name="spinBox_subopt_retries">
-                                         <property name="maximum">
-                                          <number>15</number>
-                                         </property>
-                                        </widget>
-                                       </item>
-                                       <item>
-                                        <widget class="QLabel" name="label_subopt_write_delay_2">
-                                         <property name="text">
-                                          <string>Write Delay:</string>
-                                         </property>
-                                        </widget>
-                                       </item>
-                                       <item>
-                                        <widget class="QSpinBox" name="spinBox_subopt_write_delay">
-                                         <property name="maximum">
-                                          <number>600</number>
-                                         </property>
-                                        </widget>
-                                       </item>
-                                      </layout>
-                                     </widget>
-                                    </item>
-                                    <item>
-                                     <widget class="QFrame" name="frame_left_subopt">
-                                      <property name="frameShape">
-                                       <enum>QFrame::StyledPanel</enum>
-                                      </property>
-                                      <property name="frameShadow">
-                                       <enum>QFrame::Raised</enum>
-                                      </property>
-                                      <layout class="QVBoxLayout" name="verticalLayout_32">
-                                       <item>
-                                        <widget class="QLabel" name="label_subopt_retry_interv">
-                                         <property name="text">
-                                          <string>Retry Interval: </string>
-                                         </property>
-                                        </widget>
-                                       </item>
-                                       <item>
-                                        <widget class="QSpinBox" name="spinBox_subopt_retry_interv">
-                                         <property name="maximum">
-                                          <number>86400</number>
-                                         </property>
-                                        </widget>
-                                       </item>
-                                       <item>
-                                        <widget class="QLabel" name="label_subopt_post_write_delay">
-                                         <property name="text">
-                                          <string>Post write delay: </string>
-                                         </property>
-                                        </widget>
-                                       </item>
-                                       <item>
-                                        <widget class="QSpinBox" name="spinBox_subopt_post_write_delay">
-                                         <property name="maximum">
-                                          <number>600</number>
-                                         </property>
-                                        </widget>
-                                       </item>
-                                      </layout>
-                                     </widget>
-                                    </item>
                                    </layout>
                                   </widget>
                                  </item>
-                                 <item row="4" column="0">
-                                  <widget class="QLabel" name="label_flow_control">
-                                   <property name="text">
-                                    <string>Flow Control: </string>
-                                   </property>
-                                  </widget>
-                                 </item>
-                                 <item row="4" column="1">
-                                  <widget class="QComboBox" name="comboBox_flow_control">
-                                   <item>
-                                    <property name="text">
-                                     <string>None</string>
-                                    </property>
-                                   </item>
-                                   <item>
-                                    <property name="text">
-                                     <string>RTS/CTS</string>
-                                    </property>
-                                   </item>
-                                   <item>
-                                    <property name="text">
-                                     <string>XON/XOFF</string>
-                                    </property>
-                                   </item>
-                                  </widget>
-                                 </item>
-                                </layout>
-                               </widget>
-                              </item>
-                              <item>
-                               <widget class="QFrame" name="frame_rig_right">
-                                <property name="sizePolicy">
-                                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                                  <horstretch>50</horstretch>
-                                  <verstretch>0</verstretch>
-                                 </sizepolicy>
-                                </property>
-                                <property name="frameShape">
-                                 <enum>QFrame::StyledPanel</enum>
-                                </property>
-                                <property name="frameShadow">
-                                 <enum>QFrame::Raised</enum>
-                                </property>
-                                <layout class="QFormLayout" name="formLayout_17">
-                                 <property name="horizontalSpacing">
-                                  <number>0</number>
-                                 </property>
-                                 <property name="leftMargin">
-                                  <number>11</number>
-                                 </property>
-                                 <property name="topMargin">
-                                  <number>0</number>
-                                 </property>
-                                 <property name="rightMargin">
-                                  <number>0</number>
-                                 </property>
-                                 <property name="bottomMargin">
-                                  <number>0</number>
-                                 </property>
-                                 <item row="2" column="0">
-                                  <widget class="QLabel" name="label_device_port_name">
-                                   <property name="text">
-                                    <string>Device: </string>
-                                   </property>
-                                  </widget>
-                                 </item>
-                                 <item row="2" column="1">
-                                  <widget class="QLineEdit" name="lineEdit_device_port_name">
-                                   <property name="sizePolicy">
-                                    <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                                     <horstretch>0</horstretch>
-                                     <verstretch>0</verstretch>
-                                    </sizepolicy>
-                                   </property>
-                                   <property name="maxLength">
-                                    <number>16384</number>
-                                   </property>
-                                   <property name="readOnly">
-                                    <bool>true</bool>
-                                   </property>
-                                   <property name="placeholderText">
-                                    <string>N/A</string>
-                                   </property>
-                                  </widget>
-                                 </item>
-                                 <item row="3" column="0">
-                                  <widget class="QLabel" name="label_stop_bits">
-                                   <property name="text">
-                                    <string>Stop bits: </string>
-                                   </property>
-                                  </widget>
-                                 </item>
-                                 <item row="3" column="1">
-                                  <widget class="QSpinBox" name="spinBox_stop_bits"/>
-                                 </item>
-                                 <item row="4" column="0">
-                                  <widget class="QLabel" name="label_polling_interv">
-                                   <property name="text">
-                                    <string>Polling Inter.: </string>
-                                   </property>
-                                  </widget>
-                                 </item>
-                                 <item row="4" column="1">
-                                  <widget class="QSpinBox" name="spinBox_polling_interv"/>
-                                 </item>
-                                 <item row="5" column="0">
-                                  <spacer name="horizontalSpacer_3">
-                                   <property name="orientation">
-                                    <enum>Qt::Horizontal</enum>
-                                   </property>
-                                   <property name="sizeHint" stdset="0">
-                                    <size>
-                                     <width>40</width>
-                                     <height>20</height>
-                                    </size>
-                                   </property>
-                                  </spacer>
-                                 </item>
-                                 <item row="6" column="0">
-                                  <widget class="QLabel" name="label_mode_delay">
-                                   <property name="text">
-                                    <string>Mode Delay: </string>
-                                   </property>
-                                  </widget>
-                                 </item>
-                                 <item row="6" column="1">
-                                  <widget class="QSpinBox" name="spinBox_mode_delay"/>
-                                 </item>
-                                 <item row="7" column="0">
-                                  <widget class="QLabel" name="label_rig_sideband">
-                                   <property name="text">
-                                    <string>Sideband: </string>
-                                   </property>
-                                  </widget>
-                                 </item>
-                                 <item row="7" column="1">
-                                  <widget class="QComboBox" name="comboBox_rig_sideband"/>
-                                 </item>
-                                 <item row="8" column="1">
-                                  <widget class="QCheckBox" name="checkBox_cw_lsb_mode">
-                                   <property name="text">
-                                    <string>CW is LSB mode</string>
-                                   </property>
-                                  </widget>
-                                 </item>
                                 </layout>
                                </widget>
                               </item>
@@ -1854,57 +1629,7 @@
                          </widget>
                         </item>
                         <item>
-                         <widget class="QFrame" name="frame_rig_bottom">
-                          <property name="frameShape">
-                           <enum>QFrame::StyledPanel</enum>
-                          </property>
-                          <property name="frameShadow">
-                           <enum>QFrame::Raised</enum>
-                          </property>
-                          <layout class="QHBoxLayout" name="horizontalLayout_15">
-                           <property name="spacing">
-                            <number>0</number>
-                           </property>
-                           <property name="leftMargin">
-                            <number>0</number>
-                           </property>
-                           <property name="topMargin">
-                            <number>0</number>
-                           </property>
-                           <property name="rightMargin">
-                            <number>0</number>
-                           </property>
-                           <property name="bottomMargin">
-                            <number>0</number>
-                           </property>
-                           <item>
-                            <widget class="QGroupBox" name="groupBox_rig_bottom_advanced">
-                             <property name="title">
-                              <string>Advanced</string>
-                             </property>
-                             <layout class="QFormLayout" name="formLayout_15">
-                              <item row="0" column="0">
-                               <widget class="QLabel" name="label_adv_ptt_cmd">
-                                <property name="text">
-                                 <string>PTT Command: </string>
-                                </property>
-                               </widget>
-                              </item>
-                              <item row="0" column="1">
-                               <widget class="QLineEdit" name="lineEdit_adv_ptt_cmd">
-                                <property name="placeholderText">
-                                 <string>For advanced users only!</string>
-                                </property>
-                               </widget>
-                              </item>
-                             </layout>
-                            </widget>
-                           </item>
-                          </layout>
-                         </widget>
-                        </item>
-                        <item>
-                         <widget class="QFrame" name="frame_rig_new">
+                         <widget class="QFrame" name="frame_rig_middle">
                           <property name="frameShape">
                            <enum>QFrame::StyledPanel</enum>
                           </property>
@@ -1961,6 +1686,32 @@
                                   <widget class="QLabel" name="label_com_port">
                                    <property name="text">
                                     <string>Serial Port: </string>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                 <item row="2" column="0">
+                                  <widget class="QLabel" name="label_device_port_name">
+                                   <property name="text">
+                                    <string>Device: </string>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                 <item row="2" column="1">
+                                  <widget class="QLineEdit" name="lineEdit_device_port_name">
+                                   <property name="sizePolicy">
+                                    <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                     <horstretch>0</horstretch>
+                                     <verstretch>0</verstretch>
+                                    </sizepolicy>
+                                   </property>
+                                   <property name="maxLength">
+                                    <number>16384</number>
+                                   </property>
+                                   <property name="readOnly">
+                                    <bool>true</bool>
+                                   </property>
+                                   <property name="placeholderText">
+                                    <string>N/A</string>
                                    </property>
                                   </widget>
                                  </item>
@@ -2103,6 +1854,9 @@
                                           <enum>QFrame::Raised</enum>
                                          </property>
                                          <layout class="QHBoxLayout" name="horizontalLayout_22">
+                                          <property name="bottomMargin">
+                                           <number>0</number>
+                                          </property>
                                           <item>
                                            <widget class="QRadioButton" name="radioButton_handshake_default">
                                             <property name="text">
@@ -2129,6 +1883,9 @@
                                           <enum>QFrame::Raised</enum>
                                          </property>
                                          <layout class="QHBoxLayout" name="horizontalLayout_23">
+                                          <property name="topMargin">
+                                           <number>0</number>
+                                          </property>
                                           <item>
                                            <widget class="QRadioButton" name="radioButton_handshake_xon_xoff">
                                             <property name="text">
@@ -2250,6 +2007,18 @@
                                  <enum>QFrame::Raised</enum>
                                 </property>
                                 <layout class="QVBoxLayout" name="verticalLayout_43">
+                                 <property name="leftMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="topMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="rightMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="bottomMargin">
+                                  <number>0</number>
+                                 </property>
                                  <item>
                                   <widget class="QFrame" name="frame_ptt_method_radio_1">
                                    <property name="frameShape">
@@ -2259,6 +2028,18 @@
                                     <enum>QFrame::Raised</enum>
                                    </property>
                                    <layout class="QHBoxLayout" name="horizontalLayout_19">
+                                    <property name="leftMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="topMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="rightMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="bottomMargin">
+                                     <number>0</number>
+                                    </property>
                                     <item>
                                      <widget class="QRadioButton" name="radioButton_8">
                                       <property name="text">
@@ -2285,6 +2066,18 @@
                                     <enum>QFrame::Raised</enum>
                                    </property>
                                    <layout class="QHBoxLayout" name="horizontalLayout_20">
+                                    <property name="leftMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="topMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="rightMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="bottomMargin">
+                                     <number>0</number>
+                                    </property>
                                     <item>
                                      <widget class="QRadioButton" name="radioButton_9">
                                       <property name="text">
@@ -2311,6 +2104,18 @@
                                     <enum>QFrame::Raised</enum>
                                    </property>
                                    <layout class="QFormLayout" name="formLayout_18">
+                                    <property name="leftMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="topMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="rightMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="bottomMargin">
+                                     <number>0</number>
+                                    </property>
                                     <item row="0" column="0">
                                      <widget class="QLabel" name="label_ptt_method_port">
                                       <property name="text">
@@ -2552,6 +2357,29 @@
                                </widget>
                               </item>
                              </layout>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QGroupBox" name="groupBox_rig_bottom_advanced">
+                          <property name="title">
+                           <string>Advanced</string>
+                          </property>
+                          <layout class="QFormLayout" name="formLayout_15">
+                           <item row="0" column="0">
+                            <widget class="QLabel" name="label_adv_ptt_cmd">
+                             <property name="text">
+                              <string>PTT Command: </string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="0" column="1">
+                            <widget class="QLineEdit" name="lineEdit_adv_ptt_cmd">
+                             <property name="placeholderText">
+                              <string>For advanced users only!</string>
+                             </property>
                             </widget>
                            </item>
                           </layout>
