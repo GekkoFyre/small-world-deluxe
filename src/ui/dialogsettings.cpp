@@ -77,6 +77,7 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
                                QPointer<GekkoFyre::RadioLibs> radioPtr,
                                std::shared_ptr<QSettings> settings,
                                portaudio::System *portAudioInit,
+                               libusb_context *usb_lib_ctx,
                                QWidget *parent)
     : QDialog(parent), ui(new Ui::DialogSettings)
 {
@@ -91,6 +92,7 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
         gkDekodeDb = std::move(dkDb);
         gkFileIo = std::move(filePtr);
         gkAudioDevices = std::move(audioDevices);
+        usb_ctx_ptr = std::move(usb_lib_ctx);
 
         gkSettings = settings;
         usb_ports_active = false;
@@ -120,7 +122,7 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
         // devices separately. This is because within the GekkoFyre::RadioLibs namespace, there are
         // also two separate functions for enumerating out these ports!
         status_com_ports = gkRadioLibs->status_com_ports();
-        status_usb_devices = gkRadioLibs->initUsbPorts();
+        status_usb_devices = gkRadioLibs->enumUsbDevices(usb_ctx_ptr);
         prefill_avail_com_ports(status_com_ports);
         prefill_avail_usb_ports(status_usb_devices);
 

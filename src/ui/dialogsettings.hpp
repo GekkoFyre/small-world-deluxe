@@ -72,6 +72,7 @@ public:
                             QPointer<GekkoFyre::RadioLibs> radioPtr,
                             std::shared_ptr<QSettings> settings,
                             portaudio::System *portAudioInit,
+                            libusb_context *usb_lib_ctx,
                             QWidget *parent = nullptr);
     ~DialogSettings();
 
@@ -111,6 +112,7 @@ private:
     }
 
     portaudio::System *gkPortAudioInit;
+    libusb_context *usb_ctx_ptr;
 
     QPointer<GekkoFyre::RadioLibs> gkRadioLibs;
     std::shared_ptr<GekkoFyre::GkLevelDb> gkDekodeDb;

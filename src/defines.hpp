@@ -48,9 +48,10 @@
 #include <string>
 #include <locale>
 #include <vector>
-#include <cstdlib>
 #include <cstdio>
 #include <memory>
+#include <cstdlib>
+#include <utility>
 #include <QString>
 #include <QVector>
 #include <QPointer>
@@ -254,8 +255,10 @@ namespace Database {
         struct UsbDev {
             libusb_device *dev;                         // Primary underlying pointer to the `libusb` device
             libusb_interface *interface;                // Underlying pointer to the `libusb` interface
+            libusb_interface_descriptor *inter_desc;    // Details about the interface itself pertaining to the `libusb` library
             libusb_context *context;                    // The underlying context to the `libusb` library
-            libusb_device_descriptor config;            // Underlying pointer to the `libusb` configuration
+            libusb_device_descriptor desc;              // Underlying pointer to the `libusb` configuration
+            libusb_config_descriptor *config;           // Configuration parameters for the `libusb` device in question
             libusb_device_handle *handle;               // Underlying `libusb` device handle
             std::string mfg;                            // Information relating to the manufacturer
             std::string serial_number;                  // The Product Serial Number
@@ -266,6 +269,7 @@ namespace Database {
             UsbDev usb_enum;                            // The USB Device structure, as above
             uint8_t port;                               // The USB port number as determined by `libusb`
             uint8_t bus;                                // The USB BUS number as determined by `libusb`
+            uint8_t addr;                               // The USB port's own address as determined by 'libusb'
         };
 
         namespace Audio {

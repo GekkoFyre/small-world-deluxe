@@ -188,6 +188,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             status = leveldb::DB::Open(options, save_db_path.string(), &db);
             GkDb = std::make_shared<GekkoFyre::GkLevelDb>(db, fileIo, this);
             gkRadioLibs = new GekkoFyre::RadioLibs(fileIo, gkStringFuncs, GkDb, gkRadioPtr, this);
+            usb_ctx_ptr = gkRadioLibs->initUsbLib();
         } else {
             QMessageBox::warning(this, tr("Error!"), tr("Unable to find settings database; we've lost its location! Aborting..."), QMessageBox::Ok);
             QApplication::exit(EXIT_FAILURE);
@@ -395,12 +396,20 @@ MainWindow::~MainWindow()
         }
     }
 
+    // Free the pointer for the libusb library!
+    if (usb_ctx_ptr != nullptr) {
+        libusb_exit(usb_ctx_ptr);
+    }
+
+    // Free the pointer for the Google LevelDB library!
     delete db;
 
+    // Free the pointer for the PortAudio library!
     autoSys.terminate();
     gkPortAudioInit->terminate();
 
     if (gkRadioPtr->is_open) {
+        // Free the pointer(s) for the Hamlib library!
         rig_close(gkRadioPtr->rig); // Close port
         rig_cleanup(gkRadioPtr->rig); // Cleanup memory
     }
@@ -524,7 +533,7 @@ bool MainWindow::prefillAmateurBands()
 void MainWindow::launchSettingsWin()
 {
     QPointer<DialogSettings> dlg_settings = new DialogSettings(GkDb, fileIo, gkAudioDevices, gkRadioLibs, sw_settings,
-                                                               gkPortAudioInit, this);
+                                                               gkPortAudioInit, usb_ctx_ptr, this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
@@ -557,7 +566,7 @@ void MainWindow::radioInitStart(const QString &def_com_port)
 
         QString com_baud_rate = GkDb->read_rig_settings(radio_cfg::ComBaudRate);
         if (!com_baud_rate.isEmpty() || !com_baud_rate.isNull()) {
-            gkRadioPtr->dev_baud_rate = gkRadioLibs->convertBaudRateInt(com_baud_rate.toInt());
+            gkRadioPtr->dev_baud_rate = gkRadioLibs->convertBaudRateEnum(com_baud_rate.toInt());
         } else {
             gkRadioPtr->dev_baud_rate = AmateurRadio::com_baud_rates::BAUD9600;
         }
