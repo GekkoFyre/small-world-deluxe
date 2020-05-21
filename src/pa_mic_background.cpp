@@ -202,7 +202,7 @@ void paMicProcBackground::spectrographCallback(PaAudioBuf *audio_buf, portaudio:
         std::shared_ptr<GekkoFyre::SpectroFFTW> spectro_fftw = std::make_shared<GekkoFyre::SpectroFFTW>(gkStringFuncs, this);
 
         while (stream->isOpen()) {
-            std::vector<short> raw_audio_data = audio_buf->dumpMemory();
+            std::vector<int> raw_audio_data = audio_buf->dumpMemory();
             if (!raw_audio_data.empty()) {
                 std::vector<Spectrograph::RawFFT> power_density_data;
                 std::vector<Spectrograph::RawFFT> waterfall_fft_data;

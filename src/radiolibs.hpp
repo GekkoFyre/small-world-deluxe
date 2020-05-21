@@ -63,32 +63,39 @@ class RadioLibs : public QObject {
 
 public:
     explicit RadioLibs(std::shared_ptr<GekkoFyre::FileIo> filePtr, std::shared_ptr<GekkoFyre::StringFuncs> stringPtr,
-            std::shared_ptr<GkLevelDb> dkDb, QObject *parent = nullptr);
-    ~RadioLibs() override;
+                       std::shared_ptr<GkLevelDb> dkDb, std::shared_ptr<GekkoFyre::AmateurRadio::Control::Radio> radioPtr,
+                       QObject *parent = nullptr);
+    ~RadioLibs();
 
-    static int convertBaudRateEnum(const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate);
-    GekkoFyre::AmateurRadio::com_baud_rates convertBaudRateInt(const int &baud_rate_sel);
+    static int convertBaudRateInt(const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate);
+    GekkoFyre::AmateurRadio::com_baud_rates convertBaudRateEnum(const int &baud_rate_sel);
     QString initComPorts();
-    std::vector<Database::Settings::UsbPort> initUsbPorts();
-    std::vector<Database::Settings::UsbPort> findUsbPorts();
     QMap<tstring, std::pair<tstring, boost::tribool>> status_com_ports();
-    AmateurRadio::Control::Radio *init_rig(const rig_model_t &rig_model, const std::string &com_port,
-                                           const GekkoFyre::AmateurRadio::com_baud_rates &com_baud_rate,
-                                           const rig_debug_level_e &verbosity);
+    std::shared_ptr<AmateurRadio::Control::Radio> init_rig(const rig_model_t &rig_model, const std::string &com_port,
+                                                           const GekkoFyre::AmateurRadio::com_baud_rates &com_baud_rate,
+                                                           const rig_debug_level_e &verbosity);
     QString translateBandsToStr(const AmateurRadio::bands &band);
+    QString hamlibModulEnumToStr(const rmode_t &modulation);
+
+    libusb_context *initUsbLib();
+    std::vector<Database::Settings::UsbPort> enumUsbDevices(libusb_context *usb_ctx_ptr);
+
+public slots:
+    void procFreqChange(const bool &radio_locked, const GekkoFyre::AmateurRadio::Control::FreqChange &freq_change);
+    void procSettingsChange(const bool &radio_locked, const GekkoFyre::AmateurRadio::Control::SettingsChange &settings_change);
 
 private:
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GekkoFyre::GkLevelDb> gkDekodeDb;
     std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
+    std::shared_ptr<GekkoFyre::AmateurRadio::Control::Radio> gkRadioPtr;
 
     static void hamlibStatus(const int &retcode);
 
-    std::vector<Database::Settings::UsbDev> enumUsbDevices();
     static std::string getDriver(const boost::filesystem::path &tty);
     static void probe_serial8250_comports(std::list<std::string> &comList, const std::list<std::string> &comList8250);
     static void registerComPort(std::list<std::string> &comList, std::list<std::string> &comList8250,
-            const boost::filesystem::path &dir);
+                                const boost::filesystem::path &dir);
 
 };
 };

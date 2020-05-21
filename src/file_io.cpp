@@ -69,7 +69,7 @@ FileIo::FileIo(std::shared_ptr<QSettings> settings, QObject *parent)
 }
 
 FileIo::~FileIo()
-= default;
+{}
 
 /**
  * @brief FileIo::create_random_string Creates a random string of given length

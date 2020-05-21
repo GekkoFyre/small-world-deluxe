@@ -74,22 +74,23 @@ namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
 RadioLibs::RadioLibs(std::shared_ptr<GekkoFyre::FileIo> filePtr, std::shared_ptr<StringFuncs> stringPtr,
-        std::shared_ptr<GkLevelDb> dkDb, QObject *parent) : QObject(parent)
+                     std::shared_ptr<GkLevelDb> dkDb, std::shared_ptr<Radio> radioPtr, QObject *parent) : QObject(parent)
 {
     gkStringFuncs = std::move(stringPtr);
     gkDekodeDb = std::move(dkDb);
     gkFileIo = std::move(filePtr);
+    gkRadioPtr = std::move(radioPtr);
 }
 
 RadioLibs::~RadioLibs()
-= default;
+{}
 
 /**
  * @brief RadioLibs::convertBaudRateEnum Converts an enumerator to the given baud rate for a COM/Serial/RS-232 port.
  * @param baud_rate The enumerator to be converted to an integer.
  * @return The integer output from a converted enumerator.
  */
-int RadioLibs::convertBaudRateEnum(const com_baud_rates &baud_rate)
+int RadioLibs::convertBaudRateInt(const com_baud_rates &baud_rate)
 {
     int ret = 0;
     switch (baud_rate) {
@@ -131,7 +132,7 @@ int RadioLibs::convertBaudRateEnum(const com_baud_rates &baud_rate)
  * @param baud_rate_sel The QComboBox selection to be converted.
  * @return The enumerator that was converted from a QComboBox selection (as read from a Google LevelDB database).
  */
-com_baud_rates RadioLibs::convertBaudRateInt(const int &baud_rate_sel)
+com_baud_rates RadioLibs::convertBaudRateEnum(const int &baud_rate_sel)
 {
     com_baud_rates ret = BAUD1200;
     switch (baud_rate_sel) {
@@ -199,48 +200,17 @@ QString RadioLibs::initComPorts()
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return Returns an array of possible USB devices on the user's system.
  */
-std::vector<UsbPort> RadioLibs::initUsbPorts()
+libusb_context *RadioLibs::initUsbLib()
 {
-    std::vector<UsbPort> usb_ports = findUsbPorts();
-    std::vector<UsbPort> filtered_ports;
+    libusb_context *context;
+    int r;
 
-    return filtered_ports;
-}
-
-/**
- * @brief RadioLibs::findUsbPorts
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param composite Please see the following document <https://github.com/pololu/libusbp/blob/master/examples/lsport/lsport.cpp>
- * @note <https://github.com/pololu/libusbp/blob/master/examples/port_name/port_name.cpp>
- * @return
- */
-std::vector<UsbPort> RadioLibs::findUsbPorts()
-{
-    #ifdef _WIN32
-    unsigned char usb_path[MAX_PATH + 1];
-    #elif __linux__
-    unsigned char usb_path[8 * 1024];
-    #endif
-
-    std::vector<UsbDev> usb_dev = enumUsbDevices();
-    std::vector<UsbPort> usb_ports;
-    for (const auto &usb: usb_dev) {
-        UsbPort device;
-        device.port = libusb_get_port_number(usb.dev);
-        device.bus = libusb_get_bus_number(usb.dev);
-        usb_ports.push_back(device);
+    r = libusb_init(&context);
+    if (r < 0) {
+        throw std::runtime_error(tr("Unable to initialize `libusb` interface!").toStdString());
     }
 
-    std::vector<UsbPort> filtered_ports;
-    for (const auto &device: usb_ports) {
-        if (device.port > 0) {
-            if (!device.usb_enum.product.empty()) {
-                filtered_ports.push_back(device);
-            }
-        }
-    }
-
-    return filtered_ports;
+    return context;
 }
 
 /**
@@ -390,67 +360,102 @@ void RadioLibs::hamlibStatus(const int &retcode)
 }
 
 /**
- * @brief RadioLibs::enumUsbDevices
+ * @brief RadioLibs::enumUsbDevices will enumerate out any USB devices present/connected on the user's computer system, giving valuable
+ * details for each device.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param devs
- * @param count
- * @note API Reference <http://libusb.sourceforge.net/api-1.0/>
- * @return
+ * @param usb_ctx_ptr Required for `libusb` library (de-)initialization.
+ * @note Example code file <https://github.com/libusb/libusb/blob/master/examples/testlibusb.c>
+ * @return A list of USB devices present on the user's computer system, with valuable details about each device.
  */
-std::vector<UsbDev> RadioLibs::enumUsbDevices()
+std::vector<UsbPort> RadioLibs::enumUsbDevices(libusb_context *usb_ctx_ptr)
 {
-    std::vector<UsbDev> usb_vec;
+    std::vector<UsbPort> usb_vec;
+    libusb_device **devices = nullptr;
+    UsbPort *usb = new UsbPort();
+    int dev_cnt = 0;
     try {
-        libusb_context *context;
-        libusb_device **devs;
-        ssize_t cnt;
-        int r;
-
-        r = libusb_init(&context);
-        if (r < 0) {
-            throw std::runtime_error(tr("Unable to initialize `libusb` interface!").toStdString());
+        int i = 0;
+        dev_cnt = libusb_get_device_list(nullptr, &devices);
+        if (dev_cnt < 0) {
+            delete usb;
+            libusb_exit(usb_ctx_ptr);
+            std::cout << tr("No USB devices were detected!").toStdString() << std::endl;
+            return std::vector<UsbPort>();
         }
 
-        cnt = libusb_get_device_list(nullptr, &devs);
-        if (cnt < 0) {
-            throw std::runtime_error(tr("Unable to initialize `libusb` interface!").toStdString());
-        }
+        libusb_device *dev = nullptr;
+        while ((dev = devices[i++]) != nullptr) {
+            usb->usb_enum.handle = nullptr;
+            usb->usb_enum.dev = dev;
+            usb->usb_enum.context = usb_ctx_ptr;
 
-        for (int i = 0; devs[i]; ++i) {
-            UsbDev usb;
-            usb.dev = devs[i];
-            usb.handle = nullptr;
-            unsigned char string[256];
-            int ret;
-            uint8_t j;
-
-            usb.context = context;
-
-            ret = libusb_get_device_descriptor(usb.dev, &usb.config);
+            int ret = libusb_get_device_descriptor(usb->usb_enum.dev, &usb->usb_enum.desc);
             if (ret < 0) {
-                throw std::runtime_error(tr("Unable to initialize `libusb` interface!").toStdString());
+                throw std::runtime_error(tr("Failed to get device descriptor for USB!").toStdString());
             }
 
-            ret = libusb_open(usb.dev, &usb.handle);
-            if (ret == LIBUSB_SUCCESS) {
-                if (usb.config.iManufacturer) {
-                    ret = libusb_get_string_descriptor_ascii(usb.handle, usb.config.iManufacturer, string, sizeof(string));
-                    usb.mfg = std::string(reinterpret_cast<const char*>(string), sizeof(string));
+            usb->bus = libusb_get_bus_number(dev);
+            usb->addr = libusb_get_device_address(dev);
+
+            #ifdef _WIN32 || __MINGW32__
+            unsigned char tmp_val[MAX_PATH + 32];
+            #elif __linux__
+            // TODO: Fill this section out!
+            #endif
+
+            int ret_usb_open = libusb_open(dev, &usb->usb_enum.handle);
+            if (ret_usb_open == LIBUSB_SUCCESS) {
+                if (usb->usb_enum.desc.iManufacturer) {
+                    int ret_cfg_mfg = libusb_get_string_descriptor_ascii(usb->usb_enum.handle, usb->usb_enum.desc.iManufacturer,
+                                                                         tmp_val, sizeof(tmp_val));
+                    if (ret_cfg_mfg > 0) {
+                        usb->usb_enum.mfg = std::string(reinterpret_cast<const char *>(tmp_val), sizeof(tmp_val));
+                    } else {
+                        throw std::runtime_error(tr("Error with enumerating `libusb` interface! Unable to obtain the manufacturer descriptor!").toStdString());
+                    }
                 }
 
-                if (usb.config.iProduct) {
-                    ret = libusb_get_string_descriptor_ascii(usb.handle, usb.config.iProduct, string, sizeof(string));
-                    usb.product = std::string(reinterpret_cast<const char*>(string), sizeof(string));
+                if (usb->usb_enum.desc.iProduct) {
+                    int ret_cfg_prod = libusb_get_string_descriptor_ascii(usb->usb_enum.handle, usb->usb_enum.desc.iProduct,
+                                                                          tmp_val, sizeof(tmp_val));
+                    if (ret_cfg_prod > 0) {
+                        usb->usb_enum.product = std::string(reinterpret_cast<const char *>(tmp_val), sizeof(tmp_val));
+                    } else {
+                        throw std::runtime_error(tr("Error with enumerating `libusb` interface! Unable to obtain the product descriptor!").toStdString());
+                    }
+                }
+
+                if (usb->usb_enum.desc.iSerialNumber) {
+                    int ret_cfg_serial = libusb_get_string_descriptor_ascii(usb->usb_enum.handle, usb->usb_enum.desc.iSerialNumber,
+                                                                          tmp_val, sizeof(tmp_val));
+                    if (ret_cfg_serial > 0) {
+                        usb->usb_enum.serial_number = std::string(reinterpret_cast<const char *>(tmp_val), sizeof(tmp_val));
+                    } else {
+                        throw std::runtime_error(tr("Error with enumerating `libusb` interface! Unable to obtain the serial number descriptor!").toStdString());
+                    }
                 }
             }
 
-            usb_vec.push_back(usb);
+            usb->usb_enum.config = new libusb_config_descriptor();
+            int ret_cfg_desc = libusb_get_config_descriptor(dev, i, &usb->usb_enum.config);
+            if (ret_cfg_desc != LIBUSB_SUCCESS) {
+                std::cerr << tr("Error with enumerating `libusb` interface! Couldn't retrieve descriptors.").toStdString() << std::endl;
+            }
+
+            usb_vec.push_back(*usb);
         }
     } catch (const std::exception &e) {
         QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
     }
 
-    return usb_vec;
+    delete usb;
+    // libusb_close(usb->usb_enum.handle);
+    libusb_free_device_list(devices, dev_cnt);
+    if (!usb_vec.empty()) {
+        return usb_vec;
+    }
+
+    return std::vector<UsbPort>();
 }
 
 /**
@@ -569,10 +574,10 @@ void RadioLibs::registerComPort(std::list<std::string> &comList, std::list<std::
  * @param verbosity The kind of errors you wish for HamLib to report, whether they be at a debug level or only critical errors.
  * @note Ref: HamLib <https://github.com/Hamlib/Hamlib/>.
  */
-Radio *RadioLibs::init_rig(const rig_model_t &rig_model, const std::string &com_port,
-                           const com_baud_rates &com_baud_rate, const rig_debug_level_e &verbosity)
+std::shared_ptr<Radio> RadioLibs::init_rig(const rig_model_t &rig_model, const std::string &com_port,
+                                           const com_baud_rates &com_baud_rate, const rig_debug_level_e &verbosity)
 {
-    Radio *radio = new Radio;
+    std::shared_ptr<Radio> radio = std::make_shared<Radio>();
 
     // https://github.com/Hamlib/Hamlib/blob/master/tests/example.c
     // Set verbosity level
@@ -602,7 +607,7 @@ Radio *RadioLibs::init_rig(const rig_model_t &rig_model, const std::string &com_
     strncpy(radio->rig->state.rigport.pathname, radio->rig_file.c_str(), FILPATHLEN - 1);
 
     int baud_rate = 9600;
-    baud_rate = convertBaudRateEnum(com_baud_rate);
+    baud_rate = convertBaudRateInt(com_baud_rate);
 
     radio->rig->state.rigport.parm.serial.rate = baud_rate; // The BAUD Rate for the desired COM Port
 
@@ -629,36 +634,8 @@ Radio *RadioLibs::init_rig(const rig_model_t &rig_model, const std::string &com_
     // Current mode
     radio->status = rig_get_mode(radio->rig, RIG_VFO_CURR, &radio->mode, &radio->width);
 
-    // NOTE: These are meant to be translatable!
-    switch (radio->mode) {
-    case RIG_MODE_USB:
-        radio->mm = tr("USB").toStdString();
-        break;
-    case RIG_MODE_LSB:
-        radio->mm = tr("LSB").toStdString();
-        break;
-    case RIG_MODE_CW:
-        radio->mm = tr("CW").toStdString();
-        break;
-    case RIG_MODE_CWR:
-        radio->mm = tr("CWR").toStdString();
-        break;
-    case RIG_MODE_AM:
-        radio->mm = tr("AM").toStdString();
-        break;
-    case RIG_MODE_FM:
-        radio->mm = tr("FM").toStdString();
-        break;
-    case RIG_MODE_WFM:
-        radio->mm = tr("WFM").toStdString();
-        break;
-    case RIG_MODE_RTTY:
-        radio->mm = tr("RTTY").toStdString();
-        break;
-    default:
-        radio->mm = tr("Unrecongized").toStdString();
-        break;
-    }
+    // Determine the mode of modulation that's being currently used, and output as a textual value
+    radio->mm = hamlibModulEnumToStr(radio->mode).toStdString();
 
     std::cout << tr("Current mode: %1, width is %2\n\n").arg(QString::fromStdString(radio->mm)).arg(QString::number(radio->width)).toStdString();
 
@@ -719,4 +696,128 @@ QString RadioLibs::translateBandsToStr(const bands &band)
     }
 
     return tr("Error!");
+}
+
+/**
+ * @brief RadioLibs::hamlibModulEnumToStr converts the given Hamlib enums for modulation to their relatable
+ * textual value.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param modulation The given modulation, as a Hamlib enum.
+ * @return The same enum, but given as a textual value.
+ */
+QString RadioLibs::hamlibModulEnumToStr(const rmode_t &modulation)
+{
+    // NOTE: These are meant to be translatable!
+    switch (modulation) {
+    case rmode_t::RIG_MODE_NONE:
+        return tr("None");
+    case rmode_t::RIG_MODE_AM:
+        return tr("AM");
+    case rmode_t::RIG_MODE_CW:
+        return tr("CW");
+    case rmode_t::RIG_MODE_USB:
+        return tr("USB");
+    case rmode_t::RIG_MODE_LSB:
+        return tr("LSB");
+    case rmode_t::RIG_MODE_RTTY:
+        return tr("RTTY");
+    case rmode_t::RIG_MODE_FM:
+        return tr("FM");
+    case rmode_t::RIG_MODE_WFM:
+        return tr("Wide FM");
+    case rmode_t::RIG_MODE_CWR:
+        return tr("CWR");
+    case rmode_t::RIG_MODE_RTTYR:
+        return tr("RTTYR");
+    case rmode_t::RIG_MODE_AMS:
+        return tr("AMS");
+    case rmode_t::RIG_MODE_PKTLSB:
+        return tr("PKT/LSB");
+    case rmode_t::RIG_MODE_PKTUSB:
+        return tr("PKT/USB");
+    case rmode_t::RIG_MODE_PKTFM:
+        return tr("PKT/FM");
+    case rmode_t::RIG_MODE_ECSSUSB:
+        return tr("ECSS/USB");
+    case rmode_t::RIG_MODE_ECSSLSB:
+        return tr("ECSS/LSB");
+    case rmode_t::RIG_MODE_FAX:
+        return tr("FAX");
+    case rmode_t::RIG_MODE_SAM:
+        return tr("SAM");
+    case rmode_t::RIG_MODE_SAL:
+        return tr("SAL");
+    case rmode_t::RIG_MODE_SAH:
+        return tr("SAH");
+    case rmode_t::RIG_MODE_DSB:
+        return tr("DSB");
+    case rmode_t::RIG_MODE_FMN:
+        return tr("FM Narrow");
+    case rmode_t::RIG_MODE_PKTAM:
+        return tr("PKT/AM");
+    case rmode_t::RIG_MODE_TESTS_MAX:
+        return tr("TESTS_MAX");
+    default:
+        tr("N/A");
+    }
+
+    return tr("None");
+}
+
+/**
+ * @brief RadioLibs::procFreqChange will process a frequency change request upon receiving the right signal(s).
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param radio_locked Whether the transceiver rig is in a 'locked mode' or not.
+ * @param freq_change The details of the frequency change request.
+ */
+void RadioLibs::procFreqChange(const bool &radio_locked, const FreqChange &freq_change)
+{
+    try {
+        if (gkRadioPtr->rig == nullptr && gkRadioPtr->is_open == false) {
+            throw std::runtime_error(tr("Small World Deluxe has experienced a rig control error!").toStdString());
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
+ * @brief RadioLibs::procSettingsChange will process a change in settings regarding Hamlib upon receiving the right signal(s).
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param radio_locked Whether the transceiver rig is in a 'locked mode' or not.
+ * @param settings_change The details of the settings change request.
+ */
+void RadioLibs::procSettingsChange(const bool &radio_locked, const SettingsChange &settings_change)
+{
+    try {
+        if (gkRadioPtr->rig == nullptr && gkRadioPtr->is_open == false) {
+            throw std::runtime_error(tr("Small World Deluxe has experienced a rig control error!").toStdString());
+        }
+
+        if (!settings_change.rig_file.empty()) {
+            if (settings_change.rig_file != gkRadioPtr->rig_file) {
+                gkRadioPtr->rig_file = settings_change.rig_file;
+            }
+        }
+
+        if (settings_change.rig_model > 0) {
+            gkRadioPtr->rig_model = settings_change.rig_model;
+        }
+
+        gkRadioPtr->dev_baud_rate = settings_change.dev_baud_rate;
+        gkRadioPtr->port_details = settings_change.port_details;
+        gkRadioPtr->mode = settings_change.mode;
+        gkRadioPtr->width = settings_change.width;
+
+        //
+        // Process the changes, if necessary, for the RS232 ports
+        //
+        gkRadioPtr->rig_model = rig_probe(&gkRadioPtr->port_details);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
+    return;
 }

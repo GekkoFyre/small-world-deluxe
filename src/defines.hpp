@@ -48,13 +48,15 @@
 #include <string>
 #include <locale>
 #include <vector>
-#include <cstdlib>
 #include <cstdio>
 #include <memory>
+#include <cstdlib>
+#include <utility>
 #include <QString>
 #include <QVector>
 #include <QPointer>
 #include <QDateTime>
+#include <QStringList>
 
 #ifdef _WIN32
 #ifdef PA_USE_ASIO
@@ -253,8 +255,10 @@ namespace Database {
         struct UsbDev {
             libusb_device *dev;                         // Primary underlying pointer to the `libusb` device
             libusb_interface *interface;                // Underlying pointer to the `libusb` interface
+            libusb_interface_descriptor *inter_desc;    // Details about the interface itself pertaining to the `libusb` library
             libusb_context *context;                    // The underlying context to the `libusb` library
-            libusb_device_descriptor config;            // Underlying pointer to the `libusb` configuration
+            libusb_device_descriptor desc;              // Underlying pointer to the `libusb` configuration
+            libusb_config_descriptor *config;           // Configuration parameters for the `libusb` device in question
             libusb_device_handle *handle;               // Underlying `libusb` device handle
             std::string mfg;                            // Information relating to the manufacturer
             std::string serial_number;                  // The Product Serial Number
@@ -265,6 +269,7 @@ namespace Database {
             UsbDev usb_enum;                            // The USB Device structure, as above
             uint8_t port;                               // The USB port number as determined by `libusb`
             uint8_t bus;                                // The USB BUS number as determined by `libusb`
+            uint8_t addr;                               // The USB port's own address as determined by 'libusb'
         };
 
         namespace Audio {
@@ -365,6 +370,7 @@ namespace AmateurRadio {
             rig_model_t rig_model;          // Hamlib rig model
             rig_debug_level_e verbosity;    // The debug level and verbosity of Hamlib
             com_baud_rates dev_baud_rate;   // Communication device baud rate
+            hamlib_port_t port_details;     // Information concerning details about RS232 ports, etc.
             freq_t freq;                    // Rig's primary frequency
             value_t raw_strength;           // Raw strength of the S-meter
             value_t strength;               // Calculated strength of the S-meter
@@ -374,7 +380,21 @@ namespace AmateurRadio {
             int retcode;                    // Hamlib return code
             int isz;                        // No idea what this is for?
             unsigned int mwpower;           // Converted power reading to watts
-            rmode_t mode;                   // Unknown?
+            rmode_t mode;                   // The type of modulation that the transceiver is in, whether it be AM, FM, SSB, etc.
+            pbwidth_t width;                // Bandwidth
+        };
+
+        struct FreqChange {                 // This structure is used when a frequency change is requested.
+            Radio radio;                    // Details about the radio itself!
+            freq_t new_freq;                // The new frequency to change towards!
+        };
+
+        struct SettingsChange {
+            std::string rig_file;           // Hamlib rig temporary file
+            rig_model_t rig_model;          // Hamlib rig model
+            com_baud_rates dev_baud_rate;   // Communication device baud rate
+            hamlib_port_t port_details;     // Any new changes concerning details about RS232 ports, etc.
+            rmode_t mode;                   // The type of modulation that the transceiver is in, whether it be AM, FM, SSB, etc.
             pbwidth_t width;                // Bandwidth
         };
     }

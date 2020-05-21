@@ -66,11 +66,14 @@ set(CMAKE_MODULE_PATH
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/";
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/third-party/basic-c-sdl-project/cmake/sdl2/")
 
+#
+# Custom options specific to Small World Deluxe and/or GekkoFyre Networks <https://gekkofyre.io/>
+#
 option(GFYRE_PACKAGE_MAINTAINER "Are you a package maintainer? If so, set this option to `ON`! It'll enable specific build settings to make your life easier." ON)
-# option(GFYRE_BUILD_STATIC "Build Small World Deluxe as a static library/package. This will result in a larger executable at the benefit of requiring less DLL dependencies.")
-# option(GFYRE_BUILD_SHARED "Build Small World Deluxe as a shared library/package. This will result in a smaller executable at the cost of requiring further DLL dependencies.")
-
-option(GFYRE_BUILD_CODEC2 "Build with support for Codec2 <https://github.com/drowe67/codec2>. *** NOTE! This is not a supported feature yet. ***" OFF)
+option(GFYRE_BUILD_STATIC "Build Small World Deluxe as a static library/package. This will result in a larger executable at the benefit of requiring less DLL dependencies." ON)
+option(GFYRE_BUILD_SHARED "*** This option is not fully developed yet! *** Build Small World Deluxe as a shared library/package. This will result in a smaller executable at the cost of requiring further DLL dependencies." OFF)
+option(GFYRE_HAMLIB_DBG_VERBOSITY "Enable DEBUG verbosity for the Hamlib library and its use throughout Small World Deluxe. *** Only recommended for programmers and/or possibly maintainers of the project itself! ***" OFF)
+option(GFYRE_BUILD_CODEC2 "*** This feature is in heavy development! *** Build with support for Codec2 <https://github.com/drowe67/codec2>." OFF)
 
 #
 # Detect if we are dealing with the Linux operating system and not Apple OS/X
@@ -87,22 +90,19 @@ option(GFYRE_ENABLE_PVS_STUDIO "Enable the static analysis of the Small World De
 # https://stackoverflow.com/questions/9742003/platform-detection-in-cmake
 #
 if(WIN32 OR MSYS OR MINGW)
-    if(${GFYRE_PACKAGE_MAINTAINER} EQUAL OFF)
-        macro(get_WIN32_WINNT version)
-            if (WIN32 OR MSYS OR MINGW AND CMAKE_SYSTEM_VERSION)
-                set(ver ${CMAKE_SYSTEM_VERSION})
-                string(REPLACE "." "" ver ${ver})
-                string(REGEX REPLACE "([0-9])" "0\\1" ver ${ver})
+    macro(get_WIN32_WINNT version)
+        if (WIN32 OR MSYS OR MINGW AND CMAKE_SYSTEM_VERSION)
+            set(ver ${CMAKE_SYSTEM_VERSION})
+            string(REPLACE "." "" ver ${ver})
+            string(REGEX REPLACE "([0-9])" "0\\1" ver ${ver})
 
-                set(${version} "0x${ver}")
-            endif()
-        endmacro()
-        
-        get_WIN32_WINNT(ver)
-        message(STATUS "Your Microsoft Windows has determined to be version: " ${ver})
-        message(STATUS "If the WRONG version has been determined, please enable the variable: `{GFYRE_PACKAGE_MAINTAINER}")
-        add_definitions(-D_WIN32_WINNT=${ver})
-    endif(${GFYRE_PACKAGE_MAINTAINER} EQUAL OFF)
+            set(${version} "0x${ver}")
+        endif()
+    endmacro()
+    
+    get_WIN32_WINNT(ver)
+    message(STATUS "Your Microsoft Windows has determined to be version: " ${ver})
+    add_definitions(-D_WIN32_WINNT=${ver})
 endif()
 
 #
@@ -142,10 +142,6 @@ if(WIN32 OR MSYS OR MINGW)
         endif()
     endif()
 endif()
-
-if(${GFYRE_PACKAGE_MAINTAINER} EQUAL ON)
-    set(BUILD_SHARED_LIBS ON)
-endif(${GFYRE_PACKAGE_MAINTAINER} EQUAL ON)
 
 if (Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
@@ -518,13 +514,33 @@ if(LINUX)
     check_include_file("linux/serial.h" HAVE_LSERIAL_H)
 endif()
 
+if(GFYRE_HAMLIB_DBG_VERBOSITY)
+    message(STATUS "Enabled maximum verbosity with the Hamlib library throughout Small World Deluxe; debug mode now activated!")
+    add_definitions(-DGFYRE_HAMLIB_DBG_VERBOSITY_ENBL)
+endif()
+
 #
 # The below is required for when we decide to start programming an install target for this CMake script!
 #
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
-add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_SRC_HEADERS} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP})
+#
+# Build Small World Deluxe as a static package!
+#
+if(GFYRE_BUILD_STATIC)
+    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_SRC_HEADERS} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP})
+else()
+    set(GFYRE_BUILD_SHARED ON)
+endif(GFYRE_BUILD_STATIC)
+
+#
+# Build Small World Deluxe as a shared package!
+#
+if(GFYRE_BUILD_SHARED)
+    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_SRC_HEADERS} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP})
+endif(GFYRE_BUILD_SHARED)
+
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
 target_link_libraries(galaxy Qt5::Widgets Qt5::Core Qt5::Gui Qt5::PrintSupport Threads::Threads ${LIBS})
 

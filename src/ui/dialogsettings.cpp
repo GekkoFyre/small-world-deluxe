@@ -43,6 +43,7 @@
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QStandardPaths>
+#include <QTableWidgetItem>
 #include <utility>
 #include <exception>
 #include <set>
@@ -73,9 +74,10 @@ QVector<QString> DialogSettings::unique_mfgs = { "None" };
 DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
                                std::shared_ptr<GekkoFyre::FileIo> filePtr,
                                std::shared_ptr<GekkoFyre::AudioDevices> audioDevices,
-                               std::shared_ptr<GekkoFyre::RadioLibs> radioPtr,
+                               QPointer<GekkoFyre::RadioLibs> radioPtr,
                                std::shared_ptr<QSettings> settings,
                                portaudio::System *portAudioInit,
+                               libusb_context *usb_lib_ctx,
                                QWidget *parent)
     : QDialog(parent), ui(new Ui::DialogSettings)
 {
@@ -90,6 +92,7 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
         gkDekodeDb = std::move(dkDb);
         gkFileIo = std::move(filePtr);
         gkAudioDevices = std::move(audioDevices);
+        usb_ctx_ptr = std::move(usb_lib_ctx);
 
         gkSettings = settings;
         usb_ports_active = false;
@@ -111,7 +114,7 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
             mfg_comboBox->addItem(mfg);
         }
 
-        Q_ASSERT(gkRadioLibs.get() != nullptr);
+        Q_ASSERT(gkRadioLibs != nullptr);
 
         // Detect available COM ports on either Microsoft Windows, Linux, or even Apple Mac OS/X
         // Also detect the available USB devices of the audial type
@@ -119,7 +122,7 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
         // devices separately. This is because within the GekkoFyre::RadioLibs namespace, there are
         // also two separate functions for enumerating out these ports!
         status_com_ports = gkRadioLibs->status_com_ports();
-        status_usb_devices = gkRadioLibs->initUsbPorts();
+        status_usb_devices = gkRadioLibs->enumUsbDevices(usb_ctx_ptr);
         prefill_avail_com_ports(status_com_ports);
         prefill_avail_usb_ports(status_usb_devices);
 
@@ -128,7 +131,12 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
             on_comboBox_com_port_currentIndexChanged(ui->comboBox_com_port->currentIndex());
         }
 
-        std::vector<GkDevice> audio_devices = gkAudioDevices->filterAudioDevices(gkAudioDevices->enumAudioDevicesCpp(gkPortAudioInit));
+        //
+        // Initialize PortAudio libraries!
+        //
+        std::vector<GkDevice> audio_devices = gkAudioDevices->filterPortAudioHostType(gkAudioDevices->enumAudioDevicesCpp(gkPortAudioInit));
+        QVector<PaHostApiTypeId> portaudio_api_avail = gkAudioDevices->portAudioApiChooser(audio_devices);
+        prefill_audio_api_avail(portaudio_api_avail);
         prefill_audio_devices(audio_devices);
 
         ui->label_pa_version->setText(gkAudioDevices->portAudioVersionNumber(*gkPortAudioInit));
@@ -142,6 +150,9 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
         prefill_com_baud_speed(GekkoFyre::AmateurRadio::com_baud_rates::BAUD38400);
         prefill_com_baud_speed(GekkoFyre::AmateurRadio::com_baud_rates::BAUD57600);
         prefill_com_baud_speed(GekkoFyre::AmateurRadio::com_baud_rates::BAUD115200);
+
+        init_working_freqs();
+        init_station_info();
 
         if (gkDekodeDb.get() != nullptr) {
             read_settings();
@@ -196,10 +207,15 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         int post_write_delay = ui->spinBox_subopt_post_write_delay->value();
 
         //
+        // Chosen PortAudio API
+        //
+        int chosen_pa_api = ui->comboBox_soundcard_api->currentData().toInt();
+
+        //
         // Audio Device Channels (i.e. Mono/Stereo/etc)
         //
-        int curr_input_device_channels = ui->comboBox_soundcard_input_channels->currentIndex();
-        int curr_output_device_channels = ui->comboBox_soundcard_output_channels->currentIndex();
+        int curr_input_device_channels = ui->comboBox_soundcard_input->currentData().toInt();
+        int curr_output_device_channels = ui->comboBox_soundcard_output->currentData().toInt();
 
         //
         // RS-232 Settings
@@ -248,6 +264,16 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         //
         gkFileIo->write_initial_settings(Filesystem::fileName, init_cfg::DbName);
         gkFileIo->write_initial_settings(ui->lineEdit_db_save_loc->text(), init_cfg::DbLoc);
+
+        //
+        // PortAudio API
+        //
+        for (const auto &pa_api_idx: avail_portaudio_api.toStdMap()) {
+            if (pa_api_idx.first == chosen_pa_api) {
+                gkDekodeDb->write_audio_api_settings(pa_api_idx.second);
+                break;
+            }
+        }
 
         //
         // Input Device
@@ -359,75 +385,166 @@ QMultiMap<rig_model_t, std::tuple<QString, QString, AmateurRadio::rig_type>> Dia
 }
 
 /**
+ * @brief DialogSettings::prefill_audio_api_avail Enumerates the available operating system's sound/multimedia APIs that
+ * are available to the user via PortAudio, all dependent on how Small World Deluxe and its associated libraries
+ * were compiled.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param portaudio_api The pre-sorted list of sound/multimedia APIs available to the user.
+ * @see AudioDevices::portAudioApiChooser(), AudioDevices::filterPortAudioHostType().
+ */
+void DialogSettings::prefill_audio_api_avail(const QVector<PaHostApiTypeId> &portaudio_api_vec)
+{
+    try {
+        // Garner the list of APIs!
+        if (!portaudio_api_vec.isEmpty()) {
+            for (const auto &pa_api: portaudio_api_vec) {
+                QString api_str_tmp = gkDekodeDb->portAudioApiToStr(pa_api);
+                int underlying_api_int = to_underlying(pa_api);
+                ui->comboBox_soundcard_api->insertItem(underlying_api_int, api_str_tmp, underlying_api_int);
+                avail_portaudio_api.insert(underlying_api_int, pa_api);
+            }
+        }
+
+        if (!avail_portaudio_api.isEmpty()) {
+            for (const auto &avail_api_idx: avail_portaudio_api.toStdMap()) {
+                // Set the QComboBox for the available PortAudio APIs to the first accessible item!
+                ui->comboBox_soundcard_api->setCurrentIndex(avail_api_idx.first);
+                return;
+            }
+        }
+    } catch (const portaudio::PaException &e) {
+        QMessageBox::warning(this, tr("Error!"), tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText()), QMessageBox::Ok);
+    } catch (const portaudio::PaCppException &e) {
+        QMessageBox::warning(this, tr("Error!"), tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), tr("A generic exception has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+    } catch (...) {
+        QMessageBox::warning(this, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
  * @brief DialogSettings::prefill_audio_devices Enumerates the audio deviecs on the user's
  * computer system.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param audio_devices The available audio devices on the user's system, as a typical std::vector.
- * @see GekkoFyre::AudioDevices::enumAudioDevices()
+ * @see GekkoFyre::AudioDevices::enumAudioDevices(), AudioDevices::filterPortAudioHostType().
  */
 void DialogSettings::prefill_audio_devices(std::vector<GkDevice> audio_devices_vec)
 {
     try {
+        ui->comboBox_soundcard_input->clear();
+        ui->comboBox_soundcard_output->clear();
         ui->comboBox_soundcard_input->insertItem(0, tr("No audio device selected"));
         ui->comboBox_soundcard_output->insertItem(0, tr("No audio device selected"));
 
-        int output_identifier = gkDekodeDb->read_audio_device_settings(true);
-        int input_identifier = gkDekodeDb->read_audio_device_settings(false);
-
-        for (const auto &device: audio_devices_vec) {
-            if (device.device_info.hostApi >= 0) {
-                if (device.is_output_dev) {
-                    //
-                    // Audio device is an output
-                    //
-                    std::string audio_dev_name = device.device_info.name;
-                    if (!audio_dev_name.empty()) {
-                        ui->comboBox_soundcard_output->insertItem(device.stream_parameters.device, QString::fromStdString(audio_dev_name),
-                                                                  device.stream_parameters.device);
-                        avail_output_audio_devs.insert(device.stream_parameters.device, device);
+        if (!avail_portaudio_api.isEmpty()) {
+            if (!audio_devices_vec.empty()) {
+                for (const auto &device: audio_devices_vec) {
+                    if (device.device_info.hostApi >= 0) {
+                        if (device.is_output_dev) {
+                            //
+                            // Audio device is an output
+                            //
+                            std::string audio_dev_name = device.device_info.name;
+                            if (!audio_dev_name.empty()) {
+                                PaDeviceIndex dev_idx = device.stream_parameters.device;
+                                avail_output_audio_devs.insert(dev_idx, device);
+                            }
+                        } else {
+                            //
+                            // Audio device is an input
+                            //
+                            std::string audio_dev_name = device.device_info.name;
+                            if (!audio_dev_name.empty()) {
+                                PaDeviceIndex dev_idx = device.stream_parameters.device;
+                                avail_input_audio_devs.insert(dev_idx, device);
+                            }
+                        }
+                    } else {
+                        throw std::runtime_error(tr("Given audio devices are nullptr! Small World Deluxe may not work correctly if you continue...").toStdString());
                     }
-                } else {
-                    //
-                    // Audio device is an input
-                    //
-                    std::string audio_dev_name = device.device_info.name;
-                    if (!audio_dev_name.empty()) {
-                        ui->comboBox_soundcard_input->insertItem(device.stream_parameters.device, QString::fromStdString(audio_dev_name),
-                                                                 device.stream_parameters.device);
-                        avail_input_audio_devs.insert(device.stream_parameters.device, device);
+                }
+
+                //
+                // Update the input / output audio device for the QComboBoxes
+                //
+                on_comboBox_soundcard_api_currentIndexChanged();
+
+                //
+                // Verify that the user's chosen and saved PortAudio API actually exist given this new instance
+                // of the Setting's Dialog! If so, set the current index of the QComboBox towards it.
+                //
+                PaHostApiTypeId api_identifier = gkDekodeDb->read_audio_api_settings();
+                if (api_identifier != PaHostApiTypeId::paInDevelopment) {
+                    int actual_api_idx = to_underlying(api_identifier);
+                    int counter = 0;
+                    for (const auto &pa_api_idx: avail_portaudio_api.toStdMap()) {
+                        if (pa_api_idx.first == actual_api_idx) {
+                            ui->comboBox_soundcard_api->setCurrentIndex(counter);
+                            on_comboBox_soundcard_api_currentIndexChanged();
+                            break;
+                        }
+
+                        ++counter;
+                    }
+                }
+
+                //
+                // Input audio device for PortAudio!
+                //
+                int input_identifier = gkDekodeDb->read_audio_device_settings(false);
+                if (input_identifier > 0) {
+                    GkDevice input_device = gkAudioDevices->gatherAudioDeviceDetails(gkPortAudioInit, input_identifier);
+                    for (const auto &input_idx: avail_input_audio_devs.toStdMap()) {
+                        if (input_idx.first == input_identifier) {
+                            chosen_input_audio_dev = input_device;
+                            ui->comboBox_soundcard_input->setCurrentIndex(input_identifier);
+                            break;
+                        }
+                    }
+                }
+
+                //
+                // Output audio device for PortAudio!
+                //
+                int output_identifier = gkDekodeDb->read_audio_device_settings(true);
+                if (output_identifier > 0) {
+                    GkDevice output_device = gkAudioDevices->gatherAudioDeviceDetails(gkPortAudioInit, output_identifier);
+                    for (const auto &output_idx: avail_output_audio_devs.toStdMap()) {
+                        if (output_idx.first == output_identifier) {
+                            chosen_output_audio_dev = output_device;
+                            ui->comboBox_soundcard_output->setCurrentIndex(output_identifier);
+                            break;
+                        }
                     }
                 }
             } else {
-                throw std::runtime_error(tr("Given audio devices are nullptr! Small World Deluxe may not work correctly if you continue...").toStdString());
-            }
-        }
+                //
+                // No PortAudio multimedia devices were detected!
+                //
+                ui->comboBox_soundcard_input->clear();
+                ui->comboBox_soundcard_output->clear();
 
-        //
-        // Collect the indexes for each QComboBox, for both input/output audio devices!
-        //
-        QMap<int, int> input_dev_indexes = collectComboBoxIndexes(ui->comboBox_soundcard_input);
-        QMap<int, int> output_dev_indexes = collectComboBoxIndexes(ui->comboBox_soundcard_output);
+                ui->comboBox_soundcard_input->insertItem(-1, tr("No available multimedia devices were detected!"), -1);
+                ui->comboBox_soundcard_output->insertItem(-1, tr("No available multimedia devices were detected!"), -1);
 
-        // Select the user's chosen audio input devices, if one has been previously chosen
-        // and saved as a setting...
-        GkDevice input_device = gkAudioDevices->gatherAudioDeviceDetails(gkPortAudioInit, input_identifier);
-        for (const auto &input_index: input_dev_indexes.toStdMap()) {
-            if (input_device.dev_number == input_index.first) {
-                ui->comboBox_soundcard_input->setCurrentIndex(input_index.second);
-                chosen_input_audio_dev = input_device;
-                break;
-            }
-        }
+                ui->comboBox_soundcard_input->setEnabled(false);
+                ui->comboBox_soundcard_output->setEnabled(false);
 
-        // Select the user's chosen audio output devices, if one has been previously chosen
-        // and saved as a setting...
-        GkDevice output_device = gkAudioDevices->gatherAudioDeviceDetails(gkPortAudioInit, output_identifier);
-        for (const auto &output_index: output_dev_indexes.toStdMap()) {
-            if (output_device.dev_number == output_index.first) {
-                ui->comboBox_soundcard_output->setCurrentIndex(output_index.second);
-                chosen_output_audio_dev = output_device;
-                break;
+                return;
             }
+        } else {
+            //
+            // No PortAudio APIs were detected! Therefore there were no PortAudio multimedia devices detected...
+            //
+            ui->comboBox_soundcard_api->clear();
+            ui->comboBox_soundcard_api->insertItem(-1, tr("No available APIs were detected!"), -1);
+            ui->comboBox_soundcard_api->setEnabled(false);
+
+            return;
         }
     } catch (const portaudio::PaException &e) {
         QMessageBox::warning(this, tr("Error!"), tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText()), QMessageBox::Ok);
@@ -445,6 +562,54 @@ void DialogSettings::prefill_audio_devices(std::vector<GkDevice> audio_devices_v
 void DialogSettings::prefill_audio_encode_comboboxes()
 {
     // gkDekodeDb->convAudioBitrateToStr();
+
+    return;
+}
+
+void DialogSettings::init_working_freqs()
+{
+    try {
+        ui->tableWidget_working_freqs->setColumnCount(3);
+        ui->tableWidget_working_freqs->setRowCount(1);
+
+        QTableWidgetItem *header_iaru_region = new QTableWidgetItem(tr("IARU Region"));
+        QTableWidgetItem *header_digital_mode = new QTableWidgetItem(tr("Mode"));
+        QTableWidgetItem *header_frequency = new QTableWidgetItem(tr("Frequency"));
+
+        header_iaru_region->setTextAlignment(Qt::AlignHCenter);
+        header_digital_mode->setTextAlignment(Qt::AlignHCenter);
+        header_frequency->setTextAlignment(Qt::AlignHCenter);
+
+        ui->tableWidget_working_freqs->setItem(0, 0, header_iaru_region);
+        ui->tableWidget_working_freqs->setItem(0, 1, header_digital_mode);
+        ui->tableWidget_working_freqs->setItem(0, 2, header_frequency);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+void DialogSettings::init_station_info()
+{
+    try {
+        ui->tableWidget_station_info->setColumnCount(3);
+        ui->tableWidget_station_info->setRowCount(1);
+
+        QTableWidgetItem *header_band = new QTableWidgetItem(tr("Band"));
+        QTableWidgetItem *header_offset = new QTableWidgetItem(tr("Offset"));
+        QTableWidgetItem *header_antenna_desc = new QTableWidgetItem(tr("Antenna Description"));
+
+        header_band->setTextAlignment(Qt::AlignHCenter);
+        header_offset->setTextAlignment(Qt::AlignHCenter);
+        header_antenna_desc->setTextAlignment(Qt::AlignHCenter);
+
+        ui->tableWidget_station_info->setItem(0, 0, header_band);
+        ui->tableWidget_station_info->setItem(0, 1, header_offset);
+        ui->tableWidget_station_info->setItem(0, 2, header_antenna_desc);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
 
     return;
 }
@@ -938,19 +1103,24 @@ void DialogSettings::on_pushButton_output_sound_test_clicked()
  * the audio sinusoidal test functionality.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param index The current index of the QComboBox.
+ * @see DialogSettings::on_comboBox_soundcard_api_currentIndexChanged().
  */
 void DialogSettings::on_comboBox_soundcard_input_currentIndexChanged(int index)
 {
+    Q_UNUSED(index);
     try {
-        int actual_index = ui->comboBox_soundcard_input->currentData().toInt();
-        for (const auto &device: avail_input_audio_devs.toStdMap()) {
-            if (device.first == actual_index) {
-                GkDevice chosen_input;
-                chosen_input = gkAudioDevices->gatherAudioDeviceDetails(gkPortAudioInit, actual_index);
+        //
+        // Input audio devices
+        //
+        if (!avail_portaudio_api.isEmpty() || !avail_input_audio_devs.isEmpty()) {
+            for (const auto &device: avail_input_audio_devs.toStdMap()) {
+                if (device.first == ui->comboBox_soundcard_input->currentData().toInt()) {
+                    GkDevice chosen_input;
+                    chosen_input = gkAudioDevices->gatherAudioDeviceDetails(gkPortAudioInit, ui->comboBox_soundcard_input->currentData().toInt());
+                    chosen_input_audio_dev = chosen_input;
 
-                chosen_input_audio_dev = chosen_input;
-
-                return;
+                    return;
+                }
             }
         }
     } catch (const portaudio::PaException &e) {
@@ -972,20 +1142,78 @@ void DialogSettings::on_comboBox_soundcard_input_currentIndexChanged(int index)
  * the audio sinusoidal test functionality.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param index The current index of the QComboBox.
+ * @see DialogSettings::on_comboBox_soundcard_api_currentIndexChanged().
  */
 void DialogSettings::on_comboBox_soundcard_output_currentIndexChanged(int index)
 {
     Q_UNUSED(index);
     try {
-        int actual_index = ui->comboBox_soundcard_output->currentData().toInt();
-        for (const auto &device: avail_output_audio_devs.toStdMap()) {
-            if (device.first == actual_index) {
-                GkDevice chosen_output;
-                chosen_output = gkAudioDevices->gatherAudioDeviceDetails(gkPortAudioInit, actual_index);
+        //
+        // Output audio devices
+        //
+        if (!avail_portaudio_api.isEmpty() || !avail_output_audio_devs.isEmpty()) {
+            for (const auto &device: avail_output_audio_devs.toStdMap()) {
+                if (device.first == ui->comboBox_soundcard_output->currentData().toInt()) {
+                    GkDevice chosen_output;
+                    chosen_output = gkAudioDevices->gatherAudioDeviceDetails(gkPortAudioInit, ui->comboBox_soundcard_output->currentData().toInt());
+                    chosen_output_audio_dev = chosen_output;
 
-                chosen_output_audio_dev = chosen_output;
+                    return;
+                }
+            }
+        }
+    } catch (const portaudio::PaException &e) {
+        QMessageBox::warning(this, tr("Error!"), tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText()), QMessageBox::Ok);
+    } catch (const portaudio::PaCppException &e) {
+        QMessageBox::warning(this, tr("Error!"), tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), tr("A generic exception has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+    } catch (...) {
+        QMessageBox::warning(this, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), QMessageBox::Ok);
+    }
 
-                return;
+    return;
+}
+
+void DialogSettings::on_comboBox_soundcard_api_currentIndexChanged(int index)
+{
+    Q_UNUSED(index);
+    try {
+        if (!avail_portaudio_api.isEmpty() || !avail_input_audio_devs.isEmpty()) {
+            //
+            // Input audio devices
+            //
+            ui->comboBox_soundcard_input->clear();
+            for (const auto &pa_api: avail_portaudio_api.toStdMap()) {
+                for (const auto &device: avail_input_audio_devs.toStdMap()) {
+                    GkDevice input_dev = device.second;
+                    if ((pa_api.first == ui->comboBox_soundcard_api->currentData().toInt()) && (input_dev.host_type_id == pa_api.second)) {
+                        std::string audio_dev_name = input_dev.device_info.name;
+                        if (!audio_dev_name.empty()) {
+                            ui->comboBox_soundcard_input->insertItem(input_dev.stream_parameters.device, QString::fromStdString(audio_dev_name),
+                                                                     input_dev.stream_parameters.device);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!avail_output_audio_devs.isEmpty()) {
+            //
+            // Output audio devices
+            //
+            ui->comboBox_soundcard_output->clear();
+            for (const auto &pa_api: avail_portaudio_api.toStdMap()) {
+                for (const auto &device: avail_output_audio_devs.toStdMap()) {
+                    GkDevice output_dev = device.second;
+                    if ((pa_api.first == ui->comboBox_soundcard_api->currentData().toInt()) && (output_dev.host_type_id == pa_api.second)) {
+                        std::string audio_dev_name = output_dev.device_info.name;
+                        if (!audio_dev_name.empty()) {
+                            ui->comboBox_soundcard_output->insertItem(output_dev.stream_parameters.device, QString::fromStdString(audio_dev_name),
+                                                                      output_dev.stream_parameters.device);
+                        }
+                    }
+                }
             }
         }
     } catch (const portaudio::PaException &e) {
@@ -1019,6 +1247,11 @@ void DialogSettings::on_pushButton_audio_logs_save_dir_clicked()
         gkDekodeDb->write_misc_audio_settings(ui->lineEdit_audio_logs_save_dir->text(), audio_cfg::AudioRecLoc);
     }
 
+    return;
+}
+
+void DialogSettings::on_pushButton_soundcard_api_reload_clicked()
+{
     return;
 }
 

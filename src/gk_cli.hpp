@@ -46,6 +46,7 @@
 #include <string>
 #include <QObject>
 #include <QString>
+#include <QPointer>
 #include <QCommandLineParser>
 
 namespace GekkoFyre {
@@ -57,7 +58,7 @@ public:
     explicit GkCli(std::shared_ptr<QCommandLineParser> parser,
                    std::shared_ptr<GekkoFyre::FileIo> fileIo,
                    std::shared_ptr<GekkoFyre::GkLevelDb> database,
-                   std::shared_ptr<GekkoFyre::RadioLibs> radioLibs,
+                   QPointer<GekkoFyre::RadioLibs> radioLibs,
                    QObject *parent);
     virtual ~GkCli();
 
@@ -66,7 +67,7 @@ public:
 private:
     std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
     std::shared_ptr<GekkoFyre::GkLevelDb> gkDb;
-    std::shared_ptr<GekkoFyre::RadioLibs> gkRadioLibs;
+    QPointer<GekkoFyre::RadioLibs> gkRadioLibs;
     std::shared_ptr<QCommandLineParser> gkCliParser;
 
 };

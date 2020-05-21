@@ -162,8 +162,9 @@ protected slots:
 public slots:
     bool stopRecordingInput(const bool &recording_is_stopped, const int &wait_time = 5000);
     void updateSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &data,
-                           const std::vector<short> &raw_audio_data,
+                           const std::vector<int> &raw_audio_data,
                            const int &hanning_window_size, const size_t &buffer_size);
+    void updateProgressBar(const bool &enable, const size_t &min, const size_t &max);
 
 signals:
     void refreshVuMeter(const double &volumePctg);
@@ -172,21 +173,22 @@ signals:
     void stopRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
     void gkExitApp();
     void sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values,
-                         const std::vector<short> &raw_audio_data,
+                         const std::vector<int> &raw_audio_data,
                          const int &hanning_window_size, const size_t &buffer_size);
+    void changeFreq(const bool &radio_locked, const GekkoFyre::AmateurRadio::Control::FreqChange &freq_change);
+    void changeSettings(const bool &radio_locked, const GekkoFyre::AmateurRadio::Control::SettingsChange &settings_change);
 
 private:
     Ui::MainWindow *ui;
 
     leveldb::DB *db;
-    boost::filesystem::path save_db_path;
     std::shared_ptr<GekkoFyre::FileIo> fileIo;
     std::shared_ptr<GekkoFyre::GkLevelDb> GkDb;
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
     std::shared_ptr<GekkoFyre::PaMic> gkPaMic;
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
-    std::shared_ptr<GekkoFyre::RadioLibs> gkRadioLibs;
     std::shared_ptr<GekkoFyre::GkCli> gkCli;
+    QPointer<GekkoFyre::RadioLibs> gkRadioLibs;
     QPointer<GekkoFyre::GkAudioEncoding> gkAudioEncoding;
     QPointer<GekkoFyre::GkAudioDecoding> gkAudioDecoding;
     QPointer<GekkoFyre::SpectroGui> gkSpectroGui;
@@ -196,6 +198,12 @@ private:
     std::shared_ptr<QSettings> sw_settings;
     std::shared_ptr<QCommandLineParser> gkCliParser;
     // std::shared_ptr<QPrinter> printer;
+
+    //
+    // Filesystem
+    //
+    boost::filesystem::path save_db_path;
+    boost::filesystem::path native_slash;
 
     //
     // PortAudio initialization and buffers
@@ -220,11 +228,18 @@ private:
     // https://www.boost.org/doc/libs/1_72_0/doc/html/thread/thread_management.html
     //
     std::timed_mutex btn_record_mtx;
-    std::future<GekkoFyre::AmateurRadio::Control::Radio *> rig_thread;
+    std::future<std::shared_ptr<GekkoFyre::AmateurRadio::Control::Radio>> rig_thread;
 
-    GekkoFyre::AmateurRadio::Control::Radio *radio;
+    //
+    // USB & RS232
+    //
+    libusb_context *usb_ctx_ptr;
+
+    //
+    // Miscellaneous
+    //
+    std::shared_ptr<GekkoFyre::AmateurRadio::Control::Radio> gkRadioPtr;
     QPointer<QTimer> timer;
-    // QDateTime spectro_gui_init_start; // The very first time for when the spectrograph is initialized by the user!
 
     //
     // This sub-section contains all the boolean variables pertaining to the QPushButtons on QMainWindow that
@@ -246,11 +261,17 @@ private:
     QStringList getAmateurBands();
     bool prefillAmateurBands();
 
+    void launchSettingsWin();
+    void radioInitStart(const QString &def_com_port);
+    bool radioInitTest(const QString &def_com_port);
+
     void createStatusBar(const QString &statusMsg = "");
     bool changeStatusBarMsg(const QString &statusMsg = "");
     bool steadyTimer(const int &seconds);
 };
 
 Q_DECLARE_METATYPE(std::vector<GekkoFyre::Spectrograph::RawFFT>);
+Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::Control::FreqChange);
+Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::Control::SettingsChange);
 Q_DECLARE_METATYPE(std::vector<short>);
 Q_DECLARE_METATYPE(size_t);

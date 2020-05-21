@@ -46,11 +46,13 @@
 #include <vector>
 #include <string>
 #include <tuple>
+#include <type_traits>
 #include <QSharedPointer>
 #include <QDialog>
 #include <QString>
 #include <QMap>
 #include <QVector>
+#include <QPointer>
 #include <QMultiMap>
 #include <QComboBox>
 #include <QSettings>
@@ -67,9 +69,10 @@ public:
     explicit DialogSettings(std::shared_ptr<GekkoFyre::GkLevelDb> dkDb,
                             std::shared_ptr<GekkoFyre::FileIo> filePtr,
                             std::shared_ptr<GekkoFyre::AudioDevices> audioDevices,
-                            std::shared_ptr<GekkoFyre::RadioLibs> radioPtr,
+                            QPointer<GekkoFyre::RadioLibs> radioPtr,
                             std::shared_ptr<QSettings> settings,
                             portaudio::System *portAudioInit,
+                            libusb_context *usb_lib_ctx,
                             QWidget *parent = nullptr);
     ~DialogSettings();
 
@@ -81,8 +84,10 @@ private slots:
     void on_pushButton_input_sound_test_clicked();
     void on_pushButton_output_sound_test_clicked();
     void on_pushButton_audio_logs_save_dir_clicked();
-    void on_comboBox_soundcard_input_currentIndexChanged(int index);
-    void on_comboBox_soundcard_output_currentIndexChanged(int index);
+    void on_pushButton_soundcard_api_reload_clicked();
+    void on_comboBox_soundcard_input_currentIndexChanged(int index = -1);
+    void on_comboBox_soundcard_output_currentIndexChanged(int index = -1);
+    void on_comboBox_soundcard_api_currentIndexChanged(int index = -1);
     void on_comboBox_brand_selection_currentIndexChanged(const QString &arg1);
     void on_comboBox_com_port_currentIndexChanged(int index);
     void on_spinBox_spectro_render_thread_settings_valueChanged(int arg1);
@@ -98,9 +103,18 @@ signals:
 private:
     Ui::DialogSettings *ui;
 
-    portaudio::System *gkPortAudioInit;
+    //
+    // Converts an object, such as an `enum`, to the underlying type (i.e. an `integer` in the given example)
+    //
+    template <typename E>
+    constexpr typename std::underlying_type<E>::type to_underlying(E e) noexcept {
+        return static_cast<typename std::underlying_type<E>::type>(e);
+    }
 
-    std::shared_ptr<GekkoFyre::RadioLibs> gkRadioLibs;
+    portaudio::System *gkPortAudioInit;
+    libusb_context *usb_ctx_ptr;
+
+    QPointer<GekkoFyre::RadioLibs> gkRadioLibs;
     std::shared_ptr<GekkoFyre::GkLevelDb> gkDekodeDb;
     std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
@@ -123,6 +137,7 @@ private:
     QMap<tstring, int> available_com_ports; // For tracking the *available* Device Ports (i.e. COM/Serial/RS232/USB) that the user can choose from...
 
     // The key corresponds to the position within the QComboBoxes
+    QMap<int, PaHostApiTypeId> avail_portaudio_api;
     QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> avail_input_audio_devs;
     QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> avail_output_audio_devs;
     GekkoFyre::Database::Settings::Audio::GkDevice chosen_input_audio_dev;
@@ -133,8 +148,11 @@ private:
 
     std::shared_ptr<QSettings> gkSettings;
 
+    void prefill_audio_api_avail(const QVector<PaHostApiTypeId> &portaudio_api_vec);
     void prefill_audio_devices(std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> audio_devices_vec);
     void prefill_audio_encode_comboboxes();
+    void init_working_freqs();
+    void init_station_info();
 
     QMap<int, int> collectComboBoxIndexes(const QComboBox *combo_box);
     void prefill_avail_com_ports(const QMap<tstring, std::pair<tstring, boost::tribool>> &com_ports);

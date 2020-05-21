@@ -62,7 +62,7 @@ class FileIo : public QObject {
 
 public:
     explicit FileIo(std::shared_ptr<QSettings> settings, QObject *parent = nullptr);
-    ~FileIo() override;
+    ~FileIo();
 
     static std::vector<boost::filesystem::path> boost_dir_iterator(const boost::filesystem::path &dirPath, boost::system::error_code ec,
             const std::vector<std::string> &dirsToSkip = { });
