@@ -1685,14 +1685,14 @@
                                  <item row="1" column="0">
                                   <widget class="QLabel" name="label_com_port">
                                    <property name="text">
-                                    <string>Serial Port: </string>
+                                    <string>Device Port: </string>
                                    </property>
                                   </widget>
                                  </item>
                                  <item row="2" column="0">
                                   <widget class="QLabel" name="label_device_port_name">
                                    <property name="text">
-                                    <string>Device: </string>
+                                    <string>Device Path: </string>
                                    </property>
                                   </widget>
                                  </item>
@@ -1774,7 +1774,7 @@
                                       </property>
                                       <layout class="QHBoxLayout" name="horizontalLayout_8">
                                        <item>
-                                        <widget class="QRadioButton" name="radioButton_data_bits_eight">
+                                        <widget class="QRadioButton" name="radioButton_data_bits_default">
                                          <property name="text">
                                           <string>Default</string>
                                          </property>
@@ -1788,7 +1788,7 @@
                                         </widget>
                                        </item>
                                        <item>
-                                        <widget class="QRadioButton" name="radioButton_data_bits_default">
+                                        <widget class="QRadioButton" name="radioButton_data_bits_eight">
                                          <property name="text">
                                           <string>Eight (8)</string>
                                          </property>
@@ -1941,7 +1941,7 @@
                                            </widget>
                                           </item>
                                           <item row="0" column="1">
-                                           <widget class="QComboBox" name="comboBox"/>
+                                           <widget class="QComboBox" name="comboBox_force_ctrl_lines_dtr"/>
                                           </item>
                                          </layout>
                                         </widget>
@@ -1975,7 +1975,7 @@
                                            </widget>
                                           </item>
                                           <item row="0" column="1">
-                                           <widget class="QComboBox" name="comboBox_2"/>
+                                           <widget class="QComboBox" name="comboBox_force_ctrl_lines_rts"/>
                                           </item>
                                          </layout>
                                         </widget>
@@ -2041,14 +2041,14 @@
                                      <number>0</number>
                                     </property>
                                     <item>
-                                     <widget class="QRadioButton" name="radioButton_8">
+                                     <widget class="QRadioButton" name="radioButton_ptt_method_vox">
                                       <property name="text">
                                        <string>VOX</string>
                                       </property>
                                      </widget>
                                     </item>
                                     <item>
-                                     <widget class="QRadioButton" name="radioButton_6">
+                                     <widget class="QRadioButton" name="radioButton_ptt_method_dtr">
                                       <property name="text">
                                        <string>DTR</string>
                                       </property>
@@ -2079,14 +2079,14 @@
                                      <number>0</number>
                                     </property>
                                     <item>
-                                     <widget class="QRadioButton" name="radioButton_9">
+                                     <widget class="QRadioButton" name="radioButton_ptt_method_cat">
                                       <property name="text">
                                        <string>CAT</string>
                                       </property>
                                      </widget>
                                     </item>
                                     <item>
-                                     <widget class="QRadioButton" name="radioButton_7">
+                                     <widget class="QRadioButton" name="radioButton_ptt_method_rts">
                                       <property name="text">
                                        <string>RTS</string>
                                       </property>
@@ -2119,12 +2119,38 @@
                                     <item row="0" column="0">
                                      <widget class="QLabel" name="label_ptt_method_port">
                                       <property name="text">
-                                       <string>Port: </string>
+                                       <string>Device Port: </string>
                                       </property>
                                      </widget>
                                     </item>
                                     <item row="0" column="1">
                                      <widget class="QComboBox" name="comboBox_ptt_method_port"/>
+                                    </item>
+                                    <item row="1" column="0">
+                                     <widget class="QLabel" name="label_ptt_method_dev_path">
+                                      <property name="text">
+                                       <string>Device Path: </string>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="1" column="1">
+                                     <widget class="QLineEdit" name="lineEdit_ptt_method_dev_path">
+                                      <property name="sizePolicy">
+                                       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                        <horstretch>0</horstretch>
+                                        <verstretch>0</verstretch>
+                                       </sizepolicy>
+                                      </property>
+                                      <property name="maxLength">
+                                       <number>16384</number>
+                                      </property>
+                                      <property name="readOnly">
+                                       <bool>true</bool>
+                                      </property>
+                                      <property name="placeholderText">
+                                       <string>N/A</string>
+                                      </property>
+                                     </widget>
                                     </item>
                                    </layout>
                                   </widget>
@@ -2199,7 +2225,7 @@
                                         <number>7</number>
                                        </property>
                                        <item>
-                                        <widget class="QRadioButton" name="radioButton_2">
+                                        <widget class="QRadioButton" name="radioButton_tx_audio_src_rear_data">
                                          <property name="text">
                                           <string>Rear/Data</string>
                                          </property>
@@ -2233,7 +2259,7 @@
                                         <number>7</number>
                                        </property>
                                        <item>
-                                        <widget class="QRadioButton" name="radioButton">
+                                        <widget class="QRadioButton" name="radioButton_tx_audio_src_front_mic">
                                          <property name="text">
                                           <string>Front/Mic</string>
                                          </property>
@@ -2449,8 +2475,8 @@
                         <rect>
                          <x>0</x>
                          <y>0</y>
-                         <width>53</width>
-                         <height>16</height>
+                         <width>98</width>
+                         <height>28</height>
                         </rect>
                        </property>
                       </widget>

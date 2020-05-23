@@ -72,6 +72,9 @@ public:
     int convertAudioChannelsInt(const GekkoFyre::Database::Settings::audio_channels &channel_enum) const;
     bool convertAudioEnumIsStereo(const GekkoFyre::Database::Settings::audio_channels &channel_enum) const;
 
+    ptt_type_t convPttTypeToEnum(const QString &ptt_type_str);
+    QString convPttTypeToStr(const ptt_type_t &ptt_type_enum);
+
     QString convAudioBitrateToStr(const GekkoFyre::GkAudioFramework::Bitrate &bitrate);
 
     void write_audio_api_settings(const PaHostApiTypeId &interface);

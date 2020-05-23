@@ -205,19 +205,19 @@ namespace Database {
             RigModel,
             RigModelIndex,
             RigVersion,
-            ComDevice,
+            ComDeviceCat,
+            ComDevicePtt,
             ComBaudRate,
             StopBits,
-            PollingInterval,
-            ModeDelay,
-            Sideband,
-            CWisLSB,
-            FlowControl,
-            PTTCommand,
-            Retries,
-            RetryInterv,
-            WriteDelay,
-            PostWriteDelay
+            DataBits,
+            Handshake,
+            ForceCtrlLinesDtr,
+            ForceCtrlLinesRts,
+            PTTMethod,
+            TXAudioSrc,
+            PTTMode,
+            SplitOperation,
+            PTTAdvCmd
         };
 
         enum audio_cfg {

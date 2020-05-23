@@ -69,10 +69,11 @@ public:
     explicit DialogSettings(std::shared_ptr<GekkoFyre::GkLevelDb> dkDb,
                             std::shared_ptr<GekkoFyre::FileIo> filePtr,
                             std::shared_ptr<GekkoFyre::AudioDevices> audioDevices,
-                            QPointer<GekkoFyre::RadioLibs> radioPtr,
+                            QPointer<GekkoFyre::RadioLibs> radioLibs,
                             std::shared_ptr<QSettings> settings,
                             portaudio::System *portAudioInit,
                             libusb_context *usb_lib_ctx,
+                            std::shared_ptr<GekkoFyre::AmateurRadio::Control::Radio> radioPtr,
                             QWidget *parent = nullptr);
     ~DialogSettings();
 
@@ -90,11 +91,62 @@ private slots:
     void on_comboBox_soundcard_api_currentIndexChanged(int index = -1);
     void on_comboBox_brand_selection_currentIndexChanged(const QString &arg1);
     void on_comboBox_com_port_currentIndexChanged(int index);
+    void on_comboBox_ptt_method_port_currentIndexChanged(int index);
     void on_spinBox_spectro_render_thread_settings_valueChanged(int arg1);
     void on_horizontalSlider_encoding_audio_quality_valueChanged(int value);
 
     void disableUsbPorts(const bool &active);
     void disableComPorts(const bool &active);
+
+    //
+    // Data Bits
+    //
+    void on_radioButton_data_bits_default_clicked();
+    void on_radioButton_data_bits_seven_clicked();
+    void on_radioButton_data_bits_eight_clicked();
+
+    //
+    // Stop Bits
+    //
+    void on_radioButton_stop_bits_default_clicked();
+    void on_radioButton_stop_bits_one_clicked();
+    void on_radioButton_stop_bits_two_clicked();
+
+    //
+    // Handshake
+    //
+    void on_radioButton_handshake_default_clicked();
+    void on_radioButton_handshake_none_clicked();
+    void on_radioButton_handshake_xon_xoff_clicked();
+    void on_radioButton_handshake_hardware_clicked();
+
+    //
+    // PTT Method
+    //
+    void on_radioButton_ptt_method_vox_clicked();
+    void on_radioButton_ptt_method_dtr_clicked();
+    void on_radioButton_ptt_method_cat_clicked();
+    void on_radioButton_ptt_method_rts_clicked();
+
+    //
+    // Transmit Audio Source
+    //
+    void on_radioButton_tx_audio_src_rear_data_clicked();
+    void on_radioButton_tx_audio_src_front_mic_clicked();
+
+    //
+    // Mode
+    //
+    void on_radioButton_mode_none_clicked();
+    void on_radioButton_mode_usb_clicked();
+    void on_radioButton_mode_data_pkt_clicked();
+
+    //
+    // Split Operation
+    //
+    void on_radioButton_split_none_clicked();
+    void on_radioButton_split_rig_clicked();
+    void on_radioButton_split_fake_it_clicked();
 
 signals:
     void usbPortsDisabled(const bool &active);
@@ -118,6 +170,7 @@ private:
     std::shared_ptr<GekkoFyre::GkLevelDb> gkDekodeDb;
     std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
+    std::shared_ptr<GekkoFyre::AmateurRadio::Control::Radio> gkRadioPtr;
     static QComboBox *rig_comboBox;
     static QComboBox *mfg_comboBox;
     static QMultiMap<rig_model_t, std::tuple<QString, QString, GekkoFyre::AmateurRadio::rig_type>> radio_model_names; // Values: MFG, Model, Rig Type.
@@ -155,6 +208,7 @@ private:
     void init_station_info();
 
     QMap<int, int> collectComboBoxIndexes(const QComboBox *combo_box);
+    void prefill_rig_force_ctrl_lines(const ptt_type_t &ptt_type);
     void prefill_avail_com_ports(const QMap<tstring, std::pair<tstring, boost::tribool>> &com_ports);
     void prefill_avail_usb_ports(const std::vector<GekkoFyre::Database::Settings::UsbPort> usb_devices);
     void prefill_com_baud_speed(const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate);

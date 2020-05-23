@@ -96,8 +96,11 @@ void GkLevelDb::write_rig_settings(const QString &value, const Database::Setting
         case radio_cfg::RigVersion:
             batch.Put("RigVersion", value.toStdString());
             break;
-        case radio_cfg::ComDevice:
-            batch.Put("ComDevice", value.toStdString());
+        case radio_cfg::ComDeviceCat:
+            batch.Put("ComDeviceCat", value.toStdString());
+            break;
+        case radio_cfg::ComDevicePtt:
+            batch.Put("ComDevicePtt", value.toStdString());
             break;
         case radio_cfg::ComBaudRate:
             batch.Put("ComBaudRate", value.toStdString());
@@ -105,35 +108,32 @@ void GkLevelDb::write_rig_settings(const QString &value, const Database::Setting
         case radio_cfg::StopBits:
             batch.Put("StopBits", value.toStdString());
             break;
-        case radio_cfg::PollingInterval:
-            batch.Put("PollingInterval", value.toStdString());
+        case radio_cfg::DataBits:
+            batch.Put("DataBits", value.toStdString());
             break;
-        case radio_cfg::ModeDelay:
-            batch.Put("ModeDelay", value.toStdString());
+        case radio_cfg::Handshake:
+            batch.Put("Handshake", value.toStdString());
             break;
-        case radio_cfg::Sideband:
-            batch.Put("Sideband", value.toStdString());
+        case radio_cfg::ForceCtrlLinesDtr:
+            batch.Put("ForceCtrlLinesDtr", value.toStdString());
             break;
-        case radio_cfg::CWisLSB:
-            batch.Put("CWisLSB", value.toStdString());
+        case radio_cfg::ForceCtrlLinesRts:
+            batch.Put("ForceCtrlLinesRts", value.toStdString());
             break;
-        case radio_cfg::FlowControl:
-            batch.Put("FlowControl", value.toStdString());
+        case radio_cfg::PTTMethod:
+            batch.Put("PTTMethod", value.toStdString());
             break;
-        case radio_cfg::PTTCommand:
-            batch.Put("PTTCommand", value.toStdString());
+        case radio_cfg::TXAudioSrc:
+            batch.Put("TXAudioSrc", value.toStdString());
             break;
-        case radio_cfg::Retries:
-            batch.Put("Retries", value.toStdString());
+        case radio_cfg::PTTMode:
+            batch.Put("PTTMode", value.toStdString());
             break;
-        case radio_cfg::RetryInterv:
-            batch.Put("RetryInterv", value.toStdString());
+        case radio_cfg::SplitOperation:
+            batch.Put("SplitOperation", value.toStdString());
             break;
-        case radio_cfg::WriteDelay:
-            batch.Put("WriteDelay", value.toStdString());
-            break;
-        case radio_cfg::PostWriteDelay:
-            batch.Put("PostWriteDelay", value.toStdString());
+        case radio_cfg::PTTAdvCmd:
+            batch.Put("PTTAdvCmd", value.toStdString());
             break;
         default:
             return;
@@ -330,8 +330,11 @@ QString GkLevelDb::read_rig_settings(const Database::Settings::radio_cfg &key)
     case radio_cfg::RigVersion:
         status = db->Get(read_options, "RigVersion", &value);
         break;
-    case radio_cfg::ComDevice:
-        status = db->Get(read_options, "ComDevice", &value);
+    case radio_cfg::ComDeviceCat:
+        status = db->Get(read_options, "ComDeviceCat", &value);
+        break;
+    case radio_cfg::ComDevicePtt:
+        status = db->Get(read_options, "ComDevicePtt", &value);
         break;
     case radio_cfg::ComBaudRate:
         status = db->Get(read_options, "ComBaudRate", &value);
@@ -339,20 +342,32 @@ QString GkLevelDb::read_rig_settings(const Database::Settings::radio_cfg &key)
     case radio_cfg::StopBits:
         status = db->Get(read_options, "StopBits", &value);
         break;
-    case radio_cfg::PollingInterval:
-        status = db->Get(read_options, "PollingInterval", &value);
+    case radio_cfg::DataBits:
+        status = db->Get(read_options, "DataBits", &value);
         break;
-    case radio_cfg::ModeDelay:
-        status = db->Get(read_options, "ModeDelay", &value);
+    case radio_cfg::Handshake:
+        status = db->Get(read_options, "Handshake", &value);
         break;
-    case radio_cfg::Sideband:
-        status = db->Get(read_options, "Sideband", &value);
+    case radio_cfg::ForceCtrlLinesDtr:
+        status = db->Get(read_options, "ForceCtrlLinesDtr", &value);
         break;
-    case radio_cfg::CWisLSB:
-        status = db->Get(read_options, "CWisLSB", &value);
+    case radio_cfg::ForceCtrlLinesRts:
+        status = db->Get(read_options, "ForceCtrlLinesRts", &value);
         break;
-    case radio_cfg::FlowControl:
-        status = db->Get(read_options, "FlowControl", &value);
+    case radio_cfg::PTTMethod:
+        status = db->Get(read_options, "PTTMethod", &value);
+        break;
+    case radio_cfg::TXAudioSrc:
+        status = db->Get(read_options, "TXAudioSrc", &value);
+        break;
+    case radio_cfg::PTTMode:
+        status = db->Get(read_options, "PTTMode", &value);
+        break;
+    case radio_cfg::SplitOperation:
+        status = db->Get(read_options, "SplitOperation", &value);
+        break;
+    case radio_cfg::PTTAdvCmd:
+        status = db->Get(read_options, "PTTAdvCmd", &value);
         break;
     default:
         return "";
@@ -797,6 +812,67 @@ bool GkLevelDb::convertAudioEnumIsStereo(const audio_channels &channel_enum) con
     }
 
     return false;
+}
+
+/**
+ * @brief GkLevelDb::convPttTypeToEnum
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param ptt_type_str
+ * @return
+ */
+ptt_type_t GkLevelDb::convPttTypeToEnum(const QString &ptt_type_str)
+{
+    if (ptt_type_str == tr("RIG_PTT_RIG")) {
+        return RIG_PTT_RIG;
+    } else if (ptt_type_str == tr("RIG_PTT_SERIAL_DTR")) {
+        return RIG_PTT_SERIAL_DTR;
+    } else if (ptt_type_str == tr("RIG_PTT_SERIAL_RTS")) {
+        return RIG_PTT_SERIAL_RTS;
+    } else if (ptt_type_str == tr("RIG_PTT_PARALLEL")) {
+        return RIG_PTT_PARALLEL;
+    } else if (ptt_type_str == tr("RIG_PTT_RIG_MICDATA")) {
+        return RIG_PTT_RIG_MICDATA;
+    } else if (ptt_type_str == tr("RIG_PTT_CM108")) {
+        return RIG_PTT_CM108;
+    } else if (ptt_type_str == tr("RIG_PTT_GPIO")) {
+        return RIG_PTT_GPIO;
+    } else {
+        return RIG_PTT_NONE;
+    }
+
+    return RIG_PTT_NONE;
+}
+
+/**
+ * @brief GkLevelDb::convPttTypeToStr
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param ptt_type_enum
+ * @return
+ */
+QString GkLevelDb::convPttTypeToStr(const ptt_type_t &ptt_type_enum)
+{
+    switch (ptt_type_enum) {
+    case ptt_type_t::RIG_PTT_RIG:
+        return tr("RIG_PTT_RIG");
+    case ptt_type_t::RIG_PTT_SERIAL_DTR:
+        return tr("RIG_PTT_SERIAL_DTR");
+    case ptt_type_t::RIG_PTT_SERIAL_RTS:
+        return tr("RIG_PTT_SERIAL_RTS");
+    case ptt_type_t::RIG_PTT_PARALLEL:
+        return tr("RIG_PTT_PARALLEL");
+    case ptt_type_t::RIG_PTT_RIG_MICDATA:
+        return tr("RIG_PTT_RIG_MICDATA");
+    case ptt_type_t::RIG_PTT_CM108:
+        return tr("RIG_PTT_CM108");
+    case ptt_type_t::RIG_PTT_GPIO:
+        return tr("RIG_PTT_GPIO");
+    case ptt_type_t::RIG_PTT_GPION:
+        return tr("RIG_PTT_GPION");
+    default:
+        return tr("RIG_PTT_NONE");
+    }
+
+    return tr("RIG_PTT_NONE");
 }
 
 QString GkLevelDb::convAudioBitrateToStr(const GkAudioFramework::Bitrate &bitrate)

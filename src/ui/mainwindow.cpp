@@ -297,7 +297,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         gkRadioPtr = std::make_shared<AmateurRadio::Control::Radio>();
 
         QString def_com_port = gkRadioLibs->initComPorts();
-        QString comDevice = GkDb->read_rig_settings(radio_cfg::ComDevice);
+        QString comDevice = GkDb->read_rig_settings(radio_cfg::ComDeviceCat);
         if (!comDevice.isEmpty()) {
             def_com_port = comDevice;
         }
@@ -533,7 +533,7 @@ bool MainWindow::prefillAmateurBands()
 void MainWindow::launchSettingsWin()
 {
     QPointer<DialogSettings> dlg_settings = new DialogSettings(GkDb, fileIo, gkAudioDevices, gkRadioLibs, sw_settings,
-                                                               gkPortAudioInit, usb_ctx_ptr, this);
+                                                               gkPortAudioInit, usb_ctx_ptr, gkRadioPtr, this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
