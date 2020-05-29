@@ -40,9 +40,9 @@
 #include <boost/exception/all.hpp>
 #include <iostream>
 #include <exception>
-#include <QMessageBox>
 #include <utility>
 #include <cstring>
+#include <QMessageBox>
 
 #ifdef __cplusplus
 extern "C"
@@ -74,7 +74,7 @@ namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
 RadioLibs::RadioLibs(std::shared_ptr<GekkoFyre::FileIo> filePtr, std::shared_ptr<StringFuncs> stringPtr,
-                     std::shared_ptr<GkLevelDb> dkDb, std::shared_ptr<Radio> radioPtr, QObject *parent) : QObject(parent)
+                     std::shared_ptr<GkLevelDb> dkDb, std::shared_ptr<GkRadio> radioPtr, QObject *parent) : QObject(parent)
 {
     gkStringFuncs = std::move(stringPtr);
     gkDekodeDb = std::move(dkDb);
@@ -389,11 +389,13 @@ std::vector<UsbPort> RadioLibs::enumUsbDevices(libusb_context *usb_ctx_ptr)
             usb->usb_enum.dev = dev;
             usb->usb_enum.context = usb_ctx_ptr;
 
+            // Get the underlying configuration details!
             int ret = libusb_get_device_descriptor(usb->usb_enum.dev, &usb->usb_enum.desc);
             if (ret < 0) {
                 throw std::runtime_error(tr("Failed to get device descriptor for USB!").toStdString());
             }
 
+            // Obtain the BUS & Address details
             usb->bus = libusb_get_bus_number(dev);
             usb->addr = libusb_get_device_address(dev);
 
@@ -403,9 +405,10 @@ std::vector<UsbPort> RadioLibs::enumUsbDevices(libusb_context *usb_ctx_ptr)
             // TODO: Fill this section out!
             #endif
 
+            // Open the USB device itself
             int ret_usb_open = libusb_open(dev, &usb->usb_enum.handle);
             if (ret_usb_open == LIBUSB_SUCCESS) {
-                if (usb->usb_enum.desc.iManufacturer) {
+                if (usb->usb_enum.desc.iManufacturer) { // Obtain the manufacturer details
                     int ret_cfg_mfg = libusb_get_string_descriptor_ascii(usb->usb_enum.handle, usb->usb_enum.desc.iManufacturer,
                                                                          tmp_val, sizeof(tmp_val));
                     if (ret_cfg_mfg > 0) {
@@ -415,7 +418,7 @@ std::vector<UsbPort> RadioLibs::enumUsbDevices(libusb_context *usb_ctx_ptr)
                     }
                 }
 
-                if (usb->usb_enum.desc.iProduct) {
+                if (usb->usb_enum.desc.iProduct) { // Obtain the product description
                     int ret_cfg_prod = libusb_get_string_descriptor_ascii(usb->usb_enum.handle, usb->usb_enum.desc.iProduct,
                                                                           tmp_val, sizeof(tmp_val));
                     if (ret_cfg_prod > 0) {
@@ -425,7 +428,7 @@ std::vector<UsbPort> RadioLibs::enumUsbDevices(libusb_context *usb_ctx_ptr)
                     }
                 }
 
-                if (usb->usb_enum.desc.iSerialNumber) {
+                if (usb->usb_enum.desc.iSerialNumber) { // Obtain the serial number
                     int ret_cfg_serial = libusb_get_string_descriptor_ascii(usb->usb_enum.handle, usb->usb_enum.desc.iSerialNumber,
                                                                           tmp_val, sizeof(tmp_val));
                     if (ret_cfg_serial > 0) {
@@ -574,10 +577,12 @@ void RadioLibs::registerComPort(std::list<std::string> &comList, std::list<std::
  * @param verbosity The kind of errors you wish for HamLib to report, whether they be at a debug level or only critical errors.
  * @note Ref: HamLib <https://github.com/Hamlib/Hamlib/>.
  */
-std::shared_ptr<Radio> RadioLibs::init_rig(const rig_model_t &rig_model, const std::string &com_port,
+std::shared_ptr<GkRadio> RadioLibs::init_rig(const rig_model_t &rig_model, const std::string &com_port,
                                            const com_baud_rates &com_baud_rate, const rig_debug_level_e &verbosity)
 {
-    std::shared_ptr<Radio> radio = std::make_shared<Radio>();
+    std::mutex mtx_init_rig;
+    std::lock_guard<std::mutex> lck_guard(mtx_init_rig);
+    std::shared_ptr<GkRadio> radio = std::make_shared<GkRadio>();
 
     // https://github.com/Hamlib/Hamlib/blob/master/tests/example.c
     // Set verbosity level
@@ -656,6 +661,110 @@ std::shared_ptr<Radio> RadioLibs::init_rig(const rig_model_t &rig_model, const s
     radio->status = rig_get_strength(radio->rig, RIG_VFO_CURR, &radio->strength);
 
     return radio;
+}
+
+/**
+ * @brief RadioLibs::read_rig_settings
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param dekode_db
+ * @return
+ */
+std::shared_ptr<GkRadio> RadioLibs::read_rig_settings(const std::shared_ptr<GkLevelDb> &dekode_db)
+{
+    try {
+        using namespace Database::Settings;
+        std::shared_ptr<GkRadio> gk_radio = std::make_shared<GkRadio>();
+
+        QString rigBrand = dekode_db->read_rig_settings(radio_cfg::RigBrand);
+        QString rigModel = dekode_db->read_rig_settings(radio_cfg::RigModel);
+        QString rigModelIndex = dekode_db->read_rig_settings(radio_cfg::RigModelIndex);
+        QString rigVers = dekode_db->read_rig_settings(radio_cfg::RigVersion);
+        QString comBaudRate = dekode_db->read_rig_settings(radio_cfg::ComBaudRate);
+        QString stopBits = dekode_db->read_rig_settings(radio_cfg::StopBits);
+        QString data_bits = dekode_db->read_rig_settings(radio_cfg::DataBits);
+        QString handshake = dekode_db->read_rig_settings(radio_cfg::Handshake);
+        QString force_ctrl_lines_dtr = dekode_db->read_rig_settings(radio_cfg::ForceCtrlLinesDtr);
+        QString force_ctrl_lines_rts = dekode_db->read_rig_settings(radio_cfg::ForceCtrlLinesRts);
+        QString ptt_method = dekode_db->read_rig_settings(radio_cfg::PTTMethod);
+        QString tx_audio_src = dekode_db->read_rig_settings(radio_cfg::TXAudioSrc);
+        QString ptt_mode = dekode_db->read_rig_settings(radio_cfg::PTTMode);
+        QString split_operation = dekode_db->read_rig_settings(radio_cfg::SplitOperation);
+        QString ptt_adv_cmd = dekode_db->read_rig_settings(radio_cfg::PTTAdvCmd);
+
+        if (!rigBrand.isNull() || !rigBrand.isEmpty()) {
+            gk_radio->rig_brand = rigBrand.toStdString();
+        }
+
+        if (!rigModel.isNull() || !rigModel.isEmpty()) {
+            gk_radio->rig_model = rigModel.toInt();
+        }
+
+        /*
+        if (!rigModelIndex.isNull() || !rigModelIndex.isEmpty()) {
+            gk_radio;
+        }
+        */
+
+        /*
+        if (!rigVers.isNull() || !rigVers.isEmpty()) {
+            gk_radio;
+        }
+        */
+
+        if (!comBaudRate.isNull() || !comBaudRate.isEmpty()) {
+            gk_radio->dev_baud_rate = convertBaudRateEnum(comBaudRate.toInt());
+        }
+
+        if (!stopBits.isNull() || !stopBits.isEmpty()) {
+            // gk_radio->port_details;
+        }
+
+        if (!data_bits.isNull() || !data_bits.isEmpty()) {
+            // gk_radio;
+        }
+
+        if (!handshake.isNull() || !handshake.isEmpty()) {
+            // gk_radio;
+        }
+
+        if (!force_ctrl_lines_dtr.isNull() || !force_ctrl_lines_dtr.isEmpty()) {
+            // gk_radio;
+        }
+
+        if (!force_ctrl_lines_rts.isNull() || !force_ctrl_lines_rts.isEmpty()) {
+            // gk_radio;
+        }
+
+        if (!ptt_method.isNull() || !ptt_method.isEmpty()) {
+            // gk_radio;
+        }
+
+        if (!tx_audio_src.isNull() || !tx_audio_src.isEmpty()) {
+            // gk_radio;
+        }
+
+        if (!ptt_mode.isNull() || !ptt_mode.isEmpty()) {
+            // gk_radio;
+        }
+
+        if (!split_operation.isNull() || !split_operation.isEmpty()) {
+            // gk_radio;
+        }
+
+        if (!ptt_adv_cmd.isNull() || !ptt_adv_cmd.isEmpty()) {
+            // gk_radio;
+        }
+
+        if (gk_radio != nullptr) {
+            return gk_radio;
+        } else {
+            throw std::runtime_error(tr("An error has been encountered with reading the setting's database!").toStdString());
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
+    return std::shared_ptr<GkRadio>();
 }
 
 /**
@@ -762,6 +871,36 @@ QString RadioLibs::hamlibModulEnumToStr(const rmode_t &modulation)
     }
 
     return tr("None");
+}
+
+/**
+ * @brief RadioLibs::convGkConnTypeToEnum
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param conn_type
+ * @return
+ */
+GkConnType RadioLibs::convGkConnTypeToEnum(const QString &conn_type)
+{
+    if (conn_type == "RS232") {
+        // RS232
+        return GkConnType::RS232;
+    } else if (conn_type == "USB") {
+        // USB
+        return GkConnType::USB;
+    } else if (conn_type == "Parallel") {
+        // Parallel
+        return GkConnType::Parallel;
+    } else if (conn_type == "CM108") {
+        // CM108
+        return GkConnType::CM108;
+    } else if (conn_type == "GPIO") {
+        // GPIO
+        return GkConnType::GPIO;
+    } else {
+        return GkConnType::None;
+    }
+
+    return GkConnType::None;
 }
 
 /**

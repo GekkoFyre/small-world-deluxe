@@ -48,6 +48,7 @@
 #include <vector>
 #include <string>
 #include <utility>
+#include <mutex>
 #include <list>
 
 #ifdef _WIN32
@@ -63,7 +64,7 @@ class RadioLibs : public QObject {
 
 public:
     explicit RadioLibs(std::shared_ptr<GekkoFyre::FileIo> filePtr, std::shared_ptr<GekkoFyre::StringFuncs> stringPtr,
-                       std::shared_ptr<GkLevelDb> dkDb, std::shared_ptr<GekkoFyre::AmateurRadio::Control::Radio> radioPtr,
+                       std::shared_ptr<GkLevelDb> dkDb, std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> radioPtr,
                        QObject *parent = nullptr);
     ~RadioLibs();
 
@@ -71,11 +72,15 @@ public:
     GekkoFyre::AmateurRadio::com_baud_rates convertBaudRateEnum(const int &baud_rate_sel);
     QString initComPorts();
     QMap<tstring, std::pair<tstring, boost::tribool>> status_com_ports();
-    std::shared_ptr<AmateurRadio::Control::Radio> init_rig(const rig_model_t &rig_model, const std::string &com_port,
-                                                           const GekkoFyre::AmateurRadio::com_baud_rates &com_baud_rate,
-                                                           const rig_debug_level_e &verbosity);
     QString translateBandsToStr(const AmateurRadio::bands &band);
     QString hamlibModulEnumToStr(const rmode_t &modulation);
+
+    GekkoFyre::AmateurRadio::GkConnType convGkConnTypeToEnum(const QString &conn_type);
+
+    std::shared_ptr<AmateurRadio::Control::GkRadio> init_rig(const rig_model_t &rig_model, const std::string &com_port,
+                                                           const GekkoFyre::AmateurRadio::com_baud_rates &com_baud_rate,
+                                                           const rig_debug_level_e &verbosity);
+    std::shared_ptr<AmateurRadio::Control::GkRadio> read_rig_settings(const std::shared_ptr<GekkoFyre::GkLevelDb> &dekode_db);
 
     libusb_context *initUsbLib();
     std::vector<Database::Settings::UsbPort> enumUsbDevices(libusb_context *usb_ctx_ptr);
@@ -88,7 +93,7 @@ private:
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GekkoFyre::GkLevelDb> gkDekodeDb;
     std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
-    std::shared_ptr<GekkoFyre::AmateurRadio::Control::Radio> gkRadioPtr;
+    std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> gkRadioPtr;
 
     static void hamlibStatus(const int &retcode);
 

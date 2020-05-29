@@ -228,7 +228,7 @@ private:
     // https://www.boost.org/doc/libs/1_72_0/doc/html/thread/thread_management.html
     //
     std::timed_mutex btn_record_mtx;
-    std::future<std::shared_ptr<GekkoFyre::AmateurRadio::Control::Radio>> rig_thread;
+    std::future<std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>> rig_thread;
 
     //
     // USB & RS232
@@ -238,7 +238,7 @@ private:
     //
     // Miscellaneous
     //
-    std::shared_ptr<GekkoFyre::AmateurRadio::Control::Radio> gkRadioPtr;
+    std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> gkRadioPtr;
     QPointer<QTimer> timer;
 
     //
@@ -254,7 +254,7 @@ private:
     bool btn_radio_tune;
     bool btn_radio_monitor;
 
-    void radioStats(GekkoFyre::AmateurRadio::Control::Radio *radio_dev);
+    void radioStats(GekkoFyre::AmateurRadio::Control::GkRadio *radio_dev);
 
     void changePushButtonColor(const QPointer<QPushButton> &push_button, const bool &green_result = true,
                                const bool &color_blind_mode = false);
@@ -275,3 +275,4 @@ Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::Control::FreqChange);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::Control::SettingsChange);
 Q_DECLARE_METATYPE(std::vector<short>);
 Q_DECLARE_METATYPE(size_t);
+Q_DECLARE_METATYPE(uint8_t);

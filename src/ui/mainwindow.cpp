@@ -85,6 +85,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<GekkoFyre::AmateurRadio::Control::SettingsChange>("GekkoFyre::AmateurRadio::Control::SettingsChange");
     qRegisterMetaType<std::vector<short>>("std::vector<short>");
     qRegisterMetaType<size_t>("size_t");
+    qRegisterMetaType<uint8_t>("uint8_t");
 
     try {
         // Initialize QMainWindow to a full-screen after a single second!
@@ -294,7 +295,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the Hamlib radio control library!
         //
-        gkRadioPtr = std::make_shared<AmateurRadio::Control::Radio>();
+        gkRadioPtr = std::make_shared<AmateurRadio::Control::GkRadio>();
 
         QString def_com_port = gkRadioLibs->initComPorts();
         QString comDevice = GkDb->read_rig_settings(radio_cfg::ComDeviceCat);
@@ -579,12 +580,26 @@ void MainWindow::radioInitStart(const QString &def_com_port)
         gkRadioPtr->verbosity = RIG_DEBUG_BUG;
         #endif
 
-        //
-        // Initialize Hamlib!
-        //
-        gkRadioPtr->is_open = false;
-        rig_thread = std::async(std::launch::async, &RadioLibs::init_rig, gkRadioLibs, gkRadioPtr->rig_model, def_com_port.toStdString(), final_baud_rate, gkRadioPtr->verbosity);
-        gkRadioPtr = rig_thread.get();
+        try {
+            //
+            // Initialize Hamlib!
+            //
+            gkRadioPtr->is_open = false;
+            std::future_status status;
+            rig_thread = std::async(std::launch::async, &RadioLibs::init_rig, gkRadioLibs, gkRadioPtr->rig_model, def_com_port.toStdString(), final_baud_rate, gkRadioPtr->verbosity);
+            do {
+                status = rig_thread.wait_for(std::chrono::seconds(5));
+                if (status == std::future_status::timeout) {
+                    throw std::runtime_error(tr("Timed-out while attempting to prepare amateur radio rig!").toStdString());
+                } else if (status == std::future_status::ready) {
+                    std::cout << "Amateur radio rig is ready!" << std::endl;
+                }
+            } while (status != std::future_status::ready);
+            gkRadioPtr = rig_thread.get();
+        } catch (const std::runtime_error &e) {
+            QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
+            return;
+        }
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
     }
@@ -907,7 +922,7 @@ void MainWindow::updateVolIndex(const int &percentage)
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param radio_dev The structure containing all the information on the user's radio rig of choice.
  */
-void MainWindow::radioStats(AmateurRadio::Control::Radio *radio_dev)
+void MainWindow::radioStats(AmateurRadio::Control::GkRadio *radio_dev)
 {
     return;
 }

@@ -73,7 +73,7 @@ public:
                             std::shared_ptr<QSettings> settings,
                             portaudio::System *portAudioInit,
                             libusb_context *usb_lib_ctx,
-                            std::shared_ptr<GekkoFyre::AmateurRadio::Control::Radio> radioPtr,
+                            std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> radioPtr,
                             QWidget *parent = nullptr);
     ~DialogSettings();
 
@@ -97,6 +97,11 @@ private slots:
 
     void disableUsbPorts(const bool &active);
     void disableComPorts(const bool &active);
+
+    //
+    // Rig selection
+    //
+    void on_comboBox_rig_selection_currentIndexChanged(int index);
 
     //
     // Data Bits
@@ -170,7 +175,7 @@ private:
     std::shared_ptr<GekkoFyre::GkLevelDb> gkDekodeDb;
     std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
-    std::shared_ptr<GekkoFyre::AmateurRadio::Control::Radio> gkRadioPtr;
+    std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> gkRadioPtr;
     static QComboBox *rig_comboBox;
     static QComboBox *mfg_comboBox;
     static QMultiMap<rig_model_t, std::tuple<QString, QString, GekkoFyre::AmateurRadio::rig_type>> radio_model_names; // Values: MFG, Model, Rig Type.
@@ -187,7 +192,10 @@ private:
     bool usb_ports_active;
 
     // First value is the Target Path while the second is the currentIndex within the QComboBox
-    QMap<tstring, int> available_com_ports; // For tracking the *available* Device Ports (i.e. COM/Serial/RS232/USB) that the user can choose from...
+    QMap<tstring, int> available_com_ports; // For tracking the *available* RS232, etc. device ports that the user can choose from...
+
+    // The key is the Port Number for the USB device in question, while the value is what's displayed in the QComboBox...
+    QMap<uint8_t, tstring> available_usb_ports; // For tracking the *available* USB device ports that the user can choose from...
 
     // The key corresponds to the position within the QComboBoxes
     QMap<int, PaHostApiTypeId> avail_portaudio_api;

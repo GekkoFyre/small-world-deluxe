@@ -349,6 +349,15 @@ namespace AmateurRadio {
         BAND241000
     };
 
+    enum GkConnType {
+        RS232,
+        USB,
+        Parallel,
+        CM108,
+        GPIO,
+        None
+    };
+
     enum com_baud_rates {
         BAUD1200,
         BAUD2400,
@@ -361,13 +370,16 @@ namespace AmateurRadio {
     };
 
     namespace Control {
-        struct Radio {                      // https://github.com/Hamlib/Hamlib/blob/master/tests/example.c
+        struct GkRadio {                      // https://github.com/Hamlib/Hamlib/blob/master/tests/example.c
             RIG *rig;                       // Hamlib rig pointer
             bool is_open;                   // Has HamLib been successfully initiated (including the RIG* pointer?)
             std::string rig_file;           // Hamlib rig temporary file
             std::string info_buf;           // Hamlib information buffer
+            GkConnType cat_conn_type;       // The type of connection, whether USB, RS232, etc.
+            GkConnType ptt_conn_type;       // The type of connection, whether USB, RS232, etc.
             std::string mm;                 // Hamlib modulation mode
             rig_model_t rig_model;          // Hamlib rig model
+            std::string rig_brand;          // Hamlib rig brand
             rig_debug_level_e verbosity;    // The debug level and verbosity of Hamlib
             com_baud_rates dev_baud_rate;   // Communication device baud rate
             hamlib_port_t port_details;     // Information concerning details about RS232 ports, etc.
@@ -385,7 +397,7 @@ namespace AmateurRadio {
         };
 
         struct FreqChange {                 // This structure is used when a frequency change is requested.
-            Radio radio;                    // Details about the radio itself!
+            GkRadio radio;                    // Details about the radio itself!
             freq_t new_freq;                // The new frequency to change towards!
         };
 

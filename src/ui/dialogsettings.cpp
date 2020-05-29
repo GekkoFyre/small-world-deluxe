@@ -78,7 +78,7 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
                                std::shared_ptr<QSettings> settings,
                                portaudio::System *portAudioInit,
                                libusb_context *usb_lib_ctx,
-                               std::shared_ptr<AmateurRadio::Control::Radio> radioPtr,
+                               std::shared_ptr<AmateurRadio::Control::GkRadio> radioPtr,
                                QWidget *parent)
     : QDialog(parent), ui(new Ui::DialogSettings)
 {
@@ -798,8 +798,7 @@ void DialogSettings::prefill_rig_force_ctrl_lines(const ptt_type_t &ptt_type)
 /**
  * @brief DialogSettings::prefill_avail_com_ports Finds the available COM/Serial ports within a system.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param ports The list of returned and available COM/Serial ports.
- * @param upperLimit The upper limit on how many COM/Serial ports to potentially return.
+ * @param com_ports The list of returned and available COM/Serial ports.
  * @see GekkoFyre::RadioLibs::detect_com_ports(), DialogSettings::prefill_avail_usb_ports()
  */
 void DialogSettings::prefill_avail_com_ports(const QMap<tstring, std::pair<tstring, boost::tribool>> &com_ports)
@@ -919,6 +918,30 @@ void DialogSettings::prefill_avail_usb_ports(const std::vector<UsbPort> usb_devi
         if (!usb_devices.empty()) {
             // USB devices are not empty!
             emit usbPortsDisabled(true);
+
+            available_usb_ports.clear();
+            for (const auto &device: usb_devices) {
+                uint8_t dev_port = device.port;
+                #ifdef _UNICODE
+                QString combined_str = QString("[ #%1 ] %2").arg(QString::number(dev_port)).arg(QString::fromStdWString(device.usb_enum.product));
+                available_usb_ports.insert(dev_port, combined_str.toStdWString());
+                #else
+                QString combined_str = QString("[ #%1 ] %2").arg(QString::number(dev_port)).arg(QString::fromStdString(device.usb_enum.product));
+                available_usb_ports.insert(dev_port, combined_str.toStdString());
+                #endif
+
+                //
+                // CAT Control
+                //
+                ui->comboBox_com_port->addItem(combined_str, dev_port);
+
+                //
+                // PTT Method
+                //
+                ui->comboBox_com_port->addItem(combined_str, dev_port);
+
+                combined_str.clear();
+            }
         } else {
             // There exists no USB devices...
             emit usbPortsDisabled(false);
@@ -1086,6 +1109,8 @@ bool DialogSettings::read_settings()
         QString logsDirLoc = gkDekodeDb->read_misc_audio_settings(audio_cfg::LogsDirLoc);
         QString audioRecLoc = gkDekodeDb->read_misc_audio_settings(audio_cfg::AudioRecLoc);
         QString settingsDbLoc = gkDekodeDb->read_misc_audio_settings(audio_cfg::settingsDbLoc);
+
+        Q_UNUSED(rigModel);
 
         /*
         if (!rigModel.isEmpty()) {
@@ -1626,6 +1651,16 @@ void DialogSettings::disableComPorts(const bool &active)
 {
     com_ports_active = active;
     enable_device_port_options();
+
+    return;
+}
+
+void DialogSettings::on_comboBox_rig_selection_currentIndexChanged(int index)
+{
+    Q_UNUSED(index);
+    // unsigned short sel_rig_index = ui->comboBox_rig_selection->currentIndex();
+
+    // gkRadioPtr->rig->caps->get_split_mode;
 
     return;
 }
