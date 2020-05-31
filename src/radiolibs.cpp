@@ -38,10 +38,12 @@
 #include "radiolibs.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
+#include <ios>
 #include <iostream>
 #include <exception>
 #include <utility>
 #include <cstring>
+#include <sstream>
 #include <QMessageBox>
 
 #ifdef __cplusplus
@@ -52,13 +54,12 @@ extern "C"
 #include <libusb.h>
 
 #if defined(_MSC_VER) && (_MSC_VER > 1900)
-#elif __linux__
-#include <sys/ioctl.h>
-#include <linux/serial.h>
-#else
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#elif __linux__
+#include <sys/ioctl.h>
+#include <linux/serial.h>
 #endif
 
 #ifdef __cplusplus
@@ -360,6 +361,35 @@ void RadioLibs::hamlibStatus(const int &retcode)
 }
 
 /**
+ * @brief RadioLibs::getUsbPortId gets the Port Identification number for the given USB Device.
+ * @author Unknown <https://cpp.hotexamples.com/examples/-/-/libusb_get_bus_number/cpp-libusb_get_bus_number-function-examples.html>
+ * @param usb_device The given USB Device to query.
+ * @return The Port Identification number for the given USB Device.
+ */
+std::string RadioLibs::getUsbPortId(libusb_device *usb_device)
+{
+    try {
+        auto usb_bus = std::to_string(libusb_get_bus_number(usb_device));
+
+        // As per the USB 3.0 specs, the current maximum limit for the depth is 7...
+        const auto max_usb_depth = 8;
+        uint8_t usb_ports[max_usb_depth] = {};
+        std::stringstream port_path;
+        auto port_count = libusb_get_port_numbers(usb_device, usb_ports, max_usb_depth);
+        auto usb_dev = std::to_string(libusb_get_device_address(usb_device));
+        for (size_t i = 0; i < port_count; ++i) {
+            port_path << std::to_string(usb_ports[i]) << (((i + 1) < port_count) ? "." : "");
+        }
+
+        return usb_bus + "-" + port_path.str() + "-" + usb_dev;
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
+    return "";
+}
+
+/**
  * @brief RadioLibs::enumUsbDevices will enumerate out any USB devices present/connected on the user's computer system, giving valuable
  * details for each device.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -371,20 +401,20 @@ std::vector<UsbPort> RadioLibs::enumUsbDevices(libusb_context *usb_ctx_ptr)
 {
     std::vector<UsbPort> usb_vec;
     libusb_device **devices = nullptr;
-    UsbPort *usb = new UsbPort();
     int dev_cnt = 0;
     try {
-        int i = 0;
-        dev_cnt = libusb_get_device_list(nullptr, &devices);
+        size_t i = 0;
+        dev_cnt = libusb_get_device_list(usb_ctx_ptr, &devices);
         if (dev_cnt < 0) {
-            delete usb;
             libusb_exit(usb_ctx_ptr);
             std::cout << tr("No USB devices were detected!").toStdString() << std::endl;
             return std::vector<UsbPort>();
         }
 
         libusb_device *dev = nullptr;
-        while ((dev = devices[i++]) != nullptr) {
+        while ((dev = devices[++i]) != nullptr) {
+            UsbPort *usb = new UsbPort();
+
             usb->usb_enum.handle = nullptr;
             usb->usb_enum.dev = dev;
             usb->usb_enum.context = usb_ctx_ptr;
@@ -395,63 +425,80 @@ std::vector<UsbPort> RadioLibs::enumUsbDevices(libusb_context *usb_ctx_ptr)
                 throw std::runtime_error(tr("Failed to get device descriptor for USB!").toStdString());
             }
 
-            // Obtain the BUS & Address details
-            usb->bus = libusb_get_bus_number(dev);
-            usb->addr = libusb_get_device_address(dev);
-
             #ifdef _WIN32 || __MINGW32__
-            unsigned char tmp_val[MAX_PATH + 32];
+            unsigned char tmp_val[MAX_PATH + 1];
             #elif __linux__
             // TODO: Fill this section out!
             #endif
 
+            // uint8_t port_numbers_len[8];
+
             // Open the USB device itself
             int ret_usb_open = libusb_open(dev, &usb->usb_enum.handle);
             if (ret_usb_open == LIBUSB_SUCCESS) {
-                if (usb->usb_enum.desc.iManufacturer) { // Obtain the manufacturer details
-                    int ret_cfg_mfg = libusb_get_string_descriptor_ascii(usb->usb_enum.handle, usb->usb_enum.desc.iManufacturer,
-                                                                         tmp_val, sizeof(tmp_val));
-                    if (ret_cfg_mfg > 0) {
-                        usb->usb_enum.mfg = std::string(reinterpret_cast<const char *>(tmp_val), sizeof(tmp_val));
-                    } else {
-                        throw std::runtime_error(tr("Error with enumerating `libusb` interface! Unable to obtain the manufacturer descriptor!").toStdString());
-                    }
+                usb->usb_enum.config = new libusb_config_descriptor();
+                int ret_cfg_desc = libusb_get_config_descriptor(dev, 0, &usb->usb_enum.config);
+                if (ret_cfg_desc != LIBUSB_SUCCESS) {
+                    std::cerr << tr("Error with enumerating `libusb` interface! Couldn't retrieve descriptors.").toStdString() << std::endl;
                 }
 
-                if (usb->usb_enum.desc.iProduct) { // Obtain the product description
-                    int ret_cfg_prod = libusb_get_string_descriptor_ascii(usb->usb_enum.handle, usb->usb_enum.desc.iProduct,
-                                                                          tmp_val, sizeof(tmp_val));
-                    if (ret_cfg_prod > 0) {
-                        usb->usb_enum.product = std::string(reinterpret_cast<const char *>(tmp_val), sizeof(tmp_val));
-                    } else {
-                        throw std::runtime_error(tr("Error with enumerating `libusb` interface! Unable to obtain the product descriptor!").toStdString());
-                    }
-                }
+                // https://cpp.hotexamples.com/examples/-/-/libusb_get_bus_number/cpp-libusb_get_bus_number-function-examples.html
+                for (size_t j = 0; j < usb->usb_enum.config->bNumInterfaces; ++j) {
+                    for (size_t k = 0; k < usb->usb_enum.config->interface[j].num_altsetting; ++k) {
+                        // Export device information
+                        if (usb->usb_enum.config->interface[j].altsetting[k].bInterfaceClass == LIBUSB_CLASS_AUDIO) {
+                            // Export only audio devices!
+                            // Obtain the BUS, Address and Port details
+                            std::ostringstream os_bus;
+                            std::ostringstream os_addr;
+                            os_bus << std::dec << libusb_get_bus_number(dev);
+                            os_addr << std::dec << libusb_get_device_address(dev);
 
-                if (usb->usb_enum.desc.iSerialNumber) { // Obtain the serial number
-                    int ret_cfg_serial = libusb_get_string_descriptor_ascii(usb->usb_enum.handle, usb->usb_enum.desc.iSerialNumber,
-                                                                          tmp_val, sizeof(tmp_val));
-                    if (ret_cfg_serial > 0) {
-                        usb->usb_enum.serial_number = std::string(reinterpret_cast<const char *>(tmp_val), sizeof(tmp_val));
-                    } else {
-                        throw std::runtime_error(tr("Error with enumerating `libusb` interface! Unable to obtain the serial number descriptor!").toStdString());
+                            usb->bus = os_bus.str();
+                            usb->addr = os_addr.str();
+                            usb->port = getUsbPortId(dev);
+
+                            if (usb->usb_enum.desc.iManufacturer) { // Obtain the manufacturer details
+                                int ret_cfg_mfg = libusb_get_string_descriptor_ascii(usb->usb_enum.handle, usb->usb_enum.desc.iManufacturer,
+                                                                                     tmp_val, sizeof(tmp_val));
+                                if (ret_cfg_mfg > 0) {
+                                    usb->usb_enum.mfg = std::string(reinterpret_cast<const char *>(tmp_val), sizeof(tmp_val));
+                                } else {
+                                    throw std::runtime_error(tr("Error with enumerating `libusb` interface! Unable to obtain the manufacturer descriptor!").toStdString());
+                                }
+                            }
+
+                            if (usb->usb_enum.desc.iProduct) { // Obtain the product description
+                                int ret_cfg_prod = libusb_get_string_descriptor_ascii(usb->usb_enum.handle, usb->usb_enum.desc.iProduct,
+                                                                                      tmp_val, sizeof(tmp_val));
+                                if (ret_cfg_prod > 0) {
+                                    usb->usb_enum.product = std::string(reinterpret_cast<const char *>(tmp_val), sizeof(tmp_val));
+                                } else {
+                                    throw std::runtime_error(tr("Error with enumerating `libusb` interface! Unable to obtain the product descriptor!").toStdString());
+                                }
+                            }
+
+                            if (usb->usb_enum.desc.iSerialNumber) { // Obtain the serial number
+                                int ret_cfg_serial = libusb_get_string_descriptor_ascii(usb->usb_enum.handle, usb->usb_enum.desc.iSerialNumber,
+                                                                                      tmp_val, sizeof(tmp_val));
+                                if (ret_cfg_serial > 0) {
+                                    usb->usb_enum.serial_number = std::string(reinterpret_cast<const char *>(tmp_val), sizeof(tmp_val));
+                                } else {
+                                    throw std::runtime_error(tr("Error with enumerating `libusb` interface! Unable to obtain the serial number descriptor!").toStdString());
+                                }
+                            }
+
+                            usb_vec.push_back(*usb);
+                        }
                     }
                 }
             }
-
-            usb->usb_enum.config = new libusb_config_descriptor();
-            int ret_cfg_desc = libusb_get_config_descriptor(dev, i, &usb->usb_enum.config);
-            if (ret_cfg_desc != LIBUSB_SUCCESS) {
-                std::cerr << tr("Error with enumerating `libusb` interface! Couldn't retrieve descriptors.").toStdString() << std::endl;
-            }
-
-            usb_vec.push_back(*usb);
+            delete usb;
         }
     } catch (const std::exception &e) {
         QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
     }
 
-    delete usb;
     // libusb_close(usb->usb_enum.handle);
     libusb_free_device_list(devices, dev_cnt);
     if (!usb_vec.empty()) {

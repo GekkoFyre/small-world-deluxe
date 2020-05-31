@@ -252,49 +252,55 @@ namespace Database {
             WindowVSize
         };
 
+        struct UsbVers3 {
+            libusb_ss_endpoint_companion_descriptor *ss_desc;   // Details that are applicable for USB 3.0 superspeed interfaces
+            libusb_endpoint_descriptor *endpoint;               // A structure representing the standard USB 3.0 endpoint descriptor
+            libusb_interface_descriptor *inter_desc;            // Details about the interface itself pertaining to the `libusb` library
+        };
+
         struct UsbDev {
-            libusb_device *dev;                         // Primary underlying pointer to the `libusb` device
-            libusb_interface *interface;                // Underlying pointer to the `libusb` interface
-            libusb_interface_descriptor *inter_desc;    // Details about the interface itself pertaining to the `libusb` library
-            libusb_context *context;                    // The underlying context to the `libusb` library
-            libusb_device_descriptor desc;              // Underlying pointer to the `libusb` configuration
-            libusb_config_descriptor *config;           // Configuration parameters for the `libusb` device in question
-            libusb_device_handle *handle;               // Underlying `libusb` device handle
-            std::string mfg;                            // Information relating to the manufacturer
-            std::string serial_number;                  // The Product Serial Number
-            std::string product;                        // The Product ID
+            libusb_device *dev;                                 // Primary underlying pointer to the `libusb` device
+            libusb_interface *interface;                        // Underlying pointer to the `libusb` interface
+            libusb_context *context;                            // The underlying context to the `libusb` library
+            libusb_device_descriptor desc;                      // Underlying pointer to the `libusb` configuration
+            libusb_config_descriptor *config;                   // Configuration parameters for the `libusb` device in question
+            libusb_device_handle *handle;                       // Underlying `libusb` device handle
+            std::string mfg;                                    // Information relating to the manufacturer
+            std::string serial_number;                          // The Product Serial Number
+            std::string product;                                // The Product ID
         };
 
         struct UsbPort {
-            UsbDev usb_enum;                            // The USB Device structure, as above
-            uint8_t port;                               // The USB port number as determined by `libusb`
-            uint8_t bus;                                // The USB BUS number as determined by `libusb`
-            uint8_t addr;                               // The USB port's own address as determined by 'libusb'
+            UsbDev usb_enum;                                    // The USB Device structure, as above
+            UsbVers3 usb_vers_3;                                // Details specific to USB 3.0 (and SS) devices
+            std::string port;                                   // The USB port number as determined by `libusb`
+            std::string bus;                                    // The USB BUS number as determined by `libusb`
+            std::string addr;                                   // The USB port's own address as determined by 'libusb'
         };
 
         namespace Audio {
             struct GkDevice {
-                std::string dev_name_formatted;         // The name of the device itself, formatted
-                bool default_dev;                       // Is this the default device for the system?
-                bool default_disp;                      // Used for filtering purposes
-                double def_sample_rate;                 // Default sample rate
-                boost::tribool is_output_dev;           // Is the audio device in question an input? Output if FALSE, UNSURE if either
-                int dev_number;                         // The number of this device; this is saved to the Google LevelDB database as the user's preference
-                PaError dev_err;                        // Any errors that belong to this audio device specifically
-                std::vector<double> supp_sample_rates;  // Supported sample rates by this audio device
-                long asio_min_latency;                  // ASIO specific
-                long asio_max_latency;                  // ASIO specific
-                long asio_granularity;                  // ASIO specific
-                long asio_pref_latency;                 // ASIO specific
-                long asio_min_buffer_size;              // ASIO specific
-                long asio_max_buffer_size;              // ASIO specific
-                long asio_pref_buffer_size;             // ASIO specific
-                int dev_input_channel_count;            // The number of channels this INPUT audio device supports
-                int dev_output_channel_count;           // The number of channels this OUTPUT audio device supports
-                audio_channels sel_channels;            // The selected audio channel configuration
-                PaError asio_err;                       // ASIO specific error related information
-                PaDeviceInfo device_info;               // All information pertaining to this audio device
-                PaStreamParameters stream_parameters;   // Device-specific information such as the sample format, etc.
+                std::string dev_name_formatted;                 // The name of the device itself, formatted
+                bool default_dev;                               // Is this the default device for the system?
+                bool default_disp;                              // Used for filtering purposes
+                double def_sample_rate;                         // Default sample rate
+                boost::tribool is_output_dev;                   // Is the audio device in question an input? Output if FALSE, UNSURE if either
+                int dev_number;                                 // The number of this device; this is saved to the Google LevelDB database as the user's preference
+                PaError dev_err;                                // Any errors that belong to this audio device specifically
+                std::vector<double> supp_sample_rates;          // Supported sample rates by this audio device
+                long asio_min_latency;                          // ASIO specific
+                long asio_max_latency;                          // ASIO specific
+                long asio_granularity;                          // ASIO specific
+                long asio_pref_latency;                         // ASIO specific
+                long asio_min_buffer_size;                      // ASIO specific
+                long asio_max_buffer_size;                      // ASIO specific
+                long asio_pref_buffer_size;                     // ASIO specific
+                int dev_input_channel_count;                    // The number of channels this INPUT audio device supports
+                int dev_output_channel_count;                   // The number of channels this OUTPUT audio device supports
+                audio_channels sel_channels;                    // The selected audio channel configuration
+                PaError asio_err;                               // ASIO specific error related information
+                PaDeviceInfo device_info;                       // All information pertaining to this audio device
+                PaStreamParameters stream_parameters;           // Device-specific information such as the sample format, etc.
                 PaHostApiTypeId host_type_id;
             };
         }
@@ -370,7 +376,7 @@ namespace AmateurRadio {
     };
 
     namespace Control {
-        struct GkRadio {                      // https://github.com/Hamlib/Hamlib/blob/master/tests/example.c
+        struct GkRadio {                    // https://github.com/Hamlib/Hamlib/blob/master/tests/example.c
             RIG *rig;                       // Hamlib rig pointer
             bool is_open;                   // Has HamLib been successfully initiated (including the RIG* pointer?)
             std::string rig_file;           // Hamlib rig temporary file
@@ -397,7 +403,7 @@ namespace AmateurRadio {
         };
 
         struct FreqChange {                 // This structure is used when a frequency change is requested.
-            GkRadio radio;                    // Details about the radio itself!
+            GkRadio radio;                  // Details about the radio itself!
             freq_t new_freq;                // The new frequency to change towards!
         };
 

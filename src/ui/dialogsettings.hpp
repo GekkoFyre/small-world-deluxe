@@ -51,6 +51,7 @@
 #include <QDialog>
 #include <QString>
 #include <QMap>
+#include <QHash>
 #include <QVector>
 #include <QPointer>
 #include <QMultiMap>
@@ -195,7 +196,7 @@ private:
     QMap<tstring, int> available_com_ports; // For tracking the *available* RS232, etc. device ports that the user can choose from...
 
     // The key is the Port Number for the USB device in question, while the value is what's displayed in the QComboBox...
-    QMap<uint8_t, tstring> available_usb_ports; // For tracking the *available* USB device ports that the user can choose from...
+    QHash<QString, tstring> available_usb_ports; // For tracking the *available* USB device ports that the user can choose from...
 
     // The key corresponds to the position within the QComboBoxes
     QMap<int, PaHostApiTypeId> avail_portaudio_api;

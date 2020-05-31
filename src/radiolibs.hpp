@@ -39,7 +39,6 @@
 
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
-#include "src/radiolibs.hpp"
 #include <QObject>
 #include <QString>
 #include <QMap>
@@ -96,6 +95,7 @@ private:
     std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> gkRadioPtr;
 
     static void hamlibStatus(const int &retcode);
+    static std::string getUsbPortId(libusb_device *usb_device);
 
     static std::string getDriver(const boost::filesystem::path &tty);
     static void probe_serial8250_comports(std::list<std::string> &comList, const std::list<std::string> &comList8250);

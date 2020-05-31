@@ -921,26 +921,42 @@ void DialogSettings::prefill_avail_usb_ports(const std::vector<UsbPort> usb_devi
 
             available_usb_ports.clear();
             for (const auto &device: usb_devices) {
-                uint8_t dev_port = device.port;
+                QString dev_port = QString::fromStdString(device.port);
                 #ifdef _UNICODE
                 QString combined_str = QString("[ #%1 ] %2").arg(QString::number(dev_port)).arg(QString::fromStdWString(device.usb_enum.product));
-                available_usb_ports.insert(dev_port, combined_str.toStdWString());
+                if (!available_usb_ports.contains(dev_port)) {
+                    available_usb_ports.insert(dev_port, combined_str.toStdWString());
+
+                    //
+                    // CAT Control
+                    //
+                    ui->comboBox_com_port->addItem(combined_str, dev_port);
+
+                    //
+                    // PTT Method
+                    //
+                    ui->comboBox_ptt_method_port->addItem(combined_str, dev_port);
+
+                    combined_str.clear();
+                }
                 #else
-                QString combined_str = QString("[ #%1 ] %2").arg(QString::number(dev_port)).arg(QString::fromStdString(device.usb_enum.product));
-                available_usb_ports.insert(dev_port, combined_str.toStdString());
+                QString combined_str = QString("[ #%1 ] %2").arg(dev_port).arg(QString::fromStdString(device.usb_enum.product));
+                if (!available_usb_ports.contains(dev_port)) {
+                    available_usb_ports.insert(dev_port, combined_str.toStdString());
+
+                    //
+                    // CAT Control
+                    //
+                    ui->comboBox_com_port->addItem(combined_str, dev_port);
+
+                    //
+                    // PTT Method
+                    //
+                    ui->comboBox_ptt_method_port->addItem(combined_str, dev_port);
+
+                    combined_str.clear();
+                }
                 #endif
-
-                //
-                // CAT Control
-                //
-                ui->comboBox_com_port->addItem(combined_str, dev_port);
-
-                //
-                // PTT Method
-                //
-                ui->comboBox_com_port->addItem(combined_str, dev_port);
-
-                combined_str.clear();
             }
         } else {
             // There exists no USB devices...
