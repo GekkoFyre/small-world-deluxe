@@ -51,7 +51,6 @@
 #include <QDialog>
 #include <QString>
 #include <QMap>
-#include <QHash>
 #include <QVector>
 #include <QPointer>
 #include <QMultiMap>
@@ -162,6 +161,7 @@ private slots:
 signals:
     void usbPortsDisabled(const bool &active);
     void comPortsDisabled(const bool &active);
+    void changePortType(const GekkoFyre::AmateurRadio::GkConnType &rig_conn_type, const bool &is_cat_mode);
 
 private:
     Ui::DialogSettings *ui;
@@ -192,6 +192,8 @@ private:
     // A QMap where the COM/Serial port name itself is the key and the value is the Target Path plus a
     // Boost C++ triboolean that signifies whether the port is active or not
     QMap<tstring, std::pair<tstring, boost::tribool>> status_com_ports;
+
+    // The key is the USB devices' port number and the value is the associated struct
     QMap<std::string, GekkoFyre::Database::Settings::GkUsbPort> status_usb_devices;
 
     bool com_ports_active;
@@ -201,7 +203,7 @@ private:
     QMap<tstring, int> available_com_ports; // For tracking the *available* RS232, etc. device ports that the user can choose from...
 
     // The key is the Port Number for the USB device in question, while the value is what's displayed in the QComboBox...
-    QHash<QString, tstring> available_usb_ports; // For tracking the *available* USB device ports that the user can choose from...
+    QMap<QString, tstring> available_usb_ports; // For tracking the *available* USB device ports that the user can choose from...
 
     // The key corresponds to the position within the QComboBoxes
     QMap<int, PaHostApiTypeId> avail_portaudio_api;

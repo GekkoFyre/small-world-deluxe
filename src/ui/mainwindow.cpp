@@ -84,6 +84,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<GekkoFyre::AmateurRadio::Control::FreqChange>("GekkoFyre::AmateurRadio::Control::FreqChange");
     qRegisterMetaType<GekkoFyre::AmateurRadio::Control::SettingsChange>("GekkoFyre::AmateurRadio::Control::SettingsChange");
     qRegisterMetaType<GekkoFyre::Database::Settings::GkUsbPort>("GekkoFyre::Database::Settings::GkUsbPort");
+    qRegisterMetaType<GekkoFyre::AmateurRadio::GkConnType>("GekkoFyre::AmateurRadio::GkConnType");
     qRegisterMetaType<std::vector<short>>("std::vector<short>");
     qRegisterMetaType<size_t>("size_t");
     qRegisterMetaType<uint8_t>("uint8_t");
@@ -264,6 +265,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 }
             }
         }
+
+        //
+        // Initialize the ability to change Connection Type, depending on whether we are connecting to the amateur radio rig
+        // by USB, RS232, GPIO, etc.!
+        //
+        QObject::connect(this, SIGNAL(changePortType(const GkConnType &, const bool &)),
+                         this, SLOT(selectedPortType(const GkConnType &, const bool &)));
 
         //
         // Initialize the ability to change / modify frequencies and settings relating to Hamlib
@@ -539,6 +547,8 @@ void MainWindow::launchSettingsWin()
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
+    QObject::connect(dlg_settings, SIGNAL(changePortType(const GkConnType &, const bool &)),
+                     this, SLOT(selectedPortType(const GkConnType &, const bool &)));
     dlg_settings->show();
 
     return;
@@ -1148,6 +1158,23 @@ void MainWindow::updateProgressBar(const bool &enable, const size_t &min, const 
         }
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
+ * @brief MainWindow::selectedPortType notifies Small World Deluxe as to what kind of connection you are using
+ * for CAT and PTT, whether it be RS232, USB, Parallel, GPIO, etc.
+ * @param rig_conn_type The type of connection in use for CAT and PTT modes.
+ * @param is_cat_mode Whether we are modifying CAT mode or PTT instead.
+ */
+void MainWindow::selectedPortType(const GkConnType &rig_conn_type, const bool &is_cat_mode)
+{
+    if (is_cat_mode) {
+        gkRadioPtr->cat_conn_type = rig_conn_type;
+    } else {
+        gkRadioPtr->ptt_conn_type = rig_conn_type;
     }
 
     return;

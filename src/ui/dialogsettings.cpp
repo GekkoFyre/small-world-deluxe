@@ -201,6 +201,8 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         unsigned short sel_rig_index = ui->comboBox_rig_selection->currentIndex();
         unsigned short com_device_cat = ui->comboBox_com_port->currentIndex();
         unsigned short com_device_ptt = ui->comboBox_ptt_method_port->currentIndex();
+        QString usb_device_cat = ui->comboBox_com_port->currentData().toString();
+        QString usb_device_ptt = ui->comboBox_ptt_method_port->currentData().toString();
         int com_baud_rate = ui->comboBox_baud_rate->currentIndex();
         QString ptt_adv_cmd = ui->lineEdit_adv_ptt_cmd->text();
 
@@ -225,22 +227,38 @@ void DialogSettings::on_pushButton_submit_config_clicked()
                 // List out the current serial ports in use
                 if (com_device_cat == sel_port.second) {
                     if (sel_port.first == avail_port.second.first) {
-                        #ifdef _WIN32
+                        //
+                        // CAT Control
+                        //
                         chosen_com_port_cat = sel_port.first; // The chosen serial device uses its own name as a reference
-                        #elif __linux__
-                        chosen_com_port_cat = sel_port.first; // The chosen serial device uses a Target Path as reference
-                        #endif
                         break;
                     }
                 }
 
                 if (com_device_ptt == sel_port.second) {
                     if (sel_port.first == avail_port.second.first) {
-                        #ifdef _WIN32
+                        //
+                        // PTT Method
+                        //
                         chosen_com_port_ptt = sel_port.first; // The chosen serial device uses its own name as a reference
-                        #elif __linux__
-                        chosen_com_port_ptt = sel_port.first; // The chosen serial device uses a Target Path as reference
-                        #endif
+                        break;
+                    }
+                }
+            }
+        }
+
+        //
+        // USB Device settings
+        //
+        tstring chosen_usb_port_cat;
+        tstring chosen_usb_port_ptt;
+        for (const auto &sel_usb_port: available_usb_ports.toStdMap()) { // The key is the Port Number whilst the value is what's displayed within the QComboBox...
+            for (const auto &avail_usb_port: status_usb_devices.toStdMap()) {
+                // List out the current USB devices in use
+                if (usb_device_cat == sel_usb_port.first) {
+                    if (QString::fromStdString(avail_usb_port.first) == sel_usb_port.first) {
+                        chosen_usb_port_cat = avail_usb_port.first;
+                        chosen_usb_port_ptt = avail_usb_port.first;
                         break;
                     }
                 }
@@ -394,6 +412,8 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         #else
         gkDekodeDb->write_rig_settings(QString::fromStdString(chosen_com_port_cat), radio_cfg::ComDeviceCat);
         gkDekodeDb->write_rig_settings(QString::fromStdString(chosen_com_port_ptt), radio_cfg::ComDevicePtt);
+        gkDekodeDb->write_rig_settings(QString::fromStdString(chosen_usb_port_cat), radio_cfg::UsbDeviceCat);
+        gkDekodeDb->write_rig_settings(QString::fromStdString(chosen_usb_port_ptt), radio_cfg::UsbDevicePtt);
         #endif
 
         using namespace Database::Settings;
@@ -798,7 +818,9 @@ void DialogSettings::prefill_rig_force_ctrl_lines(const ptt_type_t &ptt_type)
 /**
  * @brief DialogSettings::prefill_avail_com_ports Finds the available COM/Serial ports within a system.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param com_ports The list of returned and available COM/Serial ports.
+ * @param com_ports The list of returned and available COM/Serial ports. The COM/Serial port name itself
+ * is the key and the value is the Target Path plus a Boost C++ triboolean that signifies whether the
+ * port is active or not.
  * @see GekkoFyre::RadioLibs::detect_com_ports(), DialogSettings::prefill_avail_usb_ports()
  */
 void DialogSettings::prefill_avail_com_ports(const QMap<tstring, std::pair<tstring, boost::tribool>> &com_ports)
@@ -812,71 +834,59 @@ void DialogSettings::prefill_avail_com_ports(const QMap<tstring, std::pair<tstri
             emit comPortsDisabled(true); // Enable all GUI widgets relating to COM/Serial Ports
             for (const auto &port: com_ports.toStdMap()) {
                 #ifdef _UNICODE
-                //
-                // CAT Control
-                //
                 switch (port.second.second.value) {
                 case port.second.second.true_value:
+                    //
+                    // CAT Control
+                    //
                     ui->comboBox_com_port->insertItem(counter_cat, QString::fromStdWString(port.first));
                     available_com_ports.insert(port.second.first, counter_cat);
-                    ++counter_cat;
-                case port.second.second.indeterminate_value:
-                    ui->comboBox_com_port->insertItem(counter_cat, QString::fromStdWString(port.first));
-                    available_com_ports.insert(port.second.first, counter_cat);
-                    ++counter_cat;
-                }
 
-                //
-                // PTT Method
-                //
-                switch (port.second.second.value) {
-                case port.second.second.true_value:
+                    //
+                    // PTT Method
+                    //
                     ui->comboBox_ptt_method_port->insertItem(counter_ptt, QString::fromStdWString(port.first));
                     available_com_ports.insert(port.second.first, counter_ptt);
+
+                    ++counter_cat;
                     ++counter_ptt;
                 case port.second.second.indeterminate_value:
-                    ui->comboBox_ptt_method_port->insertItem(counter_ptt, QString::fromStdWString(port.first));
-                    available_com_ports.insert(port.second.first, counter_ptt);
-                    ++counter_ptt;
+                    continue;
+                case port.second.second.false_value:
+                    continue;
                 }
                 #else
-
-                //
-                // CAT Control
-                //
                 switch (port.second.second.value) {
                 case port.second.second.true_value:
+                    //
+                    // CAT Control
+                    //
                     ui->comboBox_com_port->insertItem(counter_cat, QString::fromStdString(port.first));
                     available_com_ports.insert(port.second.first, counter_cat);
-                    ++counter_cat;
-                case port.second.second.indeterminate_value:
-                    ui->comboBox_com_port->insertItem(counter_cat, QString::fromStdString(port.first));
-                    available_com_ports.insert(port.second.first, counter_cat);
-                    ++counter_cat;
-                }
 
-                //
-                // PTT Method
-                //
-                switch (port.second.second.value) {
-                case port.second.second.true_value:
+                    //
+                    // PTT Method
+                    //
                     ui->comboBox_ptt_method_port->insertItem(counter_ptt, QString::fromStdString(port.first));
                     available_com_ports.insert(port.second.first, counter_ptt);
+
+                    ++counter_cat;
                     ++counter_ptt;
                 case port.second.second.indeterminate_value:
-                    ui->comboBox_ptt_method_port->insertItem(counter_ptt, QString::fromStdString(port.first));
-                    available_com_ports.insert(port.second.first, counter_ptt);
-                    ++counter_ptt;
+                    continue;
+                case port.second.second.false_value:
+                    continue;
                 }
                 #endif
             }
 
-            // If a setting has been saved regarding RS-232 device port selection, then we should load
-            // this up!
-            // NOTE: The recorded setting used to identify the chosen serial device is the `Target Path`
+            //
+            // CAT Control
+            //
             QString comDeviceCat = gkDekodeDb->read_rig_settings(radio_cfg::ComDeviceCat);
-            if (!comDeviceCat.isEmpty()) {
+            if (!comDeviceCat.isEmpty() && !available_com_ports.isEmpty()) {
                 for (const auto &sel_port: available_com_ports.toStdMap()) {
+                    // NOTE: The recorded setting used to identify the chosen serial device is the `Target Path`
                     if (comDeviceCat.toStdString() == sel_port.first) {
                         ui->comboBox_com_port->setCurrentIndex(sel_port.second);
                     }
@@ -886,9 +896,10 @@ void DialogSettings::prefill_avail_com_ports(const QMap<tstring, std::pair<tstri
             //
             // PTT Method
             //
-            QString comDevicePtt = gkDekodeDb->read_rig_settings(radio_cfg::ComDeviceCat);
-            if (!comDevicePtt.isEmpty()) {
+            QString comDevicePtt = gkDekodeDb->read_rig_settings(radio_cfg::ComDevicePtt);
+            if (!comDevicePtt.isEmpty() && !available_com_ports.isEmpty()) {
                 for (const auto &sel_port: available_com_ports.toStdMap()) {
+                    // NOTE: The recorded setting used to identify the chosen serial device is the `Target Path`
                     if (comDevicePtt.toStdString() == sel_port.first) {
                         ui->comboBox_ptt_method_port->setCurrentIndex(sel_port.second);
                     }
@@ -1339,15 +1350,35 @@ void DialogSettings::on_comboBox_brand_selection_currentIndexChanged(const QStri
  */
 void DialogSettings::on_comboBox_com_port_currentIndexChanged(int index)
 {
-    for (const auto &port_list: available_com_ports.toStdMap()) {
-        if (port_list.second == index) {
-            #ifdef _UNICODE
-            ui->lineEdit_device_port_name->setText(QString::fromStdWString(port_list.first));
-            #else
-            ui->lineEdit_device_port_name->setText(QString::fromStdString(port_list.first));
-            #endif
-            return;
+    Q_UNUSED(index);
+
+    try {
+        //
+        // Determine whether a USB or RS232 port has been selected!
+        //
+        for (const auto &com_port_list: available_com_ports.toStdMap()) {
+            for (const auto &usb_port_list: available_usb_ports.toStdMap()) {
+                if (usb_port_list.first == ui->comboBox_com_port->currentData()) {
+                    // A USB port has been chosen!
+                    emit changePortType(GekkoFyre::AmateurRadio::GkConnType::USB, true);
+                    return;
+                } else if (com_port_list.second == ui->comboBox_com_port->currentIndex()) {
+                    // An RS232 port has been chosen!
+                    #ifdef _UNICODE
+                    ui->lineEdit_device_port_name->setText(QString::fromStdWString(com_port_list.first));
+                    #else
+                    ui->lineEdit_device_port_name->setText(QString::fromStdString(com_port_list.first));
+                    #endif
+
+                    emit changePortType(GekkoFyre::AmateurRadio::GkConnType::RS232, true);
+                    return;
+                } else {
+                    continue;
+                }
+            }
         }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
     }
 
     return;

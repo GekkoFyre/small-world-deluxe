@@ -207,6 +207,8 @@ namespace Database {
             RigVersion,
             ComDeviceCat,
             ComDevicePtt,
+            UsbDeviceCat,
+            UsbDevicePtt,
             ComBaudRate,
             StopBits,
             DataBits,
@@ -264,9 +266,9 @@ namespace Database {
             libusb_device_descriptor desc;                      // Underlying pointer to the `libusb` configuration
             libusb_config_descriptor *config;                   // Configuration parameters for the `libusb` device in question
             libusb_device_handle *handle;                       // Underlying `libusb` device handle
-            QString mfg;                                    // Information relating to the manufacturer
-            QString serial_number;                          // The Product Serial Number
-            QString product;                                // The Product ID
+            QString mfg;                                        // Information relating to the manufacturer
+            QString serial_number;                              // The Product Serial Number
+            QString product;                                    // The Product ID
         };
 
         struct GkUsbPort {

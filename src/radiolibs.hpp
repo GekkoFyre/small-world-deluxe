@@ -81,7 +81,6 @@ public:
     std::shared_ptr<AmateurRadio::Control::GkRadio> init_rig(const rig_model_t &rig_model, const std::string &com_port,
                                                            const GekkoFyre::AmateurRadio::com_baud_rates &com_baud_rate,
                                                            const rig_debug_level_e &verbosity);
-    std::shared_ptr<AmateurRadio::Control::GkRadio> read_rig_settings(const std::shared_ptr<GekkoFyre::GkLevelDb> &dekode_db);
 
     libusb_context *initUsbLib();
     QMap<std::string, Database::Settings::GkUsbPort> enumUsbDevices(libusb_context *usb_ctx_ptr);

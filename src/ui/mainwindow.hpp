@@ -165,6 +165,7 @@ public slots:
                            const std::vector<int> &raw_audio_data,
                            const int &hanning_window_size, const size_t &buffer_size);
     void updateProgressBar(const bool &enable, const size_t &min, const size_t &max);
+    void selectedPortType(const GekkoFyre::AmateurRadio::GkConnType &rig_conn_type, const bool &is_cat_mode);
 
 signals:
     void refreshVuMeter(const double &volumePctg);
@@ -177,6 +178,7 @@ signals:
                          const int &hanning_window_size, const size_t &buffer_size);
     void changeFreq(const bool &radio_locked, const GekkoFyre::AmateurRadio::Control::FreqChange &freq_change);
     void changeSettings(const bool &radio_locked, const GekkoFyre::AmateurRadio::Control::SettingsChange &settings_change);
+    void changePortType(const GekkoFyre::AmateurRadio::GkConnType &rig_conn_type, const bool &is_cat_mode);
 
 private:
     Ui::MainWindow *ui;
@@ -274,6 +276,7 @@ Q_DECLARE_METATYPE(std::vector<GekkoFyre::Spectrograph::RawFFT>);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::Control::FreqChange);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::Control::SettingsChange);
 Q_DECLARE_METATYPE(GekkoFyre::Database::Settings::GkUsbPort);
+Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkConnType);
 Q_DECLARE_METATYPE(std::vector<short>);
 Q_DECLARE_METATYPE(size_t);
 Q_DECLARE_METATYPE(uint8_t);

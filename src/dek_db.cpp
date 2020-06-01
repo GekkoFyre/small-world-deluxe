@@ -103,6 +103,12 @@ void GkLevelDb::write_rig_settings(const QString &value, const Database::Setting
         case radio_cfg::ComDevicePtt:
             batch.Put("ComDevicePtt", value.toStdString());
             break;
+        case radio_cfg::UsbDeviceCat:
+            batch.Put("UsbDeviceCat", value.toStdString());
+            break;
+        case radio_cfg::UsbDevicePtt:
+            batch.Put("UsbDevicePtt", value.toStdString());
+            break;
         case radio_cfg::ComBaudRate:
             batch.Put("ComBaudRate", value.toStdString());
             break;
@@ -336,6 +342,12 @@ QString GkLevelDb::read_rig_settings(const Database::Settings::radio_cfg &key)
         break;
     case radio_cfg::ComDevicePtt:
         status = db->Get(read_options, "ComDevicePtt", &value);
+        break;
+    case radio_cfg::UsbDeviceCat:
+        status = db->Get(read_options, "UsbDeviceCat", &value);
+        break;
+    case radio_cfg::UsbDevicePtt:
+        status = db->Get(read_options, "UsbDevicePtt", &value);
         break;
     case radio_cfg::ComBaudRate:
         status = db->Get(read_options, "ComBaudRate", &value);
