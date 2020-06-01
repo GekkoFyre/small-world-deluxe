@@ -82,6 +82,8 @@ public:
     QString portAudioApiToStr(const PaHostApiTypeId &interface);
     PaHostApiTypeId portAudioApiToEnum(const QString &interface);
 
+    std::string removeInvalidChars(const std::string &string_to_modify);
+
 private:
     std::shared_ptr<GekkoFyre::FileIo> fileIo;
     leveldb::DB *db;

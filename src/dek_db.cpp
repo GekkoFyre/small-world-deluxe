@@ -47,6 +47,7 @@
 #include <QMessageBox>
 #include <sstream>
 #include <utility>
+#include <iterator>
 #include <vector>
 #include <ctime>
 #include <QDebug>
@@ -553,6 +554,35 @@ PaHostApiTypeId GkLevelDb::portAudioApiToEnum(const QString &interface)
     }
 
     return PaHostApiTypeId::paInDevelopment;
+}
+
+/**
+ * @brief GkLevelDb::removeInvalidChars removes invalid/illegal characters from a given std::string, making it all clean!
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param string_to_modify The given std::string to modify.
+ * @return The cleaned up std::string!
+ */
+std::string GkLevelDb::removeInvalidChars(const std::string &string_to_modify)
+{
+    try {
+        std::string illegal_chars = "\\/:?\"<>|";
+        std::string str_tmp = string_to_modify;
+        std::string::iterator it;
+        for (it = str_tmp.begin(); it < str_tmp.end(); ++it) {
+            bool ill_found = illegal_chars.find(*it) != std::string::npos;
+            if (ill_found) {
+                *it = ' ';
+            }
+        }
+
+        if (!str_tmp.empty()) {
+            return str_tmp;
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
+    return "";
 }
 
 /**

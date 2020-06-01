@@ -258,20 +258,19 @@ namespace Database {
             libusb_interface_descriptor *inter_desc;            // Details about the interface itself pertaining to the `libusb` library
         };
 
-        struct UsbDev {
+        struct GkUsbDev {
             libusb_device *dev;                                 // Primary underlying pointer to the `libusb` device
-            libusb_interface *interface;                        // Underlying pointer to the `libusb` interface
             libusb_context *context;                            // The underlying context to the `libusb` library
             libusb_device_descriptor desc;                      // Underlying pointer to the `libusb` configuration
             libusb_config_descriptor *config;                   // Configuration parameters for the `libusb` device in question
             libusb_device_handle *handle;                       // Underlying `libusb` device handle
-            std::string mfg;                                    // Information relating to the manufacturer
-            std::string serial_number;                          // The Product Serial Number
-            std::string product;                                // The Product ID
+            QString mfg;                                    // Information relating to the manufacturer
+            QString serial_number;                          // The Product Serial Number
+            QString product;                                // The Product ID
         };
 
-        struct UsbPort {
-            UsbDev usb_enum;                                    // The USB Device structure, as above
+        struct GkUsbPort {
+            GkUsbDev usb_enum;                                  // The USB Device structure, as above
             UsbVers3 usb_vers_3;                                // Details specific to USB 3.0 (and SS) devices
             std::string port;                                   // The USB port number as determined by `libusb`
             std::string bus;                                    // The USB BUS number as determined by `libusb`

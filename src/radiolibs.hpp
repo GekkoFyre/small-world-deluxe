@@ -47,8 +47,10 @@
 #include <vector>
 #include <string>
 #include <utility>
+#include <algorithm>
 #include <mutex>
 #include <list>
+#include <set>
 
 #ifdef _WIN32
 #include "src/string_funcs_windows.hpp"
@@ -82,7 +84,7 @@ public:
     std::shared_ptr<AmateurRadio::Control::GkRadio> read_rig_settings(const std::shared_ptr<GekkoFyre::GkLevelDb> &dekode_db);
 
     libusb_context *initUsbLib();
-    std::vector<Database::Settings::UsbPort> enumUsbDevices(libusb_context *usb_ctx_ptr);
+    QMap<std::string, Database::Settings::GkUsbPort> enumUsbDevices(libusb_context *usb_ctx_ptr);
 
 public slots:
     void procFreqChange(const bool &radio_locked, const GekkoFyre::AmateurRadio::Control::FreqChange &freq_change);
@@ -101,6 +103,12 @@ private:
     static void probe_serial8250_comports(std::list<std::string> &comList, const std::list<std::string> &comList8250);
     static void registerComPort(std::list<std::string> &comList, std::list<std::string> &comList8250,
                                 const boost::filesystem::path &dir);
+
+    template <class T>
+    void removeDuplicates(std::vector<T> &vec) {
+        std::set<T> values;
+        vec.erase(std::remove_if(vec.begin(), vec.end(), [&](const T &value) { return !values.insert(value).second; }), vec.end());
+    }
 
 };
 };

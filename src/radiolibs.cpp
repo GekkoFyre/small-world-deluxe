@@ -397,9 +397,9 @@ std::string RadioLibs::getUsbPortId(libusb_device *usb_device)
  * @note Example code file <https://github.com/libusb/libusb/blob/master/examples/testlibusb.c>
  * @return A list of USB devices present on the user's computer system, with valuable details about each device.
  */
-std::vector<UsbPort> RadioLibs::enumUsbDevices(libusb_context *usb_ctx_ptr)
+QMap<std::string, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDevices(libusb_context *usb_ctx_ptr)
 {
-    std::vector<UsbPort> usb_vec;
+    QMap<std::string, GekkoFyre::Database::Settings::GkUsbPort> usb_hash;
     libusb_device **devices = nullptr;
     int dev_cnt = 0;
     try {
@@ -408,12 +408,12 @@ std::vector<UsbPort> RadioLibs::enumUsbDevices(libusb_context *usb_ctx_ptr)
         if (dev_cnt < 0) {
             libusb_exit(usb_ctx_ptr);
             std::cout << tr("No USB devices were detected!").toStdString() << std::endl;
-            return std::vector<UsbPort>();
+            return QMap<std::string, GekkoFyre::Database::Settings::GkUsbPort>();
         }
 
         libusb_device *dev = nullptr;
         while ((dev = devices[++i]) != nullptr) {
-            UsbPort *usb = new UsbPort();
+            GkUsbPort *usb = new GkUsbPort();
 
             usb->usb_enum.handle = nullptr;
             usb->usb_enum.dev = dev;
@@ -425,12 +425,7 @@ std::vector<UsbPort> RadioLibs::enumUsbDevices(libusb_context *usb_ctx_ptr)
                 throw std::runtime_error(tr("Failed to get device descriptor for USB!").toStdString());
             }
 
-            #ifdef _WIN32 || __MINGW32__
-            unsigned char tmp_val[MAX_PATH + 1];
-            #elif __linux__
-            // TODO: Fill this section out!
-            #endif
-
+            unsigned char tmp_val[32 + 1];
             // uint8_t port_numbers_len[8];
 
             // Open the USB device itself
@@ -454,25 +449,25 @@ std::vector<UsbPort> RadioLibs::enumUsbDevices(libusb_context *usb_ctx_ptr)
                             os_bus << std::dec << libusb_get_bus_number(dev);
                             os_addr << std::dec << libusb_get_device_address(dev);
 
-                            usb->bus = os_bus.str();
-                            usb->addr = os_addr.str();
-                            usb->port = getUsbPortId(dev);
+                            usb->bus = gkDekodeDb->removeInvalidChars(os_bus.str());
+                            usb->addr = gkDekodeDb->removeInvalidChars(os_addr.str());
+                            usb->port = gkDekodeDb->removeInvalidChars(getUsbPortId(dev));
 
                             if (usb->usb_enum.desc.iManufacturer) { // Obtain the manufacturer details
                                 int ret_cfg_mfg = libusb_get_string_descriptor_ascii(usb->usb_enum.handle, usb->usb_enum.desc.iManufacturer,
                                                                                      tmp_val, sizeof(tmp_val));
                                 if (ret_cfg_mfg > 0) {
-                                    usb->usb_enum.mfg = std::string(reinterpret_cast<const char *>(tmp_val), sizeof(tmp_val));
+                                    usb->usb_enum.mfg = QString::fromLocal8Bit((char *)tmp_val, sizeof(tmp_val)).trimmed();
                                 } else {
                                     throw std::runtime_error(tr("Error with enumerating `libusb` interface! Unable to obtain the manufacturer descriptor!").toStdString());
                                 }
-                            }
 
+                            }
                             if (usb->usb_enum.desc.iProduct) { // Obtain the product description
                                 int ret_cfg_prod = libusb_get_string_descriptor_ascii(usb->usb_enum.handle, usb->usb_enum.desc.iProduct,
                                                                                       tmp_val, sizeof(tmp_val));
                                 if (ret_cfg_prod > 0) {
-                                    usb->usb_enum.product = std::string(reinterpret_cast<const char *>(tmp_val), sizeof(tmp_val));
+                                    usb->usb_enum.product = QString::fromLocal8Bit((char *)tmp_val, sizeof(tmp_val)).trimmed();
                                 } else {
                                     throw std::runtime_error(tr("Error with enumerating `libusb` interface! Unable to obtain the product descriptor!").toStdString());
                                 }
@@ -482,13 +477,15 @@ std::vector<UsbPort> RadioLibs::enumUsbDevices(libusb_context *usb_ctx_ptr)
                                 int ret_cfg_serial = libusb_get_string_descriptor_ascii(usb->usb_enum.handle, usb->usb_enum.desc.iSerialNumber,
                                                                                       tmp_val, sizeof(tmp_val));
                                 if (ret_cfg_serial > 0) {
-                                    usb->usb_enum.serial_number = std::string(reinterpret_cast<const char *>(tmp_val), sizeof(tmp_val));
+                                    usb->usb_enum.serial_number = QString::fromLocal8Bit((char *)tmp_val, sizeof(tmp_val)).trimmed();
                                 } else {
                                     throw std::runtime_error(tr("Error with enumerating `libusb` interface! Unable to obtain the serial number descriptor!").toStdString());
                                 }
                             }
 
-                            usb_vec.push_back(*usb);
+                            if (!usb_hash.contains(usb->port)) {
+                                usb_hash.insert(usb->port, *usb);
+                            }
                         }
                     }
                 }
@@ -501,11 +498,11 @@ std::vector<UsbPort> RadioLibs::enumUsbDevices(libusb_context *usb_ctx_ptr)
 
     // libusb_close(usb->usb_enum.handle);
     libusb_free_device_list(devices, dev_cnt);
-    if (!usb_vec.empty()) {
-        return usb_vec;
+    if (!usb_hash.isEmpty()) {
+        return usb_hash;
     }
 
-    return std::vector<UsbPort>();
+    return QMap<std::string, GekkoFyre::Database::Settings::GkUsbPort>();
 }
 
 /**

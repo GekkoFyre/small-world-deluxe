@@ -910,7 +910,7 @@ void DialogSettings::prefill_avail_com_ports(const QMap<tstring, std::pair<tstri
  * @param usb_devices The available USB devices (of the audial type) within the user's system.
  * @see GekkoFyre::RadioLibs::enumUsbDevices(), DialogSettings::prefill_avail_com_ports()
  */
-void DialogSettings::prefill_avail_usb_ports(const std::vector<UsbPort> usb_devices)
+void DialogSettings::prefill_avail_usb_ports(const QMap<std::string, GekkoFyre::Database::Settings::GkUsbPort> usb_devices)
 {
     using namespace Database::Settings;
 
@@ -924,39 +924,23 @@ void DialogSettings::prefill_avail_usb_ports(const std::vector<UsbPort> usb_devi
                 QString dev_port = QString::fromStdString(device.port);
                 #ifdef _UNICODE
                 QString combined_str = QString("[ #%1 ] %2").arg(QString::number(dev_port)).arg(QString::fromStdWString(device.usb_enum.product));
-                if (!available_usb_ports.contains(dev_port)) {
-                    available_usb_ports.insert(dev_port, combined_str.toStdWString());
-
-                    //
-                    // CAT Control
-                    //
-                    ui->comboBox_com_port->addItem(combined_str, dev_port);
-
-                    //
-                    // PTT Method
-                    //
-                    ui->comboBox_ptt_method_port->addItem(combined_str, dev_port);
-
-                    combined_str.clear();
-                }
+                available_usb_ports.insert(dev_port, combined_str.toStdWString());
                 #else
-                QString combined_str = QString("[ #%1 ] %2").arg(dev_port).arg(QString::fromStdString(device.usb_enum.product));
-                if (!available_usb_ports.contains(dev_port)) {
-                    available_usb_ports.insert(dev_port, combined_str.toStdString());
-
-                    //
-                    // CAT Control
-                    //
-                    ui->comboBox_com_port->addItem(combined_str, dev_port);
-
-                    //
-                    // PTT Method
-                    //
-                    ui->comboBox_ptt_method_port->addItem(combined_str, dev_port);
-
-                    combined_str.clear();
-                }
+                QString combined_str = QString("[ #%1 ] %2").arg(dev_port).arg(device.usb_enum.product);
+                available_usb_ports.insert(dev_port, combined_str.toStdString());
                 #endif
+
+                //
+                // CAT Control
+                //
+                ui->comboBox_com_port->addItem(combined_str, dev_port);
+
+                //
+                // PTT Method
+                //
+                ui->comboBox_ptt_method_port->addItem(combined_str, dev_port);
+
+                combined_str.clear();
             }
         } else {
             // There exists no USB devices...
@@ -1882,5 +1866,16 @@ void DialogSettings::on_radioButton_split_fake_it_clicked()
     ui->radioButton_split_rig->setDown(false);
     ui->radioButton_split_fake_it->setDown(true);
 
+    return;
+}
+
+/**
+ * @brief DialogSettings::on_DialogSettings_rejected This signal is emitted when the dialog has been rejected either by
+ * the user or by calling reject() or done() with the QDialog::Rejected argument.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @note QDialog <https://doc.qt.io/qt-5/qdialog.html#finished>
+ */
+void DialogSettings::on_DialogSettings_rejected()
+{
     return;
 }

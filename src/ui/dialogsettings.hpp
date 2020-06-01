@@ -154,6 +154,11 @@ private slots:
     void on_radioButton_split_rig_clicked();
     void on_radioButton_split_fake_it_clicked();
 
+    //
+    // Setting's Dialog signals
+    //
+    void on_DialogSettings_rejected();
+
 signals:
     void usbPortsDisabled(const bool &active);
     void comPortsDisabled(const bool &active);
@@ -187,7 +192,7 @@ private:
     // A QMap where the COM/Serial port name itself is the key and the value is the Target Path plus a
     // Boost C++ triboolean that signifies whether the port is active or not
     QMap<tstring, std::pair<tstring, boost::tribool>> status_com_ports;
-    std::vector<GekkoFyre::Database::Settings::UsbPort> status_usb_devices;
+    QMap<std::string, GekkoFyre::Database::Settings::GkUsbPort> status_usb_devices;
 
     bool com_ports_active;
     bool usb_ports_active;
@@ -219,7 +224,7 @@ private:
     QMap<int, int> collectComboBoxIndexes(const QComboBox *combo_box);
     void prefill_rig_force_ctrl_lines(const ptt_type_t &ptt_type);
     void prefill_avail_com_ports(const QMap<tstring, std::pair<tstring, boost::tribool>> &com_ports);
-    void prefill_avail_usb_ports(const std::vector<GekkoFyre::Database::Settings::UsbPort> usb_devices);
+    void prefill_avail_usb_ports(const QMap<std::string, GekkoFyre::Database::Settings::GkUsbPort> usb_devices);
     void prefill_com_baud_speed(const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate);
     void enable_device_port_options();
     void get_device_port_details(const tstring &port, const tstring &device,

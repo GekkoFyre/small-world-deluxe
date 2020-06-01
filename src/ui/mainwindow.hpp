@@ -273,6 +273,7 @@ private:
 Q_DECLARE_METATYPE(std::vector<GekkoFyre::Spectrograph::RawFFT>);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::Control::FreqChange);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::Control::SettingsChange);
+Q_DECLARE_METATYPE(GekkoFyre::Database::Settings::GkUsbPort);
 Q_DECLARE_METATYPE(std::vector<short>);
 Q_DECLARE_METATYPE(size_t);
 Q_DECLARE_METATYPE(uint8_t);
