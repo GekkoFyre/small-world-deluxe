@@ -270,8 +270,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // Initialize the ability to change Connection Type, depending on whether we are connecting to the amateur radio rig
         // by USB, RS232, GPIO, etc.!
         //
-        QObject::connect(this, SIGNAL(changePortType(const GkConnType &, const bool &)),
-                         this, SLOT(selectedPortType(const GkConnType &, const bool &)));
+        QObject::connect(this, SIGNAL(changePortType(const GekkoFyre::AmateurRadio::GkConnType &, const bool &)),
+                         this, SLOT(selectedPortType(const GekkoFyre::AmateurRadio::GkConnType &, const bool &)));
 
         //
         // Initialize the ability to change / modify frequencies and settings relating to Hamlib
@@ -547,8 +547,8 @@ void MainWindow::launchSettingsWin()
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
-    QObject::connect(dlg_settings, SIGNAL(changePortType(const GkConnType &, const bool &)),
-                     this, SLOT(selectedPortType(const GkConnType &, const bool &)));
+    QObject::connect(dlg_settings, SIGNAL(changePortType(const GekkoFyre::AmateurRadio::GkConnType &, const bool &)),
+                     this, SLOT(selectedPortType(const GekkoFyre::AmateurRadio::GkConnType &, const bool &)));
     dlg_settings->show();
 
     return;
@@ -1169,7 +1169,7 @@ void MainWindow::updateProgressBar(const bool &enable, const size_t &min, const 
  * @param rig_conn_type The type of connection in use for CAT and PTT modes.
  * @param is_cat_mode Whether we are modifying CAT mode or PTT instead.
  */
-void MainWindow::selectedPortType(const GkConnType &rig_conn_type, const bool &is_cat_mode)
+void MainWindow::selectedPortType(const GekkoFyre::AmateurRadio::GkConnType &rig_conn_type, const bool &is_cat_mode)
 {
     if (is_cat_mode) {
         gkRadioPtr->cat_conn_type = rig_conn_type;
