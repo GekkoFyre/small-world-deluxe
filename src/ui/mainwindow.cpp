@@ -66,6 +66,7 @@ using namespace Database;
 using namespace Settings;
 using namespace Audio;
 using namespace AmateurRadio;
+using namespace Control;
 
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
@@ -190,6 +191,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         if (!save_db_path.empty()) {
             status = leveldb::DB::Open(options, save_db_path.string(), &db);
             GkDb = std::make_shared<GekkoFyre::GkLevelDb>(db, fileIo, this);
+            gkRadioPtr = readRadioSettings(); // Initialize the Radio Database pointer!
             gkRadioLibs = new GekkoFyre::RadioLibs(fileIo, gkStringFuncs, GkDb, gkRadioPtr, this);
             usb_ctx_ptr = gkRadioLibs->initUsbLib();
         } else {
@@ -304,15 +306,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the Hamlib radio control library!
         //
-        gkRadioPtr = std::make_shared<AmateurRadio::Control::GkRadio>();
 
-        QString def_com_port = gkRadioLibs->initComPorts();
-        QString comDevice = GkDb->read_rig_settings(radio_cfg::ComDeviceCat);
-        if (!comDevice.isEmpty()) {
-            def_com_port = comDevice;
+        QString commsDeviceCat = GkDb->read_rig_settings(radio_cfg::ComDeviceCat);
+        if (commsDeviceCat.isEmpty() || commsDeviceCat.isNull()) {
+            commsDeviceCat = "";
         }
 
-        radioInitStart(def_com_port);
+        radioInitStart(commsDeviceCat);
 
         timer = new QTimer(this);
         connect(timer, SIGNAL(timeout()), this, SLOT(infoBar()));
@@ -376,7 +376,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             QObject::connect(gkAudioPlayDlg, SIGNAL(beginRecording(const bool &)), gkAudioEncoding, SLOT(startRecording(const bool &)));
         }
 
-        radioInitTest(def_com_port);
+        radioInitTest(commsDeviceCat);
 
         if (gkRadioPtr->freq >= 0.0) {
             ui->label_freq_large->setText(QString::number(gkRadioPtr->freq));
@@ -557,8 +557,10 @@ void MainWindow::launchSettingsWin()
 /**
  * @brief MainWindow::radioInitStart initializes the Hamlib library and any associated libraries/functions!
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param rig_comms_port The connecting port required for communications with the amateur radio rig (if there is
+ * one that has been configured!).
  */
-void MainWindow::radioInitStart(const QString &def_com_port)
+void MainWindow::radioInitStart(const QString &rig_comms_port_cat)
 {
     try {
         std::string rand_file_name = fileIo->create_random_string(8);
@@ -597,7 +599,8 @@ void MainWindow::radioInitStart(const QString &def_com_port)
             //
             gkRadioPtr->is_open = false;
             std::future_status status;
-            rig_thread = std::async(std::launch::async, &RadioLibs::init_rig, gkRadioLibs, gkRadioPtr->rig_model, def_com_port.toStdString(), final_baud_rate, gkRadioPtr->verbosity);
+            rig_thread = std::async(std::launch::async, &RadioLibs::init_rig, gkRadioLibs, gkRadioPtr->rig_model,
+                                    rig_comms_port_cat.toStdString(), final_baud_rate, gkRadioPtr->verbosity);
             do {
                 status = rig_thread.wait_for(std::chrono::seconds(5));
                 if (status == std::future_status::timeout) {
@@ -619,10 +622,15 @@ void MainWindow::radioInitStart(const QString &def_com_port)
 }
 
 /**
- * @brief MainWindow::radioInitTest
- * @return
+ * @brief MainWindow::radioInitTest will test to see if a connection can successfully be made to an amateur radio
+ * rig or not, and if the latter case, will present a QMessageBox to the user with some options for which they
+ * may choose from, such as going straight to the Settings Dialog.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param rig_comms_port The connecting port required for communications with the amateur radio rig (if there is
+ * one that has been configured!).
+ * @return Whether a connection was successfully made or not to an amateur radio rig.
  */
-bool MainWindow::radioInitTest(const QString &def_com_port)
+bool MainWindow::radioInitTest(const QString &rig_comms_port_cat)
 {
     try {
         if (gkRadioPtr->rig == nullptr || !gkRadioPtr->is_open) {
@@ -631,7 +639,7 @@ bool MainWindow::radioInitTest(const QString &def_com_port)
         }
 
         if ((gkRadioPtr->freq > 0.0 || gkRadioPtr->rig_model <= 0 || gkRadioPtr->status <= 0) ||
-                (def_com_port.isNull() || def_com_port.isEmpty())) {
+                (rig_comms_port_cat.isNull() || rig_comms_port_cat.isEmpty())) {
             QMessageBox msg_rig_error;
             msg_rig_error.setWindowTitle(tr("Error!"));
             msg_rig_error.setText(tr("Small World Deluxe has experienced a rig control error!\n\nWould you like to reconfigure your settings?"));
@@ -645,8 +653,8 @@ bool MainWindow::radioInitTest(const QString &def_com_port)
                 launchSettingsWin();
                 return false;
             case QMessageBox::Retry:
-                radioInitStart(def_com_port);
-                return radioInitTest(def_com_port);
+                radioInitStart(rig_comms_port_cat);
+                return radioInitTest(rig_comms_port_cat);
             case QMessageBox::Cancel:
                 return false;
             default:
@@ -660,6 +668,233 @@ bool MainWindow::radioInitTest(const QString &def_com_port)
     }
 
     return false;
+}
+
+/**
+ * @brief MainWindow::readRadioSettings reads out the primary settings as they relate to the user's amateur
+ * radio rig, usually once provided everything has been configured within the Setting's Dialog. It also
+ * detects whether the user is connecting to their radio rig by means of RS232, USB, GPIO, etc. and therefore
+ * applies the correct settings accordingly.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return The primary struct for dealing with the user's amateur radio rig in question and any configuration
+ * settings (if automatically detected or henceforth configured within the Setting's Dialog).
+ */
+std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
+{
+    try {
+        QString rigBrand = GkDb->read_rig_settings(radio_cfg::RigBrand);
+        QString rigModel = GkDb->read_rig_settings(radio_cfg::RigModel);
+        QString rigModelIndex = GkDb->read_rig_settings(radio_cfg::RigModelIndex);
+        QString rigVers = GkDb->read_rig_settings(radio_cfg::RigVersion);
+        QString comBaudRate = GkDb->read_rig_settings(radio_cfg::ComBaudRate);
+        QString stopBits = GkDb->read_rig_settings(radio_cfg::StopBits);
+        QString data_bits = GkDb->read_rig_settings(radio_cfg::DataBits);
+        QString handshake = GkDb->read_rig_settings(radio_cfg::Handshake);
+        QString force_ctrl_lines_dtr = GkDb->read_rig_settings(radio_cfg::ForceCtrlLinesDtr);
+        QString force_ctrl_lines_rts = GkDb->read_rig_settings(radio_cfg::ForceCtrlLinesRts);
+        QString ptt_method = GkDb->read_rig_settings(radio_cfg::PTTMethod);
+        QString tx_audio_src = GkDb->read_rig_settings(radio_cfg::TXAudioSrc);
+        QString ptt_mode = GkDb->read_rig_settings(radio_cfg::PTTMode);
+        QString split_operation = GkDb->read_rig_settings(radio_cfg::SplitOperation);
+        QString ptt_adv_cmd = GkDb->read_rig_settings(radio_cfg::PTTAdvCmd);
+
+        std::shared_ptr<GkRadio> gk_radio_tmp = std::make_shared<GkRadio>();
+
+        //
+        // Determine the type of connection used (i.e. USB, RS232, GPIO, etc.)
+        //
+        gk_radio_tmp->port_details.type.rig;
+
+        if (!rigBrand.isNull() || !rigBrand.isEmpty()) { // The manufacturer!
+            int conv_rig_brand = rigBrand.toInt();
+            gk_radio_tmp->rig_brand = conv_rig_brand;
+        }
+
+        Q_UNUSED(rigModel);
+        // if (!rigModel.isNull() || !rigModel.isEmpty()) {}
+
+        if (!rigModelIndex.isNull() || !rigModelIndex.isEmpty()) { // The actual amateur radio rig itself!
+            int conv_rig_model_idx = rigModelIndex.toInt();
+            gk_radio_tmp->rig_model = conv_rig_model_idx;
+        }
+
+        Q_UNUSED(rigVers);
+        // if (!rigVers.isNull() || !rigVers.isEmpty()) {}
+
+        if (!comBaudRate.isNull() || !comBaudRate.isEmpty()) {
+            int conv_com_baud_rate = comBaudRate.toInt();
+            gk_radio_tmp->port_details.parm.serial.rate = gkRadioLibs->convertBaudRateInt(gkRadioLibs->convertBaudRateEnum(conv_com_baud_rate));
+        }
+
+        if (!stopBits.isNull() || !stopBits.isEmpty()) {
+            int conv_serial_stop_bits = stopBits.toInt();
+            gk_radio_tmp->port_details.parm.serial.stop_bits = conv_serial_stop_bits;
+        }
+
+        if (!data_bits.isNull() || !data_bits.isEmpty()) {
+            int conv_serial_data_bits = data_bits.toInt();
+            gk_radio_tmp->port_details.parm.serial.data_bits = conv_serial_data_bits;
+        }
+
+        if (!handshake.isNull() || !handshake.isEmpty()) {
+            int conv_serial_handshake = handshake.toInt();
+            switch (conv_serial_handshake) {
+            case 0:
+                // Default
+                gk_radio_tmp->port_details.parm.serial.handshake = serial_handshake_e::RIG_HANDSHAKE_NONE;
+                break;
+            case 1:
+                // None
+                gk_radio_tmp->port_details.parm.serial.handshake = serial_handshake_e::RIG_HANDSHAKE_NONE;
+                break;
+            case 2:
+                // XON / XOFF
+                gk_radio_tmp->port_details.parm.serial.handshake = serial_handshake_e::RIG_HANDSHAKE_XONXOFF;
+                break;
+            case 3:
+                // Hardware
+                gk_radio_tmp->port_details.parm.serial.handshake = serial_handshake_e::RIG_HANDSHAKE_HARDWARE;
+                break;
+            default:
+                // Nothing
+                gk_radio_tmp->port_details.parm.serial.handshake = serial_handshake_e::RIG_HANDSHAKE_NONE;
+                break;
+            }
+        }
+
+        if (!force_ctrl_lines_dtr.isNull() || !force_ctrl_lines_dtr.isEmpty()) {
+            int conv_force_ctrl_lines_dtr = force_ctrl_lines_dtr.toInt();
+            switch (conv_force_ctrl_lines_dtr) {
+            case 0:
+                // High
+                gk_radio_tmp->port_details.parm.serial.dtr_state = serial_control_state_e::RIG_SIGNAL_ON;
+                break;
+            case 1:
+                // Low
+                gk_radio_tmp->port_details.parm.serial.dtr_state = serial_control_state_e::RIG_SIGNAL_OFF;
+                break;
+            default:
+                // Nothing
+                gk_radio_tmp->port_details.parm.serial.dtr_state = serial_control_state_e::RIG_SIGNAL_UNSET;
+                break;
+            }
+        }
+
+        if (!force_ctrl_lines_rts.isNull() || !force_ctrl_lines_rts.isEmpty()) {
+            int conv_force_ctrl_lines_rts = force_ctrl_lines_rts.toInt();
+            switch (conv_force_ctrl_lines_rts) {
+            case 0:
+                // High
+                gk_radio_tmp->port_details.parm.serial.rts_state = serial_control_state_e::RIG_SIGNAL_ON;
+                break;
+            case 1:
+                // Low
+                gk_radio_tmp->port_details.parm.serial.rts_state = serial_control_state_e::RIG_SIGNAL_OFF;
+                break;
+            default:
+                // Nothing
+                gk_radio_tmp->port_details.parm.serial.rts_state = serial_control_state_e::RIG_SIGNAL_UNSET;
+                break;
+            }
+        }
+
+        if (!ptt_method.isNull() || !ptt_method.isEmpty()) {
+            int conv_ptt_method = ptt_method.toInt();
+            switch (conv_ptt_method) {
+            case 0:
+                // VOX
+                gk_radio_tmp->port_details.type.ptt = ptt_type_t::RIG_PTT_RIG_MICDATA; // Legacy PTT (CAT PTT), supports RIG_PTT_ON_MIC/RIG_PTT_ON_DATA
+                break;
+            case 1:
+                // DTR
+                gk_radio_tmp->port_details.type.ptt = ptt_type_t::RIG_PTT_SERIAL_DTR; // PTT control through serial DTR signal
+                break;
+            case 2:
+                // CAT
+                gk_radio_tmp->port_details.type.ptt = ptt_type_t::RIG_PTT_RIG; // Legacy PTT (CAT PTT)
+                break;
+            case 3:
+                // RTS
+                gk_radio_tmp->port_details.type.ptt = ptt_type_t::RIG_PTT_SERIAL_RTS; // PTT control through serial RTS signal
+                break;
+            default:
+                // Nothing
+                gk_radio_tmp->port_details.type.ptt = ptt_type_t::RIG_PTT_NONE; // No PTT available
+            }
+        }
+
+        if (!tx_audio_src.isNull() || !tx_audio_src.isEmpty()) {
+            int conv_tx_audio_src = tx_audio_src.toInt();
+            switch (conv_tx_audio_src) {
+            case 0:
+                // Rear / Data
+                gk_radio_tmp->ptt_status = ptt_t::RIG_PTT_ON_DATA;
+                break;
+            case 1:
+                // Front / Mic
+                gk_radio_tmp->ptt_status = ptt_t::RIG_PTT_ON_MIC;
+                break;
+            default:
+                // Nothing
+                gk_radio_tmp->ptt_status = ptt_t::RIG_PTT_OFF; // TODO: Configure this so that PTT is enabled or not, as configured by the user!
+                break;
+            }
+        }
+
+        if (!ptt_mode.isNull() || !ptt_mode.isEmpty()) {
+            int conv_ptt_mode = ptt_mode.toInt();
+            switch (conv_ptt_mode) {
+            case 0:
+                // None
+                gk_radio_tmp->mode = rmode_t::RIG_MODE_NONE;
+                break;
+            case 1:
+                // USB
+                gk_radio_tmp->mode = rmode_t::RIG_MODE_USB;
+                break;
+            case 2:
+                // Data / PKT
+                gk_radio_tmp->mode = rmode_t::RIG_MODE_PKTUSB;
+                break;
+            default:
+                // Nothing
+                gk_radio_tmp->mode = rmode_t::RIG_MODE_NONE;
+                break;
+            }
+        }
+
+        if (!split_operation.isNull() || !split_operation.isEmpty()) {
+            int conv_split_operation = split_operation.toInt();
+            switch (conv_split_operation) {
+            case 0:
+                // None
+                gk_radio_tmp->split_mode = split_t::RIG_SPLIT_OFF;
+                break;
+            case 1:
+                // Rig
+                gk_radio_tmp->split_mode = split_t::RIG_SPLIT_ON;
+                break;
+            case 2:
+                // Fake it
+                gk_radio_tmp->split_mode = split_t::RIG_SPLIT_OFF;
+                break;
+            default:
+                // Nothing
+                gk_radio_tmp->split_mode = split_t::RIG_SPLIT_OFF;
+                break;
+            }
+        }
+
+        if (!ptt_adv_cmd.isNull() || !ptt_adv_cmd.isEmpty()) {
+            gk_radio_tmp->adv_cmd = ptt_adv_cmd.toStdString();
+        }
+
+        return gk_radio_tmp;
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
+    return std::make_shared<GkRadio>();
 }
 
 /**

@@ -170,33 +170,6 @@ com_baud_rates RadioLibs::convertBaudRateEnum(const int &baud_rate_sel)
 }
 
 /**
- * @brief RadioLibs::initComPorts Finds a default communication's port to use, which is particularly useful if
- * the program has been started for the first time and the user hasn't set their preferences yet.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @return A default communication's port to use.
- */
-QString RadioLibs::initComPorts()
-{
-    QMap<tstring, std::pair<tstring, boost::tribool>> enum_com_ports = status_com_ports();
-    QString filtered_port;
-
-    for (const auto &port: enum_com_ports.toStdMap()) {
-        if (!port.first.empty()) {
-            if (port.second.second == true) {
-                #ifdef _UNICODE
-                filtered_port = QString::fromStdWString(port.first);
-                #else
-                filtered_port = QString::fromStdString(port.first);
-                #endif
-                break;
-            }
-        }
-    }
-
-    return filtered_port;
-}
-
-/**
  * @brief RadioLibs::initUsbPorts initializes the `libusb` library for use.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return Returns an array of possible USB devices on the user's system.
@@ -622,24 +595,14 @@ void RadioLibs::registerComPort(std::list<std::string> &comList, std::list<std::
  * @note Ref: HamLib <https://github.com/Hamlib/Hamlib/>.
  */
 std::shared_ptr<GkRadio> RadioLibs::init_rig(const rig_model_t &rig_model, const std::string &com_port,
-                                           const com_baud_rates &com_baud_rate, const rig_debug_level_e &verbosity)
+                                             const com_baud_rates &com_baud_rate, const rig_debug_level_e &verbosity)
 {
     std::mutex mtx_init_rig;
     std::lock_guard<std::mutex> lck_guard(mtx_init_rig);
-    std::shared_ptr<GkRadio> radio = std::make_shared<GkRadio>();
 
     // https://github.com/Hamlib/Hamlib/blob/master/tests/example.c
     // Set verbosity level
     rig_set_debug(verbosity);
-
-    // Instantiate the rig
-    radio->rig = rig_init(rig_model);
-
-    if (radio->rig == nullptr) {
-        throw std::runtime_error(tr("Unable to initialize Hamlib!").toStdString());
-    }
-
-    rig_debug(verbosity, "Backend version: %s, Status: %s\n\n", radio->rig->caps->version, rig_strstatus(radio->rig->caps->status));
 
     // Setup serial port, baud rate, etc.
     fs::path slashes = "//./";
@@ -651,25 +614,49 @@ std::shared_ptr<GkRadio> RadioLibs::init_rig(const rig_model_t &rig_model, const
     com_port_path = com_port;
     #endif
 
-    radio->rig_file = com_port_path.string(); // TODO: Replace this with real values, as this is only an example for now...
+    if (rig_model < 1) { // No amateur radio rig has been configured and/or adequately detected!
+        gkRadioPtr->rig_file = com_port_path.string(); // TODO: Replace this with real values, as this is only an example for now...
 
-    strncpy(radio->rig->state.rigport.pathname, radio->rig_file.c_str(), FILPATHLEN - 1);
+        strncpy(gkRadioPtr->port_details.pathname, gkRadioPtr->rig_file.c_str(), FILPATHLEN - 1);
 
-    int baud_rate = 9600;
-    baud_rate = convertBaudRateInt(com_baud_rate);
+        int baud_rate = 9600;
+        baud_rate = convertBaudRateInt(com_baud_rate);
 
-    radio->rig->state.rigport.parm.serial.rate = baud_rate; // The BAUD Rate for the desired COM Port
+        gkRadioPtr->port_details.parm.serial.rate = baud_rate; // The BAUD Rate for the desired COM Port
+        gkRadioPtr->port_details.type.rig = convGkConnTypeToHamlib(gkRadioPtr->cat_conn_type);
+        gkRadioPtr->port_details.parm.serial.rate = baud_rate;
+        gkRadioPtr->port_details.parm.serial.data_bits = data_bits;
+        gkRadioPtr->port_details.parm.serial.stop_bits = stop_bits;
+        gkRadioPtr->port_details.parm.serial.parity = RIG_PARITY_NONE;
+        gkRadioPtr->port_details.parm.serial.handshake = RIG_HANDSHAKE_NONE;
+
+        //
+        // Probe the given communications port, whether it be RS232, USB, GPIO, etc.
+        // With this information, provided a connection has been made successfully, we can infer the amateur radio
+        // rig that the user is making use of!
+        //
+        gkRadioPtr->rig_model = rig_probe(&gkRadioPtr->port_details);
+    }
+
+    // Instantiate the rig
+    gkRadioPtr->rig = rig_init(rig_model);
+
+    if (gkRadioPtr->rig == nullptr) {
+        throw std::runtime_error(tr("Unable to initialize Hamlib!").toStdString());
+    }
+
+    rig_debug(verbosity, "Backend version: %s, Status: %s\n\n", gkRadioPtr->rig->caps->version, rig_strstatus(gkRadioPtr->rig->caps->status));
 
     // Open our rig in question
-    int retcode = rig_open(radio->rig);
+    int retcode = rig_open(gkRadioPtr->rig);
     hamlibStatus(retcode);
 
-    radio->is_open = true; // Set the flag that the aforementioned pointer has been initialized
+    gkRadioPtr->is_open = true; // Set the flag that the aforementioned pointer has been initialized
 
-    if (rig_get_info(radio->rig) != nullptr) {
+    if (rig_get_info(gkRadioPtr->rig) != nullptr) {
         // Give me ID info, e.g., firmware version
-        radio->info_buf = rig_get_info(radio->rig);
-        std::cout << tr("Rig info: %1\n\n").arg(QString::fromStdString(radio->info_buf)).toStdString();
+        gkRadioPtr->info_buf = rig_get_info(gkRadioPtr->rig);
+        std::cout << tr("Rig info: %1\n\n").arg(QString::fromStdString(gkRadioPtr->info_buf)).toStdString();
     }
 
     // Note from Hamlib Developers: As a general practice, we should check to see if a given function
@@ -677,34 +664,34 @@ std::shared_ptr<GkRadio> RadioLibs::init_rig(const rig_model_t &rig_model, const
     // check each call's returned status in case of error.
 
     // Main VFO frequency
-    radio->status = rig_get_freq(radio->rig, RIG_VFO_CURR, &radio->freq);
-    std::cout << tr("Main VFO Frequency: %1\n\n").arg(QString::number(radio->freq)).toStdString();
+    gkRadioPtr->status = rig_get_freq(gkRadioPtr->rig, RIG_VFO_CURR, &gkRadioPtr->freq);
+    std::cout << tr("Main VFO Frequency: %1\n\n").arg(QString::number(gkRadioPtr->freq)).toStdString();
 
     // Current mode
-    radio->status = rig_get_mode(radio->rig, RIG_VFO_CURR, &radio->mode, &radio->width);
+    gkRadioPtr->status = rig_get_mode(gkRadioPtr->rig, RIG_VFO_CURR, &gkRadioPtr->mode, &gkRadioPtr->width);
 
     // Determine the mode of modulation that's being currently used, and output as a textual value
-    radio->mm = hamlibModulEnumToStr(radio->mode).toStdString();
+    gkRadioPtr->mm = hamlibModulEnumToStr(gkRadioPtr->mode).toStdString();
 
-    std::cout << tr("Current mode: %1, width is %2\n\n").arg(QString::fromStdString(radio->mm)).arg(QString::number(radio->width)).toStdString();
+    std::cout << tr("Current mode: %1, width is %2\n\n").arg(QString::fromStdString(gkRadioPtr->mm)).arg(QString::number(gkRadioPtr->width)).toStdString();
 
     // Rig power output
-    radio->status = rig_get_level(radio->rig, RIG_VFO_CURR, RIG_LEVEL_RFPOWER, &radio->power);
-    std::cout << tr("RF Power relative setting: %%1 (0.0 - 1.0)\n\n").arg(QString::number(radio->power.f)).toStdString();
+    gkRadioPtr->status = rig_get_level(gkRadioPtr->rig, RIG_VFO_CURR, RIG_LEVEL_RFPOWER, &gkRadioPtr->power);
+    std::cout << tr("RF Power relative setting: %%1 (0.0 - 1.0)\n\n").arg(QString::number(gkRadioPtr->power.f)).toStdString();
 
     // Convert power reading to watts
-    radio->status = rig_power2mW(radio->rig, &radio->mwpower, radio->power.f, radio->freq, radio->mode);
-    std::cout << tr("RF Power calibrated: %1 watts\n\n").arg(QString::number(radio->mwpower / 1000)).toStdString();
+    gkRadioPtr->status = rig_power2mW(gkRadioPtr->rig, &gkRadioPtr->mwpower, gkRadioPtr->power.f, gkRadioPtr->freq, gkRadioPtr->mode);
+    std::cout << tr("RF Power calibrated: %1 watts\n\n").arg(QString::number(gkRadioPtr->mwpower / 1000)).toStdString();
 
     // Raw and calibrated S-meter values
-    radio->status = rig_get_level(radio->rig, RIG_VFO_CURR, RIG_LEVEL_RAWSTR, &radio->raw_strength);
-    std::cout << tr("Raw receive strength: %1\n\n").arg(QString::number(radio->raw_strength.i)).toStdString();
+    gkRadioPtr->status = rig_get_level(gkRadioPtr->rig, RIG_VFO_CURR, RIG_LEVEL_RAWSTR, &gkRadioPtr->raw_strength);
+    std::cout << tr("Raw receive strength: %1\n\n").arg(QString::number(gkRadioPtr->raw_strength.i)).toStdString();
 
-    radio->isz = radio->rig->caps->str_cal.size; // TODO: No idea what this is for?
+    gkRadioPtr->isz = gkRadioPtr->rig->caps->str_cal.size; // TODO: No idea what this is for?
 
-    radio->status = rig_get_strength(radio->rig, RIG_VFO_CURR, &radio->strength);
+    gkRadioPtr->status = rig_get_strength(gkRadioPtr->rig, RIG_VFO_CURR, &gkRadioPtr->strength);
 
-    return radio;
+    return gkRadioPtr;
 }
 
 /**
@@ -841,6 +828,33 @@ GkConnType RadioLibs::convGkConnTypeToEnum(const QString &conn_type)
     }
 
     return GkConnType::None;
+}
+
+/**
+ * @brief RadioLibs::convGkConnTypeToHamlib converts from the pre-configured Small World Deluxe enumerators to the
+ * ones which are more suitable for Hamlib.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param conn_type The desired Small World Deluxe enumerator to convert to a Hamlib one.
+ * @return The desired Small World Deluxe enumerator that has been converted to a Hamlib enum.
+ */
+rig_port_e RadioLibs::convGkConnTypeToHamlib(const GkConnType &conn_type)
+{
+    switch (conn_type) {
+    case GkConnType::RS232:
+        return rig_port_e::RIG_PORT_SERIAL;
+    case GkConnType::USB:
+        return rig_port_e::RIG_PORT_USB;
+    case GkConnType::Parallel:
+        return rig_port_e::RIG_PORT_PARALLEL;
+    case GkConnType::CM108:
+        return rig_port_e::RIG_PORT_CM108;
+    case GkConnType::GPIO:
+        return rig_port_e::RIG_PORT_GPIO;
+    default:
+        return rig_port_e::RIG_PORT_NONE;
+    }
+
+    return rig_port_e::RIG_PORT_NONE;
 }
 
 /**

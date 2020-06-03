@@ -264,8 +264,10 @@ private:
     bool prefillAmateurBands();
 
     void launchSettingsWin();
-    void radioInitStart(const QString &def_com_port);
-    bool radioInitTest(const QString &def_com_port);
+    void radioInitStart(const QString &rig_comms_port_cat);
+    bool radioInitTest(const QString &rig_comms_port_cat);
+
+    std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> readRadioSettings();
 
     void createStatusBar(const QString &statusMsg = "");
     bool changeStatusBarMsg(const QString &statusMsg = "");

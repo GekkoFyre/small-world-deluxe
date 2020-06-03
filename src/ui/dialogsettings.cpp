@@ -1143,7 +1143,8 @@ bool DialogSettings::read_settings()
             ui->comboBox_rig_selection->setCurrentIndex(rigModelIndex.toInt());
         }
 
-        if (!rigVers.isEmpty()) {}
+        Q_UNUSED(rigVers);
+        // if (!rigVers.isEmpty()) {}
 
         if (!comBaudRate.isEmpty()) {
             ui->comboBox_baud_rate->setCurrentIndex(comBaudRate.toInt());
@@ -1365,11 +1366,15 @@ void DialogSettings::on_comboBox_com_port_currentIndexChanged(int index)
         for (const auto &com_port_list: status_com_ports.toStdMap()) {
             for (const auto &usb_port_list: available_usb_ports.toStdMap()) {
                 if (usb_port_list.first == ui->comboBox_com_port->currentData()) {
+                    //
                     // A USB port has been chosen!
+                    //
                     emit changePortType(GekkoFyre::AmateurRadio::GkConnType::USB, true);
                     return;
                 } else if (QString::fromStdString(com_port_list.first) == ui->comboBox_com_port->currentData().toString()) {
+                    //
                     // An RS232 port has been chosen!
+                    //
                     #ifdef _UNICODE
                     ui->lineEdit_device_port_name->setText(QString::fromStdWString(com_port_list.second.first));
                     #else
@@ -1383,6 +1388,11 @@ void DialogSettings::on_comboBox_com_port_currentIndexChanged(int index)
                 }
             }
         }
+
+        //
+        // Nothing has been chosen!
+        //
+        emit changePortType(GekkoFyre::AmateurRadio::GkConnType::None, true);
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
     }
@@ -1406,11 +1416,15 @@ void DialogSettings::on_comboBox_ptt_method_port_currentIndexChanged(int index)
         for (const auto &com_port_list: status_com_ports.toStdMap()) {
             for (const auto &usb_port_list: available_usb_ports.toStdMap()) {
                 if (usb_port_list.first == ui->comboBox_ptt_method_port->currentData()) {
+                    //
                     // A USB port has been chosen!
+                    //
                     emit changePortType(GekkoFyre::AmateurRadio::GkConnType::USB, false);
                     return;
                 } else if (QString::fromStdString(com_port_list.first) == ui->comboBox_com_port->currentData().toString()) {
+                    //
                     // An RS232 port has been chosen!
+                    //
                     #ifdef _UNICODE
                     ui->lineEdit_ptt_method_dev_path->setText(QString::fromStdWString(com_port_list.second.first));
                     #else
@@ -1424,6 +1438,11 @@ void DialogSettings::on_comboBox_ptt_method_port_currentIndexChanged(int index)
                 }
             }
         }
+
+        //
+        // Nothing has been chosen!
+        //
+        emit changePortType(GekkoFyre::AmateurRadio::GkConnType::None, false);
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
     }
