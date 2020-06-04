@@ -205,6 +205,8 @@ namespace Database {
             RigModel,
             RigModelIndex,
             RigVersion,
+            CatConnType,
+            PttConnType,
             ComDeviceCat,
             ComDevicePtt,
             UsbDeviceCat,

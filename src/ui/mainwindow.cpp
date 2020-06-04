@@ -47,15 +47,18 @@
 #include <cmath>
 #include <functional>
 #include <chrono>
-#include <QWidget>
-#include <QResource>
-#include <QMessageBox>
-#include <QFileDialog>
+#include <QDesktopServices>
 #include <QStandardPaths>
 #include <QPrintDialog>
-#include <QDate>
-#include <QTimer>
+#include <QMessageBox>
+#include <QFileDialog>
+#include <QResource>
+#include <QMultiMap>
+#include <QWidget>
 #include <QPixmap>
+#include <QTimer>
+#include <QDate>
+#include <QUrl>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -70,6 +73,11 @@ using namespace Control;
 
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
+
+//
+// Statically declared members
+//
+QPointer<QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>>> MainWindow::gkRadioModels = initRadioModelsVar();
 
 /**
  * @brief MainWindow::MainWindow
@@ -143,7 +151,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         global_rx_audio_volume = 0.0;
         global_tx_audio_volume = 0.0;
 
+        //
+        // Initialize Hamlib!
+        //
+        if (gkRadioModels.isNull()) {
+            gkRadioModels = new QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>>();
+        }
+
         rig_load_all_backends();
+        rig_list_foreach(parseRigCapabilities, nullptr);
 
         // Create class pointers
         fileIo = std::make_shared<GekkoFyre::FileIo>(sw_settings, this);
@@ -276,12 +292,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                          this, SLOT(selectedPortType(const GekkoFyre::AmateurRadio::GkConnType &, const bool &)));
 
         //
-        // Initialize the ability to change / modify frequencies and settings relating to Hamlib
+        // Load some of the primary abilities to work with the Hamlib libraries!
         //
-        QObject::connect(this, SIGNAL(changeFreq(const bool &, const GekkoFyre::AmateurRadio::Control::FreqChange &)),
-                         gkRadioLibs, SLOT(procFreqChange(const bool &, const GekkoFyre::AmateurRadio::Control::FreqChange &)));
-        QObject::connect(this, SIGNAL(changeSettings(const bool &, const GekkoFyre::AmateurRadio::Control::SettingsChange &)),
-                         gkRadioLibs, SLOT(procSettingsChange(const bool &, const GekkoFyre::AmateurRadio::Control::SettingsChange &)));
+        QObject::connect(this, SIGNAL(addRigInUse(const rig_model_t &)),
+                         this, SLOT(addRigToMemory(const rig_model_t &)));
+        QObject::connect(this, SIGNAL(modifyRigInUse(const rig_model_t &, const bool &)),
+                         this, SLOT(modifyRigInMemory(const rig_model_t &, const bool &)));
 
         //
         // Initialize the Waterfall / Spectrograph
@@ -303,16 +319,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         prefillAmateurBands();
 
-        //
-        // Initialize the Hamlib radio control library!
-        //
-
         QString commsDeviceCat = GkDb->read_rig_settings(radio_cfg::ComDeviceCat);
         if (commsDeviceCat.isEmpty() || commsDeviceCat.isNull()) {
             commsDeviceCat = "";
+        } else {
+            //
+            // Initialize the Hamlib radio control library!
+            //
+            radioInitStart(commsDeviceCat);
         }
-
-        radioInitStart(commsDeviceCat);
 
         timer = new QTimer(this);
         connect(timer, SIGNAL(timeout()), this, SLOT(infoBar()));
@@ -686,6 +701,8 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
         QString rigModel = GkDb->read_rig_settings(radio_cfg::RigModel);
         QString rigModelIndex = GkDb->read_rig_settings(radio_cfg::RigModelIndex);
         QString rigVers = GkDb->read_rig_settings(radio_cfg::RigVersion);
+        QString catConnType = GkDb->read_rig_settings(radio_cfg::CatConnType);
+        QString pttConnType = GkDb->read_rig_settings(radio_cfg::PttConnType);
         QString comBaudRate = GkDb->read_rig_settings(radio_cfg::ComBaudRate);
         QString stopBits = GkDb->read_rig_settings(radio_cfg::StopBits);
         QString data_bits = GkDb->read_rig_settings(radio_cfg::DataBits);
@@ -699,11 +716,6 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
         QString ptt_adv_cmd = GkDb->read_rig_settings(radio_cfg::PTTAdvCmd);
 
         std::shared_ptr<GkRadio> gk_radio_tmp = std::make_shared<GkRadio>();
-
-        //
-        // Determine the type of connection used (i.e. USB, RS232, GPIO, etc.)
-        //
-        gk_radio_tmp->port_details.type.rig;
 
         if (!rigBrand.isNull() || !rigBrand.isEmpty()) { // The manufacturer!
             int conv_rig_brand = rigBrand.toInt();
@@ -720,6 +732,16 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
 
         Q_UNUSED(rigVers);
         // if (!rigVers.isNull() || !rigVers.isEmpty()) {}
+
+        if (!catConnType.isNull() || !catConnType.isEmpty()) {
+            int conv_cat_conn_type = catConnType.toInt();
+            gk_radio_tmp->cat_conn_type = GkDb->convConnTypeToEnum(conv_cat_conn_type);
+        }
+
+        if (!pttConnType.isNull() || !pttConnType.isEmpty()) {
+            int conv_ptt_conn_type = pttConnType.toInt();
+            gk_radio_tmp->ptt_conn_type = GkDb->convConnTypeToEnum(conv_ptt_conn_type);
+        }
 
         if (!comBaudRate.isNull() || !comBaudRate.isEmpty()) {
             int conv_com_baud_rate = comBaudRate.toInt();
@@ -895,6 +917,61 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
     }
 
     return std::make_shared<GkRadio>();
+}
+
+/**
+ * @brief MainWindow::parseRigCapabilities parses all the supported amateur radio rigs and other miscellaneous devices supported
+ * by the Hamlib set of libraries and outputs them into a QMultiMap, which is searchable by manufacturer and device type.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param caps The given device's supported capabilities.
+ * @param data This parameter's purpose is unknown but otherwise required.
+ */
+int MainWindow::parseRigCapabilities(const rig_caps *caps, void *data)
+{
+    Q_UNUSED(data);
+
+    switch (caps->rig_type & RIG_TYPE_MASK) {
+    case RIG_TYPE_TRANSCEIVER:
+        gkRadioModels->insert(caps->rig_model, std::make_tuple(caps, caps->mfg_name, GekkoFyre::AmateurRadio::rig_type::Transceiver));
+        break;
+    case RIG_TYPE_HANDHELD:
+        gkRadioModels->insert(caps->rig_model, std::make_tuple(caps, caps->mfg_name, GekkoFyre::AmateurRadio::rig_type::Handheld));
+        break;
+    case RIG_TYPE_MOBILE:
+        gkRadioModels->insert(caps->rig_model, std::make_tuple(caps, caps->mfg_name, GekkoFyre::AmateurRadio::rig_type::Mobile));
+        break;
+    case RIG_TYPE_RECEIVER:
+        gkRadioModels->insert(caps->rig_model, std::make_tuple(caps, caps->mfg_name, GekkoFyre::AmateurRadio::rig_type::Receiver));
+        break;
+    case RIG_TYPE_PCRECEIVER:
+        gkRadioModels->insert(caps->rig_model, std::make_tuple(caps, caps->mfg_name, GekkoFyre::AmateurRadio::rig_type::PC_Receiver));
+        break;
+    case RIG_TYPE_SCANNER:
+        gkRadioModels->insert(caps->rig_model, std::make_tuple(caps, caps->mfg_name, GekkoFyre::AmateurRadio::rig_type::Scanner));
+        break;
+    case RIG_TYPE_TRUNKSCANNER:
+        gkRadioModels->insert(caps->rig_model, std::make_tuple(caps, caps->mfg_name, GekkoFyre::AmateurRadio::rig_type::TrunkingScanner));
+        break;
+    case RIG_TYPE_COMPUTER:
+        gkRadioModels->insert(caps->rig_model, std::make_tuple(caps, caps->mfg_name, GekkoFyre::AmateurRadio::rig_type::Computer));
+        break;
+    case RIG_TYPE_OTHER:
+        gkRadioModels->insert(caps->rig_model, std::make_tuple(caps, caps->mfg_name, GekkoFyre::AmateurRadio::rig_type::Other));
+        break;
+    default:
+        gkRadioModels->insert(caps->rig_model, std::make_tuple(caps, caps->mfg_name, GekkoFyre::AmateurRadio::rig_type::Unknown));
+        break;
+    }
+
+    return 1; /* !=0, we want them all! */
+}
+
+QPointer<QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, rig_type> > > MainWindow::initRadioModelsVar()
+{
+    QPointer<QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>>> mmap =
+            new QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>>();
+    mmap->insert(-1, std::make_tuple(nullptr, "", GekkoFyre::AmateurRadio::rig_type::Unknown));
+    return mmap;
 }
 
 /**
@@ -1306,13 +1383,23 @@ void MainWindow::on_pushButton_radio_monitor_clicked()
     return;
 }
 
+/**
+ * @brief MainWindow::on_comboBox_select_frequency_activated
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ */
 void MainWindow::on_comboBox_select_frequency_activated(int index)
 {
     Q_UNUSED(index);
     return;
 }
 
-void MainWindow::on_comboBox_select_digital_mode_activated(int index)
+/**
+ * @brief MainWindow::on_comboBox_select_callsign_use_currentIndexChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ */
+void MainWindow::on_comboBox_select_callsign_use_currentIndexChanged(int index)
 {
     Q_UNUSED(index);
     return;
@@ -1401,6 +1488,7 @@ void MainWindow::updateProgressBar(const bool &enable, const size_t &min, const 
 /**
  * @brief MainWindow::selectedPortType notifies Small World Deluxe as to what kind of connection you are using
  * for CAT and PTT, whether it be RS232, USB, Parallel, GPIO, etc.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param rig_conn_type The type of connection in use for CAT and PTT modes.
  * @param is_cat_mode Whether we are modifying CAT mode or PTT instead.
  */
@@ -1412,6 +1500,58 @@ void MainWindow::selectedPortType(const GekkoFyre::AmateurRadio::GkConnType &rig
         gkRadioPtr->ptt_conn_type = rig_conn_type;
     }
 
+    return;
+}
+
+/**
+ * @brief MainWindow::gatherRigCapabilities updates the capabilities of any rig that is currently in use, or about to be
+ * within use.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param rig_model_update The amateur radio rig in question, which is identified by its unique integer as derived from
+ * the `rig_list_foreach()` Hamlib function, that's to be updated and put into RAM for storage.
+ * @see With regards to the Hamlib libraries, see `rig_caps`. Another related function is MainWindow::parseRigCapabilities().
+ */
+void MainWindow::gatherRigCapabilities(const rig_model_t &rig_model_update)
+{
+    if (!gkRadioModels.isNull() || !gkRadioModels->isEmpty()) {
+        for (const auto &model: gkRadioModels->toStdMap()) {
+            if (rig_model_update == model.first) {
+                // We have the desired amateur radio rig in question!
+                gkRadioPtr;
+
+                return;
+            }
+        }
+    }
+
+    return;
+}
+
+/**
+ * @brief MainWindow::addRigToMemory will add another amateur radio rig, of specific desire, to the list of those that are
+ * currently within use throughout Small World Deluxe, and that are henceforth within the user's resident RAM.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param rig_model_update The amateur radio rig in question to add to the list of those that are within use throughout Small
+ * World Deluxe.
+ * @see MainWindow::addRigInUse().
+ */
+void MainWindow::addRigToMemory(const rig_model_t &rig_model_update)
+{
+    if (gkRadioPtr) {}
+
+    return;
+}
+
+/**
+ * @brief MainWindow::modifyRigInMemory will modify an amateur radio rig, of specific desire, that is within the list of those
+ * that are currently of use throughout Small World Deluxe, and that are henceforth within the user's resident RAM.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param rig_model_update The amateur radio rig in question to modify.
+ * @param del_rig Whether or not to delete the amateur radio rig in question from the list of those that are within use.
+ * @see MainWindow::modifyRigInUse().
+ */
+void MainWindow::modifyRigInMemory(const rig_model_t &rig_model_update, const bool &del_rig)
+{
     return;
 }
 
@@ -1501,6 +1641,19 @@ void MainWindow::on_actionSSB_toggled(bool arg1)
 
 void MainWindow::on_actionCW_toggled(bool arg1)
 {
+    return;
+}
+
+/**
+ * @brief MainWindow::on_action_Q_codes_triggered opens a web-browser (whichever that has been chosen as the default by
+ * the user) on the user's computer and navigates to Wikipedia on all the (semi-)commonly used Q-codes by amateur radio
+ * users themselves.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::on_action_Q_codes_triggered()
+{
+    QDesktopServices::openUrl(QUrl("https://en.wikipedia.org/wiki/Q_code#Amateur_radio"));
+
     return;
 }
 

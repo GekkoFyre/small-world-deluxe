@@ -548,6 +548,9 @@ QPushButton:disabled {
                  <layout class="QHBoxLayout" name="horizontalLayout_8">
                   <item>
                    <widget class="QComboBox" name="comboBox_select_frequency">
+                    <property name="toolTip">
+                     <string>Enter or select the exact frequency, in megahertz (MHz), you wish to tune your (amateur) radio rig towards.</string>
+                    </property>
                     <property name="editable">
                      <bool>true</bool>
                     </property>
@@ -561,7 +564,11 @@ QPushButton:disabled {
                 <item>
                  <layout class="QHBoxLayout" name="horizontalLayout_10">
                   <item>
-                   <widget class="QComboBox" name="comboBox_select_digital_mode"/>
+                   <widget class="QComboBox" name="comboBox_select_callsign_use">
+                    <property name="toolTip">
+                     <string>Select the call-sign you wish to use to send out with your next transmission.</string>
+                    </property>
+                   </widget>
                   </item>
                  </layout>
                 </item>
@@ -892,7 +899,14 @@ QPushButton:disabled {
     <property name="title">
      <string>&amp;Help</string>
     </property>
+    <widget class="QMenu" name="menu_Documentation">
+     <property name="title">
+      <string>&amp;Documentation</string>
+     </property>
+     <addaction name="action_Q_codes"/>
+    </widget>
     <addaction name="actionCheck_for_Updates"/>
+    <addaction name="menu_Documentation"/>
     <addaction name="separator"/>
     <addaction name="action_About_Dekoder"/>
    </widget>
@@ -1005,16 +1019,10 @@ QPushButton:disabled {
    <property name="text">
     <string>Check for &amp;Updates</string>
    </property>
-   <property name="shortcut">
-    <string>Ctrl+U</string>
-   </property>
   </action>
   <action name="action_About_Dekoder">
    <property name="text">
     <string>&amp;About SWD</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+A</string>
    </property>
   </action>
   <action name="actionSet_Offset">
@@ -1129,7 +1137,7 @@ QPushButton:disabled {
     <string>Record to a WAV file on your system disk</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+R</string>
+    <string>Ctrl+Shift+R</string>
    </property>
   </action>
   <action name="actionPlay">
@@ -1150,9 +1158,6 @@ QPushButton:disabled {
    <property name="toolTip">
     <string>Configure your personal settings/preferences for Small World</string>
    </property>
-   <property name="shortcut">
-    <string>F1</string>
-   </property>
   </action>
   <action name="actionSave_Decoded_Ab">
    <property name="text">
@@ -1160,9 +1165,6 @@ QPushButton:disabled {
    </property>
    <property name="toolTip">
     <string>Save the decoded transcripts of your radio conversations</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+S</string>
    </property>
   </action>
   <action name="actionView_Spectrogram_Controller">
@@ -1209,29 +1211,26 @@ QPushButton:disabled {
    <property name="text">
     <string>Save as &amp;File</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+C</string>
+   </property>
   </action>
   <action name="action_All">
    <property name="text">
     <string>&amp;All</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+Shift+A</string>
+    <string>Ctrl+Alt+C</string>
    </property>
   </action>
   <action name="action_Incoming">
    <property name="text">
     <string>&amp;Incoming</string>
    </property>
-   <property name="shortcut">
-    <string>Ctrl+Shift+I</string>
-   </property>
   </action>
   <action name="action_Outgoing">
    <property name="text">
     <string>&amp;Outgoing</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+Shift+O</string>
    </property>
   </action>
   <action name="actionPrint">
@@ -1241,8 +1240,10 @@ QPushButton:disabled {
    <property name="toolTip">
     <string>Print out a transcript of your conversations</string>
    </property>
-   <property name="shortcut">
-    <string>Ctrl+P</string>
+  </action>
+  <action name="action_Q_codes">
+   <property name="text">
+    <string>&amp;Q-codes</string>
    </property>
   </action>
  </widget>

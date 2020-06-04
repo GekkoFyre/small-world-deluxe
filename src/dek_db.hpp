@@ -56,13 +56,15 @@ public:
                        QObject *parent = nullptr);
     ~GkLevelDb();
 
-    void write_rig_settings(const QString &value, const Database::Settings::radio_cfg &key);
+    void write_rig_settings(const QString &value, const Database::Settings::radio_cfg &key,
+                            const AmateurRadio::GkConnType &conn_type = AmateurRadio::GkConnType::None);
     void write_audio_device_settings(const GekkoFyre::Database::Settings::Audio::GkDevice &value, const QString &key,
                                      const bool &is_output_device);
     void write_mainwindow_settings(const QString &value, const Database::Settings::general_mainwindow_cfg &key);
     void write_misc_audio_settings(const QString &value, const Database::Settings::audio_cfg &key);
 
-    QString read_rig_settings(const Database::Settings::radio_cfg &key);
+    QString read_rig_settings(const Database::Settings::radio_cfg &key,
+                              const AmateurRadio::GkConnType &conn_type = AmateurRadio::GkConnType::None);
     int read_audio_device_settings(const bool &is_output_device);
     GekkoFyre::Database::Settings::Audio::GkDevice read_audio_details_settings(const bool &is_output_device);
     QString read_mainwindow_settings(const Database::Settings::general_mainwindow_cfg &key);
@@ -74,6 +76,8 @@ public:
 
     ptt_type_t convPttTypeToEnum(const QString &ptt_type_str);
     QString convPttTypeToStr(const ptt_type_t &ptt_type_enum);
+    AmateurRadio::GkConnType convConnTypeToEnum(const int &conn_type);
+    int convConnTypeToInt(const AmateurRadio::GkConnType &conn_type);
 
     QString convAudioBitrateToStr(const GekkoFyre::GkAudioFramework::Bitrate &bitrate);
 

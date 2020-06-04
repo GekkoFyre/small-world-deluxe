@@ -199,6 +199,8 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         unsigned short brand = ui->comboBox_brand_selection->currentIndex();
         QVariant sel_rig = ui->comboBox_rig_selection->currentData();
         unsigned short sel_rig_index = ui->comboBox_rig_selection->currentIndex();
+        unsigned short cat_conn_type = gkDekodeDb->convConnTypeToInt(gkRadioPtr->cat_conn_type);
+        unsigned short ptt_conn_type = gkDekodeDb->convConnTypeToInt(gkRadioPtr->ptt_conn_type);
         unsigned short com_device_cat = ui->comboBox_com_port->currentIndex();
         unsigned short com_device_ptt = ui->comboBox_ptt_method_port->currentIndex();
         QString usb_device_cat = ui->comboBox_com_port->currentData().toString();
@@ -420,6 +422,8 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         gkDekodeDb->write_rig_settings(QString::number(brand), radio_cfg::RigBrand);
         gkDekodeDb->write_rig_settings(QString::number(sel_rig.toInt()), radio_cfg::RigModel);
         gkDekodeDb->write_rig_settings(QString::number(sel_rig_index), radio_cfg::RigModelIndex);
+        gkDekodeDb->write_rig_settings(QString::number(cat_conn_type), radio_cfg::CatConnType);
+        gkDekodeDb->write_rig_settings(QString::number(ptt_conn_type), radio_cfg::PttConnType);
         gkDekodeDb->write_rig_settings(QString::number(com_baud_rate), radio_cfg::ComBaudRate);
         gkDekodeDb->write_rig_settings(QString::number(enum_stop_bits), radio_cfg::StopBits);
         gkDekodeDb->write_rig_settings(QString::number(enum_data_bits), radio_cfg::DataBits);
