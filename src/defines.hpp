@@ -379,48 +379,34 @@ namespace AmateurRadio {
     };
 
     namespace Control {
-        struct GkRadio {                            // https://github.com/Hamlib/Hamlib/blob/master/tests/example.c
-            RIG *rig;                               // Hamlib rig pointer
-            int rig_brand;                          // Hamlib rig brand/manufacturer
-            rig_model_t rig_model;                  // The actual amateur radio rig itself!
-            rig_caps rig_capabilities;              // Read-only; the capabilities of the configured amateur radio rig in question, as defined by Hamlib.
-            hamlib_port_t port_details;             // Information concerning details about RS232 ports, etc.
-            ptt_t ptt_status;                       // PTT status
-            split_t split_mode;                     // Whether 'Split Mode' is enabled or disabled
-            bool is_open;                           // Has HamLib been successfully initiated (including the RIG* pointer?)
-            std::string rig_file;                   // Hamlib rig temporary file
-            std::string info_buf;                   // Hamlib information buffer
-            GkConnType cat_conn_type;               // The type of connection, whether USB, RS232, etc.
-            GkConnType ptt_conn_type;               // The type of connection, whether USB, RS232, etc.
-            std::string mm;                         // Hamlib modulation mode
-            rig_debug_level_e verbosity;            // The debug level and verbosity of Hamlib
-            com_baud_rates dev_baud_rate;           // Communication device baud rate
-            std::string adv_cmd;                    // The 'Advanced Command' parameters, if specified
-            freq_t freq;                            // Rig's primary frequency
-            value_t raw_strength;                   // Raw strength of the S-meter
-            value_t strength;                       // Calculated strength of the S-meter
-            value_t power;                          // Rig's power output
-            float s_meter;                          // S-meter values
-            int status;                             // Hamlib status code
-            int retcode;                            // Hamlib return code
-            int isz;                                // No idea what this is for?
-            unsigned int mwpower;                   // Converted power reading to watts
-            rmode_t mode;                           // The type of modulation that the transceiver is in, whether it be AM, FM, SSB, etc.
-            pbwidth_t width;                        // Bandwidth
-        };
-
-        struct FreqChange {                         // This structure is used when a frequency change is requested.
-            GkRadio radio;                          // Details about the radio itself!
-            freq_t new_freq;                        // The new frequency to change towards!
-        };
-
-        struct SettingsChange {
-            std::string rig_file;                   // Hamlib rig temporary file
-            rig_model_t rig_model;                  // Hamlib rig model
-            com_baud_rates dev_baud_rate;           // Communication device baud rate
-            hamlib_port_t port_details;             // Any new changes concerning details about RS232 ports, etc.
-            rmode_t mode;                           // The type of modulation that the transceiver is in, whether it be AM, FM, SSB, etc.
-            pbwidth_t width;                        // Bandwidth
+        struct GkRadio {                                    // https://github.com/Hamlib/Hamlib/blob/master/tests/example.c
+            RIG *rig;                                       // Hamlib rig pointer
+            int rig_brand;                                  // Hamlib rig brand/manufacturer
+            rig_model_t rig_model;                          // The actual amateur radio rig itself!
+            std::unique_ptr<const rig_caps *> rig_caps;     // Read-only; the capabilities of the configured amateur radio rig in question, as defined by Hamlib.
+            hamlib_port_t port_details;                     // Information concerning details about RS232 ports, etc.
+            ptt_t ptt_status;                               // PTT status
+            split_t split_mode;                             // Whether 'Split Mode' is enabled or disabled
+            bool is_open;                                   // Has HamLib been successfully initiated (including the RIG* pointer?)
+            std::string rig_file;                           // Hamlib rig temporary file
+            std::string info_buf;                           // Hamlib information buffer
+            GkConnType cat_conn_type;                       // The type of connection, whether USB, RS232, etc.
+            GkConnType ptt_conn_type;                       // The type of connection, whether USB, RS232, etc.
+            std::string mm;                                 // Hamlib modulation mode
+            rig_debug_level_e verbosity;                    // The debug level and verbosity of Hamlib
+            com_baud_rates dev_baud_rate;                   // Communication device baud rate
+            std::string adv_cmd;                            // The 'Advanced Command' parameters, if specified
+            freq_t freq;                                    // Rig's primary frequency
+            value_t raw_strength;                           // Raw strength of the S-meter
+            value_t strength;                               // Calculated strength of the S-meter
+            value_t power;                                  // Rig's power output
+            float s_meter;                                  // S-meter values
+            int status;                                     // Hamlib status code
+            int retcode;                                    // Hamlib return code
+            int isz;                                        // No idea what this is for?
+            unsigned int mwpower;                           // Converted power reading to watts
+            rmode_t mode;                                   // The type of modulation that the transceiver is in, whether it be AM, FM, SSB, etc.
+            pbwidth_t width;                                // Bandwidth
         };
     }
 }

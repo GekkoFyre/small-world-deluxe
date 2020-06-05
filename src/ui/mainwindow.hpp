@@ -195,6 +195,7 @@ signals:
     void changePortType(const GekkoFyre::AmateurRadio::GkConnType &rig_conn_type, const bool &is_cat_mode);
     void addRigInUse(const rig_model_t &rig_model_update);
     void modifyRigInUse(const rig_model_t &rig_model_update, const bool &del_rig);
+    void recvRigCapabilities(const rig_model_t &rig_model_update);
 
 private:
     Ui::MainWindow *ui;
@@ -252,11 +253,12 @@ private:
     // USB & RS232
     //
     libusb_context *usb_ctx_ptr;
+    std::shared_ptr<GekkoFyre::Database::Settings::GkUsbPort> gkUsbPortPtr; // This is used for making connections to radio rigs with Hamlib!
 
     //
     // Miscellaneous
     //
-    static QPointer<QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>>> gkRadioModels;
+    static QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>> gkRadioModels;
     std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> gkRadioPtr;
     QPointer<QTimer> timer;
 
@@ -281,12 +283,12 @@ private:
     bool prefillAmateurBands();
 
     void launchSettingsWin();
-    void radioInitStart(const QString &rig_comms_port_cat);
-    bool radioInitTest(const QString &rig_comms_port_cat);
+    void radioInitStart(const QString &rig_comms_port_cat, const GekkoFyre::AmateurRadio::GkConnType &conn_type);
+    bool radioInitTest();
 
     std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> readRadioSettings();
     static int parseRigCapabilities(const rig_caps *caps, void *data);
-    static QPointer<QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>>> initRadioModelsVar();
+    static QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>> initRadioModelsVar();
 
     void createStatusBar(const QString &statusMsg = "");
     bool changeStatusBarMsg(const QString &statusMsg = "");
@@ -294,8 +296,6 @@ private:
 };
 
 Q_DECLARE_METATYPE(std::vector<GekkoFyre::Spectrograph::RawFFT>);
-Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::Control::FreqChange);
-Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::Control::SettingsChange);
 Q_DECLARE_METATYPE(GekkoFyre::Database::Settings::GkUsbPort);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkConnType);
 Q_DECLARE_METATYPE(std::vector<short>);
