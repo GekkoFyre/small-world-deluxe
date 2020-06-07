@@ -618,6 +618,13 @@ void MainWindow::radioInitStart(const QString &rig_comms_port_cat, const GkConnT
                 }
             } while (status != std::future_status::ready);
             gkRadioPtr = rig_thread.get();
+            if (gkRadioPtr == nullptr) {
+                throw std::invalid_argument(tr("Unable to initialize the radio rig!").toStdString());
+            }
+        } catch (const std::invalid_argument &e) {
+            // We wish for this to be handled silently for now!
+            Q_UNUSED(e);
+            return;
         } catch (const std::runtime_error &e) {
             QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
             return;

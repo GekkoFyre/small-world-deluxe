@@ -259,7 +259,13 @@ namespace Database {
         struct UsbVers3 {
             libusb_ss_endpoint_companion_descriptor *ss_desc;   // Details that are applicable for USB 3.0 superspeed interfaces
             libusb_endpoint_descriptor *endpoint;               // A structure representing the standard USB 3.0 endpoint descriptor
-            libusb_interface_descriptor *inter_desc;            // Details about the interface itself pertaining to the `libusb` library
+            const libusb_interface_descriptor *inter_desc;      // Details about the interface itself pertaining to the `libusb` library
+            int interface_number;                               // Number of this interface!
+            int alternate_setting;                              // Value used to select this alternate setting for this interface
+            int max_packet_size;                                // Maximum packet size this endpoint is capable of sending/receiving
+            int interval;                                       // Interval for polling endpoint for data transfers
+            int refresh;                                        // For audio devices only: the rate at which synchronization feedback is provided
+            int sync_address;                                   // For audio devices only: the address if the synch endpoint
         };
 
         struct GkUsbDev {
@@ -271,6 +277,11 @@ namespace Database {
             QString mfg;                                        // Information relating to the manufacturer
             QString serial_number;                              // The Product Serial Number
             QString product;                                    // The Product ID
+            int vendor_id;                                      // Vendor ID as an integer
+            int product_id;                                     // Product ID as an integer
+            int conv_conf;                                      // USB Device configuration as an integer
+            int conv_iface;                                     // USB Device interface as an integer
+            int conv_alt;                                       // USB Device alternate as an integer
         };
 
         struct GkUsbPort {
