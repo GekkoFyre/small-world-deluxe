@@ -551,14 +551,15 @@ void DialogSettings::prefill_audio_api_avail(const QVector<PaHostApiTypeId> &por
                 int underlying_api_int = to_underlying(pa_api);
                 ui->comboBox_soundcard_api->insertItem(underlying_api_int, api_str_tmp, underlying_api_int);
                 avail_portaudio_api.insert(underlying_api_int, pa_api);
-            }
-        }
 
-        if (!avail_portaudio_api.isEmpty()) {
-            for (const auto &avail_api_idx: avail_portaudio_api.toStdMap()) {
-                // Set the QComboBox for the available PortAudio APIs to the first accessible item!
-                ui->comboBox_soundcard_api->setCurrentIndex(avail_api_idx.first);
-                return;
+                if (!avail_portaudio_api.isEmpty()) {
+                    for (const auto &avail_api_idx: avail_portaudio_api.toStdMap()) {
+                        // Set the QComboBox for the available PortAudio APIs to the first accessible item!
+                        if (avail_api_idx.first == underlying_api_int) {
+                            ui->comboBox_soundcard_api->setCurrentIndex(avail_api_idx.first);
+                        }
+                    }
+                }
             }
         }
     } catch (const portaudio::PaException &e) {

@@ -258,7 +258,7 @@ namespace Database {
 
         struct UsbVers3 {
             libusb_ss_endpoint_companion_descriptor *ss_desc;   // Details that are applicable for USB 3.0 superspeed interfaces
-            libusb_endpoint_descriptor *endpoint;               // A structure representing the standard USB 3.0 endpoint descriptor
+            const libusb_endpoint_descriptor *endpoint;         // A structure representing the standard USB 3.0 endpoint descriptor
             const libusb_interface_descriptor *inter_desc;      // Details about the interface itself pertaining to the `libusb` library
             int interface_number;                               // Number of this interface!
             int alternate_setting;                              // Value used to select this alternate setting for this interface

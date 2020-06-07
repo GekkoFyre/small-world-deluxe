@@ -434,6 +434,8 @@ QMap<std::string, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDe
                                 usb->usb_enum.conv_conf = static_cast<int>(usb->usb_enum.desc.bNumConfigurations);
 
                                 usb->usb_vers_3.inter_desc = &usb->usb_enum.config->interface[j].altsetting[k];
+                                usb->usb_vers_3.endpoint = &usb->usb_enum.config->interface[j].altsetting[k].endpoint[m];
+                                libusb_get_ss_endpoint_companion_descriptor(usb->usb_enum.context, usb->usb_vers_3.endpoint, &usb->usb_vers_3.ss_desc);
 
                                 usb->usb_vers_3.interface_number = static_cast<int>(usb->usb_enum.config->interface[j].altsetting[k].bInterfaceNumber);
                                 usb->usb_vers_3.alternate_setting = static_cast<int>(usb->usb_enum.config->interface[j].altsetting[k].bAlternateSetting);
@@ -672,8 +674,7 @@ std::shared_ptr<GkRadio> RadioLibs::init_rig(std::shared_ptr<GkRadio> radio_ptr,
                 //
                 // Parallel
                 //
-
-                // TODO: Fill out the code for this section, which is markedly different to RS232, USB, etc.!
+                radio_ptr->port_details.parm.parallel.pin = -1; // TODO: Finish this section for Parallel connections!
             } else {
                 throw std::invalid_argument(tr("Unable to detect connection type while initializing radio rig (i.e. 'none / unknown' was not an option)!").toStdString());
             }
