@@ -188,10 +188,9 @@ void GkLevelDb::write_rig_settings(const QString &value, const Database::Setting
  * @brief DekodeDb::write_audio_device_settings
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param value
- * @param key
  * @param is_output_device
  */
-void GkLevelDb::write_audio_device_settings(const GkDevice &value, const QString &key, const bool &is_output_device)
+void GkLevelDb::write_audio_device_settings(const GkDevice &value, const bool &is_output_device)
 {
     try {
         leveldb::WriteBatch batch;
@@ -199,11 +198,8 @@ void GkLevelDb::write_audio_device_settings(const GkDevice &value, const QString
 
         if (is_output_device) {
             // Unique identifier for the chosen output audio device
-            batch.Put("AudioOutputId", std::to_string(value.stream_parameters.device));
-            batch.Put("AudioOutputDefSampleRate", std::to_string(value.def_sample_rate));
-            batch.Put("AudioOutputChannelCount", std::to_string(value.dev_output_channel_count));
             batch.Put("AudioOutputSelChannels", std::to_string(value.sel_channels));
-            batch.Put("AudioOutputDevName", value.device_info.name);
+            batch.Put("AudioOutputId", std::to_string(value.dev_number));
 
             // Determine if this is the default output device for the system and if so, convert
             // the boolean value to a std::string suitable for database storage.
@@ -211,11 +207,8 @@ void GkLevelDb::write_audio_device_settings(const GkDevice &value, const QString
             batch.Put("AudioOutputDefSysDevice", is_default);
         } else {
             // Unique identifier for the chosen input audio device
-            batch.Put("AudioInputId", std::to_string(value.stream_parameters.device));
-            batch.Put("AudioInputDefSampleRate", std::to_string(value.def_sample_rate));
-            batch.Put("AudioInputChannelCount", std::to_string(value.dev_input_channel_count));
             batch.Put("AudioInputSelChannels", std::to_string(value.sel_channels));
-            batch.Put("AudioInputDevName", value.device_info.name);
+            batch.Put("AudioInputId", std::to_string(value.dev_number));
 
             // Determine if this is the default input device for the system and if so, convert
             // the boolean value to a std::string suitable for database storage.
@@ -654,14 +647,10 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
         // Output audio device
         //
         std::string output_id;
-        std::string output_def_sample_rate;
-        std::string output_channel_count;
         std::string output_sel_channels;
         std::string output_def_sys_device;
 
         status = db->Get(read_options, "AudioOutputId", &output_id);
-        status = db->Get(read_options, "AudioOutputDefSampleRate", &output_def_sample_rate);
-        status = db->Get(read_options, "AudioOutputChannelCount", &output_channel_count);
         status = db->Get(read_options, "AudioOutputSelChannels", &output_sel_channels);
         status = db->Get(read_options, "AudioOutputDefSysDevice", &output_def_sys_device);
 
@@ -676,20 +665,6 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
             audio_device.dev_number = -1;
         }
 
-        if (!output_def_sample_rate.empty()) {
-            audio_device.def_sample_rate = std::stod(output_def_sample_rate);
-        } else {
-            audio_device.def_sample_rate = 0.0;
-        }
-
-        if (!output_channel_count.empty()) {
-            audio_device.dev_output_channel_count = std::stoi(output_channel_count);
-            audio_device.dev_input_channel_count = 0;
-        } else {
-            audio_device.dev_output_channel_count = 0;
-            audio_device.dev_input_channel_count = 0;
-        }
-
         if (!output_sel_channels.empty()) {
             audio_device.sel_channels = convertAudioChannelsEnum(std::stoi(output_sel_channels));
         } else {
@@ -702,15 +677,10 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
         // Input audio device
         //
         std::string input_id;
-        std::string input_def_sample_rate;
-        std::string input_channel_count;
         std::string input_sel_channels;
         std::string input_def_sys_device;
 
         status = db->Get(read_options, "AudioInputId", &input_id);
-        status = db->Get(read_options, "AudioInputDefSampleRate", &input_def_sample_rate);
-        status = db->Get(read_options, "AudioInputChannelCount", &input_channel_count);
-        status = db->Get(read_options, "AudioInputSelChannels", &input_sel_channels);
         status = db->Get(read_options, "AudioInputDefSysDevice", &input_def_sys_device);
 
         bool def_sys_device = boolStr(input_def_sys_device);
@@ -722,20 +692,6 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
             audio_device.dev_number = std::stoi(input_id);
         } else {
             audio_device.dev_number = -1;
-        }
-
-        if (!input_def_sample_rate.empty()) {
-            audio_device.def_sample_rate = std::stod(input_def_sample_rate);
-        } else {
-            audio_device.def_sample_rate = 0.0;
-        }
-
-        if (!input_channel_count.empty()) {
-            audio_device.dev_input_channel_count = std::stoi(input_channel_count);
-            audio_device.dev_output_channel_count = 0;
-        } else {
-            audio_device.dev_input_channel_count = 0;
-            audio_device.dev_output_channel_count = 0;
         }
 
         if (!input_sel_channels.empty()) {

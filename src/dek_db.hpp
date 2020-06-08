@@ -58,7 +58,7 @@ public:
 
     void write_rig_settings(const QString &value, const Database::Settings::radio_cfg &key,
                             const AmateurRadio::GkConnType &conn_type = AmateurRadio::GkConnType::None);
-    void write_audio_device_settings(const GekkoFyre::Database::Settings::Audio::GkDevice &value, const QString &key,
+    void write_audio_device_settings(const GekkoFyre::Database::Settings::Audio::GkDevice &value,
                                      const bool &is_output_device);
     void write_mainwindow_settings(const QString &value, const Database::Settings::general_mainwindow_cfg &key);
     void write_misc_audio_settings(const QString &value, const Database::Settings::audio_cfg &key);

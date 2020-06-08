@@ -216,8 +216,8 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         //
         // Audio Device Channels (i.e. Mono/Stereo/etc)
         //
-        int curr_input_device_channels = ui->comboBox_soundcard_input->currentData().toInt();
-        int curr_output_device_channels = ui->comboBox_soundcard_output->currentData().toInt();
+        int curr_input_device_channels = ui->comboBox_soundcard_input_channels->currentIndex();
+        int curr_output_device_channels = ui->comboBox_soundcard_output_channels->currentIndex();
 
         //
         // RS-232 Settings
@@ -287,13 +287,13 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         // Input Device
         //
         chosen_input_audio_dev.sel_channels = gkDekodeDb->convertAudioChannelsEnum(curr_input_device_channels);
-        gkDekodeDb->write_audio_device_settings(chosen_input_audio_dev, QString::number(chosen_input_audio_dev.dev_number), false);
+        gkDekodeDb->write_audio_device_settings(chosen_input_audio_dev, false);
 
         //
         // Output Device
         //
         chosen_output_audio_dev.sel_channels = gkDekodeDb->convertAudioChannelsEnum(curr_output_device_channels);
-        gkDekodeDb->write_audio_device_settings(chosen_output_audio_dev, QString::number(chosen_output_audio_dev.dev_number), true);
+        gkDekodeDb->write_audio_device_settings(chosen_output_audio_dev, true);
 
         //
         // Data Bits
@@ -585,36 +585,27 @@ void DialogSettings::prefill_audio_api_avail(const QVector<PaHostApiTypeId> &por
 void DialogSettings::prefill_audio_devices(std::vector<GkDevice> audio_devices_vec)
 {
     try {
-        ui->comboBox_soundcard_input->clear();
-        ui->comboBox_soundcard_output->clear();
-        ui->comboBox_soundcard_input->insertItem(0, tr("No audio device selected"));
-        ui->comboBox_soundcard_output->insertItem(0, tr("No audio device selected"));
-
         if (!avail_portaudio_api.isEmpty()) {
             if (!audio_devices_vec.empty()) {
                 for (const auto &device: audio_devices_vec) {
-                    if (device.device_info.hostApi >= 0) {
-                        if (device.is_output_dev) {
-                            //
-                            // Audio device is an output
-                            //
-                            std::string audio_dev_name = device.device_info.name;
-                            if (!audio_dev_name.empty()) {
-                                PaDeviceIndex dev_idx = device.stream_parameters.device;
-                                avail_output_audio_devs.insert(dev_idx, device);
-                            }
-                        } else {
-                            //
-                            // Audio device is an input
-                            //
-                            std::string audio_dev_name = device.device_info.name;
-                            if (!audio_dev_name.empty()) {
-                                PaDeviceIndex dev_idx = device.stream_parameters.device;
-                                avail_input_audio_devs.insert(dev_idx, device);
-                            }
+                    if (device.is_output_dev) {
+                        //
+                        // Audio device is an output
+                        //
+                        std::string audio_dev_name = device.device_info.name;
+                        if (!audio_dev_name.empty()) {
+                            PaDeviceIndex dev_idx = device.stream_parameters.device;
+                            avail_output_audio_devs.insert(dev_idx, device);
                         }
                     } else {
-                        throw std::runtime_error(tr("Given audio devices are nullptr! Small World Deluxe may not work correctly if you continue...").toStdString());
+                        //
+                        // Audio device is an input
+                        //
+                        std::string audio_dev_name = device.device_info.name;
+                        if (!audio_dev_name.empty()) {
+                            PaDeviceIndex dev_idx = device.stream_parameters.device;
+                            avail_input_audio_devs.insert(dev_idx, device);
+                        }
                     }
                 }
 
@@ -639,36 +630,6 @@ void DialogSettings::prefill_audio_devices(std::vector<GkDevice> audio_devices_v
                         }
 
                         ++counter;
-                    }
-                }
-
-                //
-                // Input audio device for PortAudio!
-                //
-                int input_identifier = gkDekodeDb->read_audio_device_settings(false);
-                if (input_identifier > 0) {
-                    GkDevice input_device = gkAudioDevices->gatherAudioDeviceDetails(gkPortAudioInit, input_identifier);
-                    for (const auto &input_idx: avail_input_audio_devs.toStdMap()) {
-                        if (input_idx.first == input_identifier) {
-                            chosen_input_audio_dev = input_device;
-                            ui->comboBox_soundcard_input->setCurrentIndex(input_identifier);
-                            break;
-                        }
-                    }
-                }
-
-                //
-                // Output audio device for PortAudio!
-                //
-                int output_identifier = gkDekodeDb->read_audio_device_settings(true);
-                if (output_identifier > 0) {
-                    GkDevice output_device = gkAudioDevices->gatherAudioDeviceDetails(gkPortAudioInit, output_identifier);
-                    for (const auto &output_idx: avail_output_audio_devs.toStdMap()) {
-                        if (output_idx.first == output_identifier) {
-                            chosen_output_audio_dev = output_device;
-                            ui->comboBox_soundcard_output->setCurrentIndex(output_identifier);
-                            break;
-                        }
                     }
                 }
             } else {
@@ -1630,6 +1591,11 @@ void DialogSettings::on_comboBox_soundcard_output_currentIndexChanged(int index)
     return;
 }
 
+/**
+ * @brief DialogSettings::on_comboBox_soundcard_api_currentIndexChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ */
 void DialogSettings::on_comboBox_soundcard_api_currentIndexChanged(int index)
 {
     Q_UNUSED(index);
@@ -1645,15 +1611,32 @@ void DialogSettings::on_comboBox_soundcard_api_currentIndexChanged(int index)
                     if ((pa_api.first == ui->comboBox_soundcard_api->currentData().toInt()) && (input_dev.host_type_id == pa_api.second)) {
                         std::string audio_dev_name = input_dev.device_info.name;
                         if (!audio_dev_name.empty()) {
-                            ui->comboBox_soundcard_input->insertItem(input_dev.stream_parameters.device, QString::fromStdString(audio_dev_name),
-                                                                     input_dev.stream_parameters.device);
+                            ui->comboBox_soundcard_input->insertItem(input_dev.dev_number, QString::fromStdString(audio_dev_name),
+                                                                     input_dev.dev_number);
                         }
+                    }
+                }
+            }
+
+            //
+            // Input audio devices
+            //
+            auto soundcard_input_idx = gkDekodeDb->read_audio_device_settings(false);
+            if (soundcard_input_idx >= 0) {
+                for (int i = 0; i < ui->comboBox_soundcard_input->count(); ++i) {
+                    if (ui->comboBox_soundcard_input->itemData(i).toInt() == soundcard_input_idx) {
+                        //
+                        // Set the currently desired input sound-device as previously configured by the user, if possible
+                        // Need to convert from `currentData().toInt()` to `currentIndex()` for QComboBox in question!
+                        //
+                        ui->comboBox_soundcard_input->setCurrentIndex(i);
+                        break;
                     }
                 }
             }
         }
 
-        if (!avail_output_audio_devs.isEmpty()) {
+        if (!avail_portaudio_api.isEmpty() || !avail_output_audio_devs.isEmpty()) {
             //
             // Output audio devices
             //
@@ -1664,9 +1647,26 @@ void DialogSettings::on_comboBox_soundcard_api_currentIndexChanged(int index)
                     if ((pa_api.first == ui->comboBox_soundcard_api->currentData().toInt()) && (output_dev.host_type_id == pa_api.second)) {
                         std::string audio_dev_name = output_dev.device_info.name;
                         if (!audio_dev_name.empty()) {
-                            ui->comboBox_soundcard_output->insertItem(output_dev.stream_parameters.device, QString::fromStdString(audio_dev_name),
-                                                                      output_dev.stream_parameters.device);
+                            ui->comboBox_soundcard_output->insertItem(output_dev.dev_number, QString::fromStdString(audio_dev_name),
+                                                                      output_dev.dev_number);
                         }
+                    }
+                }
+            }
+
+            //
+            // Output audio devices
+            //
+            auto soundcard_output_idx = gkDekodeDb->read_audio_device_settings(true);
+            if (soundcard_output_idx >= 0) {
+                for (int i = 0; i < ui->comboBox_soundcard_output->count(); ++i) {
+                    if (ui->comboBox_soundcard_output->itemData(i).toInt() == soundcard_output_idx) {
+                        //
+                        // Set the currently desired output sound-device as previously configured by the user, if possible
+                        // Need to convert from `currentData().toInt()` to `currentIndex()` for QComboBox in question!
+                        //
+                        ui->comboBox_soundcard_output->setCurrentIndex(i);
+                        break;
                     }
                 }
             }
