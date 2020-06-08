@@ -1106,7 +1106,7 @@ bool DialogSettings::read_settings()
 
         if (!rigModelIndex.isEmpty()) {
             ui->comboBox_rig_selection->setCurrentIndex(rigModelIndex.toInt());
-            on_comboBox_rig_selection_currentIndexChanged();
+            emit modifyRigInUse(ui->comboBox_rig_selection->currentData().toInt(), false);
         }
 
         Q_UNUSED(rigVers);
@@ -1734,7 +1734,7 @@ void DialogSettings::disableComPorts(const bool &active)
 void DialogSettings::on_comboBox_rig_selection_currentIndexChanged(int index)
 {
     Q_UNUSED(index);
-    emit modifyRigInUse(ui->comboBox_rig_selection->currentData().toInt(), false);
+    emit modifyRigInUse(ui->comboBox_rig_selection->currentData().toInt(), true);
 
     return;
 }

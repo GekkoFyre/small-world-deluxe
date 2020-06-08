@@ -1528,6 +1528,7 @@ void MainWindow::modifyRigInMemory(const rig_model_t &rig_model_update, const bo
         if (gkRadioPtr->rig != nullptr) {
             // Delete the amateur radio rig that is currently within use!
             gkRadioPtr.reset();
+            gkRadioPtr = std::make_shared<GkRadio>();
         }
 
         //
