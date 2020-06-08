@@ -1141,12 +1141,18 @@ bool DialogSettings::read_settings()
                 switch (gkRadioPtr->rig_caps->serial_stop_bits) {
                 case 0:
                     ui->radioButton_stop_bits_default->setDown(true);
+                    ui->radioButton_stop_bits_one->setDown(false);
+                    ui->radioButton_stop_bits_two->setDown(false);
                     break;
                 case 1:
                     ui->radioButton_stop_bits_one->setDown(true);
+                    ui->radioButton_stop_bits_default->setDown(false);
+                    ui->radioButton_stop_bits_two->setDown(false);
                     break;
                 case 2:
                     ui->radioButton_stop_bits_two->setDown(true);
+                    ui->radioButton_stop_bits_one->setDown(false);
+                    ui->radioButton_stop_bits_default->setDown(false);
                     break;
                 default:
                     throw std::invalid_argument(tr("Invalid value for amount of Stop Bits!").toStdString());
@@ -1181,12 +1187,18 @@ bool DialogSettings::read_settings()
                 switch (gkRadioPtr->rig_caps->serial_data_bits) {
                 case 0:
                     ui->radioButton_data_bits_default->setDown(true);
+                    ui->radioButton_data_bits_seven->setDown(false);
+                    ui->radioButton_data_bits_eight->setDown(false);
                     break;
                 case 7:
                     ui->radioButton_data_bits_seven->setDown(true);
+                    ui->radioButton_data_bits_default->setDown(false);
+                    ui->radioButton_data_bits_eight->setDown(false);
                     break;
                 case 8:
                     ui->radioButton_data_bits_eight->setDown(true);
+                    ui->radioButton_data_bits_seven->setDown(false);
+                    ui->radioButton_data_bits_default->setDown(false);
                     break;
                 default:
                     throw std::invalid_argument(tr("Invalid value for amount of Data Bits!").toStdString());
@@ -1218,15 +1230,27 @@ bool DialogSettings::read_settings()
                 switch (gkRadioPtr->rig_caps->serial_handshake) {
                 case serial_handshake_e::RIG_HANDSHAKE_NONE:
                     ui->radioButton_handshake_none->setDown(true);
+                    ui->radioButton_handshake_xon_xoff->setDown(false);
+                    ui->radioButton_handshake_hardware->setDown(false);
+                    ui->radioButton_handshake_default->setDown(false);
                     break;
                 case serial_handshake_e::RIG_HANDSHAKE_XONXOFF:
                     ui->radioButton_handshake_xon_xoff->setDown(true);
+                    ui->radioButton_handshake_hardware->setDown(false);
+                    ui->radioButton_handshake_default->setDown(false);
+                    ui->radioButton_handshake_none->setDown(false);
                     break;
                 case serial_handshake_e::RIG_HANDSHAKE_HARDWARE:
                     ui->radioButton_handshake_hardware->setDown(true);
+                    ui->radioButton_handshake_default->setDown(false);
+                    ui->radioButton_handshake_none->setDown(false);
+                    ui->radioButton_handshake_xon_xoff->setDown(false);
                     break;
                 default:
                     ui->radioButton_handshake_default->setDown(true);
+                    ui->radioButton_handshake_none->setDown(false);
+                    ui->radioButton_handshake_xon_xoff->setDown(false);
+                    ui->radioButton_handshake_hardware->setDown(false);
                     break;
                 }
             }
@@ -1266,18 +1290,34 @@ bool DialogSettings::read_settings()
                 switch (gkRadioPtr->rig_caps->ptt_type) {
                 case ptt_type_t::RIG_PTT_RIG_MICDATA:
                     ui->radioButton_ptt_method_vox->setDown(true);
+                    ui->radioButton_ptt_method_dtr->setDown(false);
+                    ui->radioButton_ptt_method_cat->setDown(false);
+                    ui->radioButton_ptt_method_rts->setDown(false);
                     break;
                 case ptt_type_t::RIG_PTT_SERIAL_DTR:
                     ui->radioButton_ptt_method_dtr->setDown(true);
+                    ui->radioButton_ptt_method_cat->setDown(false);
+                    ui->radioButton_ptt_method_rts->setDown(false);
+                    ui->radioButton_ptt_method_vox->setDown(false);
                     break;
                 case ptt_type_t::RIG_PTT_RIG:
                     ui->radioButton_ptt_method_cat->setDown(true);
+                    ui->radioButton_ptt_method_rts->setDown(false);
+                    ui->radioButton_ptt_method_vox->setDown(false);
+                    ui->radioButton_ptt_method_dtr->setDown(false);
                     break;
                 case ptt_type_t::RIG_PTT_SERIAL_RTS:
                     ui->radioButton_ptt_method_rts->setDown(true);
+                    ui->radioButton_ptt_method_vox->setDown(false);
+                    ui->radioButton_ptt_method_dtr->setDown(false);
+                    ui->radioButton_ptt_method_cat->setDown(false);
                     break;
                 default:
-                    throw std::invalid_argument(tr("Invalid value for amount of PTT Method!").toStdString());
+                    ui->radioButton_ptt_method_vox->setDown(true);
+                    ui->radioButton_ptt_method_dtr->setDown(false);
+                    ui->radioButton_ptt_method_cat->setDown(false);
+                    ui->radioButton_ptt_method_rts->setDown(false);
+                    break;
                 }
             }
         }
@@ -1816,7 +1856,7 @@ void DialogSettings::disableComPorts(const bool &active)
 void DialogSettings::on_comboBox_rig_selection_currentIndexChanged(int index)
 {
     Q_UNUSED(index);
-    emit modifyRigInUse(ui->comboBox_rig_selection->currentData().toInt(), true);
+    emit modifyRigInUse(ui->comboBox_rig_selection->currentData().toInt(), false);
 
     if (gkRadioPtr->rig_caps != nullptr) {
         ui->comboBox_baud_rate->setCurrentIndex(gkRadioLibs->convertBaudRateFromEnum(gkRadioLibs->convertBaudRateIntToEnum(gkRadioPtr->rig_caps->serial_rate_min)));
@@ -1824,12 +1864,18 @@ void DialogSettings::on_comboBox_rig_selection_currentIndexChanged(int index)
         switch (gkRadioPtr->rig_caps->serial_stop_bits) {
         case 0:
             ui->radioButton_stop_bits_default->setDown(true);
+            ui->radioButton_stop_bits_one->setDown(false);
+            ui->radioButton_stop_bits_two->setDown(false);
             break;
         case 1:
             ui->radioButton_stop_bits_one->setDown(true);
+            ui->radioButton_stop_bits_default->setDown(false);
+            ui->radioButton_stop_bits_two->setDown(false);
             break;
         case 2:
             ui->radioButton_stop_bits_two->setDown(true);
+            ui->radioButton_stop_bits_one->setDown(false);
+            ui->radioButton_stop_bits_default->setDown(false);
             break;
         default:
             throw std::invalid_argument(tr("Invalid value for amount of Stop Bits!").toStdString());
@@ -1838,12 +1884,18 @@ void DialogSettings::on_comboBox_rig_selection_currentIndexChanged(int index)
         switch (gkRadioPtr->rig_caps->serial_data_bits) {
         case 0:
             ui->radioButton_data_bits_default->setDown(true);
+            ui->radioButton_data_bits_seven->setDown(false);
+            ui->radioButton_data_bits_eight->setDown(false);
             break;
         case 7:
             ui->radioButton_data_bits_seven->setDown(true);
+            ui->radioButton_data_bits_default->setDown(false);
+            ui->radioButton_data_bits_eight->setDown(false);
             break;
         case 8:
             ui->radioButton_data_bits_eight->setDown(true);
+            ui->radioButton_data_bits_seven->setDown(false);
+            ui->radioButton_data_bits_default->setDown(false);
             break;
         default:
             throw std::invalid_argument(tr("Invalid value for amount of Data Bits!").toStdString());
@@ -1852,33 +1904,60 @@ void DialogSettings::on_comboBox_rig_selection_currentIndexChanged(int index)
         switch (gkRadioPtr->rig_caps->serial_handshake) {
         case serial_handshake_e::RIG_HANDSHAKE_NONE:
             ui->radioButton_handshake_none->setDown(true);
+            ui->radioButton_handshake_xon_xoff->setDown(false);
+            ui->radioButton_handshake_hardware->setDown(false);
+            ui->radioButton_handshake_default->setDown(false);
             break;
         case serial_handshake_e::RIG_HANDSHAKE_XONXOFF:
             ui->radioButton_handshake_xon_xoff->setDown(true);
+            ui->radioButton_handshake_hardware->setDown(false);
+            ui->radioButton_handshake_default->setDown(false);
+            ui->radioButton_handshake_none->setDown(false);
             break;
         case serial_handshake_e::RIG_HANDSHAKE_HARDWARE:
             ui->radioButton_handshake_hardware->setDown(true);
+            ui->radioButton_handshake_default->setDown(false);
+            ui->radioButton_handshake_none->setDown(false);
+            ui->radioButton_handshake_xon_xoff->setDown(false);
             break;
         default:
             ui->radioButton_handshake_default->setDown(true);
+            ui->radioButton_handshake_none->setDown(false);
+            ui->radioButton_handshake_xon_xoff->setDown(false);
+            ui->radioButton_handshake_hardware->setDown(false);
             break;
         }
 
         switch (gkRadioPtr->rig_caps->ptt_type) {
         case ptt_type_t::RIG_PTT_RIG_MICDATA:
             ui->radioButton_ptt_method_vox->setDown(true);
+            ui->radioButton_ptt_method_dtr->setDown(false);
+            ui->radioButton_ptt_method_cat->setDown(false);
+            ui->radioButton_ptt_method_rts->setDown(false);
             break;
         case ptt_type_t::RIG_PTT_SERIAL_DTR:
             ui->radioButton_ptt_method_dtr->setDown(true);
+            ui->radioButton_ptt_method_cat->setDown(false);
+            ui->radioButton_ptt_method_rts->setDown(false);
+            ui->radioButton_ptt_method_vox->setDown(false);
             break;
         case ptt_type_t::RIG_PTT_RIG:
             ui->radioButton_ptt_method_cat->setDown(true);
+            ui->radioButton_ptt_method_rts->setDown(false);
+            ui->radioButton_ptt_method_vox->setDown(false);
+            ui->radioButton_ptt_method_dtr->setDown(false);
             break;
         case ptt_type_t::RIG_PTT_SERIAL_RTS:
             ui->radioButton_ptt_method_rts->setDown(true);
+            ui->radioButton_ptt_method_vox->setDown(false);
+            ui->radioButton_ptt_method_dtr->setDown(false);
+            ui->radioButton_ptt_method_cat->setDown(false);
             break;
         default:
-            throw std::invalid_argument(tr("Invalid value for amount of PTT Method!").toStdString());
+            ui->radioButton_ptt_method_vox->setDown(true);
+            ui->radioButton_ptt_method_dtr->setDown(false);
+            ui->radioButton_ptt_method_cat->setDown(false);
+            ui->radioButton_ptt_method_rts->setDown(false);
         }
 
         ui->radioButton_mode_none->setDown(true);
