@@ -78,9 +78,8 @@ GkLevelDb::~GkLevelDb()
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param value The information, or rather, the data itself you wish to store towards the Google LevelDB database.
  * @param key The key which is required for _later retrieving_ the desired value(s) from the Google LevelDB database itself.
- * @param conn_type The type of connection that is being used, whether it be USB, RS232, GPIO, etc.
  */
-void GkLevelDb::write_rig_settings(const QString &value, const Database::Settings::radio_cfg &key, const GkConnType &conn_type)
+void GkLevelDb::write_rig_settings(const QString &value, const Database::Settings::radio_cfg &key)
 {
     try {
         // Put key-value
@@ -141,8 +140,47 @@ void GkLevelDb::write_rig_settings(const QString &value, const Database::Setting
             return;
         }
 
-        if (conn_type == AmateurRadio::GkConnType::None) {
-            // No specific connection type has been given!
+        std::time_t curr_time = std::time(nullptr);
+        std::stringstream ss;
+        ss << curr_time;
+        batch.Put("CurrTime", ss.str());
+
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
+
+        status = db->Write(write_options, &batch);
+
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkLevelDb::write_rig_settings_comms writes out the given settings desired by the user to a Google LevelDB database stored
+ * on their own system's storage media, either via a default storage place or through specified means as configured by the
+ * user themselves.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value The information, or rather, the data itself you wish to store towards the Google LevelDB database.
+ * @param key The key which is required for _later retrieving_ the desired value(s) from the Google LevelDB database itself.
+ * @param conn_type The type of connection that is being used, whether it be USB, RS232, GPIO, etc.
+ */
+void GkLevelDb::write_rig_settings_comms(const QString &value, const radio_cfg &key, const GkConnType &conn_type)
+{
+    try {
+        // Put key-value
+        leveldb::WriteBatch batch;
+        leveldb::Status status;
+
+        using namespace Database::Settings;
+        if (conn_type == AmateurRadio::GkConnType::RS232 || conn_type == AmateurRadio::GkConnType::None) {
+            //
+            // RS232 or no specific connection type has been given!
+            //
             switch (key) {
             case radio_cfg::ComDeviceCat:
                 batch.Put("ComDeviceCat", value.toStdString());
@@ -150,24 +188,29 @@ void GkLevelDb::write_rig_settings(const QString &value, const Database::Setting
             case radio_cfg::ComDevicePtt:
                 batch.Put("ComDevicePtt", value.toStdString());
                 break;
-            case radio_cfg::UsbDeviceCat:
-                batch.Put("UsbDeviceCat", value.toStdString());
-                break;
-            case radio_cfg::UsbDevicePtt:
-                batch.Put("UsbDevicePtt", value.toStdString());
-                break;
             case radio_cfg::ComBaudRate:
                 batch.Put("ComBaudRate", value.toStdString());
                 break;
             default:
                 return;
             }
+        } else if (conn_type == AmateurRadio::GkConnType::USB) {
+            //
+            // USB
+            //
+            switch (key) {
+            case radio_cfg::UsbDeviceCat:
+                batch.Put("UsbDeviceCat", value.toStdString());
+                break;
+            case radio_cfg::UsbDevicePtt:
+                batch.Put("UsbDevicePtt", value.toStdString());
+                break;
+            default:
+                return;
+            }
+        } else {
+            throw std::invalid_argument(tr("Connection type could not be detected when writing radio rig details to setting's database!").toStdString());
         }
-
-        std::time_t curr_time = std::time(nullptr);
-        std::stringstream ss;
-        ss << curr_time;
-        batch.Put("CurrTime", ss.str());
 
         leveldb::WriteOptions write_options;
         write_options.sync = true;
@@ -326,10 +369,9 @@ void GkLevelDb::write_misc_audio_settings(const QString &value, const audio_cfg 
  * database that are stored within the user's storage media, either via a default storage place or through specified means as
  * configured by the user themselves.
  * @param key The key which is required for retrieving the desired value(s) from the Google LevelDB database itself.
- * @param conn_type The type of connection that is being used, whether it be USB, RS232, GPIO, etc.
  * @return The desired value from the Google LevelDB database.
  */
-QString GkLevelDb::read_rig_settings(const Database::Settings::radio_cfg &key, const GkConnType &conn_type)
+QString GkLevelDb::read_rig_settings(const Database::Settings::radio_cfg &key)
 {
     leveldb::Status status;
     leveldb::ReadOptions read_options;
@@ -391,9 +433,30 @@ QString GkLevelDb::read_rig_settings(const Database::Settings::radio_cfg &key, c
         return "";
     }
 
-    if (conn_type == AmateurRadio::GkConnType::None) {
+    return QString::fromStdString(value);
+}
+
+/**
+ * @brief GkLevelDb::read_rig_settings_comms reads out the stored Small World Deluxe settings which are kept within a Google LevelDB
+ * database that are stored within the user's storage media, either via a default storage place or through specified means as
+ * configured by the user themselves.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param key The key which is required for retrieving the desired value(s) from the Google LevelDB database itself.
+ * @param conn_type The type of connection that is being used, whether it be USB, RS232, GPIO, etc.
+ * @return The desired value from the Google LevelDB database.
+ */
+QString GkLevelDb::read_rig_settings_comms(const radio_cfg &key, const GkConnType &conn_type)
+{
+    leveldb::Status status;
+    leveldb::ReadOptions read_options;
+    std::string value = "";
+
+    read_options.verify_checksums = true;
+
+    using namespace Database::Settings;
+    if (conn_type == AmateurRadio::GkConnType::RS232 || conn_type == AmateurRadio::GkConnType::None) {
         //
-        // No specific connection type has been given!
+        // RS232 or no specific connection type has been given!
         //
         switch (key) {
         case radio_cfg::ComDeviceCat:
@@ -402,18 +465,28 @@ QString GkLevelDb::read_rig_settings(const Database::Settings::radio_cfg &key, c
         case radio_cfg::ComDevicePtt:
             status = db->Get(read_options, "ComDevicePtt", &value);
             break;
-        case radio_cfg::UsbDeviceCat:
-            status = db->Get(read_options, "UsbDeviceCat", &value);
-            break;
-        case radio_cfg::UsbDevicePtt:
-            status = db->Get(read_options, "UsbDevicePtt", &value);
-            break;
         case radio_cfg::ComBaudRate:
             status = db->Get(read_options, "ComBaudRate", &value);
             break;
         default:
             return "";
         }
+    } else if (conn_type == AmateurRadio::GkConnType::USB) {
+        //
+        // USB
+        //
+        switch (key) {
+        case radio_cfg::UsbDeviceCat:
+            status = db->Get(read_options, "UsbDeviceCat", &value);
+            break;
+        case radio_cfg::UsbDevicePtt:
+            status = db->Get(read_options, "UsbDevicePtt", &value);
+            break;
+        default:
+            return "";
+        }
+    } else {
+        throw std::invalid_argument(tr("Connection type could not be detected when reading radio rig details from setting's database!").toStdString());
     }
 
     return QString::fromStdString(value);

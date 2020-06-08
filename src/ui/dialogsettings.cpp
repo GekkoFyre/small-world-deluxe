@@ -55,6 +55,8 @@ using namespace GekkoFyre;
 using namespace Database;
 using namespace Settings;
 using namespace Audio;
+using namespace AmateurRadio;
+using namespace Control;
 
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
@@ -78,7 +80,7 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
                                std::shared_ptr<QSettings> settings,
                                portaudio::System *portAudioInit,
                                libusb_context *usb_lib_ctx,
-                               std::shared_ptr<AmateurRadio::Control::GkRadio> radioPtr,
+                               std::shared_ptr<GkRadio> radioPtr,
                                QWidget *parent)
     : QDialog(parent), ui(new Ui::DialogSettings)
 {
@@ -147,14 +149,14 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
         ui->label_pa_version->setText(gkAudioDevices->portAudioVersionNumber(*gkPortAudioInit));
         ui->textEdit_pa_version_text->setText(gkAudioDevices->portAudioVersionText(*gkPortAudioInit));
 
-        prefill_com_baud_speed(GekkoFyre::AmateurRadio::com_baud_rates::BAUD1200);
-        prefill_com_baud_speed(GekkoFyre::AmateurRadio::com_baud_rates::BAUD2400);
-        prefill_com_baud_speed(GekkoFyre::AmateurRadio::com_baud_rates::BAUD4800);
-        prefill_com_baud_speed(GekkoFyre::AmateurRadio::com_baud_rates::BAUD9600);
-        prefill_com_baud_speed(GekkoFyre::AmateurRadio::com_baud_rates::BAUD19200);
-        prefill_com_baud_speed(GekkoFyre::AmateurRadio::com_baud_rates::BAUD38400);
-        prefill_com_baud_speed(GekkoFyre::AmateurRadio::com_baud_rates::BAUD57600);
-        prefill_com_baud_speed(GekkoFyre::AmateurRadio::com_baud_rates::BAUD115200);
+        prefill_com_baud_speed(com_baud_rates::BAUD1200);
+        prefill_com_baud_speed(com_baud_rates::BAUD2400);
+        prefill_com_baud_speed(com_baud_rates::BAUD4800);
+        prefill_com_baud_speed(com_baud_rates::BAUD9600);
+        prefill_com_baud_speed(com_baud_rates::BAUD19200);
+        prefill_com_baud_speed(com_baud_rates::BAUD38400);
+        prefill_com_baud_speed(com_baud_rates::BAUD57600);
+        prefill_com_baud_speed(com_baud_rates::BAUD115200);
 
         init_working_freqs();
         init_station_info();
@@ -196,13 +198,13 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         //
         // Rig Settings
         //
-        unsigned short brand = ui->comboBox_brand_selection->currentIndex();
+        int brand = ui->comboBox_brand_selection->currentIndex();
         QVariant sel_rig = ui->comboBox_rig_selection->currentData();
-        unsigned short sel_rig_index = ui->comboBox_rig_selection->currentIndex();
-        unsigned short cat_conn_type = gkDekodeDb->convConnTypeToInt(gkRadioPtr->cat_conn_type);
-        unsigned short ptt_conn_type = gkDekodeDb->convConnTypeToInt(gkRadioPtr->ptt_conn_type);
-        unsigned short com_device_cat = ui->comboBox_com_port->currentIndex();
-        unsigned short com_device_ptt = ui->comboBox_ptt_method_port->currentIndex();
+        int sel_rig_index = ui->comboBox_rig_selection->currentIndex();
+        int cat_conn_type = gkDekodeDb->convConnTypeToInt(gkRadioPtr->cat_conn_type);
+        int ptt_conn_type = gkDekodeDb->convConnTypeToInt(gkRadioPtr->ptt_conn_type);
+        int com_device_cat = ui->comboBox_com_port->currentIndex();
+        int com_device_ptt = ui->comboBox_ptt_method_port->currentIndex();
         QString usb_device_cat = ui->comboBox_com_port->currentData().toString();
         QString usb_device_ptt = ui->comboBox_ptt_method_port->currentData().toString();
         int com_baud_rate = ui->comboBox_baud_rate->currentIndex();
@@ -412,10 +414,10 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         gkDekodeDb->write_rig_settings(QString::fromStdWString(chosen_com_port_cat), radio_cfg::ComDeviceCat);
         gkDekodeDb->write_rig_settings(QString::fromStdWString(chosen_com_port_ptt), radio_cfg::ComDevicePtt);
         #else
-        gkDekodeDb->write_rig_settings(QString::fromStdString(chosen_com_port_cat), radio_cfg::ComDeviceCat);
-        gkDekodeDb->write_rig_settings(QString::fromStdString(chosen_com_port_ptt), radio_cfg::ComDevicePtt);
-        gkDekodeDb->write_rig_settings(QString::fromStdString(chosen_usb_port_cat), radio_cfg::UsbDeviceCat);
-        gkDekodeDb->write_rig_settings(QString::fromStdString(chosen_usb_port_ptt), radio_cfg::UsbDevicePtt);
+        gkDekodeDb->write_rig_settings_comms(QString::fromStdString(chosen_com_port_cat), radio_cfg::ComDeviceCat, GkConnType::RS232);
+        gkDekodeDb->write_rig_settings_comms(QString::fromStdString(chosen_com_port_ptt), radio_cfg::ComDevicePtt, GkConnType::RS232);
+        gkDekodeDb->write_rig_settings_comms(QString::fromStdString(chosen_usb_port_cat), radio_cfg::UsbDeviceCat, GkConnType::USB);
+        gkDekodeDb->write_rig_settings_comms(QString::fromStdString(chosen_usb_port_ptt), radio_cfg::UsbDevicePtt, GkConnType::USB);
         #endif
 
         using namespace Database::Settings;
@@ -424,7 +426,7 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         gkDekodeDb->write_rig_settings(QString::number(sel_rig_index), radio_cfg::RigModelIndex);
         gkDekodeDb->write_rig_settings(QString::number(cat_conn_type), radio_cfg::CatConnType);
         gkDekodeDb->write_rig_settings(QString::number(ptt_conn_type), radio_cfg::PttConnType);
-        gkDekodeDb->write_rig_settings(QString::number(com_baud_rate), radio_cfg::ComBaudRate);
+        gkDekodeDb->write_rig_settings_comms(QString::number(com_baud_rate), radio_cfg::ComBaudRate, GkConnType::RS232);
         gkDekodeDb->write_rig_settings(QString::number(enum_stop_bits), radio_cfg::StopBits);
         gkDekodeDb->write_rig_settings(QString::number(enum_data_bits), radio_cfg::DataBits);
         gkDekodeDb->write_rig_settings(QString::number(enum_handshake), radio_cfg::Handshake);
@@ -467,34 +469,34 @@ int DialogSettings::prefill_rig_selection(const rig_caps *caps, void *data)
     try {
         switch (caps->rig_type & RIG_TYPE_MASK) {
         case RIG_TYPE_TRANSCEIVER:
-            radio_model_names.insert(caps->rig_model, std::make_tuple(caps->model_name, caps->mfg_name, GekkoFyre::AmateurRadio::rig_type::Transceiver));
+            radio_model_names.insert(caps->rig_model, std::make_tuple(caps->model_name, caps->mfg_name, rig_type::Transceiver));
             break;
         case RIG_TYPE_HANDHELD:
-            radio_model_names.insert(caps->rig_model, std::make_tuple(caps->model_name, caps->mfg_name, GekkoFyre::AmateurRadio::rig_type::Handheld));
+            radio_model_names.insert(caps->rig_model, std::make_tuple(caps->model_name, caps->mfg_name, rig_type::Handheld));
             break;
         case RIG_TYPE_MOBILE:
-            radio_model_names.insert(caps->rig_model, std::make_tuple(caps->model_name, caps->mfg_name, GekkoFyre::AmateurRadio::rig_type::Mobile));
+            radio_model_names.insert(caps->rig_model, std::make_tuple(caps->model_name, caps->mfg_name, rig_type::Mobile));
             break;
         case RIG_TYPE_RECEIVER:
-            radio_model_names.insert(caps->rig_model, std::make_tuple(caps->model_name, caps->mfg_name, GekkoFyre::AmateurRadio::rig_type::Receiver));
+            radio_model_names.insert(caps->rig_model, std::make_tuple(caps->model_name, caps->mfg_name, rig_type::Receiver));
             break;
         case RIG_TYPE_PCRECEIVER:
-            radio_model_names.insert(caps->rig_model, std::make_tuple(caps->model_name, caps->mfg_name, GekkoFyre::AmateurRadio::rig_type::PC_Receiver));
+            radio_model_names.insert(caps->rig_model, std::make_tuple(caps->model_name, caps->mfg_name, rig_type::PC_Receiver));
             break;
         case RIG_TYPE_SCANNER:
-            radio_model_names.insert(caps->rig_model, std::make_tuple(caps->model_name, caps->mfg_name, GekkoFyre::AmateurRadio::rig_type::Scanner));
+            radio_model_names.insert(caps->rig_model, std::make_tuple(caps->model_name, caps->mfg_name, rig_type::Scanner));
             break;
         case RIG_TYPE_TRUNKSCANNER:
-            radio_model_names.insert(caps->rig_model, std::make_tuple(caps->model_name, caps->mfg_name, GekkoFyre::AmateurRadio::rig_type::TrunkingScanner));
+            radio_model_names.insert(caps->rig_model, std::make_tuple(caps->model_name, caps->mfg_name, rig_type::TrunkingScanner));
             break;
         case RIG_TYPE_COMPUTER:
-            radio_model_names.insert(caps->rig_model, std::make_tuple(caps->model_name, caps->mfg_name, GekkoFyre::AmateurRadio::rig_type::Computer));
+            radio_model_names.insert(caps->rig_model, std::make_tuple(caps->model_name, caps->mfg_name, rig_type::Computer));
             break;
         case RIG_TYPE_OTHER:
-            radio_model_names.insert(caps->rig_model, std::make_tuple(caps->model_name, caps->mfg_name, GekkoFyre::AmateurRadio::rig_type::Other));
+            radio_model_names.insert(caps->rig_model, std::make_tuple(caps->model_name, caps->mfg_name, rig_type::Other));
             break;
         default:
-            radio_model_names.insert(caps->rig_model, std::make_tuple(caps->model_name, caps->mfg_name, GekkoFyre::AmateurRadio::rig_type::Unknown));
+            radio_model_names.insert(caps->rig_model, std::make_tuple(caps->model_name, caps->mfg_name, rig_type::Unknown));
             break;
         }
 
@@ -527,7 +529,6 @@ int DialogSettings::prefill_rig_selection(const rig_caps *caps, void *data)
  */
 QMultiMap<rig_model_t, std::tuple<QString, QString, AmateurRadio::rig_type>> DialogSettings::init_model_names()
 {
-    using namespace AmateurRadio;
     QMultiMap<rig_model_t, std::tuple<QString, QString, rig_type>> mmap;
     mmap.insert(-1, std::make_tuple("", "", GekkoFyre::AmateurRadio::rig_type::Unknown));
     return mmap;
@@ -853,7 +854,7 @@ void DialogSettings::prefill_avail_com_ports(const QMap<tstring, std::pair<tstri
             //
             // CAT Control
             //
-            QString comDeviceCat = gkDekodeDb->read_rig_settings(radio_cfg::ComDeviceCat);
+            QString comDeviceCat = gkDekodeDb->read_rig_settings_comms(radio_cfg::ComDeviceCat, GkConnType::RS232);
             if (!comDeviceCat.isEmpty() && !available_com_ports.isEmpty()) {
                 for (const auto &sel_port: available_com_ports.toStdMap()) {
                     // NOTE: The recorded setting used to identify the chosen serial device is the `Target Path`
@@ -867,7 +868,7 @@ void DialogSettings::prefill_avail_com_ports(const QMap<tstring, std::pair<tstri
             //
             // PTT Method
             //
-            QString comDevicePtt = gkDekodeDb->read_rig_settings(radio_cfg::ComDevicePtt);
+            QString comDevicePtt = gkDekodeDb->read_rig_settings_comms(radio_cfg::ComDevicePtt, GkConnType::RS232);
             if (!comDevicePtt.isEmpty() && !available_com_ports.isEmpty()) {
                 for (const auto &sel_port: available_com_ports.toStdMap()) {
                     // NOTE: The recorded setting used to identify the chosen serial device is the `Target Path`
@@ -943,8 +944,6 @@ void DialogSettings::prefill_avail_usb_ports(const QMap<std::string, GekkoFyre::
  */
 void DialogSettings::prefill_com_baud_speed(const AmateurRadio::com_baud_rates &baud_rate)
 {
-    using namespace AmateurRadio;
-
     switch (baud_rate) {
     case BAUD1200:
         ui->comboBox_baud_rate->addItem(tr("1200"));
@@ -1077,7 +1076,7 @@ bool DialogSettings::read_settings()
         QString rigModel = gkDekodeDb->read_rig_settings(radio_cfg::RigModel);
         QString rigModelIndex = gkDekodeDb->read_rig_settings(radio_cfg::RigModelIndex);
         QString rigVers = gkDekodeDb->read_rig_settings(radio_cfg::RigVersion);
-        QString comBaudRate = gkDekodeDb->read_rig_settings(radio_cfg::ComBaudRate);
+        QString comBaudRate = gkDekodeDb->read_rig_settings_comms(radio_cfg::ComBaudRate, GkConnType::RS232);
         QString stopBits = gkDekodeDb->read_rig_settings(radio_cfg::StopBits);
         QString data_bits = gkDekodeDb->read_rig_settings(radio_cfg::DataBits);
         QString handshake = gkDekodeDb->read_rig_settings(radio_cfg::Handshake);
