@@ -57,12 +57,16 @@ public:
     ~GkLevelDb();
 
     void write_rig_settings(const QString &value, const Database::Settings::radio_cfg &key);
-    void write_audio_device_settings(const GekkoFyre::Database::Settings::Audio::GkDevice &value, const QString &key,
+    void write_rig_settings_comms(const QString &value, const Database::Settings::radio_cfg &key,
+                                  const AmateurRadio::GkConnType &conn_type = AmateurRadio::GkConnType::None);
+    void write_audio_device_settings(const GekkoFyre::Database::Settings::Audio::GkDevice &value,
                                      const bool &is_output_device);
     void write_mainwindow_settings(const QString &value, const Database::Settings::general_mainwindow_cfg &key);
     void write_misc_audio_settings(const QString &value, const Database::Settings::audio_cfg &key);
 
     QString read_rig_settings(const Database::Settings::radio_cfg &key);
+    QString read_rig_settings_comms(const Database::Settings::radio_cfg &key,
+                                    const AmateurRadio::GkConnType &conn_type = AmateurRadio::GkConnType::None);
     int read_audio_device_settings(const bool &is_output_device);
     GekkoFyre::Database::Settings::Audio::GkDevice read_audio_details_settings(const bool &is_output_device);
     QString read_mainwindow_settings(const Database::Settings::general_mainwindow_cfg &key);
@@ -72,12 +76,19 @@ public:
     int convertAudioChannelsInt(const GekkoFyre::Database::Settings::audio_channels &channel_enum) const;
     bool convertAudioEnumIsStereo(const GekkoFyre::Database::Settings::audio_channels &channel_enum) const;
 
+    ptt_type_t convPttTypeToEnum(const QString &ptt_type_str);
+    QString convPttTypeToStr(const ptt_type_t &ptt_type_enum);
+    AmateurRadio::GkConnType convConnTypeToEnum(const int &conn_type);
+    int convConnTypeToInt(const AmateurRadio::GkConnType &conn_type);
+
     QString convAudioBitrateToStr(const GekkoFyre::GkAudioFramework::Bitrate &bitrate);
 
     void write_audio_api_settings(const PaHostApiTypeId &interface);
     PaHostApiTypeId read_audio_api_settings();
     QString portAudioApiToStr(const PaHostApiTypeId &interface);
     PaHostApiTypeId portAudioApiToEnum(const QString &interface);
+
+    std::string removeInvalidChars(const std::string &string_to_modify);
 
 private:
     std::shared_ptr<GekkoFyre::FileIo> fileIo;

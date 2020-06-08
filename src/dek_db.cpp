@@ -47,6 +47,7 @@
 #include <QMessageBox>
 #include <sstream>
 #include <utility>
+#include <iterator>
 #include <vector>
 #include <ctime>
 #include <QDebug>
@@ -56,6 +57,7 @@ using namespace GekkoFyre;
 using namespace Database;
 using namespace Settings;
 using namespace Audio;
+using namespace AmateurRadio;
 
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
@@ -70,10 +72,12 @@ GkLevelDb::~GkLevelDb()
 {}
 
 /**
- * @brief DekodeDb::write_rig_settings
+ * @brief GkLevelDb::write_rig_settings writes out the given settings desired by the user to a Google LevelDB database stored
+ * on their own system's storage media, either via a default storage place or through specified means as configured by the
+ * user themselves.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param value
- * @param key
+ * @param value The information, or rather, the data itself you wish to store towards the Google LevelDB database.
+ * @param key The key which is required for _later retrieving_ the desired value(s) from the Google LevelDB database itself.
  */
 void GkLevelDb::write_rig_settings(const QString &value, const Database::Settings::radio_cfg &key)
 {
@@ -96,44 +100,41 @@ void GkLevelDb::write_rig_settings(const QString &value, const Database::Setting
         case radio_cfg::RigVersion:
             batch.Put("RigVersion", value.toStdString());
             break;
-        case radio_cfg::ComDevice:
-            batch.Put("ComDevice", value.toStdString());
+        case radio_cfg::CatConnType:
+            batch.Put("CatConnType", value.toStdString());
             break;
-        case radio_cfg::ComBaudRate:
-            batch.Put("ComBaudRate", value.toStdString());
+        case radio_cfg::PttConnType:
+            batch.Put("PttConnType", value.toStdString());
             break;
         case radio_cfg::StopBits:
             batch.Put("StopBits", value.toStdString());
             break;
-        case radio_cfg::PollingInterval:
-            batch.Put("PollingInterval", value.toStdString());
+        case radio_cfg::DataBits:
+            batch.Put("DataBits", value.toStdString());
             break;
-        case radio_cfg::ModeDelay:
-            batch.Put("ModeDelay", value.toStdString());
+        case radio_cfg::Handshake:
+            batch.Put("Handshake", value.toStdString());
             break;
-        case radio_cfg::Sideband:
-            batch.Put("Sideband", value.toStdString());
+        case radio_cfg::ForceCtrlLinesDtr:
+            batch.Put("ForceCtrlLinesDtr", value.toStdString());
             break;
-        case radio_cfg::CWisLSB:
-            batch.Put("CWisLSB", value.toStdString());
+        case radio_cfg::ForceCtrlLinesRts:
+            batch.Put("ForceCtrlLinesRts", value.toStdString());
             break;
-        case radio_cfg::FlowControl:
-            batch.Put("FlowControl", value.toStdString());
+        case radio_cfg::PTTMethod:
+            batch.Put("PTTMethod", value.toStdString());
             break;
-        case radio_cfg::PTTCommand:
-            batch.Put("PTTCommand", value.toStdString());
+        case radio_cfg::TXAudioSrc:
+            batch.Put("TXAudioSrc", value.toStdString());
             break;
-        case radio_cfg::Retries:
-            batch.Put("Retries", value.toStdString());
+        case radio_cfg::PTTMode:
+            batch.Put("PTTMode", value.toStdString());
             break;
-        case radio_cfg::RetryInterv:
-            batch.Put("RetryInterv", value.toStdString());
+        case radio_cfg::SplitOperation:
+            batch.Put("SplitOperation", value.toStdString());
             break;
-        case radio_cfg::WriteDelay:
-            batch.Put("WriteDelay", value.toStdString());
-            break;
-        case radio_cfg::PostWriteDelay:
-            batch.Put("PostWriteDelay", value.toStdString());
+        case radio_cfg::PTTAdvCmd:
+            batch.Put("PTTAdvCmd", value.toStdString());
             break;
         default:
             return;
@@ -160,13 +161,79 @@ void GkLevelDb::write_rig_settings(const QString &value, const Database::Setting
 }
 
 /**
+ * @brief GkLevelDb::write_rig_settings_comms writes out the given settings desired by the user to a Google LevelDB database stored
+ * on their own system's storage media, either via a default storage place or through specified means as configured by the
+ * user themselves.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value The information, or rather, the data itself you wish to store towards the Google LevelDB database.
+ * @param key The key which is required for _later retrieving_ the desired value(s) from the Google LevelDB database itself.
+ * @param conn_type The type of connection that is being used, whether it be USB, RS232, GPIO, etc.
+ */
+void GkLevelDb::write_rig_settings_comms(const QString &value, const radio_cfg &key, const GkConnType &conn_type)
+{
+    try {
+        // Put key-value
+        leveldb::WriteBatch batch;
+        leveldb::Status status;
+
+        using namespace Database::Settings;
+        if (conn_type == AmateurRadio::GkConnType::RS232 || conn_type == AmateurRadio::GkConnType::None) {
+            //
+            // RS232 or no specific connection type has been given!
+            //
+            switch (key) {
+            case radio_cfg::ComDeviceCat:
+                batch.Put("ComDeviceCat", value.toStdString());
+                break;
+            case radio_cfg::ComDevicePtt:
+                batch.Put("ComDevicePtt", value.toStdString());
+                break;
+            case radio_cfg::ComBaudRate:
+                batch.Put("ComBaudRate", value.toStdString());
+                break;
+            default:
+                return;
+            }
+        } else if (conn_type == AmateurRadio::GkConnType::USB) {
+            //
+            // USB
+            //
+            switch (key) {
+            case radio_cfg::UsbDeviceCat:
+                batch.Put("UsbDeviceCat", value.toStdString());
+                break;
+            case radio_cfg::UsbDevicePtt:
+                batch.Put("UsbDevicePtt", value.toStdString());
+                break;
+            default:
+                return;
+            }
+        } else {
+            throw std::invalid_argument(tr("Connection type could not be detected when writing radio rig details to setting's database!").toStdString());
+        }
+
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
+
+        status = db->Write(write_options, &batch);
+
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
  * @brief DekodeDb::write_audio_device_settings
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param value
- * @param key
  * @param is_output_device
  */
-void GkLevelDb::write_audio_device_settings(const GkDevice &value, const QString &key, const bool &is_output_device)
+void GkLevelDb::write_audio_device_settings(const GkDevice &value, const bool &is_output_device)
 {
     try {
         leveldb::WriteBatch batch;
@@ -174,11 +241,8 @@ void GkLevelDb::write_audio_device_settings(const GkDevice &value, const QString
 
         if (is_output_device) {
             // Unique identifier for the chosen output audio device
-            batch.Put("AudioOutputId", std::to_string(value.stream_parameters.device));
-            batch.Put("AudioOutputDefSampleRate", std::to_string(value.def_sample_rate));
-            batch.Put("AudioOutputChannelCount", std::to_string(value.dev_output_channel_count));
             batch.Put("AudioOutputSelChannels", std::to_string(value.sel_channels));
-            batch.Put("AudioOutputDevName", value.device_info.name);
+            batch.Put("AudioOutputId", std::to_string(value.dev_number));
 
             // Determine if this is the default output device for the system and if so, convert
             // the boolean value to a std::string suitable for database storage.
@@ -186,11 +250,8 @@ void GkLevelDb::write_audio_device_settings(const GkDevice &value, const QString
             batch.Put("AudioOutputDefSysDevice", is_default);
         } else {
             // Unique identifier for the chosen input audio device
-            batch.Put("AudioInputId", std::to_string(value.stream_parameters.device));
-            batch.Put("AudioInputDefSampleRate", std::to_string(value.def_sample_rate));
-            batch.Put("AudioInputChannelCount", std::to_string(value.dev_input_channel_count));
             batch.Put("AudioInputSelChannels", std::to_string(value.sel_channels));
-            batch.Put("AudioInputDevName", value.device_info.name);
+            batch.Put("AudioInputId", std::to_string(value.dev_number));
 
             // Determine if this is the default input device for the system and if so, convert
             // the boolean value to a std::string suitable for database storage.
@@ -304,9 +365,11 @@ void GkLevelDb::write_misc_audio_settings(const QString &value, const audio_cfg 
 }
 
 /**
- * @brief DekodeDb::read_rig_settings
- * @param key
- * @return
+ * @brief DekodeDb::read_rig_settings reads out the stored Small World Deluxe settings which are kept within a Google LevelDB
+ * database that are stored within the user's storage media, either via a default storage place or through specified means as
+ * configured by the user themselves.
+ * @param key The key which is required for retrieving the desired value(s) from the Google LevelDB database itself.
+ * @return The desired value from the Google LevelDB database.
  */
 QString GkLevelDb::read_rig_settings(const Database::Settings::radio_cfg &key)
 {
@@ -330,32 +393,100 @@ QString GkLevelDb::read_rig_settings(const Database::Settings::radio_cfg &key)
     case radio_cfg::RigVersion:
         status = db->Get(read_options, "RigVersion", &value);
         break;
-    case radio_cfg::ComDevice:
-        status = db->Get(read_options, "ComDevice", &value);
+    case radio_cfg::CatConnType:
+        status = db->Get(read_options, "CatConnType", &value);
         break;
-    case radio_cfg::ComBaudRate:
-        status = db->Get(read_options, "ComBaudRate", &value);
+    case radio_cfg::PttConnType:
+        status = db->Get(read_options, "PttConnType", &value);
         break;
     case radio_cfg::StopBits:
         status = db->Get(read_options, "StopBits", &value);
         break;
-    case radio_cfg::PollingInterval:
-        status = db->Get(read_options, "PollingInterval", &value);
+    case radio_cfg::DataBits:
+        status = db->Get(read_options, "DataBits", &value);
         break;
-    case radio_cfg::ModeDelay:
-        status = db->Get(read_options, "ModeDelay", &value);
+    case radio_cfg::Handshake:
+        status = db->Get(read_options, "Handshake", &value);
         break;
-    case radio_cfg::Sideband:
-        status = db->Get(read_options, "Sideband", &value);
+    case radio_cfg::ForceCtrlLinesDtr:
+        status = db->Get(read_options, "ForceCtrlLinesDtr", &value);
         break;
-    case radio_cfg::CWisLSB:
-        status = db->Get(read_options, "CWisLSB", &value);
+    case radio_cfg::ForceCtrlLinesRts:
+        status = db->Get(read_options, "ForceCtrlLinesRts", &value);
         break;
-    case radio_cfg::FlowControl:
-        status = db->Get(read_options, "FlowControl", &value);
+    case radio_cfg::PTTMethod:
+        status = db->Get(read_options, "PTTMethod", &value);
+        break;
+    case radio_cfg::TXAudioSrc:
+        status = db->Get(read_options, "TXAudioSrc", &value);
+        break;
+    case radio_cfg::PTTMode:
+        status = db->Get(read_options, "PTTMode", &value);
+        break;
+    case radio_cfg::SplitOperation:
+        status = db->Get(read_options, "SplitOperation", &value);
+        break;
+    case radio_cfg::PTTAdvCmd:
+        status = db->Get(read_options, "PTTAdvCmd", &value);
         break;
     default:
         return "";
+    }
+
+    return QString::fromStdString(value);
+}
+
+/**
+ * @brief GkLevelDb::read_rig_settings_comms reads out the stored Small World Deluxe settings which are kept within a Google LevelDB
+ * database that are stored within the user's storage media, either via a default storage place or through specified means as
+ * configured by the user themselves.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param key The key which is required for retrieving the desired value(s) from the Google LevelDB database itself.
+ * @param conn_type The type of connection that is being used, whether it be USB, RS232, GPIO, etc.
+ * @return The desired value from the Google LevelDB database.
+ */
+QString GkLevelDb::read_rig_settings_comms(const radio_cfg &key, const GkConnType &conn_type)
+{
+    leveldb::Status status;
+    leveldb::ReadOptions read_options;
+    std::string value = "";
+
+    read_options.verify_checksums = true;
+
+    using namespace Database::Settings;
+    if (conn_type == AmateurRadio::GkConnType::RS232 || conn_type == AmateurRadio::GkConnType::None) {
+        //
+        // RS232 or no specific connection type has been given!
+        //
+        switch (key) {
+        case radio_cfg::ComDeviceCat:
+            status = db->Get(read_options, "ComDeviceCat", &value);
+            break;
+        case radio_cfg::ComDevicePtt:
+            status = db->Get(read_options, "ComDevicePtt", &value);
+            break;
+        case radio_cfg::ComBaudRate:
+            status = db->Get(read_options, "ComBaudRate", &value);
+            break;
+        default:
+            return "";
+        }
+    } else if (conn_type == AmateurRadio::GkConnType::USB) {
+        //
+        // USB
+        //
+        switch (key) {
+        case radio_cfg::UsbDeviceCat:
+            status = db->Get(read_options, "UsbDeviceCat", &value);
+            break;
+        case radio_cfg::UsbDevicePtt:
+            status = db->Get(read_options, "UsbDevicePtt", &value);
+            break;
+        default:
+            return "";
+        }
+    } else {
+        throw std::invalid_argument(tr("Connection type could not be detected when reading radio rig details from setting's database!").toStdString());
     }
 
     return QString::fromStdString(value);
@@ -541,6 +672,35 @@ PaHostApiTypeId GkLevelDb::portAudioApiToEnum(const QString &interface)
 }
 
 /**
+ * @brief GkLevelDb::removeInvalidChars removes invalid/illegal characters from a given std::string, making it all clean!
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param string_to_modify The given std::string to modify.
+ * @return The cleaned up std::string!
+ */
+std::string GkLevelDb::removeInvalidChars(const std::string &string_to_modify)
+{
+    try {
+        std::string illegal_chars = "\\/:?\"<>|";
+        std::string str_tmp = string_to_modify;
+        std::string::iterator it;
+        for (it = str_tmp.begin(); it < str_tmp.end(); ++it) {
+            bool ill_found = illegal_chars.find(*it) != std::string::npos;
+            if (ill_found) {
+                *it = ' ';
+            }
+        }
+
+        if (!str_tmp.empty()) {
+            return str_tmp;
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
+    return "";
+}
+
+/**
  * @brief DekodeDb::read_audio_details_settings Reads all the settings concerning Audio Devices from the
  * Google LevelDB database.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -560,14 +720,10 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
         // Output audio device
         //
         std::string output_id;
-        std::string output_def_sample_rate;
-        std::string output_channel_count;
         std::string output_sel_channels;
         std::string output_def_sys_device;
 
         status = db->Get(read_options, "AudioOutputId", &output_id);
-        status = db->Get(read_options, "AudioOutputDefSampleRate", &output_def_sample_rate);
-        status = db->Get(read_options, "AudioOutputChannelCount", &output_channel_count);
         status = db->Get(read_options, "AudioOutputSelChannels", &output_sel_channels);
         status = db->Get(read_options, "AudioOutputDefSysDevice", &output_def_sys_device);
 
@@ -582,20 +738,6 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
             audio_device.dev_number = -1;
         }
 
-        if (!output_def_sample_rate.empty()) {
-            audio_device.def_sample_rate = std::stod(output_def_sample_rate);
-        } else {
-            audio_device.def_sample_rate = 0.0;
-        }
-
-        if (!output_channel_count.empty()) {
-            audio_device.dev_output_channel_count = std::stoi(output_channel_count);
-            audio_device.dev_input_channel_count = 0;
-        } else {
-            audio_device.dev_output_channel_count = 0;
-            audio_device.dev_input_channel_count = 0;
-        }
-
         if (!output_sel_channels.empty()) {
             audio_device.sel_channels = convertAudioChannelsEnum(std::stoi(output_sel_channels));
         } else {
@@ -608,15 +750,10 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
         // Input audio device
         //
         std::string input_id;
-        std::string input_def_sample_rate;
-        std::string input_channel_count;
         std::string input_sel_channels;
         std::string input_def_sys_device;
 
         status = db->Get(read_options, "AudioInputId", &input_id);
-        status = db->Get(read_options, "AudioInputDefSampleRate", &input_def_sample_rate);
-        status = db->Get(read_options, "AudioInputChannelCount", &input_channel_count);
-        status = db->Get(read_options, "AudioInputSelChannels", &input_sel_channels);
         status = db->Get(read_options, "AudioInputDefSysDevice", &input_def_sys_device);
 
         bool def_sys_device = boolStr(input_def_sys_device);
@@ -628,20 +765,6 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
             audio_device.dev_number = std::stoi(input_id);
         } else {
             audio_device.dev_number = -1;
-        }
-
-        if (!input_def_sample_rate.empty()) {
-            audio_device.def_sample_rate = std::stod(input_def_sample_rate);
-        } else {
-            audio_device.def_sample_rate = 0.0;
-        }
-
-        if (!input_channel_count.empty()) {
-            audio_device.dev_input_channel_count = std::stoi(input_channel_count);
-            audio_device.dev_output_channel_count = 0;
-        } else {
-            audio_device.dev_input_channel_count = 0;
-            audio_device.dev_output_channel_count = 0;
         }
 
         if (!input_sel_channels.empty()) {
@@ -797,6 +920,123 @@ bool GkLevelDb::convertAudioEnumIsStereo(const audio_channels &channel_enum) con
     }
 
     return false;
+}
+
+/**
+ * @brief GkLevelDb::convPttTypeToEnum
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param ptt_type_str
+ * @return
+ */
+ptt_type_t GkLevelDb::convPttTypeToEnum(const QString &ptt_type_str)
+{
+    if (ptt_type_str == tr("RIG_PTT_RIG")) {
+        return RIG_PTT_RIG;
+    } else if (ptt_type_str == tr("RIG_PTT_SERIAL_DTR")) {
+        return RIG_PTT_SERIAL_DTR;
+    } else if (ptt_type_str == tr("RIG_PTT_SERIAL_RTS")) {
+        return RIG_PTT_SERIAL_RTS;
+    } else if (ptt_type_str == tr("RIG_PTT_PARALLEL")) {
+        return RIG_PTT_PARALLEL;
+    } else if (ptt_type_str == tr("RIG_PTT_RIG_MICDATA")) {
+        return RIG_PTT_RIG_MICDATA;
+    } else if (ptt_type_str == tr("RIG_PTT_CM108")) {
+        return RIG_PTT_CM108;
+    } else if (ptt_type_str == tr("RIG_PTT_GPIO")) {
+        return RIG_PTT_GPIO;
+    } else {
+        return RIG_PTT_NONE;
+    }
+
+    return RIG_PTT_NONE;
+}
+
+/**
+ * @brief GkLevelDb::convPttTypeToStr
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param ptt_type_enum
+ * @return
+ */
+QString GkLevelDb::convPttTypeToStr(const ptt_type_t &ptt_type_enum)
+{
+    switch (ptt_type_enum) {
+    case ptt_type_t::RIG_PTT_RIG:
+        return tr("RIG_PTT_RIG");
+    case ptt_type_t::RIG_PTT_SERIAL_DTR:
+        return tr("RIG_PTT_SERIAL_DTR");
+    case ptt_type_t::RIG_PTT_SERIAL_RTS:
+        return tr("RIG_PTT_SERIAL_RTS");
+    case ptt_type_t::RIG_PTT_PARALLEL:
+        return tr("RIG_PTT_PARALLEL");
+    case ptt_type_t::RIG_PTT_RIG_MICDATA:
+        return tr("RIG_PTT_RIG_MICDATA");
+    case ptt_type_t::RIG_PTT_CM108:
+        return tr("RIG_PTT_CM108");
+    case ptt_type_t::RIG_PTT_GPIO:
+        return tr("RIG_PTT_GPIO");
+    case ptt_type_t::RIG_PTT_GPION:
+        return tr("RIG_PTT_GPION");
+    default:
+        return tr("RIG_PTT_NONE");
+    }
+
+    return tr("RIG_PTT_NONE");
+}
+
+/**
+ * @brief GkLevelDb::convConnTypeToEnum
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param conn_type
+ * @return
+ */
+GkConnType GkLevelDb::convConnTypeToEnum(const int &conn_type)
+{
+    switch (conn_type) {
+    case 0:
+        return GkConnType::None;
+    case 1:
+        return GkConnType::RS232;
+    case 2:
+        return GkConnType::USB;
+    case 3:
+        return GkConnType::Parallel;
+    case 4:
+        return GkConnType::CM108;
+    case 5:
+        return GkConnType::GPIO;
+    default:
+        return GkConnType::None;
+    }
+
+    return GkConnType::None;
+}
+
+/**
+ * @brief GkLevelDb::convConnTypeToInt
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param conn_type
+ * @return
+ */
+int GkLevelDb::convConnTypeToInt(const GkConnType &conn_type)
+{
+    switch (conn_type) {
+    case GkConnType::RS232:
+        return 1;
+    case GkConnType::USB:
+        return 2;
+    case GkConnType::Parallel:
+        return 3;
+    case GkConnType::CM108:
+        return 4;
+    case GkConnType::GPIO:
+        return 5;
+    case GkConnType::None:
+        return 0;
+    default:
+        return -1;
+    }
+
+    return -1;
 }
 
 QString GkLevelDb::convAudioBitrateToStr(const GkAudioFramework::Bitrate &bitrate)
