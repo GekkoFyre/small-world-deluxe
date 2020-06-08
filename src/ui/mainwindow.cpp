@@ -95,6 +95,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<std::vector<short>>("std::vector<short>");
     qRegisterMetaType<size_t>("size_t");
     qRegisterMetaType<uint8_t>("uint8_t");
+    qRegisterMetaType<rig_model_t>("rig_model_t");
 
     try {
         // Initialize QMainWindow to a full-screen after a single second!
@@ -556,8 +557,14 @@ void MainWindow::launchSettingsWin()
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
+
     QObject::connect(dlg_settings, SIGNAL(changePortType(const GekkoFyre::AmateurRadio::GkConnType &, const bool &)),
                      this, SLOT(selectedPortType(const GekkoFyre::AmateurRadio::GkConnType &, const bool &)));
+    QObject::connect(dlg_settings, SIGNAL(addRigInUse(const rig_model_t &)),
+                     this, SLOT(addRigToMemory(const rig_model_t &)));
+    QObject::connect(dlg_settings, SIGNAL(modifyRigInUse(const rig_model_t &, const bool &)),
+                     this, SLOT(modifyRigInMemory(const rig_model_t &, const bool &)));
+
     dlg_settings->show();
 
     return;
@@ -566,12 +573,8 @@ void MainWindow::launchSettingsWin()
 /**
  * @brief MainWindow::radioInitStart initializes the Hamlib library and any associated libraries/functions!
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param rig_comms_port_cat The connecting port required for communications with the amateur radio rig (if
- * there is one that has been configured!).
- * @param conn_type The type of connection that is being made to the amateur radio rig in question, whether
- * it be RS232, USB, GPIO, etc.
  */
-void MainWindow::radioInitStart(const QString &rig_comms_port_cat, const GkConnType &conn_type)
+bool MainWindow::radioInitStart()
 {
     try {
         std::string rand_file_name = fileIo->create_random_string(8);
@@ -621,88 +624,16 @@ void MainWindow::radioInitStart(const QString &rig_comms_port_cat, const GkConnT
             if (gkRadioPtr == nullptr) {
                 throw std::invalid_argument(tr("Unable to initialize the radio rig!").toStdString());
             }
+
+            return true;
         } catch (const std::invalid_argument &e) {
             // We wish for this to be handled silently for now!
             Q_UNUSED(e);
-            return;
+            return false;
         } catch (const std::runtime_error &e) {
             QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
-            return;
+            return false;
         }
-    } catch (const std::exception &e) {
-        QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
-    }
-
-    return;
-}
-
-/**
- * @brief MainWindow::radioInitTest will test to see if a connection can successfully be made to an amateur radio
- * rig or not, and if the latter case, will present a QMessageBox to the user with some options for which they
- * may choose from, such as going straight to the Settings Dialog.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @return Whether a connection was successfully made or not to an amateur radio rig.
- */
-bool MainWindow::radioInitTest()
-{
-    try {
-        if (gkRadioPtr->rig == nullptr || !gkRadioPtr->is_open) {
-            throw std::runtime_error(tr("An unknown error was encountered whilst initializing the Hamlib libraries! "
-                                        "We advise you to restart Small World Deluxe for proper operation.").toStdString());
-        }
-
-        //
-        // If at all possible, read any stored settings within the Google LevelDB database relating to below!
-        //
-        QString catConnTypeStr = GkDb->read_rig_settings(radio_cfg::CatConnType);
-        GkConnType catConnType = GkConnType::None;
-        QString rig_comms_port_cat = "";
-        if (!catConnTypeStr.isEmpty() || !catConnTypeStr.isNull()) {
-            catConnType = GkDb->convConnTypeToEnum(catConnTypeStr.toInt());
-
-            if (catConnType == GkConnType::RS232) {
-                // RS232
-                QString rig_comms_port_cat = GkDb->read_rig_settings(radio_cfg::ComDeviceCat);
-            } else if (catConnType == GkConnType::USB){
-                // USB
-                QString rig_comms_port_cat = GkDb->read_rig_settings(radio_cfg::UsbDeviceCat);
-            } else {
-                // Nothing specified
-                catConnType = GkConnType::None;
-                rig_comms_port_cat = "";
-            }
-        }
-
-        // TODO: Implement the ability to change connection types (i.e. RS232, USB, GPIO, etc.) on the fly, instead of
-        // relying on the Google LevelDB database as per above!
-
-        if ((gkRadioPtr->freq > 0.0 || gkRadioPtr->rig_model <= 0 || gkRadioPtr->status <= 0) ||
-                (rig_comms_port_cat.isNull() || rig_comms_port_cat.isEmpty())) {
-            QMessageBox msg_rig_error;
-            msg_rig_error.setWindowTitle(tr("Error!"));
-            msg_rig_error.setText(tr("Small World Deluxe has experienced a rig control error!\n\nWould you like to reconfigure your settings?"));
-            msg_rig_error.setStandardButtons(QMessageBox::Ok | QMessageBox::Retry | QMessageBox::Cancel);
-            msg_rig_error.setDefaultButton(QMessageBox::Ok);
-            msg_rig_error.setIcon(QMessageBox::Icon::Warning);
-            int msg_rig_err_ret = msg_rig_error.exec();
-
-            switch (msg_rig_err_ret) {
-            case QMessageBox::Ok:
-                launchSettingsWin();
-                return false;
-            case QMessageBox::Retry:
-                radioInitStart(rig_comms_port_cat, catConnType);
-                return radioInitTest();
-            case QMessageBox::Cancel:
-                return false;
-            default:
-                return false;
-            }
-        } else {
-            radioInitStart(rig_comms_port_cat, catConnType);
-        }
-
-        return true;
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
     }
@@ -1568,7 +1499,7 @@ void MainWindow::addRigToMemory(const rig_model_t &rig_model_update)
         //
         // Attempt to initialize the amateur radio rig!
         //
-        if (radioInitTest() == true) {
+        if (radioInitStart() == true) {
             // Gather the new amateur radio rig's capabilities and store it in memory!
             emit recvRigCapabilities(rig_model_update);
         }
@@ -1594,7 +1525,7 @@ void MainWindow::addRigToMemory(const rig_model_t &rig_model_update)
 void MainWindow::modifyRigInMemory(const rig_model_t &rig_model_update, const bool &del_rig)
 {
     if (del_rig) {
-        if ((gkRadioPtr->rig_caps != nullptr) || (gkRadioPtr->rig != nullptr)) {
+        if (gkRadioPtr->rig != nullptr) {
             // Delete the amateur radio rig that is currently within use!
             gkRadioPtr.reset();
         }
@@ -1602,7 +1533,7 @@ void MainWindow::modifyRigInMemory(const rig_model_t &rig_model_update, const bo
         //
         // Attempt to initialize the NEW amateur radio rig!
         //
-        if (radioInitTest() == true) {
+        if (radioInitStart() == true) {
             // Gather the new amateur radi rig's capabilities and store it in memory!
             emit recvRigCapabilities(rig_model_update);
         }

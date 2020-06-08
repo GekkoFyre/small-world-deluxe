@@ -85,7 +85,6 @@ private slots:
     void on_pushButton_input_sound_test_clicked();
     void on_pushButton_output_sound_test_clicked();
     void on_pushButton_audio_logs_save_dir_clicked();
-    void on_pushButton_soundcard_api_reload_clicked();
     void on_comboBox_soundcard_input_currentIndexChanged(int index = -1);
     void on_comboBox_soundcard_output_currentIndexChanged(int index = -1);
     void on_comboBox_soundcard_api_currentIndexChanged(int index = -1);
@@ -101,7 +100,7 @@ private slots:
     //
     // Rig selection
     //
-    void on_comboBox_rig_selection_currentIndexChanged(int index);
+    void on_comboBox_rig_selection_currentIndexChanged(int index = -1);
 
     //
     // Data Bits
@@ -162,6 +161,8 @@ signals:
     void usbPortsDisabled(const bool &active);
     void comPortsDisabled(const bool &active);
     void changePortType(const GekkoFyre::AmateurRadio::GkConnType &rig_conn_type, const bool &is_cat_mode);
+    void addRigInUse(const rig_model_t &rig_model_update);
+    void modifyRigInUse(const rig_model_t &rig_model_update, const bool &del_rig);
 
 private:
     Ui::DialogSettings *ui;

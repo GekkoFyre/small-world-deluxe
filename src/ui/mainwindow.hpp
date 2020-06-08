@@ -283,8 +283,7 @@ private:
     bool prefillAmateurBands();
 
     void launchSettingsWin();
-    void radioInitStart(const QString &rig_comms_port_cat, const GekkoFyre::AmateurRadio::GkConnType &conn_type);
-    bool radioInitTest();
+    bool radioInitStart();
 
     std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> readRadioSettings();
     static int parseRigCapabilities(const rig_caps *caps, void *data);
@@ -301,3 +300,4 @@ Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkConnType);
 Q_DECLARE_METATYPE(std::vector<short>);
 Q_DECLARE_METATYPE(size_t);
 Q_DECLARE_METATYPE(uint8_t);
+Q_DECLARE_METATYPE(rig_model_t);

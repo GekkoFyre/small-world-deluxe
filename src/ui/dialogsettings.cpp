@@ -1106,6 +1106,7 @@ bool DialogSettings::read_settings()
 
         if (!rigModelIndex.isEmpty()) {
             ui->comboBox_rig_selection->setCurrentIndex(rigModelIndex.toInt());
+            on_comboBox_rig_selection_currentIndexChanged();
         }
 
         Q_UNUSED(rigVers);
@@ -1704,11 +1705,6 @@ void DialogSettings::on_pushButton_audio_logs_save_dir_clicked()
     return;
 }
 
-void DialogSettings::on_pushButton_soundcard_api_reload_clicked()
-{
-    return;
-}
-
 void DialogSettings::on_horizontalSlider_encoding_audio_quality_valueChanged(int value)
 {
     audio_quality_val = ((double)value / 10);
@@ -1738,9 +1734,7 @@ void DialogSettings::disableComPorts(const bool &active)
 void DialogSettings::on_comboBox_rig_selection_currentIndexChanged(int index)
 {
     Q_UNUSED(index);
-    // unsigned short sel_rig_index = ui->comboBox_rig_selection->currentIndex();
-
-    // gkRadioPtr->rig->caps->get_split_mode;
+    emit modifyRigInUse(ui->comboBox_rig_selection->currentData().toInt(), false);
 
     return;
 }
