@@ -594,7 +594,7 @@ bool MainWindow::radioInitStart()
 
         QString com_baud_rate = GkDb->read_rig_settings(radio_cfg::ComBaudRate);
         if (!com_baud_rate.isEmpty() || !com_baud_rate.isNull()) {
-            gkRadioPtr->dev_baud_rate = gkRadioLibs->convertBaudRateEnum(com_baud_rate.toInt());
+            gkRadioPtr->dev_baud_rate = gkRadioLibs->convertBaudRateToEnum(com_baud_rate.toInt());
         } else {
             gkRadioPtr->dev_baud_rate = AmateurRadio::com_baud_rates::BAUD9600;
         }
@@ -701,7 +701,7 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
 
         if (!comBaudRate.isNull() || !comBaudRate.isEmpty()) {
             int conv_com_baud_rate = comBaudRate.toInt();
-            gk_radio_tmp->port_details.parm.serial.rate = gkRadioLibs->convertBaudRateInt(gkRadioLibs->convertBaudRateEnum(conv_com_baud_rate));
+            gk_radio_tmp->port_details.parm.serial.rate = gkRadioLibs->convertBaudRateInt(gkRadioLibs->convertBaudRateToEnum(conv_com_baud_rate));
         }
 
         if (!stopBits.isNull() || !stopBits.isEmpty()) {
@@ -1472,7 +1472,7 @@ void MainWindow::gatherRigCapabilities(const rig_model_t &rig_model_update)
         for (const auto &model: gkRadioModels.toStdMap()) {
             if (rig_model_update == model.first) {
                 // We have the desired amateur radio rig in question!
-                gkRadioPtr->rig_caps = std::make_unique<const rig_caps *>(std::get<0>(model.second));
+                gkRadioPtr->rig_caps = std::make_unique<rig_caps>(*std::get<0>(model.second));
 
                 return;
             }

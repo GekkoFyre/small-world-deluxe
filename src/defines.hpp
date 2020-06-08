@@ -394,7 +394,8 @@ namespace AmateurRadio {
             RIG *rig;                                       // Hamlib rig pointer
             int rig_brand;                                  // Hamlib rig brand/manufacturer
             rig_model_t rig_model;                          // The actual amateur radio rig itself!
-            std::unique_ptr<const rig_caps *> rig_caps;     // Read-only; the capabilities of the configured amateur radio rig in question, as defined by Hamlib.
+            std::unique_ptr<rig_caps> rig_caps;             // Read-only; the capabilities of the configured amateur radio rig in question, as defined by Hamlib.
+            std::unique_ptr<rig_state> rig_status;          // Rig state containing live data and customized fields
             hamlib_port_t port_details;                     // Information concerning details about RS232 ports, etc.
             ptt_t ptt_status;                               // PTT status
             split_t split_mode;                             // Whether 'Split Mode' is enabled or disabled

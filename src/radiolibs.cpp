@@ -133,7 +133,7 @@ int RadioLibs::convertBaudRateInt(const com_baud_rates &baud_rate)
  * @param baud_rate_sel The QComboBox selection to be converted.
  * @return The enumerator that was converted from a QComboBox selection (as read from a Google LevelDB database).
  */
-com_baud_rates RadioLibs::convertBaudRateEnum(const int &baud_rate_sel)
+com_baud_rates RadioLibs::convertBaudRateToEnum(const int &baud_rate_sel)
 {
     com_baud_rates ret = BAUD1200;
     switch (baud_rate_sel) {
@@ -163,6 +163,90 @@ com_baud_rates RadioLibs::convertBaudRateEnum(const int &baud_rate_sel)
         break;
     default:
         ret = BAUD1200;
+        break;
+    }
+
+    return ret;
+}
+
+/**
+ * @brief RadioLibs::convertBaudRateIntToEnum
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param baud_rate
+ * @return
+ */
+com_baud_rates RadioLibs::convertBaudRateIntToEnum(const int &baud_rate)
+{
+    com_baud_rates ret = BAUD1200;
+    switch (baud_rate) {
+    case 1200:
+        ret = BAUD1200;
+        break;
+    case 2400:
+        ret = BAUD2400;
+        break;
+    case 4800:
+        ret = BAUD4800;
+        break;
+    case 9600:
+        ret = BAUD9600;
+        break;
+    case 19200:
+        ret = BAUD19200;
+        break;
+    case 38400:
+        ret = BAUD38400;
+        break;
+    case 57600:
+        ret = BAUD57600;
+        break;
+    case 115200:
+        ret = BAUD115200;
+        break;
+    default:
+        ret = BAUD1200;
+        break;
+    }
+
+    return ret;
+}
+
+/**
+ * @brief RadioLibs::convertBaudRateFromEnum
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param baud_rate
+ * @return
+ */
+int RadioLibs::convertBaudRateFromEnum(const com_baud_rates &baud_rate)
+{
+    int ret = 0;
+    switch (baud_rate) {
+    case BAUD1200:
+        ret = 0;
+        break;
+    case BAUD2400:
+        ret = 1;
+        break;
+    case BAUD4800:
+        ret = 2;
+        break;
+    case BAUD9600:
+        ret = 3;
+        break;
+    case BAUD19200:
+        ret = 4;
+        break;
+    case BAUD38400:
+        ret = 5;
+        break;
+    case BAUD57600:
+        ret = 6;
+        break;
+    case BAUD115200:
+        ret = 7;
+        break;
+    default:
+        ret = 0;
         break;
     }
 

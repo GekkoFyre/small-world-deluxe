@@ -70,7 +70,9 @@ public:
     ~RadioLibs();
 
     static int convertBaudRateInt(const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate);
-    GekkoFyre::AmateurRadio::com_baud_rates convertBaudRateEnum(const int &baud_rate_sel);
+    GekkoFyre::AmateurRadio::com_baud_rates convertBaudRateToEnum(const int &baud_rate_sel);
+    GekkoFyre::AmateurRadio::com_baud_rates convertBaudRateIntToEnum(const int &baud_rate);
+    int convertBaudRateFromEnum(const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate);
     QMap<tstring, std::pair<tstring, boost::tribool>> status_com_ports();
     QString translateBandsToStr(const AmateurRadio::bands &band);
     QString hamlibModulEnumToStr(const rmode_t &modulation);
