@@ -59,12 +59,12 @@
 #include <leveldb/status.h>
 #include <leveldb/options.h>
 #include <memory>
-#include <ctime>
 #include <thread>
 #include <future>
-#include <mutex>
 #include <vector>
 #include <string>
+#include <mutex>
+#include <ctime>
 #include <QMainWindow>
 #include <QPushButton>
 #include <QCommandLineParser>
@@ -125,6 +125,11 @@ private slots:
     void on_actionCW_toggled(bool arg1);
 
     //
+    // Documentation
+    //
+    void on_action_Q_codes_triggered();
+
+    //
     // QPushButtons that contain a logic state of some sort and are therefore displayed as
     // the color, "Green", when TRUE and the color, "Red", when FALSE. Note: May possibly
     // be different colors depending on the needs of any colorblind users for a given session.
@@ -149,7 +154,7 @@ private slots:
     // QComboBox'es
     //
     void on_comboBox_select_frequency_activated(int index);
-    void on_comboBox_select_digital_mode_activated(int index);
+    void on_comboBox_select_callsign_use_currentIndexChanged(int index);
 
     void infoBar();
     void uponExit();
@@ -165,6 +170,14 @@ public slots:
                            const std::vector<int> &raw_audio_data,
                            const int &hanning_window_size, const size_t &buffer_size);
     void updateProgressBar(const bool &enable, const size_t &min, const size_t &max);
+    void selectedPortType(const GekkoFyre::AmateurRadio::GkConnType &rig_conn_type, const bool &is_cat_mode);
+
+    //
+    // Hamlib specific functions
+    //
+    void gatherRigCapabilities(const rig_model_t &rig_model_update);
+    void addRigToMemory(const rig_model_t &rig_model_update);
+    void modifyRigInMemory(const rig_model_t &rig_model_update, const bool &del_rig);
 
 signals:
     void refreshVuMeter(const double &volumePctg);
@@ -175,8 +188,14 @@ signals:
     void sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values,
                          const std::vector<int> &raw_audio_data,
                          const int &hanning_window_size, const size_t &buffer_size);
-    void changeFreq(const bool &radio_locked, const GekkoFyre::AmateurRadio::Control::FreqChange &freq_change);
-    void changeSettings(const bool &radio_locked, const GekkoFyre::AmateurRadio::Control::SettingsChange &settings_change);
+
+    //
+    // Hamlib specific functions
+    //
+    void changePortType(const GekkoFyre::AmateurRadio::GkConnType &rig_conn_type, const bool &is_cat_mode);
+    void addRigInUse(const rig_model_t &rig_model_update);
+    void modifyRigInUse(const rig_model_t &rig_model_update, const bool &del_rig);
+    void recvRigCapabilities(const rig_model_t &rig_model_update);
 
 private:
     Ui::MainWindow *ui;
@@ -228,17 +247,19 @@ private:
     // https://www.boost.org/doc/libs/1_72_0/doc/html/thread/thread_management.html
     //
     std::timed_mutex btn_record_mtx;
-    std::future<std::shared_ptr<GekkoFyre::AmateurRadio::Control::Radio>> rig_thread;
+    std::future<std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>> rig_thread;
 
     //
     // USB & RS232
     //
     libusb_context *usb_ctx_ptr;
+    std::shared_ptr<GekkoFyre::Database::Settings::GkUsbPort> gkUsbPortPtr; // This is used for making connections to radio rigs with Hamlib!
 
     //
     // Miscellaneous
     //
-    std::shared_ptr<GekkoFyre::AmateurRadio::Control::Radio> gkRadioPtr;
+    static QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>> gkRadioModels;
+    std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> gkRadioPtr;
     QPointer<QTimer> timer;
 
     //
@@ -254,7 +275,7 @@ private:
     bool btn_radio_tune;
     bool btn_radio_monitor;
 
-    void radioStats(GekkoFyre::AmateurRadio::Control::Radio *radio_dev);
+    void radioStats(GekkoFyre::AmateurRadio::Control::GkRadio *radio_dev);
 
     void changePushButtonColor(const QPointer<QPushButton> &push_button, const bool &green_result = true,
                                const bool &color_blind_mode = false);
@@ -262,8 +283,11 @@ private:
     bool prefillAmateurBands();
 
     void launchSettingsWin();
-    void radioInitStart(const QString &def_com_port);
-    bool radioInitTest(const QString &def_com_port);
+    bool radioInitStart();
+
+    std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> readRadioSettings();
+    static int parseRigCapabilities(const rig_caps *caps, void *data);
+    static QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>> initRadioModelsVar();
 
     void createStatusBar(const QString &statusMsg = "");
     bool changeStatusBarMsg(const QString &statusMsg = "");
@@ -271,7 +295,9 @@ private:
 };
 
 Q_DECLARE_METATYPE(std::vector<GekkoFyre::Spectrograph::RawFFT>);
-Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::Control::FreqChange);
-Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::Control::SettingsChange);
+Q_DECLARE_METATYPE(GekkoFyre::Database::Settings::GkUsbPort);
+Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkConnType);
 Q_DECLARE_METATYPE(std::vector<short>);
 Q_DECLARE_METATYPE(size_t);
+Q_DECLARE_METATYPE(uint8_t);
+Q_DECLARE_METATYPE(rig_model_t);

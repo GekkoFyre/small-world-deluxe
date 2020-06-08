@@ -89,7 +89,7 @@ GkAudioDecoding::GkAudioDecoding(std::shared_ptr<FileIo> fileIo,
 
     gkOutputDev = output_device;
 
-    opus_state = std::make_unique<OpusState>(AUDIO_FRAMES_PER_BUFFER, AUDIO_CODECS_OPUS_MAX_PACKETS, gkOutputDev.dev_output_channel_count);
+    // opus_state = std::make_unique<OpusState>(AUDIO_FRAMES_PER_BUFFER, AUDIO_CODECS_OPUS_MAX_PACKETS, gkOutputDev.dev_output_channel_count);
 }
 
 GkAudioDecoding::~GkAudioDecoding()

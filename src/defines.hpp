@@ -205,19 +205,23 @@ namespace Database {
             RigModel,
             RigModelIndex,
             RigVersion,
-            ComDevice,
+            CatConnType,
+            PttConnType,
+            ComDeviceCat,
+            ComDevicePtt,
+            UsbDeviceCat,
+            UsbDevicePtt,
             ComBaudRate,
             StopBits,
-            PollingInterval,
-            ModeDelay,
-            Sideband,
-            CWisLSB,
-            FlowControl,
-            PTTCommand,
-            Retries,
-            RetryInterv,
-            WriteDelay,
-            PostWriteDelay
+            DataBits,
+            Handshake,
+            ForceCtrlLinesDtr,
+            ForceCtrlLinesRts,
+            PTTMethod,
+            TXAudioSrc,
+            PTTMode,
+            SplitOperation,
+            PTTAdvCmd
         };
 
         enum audio_cfg {
@@ -252,49 +256,65 @@ namespace Database {
             WindowVSize
         };
 
-        struct UsbDev {
-            libusb_device *dev;                         // Primary underlying pointer to the `libusb` device
-            libusb_interface *interface;                // Underlying pointer to the `libusb` interface
-            libusb_interface_descriptor *inter_desc;    // Details about the interface itself pertaining to the `libusb` library
-            libusb_context *context;                    // The underlying context to the `libusb` library
-            libusb_device_descriptor desc;              // Underlying pointer to the `libusb` configuration
-            libusb_config_descriptor *config;           // Configuration parameters for the `libusb` device in question
-            libusb_device_handle *handle;               // Underlying `libusb` device handle
-            std::string mfg;                            // Information relating to the manufacturer
-            std::string serial_number;                  // The Product Serial Number
-            std::string product;                        // The Product ID
+        struct UsbVers3 {
+            libusb_ss_endpoint_companion_descriptor *ss_desc;   // Details that are applicable for USB 3.0 superspeed interfaces
+            const libusb_endpoint_descriptor *endpoint;         // A structure representing the standard USB 3.0 endpoint descriptor
+            const libusb_interface_descriptor *inter_desc;      // Details about the interface itself pertaining to the `libusb` library
+            int interface_number;                               // Number of this interface!
+            int alternate_setting;                              // Value used to select this alternate setting for this interface
+            int max_packet_size;                                // Maximum packet size this endpoint is capable of sending/receiving
+            int interval;                                       // Interval for polling endpoint for data transfers
+            int refresh;                                        // For audio devices only: the rate at which synchronization feedback is provided
+            int sync_address;                                   // For audio devices only: the address if the synch endpoint
         };
 
-        struct UsbPort {
-            UsbDev usb_enum;                            // The USB Device structure, as above
-            uint8_t port;                               // The USB port number as determined by `libusb`
-            uint8_t bus;                                // The USB BUS number as determined by `libusb`
-            uint8_t addr;                               // The USB port's own address as determined by 'libusb'
+        struct GkUsbDev {
+            libusb_device *dev;                                 // Primary underlying pointer to the `libusb` device
+            libusb_context *context;                            // The underlying context to the `libusb` library
+            libusb_device_descriptor desc;                      // Underlying pointer to the `libusb` configuration
+            libusb_config_descriptor *config;                   // Configuration parameters for the `libusb` device in question
+            libusb_device_handle *handle;                       // Underlying `libusb` device handle
+            QString mfg;                                        // Information relating to the manufacturer
+            QString serial_number;                              // The Product Serial Number
+            QString product;                                    // The Product ID
+            int vendor_id;                                      // Vendor ID as an integer
+            int product_id;                                     // Product ID as an integer
+            int conv_conf;                                      // USB Device configuration as an integer
+            int conv_iface;                                     // USB Device interface as an integer
+            int conv_alt;                                       // USB Device alternate as an integer
+        };
+
+        struct GkUsbPort {
+            GkUsbDev usb_enum;                                  // The USB Device structure, as above
+            UsbVers3 usb_vers_3;                                // Details specific to USB 3.0 (and SS) devices
+            std::string port;                                   // The USB port number as determined by `libusb`
+            std::string bus;                                    // The USB BUS number as determined by `libusb`
+            std::string addr;                                   // The USB port's own address as determined by 'libusb'
         };
 
         namespace Audio {
             struct GkDevice {
-                std::string dev_name_formatted;         // The name of the device itself, formatted
-                bool default_dev;                       // Is this the default device for the system?
-                bool default_disp;                      // Used for filtering purposes
-                double def_sample_rate;                 // Default sample rate
-                boost::tribool is_output_dev;           // Is the audio device in question an input? Output if FALSE, UNSURE if either
-                int dev_number;                         // The number of this device; this is saved to the Google LevelDB database as the user's preference
-                PaError dev_err;                        // Any errors that belong to this audio device specifically
-                std::vector<double> supp_sample_rates;  // Supported sample rates by this audio device
-                long asio_min_latency;                  // ASIO specific
-                long asio_max_latency;                  // ASIO specific
-                long asio_granularity;                  // ASIO specific
-                long asio_pref_latency;                 // ASIO specific
-                long asio_min_buffer_size;              // ASIO specific
-                long asio_max_buffer_size;              // ASIO specific
-                long asio_pref_buffer_size;             // ASIO specific
-                int dev_input_channel_count;            // The number of channels this INPUT audio device supports
-                int dev_output_channel_count;           // The number of channels this OUTPUT audio device supports
-                audio_channels sel_channels;            // The selected audio channel configuration
-                PaError asio_err;                       // ASIO specific error related information
-                PaDeviceInfo device_info;               // All information pertaining to this audio device
-                PaStreamParameters stream_parameters;   // Device-specific information such as the sample format, etc.
+                std::string dev_name_formatted;                 // The name of the device itself, formatted
+                bool default_dev;                               // Is this the default device for the system?
+                bool default_disp;                              // Used for filtering purposes
+                double def_sample_rate;                         // Default sample rate
+                boost::tribool is_output_dev;                   // Is the audio device in question an input? Output if FALSE, UNSURE if either
+                int dev_number;                                 // The number of this device; this is saved to the Google LevelDB database as the user's preference
+                PaError dev_err;                                // Any errors that belong to this audio device specifically
+                std::vector<double> supp_sample_rates;          // Supported sample rates by this audio device
+                long asio_min_latency;                          // ASIO specific
+                long asio_max_latency;                          // ASIO specific
+                long asio_granularity;                          // ASIO specific
+                long asio_pref_latency;                         // ASIO specific
+                long asio_min_buffer_size;                      // ASIO specific
+                long asio_max_buffer_size;                      // ASIO specific
+                long asio_pref_buffer_size;                     // ASIO specific
+                int dev_input_channel_count;                    // The number of channels this INPUT audio device supports
+                int dev_output_channel_count;                   // The number of channels this OUTPUT audio device supports
+                audio_channels sel_channels;                    // The selected audio channel configuration
+                PaError asio_err;                               // ASIO specific error related information
+                PaDeviceInfo device_info;                       // All information pertaining to this audio device
+                PaStreamParameters stream_parameters;           // Device-specific information such as the sample format, etc.
                 PaHostApiTypeId host_type_id;
             };
         }
@@ -349,6 +369,15 @@ namespace AmateurRadio {
         BAND241000
     };
 
+    enum GkConnType {
+        RS232,
+        USB,
+        Parallel,
+        CM108,
+        GPIO,
+        None
+    };
+
     enum com_baud_rates {
         BAUD1200,
         BAUD2400,
@@ -361,41 +390,35 @@ namespace AmateurRadio {
     };
 
     namespace Control {
-        struct Radio {                      // https://github.com/Hamlib/Hamlib/blob/master/tests/example.c
-            RIG *rig;                       // Hamlib rig pointer
-            bool is_open;                   // Has HamLib been successfully initiated (including the RIG* pointer?)
-            std::string rig_file;           // Hamlib rig temporary file
-            std::string info_buf;           // Hamlib information buffer
-            std::string mm;                 // Hamlib modulation mode
-            rig_model_t rig_model;          // Hamlib rig model
-            rig_debug_level_e verbosity;    // The debug level and verbosity of Hamlib
-            com_baud_rates dev_baud_rate;   // Communication device baud rate
-            hamlib_port_t port_details;     // Information concerning details about RS232 ports, etc.
-            freq_t freq;                    // Rig's primary frequency
-            value_t raw_strength;           // Raw strength of the S-meter
-            value_t strength;               // Calculated strength of the S-meter
-            value_t power;                  // Rig's power output
-            float s_meter;                  // S-meter values
-            int status;                     // Hamlib status code
-            int retcode;                    // Hamlib return code
-            int isz;                        // No idea what this is for?
-            unsigned int mwpower;           // Converted power reading to watts
-            rmode_t mode;                   // The type of modulation that the transceiver is in, whether it be AM, FM, SSB, etc.
-            pbwidth_t width;                // Bandwidth
-        };
-
-        struct FreqChange {                 // This structure is used when a frequency change is requested.
-            Radio radio;                    // Details about the radio itself!
-            freq_t new_freq;                // The new frequency to change towards!
-        };
-
-        struct SettingsChange {
-            std::string rig_file;           // Hamlib rig temporary file
-            rig_model_t rig_model;          // Hamlib rig model
-            com_baud_rates dev_baud_rate;   // Communication device baud rate
-            hamlib_port_t port_details;     // Any new changes concerning details about RS232 ports, etc.
-            rmode_t mode;                   // The type of modulation that the transceiver is in, whether it be AM, FM, SSB, etc.
-            pbwidth_t width;                // Bandwidth
+        struct GkRadio {                                    // https://github.com/Hamlib/Hamlib/blob/master/tests/example.c
+            RIG *rig;                                       // Hamlib rig pointer
+            int rig_brand;                                  // Hamlib rig brand/manufacturer
+            rig_model_t rig_model;                          // The actual amateur radio rig itself!
+            std::unique_ptr<rig_caps> rig_caps;             // Read-only; the capabilities of the configured amateur radio rig in question, as defined by Hamlib.
+            std::unique_ptr<rig_state> rig_status;          // Rig state containing live data and customized fields
+            hamlib_port_t port_details;                     // Information concerning details about RS232 ports, etc.
+            ptt_t ptt_status;                               // PTT status
+            split_t split_mode;                             // Whether 'Split Mode' is enabled or disabled
+            bool is_open;                                   // Has HamLib been successfully initiated (including the RIG* pointer?)
+            std::string rig_file;                           // Hamlib rig temporary file
+            std::string info_buf;                           // Hamlib information buffer
+            GkConnType cat_conn_type;                       // The type of connection, whether USB, RS232, etc.
+            GkConnType ptt_conn_type;                       // The type of connection, whether USB, RS232, etc.
+            std::string mm;                                 // Hamlib modulation mode
+            rig_debug_level_e verbosity;                    // The debug level and verbosity of Hamlib
+            com_baud_rates dev_baud_rate;                   // Communication device baud rate
+            std::string adv_cmd;                            // The 'Advanced Command' parameters, if specified
+            freq_t freq;                                    // Rig's primary frequency
+            value_t raw_strength;                           // Raw strength of the S-meter
+            value_t strength;                               // Calculated strength of the S-meter
+            value_t power;                                  // Rig's power output
+            float s_meter;                                  // S-meter values
+            int status;                                     // Hamlib status code
+            int retcode;                                    // Hamlib return code
+            int isz;                                        // No idea what this is for?
+            unsigned int mwpower;                           // Converted power reading to watts
+            rmode_t mode;                                   // The type of modulation that the transceiver is in, whether it be AM, FM, SSB, etc.
+            pbwidth_t width;                                // Bandwidth
         };
     }
 }
