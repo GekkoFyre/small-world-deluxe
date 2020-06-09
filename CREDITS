@@ -74,6 +74,10 @@ Qwt by Uwe Rathmann & Josef Wilgen et al.
     <https://qwt.sourceforge.io/>
         GNU Lesser General Public License (LGPL, version 2.1)
 
+SingleApplication by Itay Grudev
+    <https://github.com/itay-grudev/SingleApplication>
+        The MIT License
+
 getopt for Microsoft Windows by Chunde
     <https://github.com/Chunde/getopt-for-windows>
         GNU Lesser General Public License (LGPL, version 2.1)

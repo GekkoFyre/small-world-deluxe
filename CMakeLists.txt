@@ -372,6 +372,13 @@ if(GFYRE_BUILD_CODEC2)
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/codec2/misc")
 endif(GFYRE_BUILD_CODEC2)
 
+#
+# SingleApplication
+# https://github.com/itay-grudev/SingleApplication
+#
+set(QAPPLICATION_CLASS QApplication CACHE STRING "Inheritance class for SingleApplication")
+add_subdirectory(src/contrib/SingleApplication)
+
 # set up a mapping so that the Release configuration for the Qt imported target is
 # used in the COVERAGE CMake configuration.
 set_target_properties(Qt5::Core PROPERTIES MAP_IMPORTED_CONFIG_COVERAGE "RELEASE")
@@ -549,7 +556,7 @@ if(GFYRE_BUILD_SHARED)
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
-target_link_libraries(galaxy Qt5::Widgets Qt5::Core Qt5::Gui Qt5::PrintSupport Threads::Threads ${LIBS})
+target_link_libraries(galaxy Qt5::Widgets Qt5::Core Qt5::Gui Qt5::PrintSupport Threads::Threads SingleApplication::SingleApplication ${LIBS})
 
 # rcc -no-compress -binary smallworld_res.qrc -o smallworld_res.rcc
 qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)

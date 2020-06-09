@@ -659,15 +659,15 @@ void RadioLibs::registerComPort(std::list<std::string> &comList, std::list<std::
 }
 
 /**
- * @brief RadioLibs::init_rig Initializes the struct, `GekkoFyre::AmateurRadio::Control::GkRadio`, and all of the values within, along
- * with the user's desired amateur radio rig of choice, including anything needed to power it up and enable communication between
+ * @brief RadioLibs::gkInitRadioRig Initializes the struct, `GekkoFyre::AmateurRadio::Control::GkRadio`, and all of the values within,
+ * along with the user's desired amateur radio rig of choice, including anything needed to power it up and enable communication between
  * computing device and the rig itself.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param radio_ptr The needed information to power up the user's desired amateur radio rig of choice.
  * @param usb_ptr A pointer which contains all the information on user's configured USB devices, if any.
  * @note Ref: HamLib <https://github.com/Hamlib/Hamlib/>. Example: <https://github.com/Hamlib/Hamlib/blob/master/tests/example.c>
  */
-std::shared_ptr<GkRadio> RadioLibs::init_rig(std::shared_ptr<GkRadio> radio_ptr, std::shared_ptr<GkUsbPort> usb_ptr)
+std::shared_ptr<GkRadio> RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_ptr<GkUsbPort> usb_ptr)
 {
     std::mutex mtx_init_rig;
     std::lock_guard<std::mutex> lck_guard(mtx_init_rig);

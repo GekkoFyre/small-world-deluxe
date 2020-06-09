@@ -611,7 +611,7 @@ bool MainWindow::radioInitStart()
             //
             gkRadioPtr->is_open = false;
             std::future_status status;
-            rig_thread = std::async(std::launch::async, &RadioLibs::init_rig, gkRadioLibs, gkRadioPtr, gkUsbPortPtr);
+            rig_thread = std::async(std::launch::async, &RadioLibs::gkInitRadioRig, gkRadioLibs, gkRadioPtr, gkUsbPortPtr);
             do {
                 status = rig_thread.wait_for(std::chrono::seconds(5));
                 if (status == std::future_status::timeout) {
