@@ -46,6 +46,7 @@
 #include <vector>
 #include <string>
 #include <tuple>
+#include <list>
 #include <type_traits>
 #include <QSharedPointer>
 #include <QDialog>
@@ -190,9 +191,8 @@ private:
 
     double audio_quality_val;
 
-    // A QMap where the COM/Serial port name itself is the key and the value is the Target Path plus a
-    // Boost C++ triboolean that signifies whether the port is active or not
-    QMap<tstring, std::pair<tstring, boost::tribool>> status_com_ports;
+    // This variable is responsible for managing the COM/RS232/Serial ports of the system!
+    std::list<GekkoFyre::Database::Settings::GkComPort> status_com_ports;
 
     // The key is the USB devices' port number and the value is the associated struct
     QMap<std::string, GekkoFyre::Database::Settings::GkUsbPort> status_usb_devices;
@@ -226,7 +226,7 @@ private:
 
     QMap<int, int> collectComboBoxIndexes(const QComboBox *combo_box);
     void prefill_rig_force_ctrl_lines(const ptt_type_t &ptt_type);
-    void prefill_avail_com_ports(const QMap<tstring, std::pair<tstring, boost::tribool>> &com_ports);
+    void prefill_avail_com_ports(const std::list<GekkoFyre::Database::Settings::GkComPort> &com_ports);
     void prefill_avail_usb_ports(const QMap<std::string, GekkoFyre::Database::Settings::GkUsbPort> usb_devices);
     void prefill_com_baud_speed(const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate);
     void enable_device_port_options();

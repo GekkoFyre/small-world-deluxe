@@ -39,6 +39,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
 #include <ios>
+#include <list>
 #include <iostream>
 #include <exception>
 #include <utility>
@@ -280,89 +281,56 @@ libusb_context *RadioLibs::initUsbLib()
  * Boost C++ triboolean that signifies whether the port is active or not.
  * @see GekkoFyre::RadioLibs::detect_com_ports()
  */
-QMap<tstring, std::pair<tstring, boost::tribool>> RadioLibs::status_com_ports()
+std::list<GkComPort> RadioLibs::status_com_ports()
 {
-    QMap<tstring, std::pair<tstring, boost::tribool>> com_map;
-
-    #if defined(_MSC_VER) && (_MSC_VER > 1900)
-    #ifdef _WIN32
     try {
-        TCHAR lpTargetPath[5000]; // buffer to store the path of the COM ports
-        DWORD test;
-        bool gotPort = false; // in case the COM port is not found
+        std::list<GkComPort> com_map;
+        std::vector<serial::PortInfo> devices_found = serial::list_ports();
 
-        for (int i = 0; i < 255; i++) {
-            CString str;
-            str.Format(_T("%d"), i);
-            CString ComName = CString("COM") + CString(str); // Converting to COM0, COM1, COM2, etc.
+        for (const auto &port: devices_found) {
+            GkComPort com_struct;
+            com_struct.port_info = port;
 
-            test = QueryDosDevice(ComName, (LPSTR)lpTargetPath, 5000);
-            std::string key((LPCTSTR)ComName); // https://stackoverflow.com/questions/258050/how-to-convert-cstring-and-stdstring-stdwstring-to-each-other
+            if (serial::Serial(com_struct.port_info.port).isOpen()) {
+                com_struct.is_open = true;
+            } else {
+                com_struct.is_open = false;
+            }
+
+            com_struct.def_stopbits = serial::Serial(com_struct.port_info.port).getStopbits();
+            com_struct.def_baudrate = serial::Serial(com_struct.port_info.port).getBaudrate();
+
+            #ifdef _WIN32 || __MINGW32__
+            TCHAR lpTargetPath[5000]; // Buffer to store the path of the COM ports
+
+            DWORD retval = QueryDosDevice(com_struct.port_info.port.c_str(), (LPSTR)lpTargetPath, 5000);
             std::string targetPathStr(lpTargetPath, strlen(lpTargetPath + 1));
 
-            // Test the return value and error if any
-            if (test != 0) { // QueryDosDevice returns zero if it didn't find an object
-                com_map.insert(key, std::make_pair(targetPathStr, true));
-                gotPort = true;
+            if (retval != 0) {
+                com_struct.target_path = targetPathStr;
+            } else {
+                throw std::invalid_argument(tr("Unable to determine the Target Path for given serial port, '%1'.")
+                                            .arg(QString::fromStdString(com_struct.port_info.port)).toStdString());
             }
+            #elif __linux__
+            // TODO: Finish off this critical section!
+            #endif
 
-            if (::GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
-                // In-case the buffer got filled, increase size of the buffer.
-                lpTargetPath[10000]; // TODO: Fix this hack!
-                continue;
-            }
-
-            if (!gotPort) {
-                // No active COM port found
-                com_map.insert(key, std::make_pair("", false));
-            }
-        }
-    } catch (const ATL::CAtlException &e) {
-        // https://docs.microsoft.com/en-us/cpp/atl/reference/debugging-and-error-reporting-global-functions?view=vs-2019
-        QMessageBox::warning(nullptr, tr("Error!"), tr("An issue was encountered whilst determining COM/Serial/RS-232 port status:\n\n%1")
-                             .arg(QString::number(AtlHresultFromWin32(e.m_hr))), QMessageBox::Ok);
-    }
-    #endif
-    #elif __linux__ || __MINGW32__
-    try {
-        // Scan through `/sys/class/tty` as it contains all the TTY-devices within the system
-        sys::error_code ec;
-        fs::path sys_dir = Filesystem::linux_sys_tty;
-        std::list<std::string> comList;
-        std::list<std::string> comList8250;
-        auto dirent = gkFileIo->boost_dir_iterator(sys_dir, ec);
-
-        if (ec) {
-            throw std::runtime_error(ec.message());
+            com_map.push_back(com_struct);
         }
 
-        for (const auto &device: dirent) {
-            fs::path device_stem = device.stem();
-            if (std::strcmp(device_stem.string().c_str(), "..") != 0) {
-                if (std::strcmp(device_stem.string().c_str(), ".") != 0) {
-                    // Construct full absolute file path
-                    fs::path device_dir = sys_dir;
-                    device_dir += device_stem;
-
-                    // Register the device
-                    registerComPort(comList, comList8250, device_dir);
-                }
-            }
-        }
-
-        // Only non-Serial-8250 has been added to comList without any further testing
-        // Actual Serial-8250 devices must be probed to check for validity
-        probe_serial8250_comports(comList, comList8250);
-
-        for (const auto &port: comList) {
-            com_map.insert(port, std::make_pair("", true));
-        }
+        return com_map;
     } catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+        #if defined(_MSC_VER) && (_MSC_VER > 1900)
+        HWND hwnd = nullptr;
+        gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), e.what(), MB_ICONERROR);
+        DestroyWindow(hwnd);
+        #else
+        gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+        #endif
     }
-    #endif
 
-    return com_map;
+    return std::list<GkComPort>();
 }
 
 /**
