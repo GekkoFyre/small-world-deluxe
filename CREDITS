@@ -38,6 +38,10 @@ PortAudio by the PortAudio community
     <http://www.portaudio.com/>
         The MIT License
 
+Serial by William Woodall
+    <http://wjwwood.io/serial/>
+        The MIT License
+
 LibUSB by Hans de Goede & Chris Dickens et al.
     <https://github.com/libusb/libusb>
         GNU Lesser General Public License (LGPL, version 2.1)

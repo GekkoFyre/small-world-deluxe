@@ -631,7 +631,13 @@ bool MainWindow::radioInitStart()
             Q_UNUSED(e);
             return false;
         } catch (const std::runtime_error &e) {
-            QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
+            #if defined(_MSC_VER) && (_MSC_VER > 1900)
+            HWND hwnd = nullptr;
+            gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), tr("[ Hamlib ] %1").arg(e.what()), MB_ICONERROR);
+            DestroyWindow(hwnd);
+            #else
+            gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("[ Hamlib ] %1").arg(e.what()));
+            #endif
             return false;
         }
     } catch (const std::exception &e) {
@@ -1449,10 +1455,23 @@ void MainWindow::updateProgressBar(const bool &enable, const size_t &min, const 
  */
 void MainWindow::selectedPortType(const GekkoFyre::AmateurRadio::GkConnType &rig_conn_type, const bool &is_cat_mode)
 {
+    QString comDeviceCat = "";
+    if (rig_conn_type == GkConnType::RS232 || rig_conn_type == GkConnType::None) {
+        comDeviceCat = GkDb->read_rig_settings_comms(radio_cfg::ComDeviceCat, GkConnType::RS232);
+    } else if (rig_conn_type == GkConnType::USB) {
+        comDeviceCat = GkDb->read_rig_settings_comms(radio_cfg::UsbDeviceCat, GkConnType::USB);
+    } else if (rig_conn_type == GkConnType::Parallel) {
+        comDeviceCat = GkDb->read_rig_settings_comms(radio_cfg::ParallelCat, GkConnType::Parallel);
+    } else {
+        return;
+    }
+
     if (is_cat_mode) {
         gkRadioPtr->cat_conn_type = rig_conn_type;
+        gkRadioPtr->cat_conn_port = comDeviceCat.toStdString();
     } else {
         gkRadioPtr->ptt_conn_type = rig_conn_type;
+        gkRadioPtr->ptt_conn_port = comDeviceCat.toStdString();
     }
 
     return;

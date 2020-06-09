@@ -697,7 +697,7 @@ void RadioLibs::registerComPort(std::list<std::string> &comList, std::list<std::
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param radio_ptr The needed information to power up the user's desired amateur radio rig of choice.
  * @param usb_ptr A pointer which contains all the information on user's configured USB devices, if any.
- * @note Ref: HamLib <https://github.com/Hamlib/Hamlib/>.
+ * @note Ref: HamLib <https://github.com/Hamlib/Hamlib/>. Example: <https://github.com/Hamlib/Hamlib/blob/master/tests/example.c>
  */
 std::shared_ptr<GkRadio> RadioLibs::init_rig(std::shared_ptr<GkRadio> radio_ptr, std::shared_ptr<GkUsbPort> usb_ptr)
 {
@@ -719,50 +719,67 @@ std::shared_ptr<GkRadio> RadioLibs::init_rig(std::shared_ptr<GkRadio> radio_ptr,
         com_port_path = radio_ptr->rig_file;
         #endif
 
+        radio_ptr->rig_file = com_port_path.string();
+
+        int baud_rate = 9600;
+        int baud_rate_tmp = convertBaudRateInt(radio_ptr->dev_baud_rate);
+        if (baud_rate_tmp <= 115200 && baud_rate_tmp >= 9600) {
+            baud_rate = baud_rate_tmp;
+        }
+
+        if (radio_ptr->cat_conn_type == GkConnType::RS232 || radio_ptr->cat_conn_type == GkConnType::None) {
+            //
+            // RS232 or None
+            //
+            if (radio_ptr->port_details.type.rig != rig_port_t::RIG_PORT_SERIAL || radio_ptr->port_details.parm.serial.data_bits < 0 ||
+                    radio_ptr->port_details.parm.serial.stop_bits < 0) {
+                throw std::invalid_argument(tr("Unable to initialize radio rig with RS232 connection!").toStdString());
+            }
+
+            radio_ptr->port_details.parm.serial.rate = baud_rate; // The BAUD Rate for the desired COM Port
+            radio_ptr->port_details.type.rig = convGkConnTypeToHamlib(radio_ptr->cat_conn_type);
+
+            //
+            // Determine the port necessary and let Hamlib know about it!
+            //
+            if (!radio_ptr->cat_conn_port.empty()) {
+                strncpy(radio_ptr->rig->state.rigport.pathname, radio_ptr->cat_conn_port.c_str(), FILPATHLEN - 1);
+            }
+        } else if (radio_ptr->cat_conn_type == GkConnType::USB) {
+            //
+            // USB
+            //
+            if (usb_ptr->bus.empty() || usb_ptr->addr.empty()) {
+                throw std::invalid_argument(tr("Unable to initialize radio rig with USB connection!").toStdString());
+            }
+
+            radio_ptr->port_details.parm.usb.vid = usb_ptr->usb_enum.vendor_id;
+            radio_ptr->port_details.parm.usb.pid = usb_ptr->usb_enum.product_id;
+            radio_ptr->port_details.parm.usb.conf = usb_ptr->usb_enum.conv_conf;
+            radio_ptr->port_details.parm.usb.iface = usb_ptr->usb_vers_3.interface_number;
+            radio_ptr->port_details.parm.usb.alt = usb_ptr->usb_vers_3.alternate_setting;
+
+            //
+            // Determine the port necessary and let Hamlib know about it!
+            //
+            if (!radio_ptr->cat_conn_port.empty()) {
+                strncpy(radio_ptr->rig->state.rigport.pathname, radio_ptr->cat_conn_port.c_str(), FILPATHLEN - 1);
+            }
+        } else if (radio_ptr->cat_conn_type == GkConnType::Parallel) {
+            //
+            // Parallel
+            //
+            radio_ptr->port_details.parm.parallel.pin = -1; // TODO: Finish this section for Parallel connections!
+
+            //
+            // Determine the port necessary and let Hamlib know about it!
+            //
+            // strncpy(radio_ptr->rig->state.rigport.pathname, radio_ptr, FILPATHLEN - 1);
+        } else {
+            throw std::invalid_argument(tr("Unable to detect connection type while initializing radio rig (i.e. 'none / unknown' was not an option)!").toStdString());
+        }
+
         if (radio_ptr->rig_model < 1) { // No amateur radio rig has been configured and/or adequately detected!
-            radio_ptr->rig_file = com_port_path.string();
-
-            strncpy(radio_ptr->port_details.pathname, radio_ptr->rig_file.c_str(), FILPATHLEN - 1);
-
-            int baud_rate = 9600;
-            int baud_rate_tmp = convertBaudRateInt(radio_ptr->dev_baud_rate);
-            if (baud_rate_tmp <= 115200 && baud_rate_tmp >= 9600) {
-                baud_rate = baud_rate_tmp;
-            }
-
-            if (radio_ptr->cat_conn_type == GkConnType::RS232 || radio_ptr->cat_conn_type == GkConnType::None) {
-                //
-                // RS232 or None
-                //
-                if (radio_ptr->port_details.type.rig != rig_port_t::RIG_PORT_SERIAL || radio_ptr->port_details.parm.serial.data_bits < 0 ||
-                        radio_ptr->port_details.parm.serial.stop_bits < 0) {
-                    throw std::invalid_argument(tr("Unable to initialize radio rig with RS232 connection!").toStdString());
-                }
-
-                radio_ptr->port_details.parm.serial.rate = baud_rate; // The BAUD Rate for the desired COM Port
-                radio_ptr->port_details.type.rig = convGkConnTypeToHamlib(radio_ptr->cat_conn_type);
-            } else if (radio_ptr->cat_conn_type == GkConnType::USB) {
-                //
-                // USB
-                //
-                if (usb_ptr->bus.empty() || usb_ptr->addr.empty()) {
-                    throw std::invalid_argument(tr("Unable to initialize radio rig with USB connection!").toStdString());
-                }
-
-                radio_ptr->port_details.parm.usb.vid = usb_ptr->usb_enum.vendor_id;
-                radio_ptr->port_details.parm.usb.pid = usb_ptr->usb_enum.product_id;
-                radio_ptr->port_details.parm.usb.conf = usb_ptr->usb_enum.conv_conf;
-                radio_ptr->port_details.parm.usb.iface = usb_ptr->usb_vers_3.interface_number;
-                radio_ptr->port_details.parm.usb.alt = usb_ptr->usb_vers_3.alternate_setting;
-            } else if (radio_ptr->cat_conn_type == GkConnType::Parallel) {
-                //
-                // Parallel
-                //
-                radio_ptr->port_details.parm.parallel.pin = -1; // TODO: Finish this section for Parallel connections!
-            } else {
-                throw std::invalid_argument(tr("Unable to detect connection type while initializing radio rig (i.e. 'none / unknown' was not an option)!").toStdString());
-            }
-
             //
             // Probe the given communications port, whether it be RS232, USB, GPIO, etc.
             // With this information, provided a connection has been made successfully, we can infer the amateur radio
@@ -784,6 +801,15 @@ std::shared_ptr<GkRadio> RadioLibs::init_rig(std::shared_ptr<GkRadio> radio_ptr,
         // Open our rig in question
         radio_ptr->retcode = rig_open(radio_ptr->rig);
         hamlibStatus(radio_ptr->retcode);
+
+        //
+        // Power up the rig, electrically, if at all possible!
+        //
+        rig_get_powerstat(radio_ptr->rig, &radio_ptr->power_status);
+        if (radio_ptr->power_status == powerstat_t::RIG_POWER_OFF) {
+            radio_ptr->retcode = rig_set_powerstat(radio_ptr->rig, powerstat_t::RIG_POWER_ON);
+            hamlibStatus(radio_ptr->retcode);
+        }
 
         radio_ptr->is_open = true; // Set the flag that the aforementioned pointer has been initialized
 
@@ -830,7 +856,13 @@ std::shared_ptr<GkRadio> RadioLibs::init_rig(std::shared_ptr<GkRadio> radio_ptr,
 
         return radio_ptr;
     } catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+        #if defined(_MSC_VER) && (_MSC_VER > 1900)
+        HWND hwnd = nullptr;
+        gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), tr("[ Hamlib ] %1").arg(e.what()), MB_ICONERROR);
+        DestroyWindow(hwnd);
+        #else
+        gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("[ Hamlib ] %1").arg(e.what()));
+        #endif
     }
 
     return std::shared_ptr<GkRadio>();
