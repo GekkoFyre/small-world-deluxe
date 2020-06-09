@@ -301,10 +301,10 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         // Data Bits
         //
         short enum_data_bits = 0;
-        if (ui->radioButton_data_bits_default->isDown()) {
+        if (ui->radioButton_data_bits_default->isChecked()) {
             // Default
             enum_data_bits = 0;
-        } else if (ui->radioButton_data_bits_seven->isDown()) {
+        } else if (ui->radioButton_data_bits_seven->isChecked()) {
             // Seven (7)
             enum_data_bits = 1;
         } else {
@@ -316,10 +316,10 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         // Stop Bits
         //
         short enum_stop_bits = 0;
-        if (ui->radioButton_stop_bits_default->isDown()) {
+        if (ui->radioButton_stop_bits_default->isChecked()) {
             // Default
             enum_stop_bits = 0;
-        } else if (ui->radioButton_stop_bits_one->isDown()) {
+        } else if (ui->radioButton_stop_bits_one->isChecked()) {
             // One (1)
             enum_stop_bits = 1;
         } else {
@@ -331,13 +331,13 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         // Handshake
         //
         short enum_handshake = 0;
-        if (ui->radioButton_handshake_default->isDown()) {
+        if (ui->radioButton_handshake_default->isChecked()) {
             // Default
             enum_handshake = 0;
-        } else if (ui->radioButton_handshake_none->isDown()) {
+        } else if (ui->radioButton_handshake_none->isChecked()) {
             // None
             enum_handshake = 1;
-        } else if (ui->radioButton_handshake_xon_xoff->isDown()) {
+        } else if (ui->radioButton_handshake_xon_xoff->isChecked()) {
             // XON / XOFF
             enum_handshake = 2;
         } else {
@@ -349,13 +349,13 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         // PTT Method
         //
         short enum_ptt_method = 0;
-        if (ui->radioButton_ptt_method_vox->isDown()) {
+        if (ui->radioButton_ptt_method_vox->isChecked()) {
             // VOX
             enum_ptt_method = 0;
-        } else if (ui->radioButton_ptt_method_dtr->isDown()) {
+        } else if (ui->radioButton_ptt_method_dtr->isChecked()) {
             // DTR
             enum_ptt_method = 1;
-        } else if (ui->radioButton_ptt_method_cat->isDown()) {
+        } else if (ui->radioButton_ptt_method_cat->isChecked()) {
             // CAT
             enum_ptt_method = 2;
         } else {
@@ -367,7 +367,7 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         // Transmit Audio Source
         //
         short enum_tx_audio_src = 0;
-        if (ui->radioButton_tx_audio_src_rear_data->isDown()) {
+        if (ui->radioButton_tx_audio_src_rear_data->isChecked()) {
             // Rear / Data
             enum_tx_audio_src = 0;
         } else {
@@ -379,10 +379,10 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         // Mode
         //
         short enum_mode = 0;
-        if (ui->radioButton_mode_none->isDown()) {
+        if (ui->radioButton_mode_none->isChecked()) {
             // None
             enum_mode = 0;
-        } else if (ui->radioButton_mode_usb->isDown()) {
+        } else if (ui->radioButton_mode_usb->isChecked()) {
             // USB
             enum_mode = 1;
         } else {
@@ -394,10 +394,10 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         // Split Operation
         //
         short enum_split_oper = 0;
-        if (ui->radioButton_split_none->isDown()) {
+        if (ui->radioButton_split_none->isChecked()) {
             // None
             enum_split_oper = 0;
-        } else if (ui->radioButton_split_rig->isDown()) {
+        } else if (ui->radioButton_split_rig->isChecked()) {
             // Rig
             enum_split_oper = 1;
         } else {
@@ -1125,13 +1125,13 @@ bool DialogSettings::read_settings()
             int_val_stop_bits = stopBits.toInt();
             switch (int_val_stop_bits) {
             case 0:
-                ui->radioButton_stop_bits_default->setDown(true);
+                ui->radioButton_stop_bits_default->setChecked(true);
                 break;
             case 1:
-                ui->radioButton_stop_bits_one->setDown(true);
+                ui->radioButton_stop_bits_one->setChecked(true);
                 break;
             case 2:
-                ui->radioButton_stop_bits_two->setDown(true);
+                ui->radioButton_stop_bits_two->setChecked(true);
                 break;
             default:
                 throw std::invalid_argument(tr("Invalid value for amount of Stop Bits!").toStdString());
@@ -1165,19 +1165,19 @@ bool DialogSettings::read_settings()
             int_val_data_bits = data_bits.toInt();
             switch (int_val_data_bits) {
             case 0:
-                ui->radioButton_data_bits_default->setDown(true);
+                ui->radioButton_data_bits_default->setChecked(true);
                 break;
             case 1:
-                ui->radioButton_data_bits_seven->setDown(true);
+                ui->radioButton_data_bits_seven->setChecked(true);
                 break;
             case 2:
-                ui->radioButton_data_bits_eight->setDown(true);
+                ui->radioButton_data_bits_eight->setChecked(true);
                 break;
             case 7:
-                ui->radioButton_data_bits_seven->setDown(true);
+                ui->radioButton_data_bits_seven->setChecked(true);
                 break;
             case 8:
-                ui->radioButton_data_bits_eight->setDown(true);
+                ui->radioButton_data_bits_eight->setChecked(true);
                 break;
             default:
                 throw std::invalid_argument(tr("Invalid value for amount of Data Bits!").toStdString());
@@ -1211,16 +1211,16 @@ bool DialogSettings::read_settings()
             int_val_handshake = handshake.toInt();
             switch (int_val_handshake) {
             case 0:
-                ui->radioButton_handshake_default->setDown(true);
+                ui->radioButton_handshake_default->setChecked(true);
                 break;
             case 1:
-                ui->radioButton_handshake_none->setDown(true);
+                ui->radioButton_handshake_none->setChecked(true);
                 break;
             case 2:
-                ui->radioButton_handshake_xon_xoff->setDown(true);
+                ui->radioButton_handshake_xon_xoff->setChecked(true);
                 break;
             case 3:
-                ui->radioButton_handshake_hardware->setDown(true);
+                ui->radioButton_handshake_hardware->setChecked(true);
                 break;
             default:
                 throw std::invalid_argument(tr("Invalid value for amount of Stop Bits!").toStdString());
@@ -1271,16 +1271,16 @@ bool DialogSettings::read_settings()
             int_val_ptt_method = ptt_method.toInt();
             switch (int_val_ptt_method) {
             case 0:
-                ui->radioButton_ptt_method_vox->setDown(true);
+                ui->radioButton_ptt_method_vox->setChecked(true);
                 break;
             case 1:
-                ui->radioButton_ptt_method_dtr->setDown(true);
+                ui->radioButton_ptt_method_dtr->setChecked(true);
                 break;
             case 2:
-                ui->radioButton_ptt_method_cat->setDown(true);
+                ui->radioButton_ptt_method_cat->setChecked(true);
                 break;
             case 3:
-                ui->radioButton_ptt_method_rts->setDown(true);
+                ui->radioButton_ptt_method_rts->setChecked(true);
                 break;
             default:
                 throw std::invalid_argument(tr("Invalid value for amount of PTT Method!").toStdString());
@@ -1327,10 +1327,10 @@ bool DialogSettings::read_settings()
             int_val_tx_audio_src = tx_audio_src.toInt();
             switch (int_val_tx_audio_src) {
             case 0:
-                ui->radioButton_tx_audio_src_rear_data->setDown(true);
+                ui->radioButton_tx_audio_src_rear_data->setChecked(true);
                 break;
             case 1:
-                ui->radioButton_tx_audio_src_front_mic->setDown(true);
+                ui->radioButton_tx_audio_src_front_mic->setChecked(true);
                 break;
             default:
                 throw std::invalid_argument(tr("Invalid value for amount of TX Audio Source!").toStdString());
@@ -1342,13 +1342,13 @@ bool DialogSettings::read_settings()
             int_val_ptt_mode = ptt_mode.toInt();
             switch (int_val_ptt_mode) {
             case 0:
-                ui->radioButton_mode_none->setDown(true);
+                ui->radioButton_mode_none->setChecked(true);
                 break;
             case 1:
-                ui->radioButton_mode_usb->setDown(true);
+                ui->radioButton_mode_usb->setChecked(true);
                 break;
             case 2:
-                ui->radioButton_mode_data_pkt->setDown(true);
+                ui->radioButton_mode_data_pkt->setChecked(true);
                 break;
             default:
                 throw std::invalid_argument(tr("Invalid value for amount of PTT Mode!").toStdString());
@@ -1362,13 +1362,13 @@ bool DialogSettings::read_settings()
             int_val_split_operation = split_operation.toInt();
             switch (int_val_split_operation) {
             case 0:
-                ui->radioButton_split_none->setDown(true);
+                ui->radioButton_split_none->setChecked(true);
                 break;
             case 1:
-                ui->radioButton_split_rig->setDown(true);
+                ui->radioButton_split_rig->setChecked(true);
                 break;
             case 2:
-                ui->radioButton_split_fake_it->setDown(true);
+                ui->radioButton_split_fake_it->setChecked(true);
                 break;
             default:
                 throw std::invalid_argument(tr("Invalid value for amount of Split Operation!").toStdString());
