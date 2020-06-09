@@ -120,10 +120,9 @@ std::wstring StringFuncs::removeSpecialChars(std::wstring wstr)
 #ifdef _WIN32
 bool StringFuncs::modalDlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon)
 {
-    //
-    // https://docs.microsoft.com/en-us/windows/win32/winmsg/using-windows
     // TODO: Make this dialog modal
-    //
+    std::mutex mtx_modal_dlg_box;
+    std::lock_guard<std::mutex> lck_guard(mtx_modal_dlg_box);
     int msgBoxId = MessageBoxA(hwnd, msgTxt.toStdString().c_str(), title.toStdString().c_str(), icon | MB_OK);
 
     switch (msgBoxId) {

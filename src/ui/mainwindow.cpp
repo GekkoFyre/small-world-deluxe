@@ -1456,7 +1456,7 @@ void MainWindow::updateProgressBar(const bool &enable, const size_t &min, const 
 void MainWindow::selectedPortType(const GekkoFyre::AmateurRadio::GkConnType &rig_conn_type, const bool &is_cat_mode)
 {
     QString comDeviceCat = "";
-    if (rig_conn_type == GkConnType::RS232 || rig_conn_type == GkConnType::None) {
+    if (rig_conn_type == GkConnType::RS232) {
         comDeviceCat = GkDb->read_rig_settings_comms(radio_cfg::ComDeviceCat, GkConnType::RS232);
     } else if (rig_conn_type == GkConnType::USB) {
         comDeviceCat = GkDb->read_rig_settings_comms(radio_cfg::UsbDeviceCat, GkConnType::USB);
