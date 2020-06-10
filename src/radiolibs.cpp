@@ -299,6 +299,9 @@ std::list<GkComPort> RadioLibs::status_com_ports()
 
             com_struct.def_stopbits = serial::Serial(com_struct.port_info.port).getStopbits();
             com_struct.def_baudrate = serial::Serial(com_struct.port_info.port).getBaudrate();
+            com_struct.timeout_info = serial::Serial(com_struct.port_info.port).getTimeout();
+            com_struct.def_parity = serial::Serial(com_struct.port_info.port).getParity();
+            com_struct.def_flow_control = serial::Serial(com_struct.port_info.port).getFlowcontrol();
 
             com_map.push_back(com_struct);
         }

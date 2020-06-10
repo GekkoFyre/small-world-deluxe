@@ -170,11 +170,12 @@ public slots:
                            const std::vector<int> &raw_audio_data,
                            const int &hanning_window_size, const size_t &buffer_size);
     void updateProgressBar(const bool &enable, const size_t &min, const size_t &max);
-    void selectedPortType(const GekkoFyre::AmateurRadio::GkConnType &rig_conn_type, const bool &is_cat_mode);
 
     //
     // Hamlib specific functions
     //
+    void selectedPortType(const GekkoFyre::AmateurRadio::GkConnType &rig_conn_type, const bool &is_cat_mode);
+    void analyzePortType(const bool &is_cat_mode);
     void gatherRigCapabilities(const rig_model_t &rig_model_update);
     void addRigToMemory(const rig_model_t &rig_model_update);
     void modifyRigInMemory(const rig_model_t &rig_model_update, const bool &del_rig);
@@ -192,6 +193,7 @@ signals:
     //
     // Hamlib specific functions
     //
+    void gatherPortType(const bool &is_cat_mode);
     void changePortType(const GekkoFyre::AmateurRadio::GkConnType &rig_conn_type, const bool &is_cat_mode);
     void addRigInUse(const rig_model_t &rig_model_update);
     void modifyRigInUse(const rig_model_t &rig_model_update, const bool &del_rig);

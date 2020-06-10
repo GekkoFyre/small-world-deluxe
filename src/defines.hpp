@@ -300,6 +300,9 @@ namespace Database {
             bool is_open;                                       // Is the serial port open and ready for a connection to be made?
             serial::stopbits_t def_stopbits;                    // The defined stop bits for this serial port in question
             uint32_t def_baudrate;                              // The defined baudrate for this serial port in question
+            serial::parity_t def_parity;                        // The defined parity for this serial port in question
+            serial::flowcontrol_t def_flow_control;             // The defined flow-control for this serial port in question
+            serial::Timeout timeout_info;                       // The timeout structure for the given serial port in question
         };
 
         namespace Audio {
