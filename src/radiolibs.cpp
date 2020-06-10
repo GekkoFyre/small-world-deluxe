@@ -696,7 +696,7 @@ std::shared_ptr<GkRadio> RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radi
 
     if (radio_ptr->cat_conn_type == GkConnType::RS232) {
         //
-        // RS232 or None
+        // RS232
         //
         radio_ptr->rig->state.rigport.parm.serial.data_bits = radio_ptr->port_details.parm.serial.data_bits;
         radio_ptr->rig->state.rigport.parm.serial.stop_bits = radio_ptr->port_details.parm.serial.stop_bits;
