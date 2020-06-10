@@ -228,7 +228,7 @@ void DialogSettings::on_pushButton_submit_config_clicked()
             for (const auto &avail_port: status_com_ports) {
                 // List out the current serial ports in use
                 if (com_device_cat == sel_port.second) {
-                    if (sel_port.first == avail_port.target_path) {
+                    if (sel_port.first == avail_port.port_info.description) {
                         //
                         // CAT Control
                         //
@@ -238,7 +238,7 @@ void DialogSettings::on_pushButton_submit_config_clicked()
                 }
 
                 if (com_device_ptt == sel_port.second) {
-                    if (sel_port.first == avail_port.target_path) {
+                    if (sel_port.first == avail_port.port_info.description) {
                         //
                         // PTT Method
                         //
@@ -797,26 +797,24 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
         ui->comboBox_ptt_method_port->insertItem(0, tr("N/A"), tr("N/A"));
 
         if (!com_ports.empty()) {
-            unsigned short cat_counter = 0;
-            unsigned short ptt_counter = 0;
+            unsigned short counter = 0;
             emit comPortsDisabled(true); // Enable all GUI widgets relating to COM/Serial Ports
             for (const auto &port: com_ports) {
-                ++cat_counter;
-                ++ptt_counter;
+                ++counter;
 
                 //
                 // CAT Control
                 //
-                ui->comboBox_com_port->insertItem(cat_counter, QString::fromStdString(port.port_info.port),
+                ui->comboBox_com_port->insertItem(counter, QString::fromStdString(port.port_info.port),
                                                   QString::fromStdString(port.port_info.port));
-                available_com_ports.insert(port.target_path, cat_counter);
 
                 //
                 // PTT Method
                 //
-                ui->comboBox_ptt_method_port->insertItem(ptt_counter, QString::fromStdString(port.port_info.port),
-                                                         QString::fromStdString(port.port_info.port));
-                available_com_ports.insert(port.target_path, ptt_counter);
+                ui->comboBox_ptt_method_port->insertItem(counter, QString::fromStdString(port.port_info.port),
+                                                         QString::fromStdString(port.port_info.port));\
+
+                available_com_ports.insert(port.port_info.description, counter);
             }
 
             //
@@ -825,10 +823,12 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
             QString comDeviceCat = gkDekodeDb->read_rig_settings_comms(radio_cfg::ComDeviceCat, GkConnType::RS232);
             if (!comDeviceCat.isEmpty() && !available_com_ports.isEmpty()) {
                 for (const auto &sel_port: available_com_ports.toStdMap()) {
-                    // NOTE: The recorded setting used to identify the chosen serial device is the `Target Path`
-                    if (comDeviceCat.toStdString() == sel_port.first) {
-                        ui->comboBox_com_port->setCurrentIndex(sel_port.second);
-                        on_comboBox_com_port_currentIndexChanged(sel_port.second);
+                    for (const auto &device: status_com_ports) {
+                        if ((device.port_info.description == sel_port.first) && (comDeviceCat.toStdString() == device.port_info.port)) {
+                            // NOTE: The recorded setting used to identify the chosen serial device is the COM Port name
+                            ui->comboBox_com_port->setCurrentIndex(sel_port.second);
+                            on_comboBox_com_port_currentIndexChanged(sel_port.second);
+                        }
                     }
                 }
             }
@@ -839,10 +839,12 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
             QString comDevicePtt = gkDekodeDb->read_rig_settings_comms(radio_cfg::ComDevicePtt, GkConnType::RS232);
             if (!comDevicePtt.isEmpty() && !available_com_ports.isEmpty()) {
                 for (const auto &sel_port: available_com_ports.toStdMap()) {
-                    // NOTE: The recorded setting used to identify the chosen serial device is the `Target Path`
-                    if (comDevicePtt.toStdString() == sel_port.first) {
-                        ui->comboBox_ptt_method_port->setCurrentIndex(sel_port.second);
-                        on_comboBox_ptt_method_port_currentIndexChanged(sel_port.second);
+                    for (const auto &device: status_com_ports) {
+                        if ((device.port_info.description == sel_port.first) && (comDevicePtt.toStdString() == device.port_info.port)) {
+                            // NOTE: The recorded setting used to identify the chosen serial device is the COM Port name
+                            ui->comboBox_ptt_method_port->setCurrentIndex(sel_port.second);
+                            on_comboBox_ptt_method_port_currentIndexChanged(sel_port.second);
+                        }
                     }
                 }
             }
@@ -1433,7 +1435,7 @@ void DialogSettings::on_comboBox_com_port_currentIndexChanged(int index)
                         #ifdef _UNICODE
                         ui->lineEdit_device_port_name->setText(QString::fromStdWString(com_port_list.second.first));
                         #else
-                        ui->lineEdit_device_port_name->setText(QString::fromStdString(com_port_list.target_path));
+                        ui->lineEdit_device_port_name->setText(QString::fromStdString(com_port_list.port_info.description));
                         #endif
 
                         emit changePortType(GekkoFyre::AmateurRadio::GkConnType::RS232, true);
@@ -1483,7 +1485,7 @@ void DialogSettings::on_comboBox_ptt_method_port_currentIndexChanged(int index)
                         #ifdef _UNICODE
                         ui->lineEdit_ptt_method_dev_path->setText(QString::fromStdWString(com_port_list.second.first));
                         #else
-                        ui->lineEdit_ptt_method_dev_path->setText(QString::fromStdString(com_port_list.target_path));
+                        ui->lineEdit_ptt_method_dev_path->setText(QString::fromStdString(com_port_list.port_info.description));
                         #endif
 
                         emit changePortType(GekkoFyre::AmateurRadio::GkConnType::RS232, false);

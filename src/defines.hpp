@@ -297,7 +297,6 @@ namespace Database {
 
         struct GkComPort {
             serial::PortInfo port_info;                         // Details on the COM/RS232/Serial ports themselves
-            std::string target_path;                            // The 'target path' for the RS232 port itself
             bool is_open;                                       // Is the serial port open and ready for a connection to be made?
             serial::stopbits_t def_stopbits;                    // The defined stop bits for this serial port in question
             uint32_t def_baudrate;                              // The defined baudrate for this serial port in question

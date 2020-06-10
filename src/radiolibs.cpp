@@ -300,22 +300,6 @@ std::list<GkComPort> RadioLibs::status_com_ports()
             com_struct.def_stopbits = serial::Serial(com_struct.port_info.port).getStopbits();
             com_struct.def_baudrate = serial::Serial(com_struct.port_info.port).getBaudrate();
 
-            #ifdef _WIN32 || __MINGW32__
-            TCHAR lpTargetPath[5000]; // Buffer to store the path of the COM ports
-
-            DWORD retval = QueryDosDevice(com_struct.port_info.port.c_str(), (LPSTR)lpTargetPath, 5000);
-            std::string targetPathStr(lpTargetPath, strlen(lpTargetPath + 1));
-
-            if (retval != 0) {
-                com_struct.target_path = targetPathStr;
-            } else {
-                throw std::invalid_argument(tr("Unable to determine the Target Path for given serial port, '%1'.")
-                                            .arg(QString::fromStdString(com_struct.port_info.port)).toStdString());
-            }
-            #elif __linux__
-            // TODO: Finish off this critical section!
-            #endif
-
             com_map.push_back(com_struct);
         }
 
