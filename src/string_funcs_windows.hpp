@@ -41,6 +41,7 @@
 #include <QObject>
 #include <string>
 #include <memory>
+#include <mutex>
 
 #ifdef _WIN32
 #include <Windows.h>

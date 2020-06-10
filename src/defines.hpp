@@ -37,6 +37,7 @@
 
 #pragma once
 
+#include "contrib/serial/include/serial/serial.h"
 #include <portaudiocpp/PortAudioCpp.hxx>
 #include <fftw3.h>
 #include <boost/exception/all.hpp>
@@ -211,6 +212,8 @@ namespace Database {
             ComDevicePtt,
             UsbDeviceCat,
             UsbDevicePtt,
+            ParallelCat,
+            ParallelPtt,
             ComBaudRate,
             StopBits,
             DataBits,
@@ -290,6 +293,13 @@ namespace Database {
             std::string port;                                   // The USB port number as determined by `libusb`
             std::string bus;                                    // The USB BUS number as determined by `libusb`
             std::string addr;                                   // The USB port's own address as determined by 'libusb'
+        };
+
+        struct GkComPort {
+            serial::PortInfo port_info;                         // Details on the COM/RS232/Serial ports themselves
+            bool is_open;                                       // Is the serial port open and ready for a connection to be made?
+            serial::stopbits_t def_stopbits;                    // The defined stop bits for this serial port in question
+            uint32_t def_baudrate;                              // The defined baudrate for this serial port in question
         };
 
         namespace Audio {
@@ -396,6 +406,7 @@ namespace AmateurRadio {
             rig_model_t rig_model;                          // The actual amateur radio rig itself!
             std::unique_ptr<rig_caps> rig_caps;             // Read-only; the capabilities of the configured amateur radio rig in question, as defined by Hamlib.
             std::unique_ptr<rig_state> rig_status;          // Rig state containing live data and customized fields
+            powerstat_t power_status;                       // Whether the radio rig is electrically powered on or off
             hamlib_port_t port_details;                     // Information concerning details about RS232 ports, etc.
             ptt_t ptt_status;                               // PTT status
             split_t split_mode;                             // Whether 'Split Mode' is enabled or disabled
@@ -404,6 +415,8 @@ namespace AmateurRadio {
             std::string info_buf;                           // Hamlib information buffer
             GkConnType cat_conn_type;                       // The type of connection, whether USB, RS232, etc.
             GkConnType ptt_conn_type;                       // The type of connection, whether USB, RS232, etc.
+            std::string cat_conn_port;                      // The actual port address itself
+            std::string ptt_conn_port;                      // The actual port address itself
             std::string mm;                                 // Hamlib modulation mode
             rig_debug_level_e verbosity;                    // The debug level and verbosity of Hamlib
             com_baud_rates dev_baud_rate;                   // Communication device baud rate

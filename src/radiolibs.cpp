@@ -39,6 +39,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
 #include <ios>
+#include <list>
 #include <iostream>
 #include <exception>
 #include <utility>
@@ -280,89 +281,40 @@ libusb_context *RadioLibs::initUsbLib()
  * Boost C++ triboolean that signifies whether the port is active or not.
  * @see GekkoFyre::RadioLibs::detect_com_ports()
  */
-QMap<tstring, std::pair<tstring, boost::tribool>> RadioLibs::status_com_ports()
+std::list<GkComPort> RadioLibs::status_com_ports()
 {
-    QMap<tstring, std::pair<tstring, boost::tribool>> com_map;
-
-    #if defined(_MSC_VER) && (_MSC_VER > 1900)
-    #ifdef _WIN32
     try {
-        TCHAR lpTargetPath[5000]; // buffer to store the path of the COM ports
-        DWORD test;
-        bool gotPort = false; // in case the COM port is not found
+        std::list<GkComPort> com_map;
+        std::vector<serial::PortInfo> devices_found = serial::list_ports();
 
-        for (int i = 0; i < 255; i++) {
-            CString str;
-            str.Format(_T("%d"), i);
-            CString ComName = CString("COM") + CString(str); // Converting to COM0, COM1, COM2, etc.
+        for (const auto &port: devices_found) {
+            GkComPort com_struct;
+            com_struct.port_info = port;
 
-            test = QueryDosDevice(ComName, (LPSTR)lpTargetPath, 5000);
-            std::string key((LPCTSTR)ComName); // https://stackoverflow.com/questions/258050/how-to-convert-cstring-and-stdstring-stdwstring-to-each-other
-            std::string targetPathStr(lpTargetPath, strlen(lpTargetPath + 1));
-
-            // Test the return value and error if any
-            if (test != 0) { // QueryDosDevice returns zero if it didn't find an object
-                com_map.insert(key, std::make_pair(targetPathStr, true));
-                gotPort = true;
+            if (serial::Serial(com_struct.port_info.port).isOpen()) {
+                com_struct.is_open = true;
+            } else {
+                com_struct.is_open = false;
             }
 
-            if (::GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
-                // In-case the buffer got filled, increase size of the buffer.
-                lpTargetPath[10000]; // TODO: Fix this hack!
-                continue;
-            }
+            com_struct.def_stopbits = serial::Serial(com_struct.port_info.port).getStopbits();
+            com_struct.def_baudrate = serial::Serial(com_struct.port_info.port).getBaudrate();
 
-            if (!gotPort) {
-                // No active COM port found
-                com_map.insert(key, std::make_pair("", false));
-            }
-        }
-    } catch (const ATL::CAtlException &e) {
-        // https://docs.microsoft.com/en-us/cpp/atl/reference/debugging-and-error-reporting-global-functions?view=vs-2019
-        QMessageBox::warning(nullptr, tr("Error!"), tr("An issue was encountered whilst determining COM/Serial/RS-232 port status:\n\n%1")
-                             .arg(QString::number(AtlHresultFromWin32(e.m_hr))), QMessageBox::Ok);
-    }
-    #endif
-    #elif __linux__ || __MINGW32__
-    try {
-        // Scan through `/sys/class/tty` as it contains all the TTY-devices within the system
-        sys::error_code ec;
-        fs::path sys_dir = Filesystem::linux_sys_tty;
-        std::list<std::string> comList;
-        std::list<std::string> comList8250;
-        auto dirent = gkFileIo->boost_dir_iterator(sys_dir, ec);
-
-        if (ec) {
-            throw std::runtime_error(ec.message());
+            com_map.push_back(com_struct);
         }
 
-        for (const auto &device: dirent) {
-            fs::path device_stem = device.stem();
-            if (std::strcmp(device_stem.string().c_str(), "..") != 0) {
-                if (std::strcmp(device_stem.string().c_str(), ".") != 0) {
-                    // Construct full absolute file path
-                    fs::path device_dir = sys_dir;
-                    device_dir += device_stem;
-
-                    // Register the device
-                    registerComPort(comList, comList8250, device_dir);
-                }
-            }
-        }
-
-        // Only non-Serial-8250 has been added to comList without any further testing
-        // Actual Serial-8250 devices must be probed to check for validity
-        probe_serial8250_comports(comList, comList8250);
-
-        for (const auto &port: comList) {
-            com_map.insert(port, std::make_pair("", true));
-        }
+        return com_map;
     } catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+        #if defined(_MSC_VER) && (_MSC_VER > 1900)
+        HWND hwnd = nullptr;
+        gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), e.what(), MB_ICONERROR);
+        DestroyWindow(hwnd);
+        #else
+        gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+        #endif
     }
-    #endif
 
-    return com_map;
+    return std::list<GkComPort>();
 }
 
 /**
@@ -691,147 +643,166 @@ void RadioLibs::registerComPort(std::list<std::string> &comList, std::list<std::
 }
 
 /**
- * @brief RadioLibs::init_rig Initializes the struct, `GekkoFyre::AmateurRadio::Control::GkRadio`, and all of the values within, along
- * with the user's desired amateur radio rig of choice, including anything needed to power it up and enable communication between
+ * @brief RadioLibs::gkInitRadioRig Initializes the struct, `GekkoFyre::AmateurRadio::Control::GkRadio`, and all of the values within,
+ * along with the user's desired amateur radio rig of choice, including anything needed to power it up and enable communication between
  * computing device and the rig itself.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param radio_ptr The needed information to power up the user's desired amateur radio rig of choice.
  * @param usb_ptr A pointer which contains all the information on user's configured USB devices, if any.
- * @note Ref: HamLib <https://github.com/Hamlib/Hamlib/>.
+ * @note Ref: HamLib <https://github.com/Hamlib/Hamlib/>. Example: <https://github.com/Hamlib/Hamlib/blob/master/tests/example.c>
  */
-std::shared_ptr<GkRadio> RadioLibs::init_rig(std::shared_ptr<GkRadio> radio_ptr, std::shared_ptr<GkUsbPort> usb_ptr)
+std::shared_ptr<GkRadio> RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_ptr<GkUsbPort> usb_ptr)
 {
     std::mutex mtx_init_rig;
     std::lock_guard<std::mutex> lck_guard(mtx_init_rig);
 
-    try {
-        // https://github.com/Hamlib/Hamlib/blob/master/tests/example.c
-        // Set verbosity level
-        rig_set_debug(radio_ptr->verbosity);
+    // https://github.com/Hamlib/Hamlib/blob/master/tests/example.c
+    // Set verbosity level
+    rig_set_debug(radio_ptr->verbosity);
 
-        // Setup serial port, baud rate, etc.
-        fs::path slashes = "//./";
-        fs::path native_slash = slashes.make_preferred().native();
-        fs::path com_port_path;
-        #ifdef _WIN32
-        com_port_path = fs::path(slashes.string() + radio_ptr->rig_file);
-        #elif __linux__
-        com_port_path = radio_ptr->rig_file;
-        #endif
+    // Instantiate the rig
+    radio_ptr->rig = rig_init(radio_ptr->rig_model);
 
-        if (radio_ptr->rig_model < 1) { // No amateur radio rig has been configured and/or adequately detected!
-            radio_ptr->rig_file = com_port_path.string();
+    // Setup serial port, baud rate, etc.
+    fs::path slashes = "//./";
+    fs::path native_slash = slashes.make_preferred().native();
+    fs::path com_port_path;
+    #ifdef _WIN32
+    com_port_path = fs::path(slashes.string() + radio_ptr->rig_file);
+    #elif __linux__
+    com_port_path = radio_ptr->rig_file;
+    #endif
 
-            strncpy(radio_ptr->port_details.pathname, radio_ptr->rig_file.c_str(), FILPATHLEN - 1);
+    radio_ptr->rig_file = com_port_path.string();
 
-            int baud_rate = 9600;
-            int baud_rate_tmp = convertBaudRateInt(radio_ptr->dev_baud_rate);
-            if (baud_rate_tmp <= 115200 && baud_rate_tmp >= 9600) {
-                baud_rate = baud_rate_tmp;
-            }
-
-            if (radio_ptr->cat_conn_type == GkConnType::RS232 || radio_ptr->cat_conn_type == GkConnType::None) {
-                //
-                // RS232 or None
-                //
-                if (radio_ptr->port_details.type.rig != rig_port_t::RIG_PORT_SERIAL || radio_ptr->port_details.parm.serial.data_bits < 0 ||
-                        radio_ptr->port_details.parm.serial.stop_bits < 0) {
-                    throw std::invalid_argument(tr("Unable to initialize radio rig with RS232 connection!").toStdString());
-                }
-
-                radio_ptr->port_details.parm.serial.rate = baud_rate; // The BAUD Rate for the desired COM Port
-                radio_ptr->port_details.type.rig = convGkConnTypeToHamlib(radio_ptr->cat_conn_type);
-            } else if (radio_ptr->cat_conn_type == GkConnType::USB) {
-                //
-                // USB
-                //
-                if (usb_ptr->bus.empty() || usb_ptr->addr.empty()) {
-                    throw std::invalid_argument(tr("Unable to initialize radio rig with USB connection!").toStdString());
-                }
-
-                radio_ptr->port_details.parm.usb.vid = usb_ptr->usb_enum.vendor_id;
-                radio_ptr->port_details.parm.usb.pid = usb_ptr->usb_enum.product_id;
-                radio_ptr->port_details.parm.usb.conf = usb_ptr->usb_enum.conv_conf;
-                radio_ptr->port_details.parm.usb.iface = usb_ptr->usb_vers_3.interface_number;
-                radio_ptr->port_details.parm.usb.alt = usb_ptr->usb_vers_3.alternate_setting;
-            } else if (radio_ptr->cat_conn_type == GkConnType::Parallel) {
-                //
-                // Parallel
-                //
-                radio_ptr->port_details.parm.parallel.pin = -1; // TODO: Finish this section for Parallel connections!
-            } else {
-                throw std::invalid_argument(tr("Unable to detect connection type while initializing radio rig (i.e. 'none / unknown' was not an option)!").toStdString());
-            }
-
-            //
-            // Probe the given communications port, whether it be RS232, USB, GPIO, etc.
-            // With this information, provided a connection has been made successfully, we can infer the amateur radio
-            // rig that the user is making use of!
-            //
-            radio_ptr->rig_model = rig_probe(&radio_ptr->port_details);
-        }
-
-        // Instantiate the rig
-        radio_ptr->rig = rig_init(radio_ptr->rig_model);
-
-        if (!radio_ptr->rig) {
-            throw std::runtime_error(tr("Unknown radio rig: %1\n\nNote to developers: Please check the list of rigs.")
-                                     .arg(QString::number(radio_ptr->rig_model)).toStdString());
-        }
-
-        rig_debug(radio_ptr->verbosity, "Backend version: %s, Status: %s\n\n", radio_ptr->rig->caps->version, rig_strstatus(radio_ptr->rig->caps->status));
-
-        // Open our rig in question
-        radio_ptr->retcode = rig_open(radio_ptr->rig);
-        hamlibStatus(radio_ptr->retcode);
-
-        radio_ptr->is_open = true; // Set the flag that the aforementioned pointer has been initialized
-
-        if (rig_get_info(radio_ptr->rig) != nullptr) {
-            // Give me ID info, e.g., firmware version
-            radio_ptr->info_buf = rig_get_info(radio_ptr->rig);
-            std::cout << tr("Rig info: %1\n\n").arg(QString::fromStdString(radio_ptr->info_buf)).toStdString();
-        }
-
-        //
-        // IMPORTANT!!!
-        // Note from Hamlib Developers: As a general practice, we should check to see if a given function
-        // is within the rig's capabilities before calling it, but we are simplifying here. Also, we should
-        // check each call's returned status in case of error.
-        //
-
-        // Main VFO frequency
-        radio_ptr->status = rig_get_freq(radio_ptr->rig, RIG_VFO_CURR, &radio_ptr->freq);
-        std::cout << tr("Main VFO Frequency: %1\n\n").arg(QString::number(radio_ptr->freq)).toStdString();
-
-        // Current mode
-        radio_ptr->status = rig_get_mode(radio_ptr->rig, RIG_VFO_CURR, &radio_ptr->mode, &radio_ptr->width);
-
-        // Determine the mode of modulation that's being currently used, and output as a textual value
-        radio_ptr->mm = hamlibModulEnumToStr(radio_ptr->mode).toStdString();
-
-        std::cout << tr("Current mode: %1, width is %2\n\n").arg(QString::fromStdString(radio_ptr->mm)).arg(QString::number(radio_ptr->width)).toStdString();
-
-        // Rig power output
-        radio_ptr->status = rig_get_level(radio_ptr->rig, RIG_VFO_CURR, RIG_LEVEL_RFPOWER, &radio_ptr->power);
-        std::cout << tr("RF Power relative setting: %%1 (0.0 - 1.0)\n\n").arg(QString::number(radio_ptr->power.f)).toStdString();
-
-        // Convert power reading to watts
-        radio_ptr->status = rig_power2mW(radio_ptr->rig, &radio_ptr->mwpower, radio_ptr->power.f, radio_ptr->freq, radio_ptr->mode);
-        std::cout << tr("RF Power calibrated: %1 watts\n\n").arg(QString::number(radio_ptr->mwpower / 1000)).toStdString();
-
-        // Raw and calibrated S-meter values
-        radio_ptr->status = rig_get_level(radio_ptr->rig, RIG_VFO_CURR, RIG_LEVEL_RAWSTR, &radio_ptr->raw_strength);
-        std::cout << tr("Raw receive strength: %1\n\n").arg(QString::number(radio_ptr->raw_strength.i)).toStdString();
-
-        radio_ptr->isz = radio_ptr->rig->caps->str_cal.size; // TODO: No idea what this is for?
-
-        radio_ptr->status = rig_get_strength(radio_ptr->rig, RIG_VFO_CURR, &radio_ptr->strength);
-
-        return radio_ptr;
-    } catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+    int baud_rate = 9600;
+    int baud_rate_tmp = convertBaudRateInt(radio_ptr->dev_baud_rate);
+    if (baud_rate_tmp <= 115200 && baud_rate_tmp >= 9600) {
+        baud_rate = baud_rate_tmp;
     }
+
+    if (radio_ptr->cat_conn_type == GkConnType::RS232) {
+        //
+        // RS232
+        //
+        radio_ptr->rig->state.rigport.parm.serial.data_bits = radio_ptr->port_details.parm.serial.data_bits;
+        radio_ptr->rig->state.rigport.parm.serial.stop_bits = radio_ptr->port_details.parm.serial.stop_bits;
+        radio_ptr->rig->state.rigport.parm.serial.rate = baud_rate; // The BAUD Rate for the desired COM Port
+        radio_ptr->port_details.type.rig = convGkConnTypeToHamlib(radio_ptr->cat_conn_type);
+
+        //
+        // Determine the port necessary and let Hamlib know about it!
+        //
+        if (!radio_ptr->cat_conn_port.empty()) {
+            strncpy(radio_ptr->rig->state.rigport.pathname, radio_ptr->cat_conn_port.c_str(), FILPATHLEN - 1);
+        }
+    } else if (radio_ptr->cat_conn_type == GkConnType::USB) {
+        //
+        // USB
+        //
+        if (usb_ptr->bus.empty() || usb_ptr->addr.empty()) {
+            throw std::runtime_error(tr("Unable to initialize radio rig with USB connection!").toStdString());
+        }
+
+        radio_ptr->rig->state.rigport.parm.usb.vid = usb_ptr->usb_enum.vendor_id;
+        radio_ptr->rig->state.rigport.parm.usb.pid = usb_ptr->usb_enum.product_id;
+        radio_ptr->rig->state.rigport.parm.usb.conf = usb_ptr->usb_enum.conv_conf;
+        radio_ptr->rig->state.rigport.parm.usb.iface = usb_ptr->usb_vers_3.interface_number;
+        radio_ptr->rig->state.rigport.parm.usb.alt = usb_ptr->usb_vers_3.alternate_setting;
+
+        //
+        // Determine the port necessary and let Hamlib know about it!
+        //
+        if (!radio_ptr->cat_conn_port.empty()) {
+            strncpy(radio_ptr->rig->state.rigport.pathname, radio_ptr->cat_conn_port.c_str(), FILPATHLEN - 1);
+        }
+    } else if (radio_ptr->cat_conn_type == GkConnType::Parallel) {
+        //
+        // Parallel
+        //
+        radio_ptr->rig->state.rigport.parm.parallel.pin = -1; // TODO: Finish this section for Parallel connections!
+
+        //
+        // Determine the port necessary and let Hamlib know about it!
+        //
+        // strncpy(radio_ptr->rig->state.rigport.pathname, radio_ptr, FILPATHLEN - 1);
+    } else {
+        throw std::runtime_error(tr("Unable to detect connection type while initializing radio rig (i.e. 'none / unknown' was not an option)!").toStdString());
+    }
+
+    if (radio_ptr->rig_model < 1) { // No amateur radio rig has been configured and/or adequately detected!
+        //
+        // Probe the given communications port, whether it be RS232, USB, GPIO, etc.
+        // With this information, provided a connection has been made successfully, we can infer the amateur radio
+        // rig that the user is making use of!
+        //
+        radio_ptr->rig_model = rig_probe(&radio_ptr->port_details);
+    }
+
+    if (!radio_ptr->rig) {
+        throw std::runtime_error(tr("Unknown radio rig: %1\n\nNote to developers: Please check the list of rigs.")
+                                 .arg(QString::number(radio_ptr->rig_model)).toStdString());
+    }
+
+    rig_debug(radio_ptr->verbosity, "Backend version: %s, Status: %s\n\n", radio_ptr->rig->caps->version, rig_strstatus(radio_ptr->rig->caps->status));
+
+    // Open our rig in question
+    radio_ptr->retcode = rig_open(radio_ptr->rig);
+    hamlibStatus(radio_ptr->retcode);
+
+    //
+    // Power up the rig, electrically, if at all possible!
+    //
+    rig_get_powerstat(radio_ptr->rig, &radio_ptr->power_status);
+    if (radio_ptr->power_status == powerstat_t::RIG_POWER_OFF) {
+        radio_ptr->retcode = rig_set_powerstat(radio_ptr->rig, powerstat_t::RIG_POWER_ON);
+        hamlibStatus(radio_ptr->retcode);
+    }
+
+    radio_ptr->is_open = true; // Set the flag that the aforementioned pointer has been initialized
+
+    if (rig_get_info(radio_ptr->rig) != nullptr) {
+        // Give me ID info, e.g., firmware version
+        radio_ptr->info_buf = rig_get_info(radio_ptr->rig);
+        std::cout << tr("Rig info: %1\n\n").arg(QString::fromStdString(radio_ptr->info_buf)).toStdString();
+    }
+
+    //
+    // IMPORTANT!!!
+    // Note from Hamlib Developers: As a general practice, we should check to see if a given function
+    // is within the rig's capabilities before calling it, but we are simplifying here. Also, we should
+    // check each call's returned status in case of error.
+    //
+
+    // Main VFO frequency
+    radio_ptr->status = rig_get_freq(radio_ptr->rig, RIG_VFO_CURR, &radio_ptr->freq);
+    std::cout << tr("Main VFO Frequency: %1\n\n").arg(QString::number(radio_ptr->freq)).toStdString();
+
+    // Current mode
+    radio_ptr->status = rig_get_mode(radio_ptr->rig, RIG_VFO_CURR, &radio_ptr->mode, &radio_ptr->width);
+
+    // Determine the mode of modulation that's being currently used, and output as a textual value
+    radio_ptr->mm = hamlibModulEnumToStr(radio_ptr->mode).toStdString();
+
+    std::cout << tr("Current mode: %1, width is %2\n\n").arg(QString::fromStdString(radio_ptr->mm)).arg(QString::number(radio_ptr->width)).toStdString();
+
+    // Rig power output
+    radio_ptr->status = rig_get_level(radio_ptr->rig, RIG_VFO_CURR, RIG_LEVEL_RFPOWER, &radio_ptr->power);
+    std::cout << tr("RF Power relative setting: %%1 (0.0 - 1.0)\n\n").arg(QString::number(radio_ptr->power.f)).toStdString();
+
+    // Convert power reading to watts
+    radio_ptr->status = rig_power2mW(radio_ptr->rig, &radio_ptr->mwpower, radio_ptr->power.f, radio_ptr->freq, radio_ptr->mode);
+    std::cout << tr("RF Power calibrated: %1 watts\n\n").arg(QString::number(radio_ptr->mwpower / 1000)).toStdString();
+
+    // Raw and calibrated S-meter values
+    radio_ptr->status = rig_get_level(radio_ptr->rig, RIG_VFO_CURR, RIG_LEVEL_RAWSTR, &radio_ptr->raw_strength);
+    std::cout << tr("Raw receive strength: %1\n\n").arg(QString::number(radio_ptr->raw_strength.i)).toStdString();
+
+    radio_ptr->isz = radio_ptr->rig->caps->str_cal.size; // TODO: No idea what this is for?
+
+    radio_ptr->status = rig_get_strength(radio_ptr->rig, RIG_VFO_CURR, &radio_ptr->strength);
+
+    return radio_ptr;
 
     return std::shared_ptr<GkRadio>();
 }

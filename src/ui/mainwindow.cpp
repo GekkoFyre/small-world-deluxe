@@ -222,6 +222,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                  this, SLOT(modifyRigInMemory(const rig_model_t &, const bool &)));
 
                 // Initialize the Radio Database pointer!
+                gkRadioPtr = std::make_shared<GkRadio>();
                 gkRadioPtr = readRadioSettings();
                 emit addRigInUse(gkRadioPtr->rig_model);
 
@@ -611,7 +612,7 @@ bool MainWindow::radioInitStart()
             //
             gkRadioPtr->is_open = false;
             std::future_status status;
-            rig_thread = std::async(std::launch::async, &RadioLibs::init_rig, gkRadioLibs, gkRadioPtr, gkUsbPortPtr);
+            rig_thread = std::async(std::launch::async, &RadioLibs::gkInitRadioRig, gkRadioLibs, gkRadioPtr, gkUsbPortPtr);
             do {
                 status = rig_thread.wait_for(std::chrono::seconds(5));
                 if (status == std::future_status::timeout) {
@@ -631,7 +632,13 @@ bool MainWindow::radioInitStart()
             Q_UNUSED(e);
             return false;
         } catch (const std::runtime_error &e) {
-            QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
+            #if defined(_MSC_VER) && (_MSC_VER > 1900)
+            HWND hwnd = nullptr;
+            gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), tr("[ Hamlib ] %1").arg(e.what()), MB_ICONERROR);
+            DestroyWindow(hwnd);
+            #else
+            gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("[ Hamlib ] %1").arg(e.what()));
+            #endif
             return false;
         }
     } catch (const std::exception &e) {
@@ -692,11 +699,41 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
         if (!catConnType.isNull() || !catConnType.isEmpty()) {
             int conv_cat_conn_type = catConnType.toInt();
             gk_radio_tmp->cat_conn_type = GkDb->convConnTypeToEnum(conv_cat_conn_type);
+
+            switch (gk_radio_tmp->cat_conn_type) {
+            case GkConnType::RS232:
+                emit changePortType(GekkoFyre::AmateurRadio::GkConnType::RS232, true);
+                break;
+            case GkConnType::USB:
+                emit changePortType(GekkoFyre::AmateurRadio::GkConnType::USB, true);
+                break;
+            case GkConnType::Parallel:
+                emit changePortType(GekkoFyre::AmateurRadio::GkConnType::Parallel, true);
+                break;
+            default:
+                emit changePortType(GekkoFyre::AmateurRadio::GkConnType::None, true);
+                break;
+            }
         }
 
         if (!pttConnType.isNull() || !pttConnType.isEmpty()) {
             int conv_ptt_conn_type = pttConnType.toInt();
             gk_radio_tmp->ptt_conn_type = GkDb->convConnTypeToEnum(conv_ptt_conn_type);
+
+            switch (gk_radio_tmp->ptt_conn_type) {
+            case GkConnType::RS232:
+                emit changePortType(GekkoFyre::AmateurRadio::GkConnType::RS232, false);
+                break;
+            case GkConnType::USB:
+                emit changePortType(GekkoFyre::AmateurRadio::GkConnType::USB, false);
+                break;
+            case GkConnType::Parallel:
+                emit changePortType(GekkoFyre::AmateurRadio::GkConnType::Parallel, false);
+                break;
+            default:
+                emit changePortType(GekkoFyre::AmateurRadio::GkConnType::None, false);
+                break;
+            }
         }
 
         if (!comBaudRate.isNull() || !comBaudRate.isEmpty()) {
@@ -1450,9 +1487,37 @@ void MainWindow::updateProgressBar(const bool &enable, const size_t &min, const 
 void MainWindow::selectedPortType(const GekkoFyre::AmateurRadio::GkConnType &rig_conn_type, const bool &is_cat_mode)
 {
     if (is_cat_mode) {
+        QString comDeviceCat = "";
+        if (rig_conn_type == GkConnType::RS232) {
+            comDeviceCat = GkDb->read_rig_settings_comms(radio_cfg::ComDeviceCat, GkConnType::RS232);
+        } else if (rig_conn_type == GkConnType::USB) {
+            comDeviceCat = GkDb->read_rig_settings_comms(radio_cfg::UsbDeviceCat, GkConnType::USB);
+        } else if (rig_conn_type == GkConnType::Parallel) {
+            comDeviceCat = GkDb->read_rig_settings_comms(radio_cfg::ParallelCat, GkConnType::Parallel);
+        } else {
+            gkRadioPtr->cat_conn_type = GkConnType::None;
+            gkRadioPtr->cat_conn_port = "";
+            return;
+        }
+
         gkRadioPtr->cat_conn_type = rig_conn_type;
+        gkRadioPtr->cat_conn_port = comDeviceCat.toStdString();
     } else {
+        QString comDevicePtt = "";
+        if (rig_conn_type == GkConnType::RS232) {
+            comDevicePtt = GkDb->read_rig_settings_comms(radio_cfg::ComDevicePtt, GkConnType::RS232);
+        } else if (rig_conn_type == GkConnType::USB) {
+            comDevicePtt = GkDb->read_rig_settings_comms(radio_cfg::UsbDevicePtt, GkConnType::USB);
+        } else if (rig_conn_type == GkConnType::Parallel) {
+            comDevicePtt = GkDb->read_rig_settings_comms(radio_cfg::ParallelPtt, GkConnType::Parallel);
+        } else {
+            gkRadioPtr->ptt_conn_type = GkConnType::None;
+            gkRadioPtr->ptt_conn_port = "";
+            return;
+        }
+
         gkRadioPtr->ptt_conn_type = rig_conn_type;
+        gkRadioPtr->ptt_conn_port = comDevicePtt.toStdString();
     }
 
     return;
