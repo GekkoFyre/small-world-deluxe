@@ -162,6 +162,7 @@ signals:
     void usbPortsDisabled(const bool &active);
     void comPortsDisabled(const bool &active);
     void changePortType(const GekkoFyre::AmateurRadio::GkConnType &rig_conn_type, const bool &is_cat_mode);
+    void gatherPortType(const bool &is_cat_mode);
     void addRigInUse(const rig_model_t &rig_model_update);
     void modifyRigInUse(const rig_model_t &rig_model_update, const bool &del_rig);
 
