@@ -676,6 +676,9 @@ std::shared_ptr<GkRadio> RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radi
     // Set verbosity level
     rig_set_debug(radio_ptr->verbosity);
 
+    // Instantiate the rig
+    radio_ptr->rig = rig_init(radio_ptr->rig_model);
+
     // Setup serial port, baud rate, etc.
     fs::path slashes = "//./";
     fs::path native_slash = slashes.make_preferred().native();
@@ -751,9 +754,6 @@ std::shared_ptr<GkRadio> RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radi
         //
         radio_ptr->rig_model = rig_probe(&radio_ptr->port_details);
     }
-
-    // Instantiate the rig
-    radio_ptr->rig = rig_init(radio_ptr->rig_model);
 
     if (!radio_ptr->rig) {
         throw std::runtime_error(tr("Unknown radio rig: %1\n\nNote to developers: Please check the list of rigs.")

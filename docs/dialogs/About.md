@@ -4,12 +4,12 @@ Copyright © 2006 to 2019 – [GekkoFyre Networks](https://gekkofyre.io/), All R
 
 #### Authors
 
-- [Phobos Aryn'dythyrn D'thorga](https://git.gekkofyre.io/phobos-dthorga) [ Lead Programmer / Author ]
+- [Phobos Aryn'dythyrn D'thorga](https://code.gekkofyre.io/phobos-dthorga) [ Lead Programmer / Author ]
 - Kenric D'Souza [ Software Engineering Consultant ]
 
 #### Credits, Contributors & Libraries
 
-Please see [CREDITS](https://git.gekkofyre.io/amateur-radio/dekoder-for-morse/blob/develop/CREDITS) and [CONTRIBUTING.md](https://git.gekkofyre.io/amateur-radio/dekoder-for-morse/blob/develop/CONTRIBUTING.md) just in-case anything is missing below.
+Please see [CREDITS](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/blob/develop/CREDITS) and [CONTRIBUTING.md](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/blob/develop/CONTRIBUTING.md) just in-case anything is missing below.
 
 `Copyright © 2018 The Qt Company Ltd.`
 
@@ -27,5 +27,5 @@ Please see [CREDITS](https://git.gekkofyre.io/amateur-radio/dekoder-for-morse/bl
 
 #### Licensing & Legalese
 
-Please see the [LICENSE](https://git.gekkofyre.io/amateur-radio/dekoder-for-morse/blob/develop/LICENSE) file within our GitLab repository for all licensing and legal matters.
+Please see the [LICENSE](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/blob/develop/LICENSE) file within our GitLab repository for all licensing and legal matters.
 

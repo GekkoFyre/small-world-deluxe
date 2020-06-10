@@ -222,8 +222,8 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         //
         // RS-232 Settings
         //
-        tstring chosen_com_port_cat;
-        tstring chosen_com_port_ptt;
+        std::string chosen_com_port_cat;
+        std::string chosen_com_port_ptt;
         for (const auto &sel_port: available_com_ports.toStdMap()) {
             for (const auto &avail_port: status_com_ports) {
                 // List out the current serial ports in use
@@ -232,7 +232,8 @@ void DialogSettings::on_pushButton_submit_config_clicked()
                         //
                         // CAT Control
                         //
-                        chosen_com_port_cat = sel_port.first; // The chosen serial device uses its own name as a reference
+                        chosen_com_port_cat = avail_port.port_info.port; // The chosen serial device uses its own name as a reference
+                        break;
                     }
                 }
 
@@ -241,7 +242,8 @@ void DialogSettings::on_pushButton_submit_config_clicked()
                         //
                         // PTT Method
                         //
-                        chosen_com_port_ptt = sel_port.first; // The chosen serial device uses its own name as a reference
+                        chosen_com_port_ptt = avail_port.port_info.port; // The chosen serial device uses its own name as a reference
+                        break;
                     }
                 }
             }
@@ -406,15 +408,10 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         enum_force_ctrl_lines_dtr = ui->comboBox_force_ctrl_lines_dtr->currentIndex();
         enum_force_ctrl_lines_rts = ui->comboBox_force_ctrl_lines_rts->currentIndex();
 
-        #ifdef _UNICODE
-        gkDekodeDb->write_rig_settings(QString::fromStdWString(chosen_com_port_cat), radio_cfg::ComDeviceCat);
-        gkDekodeDb->write_rig_settings(QString::fromStdWString(chosen_com_port_ptt), radio_cfg::ComDevicePtt);
-        #else
         gkDekodeDb->write_rig_settings_comms(QString::fromStdString(chosen_com_port_cat), radio_cfg::ComDeviceCat, GkConnType::RS232);
         gkDekodeDb->write_rig_settings_comms(QString::fromStdString(chosen_com_port_ptt), radio_cfg::ComDevicePtt, GkConnType::RS232);
         gkDekodeDb->write_rig_settings_comms(QString::fromStdString(chosen_usb_port_cat), radio_cfg::UsbDeviceCat, GkConnType::USB);
         gkDekodeDb->write_rig_settings_comms(QString::fromStdString(chosen_usb_port_ptt), radio_cfg::UsbDevicePtt, GkConnType::USB);
-        #endif
 
         using namespace Database::Settings;
         gkDekodeDb->write_rig_settings(QString::number(brand), radio_cfg::RigBrand);
@@ -800,24 +797,26 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
         ui->comboBox_ptt_method_port->insertItem(0, tr("N/A"), tr("N/A"));
 
         if (!com_ports.empty()) {
-            unsigned short counter = 0;
+            unsigned short cat_counter = 0;
+            unsigned short ptt_counter = 0;
             emit comPortsDisabled(true); // Enable all GUI widgets relating to COM/Serial Ports
             for (const auto &port: com_ports) {
-                ++counter;
+                ++cat_counter;
+                ++ptt_counter;
 
                 //
                 // CAT Control
                 //
-                ui->comboBox_com_port->insertItem(counter, QString::fromStdString(port.port_info.port),
+                ui->comboBox_com_port->insertItem(cat_counter, QString::fromStdString(port.port_info.port),
                                                   QString::fromStdString(port.port_info.port));
+                available_com_ports.insert(port.target_path, cat_counter);
 
                 //
                 // PTT Method
                 //
-                ui->comboBox_ptt_method_port->insertItem(counter, QString::fromStdString(port.port_info.port),
+                ui->comboBox_ptt_method_port->insertItem(ptt_counter, QString::fromStdString(port.port_info.port),
                                                          QString::fromStdString(port.port_info.port));
-
-                available_com_ports.insert(port.target_path, counter);
+                available_com_ports.insert(port.target_path, ptt_counter);
             }
 
             //
