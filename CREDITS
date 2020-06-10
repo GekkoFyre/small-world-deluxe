@@ -38,6 +38,10 @@ PortAudio by the PortAudio community
     <http://www.portaudio.com/>
         The MIT License
 
+Serial by William Woodall
+    <http://wjwwood.io/serial/>
+        The MIT License
+
 LibUSB by Hans de Goede & Chris Dickens et al.
     <https://github.com/libusb/libusb>
         GNU Lesser General Public License (LGPL, version 2.1)
@@ -69,6 +73,10 @@ libSDL2 by Cliff Matthews & Gabriel Jacobo et al.
 Qwt by Uwe Rathmann & Josef Wilgen et al.
     <https://qwt.sourceforge.io/>
         GNU Lesser General Public License (LGPL, version 2.1)
+
+SingleApplication by Itay Grudev
+    <https://github.com/itay-grudev/SingleApplication>
+        The MIT License
 
 getopt for Microsoft Windows by Chunde
     <https://github.com/Chunde/getopt-for-windows>

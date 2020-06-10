@@ -41,6 +41,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/locale.hpp>
 #include <boost/locale/generator.hpp>
+#include <singleapplication.h>
 #include <exception>
 #include <iostream>
 #include <cstdlib>
@@ -85,7 +86,10 @@ int main(int argc, char *argv[])
     }
 
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-    QApplication a(argc, argv);
+    SingleApplication app(argc, argv, false, SingleApplication::Mode::System);
+    if (app.isSecondary()) {
+        app.exit();
+    }
 
     QCoreApplication::setOrganizationName(GekkoFyre::General::companyName);
     QCoreApplication::setOrganizationDomain(GekkoFyre::General::codeRepository);
@@ -117,5 +121,5 @@ int main(int argc, char *argv[])
     MainWindow w;
     w.show();
 
-    return a.exec();
+    return app.exec();
 }

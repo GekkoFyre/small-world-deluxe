@@ -73,15 +73,15 @@ public:
     GekkoFyre::AmateurRadio::com_baud_rates convertBaudRateToEnum(const int &baud_rate_sel);
     GekkoFyre::AmateurRadio::com_baud_rates convertBaudRateIntToEnum(const int &baud_rate);
     int convertBaudRateFromEnum(const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate);
-    QMap<tstring, std::pair<tstring, boost::tribool>> status_com_ports();
+    std::list<Database::Settings::GkComPort> status_com_ports();
     QString translateBandsToStr(const AmateurRadio::bands &band);
     QString hamlibModulEnumToStr(const rmode_t &modulation);
 
     GekkoFyre::AmateurRadio::GkConnType convGkConnTypeToEnum(const QString &conn_type);
     rig_port_e convGkConnTypeToHamlib(const GekkoFyre::AmateurRadio::GkConnType &conn_type);
 
-    std::shared_ptr<AmateurRadio::Control::GkRadio> init_rig(std::shared_ptr<AmateurRadio::Control::GkRadio> radio_ptr,
-                                                             std::shared_ptr<Database::Settings::GkUsbPort> usb_ptr);
+    std::shared_ptr<AmateurRadio::Control::GkRadio> gkInitRadioRig(std::shared_ptr<AmateurRadio::Control::GkRadio> radio_ptr,
+                                                                   std::shared_ptr<Database::Settings::GkUsbPort> usb_ptr);
 
     libusb_context *initUsbLib();
     QMap<std::string, Database::Settings::GkUsbPort> enumUsbDevices(libusb_context *usb_ctx_ptr);

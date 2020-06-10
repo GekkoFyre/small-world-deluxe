@@ -372,6 +372,13 @@ if(GFYRE_BUILD_CODEC2)
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/codec2/misc")
 endif(GFYRE_BUILD_CODEC2)
 
+#
+# SingleApplication
+# https://github.com/itay-grudev/SingleApplication
+#
+set(QAPPLICATION_CLASS QApplication CACHE STRING "Inheritance class for SingleApplication")
+add_subdirectory(src/contrib/SingleApplication)
+
 # set up a mapping so that the Release configuration for the Qt imported target is
 # used in the COVERAGE CMake configuration.
 set_target_properties(Qt5::Core PROPERTIES MAP_IMPORTED_CONFIG_COVERAGE "RELEASE")
@@ -409,16 +416,20 @@ set(GALAXY_UI_CPP
     src/gk_cli.cpp
     src/gk_modem.cpp
     src/contrib/getopt.c
-    src/contrib/RS232/rs232.c)
+    src/contrib/serial/src/serial.cc)
 
 if(WIN32 OR MSYS OR MINGW)
     set(GALAXY_UI_CPP
         ${GALAXY_UI_CPP}
-        src/string_funcs_windows.cpp)
+        src/string_funcs_windows.cpp
+        src/contrib/serial/src/impl/list_ports/list_ports_win.cc
+        src/contrib/serial/src/impl/win.cc)
 elseif(LINUX)
     set(GALAXY_UI_CPP
         ${GALAXY_UI_CPP}
-        src/string_funcs_linux.cpp)
+        src/string_funcs_linux.cpp
+        src/contrib/serial/src/impl/list_ports/list_ports_linux.cc
+        src/contrib/serial/src/impl/unix.cc)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()
@@ -450,16 +461,19 @@ set(GALAXY_SRC_HEADERS
     src/gk_cli.hpp
     src/gk_modem.hpp
     src/contrib/getopt.h
-    src/contrib/RS232/rs232.h)
+    src/contrib/serial/include/serial/v8stdint.h
+    src/contrib/serial/include/serial/serial.h)
 
 if(WIN32 OR MSYS OR MINGW)
     set(GALAXY_SRC_HEADERS
         ${GALAXY_SRC_HEADERS}
-        src/string_funcs_windows.hpp)
+        src/string_funcs_windows.hpp
+        src/contrib/serial/include/serial/impl/win.h)
 elseif(LINUX)
     set(GALAXY_SRC_HEADERS
         ${GALAXY_SRC_HEADERS}
-        src/string_funcs_linux.hpp)
+        src/string_funcs_linux.hpp
+        src/contrib/serial/include/serial/impl/unix.h)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()
@@ -542,7 +556,7 @@ if(GFYRE_BUILD_SHARED)
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
-target_link_libraries(galaxy Qt5::Widgets Qt5::Core Qt5::Gui Qt5::PrintSupport Threads::Threads ${LIBS})
+target_link_libraries(galaxy Qt5::Widgets Qt5::Core Qt5::Gui Qt5::PrintSupport Threads::Threads SingleApplication::SingleApplication ${LIBS})
 
 # rcc -no-compress -binary smallworld_res.qrc -o smallworld_res.rcc
 qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)

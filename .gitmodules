@@ -7,3 +7,6 @@
 [submodule "src/contrib/jtdx"]
 	path = src/contrib/jtdx
 	url = https://github.com/jtdx-project/jtdx.git
+[submodule "src/contrib/SingleApplication"]
+	path = src/contrib/SingleApplication
+	url = https://github.com/itay-grudev/SingleApplication.git

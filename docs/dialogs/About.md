@@ -4,16 +4,28 @@ Copyright © 2006 to 2019 – [GekkoFyre Networks](https://gekkofyre.io/), All R
 
 #### Authors
 
-- [Phobos Aryn'dythyrn D'thorga](https://git.gekkofyre.io/phobos-dthorga) [ Lead Programmer / Author ]
+- [Phobos Aryn'dythyrn D'thorga](https://code.gekkofyre.io/phobos-dthorga) [ Lead Programmer / Author ]
 - Kenric D'Souza [ Software Engineering Consultant ]
 
 #### Credits, Contributors & Libraries
 
-Please see [CREDITS](https://git.gekkofyre.io/amateur-radio/dekoder-for-morse/blob/develop/CREDITS) and [CONTRIBUTING.md](https://git.gekkofyre.io/amateur-radio/dekoder-for-morse/blob/develop/CONTRIBUTING.md) just in-case anything is missing below.
+Please see [CREDITS](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/blob/develop/CREDITS) and [CONTRIBUTING.md](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/blob/develop/CONTRIBUTING.md) just in-case anything is missing below.
 
-`<insert legalese from third-party libraries>`
+`Copyright © 2018 The Qt Company Ltd.`
+
+`Boost Software -- Copyright © 1998 - 2005 Beman Dawes, David Abrahams. Copyright © 2004 - 2007 Rene Rivera.`
+
+`Hamlib (Ham Radio Control Libraries) -- Copyright © 2000 - 2001 Frank Singleton and Stephane Fillod. Copyright © 2000 - 2012 The Hamlib Group.`
+
+`PortAudio Portable Real-Time Audio Library -- Copyright © 1999 - 2011 Ross Bencina and Phil Burk.`
+
+`CMake - Cross Platform Makefile Generator -- Copyright © 2000 - 2020 Kitware, Inc. and Contributors.`
+
+`Serial -- Copyright © 2012 William Woodall and John Harrison.`
+
+`SingleApplication -- Copyright © 2015 - 2020 Itay Grudev.`
 
 #### Licensing & Legalese
 
-Please see the [LICENSE](https://git.gekkofyre.io/amateur-radio/dekoder-for-morse/blob/develop/LICENSE) file within our GitLab repository for all licensing and legal matters.
+Please see the [LICENSE](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/blob/develop/LICENSE) file within our GitLab repository for all licensing and legal matters.
 
