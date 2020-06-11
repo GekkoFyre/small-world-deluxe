@@ -58,6 +58,15 @@
 #include "src/string_funcs_linux.hpp"
 #endif
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
+#ifdef __MINGW32__
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_stdinc.h>
+#endif
+
 namespace GekkoFyre {
 
 class RadioLibs : public QObject {
@@ -80,14 +89,15 @@ public:
     GekkoFyre::AmateurRadio::GkConnType convGkConnTypeToEnum(const QString &conn_type);
     rig_port_e convGkConnTypeToHamlib(const GekkoFyre::AmateurRadio::GkConnType &conn_type);
 
-    std::shared_ptr<AmateurRadio::Control::GkRadio> gkInitRadioRig(std::shared_ptr<AmateurRadio::Control::GkRadio> radio_ptr,
-                                                                   std::shared_ptr<Database::Settings::GkUsbPort> usb_ptr);
+    void gkInitRadioRig(std::shared_ptr<AmateurRadio::Control::GkRadio> radio_ptr, std::shared_ptr<Database::Settings::GkUsbPort> usb_ptr);
 
     libusb_context *initUsbLib();
     QMap<std::string, Database::Settings::GkUsbPort> enumUsbDevices(libusb_context *usb_ctx_ptr);
 
 signals:
     void gatherPortType(const bool &is_cat_mode);
+    void disconnectRigInUse(RIG *rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
+    void updateRadioPtr(const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
 
 private:
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
@@ -102,6 +112,12 @@ private:
     static void probe_serial8250_comports(std::list<std::string> &comList, const std::list<std::string> &comList8250);
     static void registerComPort(std::list<std::string> &comList, std::list<std::string> &comList8250,
                                 const boost::filesystem::path &dir);
+
+    #ifdef _WIN32
+    bool modalDlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon);
+    #elif __linux__ || __MINGW32__
+    bool modalDlgBoxLinux(Uint32 flags, const QString &title, const QString &msgTxt);
+    #endif
 
     template <class T>
     void removeDuplicates(std::vector<T> &vec) {

@@ -47,6 +47,13 @@
 #include <sstream>
 #include <QMessageBox>
 
+#ifdef _WIN32
+#include <stringapiset.h>
+#elif __linux__ || __MINGW32__
+#include <SDL2/SDL_video.h>
+#include <SDL2/SDL_messagebox.h>
+#endif
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -301,10 +308,10 @@ std::list<GkComPort> RadioLibs::status_com_ports()
                 } catch (const std::exception &e) {
                     #if defined(_MSC_VER) && (_MSC_VER > 1900)
                     HWND hwnd = nullptr;
-                    gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), e.what(), MB_ICONERROR);
+                    modalDlgBoxOk(hwnd, tr("Error!"), e.what(), MB_ICONERROR);
                     DestroyWindow(hwnd);
                     #else
-                    gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+                    modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
                     #endif
 
                     //
@@ -336,10 +343,10 @@ std::list<GkComPort> RadioLibs::status_com_ports()
     } catch (const std::exception &e) {
         #if defined(_MSC_VER) && (_MSC_VER > 1900)
         HWND hwnd = nullptr;
-        gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), e.what(), MB_ICONERROR);
+        modalDlgBoxOk(hwnd, tr("Error!"), e.what(), MB_ICONERROR);
         DestroyWindow(hwnd);
         #else
-        gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+        modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
         #endif
     }
 
@@ -671,6 +678,33 @@ void RadioLibs::registerComPort(std::list<std::string> &comList, std::list<std::
     return;
 }
 
+#ifdef _WIN32
+bool RadioLibs::modalDlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon)
+{
+    // TODO: Make this dialog modal
+    std::mutex mtx_modal_dlg_box;
+    std::lock_guard<std::mutex> lck_guard(mtx_modal_dlg_box);
+    int msgBoxId = MessageBoxA(hwnd, msgTxt.toStdString().c_str(), title.toStdString().c_str(), icon | MB_OK);
+
+    switch (msgBoxId) {
+    case IDOK:
+        return true;
+    default:
+        return false;
+    }
+
+    return false;
+}
+#elif __linux__ || __MINGW32__
+bool RadioLibs::modalDlgBoxLinux(Uint32 flags, const QString &title, const QString &msgTxt)
+{
+    SDL_Window *sdlWindow = SDL_CreateWindow(General::productName, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, DLG_BOX_WINDOW_WIDTH, DLG_BOX_WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
+    int ret = SDL_ShowSimpleMessageBox(flags, title.toStdString().c_str(), msgTxt.toStdString().c_str(), sdlWindow);
+    SDL_DestroyWindow(sdlWindow);
+    return ret;
+}
+#endif
+
 /**
  * @brief RadioLibs::gkInitRadioRig Initializes the struct, `GekkoFyre::AmateurRadio::Control::GkRadio`, and all of the values within,
  * along with the user's desired amateur radio rig of choice, including anything needed to power it up and enable communication between
@@ -680,7 +714,7 @@ void RadioLibs::registerComPort(std::list<std::string> &comList, std::list<std::
  * @param usb_ptr A pointer which contains all the information on user's configured USB devices, if any.
  * @note Ref: HamLib <https://github.com/Hamlib/Hamlib/>. Example: <https://github.com/Hamlib/Hamlib/blob/master/tests/example.c>
  */
-std::shared_ptr<GkRadio> RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_ptr<GkUsbPort> usb_ptr)
+void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_ptr<GkUsbPort> usb_ptr)
 {
     std::mutex mtx_init_rig;
     std::lock_guard<std::mutex> lck_guard(mtx_init_rig);
@@ -731,7 +765,13 @@ std::shared_ptr<GkRadio> RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radi
         // USB
         //
         if (usb_ptr->bus.empty() || usb_ptr->addr.empty()) {
-            throw std::runtime_error(tr("Unable to initialize radio rig with USB connection!").toStdString());
+            #if defined(_MSC_VER) && (_MSC_VER > 1900)
+            HWND hwnd = nullptr;
+            modalDlgBoxOk(hwnd, tr("Error!"), tr("Unable to initialize radio rig with USB connection!"), MB_ICONERROR);
+            DestroyWindow(hwnd);
+            #else
+            modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+            #endif
         }
 
         radio_ptr->rig->state.rigport.parm.usb.vid = usb_ptr->usb_enum.vendor_id;
@@ -758,7 +798,13 @@ std::shared_ptr<GkRadio> RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radi
         //
         // strncpy(radio_ptr->rig->state.rigport.pathname, radio_ptr, FILPATHLEN - 1);
     } else {
-        throw std::runtime_error(tr("Unable to detect connection type while initializing radio rig (i.e. 'none / unknown' was not an option)!").toStdString());
+        #if defined(_MSC_VER) && (_MSC_VER > 1900)
+        HWND hwnd = nullptr;
+        modalDlgBoxOk(hwnd, tr("Error!"), tr("Unable to detect connection type while initializing radio rig (i.e. 'none / unknown' was not an option)!"), MB_ICONERROR);
+        DestroyWindow(hwnd);
+        #else
+        modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+        #endif
     }
 
     if (radio_ptr->rig_model < 1) { // No amateur radio rig has been configured and/or adequately detected!
@@ -771,8 +817,14 @@ std::shared_ptr<GkRadio> RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radi
     }
 
     if (!radio_ptr->rig) {
-        throw std::runtime_error(tr("Unknown radio rig: %1\n\nNote to developers: Please check the list of rigs.")
-                                 .arg(QString::number(radio_ptr->rig_model)).toStdString());
+        #if defined(_MSC_VER) && (_MSC_VER > 1900)
+        HWND hwnd = nullptr;
+        modalDlgBoxOk(hwnd, tr("Error!"), tr("Unknown radio rig: %1\n\nNote to developers: Please check the list of rigs.")
+                                     .arg(QString::number(radio_ptr->rig_model)), MB_ICONERROR);
+        DestroyWindow(hwnd);
+        #else
+        modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+        #endif
     }
 
     rig_debug(radio_ptr->verbosity, "Backend version: %s, Status: %s\n\n", radio_ptr->rig->caps->version, rig_strstatus(radio_ptr->rig->caps->status));
@@ -780,64 +832,138 @@ std::shared_ptr<GkRadio> RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radi
     // Open our rig in question
     radio_ptr->retcode = rig_open(radio_ptr->rig);
     if (radio_ptr->retcode != RIG_OK) {
-        throw std::runtime_error(tr("[ Hamlib ] Error with opening amateur radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->retcode))).toStdString());
+        #if defined(_MSC_VER) && (_MSC_VER > 1900)
+        HWND hwnd = nullptr;
+        modalDlgBoxOk(hwnd, tr("Error!"), tr("[ Hamlib ] Error with opening amateur radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->retcode))), MB_ICONERROR);
+        DestroyWindow(hwnd);
+        #else
+        modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+        #endif
+    } else {
+        radio_ptr->is_open = true; // Set the flag that the aforementioned pointer has been initialized
     }
 
-    //
-    // Power up the rig, electrically, if at all possible!
-    //
-    rig_get_powerstat(radio_ptr->rig, &radio_ptr->power_status);
-    if (radio_ptr->power_status == powerstat_t::RIG_POWER_OFF) {
-        radio_ptr->retcode = rig_set_powerstat(radio_ptr->rig, powerstat_t::RIG_POWER_ON);
-        hamlibStatus(radio_ptr->retcode);
+    while (radio_ptr->is_open) {
+        radio_ptr->retcode = rig_open(radio_ptr->rig);
+        if (radio_ptr->retcode != RIG_OK) {
+            #if defined(_MSC_VER) && (_MSC_VER > 1900)
+            HWND hwnd = nullptr;
+            modalDlgBoxOk(hwnd, tr("Error!"), tr("[ Hamlib ] Error with opening amateur radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->retcode))), MB_ICONERROR);
+            DestroyWindow(hwnd);
+            #else
+            modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+            #endif
+        }
+
+        //
+        // IMPORTANT!!!
+        // Note from Hamlib Developers: As a general practice, we should check to see if a given function
+        // is within the rig's capabilities before calling it, but we are simplifying here. Also, we should
+        // check each call's returned status in case of error.
+        //
+
+        //
+        // Power up the rig, electrically, if at all possible!
+        //
+        rig_get_powerstat(radio_ptr->rig, &radio_ptr->power_status);
+        if (radio_ptr->power_status == powerstat_t::RIG_POWER_OFF) {
+            radio_ptr->retcode = rig_set_powerstat(radio_ptr->rig, powerstat_t::RIG_POWER_ON);
+            if (radio_ptr->retcode != RIG_OK) {
+                #if defined(_MSC_VER) && (_MSC_VER > 1900)
+                HWND hwnd = nullptr;
+                modalDlgBoxOk(hwnd, tr("Error!"), tr("[ Hamlib ] Error with powering on radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->retcode))), MB_ICONERROR);
+                DestroyWindow(hwnd);
+                #else
+                modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+                #endif
+            }
+        }
+
+        if (rig_get_info(radio_ptr->rig) != nullptr) {
+            radio_ptr->info_buf = rig_get_info(radio_ptr->rig);
+        }
+
+        // Main VFO frequency
+        radio_ptr->status = rig_get_freq(radio_ptr->rig, RIG_VFO_CURR, &radio_ptr->freq);
+        if (radio_ptr->status != RIG_OK) {
+            #if defined(_MSC_VER) && (_MSC_VER > 1900)
+            HWND hwnd = nullptr;
+            modalDlgBoxOk(hwnd, tr("Error!"), tr("[ Hamlib ] Error with obtaining the primary VFO value for radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->status))), MB_ICONERROR);
+            DestroyWindow(hwnd);
+            #else
+            modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+            #endif
+        }
+
+        // Current mode
+        radio_ptr->status = rig_get_mode(radio_ptr->rig, RIG_VFO_CURR, &radio_ptr->mode, &radio_ptr->width);
+        if (radio_ptr->status != RIG_OK) {
+            #if defined(_MSC_VER) && (_MSC_VER > 1900)
+            HWND hwnd = nullptr;
+            modalDlgBoxOk(hwnd, tr("Error!"), tr("[ Hamlib ] Error with obtaining current modulation for radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->status))), MB_ICONERROR);
+            DestroyWindow(hwnd);
+            #else
+            modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+            #endif
+        }
+
+        // Determine the mode of modulation that's being currently used, and output as a textual value
+        radio_ptr->mm = hamlibModulEnumToStr(radio_ptr->mode).toStdString();
+
+        // Rig power output
+        radio_ptr->status = rig_get_level(radio_ptr->rig, RIG_VFO_CURR, RIG_LEVEL_RFPOWER, &radio_ptr->power);
+        if (radio_ptr->status != RIG_OK) {
+            #if defined(_MSC_VER) && (_MSC_VER > 1900)
+            HWND hwnd = nullptr;
+            modalDlgBoxOk(hwnd, tr("Error!"), tr("[ Hamlib ] Error with obtaining power output for radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->status))), MB_ICONERROR);
+            DestroyWindow(hwnd);
+            #else
+            modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+            #endif
+        }
+
+        // Convert power reading to watts
+        radio_ptr->status = rig_power2mW(radio_ptr->rig, &radio_ptr->mwpower, radio_ptr->power.f, radio_ptr->freq, radio_ptr->mode);
+        if (radio_ptr->status != RIG_OK) {
+            #if defined(_MSC_VER) && (_MSC_VER > 1900)
+            HWND hwnd = nullptr;
+            modalDlgBoxOk(hwnd, tr("Error!"), tr("[ Hamlib ] Error with converting signal power to watts for radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->status))), MB_ICONERROR);
+            DestroyWindow(hwnd);
+            #else
+            modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+            #endif
+        }
+
+        // Raw and calibrated S-meter values
+        radio_ptr->status = rig_get_level(radio_ptr->rig, RIG_VFO_CURR, RIG_LEVEL_RAWSTR, &radio_ptr->raw_strength);
+        if (radio_ptr->status != RIG_OK) {
+            #if defined(_MSC_VER) && (_MSC_VER > 1900)
+            HWND hwnd = nullptr;
+            modalDlgBoxOk(hwnd, tr("Error!"), tr("[ Hamlib ] Error with calibrating S-value output for radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->status))), MB_ICONERROR);
+            DestroyWindow(hwnd);
+            #else
+            modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+            #endif
+        }
+
+        radio_ptr->isz = radio_ptr->rig->caps->str_cal.size; // TODO: No idea what this is for?
+
+        radio_ptr->status = rig_get_strength(radio_ptr->rig, RIG_VFO_CURR, &radio_ptr->strength);
+        if (radio_ptr->status != RIG_OK) {
+            #if defined(_MSC_VER) && (_MSC_VER > 1900)
+            HWND hwnd = nullptr;
+            modalDlgBoxOk(hwnd, tr("Error!"), tr("[ Hamlib ] Error with obtaining signal strength for radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->status))), MB_ICONERROR);
+            DestroyWindow(hwnd);
+            #else
+            modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+            #endif
+        }
+
+        emit updateRadioPtr(radio_ptr);
     }
 
-    radio_ptr->is_open = true; // Set the flag that the aforementioned pointer has been initialized
-
-    if (rig_get_info(radio_ptr->rig) != nullptr) {
-        // Give me ID info, e.g., firmware version
-        radio_ptr->info_buf = rig_get_info(radio_ptr->rig);
-        std::cout << tr("Rig info: %1\n\n").arg(QString::fromStdString(radio_ptr->info_buf)).toStdString();
-    }
-
-    //
-    // IMPORTANT!!!
-    // Note from Hamlib Developers: As a general practice, we should check to see if a given function
-    // is within the rig's capabilities before calling it, but we are simplifying here. Also, we should
-    // check each call's returned status in case of error.
-    //
-
-    // Main VFO frequency
-    radio_ptr->status = rig_get_freq(radio_ptr->rig, RIG_VFO_CURR, &radio_ptr->freq);
-    std::cout << tr("Main VFO Frequency: %1\n\n").arg(QString::number(radio_ptr->freq)).toStdString();
-
-    // Current mode
-    radio_ptr->status = rig_get_mode(radio_ptr->rig, RIG_VFO_CURR, &radio_ptr->mode, &radio_ptr->width);
-
-    // Determine the mode of modulation that's being currently used, and output as a textual value
-    radio_ptr->mm = hamlibModulEnumToStr(radio_ptr->mode).toStdString();
-
-    std::cout << tr("Current mode: %1, width is %2\n\n").arg(QString::fromStdString(radio_ptr->mm)).arg(QString::number(radio_ptr->width)).toStdString();
-
-    // Rig power output
-    radio_ptr->status = rig_get_level(radio_ptr->rig, RIG_VFO_CURR, RIG_LEVEL_RFPOWER, &radio_ptr->power);
-    std::cout << tr("RF Power relative setting: %%1 (0.0 - 1.0)\n\n").arg(QString::number(radio_ptr->power.f)).toStdString();
-
-    // Convert power reading to watts
-    radio_ptr->status = rig_power2mW(radio_ptr->rig, &radio_ptr->mwpower, radio_ptr->power.f, radio_ptr->freq, radio_ptr->mode);
-    std::cout << tr("RF Power calibrated: %1 watts\n\n").arg(QString::number(radio_ptr->mwpower / 1000)).toStdString();
-
-    // Raw and calibrated S-meter values
-    radio_ptr->status = rig_get_level(radio_ptr->rig, RIG_VFO_CURR, RIG_LEVEL_RAWSTR, &radio_ptr->raw_strength);
-    std::cout << tr("Raw receive strength: %1\n\n").arg(QString::number(radio_ptr->raw_strength.i)).toStdString();
-
-    radio_ptr->isz = radio_ptr->rig->caps->str_cal.size; // TODO: No idea what this is for?
-
-    radio_ptr->status = rig_get_strength(radio_ptr->rig, RIG_VFO_CURR, &radio_ptr->strength);
-
-    return radio_ptr;
-
-    return std::shared_ptr<GkRadio>();
+    // emit disconnectRigInUse(radio_ptr->rig, radio_ptr);
+    return;
 }
 
 /**

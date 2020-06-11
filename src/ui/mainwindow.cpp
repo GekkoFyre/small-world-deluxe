@@ -44,6 +44,7 @@
 #include <sstream>
 #include <ostream>
 #include <cstring>
+#include <utility>
 #include <cmath>
 #include <iostream>
 #include <functional>
@@ -226,6 +227,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                  this, SLOT(addRigToMemory(const rig_model_t &, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
                 QObject::connect(this, SIGNAL(disconnectRigInUse(RIG *, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
                                  this, SLOT(disconnectRigInMemory(RIG *, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
+                QObject::connect(this, SIGNAL(updateRadioPtr(const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
+                                 this, SLOT(updateRadioVarsInMem(const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
 
                 // Initialize the Radio Database pointer!
                 if (gkRadioPtr.get() == nullptr) {
@@ -246,6 +249,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 //
                 QObject::connect(gkRadioLibs, SIGNAL(gatherPortType(const bool &)),
                                  this, SLOT(analyzePortType(const bool &)));
+                QObject::connect(gkRadioLibs, SIGNAL(disconnectRigInUse(RIG *, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
+                                 this, SLOT(disconnectRigInMemory(RIG *, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
+                QObject::connect(gkRadioLibs, SIGNAL(updateRadioPtr(const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
+                                 this, SLOT(updateRadioVarsInMem(const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
             } else {
                 throw std::runtime_error(tr("Unable to find settings database; we've lost its location!").toStdString());
             }
@@ -405,7 +412,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             QObject::connect(gkAudioPlayDlg, SIGNAL(beginRecording(const bool &)), gkAudioEncoding, SLOT(startRecording(const bool &)));
         }
 
-        if (gkRadioPtr->freq >= 0.0) {
+        if (gkRadioPtr->freq > 0.0) {
             ui->label_freq_large->setText(QString::number(gkRadioPtr->freq));
         } else {
             ui->label_freq_large->setText(tr("N/A"));
@@ -626,20 +633,8 @@ bool MainWindow::radioInitStart()
             // Initialize Hamlib!
             //
             gkRadioPtr->is_open = false;
-            std::future_status status;
-            rig_thread = std::async(std::launch::async, &RadioLibs::gkInitRadioRig, gkRadioLibs, gkRadioPtr, gkUsbPortPtr);
-            do {
-                status = rig_thread.wait_for(std::chrono::seconds(10));
-                if (status == std::future_status::timeout) {
-                    throw std::runtime_error(tr("Timed-out while attempting to prepare amateur radio rig!").toStdString());
-                } else if (status == std::future_status::ready) {
-                    std::cout << "Amateur radio rig is ready!" << std::endl;
-                }
-            } while (status != std::future_status::ready);
-            gkRadioPtr = rig_thread.get();
-            if (gkRadioPtr == nullptr) {
-                throw std::invalid_argument(tr("Unable to initialize the radio rig!").toStdString());
-            }
+            rig_thread = std::thread(&RadioLibs::gkInitRadioRig, gkRadioLibs, gkRadioPtr, gkUsbPortPtr);
+            rig_thread.detach();
 
             return true;
         } catch (const std::invalid_argument &e) {
@@ -1700,6 +1695,20 @@ void MainWindow::disconnectRigInMemory(RIG *rig_to_disconnect, const std::shared
                 }
             }
         }
+    }
+
+    return;
+}
+
+/**
+ * @brief MainWindow::updateRadioVarsInMem
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param radio_ptr The pointer to Hamlib's radio structure and any information thereof.
+ */
+void MainWindow::updateRadioVarsInMem(const std::shared_ptr<GkRadio> &radio_ptr)
+{
+    if (radio_ptr.get() != nullptr) {
+        gkRadioPtr = std::move(radio_ptr);
     }
 
     return;
