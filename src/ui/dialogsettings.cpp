@@ -304,10 +304,10 @@ void DialogSettings::on_pushButton_submit_config_clicked()
             enum_data_bits = 0;
         } else if (ui->radioButton_data_bits_seven->isChecked()) {
             // Seven (7)
-            enum_data_bits = 1;
+            enum_data_bits = 7;
         } else {
             // Eight (8)
-            enum_data_bits = 2;
+            enum_data_bits = 8;
         }
 
         //
@@ -1137,12 +1137,6 @@ bool DialogSettings::read_settings()
             case 0:
                 ui->radioButton_data_bits_default->setChecked(true);
                 break;
-            case 1:
-                ui->radioButton_data_bits_seven->setChecked(true);
-                break;
-            case 2:
-                ui->radioButton_data_bits_eight->setChecked(true);
-                break;
             case 7:
                 ui->radioButton_data_bits_seven->setChecked(true);
                 break;
@@ -1826,7 +1820,7 @@ void DialogSettings::disableComPorts(const bool &active)
 void DialogSettings::on_comboBox_rig_selection_currentIndexChanged(int index)
 {
     Q_UNUSED(index);
-    emit modifyRigInUse(ui->comboBox_rig_selection->currentData().toInt(), false);
+    emit recvRigCapabilities(gkRadioPtr->rig_model);
 
     if (gkRadioPtr->rig_caps != nullptr) {
         ui->comboBox_baud_rate->setCurrentIndex(gkRadioLibs->convertBaudRateFromEnum(gkRadioLibs->convertBaudRateIntToEnum(gkRadioPtr->rig_caps->serial_rate_min)));

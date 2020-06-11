@@ -42,9 +42,10 @@
 #include <boost/exception/all.hpp>
 #include <boost/chrono/chrono.hpp>
 #include <sstream>
-#include <iostream>
 #include <ostream>
+#include <cstring>
 #include <cmath>
+#include <iostream>
 #include <functional>
 #include <chrono>
 #include <QDesktopServices>
@@ -92,6 +93,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<std::vector<GekkoFyre::Spectrograph::RawFFT>>("std::vector<GekkoFyre::Spectrograph::RawFFT>");
     qRegisterMetaType<GekkoFyre::Database::Settings::GkUsbPort>("GekkoFyre::Database::Settings::GkUsbPort");
     qRegisterMetaType<GekkoFyre::AmateurRadio::GkConnType>("GekkoFyre::AmateurRadio::GkConnType");
+    qRegisterMetaType<RIG>("RIG");
     qRegisterMetaType<std::vector<short>>("std::vector<short>");
     qRegisterMetaType<size_t>("size_t");
     qRegisterMetaType<uint8_t>("uint8_t");
@@ -222,6 +224,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                  this, SLOT(addRigToMemory(const rig_model_t &)));
                 QObject::connect(this, SIGNAL(modifyRigInUse(const rig_model_t &, const bool &)),
                                  this, SLOT(modifyRigInMemory(const rig_model_t &, const bool &)));
+                QObject::connect(this, SIGNAL(disconnectRigInUse(RIG *)),
+                                 this, SLOT(disconnectRigInMemory(RIG *)));
 
                 // Initialize the Radio Database pointer!
                 if (gkRadioPtr.get() == nullptr) {
@@ -233,6 +237,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
                 // Initialize USB devices!
                 gkRadioLibs = new GekkoFyre::RadioLibs(fileIo, gkStringFuncs, GkDb, gkRadioPtr, this);
+                status_com_ports = gkRadioLibs->status_com_ports();
                 usb_ctx_ptr = gkRadioLibs->initUsbLib();
                 gkUsbPortPtr = std::make_shared<GkUsbPort>();
 
@@ -428,6 +433,26 @@ MainWindow::~MainWindow()
         }
     }
 
+    for (const auto &port: status_com_ports) {
+        //
+        // CAT Port
+        //
+        if (std::strcmp(gkRadioPtr->cat_conn_port.c_str(), port.port_info.port.c_str()) == 0) {
+            if (port.is_open) {
+                serial::Serial(port.port_info.port).close();
+            }
+        }
+
+        //
+        // PTT Port
+        //
+        if (std::strcmp(gkRadioPtr->ptt_conn_port.c_str(), port.port_info.port.c_str()) == 0) {
+            if (port.is_open) {
+                serial::Serial(port.port_info.port).close();
+            }
+        }
+    }
+
     // Free the pointer for the libusb library!
     if (usb_ctx_ptr != nullptr) {
         libusb_exit(usb_ctx_ptr);
@@ -570,6 +595,8 @@ void MainWindow::launchSettingsWin()
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
 
+    QObject::connect(dlg_settings, SIGNAL(recvRigCapabilities(const rig_model_t &)),
+                     this, SLOT(gatherRigCapabilities(const rig_model_t &)));
     QObject::connect(dlg_settings, SIGNAL(changePortType(const GekkoFyre::AmateurRadio::GkConnType &, const bool &)),
                      this, SLOT(selectedPortType(const GekkoFyre::AmateurRadio::GkConnType &, const bool &)));
     QObject::connect(dlg_settings, SIGNAL(gatherPortType(const bool &)),
@@ -1030,6 +1057,54 @@ void MainWindow::on_action_About_Dekoder_triggered()
 void MainWindow::on_actionSet_Offset_triggered()
 {
     QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+}
+
+/**
+ * @brief MainWindow::on_action_Connect_triggered Make a connection to the amateur radio rig, if at all possible.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::on_action_Connect_triggered()
+{
+    return;
+}
+
+/**
+ * @brief MainWindow::on_action_Disconnect_triggered Disconnect any and all connections from the amateur radio rig, if
+ * at all possible.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::on_action_Disconnect_triggered()
+{
+    try {
+        QMessageBox msgBox;
+        msgBox.setWindowTitle(tr("Disconnect"));
+        if (gkRadioPtr.get() != nullptr) {
+            if (gkRadioPtr->rig_caps.get() != nullptr) {
+                if (gkRadioPtr->rig_caps->model_name != nullptr) {
+                    msgBox.setText(tr("Are you sure you wish to disconnect from your [ %1 ] radio rig?").arg(QString::fromStdString(gkRadioPtr->rig_caps->model_name)));
+                }
+            }
+        } else {
+            msgBox.setText(tr("Are you sure you wish to disconnect from your radio rig?"));
+        }
+        msgBox.setStandardButtons(QMessageBox::Cancel | QMessageBox::Ok);
+        msgBox.setDefaultButton(QMessageBox::Ok);
+        msgBox.setIcon(QMessageBox::Icon::Question);
+        int ret = msgBox.exec();
+
+        switch (ret) {
+        case QMessageBox::Ok:
+            return;
+        case QMessageBox::Cancel:
+            return;
+        default:
+            return;
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
+    return;
 }
 
 /**
@@ -1634,6 +1709,17 @@ void MainWindow::modifyRigInMemory(const rig_model_t &rig_model_update, const bo
     emit recvRigCapabilities(rig_model_update); // Gather the new amateur radi rig's capabilities and store it in memory!
     radioInitStart();
 
+    return;
+}
+
+/**
+ * @brief MainWindow::disconnectRigInMemory will disconnect a given amateur radio rig from Small World Deluxe and perform
+ * any other needed functions necessary.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param rig_to_disconnect The radio rig in question to disconnect.
+ */
+void MainWindow::disconnectRigInMemory(RIG *rig_to_disconnect)
+{
     return;
 }
 
