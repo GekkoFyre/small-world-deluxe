@@ -39,10 +39,10 @@
 
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
+#include <boost/logic/tribool.hpp>
 #include <QObject>
 #include <QString>
 #include <QMap>
-#include <boost/logic/tribool.hpp>
 #include <memory>
 #include <vector>
 #include <string>
@@ -85,6 +85,9 @@ public:
 
     libusb_context *initUsbLib();
     QMap<std::string, Database::Settings::GkUsbPort> enumUsbDevices(libusb_context *usb_ctx_ptr);
+
+signals:
+    void gatherPortType(const bool &is_cat_mode);
 
 private:
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
