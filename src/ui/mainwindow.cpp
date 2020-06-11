@@ -79,6 +79,7 @@ namespace sys = boost::system;
 // Statically declared members
 //
 QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>> MainWindow::gkRadioModels = initRadioModelsVar();
+std::list<GekkoFyre::Database::Settings::GkComPort> MainWindow::status_com_ports;
 
 /**
  * @brief MainWindow::MainWindow
@@ -565,7 +566,8 @@ bool MainWindow::prefillAmateurBands()
 void MainWindow::launchSettingsWin()
 {
     QPointer<DialogSettings> dlg_settings = new DialogSettings(GkDb, fileIo, gkAudioDevices, gkRadioLibs, sw_settings,
-                                                               gkPortAudioInit, usb_ctx_ptr, gkRadioPtr, this);
+                                                               gkPortAudioInit, usb_ctx_ptr, gkRadioPtr, status_com_ports,
+                                                               this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
@@ -627,7 +629,7 @@ bool MainWindow::radioInitStart()
             std::future_status status;
             rig_thread = std::async(std::launch::async, &RadioLibs::gkInitRadioRig, gkRadioLibs, gkRadioPtr, gkUsbPortPtr);
             do {
-                status = rig_thread.wait_for(std::chrono::seconds(5));
+                status = rig_thread.wait_for(std::chrono::seconds(10));
                 if (status == std::future_status::timeout) {
                     throw std::runtime_error(tr("Timed-out while attempting to prepare amateur radio rig!").toStdString());
                 } else if (status == std::future_status::ready) {
@@ -1669,31 +1671,34 @@ void MainWindow::disconnectRigInMemory(RIG *rig_to_disconnect, const std::shared
 {
     Q_UNUSED(rig_to_disconnect);
 
-    for (const auto &port: status_com_ports) {
-        //
-        // CAT Port
-        //
-        if (std::strcmp(radio_ptr->cat_conn_port.c_str(), port.port_info.port.c_str()) == 0) {
-            if (port.is_open) {
-                serial::Serial(port.port_info.port).close();
-            }
-        }
-
-        //
-        // PTT Port
-        //
-        if (std::strcmp(radio_ptr->ptt_conn_port.c_str(), port.port_info.port.c_str()) == 0) {
-            if (port.is_open) {
-                serial::Serial(port.port_info.port).close();
-            }
-        }
-    }
-
     if (gkRadioPtr.get() != nullptr) {
-        if (gkRadioPtr->is_open) {
-            // Free the pointer(s) for the Hamlib library!
-            rig_close(gkRadioPtr->rig); // Close port
-            rig_cleanup(gkRadioPtr->rig); // Cleanup memory
+        if (gkRadioPtr->rig != nullptr) {
+            if (gkRadioPtr->is_open) {
+                // Free the pointer(s) for the Hamlib library!
+                rig_close(gkRadioPtr->rig); // Close port
+                // rig_cleanup(gkRadioPtr->rig); // Cleanup memory
+                gkRadioPtr->is_open = false;
+
+                for (const auto &port: status_com_ports) {
+                    //
+                    // CAT Port
+                    //
+                    if (std::strcmp(radio_ptr->cat_conn_port.c_str(), port.port_info.port.c_str()) == 0) {
+                        if (port.is_open) {
+                            serial::Serial(port.port_info.port).close();
+                        }
+                    }
+
+                    //
+                    // PTT Port
+                    //
+                    if (std::strcmp(radio_ptr->ptt_conn_port.c_str(), port.port_info.port.c_str()) == 0) {
+                        if (port.is_open) {
+                            serial::Serial(port.port_info.port).close();
+                        }
+                    }
+                }
+            }
         }
     }
 

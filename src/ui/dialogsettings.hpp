@@ -75,6 +75,7 @@ public:
                             portaudio::System *portAudioInit,
                             libusb_context *usb_lib_ctx,
                             std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> radioPtr,
+                            const std::list<GekkoFyre::Database::Settings::GkComPort> &com_ports,
                             QWidget *parent = nullptr);
     ~DialogSettings();
 

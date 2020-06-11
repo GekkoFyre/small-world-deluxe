@@ -291,19 +291,45 @@ std::list<GkComPort> RadioLibs::status_com_ports()
             GkComPort com_struct;
             com_struct.port_info = port;
 
-            if (serial::Serial(com_struct.port_info.port).isOpen()) {
-                com_struct.is_open = true;
-            } else {
-                com_struct.is_open = false;
+            if (!com_struct.port_info.port.empty()) {
+                try {
+                    if (serial::Serial(com_struct.port_info.port).isOpen()) {
+                        com_struct.is_open = true;
+                    } else {
+                        com_struct.is_open = false;
+                    }
+                } catch (const std::exception &e) {
+                    #if defined(_MSC_VER) && (_MSC_VER > 1900)
+                    HWND hwnd = nullptr;
+                    gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), e.what(), MB_ICONERROR);
+                    DestroyWindow(hwnd);
+                    #else
+                    gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+                    #endif
+
+                    //
+                    // Erase the currently stored settings because of an error with loading them...
+                    //
+                    QString comDeviceCat = gkDekodeDb->read_rig_settings_comms(radio_cfg::ComDeviceCat, GkConnType::RS232);
+                    QString comDevicePtt = gkDekodeDb->read_rig_settings_comms(radio_cfg::ComDevicePtt, GkConnType::RS232);
+
+                    if (!comDeviceCat.isNull() && !comDeviceCat.isEmpty()) {
+                        gkDekodeDb->write_rig_settings_comms("", radio_cfg::ComDeviceCat, GkConnType::RS232);
+                    }
+
+                    if (!comDevicePtt.isNull() && !comDevicePtt.isEmpty()) {
+                        gkDekodeDb->write_rig_settings_comms("", radio_cfg::ComDevicePtt, GkConnType::RS232);
+                    }
+                }
+
+                com_struct.def_stopbits = serial::Serial(com_struct.port_info.port).getStopbits();
+                com_struct.def_baudrate = serial::Serial(com_struct.port_info.port).getBaudrate();
+                com_struct.timeout_info = serial::Serial(com_struct.port_info.port).getTimeout();
+                com_struct.def_parity = serial::Serial(com_struct.port_info.port).getParity();
+                com_struct.def_flow_control = serial::Serial(com_struct.port_info.port).getFlowcontrol();
+
+                com_map.push_back(com_struct);
             }
-
-            com_struct.def_stopbits = serial::Serial(com_struct.port_info.port).getStopbits();
-            com_struct.def_baudrate = serial::Serial(com_struct.port_info.port).getBaudrate();
-            com_struct.timeout_info = serial::Serial(com_struct.port_info.port).getTimeout();
-            com_struct.def_parity = serial::Serial(com_struct.port_info.port).getParity();
-            com_struct.def_flow_control = serial::Serial(com_struct.port_info.port).getFlowcontrol();
-
-            com_map.push_back(com_struct);
         }
 
         return com_map;

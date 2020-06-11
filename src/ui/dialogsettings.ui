@@ -1504,8 +1504,8 @@
                         <rect>
                          <x>0</x>
                          <y>0</y>
-                         <width>673</width>
-                         <height>716</height>
+                         <width>681</width>
+                         <height>676</height>
                         </rect>
                        </property>
                        <layout class="QVBoxLayout" name="verticalLayout_33">
@@ -1871,21 +1871,6 @@
                                             </property>
                                            </widget>
                                           </item>
-                                         </layout>
-                                        </widget>
-                                       </item>
-                                       <item>
-                                        <widget class="QFrame" name="frame_handshake_radio_2">
-                                         <property name="frameShape">
-                                          <enum>QFrame::StyledPanel</enum>
-                                         </property>
-                                         <property name="frameShadow">
-                                          <enum>QFrame::Raised</enum>
-                                         </property>
-                                         <layout class="QHBoxLayout" name="horizontalLayout_23">
-                                          <property name="topMargin">
-                                           <number>0</number>
-                                          </property>
                                           <item>
                                            <widget class="QRadioButton" name="radioButton_handshake_xon_xoff">
                                             <property name="text">
@@ -2041,6 +2026,13 @@
                                      <number>0</number>
                                     </property>
                                     <item>
+                                     <widget class="QRadioButton" name="radioButton_ptt_method_rts">
+                                      <property name="text">
+                                       <string>RTS</string>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item>
                                      <widget class="QRadioButton" name="radioButton_ptt_method_vox">
                                       <property name="text">
                                        <string>VOX</string>
@@ -2054,41 +2046,10 @@
                                       </property>
                                      </widget>
                                     </item>
-                                   </layout>
-                                  </widget>
-                                 </item>
-                                 <item>
-                                  <widget class="QFrame" name="frame_ptt_method_radio_2">
-                                   <property name="frameShape">
-                                    <enum>QFrame::StyledPanel</enum>
-                                   </property>
-                                   <property name="frameShadow">
-                                    <enum>QFrame::Raised</enum>
-                                   </property>
-                                   <layout class="QHBoxLayout" name="horizontalLayout_20">
-                                    <property name="leftMargin">
-                                     <number>0</number>
-                                    </property>
-                                    <property name="topMargin">
-                                     <number>0</number>
-                                    </property>
-                                    <property name="rightMargin">
-                                     <number>0</number>
-                                    </property>
-                                    <property name="bottomMargin">
-                                     <number>0</number>
-                                    </property>
                                     <item>
                                      <widget class="QRadioButton" name="radioButton_ptt_method_cat">
                                       <property name="text">
                                        <string>CAT</string>
-                                      </property>
-                                     </widget>
-                                    </item>
-                                    <item>
-                                     <widget class="QRadioButton" name="radioButton_ptt_method_rts">
-                                      <property name="text">
-                                       <string>RTS</string>
                                       </property>
                                      </widget>
                                     </item>
@@ -2475,8 +2436,8 @@
                         <rect>
                          <x>0</x>
                          <y>0</y>
-                         <width>98</width>
-                         <height>28</height>
+                         <width>53</width>
+                         <height>16</height>
                         </rect>
                        </property>
                       </widget>
