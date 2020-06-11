@@ -65,6 +65,7 @@
 #include <string>
 #include <mutex>
 #include <ctime>
+#include <list>
 #include <QMainWindow>
 #include <QPushButton>
 #include <QCommandLineParser>
@@ -116,6 +117,8 @@ private slots:
     void on_action_Outgoing_triggered();
     void on_actionPrint_triggered();
 
+    void on_action_Connect_triggered();
+    void on_action_Disconnect_triggered();
     void on_actionShow_Waterfall_toggled(bool arg1);
     void on_actionUSB_toggled(bool arg1);
     void on_actionLSB_toggled(bool arg1);
@@ -176,9 +179,10 @@ public slots:
     //
     void selectedPortType(const GekkoFyre::AmateurRadio::GkConnType &rig_conn_type, const bool &is_cat_mode);
     void analyzePortType(const bool &is_cat_mode);
-    void gatherRigCapabilities(const rig_model_t &rig_model_update);
-    void addRigToMemory(const rig_model_t &rig_model_update);
-    void modifyRigInMemory(const rig_model_t &rig_model_update, const bool &del_rig);
+    void gatherRigCapabilities(const rig_model_t &rig_model_update,
+                               const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
+    void addRigToMemory(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
+    void disconnectRigInMemory(RIG *rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
 
 signals:
     void refreshVuMeter(const double &volumePctg);
@@ -195,9 +199,9 @@ signals:
     //
     void gatherPortType(const bool &is_cat_mode);
     void changePortType(const GekkoFyre::AmateurRadio::GkConnType &rig_conn_type, const bool &is_cat_mode);
-    void addRigInUse(const rig_model_t &rig_model_update);
-    void modifyRigInUse(const rig_model_t &rig_model_update, const bool &del_rig);
-    void recvRigCapabilities(const rig_model_t &rig_model_update);
+    void addRigInUse(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
+    void recvRigCapabilities(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
+    void disconnectRigInUse(RIG *rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
 
 private:
     Ui::MainWindow *ui;
@@ -256,6 +260,7 @@ private:
     //
     libusb_context *usb_ctx_ptr;
     std::shared_ptr<GekkoFyre::Database::Settings::GkUsbPort> gkUsbPortPtr; // This is used for making connections to radio rigs with Hamlib!
+    std::list<GekkoFyre::Database::Settings::GkComPort> status_com_ports; // This variable is responsible for managing the COM/RS232/Serial ports!
 
     //
     // Miscellaneous
@@ -296,9 +301,11 @@ private:
     bool steadyTimer(const int &seconds);
 };
 
+Q_DECLARE_METATYPE(std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>);
 Q_DECLARE_METATYPE(std::vector<GekkoFyre::Spectrograph::RawFFT>);
 Q_DECLARE_METATYPE(GekkoFyre::Database::Settings::GkUsbPort);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkConnType);
+Q_DECLARE_METATYPE(RIG);
 Q_DECLARE_METATYPE(std::vector<short>);
 Q_DECLARE_METATYPE(size_t);
 Q_DECLARE_METATYPE(uint8_t);

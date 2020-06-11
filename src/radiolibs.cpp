@@ -697,7 +697,8 @@ std::shared_ptr<GkRadio> RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radi
         // Determine the port necessary and let Hamlib know about it!
         //
         if (!radio_ptr->cat_conn_port.empty()) {
-            strncpy(radio_ptr->rig->state.rigport.pathname, radio_ptr->cat_conn_port.c_str(), FILPATHLEN - 1);
+            strncpy(radio_ptr->rig->state.rigport.pathname, radio_ptr->cat_conn_port.c_str(), sizeof(radio_ptr->rig->state.rigport.pathname));
+            radio_ptr->rig->state.rigport.pathname[radio_ptr->cat_conn_port.size()] = '\0';
         }
     } else if (radio_ptr->cat_conn_type == GkConnType::USB) {
         //
@@ -717,7 +718,8 @@ std::shared_ptr<GkRadio> RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radi
         // Determine the port necessary and let Hamlib know about it!
         //
         if (!radio_ptr->cat_conn_port.empty()) {
-            strncpy(radio_ptr->rig->state.rigport.pathname, radio_ptr->cat_conn_port.c_str(), FILPATHLEN - 1);
+            strncpy(radio_ptr->rig->state.rigport.pathname, radio_ptr->cat_conn_port.c_str(), sizeof(radio_ptr->rig->state.rigport.pathname));
+            radio_ptr->rig->state.rigport.pathname[radio_ptr->cat_conn_port.size()] = '\0';
         }
     } else if (radio_ptr->cat_conn_type == GkConnType::Parallel) {
         //
@@ -751,7 +753,9 @@ std::shared_ptr<GkRadio> RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radi
 
     // Open our rig in question
     radio_ptr->retcode = rig_open(radio_ptr->rig);
-    hamlibStatus(radio_ptr->retcode);
+    if (radio_ptr->retcode != RIG_OK) {
+        throw std::runtime_error(tr("[ Hamlib ] Error with opening amateur radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->retcode))).toStdString());
+    }
 
     //
     // Power up the rig, electrically, if at all possible!

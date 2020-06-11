@@ -930,9 +930,18 @@ QPushButton:disabled {
       <addaction name="actionSSB"/>
       <addaction name="actionCW"/>
      </widget>
+     <widget class="QMenu" name="menuSS_B">
+      <property name="title">
+       <string>SS&amp;B</string>
+      </property>
+      <addaction name="actionUSB"/>
+      <addaction name="actionLSB"/>
+     </widget>
      <addaction name="menu_Modulation"/>
-     <addaction name="actionUSB"/>
-     <addaction name="actionLSB"/>
+     <addaction name="menuSS_B"/>
+     <addaction name="separator"/>
+     <addaction name="action_Connect"/>
+     <addaction name="action_Disconnect"/>
     </widget>
     <widget class="QMenu" name="menuSoun_d">
      <property name="toolTip">
@@ -1244,6 +1253,16 @@ QPushButton:disabled {
   <action name="action_Q_codes">
    <property name="text">
     <string>&amp;Q-codes</string>
+   </property>
+  </action>
+  <action name="action_Connect">
+   <property name="text">
+    <string>&amp;Connect</string>
+   </property>
+  </action>
+  <action name="action_Disconnect">
+   <property name="text">
+    <string>&amp;Disconnect</string>
    </property>
   </action>
  </widget>

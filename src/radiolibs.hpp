@@ -39,10 +39,10 @@
 
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
+#include <boost/logic/tribool.hpp>
 #include <QObject>
 #include <QString>
 #include <QMap>
-#include <boost/logic/tribool.hpp>
 #include <memory>
 #include <vector>
 #include <string>
