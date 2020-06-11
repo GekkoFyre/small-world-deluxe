@@ -179,10 +179,10 @@ public slots:
     //
     void selectedPortType(const GekkoFyre::AmateurRadio::GkConnType &rig_conn_type, const bool &is_cat_mode);
     void analyzePortType(const bool &is_cat_mode);
-    void gatherRigCapabilities(const rig_model_t &rig_model_update);
-    void addRigToMemory(const rig_model_t &rig_model_update);
-    void modifyRigInMemory(const rig_model_t &rig_model_update, const bool &del_rig);
-    void disconnectRigInMemory(RIG *rig_to_disconnect);
+    void gatherRigCapabilities(const rig_model_t &rig_model_update,
+                               const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
+    void addRigToMemory(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
+    void disconnectRigInMemory(RIG *rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
 
 signals:
     void refreshVuMeter(const double &volumePctg);
@@ -199,10 +199,9 @@ signals:
     //
     void gatherPortType(const bool &is_cat_mode);
     void changePortType(const GekkoFyre::AmateurRadio::GkConnType &rig_conn_type, const bool &is_cat_mode);
-    void addRigInUse(const rig_model_t &rig_model_update);
-    void modifyRigInUse(const rig_model_t &rig_model_update, const bool &del_rig);
-    void recvRigCapabilities(const rig_model_t &rig_model_update);
-    void disconnectRigInUse(RIG *rig_to_disconnect);
+    void addRigInUse(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
+    void recvRigCapabilities(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
+    void disconnectRigInUse(RIG *rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
 
 private:
     Ui::MainWindow *ui;
@@ -302,6 +301,7 @@ private:
     bool steadyTimer(const int &seconds);
 };
 
+Q_DECLARE_METATYPE(std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>);
 Q_DECLARE_METATYPE(std::vector<GekkoFyre::Spectrograph::RawFFT>);
 Q_DECLARE_METATYPE(GekkoFyre::Database::Settings::GkUsbPort);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkConnType);

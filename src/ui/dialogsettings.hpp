@@ -163,9 +163,8 @@ signals:
     void comPortsDisabled(const bool &active);
     void changePortType(const GekkoFyre::AmateurRadio::GkConnType &rig_conn_type, const bool &is_cat_mode);
     void gatherPortType(const bool &is_cat_mode);
-    void recvRigCapabilities(const rig_model_t &);
-    void addRigInUse(const rig_model_t &rig_model_update);
-    void modifyRigInUse(const rig_model_t &rig_model_update, const bool &del_rig);
+    void recvRigCapabilities(const rig_model_t &, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
+    void addRigInUse(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
 
 private:
     Ui::DialogSettings *ui;

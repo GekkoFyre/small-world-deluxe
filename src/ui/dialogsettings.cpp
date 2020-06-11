@@ -431,7 +431,7 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         gkDekodeDb->write_rig_settings(QString::number(enum_split_oper), radio_cfg::SplitOperation);
         gkDekodeDb->write_rig_settings(ptt_adv_cmd, radio_cfg::PTTAdvCmd);
 
-        emit modifyRigInUse(ui->comboBox_rig_selection->currentData().toInt(), false);
+        emit addRigInUse(ui->comboBox_rig_selection->currentData().toInt(), gkRadioPtr);
 
         QMessageBox::information(this, tr("Thank you"), tr("Your settings have been saved."), QMessageBox::Ok);
         this->close();
@@ -1076,7 +1076,6 @@ bool DialogSettings::read_settings()
 
         if (!rigModelIndex.isEmpty()) {
             ui->comboBox_rig_selection->setCurrentIndex(rigModelIndex.toInt());
-            emit modifyRigInUse(ui->comboBox_rig_selection->currentData().toInt(), false);
         }
 
         Q_UNUSED(rigVers);
@@ -1820,7 +1819,8 @@ void DialogSettings::disableComPorts(const bool &active)
 void DialogSettings::on_comboBox_rig_selection_currentIndexChanged(int index)
 {
     Q_UNUSED(index);
-    emit recvRigCapabilities(gkRadioPtr->rig_model);
+
+    emit recvRigCapabilities(ui->comboBox_rig_selection->currentData().toInt(), gkRadioPtr);
 
     if (gkRadioPtr->rig_caps != nullptr) {
         ui->comboBox_baud_rate->setCurrentIndex(gkRadioLibs->convertBaudRateFromEnum(gkRadioLibs->convertBaudRateIntToEnum(gkRadioPtr->rig_caps->serial_rate_min)));
@@ -1934,204 +1934,204 @@ void DialogSettings::on_comboBox_rig_selection_currentIndexChanged(int index)
 
 void DialogSettings::on_radioButton_data_bits_default_clicked()
 {
-    ui->radioButton_data_bits_default->setDown(true);
-    ui->radioButton_data_bits_seven->setDown(false);
-    ui->radioButton_data_bits_eight->setDown(false);
+    ui->radioButton_data_bits_default->setChecked(true);
+    ui->radioButton_data_bits_seven->setChecked(false);
+    ui->radioButton_data_bits_eight->setChecked(false);
 
     return;
 }
 
 void DialogSettings::on_radioButton_data_bits_seven_clicked()
 {
-    ui->radioButton_data_bits_seven->setDown(true);
-    ui->radioButton_data_bits_default->setDown(false);
-    ui->radioButton_data_bits_eight->setDown(false);
+    ui->radioButton_data_bits_seven->setChecked(true);
+    ui->radioButton_data_bits_default->setChecked(false);
+    ui->radioButton_data_bits_eight->setChecked(false);
 
     return;
 }
 
 void DialogSettings::on_radioButton_data_bits_eight_clicked()
 {
-    ui->radioButton_data_bits_eight->setDown(true);
-    ui->radioButton_data_bits_default->setDown(false);
-    ui->radioButton_data_bits_seven->setDown(false);
+    ui->radioButton_data_bits_eight->setChecked(true);
+    ui->radioButton_data_bits_default->setChecked(false);
+    ui->radioButton_data_bits_seven->setChecked(false);
 
     return;
 }
 
 void DialogSettings::on_radioButton_stop_bits_default_clicked()
 {
-    ui->radioButton_stop_bits_default->setDown(true);
-    ui->radioButton_stop_bits_one->setDown(false);
-    ui->radioButton_stop_bits_two->setDown(false);
+    ui->radioButton_stop_bits_default->setChecked(true);
+    ui->radioButton_stop_bits_one->setChecked(false);
+    ui->radioButton_stop_bits_two->setChecked(false);
 
     return;
 }
 
 void DialogSettings::on_radioButton_stop_bits_one_clicked()
 {
-    ui->radioButton_stop_bits_one->setDown(true);
-    ui->radioButton_stop_bits_default->setDown(false);
-    ui->radioButton_stop_bits_two->setDown(false);
+    ui->radioButton_stop_bits_one->setChecked(true);
+    ui->radioButton_stop_bits_default->setChecked(false);
+    ui->radioButton_stop_bits_two->setChecked(false);
 
     return;
 }
 
 void DialogSettings::on_radioButton_stop_bits_two_clicked()
 {
-    ui->radioButton_stop_bits_two->setDown(true);
-    ui->radioButton_stop_bits_one->setDown(false);
-    ui->radioButton_stop_bits_default->setDown(false);
+    ui->radioButton_stop_bits_two->setChecked(true);
+    ui->radioButton_stop_bits_one->setChecked(false);
+    ui->radioButton_stop_bits_default->setChecked(false);
 
     return;
 }
 
 void DialogSettings::on_radioButton_handshake_default_clicked()
 {
-    ui->radioButton_handshake_default->setDown(true);
-    ui->radioButton_handshake_none->setDown(false);
-    ui->radioButton_handshake_xon_xoff->setDown(false);
-    ui->radioButton_handshake_hardware->setDown(false);
+    ui->radioButton_handshake_default->setChecked(true);
+    ui->radioButton_handshake_none->setChecked(false);
+    ui->radioButton_handshake_xon_xoff->setChecked(false);
+    ui->radioButton_handshake_hardware->setChecked(false);
 
     return;
 }
 
 void DialogSettings::on_radioButton_handshake_none_clicked()
 {
-    ui->radioButton_handshake_default->setDown(false);
-    ui->radioButton_handshake_none->setDown(true);
-    ui->radioButton_handshake_xon_xoff->setDown(false);
-    ui->radioButton_handshake_hardware->setDown(false);
+    ui->radioButton_handshake_default->setChecked(false);
+    ui->radioButton_handshake_none->setChecked(true);
+    ui->radioButton_handshake_xon_xoff->setChecked(false);
+    ui->radioButton_handshake_hardware->setChecked(false);
 
     return;
 }
 
 void DialogSettings::on_radioButton_handshake_xon_xoff_clicked()
 {
-    ui->radioButton_handshake_default->setDown(false);
-    ui->radioButton_handshake_none->setDown(false);
-    ui->radioButton_handshake_xon_xoff->setDown(true);
-    ui->radioButton_handshake_hardware->setDown(false);
+    ui->radioButton_handshake_default->setChecked(false);
+    ui->radioButton_handshake_none->setChecked(false);
+    ui->radioButton_handshake_xon_xoff->setChecked(true);
+    ui->radioButton_handshake_hardware->setChecked(false);
 
     return;
 }
 
 void DialogSettings::on_radioButton_handshake_hardware_clicked()
 {
-    ui->radioButton_handshake_default->setDown(false);
-    ui->radioButton_handshake_none->setDown(false);
-    ui->radioButton_handshake_xon_xoff->setDown(false);
-    ui->radioButton_handshake_hardware->setDown(true);
+    ui->radioButton_handshake_default->setChecked(false);
+    ui->radioButton_handshake_none->setChecked(false);
+    ui->radioButton_handshake_xon_xoff->setChecked(false);
+    ui->radioButton_handshake_hardware->setChecked(true);
 
     return;
 }
 
 void DialogSettings::on_radioButton_ptt_method_vox_clicked()
 {
-    ui->radioButton_ptt_method_vox->setDown(true);
-    ui->radioButton_ptt_method_dtr->setDown(false);
-    ui->radioButton_ptt_method_cat->setDown(false);
-    ui->radioButton_ptt_method_rts->setDown(false);
+    ui->radioButton_ptt_method_vox->setChecked(true);
+    ui->radioButton_ptt_method_dtr->setChecked(false);
+    ui->radioButton_ptt_method_cat->setChecked(false);
+    ui->radioButton_ptt_method_rts->setChecked(false);
 
     return;
 }
 
 void DialogSettings::on_radioButton_ptt_method_dtr_clicked()
 {
-    ui->radioButton_ptt_method_vox->setDown(false);
-    ui->radioButton_ptt_method_dtr->setDown(true);
-    ui->radioButton_ptt_method_cat->setDown(false);
-    ui->radioButton_ptt_method_rts->setDown(false);
+    ui->radioButton_ptt_method_vox->setChecked(false);
+    ui->radioButton_ptt_method_dtr->setChecked(true);
+    ui->radioButton_ptt_method_cat->setChecked(false);
+    ui->radioButton_ptt_method_rts->setChecked(false);
 
     return;
 }
 
 void DialogSettings::on_radioButton_ptt_method_cat_clicked()
 {
-    ui->radioButton_ptt_method_vox->setDown(false);
-    ui->radioButton_ptt_method_dtr->setDown(false);
-    ui->radioButton_ptt_method_cat->setDown(true);
-    ui->radioButton_ptt_method_rts->setDown(false);
+    ui->radioButton_ptt_method_vox->setChecked(false);
+    ui->radioButton_ptt_method_dtr->setChecked(false);
+    ui->radioButton_ptt_method_cat->setChecked(true);
+    ui->radioButton_ptt_method_rts->setChecked(false);
 
     return;
 }
 
 void DialogSettings::on_radioButton_ptt_method_rts_clicked()
 {
-    ui->radioButton_ptt_method_vox->setDown(false);
-    ui->radioButton_ptt_method_dtr->setDown(false);
-    ui->radioButton_ptt_method_cat->setDown(false);
-    ui->radioButton_ptt_method_rts->setDown(true);
+    ui->radioButton_ptt_method_vox->setChecked(false);
+    ui->radioButton_ptt_method_dtr->setChecked(false);
+    ui->radioButton_ptt_method_cat->setChecked(false);
+    ui->radioButton_ptt_method_rts->setChecked(true);
 
     return;
 }
 
 void DialogSettings::on_radioButton_tx_audio_src_rear_data_clicked()
 {
-    ui->radioButton_tx_audio_src_rear_data->setDown(true);
-    ui->radioButton_tx_audio_src_front_mic->setDown(false);
+    ui->radioButton_tx_audio_src_rear_data->setChecked(true);
+    ui->radioButton_tx_audio_src_front_mic->setChecked(false);
 
     return;
 }
 
 void DialogSettings::on_radioButton_tx_audio_src_front_mic_clicked()
 {
-    ui->radioButton_tx_audio_src_rear_data->setDown(false);
-    ui->radioButton_tx_audio_src_front_mic->setDown(true);
+    ui->radioButton_tx_audio_src_rear_data->setChecked(false);
+    ui->radioButton_tx_audio_src_front_mic->setChecked(true);
 
     return;
 }
 
 void DialogSettings::on_radioButton_mode_none_clicked()
 {
-    ui->radioButton_mode_none->setDown(true);
-    ui->radioButton_mode_usb->setDown(false);
-    ui->radioButton_mode_data_pkt->setDown(false);
+    ui->radioButton_mode_none->setChecked(true);
+    ui->radioButton_mode_usb->setChecked(false);
+    ui->radioButton_mode_data_pkt->setChecked(false);
 
     return;
 }
 
 void DialogSettings::on_radioButton_mode_usb_clicked()
 {
-    ui->radioButton_mode_none->setDown(false);
-    ui->radioButton_mode_usb->setDown(true);
-    ui->radioButton_mode_data_pkt->setDown(false);
+    ui->radioButton_mode_none->setChecked(false);
+    ui->radioButton_mode_usb->setChecked(true);
+    ui->radioButton_mode_data_pkt->setChecked(false);
 
     return;
 }
 
 void DialogSettings::on_radioButton_mode_data_pkt_clicked()
 {
-    ui->radioButton_mode_none->setDown(false);
-    ui->radioButton_mode_usb->setDown(false);
-    ui->radioButton_mode_data_pkt->setDown(true);
+    ui->radioButton_mode_none->setChecked(false);
+    ui->radioButton_mode_usb->setChecked(false);
+    ui->radioButton_mode_data_pkt->setChecked(true);
 
     return;
 }
 
 void DialogSettings::on_radioButton_split_none_clicked()
 {
-    ui->radioButton_split_none->setDown(true);
-    ui->radioButton_split_rig->setDown(false);
-    ui->radioButton_split_fake_it->setDown(false);
+    ui->radioButton_split_none->setChecked(true);
+    ui->radioButton_split_rig->setChecked(false);
+    ui->radioButton_split_fake_it->setChecked(false);
 
     return;
 }
 
 void DialogSettings::on_radioButton_split_rig_clicked()
 {
-    ui->radioButton_split_none->setDown(false);
-    ui->radioButton_split_rig->setDown(true);
-    ui->radioButton_split_fake_it->setDown(false);
+    ui->radioButton_split_none->setChecked(false);
+    ui->radioButton_split_rig->setChecked(true);
+    ui->radioButton_split_fake_it->setChecked(false);
 
     return;
 }
 
 void DialogSettings::on_radioButton_split_fake_it_clicked()
 {
-    ui->radioButton_split_none->setDown(false);
-    ui->radioButton_split_rig->setDown(false);
-    ui->radioButton_split_fake_it->setDown(true);
+    ui->radioButton_split_none->setChecked(false);
+    ui->radioButton_split_rig->setChecked(false);
+    ui->radioButton_split_fake_it->setChecked(true);
 
     return;
 }
