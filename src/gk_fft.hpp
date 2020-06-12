@@ -8,24 +8,24 @@
  **     \____/_/\_____\/\__\/\__\/ \_____\/\____/_/\_____\/\_\/ \_\/
  **
  **
- **   If you have downloaded the source code for "Small World Deluxe" and are reading this,
+ **   If you have downloaded the source code for "Dekoder for Morse" and are reading this,
  **   then thank you from the bottom of our hearts for making use of our hard work, sweat
  **   and tears in whatever you are implementing this into!
  **
  **   Copyright (C) 2020. GekkoFyre.
  **
- **   Small World Deluxe is free software: you can redistribute it and/or modify
+ **   Dekoder for Morse is free software: you can redistribute it and/or modify
  **   it under the terms of the GNU General Public License as published by
  **   the Free Software Foundation, either version 3 of the License, or
  **   (at your option) any later version.
  **
- **   Small World is distributed in the hope that it will be useful,
+ **   Dekoder is distributed in the hope that it will be useful,
  **   but WITHOUT ANY WARRANTY; without even the implied warranty of
  **   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  **   GNU General Public License for more details.
  **
  **   You should have received a copy of the GNU General Public License
- **   along with Small World Deluxe.  If not, see <http://www.gnu.org/licenses/>.
+ **   along with Dekoder for Morse.  If not, see <http://www.gnu.org/licenses/>.
  **
  **
  **   The latest source code updates can be obtained from [ 1 ] below at your
@@ -38,24 +38,19 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/dek_db.hpp"
-#include "src/audio_devices.hpp"
-#include "src/pa_audio_buf.hpp"
+#include <list>
+#include <vector>
+#include <complex>
 #include <QObject>
 
 namespace GekkoFyre {
-
-class GkModem : public QObject {
+class GkFFT : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkModem(std::shared_ptr<GekkoFyre::AudioDevices> gkAudio, std::shared_ptr<GekkoFyre::GkLevelDb> dbPtr,
-                     QObject *parent = nullptr);
-    ~GkModem();
+    explicit GkFFT(QObject *parent = nullptr);
+    ~GkFFT();
 
-private:
-    std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
-    std::shared_ptr<GekkoFyre::GkLevelDb> gkDb;
-
+    void FFTCompute(std::complex<float> *data, unsigned int dataLength);
 };
 };

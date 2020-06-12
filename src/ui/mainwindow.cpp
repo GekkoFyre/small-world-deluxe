@@ -96,6 +96,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<std::vector<GekkoFyre::Spectrograph::RawFFT>>("std::vector<GekkoFyre::Spectrograph::RawFFT>");
     qRegisterMetaType<GekkoFyre::Database::Settings::GkUsbPort>("GekkoFyre::Database::Settings::GkUsbPort");
     qRegisterMetaType<GekkoFyre::AmateurRadio::GkConnType>("GekkoFyre::AmateurRadio::GkConnType");
+    qRegisterMetaType<GekkoFyre::AmateurRadio::DigitalModes>("GekkoFyre::AmateurRadio::DigitalModes");
+    qRegisterMetaType<GekkoFyre::AmateurRadio::IARURegions>("GekkoFyre::AmateurRadio::IARURegions");
+    qRegisterMetaType<GekkoFyre::AmateurRadio::GkFreqs>("GekkoFyre::AmateurRadio::GkFreqs");
     qRegisterMetaType<RIG>("RIG");
     qRegisterMetaType<std::vector<short>>("std::vector<short>");
     qRegisterMetaType<size_t>("size_t");
@@ -127,6 +130,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         sw_settings = std::make_shared<QSettings>(QSettings::SystemScope, General::companyName,
                                                   General::productName, this);
+
+        //
+        // Initialize the list of frequencies that Small World Deluxe needs to communicate with other users
+        // throughout the globe/world!
+        //
+        gkFreqList = new GkFreqList(this);
+        QObject::connect(gkFreqList, SIGNAL(updateFrequencies(const float &, const GekkoFyre::AmateurRadio::DigitalModes &, const GekkoFyre::AmateurRadio::IARURegions &, const bool &)),
+                         this, SLOT(updateFreqsInMem(const float &, const GekkoFyre::AmateurRadio::DigitalModes &, const GekkoFyre::AmateurRadio::IARURegions &, const bool &)));
+        gkFreqList->publishFreqList();
 
         //
         // Create a status bar at the bottom of the window with a default message
@@ -229,6 +241,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                  this, SLOT(disconnectRigInMemory(RIG *, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
                 QObject::connect(this, SIGNAL(updateRadioPtr(const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
                                  this, SLOT(updateRadioVarsInMem(const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
+                QObject::connect(this, SIGNAL(updateFrequencies(const float &, const GekkoFyre::AmateurRadio::DigitalModes &, const GekkoFyre::AmateurRadio::IARURegions &, const bool &)),
+                                 this, SLOT(updateFreqsInMem(const float &, const GekkoFyre::AmateurRadio::DigitalModes &, const GekkoFyre::AmateurRadio::IARURegions &, const bool &)));
 
                 // Initialize the Radio Database pointer!
                 if (gkRadioPtr.get() == nullptr) {
@@ -356,15 +370,20 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         if (!pref_audio_devices.empty()) {
             const size_t spectro_window_size = gkSpectroGui->window()->size().rwidth();
-            const size_t input_audio_buffer_size = ((pref_input_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS) *
-                                              GkDb->convertAudioChannelsInt(pref_input_device.sel_channels));
-            pref_input_audio_buf = new GekkoFyre::PaAudioBuf(input_audio_buffer_size, this);
+            fft_num_lines = SPECTRO_NUM_LINES;
+            fft_samples_per_line = SPECTRO_SAMPLES_PER_LINE;
+            circular_buffer_size = ((pref_input_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS) *
+                                    GkDb->convertAudioChannelsInt(pref_input_device.sel_channels));
+            pref_input_audio_buf = new GekkoFyre::PaAudioBuf(circular_buffer_size, this);
             paMicProcBackground = new GekkoFyre::paMicProcBackground(gkPortAudioInit, pref_input_audio_buf, gkAudioDevices, gkStringFuncs, fileIo, GkDb,
-                                                                     pref_input_device, input_audio_buffer_size, spectro_window_size, nullptr);
+                                                                     pref_input_device, circular_buffer_size, spectro_window_size, fft_samples_per_line,
+                                                                     fft_num_lines, nullptr);
 
             //
             // Spectrograph signals and slots
             //
+            QObject::connect(paMicProcBackground, SIGNAL(updateFrequencies(const float &, const GekkoFyre::AmateurRadio::DigitalModes &, const GekkoFyre::AmateurRadio::IARURegions &, const bool &)),
+                             this, SLOT(updateFreqsInMem(const float &, const GekkoFyre::AmateurRadio::DigitalModes &, const GekkoFyre::AmateurRadio::IARURegions &, const bool &)));
             QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), paMicProcBackground, SLOT(abortRecording(const bool &, const int &)));
             QObject::connect(paMicProcBackground, SIGNAL(updateVolume(const double &)), this, SLOT(updateVuMeter(const double &)));
             QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), pref_input_audio_buf, SLOT(abortRecording(const bool &, const int &)));
@@ -1709,6 +1728,51 @@ void MainWindow::updateRadioVarsInMem(const std::shared_ptr<GkRadio> &radio_ptr)
 {
     if (radio_ptr.get() != nullptr) {
         gkRadioPtr = std::move(radio_ptr);
+    }
+
+    return;
+}
+
+/**
+ * @brief MainWindow::updateFreqsInMem Update the radio rig's used frequencies within memory, either by
+ * adding or removing them from the global QVector.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param frequency The frequency to update.
+ * @param digital_mode What digital mode is being used, whether it be WSPR, JT65, FT8, etc.
+ * @param iaru_region The IARU Region that this particular frequency applies towards, such as ALL, R1, etc.
+ * @param remove_freq Whether to remove the frequency in question from the global list or not.
+ */
+void MainWindow::updateFreqsInMem(const float &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
+                                  const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq)
+{
+    GkFreqs freq;
+    freq.frequency = frequency;
+    freq.digital_mode = digital_mode;
+    freq.iaru_region = iaru_region;
+    if (remove_freq) {
+        //
+        // We are removing the frequency from the global std::vector!
+        //
+        if (!frequencyList.isEmpty()) {
+            for (const auto &del_freq: frequencyList) {
+                if (del_freq.frequency == freq.frequency) {
+                    if (!frequencyList.removeOne(del_freq)) {
+                        throw std::runtime_error(tr("Difficulties were encountered in removing the frequency, %1, from the global list!")
+                                                 .arg(QString::number(freq.frequency)).toStdString());
+                    }
+
+                    break;
+                }
+            }
+
+            frequencyList.squeeze();
+        }
+    } else {
+        //
+        // We are adding the frequency to the global std::vector!
+        //
+        frequencyList.reserve(1);
+        frequencyList.push_back(freq);
     }
 
     return;

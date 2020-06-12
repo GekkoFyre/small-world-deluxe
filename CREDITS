@@ -46,10 +46,6 @@ LibUSB by Hans de Goede & Chris Dickens et al.
     <https://github.com/libusb/libusb>
         GNU Lesser General Public License (LGPL, version 2.1)
 
-FFTW by Matteo Frigo & Steven G. Johnson et al.
-    <http://www.fftw.org/>
-        GNU General Public License (GPL, version 2)
-
 libvorbis by Xiph.org
     <https://www.xiph.org/vorbis/>
         BSD 3-clause License

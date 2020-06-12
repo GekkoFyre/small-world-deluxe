@@ -73,7 +73,9 @@ public:
                         std::shared_ptr<GekkoFyre::FileIo> fileIo,
                         std::shared_ptr<GkLevelDb> levelDb,
                         const GekkoFyre::Database::Settings::Audio::GkDevice &pref_input_device,
-                        const size_t input_buffer_size, const int &window_size, QObject *parent = nullptr);
+                        const size_t &input_buffer_size, const int &window_size,
+                        const size_t &samples_per_line, const size_t &num_lines,
+                        QObject *parent = nullptr);
     ~paMicProcBackground() override;
 
 signals:
@@ -82,6 +84,8 @@ signals:
     void updateWaterfall(const std::vector<GekkoFyre::Spectrograph::RawFFT> &data,
                          const std::vector<int> &raw_audio_data,
                          const int &hanning_window_size, const size_t &buffer_size);
+    void updateFrequencies(const float &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
+                           const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq);
 
 public slots:
     void abortRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
@@ -106,6 +110,25 @@ private:
     GekkoFyre::Database::Settings::Audio::GkDevice sel_input_device;
 
     //
+    // Hamlib sub-system
+    //
+    std::vector<float> frequencyList;
+
+    //
+    // Audio sub-system
+    //
+    size_t sampleRate;
+    size_t sampleLength;
+    size_t fftSize;
+
+    float *waveRingBuffer;
+    size_t ringBufferSize;
+    size_t sampleCounter;
+    size_t samplesPerLine;
+
+    double deltaTime;
+
+    //
     // Threads
     //
     boost::thread vu_meter;
@@ -116,7 +139,8 @@ private:
     void procVuMeter(const size_t &buffer_size, GekkoFyre::PaAudioBuf *audio_buf,
                      portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *stream);
     void spectrographCallback(GekkoFyre::PaAudioBuf *audio_buf,
-                              portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *stream);
+                              portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *stream,
+                              float *buffer);
 
 };
 };

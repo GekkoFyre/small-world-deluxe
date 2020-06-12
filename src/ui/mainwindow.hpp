@@ -46,6 +46,7 @@
 #include "src/radiolibs.hpp"
 #include "src/pa_audio_buf.hpp"
 #include "src/spectro_gui.hpp"
+#include "src/gk_frequency_list.hpp"
 #include "src/pa_mic_background.hpp"
 #include "src/ui/dialogsettings.hpp"
 #include "src/gk_audio_encoding.hpp"
@@ -70,9 +71,10 @@
 #include <QPushButton>
 #include <QCommandLineParser>
 #include <QPointer>
-#include <QSharedPointer>
 #include <QPrinter>
+#include <QSharedPointer>
 #include <QString>
+#include <QVector>
 #include <QStringList>
 #include <QMetaType>
 #include <QDateTime>
@@ -175,7 +177,7 @@ public slots:
     void updateProgressBar(const bool &enable, const size_t &min, const size_t &max);
 
     //
-    // Hamlib specific functions
+    // Radio and Hamlib specific functions
     //
     void selectedPortType(const GekkoFyre::AmateurRadio::GkConnType &rig_conn_type, const bool &is_cat_mode);
     void analyzePortType(const bool &is_cat_mode);
@@ -184,6 +186,8 @@ public slots:
     void addRigToMemory(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void disconnectRigInMemory(RIG *rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void updateRadioVarsInMem(const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
+    void updateFreqsInMem(const float &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
+                          const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq);
 
 signals:
     void refreshVuMeter(const double &volumePctg);
@@ -196,7 +200,7 @@ signals:
                          const int &hanning_window_size, const size_t &buffer_size);
 
     //
-    // Hamlib specific functions
+    // Radio and Hamlib specific functions
     //
     void gatherPortType(const bool &is_cat_mode);
     void changePortType(const GekkoFyre::AmateurRadio::GkConnType &rig_conn_type, const bool &is_cat_mode);
@@ -204,10 +208,15 @@ signals:
     void recvRigCapabilities(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void disconnectRigInUse(RIG *rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void updateRadioPtr(const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
+    void updateFrequencies(const float &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
+                           const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq);
 
 private:
     Ui::MainWindow *ui;
 
+    //
+    // Class pointers
+    //
     leveldb::DB *db;
     std::shared_ptr<GekkoFyre::FileIo> fileIo;
     std::shared_ptr<GekkoFyre::GkLevelDb> GkDb;
@@ -215,6 +224,7 @@ private:
     std::shared_ptr<GekkoFyre::PaMic> gkPaMic;
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GekkoFyre::GkCli> gkCli;
+    QPointer<GekkoFyre::GkFreqList> gkFreqList;
     QPointer<GekkoFyre::RadioLibs> gkRadioLibs;
     QPointer<GekkoFyre::GkAudioEncoding> gkAudioEncoding;
     QPointer<GekkoFyre::GkAudioDecoding> gkAudioDecoding;
@@ -249,6 +259,9 @@ private:
     double global_rx_audio_volume;
     double global_tx_audio_volume;
     bool recording_in_progress;
+    size_t fft_num_lines;
+    size_t fft_samples_per_line;
+    size_t circular_buffer_size;
 
     //
     // Multithreading
@@ -266,10 +279,15 @@ private:
     static std::list<GekkoFyre::Database::Settings::GkComPort> status_com_ports; // This variable is responsible for managing the COM/RS232/Serial ports!
 
     //
-    // Miscellaneous
+    // Radio and Hamlib related
     //
     static QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>> gkRadioModels;
     std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> gkRadioPtr;
+    QVector<GekkoFyre::AmateurRadio::GkFreqs> frequencyList;
+
+    //
+    // Timing and date related
+    //
     QPointer<QTimer> timer;
 
     //
@@ -308,6 +326,9 @@ Q_DECLARE_METATYPE(std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>);
 Q_DECLARE_METATYPE(std::vector<GekkoFyre::Spectrograph::RawFFT>);
 Q_DECLARE_METATYPE(GekkoFyre::Database::Settings::GkUsbPort);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkConnType);
+Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::DigitalModes);
+Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::IARURegions);
+Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkFreqs);
 Q_DECLARE_METATYPE(RIG);
 Q_DECLARE_METATYPE(std::vector<short>);
 Q_DECLARE_METATYPE(size_t);

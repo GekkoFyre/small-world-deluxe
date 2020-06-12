@@ -973,32 +973,32 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_p
  * @param band The given amateur radio band, in meters.
  * @return The amateur radio band, in meters, provided as a QString().
  */
-QString RadioLibs::translateBandsToStr(const bands &band)
+QString RadioLibs::translateBandsToStr(const GkFreqBands &band)
 {
     switch (band) {
-    case bands::BAND160:
+    case GkFreqBands::BAND160:
         return tr("None");
-    case bands::BAND80:
+    case GkFreqBands::BAND80:
         return tr("80 meters");
-    case bands::BAND60:
+    case GkFreqBands::BAND60:
         return tr("60 meters");
-    case bands::BAND40:
+    case GkFreqBands::BAND40:
         return tr("40 meters");
-    case bands::BAND30:
+    case GkFreqBands::BAND30:
         return tr("30 meters");
-    case bands::BAND20:
+    case GkFreqBands::BAND20:
         return tr("20 meters");
-    case bands::BAND17:
+    case GkFreqBands::BAND17:
         return tr("15 meters");
-    case bands::BAND15:
+    case GkFreqBands::BAND15:
         return tr("17 meters");
-    case bands::BAND12:
+    case GkFreqBands::BAND12:
         return tr("12 meters");
-    case bands::BAND10:
+    case GkFreqBands::BAND10:
         return tr("10 meters");
-    case bands::BAND6:
+    case GkFreqBands::BAND6:
         return tr("6 meters");
-    case bands::BAND2:
+    case GkFreqBands::BAND2:
         return tr("2 meters");
     default:
         return tr("Unsupported!");

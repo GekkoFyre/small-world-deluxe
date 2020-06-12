@@ -74,6 +74,7 @@ option(GFYRE_BUILD_STATIC "Build Small World Deluxe as a static library/package.
 option(GFYRE_BUILD_SHARED "*** This option is not fully developed yet! *** Build Small World Deluxe as a shared library/package. This will result in a smaller executable at the cost of requiring further DLL dependencies." OFF)
 option(GFYRE_HAMLIB_DBG_VERBOSITY "Enable DEBUG verbosity for the Hamlib library and its use throughout Small World Deluxe. *** Only recommended for programmers and/or possibly maintainers of the project itself! ***" OFF)
 option(GFYRE_BUILD_CODEC2 "*** This feature is in heavy development! *** Build with support for Codec2 <https://github.com/drowe67/codec2>." OFF)
+option(GK_CUDA_FFT "Enable NVIDIA CUDA support within Small World Deluxe and allow your GPU to do heavy calculations instead of your CPU!" OFF)
 
 #
 # Detect if we are dealing with the Linux operating system and not Apple OS/X
@@ -222,14 +223,6 @@ if (USB_FOUND)
 else()
     message(FATAL_ERROR "The 'libusb' USB system library could not be found!")
 endif(USB_FOUND)
-
-find_package(FFTW REQUIRED)
-if (FFTW_FOUND)
-    include_directories(${FFTW_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${FFTW_LIBRARIES})
-else()
-    message(SEND_ERROR "The 'FFTW' mathematics library could not be found!")
-endif(FFTW_FOUND)
 
 find_package(QWT REQUIRED)
 if (QWT_FOUND)
@@ -419,6 +412,8 @@ set(GALAXY_UI_CPP
     src/gk_audio_decoding.cpp
     src/gk_cli.cpp
     src/gk_modem.cpp
+    src/gk_frequency_list.cpp
+    src/gk_fft.cpp
     src/contrib/getopt.c
     src/contrib/serial/src/serial.cc)
 
@@ -463,6 +458,8 @@ set(GALAXY_SRC_HEADERS
     src/gk_audio_decoding.hpp
     src/gk_cli.hpp
     src/gk_modem.hpp
+    src/gk_frequency_list.hpp
+    src/gk_fft.hpp
     src/contrib/getopt.h
     src/contrib/serial/include/serial/v8stdint.h
     src/contrib/serial/include/serial/serial.h)
@@ -534,6 +531,11 @@ endif()
 if(GFYRE_HAMLIB_DBG_VERBOSITY)
     message(STATUS "Enabled maximum verbosity with the Hamlib library throughout Small World Deluxe; debug mode now activated!")
     add_definitions(-DGFYRE_HAMLIB_DBG_VERBOSITY_ENBL)
+endif()
+
+if(GK_CUDA_FFT)
+    message(STATUS "Enable NVIDIA CUDA support within Small World Deluxe and allow your GPU to do heavy calculations instead of your CPU!")
+    add_definitions(-DGK_CUDA_FFT_ENBL)
 endif()
 
 #

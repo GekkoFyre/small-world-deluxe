@@ -37,6 +37,7 @@
 
 #include "pa_mic_background.hpp"
 #include "spectro_cuda.h"
+#include "gk_fft.hpp"
 #include <iostream>
 #include <utility>
 
@@ -48,9 +49,17 @@ using namespace Audio;
 /**
  * @brief paMicProcBackground::paMicProcBackground
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param paInit
  * @param audio_buf
+ * @param audioDev
+ * @param stringFunc
+ * @param fileIo
+ * @param levelDb
  * @param pref_input_device
  * @param input_buffer_size
+ * @param window_size
+ * @param samples_per_line
+ * @param num_lines
  * @param parent
  */
 paMicProcBackground::paMicProcBackground(portaudio::System *paInit, const QPointer<PaAudioBuf> &audio_buf,
@@ -59,7 +68,8 @@ paMicProcBackground::paMicProcBackground(portaudio::System *paInit, const QPoint
                                          std::shared_ptr<FileIo> fileIo,
                                          std::shared_ptr<GekkoFyre::GkLevelDb> levelDb,
                                          const GkDevice &pref_input_device,
-                                         const size_t input_buffer_size, const int &window_size,
+                                         const size_t &input_buffer_size, const int &window_size,
+                                         const size_t &samples_per_line, const size_t &num_lines,
                                          QObject *parent) : QObject(parent)
 {
     try {
@@ -83,6 +93,17 @@ paMicProcBackground::paMicProcBackground(portaudio::System *paInit, const QPoint
         gkAudioDev->openRecordStream(*paInit, &gkAudioBuf, sel_input_device, &streamRecord, gkDb->convertAudioEnumIsStereo(sel_input_device.sel_channels));
 
         emit updateVolume(0);
+
+        sampleRate = sel_input_device.def_sample_rate;
+        sampleLength = SPECTRO_SAMPLING_LENGTH * sampleRate;
+        samplesPerLine = samples_per_line;
+
+        fftSize = GK_FFT_SIZE;
+
+        deltaTime = 0.0f;
+        deltaTime = ((double)samplesPerLine)/((double)sampleRate);
+
+        waveRingBuffer = new float[ringBufferSize];
 
         return;
     } catch (const std::exception &e) {
@@ -194,21 +215,40 @@ void paMicProcBackground::procVuMeter(const size_t &buffer_size, PaAudioBuf *aud
     return;
 }
 
-void paMicProcBackground::spectrographCallback(PaAudioBuf *audio_buf, portaudio::MemFunCallbackStream<PaAudioBuf> *stream)
+/**
+ * @brief paMicProcBackground::spectrographCallback
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param audio_buf
+ * @param stream
+ * @param buffer
+ */
+void paMicProcBackground::spectrographCallback(PaAudioBuf *audio_buf, portaudio::MemFunCallbackStream<PaAudioBuf> *stream, float *buffer)
 {
     try {
         std::mutex spectrograph_callback_mtx;
         std::lock_guard<std::mutex> lck_guard(spectrograph_callback_mtx);
 
         while (stream->isOpen()) {
-            std::vector<int> raw_audio_data = audio_buf->dumpMemory();
-            if (!raw_audio_data.empty()) {
-                std::vector<double> conv_audio_data;
-                conv_audio_data.reserve(raw_audio_data.size());
-                conv_audio_data.assign(raw_audio_data.begin(), raw_audio_data.end());
+            float waveEnvMin = 0, waveEnvMax = 0;
+            for (size_t bufferInd = 0; bufferInd < audio_buffer_size; ++bufferInd) {
+                float value = buffer[bufferInd];
 
-                std::this_thread::sleep_for(std::chrono::duration(std::chrono::milliseconds(SPECTRO_REFRESH_CYCLE_MILLISECS)));
+                if (value > waveEnvMax) {
+                    waveEnvMax = value;
+                }
+                if (value < waveEnvMin) {
+                    waveEnvMin = value;
+                }
+
+                #ifdef GK_CUDA_FFT_ENBL
+                PerformCUDAFFT();
+                #else
+                std::unique_ptr<GkFFT> gkFFT = std::make_unique<GkFFT>(this);
+                gkFFT->FFTCompute();
+                #endif
             }
+
+            std::this_thread::sleep_for(std::chrono::duration(std::chrono::milliseconds(SPECTRO_REFRESH_CYCLE_MILLISECS)));
         }
     } catch (const std::exception &e) {
         #if defined(_MSC_VER) && (_MSC_VER > 1900)
