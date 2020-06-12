@@ -770,7 +770,7 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_p
             modalDlgBoxOk(hwnd, tr("Error!"), tr("Unable to initialize radio rig with USB connection!"), MB_ICONERROR);
             DestroyWindow(hwnd);
             #else
-            modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+            modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("Unable to initialize radio rig with USB connection!"));
             #endif
         }
 
@@ -803,7 +803,7 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_p
         modalDlgBoxOk(hwnd, tr("Error!"), tr("Unable to detect connection type while initializing radio rig (i.e. 'none / unknown' was not an option)!"), MB_ICONERROR);
         DestroyWindow(hwnd);
         #else
-        modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+        modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("Unable to detect connection type while initializing radio rig (i.e. 'none / unknown' was not an option)!"));
         #endif
     }
 
@@ -823,7 +823,8 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_p
                                      .arg(QString::number(radio_ptr->rig_model)), MB_ICONERROR);
         DestroyWindow(hwnd);
         #else
-        modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+        modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("Unknown radio rig: %1\n\nNote to developers: Please check the list of rigs.")
+                         .arg(QString::number(radio_ptr->rig_model));
         #endif
     }
 
@@ -837,7 +838,7 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_p
         modalDlgBoxOk(hwnd, tr("Error!"), tr("[ Hamlib ] Error with opening amateur radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->retcode))), MB_ICONERROR);
         DestroyWindow(hwnd);
         #else
-        modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+        modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("[ Hamlib ] Error with opening amateur radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->retcode))));
         #endif
     } else {
         radio_ptr->is_open = true; // Set the flag that the aforementioned pointer has been initialized
@@ -851,7 +852,7 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_p
             modalDlgBoxOk(hwnd, tr("Error!"), tr("[ Hamlib ] Error with opening amateur radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->retcode))), MB_ICONERROR);
             DestroyWindow(hwnd);
             #else
-            modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+            modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("[ Hamlib ] Error with opening amateur radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->retcode))));
             #endif
         }
 
@@ -874,7 +875,7 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_p
                 modalDlgBoxOk(hwnd, tr("Error!"), tr("[ Hamlib ] Error with powering on radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->retcode))), MB_ICONERROR);
                 DestroyWindow(hwnd);
                 #else
-                modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+                modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("[ Hamlib ] Error with powering on radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->retcode))));
                 #endif
             }
         }
@@ -891,7 +892,7 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_p
             modalDlgBoxOk(hwnd, tr("Error!"), tr("[ Hamlib ] Error with obtaining the primary VFO value for radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->status))), MB_ICONERROR);
             DestroyWindow(hwnd);
             #else
-            modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+            modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("[ Hamlib ] Error with obtaining the primary VFO value for radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->status))));
             #endif
         }
 
@@ -903,7 +904,7 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_p
             modalDlgBoxOk(hwnd, tr("Error!"), tr("[ Hamlib ] Error with obtaining current modulation for radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->status))), MB_ICONERROR);
             DestroyWindow(hwnd);
             #else
-            modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+            modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("[ Hamlib ] Error with obtaining current modulation for radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->status))));
             #endif
         }
 
@@ -918,7 +919,7 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_p
             modalDlgBoxOk(hwnd, tr("Error!"), tr("[ Hamlib ] Error with obtaining power output for radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->status))), MB_ICONERROR);
             DestroyWindow(hwnd);
             #else
-            modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+            modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("[ Hamlib ] Error with obtaining power output for radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->status))));
             #endif
         }
 
@@ -930,7 +931,7 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_p
             modalDlgBoxOk(hwnd, tr("Error!"), tr("[ Hamlib ] Error with converting signal power to watts for radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->status))), MB_ICONERROR);
             DestroyWindow(hwnd);
             #else
-            modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+            modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("[ Hamlib ] Error with converting signal power to watts for radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->status))));
             #endif
         }
 
@@ -942,7 +943,7 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_p
             modalDlgBoxOk(hwnd, tr("Error!"), tr("[ Hamlib ] Error with calibrating S-value output for radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->status))), MB_ICONERROR);
             DestroyWindow(hwnd);
             #else
-            modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+            modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("[ Hamlib ] Error with calibrating S-value output for radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->status))), e.what());
             #endif
         }
 
@@ -955,7 +956,7 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_p
             modalDlgBoxOk(hwnd, tr("Error!"), tr("[ Hamlib ] Error with obtaining signal strength for radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->status))), MB_ICONERROR);
             DestroyWindow(hwnd);
             #else
-            modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+            modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("[ Hamlib ] Error with obtaining signal strength for radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->status))));
             #endif
         }
 

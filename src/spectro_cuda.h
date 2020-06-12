@@ -37,46 +37,4 @@
 
 #pragma once
 
-#include "src/defines.hpp"
-#include <fftw3.h>
-#include <QObject>
-#include <vector>
-#include <memory>
-#include <mutex>
-#include <thread>
-#include <future>
-
-#ifdef _WIN32
-#include "src/string_funcs_windows.hpp"
-#elif __linux__
-#include "src/string_funcs_linux.hpp"
-#endif
-
-namespace GekkoFyre {
-
-class SpectroFFTW: public QObject {
-    Q_OBJECT
-
-public:
-    explicit SpectroFFTW(std::shared_ptr<GekkoFyre::StringFuncs> stringFunc,
-                         QObject *parent = nullptr);
-    ~SpectroFFTW();
-
-    void stft(std::vector<double> *signal, int signal_length, int window_size, int hop_size, const int &feed_rate,
-              std::promise<std::vector<Spectrograph::RawFFT>> ret_data_promise);
-    void calcPwr(const std::vector<Spectrograph::RawFFT> &tds, const int &win_size,
-                 std::promise<std::vector<Spectrograph::RawFFT> > pds_data_promise);
-
-private:
-    std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
-
-    std::mutex calc_stft_mtx;
-    std::mutex calc_hanning_mtx;
-
-    void hanning(int win_length, double *buffer);
-
-    void calcPwrTest(const size_t &num_periods, const int &win_size);
-    std::vector<double> powerSpectrum(fftw_complex *tds, const int &win_size);
-
-};
-};
+void processCUDAFFT(float *inputData, float *outputData, unsigned int numSamples);

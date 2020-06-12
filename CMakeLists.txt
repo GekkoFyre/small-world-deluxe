@@ -45,7 +45,7 @@ cmake_policy(SET CMP0074 NEW)
 cmake_policy(SET CMP0054 NEW)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 
-project(smallworld C CXX)
+project(smallworld C CXX CUDA)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CXX_STANDARD 17)
@@ -395,6 +395,11 @@ qt5_add_resources(UI_RESOURCES src/sworld_res.qrc)
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_BINARY_DIR})
 
+set(GALAXY_CUDA
+    ${GALAXY_CUDA}
+    src/spectro_cuda.cu
+    src/spectro_cuda.h)
+
 set(GALAXY_UI_CPP
     ${GALAXY_UI_CPP}
     src/ui/mainwindow.cpp
@@ -402,7 +407,6 @@ set(GALAXY_UI_CPP
     src/ui/aboutdialog.cpp
     src/ui/gkaudioplaydialog.cpp
     src/ui/spectrodialog.cpp
-    src/spectro_fftw.cpp
     src/radiolibs.cpp
     src/dek_db.cpp
     src/file_io.cpp
@@ -447,7 +451,6 @@ set(GALAXY_SRC_HEADERS
     src/ui/gkaudioplaydialog.hpp
     src/ui/spectrodialog.hpp
     src/pa_sinewave.hpp
-    src/spectro_fftw.hpp
     src/radiolibs.hpp
     src/dek_db.hpp
     src/file_io.hpp
@@ -544,6 +547,7 @@ include(GNUInstallDirs)
 #
 if(GFYRE_BUILD_STATIC)
     add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_SRC_HEADERS} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP})
+    add_library(galaxy_cuda STATIC ${GALAXY_CUDA})
 else()
     set(GFYRE_BUILD_SHARED ON)
 endif(GFYRE_BUILD_STATIC)
@@ -552,7 +556,8 @@ endif(GFYRE_BUILD_STATIC)
 # Build Small World Deluxe as a shared package!
 #
 if(GFYRE_BUILD_SHARED)
-    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_SRC_HEADERS} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP})
+    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_SRC_HEADERS} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP} ${GALAXY_CUDA})
+    add_library(galaxy_cuda SHARED ${GALAXY_CUDA})
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
@@ -567,6 +572,7 @@ set(SWRLD_EXEC ${SWRLD_EXEC}
 
 add_executable(smallworld ${SWRLD_EXEC})
 target_link_libraries(smallworld galaxy)
+target_link_libraries(smallworld galaxy_cuda)
 
 #
 # https://stackoverflow.com/questions/23995019/what-is-the-modern-method-for-setting-general-compile-flags-in-cmake
