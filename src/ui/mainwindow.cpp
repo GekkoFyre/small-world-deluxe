@@ -369,15 +369,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         timer->start(1000);
 
         if (!pref_audio_devices.empty()) {
-            const size_t spectro_window_size = gkSpectroGui->window()->size().rwidth();
-            fft_num_lines = SPECTRO_NUM_LINES;
-            fft_samples_per_line = SPECTRO_SAMPLES_PER_LINE;
-            circular_buffer_size = ((pref_input_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS) *
-                                    GkDb->convertAudioChannelsInt(pref_input_device.sel_channels));
-            pref_input_audio_buf = new GekkoFyre::PaAudioBuf(circular_buffer_size, this);
+            const size_t fft_num_lines = SPECTRO_NUM_LINES;
+            const size_t fft_samples_per_line = SPECTRO_SAMPLES_PER_LINE;
+            const size_t audio_input_sample_length = (pref_input_device.def_sample_rate * SPECTRO_SAMPLING_LENGTH);
+            const size_t input_audio_circ_buf_size = ((fft_num_lines - 1) * fft_samples_per_line + audio_input_sample_length);
+
+            pref_input_audio_buf = new GekkoFyre::PaAudioBuf(input_audio_circ_buf_size, this);
             paMicProcBackground = new GekkoFyre::paMicProcBackground(gkPortAudioInit, pref_input_audio_buf, gkAudioDevices, gkStringFuncs, fileIo, GkDb,
-                                                                     pref_input_device, circular_buffer_size, spectro_window_size, fft_samples_per_line,
-                                                                     fft_num_lines, nullptr);
+                                                                     pref_input_device, input_audio_circ_buf_size, fft_samples_per_line, fft_num_lines,
+                                                                     nullptr);
 
             //
             // Spectrograph signals and slots
@@ -414,9 +414,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             //
             // Setup the audio encoding/decoding libraries!
             //
-            const size_t output_audio_buffer_size = ((pref_output_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS) *
-                                              GkDb->convertAudioChannelsInt(pref_output_device.sel_channels));
-            pref_output_audio_buf = new GekkoFyre::PaAudioBuf(output_audio_buffer_size, this);
+            const size_t audio_output_sample_length = (pref_input_device.def_sample_rate * SPECTRO_SAMPLING_LENGTH);
+            const size_t output_audio_circ_buf_size = ((fft_num_lines - 1) * fft_samples_per_line + audio_output_sample_length);
+            pref_output_audio_buf = new GekkoFyre::PaAudioBuf(output_audio_circ_buf_size, this);
 
             gkAudioEncoding = new GkAudioEncoding(fileIo, pref_input_audio_buf, GkDb, gkSpectroGui,
                                                   gkStringFuncs, pref_input_device, this);

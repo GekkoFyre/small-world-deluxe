@@ -54,6 +54,7 @@
 #include <thread>
 #include <future>
 #include <vector>
+#include <list>
 
 #ifdef _WIN32
 #include "src/string_funcs_windows.hpp"
@@ -73,10 +74,9 @@ public:
                         std::shared_ptr<GekkoFyre::FileIo> fileIo,
                         std::shared_ptr<GkLevelDb> levelDb,
                         const GekkoFyre::Database::Settings::Audio::GkDevice &pref_input_device,
-                        const size_t &input_buffer_size, const int &window_size,
-                        const size_t &samples_per_line, const size_t &num_lines,
-                        QObject *parent = nullptr);
-    ~paMicProcBackground() override;
+                        const size_t &input_buffer_size, const size_t &samples_per_line,
+                        const size_t &num_lines, QObject *parent = nullptr);
+    ~paMicProcBackground();
 
 signals:
     void stopRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
@@ -129,11 +129,15 @@ private:
     double deltaTime;
 
     //
+    // Spectrogram-related
+    //
+    std::list<std::vector<float>> spectrogramData;
+
+    //
     // Threads
     //
     boost::thread vu_meter;
     boost::thread spectro_thread;
-    int hanning_window_size;
 
     void initRecording();
     void procVuMeter(const size_t &buffer_size, GekkoFyre::PaAudioBuf *audio_buf,

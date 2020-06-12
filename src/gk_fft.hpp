@@ -48,9 +48,26 @@ class GkFFT : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkFFT(QObject *parent = nullptr);
+    explicit GkFFT(const std::list<std::vector<float>> &spectrogramData_, const std::list<float> &waveEnvelopeMin_,
+                   const std::list<float> &waveEnvelopeMax_, const std::list<float> &timeList_,
+                   const size_t &numLines_, const double &deltaTime_, const double &headTime_, const double &footTime_,
+                   QObject *parent = nullptr);
     ~GkFFT();
 
     void FFTCompute(std::complex<float> *data, unsigned int dataLength);
+    void addLine(float *fourierData, unsigned int dataLength, float envMin, float envMax);
+
+private:
+    std::list<std::vector<float>> spectrogramData;
+    std::list<float> waveEnvelopeMin;
+    std::list<float> waveEnvelopeMax;
+    std::list<float> timeList;
+    size_t numLines;
+    double deltaTime;
+    double headTime;
+    double footTime;
+
+    void removeFoot(const size_t &numLines);
+
 };
 };

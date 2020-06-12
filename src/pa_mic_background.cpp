@@ -68,9 +68,8 @@ paMicProcBackground::paMicProcBackground(portaudio::System *paInit, const QPoint
                                          std::shared_ptr<FileIo> fileIo,
                                          std::shared_ptr<GekkoFyre::GkLevelDb> levelDb,
                                          const GkDevice &pref_input_device,
-                                         const size_t &input_buffer_size, const int &window_size,
-                                         const size_t &samples_per_line, const size_t &num_lines,
-                                         QObject *parent) : QObject(parent)
+                                         const size_t &input_buffer_size, const size_t &samples_per_line,
+                                         const size_t &num_lines, QObject *parent) : QObject(parent)
 {
     try {
         std::mutex pa_mic_mtx;
@@ -81,7 +80,6 @@ paMicProcBackground::paMicProcBackground(portaudio::System *paInit, const QPoint
         gkFileIo = std::move(fileIo);
         gkAudioBuf = audio_buf;
         gkDb = std::move(levelDb);
-        hanning_window_size = window_size;
 
         sel_input_device = pref_input_device;
         audio_buffer_size = input_buffer_size;

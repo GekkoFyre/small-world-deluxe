@@ -49,21 +49,28 @@ using namespace GekkoFyre;
 using namespace Database;
 using namespace Settings;
 using namespace Audio;
+using namespace AmateurRadio;
+using namespace Control;
 
 /**
  * @brief PaAudioBuf::PaAudioBuf processes the audio buffering and memory handling functions for PortAudio.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @note <http://portaudio.com/docs/v19-doxydocs-dev/pa__ringbuffer_8h.html>
  * <http://portaudio.com/docs/v19-doxydocs-dev/group__test__src.html>
- * @param size_hint
+ * @param buffer_size
  */
-PaAudioBuf::PaAudioBuf(int size_hint, QObject *parent)
+PaAudioBuf::PaAudioBuf(int buffer_size, QObject *parent)
 {
     std::mutex pa_audio_buf_mtx;
     std::lock_guard<std::mutex> lck_guard(pa_audio_buf_mtx);
 
-    buffer_size = size_hint;
-    rec_samples_ptr = std::make_unique<boost::circular_buffer<int>>(buffer_size);
+    //
+    // Original author: https://embeddedartistry.com/blog/2017/05/17/creating-a-circular-buffer-in-c-and-c/
+    //
+    circ_buffer_size = buffer_size;
+    gkCircBuffer = std::make_unique<GkCircBuffer<float>>();
+
+    rec_samples_ptr = std::make_unique<boost::circular_buffer<int>>(circ_buffer_size);
 }
 
 PaAudioBuf::~PaAudioBuf()
@@ -165,7 +172,7 @@ std::vector<int> PaAudioBuf::dumpMemory()
         }
     }
 
-    ret_vec = fillVecZeros(buffer_size);
+    ret_vec = fillVecZeros(circ_buffer_size);
     return ret_vec;
 }
 
@@ -217,7 +224,7 @@ int PaAudioBuf::at(const int &idx)
     int ret_value = 0;
     if (rec_samples_ptr != nullptr && is_rec_active) {
         if (!rec_samples_ptr->empty()) {
-            if (idx <= buffer_size && idx >= 0) {
+            if (idx <= circ_buffer_size && idx >= 0) {
                 size_t counter = 0;
                 for (const auto &sample: *rec_samples_ptr) {
                     if (counter == idx) {
@@ -324,7 +331,7 @@ bool PaAudioBuf::clear() const
 {
     if (rec_samples_ptr != nullptr) {
         if (!rec_samples_ptr->empty()) {
-            rec_samples_ptr->erase(rec_samples_ptr->begin(), (rec_samples_ptr->begin() + buffer_size));
+            rec_samples_ptr->erase(rec_samples_ptr->begin(), (rec_samples_ptr->begin() + circ_buffer_size));
 
             if (rec_samples_ptr->empty()) {
                 return true;

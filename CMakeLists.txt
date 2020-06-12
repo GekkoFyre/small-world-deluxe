@@ -458,6 +458,7 @@ set(GALAXY_SRC_HEADERS
     src/gk_audio_decoding.hpp
     src/gk_cli.hpp
     src/gk_modem.hpp
+    src/gk_circ_buffer.hpp
     src/gk_frequency_list.hpp
     src/gk_fft.hpp
     src/contrib/getopt.h

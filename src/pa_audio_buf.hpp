@@ -38,6 +38,7 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include "src/gk_circ_buffer.hpp"
 #include <boost/circular_buffer.hpp>
 #include <boost/circular_buffer/allocators.hpp>
 #include <boost/iterator.hpp>
@@ -57,7 +58,7 @@ class PaAudioBuf : public QObject, private boost::circular_buffer<int> {
     typedef boost::circular_buffer<int> circular_buffer;
 
 public:
-    explicit PaAudioBuf(int size_hint, QObject *parent = nullptr);
+    explicit PaAudioBuf(int buffer_size, QObject *parent = nullptr);
     virtual ~PaAudioBuf();
 
     PaAudioBuf operator*(const PaAudioBuf &) const;
@@ -90,8 +91,9 @@ public slots:
     void abortRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
 
 private:
+    std::unique_ptr<GekkoFyre::GkCircBuffer<float>> gkCircBuffer;
     std::unique_ptr<boost::circular_buffer<int>> rec_samples_ptr;     // Contains the 16-bit mono samples
-    int buffer_size;
+    int circ_buffer_size;
 
     std::vector<int> fillVecZeros(const int &buf_size);
 

@@ -259,9 +259,6 @@ private:
     double global_rx_audio_volume;
     double global_tx_audio_volume;
     bool recording_in_progress;
-    size_t fft_num_lines;
-    size_t fft_samples_per_line;
-    size_t circular_buffer_size;
 
     //
     // Multithreading
