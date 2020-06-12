@@ -39,9 +39,6 @@
 
 #include "src/defines.hpp"
 #include "src/gk_circ_buffer.hpp"
-#include <boost/circular_buffer.hpp>
-#include <boost/circular_buffer/allocators.hpp>
-#include <boost/iterator.hpp>
 #include <QObject>
 #include <memory>
 #include <vector>
@@ -49,16 +46,16 @@
 #include <thread>
 #include <future>
 #include <mutex>
+#include <list>
 
 namespace GekkoFyre {
 
-class PaAudioBuf : public QObject, private boost::circular_buffer<int> {
+class PaAudioBuf : public QObject {
     Q_OBJECT
-    typedef int T;
-    typedef boost::circular_buffer<int> circular_buffer;
 
 public:
-    explicit PaAudioBuf(int buffer_size, QObject *parent = nullptr);
+    explicit PaAudioBuf(int buffer_size, const GekkoFyre::Database::Settings::Audio::GkDevice &pref_output_device,
+                        const GekkoFyre::Database::Settings::Audio::GkDevice &pref_input_device, QObject *parent = nullptr);
     virtual ~PaAudioBuf();
 
     PaAudioBuf operator*(const PaAudioBuf &) const;
@@ -66,36 +63,34 @@ public:
 
     bool is_rec_active;
 
-    int playbackCallback(const void *input_buffer, void *output_buffer, unsigned long frames_per_buffer,
-                         const PaStreamCallbackTimeInfo *time_info, PaStreamCallbackFlags status_flags);
-    int recordCallback(const void *input_buffer, void *output_buffer, unsigned long frames_per_buffer,
-                       const PaStreamCallbackTimeInfo *time_info, PaStreamCallbackFlags status_flags);
+    int playbackCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
+                         const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags);
+    int recordCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
+                       const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags);
     std::vector<int> dumpMemory();
     void prepOggVorbisBuf(std::promise<std::vector<signed char>> vorbis_buf);
 
     virtual size_t size() const;
     virtual int at(const int &idx);
-    virtual int front() const;
-    virtual int back() const;
-    virtual void push_back(const int &data);
-    virtual void push_front(const int &data);
-    virtual void pop_front();
-    virtual void pop_back();
-    virtual void swap(boost::circular_buffer<int> data_idx_1) noexcept;
+    virtual void push_back(const float &data);
     virtual bool empty() const;
     virtual bool clear() const;
-    virtual iterator begin() const;
-    virtual iterator end() const;
 
 public slots:
     void abortRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
 
 private:
-    std::unique_ptr<GekkoFyre::GkCircBuffer<float>> gkCircBuffer;
-    std::unique_ptr<boost::circular_buffer<int>> rec_samples_ptr;     // Contains the 16-bit mono samples
+    GekkoFyre::Database::Settings::Audio::GkDevice prefInputDevice;
+    GekkoFyre::Database::Settings::Audio::GkDevice prefOutputDevice;
+
+    std::unique_ptr<GekkoFyre::GkCircBuffer<float *>> gkCircBuffer;
     int circ_buffer_size;
+    int maxFrameIndex;
+    int frameIndex;
 
     std::vector<int> fillVecZeros(const int &buf_size);
+
+    portaudio::SampleDataFormat sampleFormatConvert(const unsigned long sample_rate);
 
 };
 };

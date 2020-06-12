@@ -45,6 +45,11 @@
 #include <Windows.h>
 #endif
 
+//
+// If making use of `paFloat32` for all recordings, then be sure to use `0.0f` for the `GK_SAMPLE_SILENCE`!
+//
+#define GK_SAMPLE_SILENCE (0.0f)
+
 using namespace GekkoFyre;
 using namespace Database;
 using namespace Settings;
@@ -59,18 +64,32 @@ using namespace Control;
  * <http://portaudio.com/docs/v19-doxydocs-dev/group__test__src.html>
  * @param buffer_size
  */
-PaAudioBuf::PaAudioBuf(int buffer_size, QObject *parent)
+
+/**
+ * @brief PaAudioBuf::PaAudioBuf
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param buffer_size
+ * @param pref_output_device
+ * @param pref_input_device
+ * @param parent
+ */
+PaAudioBuf::PaAudioBuf(int buffer_size, const GkDevice &pref_output_device, const GkDevice &pref_input_device, QObject *parent)
 {
     std::mutex pa_audio_buf_mtx;
     std::lock_guard<std::mutex> lck_guard(pa_audio_buf_mtx);
+
+    // The preferred input and output audio devices
+    prefInputDevice = pref_input_device;
+    prefOutputDevice = pref_output_device;
+
+    maxFrameIndex = 0;
+    frameIndex = 0;
 
     //
     // Original author: https://embeddedartistry.com/blog/2017/05/17/creating-a-circular-buffer-in-c-and-c/
     //
     circ_buffer_size = buffer_size;
-    gkCircBuffer = std::make_unique<GkCircBuffer<float>>();
-
-    rec_samples_ptr = std::make_unique<boost::circular_buffer<int>>(circ_buffer_size);
+    gkCircBuffer = std::make_unique<GkCircBuffer<float *>>(circ_buffer_size, this);
 }
 
 PaAudioBuf::~PaAudioBuf()
@@ -78,75 +97,125 @@ PaAudioBuf::~PaAudioBuf()
 
 /**
  * @brief PaAudioBuf::playbackCallback
- * @author Keith Vertanen <https://www.keithv.com/software/portaudio/>
- * @param input_buffer
- * @param input_buffer
- * @param frames_per_buffer
- * @param time_info
- * @param status_flags
+ * @author Phil Burk <http://www.softsynth.com>, Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param inputBuffer
+ * @param outputBuffer
+ * @param framesPerBuffer
+ * @param timeInfo
+ * @param statusFlags
+ * @param userData
  * @return
  */
-int PaAudioBuf::playbackCallback(const void *input_buffer, void *output_buffer, unsigned long frames_per_buffer,
-                                 const PaStreamCallbackTimeInfo *time_info, PaStreamCallbackFlags status_flags)
+int PaAudioBuf::playbackCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
+                                 const PaStreamCallbackTimeInfo* timeInfo, PaStreamCallbackFlags statusFlags)
 {
     std::mutex playback_loop_mtx;
     std::lock_guard<std::mutex> lck_guard(playback_loop_mtx);
-    int**	data_mem = (int**)output_buffer;
-    unsigned long i_output = 0;
 
-    if (output_buffer == nullptr) {
-        return paComplete;
-    }
+    Q_UNUSED(inputBuffer);
+    Q_UNUSED(timeInfo);
+    Q_UNUSED(statusFlags);
 
-    // Output samples until we either have satified the caller, or we run out
-    auto it = rec_samples_ptr->begin();
-    while (i_output < frames_per_buffer) {
-        if (it == rec_samples_ptr->end()) {
-            // Fill out buffer with zeros
-            while (i_output < frames_per_buffer) {
-                data_mem[0][i_output] = (int)0;
-                i_output++;
+    int numChannels = prefOutputDevice.sel_channels;
+    std::unique_ptr<GkPaAudioData> data = std::make_unique<GkPaAudioData>();
+    float *rptr = (&data->recordedSamples[data->frameIndex * numChannels]);
+    float *wptr = (float *)outputBuffer;
+    size_t framesLeft = (data->maxFrameIndex - data->frameIndex);
+    int finished;
+
+    if (framesLeft < framesPerBuffer) {
+        // Final buffer!
+        for (size_t i = 0; i < framesLeft; ++i) {
+            *wptr++ = *rptr++;  // Left
+            if (numChannels == 2) {
+                *wptr++ = *rptr++; // Right
             }
-
-            return paComplete;
+        }
+        for (size_t i = 0; i < framesPerBuffer; ++i) {
+            *wptr++ = 0; // Left
+            if (numChannels == 2) {
+                *wptr++ = 0;  // Right
+            }
         }
 
-        data_mem[0][i_output] = (int) *it;
-        ++it;
-        i_output++;
+        data->frameIndex += framesLeft;
+        finished = paComplete;
+    } else {
+        for (size_t i = 0; i < framesPerBuffer; ++i) {
+            *wptr++ = *rptr++;  // Left
+            if (numChannels == 2) {
+                *wptr++ = *rptr++;  // Right
+            }
+        }
+
+        data->frameIndex += framesPerBuffer;
+        finished = paContinue;
     }
 
-    return paContinue;
+    return finished;
 }
 
 /**
  * @brief PaAudioBuf::recordCallback is responsible for copying PortAudio data (i.e. input audio device) to the
  * memory, asynchronously.
- * @author Keith Vertanen <https://www.keithv.com/software/portaudio/>
- * @param input_buffer
- * @param output_buffer
- * @param frames_per_buffer
- * @param time_info
- * @param status_flags
- * @param user_data
+ * @author Phil Burk <http://www.softsynth.com>, Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param inputBuffer
+ * @param outputBuffer
+ * @param framesPerBuffer
+ * @param timeInfo
+ * @param statusFlags
+ * @param userData
  * @return
  */
-int PaAudioBuf::recordCallback(const void* input_buffer, void* output_buffer, unsigned long frames_per_buffer,
-                          const PaStreamCallbackTimeInfo* time_info, PaStreamCallbackFlags status_flags)
+int PaAudioBuf::recordCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
+                               const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags)
 {
     std::mutex record_loop_mtx;
     std::lock_guard<std::mutex> lck_guard(record_loop_mtx);
-    int** data_mem = (int**)input_buffer;
 
-    if (input_buffer == nullptr) {
-        return paContinue;
+    // Prevent unused variable warnings!
+    Q_UNUSED(outputBuffer);
+    Q_UNUSED(timeInfo);
+    Q_UNUSED(statusFlags);
+
+    int numChannels = prefInputDevice.sel_channels;
+    std::unique_ptr<GkPaAudioData> data = std::make_unique<GkPaAudioData>();
+    const float *rptr = (const float*)inputBuffer;
+    float *wptr = &data->recordedSamples[data->frameIndex * numChannels];
+
+    size_t framesToCalc = 0;
+    size_t framesLeft = (data->maxFrameIndex - data->frameIndex);
+    int finished;
+
+    if (framesLeft < framesPerBuffer) {
+        framesToCalc = framesLeft;
+        finished = paComplete;
+    } else {
+        framesToCalc = framesPerBuffer;
+        finished = paContinue;
     }
 
-    for (unsigned long i = 0; i < frames_per_buffer; i++) {
-        rec_samples_ptr->push_back(data_mem[0][i]);
+    if (inputBuffer == nullptr) {
+        for (size_t i = 0; i < framesToCalc; ++i) {
+            *wptr++ = GK_SAMPLE_SILENCE;  // Left
+            if (numChannels == 2) {
+                *wptr++ = GK_SAMPLE_SILENCE;  // Right
+            }
+        }
+    } else {
+        for (size_t i = 0; i < framesToCalc; ++i) {
+            *wptr++ = *rptr++;  // Left
+            if (numChannels == 2) {
+                *wptr++ = *rptr++;  // Right
+            }
+
+            gkCircBuffer->put(wptr);
+        }
     }
 
-    return paContinue;
+    data->frameIndex += framesToCalc;
+
+    return finished;
 }
 
 /**
@@ -159,13 +228,20 @@ std::vector<int> PaAudioBuf::dumpMemory()
 {
     std::mutex pa_buf_dup_mem_mtx;
     std::lock_guard<std::mutex> lck_guard(pa_buf_dup_mem_mtx);
-    std::vector<int> ret_vec;
-    if (rec_samples_ptr != nullptr) {
-        if (!rec_samples_ptr->empty()) {
-            // rec_samples_ptr->linearize();
 
-            for (auto it = rec_samples_ptr->begin(); it != rec_samples_ptr->end(); ++it) {
-                ret_vec.push_back(*it);
+    std::vector<int> ret_vec;
+    if (gkCircBuffer != nullptr) {
+        if (!gkCircBuffer->empty()) {
+            float *data = gkCircBuffer->get();
+            ret_vec.reserve(gkCircBuffer->size());
+            size_t max_idx_counter;
+            for (size_t i = 0; i < gkCircBuffer->size(); ++i) {
+                ret_vec.push_back(data[i]);
+                ++max_idx_counter;
+
+                if (max_idx_counter == frameIndex) {
+                    break;
+                }
             }
 
             return ret_vec;
@@ -209,8 +285,8 @@ void PaAudioBuf::prepOggVorbisBuf(std::promise<std::vector<signed char>> vorbis_
 size_t PaAudioBuf::size() const
 {
     size_t rec_samples_size = 0;
-    if (!rec_samples_ptr->empty()) {
-        rec_samples_size = rec_samples_ptr->size();
+    if (!gkCircBuffer->empty()) {
+        rec_samples_size = gkCircBuffer->size();
         return rec_samples_size;
     }
 
@@ -222,20 +298,15 @@ int PaAudioBuf::at(const int &idx)
     std::mutex pa_audio_buf_loc_mtx;
     std::lock_guard<std::mutex> lck_guard(pa_audio_buf_loc_mtx);
     int ret_value = 0;
-    if (rec_samples_ptr != nullptr && is_rec_active) {
-        if (!rec_samples_ptr->empty()) {
+    if (gkCircBuffer != nullptr && is_rec_active) {
+        if (!gkCircBuffer->empty()) {
             if (idx <= circ_buffer_size && idx >= 0) {
-                size_t counter = 0;
-                for (const auto &sample: *rec_samples_ptr) {
-                    if (counter == idx) {
-                        ret_value = sample;
-                        break;
+                for (size_t i = 0; i < gkCircBuffer->size(); ++i) {
+                    if (i == idx) {
+                        ret_value = gkCircBuffer->get()[i];
+                        return ret_value;
                     }
-
-                    ++counter;
                 }
-
-                return ret_value;
             }
         }
     }
@@ -243,72 +314,19 @@ int PaAudioBuf::at(const int &idx)
     return ret_value;
 }
 
-int PaAudioBuf::front() const
+void PaAudioBuf::push_back(const float &data)
 {
-    if (rec_samples_ptr != nullptr) {
-        if (!rec_samples_ptr->empty()) {
-            return rec_samples_ptr->front();
+    if (gkCircBuffer != nullptr) {
+        if (gkCircBuffer->full()) {
+            gkCircBuffer->reset();
         }
-    }
 
-    return 0;
-}
-
-int PaAudioBuf::back() const
-{
-    if (rec_samples_ptr != nullptr) {
-        if (!rec_samples_ptr->empty()) {
-            return rec_samples_ptr->back();
+        std::vector<float> array_tmp;
+        array_tmp.reserve(1);
+        array_tmp.push_back(data);
+        for (size_t i = 0; i < gkCircBuffer->capacity(); ++i) {
+            gkCircBuffer->put(array_tmp.data());
         }
-    }
-
-    return 0;
-}
-
-void PaAudioBuf::push_back(const int &data)
-{
-    if (rec_samples_ptr != nullptr) {
-        rec_samples_ptr->push_back(data);
-    }
-
-    return;
-}
-
-void PaAudioBuf::push_front(const int &data)
-{
-    if (rec_samples_ptr != nullptr) {
-        rec_samples_ptr->push_front(data);
-    }
-
-    return;
-}
-
-void PaAudioBuf::pop_front()
-{
-    if (rec_samples_ptr != nullptr) {
-        if (!rec_samples_ptr->empty()) {
-            rec_samples_ptr->pop_front();
-        }
-    }
-
-    return;
-}
-
-void PaAudioBuf::pop_back()
-{
-    if (rec_samples_ptr != nullptr) {
-        if (!rec_samples_ptr->empty()) {
-            rec_samples_ptr->pop_back();
-        }
-    }
-
-    return;
-}
-
-void PaAudioBuf::swap(boost::circular_buffer<int> data_idx_1) noexcept
-{
-    if (rec_samples_ptr != nullptr) {
-        rec_samples_ptr->swap(data_idx_1);
     }
 
     return;
@@ -316,8 +334,8 @@ void PaAudioBuf::swap(boost::circular_buffer<int> data_idx_1) noexcept
 
 bool PaAudioBuf::empty() const
 {
-    if (rec_samples_ptr != nullptr) {
-        if (rec_samples_ptr->empty()) {
+    if (gkCircBuffer != nullptr) {
+        if (gkCircBuffer->empty()) {
             return true;
         } else {
             return false;
@@ -329,35 +347,17 @@ bool PaAudioBuf::empty() const
 
 bool PaAudioBuf::clear() const
 {
-    if (rec_samples_ptr != nullptr) {
-        if (!rec_samples_ptr->empty()) {
-            rec_samples_ptr->erase(rec_samples_ptr->begin(), (rec_samples_ptr->begin() + circ_buffer_size));
+    if (gkCircBuffer != nullptr) {
+        if (!gkCircBuffer->empty()) {
+            gkCircBuffer->reset();
 
-            if (rec_samples_ptr->empty()) {
+            if (gkCircBuffer->empty()) {
                 return true;
             }
         }
     }
 
     return false;
-}
-
-boost::circular_buffer<int, std::allocator<int>>::iterator PaAudioBuf::begin() const
-{
-    if (rec_samples_ptr != nullptr) {
-        return rec_samples_ptr->begin();
-    }
-
-    return boost::circular_buffer<int, std::allocator<int>>::iterator();
-}
-
-boost::circular_buffer<int, std::allocator<int>>::iterator PaAudioBuf::end() const
-{
-    if (rec_samples_ptr != nullptr) {
-        return rec_samples_ptr->end();
-    }
-
-    return boost::circular_buffer<int, std::allocator<int>>::iterator();
 }
 
 void PaAudioBuf::abortRecording(const bool &recording_is_stopped, const int &wait_time)
@@ -394,4 +394,32 @@ std::vector<int> PaAudioBuf::fillVecZeros(const int &buf_size)
     }
 
     return ret_vec;
+}
+
+/**
+ * @brief PaAudioBuf::sampleFormatConvert
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param sample_rate
+ * @return
+ */
+portaudio::SampleDataFormat PaAudioBuf::sampleFormatConvert(const unsigned long sample_rate)
+{
+    switch (sample_rate) {
+    case paFloat32:
+        return portaudio::FLOAT32;
+    case paInt32:
+        return portaudio::INT32;
+    case paInt24:
+        return portaudio::INT24;
+    case paInt16:
+        return portaudio::INT16;
+    case paInt8:
+        return portaudio::INT8;
+    case paUInt8:
+        return portaudio::UINT8;
+    default:
+        return portaudio::INT16;
+    }
+
+    return portaudio::INT16;
 }

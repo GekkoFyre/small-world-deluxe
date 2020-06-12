@@ -238,12 +238,14 @@ void paMicProcBackground::spectrographCallback(PaAudioBuf *audio_buf, portaudio:
                     waveEnvMin = value;
                 }
 
+                /*
                 #ifdef GK_CUDA_FFT_ENBL
                 PerformCUDAFFT();
                 #else
                 std::unique_ptr<GkFFT> gkFFT = std::make_unique<GkFFT>(this);
                 gkFFT->FFTCompute();
                 #endif
+                */
             }
 
             std::this_thread::sleep_for(std::chrono::duration(std::chrono::milliseconds(SPECTRO_REFRESH_CYCLE_MILLISECS)));

@@ -41,17 +41,15 @@
 #include <memory>
 #include <thread>
 #include <mutex>
-#include <QObject>
 
 namespace GekkoFyre {
 
 template <class T>
-class GkCircBuffer : public QObject {
-    Q_OBJECT
+class GkCircBuffer {
 
 public:
     explicit GkCircBuffer(const size_t &size, QObject *parent = nullptr) : buf_(std::unique_ptr<T[]>(new T[size])),
-                          max_size_(size), QObject(parent) { /* empty */ }
+                          max_size_(size) { /* empty */ }
     ~GkCircBuffer();
 
     void put(T item);

@@ -544,18 +544,18 @@ QStringList MainWindow::getAmateurBands()
 {
     try {
         QStringList bands;
-        bands.push_back(gkRadioLibs->translateBandsToStr(bands::BAND160));
-        bands.push_back(gkRadioLibs->translateBandsToStr(bands::BAND80));
-        bands.push_back(gkRadioLibs->translateBandsToStr(bands::BAND60));
-        bands.push_back(gkRadioLibs->translateBandsToStr(bands::BAND40));
-        bands.push_back(gkRadioLibs->translateBandsToStr(bands::BAND30));
-        bands.push_back(gkRadioLibs->translateBandsToStr(bands::BAND20));
-        bands.push_back(gkRadioLibs->translateBandsToStr(bands::BAND17));
-        bands.push_back(gkRadioLibs->translateBandsToStr(bands::BAND15));
-        bands.push_back(gkRadioLibs->translateBandsToStr(bands::BAND12));
-        bands.push_back(gkRadioLibs->translateBandsToStr(bands::BAND10));
-        bands.push_back(gkRadioLibs->translateBandsToStr(bands::BAND6));
-        bands.push_back(gkRadioLibs->translateBandsToStr(bands::BAND2));
+        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND160));
+        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND80));
+        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND60));
+        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND40));
+        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND30));
+        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND20));
+        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND17));
+        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND15));
+        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND12));
+        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND10));
+        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND6));
+        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND2));
 
         return bands;
     } catch (const std::exception &e) {
