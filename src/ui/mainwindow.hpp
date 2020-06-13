@@ -101,7 +101,7 @@ private slots:
     void on_actionE_xit_triggered();
     void on_action_Open_triggered();
     void on_actionCheck_for_Updates_triggered();
-    void on_action_About_Dekoder_triggered();
+    void on_action_About_Small world_triggered();
     void on_actionSet_Offset_triggered();
     void on_action_Settings_triggered();
     void on_actionSave_Decoded_triggered();

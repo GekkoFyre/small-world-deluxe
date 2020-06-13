@@ -1029,10 +1029,10 @@ void MainWindow::on_actionCheck_for_Updates_triggered()
 }
 
 /**
- * @brief MainWindow::on_action_About_Dekoder_triggered
+ * @brief MainWindow::on_action_About_Small world_triggered
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void MainWindow::on_action_About_Dekoder_triggered()
+void MainWindow::on_action_About_Small world_triggered()
 {
     QPointer<AboutDialog> dlg_about = new AboutDialog(this);
     dlg_about->setWindowFlags(Qt::Window);
