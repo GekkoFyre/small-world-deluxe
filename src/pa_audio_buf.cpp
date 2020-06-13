@@ -89,7 +89,7 @@ PaAudioBuf::PaAudioBuf(int buffer_size, const GkDevice &pref_output_device, cons
     // Original author: https://embeddedartistry.com/blog/2017/05/17/creating-a-circular-buffer-in-c-and-c/
     //
     circ_buffer_size = buffer_size;
-    gkCircBuffer = std::make_unique<GkCircBuffer<float *>>(circ_buffer_size, this);
+    gkCircBuffer = std::make_unique<GkCircBuffer<float *>>(circ_buffer_size);
 }
 
 PaAudioBuf::~PaAudioBuf()

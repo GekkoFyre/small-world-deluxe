@@ -131,11 +131,12 @@ void paMicProcBackground::initRecording()
 {
     if (streamRecord != nullptr && threads_already_open == false) {
         if (streamRecord->isOpen()) {
-            vu_meter = boost::thread(&paMicProcBackground::procVuMeter, this, audio_buffer_size, gkAudioBuf, streamRecord);
-            vu_meter.detach();
+            // TODO: Fix this up! Disabled as of 2020-06-13!
+            // vu_meter = boost::thread(&paMicProcBackground::procVuMeter, this, audio_buffer_size, gkAudioBuf, streamRecord);
+            // vu_meter.detach();
 
-            spectro_thread = boost::thread(&paMicProcBackground::spectrographCallback, this, gkAudioBuf, streamRecord);
-            spectro_thread.detach();
+            // spectro_thread = boost::thread(&paMicProcBackground::spectrographCallback, this, gkAudioBuf, streamRecord);
+            // spectro_thread.detach();
 
             threads_already_open = true;
 

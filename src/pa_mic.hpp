@@ -55,7 +55,7 @@ public:
                    QObject *parent = nullptr);
     ~PaMic() override;
 
-    bool recordInputDevice(const Database::Settings::Audio::GkDevice &device, PaStream *stream,
+    bool recordInputDevice(const Database::Settings::Audio::GkDevice &audio_device, PaStream *stream,
                            std::vector<short> *rec_data, const int &buffer_sec_record = 30);
 
 private:

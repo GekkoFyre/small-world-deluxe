@@ -51,6 +51,11 @@ public:
 
     void publishFreqList();
 
+    bool approximatelyEqual(const float &a, const float &b, const float &epsilon);
+    bool essentiallyEqual(const float &a, const float &b, const float &epsilon);
+    bool definitelyGreaterThan(const float &a, const float &b, const float &epsilon);
+    bool definitelyLessThan(const float &a, const float &b, const float &epsilon);
+
 signals:
     void updateFrequencies(const float &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
                            const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq);

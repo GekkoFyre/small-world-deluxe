@@ -100,10 +100,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<GekkoFyre::AmateurRadio::IARURegions>("GekkoFyre::AmateurRadio::IARURegions");
     qRegisterMetaType<GekkoFyre::AmateurRadio::GkFreqs>("GekkoFyre::AmateurRadio::GkFreqs");
     qRegisterMetaType<RIG>("RIG");
-    qRegisterMetaType<std::vector<short>>("std::vector<short>");
     qRegisterMetaType<size_t>("size_t");
     qRegisterMetaType<uint8_t>("uint8_t");
     qRegisterMetaType<rig_model_t>("rig_model_t");
+    qRegisterMetaType<PaHostApiTypeId>("PaHostApiTypeId");
+    qRegisterMetaType<std::vector<short>>("std::vector<short>");
 
     try {
         // Initialize QMainWindow to a full-screen after a single second!
@@ -368,13 +369,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         connect(timer, SIGNAL(timeout()), this, SLOT(infoBar()));
         timer->start(1000);
 
+        const size_t fft_num_lines = SPECTRO_NUM_LINES;
+        const size_t fft_samples_per_line = SPECTRO_SAMPLES_PER_LINE;
+
         if (!pref_audio_devices.empty()) {
-            const size_t fft_num_lines = SPECTRO_NUM_LINES;
-            const size_t fft_samples_per_line = SPECTRO_SAMPLES_PER_LINE;
             const size_t audio_input_sample_length = (pref_input_device.def_sample_rate * SPECTRO_SAMPLING_LENGTH);
             const size_t input_audio_circ_buf_size = ((fft_num_lines - 1) * fft_samples_per_line + audio_input_sample_length);
 
-            pref_input_audio_buf = new GekkoFyre::PaAudioBuf(input_audio_circ_buf_size, this);
+            pref_input_audio_buf = new GekkoFyre::PaAudioBuf(input_audio_circ_buf_size, pref_output_device, pref_input_device, this);
             paMicProcBackground = new GekkoFyre::paMicProcBackground(gkPortAudioInit, pref_input_audio_buf, gkAudioDevices, gkStringFuncs, fileIo, GkDb,
                                                                      pref_input_device, input_audio_circ_buf_size, fft_samples_per_line, fft_num_lines,
                                                                      nullptr);
@@ -416,7 +418,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             //
             const size_t audio_output_sample_length = (pref_input_device.def_sample_rate * SPECTRO_SAMPLING_LENGTH);
             const size_t output_audio_circ_buf_size = ((fft_num_lines - 1) * fft_samples_per_line + audio_output_sample_length);
-            pref_output_audio_buf = new GekkoFyre::PaAudioBuf(output_audio_circ_buf_size, this);
+            pref_output_audio_buf = new GekkoFyre::PaAudioBuf(output_audio_circ_buf_size, pref_output_device, pref_input_device, this);
 
             gkAudioEncoding = new GkAudioEncoding(fileIo, pref_input_audio_buf, GkDb, gkSpectroGui,
                                                   gkStringFuncs, pref_input_device, this);
@@ -1753,19 +1755,15 @@ void MainWindow::updateFreqsInMem(const float &frequency, const GekkoFyre::Amate
         //
         // We are removing the frequency from the global std::vector!
         //
-        if (!frequencyList.isEmpty()) {
-            for (const auto &del_freq: frequencyList) {
-                if (del_freq.frequency == freq.frequency) {
-                    if (!frequencyList.removeOne(del_freq)) {
-                        throw std::runtime_error(tr("Difficulties were encountered in removing the frequency, %1, from the global list!")
-                                                 .arg(QString::number(freq.frequency)).toStdString());
-                    }
-
+        if (!frequencyList.empty()) {
+            for (size_t i = 0; i < frequencyList.size(); ++i) {
+                if (gkFreqList->essentiallyEqual(frequencyList[i].frequency, freq.frequency, GK_RADIO_VFO_FLOAT_PNT_PREC)) {
+                    frequencyList.erase(frequencyList.begin() + i);
                     break;
                 }
             }
 
-            frequencyList.squeeze();
+            frequencyList.shrink_to_fit();
         }
     } else {
         //

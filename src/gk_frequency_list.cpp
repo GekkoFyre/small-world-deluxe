@@ -36,6 +36,8 @@
  ****************************************************************************************************/
 
 #include "gk_frequency_list.hpp"
+#include <cmath>
+#include <cstdlib>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -200,4 +202,60 @@ void GkFreqList::publishFreqList()
     emit updateFrequencies(5760065000, DigitalModes::JT65, IARURegions::ALL, false);
 
     return;
+}
+
+/**
+ * @brief GkFreqList::approximatelyEqual checks to see if the two floating pointers are approximately
+ * equal or not.
+ * @author The Art of Computer Programming by Donald Knuth <https://en.wikipedia.org/wiki/The_Art_of_Computer_Programming>.
+ * @param a The comparison to be made against.
+ * @param b The comparison to be made towards.
+ * @param epsilon The precision, or rather, to how many digits should the comparison be equal towards.
+ * @return Whether the desired outcome was true or false.
+ */
+bool GkFreqList::approximatelyEqual(const float &a, const float &b, const float &epsilon)
+{
+    return std::fabs(a - b) <= ((std::fabs(a) < std::fabs(b) ? std::fabs(b) : std::fabs(a)) * epsilon);
+}
+
+/**
+ * @brief GkFreqList::essentiallyEqual checks to see if the two floating pointers are essentially equal
+ * or not.
+ * @author The Art of Computer Programming by Donald Knuth <https://en.wikipedia.org/wiki/The_Art_of_Computer_Programming>.
+ * @param a The comparison to be made against.
+ * @param b The comparison to be made towards.
+ * @param epsilon The precision, or rather, to how many digits should the comparison be equal towards.
+ * @return Whether the desired outcome was true or false.
+ */
+bool GkFreqList::essentiallyEqual(const float &a, const float &b, const float &epsilon)
+{
+    return std::fabs(a - b) <= ((std::fabs(a) > std::fabs(b) ? std::fabs(b) : std::fabs(a)) * epsilon);
+}
+
+/**
+ * @brief GkFreqList::definitelyGreaterThan checks to see if one of the two floating pointers are *definitely*
+ * greater than the other.
+ * @author The Art of Computer Programming by Donald Knuth <https://en.wikipedia.org/wiki/The_Art_of_Computer_Programming>.
+ * @param a The comparison to be made against.
+ * @param b The comparison to be made towards.
+ * @param epsilon The precision, or rather, to how many digits should the comparison be equal towards.
+ * @return Whether the desired outcome was true or false.
+ */
+bool GkFreqList::definitelyGreaterThan(const float &a, const float &b, const float &epsilon)
+{
+    return (a - b) > ((std::fabs(a) < std::fabs(b) ? std::fabs(b) : std::fabs(a)) * epsilon);
+}
+
+/**
+ * @brief GkFreqList::definitelyLessThan checks to see if one of the two floating pointers are *definitely*
+ * lesser than the other.
+ * @author The Art of Computer Programming by Donald Knuth <https://en.wikipedia.org/wiki/The_Art_of_Computer_Programming>.
+ * @param a The comparison to be made against.
+ * @param b The comparison to be made towards.
+ * @param epsilon The precision, or rather, to how many digits should the comparison be equal towards.
+ * @return Whether the desired outcome was true or false.
+ */
+bool GkFreqList::definitelyLessThan(const float &a, const float &b, const float &epsilon)
+{
+    return (b - a) > ((std::fabs(a) < std::fabs(b) ? std::fabs(b) : std::fabs(a)) * epsilon);
 }

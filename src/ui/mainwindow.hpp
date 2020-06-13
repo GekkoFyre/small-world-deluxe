@@ -74,7 +74,6 @@
 #include <QPrinter>
 #include <QSharedPointer>
 #include <QString>
-#include <QVector>
 #include <QStringList>
 #include <QMetaType>
 #include <QDateTime>
@@ -280,7 +279,7 @@ private:
     //
     static QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>> gkRadioModels;
     std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> gkRadioPtr;
-    QVector<GekkoFyre::AmateurRadio::GkFreqs> frequencyList;
+    std::vector<GekkoFyre::AmateurRadio::GkFreqs> frequencyList;
 
     //
     // Timing and date related
@@ -327,7 +326,8 @@ Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::DigitalModes);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::IARURegions);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkFreqs);
 Q_DECLARE_METATYPE(RIG);
-Q_DECLARE_METATYPE(std::vector<short>);
 Q_DECLARE_METATYPE(size_t);
 Q_DECLARE_METATYPE(uint8_t);
 Q_DECLARE_METATYPE(rig_model_t);
+Q_DECLARE_METATYPE(PaHostApiTypeId);
+Q_DECLARE_METATYPE(std::vector<short>);

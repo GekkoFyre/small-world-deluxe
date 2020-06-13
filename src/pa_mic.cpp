@@ -72,26 +72,26 @@ PaMic::~PaMic()
  * @note <https://github.com/EddieRingle/portaudio/blob/master/examples/paex_record.c>
  * <https://github.com/EddieRingle/portaudio/blob/master/test/patest_read_record.c>
  */
-bool PaMic::recordInputDevice(const GkDevice &device, PaStream *stream, std::vector<short> *rec_data,
+bool PaMic::recordInputDevice(const GkDevice &audio_device, PaStream *stream, std::vector<short> *rec_data,
                               const int &buffer_sec_record)
 {
     try {
         // Create an object that is used for recording data (i.e. buffering)
-        const size_t audio_buffer_size = ((device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS) *
-                                          gkDb->convertAudioChannelsInt(device.sel_channels));
-        std::unique_ptr<PaAudioBuf> audioBuf = std::make_unique<PaAudioBuf>(audio_buffer_size, this); // TODO: Change these values to something more meaningful!
+        const size_t audio_buffer_size = ((audio_device.def_sample_rate * AUDIO_BUFFER_STREAMING_SECS) *
+                                          gkDb->convertAudioChannelsInt(audio_device.sel_channels));
+        std::unique_ptr<PaAudioBuf> audioBuf = std::make_unique<PaAudioBuf>(audio_buffer_size, audio_device, audio_device, this); // TODO: Change these values to something more meaningful!
 
         std::cout << tr("Setting up PortAudio for recording from input audio device...").toStdString() << std::endl;
 
         portaudio::AutoSystem autoSys;
         portaudio::System &sys = portaudio::System::instance();
 
-        std::cout << tr("Opening a recording stream on: %1").arg(device.device_info.name).toStdString() << std::endl;
-        portaudio::DirectionSpecificStreamParameters inParamsRecord(sys.deviceByIndex(device.stream_parameters.device),
-                                                                    device.dev_input_channel_count, gkAudioDevices->sampleFormatConvert(device.def_sample_rate),
-                                                                    false, device.device_info.defaultLowInputLatency, nullptr);
+        std::cout << tr("Opening a recording stream on: %1").arg(audio_device.device_info.name).toStdString() << std::endl;
+        portaudio::DirectionSpecificStreamParameters inParamsRecord(sys.deviceByIndex(audio_device.stream_parameters.device),
+                                                                    audio_device.dev_input_channel_count, gkAudioDevices->sampleFormatConvert(audio_device.def_sample_rate),
+                                                                    false, audio_device.device_info.defaultLowInputLatency, nullptr);
         portaudio::StreamParameters paramsRecord(inParamsRecord, portaudio::DirectionSpecificStreamParameters::null(),
-                                                 device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER, paClipOff);
+                                                 audio_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER, paClipOff);
         portaudio::MemFunCallbackStream<PaAudioBuf> streamRecord(paramsRecord, *audioBuf, &PaAudioBuf::recordCallback);
 
         while (Pa_IsStreamActive(stream) == 1) {

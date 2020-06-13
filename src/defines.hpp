@@ -115,6 +115,11 @@ namespace GekkoFyre {
 #define DLG_BOX_WINDOW_WIDTH (480)                      // The width of non-Qt generated dialog boxes
 #define DLG_BOX_WINDOW_HEIGHT (120)                     // The height of non-Qt generated dialog boxes
 
+//
+// Amateur radio specific functions
+//
+#define GK_RADIO_VFO_FLOAT_PNT_PREC (5)                 // The floating point precision, in terms of number of digits, to be used in making comparisons (i.e. the 'epsilon') of frequencies, etc.
+
 #define AUDIO_OUTPUT_MAX_VOL_SIMPLE (100)               // The maximum volume in simple units (i.e. non decible units)
 #define AUDIO_OUTPUT_CHANNEL_MAX_LIMIT (1024)
 #define AUDIO_OUTPUT_CHANNEL_MIN_LIMIT (-1024)
