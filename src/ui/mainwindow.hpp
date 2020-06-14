@@ -40,14 +40,13 @@
 #include "src/defines.hpp"
 #include "src/file_io.hpp"
 #include "src/audio_devices.hpp"
-#include "src/pa_mic.hpp"
 #include "src/gk_cli.hpp"
 #include "src/dek_db.hpp"
 #include "src/radiolibs.hpp"
 #include "src/pa_audio_buf.hpp"
 #include "src/spectro_gui.hpp"
+#include "src/gk_circ_buffer.hpp"
 #include "src/gk_frequency_list.hpp"
-#include "src/pa_mic_background.hpp"
 #include "src/ui/dialogsettings.hpp"
 #include "src/gk_audio_encoding.hpp"
 #include "src/gk_audio_decoding.hpp"
@@ -55,7 +54,6 @@
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
-#include <boost/circular_buffer.hpp>
 #include <leveldb/db.h>
 #include <leveldb/status.h>
 #include <leveldb/options.h>
@@ -101,7 +99,7 @@ private slots:
     void on_actionE_xit_triggered();
     void on_action_Open_triggered();
     void on_actionCheck_for_Updates_triggered();
-    void on_action_About_Small world_triggered();
+    void on_action_About_Dekoder_triggered();
     void on_actionSet_Offset_triggered();
     void on_action_Settings_triggered();
     void on_actionSave_Decoded_triggered();
@@ -169,11 +167,16 @@ protected slots:
     void closeEvent(QCloseEvent *event);
 
 public slots:
-    bool stopRecordingInput(const bool &recording_is_stopped, const int &wait_time = 5000);
     void updateSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &data,
                            const std::vector<int> &raw_audio_data,
                            const int &hanning_window_size, const size_t &buffer_size);
     void updateProgressBar(const bool &enable, const size_t &min, const size_t &max);
+
+    //
+    // Audio related
+    //
+    void stopRecordingInput(const int &wait_time = 5000);
+    void startRecordingInput(const int &wait_time = 5000);
 
     //
     // Radio and Hamlib specific functions
@@ -187,12 +190,11 @@ public slots:
     void updateRadioVarsInMem(const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void updateFreqsInMem(const float &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
                           const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq);
+    void grabAudioCircBuffer(float *audio_buf, const bool &is_output_dev);
 
 signals:
-    void refreshVuMeter(const double &volumePctg);
     void updatePaVol(const int &percentage);
     void updatePlot();
-    void stopRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
     void gkExitApp();
     void sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values,
                          const std::vector<int> &raw_audio_data,
@@ -210,6 +212,14 @@ signals:
     void updateFrequencies(const float &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
                            const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq);
 
+    //
+    // Audio related
+    //
+    void refreshVuMeter(const double &volumePctg);
+    void stopRecording(const int &wait_time = 5000);
+    void startRecording(const int &wait_time = 5000);
+    void grabAudioBuffer(float *audio_buf, const bool &is_output_dev);
+
 private:
     Ui::MainWindow *ui;
 
@@ -220,7 +230,6 @@ private:
     std::shared_ptr<GekkoFyre::FileIo> fileIo;
     std::shared_ptr<GekkoFyre::GkLevelDb> GkDb;
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
-    std::shared_ptr<GekkoFyre::PaMic> gkPaMic;
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GekkoFyre::GkCli> gkCli;
     QPointer<GekkoFyre::GkFreqList> gkFreqList;
@@ -228,7 +237,6 @@ private:
     QPointer<GekkoFyre::GkAudioEncoding> gkAudioEncoding;
     QPointer<GekkoFyre::GkAudioDecoding> gkAudioDecoding;
     QPointer<GekkoFyre::SpectroGui> gkSpectroGui;
-    QPointer<GekkoFyre::paMicProcBackground> paMicProcBackground;
     QPointer<GkAudioPlayDialog> gkAudioPlayDlg;
 
     std::shared_ptr<QSettings> sw_settings;
@@ -250,6 +258,9 @@ private:
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
     QPointer<GekkoFyre::PaAudioBuf> pref_input_audio_buf;
     QPointer<GekkoFyre::PaAudioBuf> pref_output_audio_buf;
+    std::unique_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf>> audioStream;
+    std::shared_ptr<GekkoFyre::GkCircBuffer<float *>> input_circ_audio_buf;
+    std::shared_ptr<GekkoFyre::GkCircBuffer<float *>> output_circ_audio_buf;
 
     //
     // Audio sub-system

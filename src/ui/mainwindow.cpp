@@ -346,6 +346,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
 
         //
+        // Initialize the Circular Audio Buffer
+        //
+
+        QObject::connect(this, SIGNAL(grabAudioBuffer(float *, const bool &)),
+                         this, SLOT(grabAudioCircBuffer(float *, const bool &)));
+
+        //
         // Initialize the Waterfall / Spectrograph
         //
         gkSpectroGui = new GekkoFyre::SpectroGui(gkStringFuncs, true, false, this);
@@ -357,7 +364,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Sound & Audio Devices
         //
-        QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), this, SLOT(stopRecordingInput(const bool &, const int &)));
+        QObject::connect(this, SIGNAL(stopRecording(const int &)), this, SLOT(stopRecordingInput(const int &)));
+        QObject::connect(this, SIGNAL(startRecording(const int &)), this, SLOT(startRecordingInput(const int &)));
         QObject::connect(this, SIGNAL(refreshVuMeter(double)), this, SLOT(updateVuMeter(double)));
 
         //
@@ -375,25 +383,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         if (!pref_audio_devices.empty()) {
             const size_t audio_input_sample_length = (pref_input_device.def_sample_rate * SPECTRO_SAMPLING_LENGTH);
             const size_t input_audio_circ_buf_size = ((fft_num_lines - 1) * fft_samples_per_line + audio_input_sample_length);
+            input_circ_audio_buf = std::make_shared<GkCircBuffer<float *>>(input_audio_circ_buf_size);
 
             pref_input_audio_buf = new GekkoFyre::PaAudioBuf(input_audio_circ_buf_size, pref_output_device, pref_input_device, this);
-            paMicProcBackground = new GekkoFyre::paMicProcBackground(gkPortAudioInit, pref_input_audio_buf, gkAudioDevices, gkStringFuncs, fileIo, GkDb,
-                                                                     pref_input_device, input_audio_circ_buf_size, fft_samples_per_line, fft_num_lines,
-                                                                     nullptr);
-
-            //
-            // Spectrograph signals and slots
-            //
-            QObject::connect(paMicProcBackground, SIGNAL(updateFrequencies(const float &, const GekkoFyre::AmateurRadio::DigitalModes &, const GekkoFyre::AmateurRadio::IARURegions &, const bool &)),
-                             this, SLOT(updateFreqsInMem(const float &, const GekkoFyre::AmateurRadio::DigitalModes &, const GekkoFyre::AmateurRadio::IARURegions &, const bool &)));
-            QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), paMicProcBackground, SLOT(abortRecording(const bool &, const int &)));
-            QObject::connect(paMicProcBackground, SIGNAL(updateVolume(const double &)), this, SLOT(updateVuMeter(const double &)));
-            QObject::connect(this, SIGNAL(stopRecording(const bool &, const int &)), pref_input_audio_buf, SLOT(abortRecording(const bool &, const int &)));
-            QObject::connect(ui->verticalSlider_vol_control, SIGNAL(valueChanged(int)), this, SLOT(updateVolMeterTooltip(const int &)));
-            QObject::connect(paMicProcBackground, SIGNAL(updateWaterfall(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const std::vector<int> &, const int &, const size_t &)),
-                             this, SLOT(updateSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const std::vector<int> &, const int &, const size_t &)));
-            QObject::connect(paMicProcBackground, SIGNAL(stopRecording(const bool &, const int &)),
-                             gkSpectroGui, SIGNAL(stopSpectroRecv(const bool &, const int &)));
         }
 
         std::thread t1(&MainWindow::infoBar, this);
@@ -418,6 +410,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             //
             const size_t audio_output_sample_length = (pref_input_device.def_sample_rate * SPECTRO_SAMPLING_LENGTH);
             const size_t output_audio_circ_buf_size = ((fft_num_lines - 1) * fft_samples_per_line + audio_output_sample_length);
+            output_circ_audio_buf = std::make_shared<GkCircBuffer<float *>>(output_audio_circ_buf_size);
+
             pref_output_audio_buf = new GekkoFyre::PaAudioBuf(output_audio_circ_buf_size, pref_output_device, pref_input_device, this);
 
             gkAudioEncoding = new GkAudioEncoding(fileIo, pref_input_audio_buf, GkDb, gkSpectroGui,
@@ -453,7 +447,7 @@ MainWindow::~MainWindow()
     std::mutex main_win_termination_mtx;
     std::lock_guard<std::mutex> lck_guard(main_win_termination_mtx);
 
-    emit stopRecording(true, 5000);
+    emit stopRecording();
 
     if (pref_input_device.dev_input_channel_count > 0 && pref_input_device.def_sample_rate > 0) {
         if (pref_input_audio_buf != nullptr) {
@@ -1029,10 +1023,10 @@ void MainWindow::on_actionCheck_for_Updates_triggered()
 }
 
 /**
- * @brief MainWindow::on_action_About_Small world_triggered
+ * @brief MainWindow::on_action_About_Dekoder_triggered
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void MainWindow::on_action_About_Small world_triggered()
+void MainWindow::on_action_About_Dekoder_triggered()
 {
     QPointer<AboutDialog> dlg_about = new AboutDialog(this);
     dlg_about->setWindowFlags(Qt::Window);
@@ -1325,7 +1319,7 @@ void MainWindow::on_pushButton_radio_receive_clicked()
                         if ((pref_input_device.device_info.name != nullptr)) {
                             // Set the QPushButton to 'Green'
                             changePushButtonColor(ui->pushButton_radio_receive, false);
-                            emit stopRecording(false);
+                            emit startRecording();
 
                             changeStatusBarMsg(tr("Please wait! Beginning to receive audio..."));
 
@@ -1349,7 +1343,7 @@ void MainWindow::on_pushButton_radio_receive_clicked()
         } else {
             // Set the QPushButton to 'Red'
             changePushButtonColor(ui->pushButton_radio_receive, true);
-            emit stopRecording(true, 5000);
+            emit stopRecording();
 
             changeStatusBarMsg(tr("No longer receiving audio!"));
 
@@ -1450,21 +1444,38 @@ void MainWindow::closeEvent(QCloseEvent *event)
  * all input audio devices related to the spectrograph / waterfall upon activation,
  * globally, across all threads.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param recording_is_stopped A toggle switch that tells the function whether to stop
- * recording of input audio devices or not.
  * @param wait_time How long to wait for the thread to terminate safely before forcing
  * a termination/interrupt.
  * @return If recording of input audio devices have actually stopped or not.
  */
-bool MainWindow::stopRecordingInput(const bool &recording_is_stopped, const int &wait_time)
+void MainWindow::stopRecordingInput(const int &wait_time)
 {
-    if (recording_is_stopped) {
-        btn_radio_rx = false;
-    } else {
-        btn_radio_rx = true;
+    if (audioStream->isOpen()) {
+        audioStream->close();
+
+        if (!audioStream->isStopped()) {
+            audioStream->abort();
+        }
     }
 
-    return false;
+    return;
+}
+
+/**
+ * @brief MainWindow::startRecordingInput
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param wait_time How long to wait for the thread to instantiate safely before forcing
+ * an abortion of the operation altogether.
+ */
+void MainWindow::startRecordingInput(const int &wait_time)
+{
+    emit stopRecording();
+    double most_min_sample_rate = std::fmin(pref_input_device.def_sample_rate, pref_output_device.def_sample_rate);
+    audioStream->open(portaudio::StreamParameters(pref_input_device.cpp_stream_param, pref_output_device.cpp_stream_param,
+                                                  most_min_sample_rate, AUDIO_FRAMES_PER_BUFFER, paClipOff),
+                      *pref_input_audio_buf.data(), &PaAudioBuf::recordCallback);
+
+    return;
 }
 
 /**
@@ -1771,6 +1782,31 @@ void MainWindow::updateFreqsInMem(const float &frequency, const GekkoFyre::Amate
         //
         frequencyList.reserve(1);
         frequencyList.push_back(freq);
+    }
+
+    return;
+}
+
+/**
+ * @brief MainWindow::grabAudioCircBuffer will obtain buffered data, whether it's for an input or output audio
+ * device, at a specific snapshot in time for use by other functions.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param audio_buf The circular audio buffer data that has been obtained at this snapshot in time.
+ * @param is_output_dev Whether this an output audio device or not.
+ */
+void MainWindow::grabAudioCircBuffer(float *audio_buf, const bool &is_output_dev)
+{
+    if (is_output_dev) {
+        //
+        // Output device
+        //
+    } else {
+        //
+        // Input device
+        //
+
+        // Accessors for PortAudio PaStream, useful for interfacing with PortAudio add-ons (such as PortMixer) for instance..
+        audioStream->paStream();
     }
 
     return;

@@ -908,7 +908,7 @@ QPushButton:disabled {
     <addaction name="actionCheck_for_Updates"/>
     <addaction name="menu_Documentation"/>
     <addaction name="separator"/>
-    <addaction name="action_About_Small world"/>
+    <addaction name="action_About_Dekoder"/>
    </widget>
    <widget class="QMenu" name="menuC_ontrol">
     <property name="title">
@@ -1029,7 +1029,7 @@ QPushButton:disabled {
     <string>Check for &amp;Updates</string>
    </property>
   </action>
-  <action name="action_About_Small world">
+  <action name="action_About_Dekoder">
    <property name="text">
     <string>&amp;About SWD</string>
    </property>

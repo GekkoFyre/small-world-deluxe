@@ -82,7 +82,7 @@ public:
                                                                             const PaDeviceIndex &pa_index);
     void portAudioErr(const PaError &err);
     void volumeSetting();
-    double vuMeter();
+    float vuMeter(const int &channels, const int &count, const int &range, const int &range_per_db, float *buffer);
     portaudio::SampleDataFormat sampleFormatConvert(const unsigned long sample_rate);
 
     PaStreamCallbackResult testSinewave(portaudio::System &portAudioSys, const Database::Settings::Audio::GkDevice device,

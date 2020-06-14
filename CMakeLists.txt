@@ -410,8 +410,6 @@ set(GALAXY_UI_CPP
     src/audio_devices.cpp
     src/pa_audio_buf.cpp
     src/spectro_gui.cpp
-    src/pa_mic.cpp
-    src/pa_mic_background.cpp
     src/gk_audio_encoding.cpp
     src/gk_audio_decoding.cpp
     src/gk_cli.cpp
@@ -456,8 +454,6 @@ set(GALAXY_SRC_HEADERS
     src/audio_devices.hpp
     src/pa_audio_buf.hpp
     src/spectro_gui.hpp
-    src/pa_mic.hpp
-    src/pa_mic_background.hpp
     src/gk_audio_encoding.hpp
     src/gk_audio_decoding.hpp
     src/gk_cli.hpp

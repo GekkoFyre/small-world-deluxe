@@ -486,6 +486,7 @@ std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp(portaudio::System *portA
                 //
                 device.is_output_dev = false;
                 device.stream_parameters = *inputParameters.paStreamParameters();
+                device.cpp_stream_param = inputParameters;
                 device.supp_sample_rates = enumSupportedStdSampleRates(inputParameters.paStreamParameters(), nullptr);
             } else if (device.dev_output_channel_count > 0) {
                 //
@@ -493,6 +494,7 @@ std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp(portaudio::System *portA
                 //
                 device.is_output_dev = true;
                 device.stream_parameters = *outputParameters.paStreamParameters();
+                device.cpp_stream_param = outputParameters;
                 device.supp_sample_rates = enumSupportedStdSampleRates(nullptr, outputParameters.paStreamParameters());
             } else {
                 //
@@ -676,17 +678,33 @@ void AudioDevices::volumeSetting()
 {}
 
 /**
- * @brief AudioDevices::vuMeter Enumerates out the Endpoint Volume Controls
+ * @brief AudioDevices::vuMeter processes a raw sound buffer and outputs a possible volume level, in decibels (dB).
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @note Define a UUID for MinGW <https://stackoverflow.com/questions/23977244/how-can-i-define-an-uuid-for-a-class-and-use-uuidof-in-the-same-way-for-g>
- * @return The Endpoint Volume Control values.
+ * @param channels The number of audio channels we are dealing with for the given audio device input.
+ * @param count The amount of `frames per buffer`.
+ * @param range How many possible levels of 'volume' you'd like (i.e. '100' for a percentage value).
+ * @param buffer The raw audiological data.
+ * @return The volume level, in decibels (dB).
  */
-double AudioDevices::vuMeter()
+float AudioDevices::vuMeter(const int &channels, const int &count, const int &range, const int &range_per_db, float *buffer)
 {
-    // TODO: Implement this section!
-    double ret_vol = 0;
+    Q_UNUSED(channels);
+    float K = 0;
+    float sum = 0;
+    float volume = 0;
 
-    return ret_vol;
+    for(int i = 0; i < count; ++i) {
+        sum += std::pow(buffer[i], 2);
+    }
+
+    volume = (20 * std::log10(std::sqrt(sum / count)) + K);
+
+    // Make the volume a number ranging from zero to number of decibels
+    volume += (range * range_per_db);
+    volume = fmax(0, volume);
+    volume /= range_per_db;
+
+    return volume;
 }
 
 /**
