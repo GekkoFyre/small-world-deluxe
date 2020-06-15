@@ -65,11 +65,13 @@ using namespace Audio;
  * @param parent
  * @note Core Audio APIs <https://docs.microsoft.com/en-us/windows/win32/api/_coreaudio/index>
  */
-AudioDevices::AudioDevices(std::shared_ptr<GkLevelDb> gkDb, std::shared_ptr<GekkoFyre::FileIo> filePtr,
-                           std::shared_ptr<StringFuncs> stringFuncs, QObject *parent)
+AudioDevices::AudioDevices(std::shared_ptr<GkLevelDb> gkDb, QPointer<FileIo> filePtr,
+                           QPointer<GekkoFyre::GkFreqList> freqList, std::shared_ptr<StringFuncs> stringFuncs,
+                           QObject *parent)
 {
     gkDekodeDb = std::move(gkDb);
     gkFileIo = std::move(filePtr);
+    gkFreqList = std::move(freqList);
     gkStringFuncs = std::move(stringFuncs);
 }
 
@@ -796,66 +798,32 @@ PaStreamCallbackResult AudioDevices::openPlaybackStream(portaudio::System &portA
  * @param stereo
  * @return
  */
-PaStreamCallbackResult AudioDevices::openRecordStream(portaudio::System &portAudioSys, PaAudioBuf **audio_buf,
+PaStreamCallbackResult AudioDevices::openRecordStream(portaudio::System &portAudioSys, std::shared_ptr<PaAudioBuf> audio_buf,
                                                       const GkDevice &device,
                                                       portaudio::MemFunCallbackStream<PaAudioBuf> **stream_record_ptr,
                                                       const bool &stereo)
 {
-    try {
-        if (audio_buf != nullptr) {
-            std::mutex record_stream_mtx;
-            std::lock_guard<std::mutex> lck_guard(record_stream_mtx);
-            portaudio::SampleDataFormat prefDataFormat = sampleFormatConvert(portAudioSys.deviceByIndex(device.stream_parameters.device).defaultLowInputLatency());
+    if (audio_buf.get() != nullptr) {
+        std::mutex record_stream_mtx;
+        std::lock_guard<std::mutex> lck_guard(record_stream_mtx);
+        portaudio::SampleDataFormat prefDataFormat = sampleFormatConvert(portAudioSys.deviceByIndex(device.stream_parameters.device).defaultLowInputLatency());
 
-            //
-            // Recording input stream
-            //
-            portaudio::DirectionSpecificStreamParameters inputParamsRecord(portAudioSys.deviceByIndex(device.stream_parameters.device),
-                                                                           device.dev_input_channel_count, prefDataFormat,
-                                                                           false, portAudioSys.defaultInputDevice().defaultLowInputLatency(), nullptr);
-            portaudio::StreamParameters recordParams(inputParamsRecord, portaudio::DirectionSpecificStreamParameters::null(), device.def_sample_rate,
-                                                     AUDIO_FRAMES_PER_BUFFER, paClipOff);
-            portaudio::MemFunCallbackStream<PaAudioBuf> *streamRecord = new portaudio::MemFunCallbackStream<PaAudioBuf>(recordParams, **audio_buf, &PaAudioBuf::recordCallback);
+        //
+        // Recording input stream
+        //
+        portaudio::DirectionSpecificStreamParameters inputParamsRecord(portAudioSys.deviceByIndex(device.stream_parameters.device),
+                                                                       device.dev_input_channel_count, prefDataFormat,
+                                                                       false, portAudioSys.defaultInputDevice().defaultLowInputLatency(), nullptr);
+        portaudio::StreamParameters recordParams(inputParamsRecord, portaudio::DirectionSpecificStreamParameters::null(), device.def_sample_rate,
+                                                 AUDIO_FRAMES_PER_BUFFER, paClipOff);
+        portaudio::MemFunCallbackStream<PaAudioBuf> *streamRecord = new portaudio::MemFunCallbackStream<PaAudioBuf>(recordParams, *audio_buf, &PaAudioBuf::recordCallback);
 
-            *stream_record_ptr = streamRecord;
-            streamRecord->start();
+        *stream_record_ptr = streamRecord;
+        streamRecord->start();
 
-            return paContinue;
-        } else {
-            throw std::runtime_error(tr("You must firstly choose an input audio device within the settings!").toStdString());
-        }
-    } catch (const portaudio::PaException &e) {
-        #if defined(_MSC_VER) && (_MSC_VER > 1900)
-        HWND hwnd = nullptr;
-        gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), tr("[ PortAudio ] %1").arg(e.paErrorText()), MB_ICONERROR);
-        DestroyWindow(hwnd);
-        #else
-        gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("[ PortAudio ] %1").arg(e.paErrorText()));
-        #endif
-    } catch (const portaudio::PaCppException &e) {
-        #if defined(_MSC_VER) && (_MSC_VER > 1900)
-        HWND hwnd = nullptr;
-        gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), tr("[ PortAudioCpp ] %1").arg(e.what()), MB_ICONERROR);
-        DestroyWindow(hwnd);
-        #else
-        gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("[ PortAudioCpp ] %1").arg(e.what()));
-        #endif
-    } catch (const std::exception &e) {
-        #if defined(_MSC_VER) && (_MSC_VER > 1900)
-        HWND hwnd = nullptr;
-        gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), tr("[ Generic exception ] %1").arg(e.what()), MB_ICONERROR);
-        DestroyWindow(hwnd);
-        #else
-        gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("[ Generic exception ] %1").arg(e.what()));
-        #endif
-    } catch (...) {
-        #if defined(_MSC_VER) && (_MSC_VER > 1900)
-        HWND hwnd = nullptr;
-        gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), MB_ICONERROR);
-        DestroyWindow(hwnd);
-        #else
-        gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("An unknown exception has occurred. There are no further details."));
-        #endif
+        return paContinue;
+    } else {
+        throw std::runtime_error(tr("You must firstly choose an input audio device within the settings!").toStdString());
     }
 
     return paAbort;
@@ -1084,6 +1052,57 @@ QVector<PaHostApiTypeId> AudioDevices::portAudioApiChooser(const std::vector<GkD
     }
 
     return QVector<PaHostApiTypeId>();
+}
+
+/**
+ * @brief AudioDevices::calcAudioBufferTimeNeeded will calculate the maximum time required before an update is next required
+ * from a circular buffer.
+ * @param num_channels The number of audio channels we are dealing with regarding the stream in question.
+ * @param fft_samples_per_line The number of FFT Samples per Line.
+ * @param audio_buf_sampling_length The audio buffer's sampling length.
+ * @param buf_size The total size of the buffer in question.
+ * @return The amount of seconds you have in total before an update is next required from the circular buffer.
+ */
+float AudioDevices::calcAudioBufferTimeNeeded(const audio_channels &num_channels, const size_t &fft_num_lines,
+                                              const size_t &fft_samples_per_line, const size_t &audio_buf_sampling_length,
+                                              const size_t &buf_size)
+{
+    int audio_channels = 0;
+
+    switch (num_channels) {
+    case audio_channels::Mono:
+        audio_channels = 1;
+        break;
+    case audio_channels::Left:
+        audio_channels = 1;
+        break;
+    case audio_channels::Right:
+        audio_channels = 1;
+        break;
+    case audio_channels::Both:
+        audio_channels = 2;
+        break;
+    case audio_channels::Unknown:
+        audio_channels = 0;
+        break;
+    default:
+        audio_channels = 0;
+        break;
+    }
+
+    if (audio_channels > 0) {
+        // We are dealing with an audio device we can work with!
+        float seconds = (audio_buf_sampling_length - fft_samples_per_line / (fft_num_lines - 1));
+        if (gkFreqList->definitelyGreaterThan(seconds, 0.000, 3)) {
+            return seconds;
+        }
+
+        return 0.000;
+    } else {
+        throw std::invalid_argument(tr("More than zero audio channels are required!").toStdString());
+    }
+
+    return -1;
 }
 
 /**

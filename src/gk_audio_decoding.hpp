@@ -101,7 +101,7 @@ private:
     };
 
 public:
-    explicit GkAudioDecoding(std::shared_ptr<GekkoFyre::FileIo> fileIo,
+    explicit GkAudioDecoding(QPointer<GekkoFyre::FileIo> fileIo,
                              QPointer<GekkoFyre::PaAudioBuf> audio_buf,
                              std::shared_ptr<GekkoFyre::GkLevelDb> database,
                              std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs,
@@ -114,7 +114,7 @@ public:
     GekkoFyre::GkAudioFramework::AudioFileInfo initAudioFileInfoStruct();
 
 private:
-    std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
+    QPointer<GekkoFyre::FileIo> gkFileIo;
     QPointer<GekkoFyre::PaAudioBuf> gkAudioBuf;
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GkLevelDb> gkDb;

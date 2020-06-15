@@ -71,11 +71,13 @@ public:
                          const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags);
     int recordCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
                        const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags);
-    std::vector<int> dumpMemory();
+    float *dumpMemory();
+    std::unique_ptr<GekkoFyre::GkCircBuffer<float *>> gkCircBuffer;
+
     void prepOggVorbisBuf(std::promise<std::vector<signed char>> vorbis_buf);
 
     virtual size_t size() const;
-    virtual int at(const int &idx);
+    virtual float at(const int &idx);
     virtual void push_back(const float &data);
     virtual bool empty() const;
     virtual bool clear() const;
@@ -87,12 +89,11 @@ private:
     GekkoFyre::Database::Settings::Audio::GkDevice prefInputDevice;
     GekkoFyre::Database::Settings::Audio::GkDevice prefOutputDevice;
 
-    std::unique_ptr<GekkoFyre::GkCircBuffer<float *>> gkCircBuffer;
     int circ_buffer_size;
     int maxFrameIndex;
     int frameIndex;
 
-    std::vector<int> fillVecZeros(const int &buf_size);
+    std::vector<float> fillVecZeros(const int &buf_size);
 
     portaudio::SampleDataFormat sampleFormatConvert(const unsigned long sample_rate);
 

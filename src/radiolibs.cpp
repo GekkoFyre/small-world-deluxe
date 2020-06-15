@@ -86,7 +86,7 @@ using namespace Control;
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
-RadioLibs::RadioLibs(std::shared_ptr<GekkoFyre::FileIo> filePtr, std::shared_ptr<StringFuncs> stringPtr,
+RadioLibs::RadioLibs(QPointer<FileIo> filePtr, std::shared_ptr<StringFuncs> stringPtr,
                      std::shared_ptr<GkLevelDb> dkDb, std::shared_ptr<GkRadio> radioPtr, QObject *parent) : QObject(parent)
 {
     gkStringFuncs = std::move(stringPtr);
@@ -967,7 +967,6 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_p
         emit updateRadioPtr(radio_ptr);
     }
 
-    // emit disconnectRigInUse(radio_ptr->rig, radio_ptr);
     return;
 }
 

@@ -74,7 +74,7 @@ QVector<QString> DialogSettings::unique_mfgs = { "None" };
  * @param parent
  */
 DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
-                               std::shared_ptr<GekkoFyre::FileIo> filePtr,
+                               QPointer<FileIo> filePtr,
                                std::shared_ptr<GekkoFyre::AudioDevices> audioDevices,
                                QPointer<GekkoFyre::RadioLibs> radioLibs,
                                std::shared_ptr<QSettings> settings,

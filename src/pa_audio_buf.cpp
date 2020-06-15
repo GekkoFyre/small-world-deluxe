@@ -62,14 +62,6 @@ using namespace AmateurRadio;
 using namespace Control;
 
 /**
- * @brief PaAudioBuf::PaAudioBuf processes the audio buffering and memory handling functions for PortAudio.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @note <http://portaudio.com/docs/v19-doxydocs-dev/pa__ringbuffer_8h.html>
- * <http://portaudio.com/docs/v19-doxydocs-dev/group__test__src.html>
- * @param buffer_size
- */
-
-/**
  * @brief PaAudioBuf::PaAudioBuf
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param buffer_size
@@ -228,32 +220,12 @@ int PaAudioBuf::recordCallback(const void *inputBuffer, void *outputBuffer, unsi
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return The entire contents of the buffer once having reached the target size.
  */
-std::vector<int> PaAudioBuf::dumpMemory()
+float *PaAudioBuf::dumpMemory()
 {
     std::mutex pa_buf_dup_mem_mtx;
     std::lock_guard<std::mutex> lck_guard(pa_buf_dup_mem_mtx);
 
-    std::vector<int> ret_vec;
-    if (gkCircBuffer != nullptr) {
-        if (!gkCircBuffer->empty()) {
-            float *data = gkCircBuffer->get();
-            ret_vec.reserve(gkCircBuffer->size());
-            size_t max_idx_counter = 0;
-            for (size_t i = 0; i < gkCircBuffer->size(); ++i) {
-                ret_vec.push_back(data[i]);
-                ++max_idx_counter;
-
-                if (max_idx_counter == frameIndex) {
-                    break;
-                }
-            }
-
-            return ret_vec;
-        }
-    }
-
-    ret_vec = fillVecZeros(circ_buffer_size);
-    return ret_vec;
+    return gkCircBuffer->get();
 }
 
 /**
@@ -266,6 +238,7 @@ std::vector<int> PaAudioBuf::dumpMemory()
  */
 void PaAudioBuf::prepOggVorbisBuf(std::promise<std::vector<signed char>> vorbis_buf)
 {
+    /*
     std::mutex pa_prep_vorbis_buf_mtx;
     std::lock_guard<std::mutex> lck_guard(pa_prep_vorbis_buf_mtx);
 
@@ -282,6 +255,7 @@ void PaAudioBuf::prepOggVorbisBuf(std::promise<std::vector<signed char>> vorbis_
     } else {
         throw std::runtime_error(tr("Audio data buffer frame is empty!").toStdString());
     }
+    */
 
     return;
 }
@@ -297,7 +271,7 @@ size_t PaAudioBuf::size() const
     return rec_samples_size;
 }
 
-int PaAudioBuf::at(const int &idx)
+float PaAudioBuf::at(const int &idx)
 {
     std::mutex pa_audio_buf_loc_mtx;
     std::lock_guard<std::mutex> lck_guard(pa_audio_buf_loc_mtx);
@@ -386,11 +360,11 @@ void PaAudioBuf::abortRecording(const bool &recording_is_stopped, const int &wai
  * @param buf_size How large to make the std::vector().
  * @return The outputted std::vector() that's now filled with zeroes.
  */
-std::vector<int> PaAudioBuf::fillVecZeros(const int &buf_size)
+std::vector<float> PaAudioBuf::fillVecZeros(const int &buf_size)
 {
     std::mutex fill_vec_zeroes_mtx;
     std::lock_guard<std::mutex> lck_guard(fill_vec_zeroes_mtx);
-    std::vector<int> ret_vec;
+    std::vector<float> ret_vec;
     ret_vec.reserve(buf_size);
 
     for (size_t i = 0; i < buf_size; ++i) {

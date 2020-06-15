@@ -45,6 +45,7 @@
 #include "src/dek_db.hpp"
 #include "src/file_io.hpp"
 #include "src/pa_audio_buf.hpp"
+#include "src/gk_frequency_list.hpp"
 #include <QObject>
 #include <vector>
 #include <string>
@@ -55,6 +56,7 @@
 #include <queue>
 #include <QString>
 #include <QVector>
+#include <QPointer>
 
 #ifdef _WIN32
 #include "src/string_funcs_windows.hpp"
@@ -68,8 +70,9 @@ class AudioDevices : public QObject {
     Q_OBJECT
 
 public:
-    explicit AudioDevices(std::shared_ptr<GekkoFyre::GkLevelDb> gkDb, std::shared_ptr<GekkoFyre::FileIo> filePtr,
-                          std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs, QObject *parent = nullptr);
+    explicit AudioDevices(std::shared_ptr<GekkoFyre::GkLevelDb> gkDb, QPointer<GekkoFyre::FileIo> filePtr,
+                          QPointer<GekkoFyre::GkFreqList> freqList, std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs,
+                          QObject *parent = nullptr);
     ~AudioDevices();
 
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> initPortAudio(portaudio::System *portAudioSys);
@@ -90,19 +93,25 @@ public:
     PaStreamCallbackResult openPlaybackStream(portaudio::System &portAudioSys, GekkoFyre::PaAudioBuf *audio_buf,
                                               const GekkoFyre::Database::Settings::Audio::GkDevice &device,
                                               const bool &stereo = true);
-    PaStreamCallbackResult openRecordStream(portaudio::System &portAudioSys, PaAudioBuf **audio_buf,
+    PaStreamCallbackResult openRecordStream(portaudio::System &portAudioSys, std::shared_ptr<PaAudioBuf> audio_buf,
                                             const GekkoFyre::Database::Settings::Audio::GkDevice &device,
-                                            portaudio::MemFunCallbackStream<PaAudioBuf> **stream_record_ptr, const bool &stereo = true);
+                                            portaudio::MemFunCallbackStream<PaAudioBuf> **stream_record_ptr,
+                                            const bool &stereo = true);
 
     std::vector<Database::Settings::Audio::GkDevice> filterPortAudioHostType(const std::vector<Database::Settings::Audio::GkDevice> &audio_devices_vec);
     QVector<PaHostApiTypeId> portAudioApiChooser(const std::vector<Database::Settings::Audio::GkDevice> &audio_devices_vec);
+
+    float calcAudioBufferTimeNeeded(const Database::Settings::audio_channels &num_channels, const size_t &fft_num_lines,
+                                    const size_t &fft_samples_per_line, const size_t &audio_buf_sampling_length,
+                                    const size_t &buf_size);
 
     QString portAudioVersionNumber(const portaudio::System &portAudioSys);
     QString portAudioVersionText(const portaudio::System &portAudioSys);
 
 private:
     std::shared_ptr<GkLevelDb> gkDekodeDb;
-    std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
+    QPointer<GekkoFyre::FileIo> gkFileIo;
+    QPointer<GekkoFyre::GkFreqList> gkFreqList;
     std::shared_ptr<StringFuncs> gkStringFuncs;
 
     bool filterAudioEnumPreexisting(const std::vector<Database::Settings::Audio::GkDevice> &device_vec,

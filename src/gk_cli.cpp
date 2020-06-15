@@ -57,14 +57,14 @@ using namespace Cli;
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
-GkCli::GkCli(std::shared_ptr<QCommandLineParser> parser, std::shared_ptr<FileIo> fileIo,
+GkCli::GkCli(std::shared_ptr<QCommandLineParser> parser, QPointer<FileIo> fileIo,
              std::shared_ptr<GkLevelDb> database, QPointer<RadioLibs> radioLibs,
              QObject *parent)
 {
-    gkCliParser = parser;
-    gkFileIo = fileIo;
-    gkDb = database;
-    gkRadioLibs = radioLibs;
+    gkCliParser = std::move(parser);
+    gkFileIo = std::move(fileIo);
+    gkDb = std::move(database);
+    gkRadioLibs = std::move(radioLibs);
 }
 
 GkCli::~GkCli()

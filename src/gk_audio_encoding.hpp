@@ -101,7 +101,7 @@ private:
     };
 
 public:
-    explicit GkAudioEncoding(std::shared_ptr<GekkoFyre::FileIo> fileIo,
+    explicit GkAudioEncoding(QPointer<GekkoFyre::FileIo> fileIo,
                              QPointer<PaAudioBuf> input_audio_buf,
                              std::shared_ptr<GekkoFyre::GkLevelDb> database,
                              QPointer<SpectroGui> spectroGui,
@@ -142,7 +142,7 @@ private slots:
     void recordFlac(const std::vector<short> &audio_rec, const boost::filesystem::path &filePath);
 
 private:
-    std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
+    QPointer<GekkoFyre::FileIo> gkFileIo;
     QPointer<GekkoFyre::SpectroGui> gkSpectroGui;
     QPointer<GekkoFyre::PaAudioBuf> gkAudioBuf;
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;

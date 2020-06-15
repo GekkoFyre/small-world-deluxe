@@ -42,37 +42,43 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/file_io.hpp"
-#include "src/dek_db.hpp"
-#include "src/radiolibs.hpp"
-#include <boost/filesystem.hpp>
-#include <memory>
-#include <string>
-#include <QObject>
-#include <QString>
-#include <QPointer>
-#include <QCommandLineParser>
+#include <chrono>
+#include <ctime>
 
 namespace GekkoFyre {
 
-class GkCli : public QObject {
-    Q_OBJECT
+class GkTimer {
 
 public:
-    explicit GkCli(std::shared_ptr<QCommandLineParser> parser,
-                   QPointer<GekkoFyre::FileIo> fileIo,
-                   std::shared_ptr<GekkoFyre::GkLevelDb> database,
-                   QPointer<GekkoFyre::RadioLibs> radioLibs,
-                   QObject *parent);
-    virtual ~GkCli();
+    void start() {
+        startTime = std::chrono::system_clock::now();
+        running = true;
+    }
 
-    System::Cli::CommandLineParseResult parseCommandLine(QString *error_msg);
+    void stop() {
+        endTime = std::chrono::system_clock::now();
+        running = false;
+    }
+
+    double elapsedMilliseconds() {
+        std::chrono::time_point<std::chrono::system_clock> endTime;
+        if (running) {
+            endTime = std::chrono::system_clock::now();
+        } else {
+            endTime = endTime;
+        }
+
+        return std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
+    }
+
+    double elapsedSeconds() {
+        return elapsedMilliseconds() / 1000.0;
+    }
 
 private:
-    QPointer<GekkoFyre::FileIo> gkFileIo;
-    std::shared_ptr<GekkoFyre::GkLevelDb> gkDb;
-    QPointer<GekkoFyre::RadioLibs> gkRadioLibs;
-    std::shared_ptr<QCommandLineParser> gkCliParser;
+    std::chrono::time_point<std::chrono::system_clock> startTime;
+    std::chrono::time_point<std::chrono::system_clock> endTime;
+    bool running = false;
 
 };
 };

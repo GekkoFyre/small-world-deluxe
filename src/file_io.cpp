@@ -67,8 +67,6 @@ namespace sys = boost::system;
  */
 FileIo::FileIo(std::shared_ptr<QSettings> settings, QObject *parent)
 {
-    Q_UNUSED(parent);
-
     gkSettings = settings;
 }
 

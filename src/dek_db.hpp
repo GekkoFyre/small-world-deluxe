@@ -49,6 +49,7 @@
 #include <string>
 #include <QObject>
 #include <QString>
+#include <QPointer>
 
 namespace GekkoFyre {
 
@@ -56,7 +57,7 @@ class GkLevelDb : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkLevelDb(leveldb::DB *db_ptr, std::shared_ptr<GekkoFyre::FileIo> filePtr,
+    explicit GkLevelDb(leveldb::DB *db_ptr, QPointer<GekkoFyre::FileIo> filePtr,
                        QObject *parent = nullptr);
     ~GkLevelDb();
 
@@ -95,7 +96,7 @@ public:
     std::string removeInvalidChars(const std::string &string_to_modify);
 
 private:
-    std::shared_ptr<GekkoFyre::FileIo> fileIo;
+    QPointer<GekkoFyre::FileIo> fileIo;
     leveldb::DB *db;
 
     std::string boolEnum(const bool &is_true);

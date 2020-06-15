@@ -133,7 +133,6 @@ set(Boost_USE_STATIC_RUNTIME OFF CACHE BOOL "Use static runtime when linking Boo
 find_package(Boost 1.54.0 REQUIRED COMPONENTS "filesystem"
                                               "system"
                                               "exception"
-                                              "thread"
                                               "chrono"
                                               "locale"
                                               "random")
@@ -461,6 +460,7 @@ set(GALAXY_SRC_HEADERS
     src/gk_circ_buffer.hpp
     src/gk_frequency_list.hpp
     src/gk_fft.hpp
+    src/gk_timer.hpp
     src/contrib/getopt.h
     src/contrib/serial/include/serial/v8stdint.h
     src/contrib/serial/include/serial/serial.h)

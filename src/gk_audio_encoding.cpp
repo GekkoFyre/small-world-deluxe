@@ -81,7 +81,7 @@ namespace sys = boost::system;
 // Static variables
 size_t GkAudioEncoding::ogg_buf_counter = 0;
 
-GkAudioEncoding::GkAudioEncoding(std::shared_ptr<FileIo> fileIo,
+GkAudioEncoding::GkAudioEncoding(QPointer<FileIo> fileIo,
                                  QPointer<PaAudioBuf> audio_buf,
                                  std::shared_ptr<GkLevelDb> database,
                                  QPointer<GekkoFyre::SpectroGui> spectroGui,
@@ -92,12 +92,12 @@ GkAudioEncoding::GkAudioEncoding(std::shared_ptr<FileIo> fileIo,
     qRegisterMetaType<GekkoFyre::GkAudioFramework::Bitrate>("GekkoFyre::GkAudioFramework::Bitrate");
     qRegisterMetaType<GekkoFyre::GkAudioFramework::CodecSupport>("GekkoFyre::GkAudioFramework::CodecSupport");
 
-    gkFileIo = fileIo;
-    gkAudioBuf = audio_buf;
-    gkStringFuncs = stringFuncs;
-    gkDb = database;
-    gkInputDev = input_device;
-    gkSpectroGui = spectroGui;
+    gkFileIo = std::move(fileIo);
+    gkAudioBuf = std::move(audio_buf);
+    gkStringFuncs = std::move(stringFuncs);
+    gkDb = std::move(database);
+    gkInputDev = std::move(input_device);
+    gkSpectroGui = std::move(spectroGui);
 
     opus_state = std::make_unique<OpusState>(AUDIO_FRAMES_PER_BUFFER, AUDIO_CODECS_OPUS_MAX_PACKETS, gkInputDev.dev_input_channel_count);
     recording_in_progress = false;
