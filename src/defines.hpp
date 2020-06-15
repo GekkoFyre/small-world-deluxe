@@ -337,6 +337,7 @@ namespace Database {
                 std::string dev_name_formatted;                                     // The name of the device itself, formatted
                 bool default_dev;                                                   // Is this the default device for the system?
                 bool default_disp;                                                  // Used for filtering purposes
+                bool is_dev_active;                                                 // Is the audio device in question currently active and streaming data?
                 double def_sample_rate;                                             // Default sample rate
                 boost::tribool is_output_dev;                                       // Is the audio device in question an input? Output if FALSE, UNSURE if either
                 int dev_number;                                                     // The number of this device; this is saved to the Google LevelDB database as the user's preference

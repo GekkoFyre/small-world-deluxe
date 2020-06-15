@@ -95,6 +95,7 @@ public:
     rig_port_e convGkConnTypeToHamlib(const GekkoFyre::AmateurRadio::GkConnType &conn_type);
 
     void gkInitRadioRig(std::shared_ptr<AmateurRadio::Control::GkRadio> radio_ptr, std::shared_ptr<Database::Settings::GkUsbPort> usb_ptr);
+    float calibrateAudioInputSignal(const float *data_buf);
 
     libusb_context *initUsbLib();
     QMap<std::string, Database::Settings::GkUsbPort> enumUsbDevices(libusb_context *usb_ctx_ptr);
@@ -102,7 +103,6 @@ public:
 signals:
     void gatherPortType(const bool &is_cat_mode);
     void disconnectRigInUse(RIG *rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
-    void updateRadioPtr(const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
 
 private:
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;

@@ -56,7 +56,7 @@ public:
     }
 
     void stop() {
-        endTime = std::chrono::system_clock::now();
+        g_endTime = std::chrono::system_clock::now();
         running = false;
     }
 
@@ -65,7 +65,7 @@ public:
         if (running) {
             endTime = std::chrono::system_clock::now();
         } else {
-            endTime = endTime;
+            endTime = g_endTime;
         }
 
         return std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
@@ -77,7 +77,7 @@ public:
 
 private:
     std::chrono::time_point<std::chrono::system_clock> startTime;
-    std::chrono::time_point<std::chrono::system_clock> endTime;
+    std::chrono::time_point<std::chrono::system_clock> g_endTime;
     bool running = false;
 
 };

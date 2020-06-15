@@ -235,7 +235,6 @@ std::vector<GkDevice> AudioDevices::enumAudioDevices()
     PaStreamParameters outputParameters;
     int numDevices, defaultDisplayed;
     const PaDeviceInfo *deviceInfo;
-    std::string vers_info;
     PaError err;
 
     numDevices = Pa_GetDeviceCount();

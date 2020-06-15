@@ -209,6 +209,8 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         int com_baud_rate = ui->comboBox_baud_rate->currentIndex();
         QString ptt_adv_cmd = ui->lineEdit_adv_ptt_cmd->text();
 
+        Q_UNUSED(usb_device_ptt);
+
         //
         // Chosen PortAudio API
         //

@@ -162,6 +162,7 @@ int PaAudioBuf::playbackCallback(const void *inputBuffer, void *outputBuffer, un
  * @param statusFlags
  * @param userData
  * @return
+ * @note StackOverflow <https://stackoverflow.com/questions/15690668/continuous-recording-in-portaudio-from-mic-or-output>.
  */
 int PaAudioBuf::recordCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
                                const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags)
@@ -174,42 +175,12 @@ int PaAudioBuf::recordCallback(const void *inputBuffer, void *outputBuffer, unsi
     Q_UNUSED(timeInfo);
     Q_UNUSED(statusFlags);
 
-    int numChannels = prefInputDevice.sel_channels;
-    std::unique_ptr<GkPaAudioData> data = std::make_unique<GkPaAudioData>();
-    const float *rptr = (const float*)inputBuffer;
-    float *wptr = &data->recordedSamples[data->frameIndex * numChannels];
+    int finished = paContinue;
+    float *buffer_ptr = (float *)inputBuffer;
 
-    size_t framesToCalc = 0;
-    size_t framesLeft = (data->maxFrameIndex - data->frameIndex);
-    int finished;
-
-    if (framesLeft < framesPerBuffer) {
-        framesToCalc = framesLeft;
-        finished = paComplete;
-    } else {
-        framesToCalc = framesPerBuffer;
-        finished = paContinue;
+    for(size_t i = 0; i < framesPerBuffer; ++i) {
+        gkCircBuffer->put(buffer_ptr + i);
     }
-
-    if (inputBuffer == nullptr) {
-        for (size_t i = 0; i < framesToCalc; ++i) {
-            *wptr++ = GK_SAMPLE_SILENCE;  // Left
-            if (numChannels == 2) {
-                *wptr++ = GK_SAMPLE_SILENCE;  // Right
-            }
-        }
-    } else {
-        for (size_t i = 0; i < framesToCalc; ++i) {
-            *wptr++ = *rptr++;  // Left
-            if (numChannels == 2) {
-                *wptr++ = *rptr++;  // Right
-            }
-
-            gkCircBuffer->put(wptr);
-        }
-    }
-
-    data->frameIndex += framesToCalc;
 
     return finished;
 }

@@ -241,8 +241,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                  this, SLOT(addRigToMemory(const rig_model_t &, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
                 QObject::connect(this, SIGNAL(disconnectRigInUse(RIG *, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
                                  this, SLOT(disconnectRigInMemory(RIG *, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
-                QObject::connect(this, SIGNAL(updateRadioPtr(const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
-                                 this, SLOT(updateRadioVarsInMem(const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
                 QObject::connect(this, SIGNAL(updateFrequencies(const float &, const GekkoFyre::AmateurRadio::DigitalModes &, const GekkoFyre::AmateurRadio::IARURegions &, const bool &)),
                                  this, SLOT(updateFreqsInMem(const float &, const GekkoFyre::AmateurRadio::DigitalModes &, const GekkoFyre::AmateurRadio::IARURegions &, const bool &)));
 
@@ -267,8 +265,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                  this, SLOT(analyzePortType(const bool &)));
                 QObject::connect(gkRadioLibs, SIGNAL(disconnectRigInUse(RIG *, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
                                  this, SLOT(disconnectRigInMemory(RIG *, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
-                QObject::connect(gkRadioLibs, SIGNAL(updateRadioPtr(const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
-                                 this, SLOT(updateRadioVarsInMem(const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
             } else {
                 throw std::runtime_error(tr("Unable to find settings database; we've lost its location!").toStdString());
             }
@@ -339,9 +335,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 if (device.is_output_dev) {
                     // Output device
                     pref_output_device = device;
+                    pref_output_device.is_dev_active = false;
                 } else {
                     // Input device
                     pref_input_device = device;
+                    pref_input_device.is_dev_active = false;
                 }
             }
         }
@@ -977,30 +975,19 @@ QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, rig_type>> MainWind
  */
 void MainWindow::updateVolumeWidgets()
 {
-    GkTimer timer;
-    timer.start(); // Wait for the audio stream to be initialized; it may take some time on a slower computing device!
-    while ((inputAudioStream->isStopped()) || (timer.elapsedSeconds() < 30.0)) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    }
-
-    timer.stop();
-
+    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     if (inputAudioStream != nullptr) {
-        if (!inputAudioStream->isActive()) {
-            throw std::runtime_error(tr("Timed out while waiting for audio sub-system to initialize!").toStdString());
-        } else {
-            while (inputAudioStream->isOpen() && inputAudioStream->isActive()) {
-                //
-                // Input audio stream is open and active!
-                //
-                const int range = 100;
-                const int range_per_db = (AUDIO_VU_METER_MAX_DECIBELS / range);
-                float vol_res = gkAudioDevices->vuMeter(pref_input_device.sel_channels, AUDIO_FRAMES_PER_BUFFER, range, range_per_db,
-                                                        input_audio_buf->gkCircBuffer->get());
+        while (inputAudioStream->isActive()) {
+            //
+            // Input audio stream is open and active!
+            //
+            const int range = 100;
+            const int range_per_db = (AUDIO_VU_METER_MAX_DECIBELS / range);
+            float vol_res = gkAudioDevices->vuMeter(pref_input_device.sel_channels, AUDIO_FRAMES_PER_BUFFER, range, range_per_db,
+                                                    input_audio_buf->gkCircBuffer->get());
 
-                emit refreshVuMeter(vol_res);
-                std::this_thread::sleep_for(std::chrono::milliseconds(500));
-            }
+            emit refreshVuMeter(vol_res);
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }
     }
 
@@ -1497,13 +1484,15 @@ void MainWindow::closeEvent(QCloseEvent *event)
  */
 void MainWindow::stopRecordingInput(const int &wait_time)
 {
-    if (inputAudioStream != nullptr) {
+    if (inputAudioStream != nullptr && pref_input_device.is_dev_active) {
         if (inputAudioStream->isActive()) {
             inputAudioStream->close();
 
             if (!inputAudioStream->isStopped()) {
                 inputAudioStream->abort();
             }
+
+            pref_input_device.is_dev_active = false; // State that this recording device is now non-active!
         }
     }
 
@@ -1515,15 +1504,19 @@ void MainWindow::stopRecordingInput(const int &wait_time)
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param wait_time How long to wait for the thread to instantiate safely before forcing
  * an abortion of the operation altogether.
+ * @note PortAudio Documentation <https://app.assembla.com/spaces/portaudio/git/source/master/bindings/cpp/example/sine.cxx>.
  */
 void MainWindow::startRecordingInput(const int &wait_time)
 {
     emit stopRecording();
-    double most_min_sample_rate = std::fmin(pref_input_device.def_sample_rate, pref_output_device.def_sample_rate);
-    inputAudioStream->open(portaudio::StreamParameters(pref_input_device.cpp_stream_param, portaudio::DirectionSpecificStreamParameters::null(),
-                                                       most_min_sample_rate, AUDIO_FRAMES_PER_BUFFER, paClipOff),
-                           *input_audio_buf, &PaAudioBuf::recordCallback);
 
+    double most_min_sample_rate = std::fmin(pref_input_device.def_sample_rate, pref_output_device.def_sample_rate);
+    auto pa_stream_param = portaudio::StreamParameters(pref_input_device.cpp_stream_param, portaudio::DirectionSpecificStreamParameters::null(),
+                                                       most_min_sample_rate, AUDIO_FRAMES_PER_BUFFER, paNoFlag);
+    inputAudioStream = new portaudio::MemFunCallbackStream<PaAudioBuf>(pa_stream_param, *input_audio_buf, &PaAudioBuf::recordCallback);
+    inputAudioStream->start();
+
+    pref_input_device.is_dev_active = true; // State that this recording device is now active!
     return;
 }
 
@@ -1776,20 +1769,6 @@ void MainWindow::disconnectRigInMemory(RIG *rig_to_disconnect, const std::shared
                 }
             }
         }
-    }
-
-    return;
-}
-
-/**
- * @brief MainWindow::updateRadioVarsInMem
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param radio_ptr The pointer to Hamlib's radio structure and any information thereof.
- */
-void MainWindow::updateRadioVarsInMem(const std::shared_ptr<GkRadio> &radio_ptr)
-{
-    if (radio_ptr.get() != nullptr) {
-        gkRadioPtr = std::move(radio_ptr);
     }
 
     return;

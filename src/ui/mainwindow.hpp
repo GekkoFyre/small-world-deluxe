@@ -186,7 +186,6 @@ public slots:
                                const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void addRigToMemory(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void disconnectRigInMemory(RIG *rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
-    void updateRadioVarsInMem(const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void updateFreqsInMem(const float &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
                           const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq);
 
@@ -206,7 +205,6 @@ signals:
     void addRigInUse(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void recvRigCapabilities(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void disconnectRigInUse(RIG *rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
-    void updateRadioPtr(const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void updateFrequencies(const float &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
                            const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq);
 
