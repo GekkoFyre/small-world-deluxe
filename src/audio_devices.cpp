@@ -684,18 +684,18 @@ void AudioDevices::volumeSetting()
  * @param channels The number of audio channels we are dealing with for the given audio device input.
  * @param count The amount of `frames per buffer`.
  * @param range How many possible levels of 'volume' you'd like (i.e. '100' for a percentage value).
+ * @param range_per_db
  * @param buffer The raw audiological data.
  * @return The volume level, in decibels (dB).
  */
 float AudioDevices::vuMeter(const int &channels, const int &count, const int &range, const int &range_per_db, float *buffer)
 {
-    Q_UNUSED(channels);
     float K = 0;
     float sum = 0;
     float volume = 0;
 
     for(int i = 0; i < count; ++i) {
-        sum += std::pow(buffer[i], 2);
+        sum += std::pow(buffer[i], channels);
     }
 
     volume = (20 * std::log10(std::sqrt(sum / count)) + K);
@@ -706,6 +706,29 @@ float AudioDevices::vuMeter(const int &channels, const int &count, const int &ra
     volume /= range_per_db;
 
     return volume;
+}
+
+/**
+ * @brief AudioDevices::vuLevelControl
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param channels The number of audio channels we are dealing with for the given audio device input.
+ * @param count The amount of `frames per buffer`.
+ * @param range How many possible levels of 'volume' you'd like (i.e. '100' for a percentage value).
+ * @param range_per_db
+ * @param sliderVal The value given from a floating-point enabled slider within QMainWindow that allows volume adjustment.
+ * @param buffer The raw audiological data.
+ * @note trukvl <https://stackoverflow.com/questions/15776390/controlling-audio-volume-in-real-time>.
+ */
+void AudioDevices::vuLevelControl(const int &channels, const int &count, const int &range, const int &range_per_db, const float &sliderVal,
+                                  float *buffer)
+{
+    const float curVol = vuMeter(channels, count, range, range_per_db, buffer);
+    const float volumeMultiplier = (curVol * std::pow(10, sliderVal / 20.f));
+    for (int i = 0; i < count; ++i) {
+        buffer[i] *= volumeMultiplier;
+    }
+
+    return;
 }
 
 /**
@@ -797,12 +820,12 @@ PaStreamCallbackResult AudioDevices::openPlaybackStream(portaudio::System &portA
  * @param stereo
  * @return
  */
-PaStreamCallbackResult AudioDevices::openRecordStream(portaudio::System &portAudioSys, std::shared_ptr<PaAudioBuf> audio_buf,
+PaStreamCallbackResult AudioDevices::openRecordStream(portaudio::System &portAudioSys, QPointer<PaAudioBuf> audio_buf,
                                                       const GkDevice &device,
                                                       portaudio::MemFunCallbackStream<PaAudioBuf> **stream_record_ptr,
                                                       const bool &stereo)
 {
-    if (audio_buf.get() != nullptr) {
+    if (audio_buf != nullptr) {
         std::mutex record_stream_mtx;
         std::lock_guard<std::mutex> lck_guard(record_stream_mtx);
         portaudio::SampleDataFormat prefDataFormat = sampleFormatConvert(portAudioSys.deviceByIndex(device.stream_parameters.device).defaultLowInputLatency());

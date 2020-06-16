@@ -807,7 +807,7 @@ QPushButton:disabled {
                 <string>Adjust volume of outgoing audio signal.</string>
                </property>
                <property name="minimum">
-                <number>1</number>
+                <number>0</number>
                </property>
                <property name="maximum">
                 <number>100</number>
@@ -816,7 +816,7 @@ QPushButton:disabled {
                 <number>5</number>
                </property>
                <property name="value">
-                <number>50</number>
+                <number>0</number>
                </property>
                <property name="orientation">
                 <enum>Qt::Vertical</enum>
@@ -840,8 +840,24 @@ QPushButton:disabled {
           </item>
           <item>
            <widget class="QCheckBox" name="checkBox_rx_tx_vol_toggle">
+            <property name="toolTip">
+             <string>Change the volume for either the RX or TX audio stream!</string>
+            </property>
             <property name="text">
              <string>RX</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_vol_control_disp">
+            <property name="text">
+             <string>0.0 dB</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
             </property>
            </widget>
           </item>

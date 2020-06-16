@@ -84,6 +84,7 @@ public:
 
 public slots:
     void abortRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
+    void updateVuAndBuffer(const float &value);
 
 private:
     GekkoFyre::Database::Settings::Audio::GkDevice prefInputDevice;

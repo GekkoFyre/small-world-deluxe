@@ -86,6 +86,8 @@ public:
     void portAudioErr(const PaError &err);
     void volumeSetting();
     float vuMeter(const int &channels, const int &count, const int &range, const int &range_per_db, float *buffer);
+    void vuLevelControl(const int &channels, const int &count, const int &range, const int &range_per_db, const float &sliderVal,
+                        float *buffer);
     portaudio::SampleDataFormat sampleFormatConvert(const unsigned long sample_rate);
 
     PaStreamCallbackResult testSinewave(portaudio::System &portAudioSys, const Database::Settings::Audio::GkDevice device,
@@ -93,7 +95,7 @@ public:
     PaStreamCallbackResult openPlaybackStream(portaudio::System &portAudioSys, GekkoFyre::PaAudioBuf *audio_buf,
                                               const GekkoFyre::Database::Settings::Audio::GkDevice &device,
                                               const bool &stereo = true);
-    PaStreamCallbackResult openRecordStream(portaudio::System &portAudioSys, std::shared_ptr<PaAudioBuf> audio_buf,
+    PaStreamCallbackResult openRecordStream(portaudio::System &portAudioSys, QPointer<PaAudioBuf> audio_buf,
                                             const GekkoFyre::Database::Settings::Audio::GkDevice &device,
                                             portaudio::MemFunCallbackStream<PaAudioBuf> **stream_record_ptr,
                                             const bool &stereo = true);

@@ -324,6 +324,17 @@ void PaAudioBuf::abortRecording(const bool &recording_is_stopped, const int &wai
 }
 
 /**
+ * @brief PaAudioBuf::updateVuAndBuffer will update the data within the circular buffer to the volume level as set
+ * by the user themselves, usually from within QMainWindow.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value The adjustment needed to the buffered data.
+ */
+void PaAudioBuf::updateVuAndBuffer(const float &value)
+{
+    return;
+}
+
+/**
  * @brief PaAudioBuf::fillVecZeros The idea of this is to fill an std::vector() with all zeroes
  * when there is nothing else to return but this, so the program doesn't output an exception
  * otherwise.

@@ -137,6 +137,7 @@ namespace GekkoFyre {
 #define AUDIO_BUFFER_STREAMING_SECS (1)
 #define AUDIO_SINE_WAVE_PLAYBACK_SECS (3)               // Play the sine wave test sample for three seconds!
 #define AUDIO_VU_METER_UPDATE_MILLISECS (500)           // How often the volume meter should update, in milliseconds.
+#define AUDIO_VU_METER_MAX_RANGE (100)                  // The maximum volume range of the QSlider and/or volume widget
 #define AUDIO_VU_METER_MAX_DECIBELS (120)               // The maximum amount of decibels that the volume meter will measure towards
 
 //

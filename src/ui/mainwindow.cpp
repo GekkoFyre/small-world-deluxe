@@ -165,7 +165,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         btn_radio_tune = false;
         btn_radio_monitor = false;
 
-        rx_vol_control_selected = false;
+        rx_vol_control_selected = true; // By default it is ticked!
         global_rx_audio_volume = 0.0;
         global_tx_audio_volume = 0.0;
 
@@ -362,8 +362,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         QObject::connect(this, SIGNAL(stopRecording(const int &)), this, SLOT(stopRecordingInput(const int &)));
         QObject::connect(this, SIGNAL(startRecording(const int &)), this, SLOT(startRecordingInput(const int &)));
-        QObject::connect(this, SIGNAL(refreshVuMeter(const float &)), this, SLOT(updateVuMeter(const float &)));
-        QObject::connect(this, SIGNAL(refreshVuMeter(const float &)), this, SLOT(updateVolMeterTooltip(const float &)));
+        QObject::connect(this, SIGNAL(refreshVuDisplay(const float &)), this, SLOT(updateVuDisplay(const float &)));
+        QObject::connect(this, SIGNAL(updateVuDisplayTooltip(const double &)), this, SLOT(updateVolDisplayTooltip(const double &)));
 
         //
         // QMainWindow widgets
@@ -381,7 +381,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             const size_t audio_input_sample_length = (pref_input_device.def_sample_rate * SPECTRO_SAMPLING_LENGTH);
             const size_t input_audio_circ_buf_size = ((fft_num_lines - 1) * fft_samples_per_line + audio_input_sample_length);
 
-            input_audio_buf = std::make_unique<GekkoFyre::PaAudioBuf>(input_audio_circ_buf_size, pref_output_device, pref_input_device, this);
+            input_audio_buf = new GekkoFyre::PaAudioBuf(input_audio_circ_buf_size, pref_output_device, pref_input_device, this);
         }
 
         std::thread t1(&MainWindow::infoBar, this);
@@ -407,11 +407,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             const size_t audio_output_sample_length = (pref_input_device.def_sample_rate * SPECTRO_SAMPLING_LENGTH);
             const size_t output_audio_circ_buf_size = ((fft_num_lines - 1) * fft_samples_per_line + audio_output_sample_length);
 
-            output_audio_buf = std::make_unique<GekkoFyre::PaAudioBuf>(output_audio_circ_buf_size, pref_output_device, pref_input_device, this);
+            output_audio_buf = new GekkoFyre::PaAudioBuf(output_audio_circ_buf_size, pref_output_device, pref_input_device, this);
 
-            gkAudioEncoding = new GkAudioEncoding(fileIo, input_audio_buf.get(), GkDb, gkSpectroGui,
+            gkAudioEncoding = new GkAudioEncoding(fileIo, input_audio_buf, GkDb, gkSpectroGui,
                                                   gkStringFuncs, pref_input_device, this);
-            gkAudioDecoding = new GkAudioDecoding(fileIo, output_audio_buf.get(), GkDb, gkStringFuncs,
+            gkAudioDecoding = new GkAudioDecoding(fileIo, output_audio_buf, GkDb, gkStringFuncs,
                                                   pref_output_device, this);
 
             //
@@ -981,12 +981,12 @@ void MainWindow::updateVolumeWidgets()
             //
             // Input audio stream is open and active!
             //
-            const int range = 100;
+            const int range = AUDIO_VU_METER_MAX_RANGE;
             const int range_per_db = (AUDIO_VU_METER_MAX_DECIBELS / range);
-            float vol_res = gkAudioDevices->vuMeter(pref_input_device.sel_channels, AUDIO_FRAMES_PER_BUFFER, range, range_per_db,
+            float vol_res = gkAudioDevices->vuMeter(GkDb->convertAudioChannelsInt(pref_input_device.sel_channels), AUDIO_FRAMES_PER_BUFFER, range, range_per_db,
                                                     input_audio_buf->gkCircBuffer->get());
 
-            emit refreshVuMeter(vol_res);
+            emit refreshVuDisplay(vol_res);
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }
     }
@@ -1270,12 +1270,12 @@ void MainWindow::stopAudioCodecRec(const bool &recording_is_started)
 }
 
 /**
- * @brief MainWindow::updateVuMeter updates/refreshes the widget on the left-hand side of the
+ * @brief MainWindow::updateVuDisplay updates/refreshes the widget on the left-hand side of the
  * QMainWindow which displays the volume level at any immediate time.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param volumePctg The volume percentage for the QWidget meter to be set towards.
  */
-void MainWindow::updateVuMeter(const float &volumePctg)
+void MainWindow::updateVuDisplay(const float &volumePctg)
 {
     ui->progressBar_spect_vu_meter->setValue(volumePctg);
 }
@@ -1284,11 +1284,38 @@ void MainWindow::updateVuMeter(const float &volumePctg)
  * @brief MainWindow::updateVolMeterTooltip updates the tooltip on the volume slider to the right-hand
  * side of QMainWindow as it is moved up/down, reflecting the actually set volume percentage.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param value The given volume, as a percentage.
+ * @param val value The given volume, as measured in decibels.
  */
-void MainWindow::updateVolMeterTooltip(const float &value)
+void MainWindow::updateVolDisplayTooltip(const double &value)
 {
-    ui->verticalSlider_vol_control->setToolTip(tr("Volume: %1%").arg(QString::number(value)));
+    ui->verticalSlider_vol_control->setToolTip(tr("%1 dB").arg(QString::number(value)));
+    ui->label_vol_control_disp->setText(tr("%1 dB").arg(QString::number(value)));
+
+    return;
+}
+
+/**
+ * @brief MainWindow::on_verticalSlider_vol_control_valueChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value
+ */
+void MainWindow::on_verticalSlider_vol_control_valueChanged(int value)
+{
+    const float realVal = (value / 10);
+    if (inputAudioStream != nullptr) {
+        if (inputAudioStream->isActive()) {
+            //
+            // Input audio stream is open and active!
+            //
+            const int range = AUDIO_VU_METER_MAX_RANGE;
+            const int range_per_db = (AUDIO_VU_METER_MAX_DECIBELS / range);
+
+            gkAudioDevices->vuLevelControl(GkDb->convertAudioChannelsInt(pref_input_device.sel_channels), AUDIO_FRAMES_PER_BUFFER, range,
+                                           range_per_db, realVal, input_audio_buf->gkCircBuffer->get());
+
+            emit updateVuDisplayTooltip();
+        }
+    }
 
     return;
 }
@@ -1843,14 +1870,22 @@ void MainWindow::on_action_Print_triggered()
     return;
 }
 
-void MainWindow::on_verticalSlider_vol_control_valueChanged(int value)
-{
-    return;
-}
-
 void MainWindow::on_checkBox_rx_tx_vol_toggle_stateChanged(int arg1)
 {
     rx_vol_control_selected = arg1;
+    if (rx_vol_control_selected) {
+        // Connect the RX audio buffer
+        QObject::connect(this, SIGNAL(updateVuLevel(const float &)), input_audio_buf, SLOT(updateVuAndBuffer(const float &)));
+
+        // Disconnect the TX audio buffer
+        QObject::disconnect(this, SIGNAL(updateVuLevel(const float &)), output_audio_buf, SLOT(updateVuAndBuffer(const float &)));
+    } else {
+        // Connect the TX audio buffer
+        QObject::connect(this, SIGNAL(updateVuLevel(const float &)), output_audio_buf, SLOT(updateVuAndBuffer(const float &)));
+
+        // Disconnect the RX audio buffer
+        QObject::disconnect(this, SIGNAL(updateVuLevel(const float &)), input_audio_buf, SLOT(updateVuAndBuffer(const float &)));
+    }
 
     return;
 }
