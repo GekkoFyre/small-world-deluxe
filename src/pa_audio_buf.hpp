@@ -71,20 +71,20 @@ public:
                          const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags);
     int recordCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
                        const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags);
-    float *dumpMemory();
-    std::unique_ptr<GekkoFyre::GkCircBuffer<float *>> gkCircBuffer;
+    int16_t *dumpMemory();
+    std::unique_ptr<GekkoFyre::GkCircBuffer<int16_t *>> gkCircBuffer;
 
     void prepOggVorbisBuf(std::promise<std::vector<signed char>> vorbis_buf);
 
     virtual size_t size() const;
-    virtual float at(const int &idx);
-    virtual void push_back(const float &data);
+    virtual int16_t at(const int &idx);
+    virtual void push_back(const int16_t &data);
     virtual bool empty() const;
     virtual bool clear() const;
 
 public slots:
     void abortRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
-    void updateVuAndBuffer(const float &value);
+    void updateVolume(const float &value);
 
 private:
     GekkoFyre::Database::Settings::Audio::GkDevice prefInputDevice;
@@ -93,9 +93,9 @@ private:
     int circ_buffer_size;
     int maxFrameIndex;
     int frameIndex;
-    float calcVolIdx;
+    float calcVolIdx; // A floating-point value between 0.0 - 1.0 that determines the amplitude of the audio signal (i.e. raw data buffer).
 
-    std::vector<float> fillVecZeros(const int &buf_size);
+    std::vector<int16_t> fillVecZeros(const int &buf_size);
 
     portaudio::SampleDataFormat sampleFormatConvert(const unsigned long sample_rate);
 

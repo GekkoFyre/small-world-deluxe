@@ -41,4 +41,6 @@
 
 #pragma once
 
-void processCUDAFFT(float *inputData, float *outputData, unsigned int numSamples);
+typedef short int16_t;
+
+void processCUDAFFT(int16_t *inputData, float *outputData, unsigned int numSamples);

@@ -912,7 +912,7 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_p
  * @param data_buf The raw audio stream itself.
  * @return A factor for which to multiply the volume of the audio signal itself by.
  */
-float RadioLibs::calibrateAudioInputSignal(const float *data_buf)
+int16_t RadioLibs::calibrateAudioInputSignal(const int16_t *data_buf)
 {
     return -1;
 }

@@ -86,7 +86,7 @@ PaAudioBuf::PaAudioBuf(int buffer_size, const GkDevice &pref_output_device, cons
     // Original author: https://embeddedartistry.com/blog/2017/05/17/creating-a-circular-buffer-in-c-and-c/
     //
     circ_buffer_size = buffer_size;
-    gkCircBuffer = std::make_unique<GkCircBuffer<float *>>(circ_buffer_size);
+    gkCircBuffer = std::make_unique<GkCircBuffer<int16_t *>>(circ_buffer_size);
 }
 
 PaAudioBuf::~PaAudioBuf()
@@ -102,6 +102,7 @@ PaAudioBuf::~PaAudioBuf()
  * @param statusFlags
  * @param userData
  * @return
+ * @note Archie <https://stackoverflow.com/questions/35959523/portaudio-iterate-through-audio-data>
  */
 int PaAudioBuf::playbackCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
                                  const PaStreamCallbackTimeInfo* timeInfo, PaStreamCallbackFlags statusFlags)
@@ -119,8 +120,8 @@ int PaAudioBuf::playbackCallback(const void *inputBuffer, void *outputBuffer, un
 
     int numChannels = prefOutputDevice.sel_channels;
     std::unique_ptr<GkPaAudioData> data = std::make_unique<GkPaAudioData>();
-    float *rptr = (&data->recordedSamples[data->frameIndex * numChannels]);
-    float *wptr = (float *)outputBuffer;
+    int16_t *rptr = (&data->recordedSamples[data->frameIndex * numChannels]);
+    int16_t *wptr = (int16_t *)outputBuffer;
     size_t framesLeft = (data->maxFrameIndex - data->frameIndex);
     int finished;
 
@@ -167,7 +168,7 @@ int PaAudioBuf::playbackCallback(const void *inputBuffer, void *outputBuffer, un
  * @param statusFlags
  * @param userData
  * @return
- * @note StackOverflow <https://stackoverflow.com/questions/15690668/continuous-recording-in-portaudio-from-mic-or-output>.
+ * @note Archie <https://stackoverflow.com/questions/35959523/portaudio-iterate-through-audio-data>
  */
 int PaAudioBuf::recordCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
                                const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags)
@@ -181,7 +182,7 @@ int PaAudioBuf::recordCallback(const void *inputBuffer, void *outputBuffer, unsi
     Q_UNUSED(statusFlags);
 
     int finished = paContinue;
-    float *buffer_ptr = (float *)inputBuffer;
+    int16_t *buffer_ptr = (int16_t *)inputBuffer;
 
     for (unsigned long i = 0; i < framesPerBuffer; ++i) {
         buffer_ptr[i] *= calcVolIdx;
@@ -197,7 +198,7 @@ int PaAudioBuf::recordCallback(const void *inputBuffer, void *outputBuffer, unsi
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return The entire contents of the buffer once having reached the target size.
  */
-float *PaAudioBuf::dumpMemory()
+int16_t *PaAudioBuf::dumpMemory()
 {
     std::mutex pa_buf_dup_mem_mtx;
     std::lock_guard<std::mutex> lck_guard(pa_buf_dup_mem_mtx);
@@ -248,7 +249,7 @@ size_t PaAudioBuf::size() const
     return rec_samples_size;
 }
 
-float PaAudioBuf::at(const int &idx)
+int16_t PaAudioBuf::at(const int &idx)
 {
     std::mutex pa_audio_buf_loc_mtx;
     std::lock_guard<std::mutex> lck_guard(pa_audio_buf_loc_mtx);
@@ -269,14 +270,14 @@ float PaAudioBuf::at(const int &idx)
     return ret_value;
 }
 
-void PaAudioBuf::push_back(const float &data)
+void PaAudioBuf::push_back(const int16_t &data)
 {
     if (gkCircBuffer != nullptr) {
         if (gkCircBuffer->full()) {
             gkCircBuffer->reset();
         }
 
-        std::vector<float> array_tmp;
+        std::vector<int16_t> array_tmp;
         array_tmp.reserve(1);
         array_tmp.push_back(data);
         for (size_t i = 0; i < gkCircBuffer->capacity(); ++i) {
@@ -335,7 +336,7 @@ void PaAudioBuf::abortRecording(const bool &recording_is_stopped, const int &wai
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param value The adjustment needed to the buffered data.
  */
-void PaAudioBuf::updateVuAndBuffer(const float &value)
+void PaAudioBuf::updateVolume(const float &value)
 {
     calcVolIdx = value;
 
@@ -350,11 +351,11 @@ void PaAudioBuf::updateVuAndBuffer(const float &value)
  * @param buf_size How large to make the std::vector().
  * @return The outputted std::vector() that's now filled with zeroes.
  */
-std::vector<float> PaAudioBuf::fillVecZeros(const int &buf_size)
+std::vector<int16_t> PaAudioBuf::fillVecZeros(const int &buf_size)
 {
     std::mutex fill_vec_zeroes_mtx;
     std::lock_guard<std::mutex> lck_guard(fill_vec_zeroes_mtx);
-    std::vector<float> ret_vec;
+    std::vector<int16_t> ret_vec;
     ret_vec.reserve(buf_size);
 
     for (size_t i = 0; i < buf_size; ++i) {

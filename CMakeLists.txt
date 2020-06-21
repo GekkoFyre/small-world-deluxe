@@ -403,6 +403,7 @@ set(GALAXY_UI_CPP
     src/ui/aboutdialog.cpp
     src/ui/gkaudioplaydialog.cpp
     src/ui/spectrodialog.cpp
+    src/ui/gk_vu_meter_widget.cpp
     src/radiolibs.cpp
     src/dek_db.cpp
     src/file_io.cpp
@@ -446,6 +447,7 @@ set(GALAXY_SRC_HEADERS
     src/ui/aboutdialog.hpp
     src/ui/gkaudioplaydialog.hpp
     src/ui/spectrodialog.hpp
+    src/ui/gk_vu_meter_widget.hpp
     src/pa_sinewave.hpp
     src/radiolibs.hpp
     src/dek_db.hpp

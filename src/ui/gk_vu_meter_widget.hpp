@@ -39,49 +39,61 @@
  **
  ****************************************************************************************************/
 
-#include "spectro_cuda.h"
-#include <cufft.h>
-#include <cuda_runtime_api.h>
+#pragma once
 
-/**
- * @brief SpectroFFTW::processCUDAFFT
- * @author Ville Räisänen <https://github.com/vsr83/QSpectrogram/blob/master/fftcuda.cu>
- * @param inputData
- * @param outputData
- * @param numSamples
- */
-void processCUDAFFT(int16_t *inputData, float *outputData, unsigned int numSamples)
-{
-    cufftHandle plan;
-    cufftComplex *inputDataG, *outputDataG;
-    int i;
+#include "src/defines.hpp"
+#include <QObject>
+#include <QWidget>
 
-    float *inputDataC, *outputDataC;
-    outputDataC = (float *)malloc(sizeof(float) * numSamples * 2);
-    inputDataC  = (float *)malloc(sizeof(float) * numSamples * 2);
+namespace GekkoFyre {
+class GkVuMeter : public QWidget {
+    Q_OBJECT
 
-    for (i = 0; i < numSamples; ++i) {
-      inputDataC[i * 2]     = inputData[i];
-      inputDataC[i * 2 + 1] = 0.0f;
-    }
+public:
+    explicit GkVuMeter(QWidget *parent = 0);
+    ~GkVuMeter();
 
-    cudaMalloc((void **)&inputDataG,  sizeof(cufftComplex) * numSamples);
-    cudaMalloc((void **)&outputDataG, sizeof(cufftComplex) * numSamples);
+    void paintEvent(QPaintEvent *event) override;
 
-    cudaMemcpy(inputDataG, inputDataC, sizeof(cufftComplex) * numSamples, cudaMemcpyHostToDevice);
-    cufftPlan1d(&plan, numSamples, CUFFT_C2C, 1);
-    cufftExecC2C(plan, inputDataG, outputDataG, CUFFT_FORWARD);
-    cufftDestroy(plan);
-    cudaMemcpy(outputDataC, outputDataG, sizeof(cufftComplex) * numSamples, cudaMemcpyDeviceToHost);
-    cudaFree(inputDataG);
-    cudaFree(outputDataG);
+public slots:
+    void reset();
+    void levelChanged(qreal rmsLevel, qreal peakLevel, int numSamples);
 
-    for (i = 0; i < numSamples; ++i) {
-        outputData[i] = outputDataC[i * 2];
-    }
+private slots:
+    void redrawTimerExpired();
 
-    free(outputDataC);
-    free(inputDataC);
+private:
+    // Height of RMS level bar.
+    // Range 0.0 - 1.0.
+    qreal m_rmsLevel;
 
-    return;
-}
+    // Most recent peak level.
+    // Range 0.0 - 1.0.
+    qreal m_peakLevel;
+
+    // Height of peak level bar.
+    // This is calculated by decaying m_peakLevel depending on the
+    // elapsed time since m_peakLevelChanged, and the value of m_decayRate.
+    qreal m_decayedPeakLevel;
+
+    // Time at which m_peakLevel was last changed.
+    QTime m_peakLevelChanged;
+
+    // Rate at which peak level bar decays.
+    // Expressed in level units / millisecond.
+    qreal m_peakDecayRate;
+
+    // High watermark of peak level.
+    // Range 0.0 - 1.0.
+    qreal m_peakHoldLevel;
+
+    // Time at which m_peakHoldLevel was last changed.
+    QTime m_peakHoldLevelChanged;
+
+    QTimer *m_redrawTimer;
+
+    QColor m_rmsColor;
+    QColor m_peakColor;
+
+};
+};

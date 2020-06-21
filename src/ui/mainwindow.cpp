@@ -168,6 +168,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         rx_vol_control_selected = true; // By default it is ticked!
         global_rx_audio_volume = 0.0;
         global_tx_audio_volume = 0.0;
+        on_checkBox_rx_tx_vol_toggle_stateChanged(rx_vol_control_selected); // Initiate at startup to set any default values and/or signals/slots!
 
         //
         // Initialize Hamlib!
@@ -975,15 +976,13 @@ QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, rig_type>> MainWind
  */
 void MainWindow::updateVolumeWidgets()
 {
-    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(2500));
     if (inputAudioStream != nullptr) {
         while (inputAudioStream->isActive()) {
             //
             // Input audio stream is open and active!
             //
-            const float range = AUDIO_VU_METER_MAX_RANGE;
-            const float range_per_db = (AUDIO_VU_METER_MAX_DECIBELS / range);
-            float vol_res = gkAudioDevices->vuMeter(GkDb->convertAudioChannelsInt(pref_input_device.sel_channels), AUDIO_FRAMES_PER_BUFFER, range, range_per_db,
+            float vol_res = gkAudioDevices->vuMeter(GkDb->convertAudioChannelsInt(pref_input_device.sel_channels), AUDIO_FRAMES_PER_BUFFER,
                                                     input_audio_buf->gkCircBuffer->get());
 
             emit refreshVuDisplay(vol_res);
@@ -1295,25 +1294,32 @@ void MainWindow::updateVolDisplayTooltip(const float &value)
 }
 
 /**
- * @brief MainWindow::on_verticalSlider_vol_control_valueChanged
+ * @brief MainWindow::on_verticalSlider_vol_control_valueChanged indirectly adjusts the volume of the audio data buffer itself
+ * via the decibel formulae <https://en.wikipedia.org/wiki/Decibel#Acoustics>.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param value
+ * @param value The value of the QSlider from the QMainWindow, ranging from 0-100 individual units.
+ * @note Ansis Māliņš <https://stackoverflow.com/questions/49014440/what-is-the-correct-audio-volume-slider-formula>
  */
 void MainWindow::on_verticalSlider_vol_control_valueChanged(int value)
 {
-    const float realVal = (static_cast<float>(value) / 10.f);
-    if (inputAudioStream != nullptr) {
-        if (pref_input_device.is_dev_active) {
-            //
-            // Input audio stream is open and active!
-            //
-            const float range = AUDIO_VU_METER_MAX_RANGE;
-            const float range_per_db = (AUDIO_VU_METER_MAX_DECIBELS / range);
+    const float real_val = (static_cast<float>(value) * 0.10f);
+    const float silence = -96.0f;
 
-            auto calcVolIdx = gkAudioDevices->vuLevelControl(input_audio_buf->gkCircBuffer->get(), portaudio::SampleDataFormat::INT16,
-                                                             AUDIO_FRAMES_PER_BUFFER, realVal);
-            emit updateVuLevel(calcVolIdx);
-            emit updateVuDisplayTooltip(realVal);
+    if (rx_vol_control_selected) {
+        if (inputAudioStream != nullptr) {
+            if (pref_input_device.is_dev_active) {
+                //
+                // Input audio stream is open and active!
+                //
+                float factor = std::pow(10.0f, (1 - real_val) * silence / 20.0f);
+                emit changeVolume(factor);
+            }
+        }
+    } else {
+        if (pref_output_device.is_dev_active) {
+            //
+            // Output audio buffer
+            //
         }
     }
 
@@ -1870,16 +1876,16 @@ void MainWindow::on_checkBox_rx_tx_vol_toggle_stateChanged(int arg1)
     rx_vol_control_selected = arg1;
     if (rx_vol_control_selected) {
         // Connect the RX audio buffer
-        QObject::connect(this, SIGNAL(updateVuLevel(const float &)), input_audio_buf, SLOT(updateVuAndBuffer(const float &)));
+        QObject::connect(this, SIGNAL(changeVolume(const float &)), input_audio_buf, SLOT(updateVolume(const float &)));
 
         // Disconnect the TX audio buffer
-        QObject::disconnect(this, SIGNAL(updateVuLevel(const float &)), output_audio_buf, SLOT(updateVuAndBuffer(const float &)));
+        QObject::disconnect(this, SIGNAL(changeVolume(const float &)), output_audio_buf, SLOT(updateVolume(const float &)));
     } else {
         // Connect the TX audio buffer
-        QObject::connect(this, SIGNAL(updateVuLevel(const float &)), output_audio_buf, SLOT(updateVuAndBuffer(const float &)));
+        QObject::connect(this, SIGNAL(changeVolume(const float &)), output_audio_buf, SLOT(updateVolume(const float &)));
 
         // Disconnect the RX audio buffer
-        QObject::disconnect(this, SIGNAL(updateVuLevel(const float &)), input_audio_buf, SLOT(updateVuAndBuffer(const float &)));
+        QObject::disconnect(this, SIGNAL(changeVolume(const float &)), input_audio_buf, SLOT(updateVolume(const float &)));
     }
 
     return;

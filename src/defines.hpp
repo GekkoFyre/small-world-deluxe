@@ -110,6 +110,8 @@ extern "C"
   typedef std::string tstring;
 #endif
 
+typedef short int16_t;
+
 namespace GekkoFyre {
 
 #define GK_EXIT_TIMEOUT (6)                             // The amount of time, in seconds, to leave 'Small World Deluxe' hanging upon exit before terminating forcefully!
@@ -136,9 +138,9 @@ namespace GekkoFyre {
 
 #define AUDIO_BUFFER_STREAMING_SECS (1)
 #define AUDIO_SINE_WAVE_PLAYBACK_SECS (3)               // Play the sine wave test sample for three seconds!
-#define AUDIO_VU_METER_UPDATE_MILLISECS (500)           // How often the volume meter should update, in milliseconds.
-#define AUDIO_VU_METER_MAX_RANGE (100)                  // The maximum volume range of the QSlider and/or volume widget
-#define AUDIO_VU_METER_MAX_DECIBELS (120)               // The maximum amount of decibels that the volume meter will measure towards
+#define AUDIO_VU_METER_UPDATE_MILLISECS (125)           // How often the volume meter should update, in milliseconds.
+#define AUDIO_VU_METER_PEAK_DECAY_RATE (0.001)          // Unknown
+#define AUDIO_VU_METER_PEAK_HOLD_LEVEL_DURATION (2000)  // Measured in milliseconds
 
 //
 // Mostly regarding FFTW functions
@@ -323,7 +325,7 @@ namespace Database {
             struct GkPaAudioData {
                 int frameIndex;                                                     // Frame index into sample array
                 int maxFrameIndex;                                                  // Maximum frame index given into sample array
-                float *recordedSamples;                                             // Audio samples that have been recorded and saved to a buffer
+                int16_t *recordedSamples;                                             // Audio samples that have been recorded and saved to a buffer
                 portaudio::SampleDataFormat sample_format;                          // Currently used sample format by given audio source, whether output or input
             };
 

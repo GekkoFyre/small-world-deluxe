@@ -213,7 +213,7 @@ signals:
     //
     void refreshVuDisplay(const float &volumePctg);
     void updateVuDisplayTooltip(const float &value);
-    void updateVuLevel(const float &value);
+    void changeVolume(const float &value);
     void stopRecording(const int &wait_time = 5000);
     void startRecording(const int &wait_time = 5000);
 

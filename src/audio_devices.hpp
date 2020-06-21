@@ -84,10 +84,9 @@ public:
     GekkoFyre::Database::Settings::Audio::GkDevice gatherAudioDeviceDetails(portaudio::System *portAudioSys,
                                                                             const PaDeviceIndex &pa_index);
     void portAudioErr(const PaError &err);
-    void volumeSetting();
-    float vuMeter(const int &channels, const int &count, const float &range, const float &range_per_db, float *buffer);
-    void vuLevelControl(int16_t *buffer, const portaudio::SampleDataFormat &sample_format, const int &count, const float &slider_val,
-                        const float &silence = -96);
+    void systemVolumeSetting();
+    float vuMeter(const int &channels, const int &count, int16_t *buffer);
+
     portaudio::SampleDataFormat sampleFormatConvert(const unsigned long sample_rate);
 
     PaStreamCallbackResult testSinewave(portaudio::System &portAudioSys, const Database::Settings::Audio::GkDevice device,

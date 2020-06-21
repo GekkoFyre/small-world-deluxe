@@ -44,6 +44,7 @@
 #include <iostream>
 #include <cstdio>
 #include <exception>
+#include <climits>
 #include <sstream>
 #include <utility>
 #include <cstring>
@@ -624,7 +625,7 @@ PaStreamCallbackResult AudioDevices::testSinewave(portaudio::System &portAudioSy
             portaudio::DirectionSpecificStreamParameters outputParams(portAudioSys.deviceByIndex(device.stream_parameters.device),
                                                                    device.dev_output_channel_count, portaudio::FLOAT32, false, prefOutputLatency, nullptr);
             portaudio::StreamParameters playbackBeep(portaudio::DirectionSpecificStreamParameters::null(), outputParams, device.def_sample_rate,
-                                                     AUDIO_FRAMES_PER_BUFFER, paClipOff);
+                                                     AUDIO_FRAMES_PER_BUFFER, paNoFlag);
             portaudio::MemFunCallbackStream<PaSinewave> streamPlaybackSine(playbackBeep, gkPaSinewave, &PaSinewave::generate);
 
             streamPlaybackSine.start();
@@ -647,7 +648,7 @@ PaStreamCallbackResult AudioDevices::testSinewave(portaudio::System &portAudioSy
                                                                            false, prefInputLatency, nullptr);
             portaudio::StreamParameters recordParams(inputParamsRecord, portaudio::DirectionSpecificStreamParameters::null(),
                                                      device.def_sample_rate,
-                                                     AUDIO_FRAMES_PER_BUFFER, paClipOff);
+                                                     AUDIO_FRAMES_PER_BUFFER, paNoFlag);
 
             portaudio::MemFunCallbackStream<PaSinewave> streamRecordSine(recordParams, gkPaSinewave, &PaSinewave::generate);
 
@@ -675,7 +676,7 @@ PaStreamCallbackResult AudioDevices::testSinewave(portaudio::System &portAudioSy
  * @brief AudioDevices::volumeSetting
  * @note Michael Satran & Mike Jacobs <https://docs.microsoft.com/en-us/windows/win32/coreaudio/endpoint-volume-controls>
  */
-void AudioDevices::volumeSetting()
+void AudioDevices::systemVolumeSetting()
 {}
 
 /**
@@ -683,66 +684,30 @@ void AudioDevices::volumeSetting()
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param channels The number of audio channels we are dealing with for the given audio device input.
  * @param count The amount of `frames per buffer`.
- * @param range How many possible levels of 'volume' you'd like (i.e. '100' for a percentage value).
- * @param range_per_db
  * @param buffer The raw audiological data.
  * @return The volume level, in decibels (dB).
+ * @note RobertT <https://stackoverflow.com/questions/2445756/how-can-i-calculate-audio-db-level>,
+ * Vassilis <https://stackoverflow.com/questions/37963115/how-to-make-smooth-levelpeak-meter-with-qt>
  */
-float AudioDevices::vuMeter(const int &channels, const int &count, const float &range, const float &range_per_db, float *buffer)
+float AudioDevices::vuMeter(const int &channels, const int &count, int16_t *buffer)
 {
-    float K = 0.f;
-    float sum = 0.f;
-    float volume = 0.f;
+    int16_t max_val = buffer[0];
 
-    for(int i = 0; i < count; ++i) {
-        sum += std::pow(buffer[i], 1);
+    // Find maximum!
+    // Traverse the array elements from second and compare every element with current maximum...
+    for (int i = 1; i < (count * channels); ++i) {
+        if (buffer[i] > max_val) {
+            max_val = buffer[i];
+        }
     }
 
-    volume = (20.f * std::log10(std::sqrt(sum / count)) + K);
+    float amplitude = (static_cast<float>(max_val) / SHRT_MAX);
+    float dB_val = (20 * std::log10(amplitude));
 
-    // Make the volume a number ranging from zero to number of decibels
-    volume += (range * range_per_db);
-    volume = fmax(0, volume);
-    volume /= range_per_db;
+    // Invert from a negative to a positive!
+    dB_val *= (-1.f);
 
-    return volume;
-}
-
-/**
- * @brief AudioDevices::vuLevelControl
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param buffer The raw audiological data.
- * @param sample_format The format for which the audio data is in.
- * @param count The amount of `frames per buffer`.
- * @param sliderVal The value given from a floating-point enabled slider within QMainWindow that allows volume adjustment.
- * @param silence
- * @note Ansis Māliņš <https://stackoverflow.com/questions/49014440/what-is-the-correct-audio-volume-slider-formula>.
- */
-void AudioDevices::vuLevelControl(int16_t *buffer, const portaudio::SampleDataFormat &sample_format, const int &count,
-                                  const float &slider_val, const float &silence)
-{
-    float factor = std::pow(10.0f, (1 - slider_val) * silence / 20.0f);
-
-    for (int i = 0; i < count; ++i) {
-    switch (sample_format) {
-    case portaudio::FLOAT32:
-        break;
-    case portaudio::INT32:
-        break;
-    case portaudio::INT24:
-        break;
-    case portaudio::INT16:
-        buffer[i] = static_cast<int16_t>(buffer[i] * factor);
-    case portaudio::INT8:
-        break;
-    case portaudio::UINT8:
-        break;
-    default:
-        break;
-    }
-    }
-
-    return;
+    return dB_val;
 }
 
 /**
@@ -779,6 +744,7 @@ portaudio::SampleDataFormat AudioDevices::sampleFormatConvert(const unsigned lon
  * @param device
  * @param stereo
  * @return
+ * @note Archie <https://stackoverflow.com/questions/35959523/portaudio-iterate-through-audio-data>
  */
 PaStreamCallbackResult AudioDevices::openPlaybackStream(portaudio::System &portAudioSys, PaAudioBuf *audio_buf,
                                                         const GkDevice &device, const bool &stereo)
@@ -796,7 +762,7 @@ PaStreamCallbackResult AudioDevices::openPlaybackStream(portaudio::System &portA
                                                                       device.dev_output_channel_count, portaudio::FLOAT32,
                                                                       false, prefOutputLatency, nullptr);
             portaudio::StreamParameters playbackParams(portaudio::DirectionSpecificStreamParameters::null(), outputParams, device.def_sample_rate,
-                                                       AUDIO_FRAMES_PER_BUFFER, paClipOff);
+                                                       AUDIO_FRAMES_PER_BUFFER, paNoFlag);
             portaudio::MemFunCallbackStream<PaAudioBuf> streamPlayback(playbackParams, *audio_buf, &PaAudioBuf::playbackCallback);
 
             streamPlayback.start();
@@ -833,6 +799,7 @@ PaStreamCallbackResult AudioDevices::openPlaybackStream(portaudio::System &portA
  * @param streamRecord
  * @param stereo
  * @return
+ * @note Archie <https://stackoverflow.com/questions/35959523/portaudio-iterate-through-audio-data>
  */
 PaStreamCallbackResult AudioDevices::openRecordStream(portaudio::System &portAudioSys, QPointer<PaAudioBuf> audio_buf,
                                                       const GkDevice &device,
@@ -851,7 +818,7 @@ PaStreamCallbackResult AudioDevices::openRecordStream(portaudio::System &portAud
                                                                        device.dev_input_channel_count, portaudio::INT16,
                                                                        false, portAudioSys.defaultInputDevice().defaultLowInputLatency(), nullptr);
         portaudio::StreamParameters recordParams(inputParamsRecord, portaudio::DirectionSpecificStreamParameters::null(), device.def_sample_rate,
-                                                 AUDIO_FRAMES_PER_BUFFER, paClipOff);
+                                                 AUDIO_FRAMES_PER_BUFFER, paNoFlag);
         portaudio::MemFunCallbackStream<PaAudioBuf> *streamRecord = new portaudio::MemFunCallbackStream<PaAudioBuf>(recordParams, *audio_buf, &PaAudioBuf::recordCallback);
 
         *stream_record_ptr = streamRecord;
