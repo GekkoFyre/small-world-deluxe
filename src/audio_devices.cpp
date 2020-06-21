@@ -688,17 +688,17 @@ void AudioDevices::volumeSetting()
  * @param buffer The raw audiological data.
  * @return The volume level, in decibels (dB).
  */
-float AudioDevices::vuMeter(const int &channels, const int &count, const int &range, const int &range_per_db, float *buffer)
+float AudioDevices::vuMeter(const int &channels, const int &count, const float &range, const float &range_per_db, float *buffer)
 {
-    float K = 0;
-    float sum = 0;
-    float volume = 0;
+    float K = 0.f;
+    float sum = 0.f;
+    float volume = 0.f;
 
     for(int i = 0; i < count; ++i) {
-        sum += std::pow(buffer[i], channels);
+        sum += std::pow(buffer[i], 1);
     }
 
-    volume = (20 * std::log10(std::sqrt(sum / count)) + K);
+    volume = (20.f * std::log10(std::sqrt(sum / count)) + K);
 
     // Make the volume a number ranging from zero to number of decibels
     volume += (range * range_per_db);
@@ -711,21 +711,35 @@ float AudioDevices::vuMeter(const int &channels, const int &count, const int &ra
 /**
  * @brief AudioDevices::vuLevelControl
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param channels The number of audio channels we are dealing with for the given audio device input.
- * @param count The amount of `frames per buffer`.
- * @param range How many possible levels of 'volume' you'd like (i.e. '100' for a percentage value).
- * @param range_per_db
- * @param sliderVal The value given from a floating-point enabled slider within QMainWindow that allows volume adjustment.
  * @param buffer The raw audiological data.
- * @note trukvl <https://stackoverflow.com/questions/15776390/controlling-audio-volume-in-real-time>.
+ * @param sample_format The format for which the audio data is in.
+ * @param count The amount of `frames per buffer`.
+ * @param sliderVal The value given from a floating-point enabled slider within QMainWindow that allows volume adjustment.
+ * @param silence
+ * @note Ansis Māliņš <https://stackoverflow.com/questions/49014440/what-is-the-correct-audio-volume-slider-formula>.
  */
-void AudioDevices::vuLevelControl(const int &channels, const int &count, const int &range, const int &range_per_db, const float &sliderVal,
-                                  float *buffer)
+void AudioDevices::vuLevelControl(int16_t *buffer, const portaudio::SampleDataFormat &sample_format, const int &count,
+                                  const float &slider_val, const float &silence)
 {
-    const float curVol = vuMeter(channels, count, range, range_per_db, buffer);
-    const float volumeMultiplier = (curVol * std::pow(10, sliderVal / 20.f));
+    float factor = std::pow(10.0f, (1 - slider_val) * silence / 20.0f);
+
     for (int i = 0; i < count; ++i) {
-        buffer[i] *= volumeMultiplier;
+    switch (sample_format) {
+    case portaudio::FLOAT32:
+        break;
+    case portaudio::INT32:
+        break;
+    case portaudio::INT24:
+        break;
+    case portaudio::INT16:
+        buffer[i] = static_cast<int16_t>(buffer[i] * factor);
+    case portaudio::INT8:
+        break;
+    case portaudio::UINT8:
+        break;
+    default:
+        break;
+    }
     }
 
     return;
@@ -828,13 +842,13 @@ PaStreamCallbackResult AudioDevices::openRecordStream(portaudio::System &portAud
     if (audio_buf != nullptr) {
         std::mutex record_stream_mtx;
         std::lock_guard<std::mutex> lck_guard(record_stream_mtx);
-        portaudio::SampleDataFormat prefDataFormat = sampleFormatConvert(portAudioSys.deviceByIndex(device.stream_parameters.device).defaultLowInputLatency());
+        // portaudio::SampleDataFormat prefDataFormat = sampleFormatConvert(portAudioSys.deviceByIndex(device.stream_parameters.device).defaultLowInputLatency());
 
         //
         // Recording input stream
         //
         portaudio::DirectionSpecificStreamParameters inputParamsRecord(portAudioSys.deviceByIndex(device.stream_parameters.device),
-                                                                       device.dev_input_channel_count, prefDataFormat,
+                                                                       device.dev_input_channel_count, portaudio::INT16,
                                                                        false, portAudioSys.defaultInputDevice().defaultLowInputLatency(), nullptr);
         portaudio::StreamParameters recordParams(inputParamsRecord, portaudio::DirectionSpecificStreamParameters::null(), device.def_sample_rate,
                                                  AUDIO_FRAMES_PER_BUFFER, paClipOff);

@@ -363,7 +363,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QObject::connect(this, SIGNAL(stopRecording(const int &)), this, SLOT(stopRecordingInput(const int &)));
         QObject::connect(this, SIGNAL(startRecording(const int &)), this, SLOT(startRecordingInput(const int &)));
         QObject::connect(this, SIGNAL(refreshVuDisplay(const float &)), this, SLOT(updateVuDisplay(const float &)));
-        QObject::connect(this, SIGNAL(updateVuDisplayTooltip(const double &)), this, SLOT(updateVolDisplayTooltip(const double &)));
+        QObject::connect(this, SIGNAL(updateVuDisplayTooltip(const float &)), this, SLOT(updateVolDisplayTooltip(const float &)));
 
         //
         // QMainWindow widgets
@@ -981,8 +981,8 @@ void MainWindow::updateVolumeWidgets()
             //
             // Input audio stream is open and active!
             //
-            const int range = AUDIO_VU_METER_MAX_RANGE;
-            const int range_per_db = (AUDIO_VU_METER_MAX_DECIBELS / range);
+            const float range = AUDIO_VU_METER_MAX_RANGE;
+            const float range_per_db = (AUDIO_VU_METER_MAX_DECIBELS / range);
             float vol_res = gkAudioDevices->vuMeter(GkDb->convertAudioChannelsInt(pref_input_device.sel_channels), AUDIO_FRAMES_PER_BUFFER, range, range_per_db,
                                                     input_audio_buf->gkCircBuffer->get());
 
@@ -1277,7 +1277,7 @@ void MainWindow::stopAudioCodecRec(const bool &recording_is_started)
  */
 void MainWindow::updateVuDisplay(const float &volumePctg)
 {
-    ui->progressBar_spect_vu_meter->setValue(volumePctg);
+    ui->progressBar_spect_vu_meter->setValue(static_cast<int>(volumePctg));
 }
 
 /**
@@ -1286,7 +1286,7 @@ void MainWindow::updateVuDisplay(const float &volumePctg)
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param val value The given volume, as measured in decibels.
  */
-void MainWindow::updateVolDisplayTooltip(const double &value)
+void MainWindow::updateVolDisplayTooltip(const float &value)
 {
     ui->verticalSlider_vol_control->setToolTip(tr("%1 dB").arg(QString::number(value)));
     ui->label_vol_control_disp->setText(tr("%1 dB").arg(QString::number(value)));
@@ -1301,19 +1301,19 @@ void MainWindow::updateVolDisplayTooltip(const double &value)
  */
 void MainWindow::on_verticalSlider_vol_control_valueChanged(int value)
 {
-    const float realVal = (value / 10);
+    const float realVal = (static_cast<float>(value) / 10.f);
     if (inputAudioStream != nullptr) {
-        if (inputAudioStream->isActive()) {
+        if (pref_input_device.is_dev_active) {
             //
             // Input audio stream is open and active!
             //
-            const int range = AUDIO_VU_METER_MAX_RANGE;
-            const int range_per_db = (AUDIO_VU_METER_MAX_DECIBELS / range);
+            const float range = AUDIO_VU_METER_MAX_RANGE;
+            const float range_per_db = (AUDIO_VU_METER_MAX_DECIBELS / range);
 
-            gkAudioDevices->vuLevelControl(GkDb->convertAudioChannelsInt(pref_input_device.sel_channels), AUDIO_FRAMES_PER_BUFFER, range,
-                                           range_per_db, realVal, input_audio_buf->gkCircBuffer->get());
-
-            emit updateVuDisplayTooltip();
+            auto calcVolIdx = gkAudioDevices->vuLevelControl(input_audio_buf->gkCircBuffer->get(), portaudio::SampleDataFormat::INT16,
+                                                             AUDIO_FRAMES_PER_BUFFER, realVal);
+            emit updateVuLevel(calcVolIdx);
+            emit updateVuDisplayTooltip(realVal);
         }
     }
 
@@ -1515,10 +1515,6 @@ void MainWindow::stopRecordingInput(const int &wait_time)
         if (inputAudioStream->isActive()) {
             inputAudioStream->close();
 
-            if (!inputAudioStream->isStopped()) {
-                inputAudioStream->abort();
-            }
-
             pref_input_device.is_dev_active = false; // State that this recording device is now non-active!
         }
     }
@@ -1537,9 +1533,8 @@ void MainWindow::startRecordingInput(const int &wait_time)
 {
     emit stopRecording();
 
-    double most_min_sample_rate = std::fmin(pref_input_device.def_sample_rate, pref_output_device.def_sample_rate);
     auto pa_stream_param = portaudio::StreamParameters(pref_input_device.cpp_stream_param, portaudio::DirectionSpecificStreamParameters::null(),
-                                                       most_min_sample_rate, AUDIO_FRAMES_PER_BUFFER, paNoFlag);
+                                                       pref_input_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER, paNoFlag);
     inputAudioStream = new portaudio::MemFunCallbackStream<PaAudioBuf>(pa_stream_param, *input_audio_buf, &PaAudioBuf::recordCallback);
     inputAudioStream->start();
 

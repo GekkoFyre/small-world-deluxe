@@ -78,6 +78,7 @@ PaAudioBuf::PaAudioBuf(int buffer_size, const GkDevice &pref_output_device, cons
     prefInputDevice = pref_input_device;
     prefOutputDevice = pref_output_device;
 
+    calcVolIdx = 1.f;
     maxFrameIndex = 0;
     frameIndex = 0;
 
@@ -105,6 +106,10 @@ PaAudioBuf::~PaAudioBuf()
 int PaAudioBuf::playbackCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
                                  const PaStreamCallbackTimeInfo* timeInfo, PaStreamCallbackFlags statusFlags)
 {
+    //
+    // TODO - Implement the volume controls for this data buffer!
+    //
+
     std::mutex playback_loop_mtx;
     std::lock_guard<std::mutex> lck_guard(playback_loop_mtx);
 
@@ -178,7 +183,8 @@ int PaAudioBuf::recordCallback(const void *inputBuffer, void *outputBuffer, unsi
     int finished = paContinue;
     float *buffer_ptr = (float *)inputBuffer;
 
-    for(size_t i = 0; i < framesPerBuffer; ++i) {
+    for (unsigned long i = 0; i < framesPerBuffer; ++i) {
+        buffer_ptr[i] *= calcVolIdx;
         gkCircBuffer->put(buffer_ptr + i);
     }
 
@@ -331,6 +337,8 @@ void PaAudioBuf::abortRecording(const bool &recording_is_stopped, const int &wai
  */
 void PaAudioBuf::updateVuAndBuffer(const float &value)
 {
+    calcVolIdx = value;
+
     return;
 }
 

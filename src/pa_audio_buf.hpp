@@ -93,6 +93,7 @@ private:
     int circ_buffer_size;
     int maxFrameIndex;
     int frameIndex;
+    float calcVolIdx;
 
     std::vector<float> fillVecZeros(const int &buf_size);
 

@@ -320,18 +320,11 @@ namespace Database {
         };
 
         namespace Audio {
-            enum GkSampleFormat {
-                Float32,
-                Int16,
-                Int8,
-                UInt8
-            };
-
             struct GkPaAudioData {
                 int frameIndex;                                                     // Frame index into sample array
                 int maxFrameIndex;                                                  // Maximum frame index given into sample array
                 float *recordedSamples;                                             // Audio samples that have been recorded and saved to a buffer
-                GkSampleFormat sample_format;                                       // Currently used sample format by given audio source, whether output or input
+                portaudio::SampleDataFormat sample_format;                          // Currently used sample format by given audio source, whether output or input
             };
 
             struct GkDevice {

@@ -85,9 +85,9 @@ public:
                                                                             const PaDeviceIndex &pa_index);
     void portAudioErr(const PaError &err);
     void volumeSetting();
-    float vuMeter(const int &channels, const int &count, const int &range, const int &range_per_db, float *buffer);
-    void vuLevelControl(const int &channels, const int &count, const int &range, const int &range_per_db, const float &sliderVal,
-                        float *buffer);
+    float vuMeter(const int &channels, const int &count, const float &range, const float &range_per_db, float *buffer);
+    void vuLevelControl(int16_t *buffer, const portaudio::SampleDataFormat &sample_format, const int &count, const float &slider_val,
+                        const float &silence = -96);
     portaudio::SampleDataFormat sampleFormatConvert(const unsigned long sample_rate);
 
     PaStreamCallbackResult testSinewave(portaudio::System &portAudioSys, const Database::Settings::Audio::GkDevice device,

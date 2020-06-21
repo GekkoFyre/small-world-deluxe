@@ -146,7 +146,7 @@ private slots:
     // Audio/Volume related controls
     //
     void updateVuDisplay(const float &volumePctg);
-    void updateVolDisplayTooltip(const double &value);
+    void updateVolDisplayTooltip(const float &value);
     void on_verticalSlider_vol_control_valueChanged(int value);
     void on_pushButton_radio_tune_clicked(bool checked);
     void on_checkBox_rx_tx_vol_toggle_stateChanged(int arg1);
@@ -212,7 +212,7 @@ signals:
     // Audio related
     //
     void refreshVuDisplay(const float &volumePctg);
-    void updateVuDisplayTooltip(const double &value);
+    void updateVuDisplayTooltip(const float &value);
     void updateVuLevel(const float &value);
     void stopRecording(const int &wait_time = 5000);
     void startRecording(const int &wait_time = 5000);
