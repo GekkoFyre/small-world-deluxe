@@ -160,6 +160,7 @@ private slots:
     void uponExit();
 
     void stopAudioCodecRec(const bool &recording_is_started);
+    void updateVolume(const float &value);
 
 protected slots:
     void closeEvent(QCloseEvent *event);
@@ -254,9 +255,9 @@ private:
     size_t output_audio_circ_buf_size;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
-    QPointer<GekkoFyre::PaAudioBuf> input_audio_buf;
-    QPointer<GekkoFyre::PaAudioBuf> output_audio_buf;
-    portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf> *inputAudioStream;
+    std::shared_ptr<GekkoFyre::PaAudioBuf<int16_t>> input_audio_buf;
+    std::shared_ptr<GekkoFyre::PaAudioBuf<int16_t>> output_audio_buf;
+    portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<int16_t>> *inputAudioStream;
 
     //
     // Audio sub-system

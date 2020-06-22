@@ -380,7 +380,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             input_audio_circ_buf_size = ((pref_input_device.def_sample_rate * SPECTRO_SAMPLING_LENGTH) *
                                         GkDb->convertAudioChannelsInt(pref_input_device.sel_channels));
 
-            input_audio_buf = new GekkoFyre::PaAudioBuf(input_audio_circ_buf_size, pref_output_device, pref_input_device, this);
+            input_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<int16_t>>(input_audio_circ_buf_size, pref_output_device, pref_input_device);
         }
 
         std::thread t1(&MainWindow::infoBar, this);
@@ -406,7 +406,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             output_audio_circ_buf_size = ((pref_output_device.def_sample_rate * SPECTRO_SAMPLING_LENGTH) *
                                          GkDb->convertAudioChannelsInt(pref_output_device.sel_channels));
 
-            output_audio_buf = new GekkoFyre::PaAudioBuf(output_audio_circ_buf_size, pref_output_device, pref_input_device, this);
+            output_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<int16_t>>(output_audio_circ_buf_size, pref_output_device, pref_input_device);
 
             gkAudioEncoding = new GkAudioEncoding(fileIo, input_audio_buf, GkDb, gkSpectroGui,
                                                   gkStringFuncs, pref_input_device, this);
@@ -425,6 +425,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // Initiate at startup to set any default values and/or signals/slots!
         //
         on_checkBox_rx_tx_vol_toggle_stateChanged(rx_vol_control_selected);
+        QObject::connect(this, SIGNAL(changeVolume(const float &)), this, SLOT(updateVolume(const float &)));
 
         if (gkRadioPtr->freq > 0.0) {
             ui->label_freq_large->setText(QString::number(gkRadioPtr->freq));
@@ -986,8 +987,8 @@ void MainWindow::updateVolumeDisplayWidgets()
             //
             // Input audio stream is open and active!
             //
-            if (input_audio_buf->gkCircBuffer->full()) {
-                int16_t *buf_data = input_audio_buf->gkCircBuffer->get();
+            if (input_audio_buf->full()) {
+                int16_t *buf_data = input_audio_buf->get();
                 // auto peak_amplitude = gkAudioDevices->vuMeterPeakAmplitude(input_audio_circ_buf_size, buf_data);
                 // auto vu_rms = gkAudioDevices->vuMeterRMS(input_audio_circ_buf_size, buf_data);
 
@@ -1289,6 +1290,30 @@ void MainWindow::stopAudioCodecRec(const bool &recording_is_started)
 }
 
 /**
+ * @brief MainWindow::updateVolume will update the data within the circular buffer to the volume level as set
+ * by the user themselves, usually from within QMainWindow.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value The adjustment needed to the buffered data.
+ * @note trukvl <https://stackoverflow.com/questions/15776390/controlling-audio-volume-in-real-time>
+ */
+void MainWindow::updateVolume(const float &value)
+{
+    if (rx_vol_control_selected) {
+        //
+        // Input device!
+        //
+        input_audio_buf->setVolume(value);
+    } else {
+        //
+        // Output device!
+        //
+        output_audio_buf->setVolume(value);
+    }
+
+    return;
+}
+
+/**
  * @brief MainWindow::on_verticalSlider_vol_control_valueChanged indirectly adjusts the volume of the audio data buffer itself
  * via the decibel formulae <https://en.wikipedia.org/wiki/Decibel#Acoustics>.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -1546,7 +1571,7 @@ void MainWindow::startRecordingInput(const int &wait_time)
 
     auto pa_stream_param = portaudio::StreamParameters(pref_input_device.cpp_stream_param, portaudio::DirectionSpecificStreamParameters::null(),
                                                        pref_input_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER, paNoFlag);
-    inputAudioStream = new portaudio::MemFunCallbackStream<PaAudioBuf>(pa_stream_param, *input_audio_buf, &PaAudioBuf::recordCallback);
+    inputAudioStream = new portaudio::MemFunCallbackStream<PaAudioBuf<int16_t>>(pa_stream_param, *input_audio_buf, &PaAudioBuf<int16_t>::recordCallback);
     inputAudioStream->start();
 
     pref_input_device.is_dev_active = true; // State that this recording device is now active!
@@ -1876,27 +1901,14 @@ void MainWindow::on_action_Print_triggered()
     return;
 }
 
+/**
+ * @brief MainWindow::on_checkBox_rx_tx_vol_toggle_stateChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
 void MainWindow::on_checkBox_rx_tx_vol_toggle_stateChanged(int arg1)
 {
     rx_vol_control_selected = arg1;
-    if (rx_vol_control_selected) {
-        if (input_audio_buf != nullptr) {
-            // Connect the RX audio buffer
-            QObject::connect(this, SIGNAL(changeVolume(const float &)), input_audio_buf, SLOT(updateVolume(const float &)));
-
-            // Disconnect the TX audio buffer
-            QObject::disconnect(this, SIGNAL(changeVolume(const float &)), output_audio_buf, SLOT(updateVolume(const float &)));
-        }
-    } else {
-        if (output_audio_buf != nullptr) {
-            // Connect the TX audio buffer
-            QObject::connect(this, SIGNAL(changeVolume(const float &)), output_audio_buf, SLOT(updateVolume(const float &)));
-
-            // Disconnect the RX audio buffer
-            QObject::disconnect(this, SIGNAL(changeVolume(const float &)), input_audio_buf, SLOT(updateVolume(const float &)));
-        }
-    }
-
     return;
 }
 

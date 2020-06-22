@@ -94,12 +94,12 @@ public:
 
     PaStreamCallbackResult testSinewave(portaudio::System &portAudioSys, const Database::Settings::Audio::GkDevice device,
                                         const bool &is_output_dev = true);
-    PaStreamCallbackResult openPlaybackStream(portaudio::System &portAudioSys, GekkoFyre::PaAudioBuf *audio_buf,
+    PaStreamCallbackResult openPlaybackStream(portaudio::System &portAudioSys, PaAudioBuf<int16_t> *audio_buf,
                                               const GekkoFyre::Database::Settings::Audio::GkDevice &device,
                                               const bool &stereo = true);
-    PaStreamCallbackResult openRecordStream(portaudio::System &portAudioSys, QPointer<PaAudioBuf> audio_buf,
+    PaStreamCallbackResult openRecordStream(portaudio::System &portAudioSys, std::shared_ptr<PaAudioBuf<int16_t> > audio_buf,
                                             const GekkoFyre::Database::Settings::Audio::GkDevice &device,
-                                            portaudio::MemFunCallbackStream<PaAudioBuf> **stream_record_ptr,
+                                            portaudio::MemFunCallbackStream<PaAudioBuf<int16_t> > **stream_record_ptr,
                                             const bool &stereo = true);
 
     std::vector<Database::Settings::Audio::GkDevice> filterPortAudioHostType(const std::vector<Database::Settings::Audio::GkDevice> &audio_devices_vec);

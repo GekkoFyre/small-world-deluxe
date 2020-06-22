@@ -408,7 +408,6 @@ set(GALAXY_UI_CPP
     src/dek_db.cpp
     src/file_io.cpp
     src/audio_devices.cpp
-    src/pa_audio_buf.cpp
     src/spectro_gui.cpp
     src/gk_audio_encoding.cpp
     src/gk_audio_decoding.cpp

@@ -798,7 +798,7 @@ portaudio::SampleDataFormat AudioDevices::sampleFormatConvert(const unsigned lon
  * @return
  * @note Archie <https://stackoverflow.com/questions/35959523/portaudio-iterate-through-audio-data>
  */
-PaStreamCallbackResult AudioDevices::openPlaybackStream(portaudio::System &portAudioSys, PaAudioBuf *audio_buf,
+PaStreamCallbackResult AudioDevices::openPlaybackStream(portaudio::System &portAudioSys, PaAudioBuf<int16_t> *audio_buf,
                                                         const GkDevice &device, const bool &stereo)
 {
     try {
@@ -815,7 +815,7 @@ PaStreamCallbackResult AudioDevices::openPlaybackStream(portaudio::System &portA
                                                                       false, prefOutputLatency, nullptr);
             portaudio::StreamParameters playbackParams(portaudio::DirectionSpecificStreamParameters::null(), outputParams, device.def_sample_rate,
                                                        AUDIO_FRAMES_PER_BUFFER, paNoFlag);
-            portaudio::MemFunCallbackStream<PaAudioBuf> streamPlayback(playbackParams, *audio_buf, &PaAudioBuf::playbackCallback);
+            portaudio::MemFunCallbackStream<PaAudioBuf<int16_t>> streamPlayback(playbackParams, *audio_buf, &PaAudioBuf<int16_t>::playbackCallback);
 
             streamPlayback.start();
             while (streamPlayback.isActive()) {
@@ -853,9 +853,9 @@ PaStreamCallbackResult AudioDevices::openPlaybackStream(portaudio::System &portA
  * @return
  * @note Archie <https://stackoverflow.com/questions/35959523/portaudio-iterate-through-audio-data>
  */
-PaStreamCallbackResult AudioDevices::openRecordStream(portaudio::System &portAudioSys, QPointer<PaAudioBuf> audio_buf,
+PaStreamCallbackResult AudioDevices::openRecordStream(portaudio::System &portAudioSys, std::shared_ptr<PaAudioBuf<int16_t>> audio_buf,
                                                       const GkDevice &device,
-                                                      portaudio::MemFunCallbackStream<PaAudioBuf> **stream_record_ptr,
+                                                      portaudio::MemFunCallbackStream<PaAudioBuf<int16_t>> **stream_record_ptr,
                                                       const bool &stereo)
 {
     if (audio_buf != nullptr) {
@@ -871,7 +871,7 @@ PaStreamCallbackResult AudioDevices::openRecordStream(portaudio::System &portAud
                                                                        false, portAudioSys.defaultInputDevice().defaultLowInputLatency(), nullptr);
         portaudio::StreamParameters recordParams(inputParamsRecord, portaudio::DirectionSpecificStreamParameters::null(), device.def_sample_rate,
                                                  AUDIO_FRAMES_PER_BUFFER, paNoFlag);
-        portaudio::MemFunCallbackStream<PaAudioBuf> *streamRecord = new portaudio::MemFunCallbackStream<PaAudioBuf>(recordParams, *audio_buf, &PaAudioBuf::recordCallback);
+        portaudio::MemFunCallbackStream<PaAudioBuf<int16_t>> *streamRecord = new portaudio::MemFunCallbackStream<PaAudioBuf<int16_t>>(recordParams, *audio_buf, &PaAudioBuf<int16_t>::recordCallback);
 
         *stream_record_ptr = streamRecord;
         streamRecord->start();

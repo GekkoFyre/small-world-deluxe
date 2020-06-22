@@ -82,7 +82,7 @@ namespace sys = boost::system;
 size_t GkAudioEncoding::ogg_buf_counter = 0;
 
 GkAudioEncoding::GkAudioEncoding(QPointer<FileIo> fileIo,
-                                 QPointer<PaAudioBuf> audio_buf,
+                                 std::shared_ptr<PaAudioBuf<int16_t>> audio_buf,
                                  std::shared_ptr<GkLevelDb> database,
                                  QPointer<GekkoFyre::SpectroGui> spectroGui,
                                  std::shared_ptr<StringFuncs> stringFuncs,
@@ -154,7 +154,7 @@ void GkAudioEncoding::recordAudioFile(const CodecSupport &codec, const Bitrate &
             std::future<std::vector<signed char>> ogg_frame_future = ogg_frame_promise.get_future();
 
             while (recording_in_progress) {
-                ogg_audio_frame_thread = std::thread(&PaAudioBuf::prepOggVorbisBuf, gkAudioBuf, std::move(ogg_frame_promise));
+                // ogg_audio_frame_thread = std::thread(&PaAudioBuf<int16_t>::prepOggVorbisBuf, gkAudioBuf, std::move(ogg_frame_promise));
                 std::vector<signed char> audio_frame_vec = ogg_frame_future.get();
 
                 if (audio_frame_vec.empty()) {
