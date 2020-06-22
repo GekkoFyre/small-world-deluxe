@@ -229,7 +229,7 @@ int PaAudioBuf<T>::recordCallback(const void *inputBuffer, void *outputBuffer, u
     auto *buffer_ptr = (T *)inputBuffer;
 
     for (unsigned long i = 0; i < framesPerBuffer; ++i) {
-        buffer_ptr[i] *= calcVolIdx;
+        buffer_ptr[i] *= (T)(buffer_ptr[i] * calcVolIdx);
         gkCircBuffer->put(buffer_ptr + i);
     }
 
