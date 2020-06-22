@@ -84,8 +84,11 @@ public:
     GekkoFyre::Database::Settings::Audio::GkDevice gatherAudioDeviceDetails(portaudio::System *portAudioSys,
                                                                             const PaDeviceIndex &pa_index);
     void portAudioErr(const PaError &err);
+
     void systemVolumeSetting();
     float vuMeter(const int &channels, const int &count, int16_t *buffer);
+    int16_t vuMeterPeakAmplitude(const size_t &count, int16_t *buffer);
+    float vuMeterRMS(const size_t &count, int16_t *buffer);
 
     portaudio::SampleDataFormat sampleFormatConvert(const unsigned long sample_rate);
 

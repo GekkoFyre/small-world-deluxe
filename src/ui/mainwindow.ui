@@ -394,28 +394,6 @@
           <property name="bottomMargin">
            <number>0</number>
           </property>
-          <item>
-           <widget class="QProgressBar" name="progressBar_spect_vu_meter">
-            <property name="toolTip">
-             <string>Volume of incoming audio signal.</string>
-            </property>
-            <property name="minimum">
-             <number>30</number>
-            </property>
-            <property name="maximum">
-             <number>100</number>
-            </property>
-            <property name="value">
-             <number>60</number>
-            </property>
-            <property name="orientation">
-             <enum>Qt::Vertical</enum>
-            </property>
-            <property name="invertedAppearance">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
          </layout>
         </widget>
        </item>

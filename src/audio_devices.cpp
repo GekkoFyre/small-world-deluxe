@@ -682,7 +682,8 @@ void AudioDevices::systemVolumeSetting()
 /**
  * @brief AudioDevices::vuMeter processes a raw sound buffer and outputs a possible volume level, in decibels (dB).
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param channels The number of audio channels we are dealing with for the given audio device input.
+ * @param channels How many audio channels there are, since they are interleaved. The first byte is the first channel, second
+ * byte is the second channel, etc.
  * @param count The amount of `frames per buffer`.
  * @param buffer The raw audiological data.
  * @return The volume level, in decibels (dB).
@@ -691,23 +692,74 @@ void AudioDevices::systemVolumeSetting()
  */
 float AudioDevices::vuMeter(const int &channels, const int &count, int16_t *buffer)
 {
-    int16_t max_val = buffer[0];
+    float dB_val = 0.0f;
+    if (buffer != nullptr) {
+        int16_t max_val = buffer[0];
 
-    // Find maximum!
-    // Traverse the array elements from second and compare every element with current maximum...
-    for (int i = 1; i < (count * channels); ++i) {
-        if (buffer[i] > max_val) {
-            max_val = buffer[i];
+        // Find maximum!
+        // Traverse the array elements from second and compare every element with current maximum...
+        for (int i = 1; i < (count * channels); ++i) {
+            if (buffer[i] > max_val) {
+                max_val = buffer[i];
+            }
+        }
+
+        float amplitude = (static_cast<float>(max_val) / SHRT_MAX);
+        dB_val = (20 * std::log10(amplitude));
+
+        // Invert from a negative to a positive!
+        // dB_val *= (-1.f);
+    }
+
+    return dB_val;
+}
+
+/**
+ * @brief AudioDevices::vuMeterPeakAmplitude traverses the buffered data array and compares every element with the current
+ * maximum to see if there's a new maximum value to be had.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param count The size of the audio data buffer.
+ * @param buffer The given audio data buffer.
+ * @return The maximum, peak audio signal for a given lot of buffered data.
+ */
+int16_t AudioDevices::vuMeterPeakAmplitude(const size_t &count, int16_t *buffer)
+{
+    int16_t peak_signal = 0;
+    if (buffer != nullptr) {
+        peak_signal = buffer[0];
+
+        // Find maximum!
+        // Traverse the array elements from second and compare every element with current maximum...
+        for (size_t i = 1; i < count; ++i) {
+            if (buffer[i] > peak_signal) {
+                peak_signal = buffer[i];
+            }
         }
     }
 
-    float amplitude = (static_cast<float>(max_val) / SHRT_MAX);
-    float dB_val = (20 * std::log10(amplitude));
+    return peak_signal;
+}
 
-    // Invert from a negative to a positive!
-    dB_val *= (-1.f);
+/**
+ * @brief AudioDevices::vuMeterRMS gathers averages from a given audio data buffer by doing a root-mean-square (i.e. RMS) on all the
+ * given samples.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param count The size of the audio data buffer.
+ * @param buffer The given audio data buffer.
+ * @return The averaged RMS of a given data buffer of audio samples.
+ * @note <https://stackoverflow.com/questions/8227030/how-to-find-highest-volume-level-of-a-wav-file-using-c>
+ */
+float AudioDevices::vuMeterRMS(const size_t &count, int16_t *buffer)
+{
+    int16_t sample = 0;
+    if (buffer != nullptr) {
+        for (size_t i = 0; i < count; ++i) {
+            sample += buffer[i] * buffer[i];
+        }
+    }
 
-    return dB_val;
+    float calc_val = std::sqrt(sample / static_cast<double>(count));
+    return calc_val;
 }
 
 /**

@@ -51,6 +51,7 @@
 #include "src/gk_audio_encoding.hpp"
 #include "src/gk_audio_decoding.hpp"
 #include "src/ui/gkaudioplaydialog.hpp"
+#include "src/ui/gk_vu_meter_widget.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
@@ -145,8 +146,6 @@ private slots:
     //
     // Audio/Volume related controls
     //
-    void updateVuDisplay(const float &volumePctg);
-    void updateVolDisplayTooltip(const float &value);
     void on_verticalSlider_vol_control_valueChanged(int value);
     void on_pushButton_radio_tune_clicked(bool checked);
     void on_checkBox_rx_tx_vol_toggle_stateChanged(int arg1);
@@ -211,8 +210,7 @@ signals:
     //
     // Audio related
     //
-    void refreshVuDisplay(const float &volumePctg);
-    void updateVuDisplayTooltip(const float &value);
+    void refreshVuDisplay(const qreal &rmsLevel, const qreal &peakLevel, const int &numSamples);
     void changeVolume(const float &value);
     void stopRecording(const int &wait_time = 5000);
     void startRecording(const int &wait_time = 5000);
@@ -235,6 +233,7 @@ private:
     QPointer<GekkoFyre::GkAudioDecoding> gkAudioDecoding;
     QPointer<GekkoFyre::SpectroGui> gkSpectroGui;
     QPointer<GkAudioPlayDialog> gkAudioPlayDlg;
+    QPointer<GekkoFyre::GkVuMeter> gkVuMeter;
 
     std::shared_ptr<QSettings> sw_settings;
     std::shared_ptr<QCommandLineParser> gkCliParser;
@@ -251,6 +250,8 @@ private:
     //
     portaudio::AutoSystem autoSys;
     portaudio::System *gkPortAudioInit;
+    size_t input_audio_circ_buf_size;
+    size_t output_audio_circ_buf_size;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
     QPointer<GekkoFyre::PaAudioBuf> input_audio_buf;

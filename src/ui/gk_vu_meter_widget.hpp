@@ -57,7 +57,7 @@ public:
 
 public slots:
     void reset();
-    void levelChanged(qreal rmsLevel, qreal peakLevel, int numSamples);
+    void levelChanged(const qreal &rmsLevel, const qreal &peakLevel, const int &numSamples);
 
 private slots:
     void redrawTimerExpired();

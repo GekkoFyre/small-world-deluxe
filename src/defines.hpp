@@ -148,7 +148,7 @@ namespace GekkoFyre {
 #define AUDIO_SIGNAL_LENGTH (2048)                      // For audio applications, '2048' seems to be a good length.
 #define SPECTRO_BANDWIDTH_MAX_SIZE (2048)               // The size and bandwidth of the spectrograph / waterfall window, in hertz.
 #define SPECTRO_BANDWIDTH_MIN_SIZE (125)                // The size and bandwidth of the spectrograph / waterfall window, in hertz.
-#define SPECTRO_SAMPLING_LENGTH (60)                    // Used for the FFT calculations primarily
+#define SPECTRO_SAMPLING_LENGTH (1)                     // Used for the FFT calculations primarily
 #define SPECTRO_NUM_LINES (8192)                        // Used for the FFT calculations primarily
 #define SPECTRO_SAMPLES_PER_LINE (256)                  // Used for the FFT calculations primarily
 #define GK_FFT_SIZE (4096)

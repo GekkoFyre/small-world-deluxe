@@ -111,7 +111,7 @@ void GkVuMeter::reset()
     return;
 }
 
-void GkVuMeter::levelChanged(qreal rmsLevel, qreal peakLevel, int numSamples)
+void GkVuMeter::levelChanged(const qreal &rmsLevel, const qreal &peakLevel, const int &numSamples)
 {
     // Smooth the RMS signal
     const qreal smooth = std::pow(qreal(0.9), static_cast<qreal>(numSamples) / 256); // TODO: remove this magic number

@@ -57,6 +57,7 @@
 #include <QFileDialog>
 #include <QResource>
 #include <QMultiMap>
+#include <QtGlobal>
 #include <QWidget>
 #include <QPixmap>
 #include <QTimer>
@@ -151,9 +152,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Configure the volume meter!
         //
-        ui->progressBar_spect_vu_meter->setMinimum(0);
-        ui->progressBar_spect_vu_meter->setMaximum(100);
-        ui->progressBar_spect_vu_meter->setValue(0);
+        gkVuMeter = new GkVuMeter(ui->frame_spect_vu_meter);
+        ui->verticalLayout_8->addWidget(gkVuMeter);
+        input_audio_circ_buf_size = 0;
+        output_audio_circ_buf_size = 0;
 
         //
         // Initialize the default logic state on all applicable QPushButtons within QMainWindow.
@@ -363,8 +365,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         QObject::connect(this, SIGNAL(stopRecording(const int &)), this, SLOT(stopRecordingInput(const int &)));
         QObject::connect(this, SIGNAL(startRecording(const int &)), this, SLOT(startRecordingInput(const int &)));
-        QObject::connect(this, SIGNAL(refreshVuDisplay(const float &)), this, SLOT(updateVuDisplay(const float &)));
-        QObject::connect(this, SIGNAL(updateVuDisplayTooltip(const float &)), this, SLOT(updateVolDisplayTooltip(const float &)));
+        QObject::connect(this, SIGNAL(refreshVuDisplay(const qreal &, const qreal &, const int &)),
+                         gkVuMeter, SLOT(levelChanged(const qreal &, const qreal &, const int &)));
 
         //
         // QMainWindow widgets
@@ -375,12 +377,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         connect(timer, SIGNAL(timeout()), this, SLOT(infoBar()));
         timer->start(1000);
 
-        const size_t fft_num_lines = SPECTRO_NUM_LINES;
-        const size_t fft_samples_per_line = SPECTRO_SAMPLES_PER_LINE;
-
         if (!pref_audio_devices.empty()) {
-            const size_t audio_input_sample_length = (pref_input_device.def_sample_rate * SPECTRO_SAMPLING_LENGTH);
-            const size_t input_audio_circ_buf_size = ((fft_num_lines - 1) * fft_samples_per_line + audio_input_sample_length);
+            input_audio_circ_buf_size = ((pref_input_device.def_sample_rate * SPECTRO_SAMPLING_LENGTH) *
+                                        GkDb->convertAudioChannelsInt(pref_input_device.sel_channels));
 
             input_audio_buf = new GekkoFyre::PaAudioBuf(input_audio_circ_buf_size, pref_output_device, pref_input_device, this);
         }
@@ -405,8 +404,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             //
             // Setup the audio encoding/decoding libraries!
             //
-            const size_t audio_output_sample_length = (pref_input_device.def_sample_rate * SPECTRO_SAMPLING_LENGTH);
-            const size_t output_audio_circ_buf_size = ((fft_num_lines - 1) * fft_samples_per_line + audio_output_sample_length);
+            output_audio_circ_buf_size = ((pref_output_device.def_sample_rate * SPECTRO_SAMPLING_LENGTH) *
+                                         GkDb->convertAudioChannelsInt(pref_output_device.sel_channels));
 
             output_audio_buf = new GekkoFyre::PaAudioBuf(output_audio_circ_buf_size, pref_output_device, pref_input_device, this);
 
@@ -973,20 +972,37 @@ QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, rig_type>> MainWind
  * @brief MainWindow::updateVolumeWidgets will update the volume widget within the QMainWindow of Small
  * World Deluxe and keep it updated as long as there is an incoming audio signal.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @note <https://doc.qt.io/qt-5.9/qtmultimedia-multimedia-spectrum-app-engine-cpp.html>
  */
 void MainWindow::updateVolumeWidgets()
 {
     std::this_thread::sleep_for(std::chrono::milliseconds(2500));
-    if (inputAudioStream != nullptr) {
+    if (inputAudioStream != nullptr && input_audio_circ_buf_size > 0) {
         while (inputAudioStream->isActive()) {
             //
             // Input audio stream is open and active!
             //
-            float vol_res = gkAudioDevices->vuMeter(GkDb->convertAudioChannelsInt(pref_input_device.sel_channels), AUDIO_FRAMES_PER_BUFFER,
-                                                    input_audio_buf->gkCircBuffer->get());
+            if (input_audio_buf->gkCircBuffer->full()) {
+                int16_t *buf_data = input_audio_buf->gkCircBuffer->get();
+                // auto peak_amplitude = gkAudioDevices->vuMeterPeakAmplitude(input_audio_circ_buf_size, buf_data);
+                // auto vu_rms = gkAudioDevices->vuMeterRMS(input_audio_circ_buf_size, buf_data);
 
-            emit refreshVuDisplay(vol_res);
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                qreal peakLevel = 0;
+                qreal sum = 0.0;
+                for (size_t i = 0; i < input_audio_circ_buf_size; ++i) {
+                    const qint16 value = *reinterpret_cast<const qint16*>(buf_data);
+                    const qreal amplitudeToReal = (value / SHRT_MAX);
+                    peakLevel = qMax(peakLevel, amplitudeToReal);
+                    sum += amplitudeToReal * amplitudeToReal;
+                }
+
+                const int numSamples = (input_audio_circ_buf_size);
+                qreal rmsLevel = std::sqrt(sum / static_cast<qreal>(numSamples));
+
+                emit refreshVuDisplay(rmsLevel, peakLevel, numSamples);
+            } else {
+                continue;
+            }
         }
     }
 
@@ -1264,31 +1280,6 @@ void MainWindow::uponExit()
 void MainWindow::stopAudioCodecRec(const bool &recording_is_started)
 {
     recording_in_progress = recording_is_started;
-
-    return;
-}
-
-/**
- * @brief MainWindow::updateVuDisplay updates/refreshes the widget on the left-hand side of the
- * QMainWindow which displays the volume level at any immediate time.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param volumePctg The volume percentage for the QWidget meter to be set towards.
- */
-void MainWindow::updateVuDisplay(const float &volumePctg)
-{
-    ui->progressBar_spect_vu_meter->setValue(static_cast<int>(volumePctg));
-}
-
-/**
- * @brief MainWindow::updateVolMeterTooltip updates the tooltip on the volume slider to the right-hand
- * side of QMainWindow as it is moved up/down, reflecting the actually set volume percentage.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param val value The given volume, as measured in decibels.
- */
-void MainWindow::updateVolDisplayTooltip(const float &value)
-{
-    ui->verticalSlider_vol_control->setToolTip(tr("%1 dB").arg(QString::number(value)));
-    ui->label_vol_control_disp->setText(tr("%1 dB").arg(QString::number(value)));
 
     return;
 }
