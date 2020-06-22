@@ -671,30 +671,6 @@ bool MainWindow::radioInitStart()
 }
 
 /**
- * @brief MainWindow::recordToAudioBuf
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param is_output_dev
- * @return
- */
-PaStreamCallbackResult MainWindow::recordToAudioBuf(const bool &is_output_dev)
-{
-    if (is_output_dev) {
-        //
-        // Output device
-        //
-        // output_circ_audio_buf->put(static_cast<float *>(audioStream->paStream()));
-    } else {
-        //
-        // Input device
-        //
-        PaStreamCallbackResult res = gkAudioDevices->openRecordStream(*gkPortAudioInit, input_audio_buf, pref_input_device, &inputAudioStream, true);
-        return PaStreamCallbackResult::paContinue;
-    }
-
-    return PaStreamCallbackResult::paAbort;
-}
-
-/**
  * @brief MainWindow::readRadioSettings reads out the primary settings as they relate to the user's amateur
  * radio rig, usually once provided everything has been configured within the Setting's Dialog. It also
  * detects whether the user is connecting to their radio rig by means of RS232, USB, GPIO, etc. and therefore

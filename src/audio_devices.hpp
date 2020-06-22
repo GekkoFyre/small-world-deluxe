@@ -97,10 +97,6 @@ public:
     PaStreamCallbackResult openPlaybackStream(portaudio::System &portAudioSys, PaAudioBuf<int16_t> *audio_buf,
                                               const GekkoFyre::Database::Settings::Audio::GkDevice &device,
                                               const bool &stereo = true);
-    PaStreamCallbackResult openRecordStream(portaudio::System &portAudioSys, std::shared_ptr<PaAudioBuf<int16_t> > audio_buf,
-                                            const GekkoFyre::Database::Settings::Audio::GkDevice &device,
-                                            portaudio::MemFunCallbackStream<PaAudioBuf<int16_t> > **stream_record_ptr,
-                                            const bool &stereo = true);
 
     std::vector<Database::Settings::Audio::GkDevice> filterPortAudioHostType(const std::vector<Database::Settings::Audio::GkDevice> &audio_devices_vec);
     QVector<PaHostApiTypeId> portAudioApiChooser(const std::vector<Database::Settings::Audio::GkDevice> &audio_devices_vec);

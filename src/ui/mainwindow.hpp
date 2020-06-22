@@ -317,7 +317,6 @@ private:
 
     void launchSettingsWin();
     bool radioInitStart();
-    PaStreamCallbackResult recordToAudioBuf(const bool &is_output_dev);
 
     std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> readRadioSettings();
     static int parseRigCapabilities(const rig_caps *caps, void *data);

@@ -843,48 +843,6 @@ PaStreamCallbackResult AudioDevices::openPlaybackStream(portaudio::System &portA
 }
 
 /**
- * @brief AudioDevices::openRecordStream
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param portAudioSys
- * @param audio_buf
- * @param device
- * @param streamRecord
- * @param stereo
- * @return
- * @note Archie <https://stackoverflow.com/questions/35959523/portaudio-iterate-through-audio-data>
- */
-PaStreamCallbackResult AudioDevices::openRecordStream(portaudio::System &portAudioSys, std::shared_ptr<PaAudioBuf<int16_t>> audio_buf,
-                                                      const GkDevice &device,
-                                                      portaudio::MemFunCallbackStream<PaAudioBuf<int16_t>> **stream_record_ptr,
-                                                      const bool &stereo)
-{
-    if (audio_buf != nullptr) {
-        std::mutex record_stream_mtx;
-        std::lock_guard<std::mutex> lck_guard(record_stream_mtx);
-        // portaudio::SampleDataFormat prefDataFormat = sampleFormatConvert(portAudioSys.deviceByIndex(device.stream_parameters.device).defaultLowInputLatency());
-
-        //
-        // Recording input stream
-        //
-        portaudio::DirectionSpecificStreamParameters inputParamsRecord(portAudioSys.deviceByIndex(device.stream_parameters.device),
-                                                                       device.dev_input_channel_count, portaudio::INT16,
-                                                                       false, portAudioSys.defaultInputDevice().defaultLowInputLatency(), nullptr);
-        portaudio::StreamParameters recordParams(inputParamsRecord, portaudio::DirectionSpecificStreamParameters::null(), device.def_sample_rate,
-                                                 AUDIO_FRAMES_PER_BUFFER, paNoFlag);
-        portaudio::MemFunCallbackStream<PaAudioBuf<int16_t>> *streamRecord = new portaudio::MemFunCallbackStream<PaAudioBuf<int16_t>>(recordParams, *audio_buf, &PaAudioBuf<int16_t>::recordCallback);
-
-        *stream_record_ptr = streamRecord;
-        streamRecord->start();
-
-        return paContinue;
-    } else {
-        throw std::runtime_error(tr("You must firstly choose an input audio device within the settings!").toStdString());
-    }
-
-    return paAbort;
-}
-
-/**
  * @brief AudioDevices::filterPortAudioHostType filters out the audio/multimedia devices on the user's system as they relate
  * to their associated operating system's API, via PortAudio. This is all dependent on how Small World Deluxe and its
  * associated libraries were compiled.
