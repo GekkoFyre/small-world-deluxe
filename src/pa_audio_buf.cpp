@@ -335,6 +335,7 @@ void PaAudioBuf::abortRecording(const bool &recording_is_stopped, const int &wai
  * by the user themselves, usually from within QMainWindow.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param value The adjustment needed to the buffered data.
+ * @note trukvl <https://stackoverflow.com/questions/15776390/controlling-audio-volume-in-real-time>
  */
 void PaAudioBuf::updateVolume(const float &value)
 {

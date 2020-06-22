@@ -322,7 +322,7 @@ private:
     static int parseRigCapabilities(const rig_caps *caps, void *data);
     static QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>> initRadioModelsVar();
 
-    void updateVolumeWidgets();
+    void updateVolumeDisplayWidgets();
 
     void createStatusBar(const QString &statusMsg = "");
     bool changeStatusBarMsg(const QString &statusMsg = "");

@@ -170,7 +170,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         rx_vol_control_selected = true; // By default it is ticked!
         global_rx_audio_volume = 0.0;
         global_tx_audio_volume = 0.0;
-        on_checkBox_rx_tx_vol_toggle_stateChanged(rx_vol_control_selected); // Initiate at startup to set any default values and/or signals/slots!
 
         //
         // Initialize Hamlib!
@@ -421,6 +420,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             QObject::connect(gkAudioPlayDlg, SIGNAL(beginRecording(const bool &)), this, SLOT(stopAudioCodecRec(const bool &)));
             QObject::connect(gkAudioPlayDlg, SIGNAL(beginRecording(const bool &)), gkAudioEncoding, SLOT(startRecording(const bool &)));
         }
+
+        //
+        // Initiate at startup to set any default values and/or signals/slots!
+        //
+        on_checkBox_rx_tx_vol_toggle_stateChanged(rx_vol_control_selected);
 
         if (gkRadioPtr->freq > 0.0) {
             ui->label_freq_large->setText(QString::number(gkRadioPtr->freq));
@@ -969,12 +973,12 @@ QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, rig_type>> MainWind
 }
 
 /**
- * @brief MainWindow::updateVolumeWidgets will update the volume widget within the QMainWindow of Small
+ * @brief MainWindow::updateVolumeDisplayWidgets will update the volume widget within the QMainWindow of Small
  * World Deluxe and keep it updated as long as there is an incoming audio signal.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @note <https://doc.qt.io/qt-5.9/qtmultimedia-multimedia-spectrum-app-engine-cpp.html>
  */
-void MainWindow::updateVolumeWidgets()
+void MainWindow::updateVolumeDisplayWidgets()
 {
     std::this_thread::sleep_for(std::chrono::milliseconds(2500));
     if (inputAudioStream != nullptr && input_audio_circ_buf_size > 0) {
@@ -1290,11 +1294,18 @@ void MainWindow::stopAudioCodecRec(const bool &recording_is_started)
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param value The value of the QSlider from the QMainWindow, ranging from 0-100 individual units.
  * @note Ansis Māliņš <https://stackoverflow.com/questions/49014440/what-is-the-correct-audio-volume-slider-formula>
+ * trukvl <https://stackoverflow.com/questions/15776390/controlling-audio-volume-in-real-time>,
  */
 void MainWindow::on_verticalSlider_vol_control_valueChanged(int value)
 {
-    const float real_val = (static_cast<float>(value) * 0.10f);
-    const float silence = -96.0f;
+    //
+    // The volume is a float between 0.0 and 1.0 and essentially represents a percentage of the max volume of the
+    // audio. Since it will always be either 100% or less, the dB value will be either 0 (for full volume) or
+    // negative. A positive dB value would mean there is amplification taking place which isn't possible with
+    // simple playback.
+    //
+    const int vol_slider_max_val = ui->verticalSlider_vol_control->maximum();
+    const float real_val = (static_cast<float>(value) / vol_slider_max_val);
 
     if (rx_vol_control_selected) {
         if (inputAudioStream != nullptr) {
@@ -1302,8 +1313,11 @@ void MainWindow::on_verticalSlider_vol_control_valueChanged(int value)
                 //
                 // Input audio stream is open and active!
                 //
-                float factor = std::pow(10.0f, (1 - real_val) * silence / 20.0f);
-                emit changeVolume(factor);
+                const float vol_level_decibel = (20.0f * std::log10(real_val));
+                ui->label_vol_control_disp->setText(tr("%1 dB").arg(QString::number(vol_level_decibel)));
+
+                const float vol_multiplier = (1.0f * std::pow(10, (vol_level_decibel / 20.0f)));
+                emit changeVolume(vol_multiplier);
             }
         }
     } else {
@@ -1376,7 +1390,7 @@ void MainWindow::on_pushButton_radio_receive_clicked()
                             changePushButtonColor(ui->pushButton_radio_receive, false);
                             emit startRecording();
 
-                            vu_meter_thread = std::thread(&MainWindow::updateVolumeWidgets, this);
+                            vu_meter_thread = std::thread(&MainWindow::updateVolumeDisplayWidgets, this);
                             vu_meter_thread.detach();
 
                             changeStatusBarMsg(tr("Please wait! Beginning to receive audio..."));
@@ -1866,17 +1880,21 @@ void MainWindow::on_checkBox_rx_tx_vol_toggle_stateChanged(int arg1)
 {
     rx_vol_control_selected = arg1;
     if (rx_vol_control_selected) {
-        // Connect the RX audio buffer
-        QObject::connect(this, SIGNAL(changeVolume(const float &)), input_audio_buf, SLOT(updateVolume(const float &)));
+        if (input_audio_buf != nullptr) {
+            // Connect the RX audio buffer
+            QObject::connect(this, SIGNAL(changeVolume(const float &)), input_audio_buf, SLOT(updateVolume(const float &)));
 
-        // Disconnect the TX audio buffer
-        QObject::disconnect(this, SIGNAL(changeVolume(const float &)), output_audio_buf, SLOT(updateVolume(const float &)));
+            // Disconnect the TX audio buffer
+            QObject::disconnect(this, SIGNAL(changeVolume(const float &)), output_audio_buf, SLOT(updateVolume(const float &)));
+        }
     } else {
-        // Connect the TX audio buffer
-        QObject::connect(this, SIGNAL(changeVolume(const float &)), output_audio_buf, SLOT(updateVolume(const float &)));
+        if (output_audio_buf != nullptr) {
+            // Connect the TX audio buffer
+            QObject::connect(this, SIGNAL(changeVolume(const float &)), output_audio_buf, SLOT(updateVolume(const float &)));
 
-        // Disconnect the RX audio buffer
-        QObject::disconnect(this, SIGNAL(changeVolume(const float &)), input_audio_buf, SLOT(updateVolume(const float &)));
+            // Disconnect the RX audio buffer
+            QObject::disconnect(this, SIGNAL(changeVolume(const float &)), input_audio_buf, SLOT(updateVolume(const float &)));
+        }
     }
 
     return;
