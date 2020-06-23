@@ -311,6 +311,17 @@ endif()
 
 set_property(SOURCE ${GALAXY_PORTAUDIO_CPP} PROPERTY SKIP_AUTOUIC ON)
 
+#
+# PortAudio C++ Wrapper
+#
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/PortAudio-Wrapper")
+set(GALAXY_PORTAUDIO_WRAPPER_CPP
+    ${GALAXY_PORTAUDIO_WRAPPER_CPP}
+    src/contrib/PortAudio-Wrapper/main.cpp
+    src/contrib/PortAudio-Wrapper/pa.cpp)
+
+set_property(SOURCE ${GALAXY_PORTAUDIO_WRAPPER_CPP} PROPERTY SKIP_AUTOUIC ON)
+
 if(GFYRE_BUILD_CODEC2)
     #
     # Codec2 library
@@ -396,6 +407,11 @@ set(GALAXY_CUDA
     src/spectro_cuda.cu
     src/spectro_cuda.h)
 
+set_property(SOURCE ${GALAXY_CUDA} PROPERTY SKIP_AUTOUIC ON)
+
+#
+# Compile UIC!
+#
 set(GALAXY_UI_CPP
     ${GALAXY_UI_CPP}
     src/ui/mainwindow.cpp
@@ -414,32 +430,50 @@ set(GALAXY_UI_CPP
     src/gk_cli.cpp
     src/gk_modem.cpp
     src/gk_frequency_list.cpp
-    src/gk_fft.cpp
-    src/contrib/getopt.c
-    src/contrib/serial/src/serial.cc)
+    src/gk_fft.cpp)
 
 if(WIN32 OR MSYS OR MINGW)
     set(GALAXY_UI_CPP
         ${GALAXY_UI_CPP}
-        src/string_funcs_windows.cpp
-        src/contrib/serial/src/impl/list_ports/list_ports_win.cc
-        src/contrib/serial/src/impl/win.cc)
+        src/string_funcs_windows.cpp)
 elseif(LINUX)
     set(GALAXY_UI_CPP
         ${GALAXY_UI_CPP}
-        src/string_funcs_linux.cpp
+        src/string_funcs_linux.cpp)
+elseif(APPLE)
+    message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
+endif()
+
+#
+# Do not compile UIC for these!
+#
+set(GALAXY_SRC_CPP
+    ${GALAXY_SRC_CPP}
+    src/pa_sinewave.cpp
+    src/contrib/getopt.c
+    src/contrib/serial/src/serial.cc)
+
+if(WIN32 OR MSYS OR MINGW)
+    set(GALAXY_SRC_CPP
+        ${GALAXY_SRC_CPP}
+        src/contrib/serial/src/impl/list_ports/list_ports_win.cc
+        src/contrib/serial/src/impl/win.cc)
+elseif(LINUX)
+    set(GALAXY_SRC_CPP
+        ${GALAXY_SRC_CPP}
         src/contrib/serial/src/impl/list_ports/list_ports_linux.cc
         src/contrib/serial/src/impl/unix.cc)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()
 
-set(GALAXY_SRC_CPP
-    ${GALAXY_SRC_CPP}
-    src/pa_sinewave.cpp)
+set_property(SOURCE ${GALAXY_SRC_CPP} PROPERTY SKIP_AUTOUIC ON)
 
-set(GALAXY_SRC_HEADERS
-    ${GALAXY_SRC_HEADERS}
+#
+# Compile UIC!
+#
+set(GALAXY_OBJ_HEADERS
+    ${GALAXY_OBJ_HEADERS}
     src/defines.hpp
     src/ui/mainwindow.hpp
     src/ui/dialogsettings.hpp
@@ -447,21 +481,39 @@ set(GALAXY_SRC_HEADERS
     src/ui/gkaudioplaydialog.hpp
     src/ui/spectrodialog.hpp
     src/ui/gk_vu_meter_widget.hpp
-    src/pa_sinewave.hpp
     src/radiolibs.hpp
     src/dek_db.hpp
     src/file_io.hpp
     src/audio_devices.hpp
-    src/pa_audio_buf.hpp
     src/spectro_gui.hpp
     src/gk_audio_encoding.hpp
     src/gk_audio_decoding.hpp
     src/gk_cli.hpp
     src/gk_modem.hpp
-    src/gk_circ_buffer.hpp
     src/gk_frequency_list.hpp
-    src/gk_fft.hpp
+    src/gk_fft.hpp)
+
+if(WIN32 OR MSYS OR MINGW)
+    set(GALAXY_OBJ_HEADERS
+        ${GALAXY_OBJ_HEADERS}
+        src/string_funcs_windows.hpp)
+elseif(LINUX)
+    set(GALAXY_OBJ_HEADERS
+        ${GALAXY_OBJ_HEADERS}
+        src/string_funcs_linux.hpp)
+elseif(APPLE)
+    message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
+endif()
+
+#
+# Do not compile UIC for these!
+#
+set(GALAXY_SRC_HEADERS
+    ${GALAXY_SRC_HEADERS}
+    src/pa_audio_buf.hpp
+    src/pa_sinewave.hpp
     src/gk_timer.hpp
+    src/gk_circ_buffer.hpp
     src/contrib/getopt.h
     src/contrib/serial/include/serial/v8stdint.h
     src/contrib/serial/include/serial/serial.h)
@@ -469,16 +521,16 @@ set(GALAXY_SRC_HEADERS
 if(WIN32 OR MSYS OR MINGW)
     set(GALAXY_SRC_HEADERS
         ${GALAXY_SRC_HEADERS}
-        src/string_funcs_windows.hpp
         src/contrib/serial/include/serial/impl/win.h)
 elseif(LINUX)
     set(GALAXY_SRC_HEADERS
         ${GALAXY_SRC_HEADERS}
-        src/string_funcs_linux.hpp
         src/contrib/serial/include/serial/impl/unix.h)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()
+
+set_property(SOURCE ${GALAXY_SRC_HEADERS} PROPERTY SKIP_AUTOUIC ON)
 
 add_definitions("-DQWT_DLL")
 
@@ -550,7 +602,7 @@ include(GNUInstallDirs)
 # Build Small World Deluxe as a static package!
 #
 if(GFYRE_BUILD_STATIC)
-    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_SRC_HEADERS} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP})
+    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP} ${GALAXY_PORTAUDIO_WRAPPER_CPP})
     add_library(galaxy_cuda STATIC ${GALAXY_CUDA})
 else()
     set(GFYRE_BUILD_SHARED ON)
@@ -560,8 +612,8 @@ endif(GFYRE_BUILD_STATIC)
 # Build Small World Deluxe as a shared package!
 #
 if(GFYRE_BUILD_SHARED)
-    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_SRC_HEADERS} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP} ${GALAXY_CUDA})
-    add_library(galaxy_cuda SHARED ${GALAXY_CUDA})
+    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP} ${GALAXY_PORTAUDIO_WRAPPER_CPP})
+    add_library(galaxy_cuda STATIC ${GALAXY_CUDA})
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
