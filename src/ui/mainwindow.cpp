@@ -1336,6 +1336,8 @@ void MainWindow::on_actionView_Spectrogram_Controller_triggered()
 {
     QPointer<SpectroDialog> dlg_spectro = new SpectroDialog(gkSpectroGui, this);
     dlg_spectro->setWindowFlags(Qt::Tool | Qt::Dialog);
+    QObject::connect(dlg_spectro, SIGNAL(activateSpectroWaterfall(const bool &)),
+                     gkSpectroGui, SLOT(showSpectrogram(const bool &)));
     dlg_spectro->show();
 
     return;
