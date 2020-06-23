@@ -23,7 +23,7 @@
  **   the Free Software Foundation, either version 3 of the License, or
  **   (at your option) any later version.
  **
- **   Small world is distributed in the hope that it will be useful,
+ **   Small World is distributed in the hope that it will be useful,
  **   but WITHOUT ANY WARRANTY; without even the implied warranty of
  **   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  **   GNU General Public License for more details.
@@ -39,24 +39,46 @@
  **
  ****************************************************************************************************/
 
-#include "gk_modem.hpp"
+#pragma once
 
-using namespace GekkoFyre;
-using namespace Database;
-using namespace Settings;
-using namespace Audio;
+#include "src/defines.hpp"
+#include <chrono>
+#include <ctime>
 
-/**
- * @brief PaMic::PaMic handles most microphone functions via PortAudio.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param parent
- */
-GkModem::GkModem(std::shared_ptr<AudioDevices> gkAudio, std::shared_ptr<GkLevelDb> dbPtr, QObject *parent)
-    : QObject(parent)
-{
-    gkAudioDevices = std::move(gkAudio);
-    gkDb = std::move(dbPtr);
-}
+namespace GekkoFyre {
 
-GkModem::~GkModem()
-{}
+class GkTimer {
+
+public:
+    void start() {
+        startTime = std::chrono::system_clock::now();
+        running = true;
+    }
+
+    void stop() {
+        g_endTime = std::chrono::system_clock::now();
+        running = false;
+    }
+
+    double elapsedMilliseconds() {
+        std::chrono::time_point<std::chrono::system_clock> endTime;
+        if (running) {
+            endTime = std::chrono::system_clock::now();
+        } else {
+            endTime = g_endTime;
+        }
+
+        return std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
+    }
+
+    double elapsedSeconds() {
+        return elapsedMilliseconds() / 1000.0;
+    }
+
+private:
+    std::chrono::time_point<std::chrono::system_clock> startTime;
+    std::chrono::time_point<std::chrono::system_clock> g_endTime;
+    bool running = false;
+
+};
+};

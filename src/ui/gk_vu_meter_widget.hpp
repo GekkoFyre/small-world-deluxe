@@ -39,24 +39,61 @@
  **
  ****************************************************************************************************/
 
-#include "gk_modem.hpp"
+#pragma once
 
-using namespace GekkoFyre;
-using namespace Database;
-using namespace Settings;
-using namespace Audio;
+#include "src/defines.hpp"
+#include <QObject>
+#include <QWidget>
 
-/**
- * @brief PaMic::PaMic handles most microphone functions via PortAudio.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param parent
- */
-GkModem::GkModem(std::shared_ptr<AudioDevices> gkAudio, std::shared_ptr<GkLevelDb> dbPtr, QObject *parent)
-    : QObject(parent)
-{
-    gkAudioDevices = std::move(gkAudio);
-    gkDb = std::move(dbPtr);
-}
+namespace GekkoFyre {
+class GkVuMeter : public QWidget {
+    Q_OBJECT
 
-GkModem::~GkModem()
-{}
+public:
+    explicit GkVuMeter(QWidget *parent = 0);
+    ~GkVuMeter();
+
+    void paintEvent(QPaintEvent *event) override;
+
+public slots:
+    void reset();
+    void levelChanged(const qreal &rmsLevel, const qreal &peakLevel, const int &numSamples);
+
+private slots:
+    void redrawTimerExpired();
+
+private:
+    // Height of RMS level bar.
+    // Range 0.0 - 1.0.
+    qreal m_rmsLevel;
+
+    // Most recent peak level.
+    // Range 0.0 - 1.0.
+    qreal m_peakLevel;
+
+    // Height of peak level bar.
+    // This is calculated by decaying m_peakLevel depending on the
+    // elapsed time since m_peakLevelChanged, and the value of m_decayRate.
+    qreal m_decayedPeakLevel;
+
+    // Time at which m_peakLevel was last changed.
+    QTime m_peakLevelChanged;
+
+    // Rate at which peak level bar decays.
+    // Expressed in level units / millisecond.
+    qreal m_peakDecayRate;
+
+    // High watermark of peak level.
+    // Range 0.0 - 1.0.
+    qreal m_peakHoldLevel;
+
+    // Time at which m_peakHoldLevel was last changed.
+    QTime m_peakHoldLevelChanged;
+
+    QTimer *m_redrawTimer;
+
+    QColor m_rmsColor;
+    QColor m_peakColor;
+
+};
+};

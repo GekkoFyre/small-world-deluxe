@@ -39,24 +39,39 @@
  **
  ****************************************************************************************************/
 
-#include "gk_modem.hpp"
+#pragma once
 
-using namespace GekkoFyre;
-using namespace Database;
-using namespace Settings;
-using namespace Audio;
+#include "src/defines.hpp"
+#include <list>
+#include <vector>
+#include <complex>
+#include <QObject>
 
-/**
- * @brief PaMic::PaMic handles most microphone functions via PortAudio.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param parent
- */
-GkModem::GkModem(std::shared_ptr<AudioDevices> gkAudio, std::shared_ptr<GkLevelDb> dbPtr, QObject *parent)
-    : QObject(parent)
-{
-    gkAudioDevices = std::move(gkAudio);
-    gkDb = std::move(dbPtr);
-}
+namespace GekkoFyre {
+class GkFFT : public QObject {
+    Q_OBJECT
 
-GkModem::~GkModem()
-{}
+public:
+    explicit GkFFT(const std::list<std::vector<float>> &spectrogramData_, const std::list<float> &waveEnvelopeMin_,
+                   const std::list<float> &waveEnvelopeMax_, const std::list<float> &timeList_,
+                   const size_t &numLines_, const double &deltaTime_, const double &headTime_, const double &footTime_,
+                   QObject *parent = nullptr);
+    ~GkFFT();
+
+    void FFTCompute(std::complex<float> *data, unsigned int dataLength);
+    void addLine(float *fourierData, unsigned int dataLength, float envMin, float envMax);
+
+private:
+    std::list<std::vector<float>> spectrogramData;
+    std::list<float> waveEnvelopeMin;
+    std::list<float> waveEnvelopeMax;
+    std::list<float> timeList;
+    size_t numLines;
+    double deltaTime;
+    double headTime;
+    double footTime;
+
+    void removeFoot(const size_t &numLines);
+
+};
+};

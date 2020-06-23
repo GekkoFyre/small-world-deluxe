@@ -10,3 +10,6 @@
 [submodule "src/contrib/SingleApplication"]
 	path = src/contrib/SingleApplication
 	url = https://github.com/itay-grudev/SingleApplication.git
+[submodule "src/contrib/PortAudio-Wrapper"]
+	path = src/contrib/PortAudio-Wrapper
+	url = https://github.com/orazdow/PortAudio-Wrapper.git

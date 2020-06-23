@@ -54,17 +54,17 @@ namespace sys = boost::system;
 GkAudioPlayDialog::GkAudioPlayDialog(std::shared_ptr<GkLevelDb> database,
                                      QPointer<GkAudioDecoding> audio_decoding,
                                      std::shared_ptr<AudioDevices> audio_devices,
-                                     std::shared_ptr<FileIo> file_io,
+                                     QPointer<FileIo> file_io,
                                      QWidget *parent) :
     QDialog(parent),
     ui(new Ui::GkAudioPlayDialog)
 {
     ui->setupUi(this);
 
-    gkDb = database;
-    gkAudioDecode = audio_decoding;
-    gkAudioDevs = audio_devices;
-    gkFileIo = file_io;
+    gkDb = std::move(database);
+    gkAudioDecode = std::move(audio_decoding);
+    gkAudioDevs = std::move(audio_devices);
+    gkFileIo = std::move(file_io);
 }
 
 GkAudioPlayDialog::~GkAudioPlayDialog()
@@ -104,7 +104,7 @@ void GkAudioPlayDialog::on_pushButton_playback_browse_file_loc_clicked()
 
 void GkAudioPlayDialog::on_pushButton_playback_record_toggled(bool checked)
 {
-    emit beginRecording(checked);
+    // emit beginRecording(checked);
     ui->pushButton_playback_record->setChecked(checked);
 
     return;

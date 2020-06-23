@@ -1,11 +1,15 @@
 /**
- **  ______  ______  ___   ___  ______  ______  ______  ______
- ** /_____/\/_____/\/___/\/__/\/_____/\/_____/\/_____/\/_____/\
- ** \:::_ \ \::::_\/\::.\ \\ \ \:::_ \ \:::_ \ \::::_\/\:::_ \ \
- **  \:\ \ \ \:\/___/\:: \/_) \ \:\ \ \ \:\ \ \ \:\/___/\:(_) ) )_
- **   \:\ \ \ \::___\/\:. __  ( (\:\ \ \ \:\ \ \ \::___\/\: __ `\ \
- **    \:\/.:| \:\____/\: \ )  \ \\:\_\ \ \:\/.:| \:\____/\ \ `\ \ \
- **     \____/_/\_____\/\__\/\__\/ \_____\/\____/_/\_____\/\_\/ \_\/
+ **     __                 _ _   __    __           _     _ 
+ **    / _\_ __ ___   __ _| | | / / /\ \ \___  _ __| | __| |
+ **    \ \| '_ ` _ \ / _` | | | \ \/  \/ / _ \| '__| |/ _` |
+ **    _\ \ | | | | | (_| | | |  \  /\  / (_) | |  | | (_| |
+ **    \__/_| |_| |_|\__,_|_|_|   \/  \/ \___/|_|  |_|\__,_|
+ **                                                         
+ **                  ___     _                              
+ **                 /   \___| |_   ___  _____               
+ **                / /\ / _ \ | | | \ \/ / _ \              
+ **               / /_//  __/ | |_| |>  <  __/              
+ **              /___,' \___|_|\__,_/_/\_\___|              
  **
  **
  **   If you have downloaded the source code for "Small World Deluxe" and are reading this,
@@ -75,17 +79,17 @@ using namespace AmateurRadio;
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
-GkAudioDecoding::GkAudioDecoding(std::shared_ptr<FileIo> fileIo,
-                                 QPointer<PaAudioBuf> output_audio_buf,
+GkAudioDecoding::GkAudioDecoding(QPointer<FileIo> fileIo,
+                                 std::shared_ptr<PaAudioBuf<int16_t>> output_audio_buf,
                                  std::shared_ptr<GkLevelDb> database,
                                  std::shared_ptr<StringFuncs> stringFuncs,
                                  Database::Settings::Audio::GkDevice output_device,
                                  QObject *parent)
 {
-    gkFileIo = fileIo;
-    gkAudioBuf = output_audio_buf;
-    gkStringFuncs = stringFuncs;
-    gkDb = database;
+    gkFileIo = std::move(fileIo);
+    gkAudioBuf = std::move(output_audio_buf);
+    gkStringFuncs = std::move(stringFuncs);
+    gkDb = std::move(database);
 
     gkOutputDev = output_device;
 

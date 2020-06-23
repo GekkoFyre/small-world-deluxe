@@ -1,11 +1,15 @@
 /**
- **  ______  ______  ___   ___  ______  ______  ______  ______       
- ** /_____/\/_____/\/___/\/__/\/_____/\/_____/\/_____/\/_____/\      
- ** \:::_ \ \::::_\/\::.\ \\ \ \:::_ \ \:::_ \ \::::_\/\:::_ \ \     
- **  \:\ \ \ \:\/___/\:: \/_) \ \:\ \ \ \:\ \ \ \:\/___/\:(_) ) )_   
- **   \:\ \ \ \::___\/\:. __  ( (\:\ \ \ \:\ \ \ \::___\/\: __ `\ \  
- **    \:\/.:| \:\____/\: \ )  \ \\:\_\ \ \:\/.:| \:\____/\ \ `\ \ \ 
- **     \____/_/\_____\/\__\/\__\/ \_____\/\____/_/\_____\/\_\/ \_\/ 
+ **     __                 _ _   __    __           _     _ 
+ **    / _\_ __ ___   __ _| | | / / /\ \ \___  _ __| | __| |
+ **    \ \| '_ ` _ \ / _` | | | \ \/  \/ / _ \| '__| |/ _` |
+ **    _\ \ | | | | | (_| | | |  \  /\  / (_) | |  | | (_| |
+ **    \__/_| |_| |_|\__,_|_|_|   \/  \/ \___/|_|  |_|\__,_|
+ **                                                         
+ **                  ___     _                              
+ **                 /   \___| |_   ___  _____               
+ **                / /\ / _ \ | | | \ \/ / _ \              
+ **               / /_//  __/ | |_| |>  <  __/              
+ **              /___,' \___|_|\__,_/_/\_\___|              
  **                                                                 
  **
  **   If you have downloaded the source code for "Small World Deluxe" and are reading this,
@@ -45,6 +49,7 @@
 #include <string>
 #include <QObject>
 #include <QString>
+#include <QPointer>
 
 namespace GekkoFyre {
 
@@ -52,7 +57,7 @@ class GkLevelDb : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkLevelDb(leveldb::DB *db_ptr, std::shared_ptr<GekkoFyre::FileIo> filePtr,
+    explicit GkLevelDb(leveldb::DB *db_ptr, QPointer<GekkoFyre::FileIo> filePtr,
                        QObject *parent = nullptr);
     ~GkLevelDb();
 
@@ -91,7 +96,7 @@ public:
     std::string removeInvalidChars(const std::string &string_to_modify);
 
 private:
-    std::shared_ptr<GekkoFyre::FileIo> fileIo;
+    QPointer<GekkoFyre::FileIo> fileIo;
     leveldb::DB *db;
 
     std::string boolEnum(const bool &is_true);

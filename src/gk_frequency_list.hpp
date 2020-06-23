@@ -39,24 +39,30 @@
  **
  ****************************************************************************************************/
 
-#include "gk_modem.hpp"
+#pragma once
 
-using namespace GekkoFyre;
-using namespace Database;
-using namespace Settings;
-using namespace Audio;
+#include "src/defines.hpp"
+#include <QObject>
 
-/**
- * @brief PaMic::PaMic handles most microphone functions via PortAudio.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param parent
- */
-GkModem::GkModem(std::shared_ptr<AudioDevices> gkAudio, std::shared_ptr<GkLevelDb> dbPtr, QObject *parent)
-    : QObject(parent)
-{
-    gkAudioDevices = std::move(gkAudio);
-    gkDb = std::move(dbPtr);
-}
+namespace GekkoFyre {
 
-GkModem::~GkModem()
-{}
+class GkFreqList : public QObject {
+    Q_OBJECT
+
+public:
+    explicit GkFreqList(QObject *parent = nullptr);
+    ~GkFreqList();
+
+    void publishFreqList();
+
+    bool approximatelyEqual(const float &a, const float &b, const float &epsilon);
+    bool essentiallyEqual(const float &a, const float &b, const float &epsilon);
+    bool definitelyGreaterThan(const float &a, const float &b, const float &epsilon);
+    bool definitelyLessThan(const float &a, const float &b, const float &epsilon);
+
+signals:
+    void updateFrequencies(const float &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
+                           const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq);
+
+};
+};

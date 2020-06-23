@@ -1,11 +1,15 @@
 /**
- **  ______  ______  ___   ___  ______  ______  ______  ______
- ** /_____/\/_____/\/___/\/__/\/_____/\/_____/\/_____/\/_____/\
- ** \:::_ \ \::::_\/\::.\ \\ \ \:::_ \ \:::_ \ \::::_\/\:::_ \ \
- **  \:\ \ \ \:\/___/\:: \/_) \ \:\ \ \ \:\ \ \ \:\/___/\:(_) ) )_
- **   \:\ \ \ \::___\/\:. __  ( (\:\ \ \ \:\ \ \ \::___\/\: __ `\ \
- **    \:\/.:| \:\____/\: \ )  \ \\:\_\ \ \:\/.:| \:\____/\ \ `\ \ \
- **     \____/_/\_____\/\__\/\__\/ \_____\/\____/_/\_____\/\_\/ \_\/
+ **     __                 _ _   __    __           _     _ 
+ **    / _\_ __ ___   __ _| | | / / /\ \ \___  _ __| | __| |
+ **    \ \| '_ ` _ \ / _` | | | \ \/  \/ / _ \| '__| |/ _` |
+ **    _\ \ | | | | | (_| | | |  \  /\  / (_) | |  | | (_| |
+ **    \__/_| |_| |_|\__,_|_|_|   \/  \/ \___/|_|  |_|\__,_|
+ **                                                         
+ **                  ___     _                              
+ **                 /   \___| |_   ___  _____               
+ **                / /\ / _ \ | | | \ \/ / _ \              
+ **               / /_//  __/ | |_| |>  <  __/              
+ **              /___,' \___|_|\__,_/_/\_\___|              
  **
  **
  **   If you have downloaded the source code for "Small World Deluxe" and are reading this,
@@ -106,6 +110,8 @@ extern "C"
   typedef std::string tstring;
 #endif
 
+typedef short int16_t;
+
 namespace GekkoFyre {
 
 #define GK_EXIT_TIMEOUT (6)                             // The amount of time, in seconds, to leave 'Small World Deluxe' hanging upon exit before terminating forcefully!
@@ -114,6 +120,11 @@ namespace GekkoFyre {
 #define MAX_TOLERATE_WINDOW_WIDTH (16384)               // This value is mostly for error correction purposes.
 #define DLG_BOX_WINDOW_WIDTH (480)                      // The width of non-Qt generated dialog boxes
 #define DLG_BOX_WINDOW_HEIGHT (120)                     // The height of non-Qt generated dialog boxes
+
+//
+// Amateur radio specific functions
+//
+#define GK_RADIO_VFO_FLOAT_PNT_PREC (5)                 // The floating point precision, in terms of number of digits, to be used in making comparisons (i.e. the 'epsilon') of frequencies, etc.
 
 #define AUDIO_OUTPUT_MAX_VOL_SIMPLE (100)               // The maximum volume in simple units (i.e. non decible units)
 #define AUDIO_OUTPUT_CHANNEL_MAX_LIMIT (1024)
@@ -125,17 +136,22 @@ namespace GekkoFyre {
 #define AUDIO_TEST_SAMPLE_TABLE_SIZE (200)
 #define AUDIO_SPEC_FLOOR_DECIBELS (-180.0)
 
-#define AUDIO_BUFFER_STREAMING_SECS (1)
+#define AUDIO_BUFFER_STREAMING_SECS (5)
 #define AUDIO_SINE_WAVE_PLAYBACK_SECS (3)               // Play the sine wave test sample for three seconds!
-#define AUDIO_VU_METER_UPDATE_MILLISECS (500)           // How often the volume meter should update, in milliseconds.
+#define AUDIO_VU_METER_UPDATE_MILLISECS (125)           // How often the volume meter should update, in milliseconds.
+#define AUDIO_VU_METER_PEAK_DECAY_RATE (0.001)          // Unknown
+#define AUDIO_VU_METER_PEAK_HOLD_LEVEL_DURATION (2000)  // Measured in milliseconds
 
 //
 // Mostly regarding FFTW functions
 //
 #define AUDIO_SIGNAL_LENGTH (2048)                      // For audio applications, '2048' seems to be a good length.
-#define FFTW_HOP_SIZE (32768)                           // Choose a smaller hop-size if you want a higher resolution! Needs to be a power of two.
 #define SPECTRO_BANDWIDTH_MAX_SIZE (2048)               // The size and bandwidth of the spectrograph / waterfall window, in hertz.
 #define SPECTRO_BANDWIDTH_MIN_SIZE (125)                // The size and bandwidth of the spectrograph / waterfall window, in hertz.
+#define SPECTRO_SAMPLING_LENGTH (1)                     // Used for the FFT calculations primarily
+#define SPECTRO_NUM_LINES (8192)                        // Used for the FFT calculations primarily
+#define SPECTRO_SAMPLES_PER_LINE (256)                  // Used for the FFT calculations primarily
+#define GK_FFT_SIZE (4096)
 
 //
 // Concerns spectrograph / waterfall calculations and settings
@@ -260,74 +276,83 @@ namespace Database {
         };
 
         struct UsbVers3 {
-            libusb_ss_endpoint_companion_descriptor *ss_desc;   // Details that are applicable for USB 3.0 superspeed interfaces
-            const libusb_endpoint_descriptor *endpoint;         // A structure representing the standard USB 3.0 endpoint descriptor
-            const libusb_interface_descriptor *inter_desc;      // Details about the interface itself pertaining to the `libusb` library
-            int interface_number;                               // Number of this interface!
-            int alternate_setting;                              // Value used to select this alternate setting for this interface
-            int max_packet_size;                                // Maximum packet size this endpoint is capable of sending/receiving
-            int interval;                                       // Interval for polling endpoint for data transfers
-            int refresh;                                        // For audio devices only: the rate at which synchronization feedback is provided
-            int sync_address;                                   // For audio devices only: the address if the synch endpoint
+            libusb_ss_endpoint_companion_descriptor *ss_desc;                       // Details that are applicable for USB 3.0 superspeed interfaces
+            const libusb_endpoint_descriptor *endpoint;                             // A structure representing the standard USB 3.0 endpoint descriptor
+            const libusb_interface_descriptor *inter_desc;                          // Details about the interface itself pertaining to the `libusb` library
+            int interface_number;                                                   // Number of this interface!
+            int alternate_setting;                                                  // Value used to select this alternate setting for this interface
+            int max_packet_size;                                                    // Maximum packet size this endpoint is capable of sending/receiving
+            int interval;                                                           // Interval for polling endpoint for data transfers
+            int refresh;                                                            // For audio devices only: the rate at which synchronization feedback is provided
+            int sync_address;                                                       // For audio devices only: the address if the synch endpoint
         };
 
         struct GkUsbDev {
-            libusb_device *dev;                                 // Primary underlying pointer to the `libusb` device
-            libusb_context *context;                            // The underlying context to the `libusb` library
-            libusb_device_descriptor desc;                      // Underlying pointer to the `libusb` configuration
-            libusb_config_descriptor *config;                   // Configuration parameters for the `libusb` device in question
-            libusb_device_handle *handle;                       // Underlying `libusb` device handle
-            QString mfg;                                        // Information relating to the manufacturer
-            QString serial_number;                              // The Product Serial Number
-            QString product;                                    // The Product ID
-            int vendor_id;                                      // Vendor ID as an integer
-            int product_id;                                     // Product ID as an integer
-            int conv_conf;                                      // USB Device configuration as an integer
-            int conv_iface;                                     // USB Device interface as an integer
-            int conv_alt;                                       // USB Device alternate as an integer
+            libusb_device *dev;                                                     // Primary underlying pointer to the `libusb` device
+            libusb_context *context;                                                // The underlying context to the `libusb` library
+            libusb_device_descriptor desc;                                          // Underlying pointer to the `libusb` configuration
+            libusb_config_descriptor *config;                                       // Configuration parameters for the `libusb` device in question
+            libusb_device_handle *handle;                                           // Underlying `libusb` device handle
+            QString mfg;                                                            // Information relating to the manufacturer
+            QString serial_number;                                                  // The Product Serial Number
+            QString product;                                                        // The Product ID
+            int vendor_id;                                                          // Vendor ID as an integer
+            int product_id;                                                         // Product ID as an integer
+            int conv_conf;                                                          // USB Device configuration as an integer
+            int conv_iface;                                                         // USB Device interface as an integer
+            int conv_alt;                                                           // USB Device alternate as an integer
         };
 
         struct GkUsbPort {
-            GkUsbDev usb_enum;                                  // The USB Device structure, as above
-            UsbVers3 usb_vers_3;                                // Details specific to USB 3.0 (and SS) devices
-            std::string port;                                   // The USB port number as determined by `libusb`
-            std::string bus;                                    // The USB BUS number as determined by `libusb`
-            std::string addr;                                   // The USB port's own address as determined by 'libusb'
+            GkUsbDev usb_enum;                                                      // The USB Device structure, as above
+            UsbVers3 usb_vers_3;                                                    // Details specific to USB 3.0 (and SS) devices
+            std::string port;                                                       // The USB port number as determined by `libusb`
+            std::string bus;                                                        // The USB BUS number as determined by `libusb`
+            std::string addr;                                                       // The USB port's own address as determined by 'libusb'
         };
 
         struct GkComPort {
-            serial::PortInfo port_info;                         // Details on the COM/RS232/Serial ports themselves
-            bool is_open;                                       // Is the serial port open and ready for a connection to be made?
-            serial::stopbits_t def_stopbits;                    // The defined stop bits for this serial port in question
-            uint32_t def_baudrate;                              // The defined baudrate for this serial port in question
-            serial::parity_t def_parity;                        // The defined parity for this serial port in question
-            serial::flowcontrol_t def_flow_control;             // The defined flow-control for this serial port in question
-            serial::Timeout timeout_info;                       // The timeout structure for the given serial port in question
+            serial::PortInfo port_info;                                             // Details on the COM/RS232/Serial ports themselves
+            bool is_open;                                                           // Is the serial port open and ready for a connection to be made?
+            serial::stopbits_t def_stopbits;                                        // The defined stop bits for this serial port in question
+            uint32_t def_baudrate;                                                  // The defined baudrate for this serial port in question
+            serial::parity_t def_parity;                                            // The defined parity for this serial port in question
+            serial::flowcontrol_t def_flow_control;                                 // The defined flow-control for this serial port in question
+            serial::Timeout timeout_info;                                           // The timeout structure for the given serial port in question
         };
 
         namespace Audio {
+            struct GkPaAudioData {
+                int frameIndex;                                                     // Frame index into sample array
+                int maxFrameIndex;                                                  // Maximum frame index given into sample array
+                int16_t *recordedSamples;                                             // Audio samples that have been recorded and saved to a buffer
+                portaudio::SampleDataFormat sample_format;                          // Currently used sample format by given audio source, whether output or input
+            };
+
             struct GkDevice {
-                std::string dev_name_formatted;                 // The name of the device itself, formatted
-                bool default_dev;                               // Is this the default device for the system?
-                bool default_disp;                              // Used for filtering purposes
-                double def_sample_rate;                         // Default sample rate
-                boost::tribool is_output_dev;                   // Is the audio device in question an input? Output if FALSE, UNSURE if either
-                int dev_number;                                 // The number of this device; this is saved to the Google LevelDB database as the user's preference
-                PaError dev_err;                                // Any errors that belong to this audio device specifically
-                std::vector<double> supp_sample_rates;          // Supported sample rates by this audio device
-                long asio_min_latency;                          // ASIO specific
-                long asio_max_latency;                          // ASIO specific
-                long asio_granularity;                          // ASIO specific
-                long asio_pref_latency;                         // ASIO specific
-                long asio_min_buffer_size;                      // ASIO specific
-                long asio_max_buffer_size;                      // ASIO specific
-                long asio_pref_buffer_size;                     // ASIO specific
-                int dev_input_channel_count;                    // The number of channels this INPUT audio device supports
-                int dev_output_channel_count;                   // The number of channels this OUTPUT audio device supports
-                audio_channels sel_channels;                    // The selected audio channel configuration
-                PaError asio_err;                               // ASIO specific error related information
-                PaDeviceInfo device_info;                       // All information pertaining to this audio device
-                PaStreamParameters stream_parameters;           // Device-specific information such as the sample format, etc.
+                std::string dev_name_formatted;                                     // The name of the device itself, formatted
+                bool default_dev;                                                   // Is this the default device for the system?
+                bool default_disp;                                                  // Used for filtering purposes
+                bool is_dev_active;                                                 // Is the audio device in question currently active and streaming data?
+                double def_sample_rate;                                             // Default sample rate
+                boost::tribool is_output_dev;                                       // Is the audio device in question an input? Output if FALSE, UNSURE if either
+                int dev_number;                                                     // The number of this device; this is saved to the Google LevelDB database as the user's preference
+                PaError dev_err;                                                    // Any errors that belong to this audio device specifically
+                std::vector<double> supp_sample_rates;                              // Supported sample rates by this audio device
+                long asio_min_latency;                                              // ASIO specific
+                long asio_max_latency;                                              // ASIO specific
+                long asio_granularity;                                              // ASIO specific
+                long asio_pref_latency;                                             // ASIO specific
+                long asio_min_buffer_size;                                          // ASIO specific
+                long asio_max_buffer_size;                                          // ASIO specific
+                long asio_pref_buffer_size;                                         // ASIO specific
+                int dev_input_channel_count;                                        // The number of channels this INPUT audio device supports
+                int dev_output_channel_count;                                       // The number of channels this OUTPUT audio device supports
+                audio_channels sel_channels;                                        // The selected audio channel configuration
+                PaError asio_err;                                                   // ASIO specific error related information
+                PaDeviceInfo device_info;                                           // All information pertaining to this audio device
+                PaStreamParameters stream_parameters;                               // Device-specific information such as the sample format, etc.
+                portaudio::DirectionSpecificStreamParameters cpp_stream_param;      // Device-specific information such as the sample format, etc. but for the C++ bindings instead
                 PaHostApiTypeId host_type_id;
             };
         }
@@ -350,7 +375,23 @@ namespace AmateurRadio {
         Unknown
     };
 
-    enum bands {
+    enum DigitalModes {
+        WSPR,
+        JT65,
+        JT9,
+        T10,
+        FT8,
+        FT4
+    };
+
+    enum IARURegions {
+        ALL,
+        R1,
+        R2,
+        R3
+    };
+
+    enum GkFreqBands {
         NONE,
         BAND160,
         BAND80,
@@ -400,6 +441,13 @@ namespace AmateurRadio {
         BAUD38400,
         BAUD57600,
         BAUD115200
+    };
+
+    struct GkFreqs {
+        float frequency;                                    // The exact frequency itself
+        GkFreqBands closest_freq_band;                      // The closest matching frequency band grouping
+        DigitalModes digital_mode;                          // The type of digital mode this frequency applies towards, or should apply toward
+        IARURegions iaru_region;                            // The IARU Region that this frequency falls under
     };
 
     namespace Control {
