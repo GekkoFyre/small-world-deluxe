@@ -7,9 +7,9 @@
 |  **Status**  | [![pipeline status](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/badges/develop/pipeline.svg)](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/commits/develop) | [![pipeline status](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/badges/master/pipeline.svg)](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/commits/master) |
 | **Coverage** | [![coverage report](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/badges/develop/coverage.svg)](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/commits/develop) | [![coverage report](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/badges/master/coverage.svg)](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/commits/master) |
 
-As a software project just only recently borne mid-July, 2019, `Small World` is a 'new age' weak-signal digital communicator powered by low bit-rate, digital voice codecs that are either originally meant for [telephony](https://en.wikipedia.org/wiki/Telephony) or are born out of such. Typical usage requires a radio transceiver with [SSB support](https://en.wikipedia.org/wiki/Single-sideband_modulation) and a [personal computer](https://en.wikipedia.org/wiki/Personal_computer) with a capable sound-card. Said computer must also be powerful enough to be running a modern [operating system](https://en.wikipedia.org/wiki/Operating_system) that is still supported with regular updates.
+As a software project just only recently borne mid-July, 2019, `Small World Deluxe` is an ultra-modern weak-signal digital communicator powered by low bit-rate, digital voice codecs such as the highly regarded and open-source [Codec2](https://en.wikipedia.org/wiki/Codec_2), among others like [FT8](https://physics.princeton.edu/pulsar/K1JT/wsjtx.html) and [related](https://www.jtdx.tech/). Typical usage requires a radio transceiver with [SSB support](https://en.wikipedia.org/wiki/Single-sideband_modulation) and a [personal computer](https://en.wikipedia.org/wiki/Personal_computer) with a capable sound-card. Said computer must also be powerful enough to be running a modern [operating system](https://en.wikipedia.org/wiki/Operating_system) that is still supported with regular updates ([see requirements below](#General-Requirements)).
 
-Having been written from the ground-up with the [Qt5 Project](https://www.qt.io/), which is the standard within the computing industry for cross-platform software applications that make use of a GUI, this project is designed for ease-of-use by both programmer and casual amateur radio user alike. We are also implementing the [Hamlib libraries](https://hamlib.github.io/) so that our users have the easiest time possible configuring their radios with `Small World Deluxe`.
+Having been written from the ground-up with the [Qt5 Project](https://www.qt.io/) set of libraries, which is the standard within the computing industry for cross-platform software applications that make use of a GUI, this project is designed for ease-of-use by both programmer and casual amateur radio user alike. We are also implementing the [Hamlib libraries](https://hamlib.github.io/) so that our users have the easiest time possible configuring their radios with `Small World Deluxe`.
 
 We are presently implementing support for [JT65/JT9/FT8 as the modem of choice](https://github.com/jtdx-project/jtdx) at this stage so that we may then begin implementing more advanced features much more quickly and easily. We don't shy away from the fact that we rely on libraries developed by others, where possible; why re-invent the wheel when the work has already been done for you?
 
@@ -33,42 +33,47 @@ Following is a short list of features, both planned and partially already implem
 
 Please note that what is displayed just below may/perhaps be awfully out-of-date. If you want to see how `Small World Deluxe` currently looks, then we advise you to [download the latest release](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/releases), or if one is not available, then to please wait and until a sufficient version *is* available. The *lack of a release* means that we're not stable enough yet.
 
-![smallworld_mainwindow_1](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/raw/31826c3b962ddb12429aa6f62a0b3885ef836436/assets/images/screenshots/smallworld_mainwindow_1.png)
+![smallworld_mainwindow_1](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/raw/a2e75b5bfea9929dd5b6d902f0fc602bc7490ea1/assets/images/screenshots/2020-06-23/smallworld_mainwindow_1.png)
 
-![smallworld_settingsdialog_1](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/raw/31826c3b962ddb12429aa6f62a0b3885ef836436/assets/images/screenshots/smallworld_settingsdialog_1.png)
+![smallworld_settingsdialog_1](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/raw/a2e75b5bfea9929dd5b6d902f0fc602bc7490ea1/assets/images/screenshots/2020-06-23/smallworld_settingsdialog_1.png)
 
-![smallworld_settingsdialog_2](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/raw/31826c3b962ddb12429aa6f62a0b3885ef836436/assets/images/screenshots/smallworld_settingsdialog_2.png)
+![smallworld_settingsdialog_2](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/raw/a2e75b5bfea9929dd5b6d902f0fc602bc7490ea1/assets/images/screenshots/2020-06-23/smallworld_settingsdialog_2.png)
 
-![smallworld_settingsdialog_3](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/raw/31826c3b962ddb12429aa6f62a0b3885ef836436/assets/images/screenshots/smallworld_settingsdialog_3.png)
+![smallworld_settingsdialog_3](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/raw/a2e75b5bfea9929dd5b6d902f0fc602bc7490ea1/assets/images/screenshots/2020-06-23/smallworld_settingsdialog_3.png)
 
-![smallworld_settingsdialog_4](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/raw/31826c3b962ddb12429aa6f62a0b3885ef836436/assets/images/screenshots/smallworld_settingsdialog_4.png)
+![smallworld_aboutdialog_1.png](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/raw/feature/PortAudio/assets/images/screenshots/2020-06-23/smallworld_aboutdialog_1.png)
 
 ------
 
 #### Binaries
 
-At the time of writing this (May 18th, 2020), we expect to be providing binaries for `Small World Deluxe` within the coming weeks/months as the project slowly becomes further realized. It is not worth providing such currently since the project has only just recently been commissioned and there's very little to see, other than a proof-of-concept.
+At the time of writing this (June 23rd, 2020), we expect to be providing binaries for `Small World Deluxe` within the coming weeks/months as the project slowly becomes further realized. It is not worth providing such currently since the project has only just recently been commissioned and there's very little to see, other than a proof-of-concept.
 
 Be sure to check back often for further updates!
 
 #### Installation / Compilation
 
+##### General Requirements
+
+This is to come soon! Check back often for updates :)
+
 ##### Linux and similar
 
 To begin with, you will need to install the following dependencies along with the [GCC Toolchain](https://gcc.gnu.org/) or [LLVM/Clang](https://clang.llvm.org/):
 
-- `CMake` [ [Build process managerial software](https://cmake.org/) ]
+- `CMake` [ [build process managerial software](https://cmake.org/) ]
 - `Boost C++` [ [development libraries](https://www.boost.org/) that must be *static* **and also** *multithreaded* libraries, unless you modify CMake's instructions ]
+- `NVIDIA CUDA Toolkit` [ [parallel computing platform](https://developer.nvidia.com/cuda-zone) for general computing on GPUs (optional) ]
 - `PortAudio` [ [multimedia libraries](http://portaudio.com/) ]
 - `libusb-devel` [ [development libraries](https://github.com/libusb/libusb) ]
-- `libusb-compat` [ [compatibility libraries](https://github.com/libusb/libusb-compat-0.1) ]
 - `leveldb-devel` [ [development libraries](https://github.com/google/leveldb) for NoSQL information storage [by Google](https://www.google.com/) ]
 - `HamLib` C++ [ [development libraries](https://hamlib.github.io/) for communicating with amateur radio transceiver rigs ]
 - `Qt5` [ [development libraries](https://www.qt.io/) ]
 - `Ogg Vorbis`  [audio codec libraries](https://xiph.org/vorbis/) along with the related `Opus` libraries
 - `Qwt` [ [graphing libraries](https://qwt.sourceforge.io/) for the instrumental display of information ]
-- `FFTW` [ [libraries for computing the discrete Fourier transform (DFT)](http://fftw.org/) in one or more dimensions ]
-- `LZ4` [ [development libraries](https://github.com/lz4/lz4) ]
+- `SDL2` [ [simple DirectMedia Layer](https://www.libsdl.org/) ]
+- `Zlib` [ [data compression library](https://zlib.net/) ]
+- `iconv` [ [converts between different character encodings](https://www.gnu.org/software/libiconv/) ]
 
 And for Linux-based systems in particular, you will further require the following:
 

@@ -85,15 +85,11 @@ public:
     virtual size_t size() const;
     virtual bool empty() const;
     virtual bool clear() const;
-    virtual T *get() const;
+    virtual T get() const;
     virtual bool full() const;
 
-public slots:
-    void abortRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
-    void updateVolume(const float &value);
-
 private:
-    std::unique_ptr<GekkoFyre::GkCircBuffer<T *>> gkCircBuffer;
+    std::unique_ptr<GekkoFyre::GkCircBuffer<T>> gkCircBuffer;
     GekkoFyre::Database::Settings::Audio::GkDevice prefInputDevice;
     GekkoFyre::Database::Settings::Audio::GkDevice prefOutputDevice;
 
@@ -133,7 +129,7 @@ PaAudioBuf<T>::PaAudioBuf(int buffer_size, const GkDevice &pref_output_device, c
     // Original author: https://embeddedartistry.com/blog/2017/05/17/creating-a-circular-buffer-in-c-and-c/
     //
     circ_buffer_size = buffer_size;
-    gkCircBuffer = std::make_unique<GkCircBuffer<T *>>(circ_buffer_size);
+    gkCircBuffer = std::make_unique<GkCircBuffer<T>>(circ_buffer_size);
 }
 
 template<class T>
@@ -215,7 +211,8 @@ int PaAudioBuf<T>::playbackCallback(const void *inputBuffer, void *outputBuffer,
  * @return
  */
 template<class T>
-int PaAudioBuf<T>::recordCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags)
+int PaAudioBuf<T>::recordCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
+                                  const PaStreamCallbackTimeInfo* timeInfo, PaStreamCallbackFlags statusFlags)
 {
     std::mutex record_loop_mtx;
     std::lock_guard<std::mutex> lck_guard(record_loop_mtx);
@@ -230,7 +227,7 @@ int PaAudioBuf<T>::recordCallback(const void *inputBuffer, void *outputBuffer, u
 
     for (unsigned long i = 0; i < framesPerBuffer; ++i) {
         buffer_ptr[i] *= (T)(buffer_ptr[i] * calcVolIdx);
-        gkCircBuffer->put(buffer_ptr + i);
+        gkCircBuffer->put(buffer_ptr[i] + i);
     }
 
     return finished;
@@ -307,7 +304,7 @@ bool PaAudioBuf<T>::clear() const
  * @return
  */
 template<class T>
-T *PaAudioBuf<T>::get() const
+T PaAudioBuf<T>::get() const
 {
     return gkCircBuffer->get();
 }
@@ -324,37 +321,5 @@ bool PaAudioBuf<T>::full() const
     }
 
     return false;
-}
-
-/**
- * @brief PaAudioBuf<T>::abortRecording
- * @param recording_is_stopped
- * @param wait_time
- */
-template<class T>
-void PaAudioBuf<T>::abortRecording(const bool &recording_is_stopped, const int &wait_time)
-{
-    std::mutex pa_audio_buf_rec_mtx;
-    std::lock_guard<std::mutex> lck_guard(pa_audio_buf_rec_mtx);
-
-    if (recording_is_stopped) {
-        is_rec_active = false;
-    } else {
-        is_rec_active = true;
-    }
-
-    return;
-}
-
-/**
- * @brief PaAudioBuf<T>::updateVolume
- * @param value
- */
-template<class T>
-void PaAudioBuf<T>::updateVolume(const float &value)
-{
-    calcVolIdx = value;
-
-    return;
 }
 };
