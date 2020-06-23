@@ -165,9 +165,6 @@ protected slots:
     void closeEvent(QCloseEvent *event);
 
 public slots:
-    void updateSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &data,
-                           const std::vector<int> &raw_audio_data,
-                           const int &hanning_window_size, const size_t &buffer_size);
     void updateProgressBar(const bool &enable, const size_t &min, const size_t &max);
 
     //
@@ -192,9 +189,6 @@ signals:
     void updatePaVol(const int &percentage);
     void updatePlot();
     void gkExitApp();
-    void sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values,
-                         const std::vector<int> &raw_audio_data,
-                         const int &hanning_window_size, const size_t &buffer_size);
 
     //
     // Radio and Hamlib specific functions
@@ -327,7 +321,6 @@ private:
 };
 
 Q_DECLARE_METATYPE(std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>);
-Q_DECLARE_METATYPE(std::vector<GekkoFyre::Spectrograph::RawFFT>);
 Q_DECLARE_METATYPE(GekkoFyre::Database::Settings::GkUsbPort);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkConnType);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::DigitalModes);

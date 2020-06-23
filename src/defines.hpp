@@ -496,22 +496,9 @@ namespace Spectrograph {
         AlphaMap
     };
 
-    struct RawFFT {
-        fftw_complex *chunk_forward_0;
-        fftw_complex *chunk_forward_1;
-        std::vector<double> power_density_spectrum;
-        double hanning_win;
-        size_t window_size;
-    };
-
     struct Window {
         int y;
         int x;
-    };
-
-    struct Graphing {
-        RawFFT fft;
-        Window axis;
     };
 
     struct GkAxisData {

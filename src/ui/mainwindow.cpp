@@ -96,7 +96,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 {
     ui->setupUi(this);
     qRegisterMetaType<std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>>("std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>");
-    qRegisterMetaType<std::vector<GekkoFyre::Spectrograph::RawFFT>>("std::vector<GekkoFyre::Spectrograph::RawFFT>");
     qRegisterMetaType<GekkoFyre::Database::Settings::GkUsbPort>("GekkoFyre::Database::Settings::GkUsbPort");
     qRegisterMetaType<GekkoFyre::AmateurRadio::GkConnType>("GekkoFyre::AmateurRadio::GkConnType");
     qRegisterMetaType<GekkoFyre::AmateurRadio::DigitalModes>("GekkoFyre::AmateurRadio::DigitalModes");
@@ -355,8 +354,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         gkSpectroGui = new GekkoFyre::SpectroGui(gkStringFuncs, true, false, this);
         ui->verticalLayout_11->addWidget(gkSpectroGui);
         gkSpectroGui->setEnabled(true);
-        QObject::connect(this, SIGNAL(sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const std::vector<int> &, const int &, const size_t &)),
-                         gkSpectroGui, SIGNAL(sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const std::vector<int> &, const int &, const size_t &)));
 
         //
         // Sound & Audio Devices
@@ -1544,33 +1541,6 @@ void MainWindow::startRecordingInput(const int &wait_time)
     inputAudioStream->start();
 
     pref_input_device.is_dev_active = true; // State that this recording device is now active!
-    return;
-}
-
-/**
- * @brief MainWindow::updateSpectroData
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param data
- * @param raw_audio_data
- * @param hanning_window_size
- * @param buffer_size
- */
-void MainWindow::updateSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &data,
-                                   const std::vector<int> &raw_audio_data, const int &hanning_window_size,
-                                   const size_t &buffer_size)
-{
-    try {
-        if (!data.empty()) {
-            // auto fut_spectro_gui_apply_data = std::async(std::launch::async, std::bind(&SpectroGui::applyData, gkSpectroGui, data, hanning_window_size, buffer_size));
-            emit sendSpectroData(data, raw_audio_data, hanning_window_size, buffer_size);
-
-            return;
-        }
-    } catch (const std::exception &e) {
-        QMessageBox::warning(this, tr("Error!"), tr("An issue has occurred whilst updating the spectrograph:\n\n%1").arg(e.what()),
-                             QMessageBox::Ok);
-    }
-
     return;
 }
 
