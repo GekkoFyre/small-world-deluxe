@@ -46,6 +46,7 @@
 #include <ostream>
 #include <cstring>
 #include <utility>
+#include <iomanip>
 #include <cmath>
 #include <iostream>
 #include <functional>
@@ -1296,7 +1297,9 @@ void MainWindow::on_verticalSlider_vol_control_valueChanged(int value)
                 // Input audio stream is open and active!
                 //
                 const float vol_level_decibel = (20.0f * std::log10(real_val));
-                ui->label_vol_control_disp->setText(tr("%1 dB").arg(QString::number(vol_level_decibel)));
+                std::stringstream ss;
+                ss << std::setprecision(3) << vol_level_decibel;
+                ui->label_vol_control_disp->setText(tr("%1 dB").arg(QString::fromStdString(ss.str())));
 
                 const float vol_multiplier = (1.0f * std::pow(10, (vol_level_decibel / 20.0f)));
                 emit changeVolume(vol_multiplier);
