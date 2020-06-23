@@ -40,6 +40,7 @@
 #include "aboutdialog.hpp"
 #include "spectrodialog.hpp"
 #include "./../gk_timer.hpp"
+#include "./../spectro_cuda.h"
 #include <boost/exception/all.hpp>
 #include <boost/chrono/chrono.hpp>
 #include <sstream>
@@ -345,8 +346,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
 
         //
-        // Initialize the Circular Audio Buffer
+        // Initialize any FFT libraries/resources
         //
+        gkFFT = std::make_unique<GkFFT>();
 
         //
         // Initialize the Waterfall / Spectrograph
@@ -438,6 +440,10 @@ MainWindow::~MainWindow()
 
     if (vu_meter_thread.joinable()) {
         vu_meter_thread.join();
+    }
+
+    if (spectro_data_thread.joinable()) {
+        spectro_data_thread.join();
     }
 
     emit stopRecording();
@@ -1377,6 +1383,9 @@ void MainWindow::on_pushButton_radio_receive_clicked()
                             vu_meter_thread = std::thread(&MainWindow::updateVolumeDisplayWidgets, this);
                             vu_meter_thread.detach();
 
+                            spectro_data_thread = std::thread(&MainWindow::updateSpectroData, this);
+                            spectro_data_thread.detach();
+
                             changeStatusBarMsg(tr("Please wait! Beginning to receive audio..."));
 
                             return;
@@ -1812,6 +1821,80 @@ void MainWindow::updateFreqsInMem(const float &frequency, const GekkoFyre::Amate
     return;
 }
 
+/**
+ * @brief MainWindow::recvSpectroData receives the data for the spectrograph / waterfall and processes it in lieu.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value The data to be processed on behalf of the spectrograph / waterfall.
+ */
+void MainWindow::updateSpectroData()
+{
+    #ifdef GK_CUDA_FFT_ENBL
+    //
+    // CUDA support is enabled!
+    //
+    if (inputAudioStream != nullptr && AUDIO_FRAMES_PER_BUFFER > 0) {
+        while (inputAudioStream->isActive()) {
+            //
+            // Input audio stream is open and active!
+            //
+            std::vector<int16_t> recv_buf;
+            while (input_audio_buf->size() > 0) {
+                recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
+                recv_buf.push_back(input_audio_buf->get());
+            }
+
+            if (!recv_buf.empty()) {
+                float *fftData = new float[GK_FFT_SIZE];
+                processCUDAFFT(recv_buf.data(), fftData, GK_FFT_SIZE);
+
+                for (size_t i = 0; i < GK_FFT_SIZE; ++i) {
+                    gkSpectroGui->value(fftData[i], i); // This is the data for the spectrograph / waterfall itself!
+                }
+
+                recv_buf.clear();
+                recv_buf.shrink_to_fit();
+            }
+        }
+    }
+    #else
+    if (inputAudioStream != nullptr && AUDIO_FRAMES_PER_BUFFER > 0) {
+        while (inputAudioStream->isActive()) {
+            //
+            // Input audio stream is open and active!
+            //
+            std::vector<int16_t> recv_buf;
+            while (input_audio_buf->size() > 0) {
+                recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
+                recv_buf.push_back(input_audio_buf->get());
+            }
+
+            if (!recv_buf.empty()) {
+                std::complex<float> *fftData = new std::complex<float>[GK_FFT_SIZE];
+                for (size_t i = 0; i < GK_FFT_SIZE; ++i) {
+                    fftData[i] = recv_buf[i];
+                }
+
+                gkFFT->FFTCompute(fftData, GK_FFT_SIZE);
+
+                for (size_t i = 0; i < GK_FFT_SIZE; ++i) {
+                    gkSpectroGui->value(fftData[i].real(), i); // This is the data for the spectrograph / waterfall itself!
+                }
+
+                recv_buf.clear();
+                recv_buf.shrink_to_fit();
+            }
+        }
+    }
+    #endif
+
+    return;
+}
+
+/**
+ * @brief MainWindow::on_pushButton_radio_tune_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param checked
+ */
 void MainWindow::on_pushButton_radio_tune_clicked(bool checked)
 {
     Q_UNUSED(checked);

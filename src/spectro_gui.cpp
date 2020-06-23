@@ -40,9 +40,11 @@
  ****************************************************************************************************/
 
 #include "spectro_gui.hpp"
+#include <qwt_plot_renderer.h>
 #include <qwt_plot_panner.h>
 #include <qwt_plot_layout.h>
-#include <qwt_plot_renderer.h>
+#include <qwt_plot_curve.h>
+#include <qwt_plot_grid.h>
 #include <qwt_panner.h>
 #include <algorithm>
 #include <utility>
@@ -62,6 +64,7 @@ using namespace Spectrograph;
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param parent
  * @note <http://dronin.org/doxygen/ground/html/plotdata_8h_source.html>
+ * <https://github.com/medvedvvs/QwtWaterfall>
  */
 SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &enablePanner,
                        const bool &enableZoomer, QWidget *parent)
@@ -77,7 +80,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         QwtPlotCanvas *canvas = new QwtPlotCanvas();
         canvas->setBorderRadius(8);
         canvas->setPaintAttribute(QwtPlotCanvas::BackingStore, false);
-        canvas->setStyleSheet("border-radius: 8px; background-color: MidnightBlue");
+        canvas->setStyleSheet("border-radius: 8px; background-color: #389638");
         setCanvas(canvas);
 
         gkSpectrogram = new QwtPlotSpectrogram();
@@ -117,6 +120,14 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         //
         plotLayout()->setAlignCanvasToScales(true);
         gkSpectrogram->setColorMap(new LinearColorMapRGB());
+
+        QwtPlotGrid *grid = new QwtPlotGrid();
+        grid->attach(this);
+
+        QwtPlotCurve *curve = new QwtPlotCurve();
+        curve->setTitle("Some Points");
+        curve->setPen(Qt::red, 4),
+        curve->setRenderHint(QwtPlotItem::RenderAntialiased, true);
 
         //
         // Setup y-axis scaling

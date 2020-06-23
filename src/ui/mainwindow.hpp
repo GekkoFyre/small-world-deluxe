@@ -50,6 +50,7 @@
 #include "src/ui/dialogsettings.hpp"
 #include "src/gk_audio_encoding.hpp"
 #include "src/gk_audio_decoding.hpp"
+#include "src/gk_fft.hpp"
 #include "src/ui/gkaudioplaydialog.hpp"
 #include "src/ui/gk_vu_meter_widget.hpp"
 #include <boost/filesystem.hpp>
@@ -58,6 +59,7 @@
 #include <leveldb/db.h>
 #include <leveldb/status.h>
 #include <leveldb/options.h>
+#include <complex>
 #include <memory>
 #include <thread>
 #include <future>
@@ -220,6 +222,7 @@ private:
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GekkoFyre::GkCli> gkCli;
+    std::unique_ptr<GekkoFyre::GkFFT> gkFFT;
     QPointer<GekkoFyre::FileIo> fileIo;
     QPointer<GekkoFyre::GkFreqList> gkFreqList;
     QPointer<GekkoFyre::RadioLibs> gkRadioLibs;
@@ -266,6 +269,7 @@ private:
     std::future<std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>> rig_future;
     std::thread rig_thread;
     std::thread vu_meter_thread;
+    std::thread spectro_data_thread;
 
     //
     // USB & RS232
@@ -314,6 +318,7 @@ private:
     static QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>> initRadioModelsVar();
 
     void updateVolumeDisplayWidgets();
+    void updateSpectroData();
 
     void createStatusBar(const QString &statusMsg = "");
     bool changeStatusBarMsg(const QString &statusMsg = "");

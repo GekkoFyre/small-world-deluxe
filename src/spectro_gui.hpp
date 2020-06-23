@@ -132,7 +132,7 @@ public:
     }
 };
 
-class GkSpectrograph: public QwtPlot {
+class GkSpectrograph: public QwtPlot, public GkSpectroData {
     Q_OBJECT
 
 public:

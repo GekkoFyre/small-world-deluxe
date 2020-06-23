@@ -418,8 +418,7 @@ set(GALAXY_UI_CPP
     src/gk_audio_decoding.cpp
     src/gk_cli.cpp
     src/gk_modem.cpp
-    src/gk_frequency_list.cpp
-    src/gk_fft.cpp)
+    src/gk_frequency_list.cpp)
 
 if(WIN32 OR MSYS OR MINGW)
     set(GALAXY_UI_CPP
@@ -439,6 +438,7 @@ endif()
 set(GALAXY_SRC_CPP
     ${GALAXY_SRC_CPP}
     src/pa_sinewave.cpp
+    src/gk_fft.cpp
     src/contrib/getopt.c
     src/contrib/serial/src/serial.cc)
 
@@ -479,8 +479,7 @@ set(GALAXY_OBJ_HEADERS
     src/gk_audio_decoding.hpp
     src/gk_cli.hpp
     src/gk_modem.hpp
-    src/gk_frequency_list.hpp
-    src/gk_fft.hpp)
+    src/gk_frequency_list.hpp)
 
 if(WIN32 OR MSYS OR MINGW)
     set(GALAXY_OBJ_HEADERS
@@ -503,6 +502,7 @@ set(GALAXY_SRC_HEADERS
     src/pa_sinewave.hpp
     src/gk_timer.hpp
     src/gk_circ_buffer.hpp
+    src/gk_fft.hpp
     src/contrib/getopt.h
     src/contrib/serial/include/serial/v8stdint.h
     src/contrib/serial/include/serial/serial.h)
