@@ -75,42 +75,6 @@
 
 namespace GekkoFyre {
 
-class SpectroRasterData: public QwtMatrixRasterData {
-
-public:
-    SpectroRasterData() {
-        const double matrix[] = {
-            1, 2, 4, 1,
-            6, 3, 5, 2,
-            4, 2, 1, 5,
-            5, 4, 2, 3
-        };
-
-        QVector<double> values;
-        for (uint i = 0; i < sizeof(matrix) / sizeof(double); ++i) {
-            values += matrix[i];
-        }
-
-        const int numColumns = 4;
-        setValueMatrix(values, numColumns);
-
-        setInterval(Qt::XAxis, QwtInterval(-0.5, 3.5, QwtInterval::ExcludeMaximum));
-        setInterval(Qt::YAxis, QwtInterval(-0.5, 3.5, QwtInterval::ExcludeMaximum));
-        setInterval(Qt::ZAxis, QwtInterval(1.0, 6.0));
-    }
-};
-
-class GkSpectrograph: public QwtPlot {
-    Q_OBJECT
-
-public:
-    GkSpectrograph(QWidget *parent = nullptr);
-    virtual ~GkSpectrograph();
-
-protected:
-    void mouseDoubleClickEvent(QMouseEvent *e);
-};
-
 /**
  * @brief The LinearColorMapRGB class
  * @note <https://www.qtcentre.org/threads/60248-Any-examples-of-different-color-tables-with-Qwt>
@@ -129,76 +93,15 @@ public:
     }
 };
 
-class HueColorMap: public QwtColorMap {
+class GkSpectrograph: public QwtPlot {
+    Q_OBJECT
 
 public:
-    HueColorMap(): gkHue1(0), gkHue2(359), gkSaturation(150), gkHueValue(200) {
-        updateTable();
-    }
+    GkSpectrograph(QWidget *parent = nullptr);
+    virtual ~GkSpectrograph();
 
-    virtual QRgb rgb(const QwtInterval &interval, double value) const {
-        if (qIsNaN(value)) {
-            return 0u;
-        }
-
-        const double width = interval.width();
-        if (width <= 0) {
-            return 0u;
-        }
-
-        if (value <= interval.minValue()) {
-            return gkHueRgbMin;
-        }
-
-        if (value >= interval.maxValue()) {
-            return gkHueRgbMax;
-        }
-
-        const double ratio = (value - interval.minValue()) / width;
-        int hue = gkHue1 + qRound(ratio * (gkHue2 - gkHue1));
-
-        if (hue >= 360) {
-            hue -= 360;
-
-            if (hue >= 360) {
-                hue = hue % 360;
-            }
-        }
-
-        return gkHueRgbTable[hue];
-    }
-
-    virtual unsigned char colorIndex(const QwtInterval &qwt_interval, double dbl_value) const {
-        //
-        // Indexed colours are currently unsupported!
-        //
-
-        Q_UNUSED(qwt_interval);
-        Q_UNUSED(dbl_value);
-
-        return 0;
-    }
-
-private:
-    void updateTable() {
-        for (int i = 0; i < 360; ++i) {
-            gkHueRgbTable[i] = QColor::fromHsv( i, gkSaturation, gkHueValue ).rgb();
-        }
-
-        gkHueRgbMin = gkHueRgbTable[gkHue1 % 360];
-        gkHueRgbMax = gkHueRgbTable[gkHue2 % 360];
-    }
-
-    int gkHue1, gkHue2, gkSaturation, gkHueValue;
-    QRgb gkHueRgbMin, gkHueRgbMax, gkHueRgbTable[360];
-};
-
-class AlphaColorMap: public QwtAlphaColorMap {
-
-public:
-    AlphaColorMap() {
-        setColor(QColor("SteelBlue"));
-    }
+protected:
+    void mouseDoubleClickEvent(QMouseEvent *e);
 };
 
 class SpectroGui: public GkSpectrograph, private QwtPlotSpectrogram, public QwtMatrixRasterData {
@@ -214,7 +117,6 @@ public:
     void setAlpha(const int &alpha);
     void setTheme(const QColor &colour);
 
-    virtual void setResampleMode(int mode);
     virtual double value(double x, double y) const override {
         const double c = 0.842;
 
@@ -285,16 +187,8 @@ private:
         return r;
     }
 
-    void calcMatrixData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values,
-                        const int &hanning_window_size, const size_t &buffer_size,
-                        std::promise<Spectrograph::MatrixData> matrix_data_promise);
-
-    void preparePlot();
     void calcInterval();
-    Spectrograph::MatrixData setDefMatrixStrucVals();
 
-    QVector<double> convMapToVec(const QMap<qint64, std::pair<QVector<double>, Spectrograph::GkAxisData>> &z_calc_information);
-    QVector<double> mergeVecsForMatrix(const QMap<qint64, std::pair<QVector<double>, Spectrograph::GkAxisData>> &z_calc_data);
     qint64 getEarliestPlottedTime(const std::vector<Spectrograph::GkTimingData> &timing_info);
     qint64 getLatestPlottedTime(const std::vector<Spectrograph::GkTimingData> &timing_info);
 };
