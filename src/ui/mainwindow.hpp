@@ -40,22 +40,21 @@
 #include "src/defines.hpp"
 #include "src/file_io.hpp"
 #include "src/audio_devices.hpp"
-#include "src/pa_mic.hpp"
 #include "src/gk_cli.hpp"
 #include "src/dek_db.hpp"
 #include "src/radiolibs.hpp"
 #include "src/pa_audio_buf.hpp"
 #include "src/spectro_gui.hpp"
+#include "src/gk_circ_buffer.hpp"
 #include "src/gk_frequency_list.hpp"
-#include "src/pa_mic_background.hpp"
 #include "src/ui/dialogsettings.hpp"
 #include "src/gk_audio_encoding.hpp"
 #include "src/gk_audio_decoding.hpp"
 #include "src/ui/gkaudioplaydialog.hpp"
+#include "src/ui/gk_vu_meter_widget.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
-#include <boost/circular_buffer.hpp>
 #include <leveldb/db.h>
 #include <leveldb/status.h>
 #include <leveldb/options.h>
@@ -74,7 +73,6 @@
 #include <QPrinter>
 #include <QSharedPointer>
 #include <QString>
-#include <QVector>
 #include <QStringList>
 #include <QMetaType>
 #include <QDateTime>
@@ -148,11 +146,8 @@ private slots:
     //
     // Audio/Volume related controls
     //
-    void updateVuMeter(const double &volumePctg);
-    void updateVolMeterTooltip(const int &value);
-    void updateVolIndex(const int &percentage);
-    void on_pushButton_radio_tune_clicked(bool checked);
     void on_verticalSlider_vol_control_valueChanged(int value);
+    void on_pushButton_radio_tune_clicked(bool checked);
     void on_checkBox_rx_tx_vol_toggle_stateChanged(int arg1);
 
     //
@@ -165,16 +160,22 @@ private slots:
     void uponExit();
 
     void stopAudioCodecRec(const bool &recording_is_started);
+    void updateVolume(const float &value);
 
 protected slots:
     void closeEvent(QCloseEvent *event);
 
 public slots:
-    bool stopRecordingInput(const bool &recording_is_stopped, const int &wait_time = 5000);
     void updateSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &data,
                            const std::vector<int> &raw_audio_data,
                            const int &hanning_window_size, const size_t &buffer_size);
     void updateProgressBar(const bool &enable, const size_t &min, const size_t &max);
+
+    //
+    // Audio related
+    //
+    void stopRecordingInput(const int &wait_time = 5000);
+    void startRecordingInput(const int &wait_time = 5000);
 
     //
     // Radio and Hamlib specific functions
@@ -185,15 +186,12 @@ public slots:
                                const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void addRigToMemory(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void disconnectRigInMemory(RIG *rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
-    void updateRadioVarsInMem(const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void updateFreqsInMem(const float &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
                           const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq);
 
 signals:
-    void refreshVuMeter(const double &volumePctg);
     void updatePaVol(const int &percentage);
     void updatePlot();
-    void stopRecording(const bool &recording_is_stopped, const int &wait_time = 5000);
     void gkExitApp();
     void sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values,
                          const std::vector<int> &raw_audio_data,
@@ -207,9 +205,16 @@ signals:
     void addRigInUse(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void recvRigCapabilities(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void disconnectRigInUse(RIG *rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
-    void updateRadioPtr(const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void updateFrequencies(const float &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
                            const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq);
+
+    //
+    // Audio related
+    //
+    void refreshVuDisplay(const qreal &rmsLevel, const qreal &peakLevel, const int &numSamples);
+    void changeVolume(const float &value);
+    void stopRecording(const int &wait_time = 5000);
+    void startRecording(const int &wait_time = 5000);
 
 private:
     Ui::MainWindow *ui;
@@ -218,19 +223,18 @@ private:
     // Class pointers
     //
     leveldb::DB *db;
-    std::shared_ptr<GekkoFyre::FileIo> fileIo;
     std::shared_ptr<GekkoFyre::GkLevelDb> GkDb;
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
-    std::shared_ptr<GekkoFyre::PaMic> gkPaMic;
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GekkoFyre::GkCli> gkCli;
+    QPointer<GekkoFyre::FileIo> fileIo;
     QPointer<GekkoFyre::GkFreqList> gkFreqList;
     QPointer<GekkoFyre::RadioLibs> gkRadioLibs;
     QPointer<GekkoFyre::GkAudioEncoding> gkAudioEncoding;
     QPointer<GekkoFyre::GkAudioDecoding> gkAudioDecoding;
     QPointer<GekkoFyre::SpectroGui> gkSpectroGui;
-    QPointer<GekkoFyre::paMicProcBackground> paMicProcBackground;
     QPointer<GkAudioPlayDialog> gkAudioPlayDlg;
+    QPointer<GekkoFyre::GkVuMeter> gkVuMeter;
 
     std::shared_ptr<QSettings> sw_settings;
     std::shared_ptr<QCommandLineParser> gkCliParser;
@@ -247,10 +251,13 @@ private:
     //
     portaudio::AutoSystem autoSys;
     portaudio::System *gkPortAudioInit;
+    size_t input_audio_circ_buf_size;
+    size_t output_audio_circ_buf_size;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
-    QPointer<GekkoFyre::PaAudioBuf> pref_input_audio_buf;
-    QPointer<GekkoFyre::PaAudioBuf> pref_output_audio_buf;
+    std::shared_ptr<GekkoFyre::PaAudioBuf<int16_t>> input_audio_buf;
+    std::shared_ptr<GekkoFyre::PaAudioBuf<int16_t>> output_audio_buf;
+    portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<int16_t>> *inputAudioStream;
 
     //
     // Audio sub-system
@@ -259,9 +266,6 @@ private:
     double global_rx_audio_volume;
     double global_tx_audio_volume;
     bool recording_in_progress;
-    size_t fft_num_lines;
-    size_t fft_samples_per_line;
-    size_t circular_buffer_size;
 
     //
     // Multithreading
@@ -270,6 +274,7 @@ private:
     std::timed_mutex btn_record_mtx;
     std::future<std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>> rig_future;
     std::thread rig_thread;
+    std::thread vu_meter_thread;
 
     //
     // USB & RS232
@@ -283,7 +288,7 @@ private:
     //
     static QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>> gkRadioModels;
     std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> gkRadioPtr;
-    QVector<GekkoFyre::AmateurRadio::GkFreqs> frequencyList;
+    std::vector<GekkoFyre::AmateurRadio::GkFreqs> frequencyList;
 
     //
     // Timing and date related
@@ -317,6 +322,8 @@ private:
     static int parseRigCapabilities(const rig_caps *caps, void *data);
     static QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>> initRadioModelsVar();
 
+    void updateVolumeDisplayWidgets();
+
     void createStatusBar(const QString &statusMsg = "");
     bool changeStatusBarMsg(const QString &statusMsg = "");
     bool steadyTimer(const int &seconds);
@@ -330,7 +337,8 @@ Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::DigitalModes);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::IARURegions);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkFreqs);
 Q_DECLARE_METATYPE(RIG);
-Q_DECLARE_METATYPE(std::vector<short>);
 Q_DECLARE_METATYPE(size_t);
 Q_DECLARE_METATYPE(uint8_t);
 Q_DECLARE_METATYPE(rig_model_t);
+Q_DECLARE_METATYPE(PaHostApiTypeId);
+Q_DECLARE_METATYPE(std::vector<short>);

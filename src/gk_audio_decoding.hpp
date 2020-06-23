@@ -1,11 +1,15 @@
 /**
- **  ______  ______  ___   ___  ______  ______  ______  ______
- ** /_____/\/_____/\/___/\/__/\/_____/\/_____/\/_____/\/_____/\
- ** \:::_ \ \::::_\/\::.\ \\ \ \:::_ \ \:::_ \ \::::_\/\:::_ \ \
- **  \:\ \ \ \:\/___/\:: \/_) \ \:\ \ \ \:\ \ \ \:\/___/\:(_) ) )_
- **   \:\ \ \ \::___\/\:. __  ( (\:\ \ \ \:\ \ \ \::___\/\: __ `\ \
- **    \:\/.:| \:\____/\: \ )  \ \\:\_\ \ \:\/.:| \:\____/\ \ `\ \ \
- **     \____/_/\_____\/\__\/\__\/ \_____\/\____/_/\_____\/\_\/ \_\/
+ **     __                 _ _   __    __           _     _ 
+ **    / _\_ __ ___   __ _| | | / / /\ \ \___  _ __| | __| |
+ **    \ \| '_ ` _ \ / _` | | | \ \/  \/ / _ \| '__| |/ _` |
+ **    _\ \ | | | | | (_| | | |  \  /\  / (_) | |  | | (_| |
+ **    \__/_| |_| |_|\__,_|_|_|   \/  \/ \___/|_|  |_|\__,_|
+ **                                                         
+ **                  ___     _                              
+ **                 /   \___| |_   ___  _____               
+ **                / /\ / _ \ | | | \ \/ / _ \              
+ **               / /_//  __/ | |_| |>  <  __/              
+ **              /___,' \___|_|\__,_/_/\_\___|              
  **
  **
  **   If you have downloaded the source code for "Small World Deluxe" and are reading this,
@@ -97,8 +101,8 @@ private:
     };
 
 public:
-    explicit GkAudioDecoding(std::shared_ptr<GekkoFyre::FileIo> fileIo,
-                             QPointer<GekkoFyre::PaAudioBuf> audio_buf,
+    explicit GkAudioDecoding(QPointer<GekkoFyre::FileIo> fileIo,
+                             std::shared_ptr<GekkoFyre::PaAudioBuf<int16_t>> audio_buf,
                              std::shared_ptr<GekkoFyre::GkLevelDb> database,
                              std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs,
                              GekkoFyre::Database::Settings::Audio::GkDevice output_device,
@@ -110,8 +114,8 @@ public:
     GekkoFyre::GkAudioFramework::AudioFileInfo initAudioFileInfoStruct();
 
 private:
-    std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
-    QPointer<GekkoFyre::PaAudioBuf> gkAudioBuf;
+    QPointer<GekkoFyre::FileIo> gkFileIo;
+    std::shared_ptr<GekkoFyre::PaAudioBuf<int16_t>> gkAudioBuf;
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GkLevelDb> gkDb;
     GekkoFyre::Database::Settings::Audio::GkDevice gkOutputDev;

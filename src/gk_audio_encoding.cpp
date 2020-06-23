@@ -1,11 +1,15 @@
 /**
- **  ______  ______  ___   ___  ______  ______  ______  ______
- ** /_____/\/_____/\/___/\/__/\/_____/\/_____/\/_____/\/_____/\
- ** \:::_ \ \::::_\/\::.\ \\ \ \:::_ \ \:::_ \ \::::_\/\:::_ \ \
- **  \:\ \ \ \:\/___/\:: \/_) \ \:\ \ \ \:\ \ \ \:\/___/\:(_) ) )_
- **   \:\ \ \ \::___\/\:. __  ( (\:\ \ \ \:\ \ \ \::___\/\: __ `\ \
- **    \:\/.:| \:\____/\: \ )  \ \\:\_\ \ \:\/.:| \:\____/\ \ `\ \ \
- **     \____/_/\_____\/\__\/\__\/ \_____\/\____/_/\_____\/\_\/ \_\/
+ **     __                 _ _   __    __           _     _ 
+ **    / _\_ __ ___   __ _| | | / / /\ \ \___  _ __| | __| |
+ **    \ \| '_ ` _ \ / _` | | | \ \/  \/ / _ \| '__| |/ _` |
+ **    _\ \ | | | | | (_| | | |  \  /\  / (_) | |  | | (_| |
+ **    \__/_| |_| |_|\__,_|_|_|   \/  \/ \___/|_|  |_|\__,_|
+ **                                                         
+ **                  ___     _                              
+ **                 /   \___| |_   ___  _____               
+ **                / /\ / _ \ | | | \ \/ / _ \              
+ **               / /_//  __/ | |_| |>  <  __/              
+ **              /___,' \___|_|\__,_/_/\_\___|              
  **
  **
  **   If you have downloaded the source code for "Small World Deluxe" and are reading this,
@@ -77,8 +81,8 @@ namespace sys = boost::system;
 // Static variables
 size_t GkAudioEncoding::ogg_buf_counter = 0;
 
-GkAudioEncoding::GkAudioEncoding(std::shared_ptr<FileIo> fileIo,
-                                 QPointer<PaAudioBuf> audio_buf,
+GkAudioEncoding::GkAudioEncoding(QPointer<FileIo> fileIo,
+                                 std::shared_ptr<PaAudioBuf<int16_t>> audio_buf,
                                  std::shared_ptr<GkLevelDb> database,
                                  QPointer<GekkoFyre::SpectroGui> spectroGui,
                                  std::shared_ptr<StringFuncs> stringFuncs,
@@ -88,12 +92,12 @@ GkAudioEncoding::GkAudioEncoding(std::shared_ptr<FileIo> fileIo,
     qRegisterMetaType<GekkoFyre::GkAudioFramework::Bitrate>("GekkoFyre::GkAudioFramework::Bitrate");
     qRegisterMetaType<GekkoFyre::GkAudioFramework::CodecSupport>("GekkoFyre::GkAudioFramework::CodecSupport");
 
-    gkFileIo = fileIo;
-    gkAudioBuf = audio_buf;
-    gkStringFuncs = stringFuncs;
-    gkDb = database;
-    gkInputDev = input_device;
-    gkSpectroGui = spectroGui;
+    gkFileIo = std::move(fileIo);
+    gkAudioBuf = std::move(audio_buf);
+    gkStringFuncs = std::move(stringFuncs);
+    gkDb = std::move(database);
+    gkInputDev = std::move(input_device);
+    gkSpectroGui = std::move(spectroGui);
 
     opus_state = std::make_unique<OpusState>(AUDIO_FRAMES_PER_BUFFER, AUDIO_CODECS_OPUS_MAX_PACKETS, gkInputDev.dev_input_channel_count);
     recording_in_progress = false;
@@ -150,7 +154,7 @@ void GkAudioEncoding::recordAudioFile(const CodecSupport &codec, const Bitrate &
             std::future<std::vector<signed char>> ogg_frame_future = ogg_frame_promise.get_future();
 
             while (recording_in_progress) {
-                ogg_audio_frame_thread = std::thread(&PaAudioBuf::prepOggVorbisBuf, gkAudioBuf, std::move(ogg_frame_promise));
+                // ogg_audio_frame_thread = std::thread(&PaAudioBuf<int16_t>::prepOggVorbisBuf, gkAudioBuf, std::move(ogg_frame_promise));
                 std::vector<signed char> audio_frame_vec = ogg_frame_future.get();
 
                 if (audio_frame_vec.empty()) {

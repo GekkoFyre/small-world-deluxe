@@ -1,31 +1,35 @@
 /**
- **  ______  ______  ___   ___  ______  ______  ______  ______
- ** /_____/\/_____/\/___/\/__/\/_____/\/_____/\/_____/\/_____/\
- ** \:::_ \ \::::_\/\::.\ \\ \ \:::_ \ \:::_ \ \::::_\/\:::_ \ \
- **  \:\ \ \ \:\/___/\:: \/_) \ \:\ \ \ \:\ \ \ \:\/___/\:(_) ) )_
- **   \:\ \ \ \::___\/\:. __  ( (\:\ \ \ \:\ \ \ \::___\/\: __ `\ \
- **    \:\/.:| \:\____/\: \ )  \ \\:\_\ \ \:\/.:| \:\____/\ \ `\ \ \
- **     \____/_/\_____\/\__\/\__\/ \_____\/\____/_/\_____\/\_\/ \_\/
+ **     __                 _ _   __    __           _     _ 
+ **    / _\_ __ ___   __ _| | | / / /\ \ \___  _ __| | __| |
+ **    \ \| '_ ` _ \ / _` | | | \ \/  \/ / _ \| '__| |/ _` |
+ **    _\ \ | | | | | (_| | | |  \  /\  / (_) | |  | | (_| |
+ **    \__/_| |_| |_|\__,_|_|_|   \/  \/ \___/|_|  |_|\__,_|
+ **                                                         
+ **                  ___     _                              
+ **                 /   \___| |_   ___  _____               
+ **                / /\ / _ \ | | | \ \/ / _ \              
+ **               / /_//  __/ | |_| |>  <  __/              
+ **              /___,' \___|_|\__,_/_/\_\___|              
  **
  **
- **   If you have downloaded the source code for "Dekoder for Morse" and are reading this,
+ **   If you have downloaded the source code for "Small World Deluxe" and are reading this,
  **   then thank you from the bottom of our hearts for making use of our hard work, sweat
  **   and tears in whatever you are implementing this into!
  **
  **   Copyright (C) 2020. GekkoFyre.
  **
- **   Dekoder for Morse is free software: you can redistribute it and/or modify
+ **   Small World Deluxe is free software: you can redistribute it and/or modify
  **   it under the terms of the GNU General Public License as published by
  **   the Free Software Foundation, either version 3 of the License, or
  **   (at your option) any later version.
  **
- **   Dekoder is distributed in the hope that it will be useful,
+ **   Small world is distributed in the hope that it will be useful,
  **   but WITHOUT ANY WARRANTY; without even the implied warranty of
  **   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  **   GNU General Public License for more details.
  **
  **   You should have received a copy of the GNU General Public License
- **   along with Dekoder for Morse.  If not, see <http://www.gnu.org/licenses/>.
+ **   along with Small World Deluxe.  If not, see <http://www.gnu.org/licenses/>.
  **
  **
  **   The latest source code updates can be obtained from [ 1 ] below at your
@@ -36,6 +40,8 @@
  ****************************************************************************************************/
 
 #include "gk_frequency_list.hpp"
+#include <cmath>
+#include <cstdlib>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -200,4 +206,60 @@ void GkFreqList::publishFreqList()
     emit updateFrequencies(5760065000, DigitalModes::JT65, IARURegions::ALL, false);
 
     return;
+}
+
+/**
+ * @brief GkFreqList::approximatelyEqual checks to see if the two floating pointers are approximately
+ * equal or not.
+ * @author The Art of Computer Programming by Donald Knuth <https://en.wikipedia.org/wiki/The_Art_of_Computer_Programming>.
+ * @param a The comparison to be made against.
+ * @param b The comparison to be made towards.
+ * @param epsilon The precision, or rather, to how many digits should the comparison be equal towards.
+ * @return Whether the desired outcome was true or false.
+ */
+bool GkFreqList::approximatelyEqual(const float &a, const float &b, const float &epsilon)
+{
+    return std::fabs(a - b) <= ((std::fabs(a) < std::fabs(b) ? std::fabs(b) : std::fabs(a)) * epsilon);
+}
+
+/**
+ * @brief GkFreqList::essentiallyEqual checks to see if the two floating pointers are essentially equal
+ * or not.
+ * @author The Art of Computer Programming by Donald Knuth <https://en.wikipedia.org/wiki/The_Art_of_Computer_Programming>.
+ * @param a The comparison to be made against.
+ * @param b The comparison to be made towards.
+ * @param epsilon The precision, or rather, to how many digits should the comparison be equal towards.
+ * @return Whether the desired outcome was true or false.
+ */
+bool GkFreqList::essentiallyEqual(const float &a, const float &b, const float &epsilon)
+{
+    return std::fabs(a - b) <= ((std::fabs(a) > std::fabs(b) ? std::fabs(b) : std::fabs(a)) * epsilon);
+}
+
+/**
+ * @brief GkFreqList::definitelyGreaterThan checks to see if one of the two floating pointers are *definitely*
+ * greater than the other.
+ * @author The Art of Computer Programming by Donald Knuth <https://en.wikipedia.org/wiki/The_Art_of_Computer_Programming>.
+ * @param a The comparison to be made against.
+ * @param b The comparison to be made towards.
+ * @param epsilon The precision, or rather, to how many digits should the comparison be equal towards.
+ * @return Whether the desired outcome was true or false.
+ */
+bool GkFreqList::definitelyGreaterThan(const float &a, const float &b, const float &epsilon)
+{
+    return (a - b) > ((std::fabs(a) < std::fabs(b) ? std::fabs(b) : std::fabs(a)) * epsilon);
+}
+
+/**
+ * @brief GkFreqList::definitelyLessThan checks to see if one of the two floating pointers are *definitely*
+ * lesser than the other.
+ * @author The Art of Computer Programming by Donald Knuth <https://en.wikipedia.org/wiki/The_Art_of_Computer_Programming>.
+ * @param a The comparison to be made against.
+ * @param b The comparison to be made towards.
+ * @param epsilon The precision, or rather, to how many digits should the comparison be equal towards.
+ * @return Whether the desired outcome was true or false.
+ */
+bool GkFreqList::definitelyLessThan(const float &a, const float &b, const float &epsilon)
+{
+    return (b - a) > ((std::fabs(a) < std::fabs(b) ? std::fabs(b) : std::fabs(a)) * epsilon);
 }

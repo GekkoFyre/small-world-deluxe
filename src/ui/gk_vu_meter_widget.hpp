@@ -43,26 +43,57 @@
 
 #include "src/defines.hpp"
 #include <QObject>
+#include <QWidget>
 
 namespace GekkoFyre {
-
-class GkFreqList : public QObject {
+class GkVuMeter : public QWidget {
     Q_OBJECT
 
 public:
-    explicit GkFreqList(QObject *parent = nullptr);
-    ~GkFreqList();
+    explicit GkVuMeter(QWidget *parent = 0);
+    ~GkVuMeter();
 
-    void publishFreqList();
+    void paintEvent(QPaintEvent *event) override;
 
-    bool approximatelyEqual(const float &a, const float &b, const float &epsilon);
-    bool essentiallyEqual(const float &a, const float &b, const float &epsilon);
-    bool definitelyGreaterThan(const float &a, const float &b, const float &epsilon);
-    bool definitelyLessThan(const float &a, const float &b, const float &epsilon);
+public slots:
+    void reset();
+    void levelChanged(const qreal &rmsLevel, const qreal &peakLevel, const int &numSamples);
 
-signals:
-    void updateFrequencies(const float &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
-                           const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq);
+private slots:
+    void redrawTimerExpired();
+
+private:
+    // Height of RMS level bar.
+    // Range 0.0 - 1.0.
+    qreal m_rmsLevel;
+
+    // Most recent peak level.
+    // Range 0.0 - 1.0.
+    qreal m_peakLevel;
+
+    // Height of peak level bar.
+    // This is calculated by decaying m_peakLevel depending on the
+    // elapsed time since m_peakLevelChanged, and the value of m_decayRate.
+    qreal m_decayedPeakLevel;
+
+    // Time at which m_peakLevel was last changed.
+    QTime m_peakLevelChanged;
+
+    // Rate at which peak level bar decays.
+    // Expressed in level units / millisecond.
+    qreal m_peakDecayRate;
+
+    // High watermark of peak level.
+    // Range 0.0 - 1.0.
+    qreal m_peakHoldLevel;
+
+    // Time at which m_peakHoldLevel was last changed.
+    QTime m_peakHoldLevelChanged;
+
+    QTimer *m_redrawTimer;
+
+    QColor m_rmsColor;
+    QColor m_peakColor;
 
 };
 };

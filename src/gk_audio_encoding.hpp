@@ -1,11 +1,15 @@
 /**
- **  ______  ______  ___   ___  ______  ______  ______  ______
- ** /_____/\/_____/\/___/\/__/\/_____/\/_____/\/_____/\/_____/\
- ** \:::_ \ \::::_\/\::.\ \\ \ \:::_ \ \:::_ \ \::::_\/\:::_ \ \
- **  \:\ \ \ \:\/___/\:: \/_) \ \:\ \ \ \:\ \ \ \:\/___/\:(_) ) )_
- **   \:\ \ \ \::___\/\:. __  ( (\:\ \ \ \:\ \ \ \::___\/\: __ `\ \
- **    \:\/.:| \:\____/\: \ )  \ \\:\_\ \ \:\/.:| \:\____/\ \ `\ \ \
- **     \____/_/\_____\/\__\/\__\/ \_____\/\____/_/\_____\/\_\/ \_\/
+ **     __                 _ _   __    __           _     _ 
+ **    / _\_ __ ___   __ _| | | / / /\ \ \___  _ __| | __| |
+ **    \ \| '_ ` _ \ / _` | | | \ \/  \/ / _ \| '__| |/ _` |
+ **    _\ \ | | | | | (_| | | |  \  /\  / (_) | |  | | (_| |
+ **    \__/_| |_| |_|\__,_|_|_|   \/  \/ \___/|_|  |_|\__,_|
+ **                                                         
+ **                  ___     _                              
+ **                 /   \___| |_   ___  _____               
+ **                / /\ / _ \ | | | \ \/ / _ \              
+ **               / /_//  __/ | |_| |>  <  __/              
+ **              /___,' \___|_|\__,_/_/\_\___|              
  **
  **
  **   If you have downloaded the source code for "Small World Deluxe" and are reading this,
@@ -89,7 +93,7 @@ private:
 
     struct OpusState {
         OpusState(int max_frame_size, int max_payload_bytes, int channels): out(max_frame_size * channels),
-            fbytes(max_frame_size * channels * sizeof(decltype(out)::value_type)), data(max_payload_bytes) {}
+                  fbytes(max_frame_size * channels * sizeof(decltype(out)::value_type)), data(max_payload_bytes) {}
         std::vector<short> out;
         std::vector<unsigned char> fbytes, data;
         int32_t frameno = 0;
@@ -97,8 +101,8 @@ private:
     };
 
 public:
-    explicit GkAudioEncoding(std::shared_ptr<GekkoFyre::FileIo> fileIo,
-                             QPointer<PaAudioBuf> input_audio_buf,
+    explicit GkAudioEncoding(QPointer<GekkoFyre::FileIo> fileIo,
+                             std::shared_ptr<PaAudioBuf<int16_t>> input_audio_buf,
                              std::shared_ptr<GekkoFyre::GkLevelDb> database,
                              QPointer<SpectroGui> spectroGui,
                              std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs,
@@ -138,9 +142,9 @@ private slots:
     void recordFlac(const std::vector<short> &audio_rec, const boost::filesystem::path &filePath);
 
 private:
-    std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
+    QPointer<GekkoFyre::FileIo> gkFileIo;
     QPointer<GekkoFyre::SpectroGui> gkSpectroGui;
-    QPointer<GekkoFyre::PaAudioBuf> gkAudioBuf;
+    std::shared_ptr<GekkoFyre::PaAudioBuf<int16_t>> gkAudioBuf;
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GkLevelDb> gkDb;
     GekkoFyre::Database::Settings::Audio::GkDevice gkInputDev;

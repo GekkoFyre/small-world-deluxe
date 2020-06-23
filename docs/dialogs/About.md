@@ -1,6 +1,8 @@
 ### [Small World Deluxe](https://git.gekkofyre.io/amateur-radio/small-world-deluxe/) (pre-alpha)
 
-Copyright © 2006 to 2019 – [GekkoFyre Networks](https://gekkofyre.io/), All Rights Reserved.
+Copyright © 2019-2020 – [GekkoFyre Networks](https://gekkofyre.io/), All Rights Reserved.
+
+Authored with my beloved partner always in mind. Much love to you, Norwaro!
 
 #### Authors
 

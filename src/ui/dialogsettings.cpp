@@ -74,7 +74,7 @@ QVector<QString> DialogSettings::unique_mfgs = { "None" };
  * @param parent
  */
 DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
-                               std::shared_ptr<GekkoFyre::FileIo> filePtr,
+                               QPointer<FileIo> filePtr,
                                std::shared_ptr<GekkoFyre::AudioDevices> audioDevices,
                                QPointer<GekkoFyre::RadioLibs> radioLibs,
                                std::shared_ptr<QSettings> settings,
@@ -208,6 +208,8 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         QString usb_device_ptt = ui->comboBox_ptt_method_port->currentData().toString();
         int com_baud_rate = ui->comboBox_baud_rate->currentIndex();
         QString ptt_adv_cmd = ui->lineEdit_adv_ptt_cmd->text();
+
+        Q_UNUSED(usb_device_ptt);
 
         //
         // Chosen PortAudio API

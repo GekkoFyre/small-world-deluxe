@@ -23,7 +23,7 @@
  **   the Free Software Foundation, either version 3 of the License, or
  **   (at your option) any later version.
  **
- **   Small world is distributed in the hope that it will be useful,
+ **   Small World is distributed in the hope that it will be useful,
  **   but WITHOUT ANY WARRANTY; without even the implied warranty of
  **   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  **   GNU General Public License for more details.
@@ -42,27 +42,43 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include <QObject>
+#include <chrono>
+#include <ctime>
 
 namespace GekkoFyre {
 
-class GkFreqList : public QObject {
-    Q_OBJECT
+class GkTimer {
 
 public:
-    explicit GkFreqList(QObject *parent = nullptr);
-    ~GkFreqList();
+    void start() {
+        startTime = std::chrono::system_clock::now();
+        running = true;
+    }
 
-    void publishFreqList();
+    void stop() {
+        g_endTime = std::chrono::system_clock::now();
+        running = false;
+    }
 
-    bool approximatelyEqual(const float &a, const float &b, const float &epsilon);
-    bool essentiallyEqual(const float &a, const float &b, const float &epsilon);
-    bool definitelyGreaterThan(const float &a, const float &b, const float &epsilon);
-    bool definitelyLessThan(const float &a, const float &b, const float &epsilon);
+    double elapsedMilliseconds() {
+        std::chrono::time_point<std::chrono::system_clock> endTime;
+        if (running) {
+            endTime = std::chrono::system_clock::now();
+        } else {
+            endTime = g_endTime;
+        }
 
-signals:
-    void updateFrequencies(const float &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
-                           const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq);
+        return std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
+    }
+
+    double elapsedSeconds() {
+        return elapsedMilliseconds() / 1000.0;
+    }
+
+private:
+    std::chrono::time_point<std::chrono::system_clock> startTime;
+    std::chrono::time_point<std::chrono::system_clock> g_endTime;
+    bool running = false;
 
 };
 };
