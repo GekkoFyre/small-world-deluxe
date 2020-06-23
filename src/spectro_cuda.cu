@@ -39,24 +39,49 @@
  **
  ****************************************************************************************************/
 
-#include "gk_modem.hpp"
-
-using namespace GekkoFyre;
-using namespace Database;
-using namespace Settings;
-using namespace Audio;
+#include "spectro_cuda.h"
+#include <cufft.h>
+#include <cuda_runtime_api.h>
 
 /**
- * @brief PaMic::PaMic handles most microphone functions via PortAudio.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param parent
+ * @brief SpectroFFTW::processCUDAFFT
+ * @author Ville Räisänen <https://github.com/vsr83/QSpectrogram/blob/master/fftcuda.cu>
+ * @param inputData
+ * @param outputData
+ * @param numSamples
  */
-GkModem::GkModem(std::shared_ptr<AudioDevices> gkAudio, std::shared_ptr<GkLevelDb> dbPtr, QObject *parent)
-    : QObject(parent)
+void processCUDAFFT(int16_t *inputData, float *outputData, unsigned int numSamples)
 {
-    gkAudioDevices = std::move(gkAudio);
-    gkDb = std::move(dbPtr);
-}
+    cufftHandle plan;
+    cufftComplex *inputDataG, *outputDataG;
+    int i;
 
-GkModem::~GkModem()
-{}
+    float *inputDataC, *outputDataC;
+    outputDataC = (float *)malloc(sizeof(float) * numSamples * 2);
+    inputDataC  = (float *)malloc(sizeof(float) * numSamples * 2);
+
+    for (i = 0; i < numSamples; ++i) {
+      inputDataC[i * 2]     = inputData[i];
+      inputDataC[i * 2 + 1] = 0.0f;
+    }
+
+    cudaMalloc((void **)&inputDataG,  sizeof(cufftComplex) * numSamples);
+    cudaMalloc((void **)&outputDataG, sizeof(cufftComplex) * numSamples);
+
+    cudaMemcpy(inputDataG, inputDataC, sizeof(cufftComplex) * numSamples, cudaMemcpyHostToDevice);
+    cufftPlan1d(&plan, numSamples, CUFFT_C2C, 1);
+    cufftExecC2C(plan, inputDataG, outputDataG, CUFFT_FORWARD);
+    cufftDestroy(plan);
+    cudaMemcpy(outputDataC, outputDataG, sizeof(cufftComplex) * numSamples, cudaMemcpyDeviceToHost);
+    cudaFree(inputDataG);
+    cudaFree(outputDataG);
+
+    for (i = 0; i < numSamples; ++i) {
+        outputData[i] = outputDataC[i * 2];
+    }
+
+    free(outputDataC);
+    free(inputDataC);
+
+    return;
+}

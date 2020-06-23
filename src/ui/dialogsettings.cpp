@@ -74,13 +74,14 @@ QVector<QString> DialogSettings::unique_mfgs = { "None" };
  * @param parent
  */
 DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
-                               std::shared_ptr<GekkoFyre::FileIo> filePtr,
+                               QPointer<FileIo> filePtr,
                                std::shared_ptr<GekkoFyre::AudioDevices> audioDevices,
                                QPointer<GekkoFyre::RadioLibs> radioLibs,
                                std::shared_ptr<QSettings> settings,
                                portaudio::System *portAudioInit,
                                libusb_context *usb_lib_ctx,
                                std::shared_ptr<GkRadio> radioPtr,
+                               const std::list<GekkoFyre::Database::Settings::GkComPort> &com_ports,
                                QWidget *parent)
     : QDialog(parent), ui(new Ui::DialogSettings)
 {
@@ -97,6 +98,7 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
         gkAudioDevices = std::move(audioDevices);
         usb_ctx_ptr = std::move(usb_lib_ctx);
         gkRadioPtr = std::move(radioPtr);
+        status_com_ports = com_ports;
 
         gkSettings = settings;
         usb_ports_active = false;
@@ -127,7 +129,6 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
         // also two separate functions for enumerating out these ports!
         prefill_rig_force_ctrl_lines(ptt_type_t::RIG_PTT_SERIAL_DTR);
         prefill_rig_force_ctrl_lines(ptt_type_t::RIG_PTT_SERIAL_RTS);
-        status_com_ports = gkRadioLibs->status_com_ports();
         status_usb_devices = gkRadioLibs->enumUsbDevices(usb_ctx_ptr);
         prefill_avail_com_ports(status_com_ports);
         prefill_avail_usb_ports(status_usb_devices);
@@ -207,6 +208,8 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         QString usb_device_ptt = ui->comboBox_ptt_method_port->currentData().toString();
         int com_baud_rate = ui->comboBox_baud_rate->currentIndex();
         QString ptt_adv_cmd = ui->lineEdit_adv_ptt_cmd->text();
+
+        Q_UNUSED(usb_device_ptt);
 
         //
         // Chosen PortAudio API

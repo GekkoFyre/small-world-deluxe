@@ -62,7 +62,7 @@ public:
     explicit GkAudioPlayDialog(std::shared_ptr<GekkoFyre::GkLevelDb> database,
                                QPointer<GekkoFyre::GkAudioDecoding> audio_decoding,
                                std::shared_ptr<GekkoFyre::AudioDevices> audio_devices,
-                               std::shared_ptr<GekkoFyre::FileIo> file_io,
+                               QPointer<GekkoFyre::FileIo> file_io,
                                QWidget *parent = nullptr);
     ~GkAudioPlayDialog();
 
@@ -86,7 +86,7 @@ private:
     std::shared_ptr<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::GkAudioDecoding> gkAudioDecode;
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevs;
-    std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
+    QPointer<GekkoFyre::FileIo> gkFileIo;
 
 signals:
     void beginRecording(const bool &recording_is_started);

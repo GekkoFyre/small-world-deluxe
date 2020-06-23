@@ -1,12 +1,16 @@
 /**
- **  ______  ______  ___   ___  ______  ______  ______  ______
- ** /_____/\/_____/\/___/\/__/\/_____/\/_____/\/_____/\/_____/\
- ** \:::_ \ \::::_\/\::.\ \\ \ \:::_ \ \:::_ \ \::::_\/\:::_ \ \
- **  \:\ \ \ \:\/___/\:: \/_) \ \:\ \ \ \:\ \ \ \:\/___/\:(_) ) )_
- **   \:\ \ \ \::___\/\:. __  ( (\:\ \ \ \:\ \ \ \::___\/\: __ `\ \
- **    \:\/.:| \:\____/\: \ )  \ \\:\_\ \ \:\/.:| \:\____/\ \ `\ \ \
- **     \____/_/\_____\/\__\/\__\/ \_____\/\____/_/\_____\/\_\/ \_\/
- **
+ **     __                 _ _   __    __           _     _ 
+ **    / _\_ __ ___   __ _| | | / / /\ \ \___  _ __| | __| |
+ **    \ \| '_ ` _ \ / _` | | | \ \/  \/ / _ \| '__| |/ _` |
+ **    _\ \ | | | | | (_| | | |  \  /\  / (_) | |  | | (_| |
+ **    \__/_| |_| |_|\__,_|_|_|   \/  \/ \___/|_|  |_|\__,_|
+ **                                                         
+ **                  ___     _                              
+ **                 /   \___| |_   ___  _____               
+ **                / /\ / _ \ | | | \ \/ / _ \              
+ **               / /_//  __/ | |_| |>  <  __/              
+ **              /___,' \___|_|\__,_/_/\_\___|              
+ **                                                     
  **
  **   If you have downloaded the source code for "Small World Deluxe" and are reading this,
  **   then thank you from the bottom of our hearts for making use of our hard work, sweat
@@ -40,6 +44,7 @@
 #include <iostream>
 #include <cstdio>
 #include <exception>
+#include <climits>
 #include <sstream>
 #include <utility>
 #include <cstring>
@@ -61,11 +66,13 @@ using namespace Audio;
  * @param parent
  * @note Core Audio APIs <https://docs.microsoft.com/en-us/windows/win32/api/_coreaudio/index>
  */
-AudioDevices::AudioDevices(std::shared_ptr<GkLevelDb> gkDb, std::shared_ptr<GekkoFyre::FileIo> filePtr,
-                           std::shared_ptr<StringFuncs> stringFuncs, QObject *parent)
+AudioDevices::AudioDevices(std::shared_ptr<GkLevelDb> gkDb, QPointer<FileIo> filePtr,
+                           QPointer<GekkoFyre::GkFreqList> freqList, std::shared_ptr<StringFuncs> stringFuncs,
+                           QObject *parent)
 {
     gkDekodeDb = std::move(gkDb);
     gkFileIo = std::move(filePtr);
+    gkFreqList = std::move(freqList);
     gkStringFuncs = std::move(stringFuncs);
 }
 
@@ -229,7 +236,6 @@ std::vector<GkDevice> AudioDevices::enumAudioDevices()
     PaStreamParameters outputParameters;
     int numDevices, defaultDisplayed;
     const PaDeviceInfo *deviceInfo;
-    std::string vers_info;
     PaError err;
 
     numDevices = Pa_GetDeviceCount();
@@ -482,6 +488,7 @@ std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp(portaudio::System *portA
                 //
                 device.is_output_dev = false;
                 device.stream_parameters = *inputParameters.paStreamParameters();
+                device.cpp_stream_param = inputParameters;
                 device.supp_sample_rates = enumSupportedStdSampleRates(inputParameters.paStreamParameters(), nullptr);
             } else if (device.dev_output_channel_count > 0) {
                 //
@@ -489,6 +496,7 @@ std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp(portaudio::System *portA
                 //
                 device.is_output_dev = true;
                 device.stream_parameters = *outputParameters.paStreamParameters();
+                device.cpp_stream_param = outputParameters;
                 device.supp_sample_rates = enumSupportedStdSampleRates(nullptr, outputParameters.paStreamParameters());
             } else {
                 //
@@ -617,7 +625,7 @@ PaStreamCallbackResult AudioDevices::testSinewave(portaudio::System &portAudioSy
             portaudio::DirectionSpecificStreamParameters outputParams(portAudioSys.deviceByIndex(device.stream_parameters.device),
                                                                    device.dev_output_channel_count, portaudio::FLOAT32, false, prefOutputLatency, nullptr);
             portaudio::StreamParameters playbackBeep(portaudio::DirectionSpecificStreamParameters::null(), outputParams, device.def_sample_rate,
-                                                     AUDIO_FRAMES_PER_BUFFER, paClipOff);
+                                                     AUDIO_FRAMES_PER_BUFFER, paNoFlag);
             portaudio::MemFunCallbackStream<PaSinewave> streamPlaybackSine(playbackBeep, gkPaSinewave, &PaSinewave::generate);
 
             streamPlaybackSine.start();
@@ -640,7 +648,7 @@ PaStreamCallbackResult AudioDevices::testSinewave(portaudio::System &portAudioSy
                                                                            false, prefInputLatency, nullptr);
             portaudio::StreamParameters recordParams(inputParamsRecord, portaudio::DirectionSpecificStreamParameters::null(),
                                                      device.def_sample_rate,
-                                                     AUDIO_FRAMES_PER_BUFFER, paClipOff);
+                                                     AUDIO_FRAMES_PER_BUFFER, paNoFlag);
 
             portaudio::MemFunCallbackStream<PaSinewave> streamRecordSine(recordParams, gkPaSinewave, &PaSinewave::generate);
 
@@ -668,21 +676,90 @@ PaStreamCallbackResult AudioDevices::testSinewave(portaudio::System &portAudioSy
  * @brief AudioDevices::volumeSetting
  * @note Michael Satran & Mike Jacobs <https://docs.microsoft.com/en-us/windows/win32/coreaudio/endpoint-volume-controls>
  */
-void AudioDevices::volumeSetting()
+void AudioDevices::systemVolumeSetting()
 {}
 
 /**
- * @brief AudioDevices::vuMeter Enumerates out the Endpoint Volume Controls
+ * @brief AudioDevices::vuMeter processes a raw sound buffer and outputs a possible volume level, in decibels (dB).
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @note Define a UUID for MinGW <https://stackoverflow.com/questions/23977244/how-can-i-define-an-uuid-for-a-class-and-use-uuidof-in-the-same-way-for-g>
- * @return The Endpoint Volume Control values.
+ * @param channels How many audio channels there are, since they are interleaved. The first byte is the first channel, second
+ * byte is the second channel, etc.
+ * @param count The amount of `frames per buffer`.
+ * @param buffer The raw audiological data.
+ * @return The volume level, in decibels (dB).
+ * @note RobertT <https://stackoverflow.com/questions/2445756/how-can-i-calculate-audio-db-level>,
+ * Vassilis <https://stackoverflow.com/questions/37963115/how-to-make-smooth-levelpeak-meter-with-qt>
  */
-double AudioDevices::vuMeter()
+float AudioDevices::vuMeter(const int &channels, const int &count, int16_t *buffer)
 {
-    // TODO: Implement this section!
-    double ret_vol = 0;
+    float dB_val = 0.0f;
+    if (buffer != nullptr) {
+        int16_t max_val = buffer[0];
 
-    return ret_vol;
+        // Find maximum!
+        // Traverse the array elements from second and compare every element with current maximum...
+        for (int i = 1; i < (count * channels); ++i) {
+            if (buffer[i] > max_val) {
+                max_val = buffer[i];
+            }
+        }
+
+        float amplitude = (static_cast<float>(max_val) / SHRT_MAX);
+        dB_val = (20 * std::log10(amplitude));
+
+        // Invert from a negative to a positive!
+        // dB_val *= (-1.f);
+    }
+
+    return dB_val;
+}
+
+/**
+ * @brief AudioDevices::vuMeterPeakAmplitude traverses the buffered data array and compares every element with the current
+ * maximum to see if there's a new maximum value to be had.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param count The size of the audio data buffer.
+ * @param buffer The given audio data buffer.
+ * @return The maximum, peak audio signal for a given lot of buffered data.
+ */
+int16_t AudioDevices::vuMeterPeakAmplitude(const size_t &count, int16_t *buffer)
+{
+    int16_t peak_signal = 0;
+    if (buffer != nullptr) {
+        peak_signal = buffer[0];
+
+        // Find maximum!
+        // Traverse the array elements from second and compare every element with current maximum...
+        for (size_t i = 1; i < count; ++i) {
+            if (buffer[i] > peak_signal) {
+                peak_signal = buffer[i];
+            }
+        }
+    }
+
+    return peak_signal;
+}
+
+/**
+ * @brief AudioDevices::vuMeterRMS gathers averages from a given audio data buffer by doing a root-mean-square (i.e. RMS) on all the
+ * given samples.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param count The size of the audio data buffer.
+ * @param buffer The given audio data buffer.
+ * @return The averaged RMS of a given data buffer of audio samples.
+ * @note <https://stackoverflow.com/questions/8227030/how-to-find-highest-volume-level-of-a-wav-file-using-c>
+ */
+float AudioDevices::vuMeterRMS(const size_t &count, int16_t *buffer)
+{
+    int16_t sample = 0;
+    if (buffer != nullptr) {
+        for (size_t i = 0; i < count; ++i) {
+            sample += buffer[i] * buffer[i];
+        }
+    }
+
+    float calc_val = std::sqrt(sample / static_cast<double>(count));
+    return calc_val;
 }
 
 /**
@@ -719,8 +796,9 @@ portaudio::SampleDataFormat AudioDevices::sampleFormatConvert(const unsigned lon
  * @param device
  * @param stereo
  * @return
+ * @note Archie <https://stackoverflow.com/questions/35959523/portaudio-iterate-through-audio-data>
  */
-PaStreamCallbackResult AudioDevices::openPlaybackStream(portaudio::System &portAudioSys, PaAudioBuf *audio_buf,
+PaStreamCallbackResult AudioDevices::openPlaybackStream(portaudio::System &portAudioSys, PaAudioBuf<int16_t> *audio_buf,
                                                         const GkDevice &device, const bool &stereo)
 {
     try {
@@ -736,8 +814,8 @@ PaStreamCallbackResult AudioDevices::openPlaybackStream(portaudio::System &portA
                                                                       device.dev_output_channel_count, portaudio::FLOAT32,
                                                                       false, prefOutputLatency, nullptr);
             portaudio::StreamParameters playbackParams(portaudio::DirectionSpecificStreamParameters::null(), outputParams, device.def_sample_rate,
-                                                       AUDIO_FRAMES_PER_BUFFER, paClipOff);
-            portaudio::MemFunCallbackStream<PaAudioBuf> streamPlayback(playbackParams, *audio_buf, &PaAudioBuf::playbackCallback);
+                                                       AUDIO_FRAMES_PER_BUFFER, paNoFlag);
+            portaudio::MemFunCallbackStream<PaAudioBuf<int16_t>> streamPlayback(playbackParams, *audio_buf, &PaAudioBuf<int16_t>::playbackCallback);
 
             streamPlayback.start();
             while (streamPlayback.isActive()) {
@@ -759,81 +837,6 @@ PaStreamCallbackResult AudioDevices::openPlaybackStream(portaudio::System &portA
         QMessageBox::warning(nullptr, tr("Error!"), tr("A generic exception has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
     } catch (...) {
         QMessageBox::warning(nullptr, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), QMessageBox::Ok);
-    }
-
-    return paAbort;
-}
-
-/**
- * @brief AudioDevices::openRecordStream
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param portAudioSys
- * @param audio_buf
- * @param device
- * @param streamRecord
- * @param stereo
- * @return
- */
-PaStreamCallbackResult AudioDevices::openRecordStream(portaudio::System &portAudioSys, PaAudioBuf **audio_buf,
-                                                      const GkDevice &device,
-                                                      portaudio::MemFunCallbackStream<PaAudioBuf> **stream_record_ptr,
-                                                      const bool &stereo)
-{
-    try {
-        if (audio_buf != nullptr) {
-            std::mutex record_stream_mtx;
-            std::lock_guard<std::mutex> lck_guard(record_stream_mtx);
-            portaudio::SampleDataFormat prefDataFormat = sampleFormatConvert(portAudioSys.deviceByIndex(device.stream_parameters.device).defaultLowInputLatency());
-
-            //
-            // Recording input stream
-            //
-            portaudio::DirectionSpecificStreamParameters inputParamsRecord(portAudioSys.deviceByIndex(device.stream_parameters.device),
-                                                                           device.dev_input_channel_count, prefDataFormat,
-                                                                           false, portAudioSys.defaultInputDevice().defaultLowInputLatency(), nullptr);
-            portaudio::StreamParameters recordParams(inputParamsRecord, portaudio::DirectionSpecificStreamParameters::null(), device.def_sample_rate,
-                                                     AUDIO_FRAMES_PER_BUFFER, paClipOff);
-            portaudio::MemFunCallbackStream<PaAudioBuf> *streamRecord = new portaudio::MemFunCallbackStream<PaAudioBuf>(recordParams, **audio_buf, &PaAudioBuf::recordCallback);
-
-            *stream_record_ptr = streamRecord;
-            streamRecord->start();
-
-            return paContinue;
-        } else {
-            throw std::runtime_error(tr("You must firstly choose an input audio device within the settings!").toStdString());
-        }
-    } catch (const portaudio::PaException &e) {
-        #if defined(_MSC_VER) && (_MSC_VER > 1900)
-        HWND hwnd = nullptr;
-        gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), tr("[ PortAudio ] %1").arg(e.paErrorText()), MB_ICONERROR);
-        DestroyWindow(hwnd);
-        #else
-        gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("[ PortAudio ] %1").arg(e.paErrorText()));
-        #endif
-    } catch (const portaudio::PaCppException &e) {
-        #if defined(_MSC_VER) && (_MSC_VER > 1900)
-        HWND hwnd = nullptr;
-        gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), tr("[ PortAudioCpp ] %1").arg(e.what()), MB_ICONERROR);
-        DestroyWindow(hwnd);
-        #else
-        gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("[ PortAudioCpp ] %1").arg(e.what()));
-        #endif
-    } catch (const std::exception &e) {
-        #if defined(_MSC_VER) && (_MSC_VER > 1900)
-        HWND hwnd = nullptr;
-        gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), tr("[ Generic exception ] %1").arg(e.what()), MB_ICONERROR);
-        DestroyWindow(hwnd);
-        #else
-        gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("[ Generic exception ] %1").arg(e.what()));
-        #endif
-    } catch (...) {
-        #if defined(_MSC_VER) && (_MSC_VER > 1900)
-        HWND hwnd = nullptr;
-        gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), MB_ICONERROR);
-        DestroyWindow(hwnd);
-        #else
-        gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("An unknown exception has occurred. There are no further details."));
-        #endif
     }
 
     return paAbort;
@@ -1062,6 +1065,57 @@ QVector<PaHostApiTypeId> AudioDevices::portAudioApiChooser(const std::vector<GkD
     }
 
     return QVector<PaHostApiTypeId>();
+}
+
+/**
+ * @brief AudioDevices::calcAudioBufferTimeNeeded will calculate the maximum time required before an update is next required
+ * from a circular buffer.
+ * @param num_channels The number of audio channels we are dealing with regarding the stream in question.
+ * @param fft_samples_per_line The number of FFT Samples per Line.
+ * @param audio_buf_sampling_length The audio buffer's sampling length.
+ * @param buf_size The total size of the buffer in question.
+ * @return The amount of seconds you have in total before an update is next required from the circular buffer.
+ */
+float AudioDevices::calcAudioBufferTimeNeeded(const audio_channels &num_channels, const size_t &fft_num_lines,
+                                              const size_t &fft_samples_per_line, const size_t &audio_buf_sampling_length,
+                                              const size_t &buf_size)
+{
+    int audio_channels = 0;
+
+    switch (num_channels) {
+    case audio_channels::Mono:
+        audio_channels = 1;
+        break;
+    case audio_channels::Left:
+        audio_channels = 1;
+        break;
+    case audio_channels::Right:
+        audio_channels = 1;
+        break;
+    case audio_channels::Both:
+        audio_channels = 2;
+        break;
+    case audio_channels::Unknown:
+        audio_channels = 0;
+        break;
+    default:
+        audio_channels = 0;
+        break;
+    }
+
+    if (audio_channels > 0) {
+        // We are dealing with an audio device we can work with!
+        float seconds = (audio_buf_sampling_length - fft_samples_per_line / (fft_num_lines - 1));
+        if (gkFreqList->definitelyGreaterThan(seconds, 0.000, 3)) {
+            return seconds;
+        }
+
+        return 0.000;
+    } else {
+        throw std::invalid_argument(tr("More than zero audio channels are required!").toStdString());
+    }
+
+    return -1;
 }
 
 /**

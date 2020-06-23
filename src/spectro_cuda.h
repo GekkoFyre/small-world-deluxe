@@ -1,11 +1,15 @@
 /**
- **  ______  ______  ___   ___  ______  ______  ______  ______
- ** /_____/\/_____/\/___/\/__/\/_____/\/_____/\/_____/\/_____/\
- ** \:::_ \ \::::_\/\::.\ \\ \ \:::_ \ \:::_ \ \::::_\/\:::_ \ \
- **  \:\ \ \ \:\/___/\:: \/_) \ \:\ \ \ \:\ \ \ \:\/___/\:(_) ) )_
- **   \:\ \ \ \::___\/\:. __  ( (\:\ \ \ \:\ \ \ \::___\/\: __ `\ \
- **    \:\/.:| \:\____/\: \ )  \ \\:\_\ \ \:\/.:| \:\____/\ \ `\ \ \
- **     \____/_/\_____\/\__\/\__\/ \_____\/\____/_/\_____\/\_\/ \_\/
+ **     __                 _ _   __    __           _     _ 
+ **    / _\_ __ ___   __ _| | | / / /\ \ \___  _ __| | __| |
+ **    \ \| '_ ` _ \ / _` | | | \ \/  \/ / _ \| '__| |/ _` |
+ **    _\ \ | | | | | (_| | | |  \  /\  / (_) | |  | | (_| |
+ **    \__/_| |_| |_|\__,_|_|_|   \/  \/ \___/|_|  |_|\__,_|
+ **                                                         
+ **                  ___     _                              
+ **                 /   \___| |_   ___  _____               
+ **                / /\ / _ \ | | | \ \/ / _ \              
+ **               / /_//  __/ | |_| |>  <  __/              
+ **              /___,' \___|_|\__,_/_/\_\___|              
  **
  **
  **   If you have downloaded the source code for "Small World Deluxe" and are reading this,
@@ -37,30 +41,6 @@
 
 #pragma once
 
-#include "src/defines.hpp"
-#include "src/dek_db.hpp"
-#include "src/audio_devices.hpp"
-#include "src/pa_audio_buf.hpp"
-#include <QObject>
-#include <memory>
-#include <vector>
+typedef short int16_t;
 
-namespace GekkoFyre {
-
-class PaMic : public QObject {
-    Q_OBJECT
-
-public:
-    explicit PaMic(std::shared_ptr<GekkoFyre::AudioDevices> gkAudio, std::shared_ptr<GekkoFyre::GkLevelDb> dbPtr,
-                   QObject *parent = nullptr);
-    ~PaMic() override;
-
-    bool recordInputDevice(const Database::Settings::Audio::GkDevice &device, PaStream *stream,
-                           std::vector<short> *rec_data, const int &buffer_sec_record = 30);
-
-private:
-    std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
-    std::shared_ptr<GekkoFyre::GkLevelDb> gkDb;
-
-};
-};
+void processCUDAFFT(int16_t *inputData, float *outputData, unsigned int numSamples);

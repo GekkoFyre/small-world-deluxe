@@ -1,11 +1,15 @@
 /**
- **  ______  ______  ___   ___  ______  ______  ______  ______       
- ** /_____/\/_____/\/___/\/__/\/_____/\/_____/\/_____/\/_____/\      
- ** \:::_ \ \::::_\/\::.\ \\ \ \:::_ \ \:::_ \ \::::_\/\:::_ \ \     
- **  \:\ \ \ \:\/___/\:: \/_) \ \:\ \ \ \:\ \ \ \:\/___/\:(_) ) )_   
- **   \:\ \ \ \::___\/\:. __  ( (\:\ \ \ \:\ \ \ \::___\/\: __ `\ \  
- **    \:\/.:| \:\____/\: \ )  \ \\:\_\ \ \:\/.:| \:\____/\ \ `\ \ \ 
- **     \____/_/\_____\/\__\/\__\/ \_____\/\____/_/\_____\/\_\/ \_\/ 
+ **     __                 _ _   __    __           _     _ 
+ **    / _\_ __ ___   __ _| | | / / /\ \ \___  _ __| | __| |
+ **    \ \| '_ ` _ \ / _` | | | \ \/  \/ / _ \| '__| |/ _` |
+ **    _\ \ | | | | | (_| | | |  \  /\  / (_) | |  | | (_| |
+ **    \__/_| |_| |_|\__,_|_|_|   \/  \/ \___/|_|  |_|\__,_|
+ **                                                         
+ **                  ___     _                              
+ **                 /   \___| |_   ___  _____               
+ **                / /\ / _ \ | | | \ \/ / _ \              
+ **               / /_//  __/ | |_| |>  <  __/              
+ **              /___,' \___|_|\__,_/_/\_\___|              
  **                                                                 
  **
  **   If you have downloaded the source code for "Small World Deluxe" and are reading this,
@@ -40,6 +44,7 @@
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
 #include <boost/logic/tribool.hpp>
+#include <QPointer>
 #include <QObject>
 #include <QString>
 #include <QMap>
@@ -58,13 +63,22 @@
 #include "src/string_funcs_linux.hpp"
 #endif
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
+#ifdef __MINGW32__
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_stdinc.h>
+#endif
+
 namespace GekkoFyre {
 
 class RadioLibs : public QObject {
     Q_OBJECT
 
 public:
-    explicit RadioLibs(std::shared_ptr<GekkoFyre::FileIo> filePtr, std::shared_ptr<GekkoFyre::StringFuncs> stringPtr,
+    explicit RadioLibs(QPointer<GekkoFyre::FileIo> filePtr, std::shared_ptr<GekkoFyre::StringFuncs> stringPtr,
                        std::shared_ptr<GkLevelDb> dkDb, std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> radioPtr,
                        QObject *parent = nullptr);
     ~RadioLibs();
@@ -74,26 +88,27 @@ public:
     GekkoFyre::AmateurRadio::com_baud_rates convertBaudRateIntToEnum(const int &baud_rate);
     int convertBaudRateFromEnum(const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate);
     std::list<Database::Settings::GkComPort> status_com_ports();
-    QString translateBandsToStr(const AmateurRadio::bands &band);
+    QString translateBandsToStr(const AmateurRadio::GkFreqBands &band);
     QString hamlibModulEnumToStr(const rmode_t &modulation);
 
     GekkoFyre::AmateurRadio::GkConnType convGkConnTypeToEnum(const QString &conn_type);
     rig_port_e convGkConnTypeToHamlib(const GekkoFyre::AmateurRadio::GkConnType &conn_type);
 
-    std::shared_ptr<AmateurRadio::Control::GkRadio> gkInitRadioRig(std::shared_ptr<AmateurRadio::Control::GkRadio> radio_ptr,
-                                                                   std::shared_ptr<Database::Settings::GkUsbPort> usb_ptr);
+    void gkInitRadioRig(std::shared_ptr<AmateurRadio::Control::GkRadio> radio_ptr, std::shared_ptr<Database::Settings::GkUsbPort> usb_ptr);
+    int16_t calibrateAudioInputSignal(const int16_t *data_buf);
 
     libusb_context *initUsbLib();
     QMap<std::string, Database::Settings::GkUsbPort> enumUsbDevices(libusb_context *usb_ctx_ptr);
 
 signals:
     void gatherPortType(const bool &is_cat_mode);
+    void disconnectRigInUse(RIG *rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
 
 private:
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GekkoFyre::GkLevelDb> gkDekodeDb;
-    std::shared_ptr<GekkoFyre::FileIo> gkFileIo;
     std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> gkRadioPtr;
+    QPointer<GekkoFyre::FileIo> gkFileIo;
 
     static void hamlibStatus(const int &retcode);
     static std::string getUsbPortId(libusb_device *usb_device);
@@ -102,6 +117,12 @@ private:
     static void probe_serial8250_comports(std::list<std::string> &comList, const std::list<std::string> &comList8250);
     static void registerComPort(std::list<std::string> &comList, std::list<std::string> &comList8250,
                                 const boost::filesystem::path &dir);
+
+    #ifdef _WIN32
+    bool modalDlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon);
+    #elif __linux__ || __MINGW32__
+    bool modalDlgBoxLinux(Uint32 flags, const QString &title, const QString &msgTxt);
+    #endif
 
     template <class T>
     void removeDuplicates(std::vector<T> &vec) {
