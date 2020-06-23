@@ -159,7 +159,6 @@ private slots:
     void infoBar();
     void uponExit();
 
-    void stopAudioCodecRec(const bool &recording_is_started);
     void updateVolume(const float &value);
 
 protected slots:
@@ -251,8 +250,6 @@ private:
     //
     portaudio::AutoSystem autoSys;
     portaudio::System *gkPortAudioInit;
-    size_t input_audio_circ_buf_size;
-    size_t output_audio_circ_buf_size;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
     std::shared_ptr<GekkoFyre::PaAudioBuf<int16_t>> input_audio_buf;

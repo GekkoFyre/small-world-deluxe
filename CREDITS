@@ -70,6 +70,10 @@ Qwt by Uwe Rathmann & Josef Wilgen et al.
     <https://qwt.sourceforge.io/>
         GNU Lesser General Public License (LGPL, version 2.1)
 
+PortAudio-Wrapper by Ollie Razdow
+    <https://github.com/orazdow/PortAudio-Wrapper>
+        Public License
+
 SingleApplication by Itay Grudev
     <https://github.com/itay-grudev/SingleApplication>
         The MIT License

@@ -46,6 +46,7 @@
 #include <ostream>
 #include <cstring>
 #include <utility>
+#include <iomanip>
 #include <cmath>
 #include <iostream>
 #include <functional>
@@ -154,8 +155,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         gkVuMeter = new GkVuMeter(ui->frame_spect_vu_meter);
         ui->verticalLayout_8->addWidget(gkVuMeter);
-        input_audio_circ_buf_size = 0;
-        output_audio_circ_buf_size = 0;
 
         //
         // Initialize the default logic state on all applicable QPushButtons within QMainWindow.
@@ -377,10 +376,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         timer->start(1000);
 
         if (!pref_audio_devices.empty()) {
-            input_audio_circ_buf_size = ((pref_input_device.def_sample_rate * SPECTRO_SAMPLING_LENGTH) *
-                                        GkDb->convertAudioChannelsInt(pref_input_device.sel_channels));
-
-            input_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<int16_t>>(input_audio_circ_buf_size, pref_output_device, pref_input_device);
+            input_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<int16_t>>(AUDIO_FRAMES_PER_BUFFER, pref_output_device, pref_input_device);
         }
 
         std::thread t1(&MainWindow::infoBar, this);
@@ -403,10 +399,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             //
             // Setup the audio encoding/decoding libraries!
             //
-            output_audio_circ_buf_size = ((pref_output_device.def_sample_rate * SPECTRO_SAMPLING_LENGTH) *
-                                         GkDb->convertAudioChannelsInt(pref_output_device.sel_channels));
-
-            output_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<int16_t>>(output_audio_circ_buf_size, pref_output_device, pref_input_device);
+            output_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<int16_t>>(AUDIO_FRAMES_PER_BUFFER, pref_output_device, pref_input_device);
 
             gkAudioEncoding = new GkAudioEncoding(fileIo, input_audio_buf, GkDb, gkSpectroGui,
                                                   gkStringFuncs, pref_input_device, this);
@@ -417,8 +410,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             // Audio encoding signals and slots
             //
             gkAudioPlayDlg = new GkAudioPlayDialog(GkDb, gkAudioDecoding, gkAudioDevices, fileIo, this);
-            QObject::connect(gkAudioPlayDlg, SIGNAL(beginRecording(const bool &)), this, SLOT(stopAudioCodecRec(const bool &)));
-            QObject::connect(gkAudioPlayDlg, SIGNAL(beginRecording(const bool &)), gkAudioEncoding, SLOT(startRecording(const bool &)));
+            // QObject::connect(gkAudioPlayDlg, SIGNAL(beginRecording(const bool &)), gkAudioEncoding, SLOT(startRecording(const bool &)));
         }
 
         //
@@ -958,31 +950,33 @@ QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, rig_type>> MainWind
 void MainWindow::updateVolumeDisplayWidgets()
 {
     std::this_thread::sleep_for(std::chrono::milliseconds(2500));
-    if (inputAudioStream != nullptr && input_audio_circ_buf_size > 0) {
+    if (inputAudioStream != nullptr && AUDIO_FRAMES_PER_BUFFER > 0) {
         while (inputAudioStream->isActive()) {
             //
             // Input audio stream is open and active!
             //
-            if (input_audio_buf->full()) {
-                int16_t *buf_data = input_audio_buf->get();
-                // auto peak_amplitude = gkAudioDevices->vuMeterPeakAmplitude(input_audio_circ_buf_size, buf_data);
-                // auto vu_rms = gkAudioDevices->vuMeterRMS(input_audio_circ_buf_size, buf_data);
+            std::vector<int16_t> recv_buf;
+            while (input_audio_buf->size() > 0) {
+                recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
+                recv_buf.push_back(input_audio_buf->get());
+            }
 
+            if (!recv_buf.empty()) {
                 qreal peakLevel = 0;
                 qreal sum = 0.0;
-                for (size_t i = 0; i < input_audio_circ_buf_size; ++i) {
-                    const qint16 value = *reinterpret_cast<const qint16*>(buf_data);
-                    const qreal amplitudeToReal = (value / SHRT_MAX);
+                for (size_t i = 0; i < AUDIO_FRAMES_PER_BUFFER; ++i) {
+                    const qint16 value = *reinterpret_cast<const qint16*>(recv_buf.data());
+                    const qreal amplitudeToReal = (static_cast<qreal>(value) / SHRT_MAX);
                     peakLevel = qMax(peakLevel, amplitudeToReal);
                     sum += amplitudeToReal * amplitudeToReal;
                 }
 
-                const int numSamples = (input_audio_circ_buf_size);
+                const int numSamples = (AUDIO_FRAMES_PER_BUFFER);
                 qreal rmsLevel = std::sqrt(sum / static_cast<qreal>(numSamples));
 
                 emit refreshVuDisplay(rmsLevel, peakLevel, numSamples);
-            } else {
-                continue;
+                recv_buf.clear();
+                recv_buf.shrink_to_fit();
             }
         }
     }
@@ -1254,18 +1248,6 @@ void MainWindow::uponExit()
 }
 
 /**
- * @brief MainWindow::stopAudioCodecRec
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param recording_is_started
- */
-void MainWindow::stopAudioCodecRec(const bool &recording_is_started)
-{
-    recording_in_progress = recording_is_started;
-
-    return;
-}
-
-/**
  * @brief MainWindow::updateVolume will update the data within the circular buffer to the volume level as set
  * by the user themselves, usually from within QMainWindow.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -1315,7 +1297,9 @@ void MainWindow::on_verticalSlider_vol_control_valueChanged(int value)
                 // Input audio stream is open and active!
                 //
                 const float vol_level_decibel = (20.0f * std::log10(real_val));
-                ui->label_vol_control_disp->setText(tr("%1 dB").arg(QString::number(vol_level_decibel)));
+                std::stringstream ss;
+                ss << std::setprecision(3) << vol_level_decibel;
+                ui->label_vol_control_disp->setText(tr("%1 dB").arg(QString::fromStdString(ss.str())));
 
                 const float vol_multiplier = (1.0f * std::pow(10, (vol_level_decibel / 20.0f)));
                 emit changeVolume(vol_multiplier);
@@ -1545,9 +1529,16 @@ void MainWindow::startRecordingInput(const int &wait_time)
 {
     emit stopRecording();
 
+    // To minimise startup latency for this use-case (i.e. expecting StartStream() to give minimum
+    // startup latency) you should use the paPrimeOutputBuffersUsingStreamCallback stream flag.
+    // Otherwise the initial buffers will be zero and the time it takes for the sound to hit the
+    // DACs will include playing out the buffer length of zeros (which would be around 80ms on
+    // Windows WMME or DirectSound with the default PA settings).
     auto pa_stream_param = portaudio::StreamParameters(pref_input_device.cpp_stream_param, portaudio::DirectionSpecificStreamParameters::null(),
-                                                       pref_input_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER, paNoFlag);
-    inputAudioStream = new portaudio::MemFunCallbackStream<PaAudioBuf<int16_t>>(pa_stream_param, *input_audio_buf, &PaAudioBuf<int16_t>::recordCallback);
+                                                       pref_input_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
+                                                       paPrimeOutputBuffersUsingStreamCallback);
+    inputAudioStream = new portaudio::MemFunCallbackStream<PaAudioBuf<int16_t>>(pa_stream_param, *input_audio_buf,
+                                                                                 &PaAudioBuf<int16_t>::recordCallback);
     inputAudioStream->start();
 
     pref_input_device.is_dev_active = true; // State that this recording device is now active!
