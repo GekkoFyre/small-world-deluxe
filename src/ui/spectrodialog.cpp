@@ -50,6 +50,7 @@ SpectroDialog::SpectroDialog(QPointer<GekkoFyre::SpectroGui> spectroGui, QWidget
 
     gkSpectroGui = std::move(spectroGui);
 
+    spectrogram_is_active = false; // Spectrogram is, by default, deactivated!
     QObject::connect(ui->pushButton_activate_spectro, SIGNAL(toggled(bool)), gkSpectroGui, SLOT(showSpectrogram(bool)));
 }
 
@@ -68,8 +69,18 @@ void SpectroDialog::on_pushButton_exit_clicked()
     this->close();
 }
 
-void SpectroDialog::on_pushButton_activate_spectro_toggled(bool checked)
+void SpectroDialog::on_pushButton_activate_spectro_clicked()
 {
+    if (spectrogram_is_active) { // Spectrogram needs to be deactivated!
+        ui->pushButton_activate_spectro->setText(tr("Activate Spectrogram"));
+        spectrogram_is_active = false; // Spectrogram is no longer active!
+        emit activateSpectroWaterfall(true);
+    } else { // Now we must activate the spectrogram!
+        ui->pushButton_activate_spectro->setText(tr("Activate Waterfall"));
+        spectrogram_is_active = true; // Spectrogram is now active!
+        emit activateSpectroWaterfall(false);
+    }
+
     return;
 }
 
