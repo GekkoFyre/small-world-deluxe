@@ -104,7 +104,7 @@ void GkAudioPlayDialog::on_pushButton_playback_browse_file_loc_clicked()
 
 void GkAudioPlayDialog::on_pushButton_playback_record_toggled(bool checked)
 {
-    emit beginRecording(checked);
+    // emit beginRecording(checked);
     ui->pushButton_playback_record->setChecked(checked);
 
     return;

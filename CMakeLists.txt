@@ -311,17 +311,6 @@ endif()
 
 set_property(SOURCE ${GALAXY_PORTAUDIO_CPP} PROPERTY SKIP_AUTOUIC ON)
 
-#
-# PortAudio C++ Wrapper
-#
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/PortAudio-Wrapper")
-set(GALAXY_PORTAUDIO_WRAPPER_CPP
-    ${GALAXY_PORTAUDIO_WRAPPER_CPP}
-    src/contrib/PortAudio-Wrapper/main.cpp
-    src/contrib/PortAudio-Wrapper/pa.cpp)
-
-set_property(SOURCE ${GALAXY_PORTAUDIO_WRAPPER_CPP} PROPERTY SKIP_AUTOUIC ON)
-
 if(GFYRE_BUILD_CODEC2)
     #
     # Codec2 library
@@ -602,7 +591,7 @@ include(GNUInstallDirs)
 # Build Small World Deluxe as a static package!
 #
 if(GFYRE_BUILD_STATIC)
-    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP} ${GALAXY_PORTAUDIO_WRAPPER_CPP})
+    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP})
     add_library(galaxy_cuda STATIC ${GALAXY_CUDA})
 else()
     set(GFYRE_BUILD_SHARED ON)
@@ -612,7 +601,7 @@ endif(GFYRE_BUILD_STATIC)
 # Build Small World Deluxe as a shared package!
 #
 if(GFYRE_BUILD_SHARED)
-    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP} ${GALAXY_PORTAUDIO_WRAPPER_CPP})
+    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP})
     add_library(galaxy_cuda STATIC ${GALAXY_CUDA})
 endif(GFYRE_BUILD_SHARED)
 
