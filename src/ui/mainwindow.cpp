@@ -43,15 +43,16 @@
 #include "./../spectro_cuda.h"
 #include <boost/exception/all.hpp>
 #include <boost/chrono/chrono.hpp>
+#include <cmath>
+#include <chrono>
 #include <sstream>
 #include <ostream>
 #include <cstring>
 #include <utility>
 #include <iomanip>
-#include <cmath>
 #include <iostream>
+#include <algorithm>
 #include <functional>
-#include <chrono>
 #include <QDesktopServices>
 #include <QStandardPaths>
 #include <QPrintDialog>
@@ -1859,29 +1860,37 @@ void MainWindow::updateSpectroData()
     #else
     if (inputAudioStream != nullptr && AUDIO_FRAMES_PER_BUFFER > 0) {
         while (inputAudioStream->isActive()) {
-            //
-            // Input audio stream is open and active!
-            //
-            std::vector<int16_t> recv_buf;
-            while (input_audio_buf->size() > 0) {
-                recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
-                recv_buf.push_back(input_audio_buf->get());
-            }
-
-            if (!recv_buf.empty()) {
-                std::complex<float> *fftData = new std::complex<float>[GK_FFT_SIZE];
-                for (size_t i = 0; i < GK_FFT_SIZE; ++i) {
-                    fftData[i] = recv_buf[i];
+            std::vector<std::complex<float>> fftData;
+            fftData.reserve(GK_FFT_SIZE + 1);
+            while (fftData.size() < GK_FFT_SIZE) {
+                //
+                // Input audio stream is open and active!
+                //
+                std::vector<int16_t> recv_buf;
+                while (input_audio_buf->size() > 0) {
+                    recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
+                    recv_buf.push_back(input_audio_buf->get());
                 }
 
-                gkFFT->FFTCompute(fftData, GK_FFT_SIZE);
+                if (recv_buf.size() >= AUDIO_FRAMES_PER_BUFFER) {
+                    for (size_t i = 0; i < AUDIO_FRAMES_PER_BUFFER; ++i) {
+                        fftData.push_back(recv_buf.at(i));
+                    }
 
-                for (size_t i = 0; i < GK_FFT_SIZE; ++i) {
-                    gkSpectroGui->value(fftData[i].real(), i); // This is the data for the spectrograph / waterfall itself!
+                    recv_buf.clear();
+                    recv_buf.shrink_to_fit();
+
+                    if (fftData.size() == GK_FFT_SIZE) {
+                        gkFFT->FFTCompute(fftData.data(), GK_FFT_SIZE);
+
+                        for (size_t i = 0; i < GK_FFT_SIZE; ++i) {
+                            gkSpectroGui->value(fftData[i].real(), i); // This is the data for the spectrograph / waterfall itself!
+                        }
+
+                        fftData.clear();
+                        fftData.shrink_to_fit();
+                    }
                 }
-
-                recv_buf.clear();
-                recv_buf.shrink_to_fit();
             }
         }
     }

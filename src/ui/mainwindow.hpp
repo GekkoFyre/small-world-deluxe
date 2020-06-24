@@ -161,6 +161,9 @@ private slots:
     void infoBar();
     void uponExit();
 
+    //
+    // Audio related
+    //
     void updateVolume(const float &value);
 
 protected slots:
