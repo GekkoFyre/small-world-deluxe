@@ -40,17 +40,19 @@
 #include "aboutdialog.hpp"
 #include "spectrodialog.hpp"
 #include "./../gk_timer.hpp"
+#include "./../spectro_cuda.h"
 #include <boost/exception/all.hpp>
 #include <boost/chrono/chrono.hpp>
+#include <cmath>
+#include <chrono>
 #include <sstream>
 #include <ostream>
 #include <cstring>
 #include <utility>
 #include <iomanip>
-#include <cmath>
 #include <iostream>
+#include <algorithm>
 #include <functional>
-#include <chrono>
 #include <QDesktopServices>
 #include <QStandardPaths>
 #include <QPrintDialog>
@@ -96,7 +98,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 {
     ui->setupUi(this);
     qRegisterMetaType<std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>>("std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>");
-    qRegisterMetaType<std::vector<GekkoFyre::Spectrograph::RawFFT>>("std::vector<GekkoFyre::Spectrograph::RawFFT>");
     qRegisterMetaType<GekkoFyre::Database::Settings::GkUsbPort>("GekkoFyre::Database::Settings::GkUsbPort");
     qRegisterMetaType<GekkoFyre::AmateurRadio::GkConnType>("GekkoFyre::AmateurRadio::GkConnType");
     qRegisterMetaType<GekkoFyre::AmateurRadio::DigitalModes>("GekkoFyre::AmateurRadio::DigitalModes");
@@ -346,8 +347,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
 
         //
-        // Initialize the Circular Audio Buffer
+        // Initialize any FFT libraries/resources
         //
+        gkFFT = std::make_unique<GkFFT>();
 
         //
         // Initialize the Waterfall / Spectrograph
@@ -355,8 +357,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         gkSpectroGui = new GekkoFyre::SpectroGui(gkStringFuncs, true, false, this);
         ui->verticalLayout_11->addWidget(gkSpectroGui);
         gkSpectroGui->setEnabled(true);
-        QObject::connect(this, SIGNAL(sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const std::vector<int> &, const int &, const size_t &)),
-                         gkSpectroGui, SIGNAL(sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &, const std::vector<int> &, const int &, const size_t &)));
 
         //
         // Sound & Audio Devices
@@ -441,6 +441,10 @@ MainWindow::~MainWindow()
 
     if (vu_meter_thread.joinable()) {
         vu_meter_thread.join();
+    }
+
+    if (spectro_data_thread.joinable()) {
+        spectro_data_thread.join();
     }
 
     emit stopRecording();
@@ -955,21 +959,21 @@ void MainWindow::updateVolumeDisplayWidgets()
             //
             // Input audio stream is open and active!
             //
+            auto audio_buf_tmp = std::make_shared<PaAudioBuf<int16_t>>(*input_audio_buf);
             std::vector<int16_t> recv_buf;
-            while (input_audio_buf->size() > 0) {
+            while (audio_buf_tmp->size() > 0) {
                 recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
-                recv_buf.push_back(input_audio_buf->get());
+                recv_buf.push_back(audio_buf_tmp->get());
             }
 
             if (!recv_buf.empty()) {
                 qreal peakLevel = 0;
                 qreal sum = 0.0;
-                for (size_t i = 0; i < AUDIO_FRAMES_PER_BUFFER; ++i) {
-                    const qint16 value = *reinterpret_cast<const qint16*>(recv_buf.data());
-                    const qreal amplitudeToReal = (static_cast<qreal>(value) / SHRT_MAX);
-                    peakLevel = qMax(peakLevel, amplitudeToReal);
-                    sum += amplitudeToReal * amplitudeToReal;
-                }
+
+                const qint16 value = *reinterpret_cast<const qint16*>(recv_buf.data());
+                const qreal amplitudeToReal = (static_cast<qreal>(value) / SHRT_MAX);
+                peakLevel = qMax(peakLevel, amplitudeToReal);
+                sum += amplitudeToReal * amplitudeToReal;
 
                 const int numSamples = (AUDIO_FRAMES_PER_BUFFER);
                 qreal rmsLevel = std::sqrt(sum / static_cast<qreal>(numSamples));
@@ -1380,6 +1384,9 @@ void MainWindow::on_pushButton_radio_receive_clicked()
                             vu_meter_thread = std::thread(&MainWindow::updateVolumeDisplayWidgets, this);
                             vu_meter_thread.detach();
 
+                            spectro_data_thread = std::thread(&MainWindow::updateSpectroData, this);
+                            spectro_data_thread.detach();
+
                             changeStatusBarMsg(tr("Please wait! Beginning to receive audio..."));
 
                             return;
@@ -1544,33 +1551,6 @@ void MainWindow::startRecordingInput(const int &wait_time)
     inputAudioStream->start();
 
     pref_input_device.is_dev_active = true; // State that this recording device is now active!
-    return;
-}
-
-/**
- * @brief MainWindow::updateSpectroData
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param data
- * @param raw_audio_data
- * @param hanning_window_size
- * @param buffer_size
- */
-void MainWindow::updateSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &data,
-                                   const std::vector<int> &raw_audio_data, const int &hanning_window_size,
-                                   const size_t &buffer_size)
-{
-    try {
-        if (!data.empty()) {
-            // auto fut_spectro_gui_apply_data = std::async(std::launch::async, std::bind(&SpectroGui::applyData, gkSpectroGui, data, hanning_window_size, buffer_size));
-            emit sendSpectroData(data, raw_audio_data, hanning_window_size, buffer_size);
-
-            return;
-        }
-    } catch (const std::exception &e) {
-        QMessageBox::warning(this, tr("Error!"), tr("An issue has occurred whilst updating the spectrograph:\n\n%1").arg(e.what()),
-                             QMessageBox::Ok);
-    }
-
     return;
 }
 
@@ -1842,6 +1822,86 @@ void MainWindow::updateFreqsInMem(const float &frequency, const GekkoFyre::Amate
     return;
 }
 
+/**
+ * @brief MainWindow::updateSpectroData receives the data for the spectrograph / waterfall and processes it in lieu.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value The data to be processed on behalf of the spectrograph / waterfall.
+ */
+void MainWindow::updateSpectroData()
+{
+    #ifdef GK_CUDA_FFT_ENBL
+    //
+    // CUDA support is enabled!
+    //
+    if (inputAudioStream != nullptr && AUDIO_FRAMES_PER_BUFFER > 0) {
+        while (inputAudioStream->isActive()) {
+            //
+            // Input audio stream is open and active!
+            //
+            std::vector<int16_t> recv_buf;
+            while (input_audio_buf->size() > 0) {
+                recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
+                recv_buf.push_back(input_audio_buf->get());
+            }
+
+            if (!recv_buf.empty()) {
+                float *fftData = new float[GK_FFT_SIZE];
+                processCUDAFFT(recv_buf.data(), fftData, GK_FFT_SIZE);
+
+                for (size_t i = 0; i < GK_FFT_SIZE; ++i) {
+                    gkSpectroGui->value(fftData[i], i); // This is the data for the spectrograph / waterfall itself!
+                }
+
+                recv_buf.clear();
+                recv_buf.shrink_to_fit();
+            }
+        }
+    }
+    #else
+    if (inputAudioStream != nullptr && AUDIO_FRAMES_PER_BUFFER > 0) {
+        while (inputAudioStream->isActive()) {
+            std::vector<std::complex<float>> fftData;
+            fftData.reserve(GK_FFT_SIZE + 1);
+            while (fftData.size() < GK_FFT_SIZE) {
+                //
+                // Input audio stream is open and active!
+                //
+                auto audio_buf_tmp = std::make_shared<PaAudioBuf<int16_t>>(*input_audio_buf);
+                std::vector<int16_t> recv_buf;
+                while (audio_buf_tmp->size() > 0) {
+                    recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
+                    recv_buf.push_back(audio_buf_tmp->get());
+                }
+
+                if (!recv_buf.empty()) {
+                    fftData.push_back(*recv_buf.data());
+                    recv_buf.clear();
+                    recv_buf.shrink_to_fit();
+
+                    if (fftData.size() == GK_FFT_SIZE) {
+                        gkFFT->FFTCompute(fftData.data(), GK_FFT_SIZE);
+
+                        for (size_t i = 0; i < GK_FFT_SIZE; ++i) {
+                            gkSpectroGui->value(fftData[i].real(), i); // This is the data for the spectrograph / waterfall itself!
+                        }
+
+                        fftData.clear();
+                        fftData.shrink_to_fit();
+                    }
+                }
+            }
+        }
+    }
+    #endif
+
+    return;
+}
+
+/**
+ * @brief MainWindow::on_pushButton_radio_tune_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param checked
+ */
 void MainWindow::on_pushButton_radio_tune_clicked(bool checked)
 {
     Q_UNUSED(checked);

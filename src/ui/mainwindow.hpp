@@ -50,6 +50,7 @@
 #include "src/ui/dialogsettings.hpp"
 #include "src/gk_audio_encoding.hpp"
 #include "src/gk_audio_decoding.hpp"
+#include "src/gk_fft.hpp"
 #include "src/ui/gkaudioplaydialog.hpp"
 #include "src/ui/gk_vu_meter_widget.hpp"
 #include <boost/filesystem.hpp>
@@ -58,6 +59,7 @@
 #include <leveldb/db.h>
 #include <leveldb/status.h>
 #include <leveldb/options.h>
+#include <complex>
 #include <memory>
 #include <thread>
 #include <future>
@@ -159,15 +161,15 @@ private slots:
     void infoBar();
     void uponExit();
 
+    //
+    // Audio related
+    //
     void updateVolume(const float &value);
 
 protected slots:
     void closeEvent(QCloseEvent *event);
 
 public slots:
-    void updateSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &data,
-                           const std::vector<int> &raw_audio_data,
-                           const int &hanning_window_size, const size_t &buffer_size);
     void updateProgressBar(const bool &enable, const size_t &min, const size_t &max);
 
     //
@@ -192,9 +194,6 @@ signals:
     void updatePaVol(const int &percentage);
     void updatePlot();
     void gkExitApp();
-    void sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values,
-                         const std::vector<int> &raw_audio_data,
-                         const int &hanning_window_size, const size_t &buffer_size);
 
     //
     // Radio and Hamlib specific functions
@@ -226,6 +225,7 @@ private:
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GekkoFyre::GkCli> gkCli;
+    std::unique_ptr<GekkoFyre::GkFFT> gkFFT;
     QPointer<GekkoFyre::FileIo> fileIo;
     QPointer<GekkoFyre::GkFreqList> gkFreqList;
     QPointer<GekkoFyre::RadioLibs> gkRadioLibs;
@@ -272,6 +272,7 @@ private:
     std::future<std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>> rig_future;
     std::thread rig_thread;
     std::thread vu_meter_thread;
+    std::thread spectro_data_thread;
 
     //
     // USB & RS232
@@ -320,6 +321,7 @@ private:
     static QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>> initRadioModelsVar();
 
     void updateVolumeDisplayWidgets();
+    void updateSpectroData();
 
     void createStatusBar(const QString &statusMsg = "");
     bool changeStatusBarMsg(const QString &statusMsg = "");
@@ -327,7 +329,6 @@ private:
 };
 
 Q_DECLARE_METATYPE(std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>);
-Q_DECLARE_METATYPE(std::vector<GekkoFyre::Spectrograph::RawFFT>);
 Q_DECLARE_METATYPE(GekkoFyre::Database::Settings::GkUsbPort);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkConnType);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::DigitalModes);
