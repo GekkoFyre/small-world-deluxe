@@ -379,9 +379,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             input_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<int16_t>>(AUDIO_FRAMES_PER_BUFFER, pref_output_device, pref_input_device);
         }
 
-        std::thread t1(&MainWindow::infoBar, this);
-        t1.detach();
-
         //
         // QPrinter-specific options!
         // https://doc.qt.io/qt-5/qprinter.html

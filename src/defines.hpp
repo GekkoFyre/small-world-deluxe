@@ -145,12 +145,8 @@ namespace GekkoFyre {
 //
 // Mostly regarding FFTW functions
 //
-#define AUDIO_SIGNAL_LENGTH (2048)                      // For audio applications, '2048' seems to be a good length.
 #define SPECTRO_BANDWIDTH_MAX_SIZE (2048)               // The size and bandwidth of the spectrograph / waterfall window, in hertz.
 #define SPECTRO_BANDWIDTH_MIN_SIZE (125)                // The size and bandwidth of the spectrograph / waterfall window, in hertz.
-#define SPECTRO_SAMPLING_LENGTH (1)                     // Used for the FFT calculations primarily
-#define SPECTRO_NUM_LINES (8192)                        // Used for the FFT calculations primarily
-#define SPECTRO_SAMPLES_PER_LINE (256)                  // Used for the FFT calculations primarily
 #define GK_FFT_SIZE (4096)
 
 //
@@ -158,7 +154,6 @@ namespace GekkoFyre {
 //
 #define SPECTRO_REFRESH_CYCLE_MILLISECS (1000)          // How often the spectrograph / waterfall should update, in milliseconds.
 #define SPECTRO_TIME_UPDATE_MILLISECS (15000)           // How often, in milliseconds, the spectrograph updates the timing information on the y-axis.
-#define SPECTRO_TIME_HORIZON (60)                       // Not sure what this is, as it has been reverse engineered from something else.
 #define SPECTRO_MAX_BUFFER_SIZE (10)                    // The maximum number of items to store within the buffers associated with the spectrograph.
 #define SPECTRO_Y_AXIS_SIZE (10000)                     // The maximum size of the y-axis, in milliseconds, given that it is based on a timescale.
 
