@@ -68,17 +68,17 @@
 #include <mutex>
 #include <ctime>
 #include <list>
-#include <QMainWindow>
-#include <QPushButton>
-#include <QCommandLineParser>
+#include <QString>
 #include <QPointer>
 #include <QPrinter>
-#include <QSharedPointer>
-#include <QString>
-#include <QStringList>
 #include <QMetaType>
 #include <QDateTime>
 #include <QSettings>
+#include <QStringList>
+#include <QMainWindow>
+#include <QPushButton>
+#include <QSharedPointer>
+#include <QCommandLineParser>
 
 #ifdef _WIN32
 #include "src/string_funcs_windows.hpp"
@@ -214,6 +214,11 @@ signals:
     void stopRecording(const int &wait_time = 5000);
     void startRecording(const int &wait_time = 5000);
 
+    //
+    // Spectrograph related
+    //
+    void refreshSpectrograph(const qint64 &latest_time_update, const qint64 &time_since);
+
 private:
     Ui::MainWindow *ui;
 
@@ -272,7 +277,7 @@ private:
     std::future<std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>> rig_future;
     std::thread rig_thread;
     std::thread vu_meter_thread;
-    std::thread spectro_data_thread;
+    std::thread spectro_timing_thread;
 
     //
     // USB & RS232
@@ -291,7 +296,9 @@ private:
     //
     // Timing and date related
     //
-    QPointer<QTimer> timer;
+    QPointer<QTimer> info_timer;
+    qint64 gk_spectro_start_time;
+    qint64 gk_spectro_latest_time;
 
     //
     // This sub-section contains all the boolean variables pertaining to the QPushButtons on QMainWindow that
@@ -321,7 +328,11 @@ private:
     static QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>> initRadioModelsVar();
 
     void updateVolumeDisplayWidgets();
-    void updateSpectroData();
+
+    //
+    // Spectrograph related
+    //
+    void updateSpectrograph();
 
     void createStatusBar(const QString &statusMsg = "");
     bool changeStatusBarMsg(const QString &statusMsg = "");

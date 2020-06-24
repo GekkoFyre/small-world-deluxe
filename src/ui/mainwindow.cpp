@@ -347,9 +347,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
 
         //
-        // Initialize any FFT libraries/resources
+        // Initialize any FFT libraries/resources along with respective timers (also might apply to spectrograph!)
         //
         gkFFT = std::make_unique<GkFFT>();
+        const static qint64 start_time = QDateTime::currentMSecsSinceEpoch();
+        gk_spectro_start_time = start_time;
+        gk_spectro_latest_time = start_time;
 
         //
         // Initialize the Waterfall / Spectrograph
@@ -371,9 +374,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         prefillAmateurBands();
 
-        timer = new QTimer(this);
-        connect(timer, SIGNAL(timeout()), this, SLOT(infoBar()));
-        timer->start(1000);
+        info_timer = new QTimer(this);
+        connect(info_timer, SIGNAL(timeout()), this, SLOT(infoBar()));
+        info_timer->start(1000);
+
+        QObject::connect(this, SIGNAL(refreshSpectrograph(const qint64 &, const qint64 &)),
+                         gkSpectroGui, SLOT(refreshDateTime(const qint64 &, const qint64 &)));
 
         if (!pref_audio_devices.empty()) {
             input_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<int16_t>>(AUDIO_FRAMES_PER_BUFFER, pref_output_device, pref_input_device);
@@ -440,8 +446,8 @@ MainWindow::~MainWindow()
         vu_meter_thread.join();
     }
 
-    if (spectro_data_thread.joinable()) {
-        spectro_data_thread.join();
+    if (spectro_timing_thread.joinable()) {
+        spectro_timing_thread.join();
     }
 
     emit stopRecording();
@@ -1273,6 +1279,91 @@ void MainWindow::updateVolume(const float &value)
 }
 
 /**
+ * @brief MainWindow::updateSpectrograph continuously updates the embedded spectrograph(s) over a regular amount of time with
+ * the latest information, in order to keep the data relevant.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::updateSpectrograph()
+{
+    const qint64 refreshed_time = QDateTime::currentMSecsSinceEpoch();
+    gk_spectro_latest_time = refreshed_time;
+
+    const qint64 spectro_time_diff = gk_spectro_latest_time - gk_spectro_start_time;
+    if (spectro_time_diff > (SPECTRO_Y_AXIS_SIZE + 1000)) {
+        // Stop the y-axis from growing more than `SPECTRO_Y_AXIS_SIZE` in size!
+        gk_spectro_start_time = gk_spectro_latest_time - SPECTRO_Y_AXIS_SIZE - 1000;
+    }
+
+    #ifdef GK_CUDA_FFT_ENBL
+    //
+    // CUDA support is enabled!
+    //
+    if (inputAudioStream != nullptr && AUDIO_FRAMES_PER_BUFFER > 0) {
+        while (inputAudioStream->isActive()) {
+            //
+            // Input audio stream is open and active!
+            //
+            std::vector<int16_t> recv_buf;
+            while (input_audio_buf->size() > 0) {
+                recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
+                recv_buf.push_back(input_audio_buf->get());
+            }
+
+            if (!recv_buf.empty()) {
+                float *fftData = new float[GK_FFT_SIZE];
+                processCUDAFFT(recv_buf.data(), fftData, GK_FFT_SIZE);
+
+                for (size_t i = 0; i < GK_FFT_SIZE; ++i) {
+                    gkSpectroGui->value(fftData[i], i); // This is the data for the spectrograph / waterfall itself!
+                }
+
+                recv_buf.clear();
+                recv_buf.shrink_to_fit();
+            }
+        }
+    }
+    #else
+    if ((inputAudioStream != nullptr) && (pref_input_device.is_dev_active == true) && (AUDIO_FRAMES_PER_BUFFER > 0)) {
+        while (inputAudioStream->isActive()) {
+            std::vector<std::complex<float>> fftData;
+            fftData.reserve(GK_FFT_SIZE + 1);
+            while (fftData.size() < GK_FFT_SIZE) {
+                //
+                // Input audio stream is open and active!
+                //
+                auto audio_buf_tmp = std::make_shared<PaAudioBuf<int16_t>>(*input_audio_buf);
+                std::vector<int16_t> recv_buf;
+                while (audio_buf_tmp->size() > 0) {
+                    recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
+                    recv_buf.push_back(audio_buf_tmp->get());
+                }
+
+                if (!recv_buf.empty()) {
+                    fftData.push_back(*recv_buf.data());
+                    recv_buf.clear();
+                    recv_buf.shrink_to_fit();
+
+                    if (fftData.size() == GK_FFT_SIZE) {
+                        gkFFT->FFTCompute(fftData.data(), GK_FFT_SIZE);
+
+                        for (size_t i = 0; i < GK_FFT_SIZE; ++i) {
+                            gkSpectroGui->value(fftData[i].real(), gk_spectro_start_time); // This is the data for the spectrograph / waterfall itself!
+                            emit refreshSpectrograph(gk_spectro_latest_time, gk_spectro_start_time);
+                        }
+
+                        fftData.clear();
+                        fftData.shrink_to_fit();
+                    }
+                }
+            }
+        }
+    }
+    #endif
+
+    return;
+}
+
+/**
  * @brief MainWindow::on_verticalSlider_vol_control_valueChanged indirectly adjusts the volume of the audio data buffer itself
  * via the decibel formulae <https://en.wikipedia.org/wiki/Decibel#Acoustics>.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -1378,11 +1469,11 @@ void MainWindow::on_pushButton_radio_receive_clicked()
                             changePushButtonColor(ui->pushButton_radio_receive, false);
                             emit startRecording();
 
+                            spectro_timing_thread = std::thread(&MainWindow::updateSpectrograph, this);
+                            spectro_timing_thread.detach();
+
                             vu_meter_thread = std::thread(&MainWindow::updateVolumeDisplayWidgets, this);
                             vu_meter_thread.detach();
-
-                            spectro_data_thread = std::thread(&MainWindow::updateSpectroData, this);
-                            spectro_data_thread.detach();
 
                             changeStatusBarMsg(tr("Please wait! Beginning to receive audio..."));
 
@@ -1815,81 +1906,6 @@ void MainWindow::updateFreqsInMem(const float &frequency, const GekkoFyre::Amate
         frequencyList.reserve(1);
         frequencyList.push_back(freq);
     }
-
-    return;
-}
-
-/**
- * @brief MainWindow::updateSpectroData receives the data for the spectrograph / waterfall and processes it in lieu.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param value The data to be processed on behalf of the spectrograph / waterfall.
- */
-void MainWindow::updateSpectroData()
-{
-    #ifdef GK_CUDA_FFT_ENBL
-    //
-    // CUDA support is enabled!
-    //
-    if (inputAudioStream != nullptr && AUDIO_FRAMES_PER_BUFFER > 0) {
-        while (inputAudioStream->isActive()) {
-            //
-            // Input audio stream is open and active!
-            //
-            std::vector<int16_t> recv_buf;
-            while (input_audio_buf->size() > 0) {
-                recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
-                recv_buf.push_back(input_audio_buf->get());
-            }
-
-            if (!recv_buf.empty()) {
-                float *fftData = new float[GK_FFT_SIZE];
-                processCUDAFFT(recv_buf.data(), fftData, GK_FFT_SIZE);
-
-                for (size_t i = 0; i < GK_FFT_SIZE; ++i) {
-                    gkSpectroGui->value(fftData[i], i); // This is the data for the spectrograph / waterfall itself!
-                }
-
-                recv_buf.clear();
-                recv_buf.shrink_to_fit();
-            }
-        }
-    }
-    #else
-    if (inputAudioStream != nullptr && AUDIO_FRAMES_PER_BUFFER > 0) {
-        while (inputAudioStream->isActive()) {
-            std::vector<std::complex<float>> fftData;
-            fftData.reserve(GK_FFT_SIZE + 1);
-            while (fftData.size() < GK_FFT_SIZE) {
-                //
-                // Input audio stream is open and active!
-                //
-                auto audio_buf_tmp = std::make_shared<PaAudioBuf<int16_t>>(*input_audio_buf);
-                std::vector<int16_t> recv_buf;
-                while (audio_buf_tmp->size() > 0) {
-                    recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
-                    recv_buf.push_back(audio_buf_tmp->get());
-                }
-
-                if (!recv_buf.empty()) {
-                    fftData.push_back(*recv_buf.data());
-                    recv_buf.clear();
-                    recv_buf.shrink_to_fit();
-
-                    if (fftData.size() == GK_FFT_SIZE) {
-                        gkFFT->FFTCompute(fftData.data(), GK_FFT_SIZE);
-
-                        for (size_t i = 0; i < GK_FFT_SIZE; ++i) {
-                            gkSpectroGui->value(fftData[i].real(), i); // This is the data for the spectrograph / waterfall itself!
-                        }
-
-                        fftData.clear();
-                        fftData.shrink_to_fit();
-                    }
-                }
-            }
-        }
-    }
-    #endif
 
     return;
 }

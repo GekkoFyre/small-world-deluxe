@@ -104,10 +104,6 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         spectro_begin_time = start_time;
         spectro_latest_update = start_time; // Set the initial value for this too!
 
-        date_plotter = new QTimer(this);
-        connect(date_plotter, SIGNAL(timeout()), this, SLOT(refreshDateTime()));
-        date_plotter->start(1000);
-
         alignScales();
 
         //
@@ -190,9 +186,6 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         refresh_data_thread = std::thread(&SpectroGui::refreshData, this);
         refresh_data_thread.detach();
 
-        QObject::connect(this, SIGNAL(stopSpectroRecv(const bool &, const int &)),
-                         this, SLOT(stopSpectro(const bool &, const int &)));
-
         setAutoReplot(false);
         plotLayout()->setAlignCanvasToScales(true);
         gkSpectrogram->invalidateCache();
@@ -265,18 +258,9 @@ void SpectroGui::refreshData()
  * @brief SpectroGui::refreshDateTime refreshes any date/time objects within the spectrograph class.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void SpectroGui::refreshDateTime()
+void SpectroGui::refreshDateTime(const qint64 &latest_time_update, const qint64 &time_since)
 {
-    const qint64 refreshed_time = QDateTime::currentMSecsSinceEpoch();
-    spectro_latest_update = refreshed_time;
-
-    const qint64 time_difference = spectro_latest_update - spectro_begin_time;
-    if (time_difference > (SPECTRO_Y_AXIS_SIZE + 1000)) {
-        // Stop the y-axis from growing more than `SPECTRO_Y_AXIS_SIZE` in size!
-        spectro_begin_time = spectro_latest_update - 1000;
-    }
-
-    setAxisScale(QwtPlot::yLeft, spectro_begin_time, spectro_latest_update, 1000);
+    setAxisScale(QwtPlot::yLeft, time_since, latest_time_update, 1000);
     gkSpectrogram->invalidateCache();
     replot();
 

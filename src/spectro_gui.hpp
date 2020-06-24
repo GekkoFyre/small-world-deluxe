@@ -162,12 +162,10 @@ protected:
 
 public slots:
     void showSpectrogram(const bool &toggled);
+    void refreshDateTime(const qint64 &latest_time_update, const qint64 &time_since);
 
 protected slots:
     void refreshData();
-
-private slots:
-    void refreshDateTime();
 
 private:
     QwtPlotZoomer *zoomer;
@@ -194,7 +192,6 @@ private:
     // Date & Timing
     //
     QPointer<QTimer> refresh_data_timer;
-    QPointer<QTimer> date_plotter;
 
     //
     // Threads

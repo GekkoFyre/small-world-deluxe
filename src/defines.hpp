@@ -147,7 +147,7 @@ namespace GekkoFyre {
 //
 #define SPECTRO_BANDWIDTH_MAX_SIZE (2048)               // The size and bandwidth of the spectrograph / waterfall window, in hertz.
 #define SPECTRO_BANDWIDTH_MIN_SIZE (125)                // The size and bandwidth of the spectrograph / waterfall window, in hertz.
-#define GK_FFT_SIZE (4096)
+#define GK_FFT_SIZE (256)
 
 //
 // Concerns spectrograph / waterfall calculations and settings
