@@ -100,19 +100,35 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         gkSpectrogram->setData(new GkSpectroData());
         gkSpectrogram->attach(this);
 
+        const static qint64 start_time = QDateTime::currentMSecsSinceEpoch();
+        spectro_begin_time = start_time;
+        spectro_latest_update = start_time; // Set the initial value for this too!
+
         alignScales();
 
-        const QwtInterval zInterval = gkSpectrogram->data()->interval(Qt::ZAxis);
-
         //
-        // Colour Bar on the right axis
+        // Setup y-axis scaling
+        // https://www.qtcentre.org/threads/55345-QwtPlot-problem-with-date-time-label-at-major-ticks
+        // https://stackoverflow.com/questions/57342087/qwtplotspectrogram-with-log-scales
         //
-        QwtScaleWidget *rightAxis = axisWidget(QwtPlot::yRight);
-        rightAxis->setTitle(tr("Intensity"));
-        rightAxis->setColorBarEnabled(true);
+        setAxisTitle(QwtPlot::yLeft, tr("Time (secs ago)"));
+        setAxisLabelRotation(QwtPlot::yLeft, -50.0); // Puts the label markings (i.e. frequency response labels) at an angle
+        setAxisLabelAlignment(QwtPlot::yLeft, Qt::AlignVCenter | Qt::AlignVCenter);
 
-        setAxisScale(QwtPlot::yRight, zInterval.minValue(), zInterval.maxValue());
-        enableAxis(QwtPlot::yRight);
+        date_scale_draw = new QwtDateScaleDraw(Qt::UTC);
+        date_scale_engine = new QwtDateScaleEngine(Qt::UTC);
+        date_scale_draw->setTimeSpec(Qt::TimeSpec::UTC);
+        date_scale_engine->setTimeSpec(Qt::TimeSpec::UTC);
+        date_scale_draw->setDateFormat(QwtDate::Second, tr("hh:mm:ss"));
+
+        setAxisScaleDraw(QwtPlot::yLeft, date_scale_draw);
+        setAxisScaleEngine(QwtPlot::yLeft, date_scale_engine);
+        date_scale_engine->divideScale(spectro_begin_time, spectro_latest_update, y_axis_num_major_steps,
+                                       y_axis_num_minor_steps, y_axis_step_size);
+
+        // const QwtInterval zInterval = gkSpectrogram->data()->interval(Qt::ZAxis);
+        setAxisScale(QwtPlot::yLeft, spectro_begin_time, spectro_latest_update, 1000);
+        enableAxis(QwtPlot::yLeft);
 
         //
         // https://qwt.sourceforge.io/class_qwt_matrix_raster_data.html#a69db38d8f920edb9dc3f0953ca16db8f
@@ -125,35 +141,20 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         grid->attach(this);
 
         QwtPlotCurve *curve = new QwtPlotCurve();
-        curve->setTitle("Some Points");
-        curve->setPen(Qt::red, 4),
+        curve->setTitle("Frequency Response");
+        curve->setPen(Qt::black, 4);
         curve->setRenderHint(QwtPlotItem::RenderAntialiased, true);
 
         //
-        // Setup y-axis scaling
-        // https://www.qtcentre.org/threads/55345-QwtPlot-problem-with-date-time-label-at-major-ticks
-        // https://stackoverflow.com/questions/57342087/qwtplotspectrogram-with-log-scales
+        // Colour Bar on the right axis
         //
-        date_scale_draw = new QwtDateScaleDraw(Qt::UTC);
-        date_scale_engine = new QwtDateScaleEngine(Qt::UTC);
-        date_scale_draw->setTimeSpec(Qt::TimeSpec::UTC);
-        date_scale_engine->setTimeSpec(Qt::TimeSpec::UTC);
-        date_scale_draw->setDateFormat(QwtDate::Second, tr("hh:mm:ss"));
-
         right_axis = axisWidget(QwtPlot::xTop);
-        right_axis->setTitle(tr("Intensity"));
+        right_axis->setTitle(tr("Bandwidth (Hz)"));
         right_axis->setColorBarWidth(16);
         right_axis->setColorBarEnabled(true);
         right_axis->setColorMap(gkSpectrogram->data()->interval(Qt::ZAxis), colour_map);
         right_axis->setEnabled(true);
         enableAxis(QwtPlot::xTop);
-
-        //
-        // Setup x-axis scaling
-        //
-        setAxisTitle(QwtPlot::xBottom, tr("Frequency (Hz)"));
-        setAxisLabelRotation(QwtPlot::xBottom, -50.0); // Puts the label markings (i.e. frequency response labels) at an angle
-        setAxisLabelAlignment(QwtPlot::xBottom, Qt::AlignCenter | Qt::AlignBottom);
 
         //
         // Instructions!
@@ -182,12 +183,8 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         QObject::connect(refresh_data_timer, SIGNAL(timeout()), this, SLOT(refreshData()));
         refresh_data_timer->start(SPECTRO_REFRESH_CYCLE_MILLISECS);
 
-
         refresh_data_thread = std::thread(&SpectroGui::refreshData, this);
         refresh_data_thread.detach();
-
-        QObject::connect(this, SIGNAL(stopSpectroRecv(const bool &, const int &)),
-                         this, SLOT(stopSpectro(const bool &, const int &)));
 
         setAutoReplot(false);
         plotLayout()->setAlignCanvasToScales(true);
@@ -254,6 +251,19 @@ void SpectroGui::showSpectrogram(const bool &toggled)
  */
 void SpectroGui::refreshData()
 {
+    return;
+}
+
+/**
+ * @brief SpectroGui::refreshDateTime refreshes any date/time objects within the spectrograph class.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void SpectroGui::refreshDateTime(const qint64 &latest_time_update, const qint64 &time_since)
+{
+    setAxisScale(QwtPlot::yLeft, time_since, latest_time_update, 1000);
+    gkSpectrogram->invalidateCache();
+    replot();
+
     return;
 }
 

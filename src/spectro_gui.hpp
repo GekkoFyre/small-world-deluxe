@@ -61,9 +61,11 @@
 #include <cmath>
 #include <thread>
 #include <future>
+#include <QTimer>
 #include <QObject>
 #include <QWidget>
 #include <QVector>
+#include <QPointer>
 #include <QDateTime>
 #include <QMouseEvent>
 
@@ -160,6 +162,7 @@ protected:
 
 public slots:
     void showSpectrogram(const bool &toggled);
+    void refreshDateTime(const qint64 &latest_time_update, const qint64 &time_since);
 
 protected slots:
     void refreshData();
@@ -174,6 +177,8 @@ private:
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     GekkoFyre::Spectrograph::GkColorMap gkMapType;
     int gkAlpha;                                                // Controls the alpha value of the waterfall chart.
+    qint64 spectro_begin_time;                                  // The time at which the spectrograph was initialized.
+    qint64 spectro_latest_update;                               // The latest time for when the spectrograph was updated with new data/information.
 
     Spectrograph::MatrixData calc_z_history;
     std::vector<int> raw_plot_data;
@@ -186,8 +191,7 @@ private:
     //
     // Date & Timing
     //
-    QTimer *date_plotter;
-    QTimer *refresh_data_timer;
+    QPointer<QTimer> refresh_data_timer;
 
     //
     // Threads
