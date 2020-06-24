@@ -347,12 +347,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
 
         //
-        // Initialize any FFT libraries/resources along with respective timers (also might apply to spectrograph!)
+        // Initialize any FFT libraries/resources
         //
         gkFFT = std::make_unique<GkFFT>();
-        const static qint64 start_time = QDateTime::currentMSecsSinceEpoch();
-        gk_spectro_start_time = start_time;
-        gk_spectro_latest_time = start_time;
 
         //
         // Initialize the Waterfall / Spectrograph
@@ -1285,14 +1282,9 @@ void MainWindow::updateVolume(const float &value)
  */
 void MainWindow::updateSpectrograph()
 {
-    const qint64 refreshed_time = QDateTime::currentMSecsSinceEpoch();
-    gk_spectro_latest_time = refreshed_time;
-
-    const qint64 spectro_time_diff = gk_spectro_latest_time - gk_spectro_start_time;
-    if (spectro_time_diff > (SPECTRO_Y_AXIS_SIZE + 1000)) {
-        // Stop the y-axis from growing more than `SPECTRO_Y_AXIS_SIZE` in size!
-        gk_spectro_start_time = gk_spectro_latest_time - SPECTRO_Y_AXIS_SIZE - 1000;
-    }
+    const qint64 start_time = QDateTime::currentMSecsSinceEpoch();
+    gk_spectro_start_time = start_time;
+    gk_spectro_latest_time = start_time;
 
     #ifdef GK_CUDA_FFT_ENBL
     //
@@ -1327,6 +1319,7 @@ void MainWindow::updateSpectrograph()
         while (inputAudioStream->isActive()) {
             std::vector<std::complex<float>> fftData;
             fftData.reserve(GK_FFT_SIZE + 1);
+            const qint64 measure_start_time = QDateTime::currentMSecsSinceEpoch();
             while (fftData.size() < GK_FFT_SIZE) {
                 //
                 // Input audio stream is open and active!
@@ -1345,6 +1338,19 @@ void MainWindow::updateSpectrograph()
 
                     if (fftData.size() == GK_FFT_SIZE) {
                         gkFFT->FFTCompute(fftData.data(), GK_FFT_SIZE);
+
+                        //
+                        // Perform the timing and date calculations!
+                        //
+                        const qint64 measure_end_time = QDateTime::currentMSecsSinceEpoch(); // The end time at the finalization of all calculations
+                        const qint64 total_calc_time = measure_end_time - measure_start_time; // The total time it took to calculate everything
+                        gk_spectro_latest_time = measure_end_time;
+
+                        const qint64 spectro_time_diff = total_calc_time;
+                        if (spectro_time_diff > SPECTRO_Y_AXIS_SIZE) {
+                            // Stop the y-axis from growing more than `SPECTRO_Y_AXIS_SIZE` in size!
+                            gk_spectro_start_time = gk_spectro_latest_time - SPECTRO_Y_AXIS_SIZE;
+                        }
 
                         for (size_t i = 0; i < GK_FFT_SIZE; ++i) {
                             gkSpectroGui->value(fftData[i].real(), gk_spectro_start_time); // This is the data for the spectrograph / waterfall itself!
