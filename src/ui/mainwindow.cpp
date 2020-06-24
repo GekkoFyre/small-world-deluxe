@@ -959,21 +959,21 @@ void MainWindow::updateVolumeDisplayWidgets()
             //
             // Input audio stream is open and active!
             //
+            auto audio_buf_tmp = std::make_shared<PaAudioBuf<int16_t>>(*input_audio_buf);
             std::vector<int16_t> recv_buf;
-            while (input_audio_buf->size() > 0) {
+            while (audio_buf_tmp->size() > 0) {
                 recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
-                recv_buf.push_back(input_audio_buf->get());
+                recv_buf.push_back(audio_buf_tmp->get());
             }
 
             if (!recv_buf.empty()) {
                 qreal peakLevel = 0;
                 qreal sum = 0.0;
-                for (size_t i = 0; i < AUDIO_FRAMES_PER_BUFFER; ++i) {
-                    const qint16 value = *reinterpret_cast<const qint16*>(recv_buf.data());
-                    const qreal amplitudeToReal = (static_cast<qreal>(value) / SHRT_MAX);
-                    peakLevel = qMax(peakLevel, amplitudeToReal);
-                    sum += amplitudeToReal * amplitudeToReal;
-                }
+
+                const qint16 value = *reinterpret_cast<const qint16*>(recv_buf.data());
+                const qreal amplitudeToReal = (static_cast<qreal>(value) / SHRT_MAX);
+                peakLevel = qMax(peakLevel, amplitudeToReal);
+                sum += amplitudeToReal * amplitudeToReal;
 
                 const int numSamples = (AUDIO_FRAMES_PER_BUFFER);
                 qreal rmsLevel = std::sqrt(sum / static_cast<qreal>(numSamples));
@@ -1823,7 +1823,7 @@ void MainWindow::updateFreqsInMem(const float &frequency, const GekkoFyre::Amate
 }
 
 /**
- * @brief MainWindow::recvSpectroData receives the data for the spectrograph / waterfall and processes it in lieu.
+ * @brief MainWindow::updateSpectroData receives the data for the spectrograph / waterfall and processes it in lieu.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param value The data to be processed on behalf of the spectrograph / waterfall.
  */
@@ -1866,17 +1866,15 @@ void MainWindow::updateSpectroData()
                 //
                 // Input audio stream is open and active!
                 //
+                auto audio_buf_tmp = std::make_shared<PaAudioBuf<int16_t>>(*input_audio_buf);
                 std::vector<int16_t> recv_buf;
-                while (input_audio_buf->size() > 0) {
+                while (audio_buf_tmp->size() > 0) {
                     recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
-                    recv_buf.push_back(input_audio_buf->get());
+                    recv_buf.push_back(audio_buf_tmp->get());
                 }
 
-                if (recv_buf.size() >= AUDIO_FRAMES_PER_BUFFER) {
-                    for (size_t i = 0; i < AUDIO_FRAMES_PER_BUFFER; ++i) {
-                        fftData.push_back(recv_buf.at(i));
-                    }
-
+                if (!recv_buf.empty()) {
+                    fftData.push_back(*recv_buf.data());
                     recv_buf.clear();
                     recv_buf.shrink_to_fit();
 
