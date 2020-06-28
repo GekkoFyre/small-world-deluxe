@@ -315,8 +315,8 @@
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>346</width>
-                      <height>287</height>
+                      <width>696</width>
+                      <height>575</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_20">
@@ -435,8 +435,8 @@
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>502</width>
-                      <height>355</height>
+                      <width>696</width>
+                      <height>575</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_23">
@@ -950,12 +950,15 @@
                                <number>0</number>
                               </property>
                               <item row="0" column="0">
-                               <widget class="QCheckBox" name="checkBox_formatted_audio_devices">
+                               <widget class="QCheckBox" name="checkBox_init_rx_audio_upon_start">
                                 <property name="toolTip">
                                  <string>Whether you want the audio devices to appear in a formatted manner or not.</string>
                                 </property>
                                 <property name="text">
-                                 <string>Formatted Audio Devices</string>
+                                 <string>Initialize RX Audio Device upon Start</string>
+                                </property>
+                                <property name="checked">
+                                 <bool>true</bool>
                                 </property>
                                </widget>
                               </item>
@@ -1074,8 +1077,8 @@
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>212</width>
-                      <height>129</height>
+                      <width>696</width>
+                      <height>575</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_28">

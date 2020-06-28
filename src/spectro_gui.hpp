@@ -134,7 +134,7 @@ public:
     }
 };
 
-class GkSpectrograph: public QwtPlot, public GkSpectroData {
+class GkSpectrograph: public QwtPlot, public GkSpectroData, public QwtMatrixRasterData {
     Q_OBJECT
 
 public:
@@ -164,15 +164,12 @@ public slots:
     void showSpectrogram(const bool &toggled);
     void refreshDateTime(const qint64 &latest_time_update, const qint64 &time_since);
 
-protected slots:
-    void refreshData();
-
 private:
     QwtPlotZoomer *zoomer;
     LinearColorMapRGB *colour_map;
     QwtDateScaleDraw *date_scale_draw;
     QwtDateScaleEngine *date_scale_engine;
-    QwtScaleWidget *right_axis;
+    QwtScaleWidget *top_x_axis;
 
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     GekkoFyre::Spectrograph::GkColorMap gkMapType;
@@ -191,12 +188,10 @@ private:
     //
     // Date & Timing
     //
-    QPointer<QTimer> refresh_data_timer;
 
     //
     // Threads
     //
-    std::thread refresh_data_thread;
 
     template<class in_it, class out_it>
     out_it copy_every_nth(in_it b, in_it e, out_it r, size_t n) {

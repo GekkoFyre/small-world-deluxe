@@ -235,7 +235,8 @@ namespace Database {
             TXAudioSrc,
             PTTMode,
             SplitOperation,
-            PTTAdvCmd
+            PTTAdvCmd,
+            RXAudioInitStart
         };
 
         enum audio_cfg {

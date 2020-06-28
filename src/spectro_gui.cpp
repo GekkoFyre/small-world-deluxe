@@ -148,12 +148,12 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         //
         // Colour Bar on the right axis
         //
-        right_axis = axisWidget(QwtPlot::xTop);
-        right_axis->setTitle(tr("Bandwidth (Hz)"));
-        right_axis->setColorBarWidth(16);
-        right_axis->setColorBarEnabled(true);
-        right_axis->setColorMap(gkSpectrogram->data()->interval(Qt::ZAxis), colour_map);
-        right_axis->setEnabled(true);
+        top_x_axis = axisWidget(QwtPlot::xTop);
+        top_x_axis->setTitle(tr("Bandwidth (Hz)"));
+        top_x_axis->setColorBarWidth(16);
+        top_x_axis->setColorBarEnabled(true);
+        top_x_axis->setColorMap(gkSpectrogram->data()->interval(Qt::ZAxis), colour_map);
+        top_x_axis->setEnabled(true);
         enableAxis(QwtPlot::xTop);
 
         //
@@ -178,13 +178,6 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         const QColor c(Qt::darkBlue);
         zoomer->setRubberBandPen(c);
         zoomer->setTrackerPen(c);
-
-        refresh_data_timer = new QTimer(this);
-        QObject::connect(refresh_data_timer, SIGNAL(timeout()), this, SLOT(refreshData()));
-        refresh_data_timer->start(SPECTRO_REFRESH_CYCLE_MILLISECS);
-
-        refresh_data_thread = std::thread(&SpectroGui::refreshData, this);
-        refresh_data_thread.detach();
 
         setAutoReplot(false);
         plotLayout()->setAlignCanvasToScales(true);
@@ -241,15 +234,6 @@ void SpectroGui::alignScales()
 }
 
 void SpectroGui::showSpectrogram(const bool &toggled)
-{
-    return;
-}
-
-/**
- * @brief SpectroGui::refreshData
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void SpectroGui::refreshData()
 {
     return;
 }

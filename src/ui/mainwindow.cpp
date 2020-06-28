@@ -419,6 +419,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         on_checkBox_rx_tx_vol_toggle_stateChanged(rx_vol_control_selected);
         QObject::connect(this, SIGNAL(changeVolume(const float &)), this, SLOT(updateVolume(const float &)));
 
+        if (input_audio_buf.get() != nullptr) {
+            if (pref_input_device.dev_number > 0 && pref_input_device.dev_input_channel_count > 0) {
+                on_pushButton_radio_receive_clicked();
+            }
+        }
+
         if (gkRadioPtr->freq > 0.0) {
             ui->label_freq_large->setText(QString::number(gkRadioPtr->freq));
         } else {
@@ -1352,12 +1358,39 @@ void MainWindow::updateSpectrograph()
                             gk_spectro_start_time = gk_spectro_latest_time - SPECTRO_Y_AXIS_SIZE;
                         }
 
+                        //
+                        // In order to get the frequency information for each audio sample, you must:
+                        // 1) Use a real-to-complex FFT of size N to generate frequency domain data.
+                        // 2) Calculate the magnitude of your complex frequency domain data (i.e., `magnitude = std::sqrt(re^2 + im^2)`).
+                        // 3) Optionally convert magnitude to a log scale (dB) (i.e., `magnitude_dB = 20 * std::log10(magnitude)`).
+                        //
+
+                        std::vector<float> magnitude_buf;
+                        magnitude_buf.reserve(fftData.size() + 1);
+                        for (const auto &calc: fftData) {
+                            const float magnitude = std::sqrt(std::pow(calc.real(), 2) + std::pow(calc.imag(), 2));
+                            magnitude_buf.push_back(magnitude);
+                        }
+
+                        std::vector<float> freq_list;
+
+                        std::vector<float> magnitude_db_buf;
+                        magnitude_buf.reserve(magnitude_buf.size() + 1);
+                        for (const auto &calc: magnitude_buf) {
+                            const float magnitude_db = 20 * std::log10(calc);
+                            magnitude_db_buf.push_back(magnitude_db);
+                        }
+
                         for (size_t i = 0; i < GK_FFT_SIZE; ++i) {
-                            gkSpectroGui->value(fftData[i].real(), gk_spectro_start_time); // This is the data for the spectrograph / waterfall itself!
+                            gkSpectroGui->setValue(gk_spectro_start_time, fftData[i].real(), magnitude_db_buf[i]); // This is the data for the spectrograph / waterfall itself!
                             emit refreshSpectrograph(gk_spectro_latest_time, gk_spectro_start_time);
                         }
 
+                        magnitude_buf.clear();
+                        magnitude_db_buf.clear();
                         fftData.clear();
+                        magnitude_buf.shrink_to_fit();
+                        magnitude_db_buf.shrink_to_fit();
                         fftData.shrink_to_fit();
                     }
                 }
