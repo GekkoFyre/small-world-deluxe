@@ -61,6 +61,7 @@
 #include <cmath>
 #include <thread>
 #include <future>
+#include <memory>
 #include <QTimer>
 #include <QObject>
 #include <QWidget>
@@ -94,26 +95,10 @@ public:
     }
 };
 
-/**
- * @brief The GkSpectroData class creates the coloured spectrogram plots.
- */
-class GkSpectroData: public QwtRasterData {
+class GkSpectroRasterData: public QwtPlotSpectrogram {
 
 public:
-    GkSpectroData() {
-        // Example: https://stackoverflow.com/questions/35563246/qwtplotspectrogram-doesnt-work-no-imagemode-plot
-        // setInterval(Qt::XAxis, QwtInterval(-1.5, 1.5));
-        // setInterval(Qt::YAxis, QwtInterval(-1.5, 1.5));
-        // setInterval(Qt::ZAxis, QwtInterval(0.0, 10.0));
-    }
-
-    virtual double value(double x, double y) const {
-        const double c = 0.842;
-        const double v1 = x * x + (y - c) * (y + c);
-        const double v2 = x * (y + c) + x * (y + c);
-
-        return (1.0 / (v1 * v1 + v2 * v2));
-    }
+    void draw(QPainter *painter, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRectF &canvasRect) const override;
 };
 
 /**
@@ -134,7 +119,7 @@ public:
     }
 };
 
-class GkSpectrograph: public QwtPlot, public GkSpectroData, public QwtMatrixRasterData {
+class GkSpectrograph: public QwtPlot {
     Q_OBJECT
 
 public:
@@ -144,7 +129,7 @@ protected:
     void mouseDoubleClickEvent(QMouseEvent *e);
 };
 
-class SpectroGui: public GkSpectrograph {
+class SpectroGui: public GkSpectrograph, public GkSpectroRasterData {
     Q_OBJECT
 
 public:
@@ -152,10 +137,9 @@ public:
                const bool &enableZoomer = false, QWidget *parent = nullptr);
     ~SpectroGui();
 
-    QwtPlotSpectrogram *gkSpectrogram;
-
     void setAlpha(const int &alpha);
     void setTheme(const QColor &colour);
+    void insertData(const int &row, const int &col, const double &value);
 
 protected:
     void alignScales();
@@ -170,6 +154,7 @@ private:
     QwtDateScaleDraw *date_scale_draw;
     QwtDateScaleEngine *date_scale_engine;
     QwtScaleWidget *top_x_axis;
+    std::unique_ptr<QwtMatrixRasterData> gkMatrixData;
 
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     GekkoFyre::Spectrograph::GkColorMap gkMapType;
@@ -177,13 +162,13 @@ private:
     qint64 spectro_begin_time;                                  // The time at which the spectrograph was initialized.
     qint64 spectro_latest_update;                               // The latest time for when the spectrograph was updated with new data/information.
 
-    Spectrograph::MatrixData calc_z_history;
-    std::vector<int> raw_plot_data;
-
-    size_t y_axis_num_minor_steps;
-    size_t y_axis_num_major_steps;
+    double y_axis_num_minor_steps;
+    double y_axis_num_major_steps;
     double y_axis_step_size;
     bool enablePlotRefresh;
+
+    int x_axis_bandwidth_min_size;
+    int x_axis_bandwidth_max_size;
 
     //
     // Date & Timing

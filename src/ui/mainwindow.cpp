@@ -1291,6 +1291,7 @@ void MainWindow::updateSpectrograph()
     const qint64 start_time = QDateTime::currentMSecsSinceEpoch();
     gk_spectro_start_time = start_time;
     gk_spectro_latest_time = start_time;
+    static int row_counter = 0;
 
     #ifdef GK_CUDA_FFT_ENBL
     //
@@ -1365,25 +1366,27 @@ void MainWindow::updateSpectrograph()
                         // 3) Optionally convert magnitude to a log scale (dB) (i.e., `magnitude_dB = 20 * std::log10(magnitude)`).
                         //
 
-                        std::vector<float> magnitude_buf;
+                        std::vector<double> magnitude_buf;
                         magnitude_buf.reserve(fftData.size() + 1);
                         for (const auto &calc: fftData) {
-                            const float magnitude = std::sqrt(std::pow(calc.real(), 2) + std::pow(calc.imag(), 2));
+                            const double magnitude = std::sqrt(std::pow(calc.real(), 2) + std::pow(calc.imag(), 2));
                             magnitude_buf.push_back(magnitude);
                         }
 
                         std::vector<float> freq_list;
 
-                        std::vector<float> magnitude_db_buf;
+                        std::vector<double> magnitude_db_buf;
                         magnitude_buf.reserve(magnitude_buf.size() + 1);
                         for (const auto &calc: magnitude_buf) {
-                            const float magnitude_db = 20 * std::log10(calc);
+                            const double magnitude_db = 20 * std::log10(calc);
                             magnitude_db_buf.push_back(magnitude_db);
                         }
 
                         for (size_t i = 0; i < GK_FFT_SIZE; ++i) {
-                            gkSpectroGui->setValue(gk_spectro_start_time, fftData[i].real(), magnitude_db_buf[i]); // This is the data for the spectrograph / waterfall itself!
+                            auto abs_val = std::abs(fftData[i]) / ((float)GK_FFT_SIZE);
+                            gkSpectroGui->insertData(row_counter, abs_val, magnitude_db_buf[i]); // This is the data for the spectrograph / waterfall itself!
                             emit refreshSpectrograph(gk_spectro_latest_time, gk_spectro_start_time);
+                            ++row_counter;
                         }
 
                         magnitude_buf.clear();
