@@ -89,13 +89,6 @@ void SpectroDialog::on_comboBox_fft_size_currentIndexChanged(int index)
     return;
 }
 
-void SpectroDialog::on_verticalSlider_control_alpha_valueChanged(int value)
-{
-    gkSpectroGui->setAlpha(value);
-
-    return;
-}
-
 void SpectroDialog::on_pushButton_export_graph_clicked()
 {
     QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);

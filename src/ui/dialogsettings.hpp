@@ -159,6 +159,16 @@ private slots:
     //
     void on_DialogSettings_rejected();
 
+    //
+    // Spectrograph & Waterfall
+    //
+    void on_spinBox_spectro_min_freq_valueChanged(int arg1);
+    void on_spinBox_spectro_max_freq_valueChanged(int arg1);
+    void on_horizontalSlider_spectro_min_freq_sliderMoved(int position);
+    void on_horizontalSlider_spectro_max_freq_sliderMoved(int position);
+    void on_horizontalSlider_spectro_min_freq_valueChanged(int value);
+    void on_horizontalSlider_spectro_max_freq_valueChanged(int value);
+
 signals:
     void usbPortsDisabled(const bool &active);
     void comPortsDisabled(const bool &active);

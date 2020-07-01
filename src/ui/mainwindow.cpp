@@ -354,7 +354,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the Waterfall / Spectrograph
         //
-        gkSpectroGui = new GekkoFyre::SpectroGui(gkStringFuncs, true, false, this);
+        gkSpectroGui = new GekkoFyre::SpectroGui(gkStringFuncs, true, true, this);
         ui->verticalLayout_11->addWidget(gkSpectroGui);
         gkSpectroGui->setEnabled(true);
 

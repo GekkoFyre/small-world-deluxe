@@ -47,7 +47,6 @@
 #include <qwt_plot_spectrogram.h>
 #include <qwt_plot_zoomer.h>
 #include <qwt_color_map.h>
-#include <qwt_plot_grid.h>
 #include <qwt_matrix_raster_data.h>
 #include <qwt_plot_canvas.h>
 #include <qwt_raster_data.h>
@@ -84,7 +83,7 @@ namespace GekkoFyre {
 class GkZoomer: public QwtPlotZoomer {
 
 public:
-    GkZoomer(QWidget *canvas): QwtPlotZoomer(canvas) {
+    GkZoomer(QWidget *canvas): QwtPlotZoomer(QwtPlot::xTop, QwtPlot::yLeft, canvas) {
         setTrackerMode(AlwaysOn);
     }
 
@@ -113,12 +112,10 @@ class LinearColorMapRGB: public QwtLinearColorMap {
 public:
     LinearColorMapRGB(): QwtLinearColorMap(Qt::darkCyan, Qt::red, QwtColorMap::RGB) {
         setColorInterval(QColor(0, 0, 30), QColor(0.5 * 255, 0, 0));
-        addColorStop(0.00, Qt::cyan);
-        addColorStop(0.20, Qt::blue);
-        addColorStop(0.40, Qt::yellow);
-        addColorStop(0.60, Qt::darkYellow);
-        addColorStop(0.80, Qt::red);
-        addColorStop(1.00, Qt::darkRed);
+        addColorStop(1.00, Qt::cyan);
+        addColorStop(0.75, Qt::blue);
+        addColorStop(0.50, Qt::darkCyan);
+        addColorStop(0.25, Qt::darkBlue);
     }
 };
 
@@ -130,8 +127,6 @@ public:
                const bool &enableZoomer = false, QWidget *parent = nullptr);
     ~SpectroGui();
 
-    void setAlpha(const int &alpha);
-    void setTheme(const QColor &colour);
     void insertData(const QVector<double> values, const int &numCols);
 
 protected:
@@ -146,9 +141,6 @@ private:
     QwtPlotZoomer *zoomer;
     LinearColorMapRGB *color_map;
     QwtPlotCanvas *canvas;
-    QwtDateScaleDraw *date_scale_draw;
-    QwtDateScaleEngine *date_scale_engine;
-    QwtPlotGrid *grid;
     QwtPlotCurve *curve;
     QwtPlotPanner *panner;
     QwtScaleWidget *top_x_axis;
@@ -161,17 +153,15 @@ private:
     qint64 spectro_begin_time;                                  // The time at which the spectrograph was initialized.
     qint64 spectro_latest_update;                               // The latest time for when the spectrograph was updated with new data/information.
 
-    double y_axis_num_minor_steps;
-    double y_axis_num_major_steps;
-    double y_axis_step_size;
-    bool enablePlotRefresh;
-
-    int x_axis_bandwidth_min_size;
-    int x_axis_bandwidth_max_size;
-
     //
     // Date & Timing
     //
+    QwtDateScaleDraw *date_scale_draw;
+    QwtDateScaleEngine *date_scale_engine;
+
+    double y_axis_num_minor_steps;
+    double y_axis_num_major_steps;
+    double y_axis_step_size;
 
     //
     // Threads

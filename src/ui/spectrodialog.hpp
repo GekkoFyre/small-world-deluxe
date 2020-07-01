@@ -60,7 +60,6 @@ private slots:
     void on_pushButton_exit_clicked();
     void on_pushButton_activate_spectro_clicked();
     void on_comboBox_fft_size_currentIndexChanged(int index);
-    void on_verticalSlider_control_alpha_valueChanged(int value);
     void on_pushButton_export_graph_clicked();
     void on_pushButton_print_graph_clicked();
 
