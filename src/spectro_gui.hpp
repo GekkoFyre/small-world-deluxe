@@ -47,12 +47,15 @@
 #include <qwt_plot_spectrogram.h>
 #include <qwt_plot_zoomer.h>
 #include <qwt_color_map.h>
+#include <qwt_plot_grid.h>
 #include <qwt_matrix_raster_data.h>
 #include <qwt_plot_canvas.h>
 #include <qwt_raster_data.h>
+#include <qwt_plot_panner.h>
 #include <qwt_interval.h>
 #include <qwt_scale_widget.h>
 #include <qwt_scale_draw.h>
+#include <qwt_plot_curve.h>
 #include <qwt_scale_engine.h>
 #include <qwt_date_scale_engine.h>
 #include <qwt_date_scale_draw.h>
@@ -61,6 +64,7 @@
 #include <cmath>
 #include <thread>
 #include <future>
+#include <memory>
 #include <QTimer>
 #include <QObject>
 #include <QWidget>
@@ -94,26 +98,10 @@ public:
     }
 };
 
-/**
- * @brief The GkSpectroData class creates the coloured spectrogram plots.
- */
-class GkSpectroData: public QwtRasterData {
+class GkSpectroRasterData: public QwtPlotSpectrogram {
 
 public:
-    GkSpectroData() {
-        // Example: https://stackoverflow.com/questions/35563246/qwtplotspectrogram-doesnt-work-no-imagemode-plot
-        // setInterval(Qt::XAxis, QwtInterval(-1.5, 1.5));
-        // setInterval(Qt::YAxis, QwtInterval(-1.5, 1.5));
-        // setInterval(Qt::ZAxis, QwtInterval(0.0, 10.0));
-    }
-
-    virtual double value(double x, double y) const {
-        const double c = 0.842;
-        const double v1 = x * x + (y - c) * (y + c);
-        const double v2 = x * (y + c) + x * (y + c);
-
-        return (1.0 / (v1 * v1 + v2 * v2));
-    }
+    void draw(QPainter *painter, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRectF &canvasRect) const override;
 };
 
 /**
@@ -134,17 +122,7 @@ public:
     }
 };
 
-class GkSpectrograph: public QwtPlot, public GkSpectroData {
-    Q_OBJECT
-
-public:
-    explicit GkSpectrograph(QWidget *parent = nullptr);
-
-protected:
-    void mouseDoubleClickEvent(QMouseEvent *e);
-};
-
-class SpectroGui: public GkSpectrograph {
+class SpectroGui: public QwtPlot {
     Q_OBJECT
 
 public:
@@ -152,10 +130,9 @@ public:
                const bool &enableZoomer = false, QWidget *parent = nullptr);
     ~SpectroGui();
 
-    QwtPlotSpectrogram *gkSpectrogram;
-
     void setAlpha(const int &alpha);
     void setTheme(const QColor &colour);
+    void insertData(const QVector<double> values, const int &numCols);
 
 protected:
     void alignScales();
@@ -164,15 +141,19 @@ public slots:
     void showSpectrogram(const bool &toggled);
     void refreshDateTime(const qint64 &latest_time_update, const qint64 &time_since);
 
-protected slots:
-    void refreshData();
-
 private:
+    std::unique_ptr<GkSpectroRasterData> gkRasterData;
     QwtPlotZoomer *zoomer;
-    LinearColorMapRGB *colour_map;
+    LinearColorMapRGB *color_map;
+    QwtPlotCanvas *canvas;
     QwtDateScaleDraw *date_scale_draw;
     QwtDateScaleEngine *date_scale_engine;
-    QwtScaleWidget *right_axis;
+    QwtPlotGrid *grid;
+    QwtPlotCurve *curve;
+    QwtPlotPanner *panner;
+    QwtScaleWidget *top_x_axis;
+    QwtScaleWidget *right_y_axis;
+    std::unique_ptr<QwtMatrixRasterData> gkMatrixData;
 
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     GekkoFyre::Spectrograph::GkColorMap gkMapType;
@@ -180,23 +161,21 @@ private:
     qint64 spectro_begin_time;                                  // The time at which the spectrograph was initialized.
     qint64 spectro_latest_update;                               // The latest time for when the spectrograph was updated with new data/information.
 
-    Spectrograph::MatrixData calc_z_history;
-    std::vector<int> raw_plot_data;
-
-    size_t y_axis_num_minor_steps;
-    size_t y_axis_num_major_steps;
+    double y_axis_num_minor_steps;
+    double y_axis_num_major_steps;
     double y_axis_step_size;
     bool enablePlotRefresh;
+
+    int x_axis_bandwidth_min_size;
+    int x_axis_bandwidth_max_size;
 
     //
     // Date & Timing
     //
-    QPointer<QTimer> refresh_data_timer;
 
     //
     // Threads
     //
-    std::thread refresh_data_thread;
 
     template<class in_it, class out_it>
     out_it copy_every_nth(in_it b, in_it e, out_it r, size_t n) {

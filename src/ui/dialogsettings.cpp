@@ -212,6 +212,11 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         Q_UNUSED(usb_device_ptt);
 
         //
+        // Audio --> Configuration
+        //
+        bool rx_audio_init_start = ui->checkBox_init_rx_audio_upon_start->isChecked();
+
+        //
         // Chosen PortAudio API
         //
         int chosen_pa_api = ui->comboBox_soundcard_api->currentData().toInt();
@@ -297,6 +302,11 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         //
         chosen_output_audio_dev.sel_channels = gkDekodeDb->convertAudioChannelsEnum(curr_output_device_channels);
         gkDekodeDb->write_audio_device_settings(chosen_output_audio_dev, true);
+
+        //
+        // Audio --> Configuration
+        //
+        gkDekodeDb->write_rig_settings(QString::fromStdString(gkDekodeDb->boolEnum(rx_audio_init_start)), radio_cfg::RXAudioInitStart);
 
         //
         // Data Bits
@@ -1065,6 +1075,11 @@ bool DialogSettings::read_settings()
         QString audioRecLoc = gkDekodeDb->read_misc_audio_settings(audio_cfg::AudioRecLoc);
         QString settingsDbLoc = gkDekodeDb->read_misc_audio_settings(audio_cfg::settingsDbLoc);
 
+        //
+        // Audio --> Configuration
+        //
+        QString rx_audio_init_start = gkDekodeDb->read_rig_settings(radio_cfg::RXAudioInitStart);
+
         Q_UNUSED(rigModel);
 
         /*
@@ -1368,6 +1383,12 @@ bool DialogSettings::read_settings()
             // Point to a default directory...
             ui->lineEdit_db_save_loc->setText(gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)));
         }
+
+        //
+        // Audio --> Configuration
+        //
+        bool conv_rx_audio_init_start = gkDekodeDb->boolStr(rx_audio_init_start.toStdString());
+        ui->checkBox_init_rx_audio_upon_start->setChecked(conv_rx_audio_init_start);
 
         return true;
     } catch (const std::exception &e) {

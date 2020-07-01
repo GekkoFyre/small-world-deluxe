@@ -94,13 +94,12 @@ public:
     PaHostApiTypeId portAudioApiToEnum(const QString &interface);
 
     std::string removeInvalidChars(const std::string &string_to_modify);
+    std::string boolEnum(const bool &is_true);
+    bool boolStr(const std::string &is_true);
 
 private:
     QPointer<GekkoFyre::FileIo> fileIo;
     leveldb::DB *db;
-
-    std::string boolEnum(const bool &is_true);
-    bool boolStr(const std::string &is_true);
 
 };
 };

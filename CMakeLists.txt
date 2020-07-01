@@ -49,7 +49,15 @@ cmake_policy(SET CMP0074 NEW)
 cmake_policy(SET CMP0054 NEW)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 
-project(smallworld C CXX CUDA)
+option(GK_CUDA_FFT "Enable NVIDIA CUDA support within Small World Deluxe and allow your GPU to do heavy calculations instead of your CPU!" OFF)
+
+if(GK_CUDA_FFT)
+    message(STATUS "Enable NVIDIA CUDA support within Small World Deluxe and allow your GPU to do heavy calculations instead of your CPU!")
+    add_definitions(-DGK_CUDA_FFT_ENBL)
+    project(smallworld C CXX CUDA)
+else()
+    project(smallworld C CXX)
+endif()
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CXX_STANDARD 17)
@@ -78,7 +86,6 @@ option(GFYRE_BUILD_STATIC "Build Small World Deluxe as a static library/package.
 option(GFYRE_BUILD_SHARED "*** This option is not fully developed yet! *** Build Small World Deluxe as a shared library/package. This will result in a smaller executable at the cost of requiring further DLL dependencies." OFF)
 option(GFYRE_HAMLIB_DBG_VERBOSITY "Enable DEBUG verbosity for the Hamlib library and its use throughout Small World Deluxe. *** Only recommended for programmers and/or possibly maintainers of the project itself! ***" OFF)
 option(GFYRE_BUILD_CODEC2 "*** This feature is in heavy development! *** Build with support for Codec2 <https://github.com/drowe67/codec2>." OFF)
-option(GK_CUDA_FFT "Enable NVIDIA CUDA support within Small World Deluxe and allow your GPU to do heavy calculations instead of your CPU!" OFF)
 
 #
 # Detect if we are dealing with the Linux operating system and not Apple OS/X
@@ -391,12 +398,14 @@ qt5_add_resources(UI_RESOURCES src/sworld_res.qrc)
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_BINARY_DIR})
 
-set(GALAXY_CUDA
-    ${GALAXY_CUDA}
-    src/spectro_cuda.cu
-    src/spectro_cuda.h)
+if(GK_CUDA_FFT)
+    set(GALAXY_CUDA
+        ${GALAXY_CUDA}
+        src/spectro_cuda.cu
+        src/spectro_cuda.h)
 
-set_property(SOURCE ${GALAXY_CUDA} PROPERTY SKIP_AUTOUIC ON)
+    set_property(SOURCE ${GALAXY_CUDA} PROPERTY SKIP_AUTOUIC ON)
+endif()
 
 #
 # Compile UIC!
@@ -576,11 +585,6 @@ if(GFYRE_HAMLIB_DBG_VERBOSITY)
     add_definitions(-DGFYRE_HAMLIB_DBG_VERBOSITY_ENBL)
 endif()
 
-if(GK_CUDA_FFT)
-    message(STATUS "Enable NVIDIA CUDA support within Small World Deluxe and allow your GPU to do heavy calculations instead of your CPU!")
-    add_definitions(-DGK_CUDA_FFT_ENBL)
-endif()
-
 #
 # The below is required for when we decide to start programming an install target for this CMake script!
 #
@@ -592,7 +596,9 @@ include(GNUInstallDirs)
 #
 if(GFYRE_BUILD_STATIC)
     add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP})
-    add_library(galaxy_cuda STATIC ${GALAXY_CUDA})
+    if(GK_CUDA_FFT)
+        add_library(galaxy_cuda STATIC ${GALAXY_CUDA})
+    endif()
 else()
     set(GFYRE_BUILD_SHARED ON)
 endif(GFYRE_BUILD_STATIC)
@@ -602,7 +608,9 @@ endif(GFYRE_BUILD_STATIC)
 #
 if(GFYRE_BUILD_SHARED)
     add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP})
-    add_library(galaxy_cuda STATIC ${GALAXY_CUDA})
+    if(GK_CUDA_FFT)
+        add_library(galaxy_cuda STATIC ${GALAXY_CUDA})
+    endif()
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
@@ -617,7 +625,10 @@ set(SWRLD_EXEC ${SWRLD_EXEC}
 
 add_executable(smallworld ${SWRLD_EXEC})
 target_link_libraries(smallworld galaxy)
-target_link_libraries(smallworld galaxy_cuda)
+
+if(GK_CUDA_FFT)
+    target_link_libraries(smallworld galaxy_cuda)
+endif()
 
 #
 # https://stackoverflow.com/questions/23995019/what-is-the-modern-method-for-setting-general-compile-flags-in-cmake
