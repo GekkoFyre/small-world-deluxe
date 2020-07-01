@@ -47,12 +47,15 @@
 #include <qwt_plot_spectrogram.h>
 #include <qwt_plot_zoomer.h>
 #include <qwt_color_map.h>
+#include <qwt_plot_grid.h>
 #include <qwt_matrix_raster_data.h>
 #include <qwt_plot_canvas.h>
 #include <qwt_raster_data.h>
+#include <qwt_plot_panner.h>
 #include <qwt_interval.h>
 #include <qwt_scale_widget.h>
 #include <qwt_scale_draw.h>
+#include <qwt_plot_curve.h>
 #include <qwt_scale_engine.h>
 #include <qwt_date_scale_engine.h>
 #include <qwt_date_scale_draw.h>
@@ -119,17 +122,7 @@ public:
     }
 };
 
-class GkSpectrograph: public QwtPlot {
-    Q_OBJECT
-
-public:
-    explicit GkSpectrograph(QWidget *parent = nullptr);
-
-protected:
-    void mouseDoubleClickEvent(QMouseEvent *e);
-};
-
-class SpectroGui: public GkSpectrograph, public GkSpectroRasterData {
+class SpectroGui: public QwtPlot, private GkSpectroRasterData {
     Q_OBJECT
 
 public:
@@ -139,7 +132,7 @@ public:
 
     void setAlpha(const int &alpha);
     void setTheme(const QColor &colour);
-    void insertData(const int &row, const int &col, const double &value);
+    void insertData(const QVector<double> values, const int &numCols);
 
 protected:
     void alignScales();
@@ -150,9 +143,13 @@ public slots:
 
 private:
     QwtPlotZoomer *zoomer;
-    LinearColorMapRGB *colour_map;
+    LinearColorMapRGB *color_map;
+    QwtPlotCanvas *canvas;
     QwtDateScaleDraw *date_scale_draw;
     QwtDateScaleEngine *date_scale_engine;
+    QwtPlotGrid *grid;
+    QwtPlotCurve *curve;
+    QwtPlotPanner *panner;
     QwtScaleWidget *top_x_axis;
     std::unique_ptr<QwtMatrixRasterData> gkMatrixData;
 

@@ -1291,7 +1291,6 @@ void MainWindow::updateSpectrograph()
     const qint64 start_time = QDateTime::currentMSecsSinceEpoch();
     gk_spectro_start_time = start_time;
     gk_spectro_latest_time = start_time;
-    static int row_counter = 0;
 
     #ifdef GK_CUDA_FFT_ENBL
     //
@@ -1382,12 +1381,15 @@ void MainWindow::updateSpectrograph()
                             magnitude_db_buf.push_back(magnitude_db);
                         }
 
+                        QVector<double> fft_spectro_vals;
+                        fft_spectro_vals.reserve(GK_FFT_SIZE + 1);
                         for (size_t i = 0; i < GK_FFT_SIZE; ++i) {
-                            auto abs_val = std::abs(fftData[i]) / ((float)GK_FFT_SIZE);
-                            gkSpectroGui->insertData(row_counter, abs_val, magnitude_db_buf[i]); // This is the data for the spectrograph / waterfall itself!
-                            emit refreshSpectrograph(gk_spectro_latest_time, gk_spectro_start_time);
-                            ++row_counter;
+                            auto abs_val = std::abs(fftData[i]) / ((double)GK_FFT_SIZE);
+                            fft_spectro_vals.push_back(abs_val);
                         }
+
+                        gkSpectroGui->insertData(fft_spectro_vals, 1); // This is the data for the spectrograph / waterfall itself!
+                        emit refreshSpectrograph(gk_spectro_latest_time, gk_spectro_start_time);
 
                         magnitude_buf.clear();
                         magnitude_db_buf.clear();
