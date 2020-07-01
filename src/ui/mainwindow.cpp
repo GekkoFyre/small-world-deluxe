@@ -1394,9 +1394,6 @@ void MainWindow::updateSpectrograph()
                         magnitude_buf.clear();
                         magnitude_db_buf.clear();
                         fftData.clear();
-                        magnitude_buf.shrink_to_fit();
-                        magnitude_db_buf.shrink_to_fit();
-                        fftData.shrink_to_fit();
                     }
                 }
             }

@@ -122,7 +122,7 @@ public:
     }
 };
 
-class SpectroGui: public QwtPlot, private GkSpectroRasterData {
+class SpectroGui: public QwtPlot {
     Q_OBJECT
 
 public:
@@ -142,6 +142,7 @@ public slots:
     void refreshDateTime(const qint64 &latest_time_update, const qint64 &time_since);
 
 private:
+    std::unique_ptr<GkSpectroRasterData> gkRasterData;
     QwtPlotZoomer *zoomer;
     LinearColorMapRGB *color_map;
     QwtPlotCanvas *canvas;
@@ -151,6 +152,7 @@ private:
     QwtPlotCurve *curve;
     QwtPlotPanner *panner;
     QwtScaleWidget *top_x_axis;
+    QwtScaleWidget *right_y_axis;
     std::unique_ptr<QwtMatrixRasterData> gkMatrixData;
 
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;

@@ -73,6 +73,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
     try {
         gkStringFuncs = std::move(stringFuncs);
 
+        gkRasterData = std::make_unique<GkSpectroRasterData>();
         gkMatrixData = std::make_unique<QwtMatrixRasterData>();
         color_map = new LinearColorMapRGB();
         canvas = new QwtPlotCanvas();
@@ -81,27 +82,28 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         x_axis_bandwidth_max_size = 0;
         y_axis_num_minor_steps = 0.0f;
         y_axis_num_major_steps = 0.0f;
+        // y_axis_step_size = 1000.0f;
 
         canvas->setBorderRadius(8);
         canvas->setPaintAttribute(QwtPlotCanvas::BackingStore, false);
         canvas->setStyleSheet("border-radius: 8px; background-color: #389638");
         setCanvas(canvas);
 
-        setRenderThreadCount(0); // Use system specific thread count
-        setCachePolicy(QwtPlotRasterItem::PaintCache);
-        setDisplayMode(QwtPlotSpectrogram::DisplayMode::ImageMode, true);
-        setColorMap(color_map);
+        gkRasterData->setRenderThreadCount(0); // Use system specific thread count
+        gkRasterData->setCachePolicy(QwtPlotRasterItem::PaintCache);
+        gkRasterData->setDisplayMode(QwtPlotSpectrogram::DisplayMode::ImageMode, true);
+        gkRasterData->setColorMap(color_map);
 
         // These are said to use quite a few system resources!
-        setRenderHint(QwtPlotItem::RenderAntialiased);
+        gkRasterData->setRenderHint(QwtPlotItem::RenderAntialiased);
 
         QList<double> contourLevels;
         for (double level = 0.5; level < 10.0; level += 1.0) {
             contourLevels += level;
         }
 
-        setContourLevels(contourLevels);
-        setData(gkMatrixData.get());
+        gkRasterData->setContourLevels(contourLevels);
+        gkRasterData->setData(gkMatrixData.get());
         // gkSpectrogram->attach(this);
 
         gkMatrixData->setInterval(Qt::XAxis, QwtInterval(0, 2500.0f));
@@ -157,12 +159,16 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         //
         top_x_axis = axisWidget(QwtPlot::xTop);
         top_x_axis->setTitle(tr("Bandwidth (Hz)"));
-        top_x_axis->setColorBarWidth(16);
-        top_x_axis->setColorBarEnabled(true);
-        top_x_axis->setColorMap(interval(Qt::ZAxis), color_map);
         top_x_axis->setEnabled(true);
         setAxisScale(QwtPlot::xTop, 100, 2500, 250);
         enableAxis(QwtPlot::xTop);
+
+        right_y_axis = axisWidget(QwtPlot::yRight);
+        right_y_axis->setColorBarWidth(16);
+        right_y_axis->setColorBarEnabled(true);
+        right_y_axis->setColorMap(gkRasterData->interval(Qt::ZAxis), color_map);
+        right_y_axis->setEnabled(true);
+        enableAxis(QwtPlot::yRight);
 
         //
         // Instructions!
@@ -187,9 +193,11 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         zoomer->setRubberBandPen(c);
         zoomer->setTrackerPen(c);
 
+        gkRasterData->attach(this);
+
         setAutoReplot(false);
         plotLayout()->setAlignCanvasToScales(true);
-        invalidateCache();
+        gkRasterData->invalidateCache();
         replot();
     } catch (const std::exception &e) {
         #if defined(_MSC_VER) && (_MSC_VER > 1900)
@@ -292,10 +300,10 @@ void SpectroGui::refreshDateTime(const qint64 &latest_time_update, const qint64 
 
     gkMatrixData->setInterval(Qt::YAxis, QwtInterval(time_since, latest_time_update));
 
-    QwtScaleDiv y_axis_left_scale_div = QwtScaleDiv(y_axis_num_minor_steps, y_axis_num_major_steps);
-    setAxisScaleDiv(QwtPlot::yLeft, y_axis_left_scale_div);
+    //QwtScaleDiv y_axis_left_scale_div = QwtScaleDiv(y_axis_num_minor_steps, y_axis_num_major_steps);
+    // setAxisScaleDiv(QwtPlot::yLeft, y_axis_left_scale_div);
 
-    invalidateCache();
+    gkRasterData->invalidateCache();
     replot();
 
     return;
