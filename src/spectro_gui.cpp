@@ -78,9 +78,11 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         color_map = new LinearColorMapRGB();
         canvas = new QwtPlotCanvas();
 
-        // y_axis_num_minor_steps = 5.0f;
-        // y_axis_num_major_steps = 3.0f;
-        // y_axis_step_size = 1.0f;
+        //
+        // Initialize any variables here!
+        //
+        buf_overall_size = 0;
+        buf_size_reset = 0;
 
         canvas->setBorderRadius(8);
         canvas->setPaintAttribute(QwtPlotCanvas::BackingStore, false);
@@ -239,7 +241,26 @@ SpectroGui::~SpectroGui()
 
 void SpectroGui::insertData(const QVector<double> values, const int &numCols)
 {
-    gkMatrixData->setValueMatrix(values, numCols);
+    Q_UNUSED(numCols);
+
+    buf_overall_size += SPECTRO_Y_AXIS_SIZE; // Obtain the total size of the matrix values!
+    gkRasterBuf.reserve(buf_overall_size + 1);
+    for (const auto &data: values) {
+        gkRasterBuf.push_back(data); // Store the matrix values within a QVector, for up to `SPECTRO_Y_AXIS_SIZE` milliseconds!
+    }
+
+    int buf_total_cols = (gkRasterBuf.size() / GK_FFT_SIZE);
+    gkMatrixData->setValueMatrix(gkRasterBuf, buf_total_cols);
+    ++buf_size_reset;
+
+    if (buf_size_reset == ((SPECTRO_Y_AXIS_SIZE / 1000) - 1)) { // We 'minus one' because we are counting from zero!
+        buf_size_reset = 0; // Reset back to zero!
+        buf_overall_size -= SPECTRO_Y_AXIS_SIZE;
+        int i = 0;
+        while (i < GK_FFT_SIZE) {
+            gkRasterBuf.pop_back(); // Delete the last amount of `GK_FFT_SIZE` at the very end of the QVector!
+        }
+    }
 
     return;
 }

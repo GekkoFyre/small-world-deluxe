@@ -59,8 +59,8 @@
 #include <qwt_date_scale_engine.h>
 #include <qwt_date_scale_draw.h>
 #include <mutex>
-#include <vector>
 #include <cmath>
+#include <vector>
 #include <thread>
 #include <future>
 #include <memory>
@@ -137,7 +137,6 @@ public slots:
     void refreshDateTime(const qint64 &latest_time_update, const qint64 &time_since);
 
 private:
-    std::unique_ptr<GkSpectroRasterData> gkRasterData;
     QwtPlotZoomer *zoomer;
     LinearColorMapRGB *color_map;
     QwtPlotCanvas *canvas;
@@ -145,6 +144,11 @@ private:
     QwtPlotPanner *panner;
     QwtScaleWidget *top_x_axis;
     QwtScaleWidget *right_y_axis;
+
+    int buf_size_reset;
+    int buf_overall_size;
+    QVector<double> gkRasterBuf;
+    std::unique_ptr<GkSpectroRasterData> gkRasterData;
     std::unique_ptr<QwtMatrixRasterData> gkMatrixData;
 
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
