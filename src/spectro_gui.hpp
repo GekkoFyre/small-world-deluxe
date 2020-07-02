@@ -145,14 +145,13 @@ private:
     QwtScaleWidget *top_x_axis;
     QwtScaleWidget *right_y_axis;
 
-    int buf_size_reset;
     int buf_overall_size;
+    int buf_total_size;
     QVector<double> gkRasterBuf;
     std::unique_ptr<GkSpectroRasterData> gkRasterData;
     std::unique_ptr<QwtMatrixRasterData> gkMatrixData;
 
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
-    GekkoFyre::Spectrograph::GkColorMap gkMapType;
     int gkAlpha;                                                // Controls the alpha value of the waterfall chart.
     qint64 spectro_begin_time;                                  // The time at which the spectrograph was initialized.
     qint64 spectro_latest_update;                               // The latest time for when the spectrograph was updated with new data/information.
@@ -163,13 +162,10 @@ private:
     QwtDateScaleDraw *date_scale_draw;
     QwtDateScaleEngine *date_scale_engine;
 
-    double y_axis_num_minor_steps;
-    double y_axis_num_major_steps;
-    double y_axis_step_size;
-
     //
     // Threads
     //
+    std::mutex mtx_raster_data;
 
     template<class in_it, class out_it>
     out_it copy_every_nth(in_it b, in_it e, out_it r, size_t n) {

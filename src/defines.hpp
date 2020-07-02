@@ -156,6 +156,8 @@ namespace GekkoFyre {
 #define SPECTRO_TIME_UPDATE_MILLISECS (15000)           // How often, in milliseconds, the spectrograph updates the timing information on the y-axis.
 #define SPECTRO_MAX_BUFFER_SIZE (10)                    // The maximum number of items to store within the buffers associated with the spectrograph.
 #define SPECTRO_Y_AXIS_SIZE (60000)                     // The maximum size of the y-axis, in milliseconds, given that it is based on a timescale.
+#define SPECTRO_Y_AXIS_MINOR (15)
+#define SPECTRO_Y_AXIS_MAJOR (8)
 
 //
 // Audio encoding/decoding

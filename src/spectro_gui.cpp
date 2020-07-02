@@ -81,8 +81,9 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         //
         // Initialize any variables here!
         //
-        buf_overall_size = 0;
-        buf_size_reset = 0;
+        buf_total_size = 0;
+        buf_overall_size = ((SPECTRO_Y_AXIS_SIZE / SPECTRO_REFRESH_CYCLE_MILLISECS) * GK_FFT_SIZE); // Obtain the total size of the matrix values!
+        gkRasterBuf.reserve(buf_overall_size + GK_FFT_SIZE);
 
         canvas->setBorderRadius(8);
         canvas->setPaintAttribute(QwtPlotCanvas::BackingStore, false);
@@ -130,8 +131,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
 
         setAxisScaleDraw(QwtPlot::yLeft, date_scale_draw);
         setAxisScaleEngine(QwtPlot::yLeft, date_scale_engine);
-        date_scale_engine->divideScale(spectro_begin_time, spectro_latest_update, y_axis_num_major_steps,
-                                       y_axis_num_minor_steps, y_axis_step_size);
+        // date_scale_engine->divideScale(spectro_begin_time, spectro_latest_update, 0, 0);
 
         // const QwtInterval zInterval = gkSpectrogram->data()->interval(Qt::ZAxis);
         setAxisScale(QwtPlot::yLeft, spectro_begin_time, spectro_latest_update, 1000);
@@ -239,27 +239,35 @@ SpectroGui::~SpectroGui()
     return;
 }
 
+/**
+ * @brief SpectroGui::insertData
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param values
+ * @param numCols
+ */
 void SpectroGui::insertData(const QVector<double> values, const int &numCols)
 {
     Q_UNUSED(numCols);
 
-    buf_overall_size += SPECTRO_Y_AXIS_SIZE; // Obtain the total size of the matrix values!
-    gkRasterBuf.reserve(buf_overall_size + 1);
     for (const auto &data: values) {
         gkRasterBuf.push_back(data); // Store the matrix values within a QVector, for up to `SPECTRO_Y_AXIS_SIZE` milliseconds!
     }
 
-    int buf_total_cols = (gkRasterBuf.size() / GK_FFT_SIZE);
+    buf_total_size += GK_FFT_SIZE;
+    const int buf_total_cols = (buf_total_size / GK_FFT_SIZE);
     gkMatrixData->setValueMatrix(gkRasterBuf, buf_total_cols);
-    ++buf_size_reset;
 
-    if (buf_size_reset == ((SPECTRO_Y_AXIS_SIZE / 1000) - 1)) { // We 'minus one' because we are counting from zero!
-        buf_size_reset = 0; // Reset back to zero!
-        buf_overall_size -= SPECTRO_Y_AXIS_SIZE;
+    if (buf_total_size > (buf_overall_size - GK_FFT_SIZE)) {
+        buf_total_size -= GK_FFT_SIZE; // Reset back to zero!
+
+        mtx_raster_data.lock();
         int i = 0;
         while (i < GK_FFT_SIZE) {
             gkRasterBuf.pop_back(); // Delete the last amount of `GK_FFT_SIZE` at the very end of the QVector!
+            ++i;
         }
+
+        mtx_raster_data.unlock();
     }
 
     return;
@@ -267,6 +275,7 @@ void SpectroGui::insertData(const QVector<double> values, const int &numCols)
 
 /**
  * @brief SpectroGui::alignScales will align the scales to the canvas frame.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void SpectroGui::alignScales()
 {
@@ -287,6 +296,11 @@ void SpectroGui::alignScales()
     return;
 }
 
+/**
+ * @brief SpectroGui::showSpectrogram
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param toggled
+ */
 void SpectroGui::showSpectrogram(const bool &toggled)
 {
     return;
@@ -299,8 +313,8 @@ void SpectroGui::showSpectrogram(const bool &toggled)
 void SpectroGui::refreshDateTime(const qint64 &latest_time_update, const qint64 &time_since)
 {
     setAxisScale(QwtPlot::yLeft, latest_time_update - SPECTRO_Y_AXIS_SIZE, latest_time_update);
-    setAxisMaxMinor(QwtPlot::yLeft, 15);
-    setAxisMaxMajor(QwtPlot::yLeft, 8);
+    setAxisMaxMinor(QwtPlot::yLeft, SPECTRO_Y_AXIS_MINOR);
+    setAxisMaxMajor(QwtPlot::yLeft, SPECTRO_Y_AXIS_MAJOR);
     // setAxisScale(QwtPlot::xTop, x_axis_bandwidth_min_size, x_axis_bandwidth_max_size, 250);
 
     //
@@ -308,9 +322,7 @@ void SpectroGui::refreshDateTime(const qint64 &latest_time_update, const qint64 
     //
     gkMatrixData->setInterval(Qt::YAxis, QwtInterval(time_since, latest_time_update));
 
-    // QwtScaleDiv y_axis_left_scale_div = QwtScaleDiv(y_axis_num_minor_steps, y_axis_num_major_steps);
-    // setAxisScaleDiv(QwtPlot::yLeft, y_axis_left_scale_div);
-
+    spectro_latest_update = time_since;
     gkRasterData->invalidateCache();
     replot();
 
