@@ -74,8 +74,8 @@ SpectroDialog::SpectroDialog(QPointer<GekkoFyre::SpectroGui> spectroGui, QWidget
     fft_size_updated = 0;
 
     gkSpectroGui = std::move(spectroGui);
-    QObject::connect(this, SIGNAL(changeGraphType(const GekkoFyre::Spectrograph::GkGraphType &, const bool &)),
-                     gkSpectroGui, SLOT(changeSpectroType(const GekkoFyre::Spectrograph::GkGraphType &, const bool &)));
+    QObject::connect(this, SIGNAL(changeGraphType(const GekkoFyre::Spectrograph::GkGraphType &)),
+                     gkSpectroGui, SLOT(changeSpectroType(const GekkoFyre::Spectrograph::GkGraphType &)));
     QObject::connect(this, SIGNAL(changeFFTSize(const int &)), gkSpectroGui, SLOT(updateFFTSize(const int &)));
 }
 
@@ -111,22 +111,30 @@ void SpectroDialog::on_pushButton_exit_clicked()
 }
 
 /**
- * @brief SpectroDialog::on_comboBox_fft_size_currentIndexChanged
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param index
- */
-void SpectroDialog::on_comboBox_fft_size_currentIndexChanged(int index)
-{
-    return;
-}
-
-/**
  * @brief SpectroDialog::on_comboBox_graph_to_display_currentIndexChanged
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param index
  */
 void SpectroDialog::on_comboBox_graph_to_display_currentIndexChanged(int index)
 {
+    try {
+        switch (index) {
+        case GRAPH_DISPLAY_WATERFALL_STD_IDX:
+            emit changeGraphType(GekkoFyre::Spectrograph::GkGraphType::GkWaterfall);
+            break;
+        case GRAPH_DISPLAY_WATERFALL_MIT_IDX:
+            emit changeGraphType(GekkoFyre::Spectrograph::GkGraphType::GkMomentInTime);
+            break;
+        case GRAPH_DISPLAY_2D_SINEWAVE_IDX:
+            emit changeGraphType(GekkoFyre::Spectrograph::GkGraphType::GkSinewave);
+            break;
+        default:
+            throw std::invalid_argument(tr("An invalid selection has been made regarding choice of (spectro)graph type!").toStdString());
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
     return;
 }
 
@@ -240,5 +248,10 @@ void SpectroDialog::on_spinBox_fft_size_valueChanged(int arg1)
 
     fft_size_updated = arg1;
 
+    return;
+}
+
+void SpectroDialog::on_comboBox_timing_currentIndexChanged(int index)
+{
     return;
 }

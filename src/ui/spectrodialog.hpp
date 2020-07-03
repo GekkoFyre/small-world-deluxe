@@ -60,15 +60,15 @@ public:
 private slots:
     void on_pushButton_apply_clicked();
     void on_pushButton_exit_clicked();
-    void on_comboBox_fft_size_currentIndexChanged(int index);
-    void on_comboBox_graph_to_display_currentIndexChanged(int index);
     void on_pushButton_export_graph_clicked();
     void on_pushButton_print_graph_clicked();
+    void on_comboBox_graph_to_display_currentIndexChanged(int index);
+    void on_comboBox_timing_currentIndexChanged(int index);
     void on_spinBox_fft_size_valueChanged(int arg1);
 
 signals:
     void activateSpectroWaterfall(const bool &is_active);
-    void changeGraphType(const GekkoFyre::Spectrograph::GkGraphType &graph_type, const bool &enable);
+    void changeGraphType(const GekkoFyre::Spectrograph::GkGraphType &graph_type);
     void changeFFTSize(const int &value);
 
 private:

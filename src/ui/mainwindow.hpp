@@ -53,6 +53,7 @@
 #include "src/gk_fft.hpp"
 #include "src/ui/gkaudioplaydialog.hpp"
 #include "src/ui/gk_vu_meter_widget.hpp"
+#include "src/gk_string_funcs.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
@@ -79,12 +80,6 @@
 #include <QPushButton>
 #include <QSharedPointer>
 #include <QCommandLineParser>
-
-#ifdef _WIN32
-#include "src/string_funcs_windows.hpp"
-#elif __linux__
-#include "src/string_funcs_linux.hpp"
-#endif
 
 namespace Ui {
 class MainWindow;

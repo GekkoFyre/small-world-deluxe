@@ -73,6 +73,11 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
     try {
         gkStringFuncs = std::move(stringFuncs);
 
+        //
+        // This is the default graph-type that will be initialized when Small World Deluxe is launched by a user!
+        //
+        graph_in_use = GkGraphType::GkMomentInTime;
+
         gkRasterData = std::make_unique<GkSpectroRasterData>();
         gkMatrixData = std::make_unique<QwtMatrixRasterData>();
         color_map = new LinearColorMapRGB();
@@ -296,8 +301,32 @@ void SpectroGui::alignScales()
  * @param graph_type
  * @param enable
  */
-void SpectroGui::changeSpectroType(const GekkoFyre::Spectrograph::GkGraphType &graph_type, const bool &enable)
+void SpectroGui::changeSpectroType(const GekkoFyre::Spectrograph::GkGraphType &graph_type)
 {
+    try {
+        switch (graph_type) {
+        case GkGraphType::GkWaterfall:
+            graph_in_use = GkGraphType::GkWaterfall;
+            break;
+        case GkGraphType::GkSinewave:
+            graph_in_use = GkGraphType::GkSinewave;
+            break;
+        case GkGraphType::GkMomentInTime:
+            graph_in_use = GkGraphType::GkMomentInTime;
+            break;
+        default:
+            break;
+        }
+    } catch (const std::exception &e) {
+        #if defined(_MSC_VER) && (_MSC_VER > 1900)
+        HWND hwnd_spectro_gui_main = nullptr;
+        gkStringFuncs->modalDlgBoxOk(hwnd_spectro_gui_main, tr("Error!"), e.what(), MB_ICONERROR);
+        DestroyWindow(hwnd_spectro_gui_main);
+        #else
+        gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+        #endif
+    }
+
     return;
 }
 
