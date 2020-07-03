@@ -344,6 +344,7 @@ Q_DECLARE_METATYPE(GekkoFyre::Database::Settings::GkUsbPort);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkConnType);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::DigitalModes);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::IARURegions);
+Q_DECLARE_METATYPE(GekkoFyre::Spectrograph::GkGraphType);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkFreqs);
 Q_DECLARE_METATYPE(RIG);
 Q_DECLARE_METATYPE(size_t);

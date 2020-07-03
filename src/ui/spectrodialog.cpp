@@ -41,54 +41,99 @@
 #include <utility>
 
 using namespace GekkoFyre;
+using namespace Database;
+using namespace Settings;
+using namespace Audio;
+using namespace AmateurRadio;
+using namespace Control;
+using namespace Spectrograph;
 
+/**
+ * @brief SpectroDialog::SpectroDialog
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param spectroGui
+ * @param parent
+ */
 SpectroDialog::SpectroDialog(QPointer<GekkoFyre::SpectroGui> spectroGui, QWidget *parent) :
     QDialog(parent), ui(new Ui::SpectroDialog)
 {
     ui->setupUi(this);
     this->adjustSize(); // Resize to contents
 
-    gkSpectroGui = std::move(spectroGui);
+    prefillGraphTypes(GkGraphType::GkWaterfall);
+    prefillGraphTypes(GkGraphType::GkMomentInTime);
+    prefillGraphTypes(GkGraphType::GkSinewave);
 
-    spectrogram_is_active = false; // Spectrogram is, by default, deactivated!
-    QObject::connect(ui->pushButton_activate_spectro, SIGNAL(toggled(bool)), gkSpectroGui, SLOT(showSpectrogram(bool)));
+    prefillGraphTiming(GkGraphTiming::GkGraphTime500Millisec);
+    prefillGraphTiming(GkGraphTiming::GkGraphTime1Sec);
+    prefillGraphTiming(GkGraphTiming::GkGraphTime2Sec);
+    prefillGraphTiming(GkGraphTiming::GkGraphTime5Sec);
+    prefillGraphTiming(GkGraphTiming::GkGraphTime10Sec);
+
+    fft_size_cur_value = 0;
+    fft_size_updated = 0;
+
+    gkSpectroGui = std::move(spectroGui);
+    QObject::connect(this, SIGNAL(changeGraphType(const GekkoFyre::Spectrograph::GkGraphType &, const bool &)),
+                     gkSpectroGui, SLOT(changeSpectroType(const GekkoFyre::Spectrograph::GkGraphType &, const bool &)));
+    QObject::connect(this, SIGNAL(changeFFTSize(const int &)), gkSpectroGui, SLOT(updateFFTSize(const int &)));
 }
 
+/**
+ * @brief SpectroDialog::~SpectroDialog
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
 SpectroDialog::~SpectroDialog()
 {
     delete ui;
 }
 
+/**
+ * @brief SpectroDialog::on_pushButton_apply_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
 void SpectroDialog::on_pushButton_apply_clicked()
 {
-    return;
-}
-
-void SpectroDialog::on_pushButton_exit_clicked()
-{
-    this->close();
-}
-
-void SpectroDialog::on_pushButton_activate_spectro_clicked()
-{
-    if (spectrogram_is_active) { // Spectrogram needs to be deactivated!
-        ui->pushButton_activate_spectro->setText(tr("Activate Spectrogram"));
-        spectrogram_is_active = false; // Spectrogram is no longer active!
-        emit activateSpectroWaterfall(true);
-    } else { // Now we must activate the spectrogram!
-        ui->pushButton_activate_spectro->setText(tr("Activate Waterfall"));
-        spectrogram_is_active = true; // Spectrogram is now active!
-        emit activateSpectroWaterfall(false);
+    if (fft_size_updated >= 256) {
+        emit changeFFTSize(fft_size_updated);
     }
 
     return;
 }
 
+/**
+ * @brief SpectroDialog::on_pushButton_exit_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void SpectroDialog::on_pushButton_exit_clicked()
+{
+    this->close();
+}
+
+/**
+ * @brief SpectroDialog::on_comboBox_fft_size_currentIndexChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ */
 void SpectroDialog::on_comboBox_fft_size_currentIndexChanged(int index)
 {
     return;
 }
 
+/**
+ * @brief SpectroDialog::on_comboBox_graph_to_display_currentIndexChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ */
+void SpectroDialog::on_comboBox_graph_to_display_currentIndexChanged(int index)
+{
+    return;
+}
+
+/**
+ * @brief SpectroDialog::on_pushButton_export_graph_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
 void SpectroDialog::on_pushButton_export_graph_clicked()
 {
     QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
@@ -96,7 +141,104 @@ void SpectroDialog::on_pushButton_export_graph_clicked()
     return;
 }
 
+/**
+ * @brief SpectroDialog::on_pushButton_print_graph_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
 void SpectroDialog::on_pushButton_print_graph_clicked()
 {
+    return;
+}
+
+/**
+ * @brief SpectroDialog::prefillGraphTypes
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param graph_type
+ */
+void SpectroDialog::prefillGraphTypes(const GkGraphType &graph_type)
+{
+    switch (graph_type) {
+    case GkGraphType::GkWaterfall:
+        ui->comboBox_graph_to_display->insertItem(GRAPH_DISPLAY_WATERFALL_STD_IDX, tr("Waterfall"));
+        break;
+    case GkGraphType::GkSinewave:
+        ui->comboBox_graph_to_display->insertItem(GRAPH_DISPLAY_2D_SINEWAVE_IDX, tr("2D Sinewave"));
+        break;
+    case GkGraphType::GkMomentInTime:
+        ui->comboBox_graph_to_display->insertItem(GRAPH_DISPLAY_WATERFALL_MIT_IDX, tr("Waterfall (moment-in-time)"));
+        break;
+    default:
+        break;
+    }
+
+    return;
+}
+
+void SpectroDialog::prefillGraphTiming(const GkGraphTiming &graph_timing)
+{
+    switch (graph_timing) {
+    case GkGraphTiming::GkGraphTime500Millisec:
+        ui->comboBox_timing->insertItem(GRAPH_DISPLAY_500_MILLISECS_IDX, tr("500 milliseconds"));
+        break;
+    case GkGraphTiming::GkGraphTime1Sec:
+        ui->comboBox_timing->insertItem(GRAPH_DISPLAY_1_SECONDS_IDX, tr("1 second"));
+        break;
+    case GkGraphTiming::GkGraphTime2Sec:
+        ui->comboBox_timing->insertItem(GRAPH_DISPLAY_2_SECONDS_IDX, tr("2 seconds"));
+        break;
+    case GkGraphTiming::GkGraphTime5Sec:
+        ui->comboBox_timing->insertItem(GRAPH_DISPLAY_5_SECONDS_IDX, tr("5 seconds"));
+        break;
+    case GkGraphTiming::GkGraphTime10Sec:
+        ui->comboBox_timing->insertItem(GRAPH_DISPLAY_10_SECONDS_IDX, tr("10 seconds"));
+        break;
+    default:
+        break;
+    }
+
+    return;
+}
+
+/**
+ * @brief SpectroDialog::eventFilter
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param obj
+ * @param event
+ * @return
+ * @note <https://stackoverflow.com/questions/26041471/make-qspinbox-react-to-mouse-wheel-events-when-cursor-is-not-over-it>
+ */
+bool SpectroDialog::eventFilter(QObject *obj, QEvent *event)
+{
+    if(obj == ui->spinBox_fft_size && event->type() == QEvent::FocusIn) {
+        fft_size_spinbox_sel = true;
+    }
+
+    if (fft_size_spinbox_sel) {
+        if (obj == this && event->type() == QEvent::MouseButtonPress) {
+            // Perform action here!
+        }
+    }
+
+    if(obj == ui->spinBox_fft_size && event->type() == QEvent::FocusOut) {
+        fft_size_spinbox_sel = false;
+    }
+
+    return false;
+}
+
+/**
+ * @brief SpectroDialog::on_spinBox_fft_size_valueChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
+void SpectroDialog::on_spinBox_fft_size_valueChanged(int arg1)
+{
+    if (arg1 % 256 != 0) {
+        QMessageBox::warning(this, tr("Incorrect value!"), tr("You must enter a value that is cleanly divisible by '8' (i.e. 256, 1024, 8192, etc.)!"), QMessageBox::Ok);
+        return;
+    }
+
+    fft_size_updated = arg1;
+
     return;
 }

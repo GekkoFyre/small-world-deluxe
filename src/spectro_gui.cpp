@@ -291,11 +291,12 @@ void SpectroGui::alignScales()
 }
 
 /**
- * @brief SpectroGui::showSpectrogram
+ * @brief SpectroGui::changeSpectroType
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param toggled
+ * @param graph_type
+ * @param enable
  */
-void SpectroGui::showSpectrogram(const bool &toggled)
+void SpectroGui::changeSpectroType(const GekkoFyre::Spectrograph::GkGraphType &graph_type, const bool &enable)
 {
     return;
 }
@@ -320,6 +321,16 @@ void SpectroGui::refreshDateTime(const qint64 &latest_time_update, const qint64 
     gkRasterData->invalidateCache();
     replot();
 
+    return;
+}
+
+/**
+ * @brief SpectroGui::updateFFTSize
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value
+ */
+void SpectroGui::updateFFTSize(const int &value)
+{
     return;
 }
 

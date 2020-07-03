@@ -134,8 +134,9 @@ protected:
     void alignScales();
 
 public slots:
-    void showSpectrogram(const bool &toggled);
+    void changeSpectroType(const GekkoFyre::Spectrograph::GkGraphType &graph_type, const bool &enable);
     void refreshDateTime(const qint64 &latest_time_update, const qint64 &time_since);
+    void updateFFTSize(const int &value);
 
 private:
     QwtPlotZoomer *zoomer;
