@@ -46,6 +46,7 @@
 #include "src/spectro_gui.hpp"
 #include "src/pa_audio_buf.hpp"
 #include "src/dek_db.hpp"
+#include "src/gk_string_funcs.hpp"
 #include "contrib/portaudio/cpp/include/portaudiocpp/PortAudioCpp.hxx"
 #include <boost/filesystem.hpp>
 #include <memory>
@@ -58,12 +59,6 @@
 #include <ostream>
 #include <QObject>
 #include <QPointer>
-
-#ifdef _WIN32
-#include "src/string_funcs_windows.hpp"
-#elif __linux__
-#include "src/string_funcs_linux.hpp"
-#endif
 
 #ifdef __cplusplus
 extern "C"

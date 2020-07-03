@@ -2170,3 +2170,45 @@ void DialogSettings::on_DialogSettings_rejected()
 {
     return;
 }
+
+void DialogSettings::on_spinBox_spectro_min_freq_valueChanged(int arg1)
+{
+    ui->horizontalSlider_spectro_min_freq->setValue(arg1);
+
+    return;
+}
+
+void DialogSettings::on_spinBox_spectro_max_freq_valueChanged(int arg1)
+{
+    ui->horizontalSlider_spectro_max_freq->setValue(arg1);
+
+    return;
+}
+
+void DialogSettings::on_horizontalSlider_spectro_min_freq_sliderMoved(int position)
+{
+    ui->spinBox_spectro_min_freq->setValue(position);
+
+    return;
+}
+
+void DialogSettings::on_horizontalSlider_spectro_max_freq_sliderMoved(int position)
+{
+    ui->spinBox_spectro_max_freq->setValue(position);
+
+    return;
+}
+
+void DialogSettings::on_horizontalSlider_spectro_min_freq_valueChanged(int value)
+{
+    ui->spinBox_spectro_min_freq->setValue(value);
+
+    return;
+}
+
+void DialogSettings::on_horizontalSlider_spectro_max_freq_valueChanged(int value)
+{
+    ui->spinBox_spectro_max_freq->setValue(value);
+
+    return;
+}

@@ -451,6 +451,9 @@
                           <property name="text">
                            <string>Compress settings database</string>
                           </property>
+                          <property name="checked">
+                           <bool>true</bool>
+                          </property>
                          </widget>
                         </item>
                        </layout>
@@ -467,6 +470,9 @@
                           <property name="text">
                            <string>Initialize waterfall upon startup</string>
                           </property>
+                          <property name="checked">
+                           <bool>true</bool>
+                          </property>
                          </widget>
                         </item>
                        </layout>
@@ -478,14 +484,14 @@
                         <string>Spectrograph / Waterfall</string>
                        </property>
                        <layout class="QFormLayout" name="formLayout_7">
-                        <item row="0" column="0">
+                        <item row="2" column="0">
                          <widget class="QLabel" name="label_spectro_render_thread_settings">
                           <property name="text">
                            <string>Number Rendering Threads: </string>
                           </property>
                          </widget>
                         </item>
-                        <item row="0" column="1">
+                        <item row="2" column="1">
                          <widget class="QSpinBox" name="spinBox_spectro_render_thread_settings">
                           <property name="toolTip">
                            <string>Be careful! Setting this too high can cause system instability.</string>
@@ -498,7 +504,7 @@
                           </property>
                          </widget>
                         </item>
-                        <item row="1" column="1">
+                        <item row="3" column="1">
                          <widget class="QFrame" name="frame_spectro_settings_checkbox">
                           <property name="frameShape">
                            <enum>QFrame::StyledPanel</enum>
@@ -531,10 +537,25 @@
                               <enum>QFrame::Raised</enum>
                              </property>
                              <layout class="QVBoxLayout" name="verticalLayout_25">
+                              <property name="leftMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="topMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="rightMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="bottomMargin">
+                               <number>0</number>
+                              </property>
                               <item>
                                <widget class="QCheckBox" name="checkBox_enable_panning">
                                 <property name="text">
                                  <string>Enable Panning</string>
+                                </property>
+                                <property name="checked">
+                                 <bool>true</bool>
                                 </property>
                                </widget>
                               </item>
@@ -550,10 +571,25 @@
                               <enum>QFrame::Raised</enum>
                              </property>
                              <layout class="QVBoxLayout" name="verticalLayout_24">
+                              <property name="leftMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="topMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="rightMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="bottomMargin">
+                               <number>0</number>
+                              </property>
                               <item>
                                <widget class="QCheckBox" name="checkBox_enable_zooming">
                                 <property name="text">
                                  <string>Enable Zooming</string>
+                                </property>
+                                <property name="checked">
+                                 <bool>true</bool>
                                 </property>
                                </widget>
                               </item>
@@ -563,7 +599,7 @@
                           </layout>
                          </widget>
                         </item>
-                        <item row="1" column="0">
+                        <item row="3" column="0">
                          <spacer name="horizontalSpacer_7">
                           <property name="orientation">
                            <enum>Qt::Horizontal</enum>
@@ -575,6 +611,144 @@
                            </size>
                           </property>
                          </spacer>
+                        </item>
+                        <item row="0" column="0">
+                         <widget class="QLabel" name="label_spectro_min_freq">
+                          <property name="text">
+                           <string>Minimum Frequency: </string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="0">
+                         <widget class="QLabel" name="label_spectro_max_freq">
+                          <property name="text">
+                           <string>Maximum Frequency: </string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="0" column="1">
+                         <widget class="QFrame" name="frame_5">
+                          <property name="frameShape">
+                           <enum>QFrame::StyledPanel</enum>
+                          </property>
+                          <property name="frameShadow">
+                           <enum>QFrame::Raised</enum>
+                          </property>
+                          <layout class="QHBoxLayout" name="horizontalLayout_23">
+                           <property name="leftMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="topMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="rightMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="bottomMargin">
+                            <number>0</number>
+                           </property>
+                           <item>
+                            <widget class="QSlider" name="horizontalSlider_spectro_min_freq">
+                             <property name="maximum">
+                              <number>1500</number>
+                             </property>
+                             <property name="singleStep">
+                              <number>100</number>
+                             </property>
+                             <property name="pageStep">
+                              <number>200</number>
+                             </property>
+                             <property name="orientation">
+                              <enum>Qt::Horizontal</enum>
+                             </property>
+                             <property name="tickPosition">
+                              <enum>QSlider::TicksBelow</enum>
+                             </property>
+                             <property name="tickInterval">
+                              <number>100</number>
+                             </property>
+                            </widget>
+                           </item>
+                           <item>
+                            <widget class="QSpinBox" name="spinBox_spectro_min_freq">
+                             <property name="suffix">
+                              <string> Hz</string>
+                             </property>
+                             <property name="maximum">
+                              <number>1500</number>
+                             </property>
+                             <property name="singleStep">
+                              <number>100</number>
+                             </property>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                        <item row="1" column="1">
+                         <widget class="QFrame" name="frame_6">
+                          <property name="frameShape">
+                           <enum>QFrame::StyledPanel</enum>
+                          </property>
+                          <property name="frameShadow">
+                           <enum>QFrame::Raised</enum>
+                          </property>
+                          <layout class="QHBoxLayout" name="horizontalLayout_27">
+                           <property name="leftMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="topMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="rightMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="bottomMargin">
+                            <number>0</number>
+                           </property>
+                           <item>
+                            <widget class="QSlider" name="horizontalSlider_spectro_max_freq">
+                             <property name="minimum">
+                              <number>2500</number>
+                             </property>
+                             <property name="maximum">
+                              <number>12500</number>
+                             </property>
+                             <property name="singleStep">
+                              <number>500</number>
+                             </property>
+                             <property name="pageStep">
+                              <number>1000</number>
+                             </property>
+                             <property name="orientation">
+                              <enum>Qt::Horizontal</enum>
+                             </property>
+                             <property name="tickPosition">
+                              <enum>QSlider::TicksBelow</enum>
+                             </property>
+                             <property name="tickInterval">
+                              <number>500</number>
+                             </property>
+                            </widget>
+                           </item>
+                           <item>
+                            <widget class="QSpinBox" name="spinBox_spectro_max_freq">
+                             <property name="suffix">
+                              <string> Hz</string>
+                             </property>
+                             <property name="minimum">
+                              <number>2500</number>
+                             </property>
+                             <property name="maximum">
+                              <number>12500</number>
+                             </property>
+                             <property name="singleStep">
+                              <number>500</number>
+                             </property>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
                         </item>
                        </layout>
                       </widget>

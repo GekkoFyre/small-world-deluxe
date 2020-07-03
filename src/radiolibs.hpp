@@ -43,6 +43,7 @@
 
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
+#include "src/gk_string_funcs.hpp"
 #include <boost/logic/tribool.hpp>
 #include <QPointer>
 #include <QObject>
@@ -56,12 +57,6 @@
 #include <mutex>
 #include <list>
 #include <set>
-
-#ifdef _WIN32
-#include "src/string_funcs_windows.hpp"
-#elif __linux__
-#include "src/string_funcs_linux.hpp"
-#endif
 
 #ifdef _WIN32
 #include <Windows.h>

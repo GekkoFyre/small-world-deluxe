@@ -427,16 +427,13 @@ set(GALAXY_UI_CPP
     src/gk_audio_decoding.cpp
     src/gk_cli.cpp
     src/gk_modem.cpp
-    src/gk_frequency_list.cpp)
+    src/gk_frequency_list.cpp
+    src/gk_string_funcs.cpp)
 
 if(WIN32 OR MSYS OR MINGW)
-    set(GALAXY_UI_CPP
-        ${GALAXY_UI_CPP}
-        src/string_funcs_windows.cpp)
+    # Nothing here at the moment!
 elseif(LINUX)
-    set(GALAXY_UI_CPP
-        ${GALAXY_UI_CPP}
-        src/string_funcs_linux.cpp)
+    # Nothing here at the moment!
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()
@@ -488,16 +485,13 @@ set(GALAXY_OBJ_HEADERS
     src/gk_audio_decoding.hpp
     src/gk_cli.hpp
     src/gk_modem.hpp
-    src/gk_frequency_list.hpp)
+    src/gk_frequency_list.hpp
+    src/gk_string_funcs.hpp)
 
 if(WIN32 OR MSYS OR MINGW)
-    set(GALAXY_OBJ_HEADERS
-        ${GALAXY_OBJ_HEADERS}
-        src/string_funcs_windows.hpp)
+    # Nothing here at the moment!
 elseif(LINUX)
-    set(GALAXY_OBJ_HEADERS
-        ${GALAXY_OBJ_HEADERS}
-        src/string_funcs_linux.hpp)
+    # Nothing here at the moment!
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()

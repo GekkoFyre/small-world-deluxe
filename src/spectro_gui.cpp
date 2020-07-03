@@ -44,6 +44,8 @@
 #include <qwt_plot_layout.h>
 #include <qwt_panner.h>
 #include <algorithm>
+#include <stdexcept>
+#include <exception>
 #include <utility>
 #include <QColormap>
 #include <QTimer>
@@ -73,23 +75,29 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
     try {
         gkStringFuncs = std::move(stringFuncs);
 
+        //
+        // This is the default graph-type that will be initialized when Small World Deluxe is launched by a user!
+        //
+        graph_in_use = GkGraphType::GkWaterfall;
+
         gkRasterData = std::make_unique<GkSpectroRasterData>();
         gkMatrixData = std::make_unique<QwtMatrixRasterData>();
         color_map = new LinearColorMapRGB();
         canvas = new QwtPlotCanvas();
 
-        x_axis_bandwidth_min_size = 0;
-        x_axis_bandwidth_max_size = 0;
-        y_axis_num_minor_steps = 0.0f;
-        y_axis_num_major_steps = 0.0f;
-        // y_axis_step_size = 1000.0f;
+        //
+        // Initialize any variables here!
+        //
+        buf_total_size = 0;
+        buf_overall_size = ((SPECTRO_Y_AXIS_SIZE / SPECTRO_REFRESH_CYCLE_MILLISECS) * GK_FFT_SIZE); // Obtain the total size of the matrix values!
+        gkRasterBuf.reserve(buf_overall_size + GK_FFT_SIZE);
 
         canvas->setBorderRadius(8);
         canvas->setPaintAttribute(QwtPlotCanvas::BackingStore, false);
-        canvas->setStyleSheet("border-radius: 8px; background-color: #389638");
+        canvas->setStyleSheet("border-radius: 8px; background-color: #000080");
         setCanvas(canvas);
 
-        gkRasterData->setRenderThreadCount(0); // Use system specific thread count
+        gkRasterData->setRenderThreadCount(0); // https://docs.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getlogicalprocessorinformation?redirectedfrom=MSDN
         gkRasterData->setCachePolicy(QwtPlotRasterItem::PaintCache);
         gkRasterData->setDisplayMode(QwtPlotSpectrogram::DisplayMode::ImageMode, true);
         gkRasterData->setColorMap(color_map);
@@ -113,8 +121,6 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         spectro_begin_time = start_time;
         spectro_latest_update = start_time; // Set the initial value for this too!
 
-        alignScales();
-
         //
         // Setup y-axis scaling
         // https://www.qtcentre.org/threads/55345-QwtPlot-problem-with-date-time-label-at-major-ticks
@@ -132,21 +138,17 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
 
         setAxisScaleDraw(QwtPlot::yLeft, date_scale_draw);
         setAxisScaleEngine(QwtPlot::yLeft, date_scale_engine);
-        date_scale_engine->divideScale(spectro_begin_time, spectro_latest_update, y_axis_num_major_steps,
-                                       y_axis_num_minor_steps, y_axis_step_size);
+        // date_scale_engine->divideScale(spectro_begin_time, spectro_latest_update, 0, 0);
 
         // const QwtInterval zInterval = gkSpectrogram->data()->interval(Qt::ZAxis);
         setAxisScale(QwtPlot::yLeft, spectro_begin_time, spectro_latest_update, 1000);
-        enableAxis(QwtPlot::yLeft);
+        enableAxis(QwtPlot::yLeft, true);
 
         //
         // https://qwt.sourceforge.io/class_qwt_matrix_raster_data.html#a69db38d8f920edb9dc3f0953ca16db8f
         // Set the type of colour-map used!
         //
         plotLayout()->setAlignCanvasToScales(true);
-
-        grid = new QwtPlotGrid();
-        grid->attach(this);
 
         curve = new QwtPlotCurve();
         curve->setTitle("Frequency Response");
@@ -161,14 +163,16 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         top_x_axis->setTitle(tr("Bandwidth (Hz)"));
         top_x_axis->setEnabled(true);
         setAxisScale(QwtPlot::xTop, 100, 2500, 250);
-        enableAxis(QwtPlot::xTop);
+        enableAxis(QwtPlot::xTop, true);
+
+        enableAxis(QwtPlot::xBottom, false);
 
         right_y_axis = axisWidget(QwtPlot::yRight);
         right_y_axis->setColorBarWidth(16);
         right_y_axis->setColorBarEnabled(true);
         right_y_axis->setColorMap(gkRasterData->interval(Qt::ZAxis), color_map);
         right_y_axis->setEnabled(true);
-        enableAxis(QwtPlot::yRight);
+        enableAxis(QwtPlot::yRight, true);
 
         //
         // Instructions!
@@ -185,7 +189,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         zoomer->setEnabled(enableZoomer);
 
         panner = new QwtPlotPanner(canvas);
-        panner->setAxisEnabled(QwtPlot::xBottom, false);
+        panner->setAxisEnabled(QwtPlot::xTop, true);
         panner->setMouseButton(Qt::MidButton);
         panner->setEnabled(enablePanner);
 
@@ -193,6 +197,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         zoomer->setRubberBandPen(c);
         zoomer->setTrackerPen(c);
 
+        alignScales();
         gkRasterData->attach(this);
 
         setAutoReplot(false);
@@ -230,10 +235,6 @@ SpectroGui::~SpectroGui()
         delete date_scale_engine;
     }
 
-    if (grid != nullptr) {
-        delete grid;
-    }
-
     if (curve != nullptr) {
         delete curve;
     }
@@ -245,25 +246,57 @@ SpectroGui::~SpectroGui()
     return;
 }
 
-void SpectroGui::setAlpha(const int &alpha)
-{
-    return;
-}
-
-void SpectroGui::setTheme(const QColor &colour)
-{
-    return;
-}
-
+/**
+ * @brief SpectroGui::insertData
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param values
+ * @param numCols
+ */
 void SpectroGui::insertData(const QVector<double> values, const int &numCols)
 {
-    gkMatrixData->setValueMatrix(values, numCols);
+    Q_UNUSED(numCols);
+
+    try {
+        mtx_raster_data.lock();
+
+        for (const auto &data: values) {
+            gkRasterBuf.push_back(data); // Store the matrix values within a QVector, for up to `SPECTRO_Y_AXIS_SIZE` milliseconds!
+        }
+
+        const int buf_total_cols = (buf_overall_size / GK_FFT_SIZE);
+        if (graph_in_use == GkGraphType::GkMomentInTime) {
+            //
+            // Waterfall (moment-in-time, i.e. without 'date and time' axis)
+            //
+            gkMatrixData->setValueMatrix(gkRasterBuf.toVector(), buf_total_cols);
+        } else if (graph_in_use == GkGraphType::GkWaterfall) {
+            //
+            // Standard Waterfall (i.e. with 'date and time' axis)
+            //
+            gkMatrixData->setValueMatrix(gkRasterBuf.toVector(), buf_total_cols);
+        } else {
+            //
+            // 2D Spectrogram
+            //
+        }
+
+        int i = 0;
+        while (i < GK_FFT_SIZE) {
+            gkRasterBuf.pop_front(); // Delete the last amount of `GK_FFT_SIZE` at the very front of the QList!
+            ++i;
+        }
+
+        mtx_raster_data.unlock();
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(tr("An error has occurred whilst doing calculations for the spectrograph / waterfall!").toStdString()));
+    }
 
     return;
 }
 
 /**
  * @brief SpectroGui::alignScales will align the scales to the canvas frame.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void SpectroGui::alignScales()
 {
@@ -284,8 +317,38 @@ void SpectroGui::alignScales()
     return;
 }
 
-void SpectroGui::showSpectrogram(const bool &toggled)
+/**
+ * @brief SpectroGui::changeSpectroType
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param graph_type
+ * @param enable
+ */
+void SpectroGui::changeSpectroType(const GekkoFyre::Spectrograph::GkGraphType &graph_type)
 {
+    try {
+        switch (graph_type) {
+        case GkGraphType::GkWaterfall:
+            graph_in_use = GkGraphType::GkWaterfall;
+            break;
+        case GkGraphType::GkSinewave:
+            graph_in_use = GkGraphType::GkSinewave;
+            break;
+        case GkGraphType::GkMomentInTime:
+            graph_in_use = GkGraphType::GkMomentInTime;
+            break;
+        default:
+            break;
+        }
+    } catch (const std::exception &e) {
+        #if defined(_MSC_VER) && (_MSC_VER > 1900)
+        HWND hwnd_spectro_gui_main = nullptr;
+        gkStringFuncs->modalDlgBoxOk(hwnd_spectro_gui_main, tr("Error!"), e.what(), MB_ICONERROR);
+        DestroyWindow(hwnd_spectro_gui_main);
+        #else
+        gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+        #endif
+    }
+
     return;
 }
 
@@ -295,17 +358,30 @@ void SpectroGui::showSpectrogram(const bool &toggled)
  */
 void SpectroGui::refreshDateTime(const qint64 &latest_time_update, const qint64 &time_since)
 {
-    setAxisScale(QwtPlot::yLeft, time_since, latest_time_update, 1000);
+    spectro_latest_update = latest_time_update;
+    setAxisScale(QwtPlot::yLeft, spectro_latest_update, spectro_latest_update + SPECTRO_Y_AXIS_SIZE);
+    setAxisMaxMinor(QwtPlot::yLeft, SPECTRO_Y_AXIS_MINOR);
+    setAxisMaxMajor(QwtPlot::yLeft, SPECTRO_Y_AXIS_MAJOR);
     // setAxisScale(QwtPlot::xTop, x_axis_bandwidth_min_size, x_axis_bandwidth_max_size, 250);
 
-    gkMatrixData->setInterval(Qt::YAxis, QwtInterval(time_since, latest_time_update));
-
-    //QwtScaleDiv y_axis_left_scale_div = QwtScaleDiv(y_axis_num_minor_steps, y_axis_num_major_steps);
-    // setAxisScaleDiv(QwtPlot::yLeft, y_axis_left_scale_div);
+    //
+    // Breakup the FFT caclulations into specific time units!
+    //
+    gkMatrixData->setInterval(Qt::YAxis, QwtInterval(time_since, spectro_latest_update));
 
     gkRasterData->invalidateCache();
     replot();
 
+    return;
+}
+
+/**
+ * @brief SpectroGui::updateFFTSize
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value
+ */
+void SpectroGui::updateFFTSize(const int &value)
+{
     return;
 }
 

@@ -303,42 +303,6 @@ std::list<GkComPort> RadioLibs::status_com_ports()
             com_struct.port_info = port;
 
             if (!com_struct.port_info.port.empty()) {
-                try {
-                    if (serial::Serial(com_struct.port_info.port).isOpen()) {
-                        com_struct.is_open = true;
-                    } else {
-                        com_struct.is_open = false;
-                    }
-                } catch (const std::exception &e) {
-                    #if defined(_MSC_VER) && (_MSC_VER > 1900)
-                    HWND hwnd = nullptr;
-                    modalDlgBoxOk(hwnd, tr("Error!"), e.what(), MB_ICONERROR);
-                    DestroyWindow(hwnd);
-                    #else
-                    modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
-                    #endif
-
-                    //
-                    // Erase the currently stored settings because of an error with loading them...
-                    //
-                    QString comDeviceCat = gkDekodeDb->read_rig_settings_comms(radio_cfg::ComDeviceCat, GkConnType::RS232);
-                    QString comDevicePtt = gkDekodeDb->read_rig_settings_comms(radio_cfg::ComDevicePtt, GkConnType::RS232);
-
-                    if (!comDeviceCat.isNull() && !comDeviceCat.isEmpty()) {
-                        gkDekodeDb->write_rig_settings_comms("", radio_cfg::ComDeviceCat, GkConnType::RS232);
-                    }
-
-                    if (!comDevicePtt.isNull() && !comDevicePtt.isEmpty()) {
-                        gkDekodeDb->write_rig_settings_comms("", radio_cfg::ComDevicePtt, GkConnType::RS232);
-                    }
-                }
-
-                com_struct.def_stopbits = serial::Serial(com_struct.port_info.port).getStopbits();
-                com_struct.def_baudrate = serial::Serial(com_struct.port_info.port).getBaudrate();
-                com_struct.timeout_info = serial::Serial(com_struct.port_info.port).getTimeout();
-                com_struct.def_parity = serial::Serial(com_struct.port_info.port).getParity();
-                com_struct.def_flow_control = serial::Serial(com_struct.port_info.port).getFlowcontrol();
-
                 com_map.push_back(com_struct);
             }
         }
@@ -816,7 +780,16 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_p
 
         rig_debug(radio_ptr->verbosity, "Backend version: %s, Status: %s\n\n", radio_ptr->rig->caps->version, rig_strstatus(radio_ptr->rig->caps->status));
 
+        //
+        // Close any ports that are about to be connected towards by Hamlib!
+        //
+        if (serial::Serial(radio_ptr->cat_conn_port).isOpen()) {
+            serial::Serial(radio_ptr->cat_conn_port).close();
+        }
+
+        //
         // Open our rig in question
+        //
         radio_ptr->retcode = rig_open(radio_ptr->rig);
         if (radio_ptr->retcode != RIG_OK) {
             throw std::runtime_error(tr("[ Hamlib ] Error with opening amateur radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->retcode))).toStdString());

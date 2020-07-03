@@ -155,7 +155,19 @@ namespace GekkoFyre {
 #define SPECTRO_REFRESH_CYCLE_MILLISECS (1000)          // How often the spectrograph / waterfall should update, in milliseconds.
 #define SPECTRO_TIME_UPDATE_MILLISECS (15000)           // How often, in milliseconds, the spectrograph updates the timing information on the y-axis.
 #define SPECTRO_MAX_BUFFER_SIZE (10)                    // The maximum number of items to store within the buffers associated with the spectrograph.
-#define SPECTRO_Y_AXIS_SIZE (10000)                     // The maximum size of the y-axis, in milliseconds, given that it is based on a timescale.
+#define SPECTRO_Y_AXIS_SIZE (60000)                     // The maximum size of the y-axis, in milliseconds, given that it is based on a timescale.
+#define SPECTRO_Y_AXIS_MINOR (15)
+#define SPECTRO_Y_AXIS_MAJOR (8)
+
+#define GRAPH_DISPLAY_WATERFALL_STD_IDX (0)             // Display the standard waterfall!
+#define GRAPH_DISPLAY_WATERFALL_MIT_IDX (1)             // Display the moment-in-time waterfall!
+#define GRAPH_DISPLAY_2D_SINEWAVE_IDX (2)               // Display the 2D Sinewave graph!
+
+#define GRAPH_DISPLAY_500_MILLISECS_IDX (0)             // Display '500 milliseconds' within the QComboBox!
+#define GRAPH_DISPLAY_1_SECONDS_IDX (1)                 // Display '1 seconds' within the QComboBox!
+#define GRAPH_DISPLAY_2_SECONDS_IDX (2)                 // Display '2 seconds' within the QComboBox!
+#define GRAPH_DISPLAY_5_SECONDS_IDX (3)                 // Display '5 seconds' within the QComboBox!
+#define GRAPH_DISPLAY_10_SECONDS_IDX (4)                // Display '10 seconds' within the QComboBox!
 
 //
 // Audio encoding/decoding
@@ -163,6 +175,12 @@ namespace GekkoFyre {
 #define AUDIO_CODECS_OGG_VORBIS_ENCODE_QUALITY (1.0)    // The quality at which to encode an Ogg Vorbis file!
 #define AUDIO_CODECS_OGG_VORBIS_BUFFER_SIZE (64 * 1024) // The buffering size for each frame, in kilobytes, to be used with Ogg Vorbis encoding.
 #define AUDIO_CODECS_OPUS_MAX_PACKETS (1500)            // Not sure what this is for but it seems to be necessary!
+
+//
+// RS232 & USB Connections
+//
+#define RS232_DEFAULT_BAUD_SPEED (9600)                 // The default baud speed made for any RS232 connections, mostly made for testing purposes.
+#define RS232_DEFAULT_TIMEOUT (5000)                    // The default timeout value for any RS232 connections, mostly made for testing purposes.
 
 #ifndef M_PI
 #define M_PI (3.14159265358979323846) /* pi */
@@ -309,7 +327,6 @@ namespace Database {
 
         struct GkComPort {
             serial::PortInfo port_info;                                             // Details on the COM/RS232/Serial ports themselves
-            bool is_open;                                                           // Is the serial port open and ready for a connection to be made?
             serial::stopbits_t def_stopbits;                                        // The defined stop bits for this serial port in question
             uint32_t def_baudrate;                                                  // The defined baudrate for this serial port in question
             serial::parity_t def_parity;                                            // The defined parity for this serial port in question
@@ -490,6 +507,20 @@ namespace Spectrograph {
         IndexMap,
         HueMap,
         AlphaMap
+    };
+
+    enum GkGraphType {
+        GkWaterfall,
+        GkSinewave,
+        GkMomentInTime
+    };
+
+    enum GkGraphTiming {
+        GkGraphTime500Millisec,
+        GkGraphTime1Sec,
+        GkGraphTime2Sec,
+        GkGraphTime5Sec,
+        GkGraphTime10Sec
     };
 
     struct Window {

@@ -53,12 +53,15 @@
 #include "src/gk_fft.hpp"
 #include "src/ui/gkaudioplaydialog.hpp"
 #include "src/ui/gk_vu_meter_widget.hpp"
+#include "src/gk_string_funcs.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
 #include <leveldb/db.h>
 #include <leveldb/status.h>
 #include <leveldb/options.h>
+#include <stdexcept>
+#include <exception>
 #include <complex>
 #include <memory>
 #include <thread>
@@ -79,12 +82,6 @@
 #include <QPushButton>
 #include <QSharedPointer>
 #include <QCommandLineParser>
-
-#ifdef _WIN32
-#include "src/string_funcs_windows.hpp"
-#elif __linux__
-#include "src/string_funcs_linux.hpp"
-#endif
 
 namespace Ui {
 class MainWindow;
@@ -337,6 +334,7 @@ private:
     void createStatusBar(const QString &statusMsg = "");
     bool changeStatusBarMsg(const QString &statusMsg = "");
     bool steadyTimer(const int &seconds);
+    void print_exception(const std::exception &e, int level = 0);
 };
 
 Q_DECLARE_METATYPE(std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>);
@@ -344,6 +342,7 @@ Q_DECLARE_METATYPE(GekkoFyre::Database::Settings::GkUsbPort);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkConnType);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::DigitalModes);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::IARURegions);
+Q_DECLARE_METATYPE(GekkoFyre::Spectrograph::GkGraphType);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkFreqs);
 Q_DECLARE_METATYPE(RIG);
 Q_DECLARE_METATYPE(size_t);

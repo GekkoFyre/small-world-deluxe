@@ -39,7 +39,7 @@
  **
  ****************************************************************************************************/
 
-#include "string_funcs_windows.hpp"
+#include "gk_string_funcs.hpp"
 #include <QSettings>
 
 #ifdef _WIN32

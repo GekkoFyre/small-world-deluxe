@@ -102,6 +102,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<GekkoFyre::AmateurRadio::GkConnType>("GekkoFyre::AmateurRadio::GkConnType");
     qRegisterMetaType<GekkoFyre::AmateurRadio::DigitalModes>("GekkoFyre::AmateurRadio::DigitalModes");
     qRegisterMetaType<GekkoFyre::AmateurRadio::IARURegions>("GekkoFyre::AmateurRadio::IARURegions");
+    qRegisterMetaType<GekkoFyre::Spectrograph::GkGraphType>("GekkoFyre::Spectrograph::GkGraphType");
     qRegisterMetaType<GekkoFyre::AmateurRadio::GkFreqs>("GekkoFyre::AmateurRadio::GkFreqs");
     qRegisterMetaType<RIG>("RIG");
     qRegisterMetaType<size_t>("size_t");
@@ -354,7 +355,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the Waterfall / Spectrograph
         //
-        gkSpectroGui = new GekkoFyre::SpectroGui(gkStringFuncs, true, false, this);
+        gkSpectroGui = new GekkoFyre::SpectroGui(gkStringFuncs, true, true, this);
         ui->verticalLayout_11->addWidget(gkSpectroGui);
         gkSpectroGui->setEnabled(true);
 
@@ -1056,6 +1057,23 @@ bool MainWindow::steadyTimer(const int &seconds)
 }
 
 /**
+ * @brief MainWindow::print_exception
+ * @param e
+ * @param level
+ */
+void MainWindow::print_exception(const std::exception &e, int level)
+{
+    QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
+    try {
+        std::rethrow_if_nested(e);
+    } catch(const std::exception &e) {
+        print_exception(e, level + 1);
+    } catch(...) {}
+
+    return;
+}
+
+/**
  * @brief MainWindow::on_actionCheck_for_Updates_triggered
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
@@ -1296,109 +1314,169 @@ void MainWindow::updateSpectrograph()
     //
     // CUDA support is enabled!
     //
-    if (inputAudioStream != nullptr && AUDIO_FRAMES_PER_BUFFER > 0) {
-        while (inputAudioStream->isActive()) {
-            //
-            // Input audio stream is open and active!
-            //
-            std::vector<int16_t> recv_buf;
-            while (input_audio_buf->size() > 0) {
-                recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
-                recv_buf.push_back(input_audio_buf->get());
-            }
+    try {
+        if ((inputAudioStream != nullptr) && (pref_input_device.is_dev_active == true) && (AUDIO_FRAMES_PER_BUFFER > 0)) {
+            while (inputAudioStream->isActive()) {
+                std::vector<float> fftData;
+                fftData.reserve(GK_FFT_SIZE + 1);
+                const qint64 measure_start_time = QDateTime::currentMSecsSinceEpoch();
+                while (fftData.size() < GK_FFT_SIZE) {
+                    //
+                    // Input audio stream is open and active!
+                    //
+                    auto audio_buf_tmp = std::make_shared<PaAudioBuf<int16_t>>(*input_audio_buf);
+                    std::vector<int16_t> recv_buf;
+                    while (audio_buf_tmp->size() > 0) {
+                        recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
+                        recv_buf.push_back(audio_buf_tmp->get());
+                    }
 
-            if (!recv_buf.empty()) {
-                float *fftData = new float[GK_FFT_SIZE];
-                processCUDAFFT(recv_buf.data(), fftData, GK_FFT_SIZE);
+                    if (!recv_buf.empty()) {
 
-                for (size_t i = 0; i < GK_FFT_SIZE; ++i) {
-                    gkSpectroGui->value(fftData[i], i); // This is the data for the spectrograph / waterfall itself!
-                }
+                        if (fftData.size() == GK_FFT_SIZE) {
+                            processCUDAFFT(recv_buf.data(), fftData.data(), GK_FFT_SIZE);
 
-                recv_buf.clear();
-                recv_buf.shrink_to_fit();
-            }
-        }
-    }
-    #else
-    if ((inputAudioStream != nullptr) && (pref_input_device.is_dev_active == true) && (AUDIO_FRAMES_PER_BUFFER > 0)) {
-        while (inputAudioStream->isActive()) {
-            std::vector<std::complex<float>> fftData;
-            fftData.reserve(GK_FFT_SIZE + 1);
-            const qint64 measure_start_time = QDateTime::currentMSecsSinceEpoch();
-            while (fftData.size() < GK_FFT_SIZE) {
-                //
-                // Input audio stream is open and active!
-                //
-                auto audio_buf_tmp = std::make_shared<PaAudioBuf<int16_t>>(*input_audio_buf);
-                std::vector<int16_t> recv_buf;
-                while (audio_buf_tmp->size() > 0) {
-                    recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
-                    recv_buf.push_back(audio_buf_tmp->get());
-                }
+                            //
+                            // Perform the timing and date calculations!
+                            //
+                            const qint64 measure_end_time = QDateTime::currentMSecsSinceEpoch(); // The end time at the finalization of all calculations
+                            const qint64 total_calc_time = measure_end_time - measure_start_time; // The total time it took to calculate everything
+                            gk_spectro_latest_time = measure_end_time;
 
-                if (!recv_buf.empty()) {
-                    fftData.push_back(*recv_buf.data());
-                    recv_buf.clear();
-                    recv_buf.shrink_to_fit();
+                            const qint64 spectro_time_diff = total_calc_time;
+                            if (spectro_time_diff > SPECTRO_Y_AXIS_SIZE) {
+                                // Stop the y-axis from growing more than `SPECTRO_Y_AXIS_SIZE` in size!
+                                gk_spectro_start_time = gk_spectro_latest_time - SPECTRO_Y_AXIS_SIZE;
+                            }
 
-                    if (fftData.size() == GK_FFT_SIZE) {
-                        gkFFT->FFTCompute(fftData.data(), GK_FFT_SIZE);
+                            //
+                            // In order to get the frequency information for each audio sample, you must:
+                            // 1) Use a real-to-complex FFT of size N to generate frequency domain data.
+                            // 2) Calculate the magnitude of your complex frequency domain data (i.e., `magnitude = std::sqrt(re^2 + im^2)`).
+                            // 3) Optionally convert magnitude to a log scale (dB) (i.e., `magnitude_dB = 20 * std::log10(magnitude)`).
+                            //
 
-                        //
-                        // Perform the timing and date calculations!
-                        //
-                        const qint64 measure_end_time = QDateTime::currentMSecsSinceEpoch(); // The end time at the finalization of all calculations
-                        const qint64 total_calc_time = measure_end_time - measure_start_time; // The total time it took to calculate everything
-                        gk_spectro_latest_time = measure_end_time;
+                            std::vector<double> magnitude_buf;
+                            magnitude_buf.reserve(fftData.size() + 1);
+                            for (const auto &calc: fftData) {
+                                const double magnitude = std::sqrt(std::pow(calc, 2) + std::pow(calc, 2));
+                                magnitude_buf.push_back(magnitude);
+                            }
 
-                        const qint64 spectro_time_diff = total_calc_time;
-                        if (spectro_time_diff > SPECTRO_Y_AXIS_SIZE) {
-                            // Stop the y-axis from growing more than `SPECTRO_Y_AXIS_SIZE` in size!
-                            gk_spectro_start_time = gk_spectro_latest_time - SPECTRO_Y_AXIS_SIZE;
+                            std::vector<float> freq_list;
+
+                            std::vector<double> magnitude_db_buf;
+                            magnitude_buf.reserve(magnitude_buf.size() + 1);
+                            for (const auto &calc: magnitude_buf) {
+                                const double magnitude_db = 20 * std::log10(calc);
+                                magnitude_db_buf.push_back(magnitude_db);
+                            }
+
+                            QVector<double> fft_spectro_vals;
+                            fft_spectro_vals.reserve(GK_FFT_SIZE + 1);
+                            for (size_t i = 0; i < GK_FFT_SIZE; ++i) {
+                                auto abs_val = std::abs(fftData[i]) / ((double)GK_FFT_SIZE);
+                                fft_spectro_vals.push_back(abs_val);
+                            }
+
+                            gkSpectroGui->insertData(fft_spectro_vals, 1); // This is the data for the spectrograph / waterfall itself!
+                            emit refreshSpectrograph(gk_spectro_latest_time, gk_spectro_start_time);
+
+                            magnitude_buf.clear();
+                            magnitude_db_buf.clear();
+                            fftData.clear();
                         }
-
-                        //
-                        // In order to get the frequency information for each audio sample, you must:
-                        // 1) Use a real-to-complex FFT of size N to generate frequency domain data.
-                        // 2) Calculate the magnitude of your complex frequency domain data (i.e., `magnitude = std::sqrt(re^2 + im^2)`).
-                        // 3) Optionally convert magnitude to a log scale (dB) (i.e., `magnitude_dB = 20 * std::log10(magnitude)`).
-                        //
-
-                        std::vector<double> magnitude_buf;
-                        magnitude_buf.reserve(fftData.size() + 1);
-                        for (const auto &calc: fftData) {
-                            const double magnitude = std::sqrt(std::pow(calc.real(), 2) + std::pow(calc.imag(), 2));
-                            magnitude_buf.push_back(magnitude);
-                        }
-
-                        std::vector<float> freq_list;
-
-                        std::vector<double> magnitude_db_buf;
-                        magnitude_buf.reserve(magnitude_buf.size() + 1);
-                        for (const auto &calc: magnitude_buf) {
-                            const double magnitude_db = 20 * std::log10(calc);
-                            magnitude_db_buf.push_back(magnitude_db);
-                        }
-
-                        QVector<double> fft_spectro_vals;
-                        fft_spectro_vals.reserve(GK_FFT_SIZE + 1);
-                        for (size_t i = 0; i < GK_FFT_SIZE; ++i) {
-                            auto abs_val = std::abs(fftData[i]) / ((double)GK_FFT_SIZE);
-                            fft_spectro_vals.push_back(abs_val);
-                        }
-
-                        gkSpectroGui->insertData(fft_spectro_vals, 1); // This is the data for the spectrograph / waterfall itself!
-                        emit refreshSpectrograph(gk_spectro_latest_time, gk_spectro_start_time);
-
-                        magnitude_buf.clear();
-                        magnitude_db_buf.clear();
-                        fftData.clear();
                     }
                 }
             }
         }
+    } catch (const std::exception &e) {
+        print_exception(e);
     }
+    #else
+    try {
+        if ((inputAudioStream != nullptr) && (pref_input_device.is_dev_active == true) && (AUDIO_FRAMES_PER_BUFFER > 0)) {
+            while (inputAudioStream->isActive()) {
+                std::vector<std::complex<float>> fftData;
+                fftData.reserve(GK_FFT_SIZE + 1);
+                const qint64 measure_start_time = QDateTime::currentMSecsSinceEpoch();
+                while (fftData.size() < GK_FFT_SIZE) {
+                    //
+                    // Input audio stream is open and active!
+                    //
+                    auto audio_buf_tmp = std::make_shared<PaAudioBuf<int16_t>>(*input_audio_buf);
+                    std::vector<int16_t> recv_buf;
+                    while (audio_buf_tmp->size() > 0) {
+                        recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
+                        recv_buf.push_back(audio_buf_tmp->get());
+                    }
+
+                    if (!recv_buf.empty()) {
+                        fftData.push_back(*recv_buf.data());
+                        recv_buf.clear();
+                        recv_buf.shrink_to_fit();
+
+                        if (fftData.size() == GK_FFT_SIZE) {
+                            gkFFT->FFTCompute(fftData.data(), GK_FFT_SIZE);
+
+                            //
+                            // Perform the timing and date calculations!
+                            //
+                            const qint64 measure_end_time = QDateTime::currentMSecsSinceEpoch(); // The end time at the finalization of all calculations
+                            const qint64 total_calc_time = measure_end_time - measure_start_time; // The total time it took to calculate everything
+                            gk_spectro_latest_time = measure_end_time;
+
+                            const qint64 spectro_time_diff = total_calc_time;
+                            if (spectro_time_diff > SPECTRO_Y_AXIS_SIZE) {
+                                // Stop the y-axis from growing more than `SPECTRO_Y_AXIS_SIZE` in size!
+                                gk_spectro_start_time = gk_spectro_latest_time - SPECTRO_Y_AXIS_SIZE;
+                            }
+
+                            //
+                            // In order to get the frequency information for each audio sample, you must:
+                            // 1) Use a real-to-complex FFT of size N to generate frequency domain data.
+                            // 2) Calculate the magnitude of your complex frequency domain data (i.e., `magnitude = std::sqrt(re^2 + im^2)`).
+                            // 3) Optionally convert magnitude to a log scale (dB) (i.e., `magnitude_dB = 20 * std::log10(magnitude)`).
+                            //
+
+                            std::vector<double> magnitude_buf;
+                            magnitude_buf.reserve(fftData.size() + 1);
+                            for (const auto &calc: fftData) {
+                                const double magnitude = std::sqrt(std::pow(calc.real(), 2) + std::pow(calc.imag(), 2));
+                                magnitude_buf.push_back(magnitude);
+                            }
+
+                            std::vector<float> freq_list;
+
+                            std::vector<double> magnitude_db_buf;
+                            magnitude_buf.reserve(magnitude_buf.size() + 1);
+                            for (const auto &calc: magnitude_buf) {
+                                const double magnitude_db = 20 * std::log10(calc);
+                                magnitude_db_buf.push_back(magnitude_db);
+                            }
+
+                            QVector<double> fft_spectro_vals;
+                            fft_spectro_vals.reserve(GK_FFT_SIZE + 1);
+                            for (size_t i = 0; i < GK_FFT_SIZE; ++i) {
+                                auto abs_val = std::abs(fftData[i]) / ((double)GK_FFT_SIZE);
+                                fft_spectro_vals.push_back(abs_val);
+                            }
+
+                            gkSpectroGui->insertData(fft_spectro_vals, 1); // This is the data for the spectrograph / waterfall itself!
+                            emit refreshSpectrograph(gk_spectro_latest_time, gk_spectro_start_time);
+
+                            magnitude_buf.clear();
+                            magnitude_db_buf.clear();
+                            fftData.clear();
+                        }
+                    }
+                }
+            }
+        }
+    } catch (const std::exception &e) {
+        print_exception(e);
+    }
+
     #endif
 
     return;
@@ -1889,7 +1967,7 @@ void MainWindow::disconnectRigInMemory(RIG *rig_to_disconnect, const std::shared
                     // CAT Port
                     //
                     if (std::strcmp(radio_ptr->cat_conn_port.c_str(), port.port_info.port.c_str()) == 0) {
-                        if (port.is_open) {
+                        if (serial::Serial(port.port_info.port).isOpen()) {
                             serial::Serial(port.port_info.port).close();
                         }
                     }
@@ -1898,7 +1976,7 @@ void MainWindow::disconnectRigInMemory(RIG *rig_to_disconnect, const std::shared
                     // PTT Port
                     //
                     if (std::strcmp(radio_ptr->ptt_conn_port.c_str(), port.port_info.port.c_str()) == 0) {
-                        if (port.is_open) {
+                        if (serial::Serial(port.port_info.port).isOpen()) {
                             serial::Serial(port.port_info.port).close();
                         }
                     }
