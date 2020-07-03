@@ -89,7 +89,7 @@ public:
     virtual bool full() const;
 
 private:
-    std::unique_ptr<GekkoFyre::GkCircBuffer<T>> gkCircBuffer;
+    std::shared_ptr<GekkoFyre::GkCircBuffer<T>> gkCircBuffer;
     GekkoFyre::Database::Settings::Audio::GkDevice prefInputDevice;
     GekkoFyre::Database::Settings::Audio::GkDevice prefOutputDevice;
 
@@ -129,7 +129,7 @@ PaAudioBuf<T>::PaAudioBuf(int buffer_size, const GkDevice &pref_output_device, c
     // Original author: https://embeddedartistry.com/blog/2017/05/17/creating-a-circular-buffer-in-c-and-c/
     //
     circ_buffer_size = buffer_size;
-    gkCircBuffer = std::make_unique<GkCircBuffer<T>>(circ_buffer_size);
+    gkCircBuffer = std::make_shared<GkCircBuffer<T>>(circ_buffer_size);
 }
 
 template<class T>

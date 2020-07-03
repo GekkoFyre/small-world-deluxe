@@ -46,6 +46,7 @@
 #include "src/file_io.hpp"
 #include "src/pa_audio_buf.hpp"
 #include "src/gk_frequency_list.hpp"
+#include "src/gk_string_funcs.hpp"
 #include <QObject>
 #include <vector>
 #include <string>
@@ -57,12 +58,6 @@
 #include <QString>
 #include <QVector>
 #include <QPointer>
-
-#ifdef _WIN32
-#include "src/string_funcs_windows.hpp"
-#elif __linux__
-#include "src/string_funcs_linux.hpp"
-#endif
 
 namespace GekkoFyre {
 

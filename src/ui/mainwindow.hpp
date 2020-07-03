@@ -50,14 +50,19 @@
 #include "src/ui/dialogsettings.hpp"
 #include "src/gk_audio_encoding.hpp"
 #include "src/gk_audio_decoding.hpp"
+#include "src/gk_fft.hpp"
 #include "src/ui/gkaudioplaydialog.hpp"
 #include "src/ui/gk_vu_meter_widget.hpp"
+#include "src/gk_string_funcs.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
 #include <leveldb/db.h>
 #include <leveldb/status.h>
 #include <leveldb/options.h>
+#include <stdexcept>
+#include <exception>
+#include <complex>
 #include <memory>
 #include <thread>
 #include <future>
@@ -66,23 +71,17 @@
 #include <mutex>
 #include <ctime>
 #include <list>
-#include <QMainWindow>
-#include <QPushButton>
-#include <QCommandLineParser>
+#include <QString>
 #include <QPointer>
 #include <QPrinter>
-#include <QSharedPointer>
-#include <QString>
-#include <QStringList>
 #include <QMetaType>
 #include <QDateTime>
 #include <QSettings>
-
-#ifdef _WIN32
-#include "src/string_funcs_windows.hpp"
-#elif __linux__
-#include "src/string_funcs_linux.hpp"
-#endif
+#include <QStringList>
+#include <QMainWindow>
+#include <QPushButton>
+#include <QSharedPointer>
+#include <QCommandLineParser>
 
 namespace Ui {
 class MainWindow;
@@ -159,15 +158,15 @@ private slots:
     void infoBar();
     void uponExit();
 
+    //
+    // Audio related
+    //
     void updateVolume(const float &value);
 
 protected slots:
     void closeEvent(QCloseEvent *event);
 
 public slots:
-    void updateSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &data,
-                           const std::vector<int> &raw_audio_data,
-                           const int &hanning_window_size, const size_t &buffer_size);
     void updateProgressBar(const bool &enable, const size_t &min, const size_t &max);
 
     //
@@ -192,9 +191,6 @@ signals:
     void updatePaVol(const int &percentage);
     void updatePlot();
     void gkExitApp();
-    void sendSpectroData(const std::vector<GekkoFyre::Spectrograph::RawFFT> &values,
-                         const std::vector<int> &raw_audio_data,
-                         const int &hanning_window_size, const size_t &buffer_size);
 
     //
     // Radio and Hamlib specific functions
@@ -215,6 +211,11 @@ signals:
     void stopRecording(const int &wait_time = 5000);
     void startRecording(const int &wait_time = 5000);
 
+    //
+    // Spectrograph related
+    //
+    void refreshSpectrograph(const qint64 &latest_time_update, const qint64 &time_since);
+
 private:
     Ui::MainWindow *ui;
 
@@ -226,6 +227,7 @@ private:
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GekkoFyre::GkCli> gkCli;
+    std::unique_ptr<GekkoFyre::GkFFT> gkFFT;
     QPointer<GekkoFyre::FileIo> fileIo;
     QPointer<GekkoFyre::GkFreqList> gkFreqList;
     QPointer<GekkoFyre::RadioLibs> gkRadioLibs;
@@ -272,6 +274,7 @@ private:
     std::future<std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>> rig_future;
     std::thread rig_thread;
     std::thread vu_meter_thread;
+    std::thread spectro_timing_thread;
 
     //
     // USB & RS232
@@ -290,7 +293,9 @@ private:
     //
     // Timing and date related
     //
-    QPointer<QTimer> timer;
+    QPointer<QTimer> info_timer;
+    qint64 gk_spectro_start_time;
+    qint64 gk_spectro_latest_time;
 
     //
     // This sub-section contains all the boolean variables pertaining to the QPushButtons on QMainWindow that
@@ -321,17 +326,23 @@ private:
 
     void updateVolumeDisplayWidgets();
 
+    //
+    // Spectrograph related
+    //
+    void updateSpectrograph();
+
     void createStatusBar(const QString &statusMsg = "");
     bool changeStatusBarMsg(const QString &statusMsg = "");
     bool steadyTimer(const int &seconds);
+    void print_exception(const std::exception &e, int level = 0);
 };
 
 Q_DECLARE_METATYPE(std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>);
-Q_DECLARE_METATYPE(std::vector<GekkoFyre::Spectrograph::RawFFT>);
 Q_DECLARE_METATYPE(GekkoFyre::Database::Settings::GkUsbPort);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkConnType);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::DigitalModes);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::IARURegions);
+Q_DECLARE_METATYPE(GekkoFyre::Spectrograph::GkGraphType);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkFreqs);
 Q_DECLARE_METATYPE(RIG);
 Q_DECLARE_METATYPE(size_t);

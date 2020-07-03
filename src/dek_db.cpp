@@ -140,6 +140,9 @@ void GkLevelDb::write_rig_settings(const QString &value, const Database::Setting
         case radio_cfg::PTTAdvCmd:
             batch.Put("PTTAdvCmd", value.toStdString());
             break;
+        case radio_cfg::RXAudioInitStart:
+            batch.Put("RXAudioInitStart", value.toStdString());
+            break;
         default:
             return;
         }
@@ -432,6 +435,9 @@ QString GkLevelDb::read_rig_settings(const Database::Settings::radio_cfg &key)
         break;
     case radio_cfg::PTTAdvCmd:
         status = db->Get(read_options, "PTTAdvCmd", &value);
+        break;
+    case radio_cfg::RXAudioInitStart:
+        status = db->Get(read_options, "RXAudioInitStart", &value);
         break;
     default:
         return "";

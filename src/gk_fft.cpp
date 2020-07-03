@@ -53,30 +53,9 @@ using namespace Control;
 /**
  * @brief GkFFT::GkFFT
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param spectrogramData_
- * @param waveEnvelopeMin_
- * @param waveEnvelopeMax_
- * @param timeList_
- * @param numLines_
- * @param deltaTime_
- * @param headTime_
- * @param footTime_
- * @param parent
  */
-GkFFT::GkFFT(const std::list<std::vector<float>> &spectrogramData_, const std::list<float> &waveEnvelopeMin_,
-             const std::list<float> &waveEnvelopeMax_, const std::list<float> &timeList_,
-             const size_t &numLines_, const double &deltaTime_, const double &headTime_, const double &footTime_,
-             QObject *parent) : QObject(parent)
+GkFFT::GkFFT()
 {
-    spectrogramData = spectrogramData_;
-    waveEnvelopeMin = waveEnvelopeMin_;
-    waveEnvelopeMax = waveEnvelopeMax_;
-    timeList = timeList_;
-    numLines = numLines_;
-    deltaTime = deltaTime_;
-    headTime = headTime_;
-    footTime = footTime_;
-
     return;
 }
 
@@ -133,50 +112,4 @@ void GkFFT::FFTCompute(std::complex<float> *data, unsigned int dataLength)
     }
 
     return;
-}
-
-/**
- * @brief GkFFT::addLine
- * @author Ville Räisänen <https://github.com/vsr83/QSpectrogram/>
- * @param fourierData
- * @param dataLength
- * @param envMin
- * @param envMax
- */
-void GkFFT::addLine(float *fourierData, unsigned int dataLength, float envMin, float envMax)
-{
-    std::vector<float> fourierDataVec;
-
-    if (spectrogramData.size() >= numLines) {
-        removeFoot(spectrogramData.size() - numLines + 1);
-    }
-    fourierDataVec.assign(fourierData, fourierData + dataLength);
-    spectrogramData.push_back(fourierDataVec);
-    waveEnvelopeMax.push_back(envMax);
-    waveEnvelopeMin.push_back(envMin);
-
-    headTime += deltaTime;
-    timeList.push_back(headTime);
-
-    return;
-}
-
-/**
- * @brief GkFFT::removeFoot
- * @author Ville Räisänen <https://github.com/vsr83/QSpectrogram/>
- * @param numLines
- */
-void GkFFT::removeFoot(const size_t &numLines)
-{
-    for (unsigned int indLine = 0; indLine < numLines; indLine++) {
-        assert(!spectrogramData.empty());
-        assert(!timeList.empty());
-        spectrogramData.pop_front();
-        timeList.pop_front();
-
-        waveEnvelopeMin.pop_front();;
-        waveEnvelopeMax.pop_front();;
-
-        footTime += deltaTime;
-    }
 }
