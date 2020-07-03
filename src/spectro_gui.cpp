@@ -44,6 +44,8 @@
 #include <qwt_plot_layout.h>
 #include <qwt_panner.h>
 #include <algorithm>
+#include <stdexcept>
+#include <exception>
 #include <utility>
 #include <QColormap>
 #include <QTimer>
@@ -76,7 +78,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         //
         // This is the default graph-type that will be initialized when Small World Deluxe is launched by a user!
         //
-        graph_in_use = GkGraphType::GkMomentInTime;
+        graph_in_use = GkGraphType::GkWaterfall;
 
         gkRasterData = std::make_unique<GkSpectroRasterData>();
         gkMatrixData = std::make_unique<QwtMatrixRasterData>();
@@ -95,7 +97,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         canvas->setStyleSheet("border-radius: 8px; background-color: #000080");
         setCanvas(canvas);
 
-        gkRasterData->setRenderThreadCount(0); // Use system specific thread count
+        gkRasterData->setRenderThreadCount(0); // https://docs.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getlogicalprocessorinformation?redirectedfrom=MSDN
         gkRasterData->setCachePolicy(QwtPlotRasterItem::PaintCache);
         gkRasterData->setDisplayMode(QwtPlotSpectrogram::DisplayMode::ImageMode, true);
         gkRasterData->setColorMap(color_map);
@@ -253,22 +255,42 @@ SpectroGui::~SpectroGui()
 void SpectroGui::insertData(const QVector<double> values, const int &numCols)
 {
     Q_UNUSED(numCols);
-    mtx_raster_data.lock();
 
-    for (const auto &data: values) {
-        gkRasterBuf.push_back(data); // Store the matrix values within a QVector, for up to `SPECTRO_Y_AXIS_SIZE` milliseconds!
+    try {
+        mtx_raster_data.lock();
+
+        for (const auto &data: values) {
+            gkRasterBuf.push_back(data); // Store the matrix values within a QVector, for up to `SPECTRO_Y_AXIS_SIZE` milliseconds!
+        }
+
+        const int buf_total_cols = (buf_overall_size / GK_FFT_SIZE);
+        if (graph_in_use == GkGraphType::GkMomentInTime) {
+            //
+            // Waterfall (moment-in-time, i.e. without 'date and time' axis)
+            //
+            gkMatrixData->setValueMatrix(gkRasterBuf.toVector(), buf_total_cols);
+        } else if (graph_in_use == GkGraphType::GkWaterfall) {
+            //
+            // Standard Waterfall (i.e. with 'date and time' axis)
+            //
+            gkMatrixData->setValueMatrix(gkRasterBuf.toVector(), buf_total_cols);
+        } else {
+            //
+            // 2D Spectrogram
+            //
+        }
+
+        int i = 0;
+        while (i < GK_FFT_SIZE) {
+            gkRasterBuf.pop_front(); // Delete the last amount of `GK_FFT_SIZE` at the very front of the QList!
+            ++i;
+        }
+
+        mtx_raster_data.unlock();
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(tr("An error has occurred whilst doing calculations for the spectrograph / waterfall!").toStdString()));
     }
 
-    const int buf_total_cols = (buf_overall_size / GK_FFT_SIZE);
-    gkMatrixData->setValueMatrix(gkRasterBuf.toVector(), buf_total_cols);
-
-    int i = 0;
-    while (i < GK_FFT_SIZE) {
-        gkRasterBuf.pop_front(); // Delete the last amount of `GK_FFT_SIZE` at the very front of the QList!
-        ++i;
-    }
-
-    mtx_raster_data.unlock();
     return;
 }
 

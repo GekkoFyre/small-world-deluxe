@@ -176,6 +176,12 @@ namespace GekkoFyre {
 #define AUDIO_CODECS_OGG_VORBIS_BUFFER_SIZE (64 * 1024) // The buffering size for each frame, in kilobytes, to be used with Ogg Vorbis encoding.
 #define AUDIO_CODECS_OPUS_MAX_PACKETS (1500)            // Not sure what this is for but it seems to be necessary!
 
+//
+// RS232 & USB Connections
+//
+#define RS232_DEFAULT_BAUD_SPEED (9600)                 // The default baud speed made for any RS232 connections, mostly made for testing purposes.
+#define RS232_DEFAULT_TIMEOUT (5000)                    // The default timeout value for any RS232 connections, mostly made for testing purposes.
+
 #ifndef M_PI
 #define M_PI (3.14159265358979323846) /* pi */
 #endif
@@ -321,7 +327,6 @@ namespace Database {
 
         struct GkComPort {
             serial::PortInfo port_info;                                             // Details on the COM/RS232/Serial ports themselves
-            bool is_open;                                                           // Is the serial port open and ready for a connection to be made?
             serial::stopbits_t def_stopbits;                                        // The defined stop bits for this serial port in question
             uint32_t def_baudrate;                                                  // The defined baudrate for this serial port in question
             serial::parity_t def_parity;                                            // The defined parity for this serial port in question

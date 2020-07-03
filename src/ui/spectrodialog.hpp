@@ -75,7 +75,7 @@ private:
     Ui::SpectroDialog *ui;
     QPointer<GekkoFyre::SpectroGui> gkSpectroGui;
 
-    int fft_size_cur_value;
+    int fft_size_prev_value;                        // Remembers the previous value, for if the user does not enter a number that's divisible by '256'!
     int fft_size_updated;
     bool fft_size_spinbox_sel;
 

@@ -118,6 +118,12 @@ You can be rest assured that we'll keep this Docker image updated as need be.
 
 If you receive an error that's similar to, `Setting the locale has failed!`, or even possibly, `locale::facet::_S_create_c_locale name not valid`, then the locale that has been configured for your system of choice may not be set correctly. [This particular article from Stack Overflow](https://stackoverflow.com/a/10236868/4293625) may help you in your endeavors but if not, you will have to [open an issue with the Small World Deluxe team over at their Git repository](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/issues), where we will be happy to help you and your particular system of choice.
 
+##### Help! I'm encountering issues with making a connection between `Small World Deluxe` and my radio transceiver rig!
+
+This could be due to the individual settings of your radio itself. For example, I had to modify the CAT TOT (timeout time) for my [Yaesu FT-450D](https://www.yaesu.com/indexVS.cfm?cmd=DisplayProducts&ProdCatID=102&encProdID=870B3CA7CFCB61E6A599B0EFEA2217E4&DivisionID=65&isArchived=0) before a connection could be reliably made between this application and the rig itself, so something similar might have to be done for your use-case, if encountering such problems. It's no fault of SWD at all, but simply down to the differences of each radio rig out there :)
+
+If you have a particularly stubborn problem regarding this, then we'd be glad to help you out to the best of our ability within the [Issues section of this code repository](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/issues). You might also benefit from reading [the Hamlib FAQ](https://github.com/Hamlib/Hamlib/wiki/FAQ) as well, since this software is powered by it in some respects.
+
 ##### How may I contribute to the project?
 
 You may contribute to `Small World Deluxe` in a number of ways, and they don't all necessarily require you to be a computer programmer of skill either!

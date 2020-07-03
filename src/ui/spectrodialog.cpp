@@ -70,7 +70,7 @@ SpectroDialog::SpectroDialog(QPointer<GekkoFyre::SpectroGui> spectroGui, QWidget
     prefillGraphTiming(GkGraphTiming::GkGraphTime5Sec);
     prefillGraphTiming(GkGraphTiming::GkGraphTime10Sec);
 
-    fft_size_cur_value = 0;
+    fft_size_prev_value = 0;
     fft_size_updated = 0;
 
     gkSpectroGui = std::move(spectroGui);
@@ -223,7 +223,7 @@ bool SpectroDialog::eventFilter(QObject *obj, QEvent *event)
 
     if (fft_size_spinbox_sel) {
         if (obj == this && event->type() == QEvent::MouseButtonPress) {
-            // Perform action here!
+            fft_size_prev_value = ui->spinBox_fft_size->value();
         }
     }
 
