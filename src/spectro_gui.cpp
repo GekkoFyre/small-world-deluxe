@@ -87,7 +87,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
 
         canvas->setBorderRadius(8);
         canvas->setPaintAttribute(QwtPlotCanvas::BackingStore, false);
-        canvas->setStyleSheet("border-radius: 8px; background-color: #389638");
+        canvas->setStyleSheet("border-radius: 8px; background-color: #000080");
         setCanvas(canvas);
 
         gkRasterData->setRenderThreadCount(0); // Use system specific thread count
@@ -248,28 +248,22 @@ SpectroGui::~SpectroGui()
 void SpectroGui::insertData(const QVector<double> values, const int &numCols)
 {
     Q_UNUSED(numCols);
+    mtx_raster_data.lock();
 
     for (const auto &data: values) {
         gkRasterBuf.push_back(data); // Store the matrix values within a QVector, for up to `SPECTRO_Y_AXIS_SIZE` milliseconds!
     }
 
-    buf_total_size += GK_FFT_SIZE;
-    const int buf_total_cols = (buf_total_size / GK_FFT_SIZE);
-    gkMatrixData->setValueMatrix(gkRasterBuf, buf_total_cols);
+    const int buf_total_cols = (buf_overall_size / GK_FFT_SIZE);
+    gkMatrixData->setValueMatrix(gkRasterBuf.toVector(), buf_total_cols);
 
-    if (buf_total_size > (buf_overall_size - GK_FFT_SIZE)) {
-        buf_total_size -= GK_FFT_SIZE; // Reset back to zero!
-
-        mtx_raster_data.lock();
-        int i = 0;
-        while (i < GK_FFT_SIZE) {
-            gkRasterBuf.pop_back(); // Delete the last amount of `GK_FFT_SIZE` at the very end of the QVector!
-            ++i;
-        }
-
-        mtx_raster_data.unlock();
+    int i = 0;
+    while (i < GK_FFT_SIZE) {
+        gkRasterBuf.pop_front(); // Delete the last amount of `GK_FFT_SIZE` at the very front of the QList!
+        ++i;
     }
 
+    mtx_raster_data.unlock();
     return;
 }
 
@@ -312,7 +306,8 @@ void SpectroGui::showSpectrogram(const bool &toggled)
  */
 void SpectroGui::refreshDateTime(const qint64 &latest_time_update, const qint64 &time_since)
 {
-    setAxisScale(QwtPlot::yLeft, latest_time_update - SPECTRO_Y_AXIS_SIZE, latest_time_update);
+    spectro_latest_update = latest_time_update;
+    setAxisScale(QwtPlot::yLeft, spectro_latest_update, spectro_latest_update + SPECTRO_Y_AXIS_SIZE);
     setAxisMaxMinor(QwtPlot::yLeft, SPECTRO_Y_AXIS_MINOR);
     setAxisMaxMajor(QwtPlot::yLeft, SPECTRO_Y_AXIS_MAJOR);
     // setAxisScale(QwtPlot::xTop, x_axis_bandwidth_min_size, x_axis_bandwidth_max_size, 250);
@@ -320,9 +315,8 @@ void SpectroGui::refreshDateTime(const qint64 &latest_time_update, const qint64 
     //
     // Breakup the FFT caclulations into specific time units!
     //
-    gkMatrixData->setInterval(Qt::YAxis, QwtInterval(time_since, latest_time_update));
+    gkMatrixData->setInterval(Qt::YAxis, QwtInterval(time_since, spectro_latest_update));
 
-    spectro_latest_update = time_since;
     gkRasterData->invalidateCache();
     replot();
 

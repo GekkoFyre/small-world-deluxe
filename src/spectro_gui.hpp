@@ -64,6 +64,7 @@
 #include <thread>
 #include <future>
 #include <memory>
+#include <QList>
 #include <QTimer>
 #include <QObject>
 #include <QWidget>
@@ -147,7 +148,7 @@ private:
 
     int buf_overall_size;
     int buf_total_size;
-    QVector<double> gkRasterBuf;
+    QList<double> gkRasterBuf;
     std::unique_ptr<GkSpectroRasterData> gkRasterData;
     std::unique_ptr<QwtMatrixRasterData> gkMatrixData;
 
