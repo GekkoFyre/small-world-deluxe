@@ -843,19 +843,19 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
             switch (conv_ptt_mode) {
             case 0:
                 // None
-                gk_radio_tmp->mode = rmode_t::RIG_MODE_NONE;
+                gk_radio_tmp->mode = RIG_MODE_NONE;
                 break;
             case 1:
                 // USB
-                gk_radio_tmp->mode = rmode_t::RIG_MODE_USB;
+                gk_radio_tmp->mode = RIG_MODE_USB;
                 break;
             case 2:
                 // Data / PKT
-                gk_radio_tmp->mode = rmode_t::RIG_MODE_PKTUSB;
+                gk_radio_tmp->mode = RIG_MODE_PKTUSB;
                 break;
             default:
                 // Nothing
-                gk_radio_tmp->mode = rmode_t::RIG_MODE_NONE;
+                gk_radio_tmp->mode = RIG_MODE_NONE;
                 break;
             }
         }

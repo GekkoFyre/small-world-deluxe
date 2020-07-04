@@ -133,6 +133,7 @@ else()
 endif(Threads_FOUND)
 
 find_package(Qt5 COMPONENTS Core Gui Widgets PrintSupport Test REQUIRED)
+find_package(ICU 61.0 COMPONENTS uc i18n REQUIRED)
 
 set(Boost_USE_STATIC_LIBS ON CACHE BOOL "Use static libraries when linking Boost C++.")
 set(Boost_USE_MULTITHREADED ON CACHE BOOL "Use multithreaded libraries when linking Boost C++.")
@@ -197,12 +198,14 @@ endif(LEVELDB_FOUND)
 
 find_package(PortAudio REQUIRED)
 if (PortAudio_FOUND)
-    if(WIN32 OR MSYS OR MINGW)
-        # Enable `PA_USE_ASIO` by default, since this allows for the lowest latency possible with the audio pathways!
-        option(PA_USE_ASIO "Enable support for ASIO. This is recommended for Microsoft Windows operating systems." ON)
-    else()
+    if(LINUX OR MSYS OR MINGW)
         # Disable `PA_USE_ASIO` because we are dealing with a system other than Microsoft Windows, where ASIO is unsupported...
         option(PA_USE_ASIO "Disable support for ASIO. This is recommended for operating systems other than Microsoft Windows." OFF)
+    elseif(WIN32)
+        # Enable `PA_USE_ASIO` by default, since this allows for the lowest latency possible with the audio pathways!
+        option(PA_USE_ASIO "Enable support for ASIO. This is recommended for Microsoft Windows operating systems." ON)
+    elseif(APPLE)
+        message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
     endif()
 
     if (PA_USE_ASIO)
@@ -445,19 +448,19 @@ set(GALAXY_SRC_CPP
     ${GALAXY_SRC_CPP}
     src/pa_sinewave.cpp
     src/gk_fft.cpp
-    src/contrib/getopt.c
     src/contrib/serial/src/serial.cc)
 
-if(WIN32 OR MSYS OR MINGW)
-    set(GALAXY_SRC_CPP
-        ${GALAXY_SRC_CPP}
-        src/contrib/serial/src/impl/list_ports/list_ports_win.cc
-        src/contrib/serial/src/impl/win.cc)
-elseif(LINUX)
+if(LINUX OR MSYS OR MINGW)
     set(GALAXY_SRC_CPP
         ${GALAXY_SRC_CPP}
         src/contrib/serial/src/impl/list_ports/list_ports_linux.cc
         src/contrib/serial/src/impl/unix.cc)
+elseif(WIN32)
+    set(GALAXY_SRC_CPP
+        ${GALAXY_SRC_CPP}
+        src/contrib/getopt.c
+        src/contrib/serial/src/impl/list_ports/list_ports_win.cc
+        src/contrib/serial/src/impl/win.cc)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()
@@ -506,18 +509,18 @@ set(GALAXY_SRC_HEADERS
     src/gk_timer.hpp
     src/gk_circ_buffer.hpp
     src/gk_fft.hpp
-    src/contrib/getopt.h
     src/contrib/serial/include/serial/v8stdint.h
     src/contrib/serial/include/serial/serial.h)
 
-if(WIN32 OR MSYS OR MINGW)
-    set(GALAXY_SRC_HEADERS
-        ${GALAXY_SRC_HEADERS}
-        src/contrib/serial/include/serial/impl/win.h)
-elseif(LINUX)
+if(LINUX OR MSYS OR MINGW)
     set(GALAXY_SRC_HEADERS
         ${GALAXY_SRC_HEADERS}
         src/contrib/serial/include/serial/impl/unix.h)
+elseif(WIN32)
+    set(GALAXY_SRC_HEADERS
+        ${GALAXY_SRC_HEADERS}
+        src/contrib/getopt.h
+        src/contrib/serial/include/serial/impl/win.h)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()
@@ -608,7 +611,7 @@ if(GFYRE_BUILD_SHARED)
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
-target_link_libraries(galaxy Qt5::Widgets Qt5::Core Qt5::Gui Qt5::PrintSupport Threads::Threads SingleApplication::SingleApplication ${LIBS})
+target_link_libraries(galaxy Qt5::Widgets Qt5::Core Qt5::Gui Qt5::PrintSupport Threads::Threads SingleApplication::SingleApplication ICU::uc ICU::i18n ${LIBS})
 
 # rcc -no-compress -binary smallworld_res.qrc -o smallworld_res.rcc
 qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)

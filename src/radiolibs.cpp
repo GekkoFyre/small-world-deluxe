@@ -54,7 +54,7 @@
 
 #ifdef _WIN32
 #include <stringapiset.h>
-#elif __linux__ || __MINGW32__
+#elif __linux__ || __MINGW64__
 #include <SDL2/SDL_video.h>
 #include <SDL2/SDL_messagebox.h>
 #endif
@@ -647,7 +647,7 @@ void RadioLibs::registerComPort(std::list<std::string> &comList, std::list<std::
     return;
 }
 
-#ifdef _WIN32
+#if defined(_MSC_VER) && (_MSC_VER > 1900)
 bool RadioLibs::modalDlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon)
 {
     // TODO: Make this dialog modal
@@ -664,7 +664,7 @@ bool RadioLibs::modalDlgBoxOk(const HWND &hwnd, const QString &title, const QStr
 
     return false;
 }
-#elif __linux__ || __MINGW32__
+#else
 bool RadioLibs::modalDlgBoxLinux(Uint32 flags, const QString &title, const QString &msgTxt)
 {
     SDL_Window *sdlWindow = SDL_CreateWindow(General::productName, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, DLG_BOX_WINDOW_WIDTH, DLG_BOX_WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
@@ -717,7 +717,7 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_p
             radio_ptr->rig->state.rigport.parm.serial.handshake = radio_ptr->port_details.parm.serial.handshake;
             radio_ptr->rig->state.rigport.type.ptt = radio_ptr->port_details.type.ptt;
 
-            #if __MINGW32__
+            #if __MINGW64__
             //
             // Modify the COM Port so that it's suitable for Hamlib!
             //
@@ -923,53 +923,53 @@ QString RadioLibs::hamlibModulEnumToStr(const rmode_t &modulation)
 {
     // NOTE: These are meant to be translatable!
     switch (modulation) {
-    case rmode_t::RIG_MODE_NONE:
+    case RIG_MODE_NONE:
         return tr("None");
-    case rmode_t::RIG_MODE_AM:
+    case RIG_MODE_AM:
         return tr("AM");
-    case rmode_t::RIG_MODE_CW:
+    case RIG_MODE_CW:
         return tr("CW");
-    case rmode_t::RIG_MODE_USB:
+    case RIG_MODE_USB:
         return tr("USB");
-    case rmode_t::RIG_MODE_LSB:
+    case RIG_MODE_LSB:
         return tr("LSB");
-    case rmode_t::RIG_MODE_RTTY:
+    case RIG_MODE_RTTY:
         return tr("RTTY");
-    case rmode_t::RIG_MODE_FM:
+    case RIG_MODE_FM:
         return tr("FM");
-    case rmode_t::RIG_MODE_WFM:
+    case RIG_MODE_WFM:
         return tr("Wide FM");
-    case rmode_t::RIG_MODE_CWR:
+    case RIG_MODE_CWR:
         return tr("CWR");
-    case rmode_t::RIG_MODE_RTTYR:
+    case RIG_MODE_RTTYR:
         return tr("RTTYR");
-    case rmode_t::RIG_MODE_AMS:
+    case RIG_MODE_AMS:
         return tr("AMS");
-    case rmode_t::RIG_MODE_PKTLSB:
+    case RIG_MODE_PKTLSB:
         return tr("PKT/LSB");
-    case rmode_t::RIG_MODE_PKTUSB:
+    case RIG_MODE_PKTUSB:
         return tr("PKT/USB");
-    case rmode_t::RIG_MODE_PKTFM:
+    case RIG_MODE_PKTFM:
         return tr("PKT/FM");
-    case rmode_t::RIG_MODE_ECSSUSB:
+    case RIG_MODE_ECSSUSB:
         return tr("ECSS/USB");
-    case rmode_t::RIG_MODE_ECSSLSB:
+    case RIG_MODE_ECSSLSB:
         return tr("ECSS/LSB");
-    case rmode_t::RIG_MODE_FAX:
+    case RIG_MODE_FAX:
         return tr("FAX");
-    case rmode_t::RIG_MODE_SAM:
+    case RIG_MODE_SAM:
         return tr("SAM");
-    case rmode_t::RIG_MODE_SAL:
+    case RIG_MODE_SAL:
         return tr("SAL");
-    case rmode_t::RIG_MODE_SAH:
+    case RIG_MODE_SAH:
         return tr("SAH");
-    case rmode_t::RIG_MODE_DSB:
+    case RIG_MODE_DSB:
         return tr("DSB");
-    case rmode_t::RIG_MODE_FMN:
+    case RIG_MODE_FMN:
         return tr("FM Narrow");
-    case rmode_t::RIG_MODE_PKTAM:
+    case RIG_MODE_PKTAM:
         return tr("PKT/AM");
-    case rmode_t::RIG_MODE_TESTS_MAX:
+    case RIG_MODE_TESTS_MAX:
         return tr("TESTS_MAX");
     default:
         tr("N/A");
