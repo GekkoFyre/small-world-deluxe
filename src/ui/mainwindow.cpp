@@ -615,10 +615,6 @@ void MainWindow::launchSettingsWin()
 bool MainWindow::radioInitStart()
 {
     try {
-        std::string rand_file_name = fileIo->create_random_string(8);
-        fs::path rig_file_path_tmp = fs::path(fs::temp_directory_path().string() + native_slash.string() + rand_file_name + GekkoFyre::Filesystem::tmpExtension);
-        gkRadioPtr->rig_file = rig_file_path_tmp.string();
-
         QString model = GkDb->read_rig_settings(radio_cfg::RigModel);
         if (!model.isEmpty() || !model.isNull()) {
             gkRadioPtr->rig_model = model.toInt();

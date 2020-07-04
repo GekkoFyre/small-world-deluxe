@@ -889,7 +889,7 @@ std::vector<GkDevice> AudioDevices::filterPortAudioHostType(const std::vector<Gk
                     }
 
                     break;
-                #elif __linux__ || __MINGW32__
+                #elif __linux__
                 case PaHostApiTypeId::paSoundManager:
                     if (filterAudioEnumPreexisting(host_res, audio_device) == false) {
                         host_res.push_back(audio_device);

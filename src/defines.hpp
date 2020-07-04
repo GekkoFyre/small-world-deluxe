@@ -475,7 +475,6 @@ namespace AmateurRadio {
             ptt_t ptt_status;                               // PTT status
             split_t split_mode;                             // Whether 'Split Mode' is enabled or disabled
             bool is_open;                                   // Has HamLib been successfully initiated (including the RIG* pointer?)
-            std::string rig_file;                           // Hamlib rig temporary file
             std::string info_buf;                           // Hamlib information buffer
             GkConnType cat_conn_type;                       // The type of connection, whether USB, RS232, etc.
             GkConnType ptt_conn_type;                       // The type of connection, whether USB, RS232, etc.
