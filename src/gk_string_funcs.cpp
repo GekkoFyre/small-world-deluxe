@@ -42,11 +42,11 @@
 #include "gk_string_funcs.hpp"
 #include <QSettings>
 
-#ifdef _WIN32
-#include <stringapiset.h>
-#elif __linux__ || __MINGW64__
+#if defined(__linux__) || defined(__MINGW64__)
 #include <SDL2/SDL_video.h>
 #include <SDL2/SDL_messagebox.h>
+#elif _WIN32
+#include <stringapiset.h>
 #endif
 
 using namespace GekkoFyre;

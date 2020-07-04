@@ -286,7 +286,7 @@ else()
     message(SEND_ERROR "The 'libiconv' character encoding and conversion library could not be found!")
 endif(Iconv_FOUND)
 
-set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-arcs -ftest-coverage")
+set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-arcs -ftest-coverage -mwindows")
 
 #
 # PortAudio's C++ bindings
@@ -450,15 +450,14 @@ set(GALAXY_SRC_CPP
     src/gk_fft.cpp
     src/contrib/serial/src/serial.cc)
 
-if(LINUX OR MSYS OR MINGW)
+if(LINUX)
     set(GALAXY_SRC_CPP
         ${GALAXY_SRC_CPP}
         src/contrib/serial/src/impl/list_ports/list_ports_linux.cc
         src/contrib/serial/src/impl/unix.cc)
-elseif(WIN32)
+elseif(WIN32 OR MSYS OR MINGW)
     set(GALAXY_SRC_CPP
         ${GALAXY_SRC_CPP}
-        src/contrib/getopt.c
         src/contrib/serial/src/impl/list_ports/list_ports_win.cc
         src/contrib/serial/src/impl/win.cc)
 elseif(APPLE)
@@ -466,6 +465,21 @@ elseif(APPLE)
 endif()
 
 set_property(SOURCE ${GALAXY_SRC_CPP} PROPERTY SKIP_AUTOUIC ON)
+
+#
+# Do not compile under MinGW for these sources!
+#
+set(GALAXY_SRC_CPP_NON_MINGW
+    ${GALAXY_SRC_CPP_NON_MINGW}) # Setup a dummy variable for if this variable is otherwise not needed (i.e. we're not compiling under MinGW!)....
+
+# Setup the real MinGW variables for if they're actually needed (i.e. we're actually compiling under MinGW)!
+if (!MSYS OR !MINGW)
+    set(GALAXY_SRC_CPP_NON_MINGW
+        ${GALAXY_SRC_CPP_NON_MINGW}
+        src/contrib/getopt.c)
+endif()
+
+set_property(SOURCE ${GALAXY_SRC_CPP_NON_MINGW} PROPERTY SKIP_AUTOUIC ON)
 
 #
 # Compile UIC!
@@ -512,20 +526,34 @@ set(GALAXY_SRC_HEADERS
     src/contrib/serial/include/serial/v8stdint.h
     src/contrib/serial/include/serial/serial.h)
 
-if(LINUX OR MSYS OR MINGW)
+if(LINUX)
     set(GALAXY_SRC_HEADERS
         ${GALAXY_SRC_HEADERS}
         src/contrib/serial/include/serial/impl/unix.h)
-elseif(WIN32)
+elseif(WIN32 OR MSYS OR MINGW)
     set(GALAXY_SRC_HEADERS
         ${GALAXY_SRC_HEADERS}
-        src/contrib/getopt.h
         src/contrib/serial/include/serial/impl/win.h)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()
 
 set_property(SOURCE ${GALAXY_SRC_HEADERS} PROPERTY SKIP_AUTOUIC ON)
+
+#
+# Do not compile under MinGW for these sources!
+#
+set(GALAXY_SRC_HEADERS_NON_MINGW
+    ${GALAXY_SRC_HEADERS_NON_MINGW}) # Setup a dummy variable for if this variable is otherwise not needed (i.e. we're not compiling under MinGW!)....
+
+# Setup the real MinGW variables for if they're actually needed (i.e. we're actually compiling under MinGW)!
+if (!MSYS OR !MINGW)
+    set(GALAXY_SRC_HEADERS_NON_MINGW
+        ${GALAXY_SRC_HEADERS_NON_MINGW}
+        src/contrib/getopt.h)
+endif()
+
+set_property(SOURCE ${GALAXY_SRC_HEADERS_NON_MINGW} PROPERTY SKIP_AUTOUIC ON)
 
 add_definitions("-DQWT_DLL")
 
@@ -592,7 +620,7 @@ include(GNUInstallDirs)
 # Build Small World Deluxe as a static package!
 #
 if(GFYRE_BUILD_STATIC)
-    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP})
+    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP})
     if(GK_CUDA_FFT)
         add_library(galaxy_cuda STATIC ${GALAXY_CUDA})
     endif()
@@ -604,7 +632,7 @@ endif(GFYRE_BUILD_STATIC)
 # Build Small World Deluxe as a shared package!
 #
 if(GFYRE_BUILD_SHARED)
-    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP})
+    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP})
     if(GK_CUDA_FFT)
         add_library(galaxy_cuda STATIC ${GALAXY_CUDA})
     endif()
@@ -620,7 +648,7 @@ add_dependencies(galaxy resources)
 set(SWRLD_EXEC ${SWRLD_EXEC}
     src/main.cpp)
 
-add_executable(smallworld ${SWRLD_EXEC})
+add_executable(smallworld WIN32 ${SWRLD_EXEC})
 target_link_libraries(smallworld galaxy)
 
 if(GK_CUDA_FFT)

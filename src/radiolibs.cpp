@@ -52,11 +52,15 @@
 #include <sstream>
 #include <QMessageBox>
 
-#ifdef _WIN32
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+#ifdef _WIN64
 #include <stringapiset.h>
-#elif __linux__ || __MINGW64__
-#include <SDL2/SDL_video.h>
-#include <SDL2/SDL_messagebox.h>
+#include <windows.h>
+#include <ntddstor.h>
+#include <setupapi.h>
+#include <initguid.h>
+#include <devguid.h>
+#endif
 #endif
 
 #ifdef __cplusplus
@@ -66,11 +70,20 @@ extern "C"
 
 #include <libusb.h>
 
-#if defined(_MSC_VER) && (_MSC_VER > 1900)
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+#ifdef _WIN64
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#elif __linux__
+#endif
+#endif
+
+#if defined(__linux__) || defined(__MINGW64__)
+#include <SDL2/SDL_video.h>
+#include <SDL2/SDL_messagebox.h>
+#endif
+
+#if __linux__
 #include <sys/ioctl.h>
 #include <linux/serial.h>
 #endif
@@ -86,6 +99,10 @@ using namespace AmateurRadio;
 using namespace Control;
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
+
+static const DWORD port_name_max_length = 256;
+static const DWORD friendly_name_max_length = 256;
+static const DWORD hardware_id_max_length = 256;
 
 RadioLibs::RadioLibs(QPointer<FileIo> filePtr, std::shared_ptr<StringFuncs> stringPtr,
                      std::shared_ptr<GkLevelDb> dkDb, std::shared_ptr<GkRadio> radioPtr, QObject *parent) : QObject(parent)
@@ -297,26 +314,11 @@ std::list<GkComPort> RadioLibs::status_com_ports()
 {
     try {
         std::list<GkComPort> com_map;
-        std::vector<serial::PortInfo> devices_found = serial::list_ports();
-
-        for (const auto &port: devices_found) {
-            GkComPort com_struct;
-            com_struct.port_info = port;
-
-            if (!com_struct.port_info.port.empty()) {
-                com_map.push_back(com_struct);
-            }
-        }
+        com_map = enumerateRS232Ports();
 
         return com_map;
     } catch (const std::exception &e) {
-        #if defined(_MSC_VER) && (_MSC_VER > 1900)
-        HWND hwnd = nullptr;
-        modalDlgBoxOk(hwnd, tr("Error!"), e.what(), MB_ICONERROR);
-        DestroyWindow(hwnd);
-        #else
-        modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
-        #endif
+        print_exception(e);
     }
 
     return std::list<GkComPort>();
@@ -401,6 +403,104 @@ std::string RadioLibs::getUsbPortId(libusb_device *usb_device)
     }
 
     return "";
+}
+
+std::list<GkComPort> RadioLibs::enumerateRS232Ports()
+{
+    try {
+        #if __linux__
+        // Enumerate RS232 Ports for Linux systems!
+        #elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+        #ifdef _WIN64
+        // Enumerate COM Ports for Microsoft Windows and MinGW systems!
+        std::list<GkComPort> gk_com_ports;
+
+        HDEVINFO device_info_set = SetupDiGetClassDevs((const GUID *) &GUID_DEVCLASS_PORTS, NULL, NULL, DIGCF_PRESENT);
+        unsigned int device_info_set_index = 0;
+        SP_DEVINFO_DATA device_info_data;
+        device_info_data.cbSize = sizeof(SP_DEVINFO_DATA);
+
+        while (SetupDiEnumDeviceInfo(device_info_set, device_info_set_index, &device_info_data)) {
+            device_info_set_index++;
+
+            // Get port name
+            HKEY hkey = SetupDiOpenDevRegKey(device_info_set, &device_info_data, DICS_FLAG_GLOBAL, 0, DIREG_DEV, KEY_READ);
+
+            TCHAR port_name[port_name_max_length];
+            DWORD port_name_length = port_name_max_length;
+
+            LONG return_code = RegQueryValueEx(hkey, _T("PortName"), NULL, NULL, (LPBYTE)port_name, &port_name_length);
+            RegCloseKey(hkey);
+
+            if (return_code != EXIT_SUCCESS) {
+                continue;
+            }
+
+            if (port_name_length > 0 && port_name_length <= port_name_max_length) {
+                port_name[port_name_length-1] = '\0';
+            } else {
+                port_name[0] = '\0';
+            }
+
+            // Ignore parallel ports
+            if (_tcsstr(port_name, _T("LPT")) != NULL) {
+                continue;
+            }
+
+            // Get port friendly name
+            TCHAR friendly_name[friendly_name_max_length];
+            DWORD friendly_name_actual_length = 0;
+            BOOL got_friendly_name = SetupDiGetDeviceRegistryProperty(device_info_set, &device_info_data, SPDRP_FRIENDLYNAME, NULL,
+                                                                      (PBYTE)friendly_name, friendly_name_max_length,
+                                                                      &friendly_name_actual_length);
+
+            if (got_friendly_name == TRUE && friendly_name_actual_length > 0) {
+                friendly_name[friendly_name_actual_length-1] = '\0';
+            } else {
+                friendly_name[0] = '\0';
+            }
+
+            // Get hardware ID
+            TCHAR hardware_id[hardware_id_max_length];
+            DWORD hardware_id_actual_length = 0;
+
+            BOOL got_hardware_id = SetupDiGetDeviceRegistryProperty(device_info_set, &device_info_data, SPDRP_HARDWAREID, NULL,
+                                                                    (PBYTE)hardware_id, hardware_id_max_length,
+                                                                    &hardware_id_actual_length);
+
+            if (got_hardware_id == TRUE && hardware_id_actual_length > 0) {
+                hardware_id[hardware_id_actual_length-1] = '\0';
+            } else {
+                hardware_id[0] = '\0';
+            }
+
+            #ifdef UNICODE
+                std::string portName = utf8_encode(port_name);
+                std::string friendlyName = utf8_encode(friendly_name);
+                std::string hardwareId = utf8_encode(hardware_id);
+            #else
+                std::string portName = port_name;
+                std::string friendlyName = friendly_name;
+                std::string hardwareId = hardware_id;
+            #endif
+
+            GkComPort com_port;
+            com_port.port_info.port = portName;
+            com_port.port_info.description = friendlyName;
+            com_port.port_info.hardware_id = hardwareId;
+
+            gk_com_ports.push_back(com_port);
+        }
+
+        SetupDiDestroyDeviceInfoList(device_info_set);
+        return gk_com_ports;
+        #endif
+        #endif
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(tr("An error has occurred whilst enumerating RS232 ports:\n\n%1").arg(e.what()).toStdString()));
+    }
+
+    return std::list<GkComPort>();
 }
 
 /**
@@ -643,6 +743,30 @@ void RadioLibs::registerComPort(std::list<std::string> &comList, std::list<std::
             comList.push_back(dev_file.string());
         }
     }
+
+    return;
+}
+
+/**
+ * @brief RadioLibs::print_exception
+ * @param e
+ * @param level
+ */
+void RadioLibs::print_exception(const std::exception &e, int level)
+{
+    #if defined(_MSC_VER) && (_MSC_VER > 1900)
+    HWND hwnd = nullptr;
+    modalDlgBoxOk(hwnd, tr("Error!"), e.what(), MB_ICONERROR);
+    DestroyWindow(hwnd);
+    #else
+    modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+    #endif
+
+    try {
+        std::rethrow_if_nested(e);
+    } catch(const std::exception& e) {
+        print_exception(e, level+1);
+    } catch(...) {}
 
     return;
 }
