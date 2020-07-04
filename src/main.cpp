@@ -89,6 +89,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    QCoreApplication::addLibraryPath(".");
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     SingleApplication app(argc, argv, false, SingleApplication::Mode::System);
     if (app.isSecondary()) {

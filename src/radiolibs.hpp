@@ -108,7 +108,6 @@ private:
     static void hamlibStatus(const int &retcode);
     static std::string getUsbPortId(libusb_device *usb_device);
 
-    std::list<Database::Settings::GkComPort> enumerateRS232Ports();
     static std::string getDriver(const boost::filesystem::path &tty);
     static void probe_serial8250_comports(std::list<std::string> &comList, const std::list<std::string> &comList8250);
     static void registerComPort(std::list<std::string> &comList, std::list<std::string> &comList8250,

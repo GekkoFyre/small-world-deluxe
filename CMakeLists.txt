@@ -132,10 +132,10 @@ else()
     message(FATAL_ERROR "Could not find the Threads library!")
 endif(Threads_FOUND)
 
-find_package(Qt5 COMPONENTS Core Gui Widgets PrintSupport Test REQUIRED)
+find_package(Qt5 COMPONENTS Core Gui Widgets Network PrintSupport Test REQUIRED)
 find_package(ICU 61.0 COMPONENTS uc i18n REQUIRED)
 
-set(Boost_USE_STATIC_LIBS ON CACHE BOOL "Use static libraries when linking Boost C++.")
+set(Boost_USE_STATIC_LIBS OFF CACHE BOOL "Use static libraries when linking Boost C++.")
 set(Boost_USE_MULTITHREADED ON CACHE BOOL "Use multithreaded libraries when linking Boost C++.")
 set(Boost_USE_STATIC_RUNTIME OFF CACHE BOOL "Use static runtime when linking Boost C++.")
 find_package(Boost 1.54.0 REQUIRED COMPONENTS "filesystem"
@@ -143,7 +143,8 @@ find_package(Boost 1.54.0 REQUIRED COMPONENTS "filesystem"
                                               "exception"
                                               "chrono"
                                               "locale"
-                                              "random")
+                                              "random"
+                                              "locale")
                                               
 if(WIN32 OR MSYS OR MINGW)
     if(${GFYRE_PACKAGE_MAINTAINER} EQUAL ON)
@@ -555,6 +556,19 @@ endif()
 
 set_property(SOURCE ${GALAXY_SRC_HEADERS_NON_MINGW} PROPERTY SKIP_AUTOUIC ON)
 
+if (MSYS OR MINGW)
+    set(GK_EXTRA_LIBS
+        ${GK_EXTRA_LIBS}
+        -lhid
+        -lsetupapi)
+else()
+    #
+    # Just an empty container for now!
+    #
+    set(GK_EXTRA_LIBS
+        ${GK_EXTRA_LIBS})
+endif()
+
 add_definitions("-DQWT_DLL")
 
 #
@@ -639,7 +653,7 @@ if(GFYRE_BUILD_SHARED)
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
-target_link_libraries(galaxy Qt5::Widgets Qt5::Core Qt5::Gui Qt5::PrintSupport Threads::Threads SingleApplication::SingleApplication ICU::uc ICU::i18n ${LIBS})
+target_link_libraries(galaxy ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::PrintSupport Threads::Threads SingleApplication::SingleApplication ICU::uc ICU::i18n ${LIBS})
 
 # rcc -no-compress -binary smallworld_res.qrc -o smallworld_res.rcc
 qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)

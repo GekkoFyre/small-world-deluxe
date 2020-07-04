@@ -7,6 +7,7 @@
  * http://opensource.org/licenses/MIT
  */
 
+#define INITGUID
 #include "./../../../include/serial/serial.h"
 #include <tchar.h>
 #include <windows.h>
@@ -126,14 +127,14 @@ serial::list_ports()
 		else
 			hardware_id[0] = '\0';
 
-		#ifdef UNICODE
+        #ifdef UNICODE
 			std::string portName = utf8_encode(port_name);
 			std::string friendlyName = utf8_encode(friendly_name);
 			std::string hardwareId = utf8_encode(hardware_id);
 		#else
-			std::string portName = port_name;
-			std::string friendlyName = friendly_name;
-			std::string hardwareId = hardware_id;
+            std::string portName(&port_name[0]);
+            std::string friendlyName(&friendly_name[0]);
+            std::string hardwareId(&hardware_id[0]);
 		#endif
 
 		PortInfo port_entry;
