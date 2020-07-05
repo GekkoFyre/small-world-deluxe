@@ -132,7 +132,7 @@ else()
     message(FATAL_ERROR "Could not find the Threads library!")
 endif(Threads_FOUND)
 
-find_package(Qt5 COMPONENTS Core Gui Widgets Network PrintSupport Test REQUIRED)
+find_package(Qt5 COMPONENTS Core Gui Widgets Network SerialPort PrintSupport Test REQUIRED)
 find_package(ICU 61.0 COMPONENTS uc i18n REQUIRED)
 
 set(Boost_USE_STATIC_LIBS OFF CACHE BOOL "Use static libraries when linking Boost C++.")
@@ -448,19 +448,14 @@ endif()
 set(GALAXY_SRC_CPP
     ${GALAXY_SRC_CPP}
     src/pa_sinewave.cpp
-    src/gk_fft.cpp
-    src/contrib/serial/src/serial.cc)
+    src/gk_fft.cpp)
 
 if(LINUX)
     set(GALAXY_SRC_CPP
-        ${GALAXY_SRC_CPP}
-        src/contrib/serial/src/impl/list_ports/list_ports_linux.cc
-        src/contrib/serial/src/impl/unix.cc)
+        ${GALAXY_SRC_CPP})
 elseif(WIN32 OR MSYS OR MINGW)
     set(GALAXY_SRC_CPP
-        ${GALAXY_SRC_CPP}
-        src/contrib/serial/src/impl/list_ports/list_ports_win.cc
-        src/contrib/serial/src/impl/win.cc)
+        ${GALAXY_SRC_CPP})
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()
@@ -523,18 +518,14 @@ set(GALAXY_SRC_HEADERS
     src/pa_sinewave.hpp
     src/gk_timer.hpp
     src/gk_circ_buffer.hpp
-    src/gk_fft.hpp
-    src/contrib/serial/include/serial/v8stdint.h
-    src/contrib/serial/include/serial/serial.h)
+    src/gk_fft.hpp)
 
 if(LINUX)
     set(GALAXY_SRC_HEADERS
-        ${GALAXY_SRC_HEADERS}
-        src/contrib/serial/include/serial/impl/unix.h)
+        ${GALAXY_SRC_HEADERS})
 elseif(WIN32 OR MSYS OR MINGW)
     set(GALAXY_SRC_HEADERS
-        ${GALAXY_SRC_HEADERS}
-        src/contrib/serial/include/serial/impl/win.h)
+        ${GALAXY_SRC_HEADERS})
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()
@@ -653,7 +644,7 @@ if(GFYRE_BUILD_SHARED)
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
-target_link_libraries(galaxy ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::PrintSupport Threads::Threads SingleApplication::SingleApplication ICU::uc ICU::i18n ${LIBS})
+target_link_libraries(galaxy ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::SerialPort Qt5::PrintSupport Threads::Threads SingleApplication::SingleApplication ICU::uc ICU::i18n ${LIBS})
 
 # rcc -no-compress -binary smallworld_res.qrc -o smallworld_res.rcc
 qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)

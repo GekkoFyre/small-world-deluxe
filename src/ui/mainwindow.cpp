@@ -54,8 +54,10 @@
 #include <algorithm>
 #include <functional>
 #include <QDesktopServices>
+#include <QSerialPortInfo>
 #include <QStandardPaths>
 #include <QPrintDialog>
+#include <QSerialPort>
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QResource>
@@ -1962,18 +1964,20 @@ void MainWindow::disconnectRigInMemory(RIG *rig_to_disconnect, const std::shared
                     //
                     // CAT Port
                     //
-                    if (std::strcmp(radio_ptr->cat_conn_port.c_str(), port.port_info.port.c_str()) == 0) {
-                        if (serial::Serial(port.port_info.port).isOpen()) {
-                            serial::Serial(port.port_info.port).close();
+                    if (std::strcmp(radio_ptr->cat_conn_port.c_str(), port.port_info.portName().toStdString().c_str()) == 0) {
+                        QSerialPort serial(port.port_info);
+                        if (serial.isOpen()) {
+                            serial.close();
                         }
                     }
 
                     //
                     // PTT Port
                     //
-                    if (std::strcmp(radio_ptr->ptt_conn_port.c_str(), port.port_info.port.c_str()) == 0) {
-                        if (serial::Serial(port.port_info.port).isOpen()) {
-                            serial::Serial(port.port_info.port).close();
+                    if (std::strcmp(radio_ptr->ptt_conn_port.c_str(), port.port_info.portName().toStdString().c_str()) == 0) {
+                        QSerialPort serial(port.port_info);
+                        if (serial.isOpen()) {
+                            serial.close();
                         }
                     }
                 }

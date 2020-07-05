@@ -51,6 +51,7 @@
 #include <cstring>
 #include <sstream>
 #include <QMessageBox>
+#include <QSerialPortInfo>
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 #ifdef _WIN64
@@ -314,13 +315,12 @@ std::list<GkComPort> RadioLibs::status_com_ports()
 {
     try {
         std::list<GkComPort> com_map;
-        std::vector<serial::PortInfo> devices_found = serial::list_ports();
+        const auto rs232_data = QSerialPortInfo::availablePorts();
 
-        for (const auto &port: devices_found) {
-            GkComPort com_struct;
-            com_struct.port_info = port;
-
-            if (!com_struct.port_info.port.empty()) {
+        for (const auto &info: rs232_data) {
+            if (!info.isNull()) {
+                GkComPort com_struct;
+                com_struct.port_info = info;
                 com_map.push_back(com_struct);
             }
         }
