@@ -54,8 +54,10 @@
 #include <algorithm>
 #include <functional>
 #include <QDesktopServices>
+#include <QSerialPortInfo>
 #include <QStandardPaths>
 #include <QPrintDialog>
+#include <QSerialPort>
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QResource>
@@ -615,10 +617,6 @@ void MainWindow::launchSettingsWin()
 bool MainWindow::radioInitStart()
 {
     try {
-        std::string rand_file_name = fileIo->create_random_string(8);
-        fs::path rig_file_path_tmp = fs::path(fs::temp_directory_path().string() + native_slash.string() + rand_file_name + GekkoFyre::Filesystem::tmpExtension);
-        gkRadioPtr->rig_file = rig_file_path_tmp.string();
-
         QString model = GkDb->read_rig_settings(radio_cfg::RigModel);
         if (!model.isEmpty() || !model.isNull()) {
             gkRadioPtr->rig_model = model.toInt();
@@ -630,7 +628,8 @@ bool MainWindow::radioInitStart()
             gkRadioPtr->rig_model = 1;
         }
 
-        QString com_baud_rate = GkDb->read_rig_settings(radio_cfg::ComBaudRate);
+        // TODO: Very important! Expand this section!
+        QString com_baud_rate = GkDb->read_rig_settings_comms(radio_cfg::ComBaudRate, GkConnType::RS232);
         if (!com_baud_rate.isEmpty() || !com_baud_rate.isNull()) {
             gkRadioPtr->dev_baud_rate = gkRadioLibs->convertBaudRateToEnum(com_baud_rate.toInt());
         } else {
@@ -638,7 +637,7 @@ bool MainWindow::radioInitStart()
         }
 
         #ifdef GFYRE_HAMLIB_DBG_VERBOSITY_ENBL
-        radio->verbosity = RIG_DEBUG_VERBOSE;
+        gkRadioPtr->verbosity = RIG_DEBUG_VERBOSE;
         #else
         gkRadioPtr->verbosity = RIG_DEBUG_BUG;
         #endif
@@ -847,19 +846,19 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
             switch (conv_ptt_mode) {
             case 0:
                 // None
-                gk_radio_tmp->mode = rmode_t::RIG_MODE_NONE;
+                gk_radio_tmp->mode = RIG_MODE_NONE;
                 break;
             case 1:
                 // USB
-                gk_radio_tmp->mode = rmode_t::RIG_MODE_USB;
+                gk_radio_tmp->mode = RIG_MODE_USB;
                 break;
             case 2:
                 // Data / PKT
-                gk_radio_tmp->mode = rmode_t::RIG_MODE_PKTUSB;
+                gk_radio_tmp->mode = RIG_MODE_PKTUSB;
                 break;
             default:
                 // Nothing
-                gk_radio_tmp->mode = rmode_t::RIG_MODE_NONE;
+                gk_radio_tmp->mode = RIG_MODE_NONE;
                 break;
             }
         }
@@ -1446,8 +1445,6 @@ void MainWindow::updateSpectrograph()
                                 magnitude_buf.push_back(magnitude);
                             }
 
-                            std::vector<float> freq_list;
-
                             std::vector<double> magnitude_db_buf;
                             magnitude_buf.reserve(magnitude_buf.size() + 1);
                             for (const auto &calc: magnitude_buf) {
@@ -1966,18 +1963,20 @@ void MainWindow::disconnectRigInMemory(RIG *rig_to_disconnect, const std::shared
                     //
                     // CAT Port
                     //
-                    if (std::strcmp(radio_ptr->cat_conn_port.c_str(), port.port_info.port.c_str()) == 0) {
-                        if (serial::Serial(port.port_info.port).isOpen()) {
-                            serial::Serial(port.port_info.port).close();
+                    if (std::strcmp(radio_ptr->cat_conn_port.c_str(), port.port_info.portName().toStdString().c_str()) == 0) {
+                        QSerialPort serial(port.port_info);
+                        if (serial.isOpen()) {
+                            serial.close();
                         }
                     }
 
                     //
                     // PTT Port
                     //
-                    if (std::strcmp(radio_ptr->ptt_conn_port.c_str(), port.port_info.port.c_str()) == 0) {
-                        if (serial::Serial(port.port_info.port).isOpen()) {
-                            serial::Serial(port.port_info.port).close();
+                    if (std::strcmp(radio_ptr->ptt_conn_port.c_str(), port.port_info.portName().toStdString().c_str()) == 0) {
+                        QSerialPort serial(port.port_info);
+                        if (serial.isOpen()) {
+                            serial.close();
                         }
                     }
                 }
@@ -2015,8 +2014,6 @@ void MainWindow::updateFreqsInMem(const float &frequency, const GekkoFyre::Amate
                     break;
                 }
             }
-
-            frequencyList.shrink_to_fit();
         }
     } else {
         //

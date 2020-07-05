@@ -132,9 +132,16 @@ else()
     message(FATAL_ERROR "Could not find the Threads library!")
 endif(Threads_FOUND)
 
-find_package(Qt5 COMPONENTS Core Gui Widgets PrintSupport Test REQUIRED)
+find_package(Qt5 COMPONENTS Core Gui Widgets Network SerialPort PrintSupport Test REQUIRED)
 
-set(Boost_USE_STATIC_LIBS ON CACHE BOOL "Use static libraries when linking Boost C++.")
+if (MSYS OR MINGW OR LINUX)
+    set(Boost_USE_STATIC_LIBS OFF CACHE BOOL "Use static libraries when linking Boost C++.")
+elseif(WIN32)
+    set(Boost_USE_STATIC_LIBS ON CACHE BOOL "Use static libraries when linking Boost C++.")
+else()
+    message(SEND_ERROR "The only operating systems and/or build environments we OFFICIALLY support as of the moment are Microsoft Windows, MinGW/MSYS, and Linux. Sorry!")
+endif()
+
 set(Boost_USE_MULTITHREADED ON CACHE BOOL "Use multithreaded libraries when linking Boost C++.")
 set(Boost_USE_STATIC_RUNTIME OFF CACHE BOOL "Use static runtime when linking Boost C++.")
 find_package(Boost 1.54.0 REQUIRED COMPONENTS "filesystem"
@@ -142,7 +149,8 @@ find_package(Boost 1.54.0 REQUIRED COMPONENTS "filesystem"
                                               "exception"
                                               "chrono"
                                               "locale"
-                                              "random")
+                                              "random"
+                                              "locale")
                                               
 if(WIN32 OR MSYS OR MINGW)
     if(${GFYRE_PACKAGE_MAINTAINER} EQUAL ON)
@@ -197,12 +205,14 @@ endif(LEVELDB_FOUND)
 
 find_package(PortAudio REQUIRED)
 if (PortAudio_FOUND)
-    if(WIN32 OR MSYS OR MINGW)
-        # Enable `PA_USE_ASIO` by default, since this allows for the lowest latency possible with the audio pathways!
-        option(PA_USE_ASIO "Enable support for ASIO. This is recommended for Microsoft Windows operating systems." ON)
-    else()
+    if(LINUX OR MSYS OR MINGW)
         # Disable `PA_USE_ASIO` because we are dealing with a system other than Microsoft Windows, where ASIO is unsupported...
         option(PA_USE_ASIO "Disable support for ASIO. This is recommended for operating systems other than Microsoft Windows." OFF)
+    elseif(WIN32)
+        # Enable `PA_USE_ASIO` by default, since this allows for the lowest latency possible with the audio pathways!
+        option(PA_USE_ASIO "Enable support for ASIO. This is recommended for Microsoft Windows operating systems." ON)
+    elseif(APPLE)
+        message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
     endif()
 
     if (PA_USE_ASIO)
@@ -283,7 +293,7 @@ else()
     message(SEND_ERROR "The 'libiconv' character encoding and conversion library could not be found!")
 endif(Iconv_FOUND)
 
-set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-arcs -ftest-coverage")
+set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-arcs -ftest-coverage -mwindows")
 
 #
 # PortAudio's C++ bindings
@@ -444,25 +454,34 @@ endif()
 set(GALAXY_SRC_CPP
     ${GALAXY_SRC_CPP}
     src/pa_sinewave.cpp
-    src/gk_fft.cpp
-    src/contrib/getopt.c
-    src/contrib/serial/src/serial.cc)
+    src/gk_fft.cpp)
 
-if(WIN32 OR MSYS OR MINGW)
+if(LINUX)
     set(GALAXY_SRC_CPP
-        ${GALAXY_SRC_CPP}
-        src/contrib/serial/src/impl/list_ports/list_ports_win.cc
-        src/contrib/serial/src/impl/win.cc)
-elseif(LINUX)
+        ${GALAXY_SRC_CPP})
+elseif(WIN32 OR MSYS OR MINGW)
     set(GALAXY_SRC_CPP
-        ${GALAXY_SRC_CPP}
-        src/contrib/serial/src/impl/list_ports/list_ports_linux.cc
-        src/contrib/serial/src/impl/unix.cc)
+        ${GALAXY_SRC_CPP})
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()
 
 set_property(SOURCE ${GALAXY_SRC_CPP} PROPERTY SKIP_AUTOUIC ON)
+
+#
+# Do not compile under MinGW for these sources!
+#
+set(GALAXY_SRC_CPP_NON_MINGW
+    ${GALAXY_SRC_CPP_NON_MINGW}) # Setup a dummy variable for if this variable is otherwise not needed (i.e. we're not compiling under MinGW!)....
+
+# Setup the real MinGW variables for if they're actually needed (i.e. we're actually compiling under MinGW)!
+if (!MSYS OR !MINGW)
+    set(GALAXY_SRC_CPP_NON_MINGW
+        ${GALAXY_SRC_CPP_NON_MINGW}
+        src/contrib/getopt.c)
+endif()
+
+set_property(SOURCE ${GALAXY_SRC_CPP_NON_MINGW} PROPERTY SKIP_AUTOUIC ON)
 
 #
 # Compile UIC!
@@ -486,7 +505,8 @@ set(GALAXY_OBJ_HEADERS
     src/gk_cli.hpp
     src/gk_modem.hpp
     src/gk_frequency_list.hpp
-    src/gk_string_funcs.hpp)
+    src/gk_string_funcs.hpp
+    src/gk_messagebox.hpp)
 
 if(WIN32 OR MSYS OR MINGW)
     # Nothing here at the moment!
@@ -505,24 +525,47 @@ set(GALAXY_SRC_HEADERS
     src/pa_sinewave.hpp
     src/gk_timer.hpp
     src/gk_circ_buffer.hpp
-    src/gk_fft.hpp
-    src/contrib/getopt.h
-    src/contrib/serial/include/serial/v8stdint.h
-    src/contrib/serial/include/serial/serial.h)
+    src/gk_fft.hpp)
 
-if(WIN32 OR MSYS OR MINGW)
+if(LINUX)
     set(GALAXY_SRC_HEADERS
-        ${GALAXY_SRC_HEADERS}
-        src/contrib/serial/include/serial/impl/win.h)
-elseif(LINUX)
+        ${GALAXY_SRC_HEADERS})
+elseif(WIN32 OR MSYS OR MINGW)
     set(GALAXY_SRC_HEADERS
-        ${GALAXY_SRC_HEADERS}
-        src/contrib/serial/include/serial/impl/unix.h)
+        ${GALAXY_SRC_HEADERS})
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()
 
 set_property(SOURCE ${GALAXY_SRC_HEADERS} PROPERTY SKIP_AUTOUIC ON)
+
+#
+# Do not compile under MinGW for these sources!
+#
+set(GALAXY_SRC_HEADERS_NON_MINGW
+    ${GALAXY_SRC_HEADERS_NON_MINGW}) # Setup a dummy variable for if this variable is otherwise not needed (i.e. we're not compiling under MinGW!)....
+
+# Setup the real MinGW variables for if they're actually needed (i.e. we're actually compiling under MinGW)!
+if (!MSYS OR !MINGW)
+    set(GALAXY_SRC_HEADERS_NON_MINGW
+        ${GALAXY_SRC_HEADERS_NON_MINGW}
+        src/contrib/getopt.h)
+endif()
+
+set_property(SOURCE ${GALAXY_SRC_HEADERS_NON_MINGW} PROPERTY SKIP_AUTOUIC ON)
+
+if (MSYS OR MINGW)
+    set(GK_EXTRA_LIBS
+        ${GK_EXTRA_LIBS}
+        -lhid
+        -lsetupapi)
+else()
+    #
+    # Just an empty container for now!
+    #
+    set(GK_EXTRA_LIBS
+        ${GK_EXTRA_LIBS})
+endif()
 
 add_definitions("-DQWT_DLL")
 
@@ -589,7 +632,7 @@ include(GNUInstallDirs)
 # Build Small World Deluxe as a static package!
 #
 if(GFYRE_BUILD_STATIC)
-    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP})
+    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP})
     if(GK_CUDA_FFT)
         add_library(galaxy_cuda STATIC ${GALAXY_CUDA})
     endif()
@@ -601,14 +644,14 @@ endif(GFYRE_BUILD_STATIC)
 # Build Small World Deluxe as a shared package!
 #
 if(GFYRE_BUILD_SHARED)
-    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP})
+    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP})
     if(GK_CUDA_FFT)
         add_library(galaxy_cuda STATIC ${GALAXY_CUDA})
     endif()
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
-target_link_libraries(galaxy Qt5::Widgets Qt5::Core Qt5::Gui Qt5::PrintSupport Threads::Threads SingleApplication::SingleApplication ${LIBS})
+target_link_libraries(galaxy ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::SerialPort Qt5::PrintSupport Threads::Threads SingleApplication::SingleApplication ${LIBS})
 
 # rcc -no-compress -binary smallworld_res.qrc -o smallworld_res.rcc
 qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)
@@ -617,7 +660,7 @@ add_dependencies(galaxy resources)
 set(SWRLD_EXEC ${SWRLD_EXEC}
     src/main.cpp)
 
-add_executable(smallworld ${SWRLD_EXEC})
+add_executable(smallworld WIN32 ${SWRLD_EXEC})
 target_link_libraries(smallworld galaxy)
 
 if(GK_CUDA_FFT)

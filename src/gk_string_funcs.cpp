@@ -42,11 +42,11 @@
 #include "gk_string_funcs.hpp"
 #include <QSettings>
 
-#ifdef _WIN32
-#include <stringapiset.h>
-#elif __linux__ || __MINGW32__
+#if defined(__linux__) || defined(__MINGW64__)
 #include <SDL2/SDL_video.h>
 #include <SDL2/SDL_messagebox.h>
+#elif _WIN32
+#include <stringapiset.h>
 #endif
 
 using namespace GekkoFyre;
@@ -121,7 +121,7 @@ std::wstring StringFuncs::removeSpecialChars(std::wstring wstr)
  * @return Whether the OK button was selected or not.
  * @see GekkoFyre::PaAudioBuf::dlgBoxOk().
  */
-#ifdef _WIN32
+#if defined(_MSC_VER) && (_MSC_VER > 1900)
 bool StringFuncs::modalDlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon)
 {
     // TODO: Make this dialog modal
@@ -138,7 +138,7 @@ bool StringFuncs::modalDlgBoxOk(const HWND &hwnd, const QString &title, const QS
 
     return false;
 }
-#elif __linux__ || __MINGW32__
+#else
 bool StringFuncs::modalDlgBoxLinux(Uint32 flags, const QString &title, const QString &msgTxt)
 {
     SDL_Window *sdlWindow = SDL_CreateWindow(General::productName, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, DLG_BOX_WINDOW_WIDTH, DLG_BOX_WINDOW_HEIGHT, SDL_WINDOW_SHOWN);

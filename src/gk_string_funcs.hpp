@@ -43,6 +43,7 @@
 
 #include "src/defines.hpp"
 #include <QObject>
+#include <QMessageBox>
 #include <string>
 #include <memory>
 #include <mutex>
@@ -51,7 +52,7 @@
 #include <Windows.h>
 #endif
 
-#ifdef __MINGW32__
+#ifdef __MINGW64__
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_stdinc.h>
 #endif
@@ -68,9 +69,9 @@ public:
     static std::string multiByteFromWide(LPCWSTR pwsz, UINT cp);
     static std::wstring strToWStrWin(const std::string &s);
     std::wstring removeSpecialChars(std::wstring wstr);
-    #ifdef _WIN32
+    #if defined(_MSC_VER) && (_MSC_VER > 1900)
     bool modalDlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon);
-    #elif __linux__ || __MINGW32__
+    #else
     bool modalDlgBoxLinux(Uint32 flags, const QString &title, const QString &msgTxt);
     #endif
 

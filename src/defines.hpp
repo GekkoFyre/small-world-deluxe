@@ -41,9 +41,7 @@
 
 #pragma once
 
-#include "contrib/serial/include/serial/serial.h"
 #include <portaudiocpp/PortAudioCpp.hxx>
-#include <fftw3.h>
 #include <boost/exception/all.hpp>
 #include <boost/logic/tribool.hpp>
 #include <boost/filesystem.hpp>
@@ -62,6 +60,7 @@
 #include <QPointer>
 #include <QDateTime>
 #include <QStringList>
+#include <QSerialPortInfo>
 
 #ifdef _WIN32
 #ifdef PA_USE_ASIO
@@ -326,12 +325,8 @@ namespace Database {
         };
 
         struct GkComPort {
-            serial::PortInfo port_info;                                             // Details on the COM/RS232/Serial ports themselves
-            serial::stopbits_t def_stopbits;                                        // The defined stop bits for this serial port in question
+            QSerialPortInfo port_info;                                              // Details on the COM/RS232/Serial ports themselves
             uint32_t def_baudrate;                                                  // The defined baudrate for this serial port in question
-            serial::parity_t def_parity;                                            // The defined parity for this serial port in question
-            serial::flowcontrol_t def_flow_control;                                 // The defined flow-control for this serial port in question
-            serial::Timeout timeout_info;                                           // The timeout structure for the given serial port in question
         };
 
         namespace Audio {
@@ -475,7 +470,6 @@ namespace AmateurRadio {
             ptt_t ptt_status;                               // PTT status
             split_t split_mode;                             // Whether 'Split Mode' is enabled or disabled
             bool is_open;                                   // Has HamLib been successfully initiated (including the RIG* pointer?)
-            std::string rig_file;                           // Hamlib rig temporary file
             std::string info_buf;                           // Hamlib information buffer
             GkConnType cat_conn_type;                       // The type of connection, whether USB, RS232, etc.
             GkConnType ptt_conn_type;                       // The type of connection, whether USB, RS232, etc.

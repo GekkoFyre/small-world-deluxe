@@ -236,21 +236,21 @@ void DialogSettings::on_pushButton_submit_config_clicked()
             for (const auto &avail_port: status_com_ports) {
                 // List out the current serial ports in use
                 if (com_device_cat == sel_port.second) {
-                    if (sel_port.first == avail_port.port_info.description) {
+                    if (sel_port.first == avail_port.port_info.description().toStdString()) {
                         //
                         // CAT Control
                         //
-                        chosen_com_port_cat = avail_port.port_info.port; // The chosen serial device uses its own name as a reference
+                        chosen_com_port_cat = avail_port.port_info.portName().toStdString(); // The chosen serial device uses its own name as a reference
                         break;
                     }
                 }
 
                 if (com_device_ptt == sel_port.second) {
-                    if (sel_port.first == avail_port.port_info.description) {
+                    if (sel_port.first == avail_port.port_info.description().toStdString()) {
                         //
                         // PTT Method
                         //
-                        chosen_com_port_ptt = avail_port.port_info.port; // The chosen serial device uses its own name as a reference
+                        chosen_com_port_ptt = avail_port.port_info.portName().toStdString(); // The chosen serial device uses its own name as a reference
                         break;
                     }
                 }
@@ -591,7 +591,7 @@ void DialogSettings::prefill_audio_api_avail(const QVector<PaHostApiTypeId> &por
  * @param audio_devices The available audio devices on the user's system, as a typical std::vector.
  * @see GekkoFyre::AudioDevices::enumAudioDevices(), AudioDevices::filterPortAudioHostType().
  */
-void DialogSettings::prefill_audio_devices(std::vector<GkDevice> audio_devices_vec)
+void DialogSettings::prefill_audio_devices(const std::vector<GkDevice> &audio_devices_vec)
 {
     try {
         if (!avail_portaudio_api.isEmpty()) {
@@ -818,16 +818,16 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
                 //
                 // CAT Control
                 //
-                ui->comboBox_com_port->insertItem(counter, QString::fromStdString(port.port_info.port),
-                                                  QString::fromStdString(port.port_info.port));
+                ui->comboBox_com_port->insertItem(counter, QString::fromStdString(port.port_info.portName().toStdString()),
+                                                  QString::fromStdString(port.port_info.portName().toStdString()));
 
                 //
                 // PTT Method
                 //
-                ui->comboBox_ptt_method_port->insertItem(counter, QString::fromStdString(port.port_info.port),
-                                                         QString::fromStdString(port.port_info.port));\
+                ui->comboBox_ptt_method_port->insertItem(counter, QString::fromStdString(port.port_info.portName().toStdString()),
+                                                         QString::fromStdString(port.port_info.portName().toStdString()));\
 
-                available_com_ports.insert(port.port_info.description, counter);
+                available_com_ports.insert(port.port_info.description().toStdString(), counter);
             }
 
             //
@@ -837,7 +837,7 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
             if (!comDeviceCat.isEmpty() && !available_com_ports.isEmpty()) {
                 for (const auto &sel_port: available_com_ports.toStdMap()) {
                     for (const auto &device: status_com_ports) {
-                        if ((device.port_info.description == sel_port.first) && (comDeviceCat.toStdString() == device.port_info.port)) {
+                        if ((device.port_info.description().toStdString() == sel_port.first) && (comDeviceCat.toStdString() == device.port_info.portName().toStdString())) {
                             // NOTE: The recorded setting used to identify the chosen serial device is the COM Port name
                             ui->comboBox_com_port->setCurrentIndex(sel_port.second);
                             on_comboBox_com_port_currentIndexChanged(sel_port.second);
@@ -853,7 +853,7 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
             if (!comDevicePtt.isEmpty() && !available_com_ports.isEmpty()) {
                 for (const auto &sel_port: available_com_ports.toStdMap()) {
                     for (const auto &device: status_com_ports) {
-                        if ((device.port_info.description == sel_port.first) && (comDevicePtt.toStdString() == device.port_info.port)) {
+                        if ((device.port_info.description().toStdString() == sel_port.first) && (comDevicePtt.toStdString() == device.port_info.portName().toStdString())) {
                             // NOTE: The recorded setting used to identify the chosen serial device is the COM Port name
                             ui->comboBox_ptt_method_port->setCurrentIndex(sel_port.second);
                             on_comboBox_ptt_method_port_currentIndexChanged(sel_port.second);
@@ -1445,14 +1445,14 @@ void DialogSettings::on_comboBox_com_port_currentIndexChanged(int index)
                         //
                         emit changePortType(GekkoFyre::AmateurRadio::GkConnType::USB, true);
                         return;
-                    } else if (QString::fromStdString(com_port_list.port_info.port) == ui->comboBox_com_port->currentData().toString()) {
+                    } else if (QString::fromStdString(com_port_list.port_info.portName().toStdString()) == ui->comboBox_com_port->currentData().toString()) {
                         //
                         // An RS232 port has been chosen!
                         //
                         #ifdef _UNICODE
                         ui->lineEdit_device_port_name->setText(QString::fromStdWString(com_port_list.second.first));
                         #else
-                        ui->lineEdit_device_port_name->setText(QString::fromStdString(com_port_list.port_info.description));
+                        ui->lineEdit_device_port_name->setText(QString::fromStdString(com_port_list.port_info.description().toStdString()));
                         #endif
 
                         emit changePortType(GekkoFyre::AmateurRadio::GkConnType::RS232, true);
@@ -1495,14 +1495,14 @@ void DialogSettings::on_comboBox_ptt_method_port_currentIndexChanged(int index)
                         //
                         emit changePortType(GekkoFyre::AmateurRadio::GkConnType::USB, false);
                         return;
-                    } else if (QString::fromStdString(com_port_list.port_info.port) == ui->comboBox_com_port->currentData().toString()) {
+                    } else if (QString::fromStdString(com_port_list.port_info.portName().toStdString()) == ui->comboBox_com_port->currentData().toString()) {
                         //
                         // An RS232 port has been chosen!
                         //
                         #ifdef _UNICODE
                         ui->lineEdit_ptt_method_dev_path->setText(QString::fromStdWString(com_port_list.second.first));
                         #else
-                        ui->lineEdit_ptt_method_dev_path->setText(QString::fromStdString(com_port_list.port_info.description));
+                        ui->lineEdit_ptt_method_dev_path->setText(QString::fromStdString(com_port_list.port_info.description().toStdString()));
                         #endif
 
                         emit changePortType(GekkoFyre::AmateurRadio::GkConnType::RS232, false);

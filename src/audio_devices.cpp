@@ -858,7 +858,7 @@ std::vector<GkDevice> AudioDevices::filterPortAudioHostType(const std::vector<Gk
             std::vector<GkDevice> host_res;
             for (const auto &audio_device: audio_devices_vec) {
                 switch (audio_device.host_type_id) {
-                #if _WIN32 || __MINGW32__
+                #if _WIN32 || __MINGW64__
                 case PaHostApiTypeId::paDirectSound:
                     if (filterAudioEnumPreexisting(host_res, audio_device) == false) {
                         host_res.push_back(audio_device);
@@ -889,7 +889,7 @@ std::vector<GkDevice> AudioDevices::filterPortAudioHostType(const std::vector<Gk
                     }
 
                     break;
-                #elif __linux__ || __MINGW32__
+                #elif __linux__
                 case PaHostApiTypeId::paSoundManager:
                     if (filterAudioEnumPreexisting(host_res, audio_device) == false) {
                         host_res.push_back(audio_device);

@@ -60,7 +60,7 @@
 #include <QWidget>
 #include <QResource>
 
-#ifdef __MINGW32__
+#ifdef __MINGW64__
 #include <SDL2/SDL.h>
 #endif
 
@@ -89,6 +89,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    QCoreApplication::addLibraryPath(".");
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     SingleApplication app(argc, argv, false, SingleApplication::Mode::System);
     if (app.isSecondary()) {
@@ -105,7 +106,7 @@ int main(int argc, char *argv[])
     fs::path resource_path = fs::path(QCoreApplication::applicationDirPath().toStdString() + native_slash.string()  + GekkoFyre::Filesystem::resourceFile);
     QResource::registerResource(QString::fromStdString(resource_path.string())); // https://doc.qt.io/qt-5/resources.html
 
-    #ifdef __MINGW32__
+    #ifdef __MINGW64__
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         std::cout << "Failed to initialize the SDL2 library!" << std::endl;
         return -1;

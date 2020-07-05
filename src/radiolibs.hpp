@@ -62,7 +62,7 @@
 #include <Windows.h>
 #endif
 
-#ifdef __MINGW32__
+#ifdef __MINGW64__
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_stdinc.h>
 #endif
@@ -113,9 +113,11 @@ private:
     static void registerComPort(std::list<std::string> &comList, std::list<std::string> &comList8250,
                                 const boost::filesystem::path &dir);
 
-    #ifdef _WIN32
+    void print_exception(const std::exception &e, int level = 0);
+
+    #if defined(_MSC_VER) && (_MSC_VER > 1900)
     bool modalDlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon);
-    #elif __linux__ || __MINGW32__
+    #else
     bool modalDlgBoxLinux(Uint32 flags, const QString &title, const QString &msgTxt);
     #endif
 

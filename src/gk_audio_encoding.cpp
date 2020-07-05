@@ -226,7 +226,7 @@ void GkAudioEncoding::recordOggVorbis(const std::vector<signed char> &audio_fram
             if (ret) {
                 throw std::runtime_error(tr("There has been an error in initializing an Ogg Vorbis audio encode!").toStdString());
             }
-            #elif __MINGW32__
+            #elif __MINGW64__
             // TODO: Find a replacement for the above that's suitable within MinGW!
             #endif
 
