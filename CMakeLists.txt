@@ -133,9 +133,15 @@ else()
 endif(Threads_FOUND)
 
 find_package(Qt5 COMPONENTS Core Gui Widgets Network SerialPort PrintSupport Test REQUIRED)
-find_package(ICU 61.0 COMPONENTS uc i18n REQUIRED)
 
-set(Boost_USE_STATIC_LIBS OFF CACHE BOOL "Use static libraries when linking Boost C++.")
+if (MSYS OR MINGW OR LINUX)
+    set(Boost_USE_STATIC_LIBS OFF CACHE BOOL "Use static libraries when linking Boost C++.")
+elseif(WIN32)
+    set(Boost_USE_STATIC_LIBS ON CACHE BOOL "Use static libraries when linking Boost C++.")
+else()
+    message(SEND_ERROR "The only operating systems and/or build environments we OFFICIALLY support as of the moment are Microsoft Windows, MinGW/MSYS, and Linux. Sorry!")
+endif()
+
 set(Boost_USE_MULTITHREADED ON CACHE BOOL "Use multithreaded libraries when linking Boost C++.")
 set(Boost_USE_STATIC_RUNTIME OFF CACHE BOOL "Use static runtime when linking Boost C++.")
 find_package(Boost 1.54.0 REQUIRED COMPONENTS "filesystem"
@@ -499,7 +505,8 @@ set(GALAXY_OBJ_HEADERS
     src/gk_cli.hpp
     src/gk_modem.hpp
     src/gk_frequency_list.hpp
-    src/gk_string_funcs.hpp)
+    src/gk_string_funcs.hpp
+    src/gk_messagebox.hpp)
 
 if(WIN32 OR MSYS OR MINGW)
     # Nothing here at the moment!
@@ -644,7 +651,7 @@ if(GFYRE_BUILD_SHARED)
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
-target_link_libraries(galaxy ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::SerialPort Qt5::PrintSupport Threads::Threads SingleApplication::SingleApplication ICU::uc ICU::i18n ${LIBS})
+target_link_libraries(galaxy ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::SerialPort Qt5::PrintSupport Threads::Threads SingleApplication::SingleApplication ${LIBS})
 
 # rcc -no-compress -binary smallworld_res.qrc -o smallworld_res.rcc
 qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)

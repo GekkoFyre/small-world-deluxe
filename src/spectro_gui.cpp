@@ -128,7 +128,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         //
         setAxisTitle(QwtPlot::yLeft, tr("Time (secs ago)"));
         setAxisLabelRotation(QwtPlot::yLeft, -50.0); // Puts the label markings (i.e. frequency response labels) at an angle
-        setAxisLabelAlignment(QwtPlot::yLeft, Qt::AlignVCenter | Qt::AlignVCenter);
+        setAxisLabelAlignment(QwtPlot::yLeft, Qt::AlignVCenter);
 
         date_scale_draw = new QwtDateScaleDraw(Qt::UTC);
         date_scale_engine = new QwtDateScaleEngine(Qt::UTC);
@@ -252,7 +252,7 @@ SpectroGui::~SpectroGui()
  * @param values
  * @param numCols
  */
-void SpectroGui::insertData(const QVector<double> values, const int &numCols)
+void SpectroGui::insertData(const QVector<double> &values, const int &numCols)
 {
     Q_UNUSED(numCols);
 

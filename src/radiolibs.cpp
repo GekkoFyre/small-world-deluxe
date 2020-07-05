@@ -53,17 +53,6 @@
 #include <QMessageBox>
 #include <QSerialPortInfo>
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-#ifdef _WIN64
-#include <stringapiset.h>
-#include <windows.h>
-#include <ntddstor.h>
-#include <setupapi.h>
-#include <initguid.h>
-#include <devguid.h>
-#endif
-#endif
-
 #ifdef __cplusplus
 extern "C"
 {
@@ -100,10 +89,6 @@ using namespace AmateurRadio;
 using namespace Control;
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
-
-static const DWORD port_name_max_length = 256;
-static const DWORD friendly_name_max_length = 256;
-static const DWORD hardware_id_max_length = 256;
 
 RadioLibs::RadioLibs(QPointer<FileIo> filePtr, std::shared_ptr<StringFuncs> stringPtr,
                      std::shared_ptr<GkLevelDb> dkDb, std::shared_ptr<GkRadio> radioPtr, QObject *parent) : QObject(parent)
@@ -313,30 +298,21 @@ libusb_context *RadioLibs::initUsbLib()
  */
 std::list<GkComPort> RadioLibs::status_com_ports()
 {
-    try {
-        std::list<GkComPort> com_map;
-        const auto rs232_data = QSerialPortInfo::availablePorts();
+    std::mutex mtx_status_com_ports;
+    std::lock_guard<std::mutex> lck_guard(mtx_status_com_ports);
 
-        for (const auto &info: rs232_data) {
-            if (!info.isNull()) {
-                GkComPort com_struct;
-                com_struct.port_info = info;
-                com_map.push_back(com_struct);
-            }
+    std::list<GkComPort> com_map;
+    const auto rs232_data = QSerialPortInfo::availablePorts();
+
+    for (const auto &info: rs232_data) {
+        if (!info.isNull()) {
+            GkComPort com_struct;
+            com_struct.port_info = info;
+            com_map.push_back(com_struct);
         }
-
-        return com_map;
-    } catch (const std::exception &e) {
-        #if defined(_MSC_VER) && (_MSC_VER > 1900)
-        HWND hwnd = nullptr;
-        modalDlgBoxOk(hwnd, tr("Error!"), e.what(), MB_ICONERROR);
-        DestroyWindow(hwnd);
-        #else
-        modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
-        #endif
     }
 
-    return std::list<GkComPort>();
+    return com_map;
 }
 
 /**

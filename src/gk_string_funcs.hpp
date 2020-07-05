@@ -43,6 +43,7 @@
 
 #include "src/defines.hpp"
 #include <QObject>
+#include <QMessageBox>
 #include <string>
 #include <memory>
 #include <mutex>

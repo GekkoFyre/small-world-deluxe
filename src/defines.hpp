@@ -42,7 +42,6 @@
 #pragma once
 
 #include <portaudiocpp/PortAudioCpp.hxx>
-#include <fftw3.h>
 #include <boost/exception/all.hpp>
 #include <boost/logic/tribool.hpp>
 #include <boost/filesystem.hpp>

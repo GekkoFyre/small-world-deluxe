@@ -123,7 +123,7 @@ public:
                const bool &enableZoomer = false, QWidget *parent = nullptr);
     ~SpectroGui();
 
-    void insertData(const QVector<double> values, const int &numCols);
+    void insertData(const QVector<double> &values, const int &numCols);
 
 protected:
     void alignScales();

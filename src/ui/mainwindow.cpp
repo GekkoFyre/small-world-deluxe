@@ -1444,8 +1444,6 @@ void MainWindow::updateSpectrograph()
                                 magnitude_buf.push_back(magnitude);
                             }
 
-                            std::vector<float> freq_list;
-
                             std::vector<double> magnitude_db_buf;
                             magnitude_buf.reserve(magnitude_buf.size() + 1);
                             for (const auto &calc: magnitude_buf) {

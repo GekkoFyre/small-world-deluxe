@@ -231,7 +231,7 @@ private:
     std::shared_ptr<QSettings> gkSettings;
 
     void prefill_audio_api_avail(const QVector<PaHostApiTypeId> &portaudio_api_vec);
-    void prefill_audio_devices(std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> audio_devices_vec);
+    void prefill_audio_devices(const std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> &audio_devices_vec);
     void prefill_audio_encode_comboboxes();
     void init_working_freqs();
     void init_station_info();

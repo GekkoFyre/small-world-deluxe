@@ -591,7 +591,7 @@ void DialogSettings::prefill_audio_api_avail(const QVector<PaHostApiTypeId> &por
  * @param audio_devices The available audio devices on the user's system, as a typical std::vector.
  * @see GekkoFyre::AudioDevices::enumAudioDevices(), AudioDevices::filterPortAudioHostType().
  */
-void DialogSettings::prefill_audio_devices(std::vector<GkDevice> audio_devices_vec)
+void DialogSettings::prefill_audio_devices(const std::vector<GkDevice> &audio_devices_vec)
 {
     try {
         if (!avail_portaudio_api.isEmpty()) {
