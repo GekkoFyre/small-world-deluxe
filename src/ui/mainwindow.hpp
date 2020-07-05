@@ -71,6 +71,7 @@
 #include <mutex>
 #include <ctime>
 #include <list>
+#include <QList>
 #include <QString>
 #include <QPointer>
 #include <QPrinter>
@@ -288,7 +289,7 @@ private:
     //
     static QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>> gkRadioModels;
     std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> gkRadioPtr;
-    std::vector<GekkoFyre::AmateurRadio::GkFreqs> frequencyList;
+    QList<GekkoFyre::AmateurRadio::GkFreqs> frequencyList;
 
     //
     // Timing and date related

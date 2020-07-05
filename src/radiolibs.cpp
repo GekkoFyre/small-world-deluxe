@@ -713,6 +713,7 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_p
         // Instantiate the rig
         radio_ptr->rig = rig_init(radio_ptr->rig_model);
 
+
         // Setup serial port, baud rate, etc.
         int baud_rate = 9600;
         int baud_rate_tmp = convertBaudRateInt(radio_ptr->dev_baud_rate);
@@ -732,7 +733,7 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_p
             // radio_ptr->rig->state.rigport.parm.serial.rts_state = radio_ptr->port_details.parm.serial.rts_state;
             radio_ptr->rig->state.rigport.parm.serial.dtr_state = radio_ptr->port_details.parm.serial.dtr_state;
             radio_ptr->rig->state.rigport.parm.serial.handshake = radio_ptr->port_details.parm.serial.handshake;
-            radio_ptr->rig->state.rigport.type.ptt = radio_ptr->port_details.type.ptt;
+            radio_ptr->rig->state.pttport.type.ptt = radio_ptr->port_details.type.ptt;
 
             #if __MINGW64__
             //
@@ -746,11 +747,9 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_p
             // Determine the port necessary and let Hamlib know about it!
             //
             if (!radio_ptr->cat_conn_port.empty()) {
-                strncpy(radio_ptr->port_details.pathname, radio_ptr->cat_conn_port.c_str(), sizeof(radio_ptr->rig->state.rigport.pathname));
-                radio_ptr->port_details.pathname[radio_ptr->cat_conn_port.size()] = '\0';
-
-                strncpy(radio_ptr->rig->state.rigport.pathname, radio_ptr->cat_conn_port.c_str(), sizeof(radio_ptr->rig->state.rigport.pathname));
-                radio_ptr->rig->state.rigport.pathname[radio_ptr->cat_conn_port.size()] = '\0';
+                strncpy_s(radio_ptr->port_details.pathname, radio_ptr->cat_conn_port.c_str(), (FILPATHLEN - 1));
+                strncpy_s(radio_ptr->rig->state.rigport.pathname, radio_ptr->cat_conn_port.c_str(), (FILPATHLEN - 1));
+                strncpy_s(radio_ptr->rig->state.pttport.pathname, radio_ptr->ptt_conn_port.c_str(), (FILPATHLEN - 1));
             }
         } else if (radio_ptr->cat_conn_type == GkConnType::USB) {
             //
@@ -802,6 +801,8 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_p
         }
 
         rig_debug(radio_ptr->verbosity, "Backend version: %s, Status: %s\n\n", radio_ptr->rig->caps->version, rig_strstatus(radio_ptr->rig->caps->status));
+
+        // rig_set_conf();
 
         //
         // Open our rig in question

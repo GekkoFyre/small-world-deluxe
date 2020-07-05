@@ -628,7 +628,8 @@ bool MainWindow::radioInitStart()
             gkRadioPtr->rig_model = 1;
         }
 
-        QString com_baud_rate = GkDb->read_rig_settings(radio_cfg::ComBaudRate);
+        // TODO: Very important! Expand this section!
+        QString com_baud_rate = GkDb->read_rig_settings_comms(radio_cfg::ComBaudRate, GkConnType::RS232);
         if (!com_baud_rate.isEmpty() || !com_baud_rate.isNull()) {
             gkRadioPtr->dev_baud_rate = gkRadioLibs->convertBaudRateToEnum(com_baud_rate.toInt());
         } else {
@@ -636,7 +637,7 @@ bool MainWindow::radioInitStart()
         }
 
         #ifdef GFYRE_HAMLIB_DBG_VERBOSITY_ENBL
-        radio->verbosity = RIG_DEBUG_VERBOSE;
+        gkRadioPtr->verbosity = RIG_DEBUG_VERBOSE;
         #else
         gkRadioPtr->verbosity = RIG_DEBUG_BUG;
         #endif
@@ -2013,8 +2014,6 @@ void MainWindow::updateFreqsInMem(const float &frequency, const GekkoFyre::Amate
                     break;
                 }
             }
-
-            frequencyList.shrink_to_fit();
         }
     } else {
         //
