@@ -52,9 +52,19 @@
 #include <Windows.h>
 #endif
 
-#ifdef __MINGW64__
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#if defined(__linux__) || defined(__MINGW64__)
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_stdinc.h>
+#include <SDL2/SDL_messagebox.h>
+#endif
+
+#ifdef __cplusplus
+} // extern "C"
 #endif
 
 namespace GekkoFyre {
@@ -66,13 +76,13 @@ public:
     explicit StringFuncs(QObject *parent = nullptr);
     ~StringFuncs();
 
+    #if defined(_MSC_VER) && (_MSC_VER > 1900)
     static std::string multiByteFromWide(LPCWSTR pwsz, UINT cp);
     static std::wstring strToWStrWin(const std::string &s);
     std::wstring removeSpecialChars(std::wstring wstr);
-    #if defined(_MSC_VER) && (_MSC_VER > 1900)
     bool modalDlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon);
     #else
-    bool modalDlgBoxLinux(Uint32 flags, const QString &title, const QString &msgTxt);
+    bool modalDlgBoxLinux(uint32_t flags, const QString &title, const QString &msgTxt);
     #endif
 
 };

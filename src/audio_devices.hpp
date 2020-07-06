@@ -46,7 +46,6 @@
 #include "src/file_io.hpp"
 #include "src/pa_audio_buf.hpp"
 #include "src/gk_frequency_list.hpp"
-#include "src/gk_string_funcs.hpp"
 #include <QObject>
 #include <vector>
 #include <string>

@@ -534,113 +534,6 @@ QMap<std::string, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDe
 }
 
 /**
- * @brief RadioLibs::getDriver While aimed at Linux systems, this filters away TTY-devices that do not contain
- * a `/device` subdirectory. An example of this is the `/sys/class/tty/console` device. Only the devices containing
- * this subdirectory are accepterd as valid ports and are therefore ouputted by the function.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * Søren Holm <https://stackoverflow.com/questions/2530096/how-to-find-all-serial-devices-ttys-ttyusb-on-linux-without-opening-them/9914339#9914339>
- * @param tty A TTY-device to be tested for the aforementioned constraints.
- * @return The 'base name' (or rather 'stem') of the TTY target.
- */
-std::string RadioLibs::getDriver(const fs::path &tty)
-{
-    #ifdef __linux__
-    struct stat st{};
-    fs::path device_dir = tty;
-
-    fs::path slash = "/";
-    fs::path native_slash = slash.make_preferred().native();
-
-    // Append `/device` to the TTY-path
-    device_dir += native_slash.string() + "device";
-
-    // Stat the `device_dir` and handle it of a `symlink` type
-    if ((lstat(device_dir.string().c_str(), &st) == 0) && (S_ISLNK(st.st_mode))) {
-        char buffer[4096];
-        memset(buffer, 0, sizeof(buffer));
-
-        // Append `/driver` and return just the stem of the target
-        device_dir += native_slash.string() + "driver";
-        if (readlink(device_dir.string().c_str(), buffer, sizeof(buffer)) > 0) {
-            return fs::path(buffer).stem().string();
-        }
-    }
-    #elif _WIN32
-    Q_UNUSED(tty);
-    #endif
-
-    return "";
-}
-
-/**
- * @brief RadioLibs::probe_serial8250_comports Gathers a list of all the open TTY-devices.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * Søren Holm <https://stackoverflow.com/questions/2530096/how-to-find-all-serial-devices-ttys-ttyusb-on-linux-without-opening-them/9914339#9914339>
- * @param comList Outputted std::list<std::string> of active TTY-devices.
- * @param comList8250 A std::list<std::string> of TTY-devices to test.
- */
-void RadioLibs::probe_serial8250_comports(std::list<std::string> &comList, const std::list<std::string> &comList8250)
-{
-    #ifdef __linux__
-    struct serial_struct ser_info;
-    auto it = comList8250.begin();
-
-    // Iterate over all Serial-8250 devices
-    while (it != comList8250.end()) {
-        // Try and open the device
-        int fd = open((*it).c_str(), O_RDWR | O_NONBLOCK | O_NOCTTY);
-        if (fd >= 0) {
-            // Get serial_info
-            if (ioctl(fd, TIOCGSERIAL, &ser_info) == 0) {
-                // If device type is not `PORT_UNKNOWN` then we accept the port
-                if (ser_info.type != PORT_UNKNOWN) {
-                    comList.push_back(*it);
-                }
-            }
-
-            close(fd);
-        }
-
-        ++it;
-    }
-    #elif _WIN32
-    Q_UNUSED(comList);
-    Q_UNUSED(comList8250);
-    #endif
-
-    return;
-}
-
-/**
- * @brief GekkoFyre::RadioLibs::registerComPort
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * Søren Holm <https://stackoverflow.com/questions/2530096/how-to-find-all-serial-devices-ttys-ttyusb-on-linux-without-opening-them/9914339#9914339>
- * @param comList
- * @param comList8250
- * @param dir
- */
-void RadioLibs::registerComPort(std::list<std::string> &comList, std::list<std::string> &comList8250,
-        const fs::path &dir)
-{
-    // Get the driver the device is using
-    std::string driver = getDriver(dir);
-
-    // Skip devices without a driver
-    if (!driver.empty()) {
-        fs::path dev_file = fs::path("/dev/").string() + dir.stem().string();
-
-        // Put Serial-8250 Devices in a separate list
-        if (driver == "serial8250") {
-            comList8250.push_back(dev_file.string());
-        } else {
-            comList.push_back(dev_file.string());
-        }
-    }
-
-    return;
-}
-
-/**
  * @brief RadioLibs::print_exception
  * @param e
  * @param level
@@ -682,7 +575,7 @@ bool RadioLibs::modalDlgBoxOk(const HWND &hwnd, const QString &title, const QStr
     return false;
 }
 #else
-bool RadioLibs::modalDlgBoxLinux(Uint32 flags, const QString &title, const QString &msgTxt)
+bool RadioLibs::modalDlgBoxLinux(uint32_t flags, const QString &title, const QString &msgTxt)
 {
     SDL_Window *sdlWindow = SDL_CreateWindow(General::productName, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, DLG_BOX_WINDOW_WIDTH, DLG_BOX_WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
     int ret = SDL_ShowSimpleMessageBox(flags, title.toStdString().c_str(), msgTxt.toStdString().c_str(), sdlWindow);
@@ -747,9 +640,15 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_p
             // Determine the port necessary and let Hamlib know about it!
             //
             if (!radio_ptr->cat_conn_port.empty()) {
+                #if defined(_MSC_VER) && (_MSC_VER > 1900)
                 strncpy_s(radio_ptr->port_details.pathname, radio_ptr->cat_conn_port.c_str(), (FILPATHLEN - 1));
                 strncpy_s(radio_ptr->rig->state.rigport.pathname, radio_ptr->cat_conn_port.c_str(), (FILPATHLEN - 1));
                 strncpy_s(radio_ptr->rig->state.pttport.pathname, radio_ptr->ptt_conn_port.c_str(), (FILPATHLEN - 1));
+                #else
+                strncpy(radio_ptr->port_details.pathname, radio_ptr->cat_conn_port.c_str(), (FILPATHLEN - 1));
+                strncpy(radio_ptr->rig->state.rigport.pathname, radio_ptr->cat_conn_port.c_str(), (FILPATHLEN - 1));
+                strncpy(radio_ptr->rig->state.pttport.pathname, radio_ptr->ptt_conn_port.c_str(), (FILPATHLEN - 1));
+                #endif
             }
         } else if (radio_ptr->cat_conn_type == GkConnType::USB) {
             //

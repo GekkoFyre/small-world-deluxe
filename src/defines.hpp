@@ -41,6 +41,7 @@
 
 #pragma once
 
+#include "src/gk_string_funcs.hpp"
 #include <portaudiocpp/PortAudioCpp.hxx>
 #include <boost/exception/all.hpp>
 #include <boost/logic/tribool.hpp>

@@ -42,7 +42,6 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/gk_string_funcs.hpp"
 #include <qwt.h>
 #include <qwt_plot.h>
 #include <qwt_plot_spectrogram.h>

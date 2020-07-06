@@ -43,7 +43,6 @@
 
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
-#include "src/gk_string_funcs.hpp"
 #include <boost/logic/tribool.hpp>
 #include <QPointer>
 #include <QObject>
@@ -108,17 +107,12 @@ private:
     static void hamlibStatus(const int &retcode);
     static std::string getUsbPortId(libusb_device *usb_device);
 
-    static std::string getDriver(const boost::filesystem::path &tty);
-    static void probe_serial8250_comports(std::list<std::string> &comList, const std::list<std::string> &comList8250);
-    static void registerComPort(std::list<std::string> &comList, std::list<std::string> &comList8250,
-                                const boost::filesystem::path &dir);
-
     void print_exception(const std::exception &e, int level = 0);
 
     #if defined(_MSC_VER) && (_MSC_VER > 1900)
     bool modalDlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon);
     #else
-    bool modalDlgBoxLinux(Uint32 flags, const QString &title, const QString &msgTxt);
+    bool modalDlgBoxLinux(uint32_t flags, const QString &title, const QString &msgTxt);
     #endif
 
     template <class T>
