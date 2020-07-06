@@ -56,7 +56,9 @@ class GkMessageBox: public QObject {
     Q_OBJECT
 
 public:
-    explicit GkMessageBox();
+    explicit GkMessageBox(const QString &title, const QString &msg, const QMessageBox::StandardButton &buttons,
+                          const QMessageBox::StandardButton &def_button, const QMessageBox::Icon &icon,
+                          const std::string &error_msg);
 
 public slots:
     void displayErrorMessageBox(const QString &title, const QString &msg, const QMessageBox::StandardButton &buttons,
@@ -68,6 +70,11 @@ public slots:
 class GkMessageBoxThread: public QThread {
     Q_OBJECT
 
+public:
+    explicit GkMessageBoxThread(const QString &title, const QString &msg, const QMessageBox::StandardButton &buttons,
+                                const QMessageBox::StandardButton &def_button, const QMessageBox::Icon &icon,
+                                const std::string &error_msg);
+
 signals:
     void showErrorMsgBox(const QString &title, const QString &msg, const QMessageBox::StandardButton &buttons,
                          const QMessageBox::StandardButton &def_button, const QMessageBox::Icon &icon,
@@ -77,12 +84,12 @@ protected:
     void run();
 
 private:
-    QString title;
-    QString msg;
-    QMessageBox::StandardButton buttons;
-    QMessageBox::StandardButton def_button;
-    QMessageBox::Icon icon;
-    std::string error_msg;
+    QString gkTitle;
+    QString gkMsg;
+    QMessageBox::StandardButton gkButtons;
+    QMessageBox::StandardButton gkDefButton;
+    QMessageBox::Icon gkIcon;
+    std::string gkErrorMsg;
 
 };
 
@@ -90,9 +97,23 @@ private:
  * @brief GkMessageBox::run executes a QMessageBox() when the GUI thread for Qt5 is otherwise not directly accessible!
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
+GkMessageBoxThread::GkMessageBoxThread(const QString &title, const QString &msg, const QMessageBox::StandardButton &buttons,
+                                       const QMessageBox::StandardButton &def_button, const QMessageBox::Icon &icon,
+                                       const std::string &error_msg)
+{
+    gkTitle = title;
+    gkMsg = msg;
+    gkButtons = buttons;
+    gkDefButton = def_button;
+    gkIcon = icon;
+    gkErrorMsg = error_msg;
+
+    return;
+}
+
 void GkMessageBoxThread::run()
 {
-    emit showErrorMsgBox(title, msg, buttons, def_button, icon, error_msg);
+    emit showErrorMsgBox(gkTitle, gkMsg, gkButtons, gkDefButton, gkIcon, gkErrorMsg);
 
     return;
 }
@@ -101,9 +122,11 @@ void GkMessageBoxThread::run()
  * @brief GkMessageBox::displayErrorMessageBox
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-GkMessageBox::GkMessageBox()
+GkMessageBox::GkMessageBox(const QString &title, const QString &msg, const QMessageBox::StandardButton &buttons,
+                           const QMessageBox::StandardButton &def_button, const QMessageBox::Icon &icon,
+                           const std::string &error_msg)
 {
-    QPointer<GekkoFyre::GkMessageBoxThread> gkMessageBoxThread = new GkMessageBoxThread();
+    QPointer<GekkoFyre::GkMessageBoxThread> gkMessageBoxThread = new GkMessageBoxThread(title, msg, buttons, def_button, icon, error_msg);
     QObject::connect(gkMessageBoxThread, SIGNAL(showErrorMsgBox(const QString &, const QString &, const QMessageBox::StandardButton &,
                                                                 const QMessageBox::StandardButton &, const QMessageBox::Icon &, const std::string &)),
                      this, SLOT(displayErrorMessageBox(const QString &, const QString &, const QMessageBox::StandardButton &,
