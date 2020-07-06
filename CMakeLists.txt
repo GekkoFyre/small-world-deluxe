@@ -85,7 +85,6 @@ option(GFYRE_PACKAGE_MAINTAINER "Are you a package maintainer? If so, set this o
 option(GFYRE_BUILD_STATIC "Build Small World Deluxe as a static library/package. This will result in a larger executable at the benefit of requiring less DLL dependencies." ON)
 option(GFYRE_BUILD_SHARED "*** This option is not fully developed yet! *** Build Small World Deluxe as a shared library/package. This will result in a smaller executable at the cost of requiring further DLL dependencies." OFF)
 option(GFYRE_HAMLIB_DBG_VERBOSITY "Enable DEBUG verbosity for the Hamlib library and its use throughout Small World Deluxe. *** Only recommended for programmers and/or possibly maintainers of the project itself! ***" OFF)
-option(GFYRE_BUILD_CODEC2 "*** This feature is in heavy development! *** Build with support for Codec2 <https://github.com/drowe67/codec2>." OFF)
 
 #
 # Detect if we are dealing with the Linux operating system and not Apple OS/X
@@ -236,6 +235,14 @@ else()
     message(FATAL_ERROR "The 'Hamlib' amateur radio library could not be found!")
 endif(HAMLIB_FOUND)
 
+find_package(Codec2 REQUIRED)
+if (CODEC2_FOUND)
+    include_directories(${CODEC2_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${CODEC2_LIBRARIES})
+else()
+    message(FATAL_ERROR "The 'Codec2' open source speech codec library could not be found!")
+endif(CODEC2_FOUND)
+
 find_package(USB REQUIRED)
 if (USB_FOUND)
     include_directories(${LIBUSB_INCLUDE_DIRS})
@@ -328,63 +335,6 @@ endif()
 
 set_property(SOURCE ${GALAXY_PORTAUDIO_CPP} PROPERTY SKIP_AUTOUIC ON)
 
-if(GFYRE_BUILD_CODEC2)
-    #
-    # Codec2 library
-    #
-    #
-    # Set project version information. This should probably be done via external
-    # file at some point.
-    #
-    set(CMAKE_REQUIRED_LIBRARIES m)
-    set(CODEC2_VERSION_MAJOR 0)
-    set(CODEC2_VERSION_MINOR 9)
-    # Set to patch level if needed, otherwise leave FALSE.
-    # Must be positive (non-zero) if set, since 0 == FALSE in CMake.
-    set(CODEC2_VERSION_PATCH 2)
-    set(CODEC2_VERSION "${CODEC2_VERSION_MAJOR}.${CODEC2_VERSION_MINOR}")
-    # Patch level version bumps should not change API/ABI.
-    set(SOVERSION "${CODEC2_VERSION_MAJOR}.${CODEC2_VERSION_MINOR}")
-    if(CODEC2_VERSION_PATCH)
-        set(CODEC2_VERSION "${CODEC2_VERSION}.${CODEC2_VERSION_PATCH}")
-    endif()
-    message(STATUS "codec2 version: ${CODEC2_VERSION}")
-
-    if (MSYS OR MINGW OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-        option(CMAKE_CROSSCOMPILING "Build Codec2 as a cross-compiled library." OFF)
-    endif()
-
-    #
-    # Find lpcnet library
-    #
-    if(LPCNET)
-        if(LPCNET_BUILD_DIR)
-            find_package(lpcnetfreedv REQUIRED
-                PATHS ${LPCNET_BUILD_DIR}
-                NO_DEFAULT_PATH
-                CONFIGS lpcnetfreedv.cmake
-            )
-            if(lpcnetfreedv_FOUND)
-                message(STATUS "liblpcnetfreedv found in build tree.")
-                add_definitions("-D__LPCNET__")
-            else()
-                message(FATAL_ERROR "LPCNet include/library not found in build tree.")
-            endif()
-        else()
-            find_package(lpcnetfreedv REQUIRED)
-            if(lpcnetfreedv_FOUND)
-                add_definitions("-D__LPCNET__")
-                message(STATUS "liblpcnetfreedv found.")
-            else()
-                message(FATAL_ERROR "lpcnetfreedv library not found.")
-            endif()
-        endif()
-    endif()
-    
-    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/codec2/src")
-    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/codec2/misc")
-endif(GFYRE_BUILD_CODEC2)
-
 #
 # SingleApplication
 # https://github.com/itay-grudev/SingleApplication
@@ -438,7 +388,8 @@ set(GALAXY_UI_CPP
     src/gk_cli.cpp
     src/gk_modem.cpp
     src/gk_frequency_list.cpp
-    src/gk_string_funcs.cpp)
+    src/gk_string_funcs.cpp
+    src/gk_codec2.cpp)
 
 if(WIN32 OR MSYS OR MINGW)
     # Nothing here at the moment!
@@ -506,7 +457,8 @@ set(GALAXY_OBJ_HEADERS
     src/gk_modem.hpp
     src/gk_frequency_list.hpp
     src/gk_string_funcs.hpp
-    src/gk_messagebox.hpp)
+    src/gk_messagebox.hpp
+    src/gk_codec2.hpp)
 
 if(WIN32 OR MSYS OR MINGW)
     # Nothing here at the moment!

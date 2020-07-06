@@ -43,6 +43,8 @@
 
 #include "src/gk_string_funcs.hpp"
 #include <portaudiocpp/PortAudioCpp.hxx>
+#include <codec2/codec2.h>
+#include <codec2/freedv_api.h>
 #include <boost/exception/all.hpp>
 #include <boost/logic/tribool.hpp>
 #include <boost/filesystem.hpp>
@@ -457,6 +459,13 @@ namespace AmateurRadio {
         GkFreqBands closest_freq_band;                      // The closest matching frequency band grouping
         DigitalModes digital_mode;                          // The type of digital mode this frequency applies towards, or should apply toward
         IARURegions iaru_region;                            // The IARU Region that this frequency falls under
+    };
+
+    struct GkFreeDV {                                       // <https://github.com/drowe67/codec2/blob/master/README_data.md>.
+        struct freedv *freedv;
+        int mode;
+        int use_clip;
+        int use_txbpf;
     };
 
     namespace Control {

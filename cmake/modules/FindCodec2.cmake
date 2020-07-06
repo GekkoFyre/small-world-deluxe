@@ -48,7 +48,7 @@ find_path(CODEC2_INCLUDE_DIR
     PATHS "/usr/local/include" "/usr/include")
 
 find_library(CODEC2_LIBRARY
-    NAMES  "codec2" "libcodec"
+    NAMES  "codec2" "libcodec2"
     HINTS ${PC_CODEC2_LIBDIR} ${PC_CODEC2_LIBRARY_DIRS}
     PATHS "/usr/local/lib" "/usr/local/lib64" "/usr/lib" "/usr/lib64")
 

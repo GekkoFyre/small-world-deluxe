@@ -10,9 +10,9 @@ Boost C++ Libraries by various
     <http://www.boost.org/>
         Boost Software License, v1
 
-JTDX by Joe Taylor, K1JT <k1jt@arrl.net>
-    <https://jtdx.tech/>
-        GNU General Public License (GPL, version 3)
+Codec2 by David et al.
+    <https://github.com/drowe67/codec2>
+        GNU Lesser General Public License (LGPL, version 2.1)
 
 CMake (Cross Platform Makefile Generator) by Kitware
     <https://cmake.org/>
