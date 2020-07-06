@@ -50,6 +50,7 @@
 #include <cmath>
 #include <iomanip>
 #include <sstream>
+#include <cstdlib>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -103,6 +104,14 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
         gkSettings = settings;
         usb_ports_active = false;
         com_ports_active = false;
+
+        //
+        // The detectable and thusly, testable, PortAudio 'sample rates' for each found audio device on the user's system!
+        //
+        standardSampleRates = {
+            8000.0, 9600.0, 11025.0, 12000.0, 16000.0, 22050.0, 24000.0, 32000.0,
+            44100.0, 48000.0, 88200.0, 96000.0, 192000.0, -1 /* negative terminated list */
+        };
 
         QObject::connect(this, SIGNAL(usbPortsDisabled(const bool &)), this, SLOT(disableUsbPorts(const bool &)));
         QObject::connect(this, SIGNAL(comPortsDisabled(const bool &)), this, SLOT(disableComPorts(const bool &)));
@@ -555,6 +564,21 @@ void DialogSettings::prefill_audio_api_avail(const QVector<PaHostApiTypeId> &por
     try {
         // Garner the list of APIs!
         if (!portaudio_api_vec.isEmpty()) {
+            //
+            // Prefill the QComboBoxes containing the Sample Frequencies that can be tested for each PortAudio detected audio/multimedia device!
+            //
+            int sample_rate_idx = 0;
+            for (const auto &sample_rate: standardSampleRates) {
+                if (sample_rate != -1) { // Insert all numbers but the terminating number of '1'!
+                    ui->comboBox_audio_input_sample_rate->insertItem(sample_rate_idx, QString::number(std::abs(sample_rate)), sample_rate_idx);
+                    ui->comboBox_audio_output_sample_rate->insertItem(sample_rate_idx, QString::number(std::abs(sample_rate)), sample_rate_idx);
+                    ++sample_rate_idx;
+                }
+            }
+
+            //
+            // Prefill the QComboBox responsible for displaying the PortAudio detected multimedia APIs on the user's system!
+            //
             for (const auto &pa_api: portaudio_api_vec) {
                 QString api_str_tmp = gkDekodeDb->portAudioApiToStr(pa_api);
                 int underlying_api_int = to_underlying(pa_api);
@@ -732,6 +756,68 @@ void DialogSettings::init_station_info()
     }
 
     return;
+}
+
+/**
+ * @brief DialogSettings::print_exception
+ * @param e
+ * @param level
+ */
+void DialogSettings::print_exception(const std::exception &e, int level)
+{
+    QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
+
+    try {
+        std::rethrow_if_nested(e);
+    } catch (const std::exception &e) {
+        print_exception(e, level + 1);
+    } catch (...) {}
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::convQComboBoxSampleRateToDouble
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param combobox_idx
+ * @return
+ */
+double DialogSettings::convQComboBoxSampleRateToDouble(const int &combobox_idx)
+{
+    switch (combobox_idx) {
+    case 0:
+        return 8000.0;
+    case 1:
+        return 9600.0;
+    case 2:
+        return 11025.0;
+    case 3:
+        return 12000.0;
+    case 4:
+        return 16000.0;
+    case 5:
+        return 22050.0;
+    case 6:
+        return 24000.0;
+    case 7:
+        return 32000.0;
+    case 8:
+        return 44100.0;
+    case 9:
+        return 48000.0;
+    case 10:
+        return 88200.0;
+    case 11:
+        return 96000.0;
+    case 12:
+        return 8000.0;
+    case 13:
+        return 192000.0;
+    default:
+        break;
+    }
+
+    return -1.0f;
 }
 
 /**
@@ -1696,6 +1782,40 @@ void DialogSettings::on_comboBox_soundcard_output_currentIndexChanged(int index)
     } catch (...) {
         QMessageBox::warning(this, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), QMessageBox::Ok);
     }
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::on_comboBox_audio_input_sample_rate_currentIndexChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ */
+void DialogSettings::on_comboBox_audio_input_sample_rate_currentIndexChanged(int index)
+{
+    Q_UNUSED(index);
+
+    //
+    // Input audio device!
+    //
+    gkAudioDevices->enumSupportedStdSampleRates(&chosen_input_audio_dev.stream_parameters, convQComboBoxSampleRateToDouble(ui->comboBox_audio_input_sample_rate->currentIndex()), false);
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::on_comboBox_audio_output_sample_rate_currentIndexChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ */
+void DialogSettings::on_comboBox_audio_output_sample_rate_currentIndexChanged(int index)
+{
+    Q_UNUSED(index);
+
+    //
+    // Output audio device!
+    //
+    gkAudioDevices->enumSupportedStdSampleRates(&chosen_output_audio_dev.stream_parameters, convQComboBoxSampleRateToDouble(ui->comboBox_audio_output_sample_rate->currentIndex()), true);
 
     return;
 }

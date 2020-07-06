@@ -41,16 +41,17 @@
 
 #include "audio_devices.hpp"
 #include "pa_sinewave.hpp"
-#include <iostream>
+#include <cmath>
 #include <cstdio>
-#include <exception>
 #include <climits>
 #include <sstream>
 #include <utility>
 #include <cstring>
 #include <ostream>
+#include <cstdlib>
+#include <iostream>
+#include <exception>
 #include <algorithm>
-#include <cmath>
 #include <QDebug>
 #include <QString>
 #include <QMessageBox>
@@ -182,44 +183,30 @@ std::vector<GkDevice> AudioDevices::defaultAudioDevices(portaudio::System *portA
  * @param outputParameters
  * @return
  */
-std::vector<double> AudioDevices::enumSupportedStdSampleRates(const PaStreamParameters *inputParameters, const PaStreamParameters *outputParameters)
+bool AudioDevices::enumSupportedStdSampleRates(const PaStreamParameters *audioParameters, const double &sampleRateToTest,
+                                               const bool &isOutputDevice)
 {
-    double standardSampleRates[] = {
-        8000.0, 9600.0, 11025.0, 12000.0, 16000.0, 22050.0, 24000.0, 32000.0,
-        44100.0, 48000.0, 88200.0, 96000.0, 192000.0, -1 /* negative terminated  list */
-    };
-
-    int i, printCount;
     PaError err;
-    std::vector<double> supSampleRate; // Supported Sample Rates
-
-    printCount = 0;
-    for (i = 0; standardSampleRates[i] > 0; ++i) {
-        err = Pa_IsFormatSupported(inputParameters, outputParameters, standardSampleRates[i]);
-        if(err == paFormatIsSupported) {
-            if (printCount == 0) {
-                std::cout << tr("\t%1").arg(QString::number(standardSampleRates[i])).toStdString();
-                supSampleRate.push_back(standardSampleRates[i]);
-                printCount = 1;
-            } else if (printCount == 4) {
-                std::cout << tr("\n\t%1").arg(QString::number(standardSampleRates[i])).toStdString();
-                supSampleRate.push_back(standardSampleRates[i]);
-                printCount = 1;
-            } else {
-                std::cout << tr(", %1").arg(QString::number(standardSampleRates[i])).toStdString();
-                supSampleRate.push_back(standardSampleRates[i]);
-                ++printCount;
-            }
-        }
-    }
-
-    if (!printCount) {
-        std::cout << tr("No sample rates supported!").toStdString() << std::endl;
+    if (isOutputDevice) {
+        //
+        // Output audio device!
+        //
+        err = Pa_IsFormatSupported(nullptr, audioParameters, sampleRateToTest);
     } else {
-        std::cout << std::endl;
+        //
+        // Input audio device!
+        //
+        err = Pa_IsFormatSupported(audioParameters, nullptr, sampleRateToTest);
     }
 
-    return supSampleRate;
+    if (err == paFormatIsSupported) {
+        std::cout << tr("Sample rate of [ %1 ] is supported!").arg(QString::number(sampleRateToTest)).toStdString();
+        return true;
+    }
+
+    QMessageBox::information(nullptr, tr("Unsupported!"), tr("Sample rate of %1 KHz is not supported! Please make another selection.")
+                             .arg(QString::number(std::abs(sampleRateToTest))), QMessageBox::Ok);
+    return false;
 }
 
 /**
@@ -333,22 +320,16 @@ std::vector<GkDevice> AudioDevices::enumAudioDevices()
 
             if (inputParameters.channelCount > 0) {
                 device.is_output_dev = false;
-                device.supp_sample_rates = enumSupportedStdSampleRates(&inputParameters, nullptr);
                 device.stream_parameters = inputParameters;
-                // Pa_GetHostApiInfo(deviceInfo->hostApi)->defaultInputDevice;
 
                 audio_devices.push_back(device);
             } else if (outputParameters.channelCount > 0) {
                 device.is_output_dev = true;
-                device.supp_sample_rates = enumSupportedStdSampleRates(nullptr, &outputParameters);
                 device.stream_parameters = outputParameters;
-                // Pa_GetHostApiInfo(deviceInfo->hostApi)->defaultOutputDevice;
 
                 audio_devices.push_back(device);
             } else {
                 device.is_output_dev = boost::tribool::indeterminate_value;
-                device.supp_sample_rates = enumSupportedStdSampleRates(&inputParameters, &outputParameters);
-
                 audio_devices.push_back(device);
             }
         }
@@ -489,7 +470,6 @@ std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp(portaudio::System *portA
                 device.is_output_dev = false;
                 device.stream_parameters = *inputParameters.paStreamParameters();
                 device.cpp_stream_param = inputParameters;
-                device.supp_sample_rates = enumSupportedStdSampleRates(inputParameters.paStreamParameters(), nullptr);
             } else if (device.dev_output_channel_count > 0) {
                 //
                 // Output device
@@ -497,15 +477,12 @@ std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp(portaudio::System *portA
                 device.is_output_dev = true;
                 device.stream_parameters = *outputParameters.paStreamParameters();
                 device.cpp_stream_param = outputParameters;
-                device.supp_sample_rates = enumSupportedStdSampleRates(nullptr, outputParameters.paStreamParameters());
             } else {
                 //
                 // Unable to determine whether just input or output device, so therefore assume it's both!
                 //
                 device.is_output_dev = boost::tribool::indeterminate_value;
                 device.stream_parameters = PaStreamParameters();
-                device.supp_sample_rates = enumSupportedStdSampleRates(inputParameters.paStreamParameters(),
-                                                                       outputParameters.paStreamParameters());
             }
 
             //
