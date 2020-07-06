@@ -427,12 +427,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 on_pushButton_radio_receive_clicked();
             }
         }
-
-        if (gkRadioPtr->freq > 0.0) {
-            ui->label_freq_large->setText(QString::number(gkRadioPtr->freq));
-        } else {
-            ui->label_freq_large->setText(tr("N/A"));
-        }
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
@@ -1254,6 +1248,13 @@ void MainWindow::infoBar()
         QString curr_utc_date_str = QString::fromStdString(oss_utc_date.str());
         ui->label_curr_utc_time->setText(curr_utc_time_str);
         ui->label_curr_utc_date->setText(curr_utc_date_str);
+
+        freq_t frequency_tmp = ((gkRadioPtr->freq / 1000) / 1000);
+        if (frequency_tmp > 0.0) {
+            ui->label_freq_large->setText(tr("%1 MHz").arg(QString::number(frequency_tmp)));
+        } else {
+            ui->label_freq_large->setText(tr("N/A"));
+        }
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
     }
