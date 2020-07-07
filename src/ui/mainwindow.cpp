@@ -244,8 +244,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                  this, SLOT(gatherRigCapabilities(const rig_model_t &, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
                 QObject::connect(this, SIGNAL(addRigInUse(const rig_model_t &, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
                                  this, SLOT(addRigToMemory(const rig_model_t &, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
-                QObject::connect(this, SIGNAL(disconnectRigInUse(RIG *, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
-                                 this, SLOT(disconnectRigInMemory(RIG *, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
+                QObject::connect(this, SIGNAL(disconnectRigInUse(std::shared_ptr<Rig>, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
+                                 this, SLOT(disconnectRigInMemory(std::shared_ptr<Rig>, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
                 QObject::connect(this, SIGNAL(updateFrequencies(const float &, const GekkoFyre::AmateurRadio::DigitalModes &, const GekkoFyre::AmateurRadio::IARURegions &, const bool &)),
                                  this, SLOT(updateFreqsInMem(const float &, const GekkoFyre::AmateurRadio::DigitalModes &, const GekkoFyre::AmateurRadio::IARURegions &, const bool &)));
 
@@ -268,8 +268,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 //
                 QObject::connect(gkRadioLibs, SIGNAL(gatherPortType(const bool &)),
                                  this, SLOT(analyzePortType(const bool &)));
-                QObject::connect(gkRadioLibs, SIGNAL(disconnectRigInUse(RIG *, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
-                                 this, SLOT(disconnectRigInMemory(RIG *, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
+                QObject::connect(gkRadioLibs, SIGNAL(disconnectRigInUse(std::shared_ptr<Rig>, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
+                                 this, SLOT(disconnectRigInMemory(std::shared_ptr<Rig>, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
             } else {
                 throw std::runtime_error(tr("Unable to find settings database; we've lost its location!").toStdString());
             }
@@ -451,7 +451,7 @@ MainWindow::~MainWindow()
     }
 
     emit stopRecording();
-    emit disconnectRigInUse(gkRadioPtr->rig, gkRadioPtr);
+    emit disconnectRigInUse(gkRadioPtr->gkRig, gkRadioPtr);
 
     // Free the pointer for the libusb library!
     if (usb_ctx_ptr != nullptr) {
@@ -1128,7 +1128,7 @@ void MainWindow::on_action_Disconnect_triggered()
 
         switch (ret) {
         case QMessageBox::Ok:
-            emit disconnectRigInUse(gkRadioPtr->rig, gkRadioPtr);
+            emit disconnectRigInUse(gkRadioPtr->gkRig, gkRadioPtr);
             return;
         case QMessageBox::Cancel:
             return;
@@ -1926,8 +1926,8 @@ void MainWindow::gatherRigCapabilities(const rig_model_t &rig_model_update,
  */
 void MainWindow::addRigToMemory(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr)
 {
-    if (radio_ptr->rig != nullptr) {
-        emit disconnectRigInUse(radio_ptr->rig, radio_ptr);
+    if (radio_ptr->gkRig.get() != nullptr) {
+        emit disconnectRigInUse(radio_ptr->gkRig, radio_ptr);
     }
 
     //
@@ -1948,16 +1948,15 @@ void MainWindow::addRigToMemory(const rig_model_t &rig_model_update, const std::
  * @param rig_to_disconnect The radio rig in question to disconnect.
  * @param radio_ptr The pointer to Hamlib's radio structure and any information thereof.
  */
-void MainWindow::disconnectRigInMemory(RIG *rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr)
+void MainWindow::disconnectRigInMemory(std::shared_ptr<Rig> rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr)
 {
     Q_UNUSED(rig_to_disconnect);
 
     if (gkRadioPtr.get() != nullptr) {
-        if (gkRadioPtr->rig != nullptr) {
+        if (gkRadioPtr->gkRig.get() != nullptr) {
             if (gkRadioPtr->is_open) {
                 // Free the pointer(s) for the Hamlib library!
-                rig_close(gkRadioPtr->rig); // Close port
-                // rig_cleanup(gkRadioPtr->rig); // Cleanup memory
+                rig_to_disconnect->close(); // Close port
                 gkRadioPtr->is_open = false;
 
                 for (const auto &port: status_com_ports) {
