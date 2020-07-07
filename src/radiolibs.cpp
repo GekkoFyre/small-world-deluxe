@@ -612,7 +612,7 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_p
             baud_rate = baud_rate_tmp;
         }
 
-        // radio_ptr->gkRig->setConf("data_bits", std::to_string(radio_ptr->port_details.parm.serial.data_bits).c_str());
+        radio_ptr->gkRig->setConf("data_bits", std::to_string(radio_ptr->port_details.parm.serial.data_bits).c_str());
         radio_ptr->gkRig->setConf("stop_bits", std::to_string(radio_ptr->port_details.parm.serial.stop_bits).c_str());
         radio_ptr->gkRig->setConf("serial_speed", std::to_string(baud_rate).c_str());
         radio_ptr->port_details.type.rig = convGkConnTypeToHamlib(radio_ptr->cat_conn_type);
@@ -647,6 +647,21 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_p
             radio_ptr->gkRig->setConf("ptt_type", "None");
             radio_ptr->gkRig->setConf("dtr_state", "OFF");
             radio_ptr->gkRig->setConf("rts_state", "OFF");
+            break;
+        }
+
+        switch (radio_ptr->port_details.parm.serial.dtr_state) {
+        case serial_control_state_e::RIG_SIGNAL_ON:
+            // High
+            radio_ptr->gkRig->setConf("dtr_state", "ON");
+            break;
+        case serial_control_state_e::RIG_SIGNAL_OFF:
+            // Low
+            radio_ptr->gkRig->setConf("dtr_state", "OFF");
+            break;
+        default:
+            // Nothing
+            radio_ptr->gkRig->setConf("dtr_state", "UNSET");
             break;
         }
 
@@ -739,14 +754,9 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_p
                 radio_ptr->gkRig->getLevel(RIG_LEVEL_STRENGTH, radio_ptr->strength, RIG_VFO_CURR);
             }
         }
-    } catch (const std::exception &e) {
-        #if defined(_MSC_VER) && (_MSC_VER > 1900)
-        HWND hwnd = nullptr;
-        modalDlgBoxOk(hwnd, tr("Error!"), e.what(), MB_ICONERROR);
-        DestroyWindow(hwnd);
-        #else
-        modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
-        #endif
+    } catch (const RigException &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("Unable to make a connection with your radio rig! Error:\n\n%1")
+                             .arg(QString::fromStdString(e.message)), QMessageBox::Ok) ;
     }
 
     return;

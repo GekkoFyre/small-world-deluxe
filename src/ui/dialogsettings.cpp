@@ -1467,7 +1467,7 @@ bool DialogSettings::read_settings()
             ui->lineEdit_db_save_loc->setText(settingsDbLoc);
         } else {
             // Point to a default directory...
-            ui->lineEdit_db_save_loc->setText(gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)));
+            ui->lineEdit_db_save_loc->setText(gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation)));
         }
 
         //
@@ -1618,7 +1618,7 @@ void DialogSettings::on_comboBox_ptt_method_port_currentIndexChanged(int index)
 void DialogSettings::on_pushButton_db_save_loc_clicked()
 {
     QString dirName = QFileDialog::getExistingDirectory(this, tr("Choose a location to save the SWD application database"),
-                                                        gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation), true),
+                                                        gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation), true),
                                                         QFileDialog::ShowDirsOnly);
 
     if (!dirName.isEmpty()) {

@@ -64,7 +64,10 @@ extern "C"
 {
 #endif
 
+#ifdef OPUS_LIBS_ENBLD
 #include <opus.h>
+#endif
+
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -77,6 +80,7 @@ class GkAudioEncoding : public QObject {
     Q_OBJECT
 
 private:
+    #ifdef OPUS_LIBS_ENBLD
     struct OpusErrorException: public virtual std::exception {
         OpusErrorException(int code) : code(code) {}
         const char *what() const noexcept;
@@ -93,6 +97,7 @@ private:
         int32_t frameno = 0;
         bool lost_prev = true;
     };
+    #endif
 
 public:
     explicit GkAudioEncoding(QPointer<GekkoFyre::FileIo> fileIo,
@@ -145,7 +150,10 @@ private:
 
     bool recording_in_progress;
     static size_t ogg_buf_counter;
+
+    #ifdef OPUS_LIBS_ENBLD
     std::unique_ptr<OpusState> opus_state;
+    #endif
 
     //
     // Threads

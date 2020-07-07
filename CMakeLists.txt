@@ -83,8 +83,10 @@ set(CMAKE_MODULE_PATH
 #
 option(GFYRE_PACKAGE_MAINTAINER "Are you a package maintainer? If so, set this option to `ON`! It'll enable specific build settings to make your life easier." ON)
 option(GFYRE_BUILD_STATIC "Build Small World Deluxe as a static library/package. This will result in a larger executable at the benefit of requiring less DLL dependencies." ON)
-option(GFYRE_BUILD_SHARED "*** This option is not fully developed yet! *** Build Small World Deluxe as a shared library/package. This will result in a smaller executable at the cost of requiring further DLL dependencies." OFF)
-option(GFYRE_HAMLIB_DBG_VERBOSITY "Enable DEBUG verbosity for the Hamlib library and its use throughout Small World Deluxe. *** Only recommended for programmers and/or possibly maintainers of the project itself! ***" OFF)
+option(GFYRE_BUILD_SHARED "Build Small World Deluxe as a shared library/package. This will result in a smaller executable at the cost of requiring further DLL dependencies." OFF)
+option(GFYRE_HAMLIB_DBG_VERBOSITY "Enable DEBUG verbosity for the Hamlib library and its use throughout Small World Deluxe." OFF)
+
+option(BUILD_OPUS_SUPPORT "Enable support for the Opus codec library." OFF)
 
 #
 # Detect if we are dealing with the Linux operating system and not Apple OS/X
@@ -292,13 +294,16 @@ endif(Ogg_FOUND)
 #
 # http://opus-codec.org/
 #
-find_package(Opus REQUIRED)
-if (Opus_FOUND)
-    include_directories(${Opus_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${Opus_LIBRARIES})
-else()
-    message(SEND_ERROR "The 'Opus' audio (de-/en-)coding library could not be found!")
-endif(Opus_FOUND)
+if (BUILD_OPUS_SUPPORT)
+    find_package(Opus REQUIRED)
+    if (Opus_FOUND)
+        include_directories(${Opus_INCLUDE_DIRS})
+        set(LIBS ${LIBS} ${Opus_LIBRARIES})
+        add_definitions("-DOPUS_LIBS_ENBLD")
+    else()
+        message(SEND_ERROR "The 'Opus' audio (de-/en-)coding library could not be found!")
+    endif(Opus_FOUND)
+endif(BUILD_OPUS_SUPPORT)
 
 find_package(Iconv REQUIRED)
 if (Iconv_FOUND)

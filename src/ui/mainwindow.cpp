@@ -204,7 +204,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 } else {
                     // Directory does not exist despite been saved as a setting, so we must create it first!
                     fs::path dir_to_append = fs::path(Filesystem::defaultDirAppend + native_slash.string() + Filesystem::fileName);
-                    save_db_path = fileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
+                    save_db_path = fileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation),
                                                                             true, QString::fromStdString(dir_to_append.string())).toStdString(); // Path to save final database towards
                 }
             }
@@ -636,29 +636,14 @@ bool MainWindow::radioInitStart()
         gkRadioPtr->verbosity = RIG_DEBUG_BUG;
         #endif
 
-        try {
-            //
-            // Initialize Hamlib!
-            //
-            gkRadioPtr->is_open = false;
-            rig_thread = std::thread(&RadioLibs::gkInitRadioRig, gkRadioLibs, gkRadioPtr, gkUsbPortPtr);
-            rig_thread.detach();
+        //
+        // Initialize Hamlib!
+        //
+        gkRadioPtr->is_open = false;
+        rig_thread = std::thread(&RadioLibs::gkInitRadioRig, gkRadioLibs, gkRadioPtr, gkUsbPortPtr);
+        rig_thread.detach();
 
-            return true;
-        } catch (const std::invalid_argument &e) {
-            // We wish for this to be handled silently for now!
-            Q_UNUSED(e);
-            return false;
-        } catch (const std::runtime_error &e) {
-            #if defined(_MSC_VER) && (_MSC_VER > 1900)
-            HWND hwnd = nullptr;
-            gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), tr("[ Hamlib ] %1").arg(e.what()), MB_ICONERROR);
-            DestroyWindow(hwnd);
-            #else
-            gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("[ Hamlib ] %1").arg(e.what()));
-            #endif
-            return false;
-        }
+        return true;
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
     }
@@ -707,6 +692,8 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
         if (!rigModelIndex.isNull() || !rigModelIndex.isEmpty()) { // The actual amateur radio rig itself!
             int conv_rig_model_idx = rigModelIndex.toInt();
             gk_radio_tmp->rig_model = conv_rig_model_idx;
+        } else {
+            gk_radio_tmp->rig_model = RIG_MODEL_DUMMY;
         }
 
         Q_UNUSED(rigVers);
@@ -718,16 +705,22 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
         if (!comBaudRate.isNull() || !comBaudRate.isEmpty()) {
             int conv_com_baud_rate = comBaudRate.toInt();
             gk_radio_tmp->port_details.parm.serial.rate = gkRadioLibs->convertBaudRateInt(gkRadioLibs->convertBaudRateToEnum(conv_com_baud_rate));
+        } else {
+            gk_radio_tmp->port_details.parm.serial.rate = 38400;
         }
 
         if (!stopBits.isNull() || !stopBits.isEmpty()) {
             int conv_serial_stop_bits = stopBits.toInt();
             gk_radio_tmp->port_details.parm.serial.stop_bits = conv_serial_stop_bits;
+        } else {
+            gk_radio_tmp->port_details.parm.serial.stop_bits = 0;
         }
 
         if (!data_bits.isNull() || !data_bits.isEmpty()) {
             int conv_serial_data_bits = data_bits.toInt();
             gk_radio_tmp->port_details.parm.serial.data_bits = conv_serial_data_bits;
+        } else {
+            gk_radio_tmp->port_details.parm.serial.data_bits = 0;
         }
 
         if (!handshake.isNull() || !handshake.isEmpty()) {
@@ -754,6 +747,8 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
                 gk_radio_tmp->port_details.parm.serial.handshake = serial_handshake_e::RIG_HANDSHAKE_NONE;
                 break;
             }
+        } else {
+            gk_radio_tmp->port_details.parm.serial.handshake = serial_handshake_e::RIG_HANDSHAKE_NONE;
         }
 
         if (!force_ctrl_lines_dtr.isNull() || !force_ctrl_lines_dtr.isEmpty()) {
@@ -772,6 +767,8 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
                 gk_radio_tmp->port_details.parm.serial.dtr_state = serial_control_state_e::RIG_SIGNAL_UNSET;
                 break;
             }
+        } else {
+            gk_radio_tmp->port_details.parm.serial.dtr_state = serial_control_state_e::RIG_SIGNAL_UNSET;
         }
 
         if (!force_ctrl_lines_rts.isNull() || !force_ctrl_lines_rts.isEmpty()) {
@@ -790,6 +787,8 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
                 gk_radio_tmp->port_details.parm.serial.rts_state = serial_control_state_e::RIG_SIGNAL_UNSET;
                 break;
             }
+        } else {
+            gk_radio_tmp->port_details.parm.serial.rts_state = serial_control_state_e::RIG_SIGNAL_UNSET;
         }
 
         if (!ptt_method.isNull() || !ptt_method.isEmpty()) {
@@ -815,6 +814,8 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
                 // Nothing
                 gk_radio_tmp->port_details.type.ptt = ptt_type_t::RIG_PTT_NONE; // No PTT available
             }
+        } else {
+            gk_radio_tmp->port_details.type.ptt = ptt_type_t::RIG_PTT_NONE; // Default option
         }
 
         if (!tx_audio_src.isNull() || !tx_audio_src.isEmpty()) {
@@ -833,6 +834,8 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
                 gk_radio_tmp->ptt_status = ptt_t::RIG_PTT_OFF; // TODO: Configure this so that PTT is enabled or not, as configured by the user!
                 break;
             }
+        } else {
+            gk_radio_tmp->ptt_status = ptt_t::RIG_PTT_OFF; // Default option
         }
 
         if (!ptt_mode.isNull() || !ptt_mode.isEmpty()) {
@@ -855,6 +858,9 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
                 gk_radio_tmp->mode = RIG_MODE_NONE;
                 break;
             }
+        } else {
+            // Default option
+            gk_radio_tmp->mode = RIG_MODE_NONE;
         }
 
         if (!split_operation.isNull() || !split_operation.isEmpty()) {
@@ -877,10 +883,15 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
                 gk_radio_tmp->split_mode = split_t::RIG_SPLIT_OFF;
                 break;
             }
+        } else {
+            // Default option
+            gk_radio_tmp->split_mode = split_t::RIG_SPLIT_OFF;
         }
 
         if (!ptt_adv_cmd.isNull() || !ptt_adv_cmd.isEmpty()) {
             gk_radio_tmp->adv_cmd = ptt_adv_cmd.toStdString();
+        } else {
+            gk_radio_tmp->adv_cmd = "";
         }
 
         return gk_radio_tmp;

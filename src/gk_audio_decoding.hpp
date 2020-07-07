@@ -64,7 +64,10 @@ extern "C"
 {
 #endif
 
+#ifdef OPUS_LIBS_ENBLD
 #include <opus.h>
+#endif
+
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -76,6 +79,7 @@ namespace GekkoFyre {
 class GkAudioDecoding : public QObject {
     Q_OBJECT
 
+#ifdef OPUS_LIBS_ENBLD
 private:
     struct OpusErrorException: public virtual std::exception {
         OpusErrorException(int code) : code(code) {}
@@ -93,6 +97,7 @@ private:
         int32_t frameno = 0;
         bool lost_prev = true;
     };
+#endif
 
 public:
     explicit GkAudioDecoding(QPointer<GekkoFyre::FileIo> fileIo,
@@ -114,6 +119,7 @@ private:
     std::shared_ptr<GkLevelDb> gkDb;
     GekkoFyre::Database::Settings::Audio::GkDevice gkOutputDev;
 
+    #ifdef OPUS_LIBS_ENBLD
     struct OpusDecoderDeleter {
         void operator()(OpusDecoder *opusDecoder) const {
             opus_decoder_destroy(opusDecoder);
@@ -124,8 +130,10 @@ private:
     std::unique_ptr<OpusState> opus_state;
     const int opus_max_frame_size = AUDIO_FRAMES_PER_BUFFER;
 
-    static uint32_t char_to_int(char ch[4]);
     bool decodeOpusFrame(std::istream &file_in, std::ostream &file_out);
+    #endif
+
+    static uint32_t char_to_int(char ch[4]);
 
     static size_t readOgg(void *buffer, size_t element_size, size_t element_count, void *data_source);
     static int seekOgg(void *data_source, ogg_int64_t offset, int origin);
