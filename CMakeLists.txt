@@ -75,7 +75,7 @@ if(CMAKE_VERSION VERSION_LESS "3.7.0")
 endif()
 
 set(CMAKE_MODULE_PATH
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/";
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/"
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/third-party/basic-c-sdl-project/cmake/sdl2/")
 
 #
@@ -83,9 +83,11 @@ set(CMAKE_MODULE_PATH
 #
 option(GFYRE_PACKAGE_MAINTAINER "Are you a package maintainer? If so, set this option to `ON`! It'll enable specific build settings to make your life easier." ON)
 option(GFYRE_BUILD_STATIC "Build Small World Deluxe as a static library/package. This will result in a larger executable at the benefit of requiring less DLL dependencies." ON)
-option(GFYRE_BUILD_SHARED "*** This option is not fully developed yet! *** Build Small World Deluxe as a shared library/package. This will result in a smaller executable at the cost of requiring further DLL dependencies." OFF)
-option(GFYRE_HAMLIB_DBG_VERBOSITY "Enable DEBUG verbosity for the Hamlib library and its use throughout Small World Deluxe. *** Only recommended for programmers and/or possibly maintainers of the project itself! ***" OFF)
-option(GFYRE_BUILD_CODEC2 "*** This feature is in heavy development! *** Build with support for Codec2 <https://github.com/drowe67/codec2>." OFF)
+option(GFYRE_BUILD_SHARED "Build Small World Deluxe as a shared library/package. This will result in a smaller executable at the cost of requiring further DLL dependencies." OFF)
+option(GFYRE_HAMLIB_DBG_VERBOSITY "Enable DEBUG verbosity for the Hamlib library and its use throughout Small World Deluxe." OFF)
+
+option(BUILD_CODEC2_SUPPORT "Enable support for the 'Codec2' open source speech codec library." ON)
+option(BUILD_OPUS_SUPPORT "Enable support for the 'Opus' codec library." OFF)
 
 #
 # Detect if we are dealing with the Linux operating system and not Apple OS/X
@@ -132,9 +134,16 @@ else()
     message(FATAL_ERROR "Could not find the Threads library!")
 endif(Threads_FOUND)
 
-find_package(Qt5 COMPONENTS Core Gui Widgets PrintSupport Test REQUIRED)
+find_package(Qt5 COMPONENTS Core Gui Widgets Network SerialPort PrintSupport Test REQUIRED)
 
-set(Boost_USE_STATIC_LIBS ON CACHE BOOL "Use static libraries when linking Boost C++.")
+if (MSYS OR MINGW OR LINUX)
+    set(Boost_USE_STATIC_LIBS OFF CACHE BOOL "Use static libraries when linking Boost C++.")
+elseif(WIN32)
+    set(Boost_USE_STATIC_LIBS ON CACHE BOOL "Use static libraries when linking Boost C++.")
+else()
+    message(SEND_ERROR "The only operating systems and/or build environments we OFFICIALLY support as of the moment are Microsoft Windows, MinGW/MSYS, and Linux. Sorry!")
+endif()
+
 set(Boost_USE_MULTITHREADED ON CACHE BOOL "Use multithreaded libraries when linking Boost C++.")
 set(Boost_USE_STATIC_RUNTIME OFF CACHE BOOL "Use static runtime when linking Boost C++.")
 find_package(Boost 1.54.0 REQUIRED COMPONENTS "filesystem"
@@ -197,12 +206,14 @@ endif(LEVELDB_FOUND)
 
 find_package(PortAudio REQUIRED)
 if (PortAudio_FOUND)
-    if(WIN32 OR MSYS OR MINGW)
-        # Enable `PA_USE_ASIO` by default, since this allows for the lowest latency possible with the audio pathways!
-        option(PA_USE_ASIO "Enable support for ASIO. This is recommended for Microsoft Windows operating systems." ON)
-    else()
+    if(LINUX OR MSYS OR MINGW)
         # Disable `PA_USE_ASIO` because we are dealing with a system other than Microsoft Windows, where ASIO is unsupported...
         option(PA_USE_ASIO "Disable support for ASIO. This is recommended for operating systems other than Microsoft Windows." OFF)
+    elseif(WIN32)
+        # Enable `PA_USE_ASIO` by default, since this allows for the lowest latency possible with the audio pathways!
+        option(PA_USE_ASIO "Enable support for ASIO. This is recommended for Microsoft Windows operating systems." ON)
+    elseif(APPLE)
+        message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
     endif()
 
     if (PA_USE_ASIO)
@@ -222,9 +233,33 @@ if (HAMLIB_FOUND)
     include_directories(${HAMLIB_INCLUDE_DIRS})
     set(LIBS ${LIBS} ${HAMLIB_LIBRARIES})
     ADD_DEFINITIONS(-DUSE_HAMLIB=1)
+
+    find_package(HamlibCpp REQUIRED)
+    if (HAMLIBCPP_FOUND)
+        include_directories(${HAMLIBCPP_INCLUDE_DIRS})
+        set(LIBS ${LIBS} ${HAMLIBCPP_LIBRARIES})
+    else()
+        message(FATAL_ERROR "The 'Hamlib' amateur radio C++ library bindings could not be found!")
+    endif(HAMLIBCPP_FOUND)
 else()
     message(FATAL_ERROR "The 'Hamlib' amateur radio library could not be found!")
 endif(HAMLIB_FOUND)
+
+if (BUILD_CODEC2_SUPPORT)
+    if (MSYS OR MINGW OR LINUX OR UNIX)
+        message(STATUS "Support for 'Codec2' has been enabled! Finding package...")
+        find_package(Codec2 REQUIRED)
+        if (CODEC2_FOUND)
+            include_directories(${CODEC2_INCLUDE_DIRS})
+            set(LIBS ${LIBS} ${CODEC2_LIBRARIES})
+            add_definitions("-DCODEC2_LIBS_ENBLD")
+        else()
+            message(FATAL_ERROR "The 'Codec2' open source speech codec library could not be found!")
+        endif(CODEC2_FOUND)
+    else()
+        message(WARNING "Support for 'Codec2' is only possible with *nix systems or Macintosh OS/X! MinGW is another option if you're using Microsoft Windows.")
+    endif()
+endif(BUILD_CODEC2_SUPPORT)
 
 find_package(USB REQUIRED)
 if (USB_FOUND)
@@ -267,13 +302,17 @@ endif(Ogg_FOUND)
 #
 # http://opus-codec.org/
 #
-find_package(Opus REQUIRED)
-if (Opus_FOUND)
-    include_directories(${Opus_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${Opus_LIBRARIES})
-else()
-    message(SEND_ERROR "The 'Opus' audio (de-/en-)coding library could not be found!")
-endif(Opus_FOUND)
+if (BUILD_OPUS_SUPPORT)
+    message(STATUS "Support for 'Opus' has been enabled! Finding package...")
+    find_package(Opus REQUIRED)
+    if (Opus_FOUND)
+        include_directories(${Opus_INCLUDE_DIRS})
+        set(LIBS ${LIBS} ${Opus_LIBRARIES})
+        add_definitions("-DOPUS_LIBS_ENBLD")
+    else()
+        message(SEND_ERROR "The 'Opus' audio (de-/en-)coding library could not be found!")
+    endif(Opus_FOUND)
+endif(BUILD_OPUS_SUPPORT)
 
 find_package(Iconv REQUIRED)
 if (Iconv_FOUND)
@@ -283,7 +322,7 @@ else()
     message(SEND_ERROR "The 'libiconv' character encoding and conversion library could not be found!")
 endif(Iconv_FOUND)
 
-set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-arcs -ftest-coverage")
+set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-arcs -ftest-coverage -mwindows")
 
 #
 # PortAudio's C++ bindings
@@ -317,63 +356,6 @@ if(WIN32 OR MSYS OR MINGW)
 endif()
 
 set_property(SOURCE ${GALAXY_PORTAUDIO_CPP} PROPERTY SKIP_AUTOUIC ON)
-
-if(GFYRE_BUILD_CODEC2)
-    #
-    # Codec2 library
-    #
-    #
-    # Set project version information. This should probably be done via external
-    # file at some point.
-    #
-    set(CMAKE_REQUIRED_LIBRARIES m)
-    set(CODEC2_VERSION_MAJOR 0)
-    set(CODEC2_VERSION_MINOR 9)
-    # Set to patch level if needed, otherwise leave FALSE.
-    # Must be positive (non-zero) if set, since 0 == FALSE in CMake.
-    set(CODEC2_VERSION_PATCH 2)
-    set(CODEC2_VERSION "${CODEC2_VERSION_MAJOR}.${CODEC2_VERSION_MINOR}")
-    # Patch level version bumps should not change API/ABI.
-    set(SOVERSION "${CODEC2_VERSION_MAJOR}.${CODEC2_VERSION_MINOR}")
-    if(CODEC2_VERSION_PATCH)
-        set(CODEC2_VERSION "${CODEC2_VERSION}.${CODEC2_VERSION_PATCH}")
-    endif()
-    message(STATUS "codec2 version: ${CODEC2_VERSION}")
-
-    if (MSYS OR MINGW OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-        option(CMAKE_CROSSCOMPILING "Build Codec2 as a cross-compiled library." OFF)
-    endif()
-
-    #
-    # Find lpcnet library
-    #
-    if(LPCNET)
-        if(LPCNET_BUILD_DIR)
-            find_package(lpcnetfreedv REQUIRED
-                PATHS ${LPCNET_BUILD_DIR}
-                NO_DEFAULT_PATH
-                CONFIGS lpcnetfreedv.cmake
-            )
-            if(lpcnetfreedv_FOUND)
-                message(STATUS "liblpcnetfreedv found in build tree.")
-                add_definitions("-D__LPCNET__")
-            else()
-                message(FATAL_ERROR "LPCNet include/library not found in build tree.")
-            endif()
-        else()
-            find_package(lpcnetfreedv REQUIRED)
-            if(lpcnetfreedv_FOUND)
-                add_definitions("-D__LPCNET__")
-                message(STATUS "liblpcnetfreedv found.")
-            else()
-                message(FATAL_ERROR "lpcnetfreedv library not found.")
-            endif()
-        endif()
-    endif()
-    
-    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/codec2/src")
-    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/codec2/misc")
-endif(GFYRE_BUILD_CODEC2)
 
 #
 # SingleApplication
@@ -428,7 +410,8 @@ set(GALAXY_UI_CPP
     src/gk_cli.cpp
     src/gk_modem.cpp
     src/gk_frequency_list.cpp
-    src/gk_string_funcs.cpp)
+    src/gk_string_funcs.cpp
+    src/gk_codec2.cpp)
 
 if(WIN32 OR MSYS OR MINGW)
     # Nothing here at the moment!
@@ -444,25 +427,34 @@ endif()
 set(GALAXY_SRC_CPP
     ${GALAXY_SRC_CPP}
     src/pa_sinewave.cpp
-    src/gk_fft.cpp
-    src/contrib/getopt.c
-    src/contrib/serial/src/serial.cc)
+    src/gk_fft.cpp)
 
-if(WIN32 OR MSYS OR MINGW)
+if(LINUX)
     set(GALAXY_SRC_CPP
-        ${GALAXY_SRC_CPP}
-        src/contrib/serial/src/impl/list_ports/list_ports_win.cc
-        src/contrib/serial/src/impl/win.cc)
-elseif(LINUX)
+        ${GALAXY_SRC_CPP})
+elseif(WIN32 OR MSYS OR MINGW)
     set(GALAXY_SRC_CPP
-        ${GALAXY_SRC_CPP}
-        src/contrib/serial/src/impl/list_ports/list_ports_linux.cc
-        src/contrib/serial/src/impl/unix.cc)
+        ${GALAXY_SRC_CPP})
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()
 
 set_property(SOURCE ${GALAXY_SRC_CPP} PROPERTY SKIP_AUTOUIC ON)
+
+#
+# Do not compile under MinGW for these sources!
+#
+set(GALAXY_SRC_CPP_NON_MINGW
+    ${GALAXY_SRC_CPP_NON_MINGW}) # Setup a dummy variable for if this variable is otherwise not needed (i.e. we're not compiling under MinGW!)....
+
+# Setup the real MinGW variables for if they're actually needed (i.e. we're actually compiling under MinGW)!
+if (!MSYS OR !MINGW)
+    set(GALAXY_SRC_CPP_NON_MINGW
+        ${GALAXY_SRC_CPP_NON_MINGW}
+        src/contrib/getopt.c)
+endif()
+
+set_property(SOURCE ${GALAXY_SRC_CPP_NON_MINGW} PROPERTY SKIP_AUTOUIC ON)
 
 #
 # Compile UIC!
@@ -486,7 +478,9 @@ set(GALAXY_OBJ_HEADERS
     src/gk_cli.hpp
     src/gk_modem.hpp
     src/gk_frequency_list.hpp
-    src/gk_string_funcs.hpp)
+    src/gk_string_funcs.hpp
+    src/gk_messagebox.hpp
+    src/gk_codec2.hpp)
 
 if(WIN32 OR MSYS OR MINGW)
     # Nothing here at the moment!
@@ -506,23 +500,47 @@ set(GALAXY_SRC_HEADERS
     src/gk_timer.hpp
     src/gk_circ_buffer.hpp
     src/gk_fft.hpp
-    src/contrib/getopt.h
-    src/contrib/serial/include/serial/v8stdint.h
-    src/contrib/serial/include/serial/serial.h)
+    src/contrib/rapidcsv/src/rapidcsv.h)
 
-if(WIN32 OR MSYS OR MINGW)
+if(LINUX)
     set(GALAXY_SRC_HEADERS
-        ${GALAXY_SRC_HEADERS}
-        src/contrib/serial/include/serial/impl/win.h)
-elseif(LINUX)
+        ${GALAXY_SRC_HEADERS})
+elseif(WIN32 OR MSYS OR MINGW)
     set(GALAXY_SRC_HEADERS
-        ${GALAXY_SRC_HEADERS}
-        src/contrib/serial/include/serial/impl/unix.h)
+        ${GALAXY_SRC_HEADERS})
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()
 
 set_property(SOURCE ${GALAXY_SRC_HEADERS} PROPERTY SKIP_AUTOUIC ON)
+
+#
+# Do not compile under MinGW for these sources!
+#
+set(GALAXY_SRC_HEADERS_NON_MINGW
+    ${GALAXY_SRC_HEADERS_NON_MINGW}) # Setup a dummy variable for if this variable is otherwise not needed (i.e. we're not compiling under MinGW!)....
+
+# Setup the real MinGW variables for if they're actually needed (i.e. we're actually compiling under MinGW)!
+if (!MSYS OR !MINGW)
+    set(GALAXY_SRC_HEADERS_NON_MINGW
+        ${GALAXY_SRC_HEADERS_NON_MINGW}
+        src/contrib/getopt.h)
+endif()
+
+set_property(SOURCE ${GALAXY_SRC_HEADERS_NON_MINGW} PROPERTY SKIP_AUTOUIC ON)
+
+if (MSYS OR MINGW)
+    set(GK_EXTRA_LIBS
+        ${GK_EXTRA_LIBS}
+        -lhid
+        -lsetupapi)
+else()
+    #
+    # Just an empty container for now!
+    #
+    set(GK_EXTRA_LIBS
+        ${GK_EXTRA_LIBS})
+endif()
 
 add_definitions("-DQWT_DLL")
 
@@ -589,7 +607,7 @@ include(GNUInstallDirs)
 # Build Small World Deluxe as a static package!
 #
 if(GFYRE_BUILD_STATIC)
-    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP})
+    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP})
     if(GK_CUDA_FFT)
         add_library(galaxy_cuda STATIC ${GALAXY_CUDA})
     endif()
@@ -601,14 +619,14 @@ endif(GFYRE_BUILD_STATIC)
 # Build Small World Deluxe as a shared package!
 #
 if(GFYRE_BUILD_SHARED)
-    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP})
+    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP})
     if(GK_CUDA_FFT)
         add_library(galaxy_cuda STATIC ${GALAXY_CUDA})
     endif()
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
-target_link_libraries(galaxy Qt5::Widgets Qt5::Core Qt5::Gui Qt5::PrintSupport Threads::Threads SingleApplication::SingleApplication ${LIBS})
+target_link_libraries(galaxy ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::SerialPort Qt5::PrintSupport Threads::Threads SingleApplication::SingleApplication ${LIBS})
 
 # rcc -no-compress -binary smallworld_res.qrc -o smallworld_res.rcc
 qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)
@@ -617,7 +635,7 @@ add_dependencies(galaxy resources)
 set(SWRLD_EXEC ${SWRLD_EXEC}
     src/main.cpp)
 
-add_executable(smallworld ${SWRLD_EXEC})
+add_executable(smallworld WIN32 ${SWRLD_EXEC})
 target_link_libraries(smallworld galaxy)
 
 if(GK_CUDA_FFT)
@@ -639,9 +657,9 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     # Using Microsoft Visual Studio C++
     if(CMAKE_BUILD_TYPE MATCHES "Debug")
-    add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W3 /WX)
+        add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W3 /WX)
     elseif(CMAKE_BUILD_TYPE MATCHES "Release")
-    add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W3 /WX /GL)
+        add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W3 /WX /GL)
     endif()
 endif()
 

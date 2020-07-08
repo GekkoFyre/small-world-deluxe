@@ -23,7 +23,7 @@
  **   the Free Software Foundation, either version 3 of the License, or
  **   (at your option) any later version.
  **
- **   Small World is distributed in the hope that it will be useful,
+ **   Small world is distributed in the hope that it will be useful,
  **   but WITHOUT ANY WARRANTY; without even the implied warranty of
  **   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  **   GNU General Public License for more details.
@@ -39,51 +39,37 @@
  **
  ****************************************************************************************************/
 
-#pragma once
+#include "src/gk_codec2.hpp"
 
-#include "src/defines.hpp"
-#include <QObject>
-#include <QMessageBox>
-#include <string>
-#include <memory>
-#include <mutex>
+using namespace GekkoFyre;
+using namespace Database;
+using namespace Settings;
+using namespace Audio;
+using namespace AmateurRadio;
+using namespace Control;
+using namespace Spectrograph;
 
-#ifdef _WIN32
-#include <Windows.h>
-#endif
-
-#ifdef __cplusplus
-extern "C"
+GkCodec2::GkCodec2(const int &freedv_mode, const int &freedv_clip, const int &freedv_txbpf)
 {
-#endif
+    gkFreeDvMode = freedv_mode;
+    gkFreeDvClip = freedv_clip;
+    gkFreeDvTXBpf = freedv_txbpf;
 
-#if defined(__linux__) || defined(__MINGW64__)
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_stdinc.h>
-#include <SDL2/SDL_messagebox.h>
-#endif
+    freedv = freedv_open(gkFreeDvMode);
+    assert(freedv != nullptr);
 
-#ifdef __cplusplus
-} // extern "C"
-#endif
+    freedv_set_clip(freedv, gkFreeDvClip);
+    freedv_set_tx_bpf(freedv, gkFreeDvTXBpf);
 
-namespace GekkoFyre {
+    return;
+}
 
-class StringFuncs : public QObject {
-    Q_OBJECT
+GkCodec2::~GkCodec2()
+{
+    return;
+}
 
-public:
-    explicit StringFuncs(QObject *parent = nullptr);
-    ~StringFuncs();
-
-    #if defined(_MSC_VER) && (_MSC_VER > 1900)
-    static std::string multiByteFromWide(LPCWSTR pwsz, UINT cp);
-    static std::wstring strToWStrWin(const std::string &s);
-    std::wstring removeSpecialChars(std::wstring wstr);
-    bool modalDlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon);
-    #else
-    bool modalDlgBoxLinux(uint32_t flags, const QString &title, const QString &msgTxt);
-    #endif
-
-};
-};
+void GkCodec2::txCodec2RawData(const GkRadio &gkRadio, const GkDevice &gkAudioDevice)
+{
+    return;
+}

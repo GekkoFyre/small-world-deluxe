@@ -52,10 +52,13 @@ extern "C"
 {
 #endif
 
+#ifdef OPUS_LIBS_ENBLD
+#include <opus_multistream.h>
+#endif
+
 #include <vorbis/codec.h>
 #include <vorbis/vorbisenc.h>
 #include <vorbis/vorbisfile.h>
-#include <opus_multistream.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -99,7 +102,10 @@ GkAudioEncoding::GkAudioEncoding(QPointer<FileIo> fileIo,
     gkInputDev = std::move(input_device);
     gkSpectroGui = std::move(spectroGui);
 
+    #ifdef OPUS_LIBS_ENBLD
     opus_state = std::make_unique<OpusState>(AUDIO_FRAMES_PER_BUFFER, AUDIO_CODECS_OPUS_MAX_PACKETS, gkInputDev.dev_input_channel_count);
+    #endif
+
     recording_in_progress = false;
     ogg_buf_counter = 0;
 
@@ -226,7 +232,7 @@ void GkAudioEncoding::recordOggVorbis(const std::vector<signed char> &audio_fram
             if (ret) {
                 throw std::runtime_error(tr("There has been an error in initializing an Ogg Vorbis audio encode!").toStdString());
             }
-            #elif __MINGW32__
+            #elif __MINGW64__
             // TODO: Find a replacement for the above that's suitable within MinGW!
             #endif
 
@@ -425,7 +431,9 @@ void GkAudioEncoding::oggVorbisBuf(std::vector<signed char> &audio_rec, const in
     return;
 }
 
+#ifdef OPUS_LIBS_ENBLD
 const char *GkAudioEncoding::OpusErrorException::what() const noexcept
 {
     return opus_strerror(code);
 }
+#endif

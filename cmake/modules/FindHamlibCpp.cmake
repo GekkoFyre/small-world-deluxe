@@ -39,23 +39,22 @@
 #
 
 find_package(PkgConfig)
-pkg_check_modules(PC_CODEC2 QUIET "codec2")
-set(CODEC2_DEFINITIONS ${PC_CODEC2_CFLAGS_OTHER})
+pkg_check_modules(PC_HAMLIBCPP QUIET hamlib)
+set(HAMLIBCPP_DEFINITIONS ${PC_HAMLIBCPP_CFLAGS_OTHER})
 
-find_path(CODEC2_INCLUDE_DIR
-    NAMES "codec2/codec2.h"
-    HINTS ${PC_CODEC2_INCLUDE_DIR} ${PC_CODEC2_INCLUDE_DIRS}
-    PATHS "/usr/local/include" "/usr/include")
+find_path(HAMLIBCPP_INCLUDE_DIR
+    NAMES "hamlib/rigclass.h"
+    HINTS ${PC_HAMLIBCPP_INCLUDE_DIR} ${PC_HAMLIBCPP_INCLUDE_DIRS}
+    PATH_SUFFIXES hamlib)
 
-find_library(CODEC2_LIBRARY
-    NAMES  "codec2" "libcodec2"
-    HINTS ${PC_CODEC2_LIBDIR} ${PC_CODEC2_LIBRARY_DIRS}
-    PATHS "/usr/local/lib" "/usr/local/lib64" "/usr/lib" "/usr/lib64")
+find_library(HAMLIBCPP_LIBRARY
+    NAMES  "hamlib++" "libhamlib++"
+    HINTS ${PC_HAMLIBCPP_LIBDIR} ${PC_HAMLIBCPP_LIBRARY_DIRS})
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Codec2 DEFAULT_MSG CODEC2_LIBRARY CODEC2_INCLUDE_DIR)
+find_package_handle_standard_args(HAMLIBCPP DEFAULT_MSG HAMLIBCPP_LIBRARY HAMLIBCPP_INCLUDE_DIR)
 
-mark_as_advanced(CODEC2_INCLUDE_DIR CODEC2_LIBRARY)
+mark_as_advanced(HAMLIBCPP_INCLUDE_DIR HAMLIBCPP_LIBRARY)
 
-set(CODEC2_LIBRARIES ${CODEC2_LIBRARY})
-set(CODEC2_INCLUDE_DIRS ${CODEC2_INCLUDE_DIR})
+set(HAMLIBCPP_LIBRARIES ${HAMLIBCPP_LIBRARY})
+set(HAMLIBCPP_INCLUDE_DIRS ${HAMLIBCPP_INCLUDE_DIR}) 

@@ -23,8 +23,6 @@ Please see [CREDITS](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe
 
 `CMake - Cross Platform Makefile Generator -- Copyright © 2000 - 2020 Kitware, Inc. and Contributors.`
 
-`Serial -- Copyright © 2012 William Woodall and John Harrison.`
-
 `SingleApplication -- Copyright © 2015 - 2020 Itay Grudev.`
 
 #### Licensing & Legalese

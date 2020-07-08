@@ -42,7 +42,6 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/gk_string_funcs.hpp"
 #include <qwt.h>
 #include <qwt_plot.h>
 #include <qwt_plot_spectrogram.h>
@@ -96,6 +95,8 @@ public:
 class GkSpectroRasterData: public QwtPlotSpectrogram {
 
 public:
+    ~GkSpectroRasterData();
+
     void draw(QPainter *painter, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRectF &canvasRect) const override;
 };
 
@@ -123,7 +124,7 @@ public:
                const bool &enableZoomer = false, QWidget *parent = nullptr);
     ~SpectroGui();
 
-    void insertData(const QVector<double> values, const int &numCols);
+    void insertData(const QVector<double> &values, const int &numCols);
 
 protected:
     void alignScales();
@@ -145,8 +146,8 @@ private:
     int buf_overall_size;
     int buf_total_size;
     QList<double> gkRasterBuf;
-    std::unique_ptr<GkSpectroRasterData> gkRasterData;
-    std::unique_ptr<QwtMatrixRasterData> gkMatrixData;
+    GkSpectroRasterData *gkRasterData;
+    QwtMatrixRasterData *gkMatrixData;
 
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     int gkAlpha;                                                // Controls the alpha value of the waterfall chart.

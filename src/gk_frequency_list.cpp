@@ -50,12 +50,15 @@ using namespace Audio;
 using namespace AmateurRadio;
 using namespace Control;
 
-GkFreqList::GkFreqList(QObject *parent)
+GkFrequencies::GkFrequencies(QObject *parent)
 {
+    QObject::connect(this, SIGNAL(updateFrequencies(const quint64 &, const GekkoFyre::AmateurRadio::DigitalModes &, const GekkoFyre::AmateurRadio::IARURegions &, const bool &)),
+                     this, SLOT(updateFreqsInMem(const quint64 &, const GekkoFyre::AmateurRadio::DigitalModes &, const GekkoFyre::AmateurRadio::IARURegions &, const bool &)));
+
     return;
 }
 
-GkFreqList::~GkFreqList()
+GkFrequencies::~GkFrequencies()
 {
     return;
 }
@@ -67,7 +70,7 @@ GkFreqList::~GkFreqList()
  * @note This data has been drawn from the JTDX project
  * <https://github.com/jtdx-project/jtdx/blob/0d45ce10b3f0ebb0b37a88dae71a5c2b25383dd2/FrequencyList.cpp>.
  */
-void GkFreqList::publishFreqList()
+void GkFrequencies::publishFreqList()
 {
     emit updateFrequencies(136000, DigitalModes::WSPR, IARURegions::ALL, false);
     emit updateFrequencies(136130, DigitalModes::JT65, IARURegions::ALL, false);
@@ -217,7 +220,7 @@ void GkFreqList::publishFreqList()
  * @param epsilon The precision, or rather, to how many digits should the comparison be equal towards.
  * @return Whether the desired outcome was true or false.
  */
-bool GkFreqList::approximatelyEqual(const float &a, const float &b, const float &epsilon)
+bool GkFrequencies::approximatelyEqual(const float &a, const float &b, const float &epsilon)
 {
     return std::fabs(a - b) <= ((std::fabs(a) < std::fabs(b) ? std::fabs(b) : std::fabs(a)) * epsilon);
 }
@@ -231,7 +234,7 @@ bool GkFreqList::approximatelyEqual(const float &a, const float &b, const float 
  * @param epsilon The precision, or rather, to how many digits should the comparison be equal towards.
  * @return Whether the desired outcome was true or false.
  */
-bool GkFreqList::essentiallyEqual(const float &a, const float &b, const float &epsilon)
+bool GkFrequencies::essentiallyEqual(const float &a, const float &b, const float &epsilon)
 {
     return std::fabs(a - b) <= ((std::fabs(a) > std::fabs(b) ? std::fabs(b) : std::fabs(a)) * epsilon);
 }
@@ -245,7 +248,7 @@ bool GkFreqList::essentiallyEqual(const float &a, const float &b, const float &e
  * @param epsilon The precision, or rather, to how many digits should the comparison be equal towards.
  * @return Whether the desired outcome was true or false.
  */
-bool GkFreqList::definitelyGreaterThan(const float &a, const float &b, const float &epsilon)
+bool GkFrequencies::definitelyGreaterThan(const float &a, const float &b, const float &epsilon)
 {
     return (a - b) > ((std::fabs(a) < std::fabs(b) ? std::fabs(b) : std::fabs(a)) * epsilon);
 }
@@ -259,7 +262,61 @@ bool GkFreqList::definitelyGreaterThan(const float &a, const float &b, const flo
  * @param epsilon The precision, or rather, to how many digits should the comparison be equal towards.
  * @return Whether the desired outcome was true or false.
  */
-bool GkFreqList::definitelyLessThan(const float &a, const float &b, const float &epsilon)
+bool GkFrequencies::definitelyLessThan(const float &a, const float &b, const float &epsilon)
 {
     return (b - a) > ((std::fabs(a) < std::fabs(b) ? std::fabs(b) : std::fabs(a)) * epsilon);
+}
+
+QList<GekkoFyre::AmateurRadio::GkFreqs> GkFrequencies::listOfFreqs()
+{
+    return frequencyList;
+}
+
+int GkFrequencies::size()
+{
+    return frequencyList.size();
+}
+
+GkFreqs GkFrequencies::at(const int &idx)
+{
+    return frequencyList.at(idx);
+}
+
+/**
+ * @brief GkFreqList::updateFreqsInMem Update the radio rig's used frequencies within memory, either by
+ * adding or removing them from the global QVector.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param frequency The frequency to update.
+ * @param digital_mode What digital mode is being used, whether it be WSPR, JT65, FT8, etc.
+ * @param iaru_region The IARU Region that this particular frequency applies towards, such as ALL, R1, etc.
+ * @param remove_freq Whether to remove the frequency in question from the global list or not.
+ */
+void GkFrequencies::updateFreqsInMem(const quint64 &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
+                                  const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq)
+{
+    GkFreqs freq;
+    freq.frequency = frequency;
+    freq.digital_mode = digital_mode;
+    freq.iaru_region = iaru_region;
+    if (remove_freq) {
+        //
+        // We are removing the frequency from the global std::vector!
+        //
+        if (!frequencyList.empty()) {
+            for (int i = 0; i < frequencyList.size(); ++i) {
+                if (frequencyList[i].frequency == freq.frequency) {
+                    frequencyList.erase(frequencyList.begin() + i);
+                    break;
+                }
+            }
+        }
+    } else {
+        //
+        // We are adding the frequency to the global std::vector!
+        //
+        frequencyList.reserve(1);
+        frequencyList.push_back(freq);
+    }
+
+    return;
 }

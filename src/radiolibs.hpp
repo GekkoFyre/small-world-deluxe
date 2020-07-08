@@ -43,7 +43,6 @@
 
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
-#include "src/gk_string_funcs.hpp"
 #include <boost/logic/tribool.hpp>
 #include <QPointer>
 #include <QObject>
@@ -62,7 +61,7 @@
 #include <Windows.h>
 #endif
 
-#ifdef __MINGW32__
+#ifdef __MINGW64__
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_stdinc.h>
 #endif
@@ -97,7 +96,7 @@ public:
 
 signals:
     void gatherPortType(const bool &is_cat_mode);
-    void disconnectRigInUse(RIG *rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
+    void disconnectRigInUse(std::shared_ptr<Rig> rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
 
 private:
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
@@ -108,15 +107,12 @@ private:
     static void hamlibStatus(const int &retcode);
     static std::string getUsbPortId(libusb_device *usb_device);
 
-    static std::string getDriver(const boost::filesystem::path &tty);
-    static void probe_serial8250_comports(std::list<std::string> &comList, const std::list<std::string> &comList8250);
-    static void registerComPort(std::list<std::string> &comList, std::list<std::string> &comList8250,
-                                const boost::filesystem::path &dir);
+    void print_exception(const std::exception &e, int level = 0);
 
-    #ifdef _WIN32
+    #if defined(_MSC_VER) && (_MSC_VER > 1900)
     bool modalDlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon);
-    #elif __linux__ || __MINGW32__
-    bool modalDlgBoxLinux(Uint32 flags, const QString &title, const QString &msgTxt);
+    #else
+    bool modalDlgBoxLinux(uint32_t flags, const QString &title, const QString &msgTxt);
     #endif
 
     template <class T>

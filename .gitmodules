@@ -4,12 +4,12 @@
 [submodule "src/contrib/libiconv-win-build"]
 	path = src/contrib/libiconv-win-build
 	url = https://github.com/kiyolee/libiconv-win-build.git
-[submodule "src/contrib/jtdx"]
-	path = src/contrib/jtdx
-	url = https://github.com/jtdx-project/jtdx.git
 [submodule "src/contrib/SingleApplication"]
 	path = src/contrib/SingleApplication
 	url = https://github.com/itay-grudev/SingleApplication.git
 [submodule "src/contrib/PortAudio-Wrapper"]
 	path = src/contrib/PortAudio-Wrapper
 	url = https://github.com/orazdow/PortAudio-Wrapper.git
+[submodule "src/contrib/rapidcsv"]
+	path = src/contrib/rapidcsv
+	url = https://github.com/d99kris/rapidcsv.git

@@ -41,12 +41,14 @@
 
 #pragma once
 
-#include "contrib/serial/include/serial/serial.h"
+#include "src/gk_string_funcs.hpp"
 #include <portaudiocpp/PortAudioCpp.hxx>
-#include <fftw3.h>
+#include <codec2/codec2.h>
+#include <codec2/freedv_api.h>
 #include <boost/exception/all.hpp>
 #include <boost/logic/tribool.hpp>
 #include <boost/filesystem.hpp>
+#include <hamlib/rigclass.h>
 #include <qwt_interval.h>
 #include <vector>
 #include <exception>
@@ -62,6 +64,7 @@
 #include <QPointer>
 #include <QDateTime>
 #include <QStringList>
+#include <QSerialPortInfo>
 
 #ifdef _WIN32
 #ifdef PA_USE_ASIO
@@ -326,12 +329,8 @@ namespace Database {
         };
 
         struct GkComPort {
-            serial::PortInfo port_info;                                             // Details on the COM/RS232/Serial ports themselves
-            serial::stopbits_t def_stopbits;                                        // The defined stop bits for this serial port in question
+            QSerialPortInfo port_info;                                              // Details on the COM/RS232/Serial ports themselves
             uint32_t def_baudrate;                                                  // The defined baudrate for this serial port in question
-            serial::parity_t def_parity;                                            // The defined parity for this serial port in question
-            serial::flowcontrol_t def_flow_control;                                 // The defined flow-control for this serial port in question
-            serial::Timeout timeout_info;                                           // The timeout structure for the given serial port in question
         };
 
         namespace Audio {
@@ -457,15 +456,22 @@ namespace AmateurRadio {
     };
 
     struct GkFreqs {
-        float frequency;                                    // The exact frequency itself
+        quint64 frequency;                                   // The exact frequency itself
         GkFreqBands closest_freq_band;                      // The closest matching frequency band grouping
         DigitalModes digital_mode;                          // The type of digital mode this frequency applies towards, or should apply toward
         IARURegions iaru_region;                            // The IARU Region that this frequency falls under
     };
 
+    struct GkFreeDV {                                       // <https://github.com/drowe67/codec2/blob/master/README_data.md>.
+        struct freedv *freedv;
+        int mode;
+        int use_clip;
+        int use_txbpf;
+    };
+
     namespace Control {
-        struct GkRadio {                                    // https://github.com/Hamlib/Hamlib/blob/master/tests/example.c
-            RIG *rig;                                       // Hamlib rig pointer
+        struct GkRadio {                                    // <https://github.com/Hamlib/Hamlib/blob/master/c%2B%2B/rigclass.cc>.
+            std::shared_ptr<Rig> gkRig;                     // Hamlib rig pointer
             int rig_brand;                                  // Hamlib rig brand/manufacturer
             rig_model_t rig_model;                          // The actual amateur radio rig itself!
             std::unique_ptr<rig_caps> rig_caps;             // Read-only; the capabilities of the configured amateur radio rig in question, as defined by Hamlib.
@@ -473,9 +479,9 @@ namespace AmateurRadio {
             powerstat_t power_status;                       // Whether the radio rig is electrically powered on or off
             hamlib_port_t port_details;                     // Information concerning details about RS232 ports, etc.
             ptt_t ptt_status;                               // PTT status
+            ptt_type_t ptt_type;                            // PTT Type
             split_t split_mode;                             // Whether 'Split Mode' is enabled or disabled
             bool is_open;                                   // Has HamLib been successfully initiated (including the RIG* pointer?)
-            std::string rig_file;                           // Hamlib rig temporary file
             std::string info_buf;                           // Hamlib information buffer
             GkConnType cat_conn_type;                       // The type of connection, whether USB, RS232, etc.
             GkConnType ptt_conn_type;                       // The type of connection, whether USB, RS232, etc.
@@ -486,9 +492,9 @@ namespace AmateurRadio {
             com_baud_rates dev_baud_rate;                   // Communication device baud rate
             std::string adv_cmd;                            // The 'Advanced Command' parameters, if specified
             freq_t freq;                                    // Rig's primary frequency
-            value_t raw_strength;                           // Raw strength of the S-meter
-            value_t strength;                               // Calculated strength of the S-meter
-            value_t power;                                  // Rig's power output
+            float raw_strength;                             // Raw strength of the S-meter
+            float strength;                                 // Calculated strength of the S-meter
+            float power;                                    // Rig's power output
             float s_meter;                                  // S-meter values
             int status;                                     // Hamlib status code
             int retcode;                                    // Hamlib return code

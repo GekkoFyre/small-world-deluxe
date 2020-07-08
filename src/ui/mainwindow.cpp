@@ -41,6 +41,7 @@
 #include "spectrodialog.hpp"
 #include "./../gk_timer.hpp"
 #include "./../spectro_cuda.h"
+#include "./../contrib/rapidcsv/src/rapidcsv.h"
 #include <boost/exception/all.hpp>
 #include <boost/chrono/chrono.hpp>
 #include <cmath>
@@ -54,8 +55,10 @@
 #include <algorithm>
 #include <functional>
 #include <QDesktopServices>
+#include <QSerialPortInfo>
 #include <QStandardPaths>
 #include <QPrintDialog>
+#include <QSerialPort>
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QResource>
@@ -141,9 +144,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // Initialize the list of frequencies that Small World Deluxe needs to communicate with other users
         // throughout the globe/world!
         //
-        gkFreqList = new GkFreqList(this);
-        QObject::connect(gkFreqList, SIGNAL(updateFrequencies(const float &, const GekkoFyre::AmateurRadio::DigitalModes &, const GekkoFyre::AmateurRadio::IARURegions &, const bool &)),
-                         this, SLOT(updateFreqsInMem(const float &, const GekkoFyre::AmateurRadio::DigitalModes &, const GekkoFyre::AmateurRadio::IARURegions &, const bool &)));
+        gkFreqList = new GkFrequencies(this);
         gkFreqList->publishFreqList();
 
         //
@@ -202,7 +203,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 } else {
                     // Directory does not exist despite been saved as a setting, so we must create it first!
                     fs::path dir_to_append = fs::path(Filesystem::defaultDirAppend + native_slash.string() + Filesystem::fileName);
-                    save_db_path = fileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
+                    save_db_path = fileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation),
                                                                             true, QString::fromStdString(dir_to_append.string())).toStdString(); // Path to save final database towards
                 }
             }
@@ -242,10 +243,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                  this, SLOT(gatherRigCapabilities(const rig_model_t &, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
                 QObject::connect(this, SIGNAL(addRigInUse(const rig_model_t &, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
                                  this, SLOT(addRigToMemory(const rig_model_t &, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
-                QObject::connect(this, SIGNAL(disconnectRigInUse(RIG *, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
-                                 this, SLOT(disconnectRigInMemory(RIG *, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
-                QObject::connect(this, SIGNAL(updateFrequencies(const float &, const GekkoFyre::AmateurRadio::DigitalModes &, const GekkoFyre::AmateurRadio::IARURegions &, const bool &)),
-                                 this, SLOT(updateFreqsInMem(const float &, const GekkoFyre::AmateurRadio::DigitalModes &, const GekkoFyre::AmateurRadio::IARURegions &, const bool &)));
+                QObject::connect(this, SIGNAL(disconnectRigInUse(std::shared_ptr<Rig>, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
+                                 this, SLOT(disconnectRigInMemory(std::shared_ptr<Rig>, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
 
                 // Initialize the Radio Database pointer!
                 if (gkRadioPtr.get() == nullptr) {
@@ -266,8 +265,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 //
                 QObject::connect(gkRadioLibs, SIGNAL(gatherPortType(const bool &)),
                                  this, SLOT(analyzePortType(const bool &)));
-                QObject::connect(gkRadioLibs, SIGNAL(disconnectRigInUse(RIG *, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
-                                 this, SLOT(disconnectRigInMemory(RIG *, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
+                QObject::connect(gkRadioLibs, SIGNAL(disconnectRigInUse(std::shared_ptr<Rig>, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
+                                 this, SLOT(disconnectRigInMemory(std::shared_ptr<Rig>, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
             } else {
                 throw std::runtime_error(tr("Unable to find settings database; we've lost its location!").toStdString());
             }
@@ -356,7 +355,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // Initialize the Waterfall / Spectrograph
         //
         gkSpectroGui = new GekkoFyre::SpectroGui(gkStringFuncs, true, true, this);
-        ui->verticalLayout_11->addWidget(gkSpectroGui);
+        ui->horizontalLayout_12->addWidget(gkSpectroGui);
         gkSpectroGui->setEnabled(true);
 
         //
@@ -420,16 +419,17 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         on_checkBox_rx_tx_vol_toggle_stateChanged(rx_vol_control_selected);
         QObject::connect(this, SIGNAL(changeVolume(const float &)), this, SLOT(updateVolume(const float &)));
 
+        //
+        // Set a default value for the Volume Slider and its QLabel
+        //
+        const int vol_slider_max_val = ui->verticalSlider_vol_control->maximum();
+        const float real_vol_val = (static_cast<float>(ui->verticalSlider_vol_control->value()) / vol_slider_max_val);
+        updateVolumeSliderLabel(real_vol_val);
+
         if (input_audio_buf.get() != nullptr) {
             if (pref_input_device.dev_number > 0 && pref_input_device.dev_input_channel_count > 0) {
                 on_pushButton_radio_receive_clicked();
             }
-        }
-
-        if (gkRadioPtr->freq > 0.0) {
-            ui->label_freq_large->setText(QString::number(gkRadioPtr->freq));
-        } else {
-            ui->label_freq_large->setText(tr("N/A"));
         }
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
@@ -455,7 +455,7 @@ MainWindow::~MainWindow()
     }
 
     emit stopRecording();
-    emit disconnectRigInUse(gkRadioPtr->rig, gkRadioPtr);
+    emit disconnectRigInUse(gkRadioPtr->gkRig, gkRadioPtr);
 
     // Free the pointer for the libusb library!
     if (usb_ctx_ptr != nullptr) {
@@ -518,6 +518,8 @@ void MainWindow::on_action_Open_triggered()
 void MainWindow::changePushButtonColor(const QPointer<QPushButton> &push_button, const bool &green_result,
                                        const bool &color_blind_mode)
 {
+    Q_UNUSED(color_blind_mode);
+
     if (green_result) {
         // Change QPushButton to a shade of darkish 'Green'
         push_button->setStyleSheet("QPushButton{\nbackground-color: #B80000; border: 1px solid black;\nborder-radius: 5px;\nborder-width: 1px;\npadding: 6px;\nfont: bold;\ncolor: white;\n}");
@@ -589,7 +591,7 @@ void MainWindow::launchSettingsWin()
 {
     QPointer<DialogSettings> dlg_settings = new DialogSettings(GkDb, fileIo, gkAudioDevices, gkRadioLibs, sw_settings,
                                                                gkPortAudioInit, usb_ctx_ptr, gkRadioPtr, status_com_ports,
-                                                               this);
+                                                               gkFreqList, this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
@@ -615,10 +617,6 @@ void MainWindow::launchSettingsWin()
 bool MainWindow::radioInitStart()
 {
     try {
-        std::string rand_file_name = fileIo->create_random_string(8);
-        fs::path rig_file_path_tmp = fs::path(fs::temp_directory_path().string() + native_slash.string() + rand_file_name + GekkoFyre::Filesystem::tmpExtension);
-        gkRadioPtr->rig_file = rig_file_path_tmp.string();
-
         QString model = GkDb->read_rig_settings(radio_cfg::RigModel);
         if (!model.isEmpty() || !model.isNull()) {
             gkRadioPtr->rig_model = model.toInt();
@@ -630,7 +628,8 @@ bool MainWindow::radioInitStart()
             gkRadioPtr->rig_model = 1;
         }
 
-        QString com_baud_rate = GkDb->read_rig_settings(radio_cfg::ComBaudRate);
+        // TODO: Very important! Expand this section!
+        QString com_baud_rate = GkDb->read_rig_settings_comms(radio_cfg::ComBaudRate, GkConnType::RS232);
         if (!com_baud_rate.isEmpty() || !com_baud_rate.isNull()) {
             gkRadioPtr->dev_baud_rate = gkRadioLibs->convertBaudRateToEnum(com_baud_rate.toInt());
         } else {
@@ -638,34 +637,19 @@ bool MainWindow::radioInitStart()
         }
 
         #ifdef GFYRE_HAMLIB_DBG_VERBOSITY_ENBL
-        radio->verbosity = RIG_DEBUG_VERBOSE;
+        gkRadioPtr->verbosity = RIG_DEBUG_VERBOSE;
         #else
         gkRadioPtr->verbosity = RIG_DEBUG_BUG;
         #endif
 
-        try {
-            //
-            // Initialize Hamlib!
-            //
-            gkRadioPtr->is_open = false;
-            rig_thread = std::thread(&RadioLibs::gkInitRadioRig, gkRadioLibs, gkRadioPtr, gkUsbPortPtr);
-            rig_thread.detach();
+        //
+        // Initialize Hamlib!
+        //
+        gkRadioPtr->is_open = false;
+        rig_thread = std::thread(&RadioLibs::gkInitRadioRig, gkRadioLibs, gkRadioPtr, gkUsbPortPtr);
+        rig_thread.detach();
 
-            return true;
-        } catch (const std::invalid_argument &e) {
-            // We wish for this to be handled silently for now!
-            Q_UNUSED(e);
-            return false;
-        } catch (const std::runtime_error &e) {
-            #if defined(_MSC_VER) && (_MSC_VER > 1900)
-            HWND hwnd = nullptr;
-            gkStringFuncs->modalDlgBoxOk(hwnd, tr("Error!"), tr("[ Hamlib ] %1").arg(e.what()), MB_ICONERROR);
-            DestroyWindow(hwnd);
-            #else
-            gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("[ Hamlib ] %1").arg(e.what()));
-            #endif
-            return false;
-        }
+        return true;
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
     }
@@ -714,6 +698,8 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
         if (!rigModelIndex.isNull() || !rigModelIndex.isEmpty()) { // The actual amateur radio rig itself!
             int conv_rig_model_idx = rigModelIndex.toInt();
             gk_radio_tmp->rig_model = conv_rig_model_idx;
+        } else {
+            gk_radio_tmp->rig_model = RIG_MODEL_DUMMY;
         }
 
         Q_UNUSED(rigVers);
@@ -725,16 +711,22 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
         if (!comBaudRate.isNull() || !comBaudRate.isEmpty()) {
             int conv_com_baud_rate = comBaudRate.toInt();
             gk_radio_tmp->port_details.parm.serial.rate = gkRadioLibs->convertBaudRateInt(gkRadioLibs->convertBaudRateToEnum(conv_com_baud_rate));
+        } else {
+            gk_radio_tmp->port_details.parm.serial.rate = 38400;
         }
 
         if (!stopBits.isNull() || !stopBits.isEmpty()) {
             int conv_serial_stop_bits = stopBits.toInt();
             gk_radio_tmp->port_details.parm.serial.stop_bits = conv_serial_stop_bits;
+        } else {
+            gk_radio_tmp->port_details.parm.serial.stop_bits = 0;
         }
 
         if (!data_bits.isNull() || !data_bits.isEmpty()) {
             int conv_serial_data_bits = data_bits.toInt();
             gk_radio_tmp->port_details.parm.serial.data_bits = conv_serial_data_bits;
+        } else {
+            gk_radio_tmp->port_details.parm.serial.data_bits = 0;
         }
 
         if (!handshake.isNull() || !handshake.isEmpty()) {
@@ -761,6 +753,8 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
                 gk_radio_tmp->port_details.parm.serial.handshake = serial_handshake_e::RIG_HANDSHAKE_NONE;
                 break;
             }
+        } else {
+            gk_radio_tmp->port_details.parm.serial.handshake = serial_handshake_e::RIG_HANDSHAKE_NONE;
         }
 
         if (!force_ctrl_lines_dtr.isNull() || !force_ctrl_lines_dtr.isEmpty()) {
@@ -779,6 +773,8 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
                 gk_radio_tmp->port_details.parm.serial.dtr_state = serial_control_state_e::RIG_SIGNAL_UNSET;
                 break;
             }
+        } else {
+            gk_radio_tmp->port_details.parm.serial.dtr_state = serial_control_state_e::RIG_SIGNAL_UNSET;
         }
 
         if (!force_ctrl_lines_rts.isNull() || !force_ctrl_lines_rts.isEmpty()) {
@@ -797,6 +793,8 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
                 gk_radio_tmp->port_details.parm.serial.rts_state = serial_control_state_e::RIG_SIGNAL_UNSET;
                 break;
             }
+        } else {
+            gk_radio_tmp->port_details.parm.serial.rts_state = serial_control_state_e::RIG_SIGNAL_UNSET;
         }
 
         if (!ptt_method.isNull() || !ptt_method.isEmpty()) {
@@ -822,6 +820,8 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
                 // Nothing
                 gk_radio_tmp->port_details.type.ptt = ptt_type_t::RIG_PTT_NONE; // No PTT available
             }
+        } else {
+            gk_radio_tmp->port_details.type.ptt = ptt_type_t::RIG_PTT_NONE; // Default option
         }
 
         if (!tx_audio_src.isNull() || !tx_audio_src.isEmpty()) {
@@ -840,6 +840,8 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
                 gk_radio_tmp->ptt_status = ptt_t::RIG_PTT_OFF; // TODO: Configure this so that PTT is enabled or not, as configured by the user!
                 break;
             }
+        } else {
+            gk_radio_tmp->ptt_status = ptt_t::RIG_PTT_OFF; // Default option
         }
 
         if (!ptt_mode.isNull() || !ptt_mode.isEmpty()) {
@@ -847,21 +849,24 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
             switch (conv_ptt_mode) {
             case 0:
                 // None
-                gk_radio_tmp->mode = rmode_t::RIG_MODE_NONE;
+                gk_radio_tmp->mode = RIG_MODE_NONE;
                 break;
             case 1:
                 // USB
-                gk_radio_tmp->mode = rmode_t::RIG_MODE_USB;
+                gk_radio_tmp->mode = RIG_MODE_USB;
                 break;
             case 2:
                 // Data / PKT
-                gk_radio_tmp->mode = rmode_t::RIG_MODE_PKTUSB;
+                gk_radio_tmp->mode = RIG_MODE_PKTUSB;
                 break;
             default:
                 // Nothing
-                gk_radio_tmp->mode = rmode_t::RIG_MODE_NONE;
+                gk_radio_tmp->mode = RIG_MODE_NONE;
                 break;
             }
+        } else {
+            // Default option
+            gk_radio_tmp->mode = RIG_MODE_NONE;
         }
 
         if (!split_operation.isNull() || !split_operation.isEmpty()) {
@@ -884,10 +889,15 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
                 gk_radio_tmp->split_mode = split_t::RIG_SPLIT_OFF;
                 break;
             }
+        } else {
+            // Default option
+            gk_radio_tmp->split_mode = split_t::RIG_SPLIT_OFF;
         }
 
         if (!ptt_adv_cmd.isNull() || !ptt_adv_cmd.isEmpty()) {
             gk_radio_tmp->adv_cmd = ptt_adv_cmd.toStdString();
+        } else {
+            gk_radio_tmp->adv_cmd = "";
         }
 
         return gk_radio_tmp;
@@ -991,6 +1001,24 @@ void MainWindow::updateVolumeDisplayWidgets()
             }
         }
     }
+
+    return;
+}
+
+/**
+ * @brief MainWindow::updateVolumeSliderLabel will update the volume QLabel UI widget, `label_vol_control_disp`.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param vol_level The actual slider value itself, derived from UI widget, `verticalSlider_vol_control`.
+ */
+void MainWindow::updateVolumeSliderLabel(const float &vol_level)
+{
+    const float vol_level_decibel = (20.0f * std::log10(vol_level));
+    std::stringstream ss;
+    ss << std::setprecision(3) << vol_level_decibel;
+    ui->label_vol_control_disp->setText(tr("%1 dB").arg(QString::fromStdString(ss.str())));
+
+    const float vol_multiplier = (1.0f * std::pow(10, (vol_level_decibel / 20.0f)));
+    emit changeVolume(vol_multiplier);
 
     return;
 }
@@ -1135,7 +1163,7 @@ void MainWindow::on_action_Disconnect_triggered()
 
         switch (ret) {
         case QMessageBox::Ok:
-            emit disconnectRigInUse(gkRadioPtr->rig, gkRadioPtr);
+            emit disconnectRigInUse(gkRadioPtr->gkRig, gkRadioPtr);
             return;
         case QMessageBox::Cancel:
             return;
@@ -1156,6 +1184,8 @@ void MainWindow::on_action_Disconnect_triggered()
  */
 void MainWindow::on_actionShow_Waterfall_toggled(bool arg1)
 {
+    Q_UNUSED(arg1);
+
     try {
         // QWT is started!
     } catch (const portaudio::PaException &e) {
@@ -1255,6 +1285,13 @@ void MainWindow::infoBar()
         QString curr_utc_date_str = QString::fromStdString(oss_utc_date.str());
         ui->label_curr_utc_time->setText(curr_utc_time_str);
         ui->label_curr_utc_date->setText(curr_utc_date_str);
+
+        freq_t frequency_tmp = ((gkRadioPtr->freq / 1000) / 1000);
+        if (frequency_tmp > 0.0) {
+            ui->label_freq_large->setText(tr("%1 MHz").arg(QString::number(frequency_tmp)));
+        } else {
+            ui->label_freq_large->setText(tr("N/A"));
+        }
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
     }
@@ -1446,8 +1483,6 @@ void MainWindow::updateSpectrograph()
                                 magnitude_buf.push_back(magnitude);
                             }
 
-                            std::vector<float> freq_list;
-
                             std::vector<double> magnitude_db_buf;
                             magnitude_buf.reserve(magnitude_buf.size() + 1);
                             for (const auto &calc: magnitude_buf) {
@@ -1507,13 +1542,7 @@ void MainWindow::on_verticalSlider_vol_control_valueChanged(int value)
                 //
                 // Input audio stream is open and active!
                 //
-                const float vol_level_decibel = (20.0f * std::log10(real_val));
-                std::stringstream ss;
-                ss << std::setprecision(3) << vol_level_decibel;
-                ui->label_vol_control_disp->setText(tr("%1 dB").arg(QString::fromStdString(ss.str())));
-
-                const float vol_multiplier = (1.0f * std::pow(10, (vol_level_decibel / 20.0f)));
-                emit changeVolume(vol_multiplier);
+                updateVolumeSliderLabel(real_val);
             }
         }
     } else {
@@ -1521,20 +1550,10 @@ void MainWindow::on_verticalSlider_vol_control_valueChanged(int value)
             //
             // Output audio buffer
             //
+            updateVolumeSliderLabel(real_val);
         }
     }
 
-    return;
-}
-
-/**
- * @brief MainWindow::radioStats Displays statistics to the QMainWindow concerning the user's radio rig
- * of choice.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param radio_dev The structure containing all the information on the user's radio rig of choice.
- */
-void MainWindow::radioStats(Control::GkRadio *radio_dev)
-{
     return;
 }
 
@@ -1723,6 +1742,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
  */
 void MainWindow::stopRecordingInput(const int &wait_time)
 {
+    Q_UNUSED(wait_time);
+
     if (inputAudioStream != nullptr && pref_input_device.is_dev_active) {
         if (inputAudioStream->isActive()) {
             inputAudioStream->close();
@@ -1743,6 +1764,7 @@ void MainWindow::stopRecordingInput(const int &wait_time)
  */
 void MainWindow::startRecordingInput(const int &wait_time)
 {
+    Q_UNUSED(wait_time);
     emit stopRecording();
 
     // To minimise startup latency for this use-case (i.e. expecting StartStream() to give minimum
@@ -1770,6 +1792,9 @@ void MainWindow::startRecordingInput(const int &wait_time)
  */
 void MainWindow::updateProgressBar(const bool &enable, const size_t &min, const size_t &max)
 {
+    Q_UNUSED(min);
+    Q_UNUSED(max);
+
     try {
         if (enable) {
             // Launch the QProgressBar!
@@ -1928,8 +1953,8 @@ void MainWindow::gatherRigCapabilities(const rig_model_t &rig_model_update,
  */
 void MainWindow::addRigToMemory(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr)
 {
-    if (radio_ptr->rig != nullptr) {
-        emit disconnectRigInUse(radio_ptr->rig, radio_ptr);
+    if (radio_ptr->gkRig.get() != nullptr) {
+        emit disconnectRigInUse(radio_ptr->gkRig, radio_ptr);
     }
 
     //
@@ -1950,34 +1975,35 @@ void MainWindow::addRigToMemory(const rig_model_t &rig_model_update, const std::
  * @param rig_to_disconnect The radio rig in question to disconnect.
  * @param radio_ptr The pointer to Hamlib's radio structure and any information thereof.
  */
-void MainWindow::disconnectRigInMemory(RIG *rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr)
+void MainWindow::disconnectRigInMemory(std::shared_ptr<Rig> rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr)
 {
     Q_UNUSED(rig_to_disconnect);
 
     if (gkRadioPtr.get() != nullptr) {
-        if (gkRadioPtr->rig != nullptr) {
+        if (gkRadioPtr->gkRig.get() != nullptr) {
             if (gkRadioPtr->is_open) {
                 // Free the pointer(s) for the Hamlib library!
-                rig_close(gkRadioPtr->rig); // Close port
-                // rig_cleanup(gkRadioPtr->rig); // Cleanup memory
+                rig_to_disconnect->close(); // Close port
                 gkRadioPtr->is_open = false;
 
                 for (const auto &port: status_com_ports) {
                     //
                     // CAT Port
                     //
-                    if (std::strcmp(radio_ptr->cat_conn_port.c_str(), port.port_info.port.c_str()) == 0) {
-                        if (serial::Serial(port.port_info.port).isOpen()) {
-                            serial::Serial(port.port_info.port).close();
+                    if (std::strcmp(radio_ptr->cat_conn_port.c_str(), port.port_info.portName().toStdString().c_str()) == 0) {
+                        QSerialPort serial(port.port_info);
+                        if (serial.isOpen()) {
+                            serial.close();
                         }
                     }
 
                     //
                     // PTT Port
                     //
-                    if (std::strcmp(radio_ptr->ptt_conn_port.c_str(), port.port_info.port.c_str()) == 0) {
-                        if (serial::Serial(port.port_info.port).isOpen()) {
-                            serial::Serial(port.port_info.port).close();
+                    if (std::strcmp(radio_ptr->ptt_conn_port.c_str(), port.port_info.portName().toStdString().c_str()) == 0) {
+                        QSerialPort serial(port.port_info);
+                        if (serial.isOpen()) {
+                            serial.close();
                         }
                     }
                 }
@@ -1989,43 +2015,16 @@ void MainWindow::disconnectRigInMemory(RIG *rig_to_disconnect, const std::shared
 }
 
 /**
- * @brief MainWindow::updateFreqsInMem Update the radio rig's used frequencies within memory, either by
- * adding or removing them from the global QVector.
+ * @brief MainWindow::updateFreqSettingsDb Updates the database of frequencies managed by the user and saves them within Google LevelDB.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param frequency The frequency to update.
  * @param digital_mode What digital mode is being used, whether it be WSPR, JT65, FT8, etc.
  * @param iaru_region The IARU Region that this particular frequency applies towards, such as ALL, R1, etc.
  * @param remove_freq Whether to remove the frequency in question from the global list or not.
  */
-void MainWindow::updateFreqsInMem(const float &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
-                                  const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq)
+void MainWindow::updateFreqSettingsDb(const quint64 &frequency, const DigitalModes &digital_mode,
+                                      const IARURegions &iaru_region, const bool &remove_freq)
 {
-    GkFreqs freq;
-    freq.frequency = frequency;
-    freq.digital_mode = digital_mode;
-    freq.iaru_region = iaru_region;
-    if (remove_freq) {
-        //
-        // We are removing the frequency from the global std::vector!
-        //
-        if (!frequencyList.empty()) {
-            for (size_t i = 0; i < frequencyList.size(); ++i) {
-                if (gkFreqList->essentiallyEqual(frequencyList[i].frequency, freq.frequency, GK_RADIO_VFO_FLOAT_PNT_PREC)) {
-                    frequencyList.erase(frequencyList.begin() + i);
-                    break;
-                }
-            }
-
-            frequencyList.shrink_to_fit();
-        }
-    } else {
-        //
-        // We are adding the frequency to the global std::vector!
-        //
-        frequencyList.reserve(1);
-        frequencyList.push_back(freq);
-    }
-
     return;
 }
 
@@ -2104,21 +2103,29 @@ void MainWindow::on_actionLSB_toggled(bool arg1)
 
 void MainWindow::on_actionAM_toggled(bool arg1)
 {
+    Q_UNUSED(arg1);
+
     return;
 }
 
 void MainWindow::on_actionFM_toggled(bool arg1)
 {
+    Q_UNUSED(arg1);
+
     return;
 }
 
 void MainWindow::on_actionSSB_toggled(bool arg1)
 {
+    Q_UNUSED(arg1);
+
     return;
 }
 
 void MainWindow::on_actionCW_toggled(bool arg1)
 {
+    Q_UNUSED(arg1);
+
     return;
 }
 

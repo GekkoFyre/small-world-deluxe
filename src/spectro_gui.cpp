@@ -80,8 +80,8 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         //
         graph_in_use = GkGraphType::GkWaterfall;
 
-        gkRasterData = std::make_unique<GkSpectroRasterData>();
-        gkMatrixData = std::make_unique<QwtMatrixRasterData>();
+        gkRasterData = new GkSpectroRasterData();
+        gkMatrixData = new QwtMatrixRasterData();
         color_map = new LinearColorMapRGB();
         canvas = new QwtPlotCanvas();
 
@@ -111,7 +111,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         }
 
         gkRasterData->setContourLevels(contourLevels);
-        gkRasterData->setData(gkMatrixData.get());
+        gkRasterData->setData(gkMatrixData);
         // gkSpectrogram->attach(this);
 
         gkMatrixData->setInterval(Qt::XAxis, QwtInterval(0, 2500.0f));
@@ -128,7 +128,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         //
         setAxisTitle(QwtPlot::yLeft, tr("Time (secs ago)"));
         setAxisLabelRotation(QwtPlot::yLeft, -50.0); // Puts the label markings (i.e. frequency response labels) at an angle
-        setAxisLabelAlignment(QwtPlot::yLeft, Qt::AlignVCenter | Qt::AlignVCenter);
+        setAxisLabelAlignment(QwtPlot::yLeft, Qt::AlignVCenter);
 
         date_scale_draw = new QwtDateScaleDraw(Qt::UTC);
         date_scale_engine = new QwtDateScaleEngine(Qt::UTC);
@@ -239,10 +239,6 @@ SpectroGui::~SpectroGui()
         delete curve;
     }
 
-    if (panner != nullptr) {
-        delete panner;
-    }
-
     return;
 }
 
@@ -252,7 +248,7 @@ SpectroGui::~SpectroGui()
  * @param values
  * @param numCols
  */
-void SpectroGui::insertData(const QVector<double> values, const int &numCols)
+void SpectroGui::insertData(const QVector<double> &values, const int &numCols)
 {
     Q_UNUSED(numCols);
 
@@ -300,6 +296,9 @@ void SpectroGui::insertData(const QVector<double> values, const int &numCols)
  */
 void SpectroGui::alignScales()
 {
+    std::mutex mtx_spectro_align_scales;
+    std::lock_guard<std::mutex> lck_guard(mtx_spectro_align_scales);
+
     for (int i = 0; i < QwtPlot::axisCnt; ++i) {
         QwtScaleWidget *scale_widget = axisWidget(i);
         if (scale_widget) {
@@ -358,6 +357,9 @@ void SpectroGui::changeSpectroType(const GekkoFyre::Spectrograph::GkGraphType &g
  */
 void SpectroGui::refreshDateTime(const qint64 &latest_time_update, const qint64 &time_since)
 {
+    std::mutex mtx_spectro_refresh_date_time;
+    std::lock_guard<std::mutex> lck_guard(mtx_spectro_refresh_date_time);
+
     spectro_latest_update = latest_time_update;
     setAxisScale(QwtPlot::yLeft, spectro_latest_update, spectro_latest_update + SPECTRO_Y_AXIS_SIZE);
     setAxisMaxMinor(QwtPlot::yLeft, SPECTRO_Y_AXIS_MINOR);
@@ -385,6 +387,11 @@ void SpectroGui::updateFFTSize(const int &value)
     return;
 }
 
+GkSpectroRasterData::~GkSpectroRasterData()
+{
+    return;
+}
+
 /**
  * @brief GkSpectroRasterData::draw
  * @author Thomas <https://stackoverflow.com/questions/57342087/qwtplotspectrogram-with-log-scales>
@@ -395,6 +402,9 @@ void SpectroGui::updateFFTSize(const int &value)
  */
 void GkSpectroRasterData::draw(QPainter *painter, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRectF &canvasRect) const
 {
+    std::mutex mtx_spectro_raster_draw;
+    std::lock_guard<std::mutex> lck_guard(mtx_spectro_raster_draw);
+
     QwtScaleMap xMapLin(xMap);
     QwtScaleMap yMapLin(yMap);
 

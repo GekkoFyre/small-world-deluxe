@@ -42,6 +42,7 @@
 #include "radiolibs.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
+#include <boost/algorithm/string/replace.hpp>
 #include <ios>
 #include <list>
 #include <iostream>
@@ -50,13 +51,7 @@
 #include <cstring>
 #include <sstream>
 #include <QMessageBox>
-
-#ifdef _WIN32
-#include <stringapiset.h>
-#elif __linux__ || __MINGW32__
-#include <SDL2/SDL_video.h>
-#include <SDL2/SDL_messagebox.h>
-#endif
+#include <QSerialPortInfo>
 
 #ifdef __cplusplus
 extern "C"
@@ -65,11 +60,20 @@ extern "C"
 
 #include <libusb.h>
 
-#if defined(_MSC_VER) && (_MSC_VER > 1900)
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+#ifdef _WIN64
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#elif __linux__
+#endif
+#endif
+
+#if defined(__linux__) || defined(__MINGW64__)
+#include <SDL2/SDL_video.h>
+#include <SDL2/SDL_messagebox.h>
+#endif
+
+#if __linux__
 #include <sys/ioctl.h>
 #include <linux/serial.h>
 #endif
@@ -294,31 +298,21 @@ libusb_context *RadioLibs::initUsbLib()
  */
 std::list<GkComPort> RadioLibs::status_com_ports()
 {
-    try {
-        std::list<GkComPort> com_map;
-        std::vector<serial::PortInfo> devices_found = serial::list_ports();
+    std::mutex mtx_status_com_ports;
+    std::lock_guard<std::mutex> lck_guard(mtx_status_com_ports);
 
-        for (const auto &port: devices_found) {
+    std::list<GkComPort> com_map;
+    const auto rs232_data = QSerialPortInfo::availablePorts();
+
+    for (const auto &info: rs232_data) {
+        if (!info.isNull()) {
             GkComPort com_struct;
-            com_struct.port_info = port;
-
-            if (!com_struct.port_info.port.empty()) {
-                com_map.push_back(com_struct);
-            }
+            com_struct.port_info = info;
+            com_map.push_back(com_struct);
         }
-
-        return com_map;
-    } catch (const std::exception &e) {
-        #if defined(_MSC_VER) && (_MSC_VER > 1900)
-        HWND hwnd = nullptr;
-        modalDlgBoxOk(hwnd, tr("Error!"), e.what(), MB_ICONERROR);
-        DestroyWindow(hwnd);
-        #else
-        modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
-        #endif
     }
 
-    return std::list<GkComPort>();
+    return com_map;
 }
 
 /**
@@ -540,113 +534,30 @@ QMap<std::string, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDe
 }
 
 /**
- * @brief RadioLibs::getDriver While aimed at Linux systems, this filters away TTY-devices that do not contain
- * a `/device` subdirectory. An example of this is the `/sys/class/tty/console` device. Only the devices containing
- * this subdirectory are accepterd as valid ports and are therefore ouputted by the function.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * Søren Holm <https://stackoverflow.com/questions/2530096/how-to-find-all-serial-devices-ttys-ttyusb-on-linux-without-opening-them/9914339#9914339>
- * @param tty A TTY-device to be tested for the aforementioned constraints.
- * @return The 'base name' (or rather 'stem') of the TTY target.
+ * @brief RadioLibs::print_exception
+ * @param e
+ * @param level
  */
-std::string RadioLibs::getDriver(const fs::path &tty)
+void RadioLibs::print_exception(const std::exception &e, int level)
 {
-    #ifdef __linux__
-    struct stat st{};
-    fs::path device_dir = tty;
-
-    fs::path slash = "/";
-    fs::path native_slash = slash.make_preferred().native();
-
-    // Append `/device` to the TTY-path
-    device_dir += native_slash.string() + "device";
-
-    // Stat the `device_dir` and handle it of a `symlink` type
-    if ((lstat(device_dir.string().c_str(), &st) == 0) && (S_ISLNK(st.st_mode))) {
-        char buffer[4096];
-        memset(buffer, 0, sizeof(buffer));
-
-        // Append `/driver` and return just the stem of the target
-        device_dir += native_slash.string() + "driver";
-        if (readlink(device_dir.string().c_str(), buffer, sizeof(buffer)) > 0) {
-            return fs::path(buffer).stem().string();
-        }
-    }
-    #elif _WIN32
-    Q_UNUSED(tty);
+    #if defined(_MSC_VER) && (_MSC_VER > 1900)
+    HWND hwnd = nullptr;
+    modalDlgBoxOk(hwnd, tr("Error!"), e.what(), MB_ICONERROR);
+    DestroyWindow(hwnd);
+    #else
+    modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
     #endif
 
-    return "";
-}
-
-/**
- * @brief RadioLibs::probe_serial8250_comports Gathers a list of all the open TTY-devices.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * Søren Holm <https://stackoverflow.com/questions/2530096/how-to-find-all-serial-devices-ttys-ttyusb-on-linux-without-opening-them/9914339#9914339>
- * @param comList Outputted std::list<std::string> of active TTY-devices.
- * @param comList8250 A std::list<std::string> of TTY-devices to test.
- */
-void RadioLibs::probe_serial8250_comports(std::list<std::string> &comList, const std::list<std::string> &comList8250)
-{
-    #ifdef __linux__
-    struct serial_struct ser_info;
-    auto it = comList8250.begin();
-
-    // Iterate over all Serial-8250 devices
-    while (it != comList8250.end()) {
-        // Try and open the device
-        int fd = open((*it).c_str(), O_RDWR | O_NONBLOCK | O_NOCTTY);
-        if (fd >= 0) {
-            // Get serial_info
-            if (ioctl(fd, TIOCGSERIAL, &ser_info) == 0) {
-                // If device type is not `PORT_UNKNOWN` then we accept the port
-                if (ser_info.type != PORT_UNKNOWN) {
-                    comList.push_back(*it);
-                }
-            }
-
-            close(fd);
-        }
-
-        ++it;
-    }
-    #elif _WIN32
-    Q_UNUSED(comList);
-    Q_UNUSED(comList8250);
-    #endif
+    try {
+        std::rethrow_if_nested(e);
+    } catch(const std::exception& e) {
+        print_exception(e, level+1);
+    } catch(...) {}
 
     return;
 }
 
-/**
- * @brief GekkoFyre::RadioLibs::registerComPort
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * Søren Holm <https://stackoverflow.com/questions/2530096/how-to-find-all-serial-devices-ttys-ttyusb-on-linux-without-opening-them/9914339#9914339>
- * @param comList
- * @param comList8250
- * @param dir
- */
-void RadioLibs::registerComPort(std::list<std::string> &comList, std::list<std::string> &comList8250,
-        const fs::path &dir)
-{
-    // Get the driver the device is using
-    std::string driver = getDriver(dir);
-
-    // Skip devices without a driver
-    if (!driver.empty()) {
-        fs::path dev_file = fs::path("/dev/").string() + dir.stem().string();
-
-        // Put Serial-8250 Devices in a separate list
-        if (driver == "serial8250") {
-            comList8250.push_back(dev_file.string());
-        } else {
-            comList.push_back(dev_file.string());
-        }
-    }
-
-    return;
-}
-
-#ifdef _WIN32
+#if defined(_MSC_VER) && (_MSC_VER > 1900)
 bool RadioLibs::modalDlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon)
 {
     // TODO: Make this dialog modal
@@ -663,8 +574,8 @@ bool RadioLibs::modalDlgBoxOk(const HWND &hwnd, const QString &title, const QStr
 
     return false;
 }
-#elif __linux__ || __MINGW32__
-bool RadioLibs::modalDlgBoxLinux(Uint32 flags, const QString &title, const QString &msgTxt)
+#else
+bool RadioLibs::modalDlgBoxLinux(uint32_t flags, const QString &title, const QString &msgTxt)
 {
     SDL_Window *sdlWindow = SDL_CreateWindow(General::productName, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, DLG_BOX_WINDOW_WIDTH, DLG_BOX_WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
     int ret = SDL_ShowSimpleMessageBox(flags, title.toStdString().c_str(), msgTxt.toStdString().c_str(), sdlWindow);
@@ -692,76 +603,101 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_p
         // Set verbosity level
         rig_set_debug(radio_ptr->verbosity);
 
-        // Instantiate the rig
-        radio_ptr->rig = rig_init(radio_ptr->rig_model);
+        radio_ptr->gkRig = std::make_shared<Rig>(radio_ptr->rig_model);
 
         // Setup serial port, baud rate, etc.
-        fs::path slashes = "//./";
-        fs::path native_slash = slashes.make_preferred().native();
-        fs::path com_port_path;
-        #ifdef _WIN32
-        com_port_path = fs::path(slashes.string() + radio_ptr->rig_file);
-        #elif __linux__
-        com_port_path = radio_ptr->rig_file;
-        #endif
-
-        radio_ptr->rig_file = com_port_path.string();
-
         int baud_rate = 9600;
         int baud_rate_tmp = convertBaudRateInt(radio_ptr->dev_baud_rate);
         if (baud_rate_tmp <= 115200 && baud_rate_tmp >= 9600) {
             baud_rate = baud_rate_tmp;
         }
 
-        if (radio_ptr->cat_conn_type == GkConnType::RS232) {
-            //
-            // RS232
-            //
-            radio_ptr->rig->state.rigport.parm.serial.data_bits = radio_ptr->port_details.parm.serial.data_bits;
-            radio_ptr->rig->state.rigport.parm.serial.stop_bits = radio_ptr->port_details.parm.serial.stop_bits;
-            radio_ptr->rig->state.rigport.parm.serial.rate = baud_rate; // The BAUD Rate for the desired COM Port
-            radio_ptr->port_details.type.rig = convGkConnTypeToHamlib(radio_ptr->cat_conn_type);
+        radio_ptr->gkRig->setConf("data_bits", std::to_string(radio_ptr->port_details.parm.serial.data_bits).c_str());
+        radio_ptr->gkRig->setConf("stop_bits", std::to_string(radio_ptr->port_details.parm.serial.stop_bits).c_str());
+        radio_ptr->gkRig->setConf("serial_speed", std::to_string(baud_rate).c_str());
+        radio_ptr->port_details.type.rig = convGkConnTypeToHamlib(radio_ptr->cat_conn_type);
 
-            //
-            // Determine the port necessary and let Hamlib know about it!
-            //
-            if (!radio_ptr->cat_conn_port.empty()) {
-                strncpy(radio_ptr->rig->state.rigport.pathname, radio_ptr->cat_conn_port.c_str(), sizeof(radio_ptr->rig->state.rigport.pathname));
-                radio_ptr->rig->state.rigport.pathname[radio_ptr->cat_conn_port.size()] = '\0';
-            }
-        } else if (radio_ptr->cat_conn_type == GkConnType::USB) {
-            //
-            // USB
-            //
-            if (usb_ptr->bus.empty() || usb_ptr->addr.empty()) {
-                throw std::runtime_error(tr("Unable to initialize radio rig with USB connection!").toStdString());
-            }
+        switch (radio_ptr->ptt_type) { // TODO: Add type for 'Parallel'!
+        case RIG_PTT_SERIAL_RTS:
+            radio_ptr->gkRig->setConf("ptt_type", "RTS");
+            radio_ptr->gkRig->setConf("rts_state", "ON");
+            radio_ptr->gkRig->setConf("dtr_state", "OFF");
+            break;
+        case RIG_PTT_SERIAL_DTR:
+            radio_ptr->gkRig->setConf("ptt_type", "DTR");
+            radio_ptr->gkRig->setConf("dtr_state", "ON");
+            radio_ptr->gkRig->setConf("rts_state", "OFF");
+            break;
+        case RIG_PTT_RIG:
+            radio_ptr->gkRig->setConf("ptt_type", "RIG");
+            radio_ptr->gkRig->setConf("dtr_state", "OFF");
+            radio_ptr->gkRig->setConf("rts_state", "OFF");
+            break;
+        case RIG_PTT_RIG_MICDATA:
+            radio_ptr->gkRig->setConf("ptt_type", "RIGMICDATA");
+            radio_ptr->gkRig->setConf("dtr_state", "OFF");
+            radio_ptr->gkRig->setConf("rts_state", "OFF");
+            break;
+        case RIG_PTT_NONE:
+            radio_ptr->gkRig->setConf("ptt_type", "None");
+            radio_ptr->gkRig->setConf("dtr_state", "OFF");
+            radio_ptr->gkRig->setConf("rts_state", "OFF");
+            break;
+        default:
+            radio_ptr->gkRig->setConf("ptt_type", "None");
+            radio_ptr->gkRig->setConf("dtr_state", "OFF");
+            radio_ptr->gkRig->setConf("rts_state", "OFF");
+            break;
+        }
 
-            radio_ptr->rig->state.rigport.parm.usb.vid = usb_ptr->usb_enum.vendor_id;
-            radio_ptr->rig->state.rigport.parm.usb.pid = usb_ptr->usb_enum.product_id;
-            radio_ptr->rig->state.rigport.parm.usb.conf = usb_ptr->usb_enum.conv_conf;
-            radio_ptr->rig->state.rigport.parm.usb.iface = usb_ptr->usb_vers_3.interface_number;
-            radio_ptr->rig->state.rigport.parm.usb.alt = usb_ptr->usb_vers_3.alternate_setting;
+        switch (radio_ptr->port_details.parm.serial.dtr_state) {
+        case serial_control_state_e::RIG_SIGNAL_ON:
+            // High
+            radio_ptr->gkRig->setConf("dtr_state", "ON");
+            break;
+        case serial_control_state_e::RIG_SIGNAL_OFF:
+            // Low
+            radio_ptr->gkRig->setConf("dtr_state", "OFF");
+            break;
+        default:
+            // Nothing
+            radio_ptr->gkRig->setConf("dtr_state", "UNSET");
+            break;
+        }
 
-            //
-            // Determine the port necessary and let Hamlib know about it!
-            //
-            if (!radio_ptr->cat_conn_port.empty()) {
-                strncpy(radio_ptr->rig->state.rigport.pathname, radio_ptr->cat_conn_port.c_str(), sizeof(radio_ptr->rig->state.rigport.pathname));
-                radio_ptr->rig->state.rigport.pathname[radio_ptr->cat_conn_port.size()] = '\0';
-            }
-        } else if (radio_ptr->cat_conn_type == GkConnType::Parallel) {
-            //
-            // Parallel
-            //
-            radio_ptr->rig->state.rigport.parm.parallel.pin = -1; // TODO: Finish this section for Parallel connections!
+        switch (radio_ptr->port_details.parm.serial.handshake) {
+        case serial_handshake_e::RIG_HANDSHAKE_NONE:
+            // Default
+            radio_ptr->gkRig->setConf("serial_handshake", "None");
+            break;
+        case serial_handshake_e::RIG_HANDSHAKE_XONXOFF:
+            // XON / XOFF
+            radio_ptr->gkRig->setConf("serial_handshake", "XONXOFF");
+            break;
+        case serial_handshake_e::RIG_HANDSHAKE_HARDWARE:
+            // Hardware
+            radio_ptr->gkRig->setConf("serial_handshake", "Hardware");
+            break;
+        default:
+            // Nothing
+            radio_ptr->gkRig->setConf("serial_handshake", "None");
+            break;
+        }
 
-            //
-            // Determine the port necessary and let Hamlib know about it!
-            //
-            // strncpy(radio_ptr->rig->state.rigport.pathname, radio_ptr, FILPATHLEN - 1);
-        } else {
-            throw std::runtime_error(tr("Unable to detect connection type while initializing radio rig (i.e. 'none / unknown' was not an option)!").toStdString());
+        #if __MINGW64__
+        //
+        // Modify the COM Port so that it's suitable for Hamlib!
+        //
+        boost::replace_all(radio_ptr->cat_conn_port, "COM", "/dev/ttyS");
+        boost::replace_all(radio_ptr->ptt_conn_port, "COM", "/dev/ttyS");
+        #endif
+
+        //
+        // Determine the port necessary and let Hamlib know about it!
+        //
+        if (!radio_ptr->cat_conn_port.empty()) {
+            radio_ptr->gkRig->setConf("ptt_pathname", radio_ptr->ptt_conn_port.c_str());
+            radio_ptr->gkRig->setConf("rig_pathname", radio_ptr->cat_conn_port.c_str());
         }
 
         if (radio_ptr->rig_model < 1) { // No amateur radio rig has been configured and/or adequately detected!
@@ -773,106 +709,54 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_p
             radio_ptr->rig_model = rig_probe(&radio_ptr->port_details);
         }
 
-        if (!radio_ptr->rig) {
-            throw std::runtime_error(tr("Unknown radio rig: %1\n\nNote to developers: Please check the list of rigs.")
-                                     .arg(QString::number(radio_ptr->rig_model)).toStdString());
-        }
-
-        rig_debug(radio_ptr->verbosity, "Backend version: %s, Status: %s\n\n", radio_ptr->rig->caps->version, rig_strstatus(radio_ptr->rig->caps->status));
-
-        //
-        // Close any ports that are about to be connected towards by Hamlib!
-        //
-        if (serial::Serial(radio_ptr->cat_conn_port).isOpen()) {
-            serial::Serial(radio_ptr->cat_conn_port).close();
-        }
+        rig_debug(radio_ptr->verbosity, "Backend version: %s, Status: %s\n\n", radio_ptr->gkRig->caps->version, rig_strstatus(radio_ptr->gkRig->caps->status));
 
         //
         // Open our rig in question
         //
-        radio_ptr->retcode = rig_open(radio_ptr->rig);
-        if (radio_ptr->retcode != RIG_OK) {
-            throw std::runtime_error(tr("[ Hamlib ] Error with opening amateur radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->retcode))).toStdString());
-        } else {
-            radio_ptr->is_open = true; // Set the flag that the aforementioned pointer has been initialized
-        }
+        radio_ptr->gkRig->open();
+        radio_ptr->is_open = true; // Set the flag that the aforementioned pointer has been initialized
 
         while (radio_ptr->is_open) {
-            radio_ptr->retcode = rig_open(radio_ptr->rig);
-            if (radio_ptr->retcode != RIG_OK) {
-                throw std::runtime_error(tr("[ Hamlib ] Error with opening amateur radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->retcode))).toStdString());
-            }
-
             //
             // IMPORTANT!!!
             // Note from Hamlib Developers: As a general practice, we should check to see if a given function
             // is within the rig's capabilities before calling it, but we are simplifying here. Also, we should
             // check each call's returned status in case of error.
             //
-
-            //
-            // Power up the rig, electrically, if at all possible!
-            //
-            rig_get_powerstat(radio_ptr->rig, &radio_ptr->power_status);
-            if (radio_ptr->power_status == powerstat_t::RIG_POWER_OFF) {
-                radio_ptr->retcode = rig_set_powerstat(radio_ptr->rig, powerstat_t::RIG_POWER_ON);
-                if (radio_ptr->retcode != RIG_OK) {
-                    throw std::runtime_error(tr("[ Hamlib ] Error with powering on radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->retcode))).toStdString());
-                }
-            }
-
-            if (rig_get_info(radio_ptr->rig) != nullptr) {
-                radio_ptr->info_buf = rig_get_info(radio_ptr->rig);
+            if (radio_ptr->gkRig->getInfo() != nullptr) {
+                radio_ptr->info_buf = radio_ptr->gkRig->getInfo();
             }
 
             // Main VFO frequency
-            radio_ptr->status = rig_get_freq(radio_ptr->rig, RIG_VFO_CURR, &radio_ptr->freq);
-            if (radio_ptr->status != RIG_OK) {
-                throw std::runtime_error(tr("[ Hamlib ] Error with obtaining the primary VFO value for radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->status))).toStdString());
-            }
+            radio_ptr->freq = radio_ptr->gkRig->getFreq(RIG_VFO_CURR);
 
             // Current mode
-            radio_ptr->status = rig_get_mode(radio_ptr->rig, RIG_VFO_CURR, &radio_ptr->mode, &radio_ptr->width);
-            if (radio_ptr->status != RIG_OK) {
-                throw std::runtime_error(tr("[ Hamlib ] Error with obtaining current modulation for radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->status))).toStdString());
-            }
+            radio_ptr->mode = radio_ptr->gkRig->getMode(radio_ptr->width, RIG_VFO_CURR);
 
             // Determine the mode of modulation that's being currently used, and output as a textual value
             radio_ptr->mm = hamlibModulEnumToStr(radio_ptr->mode).toStdString();
 
             // Rig power output
-            radio_ptr->status = rig_get_level(radio_ptr->rig, RIG_VFO_CURR, RIG_LEVEL_RFPOWER, &radio_ptr->power);
-            if (radio_ptr->status != RIG_OK) {
-                throw std::runtime_error(tr("[ Hamlib ] Error with obtaining power output for radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->status))).toStdString());
+            if (radio_ptr->gkRig->hasGetLevel(RIG_LEVEL_RFPOWER)) {
+                radio_ptr->gkRig->getLevel(RIG_LEVEL_RFPOWER, radio_ptr->power, RIG_VFO_CURR);
             }
 
             // Convert power reading to watts
-            radio_ptr->status = rig_power2mW(radio_ptr->rig, &radio_ptr->mwpower, radio_ptr->power.f, radio_ptr->freq, radio_ptr->mode);
-            if (radio_ptr->status != RIG_OK) {
-                throw std::runtime_error(tr("[ Hamlib ] Error with converting signal power to watts for radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->status))).toStdString());
-            }
+            radio_ptr->gkRig->power2mW(radio_ptr->power, radio_ptr->freq, radio_ptr->mode);
 
             // Raw and calibrated S-meter values
-            radio_ptr->status = rig_get_level(radio_ptr->rig, RIG_VFO_CURR, RIG_LEVEL_RAWSTR, &radio_ptr->raw_strength);
-            if (radio_ptr->status != RIG_OK) {
-                throw std::runtime_error(tr("[ Hamlib ] Error with calibrating S-value output for radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->status))).toStdString());
+            if (radio_ptr->gkRig->hasGetLevel(RIG_LEVEL_RAWSTR)) {
+                radio_ptr->gkRig->getLevel(RIG_LEVEL_RAWSTR, radio_ptr->raw_strength, RIG_VFO_CURR);
             }
 
-            radio_ptr->isz = radio_ptr->rig->caps->str_cal.size; // TODO: No idea what this is for?
-
-            radio_ptr->status = rig_get_strength(radio_ptr->rig, RIG_VFO_CURR, &radio_ptr->strength);
-            if (radio_ptr->status != RIG_OK) {
-                throw std::runtime_error(tr("[ Hamlib ] Error with obtaining signal strength for radio rig:\n\n%1").arg(QString::fromStdString(rigerror(radio_ptr->status))).toStdString());
+            if (radio_ptr->gkRig->hasGetLevel(RIG_LEVEL_STRENGTH)) {
+                radio_ptr->gkRig->getLevel(RIG_LEVEL_STRENGTH, radio_ptr->strength, RIG_VFO_CURR);
             }
         }
-    } catch (const std::exception &e) {
-        #if defined(_MSC_VER) && (_MSC_VER > 1900)
-        HWND hwnd = nullptr;
-        modalDlgBoxOk(hwnd, tr("Error!"), e.what(), MB_ICONERROR);
-        DestroyWindow(hwnd);
-        #else
-        modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
-        #endif
+    } catch (const RigException &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("Unable to make a connection with your radio rig! Error:\n\n%1")
+                             .arg(QString::fromStdString(e.message)), QMessageBox::Ok) ;
     }
 
     return;
@@ -941,53 +825,53 @@ QString RadioLibs::hamlibModulEnumToStr(const rmode_t &modulation)
 {
     // NOTE: These are meant to be translatable!
     switch (modulation) {
-    case rmode_t::RIG_MODE_NONE:
+    case RIG_MODE_NONE:
         return tr("None");
-    case rmode_t::RIG_MODE_AM:
+    case RIG_MODE_AM:
         return tr("AM");
-    case rmode_t::RIG_MODE_CW:
+    case RIG_MODE_CW:
         return tr("CW");
-    case rmode_t::RIG_MODE_USB:
+    case RIG_MODE_USB:
         return tr("USB");
-    case rmode_t::RIG_MODE_LSB:
+    case RIG_MODE_LSB:
         return tr("LSB");
-    case rmode_t::RIG_MODE_RTTY:
+    case RIG_MODE_RTTY:
         return tr("RTTY");
-    case rmode_t::RIG_MODE_FM:
+    case RIG_MODE_FM:
         return tr("FM");
-    case rmode_t::RIG_MODE_WFM:
+    case RIG_MODE_WFM:
         return tr("Wide FM");
-    case rmode_t::RIG_MODE_CWR:
+    case RIG_MODE_CWR:
         return tr("CWR");
-    case rmode_t::RIG_MODE_RTTYR:
+    case RIG_MODE_RTTYR:
         return tr("RTTYR");
-    case rmode_t::RIG_MODE_AMS:
+    case RIG_MODE_AMS:
         return tr("AMS");
-    case rmode_t::RIG_MODE_PKTLSB:
+    case RIG_MODE_PKTLSB:
         return tr("PKT/LSB");
-    case rmode_t::RIG_MODE_PKTUSB:
+    case RIG_MODE_PKTUSB:
         return tr("PKT/USB");
-    case rmode_t::RIG_MODE_PKTFM:
+    case RIG_MODE_PKTFM:
         return tr("PKT/FM");
-    case rmode_t::RIG_MODE_ECSSUSB:
+    case RIG_MODE_ECSSUSB:
         return tr("ECSS/USB");
-    case rmode_t::RIG_MODE_ECSSLSB:
+    case RIG_MODE_ECSSLSB:
         return tr("ECSS/LSB");
-    case rmode_t::RIG_MODE_FAX:
+    case RIG_MODE_FAX:
         return tr("FAX");
-    case rmode_t::RIG_MODE_SAM:
+    case RIG_MODE_SAM:
         return tr("SAM");
-    case rmode_t::RIG_MODE_SAL:
+    case RIG_MODE_SAL:
         return tr("SAL");
-    case rmode_t::RIG_MODE_SAH:
+    case RIG_MODE_SAH:
         return tr("SAH");
-    case rmode_t::RIG_MODE_DSB:
+    case RIG_MODE_DSB:
         return tr("DSB");
-    case rmode_t::RIG_MODE_FMN:
+    case RIG_MODE_FMN:
         return tr("FM Narrow");
-    case rmode_t::RIG_MODE_PKTAM:
+    case RIG_MODE_PKTAM:
         return tr("PKT/AM");
-    case rmode_t::RIG_MODE_TESTS_MAX:
+    case RIG_MODE_TESTS_MAX:
         return tr("TESTS_MAX");
     default:
         tr("N/A");

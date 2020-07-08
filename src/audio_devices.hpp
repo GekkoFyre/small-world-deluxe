@@ -46,7 +46,6 @@
 #include "src/file_io.hpp"
 #include "src/pa_audio_buf.hpp"
 #include "src/gk_frequency_list.hpp"
-#include "src/gk_string_funcs.hpp"
 #include <QObject>
 #include <vector>
 #include <string>
@@ -66,14 +65,14 @@ class AudioDevices : public QObject {
 
 public:
     explicit AudioDevices(std::shared_ptr<GekkoFyre::GkLevelDb> gkDb, QPointer<GekkoFyre::FileIo> filePtr,
-                          QPointer<GekkoFyre::GkFreqList> freqList, std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs,
+                          QPointer<GekkoFyre::GkFrequencies> freqList, std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs,
                           QObject *parent = nullptr);
     ~AudioDevices();
 
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> initPortAudio(portaudio::System *portAudioSys);
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> defaultAudioDevices(portaudio::System *portAudioSys);
-    std::vector<double> enumSupportedStdSampleRates(const PaStreamParameters *inputParameters,
-                                                    const PaStreamParameters *outputParameters);
+    bool enumSupportedStdSampleRates(const PaStreamParameters *audioParameters, const double &sampleRateToTest,
+                                     const bool &isOutputDevice);
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> enumAudioDevices();
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> enumAudioDevicesCpp(portaudio::System *portAudioSys);
     GekkoFyre::Database::Settings::Audio::GkDevice gatherAudioDeviceDetails(portaudio::System *portAudioSys,
@@ -106,7 +105,7 @@ public:
 private:
     std::shared_ptr<GkLevelDb> gkDekodeDb;
     QPointer<GekkoFyre::FileIo> gkFileIo;
-    QPointer<GekkoFyre::GkFreqList> gkFreqList;
+    QPointer<GekkoFyre::GkFrequencies> gkFreqList;
     std::shared_ptr<StringFuncs> gkStringFuncs;
 
     bool filterAudioEnumPreexisting(const std::vector<Database::Settings::Audio::GkDevice> &device_vec,

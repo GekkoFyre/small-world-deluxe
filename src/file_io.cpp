@@ -235,7 +235,7 @@ QString FileIo::read_initial_settings(const Database::Settings::init_cfg &key)
         value = gkSettings->value(Settings::dbExt, "");
         break;
     case DbLoc:
-        value = gkSettings->value(Settings::dbLoc, QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation));
+        value = gkSettings->value(Settings::dbLoc, QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation));
         break;
     default:
         return "";

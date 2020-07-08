@@ -50,6 +50,7 @@
 #include <cmath>
 #include <iomanip>
 #include <sstream>
+#include <cstdlib>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -75,13 +76,14 @@ QVector<QString> DialogSettings::unique_mfgs = { "None" };
  */
 DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
                                QPointer<FileIo> filePtr,
-                               std::shared_ptr<GekkoFyre::AudioDevices> audioDevices,
-                               QPointer<GekkoFyre::RadioLibs> radioLibs,
+                               std::shared_ptr<AudioDevices> audioDevices,
+                               QPointer<RadioLibs> radioLibs,
                                std::shared_ptr<QSettings> settings,
                                portaudio::System *portAudioInit,
                                libusb_context *usb_lib_ctx,
                                std::shared_ptr<GkRadio> radioPtr,
                                const std::list<GekkoFyre::Database::Settings::GkComPort> &com_ports,
+                               QPointer<GkFrequencies> gkFreqList,
                                QWidget *parent)
     : QDialog(parent), ui(new Ui::DialogSettings)
 {
@@ -98,11 +100,20 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
         gkAudioDevices = std::move(audioDevices);
         usb_ctx_ptr = std::move(usb_lib_ctx);
         gkRadioPtr = std::move(radioPtr);
+        gkFreqs = std::move(gkFreqList);
         status_com_ports = com_ports;
 
-        gkSettings = settings;
+        gkSettings = std::move(settings);
         usb_ports_active = false;
         com_ports_active = false;
+
+        //
+        // The detectable and thusly, testable, PortAudio 'sample rates' for each found audio device on the user's system!
+        //
+        standardSampleRates = {
+            8000.0, 9600.0, 11025.0, 12000.0, 16000.0, 22050.0, 24000.0, 32000.0,
+            44100.0, 48000.0, 88200.0, 96000.0, 192000.0, -1 /* negative terminated list */
+        };
 
         QObject::connect(this, SIGNAL(usbPortsDisabled(const bool &)), this, SLOT(disableUsbPorts(const bool &)));
         QObject::connect(this, SIGNAL(comPortsDisabled(const bool &)), this, SLOT(disableComPorts(const bool &)));
@@ -230,27 +241,27 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         //
         // RS-232 Settings
         //
-        std::string chosen_com_port_cat;
-        std::string chosen_com_port_ptt;
+        QString chosen_com_port_cat;
+        QString chosen_com_port_ptt;
         for (const auto &sel_port: available_com_ports.toStdMap()) {
             for (const auto &avail_port: status_com_ports) {
                 // List out the current serial ports in use
                 if (com_device_cat == sel_port.second) {
-                    if (sel_port.first == avail_port.port_info.description) {
+                    if (sel_port.first == avail_port.port_info.description()) {
                         //
                         // CAT Control
                         //
-                        chosen_com_port_cat = avail_port.port_info.port; // The chosen serial device uses its own name as a reference
+                        chosen_com_port_cat = avail_port.port_info.portName(); // The chosen serial device uses its own name as a reference
                         break;
                     }
                 }
 
                 if (com_device_ptt == sel_port.second) {
-                    if (sel_port.first == avail_port.port_info.description) {
+                    if (sel_port.first == avail_port.port_info.description()) {
                         //
                         // PTT Method
                         //
-                        chosen_com_port_ptt = avail_port.port_info.port; // The chosen serial device uses its own name as a reference
+                        chosen_com_port_ptt = avail_port.port_info.portName(); // The chosen serial device uses its own name as a reference
                         break;
                     }
                 }
@@ -421,8 +432,8 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         enum_force_ctrl_lines_dtr = ui->comboBox_force_ctrl_lines_dtr->currentIndex();
         enum_force_ctrl_lines_rts = ui->comboBox_force_ctrl_lines_rts->currentIndex();
 
-        gkDekodeDb->write_rig_settings_comms(QString::fromStdString(chosen_com_port_cat), radio_cfg::ComDeviceCat, GkConnType::RS232);
-        gkDekodeDb->write_rig_settings_comms(QString::fromStdString(chosen_com_port_ptt), radio_cfg::ComDevicePtt, GkConnType::RS232);
+        gkDekodeDb->write_rig_settings_comms(chosen_com_port_cat, radio_cfg::ComDeviceCat, GkConnType::RS232);
+        gkDekodeDb->write_rig_settings_comms(chosen_com_port_ptt, radio_cfg::ComDevicePtt, GkConnType::RS232);
         gkDekodeDb->write_rig_settings_comms(QString::fromStdString(chosen_usb_port_cat), radio_cfg::UsbDeviceCat, GkConnType::USB);
         gkDekodeDb->write_rig_settings_comms(QString::fromStdString(chosen_usb_port_ptt), radio_cfg::UsbDevicePtt, GkConnType::USB);
 
@@ -555,6 +566,21 @@ void DialogSettings::prefill_audio_api_avail(const QVector<PaHostApiTypeId> &por
     try {
         // Garner the list of APIs!
         if (!portaudio_api_vec.isEmpty()) {
+            //
+            // Prefill the QComboBoxes containing the Sample Frequencies that can be tested for each PortAudio detected audio/multimedia device!
+            //
+            int sample_rate_idx = 0;
+            for (const auto &sample_rate: standardSampleRates) {
+                if (sample_rate != -1) { // Insert all numbers but the terminating number of '1'!
+                    ui->comboBox_audio_input_sample_rate->insertItem(sample_rate_idx, QString::number(std::abs(sample_rate)), sample_rate_idx);
+                    ui->comboBox_audio_output_sample_rate->insertItem(sample_rate_idx, QString::number(std::abs(sample_rate)), sample_rate_idx);
+                    ++sample_rate_idx;
+                }
+            }
+
+            //
+            // Prefill the QComboBox responsible for displaying the PortAudio detected multimedia APIs on the user's system!
+            //
             for (const auto &pa_api: portaudio_api_vec) {
                 QString api_str_tmp = gkDekodeDb->portAudioApiToStr(pa_api);
                 int underlying_api_int = to_underlying(pa_api);
@@ -591,7 +617,7 @@ void DialogSettings::prefill_audio_api_avail(const QVector<PaHostApiTypeId> &por
  * @param audio_devices The available audio devices on the user's system, as a typical std::vector.
  * @see GekkoFyre::AudioDevices::enumAudioDevices(), AudioDevices::filterPortAudioHostType().
  */
-void DialogSettings::prefill_audio_devices(std::vector<GkDevice> audio_devices_vec)
+void DialogSettings::prefill_audio_devices(const std::vector<GkDevice> &audio_devices_vec)
 {
     try {
         if (!avail_portaudio_api.isEmpty()) {
@@ -735,6 +761,68 @@ void DialogSettings::init_station_info()
 }
 
 /**
+ * @brief DialogSettings::print_exception
+ * @param e
+ * @param level
+ */
+void DialogSettings::print_exception(const std::exception &e, int level)
+{
+    QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
+
+    try {
+        std::rethrow_if_nested(e);
+    } catch (const std::exception &e) {
+        print_exception(e, level + 1);
+    } catch (...) {}
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::convQComboBoxSampleRateToDouble
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param combobox_idx
+ * @return
+ */
+double DialogSettings::convQComboBoxSampleRateToDouble(const int &combobox_idx)
+{
+    switch (combobox_idx) {
+    case 0:
+        return 8000.0;
+    case 1:
+        return 9600.0;
+    case 2:
+        return 11025.0;
+    case 3:
+        return 12000.0;
+    case 4:
+        return 16000.0;
+    case 5:
+        return 22050.0;
+    case 6:
+        return 24000.0;
+    case 7:
+        return 32000.0;
+    case 8:
+        return 44100.0;
+    case 9:
+        return 48000.0;
+    case 10:
+        return 88200.0;
+    case 11:
+        return 96000.0;
+    case 12:
+        return 8000.0;
+    case 13:
+        return 192000.0;
+    default:
+        break;
+    }
+
+    return -1.0f;
+}
+
+/**
  * @brief DialogSettings::collectComboBoxIndexes Collects the actual item index (i.e. GkDevice::dev_number()), and
  * returns it as a QMap<int, int>().
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -818,16 +906,16 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
                 //
                 // CAT Control
                 //
-                ui->comboBox_com_port->insertItem(counter, QString::fromStdString(port.port_info.port),
-                                                  QString::fromStdString(port.port_info.port));
+                ui->comboBox_com_port->insertItem(counter, QString::fromStdString(port.port_info.portName().toStdString()),
+                                                  QString::fromStdString(port.port_info.portName().toStdString()));
 
                 //
                 // PTT Method
                 //
-                ui->comboBox_ptt_method_port->insertItem(counter, QString::fromStdString(port.port_info.port),
-                                                         QString::fromStdString(port.port_info.port));\
+                ui->comboBox_ptt_method_port->insertItem(counter, QString::fromStdString(port.port_info.portName().toStdString()),
+                                                         QString::fromStdString(port.port_info.portName().toStdString()));\
 
-                available_com_ports.insert(port.port_info.description, counter);
+                available_com_ports.insert(port.port_info.description(), counter);
             }
 
             //
@@ -837,7 +925,7 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
             if (!comDeviceCat.isEmpty() && !available_com_ports.isEmpty()) {
                 for (const auto &sel_port: available_com_ports.toStdMap()) {
                     for (const auto &device: status_com_ports) {
-                        if ((device.port_info.description == sel_port.first) && (comDeviceCat.toStdString() == device.port_info.port)) {
+                        if ((device.port_info.description() == sel_port.first) && (comDeviceCat.toStdString() == device.port_info.portName().toStdString())) {
                             // NOTE: The recorded setting used to identify the chosen serial device is the COM Port name
                             ui->comboBox_com_port->setCurrentIndex(sel_port.second);
                             on_comboBox_com_port_currentIndexChanged(sel_port.second);
@@ -853,7 +941,7 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
             if (!comDevicePtt.isEmpty() && !available_com_ports.isEmpty()) {
                 for (const auto &sel_port: available_com_ports.toStdMap()) {
                     for (const auto &device: status_com_ports) {
-                        if ((device.port_info.description == sel_port.first) && (comDevicePtt.toStdString() == device.port_info.port)) {
+                        if ((device.port_info.description() == sel_port.first) && (comDevicePtt.toStdString() == device.port_info.portName().toStdString())) {
                             // NOTE: The recorded setting used to identify the chosen serial device is the COM Port name
                             ui->comboBox_ptt_method_port->setCurrentIndex(sel_port.second);
                             on_comboBox_ptt_method_port_currentIndexChanged(sel_port.second);
@@ -1381,7 +1469,7 @@ bool DialogSettings::read_settings()
             ui->lineEdit_db_save_loc->setText(settingsDbLoc);
         } else {
             // Point to a default directory...
-            ui->lineEdit_db_save_loc->setText(gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)));
+            ui->lineEdit_db_save_loc->setText(gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation)));
         }
 
         //
@@ -1445,14 +1533,14 @@ void DialogSettings::on_comboBox_com_port_currentIndexChanged(int index)
                         //
                         emit changePortType(GekkoFyre::AmateurRadio::GkConnType::USB, true);
                         return;
-                    } else if (QString::fromStdString(com_port_list.port_info.port) == ui->comboBox_com_port->currentData().toString()) {
+                    } else if (com_port_list.port_info.portName() == ui->comboBox_com_port->currentData().toString()) {
                         //
                         // An RS232 port has been chosen!
                         //
                         #ifdef _UNICODE
                         ui->lineEdit_device_port_name->setText(QString::fromStdWString(com_port_list.second.first));
                         #else
-                        ui->lineEdit_device_port_name->setText(QString::fromStdString(com_port_list.port_info.description));
+                        ui->lineEdit_device_port_name->setText(com_port_list.port_info.systemLocation());
                         #endif
 
                         emit changePortType(GekkoFyre::AmateurRadio::GkConnType::RS232, true);
@@ -1495,14 +1583,14 @@ void DialogSettings::on_comboBox_ptt_method_port_currentIndexChanged(int index)
                         //
                         emit changePortType(GekkoFyre::AmateurRadio::GkConnType::USB, false);
                         return;
-                    } else if (QString::fromStdString(com_port_list.port_info.port) == ui->comboBox_com_port->currentData().toString()) {
+                    } else if (com_port_list.port_info.portName() == ui->comboBox_com_port->currentData().toString()) {
                         //
                         // An RS232 port has been chosen!
                         //
                         #ifdef _UNICODE
                         ui->lineEdit_ptt_method_dev_path->setText(QString::fromStdWString(com_port_list.second.first));
                         #else
-                        ui->lineEdit_ptt_method_dev_path->setText(QString::fromStdString(com_port_list.port_info.description));
+                        ui->lineEdit_ptt_method_dev_path->setText(com_port_list.port_info.systemLocation());
                         #endif
 
                         emit changePortType(GekkoFyre::AmateurRadio::GkConnType::RS232, false);
@@ -1532,7 +1620,7 @@ void DialogSettings::on_comboBox_ptt_method_port_currentIndexChanged(int index)
 void DialogSettings::on_pushButton_db_save_loc_clicked()
 {
     QString dirName = QFileDialog::getExistingDirectory(this, tr("Choose a location to save the SWD application database"),
-                                                        gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation), true),
+                                                        gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation), true),
                                                         QFileDialog::ShowDirsOnly);
 
     if (!dirName.isEmpty()) {
@@ -1696,6 +1784,40 @@ void DialogSettings::on_comboBox_soundcard_output_currentIndexChanged(int index)
     } catch (...) {
         QMessageBox::warning(this, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), QMessageBox::Ok);
     }
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::on_comboBox_audio_input_sample_rate_currentIndexChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ */
+void DialogSettings::on_comboBox_audio_input_sample_rate_currentIndexChanged(int index)
+{
+    Q_UNUSED(index);
+
+    //
+    // Input audio device!
+    //
+    gkAudioDevices->enumSupportedStdSampleRates(&chosen_input_audio_dev.stream_parameters, convQComboBoxSampleRateToDouble(ui->comboBox_audio_input_sample_rate->currentIndex()), false);
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::on_comboBox_audio_output_sample_rate_currentIndexChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ */
+void DialogSettings::on_comboBox_audio_output_sample_rate_currentIndexChanged(int index)
+{
+    Q_UNUSED(index);
+
+    //
+    // Output audio device!
+    //
+    gkAudioDevices->enumSupportedStdSampleRates(&chosen_output_audio_dev.stream_parameters, convQComboBoxSampleRateToDouble(ui->comboBox_audio_output_sample_rate->currentIndex()), true);
 
     return;
 }
