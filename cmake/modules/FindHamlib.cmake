@@ -48,7 +48,7 @@ find_path(HAMLIB_INCLUDE_DIR
     PATH_SUFFIXES hamlib)
 
 find_library(HAMLIB_LIBRARY
-    NAMES  "hamlib" "libhamlib" "hamlib-2" "libhamlib-2" "hamlib++" "libhamlib++"
+    NAMES  "hamlib" "libhamlib" "hamlib-2" "libhamlib-2"
     HINTS ${PC_HAMLIB_LIBDIR} ${PC_HAMLIB_LIBRARY_DIRS})
 
 include(FindPackageHandleStandardArgs)

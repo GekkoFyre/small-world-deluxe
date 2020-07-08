@@ -75,7 +75,7 @@ if(CMAKE_VERSION VERSION_LESS "3.7.0")
 endif()
 
 set(CMAKE_MODULE_PATH
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/";
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/"
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/third-party/basic-c-sdl-project/cmake/sdl2/")
 
 #
@@ -83,9 +83,11 @@ set(CMAKE_MODULE_PATH
 #
 option(GFYRE_PACKAGE_MAINTAINER "Are you a package maintainer? If so, set this option to `ON`! It'll enable specific build settings to make your life easier." ON)
 option(GFYRE_BUILD_STATIC "Build Small World Deluxe as a static library/package. This will result in a larger executable at the benefit of requiring less DLL dependencies." ON)
-option(GFYRE_BUILD_SHARED "*** This option is not fully developed yet! *** Build Small World Deluxe as a shared library/package. This will result in a smaller executable at the cost of requiring further DLL dependencies." OFF)
-option(GFYRE_HAMLIB_DBG_VERBOSITY "Enable DEBUG verbosity for the Hamlib library and its use throughout Small World Deluxe. *** Only recommended for programmers and/or possibly maintainers of the project itself! ***" OFF)
-option(GFYRE_BUILD_CODEC2 "*** This feature is in heavy development! *** Build with support for Codec2 <https://github.com/drowe67/codec2>." OFF)
+option(GFYRE_BUILD_SHARED "Build Small World Deluxe as a shared library/package. This will result in a smaller executable at the cost of requiring further DLL dependencies." OFF)
+option(GFYRE_HAMLIB_DBG_VERBOSITY "Enable DEBUG verbosity for the Hamlib library and its use throughout Small World Deluxe." OFF)
+
+option(BUILD_CODEC2_SUPPORT "Enable support for the 'Codec2' open source speech codec library." ON)
+option(BUILD_OPUS_SUPPORT "Enable support for the 'Opus' codec library." OFF)
 
 #
 # Detect if we are dealing with the Linux operating system and not Apple OS/X
@@ -149,8 +151,7 @@ find_package(Boost 1.54.0 REQUIRED COMPONENTS "filesystem"
                                               "exception"
                                               "chrono"
                                               "locale"
-                                              "random"
-                                              "locale")
+                                              "random")
                                               
 if(WIN32 OR MSYS OR MINGW)
     if(${GFYRE_PACKAGE_MAINTAINER} EQUAL ON)
@@ -232,9 +233,33 @@ if (HAMLIB_FOUND)
     include_directories(${HAMLIB_INCLUDE_DIRS})
     set(LIBS ${LIBS} ${HAMLIB_LIBRARIES})
     ADD_DEFINITIONS(-DUSE_HAMLIB=1)
+
+    find_package(HamlibCpp REQUIRED)
+    if (HAMLIBCPP_FOUND)
+        include_directories(${HAMLIBCPP_INCLUDE_DIRS})
+        set(LIBS ${LIBS} ${HAMLIBCPP_LIBRARIES})
+    else()
+        message(FATAL_ERROR "The 'Hamlib' amateur radio C++ library bindings could not be found!")
+    endif(HAMLIBCPP_FOUND)
 else()
     message(FATAL_ERROR "The 'Hamlib' amateur radio library could not be found!")
 endif(HAMLIB_FOUND)
+
+if (BUILD_CODEC2_SUPPORT)
+    if (MSYS OR MINGW OR LINUX OR UNIX)
+        message(STATUS "Support for 'Codec2' has been enabled! Finding package...")
+        find_package(Codec2 REQUIRED)
+        if (CODEC2_FOUND)
+            include_directories(${CODEC2_INCLUDE_DIRS})
+            set(LIBS ${LIBS} ${CODEC2_LIBRARIES})
+            add_definitions("-DCODEC2_LIBS_ENBLD")
+        else()
+            message(FATAL_ERROR "The 'Codec2' open source speech codec library could not be found!")
+        endif(CODEC2_FOUND)
+    else()
+        message(WARNING "Support for 'Codec2' is only possible with *nix systems or Macintosh OS/X! MinGW is another option if you're using Microsoft Windows.")
+    endif()
+endif(BUILD_CODEC2_SUPPORT)
 
 find_package(USB REQUIRED)
 if (USB_FOUND)
@@ -277,13 +302,17 @@ endif(Ogg_FOUND)
 #
 # http://opus-codec.org/
 #
-find_package(Opus REQUIRED)
-if (Opus_FOUND)
-    include_directories(${Opus_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${Opus_LIBRARIES})
-else()
-    message(SEND_ERROR "The 'Opus' audio (de-/en-)coding library could not be found!")
-endif(Opus_FOUND)
+if (BUILD_OPUS_SUPPORT)
+    message(STATUS "Support for 'Opus' has been enabled! Finding package...")
+    find_package(Opus REQUIRED)
+    if (Opus_FOUND)
+        include_directories(${Opus_INCLUDE_DIRS})
+        set(LIBS ${LIBS} ${Opus_LIBRARIES})
+        add_definitions("-DOPUS_LIBS_ENBLD")
+    else()
+        message(SEND_ERROR "The 'Opus' audio (de-/en-)coding library could not be found!")
+    endif(Opus_FOUND)
+endif(BUILD_OPUS_SUPPORT)
 
 find_package(Iconv REQUIRED)
 if (Iconv_FOUND)
@@ -327,63 +356,6 @@ if(WIN32 OR MSYS OR MINGW)
 endif()
 
 set_property(SOURCE ${GALAXY_PORTAUDIO_CPP} PROPERTY SKIP_AUTOUIC ON)
-
-if(GFYRE_BUILD_CODEC2)
-    #
-    # Codec2 library
-    #
-    #
-    # Set project version information. This should probably be done via external
-    # file at some point.
-    #
-    set(CMAKE_REQUIRED_LIBRARIES m)
-    set(CODEC2_VERSION_MAJOR 0)
-    set(CODEC2_VERSION_MINOR 9)
-    # Set to patch level if needed, otherwise leave FALSE.
-    # Must be positive (non-zero) if set, since 0 == FALSE in CMake.
-    set(CODEC2_VERSION_PATCH 2)
-    set(CODEC2_VERSION "${CODEC2_VERSION_MAJOR}.${CODEC2_VERSION_MINOR}")
-    # Patch level version bumps should not change API/ABI.
-    set(SOVERSION "${CODEC2_VERSION_MAJOR}.${CODEC2_VERSION_MINOR}")
-    if(CODEC2_VERSION_PATCH)
-        set(CODEC2_VERSION "${CODEC2_VERSION}.${CODEC2_VERSION_PATCH}")
-    endif()
-    message(STATUS "codec2 version: ${CODEC2_VERSION}")
-
-    if (MSYS OR MINGW OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-        option(CMAKE_CROSSCOMPILING "Build Codec2 as a cross-compiled library." OFF)
-    endif()
-
-    #
-    # Find lpcnet library
-    #
-    if(LPCNET)
-        if(LPCNET_BUILD_DIR)
-            find_package(lpcnetfreedv REQUIRED
-                PATHS ${LPCNET_BUILD_DIR}
-                NO_DEFAULT_PATH
-                CONFIGS lpcnetfreedv.cmake
-            )
-            if(lpcnetfreedv_FOUND)
-                message(STATUS "liblpcnetfreedv found in build tree.")
-                add_definitions("-D__LPCNET__")
-            else()
-                message(FATAL_ERROR "LPCNet include/library not found in build tree.")
-            endif()
-        else()
-            find_package(lpcnetfreedv REQUIRED)
-            if(lpcnetfreedv_FOUND)
-                add_definitions("-D__LPCNET__")
-                message(STATUS "liblpcnetfreedv found.")
-            else()
-                message(FATAL_ERROR "lpcnetfreedv library not found.")
-            endif()
-        endif()
-    endif()
-    
-    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/codec2/src")
-    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/codec2/misc")
-endif(GFYRE_BUILD_CODEC2)
 
 #
 # SingleApplication
@@ -438,7 +410,8 @@ set(GALAXY_UI_CPP
     src/gk_cli.cpp
     src/gk_modem.cpp
     src/gk_frequency_list.cpp
-    src/gk_string_funcs.cpp)
+    src/gk_string_funcs.cpp
+    src/gk_codec2.cpp)
 
 if(WIN32 OR MSYS OR MINGW)
     # Nothing here at the moment!
@@ -506,7 +479,8 @@ set(GALAXY_OBJ_HEADERS
     src/gk_modem.hpp
     src/gk_frequency_list.hpp
     src/gk_string_funcs.hpp
-    src/gk_messagebox.hpp)
+    src/gk_messagebox.hpp
+    src/gk_codec2.hpp)
 
 if(WIN32 OR MSYS OR MINGW)
     # Nothing here at the moment!
@@ -525,7 +499,8 @@ set(GALAXY_SRC_HEADERS
     src/pa_sinewave.hpp
     src/gk_timer.hpp
     src/gk_circ_buffer.hpp
-    src/gk_fft.hpp)
+    src/gk_fft.hpp
+    src/contrib/rapidcsv/src/rapidcsv.h)
 
 if(LINUX)
     set(GALAXY_SRC_HEADERS
@@ -682,9 +657,9 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     # Using Microsoft Visual Studio C++
     if(CMAKE_BUILD_TYPE MATCHES "Debug")
-    add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W3 /WX)
+        add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W3 /WX)
     elseif(CMAKE_BUILD_TYPE MATCHES "Release")
-    add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W3 /WX /GL)
+        add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W3 /WX /GL)
     endif()
 endif()
 

@@ -43,15 +43,16 @@
 
 #include "src/defines.hpp"
 #include <QObject>
+#include <QList>
 
 namespace GekkoFyre {
 
-class GkFreqList : public QObject {
+class GkFrequencies : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkFreqList(QObject *parent = nullptr);
-    ~GkFreqList();
+    explicit GkFrequencies(QObject *parent = nullptr);
+    ~GkFrequencies();
 
     void publishFreqList();
 
@@ -60,9 +61,20 @@ public:
     bool definitelyGreaterThan(const float &a, const float &b, const float &epsilon);
     bool definitelyLessThan(const float &a, const float &b, const float &epsilon);
 
+    QList<GekkoFyre::AmateurRadio::GkFreqs> listOfFreqs();
+    int size();
+    GekkoFyre::AmateurRadio::GkFreqs at(const int &idx);
+
 signals:
-    void updateFrequencies(const float &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
+    void updateFrequencies(const quint64 &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
                            const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq);
+
+private slots:
+    void updateFreqsInMem(const quint64 &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
+                          const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq);
+
+private:
+    QList<GekkoFyre::AmateurRadio::GkFreqs> frequencyList;
 
 };
 };

@@ -42,21 +42,23 @@
 #include "src/dek_db.hpp"
 #include "src/audio_devices.hpp"
 #include <boost/logic/tribool.hpp>
+#include <list>
+#include <tuple>
 #include <memory>
 #include <vector>
 #include <string>
-#include <tuple>
-#include <list>
+#include <stdexcept>
+#include <exception>
 #include <type_traits>
-#include <QSharedPointer>
+#include <QMap>
 #include <QDialog>
 #include <QString>
-#include <QMap>
 #include <QVector>
 #include <QPointer>
 #include <QMultiMap>
 #include <QComboBox>
 #include <QSettings>
+#include <QSharedPointer>
 
 namespace Ui {
 class DialogSettings;
@@ -76,6 +78,7 @@ public:
                             libusb_context *usb_lib_ctx,
                             std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> radioPtr,
                             const std::list<GekkoFyre::Database::Settings::GkComPort> &com_ports,
+                            QPointer<GekkoFyre::GkFrequencies> gkFreqList,
                             QWidget *parent = nullptr);
     ~DialogSettings();
 
@@ -89,6 +92,8 @@ private slots:
     void on_pushButton_audio_logs_save_dir_clicked();
     void on_comboBox_soundcard_input_currentIndexChanged(int index = -1);
     void on_comboBox_soundcard_output_currentIndexChanged(int index = -1);
+    void on_comboBox_audio_input_sample_rate_currentIndexChanged(int index);
+    void on_comboBox_audio_output_sample_rate_currentIndexChanged(int index);
     void on_comboBox_soundcard_api_currentIndexChanged(int index = -1);
     void on_comboBox_brand_selection_currentIndexChanged(const QString &arg1);
     void on_comboBox_com_port_currentIndexChanged(int index);
@@ -191,6 +196,8 @@ private:
     portaudio::System *gkPortAudioInit;
     libusb_context *usb_ctx_ptr;
 
+    std::vector<double> standardSampleRates;
+
     QPointer<GekkoFyre::RadioLibs> gkRadioLibs;
     std::shared_ptr<GekkoFyre::GkLevelDb> gkDekodeDb;
     QPointer<GekkoFyre::FileIo> gkFileIo;
@@ -228,6 +235,7 @@ private:
     static int prefill_rig_selection(const rig_caps *caps, void *data);
     static QMultiMap<rig_model_t, std::tuple<QString, QString, GekkoFyre::AmateurRadio::rig_type>> init_model_names();
 
+    QPointer<GekkoFyre::GkFrequencies> gkFreqs;
     std::shared_ptr<QSettings> gkSettings;
 
     void prefill_audio_api_avail(const QVector<PaHostApiTypeId> &portaudio_api_vec);
@@ -235,6 +243,9 @@ private:
     void prefill_audio_encode_comboboxes();
     void init_working_freqs();
     void init_station_info();
+
+    void print_exception(const std::exception &e, int level = 0);
+    double convQComboBoxSampleRateToDouble(const int &combobox_idx);
 
     QMap<int, int> collectComboBoxIndexes(const QComboBox *combo_box);
     void prefill_rig_force_ctrl_lines(const ptt_type_t &ptt_type);

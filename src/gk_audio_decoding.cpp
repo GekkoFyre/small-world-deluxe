@@ -54,11 +54,14 @@ extern "C"
 {
 #endif
 
+#ifdef OPUS_LIBS_ENBLD
+#include <opus_multistream.h>
+#endif
+
 #include <ogg/ogg.h>
 #include <vorbis/codec.h>
 #include <vorbis/vorbisenc.h>
 #include <vorbis/vorbisfile.h>
-#include <opus_multistream.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -183,6 +186,7 @@ uint32_t GkAudioDecoding::char_to_int(char ch[])
             static_cast<uint32_t>(static_cast<unsigned char>(ch[3])<< 0);
 }
 
+#ifdef OPUS_LIBS_ENBLD
 /**
  * @brief GkAudioDecoding::decodeOpusFrame
  * @author sehe <https://stackoverflow.com/questions/16496288/decoding-opus-audio-data>
@@ -261,6 +265,7 @@ bool GkAudioDecoding::decodeOpusFrame(std::istream &file_in, std::ostream &file_
 
     return true;
 }
+#endif
 
 /**
  * @brief GkAudioDecoding::readOgg
@@ -326,7 +331,9 @@ long GkAudioDecoding::tellOgg(void *data_source)
     return static_cast<long>(position);
 }
 
+#ifdef OPUS_LIBS_ENBLD
 const char *GkAudioDecoding::OpusErrorException::what() const noexcept
 {
     return opus_strerror(code);
 }
+#endif

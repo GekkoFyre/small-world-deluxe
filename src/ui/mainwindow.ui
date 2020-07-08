@@ -151,10 +151,10 @@ color: white;</string>
     <item>
      <widget class="QFrame" name="frame_mesg_disp">
       <property name="frameShape">
-       <enum>QFrame::StyledPanel</enum>
+       <enum>QFrame::NoFrame</enum>
       </property>
       <property name="frameShadow">
-       <enum>QFrame::Raised</enum>
+       <enum>QFrame::Plain</enum>
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout">
        <property name="leftMargin">
@@ -178,10 +178,10 @@ color: white;</string>
           </sizepolicy>
          </property>
          <property name="frameShape">
-          <enum>QFrame::StyledPanel</enum>
+          <enum>QFrame::NoFrame</enum>
          </property>
          <property name="frameShadow">
-          <enum>QFrame::Raised</enum>
+          <enum>QFrame::Plain</enum>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_2">
           <property name="leftMargin">
@@ -238,10 +238,10 @@ color: white;</string>
           </sizepolicy>
          </property>
          <property name="frameShape">
-          <enum>QFrame::StyledPanel</enum>
+          <enum>QFrame::NoFrame</enum>
          </property>
          <property name="frameShadow">
-          <enum>QFrame::Raised</enum>
+          <enum>QFrame::Plain</enum>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_3">
           <property name="leftMargin">
@@ -312,10 +312,10 @@ color: white;</string>
           </sizepolicy>
          </property>
          <property name="frameShape">
-          <enum>QFrame::StyledPanel</enum>
+          <enum>QFrame::NoFrame</enum>
          </property>
          <property name="frameShadow">
-          <enum>QFrame::Raised</enum>
+          <enum>QFrame::Plain</enum>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_4">
           <property name="leftMargin">
@@ -384,10 +384,10 @@ color: white;</string>
     <item>
      <widget class="QFrame" name="frame_spectrograph">
       <property name="frameShape">
-       <enum>QFrame::StyledPanel</enum>
+       <enum>QFrame::NoFrame</enum>
       </property>
       <property name="frameShadow">
-       <enum>QFrame::Raised</enum>
+       <enum>QFrame::Plain</enum>
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout_3">
        <property name="leftMargin">
@@ -441,10 +441,10 @@ color: white;</string>
           </sizepolicy>
          </property>
          <property name="frameShape">
-          <enum>QFrame::StyledPanel</enum>
+          <enum>QFrame::NoFrame</enum>
          </property>
          <property name="frameShadow">
-          <enum>QFrame::Raised</enum>
+          <enum>QFrame::Plain</enum>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_9">
           <property name="leftMargin">
@@ -468,10 +468,10 @@ color: white;</string>
              </sizepolicy>
             </property>
             <property name="frameShape">
-             <enum>QFrame::StyledPanel</enum>
+             <enum>QFrame::NoFrame</enum>
             </property>
             <property name="frameShadow">
-             <enum>QFrame::Raised</enum>
+             <enum>QFrame::Plain</enum>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_11">
              <property name="leftMargin">
@@ -486,6 +486,112 @@ color: white;</string>
              <property name="bottomMargin">
               <number>0</number>
              </property>
+             <item>
+              <widget class="QTabWidget" name="tabWidget_maingui">
+               <property name="currentIndex">
+                <number>0</number>
+               </property>
+               <property name="elideMode">
+                <enum>Qt::ElideLeft</enum>
+               </property>
+               <property name="tabBarAutoHide">
+                <bool>true</bool>
+               </property>
+               <widget class="QWidget" name="tab_maingui_spectro_waterfall">
+                <attribute name="title">
+                 <string>Spectrograph / Waterfall</string>
+                </attribute>
+                <layout class="QHBoxLayout" name="horizontalLayout_12">
+                 <property name="spacing">
+                  <number>0</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="QFrame" name="frame_maingui_spectro_waterfall">
+                   <property name="frameShape">
+                    <enum>QFrame::NoFrame</enum>
+                   </property>
+                   <property name="frameShadow">
+                    <enum>QFrame::Plain</enum>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+               <widget class="QWidget" name="tab_maingui_sstv">
+                <attribute name="title">
+                 <string>SSTV</string>
+                </attribute>
+                <attribute name="toolTip">
+                 <string>Slow Scan Television (&quot;SSTV&quot;).</string>
+                </attribute>
+               </widget>
+               <widget class="QWidget" name="tab_maingui_logs">
+                <attribute name="title">
+                 <string>Logs</string>
+                </attribute>
+                <layout class="QVBoxLayout" name="verticalLayout_12">
+                 <item>
+                  <widget class="QFrame" name="frame_maingui_logs">
+                   <property name="frameShape">
+                    <enum>QFrame::NoFrame</enum>
+                   </property>
+                   <property name="frameShadow">
+                    <enum>QFrame::Plain</enum>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_13">
+                    <property name="spacing">
+                     <number>0</number>
+                    </property>
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <item>
+                     <widget class="QTableWidget" name="tableWidget_maingui_logs">
+                      <column>
+                       <property name="text">
+                        <string>Event No.</string>
+                       </property>
+                      </column>
+                      <column>
+                       <property name="text">
+                        <string>Date &amp; Time</string>
+                       </property>
+                      </column>
+                      <column>
+                       <property name="text">
+                        <string>Message</string>
+                       </property>
+                      </column>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </widget>
+             </item>
             </layout>
            </widget>
           </item>
@@ -498,10 +604,10 @@ color: white;</string>
              </sizepolicy>
             </property>
             <property name="frameShape">
-             <enum>QFrame::StyledPanel</enum>
+             <enum>QFrame::NoFrame</enum>
             </property>
             <property name="frameShadow">
-             <enum>QFrame::Raised</enum>
+             <enum>QFrame::Plain</enum>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_10">
              <property name="leftMargin">
@@ -519,10 +625,10 @@ color: white;</string>
              <item>
               <widget class="QFrame" name="frame_spect_buttons_top">
                <property name="frameShape">
-                <enum>QFrame::StyledPanel</enum>
+                <enum>QFrame::NoFrame</enum>
                </property>
                <property name="frameShadow">
-                <enum>QFrame::Raised</enum>
+                <enum>QFrame::Plain</enum>
                </property>
                <layout class="QHBoxLayout" name="horizontalLayout_4">
                 <property name="leftMargin">
@@ -632,10 +738,10 @@ QPushButton:disabled {
              <item>
               <widget class="QFrame" name="frame_spect_buttons_bottom">
                <property name="frameShape">
-                <enum>QFrame::StyledPanel</enum>
+                <enum>QFrame::NoFrame</enum>
                </property>
                <property name="frameShadow">
-                <enum>QFrame::Raised</enum>
+                <enum>QFrame::Plain</enum>
                </property>
                <layout class="QHBoxLayout" name="horizontalLayout_5">
                 <property name="leftMargin">
@@ -796,10 +902,10 @@ QPushButton:disabled {
           </sizepolicy>
          </property>
          <property name="frameShape">
-          <enum>QFrame::StyledPanel</enum>
+          <enum>QFrame::NoFrame</enum>
          </property>
          <property name="frameShadow">
-          <enum>QFrame::Raised</enum>
+          <enum>QFrame::Plain</enum>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_7">
           <property name="leftMargin">
@@ -815,12 +921,12 @@ QPushButton:disabled {
            <number>0</number>
           </property>
           <item>
-           <widget class="QFrame" name="frame">
+           <widget class="QFrame" name="frame_vol_control">
             <property name="frameShape">
-             <enum>QFrame::StyledPanel</enum>
+             <enum>QFrame::NoFrame</enum>
             </property>
             <property name="frameShadow">
-             <enum>QFrame::Raised</enum>
+             <enum>QFrame::Plain</enum>
             </property>
             <layout class="QHBoxLayout" name="horizontalLayout_13">
              <item>
@@ -838,16 +944,16 @@ QPushButton:disabled {
                 <number>5</number>
                </property>
                <property name="value">
-                <number>0</number>
+                <number>25</number>
                </property>
                <property name="orientation">
                 <enum>Qt::Vertical</enum>
                </property>
                <property name="invertedAppearance">
-                <bool>true</bool>
+                <bool>false</bool>
                </property>
                <property name="invertedControls">
-                <bool>true</bool>
+                <bool>false</bool>
                </property>
                <property name="tickPosition">
                 <enum>QSlider::TicksBelow</enum>
@@ -869,7 +975,7 @@ QPushButton:disabled {
              <string>RX</string>
             </property>
             <property name="checked">
-             <bool>false</bool>
+             <bool>true</bool>
             </property>
            </widget>
           </item>
@@ -897,7 +1003,7 @@ QPushButton:disabled {
      <x>0</x>
      <y>0</y>
      <width>1024</width>
-     <height>26</height>
+     <height>30</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">

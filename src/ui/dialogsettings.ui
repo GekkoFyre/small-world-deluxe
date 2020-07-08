@@ -38,10 +38,10 @@
    <item>
     <widget class="QFrame" name="frame_container_settings">
      <property name="frameShape">
-      <enum>QFrame::StyledPanel</enum>
+      <enum>QFrame::NoFrame</enum>
      </property>
      <property name="frameShadow">
-      <enum>QFrame::Raised</enum>
+      <enum>QFrame::Plain</enum>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
@@ -122,8 +122,8 @@
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>696</width>
-                      <height>575</height>
+                      <width>732</width>
+                      <height>603</height>
                      </rect>
                     </property>
                     <property name="sizePolicy">
@@ -224,11 +224,17 @@
                         </item>
                         <item row="0" column="1">
                          <widget class="QFrame" name="frame_audio_location_power">
+                          <property name="sizePolicy">
+                           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                           </sizepolicy>
+                          </property>
                           <property name="frameShape">
-                           <enum>QFrame::StyledPanel</enum>
+                           <enum>QFrame::NoFrame</enum>
                           </property>
                           <property name="frameShadow">
-                           <enum>QFrame::Raised</enum>
+                           <enum>QFrame::Plain</enum>
                           </property>
                           <layout class="QHBoxLayout" name="horizontalLayout_5">
                            <property name="spacing">
@@ -315,8 +321,8 @@
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>696</width>
-                      <height>575</height>
+                      <width>732</width>
+                      <height>603</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_20">
@@ -327,7 +333,17 @@
                        </property>
                        <layout class="QHBoxLayout" name="horizontalLayout_2">
                         <item>
-                         <widget class="QTableWidget" name="tableWidget_working_freqs"/>
+                         <widget class="QTableWidget" name="tableWidget_working_freqs">
+                          <property name="sizePolicy">
+                           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                           </sizepolicy>
+                          </property>
+                          <property name="verticalScrollBarPolicy">
+                           <enum>Qt::ScrollBarAlwaysOn</enum>
+                          </property>
+                         </widget>
                         </item>
                         <item>
                          <widget class="QGroupBox" name="groupBox_freq_calibration">
@@ -344,6 +360,12 @@
                            </item>
                            <item row="0" column="1">
                             <widget class="QDoubleSpinBox" name="doubleSpinBox_freq_calib_intercept">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
                              <property name="suffix">
                               <string> Hz</string>
                              </property>
@@ -367,6 +389,12 @@
                            </item>
                            <item row="1" column="1">
                             <widget class="QDoubleSpinBox" name="doubleSpinBox_freq_calib_slope">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
                              <property name="accelerated">
                               <bool>true</bool>
                              </property>
@@ -403,7 +431,11 @@
                        </property>
                        <layout class="QVBoxLayout" name="verticalLayout_37">
                         <item>
-                         <widget class="QTableWidget" name="tableWidget_station_info"/>
+                         <widget class="QTableWidget" name="tableWidget_station_info">
+                          <property name="verticalScrollBarPolicy">
+                           <enum>Qt::ScrollBarAlwaysOn</enum>
+                          </property>
+                         </widget>
                         </item>
                        </layout>
                       </widget>
@@ -435,8 +467,8 @@
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>696</width>
-                      <height>575</height>
+                      <width>732</width>
+                      <height>603</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_23">
@@ -493,6 +525,12 @@
                         </item>
                         <item row="2" column="1">
                          <widget class="QSpinBox" name="spinBox_spectro_render_thread_settings">
+                          <property name="minimumSize">
+                           <size>
+                            <width>96</width>
+                            <height>0</height>
+                           </size>
+                          </property>
                           <property name="toolTip">
                            <string>Be careful! Setting this too high can cause system instability.</string>
                           </property>
@@ -506,11 +544,17 @@
                         </item>
                         <item row="3" column="1">
                          <widget class="QFrame" name="frame_spectro_settings_checkbox">
+                          <property name="sizePolicy">
+                           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                           </sizepolicy>
+                          </property>
                           <property name="frameShape">
-                           <enum>QFrame::StyledPanel</enum>
+                           <enum>QFrame::NoFrame</enum>
                           </property>
                           <property name="frameShadow">
-                           <enum>QFrame::Raised</enum>
+                           <enum>QFrame::Plain</enum>
                           </property>
                           <layout class="QHBoxLayout" name="horizontalLayout_6">
                            <property name="spacing">
@@ -531,10 +575,10 @@
                            <item>
                             <widget class="QFrame" name="frame_spectro_inner_enable_panning">
                              <property name="frameShape">
-                              <enum>QFrame::StyledPanel</enum>
+                              <enum>QFrame::NoFrame</enum>
                              </property>
                              <property name="frameShadow">
-                              <enum>QFrame::Raised</enum>
+                              <enum>QFrame::Plain</enum>
                              </property>
                              <layout class="QVBoxLayout" name="verticalLayout_25">
                               <property name="leftMargin">
@@ -565,10 +609,10 @@
                            <item>
                             <widget class="QFrame" name="frame_spectro_inner_enable_zooming">
                              <property name="frameShape">
-                              <enum>QFrame::StyledPanel</enum>
+                              <enum>QFrame::NoFrame</enum>
                              </property>
                              <property name="frameShadow">
-                              <enum>QFrame::Raised</enum>
+                              <enum>QFrame::Plain</enum>
                              </property>
                              <layout class="QVBoxLayout" name="verticalLayout_24">
                               <property name="leftMargin">
@@ -627,12 +671,12 @@
                          </widget>
                         </item>
                         <item row="0" column="1">
-                         <widget class="QFrame" name="frame_5">
+                         <widget class="QFrame" name="frame_spectro_min_freq">
                           <property name="frameShape">
-                           <enum>QFrame::StyledPanel</enum>
+                           <enum>QFrame::NoFrame</enum>
                           </property>
                           <property name="frameShadow">
-                           <enum>QFrame::Raised</enum>
+                           <enum>QFrame::Plain</enum>
                           </property>
                           <layout class="QHBoxLayout" name="horizontalLayout_23">
                            <property name="leftMargin">
@@ -671,6 +715,12 @@
                            </item>
                            <item>
                             <widget class="QSpinBox" name="spinBox_spectro_min_freq">
+                             <property name="minimumSize">
+                              <size>
+                               <width>96</width>
+                               <height>0</height>
+                              </size>
+                             </property>
                              <property name="suffix">
                               <string> Hz</string>
                              </property>
@@ -686,12 +736,12 @@
                          </widget>
                         </item>
                         <item row="1" column="1">
-                         <widget class="QFrame" name="frame_6">
+                         <widget class="QFrame" name="frame_spectro_max_freq">
                           <property name="frameShape">
-                           <enum>QFrame::StyledPanel</enum>
+                           <enum>QFrame::NoFrame</enum>
                           </property>
                           <property name="frameShadow">
-                           <enum>QFrame::Raised</enum>
+                           <enum>QFrame::Plain</enum>
                           </property>
                           <layout class="QHBoxLayout" name="horizontalLayout_27">
                            <property name="leftMargin">
@@ -733,6 +783,12 @@
                            </item>
                            <item>
                             <widget class="QSpinBox" name="spinBox_spectro_max_freq">
+                             <property name="minimumSize">
+                              <size>
+                               <width>96</width>
+                               <height>0</height>
+                              </size>
+                             </property>
                              <property name="suffix">
                               <string> Hz</string>
                              </property>
@@ -768,11 +824,17 @@
                         </item>
                         <item row="0" column="1">
                          <widget class="QFrame" name="frame_db_save_loc_2">
+                          <property name="sizePolicy">
+                           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                           </sizepolicy>
+                          </property>
                           <property name="frameShape">
-                           <enum>QFrame::StyledPanel</enum>
+                           <enum>QFrame::NoFrame</enum>
                           </property>
                           <property name="frameShadow">
-                           <enum>QFrame::Raised</enum>
+                           <enum>QFrame::Plain</enum>
                           </property>
                           <layout class="QHBoxLayout" name="horizontalLayout_12">
                            <property name="leftMargin">
@@ -869,10 +931,10 @@
                  <item>
                   <widget class="QFrame" name="frame_audio_config">
                    <property name="frameShape">
-                    <enum>QFrame::StyledPanel</enum>
+                    <enum>QFrame::NoFrame</enum>
                    </property>
                    <property name="frameShadow">
-                    <enum>QFrame::Raised</enum>
+                    <enum>QFrame::Plain</enum>
                    </property>
                    <layout class="QVBoxLayout" name="verticalLayout_5">
                     <item>
@@ -891,8 +953,8 @@
                         <rect>
                          <x>0</x>
                          <y>0</y>
-                         <width>694</width>
-                         <height>573</height>
+                         <width>732</width>
+                         <height>603</height>
                         </rect>
                        </property>
                        <layout class="QVBoxLayout" name="verticalLayout_29">
@@ -918,11 +980,17 @@
                            </item>
                            <item row="1" column="1">
                             <widget class="QFrame" name="frame_input_sound">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
                              <property name="frameShape">
-                              <enum>QFrame::StyledPanel</enum>
+                              <enum>QFrame::NoFrame</enum>
                              </property>
                              <property name="frameShadow">
-                              <enum>QFrame::Raised</enum>
+                              <enum>QFrame::Plain</enum>
                              </property>
                              <layout class="QHBoxLayout" name="horizontalLayout_9">
                               <property name="leftMargin">
@@ -939,6 +1007,12 @@
                               </property>
                               <item>
                                <widget class="QComboBox" name="comboBox_soundcard_input">
+                                <property name="sizePolicy">
+                                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                                  <horstretch>0</horstretch>
+                                  <verstretch>0</verstretch>
+                                 </sizepolicy>
+                                </property>
                                 <property name="toolTip">
                                  <string>The input channel for your soundcard, which can be anything from a microphone or in this case, possibly a radio rig.</string>
                                 </property>
@@ -953,13 +1027,26 @@
                                  </sizepolicy>
                                 </property>
                                 <property name="toolTip">
-                                 <string>Play an audio sample</string>
+                                 <string>Play an audio sample.</string>
                                 </property>
                                 <property name="text">
-                                 <string>Test</string>
+                                 <string>Audio Test</string>
                                 </property>
                                 <property name="autoDefault">
                                  <bool>false</bool>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QComboBox" name="comboBox_audio_input_sample_rate">
+                                <property name="sizePolicy">
+                                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                                  <horstretch>0</horstretch>
+                                  <verstretch>0</verstretch>
+                                 </sizepolicy>
+                                </property>
+                                <property name="maxVisibleItems">
+                                 <number>12</number>
                                 </property>
                                </widget>
                               </item>
@@ -970,6 +1057,9 @@
                                   <horstretch>0</horstretch>
                                   <verstretch>0</verstretch>
                                  </sizepolicy>
+                                </property>
+                                <property name="toolTip">
+                                 <string>Is the audio channel mono, stereo, etc.?</string>
                                 </property>
                                 <item>
                                  <property name="text">
@@ -998,11 +1088,17 @@
                            </item>
                            <item row="2" column="1">
                             <widget class="QFrame" name="frame_output_sound">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
                              <property name="frameShape">
-                              <enum>QFrame::StyledPanel</enum>
+                              <enum>QFrame::NoFrame</enum>
                              </property>
                              <property name="frameShadow">
-                              <enum>QFrame::Raised</enum>
+                              <enum>QFrame::Plain</enum>
                              </property>
                              <layout class="QHBoxLayout" name="horizontalLayout_10">
                               <property name="leftMargin">
@@ -1019,6 +1115,12 @@
                               </property>
                               <item>
                                <widget class="QComboBox" name="comboBox_soundcard_output">
+                                <property name="sizePolicy">
+                                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                                  <horstretch>0</horstretch>
+                                  <verstretch>0</verstretch>
+                                 </sizepolicy>
+                                </property>
                                 <property name="toolTip">
                                  <string>The output channel to your soundcard, where sounds produced from your computer are sent outwards to an external device, whether it be speakers or possibly in this case, a radio rig for transmission.</string>
                                 </property>
@@ -1033,10 +1135,23 @@
                                  </sizepolicy>
                                 </property>
                                 <property name="toolTip">
-                                 <string>Play an audio sample</string>
+                                 <string>Play an audio sample.</string>
                                 </property>
                                 <property name="text">
-                                 <string>Test</string>
+                                 <string>Audio Test</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QComboBox" name="comboBox_audio_output_sample_rate">
+                                <property name="sizePolicy">
+                                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                                  <horstretch>0</horstretch>
+                                  <verstretch>0</verstretch>
+                                 </sizepolicy>
+                                </property>
+                                <property name="maxVisibleItems">
+                                 <number>12</number>
                                 </property>
                                </widget>
                               </item>
@@ -1047,6 +1162,9 @@
                                   <horstretch>0</horstretch>
                                   <verstretch>0</verstretch>
                                  </sizepolicy>
+                                </property>
+                                <property name="toolTip">
+                                 <string>Is the audio channel mono, stereo, etc.?</string>
                                 </property>
                                 <item>
                                  <property name="text">
@@ -1082,6 +1200,12 @@
                            </item>
                            <item row="0" column="1">
                             <widget class="QComboBox" name="comboBox_soundcard_api">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
                              <property name="toolTip">
                               <string>The API through which Small World Deluxe interacts with via your operating system in order to communicate with any sound/multimedia devices.</string>
                              </property>
@@ -1099,10 +1223,10 @@
                            <item>
                             <widget class="QFrame" name="frame_audio_cfg_settings">
                              <property name="frameShape">
-                              <enum>QFrame::StyledPanel</enum>
+                              <enum>QFrame::NoFrame</enum>
                              </property>
                              <property name="frameShadow">
-                              <enum>QFrame::Raised</enum>
+                              <enum>QFrame::Plain</enum>
                              </property>
                              <layout class="QFormLayout" name="formLayout">
                               <property name="horizontalSpacing">
@@ -1157,11 +1281,17 @@
                            </item>
                            <item row="0" column="1">
                             <widget class="QFrame" name="frame_audio_save_loc">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
                              <property name="frameShape">
-                              <enum>QFrame::StyledPanel</enum>
+                              <enum>QFrame::NoFrame</enum>
                              </property>
                              <property name="frameShadow">
-                              <enum>QFrame::Raised</enum>
+                              <enum>QFrame::Plain</enum>
                              </property>
                              <layout class="QHBoxLayout" name="horizontalLayout_4">
                               <property name="spacing">
@@ -1251,18 +1381,18 @@
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>696</width>
-                      <height>575</height>
+                      <width>732</width>
+                      <height>603</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_28">
                      <item>
                       <widget class="QFrame" name="frame_audio_encoding_settings_inner">
                        <property name="frameShape">
-                        <enum>QFrame::StyledPanel</enum>
+                        <enum>QFrame::NoFrame</enum>
                        </property>
                        <property name="frameShadow">
-                        <enum>QFrame::Raised</enum>
+                        <enum>QFrame::Plain</enum>
                        </property>
                        <layout class="QVBoxLayout" name="verticalLayout_27">
                         <property name="leftMargin">
@@ -1298,15 +1428,22 @@
                             </widget>
                            </item>
                            <item row="1" column="1">
-                            <widget class="QComboBox" name="comboBox_encoding_audio_bitrate"/>
+                            <widget class="QComboBox" name="comboBox_encoding_audio_bitrate">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                            </widget>
                            </item>
                            <item row="0" column="1">
                             <widget class="QFrame" name="frame_encoding_audio_quality">
                              <property name="frameShape">
-                              <enum>QFrame::StyledPanel</enum>
+                              <enum>QFrame::NoFrame</enum>
                              </property>
                              <property name="frameShadow">
-                              <enum>QFrame::Raised</enum>
+                              <enum>QFrame::Plain</enum>
                              </property>
                              <layout class="QHBoxLayout" name="horizontalLayout_14">
                               <property name="leftMargin">
@@ -1401,10 +1538,10 @@
                        </sizepolicy>
                       </property>
                       <property name="frameShape">
-                       <enum>QFrame::StyledPanel</enum>
+                       <enum>QFrame::NoFrame</enum>
                       </property>
                       <property name="frameShadow">
-                       <enum>QFrame::Raised</enum>
+                       <enum>QFrame::Plain</enum>
                       </property>
                       <layout class="QVBoxLayout" name="verticalLayout_15">
                        <item>
@@ -1426,10 +1563,10 @@
                     <item>
                      <widget class="QFrame" name="frame_api_details_2">
                       <property name="frameShape">
-                       <enum>QFrame::StyledPanel</enum>
+                       <enum>QFrame::NoFrame</enum>
                       </property>
                       <property name="frameShadow">
-                       <enum>QFrame::Raised</enum>
+                       <enum>QFrame::Plain</enum>
                       </property>
                       <layout class="QVBoxLayout" name="verticalLayout_13">
                        <property name="leftMargin">
@@ -1453,10 +1590,10 @@
                           </sizepolicy>
                          </property>
                          <property name="frameShape">
-                          <enum>QFrame::StyledPanel</enum>
+                          <enum>QFrame::NoFrame</enum>
                          </property>
                          <property name="frameShadow">
-                          <enum>QFrame::Raised</enum>
+                          <enum>QFrame::Plain</enum>
                          </property>
                          <layout class="QVBoxLayout" name="verticalLayout_17">
                           <item>
@@ -1478,19 +1615,19 @@
                        <item>
                         <widget class="QFrame" name="frame_api_details_inner_2">
                          <property name="frameShape">
-                          <enum>QFrame::StyledPanel</enum>
+                          <enum>QFrame::NoFrame</enum>
                          </property>
                          <property name="frameShadow">
-                          <enum>QFrame::Raised</enum>
+                          <enum>QFrame::Plain</enum>
                          </property>
                          <layout class="QVBoxLayout" name="verticalLayout_16">
                           <item>
                            <widget class="QFrame" name="frame">
                             <property name="frameShape">
-                             <enum>QFrame::StyledPanel</enum>
+                             <enum>QFrame::NoFrame</enum>
                             </property>
                             <property name="frameShadow">
-                             <enum>QFrame::Raised</enum>
+                             <enum>QFrame::Plain</enum>
                             </property>
                             <layout class="QHBoxLayout" name="horizontalLayout_13">
                              <item>
@@ -1564,10 +1701,10 @@
                           </sizepolicy>
                          </property>
                          <property name="frameShape">
-                          <enum>QFrame::StyledPanel</enum>
+                          <enum>QFrame::NoFrame</enum>
                          </property>
                          <property name="frameShadow">
-                          <enum>QFrame::Raised</enum>
+                          <enum>QFrame::Plain</enum>
                          </property>
                          <layout class="QVBoxLayout" name="verticalLayout_18">
                           <item>
@@ -1598,10 +1735,10 @@
                        </sizepolicy>
                       </property>
                       <property name="frameShape">
-                       <enum>QFrame::StyledPanel</enum>
+                       <enum>QFrame::NoFrame</enum>
                       </property>
                       <property name="frameShadow">
-                       <enum>QFrame::Raised</enum>
+                       <enum>QFrame::Plain</enum>
                       </property>
                       <layout class="QVBoxLayout" name="verticalLayout_14">
                        <item>
@@ -1647,10 +1784,10 @@
                  <item>
                   <widget class="QFrame" name="frame_2">
                    <property name="frameShape">
-                    <enum>QFrame::StyledPanel</enum>
+                    <enum>QFrame::NoFrame</enum>
                    </property>
                    <property name="frameShadow">
-                    <enum>QFrame::Raised</enum>
+                    <enum>QFrame::Plain</enum>
                    </property>
                    <layout class="QVBoxLayout" name="verticalLayout_30">
                     <property name="leftMargin">
@@ -1667,6 +1804,9 @@
                     </property>
                     <item>
                      <widget class="QScrollArea" name="scrollArea_2">
+                      <property name="frameShape">
+                       <enum>QFrame::NoFrame</enum>
+                      </property>
                       <property name="frameShadow">
                        <enum>QFrame::Plain</enum>
                       </property>
@@ -1681,18 +1821,18 @@
                         <rect>
                          <x>0</x>
                          <y>0</y>
-                         <width>681</width>
-                         <height>676</height>
+                         <width>715</width>
+                         <height>729</height>
                         </rect>
                        </property>
                        <layout class="QVBoxLayout" name="verticalLayout_33">
                         <item>
                          <widget class="QFrame" name="frame_rig_top">
                           <property name="frameShape">
-                           <enum>QFrame::StyledPanel</enum>
+                           <enum>QFrame::NoFrame</enum>
                           </property>
                           <property name="frameShadow">
-                           <enum>QFrame::Raised</enum>
+                           <enum>QFrame::Plain</enum>
                           </property>
                           <layout class="QHBoxLayout" name="horizontalLayout_16">
                            <property name="spacing">
@@ -1725,10 +1865,10 @@
                                  </sizepolicy>
                                 </property>
                                 <property name="frameShape">
-                                 <enum>QFrame::StyledPanel</enum>
+                                 <enum>QFrame::NoFrame</enum>
                                 </property>
                                 <property name="frameShadow">
-                                 <enum>QFrame::Raised</enum>
+                                 <enum>QFrame::Plain</enum>
                                 </property>
                                 <layout class="QFormLayout" name="formLayout_16">
                                  <property name="horizontalSpacing">
@@ -1757,7 +1897,14 @@
                                   </widget>
                                  </item>
                                  <item row="1" column="1">
-                                  <widget class="QComboBox" name="comboBox_brand_selection"/>
+                                  <widget class="QComboBox" name="comboBox_brand_selection">
+                                   <property name="sizePolicy">
+                                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                                     <horstretch>0</horstretch>
+                                     <verstretch>0</verstretch>
+                                    </sizepolicy>
+                                   </property>
+                                  </widget>
                                  </item>
                                  <item row="2" column="0">
                                   <widget class="QLabel" name="label_rig_selection">
@@ -1767,7 +1914,14 @@
                                   </widget>
                                  </item>
                                  <item row="2" column="1">
-                                  <widget class="QComboBox" name="comboBox_rig_selection"/>
+                                  <widget class="QComboBox" name="comboBox_rig_selection">
+                                   <property name="sizePolicy">
+                                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                                     <horstretch>0</horstretch>
+                                     <verstretch>0</verstretch>
+                                    </sizepolicy>
+                                   </property>
+                                  </widget>
                                  </item>
                                  <item row="3" column="1">
                                   <widget class="QFrame" name="frame_rig_left_inner_subopt">
@@ -1808,10 +1962,10 @@
                         <item>
                          <widget class="QFrame" name="frame_rig_middle">
                           <property name="frameShape">
-                           <enum>QFrame::StyledPanel</enum>
+                           <enum>QFrame::NoFrame</enum>
                           </property>
                           <property name="frameShadow">
-                           <enum>QFrame::Raised</enum>
+                           <enum>QFrame::Plain</enum>
                           </property>
                           <layout class="QHBoxLayout" name="horizontalLayout_3">
                            <property name="spacing">
@@ -1838,10 +1992,10 @@
                               <item>
                                <widget class="QFrame" name="frame_cat_control">
                                 <property name="frameShape">
-                                 <enum>QFrame::StyledPanel</enum>
+                                 <enum>QFrame::NoFrame</enum>
                                 </property>
                                 <property name="frameShadow">
-                                 <enum>QFrame::Raised</enum>
+                                 <enum>QFrame::Plain</enum>
                                 </property>
                                 <layout class="QFormLayout" name="formLayout_10">
                                  <property name="leftMargin">
@@ -1857,7 +2011,14 @@
                                   <number>0</number>
                                  </property>
                                  <item row="1" column="1">
-                                  <widget class="QComboBox" name="comboBox_com_port"/>
+                                  <widget class="QComboBox" name="comboBox_com_port">
+                                   <property name="sizePolicy">
+                                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                                     <horstretch>0</horstretch>
+                                     <verstretch>0</verstretch>
+                                    </sizepolicy>
+                                   </property>
+                                  </widget>
                                  </item>
                                  <item row="1" column="0">
                                   <widget class="QLabel" name="label_com_port">
@@ -1876,7 +2037,7 @@
                                  <item row="2" column="1">
                                   <widget class="QLineEdit" name="lineEdit_device_port_name">
                                    <property name="sizePolicy">
-                                    <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
                                      <horstretch>0</horstretch>
                                      <verstretch>0</verstretch>
                                     </sizepolicy>
@@ -1904,10 +2065,10 @@
                                  <item>
                                   <widget class="QFrame" name="frame_baud_rate">
                                    <property name="frameShape">
-                                    <enum>QFrame::StyledPanel</enum>
+                                    <enum>QFrame::NoFrame</enum>
                                    </property>
                                    <property name="frameShadow">
-                                    <enum>QFrame::Raised</enum>
+                                    <enum>QFrame::Plain</enum>
                                    </property>
                                    <layout class="QFormLayout" name="formLayout_11">
                                     <item row="0" column="0">
@@ -1918,7 +2079,14 @@
                                      </widget>
                                     </item>
                                     <item row="0" column="1">
-                                     <widget class="QComboBox" name="comboBox_baud_rate"/>
+                                     <widget class="QComboBox" name="comboBox_baud_rate">
+                                      <property name="sizePolicy">
+                                       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                                        <horstretch>0</horstretch>
+                                        <verstretch>0</verstretch>
+                                       </sizepolicy>
+                                      </property>
+                                     </widget>
                                     </item>
                                    </layout>
                                   </widget>
@@ -1926,10 +2094,10 @@
                                  <item>
                                   <widget class="QFrame" name="frame_serial_port_parameters_groupboxes">
                                    <property name="frameShape">
-                                    <enum>QFrame::StyledPanel</enum>
+                                    <enum>QFrame::NoFrame</enum>
                                    </property>
                                    <property name="frameShadow">
-                                    <enum>QFrame::Raised</enum>
+                                    <enum>QFrame::Plain</enum>
                                    </property>
                                    <layout class="QVBoxLayout" name="verticalLayout_42">
                                     <property name="leftMargin">
@@ -2025,10 +2193,10 @@
                                        <item>
                                         <widget class="QFrame" name="frame_handshake_radio_1">
                                          <property name="frameShape">
-                                          <enum>QFrame::StyledPanel</enum>
+                                          <enum>QFrame::NoFrame</enum>
                                          </property>
                                          <property name="frameShadow">
-                                          <enum>QFrame::Raised</enum>
+                                          <enum>QFrame::Plain</enum>
                                          </property>
                                          <layout class="QHBoxLayout" name="horizontalLayout_22">
                                           <property name="bottomMargin">
@@ -2076,11 +2244,17 @@
                                       <layout class="QHBoxLayout" name="horizontalLayout_24">
                                        <item>
                                         <widget class="QFrame" name="frame_force_control_lines_1">
+                                         <property name="sizePolicy">
+                                          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+                                           <horstretch>0</horstretch>
+                                           <verstretch>0</verstretch>
+                                          </sizepolicy>
+                                         </property>
                                          <property name="frameShape">
-                                          <enum>QFrame::StyledPanel</enum>
+                                          <enum>QFrame::NoFrame</enum>
                                          </property>
                                          <property name="frameShadow">
-                                          <enum>QFrame::Raised</enum>
+                                          <enum>QFrame::Plain</enum>
                                          </property>
                                          <layout class="QFormLayout" name="formLayout_19">
                                           <property name="leftMargin">
@@ -2103,18 +2277,31 @@
                                            </widget>
                                           </item>
                                           <item row="0" column="1">
-                                           <widget class="QComboBox" name="comboBox_force_ctrl_lines_dtr"/>
+                                           <widget class="QComboBox" name="comboBox_force_ctrl_lines_dtr">
+                                            <property name="sizePolicy">
+                                             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                                              <horstretch>0</horstretch>
+                                              <verstretch>0</verstretch>
+                                             </sizepolicy>
+                                            </property>
+                                           </widget>
                                           </item>
                                          </layout>
                                         </widget>
                                        </item>
                                        <item>
                                         <widget class="QFrame" name="frame_force_control_lines_2">
+                                         <property name="sizePolicy">
+                                          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+                                           <horstretch>0</horstretch>
+                                           <verstretch>0</verstretch>
+                                          </sizepolicy>
+                                         </property>
                                          <property name="frameShape">
-                                          <enum>QFrame::StyledPanel</enum>
+                                          <enum>QFrame::NoFrame</enum>
                                          </property>
                                          <property name="frameShadow">
-                                          <enum>QFrame::Raised</enum>
+                                          <enum>QFrame::Plain</enum>
                                          </property>
                                          <layout class="QFormLayout" name="formLayout_20">
                                           <property name="leftMargin">
@@ -2137,7 +2324,14 @@
                                            </widget>
                                           </item>
                                           <item row="0" column="1">
-                                           <widget class="QComboBox" name="comboBox_force_ctrl_lines_rts"/>
+                                           <widget class="QComboBox" name="comboBox_force_ctrl_lines_rts">
+                                            <property name="sizePolicy">
+                                             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                                              <horstretch>0</horstretch>
+                                              <verstretch>0</verstretch>
+                                             </sizepolicy>
+                                            </property>
+                                           </widget>
                                           </item>
                                          </layout>
                                         </widget>
@@ -2163,10 +2357,10 @@
                               <item>
                                <widget class="QFrame" name="frame_ptt_method">
                                 <property name="frameShape">
-                                 <enum>QFrame::StyledPanel</enum>
+                                 <enum>QFrame::NoFrame</enum>
                                 </property>
                                 <property name="frameShadow">
-                                 <enum>QFrame::Raised</enum>
+                                 <enum>QFrame::Plain</enum>
                                 </property>
                                 <layout class="QVBoxLayout" name="verticalLayout_43">
                                  <property name="leftMargin">
@@ -2183,11 +2377,17 @@
                                  </property>
                                  <item>
                                   <widget class="QFrame" name="frame_ptt_method_radio_1">
+                                   <property name="sizePolicy">
+                                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+                                     <horstretch>0</horstretch>
+                                     <verstretch>0</verstretch>
+                                    </sizepolicy>
+                                   </property>
                                    <property name="frameShape">
-                                    <enum>QFrame::StyledPanel</enum>
+                                    <enum>QFrame::NoFrame</enum>
                                    </property>
                                    <property name="frameShadow">
-                                    <enum>QFrame::Raised</enum>
+                                    <enum>QFrame::Plain</enum>
                                    </property>
                                    <layout class="QHBoxLayout" name="horizontalLayout_19">
                                     <property name="leftMargin">
@@ -2236,10 +2436,10 @@
                                  <item>
                                   <widget class="QFrame" name="frame_ptt_method_port_1">
                                    <property name="frameShape">
-                                    <enum>QFrame::StyledPanel</enum>
+                                    <enum>QFrame::NoFrame</enum>
                                    </property>
                                    <property name="frameShadow">
-                                    <enum>QFrame::Raised</enum>
+                                    <enum>QFrame::Plain</enum>
                                    </property>
                                    <layout class="QFormLayout" name="formLayout_18">
                                     <property name="leftMargin">
@@ -2262,7 +2462,14 @@
                                      </widget>
                                     </item>
                                     <item row="0" column="1">
-                                     <widget class="QComboBox" name="comboBox_ptt_method_port"/>
+                                     <widget class="QComboBox" name="comboBox_ptt_method_port">
+                                      <property name="sizePolicy">
+                                       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                                        <horstretch>0</horstretch>
+                                        <verstretch>0</verstretch>
+                                       </sizepolicy>
+                                      </property>
+                                     </widget>
                                     </item>
                                     <item row="1" column="0">
                                      <widget class="QLabel" name="label_ptt_method_dev_path">
@@ -2274,7 +2481,7 @@
                                     <item row="1" column="1">
                                      <widget class="QLineEdit" name="lineEdit_ptt_method_dev_path">
                                       <property name="sizePolicy">
-                                       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
                                         <horstretch>0</horstretch>
                                         <verstretch>0</verstretch>
                                        </sizepolicy>
@@ -2299,10 +2506,10 @@
                               <item>
                                <widget class="QFrame" name="frame_tx_audio_source">
                                 <property name="frameShape">
-                                 <enum>QFrame::StyledPanel</enum>
+                                 <enum>QFrame::NoFrame</enum>
                                 </property>
                                 <property name="frameShadow">
-                                 <enum>QFrame::Raised</enum>
+                                 <enum>QFrame::Plain</enum>
                                 </property>
                                 <layout class="QVBoxLayout" name="verticalLayout_45">
                                  <property name="leftMargin">
@@ -2341,10 +2548,10 @@
                                     <item>
                                      <widget class="QFrame" name="frame_tx_audio_rear_data">
                                       <property name="frameShape">
-                                       <enum>QFrame::StyledPanel</enum>
+                                       <enum>QFrame::NoFrame</enum>
                                       </property>
                                       <property name="frameShadow">
-                                       <enum>QFrame::Raised</enum>
+                                       <enum>QFrame::Plain</enum>
                                       </property>
                                       <layout class="QVBoxLayout" name="verticalLayout_39">
                                        <property name="spacing">
@@ -2375,10 +2582,10 @@
                                     <item>
                                      <widget class="QFrame" name="frame_tx_audio_front_mic">
                                       <property name="frameShape">
-                                       <enum>QFrame::StyledPanel</enum>
+                                       <enum>QFrame::NoFrame</enum>
                                       </property>
                                       <property name="frameShadow">
-                                       <enum>QFrame::Raised</enum>
+                                       <enum>QFrame::Plain</enum>
                                       </property>
                                       <layout class="QVBoxLayout" name="verticalLayout_38">
                                        <property name="spacing">
@@ -2415,10 +2622,10 @@
                               <item>
                                <widget class="QFrame" name="frame_mode">
                                 <property name="frameShape">
-                                 <enum>QFrame::StyledPanel</enum>
+                                 <enum>QFrame::NoFrame</enum>
                                 </property>
                                 <property name="frameShadow">
-                                 <enum>QFrame::Raised</enum>
+                                 <enum>QFrame::Plain</enum>
                                 </property>
                                 <layout class="QVBoxLayout" name="verticalLayout_46">
                                  <property name="leftMargin">
@@ -2469,10 +2676,10 @@
                               <item>
                                <widget class="QFrame" name="frame_split_operation">
                                 <property name="frameShape">
-                                 <enum>QFrame::StyledPanel</enum>
+                                 <enum>QFrame::NoFrame</enum>
                                 </property>
                                 <property name="frameShadow">
-                                 <enum>QFrame::Raised</enum>
+                                 <enum>QFrame::Plain</enum>
                                 </property>
                                 <layout class="QVBoxLayout" name="verticalLayout_47">
                                  <property name="leftMargin">
@@ -2541,6 +2748,12 @@
                            </item>
                            <item row="0" column="1">
                             <widget class="QLineEdit" name="lineEdit_adv_ptt_cmd">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
                              <property name="placeholderText">
                               <string>For advanced users only!</string>
                              </property>
@@ -2599,6 +2812,9 @@
                     </property>
                     <item>
                      <widget class="QScrollArea" name="scrollArea_3">
+                      <property name="frameShape">
+                       <enum>QFrame::NoFrame</enum>
+                      </property>
                       <property name="frameShadow">
                        <enum>QFrame::Plain</enum>
                       </property>
@@ -2613,8 +2829,8 @@
                         <rect>
                          <x>0</x>
                          <y>0</y>
-                         <width>53</width>
-                         <height>16</height>
+                         <width>100</width>
+                         <height>30</height>
                         </rect>
                        </property>
                       </widget>
@@ -2643,10 +2859,10 @@
          </sizepolicy>
         </property>
         <property name="frameShape">
-         <enum>QFrame::StyledPanel</enum>
+         <enum>QFrame::NoFrame</enum>
         </property>
         <property name="frameShadow">
-         <enum>QFrame::Raised</enum>
+         <enum>QFrame::Plain</enum>
         </property>
         <layout class="QHBoxLayout" name="horizontalLayout">
          <property name="spacing">

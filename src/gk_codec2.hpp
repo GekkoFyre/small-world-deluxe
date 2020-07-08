@@ -23,7 +23,7 @@
  **   the Free Software Foundation, either version 3 of the License, or
  **   (at your option) any later version.
  **
- **   Small World is distributed in the hope that it will be useful,
+ **   Small world is distributed in the hope that it will be useful,
  **   but WITHOUT ANY WARRANTY; without even the implied warranty of
  **   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  **   GNU General Public License for more details.
@@ -42,48 +42,26 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include <codec2/codec2.h>
+#include <codec2/freedv_api.h>
 #include <QObject>
-#include <QMessageBox>
-#include <string>
-#include <memory>
-#include <mutex>
-
-#ifdef _WIN32
-#include <Windows.h>
-#endif
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#if defined(__linux__) || defined(__MINGW64__)
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_stdinc.h>
-#include <SDL2/SDL_messagebox.h>
-#endif
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
 
 namespace GekkoFyre {
 
-class StringFuncs : public QObject {
+class GkCodec2 : public QObject {
     Q_OBJECT
 
 public:
-    explicit StringFuncs(QObject *parent = nullptr);
-    ~StringFuncs();
+    explicit GkCodec2(const int &freedv_mode, const int &freedv_clip, const int &freedv_txbpf);
+    ~GkCodec2();
 
-    #if defined(_MSC_VER) && (_MSC_VER > 1900)
-    static std::string multiByteFromWide(LPCWSTR pwsz, UINT cp);
-    static std::wstring strToWStrWin(const std::string &s);
-    std::wstring removeSpecialChars(std::wstring wstr);
-    bool modalDlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon);
-    #else
-    bool modalDlgBoxLinux(uint32_t flags, const QString &title, const QString &msgTxt);
-    #endif
+    void txCodec2RawData(const AmateurRadio::Control::GkRadio &gkRadio, const Database::Settings::Audio::GkDevice &gkAudioDevice);
+
+private:
+    struct freedv *freedv;
+    int gkFreeDvMode;
+    int gkFreeDvClip;
+    int gkFreeDvTXBpf;
 
 };
 };
