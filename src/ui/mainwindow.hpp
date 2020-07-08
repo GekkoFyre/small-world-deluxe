@@ -184,8 +184,12 @@ public slots:
                                const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void addRigToMemory(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void disconnectRigInMemory(std::shared_ptr<Rig> rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
-    void updateFreqsInMem(const float &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
-                          const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq);
+
+    //
+    // Frequencies related
+    //
+    void updateFreqSettingsDb(const quint64 &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
+                        const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq);
 
 signals:
     void updatePaVol(const int &percentage);
@@ -200,8 +204,6 @@ signals:
     void addRigInUse(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void recvRigCapabilities(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void disconnectRigInUse(std::shared_ptr<Rig> rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
-    void updateFrequencies(const float &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
-                           const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq);
 
     //
     // Audio related
@@ -229,7 +231,7 @@ private:
     std::shared_ptr<GekkoFyre::GkCli> gkCli;
     std::unique_ptr<GekkoFyre::GkFFT> gkFFT;
     QPointer<GekkoFyre::FileIo> fileIo;
-    QPointer<GekkoFyre::GkFreqList> gkFreqList;
+    QPointer<GekkoFyre::GkFrequencies> gkFreqList;
     QPointer<GekkoFyre::RadioLibs> gkRadioLibs;
     QPointer<GekkoFyre::GkAudioEncoding> gkAudioEncoding;
     QPointer<GekkoFyre::GkAudioDecoding> gkAudioDecoding;
@@ -309,8 +311,6 @@ private:
     bool btn_radio_tx_halt;
     bool btn_radio_tune;
     bool btn_radio_monitor;
-
-    void radioStats(GekkoFyre::AmateurRadio::Control::GkRadio *radio_dev);
 
     void changePushButtonColor(const QPointer<QPushButton> &push_button, const bool &green_result = true,
                                const bool &color_blind_mode = false);

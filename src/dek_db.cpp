@@ -307,6 +307,15 @@ void GkLevelDb::write_mainwindow_settings(const QString &value, const general_ma
         default:
             return;
         }
+
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
+
+        status = db->Write(write_options, &batch);
+
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        }
     } catch (const std::exception &e) {
         QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
     }

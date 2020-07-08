@@ -41,6 +41,7 @@
 #include "spectrodialog.hpp"
 #include "./../gk_timer.hpp"
 #include "./../spectro_cuda.h"
+#include "./../contrib/rapidcsv/src/rapidcsv.h"
 #include <boost/exception/all.hpp>
 #include <boost/chrono/chrono.hpp>
 #include <cmath>
@@ -143,9 +144,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // Initialize the list of frequencies that Small World Deluxe needs to communicate with other users
         // throughout the globe/world!
         //
-        gkFreqList = new GkFreqList(this);
-        QObject::connect(gkFreqList, SIGNAL(updateFrequencies(const float &, const GekkoFyre::AmateurRadio::DigitalModes &, const GekkoFyre::AmateurRadio::IARURegions &, const bool &)),
-                         this, SLOT(updateFreqsInMem(const float &, const GekkoFyre::AmateurRadio::DigitalModes &, const GekkoFyre::AmateurRadio::IARURegions &, const bool &)));
+        gkFreqList = new GkFrequencies(this);
         gkFreqList->publishFreqList();
 
         //
@@ -246,8 +245,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                  this, SLOT(addRigToMemory(const rig_model_t &, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
                 QObject::connect(this, SIGNAL(disconnectRigInUse(std::shared_ptr<Rig>, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
                                  this, SLOT(disconnectRigInMemory(std::shared_ptr<Rig>, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
-                QObject::connect(this, SIGNAL(updateFrequencies(const float &, const GekkoFyre::AmateurRadio::DigitalModes &, const GekkoFyre::AmateurRadio::IARURegions &, const bool &)),
-                                 this, SLOT(updateFreqsInMem(const float &, const GekkoFyre::AmateurRadio::DigitalModes &, const GekkoFyre::AmateurRadio::IARURegions &, const bool &)));
 
                 // Initialize the Radio Database pointer!
                 if (gkRadioPtr.get() == nullptr) {
@@ -521,6 +518,8 @@ void MainWindow::on_action_Open_triggered()
 void MainWindow::changePushButtonColor(const QPointer<QPushButton> &push_button, const bool &green_result,
                                        const bool &color_blind_mode)
 {
+    Q_UNUSED(color_blind_mode);
+
     if (green_result) {
         // Change QPushButton to a shade of darkish 'Green'
         push_button->setStyleSheet("QPushButton{\nbackground-color: #B80000; border: 1px solid black;\nborder-radius: 5px;\nborder-width: 1px;\npadding: 6px;\nfont: bold;\ncolor: white;\n}");
@@ -592,7 +591,7 @@ void MainWindow::launchSettingsWin()
 {
     QPointer<DialogSettings> dlg_settings = new DialogSettings(GkDb, fileIo, gkAudioDevices, gkRadioLibs, sw_settings,
                                                                gkPortAudioInit, usb_ctx_ptr, gkRadioPtr, status_com_ports,
-                                                               this);
+                                                               gkFreqList, this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
@@ -1185,6 +1184,8 @@ void MainWindow::on_action_Disconnect_triggered()
  */
 void MainWindow::on_actionShow_Waterfall_toggled(bool arg1)
 {
+    Q_UNUSED(arg1);
+
     try {
         // QWT is started!
     } catch (const portaudio::PaException &e) {
@@ -1556,17 +1557,6 @@ void MainWindow::on_verticalSlider_vol_control_valueChanged(int value)
     return;
 }
 
-/**
- * @brief MainWindow::radioStats Displays statistics to the QMainWindow concerning the user's radio rig
- * of choice.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param radio_dev The structure containing all the information on the user's radio rig of choice.
- */
-void MainWindow::radioStats(Control::GkRadio *radio_dev)
-{
-    return;
-}
-
 void MainWindow::on_actionSave_Decoded_Ab_triggered()
 {
     return;
@@ -1752,6 +1742,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
  */
 void MainWindow::stopRecordingInput(const int &wait_time)
 {
+    Q_UNUSED(wait_time);
+
     if (inputAudioStream != nullptr && pref_input_device.is_dev_active) {
         if (inputAudioStream->isActive()) {
             inputAudioStream->close();
@@ -1772,6 +1764,7 @@ void MainWindow::stopRecordingInput(const int &wait_time)
  */
 void MainWindow::startRecordingInput(const int &wait_time)
 {
+    Q_UNUSED(wait_time);
     emit stopRecording();
 
     // To minimise startup latency for this use-case (i.e. expecting StartStream() to give minimum
@@ -1799,6 +1792,9 @@ void MainWindow::startRecordingInput(const int &wait_time)
  */
 void MainWindow::updateProgressBar(const bool &enable, const size_t &min, const size_t &max)
 {
+    Q_UNUSED(min);
+    Q_UNUSED(max);
+
     try {
         if (enable) {
             // Launch the QProgressBar!
@@ -2019,41 +2015,16 @@ void MainWindow::disconnectRigInMemory(std::shared_ptr<Rig> rig_to_disconnect, c
 }
 
 /**
- * @brief MainWindow::updateFreqsInMem Update the radio rig's used frequencies within memory, either by
- * adding or removing them from the global QVector.
+ * @brief MainWindow::updateFreqSettingsDb Updates the database of frequencies managed by the user and saves them within Google LevelDB.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param frequency The frequency to update.
  * @param digital_mode What digital mode is being used, whether it be WSPR, JT65, FT8, etc.
  * @param iaru_region The IARU Region that this particular frequency applies towards, such as ALL, R1, etc.
  * @param remove_freq Whether to remove the frequency in question from the global list or not.
  */
-void MainWindow::updateFreqsInMem(const float &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
-                                  const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq)
+void MainWindow::updateFreqSettingsDb(const quint64 &frequency, const DigitalModes &digital_mode,
+                                      const IARURegions &iaru_region, const bool &remove_freq)
 {
-    GkFreqs freq;
-    freq.frequency = frequency;
-    freq.digital_mode = digital_mode;
-    freq.iaru_region = iaru_region;
-    if (remove_freq) {
-        //
-        // We are removing the frequency from the global std::vector!
-        //
-        if (!frequencyList.empty()) {
-            for (size_t i = 0; i < frequencyList.size(); ++i) {
-                if (gkFreqList->essentiallyEqual(frequencyList[i].frequency, freq.frequency, GK_RADIO_VFO_FLOAT_PNT_PREC)) {
-                    frequencyList.erase(frequencyList.begin() + i);
-                    break;
-                }
-            }
-        }
-    } else {
-        //
-        // We are adding the frequency to the global std::vector!
-        //
-        frequencyList.reserve(1);
-        frequencyList.push_back(freq);
-    }
-
     return;
 }
 
@@ -2132,21 +2103,29 @@ void MainWindow::on_actionLSB_toggled(bool arg1)
 
 void MainWindow::on_actionAM_toggled(bool arg1)
 {
+    Q_UNUSED(arg1);
+
     return;
 }
 
 void MainWindow::on_actionFM_toggled(bool arg1)
 {
+    Q_UNUSED(arg1);
+
     return;
 }
 
 void MainWindow::on_actionSSB_toggled(bool arg1)
 {
+    Q_UNUSED(arg1);
+
     return;
 }
 
 void MainWindow::on_actionCW_toggled(bool arg1)
 {
+    Q_UNUSED(arg1);
+
     return;
 }
 

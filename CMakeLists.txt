@@ -75,7 +75,7 @@ if(CMAKE_VERSION VERSION_LESS "3.7.0")
 endif()
 
 set(CMAKE_MODULE_PATH
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/";
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/"
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/third-party/basic-c-sdl-project/cmake/sdl2/")
 
 #
@@ -86,7 +86,8 @@ option(GFYRE_BUILD_STATIC "Build Small World Deluxe as a static library/package.
 option(GFYRE_BUILD_SHARED "Build Small World Deluxe as a shared library/package. This will result in a smaller executable at the cost of requiring further DLL dependencies." OFF)
 option(GFYRE_HAMLIB_DBG_VERBOSITY "Enable DEBUG verbosity for the Hamlib library and its use throughout Small World Deluxe." OFF)
 
-option(BUILD_OPUS_SUPPORT "Enable support for the Opus codec library." OFF)
+option(BUILD_CODEC2_SUPPORT "Enable support for the 'Codec2' open source speech codec library." ON)
+option(BUILD_OPUS_SUPPORT "Enable support for the 'Opus' codec library." OFF)
 
 #
 # Detect if we are dealing with the Linux operating system and not Apple OS/X
@@ -150,8 +151,7 @@ find_package(Boost 1.54.0 REQUIRED COMPONENTS "filesystem"
                                               "exception"
                                               "chrono"
                                               "locale"
-                                              "random"
-                                              "locale")
+                                              "random")
                                               
 if(WIN32 OR MSYS OR MINGW)
     if(${GFYRE_PACKAGE_MAINTAINER} EQUAL ON)
@@ -240,18 +240,26 @@ if (HAMLIB_FOUND)
         set(LIBS ${LIBS} ${HAMLIBCPP_LIBRARIES})
     else()
         message(FATAL_ERROR "The 'Hamlib' amateur radio C++ library bindings could not be found!")
-    endif(HAMLIB_FOUND)
+    endif(HAMLIBCPP_FOUND)
 else()
     message(FATAL_ERROR "The 'Hamlib' amateur radio library could not be found!")
 endif(HAMLIB_FOUND)
 
-find_package(Codec2 REQUIRED)
-if (CODEC2_FOUND)
-    include_directories(${CODEC2_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${CODEC2_LIBRARIES})
-else()
-    message(FATAL_ERROR "The 'Codec2' open source speech codec library could not be found!")
-endif(CODEC2_FOUND)
+if (BUILD_CODEC2_SUPPORT)
+    if (MSYS OR MINGW OR LINUX OR UNIX)
+        message(STATUS "Support for 'Codec2' has been enabled! Finding package...")
+        find_package(Codec2 REQUIRED)
+        if (CODEC2_FOUND)
+            include_directories(${CODEC2_INCLUDE_DIRS})
+            set(LIBS ${LIBS} ${CODEC2_LIBRARIES})
+            add_definitions("-DCODEC2_LIBS_ENBLD")
+        else()
+            message(FATAL_ERROR "The 'Codec2' open source speech codec library could not be found!")
+        endif(CODEC2_FOUND)
+    else()
+        message(WARNING "Support for 'Codec2' is only possible with *nix systems or Macintosh OS/X! MinGW is another option if you're using Microsoft Windows.")
+    endif()
+endif(BUILD_CODEC2_SUPPORT)
 
 find_package(USB REQUIRED)
 if (USB_FOUND)
@@ -295,6 +303,7 @@ endif(Ogg_FOUND)
 # http://opus-codec.org/
 #
 if (BUILD_OPUS_SUPPORT)
+    message(STATUS "Support for 'Opus' has been enabled! Finding package...")
     find_package(Opus REQUIRED)
     if (Opus_FOUND)
         include_directories(${Opus_INCLUDE_DIRS})
@@ -490,7 +499,8 @@ set(GALAXY_SRC_HEADERS
     src/pa_sinewave.hpp
     src/gk_timer.hpp
     src/gk_circ_buffer.hpp
-    src/gk_fft.hpp)
+    src/gk_fft.hpp
+    src/contrib/rapidcsv/src/rapidcsv.h)
 
 if(LINUX)
     set(GALAXY_SRC_HEADERS
@@ -647,9 +657,9 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     # Using Microsoft Visual Studio C++
     if(CMAKE_BUILD_TYPE MATCHES "Debug")
-    add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W3 /WX)
+        add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W3 /WX)
     elseif(CMAKE_BUILD_TYPE MATCHES "Release")
-    add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W3 /WX /GL)
+        add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W3 /WX /GL)
     endif()
 endif()
 

@@ -456,7 +456,7 @@ namespace AmateurRadio {
     };
 
     struct GkFreqs {
-        float frequency;                                    // The exact frequency itself
+        quint64 frequency;                                   // The exact frequency itself
         GkFreqBands closest_freq_band;                      // The closest matching frequency band grouping
         DigitalModes digital_mode;                          // The type of digital mode this frequency applies towards, or should apply toward
         IARURegions iaru_region;                            // The IARU Region that this frequency falls under

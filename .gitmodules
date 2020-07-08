@@ -10,3 +10,6 @@
 [submodule "src/contrib/PortAudio-Wrapper"]
 	path = src/contrib/PortAudio-Wrapper
 	url = https://github.com/orazdow/PortAudio-Wrapper.git
+[submodule "src/contrib/rapidcsv"]
+	path = src/contrib/rapidcsv
+	url = https://github.com/d99kris/rapidcsv.git

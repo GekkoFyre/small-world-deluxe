@@ -231,10 +231,10 @@
                            </sizepolicy>
                           </property>
                           <property name="frameShape">
-                           <enum>QFrame::StyledPanel</enum>
+                           <enum>QFrame::NoFrame</enum>
                           </property>
                           <property name="frameShadow">
-                           <enum>QFrame::Raised</enum>
+                           <enum>QFrame::Plain</enum>
                           </property>
                           <layout class="QHBoxLayout" name="horizontalLayout_5">
                            <property name="spacing">
@@ -525,6 +525,12 @@
                         </item>
                         <item row="2" column="1">
                          <widget class="QSpinBox" name="spinBox_spectro_render_thread_settings">
+                          <property name="minimumSize">
+                           <size>
+                            <width>96</width>
+                            <height>0</height>
+                           </size>
+                          </property>
                           <property name="toolTip">
                            <string>Be careful! Setting this too high can cause system instability.</string>
                           </property>
@@ -545,10 +551,10 @@
                            </sizepolicy>
                           </property>
                           <property name="frameShape">
-                           <enum>QFrame::StyledPanel</enum>
+                           <enum>QFrame::NoFrame</enum>
                           </property>
                           <property name="frameShadow">
-                           <enum>QFrame::Raised</enum>
+                           <enum>QFrame::Plain</enum>
                           </property>
                           <layout class="QHBoxLayout" name="horizontalLayout_6">
                            <property name="spacing">
@@ -569,10 +575,10 @@
                            <item>
                             <widget class="QFrame" name="frame_spectro_inner_enable_panning">
                              <property name="frameShape">
-                              <enum>QFrame::StyledPanel</enum>
+                              <enum>QFrame::NoFrame</enum>
                              </property>
                              <property name="frameShadow">
-                              <enum>QFrame::Raised</enum>
+                              <enum>QFrame::Plain</enum>
                              </property>
                              <layout class="QVBoxLayout" name="verticalLayout_25">
                               <property name="leftMargin">
@@ -603,10 +609,10 @@
                            <item>
                             <widget class="QFrame" name="frame_spectro_inner_enable_zooming">
                              <property name="frameShape">
-                              <enum>QFrame::StyledPanel</enum>
+                              <enum>QFrame::NoFrame</enum>
                              </property>
                              <property name="frameShadow">
-                              <enum>QFrame::Raised</enum>
+                              <enum>QFrame::Plain</enum>
                              </property>
                              <layout class="QVBoxLayout" name="verticalLayout_24">
                               <property name="leftMargin">
@@ -665,12 +671,12 @@
                          </widget>
                         </item>
                         <item row="0" column="1">
-                         <widget class="QFrame" name="frame_5">
+                         <widget class="QFrame" name="frame_spectro_min_freq">
                           <property name="frameShape">
-                           <enum>QFrame::StyledPanel</enum>
+                           <enum>QFrame::NoFrame</enum>
                           </property>
                           <property name="frameShadow">
-                           <enum>QFrame::Raised</enum>
+                           <enum>QFrame::Plain</enum>
                           </property>
                           <layout class="QHBoxLayout" name="horizontalLayout_23">
                            <property name="leftMargin">
@@ -709,6 +715,12 @@
                            </item>
                            <item>
                             <widget class="QSpinBox" name="spinBox_spectro_min_freq">
+                             <property name="minimumSize">
+                              <size>
+                               <width>96</width>
+                               <height>0</height>
+                              </size>
+                             </property>
                              <property name="suffix">
                               <string> Hz</string>
                              </property>
@@ -724,12 +736,12 @@
                          </widget>
                         </item>
                         <item row="1" column="1">
-                         <widget class="QFrame" name="frame_6">
+                         <widget class="QFrame" name="frame_spectro_max_freq">
                           <property name="frameShape">
-                           <enum>QFrame::StyledPanel</enum>
+                           <enum>QFrame::NoFrame</enum>
                           </property>
                           <property name="frameShadow">
-                           <enum>QFrame::Raised</enum>
+                           <enum>QFrame::Plain</enum>
                           </property>
                           <layout class="QHBoxLayout" name="horizontalLayout_27">
                            <property name="leftMargin">
@@ -771,6 +783,12 @@
                            </item>
                            <item>
                             <widget class="QSpinBox" name="spinBox_spectro_max_freq">
+                             <property name="minimumSize">
+                              <size>
+                               <width>96</width>
+                               <height>0</height>
+                              </size>
+                             </property>
                              <property name="suffix">
                               <string> Hz</string>
                              </property>
@@ -813,10 +831,10 @@
                            </sizepolicy>
                           </property>
                           <property name="frameShape">
-                           <enum>QFrame::StyledPanel</enum>
+                           <enum>QFrame::NoFrame</enum>
                           </property>
                           <property name="frameShadow">
-                           <enum>QFrame::Raised</enum>
+                           <enum>QFrame::Plain</enum>
                           </property>
                           <layout class="QHBoxLayout" name="horizontalLayout_12">
                            <property name="leftMargin">
@@ -1009,10 +1027,10 @@
                                  </sizepolicy>
                                 </property>
                                 <property name="toolTip">
-                                 <string>Play an audio sample</string>
+                                 <string>Play an audio sample.</string>
                                 </property>
                                 <property name="text">
-                                 <string>Test</string>
+                                 <string>Audio Test</string>
                                 </property>
                                 <property name="autoDefault">
                                  <bool>false</bool>
@@ -1039,6 +1057,9 @@
                                   <horstretch>0</horstretch>
                                   <verstretch>0</verstretch>
                                  </sizepolicy>
+                                </property>
+                                <property name="toolTip">
+                                 <string>Is the audio channel mono, stereo, etc.?</string>
                                 </property>
                                 <item>
                                  <property name="text">
@@ -1114,10 +1135,10 @@
                                  </sizepolicy>
                                 </property>
                                 <property name="toolTip">
-                                 <string>Play an audio sample</string>
+                                 <string>Play an audio sample.</string>
                                 </property>
                                 <property name="text">
-                                 <string>Test</string>
+                                 <string>Audio Test</string>
                                 </property>
                                </widget>
                               </item>
@@ -1141,6 +1162,9 @@
                                   <horstretch>0</horstretch>
                                   <verstretch>0</verstretch>
                                  </sizepolicy>
+                                </property>
+                                <property name="toolTip">
+                                 <string>Is the audio channel mono, stereo, etc.?</string>
                                 </property>
                                 <item>
                                  <property name="text">
@@ -1796,7 +1820,7 @@
                        <property name="geometry">
                         <rect>
                          <x>0</x>
-                         <y>-117</y>
+                         <y>0</y>
                          <width>715</width>
                          <height>729</height>
                         </rect>
@@ -2805,8 +2829,8 @@
                         <rect>
                          <x>0</x>
                          <y>0</y>
-                         <width>732</width>
-                         <height>603</height>
+                         <width>100</width>
+                         <height>30</height>
                         </rect>
                        </property>
                       </widget>

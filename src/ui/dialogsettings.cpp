@@ -76,13 +76,14 @@ QVector<QString> DialogSettings::unique_mfgs = { "None" };
  */
 DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
                                QPointer<FileIo> filePtr,
-                               std::shared_ptr<GekkoFyre::AudioDevices> audioDevices,
-                               QPointer<GekkoFyre::RadioLibs> radioLibs,
+                               std::shared_ptr<AudioDevices> audioDevices,
+                               QPointer<RadioLibs> radioLibs,
                                std::shared_ptr<QSettings> settings,
                                portaudio::System *portAudioInit,
                                libusb_context *usb_lib_ctx,
                                std::shared_ptr<GkRadio> radioPtr,
                                const std::list<GekkoFyre::Database::Settings::GkComPort> &com_ports,
+                               QPointer<GkFrequencies> gkFreqList,
                                QWidget *parent)
     : QDialog(parent), ui(new Ui::DialogSettings)
 {
@@ -99,9 +100,10 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
         gkAudioDevices = std::move(audioDevices);
         usb_ctx_ptr = std::move(usb_lib_ctx);
         gkRadioPtr = std::move(radioPtr);
+        gkFreqs = std::move(gkFreqList);
         status_com_ports = com_ports;
 
-        gkSettings = settings;
+        gkSettings = std::move(settings);
         usb_ports_active = false;
         com_ports_active = false;
 

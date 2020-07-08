@@ -78,6 +78,7 @@ public:
                             libusb_context *usb_lib_ctx,
                             std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> radioPtr,
                             const std::list<GekkoFyre::Database::Settings::GkComPort> &com_ports,
+                            QPointer<GekkoFyre::GkFrequencies> gkFreqList,
                             QWidget *parent = nullptr);
     ~DialogSettings();
 
@@ -234,6 +235,7 @@ private:
     static int prefill_rig_selection(const rig_caps *caps, void *data);
     static QMultiMap<rig_model_t, std::tuple<QString, QString, GekkoFyre::AmateurRadio::rig_type>> init_model_names();
 
+    QPointer<GekkoFyre::GkFrequencies> gkFreqs;
     std::shared_ptr<QSettings> gkSettings;
 
     void prefill_audio_api_avail(const QVector<PaHostApiTypeId> &portaudio_api_vec);
