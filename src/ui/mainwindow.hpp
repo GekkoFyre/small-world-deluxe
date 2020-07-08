@@ -325,6 +325,7 @@ private:
     static QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>> initRadioModelsVar();
 
     void updateVolumeDisplayWidgets();
+    void updateVolumeSliderLabel(const float &vol_level);
 
     //
     // Spectrograph related

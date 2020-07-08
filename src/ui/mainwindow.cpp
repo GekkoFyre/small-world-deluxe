@@ -358,7 +358,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // Initialize the Waterfall / Spectrograph
         //
         gkSpectroGui = new GekkoFyre::SpectroGui(gkStringFuncs, true, true, this);
-        ui->verticalLayout_11->addWidget(gkSpectroGui);
+        ui->horizontalLayout_12->addWidget(gkSpectroGui);
         gkSpectroGui->setEnabled(true);
 
         //
@@ -421,6 +421,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         on_checkBox_rx_tx_vol_toggle_stateChanged(rx_vol_control_selected);
         QObject::connect(this, SIGNAL(changeVolume(const float &)), this, SLOT(updateVolume(const float &)));
+
+        //
+        // Set a default value for the Volume Slider and its QLabel
+        //
+        const int vol_slider_max_val = ui->verticalSlider_vol_control->maximum();
+        const float real_vol_val = (static_cast<float>(ui->verticalSlider_vol_control->value()) / vol_slider_max_val);
+        updateVolumeSliderLabel(real_vol_val);
 
         if (input_audio_buf.get() != nullptr) {
             if (pref_input_device.dev_number > 0 && pref_input_device.dev_input_channel_count > 0) {
@@ -1000,6 +1007,24 @@ void MainWindow::updateVolumeDisplayWidgets()
 }
 
 /**
+ * @brief MainWindow::updateVolumeSliderLabel will update the volume QLabel UI widget, `label_vol_control_disp`.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param vol_level The actual slider value itself, derived from UI widget, `verticalSlider_vol_control`.
+ */
+void MainWindow::updateVolumeSliderLabel(const float &vol_level)
+{
+    const float vol_level_decibel = (20.0f * std::log10(vol_level));
+    std::stringstream ss;
+    ss << std::setprecision(3) << vol_level_decibel;
+    ui->label_vol_control_disp->setText(tr("%1 dB").arg(QString::fromStdString(ss.str())));
+
+    const float vol_multiplier = (1.0f * std::pow(10, (vol_level_decibel / 20.0f)));
+    emit changeVolume(vol_multiplier);
+
+    return;
+}
+
+/**
  * @brief MainWindow::createStatusBar creates a status bar at the bottom of the window.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @note <https://doc.qt.io/qt-5/qstatusbar.html>
@@ -1516,13 +1541,7 @@ void MainWindow::on_verticalSlider_vol_control_valueChanged(int value)
                 //
                 // Input audio stream is open and active!
                 //
-                const float vol_level_decibel = (20.0f * std::log10(real_val));
-                std::stringstream ss;
-                ss << std::setprecision(3) << vol_level_decibel;
-                ui->label_vol_control_disp->setText(tr("%1 dB").arg(QString::fromStdString(ss.str())));
-
-                const float vol_multiplier = (1.0f * std::pow(10, (vol_level_decibel / 20.0f)));
-                emit changeVolume(vol_multiplier);
+                updateVolumeSliderLabel(real_val);
             }
         }
     } else {
@@ -1530,6 +1549,7 @@ void MainWindow::on_verticalSlider_vol_control_valueChanged(int value)
             //
             // Output audio buffer
             //
+            updateVolumeSliderLabel(real_val);
         }
     }
 
