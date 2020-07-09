@@ -39,24 +39,26 @@
  **
  ****************************************************************************************************/
 
-#include "src/gk_modem.hpp"
+#pragma once
 
-using namespace GekkoFyre;
-using namespace Database;
-using namespace Settings;
-using namespace Audio;
+#include "src/defines.hpp"
+#include <QObject>
+#include <QKeyEvent>
+#include <QPlainTextEdit>
 
-/**
- * @brief PaMic::PaMic handles most microphone functions via PortAudio.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param parent
- */
-GkModem::GkModem(std::shared_ptr<AudioDevices> gkAudio, std::shared_ptr<GkLevelDb> dbPtr, QObject *parent)
-    : QObject(parent)
-{
-    gkAudioDevices = std::move(gkAudio);
-    gkDb = std::move(dbPtr);
-}
+namespace GekkoFyre {
 
-GkModem::~GkModem()
-{}
+class GkPlainTextSubmit : public QPlainTextEdit {
+    Q_OBJECT
+
+public:
+    explicit GkPlainTextSubmit(QWidget *parent = nullptr);
+    ~GkPlainTextSubmit();
+
+    void keyPressEvent(QKeyEvent *event);
+
+signals:
+    void execFuncAfterEvent();
+
+};
+};

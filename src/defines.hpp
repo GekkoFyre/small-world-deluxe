@@ -393,7 +393,8 @@ namespace AmateurRadio {
         JT9,
         T10,
         FT8,
-        FT4
+        FT4,
+        Codec2
     };
 
     enum IARURegions {
@@ -453,6 +454,13 @@ namespace AmateurRadio {
         BAUD38400,
         BAUD57600,
         BAUD115200
+    };
+
+    enum GkFreqsDb {
+        GkStoredFreq,
+        GkClosestBand,
+        GkDigitalMode,
+        GkIARURegion
     };
 
     struct GkFreqs {

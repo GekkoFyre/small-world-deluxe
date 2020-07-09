@@ -68,6 +68,7 @@ public:
                                      const bool &is_output_device);
     void write_mainwindow_settings(const QString &value, const Database::Settings::general_mainwindow_cfg &key);
     void write_misc_audio_settings(const QString &value, const Database::Settings::audio_cfg &key);
+    void write_frequencies_db(const GekkoFyre::AmateurRadio::GkFreqs &value);
 
     QString read_rig_settings(const Database::Settings::radio_cfg &key);
     QString read_rig_settings_comms(const Database::Settings::radio_cfg &key,
@@ -87,6 +88,10 @@ public:
     int convConnTypeToInt(const AmateurRadio::GkConnType &conn_type);
 
     QString convAudioBitrateToStr(const GekkoFyre::GkAudioFramework::Bitrate &bitrate);
+
+    QString convBandsToStr(const GekkoFyre::AmateurRadio::GkFreqBands &band);
+    QString convDigitalModesToStr(const GekkoFyre::AmateurRadio::DigitalModes &digital_mode);
+    QString convIARURegionToStr(const GekkoFyre::AmateurRadio::IARURegions &iaru_region);
 
     void write_audio_api_settings(const PaHostApiTypeId &interface);
     PaHostApiTypeId read_audio_api_settings();

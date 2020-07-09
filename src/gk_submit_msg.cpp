@@ -39,24 +39,30 @@
  **
  ****************************************************************************************************/
 
-#include "src/gk_modem.hpp"
+#include "src/gk_submit_msg.hpp" 
 
-using namespace GekkoFyre;
-using namespace Database;
-using namespace Settings;
-using namespace Audio;
-
-/**
- * @brief PaMic::PaMic handles most microphone functions via PortAudio.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param parent
- */
-GkModem::GkModem(std::shared_ptr<AudioDevices> gkAudio, std::shared_ptr<GkLevelDb> dbPtr, QObject *parent)
-    : QObject(parent)
+GekkoFyre::GkPlainTextSubmit::GkPlainTextSubmit(QWidget *parent)
 {
-    gkAudioDevices = std::move(gkAudio);
-    gkDb = std::move(dbPtr);
+    setParent(parent);
+
+    return;
 }
 
-GkModem::~GkModem()
-{}
+GekkoFyre::GkPlainTextSubmit::~GkPlainTextSubmit()
+{
+    return;
+}
+
+void GekkoFyre::GkPlainTextSubmit::keyPressEvent(QKeyEvent *event)
+{
+    if (event->key() == Qt::Key_Return) {
+        // The ENTER key has been pressed!
+        clear();
+        emit execFuncAfterEvent(); // Execute desired functions now!
+    } else {
+        // Some other key has been pressed, process as normal...
+        QPlainTextEdit::keyPressEvent(event);
+    }
+
+    return;
+}

@@ -39,7 +39,7 @@
  **
  ****************************************************************************************************/
 
-#include "gk_frequency_list.hpp"
+#include "src/gk_frequency_list.hpp"
 #include <cmath>
 #include <cstdlib>
 

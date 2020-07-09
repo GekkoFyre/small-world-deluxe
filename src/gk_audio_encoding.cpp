@@ -39,7 +39,7 @@
  **
  ****************************************************************************************************/
 
-#include "gk_audio_encoding.hpp"
+#include "src/gk_audio_encoding.hpp"
 #include <boost/exception/all.hpp>
 #include <fstream>
 #include <iterator>

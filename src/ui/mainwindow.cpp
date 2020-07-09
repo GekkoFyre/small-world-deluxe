@@ -35,13 +35,11 @@
  **
  ****************************************************************************************************/
 
-#include "mainwindow.hpp"
+#include "src/ui/mainwindow.hpp"
 #include "ui_mainwindow.h"
-#include "aboutdialog.hpp"
-#include "spectrodialog.hpp"
-#include "./../gk_timer.hpp"
-#include "./../spectro_cuda.h"
-#include "./../contrib/rapidcsv/src/rapidcsv.h"
+#include "src/ui/aboutdialog.hpp"
+#include "src/ui/spectrodialog.hpp"
+#include "src/gk_submit_msg.hpp"
 #include <boost/exception/all.hpp>
 #include <boost/chrono/chrono.hpp>
 #include <cmath>
@@ -72,6 +70,10 @@
 
 #ifdef _WIN32
 #include <Windows.h>
+#endif
+
+#ifdef GK_CUDA_FFT_ENBL
+#include "./../spectro_cuda.h"
 #endif
 
 using namespace GekkoFyre;
@@ -431,6 +433,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 on_pushButton_radio_receive_clicked();
             }
         }
+
+        //
+        // This connects `widget_mesg_outgoing` to any transmission protocols, such as Codec2!
+        //
+        QPointer<GkPlainTextSubmit> widget_mesg_outgoing = new GkPlainTextSubmit(ui->frame_mesg_log);
+        ui->verticalLayout_3->addWidget(widget_mesg_outgoing);
+        widget_mesg_outgoing->setTabChangesFocus(true);
+        widget_mesg_outgoing->setPlaceholderText(tr("Enter your outgoing messages here..."));
+        QObject::connect(widget_mesg_outgoing, SIGNAL(execFuncAfterEvent()), this, SLOT(msgOutgoingProcess()));
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
@@ -542,18 +553,18 @@ QStringList MainWindow::getAmateurBands()
 {
     try {
         QStringList bands;
-        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND160));
-        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND80));
-        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND60));
-        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND40));
-        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND30));
-        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND20));
-        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND17));
-        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND15));
-        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND12));
-        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND10));
-        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND6));
-        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND2));
+        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND160));
+        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND80));
+        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND60));
+        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND40));
+        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND30));
+        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND20));
+        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND17));
+        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND15));
+        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND12));
+        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND10));
+        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND6));
+        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND2));
 
         return bands;
     } catch (const std::exception &e) {
@@ -1332,6 +1343,18 @@ void MainWindow::updateVolume(const float &value)
         //
         output_audio_buf->setVolume(value);
     }
+
+    return;
+}
+
+/**
+ * @brief MainWindow::msgOutgoingProcess will process outgoing messages and prepare them for transmission with regards to
+ * libraries such as Codec2, whilst clearing `ui->plainTextEdit_mesg_outgoing` of any text at the same time.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::msgOutgoingProcess()
+{
+    QMessageBox::warning(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
 
     return;
 }

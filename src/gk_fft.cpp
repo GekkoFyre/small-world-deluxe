@@ -39,7 +39,7 @@
  **
  ****************************************************************************************************/
 
-#include "gk_fft.hpp"
+#include "src/gk_fft.hpp"
 #include <iostream>
 #include <cmath>
 

@@ -41,6 +41,7 @@
 
 #include "dek_db.hpp"
 #include "src/audio_devices.hpp"
+#include "src/contrib/rapidcsv/src/rapidcsv.h"
 #include <leveldb/cache.h>
 #include <leveldb/options.h>
 #include <leveldb/slice.h>
@@ -381,9 +382,45 @@ void GkLevelDb::write_misc_audio_settings(const QString &value, const audio_cfg 
 }
 
 /**
+ * @brief GkLevelDb::write_frequencies_db
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value
+ * @param key
+ */
+void GkLevelDb::write_frequencies_db(const GkFreqs &value)
+{
+    leveldb::WriteBatch batch;
+    leveldb::Status status;
+
+    // Frequency
+    batch.Put("GkStoredFreq", QString::number(value.frequency).toStdString());
+
+    // Closest matching frequency band
+    batch.Put("GkClosestBand", convBandsToStr(value.closest_freq_band).toStdString());
+
+    // Digital mode
+    batch.Put("GkDigitalMode", convDigitalModesToStr(value.digital_mode).toStdString());
+
+    // IARU Region
+    batch.Put("GkDigitalMode", convIARURegionToStr(value.iaru_region).toStdString());
+
+    leveldb::WriteOptions write_options;
+    write_options.sync = true;
+
+    status = db->Write(write_options, &batch);
+
+    if (!status.ok()) { // Abort because of error!
+        throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+    }
+
+    return;
+}
+
+/**
  * @brief DekodeDb::read_rig_settings reads out the stored Small World Deluxe settings which are kept within a Google LevelDB
  * database that are stored within the user's storage media, either via a default storage place or through specified means as
  * configured by the user themselves.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param key The key which is required for retrieving the desired value(s) from the Google LevelDB database itself.
  * @return The desired value from the Google LevelDB database.
  */
@@ -1078,6 +1115,100 @@ QString GkLevelDb::convAudioBitrateToStr(const GkAudioFramework::Bitrate &bitrat
     }
 
     return tr("Variable bitrate (i.e. VBR)");
+}
+
+/**
+ * @brief GkLevelDb::translateBandsToStr will translate a given band to the equivalent QString().
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param band The given amateur radio band, in meters.
+ * @return The amateur radio band, in meters, provided as a QString().
+ */
+QString GkLevelDb::convBandsToStr(const GkFreqBands &band)
+{
+    switch (band) {
+    case GkFreqBands::BAND160:
+        return tr("None");
+    case GkFreqBands::BAND80:
+        return tr("80 meters");
+    case GkFreqBands::BAND60:
+        return tr("60 meters");
+    case GkFreqBands::BAND40:
+        return tr("40 meters");
+    case GkFreqBands::BAND30:
+        return tr("30 meters");
+    case GkFreqBands::BAND20:
+        return tr("20 meters");
+    case GkFreqBands::BAND17:
+        return tr("15 meters");
+    case GkFreqBands::BAND15:
+        return tr("17 meters");
+    case GkFreqBands::BAND12:
+        return tr("12 meters");
+    case GkFreqBands::BAND10:
+        return tr("10 meters");
+    case GkFreqBands::BAND6:
+        return tr("6 meters");
+    case GkFreqBands::BAND2:
+        return tr("2 meters");
+    default:
+        return tr("Unsupported!");
+    }
+
+    return tr("Error!");
+}
+
+/**
+ * @brief GkLevelDb::convDigitalModesToStr
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param digital_mode
+ * @return
+ */
+QString GkLevelDb::convDigitalModesToStr(const DigitalModes &digital_mode)
+{
+    switch (digital_mode) {
+    case DigitalModes::WSPR:
+        return tr("WSPR");
+    case DigitalModes::JT65:
+        return tr("JT65");
+    case DigitalModes::JT9:
+        return tr("JT9");
+    case DigitalModes::T10:
+        return tr("T10");
+    case DigitalModes::FT8:
+        return tr("FT8");
+    case DigitalModes::FT4:
+        return tr("FT4");
+    case DigitalModes::Codec2:
+        return tr("Codec2");
+    default:
+        return tr("Unsupported!");
+    }
+
+    return tr("Error!");
+}
+
+/**
+ * @brief GkLevelDb::convIARURegionToStr
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param iaru_region
+ * @return
+ */
+QString GkLevelDb::convIARURegionToStr(const IARURegions &iaru_region)
+{
+    switch (iaru_region) {
+    case IARURegions::ALL:
+        return tr("ALL");
+    case IARURegions::R1:
+        return tr("R1");
+    case IARURegions::R2:
+        return tr("R2");
+    case IARURegions::R3:
+        return tr("R3");
+    default:
+        return tr("Unsupported!");
+    }
+
+    return tr("Error!");
 }
 
 /**

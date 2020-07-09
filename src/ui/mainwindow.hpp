@@ -72,6 +72,7 @@
 #include <list>
 #include <QList>
 #include <QString>
+#include <QObject>
 #include <QPointer>
 #include <QPrinter>
 #include <QMetaType>
@@ -162,6 +163,11 @@ private slots:
     // Audio related
     //
     void updateVolume(const float &value);
+
+    //
+    // Transmission & Digital Signalling
+    //
+    void msgOutgoingProcess();
 
 protected slots:
     void closeEvent(QCloseEvent *event);

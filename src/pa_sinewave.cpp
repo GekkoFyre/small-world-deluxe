@@ -39,7 +39,7 @@
  **
  ****************************************************************************************************/
 
-#include "pa_sinewave.hpp"
+#include "src/pa_sinewave.hpp"
 #include <iostream>
 #include <ostream>
 #include <mutex>

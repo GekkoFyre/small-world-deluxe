@@ -39,8 +39,8 @@
  **
  ****************************************************************************************************/
 
-#include "audio_devices.hpp"
-#include "pa_sinewave.hpp"
+#include "src/audio_devices.hpp"
+#include "src/pa_sinewave.hpp"
 #include <cmath>
 #include <cstdio>
 #include <climits>

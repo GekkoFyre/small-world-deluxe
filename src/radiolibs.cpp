@@ -39,7 +39,7 @@
  **
  ****************************************************************************************************/
 
-#include "radiolibs.hpp"
+#include "src/radiolibs.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
 #include <boost/algorithm/string/replace.hpp>
@@ -772,46 +772,6 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_p
 int16_t RadioLibs::calibrateAudioInputSignal(const int16_t *data_buf)
 {
     return -1;
-}
-
-/**
- * @brief RadioLibs::translateBandsToStr will translate a given band to the equivalent QString().
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param band The given amateur radio band, in meters.
- * @return The amateur radio band, in meters, provided as a QString().
- */
-QString RadioLibs::translateBandsToStr(const GkFreqBands &band)
-{
-    switch (band) {
-    case GkFreqBands::BAND160:
-        return tr("None");
-    case GkFreqBands::BAND80:
-        return tr("80 meters");
-    case GkFreqBands::BAND60:
-        return tr("60 meters");
-    case GkFreqBands::BAND40:
-        return tr("40 meters");
-    case GkFreqBands::BAND30:
-        return tr("30 meters");
-    case GkFreqBands::BAND20:
-        return tr("20 meters");
-    case GkFreqBands::BAND17:
-        return tr("15 meters");
-    case GkFreqBands::BAND15:
-        return tr("17 meters");
-    case GkFreqBands::BAND12:
-        return tr("12 meters");
-    case GkFreqBands::BAND10:
-        return tr("10 meters");
-    case GkFreqBands::BAND6:
-        return tr("6 meters");
-    case GkFreqBands::BAND2:
-        return tr("2 meters");
-    default:
-        return tr("Unsupported!");
-    }
-
-    return tr("Error!");
 }
 
 /**
