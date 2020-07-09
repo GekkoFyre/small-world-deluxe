@@ -76,7 +76,7 @@ endif()
 
 set(CMAKE_MODULE_PATH
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/"
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/third-party/basic-c-sdl-project/cmake/sdl2/")
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/third-party/basic-c-sdl-project/cmake/sdl2/") # Do not delete this submodule!
 
 #
 # Custom options specific to Small World Deluxe and/or GekkoFyre Networks <https://gekkofyre.io/>
@@ -184,7 +184,7 @@ if (LINUX OR MSYS OR MINGW)
         include_directories(${SDL2_INCLUDE_DIRS})
         set(LIBS ${LIBS} ${SDL2_LIBRARIES})
     else()
-        message(SEND_ERROR "The cross-platform Simple DirectMedia Layer (libSDL2) library could not be found!")
+        message(FATAL_ERROR "The cross-platform Simple DirectMedia Layer (libSDL2) library could not be found!")
     endif()
 endif()
 
@@ -193,7 +193,7 @@ if (ZLIB_FOUND)
     include_directories(${ZLIB_INCLUDE_DIRS})
     set(LIBS ${LIBS} ${ZLIB_LIBRARIES})
 else()
-    message(SEND_ERROR "The 'ZLIB' compression library could not be found!")
+    message(FATAL_ERROR "The 'ZLIB' compression library could not be found!")
 endif(ZLIB_FOUND)
 
 find_package(LevelDB REQUIRED)
@@ -274,7 +274,7 @@ if (QWT_FOUND)
     include_directories(${QWT_INCLUDE_DIRS})
     set(LIBS ${LIBS} ${QWT_LIBRARIES})
 else()
-    message(SEND_ERROR "The 'QWT' graphing/charting library could not be found!")
+    message(FATAL_ERROR "The 'QWT' graphing/charting library could not be found!")
 endif(QWT_FOUND)
 
 #
@@ -285,7 +285,7 @@ if (Vorbis_FOUND)
     include_directories(${Vorbis_INCLUDE_DIRS})
     set(LIBS ${LIBS} ${Vorbis_LIBRARIES})
 else()
-    message(SEND_ERROR "The 'Vorbis' audio (de-/en-)coding library could not be found!")
+    message(FATAL_ERROR "The 'Vorbis' audio (de-/en-)coding library could not be found!")
 endif(Vorbis_FOUND)
 
 #
@@ -296,7 +296,7 @@ if (Ogg_FOUND)
     include_directories(${Ogg_INCLUDE_DIRS})
     set(LIBS ${LIBS} ${Ogg_LIBRARIES})
 else()
-    message(SEND_ERROR "The 'Ogg' audio (de-/en-)coding library could not be found!")
+    message(FATAL_ERROR "The 'Ogg' audio (de-/en-)coding library could not be found!")
 endif(Ogg_FOUND)
 
 #
@@ -310,7 +310,7 @@ if (BUILD_OPUS_SUPPORT)
         set(LIBS ${LIBS} ${Opus_LIBRARIES})
         add_definitions("-DOPUS_LIBS_ENBLD")
     else()
-        message(SEND_ERROR "The 'Opus' audio (de-/en-)coding library could not be found!")
+        message(FATAL_ERROR "The 'Opus' audio (de-/en-)coding library could not be found!")
     endif(Opus_FOUND)
 endif(BUILD_OPUS_SUPPORT)
 
@@ -319,7 +319,7 @@ if (Iconv_FOUND)
     include_directories(${Iconv_INCLUDE_DIRS})
     set(LIBS ${LIBS} ${Iconv_LIBRARIES})
 else()
-    message(SEND_ERROR "The 'libiconv' character encoding and conversion library could not be found!")
+    message(FATAL_ERROR "The 'libiconv' character encoding and conversion library could not be found!")
 endif(Iconv_FOUND)
 
 set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-arcs -ftest-coverage -mwindows")
