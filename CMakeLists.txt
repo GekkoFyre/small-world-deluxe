@@ -412,6 +412,7 @@ set(GALAXY_UI_CPP
     src/gk_frequency_list.cpp
     src/gk_string_funcs.cpp
     src/gk_submit_msg.cpp
+    src/gk_logger.cpp
     src/gk_codec2.cpp)
 
 if(WIN32 OR MSYS OR MINGW)
@@ -482,6 +483,7 @@ set(GALAXY_OBJ_HEADERS
     src/gk_string_funcs.hpp
     src/gk_messagebox.hpp
     src/gk_submit_msg.hpp
+    src/gk_logger.hpp
     src/gk_codec2.hpp)
 
 if(WIN32 OR MSYS OR MINGW)

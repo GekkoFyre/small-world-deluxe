@@ -387,30 +387,66 @@ void GkLevelDb::write_misc_audio_settings(const QString &value, const audio_cfg 
  * @param value
  * @param key
  */
-void GkLevelDb::write_frequencies_db(const GkFreqs &value)
+void GkLevelDb::write_frequencies_db(const GkFreqs &write_value)
 {
-    leveldb::WriteBatch batch;
-    leveldb::Status status;
+    try {
+        leveldb::WriteBatch batch;
+        leveldb::Status status;
+        leveldb::ReadOptions read_options;
 
-    // Frequency
-    batch.Put("GkStoredFreq", QString::number(value.frequency).toStdString());
+        // Frequency
+        std::string gk_stored_freq_value = "";
+        status = db->Get(read_options, "GkStoredFreq", &gk_stored_freq_value);
+        if (!gk_stored_freq_value.empty()) {
+            // Frequency (CSV)
+            processCsvToLevelDB(gk_stored_freq_value);
+        }
 
-    // Closest matching frequency band
-    batch.Put("GkClosestBand", convBandsToStr(value.closest_freq_band).toStdString());
+        batch.Delete("GkStoredFreq"); // Delete the key before rewriting the values again!
+        batch.Put("GkStoredFreq", QString::number(write_value.frequency).toStdString());
 
-    // Digital mode
-    batch.Put("GkDigitalMode", convDigitalModesToStr(value.digital_mode).toStdString());
+        // Closest matching frequency band
+        std::string gk_closest_band_value = "";
+        status = db->Get(read_options, "GkClosestBand", &gk_closest_band_value);
+        if (!gk_closest_band_value.empty()) {
+            // Closest matching frequency band (CSV)
+        }
 
-    // IARU Region
-    batch.Put("GkDigitalMode", convIARURegionToStr(value.iaru_region).toStdString());
+        batch.Delete("GkClosestBand"); // Delete the key before rewriting the values again!
+        batch.Put("GkClosestBand", convBandsToStr(write_value.closest_freq_band).toStdString());
 
-    leveldb::WriteOptions write_options;
-    write_options.sync = true;
+        // Digital mode
+        std::string gk_digital_mode_value = "";
+        status = db->Get(read_options, "GkDigitalMode", &gk_digital_mode_value);
+        if (!gk_digital_mode_value.empty()) {
+            // Digital mode (CSV)
+        }
 
-    status = db->Write(write_options, &batch);
+        batch.Delete("GkDigitalMode"); // Delete the key before rewriting the values again!
+        batch.Put("GkDigitalMode", convDigitalModesToStr(write_value.digital_mode).toStdString());
 
-    if (!status.ok()) { // Abort because of error!
-        throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        // IARU Region
+        std::string gk_iaru_region_value = "";
+        status = db->Get(read_options, "GkIARURegion", &gk_iaru_region_value);
+        if (!gk_iaru_region_value.empty()) {
+            // IARU Region (CSV)
+        }
+
+        batch.Delete("GkIARURegion"); // Delete the key before rewriting the values again!
+        batch.Put("GkIARURegion", convIARURegionToStr(write_value.iaru_region).toStdString());
+
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
+
+        status = db->Write(write_options, &batch);
+
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        }
+
+        return;
+    }  catch (const std::exception &e) { // https://en.cppreference.com/w/cpp/error/nested_exception
+        std::throw_with_nested(std::runtime_error(e.what()));
     }
 
     return;
@@ -1247,4 +1283,22 @@ bool GkLevelDb::boolStr(const std::string &is_true)
     }
 
     return ret;
+}
+
+/**
+ * @brief GkLevelDb::processCsvToLevelDB
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param comma_sep_values
+ */
+void GkLevelDb::processCsvToLevelDB(const std::string &comma_sep_values)
+{
+    try {
+        // Process
+
+        return;
+    }  catch (const std::exception &e) {
+        std::throw_with_nested(std::invalid_argument(tr("An error has occurred whilst processing CSV for Google LevelDB!").toStdString()));
+    }
+
+    return;
 }

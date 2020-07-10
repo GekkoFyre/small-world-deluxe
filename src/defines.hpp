@@ -61,6 +61,7 @@
 #include <utility>
 #include <QString>
 #include <QVector>
+#include <QVariant>
 #include <QPointer>
 #include <QDateTime>
 #include <QStringList>
@@ -218,6 +219,35 @@ namespace System {
             CommandLineVersionRequested,
             CommandLineHelpRequested
         };
+    }
+
+    namespace Events {
+        namespace Logging {
+            enum GkSeverity {
+                Fatal,
+                Error,
+                Warning,
+                Info,
+                Debug,
+                Verbose,
+                None
+            };
+        }
+
+        struct GkMsg {
+            qint64 date;                                // The date and time at which the message was spawned!
+            Logging::GkSeverity severity;               // The severity of the event, whether it was 'informational' or a 'fatal error'.
+            QString message;                            // The actual details of the message itself.
+            QVariant arguments;                         // If any arguments were provided alongside the message itself as well.
+        };
+
+        namespace Logging {
+            struct GkEventLogging {
+                GkMsg mesg;                             // Details concerning the event log itself.
+                int event_no;                           // The unique 'index number' for the given event.
+                bool show;                              // Whether to show this event within the UI interface(s) or not.
+            };
+        }
     }
 }
 

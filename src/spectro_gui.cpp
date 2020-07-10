@@ -73,6 +73,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
     std::lock_guard<std::mutex> lck_guard(spectro_main_mtx);
 
     try {
+        setParent(parent);
         gkStringFuncs = std::move(stringFuncs);
 
         //
