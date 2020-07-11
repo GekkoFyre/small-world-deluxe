@@ -306,6 +306,8 @@ void GkFrequencies::updateFreqsInMem(const quint64 &frequency, const GekkoFyre::
             for (int i = 0; i < frequencyList.size(); ++i) {
                 if (frequencyList[i].frequency == freq.frequency) {
                     frequencyList.erase(frequencyList.begin() + i);
+                    emit removeFreq(frequencyList[i]);
+
                     break;
                 }
             }
@@ -316,6 +318,7 @@ void GkFrequencies::updateFreqsInMem(const quint64 &frequency, const GekkoFyre::
         //
         frequencyList.reserve(1);
         frequencyList.push_back(freq);
+        emit addFreq(freq);
     }
 
     return;

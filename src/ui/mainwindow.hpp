@@ -169,6 +169,12 @@ private slots:
     //
     void msgOutgoingProcess();
 
+    //
+    // Frequencies related
+    //
+    void removeFreqFromDb(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_remove);
+    void addFreqToDb(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_add);
+
 protected slots:
     void closeEvent(QCloseEvent *event);
 
@@ -326,11 +332,6 @@ private:
 
     void updateVolumeDisplayWidgets();
     void updateVolumeSliderLabel(const float &vol_level);
-
-    //
-    // Frequencies related
-    //
-    void updateFreqSettingsDb(const GekkoFyre::AmateurRadio::GkFreqs &write_new_value, const GekkoFyre::AmateurRadio::GkFreqs &write_old_value);
 
     //
     // Spectrograph related

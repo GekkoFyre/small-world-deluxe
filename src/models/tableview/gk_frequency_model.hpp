@@ -45,16 +45,34 @@
 #include <QList>
 #include <QObject>
 #include <QString>
+#include <QVariant>
+#include <QModelIndex>
 #include <QAbstractTableModel>
 
 namespace GekkoFyre {
 
 class GkFreqTableViewModel : public QAbstractTableModel {
-    QList<GekkoFyre::AmateurRadio::GkFreqs> m_data;
+    Q_OBJECT
 
 public:
-    explicit GkFreqTableViewModel(QObject *parent = nullptr);
+    explicit GkFreqTableViewModel(QWidget *parent = nullptr);
     ~GkFreqTableViewModel();
+
+    void populateData(const QList<GekkoFyre::AmateurRadio::GkFreqs> &frequencies);
+    void insertData(const GekkoFyre::AmateurRadio::GkFreqs &freq_val);
+    void removeData(const GekkoFyre::AmateurRadio::GkFreqs &freq_val);
+    int rowCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
+    int columnCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
+
+    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
+    QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
+
+signals:
+    void removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_remove);
+    void addFreq(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_add);
+
+private:
+    QList<GekkoFyre::AmateurRadio::GkFreqs> m_data;
 
 };
 };

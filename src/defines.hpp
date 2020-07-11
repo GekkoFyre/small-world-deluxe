@@ -186,6 +186,13 @@ namespace GekkoFyre {
 #define RS232_DEFAULT_BAUD_SPEED (9600)                 // The default baud speed made for any RS232 connections, mostly made for testing purposes.
 #define RS232_DEFAULT_TIMEOUT (5000)                    // The default timeout value for any RS232 connections, mostly made for testing purposes.
 
+//
+// QTableView Models
+//
+#define GK_FREQ_TABLEVIEW_MODEL_FREQUENCY_IDX (0)       // The desired ordering for the 'Frequency' heading within the QTableView model for class, `GkFreqTableViewModel`.
+#define GK_FREQ_TABLEVIEW_MODEL_MODE_IDX (1)            // The desired ordering for the 'Mode' heading within the QTableView model for class, `GkFreqTableViewModel`.
+#define GK_FREQ_TABLEVIEW_MODEL_IARU_REGION_IDX (2)     // The desired ordering for the 'IARU Region' heading within the QTableView model for class, `GkFreqTableViewModel`.
+
 #ifndef M_PI
 #define M_PI (3.14159265358979323846) /* pi */
 #endif

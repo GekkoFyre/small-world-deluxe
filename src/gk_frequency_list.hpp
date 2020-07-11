@@ -68,7 +68,8 @@ public:
 signals:
     void updateFrequencies(const quint64 &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
                            const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq);
-    void updateFreqDb(const GekkoFyre::AmateurRadio::GkFreqs &write_new_value, const GekkoFyre::AmateurRadio::GkFreqs &write_old_value);
+    void removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_remove);
+    void addFreq(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_add);
 
 private slots:
     void updateFreqsInMem(const quint64 &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,

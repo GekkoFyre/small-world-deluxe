@@ -40,6 +40,7 @@
 #include "src/ui/aboutdialog.hpp"
 #include "src/ui/spectrodialog.hpp"
 #include "src/gk_submit_msg.hpp"
+#include "src/models/tableview/gk_frequency_model.hpp"
 #include <boost/exception/all.hpp>
 #include <boost/chrono/chrono.hpp>
 #include <cmath>
@@ -147,6 +148,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // throughout the globe/world!
         //
         gkFreqList = new GkFrequencies(this);
+        QObject::connect(gkFreqList, SIGNAL(addFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
+                         this, SLOT(addFreqToDb(const GekkoFyre::AmateurRadio::GkFreqs &)));
+        QObject::connect(gkFreqList, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
+                         this, SLOT(removeFreqFromDb(const GekkoFyre::AmateurRadio::GkFreqs &)));
+
+
         gkFreqList->publishFreqList();
 
         //
@@ -600,9 +607,15 @@ bool MainWindow::prefillAmateurBands()
  */
 void MainWindow::launchSettingsWin()
 {
+    QPointer<GkFreqTableViewModel> gkFreqTableModel = new GkFreqTableViewModel(this);
+    QObject::connect(gkFreqTableModel, SIGNAL(addFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
+                     gkFreqList, SIGNAL(addFreq(const GekkoFyre::AmateurRadio::GkFreqs &)));
+    QObject::connect(gkFreqTableModel, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
+                     gkFreqList, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)));
+
     QPointer<DialogSettings> dlg_settings = new DialogSettings(GkDb, fileIo, gkAudioDevices, gkRadioLibs, sw_settings,
                                                                gkPortAudioInit, usb_ctx_ptr, gkRadioPtr, status_com_ports,
-                                                               gkFreqList, this);
+                                                               gkFreqList, gkFreqTableModel, this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
@@ -1031,6 +1044,27 @@ void MainWindow::updateVolumeSliderLabel(const float &vol_level)
     const float vol_multiplier = (1.0f * std::pow(10, (vol_level_decibel / 20.0f)));
     emit changeVolume(vol_multiplier);
 
+    return;
+}
+
+/**
+ * @brief MainWindow::removeFreqFromDb will remove a frequency and its related values from the Google LevelDB database.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param freq_to_remove
+ */
+void MainWindow::removeFreqFromDb(const GkFreqs &freq_to_remove)
+{
+    return;
+}
+
+/**
+ * @brief MainWindow::addFreqToDb will add a new frequency and any of its related values (such as digital mode
+ * used, IARU region, etc.) to the Google LevelDB database.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param freq_to_add
+ */
+void MainWindow::addFreqToDb(const GkFreqs &freq_to_add)
+{
     return;
 }
 
@@ -2033,20 +2067,6 @@ void MainWindow::disconnectRigInMemory(std::shared_ptr<Rig> rig_to_disconnect, c
             }
         }
     }
-
-    return;
-}
-
-/**
- * @brief MainWindow::updateFreqSettingsDb Updates the database of frequencies managed by the user and saves them within Google LevelDB.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param write_new_value
- * @param write_old_value
- */
-void MainWindow::updateFreqSettingsDb(const GekkoFyre::AmateurRadio::GkFreqs &write_new_value, const GekkoFyre::AmateurRadio::GkFreqs &write_old_value)
-{
-    Q_UNUSED(write_new_value);
-    Q_UNUSED(write_old_value);
 
     return;
 }
