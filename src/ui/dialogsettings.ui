@@ -333,7 +333,7 @@
                        </property>
                        <layout class="QHBoxLayout" name="horizontalLayout_2">
                         <item>
-                         <widget class="QTableWidget" name="tableWidget_working_freqs">
+                         <widget class="QTableView" name="tableView_working_freqs">
                           <property name="sizePolicy">
                            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                             <horstretch>0</horstretch>
@@ -1381,8 +1381,8 @@
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>732</width>
-                      <height>603</height>
+                      <width>211</width>
+                      <height>121</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_28">
@@ -2829,8 +2829,8 @@
                         <rect>
                          <x>0</x>
                          <y>0</y>
-                         <width>100</width>
-                         <height>30</height>
+                         <width>63</width>
+                         <height>16</height>
                         </rect>
                        </property>
                       </widget>

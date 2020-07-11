@@ -382,66 +382,79 @@ void GkLevelDb::write_misc_audio_settings(const QString &value, const audio_cfg 
 }
 
 /**
- * @brief GkLevelDb::write_frequencies_db
+ * @brief GkLevelDb::write_frequencies_db manages the storage of frequency information within Small World Deluxe, such as
+ * deletion, addition, and modification.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param value
- * @param key
+ * @param write_new_value The newer frequency information values to be written to Google LevelDB.
+ * @param write_old_value The old data that needs to be modified, if required.
  */
-void GkLevelDb::write_frequencies_db(const GkFreqs &write_value)
+void GkLevelDb::write_frequencies_db(const GkFreqs &write_new_value, const GkFreqs &write_old_value)
 {
     try {
         leveldb::WriteBatch batch;
         leveldb::Status status;
         leveldb::ReadOptions read_options;
 
-        // Frequency
-        std::string gk_stored_freq_value = "";
-        status = db->Get(read_options, "GkStoredFreq", &gk_stored_freq_value);
-        if (!gk_stored_freq_value.empty()) {
-            // Frequency (CSV)
-            processCsvToLevelDB(gk_stored_freq_value);
+        // Has the Google LevelDB database being initialized at all with the default frequency list?
+        std::string gk_init_str = "";
+        status = db->Get(read_options, "GkFreqInit", &gk_init_str);
+        batch.Put("GkFreqInit", gk_init_str);
+
+        bool gk_freq_init = false;
+        if (!gk_init_str.empty()) {
+            // Convert to a boolean value
+            gk_freq_init = boolStr(gk_init_str);
         }
 
-        batch.Delete("GkStoredFreq"); // Delete the key before rewriting the values again!
-        batch.Put("GkStoredFreq", QString::number(write_value.frequency).toStdString());
+        if (!gk_freq_init) {
+            // Frequency
+            std::string gk_stored_freq_value = "";
+            status = db->Get(read_options, "GkStoredFreq", &gk_stored_freq_value);
+            std::string csv_stored_freq;
+            csv_stored_freq = processCsvToLevelDB(gk_stored_freq_value, QString::number(write_new_value.frequency).toStdString(),
+                                                  QString::number(write_old_value.frequency).toStdString()); // Frequency (CSV)
 
-        // Closest matching frequency band
-        std::string gk_closest_band_value = "";
-        status = db->Get(read_options, "GkClosestBand", &gk_closest_band_value);
-        if (!gk_closest_band_value.empty()) {
-            // Closest matching frequency band (CSV)
-        }
+            batch.Delete("GkStoredFreq"); // Delete the key before rewriting the values again!
+            batch.Put("GkStoredFreq", csv_stored_freq);
 
-        batch.Delete("GkClosestBand"); // Delete the key before rewriting the values again!
-        batch.Put("GkClosestBand", convBandsToStr(write_value.closest_freq_band).toStdString());
+            // Closest matching frequency band
+            std::string gk_closest_band_value = "";
+            status = db->Get(read_options, "GkClosestBand", &gk_closest_band_value);
+            std::string csv_closest_band;
+            csv_closest_band = processCsvToLevelDB(gk_closest_band_value, convBandsToStr(write_new_value.closest_freq_band).toStdString(),
+                                                   convBandsToStr(write_old_value.closest_freq_band).toStdString()); // Closest matching frequency band (CSV)
 
-        // Digital mode
-        std::string gk_digital_mode_value = "";
-        status = db->Get(read_options, "GkDigitalMode", &gk_digital_mode_value);
-        if (!gk_digital_mode_value.empty()) {
-            // Digital mode (CSV)
-        }
+            batch.Delete("GkClosestBand"); // Delete the key before rewriting the values again!
+            batch.Put("GkClosestBand", csv_closest_band);
 
-        batch.Delete("GkDigitalMode"); // Delete the key before rewriting the values again!
-        batch.Put("GkDigitalMode", convDigitalModesToStr(write_value.digital_mode).toStdString());
+            // Digital mode
+            std::string gk_digital_mode_value = "";
+            status = db->Get(read_options, "GkDigitalMode", &gk_digital_mode_value);
+            std::string csv_digital_mode;
+            csv_digital_mode = processCsvToLevelDB(gk_digital_mode_value, convDigitalModesToStr(write_new_value.digital_mode).toStdString(),
+                                                   convDigitalModesToStr(write_old_value.digital_mode).toStdString()); // Digital mode (CSV)
 
-        // IARU Region
-        std::string gk_iaru_region_value = "";
-        status = db->Get(read_options, "GkIARURegion", &gk_iaru_region_value);
-        if (!gk_iaru_region_value.empty()) {
-            // IARU Region (CSV)
-        }
+            batch.Delete("GkDigitalMode"); // Delete the key before rewriting the values again!
+            batch.Put("GkDigitalMode", csv_digital_mode);
 
-        batch.Delete("GkIARURegion"); // Delete the key before rewriting the values again!
-        batch.Put("GkIARURegion", convIARURegionToStr(write_value.iaru_region).toStdString());
+            // IARU Region
+            std::string gk_iaru_region_value = "";
+            status = db->Get(read_options, "GkIARURegion", &gk_iaru_region_value);
+            std::string csv_iaru_region;
+            csv_iaru_region = processCsvToLevelDB(gk_iaru_region_value, convIARURegionToStr(write_new_value.iaru_region).toStdString(),
+                                                  convIARURegionToStr(write_old_value.iaru_region).toStdString()); // IARU Region (CSV)
 
-        leveldb::WriteOptions write_options;
-        write_options.sync = true;
+            batch.Delete("GkIARURegion"); // Delete the key before rewriting the values again!
+            batch.Put("GkIARURegion", csv_iaru_region);
 
-        status = db->Write(write_options, &batch);
+            leveldb::WriteOptions write_options;
+            write_options.sync = true;
 
-        if (!status.ok()) { // Abort because of error!
-            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+            status = db->Write(write_options, &batch);
+
+            if (!status.ok()) { // Abort because of error!
+                throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+            }
         }
 
         return;
@@ -1273,10 +1286,8 @@ std::string GkLevelDb::boolEnum(const bool &is_true)
  */
 bool GkLevelDb::boolStr(const std::string &is_true)
 {
-    // TODO: Maybe convert to a Boost C++ tribool?
-
     bool ret = false;
-    if (std::strcmp(is_true.c_str(), "true")) {
+    if (is_true == "true") {
         ret = true;
     } else {
         ret = false;
@@ -1286,19 +1297,55 @@ bool GkLevelDb::boolStr(const std::string &is_true)
 }
 
 /**
- * @brief GkLevelDb::processCsvToLevelDB
+ * @brief GkLevelDb::processCsvToLevelDB takes pre-existing data and appends new values towards it, in the form of CSV. It then returns
+ * all the newly made data as a CSV string. Data modifications to existing rows can be made too, which are automatically detected.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param comma_sep_values
+ * @param comma_sep_values The pre-existing CSV information.
+ * @param data_to_append The information to append onto the pre-existing CSV information, if any.
+ * @param old_value Any older information that needs to be removed, modified, etc. if required.
+ * @return The newly made data, with the appended information, as a CSV string.
  */
-void GkLevelDb::processCsvToLevelDB(const std::string &comma_sep_values)
+std::string GkLevelDb::processCsvToLevelDB(const std::string &comma_sep_values, const std::string &data_to_append, const std::string &old_value)
 {
     try {
-        // Process
+        if (!data_to_append.empty() || !old_value.empty()) {
+            if (!comma_sep_values.empty()) {
+                std::stringstream sstream(comma_sep_values);
+                rapidcsv::Document doc(sstream, rapidcsv::LabelParams(0, 0));
+                std::vector<std::string> csv_vals = doc.GetColumn<std::string>("FreqValues");
 
-        return;
+                for (size_t i = 0; i < csv_vals.size(); ++i) {
+                    if (csv_vals[i] == old_value) {
+                        // The old value does indeed exist within the Google LevelDB database!
+                        if (!data_to_append.empty()) {
+                            doc.SetCell(0, i, data_to_append);
+                        } else {
+                            doc.SetCell(0, i, "");
+                        }
+
+                        break;
+                    }
+                }
+
+                if (!data_to_append.empty()) {
+                    sstream << "," << data_to_append;
+                }
+
+                return sstream.str(); // Return the appended data
+            } else {
+                std::stringstream sstream;
+                if (!data_to_append.empty()) {
+                    sstream << "FreqValues" << std::endl << data_to_append;
+                }
+
+                return sstream.str();
+            }
+        } else {
+            throw std::invalid_argument(tr("Given CSV data for frequency values is invalid!").toStdString());
+        }
     }  catch (const std::exception &e) {
         std::throw_with_nested(std::invalid_argument(tr("An error has occurred whilst processing CSV for Google LevelDB!").toStdString()));
     }
 
-    return;
+    return "";
 }

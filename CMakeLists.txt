@@ -413,7 +413,8 @@ set(GALAXY_UI_CPP
     src/gk_string_funcs.cpp
     src/gk_submit_msg.cpp
     src/gk_logger.cpp
-    src/gk_codec2.cpp)
+    src/gk_codec2.cpp
+    src/models/tableview/gk_frequency_model.cpp)
 
 if(WIN32 OR MSYS OR MINGW)
     # Nothing here at the moment!
@@ -484,7 +485,8 @@ set(GALAXY_OBJ_HEADERS
     src/gk_messagebox.hpp
     src/gk_submit_msg.hpp
     src/gk_logger.hpp
-    src/gk_codec2.hpp)
+    src/gk_codec2.hpp
+    src/models/tableview/gk_frequency_model.hpp)
 
 if(WIN32 OR MSYS OR MINGW)
     # Nothing here at the moment!

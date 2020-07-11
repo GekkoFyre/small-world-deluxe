@@ -42,40 +42,19 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include <QObject>
 #include <QList>
+#include <QObject>
+#include <QString>
+#include <QAbstractTableModel>
 
 namespace GekkoFyre {
 
-class GkFrequencies : public QObject {
-    Q_OBJECT
+class GkFreqTableViewModel : public QAbstractTableModel {
+    QList<GekkoFyre::AmateurRadio::GkFreqs> m_data;
 
 public:
-    explicit GkFrequencies(QObject *parent = nullptr);
-    ~GkFrequencies();
-
-    void publishFreqList();
-
-    bool approximatelyEqual(const float &a, const float &b, const float &epsilon);
-    bool essentiallyEqual(const float &a, const float &b, const float &epsilon);
-    bool definitelyGreaterThan(const float &a, const float &b, const float &epsilon);
-    bool definitelyLessThan(const float &a, const float &b, const float &epsilon);
-
-    QList<GekkoFyre::AmateurRadio::GkFreqs> listOfFreqs();
-    int size();
-    GekkoFyre::AmateurRadio::GkFreqs at(const int &idx);
-
-signals:
-    void updateFrequencies(const quint64 &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
-                           const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq);
-    void updateFreqDb(const GekkoFyre::AmateurRadio::GkFreqs &write_new_value, const GekkoFyre::AmateurRadio::GkFreqs &write_old_value);
-
-private slots:
-    void updateFreqsInMem(const quint64 &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
-                          const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq);
-
-private:
-    QList<GekkoFyre::AmateurRadio::GkFreqs> frequencyList;
+    explicit GkFreqTableViewModel(QObject *parent = nullptr);
+    ~GkFreqTableViewModel();
 
 };
 };

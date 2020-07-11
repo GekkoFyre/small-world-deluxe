@@ -2040,14 +2040,14 @@ void MainWindow::disconnectRigInMemory(std::shared_ptr<Rig> rig_to_disconnect, c
 /**
  * @brief MainWindow::updateFreqSettingsDb Updates the database of frequencies managed by the user and saves them within Google LevelDB.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param frequency The frequency to update.
- * @param digital_mode What digital mode is being used, whether it be WSPR, JT65, FT8, etc.
- * @param iaru_region The IARU Region that this particular frequency applies towards, such as ALL, R1, etc.
- * @param remove_freq Whether to remove the frequency in question from the global list or not.
+ * @param write_new_value
+ * @param write_old_value
  */
-void MainWindow::updateFreqSettingsDb(const quint64 &frequency, const DigitalModes &digital_mode,
-                                      const IARURegions &iaru_region, const bool &remove_freq)
+void MainWindow::updateFreqSettingsDb(const GekkoFyre::AmateurRadio::GkFreqs &write_new_value, const GekkoFyre::AmateurRadio::GkFreqs &write_old_value)
 {
+    Q_UNUSED(write_new_value);
+    Q_UNUSED(write_old_value);
+
     return;
 }
 
