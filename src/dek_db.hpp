@@ -72,6 +72,7 @@ public:
     void write_frequencies_db(const AmateurRadio::GkFreqs &write_new_value);
     void remove_frequencies_db(const AmateurRadio::GkFreqs &freq_to_remove);
     void remove_frequencies_db(const bool &del_all);
+    void writeFreqInit();
     bool isFreqAlreadyInit();
 
     QString read_rig_settings(const Database::Settings::radio_cfg &key);

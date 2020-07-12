@@ -176,6 +176,16 @@ private slots:
     void on_horizontalSlider_spectro_min_freq_valueChanged(int value);
     void on_horizontalSlider_spectro_max_freq_valueChanged(int value);
 
+    //
+    // Frequency List
+    //
+    void on_pushButton_freq_list_new_clicked();
+    void on_pushButton_freq_list_edit_clicked();
+    void on_pushButton_freq_list_delete_clicked();
+    void on_pushButton_freq_list_print_clicked();
+    void on_doubleSpinBox_freq_calib_intercept_valueChanged(double arg1);
+    void on_doubleSpinBox_freq_calib_slope_valueChanged(double arg1);
+
 signals:
     void usbPortsDisabled(const bool &active);
     void comPortsDisabled(const bool &active);

@@ -42,6 +42,7 @@
 #include "src/gk_frequency_list.hpp"
 #include <cmath>
 #include <cstdlib>
+#include <utility>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -58,8 +59,10 @@ using namespace Control;
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param parent
  */
-GkFrequencies::GkFrequencies(QObject *parent)
+GkFrequencies::GkFrequencies(std::shared_ptr<GekkoFyre::GkLevelDb> database, QObject *parent)
 {
+    GkDb = std::move(database);
+
     QObject::connect(this, SIGNAL(updateFrequencies(const quint64 &, const GekkoFyre::AmateurRadio::DigitalModes &, const GekkoFyre::AmateurRadio::IARURegions &, const bool &)),
                      this, SLOT(updateFreqsInMem(const quint64 &, const GekkoFyre::AmateurRadio::DigitalModes &, const GekkoFyre::AmateurRadio::IARURegions &, const bool &)));
 
@@ -215,6 +218,8 @@ void GkFrequencies::publishFreqList()
     emit updateFrequencies(3400065000, DigitalModes::JT65, IARURegions::ALL, false);
 
     emit updateFrequencies(5760065000, DigitalModes::JT65, IARURegions::ALL, false);
+
+    GkDb->writeFreqInit(); // Write to the database that we've initialized Google LevelDB with these aforementioned base values!
 
     return;
 }

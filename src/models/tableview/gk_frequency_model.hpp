@@ -43,13 +43,42 @@
 
 #include "src/defines.hpp"
 #include <QList>
+#include <QMenu>
+#include <QPoint>
 #include <QObject>
 #include <QString>
 #include <QVariant>
+#include <QPointer>
+#include <QTableView>
 #include <QModelIndex>
+#include <QMouseEvent>
+#include <QStandardItemModel>
 #include <QAbstractTableModel>
 
 namespace GekkoFyre {
+
+class GkFreqTableContextMenu : public QStandardItemModel {
+    Q_OBJECT
+
+public:
+    explicit GkFreqTableContextMenu(QWidget *parent = nullptr);
+    ~GkFreqTableContextMenu();
+
+public slots:
+    void customMenuRequested(QPoint pos);
+    void customHeaderMenuRequested(QPoint pos);
+
+private slots:
+    void mousePressEvent(QMouseEvent *e);
+
+signals:
+    void rightClicked(QPoint pos);
+
+private:
+    QPointer<QTableView> table;
+    QPointer<QMenu> menu;
+
+};
 
 class GkFreqTableViewModel : public QAbstractTableModel {
     Q_OBJECT
@@ -59,8 +88,11 @@ public:
     ~GkFreqTableViewModel();
 
     void populateData(const QList<GekkoFyre::AmateurRadio::GkFreqs> &frequencies);
+    void populateData(const QList<GekkoFyre::AmateurRadio::GkFreqs> &frequencies, const bool &populate_freq_db);
     void insertData(const GekkoFyre::AmateurRadio::GkFreqs &freq_val);
+    void insertData(const GekkoFyre::AmateurRadio::GkFreqs &freq_val, const bool &populate_freq_db);
     void removeData(const GekkoFyre::AmateurRadio::GkFreqs &freq_val);
+    void removeData(const GekkoFyre::AmateurRadio::GkFreqs &freq_val, const bool &remove_freq_db);
     int rowCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
     int columnCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
 
@@ -73,6 +105,7 @@ signals:
 
 private:
     QList<GekkoFyre::AmateurRadio::GkFreqs> m_data;
+    QPointer<GkFreqTableContextMenu> context_menu;
 
 };
 };

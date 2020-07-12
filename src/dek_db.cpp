@@ -557,6 +557,33 @@ void GkLevelDb::remove_frequencies_db(const bool &del_all)
 }
 
 /**
+ * @brief GkLevelDb::writeFreqInit
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkLevelDb::writeFreqInit()
+{
+    bool already_init = isFreqAlreadyInit();
+
+    if (!already_init) {
+        leveldb::WriteBatch batch;
+        leveldb::Status status;
+
+        batch.Put("GkFreqInit", boolEnum(true));
+
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
+
+        status = db->Write(write_options, &batch);
+
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        }
+    }
+
+    return;
+}
+
+/**
  * @brief GkLevelDb::isFreqAlreadyInit determines whether the Google LevelDB database has been primed with the base frequency set and
  * their component values or not. This is kind'a required for the basic functioning of Small World Deluxe, at least and until the user
  * starts making their own customizations to the software application itself.
