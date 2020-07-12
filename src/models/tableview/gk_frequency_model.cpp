@@ -39,7 +39,10 @@
  **
  ****************************************************************************************************/
 
-#include "src/models/tableview/gk_frequency_model.hpp" 
+#include "src/models/tableview/gk_frequency_model.hpp"
+#include <QAction>
+#include <QVBoxLayout>
+#include <QHeaderView>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -54,6 +57,8 @@ using namespace Logging;
 
 GkFreqTableViewModel::GkFreqTableViewModel(QWidget *parent) : QAbstractTableModel(parent)
 {
+    context_menu = new GkFreqTableContextMenu(parent);
+
     return;
 }
 
@@ -72,30 +77,92 @@ void GkFreqTableViewModel::populateData(const QList<GkFreqs> &frequencies)
     m_data.clear();
     m_data = frequencies;
 
-    for (const auto &data: frequencies) {
-        emit addFreq(data);
+    return;
+}
+
+/**
+ * @brief GkFreqTableViewModel::populateData
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param frequencies
+ * @param populate_freq_db
+ */
+void GkFreqTableViewModel::populateData(const QList<GkFreqs> &frequencies, const bool &populate_freq_db)
+{
+    populateData(frequencies);
+
+    if (populate_freq_db) {
+        for (const auto &data: frequencies) {
+            emit addFreq(data);
+        }
     }
 
     return;
 }
 
+/**
+ * @brief GkFreqTableViewModel::insertData
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param freq_val
+ */
 void GkFreqTableViewModel::insertData(const GkFreqs &freq_val)
 {
     m_data.push_back(freq_val);
-    emit addFreq(freq_val);
 
     return;
 }
 
+/**
+ * @brief GkFreqTableViewModel::insertData
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param freq_val
+ * @param populate_freq_db
+ */
+void GkFreqTableViewModel::insertData(const GkFreqs &freq_val, const bool &populate_freq_db)
+{
+    insertData(freq_val);
+
+    if (populate_freq_db) {
+        emit addFreq(freq_val);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkFreqTableViewModel::removeData
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param freq_val
+ */
 void GkFreqTableViewModel::removeData(const GkFreqs &freq_val)
 {
     for (int i = 0; i < m_data.size(); ++i) {
         if ((m_data[i].frequency == freq_val.frequency) && ((m_data[i].digital_mode == freq_val.digital_mode) ||
                                                             (m_data[i].iaru_region == freq_val.iaru_region))) {
             m_data.removeAt(i); // Remove any occurrence of this value, one at a time!
-            emit removeFreq(freq_val);
         }
     }
+
+    return;
+}
+
+/**
+ * @brief GkFreqTableViewModel::removeData
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param freq_val
+ * @param remove_freq_db
+ */
+void GkFreqTableViewModel::removeData(const GkFreqs &freq_val, const bool &remove_freq_db)
+{
+    if (remove_freq_db) {
+        for (int i = 0; i < m_data.size(); ++i) {
+            if ((m_data[i].frequency == freq_val.frequency) && ((m_data[i].digital_mode == freq_val.digital_mode) ||
+                                                                (m_data[i].iaru_region == freq_val.iaru_region))) {
+                emit removeFreq(freq_val);
+            }
+        }
+    }
+
+    removeData(freq_val);
 
     return;
 }
@@ -177,4 +244,73 @@ QVariant GkFreqTableViewModel::headerData(int section, Qt::Orientation orientati
     }
 
     return QVariant();
+}
+
+/**
+ * @brief GkFreqTableContextMenu::GkFreqTableContextMenu
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param parent
+ */
+GkFreqTableContextMenu::GkFreqTableContextMenu(QWidget *parent)
+{
+    table = new QTableView(parent);
+    QPointer<QVBoxLayout> layout = new QVBoxLayout(parent);
+
+    table->setModel(this);
+    table->setContextMenuPolicy(Qt::CustomContextMenu);
+    QObject::connect(table, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(customMenuRequested(QPoint)));
+
+    table->horizontalHeader()->setContextMenuPolicy(Qt::CustomContextMenu);
+    QObject::connect(table->horizontalHeader(), SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(customHeaderMenuRequested(QPoint)));
+    layout->addWidget(table);
+
+    menu = new QMenu(parent);
+    menu->addAction(new QAction(tr("New"), this));
+    menu->addAction(new QAction(tr("Edit"), this));
+    menu->addAction(new QAction(tr("Delete"), this));
+
+    QObject::connect(this, SIGNAL(rightClicked(QPoint)), this, SLOT(customHeaderMenuRequested(QPoint)));
+
+    return;
+}
+
+GkFreqTableContextMenu::~GkFreqTableContextMenu()
+{
+    return;
+}
+
+/**
+ * @brief GkFreqTableContextMenu::customMenuRequested
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param pos
+ */
+void GkFreqTableContextMenu::customMenuRequested(QPoint pos)
+{
+    QModelIndex index = table->indexAt(pos);
+    Q_UNUSED(index);
+
+    menu->popup(table->viewport()->mapToGlobal(pos));
+
+    return;
+}
+
+/**
+ * @brief GkFreqTableContextMenu::customHeaderMenuRequested
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param pos
+ */
+void GkFreqTableContextMenu::customHeaderMenuRequested(QPoint pos)
+{
+    menu->popup(table->horizontalHeader()->viewport()->mapToGlobal(pos));
+
+    return;
+}
+
+void GkFreqTableContextMenu::mousePressEvent(QMouseEvent *e)
+{
+    if (e->button() == Qt::RightButton) {
+        emit rightClicked(QCursor::pos());
+    }
+
+    return;
 }

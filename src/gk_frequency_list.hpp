@@ -42,6 +42,8 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include "src/dek_db.hpp"
+#include <memory>
 #include <QObject>
 #include <QList>
 
@@ -51,7 +53,7 @@ class GkFrequencies : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkFrequencies(QObject *parent = nullptr);
+    explicit GkFrequencies(std::shared_ptr<GekkoFyre::GkLevelDb> database, QObject *parent = nullptr);
     ~GkFrequencies();
 
     void publishFreqList();
@@ -77,6 +79,7 @@ private slots:
 
 private:
     QList<GekkoFyre::AmateurRadio::GkFreqs> frequencyList;
+    std::shared_ptr<GekkoFyre::GkLevelDb> GkDb;
 
 };
 };

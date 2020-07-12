@@ -432,7 +432,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // Initialize the list of frequencies that Small World Deluxe needs to communicate with other users
         // throughout the globe/world!
         //
-        gkFreqList = new GkFrequencies(this);
+        gkFreqList = new GkFrequencies(GkDb, this);
         QObject::connect(gkFreqList, SIGNAL(addFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
                          this, SLOT(addFreqToDb(const GekkoFyre::AmateurRadio::GkFreqs &)));
         QObject::connect(gkFreqList, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
