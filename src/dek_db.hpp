@@ -68,8 +68,10 @@ public:
                                      const bool &is_output_device);
     void write_mainwindow_settings(const QString &value, const Database::Settings::general_mainwindow_cfg &key);
     void write_misc_audio_settings(const QString &value, const Database::Settings::audio_cfg &key);
-    void write_frequencies_db(const AmateurRadio::GkFreqs &write_new_value,
-                              const AmateurRadio::GkFreqs &write_old_value = AmateurRadio::GkFreqs());
+
+    void write_frequencies_db(const AmateurRadio::GkFreqs &write_new_value);
+    void remove_frequencies_db(const AmateurRadio::GkFreqs &freq_to_remove, const bool &del_all = false);
+    bool isFreqAlreadyInit();
 
     QString read_rig_settings(const Database::Settings::radio_cfg &key);
     QString read_rig_settings_comms(const Database::Settings::radio_cfg &key,
@@ -107,7 +109,8 @@ private:
     QPointer<GekkoFyre::FileIo> fileIo;
     leveldb::DB *db;
 
-    std::string processCsvToLevelDB(const std::string &comma_sep_values, const std::string &data_to_append = "", const std::string &old_value = "");
+    std::string processCsvToDB(const std::string &comma_sep_values, const std::string &data_to_append);
+    std::string deleteCsvValForDb(const std::string &comma_sep_values, const std::string &data_to_remove);
 
 };
 };

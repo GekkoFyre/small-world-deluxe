@@ -227,7 +227,9 @@ std::vector<GkDevice> AudioDevices::enumAudioDevices()
 
     numDevices = Pa_GetDeviceCount();
     if (numDevices < 0) {
+        #ifdef GFYRE_PORTAUDIO_DBG_VERBOSITY_ENBL
         std::cerr << tr("ERROR: Pa_GetDeviceCount returned 0x").arg(QString::number(numDevices)).toStdString() << std::endl;
+        #endif
         err = numDevices;
         goto error;
     }
@@ -236,7 +238,9 @@ std::vector<GkDevice> AudioDevices::enumAudioDevices()
     for (int i = 0; i < numDevices; ++i) {
         GkDevice device;
         deviceInfo = Pa_GetDeviceInfo(i);
+        #ifdef GFYRE_PORTAUDIO_DBG_VERBOSITY_ENBL
         std::cout << tr("--------------------------------------- Device #%1").arg(QString::number(i)).toStdString() << std::endl;
+        #endif
         device.dev_number = i;
         device.default_dev = false;
         device.device_info = *const_cast<PaDeviceInfo*>(deviceInfo);
@@ -244,31 +248,41 @@ std::vector<GkDevice> AudioDevices::enumAudioDevices()
         // Mark global and API specific default devices
         defaultDisplayed = 0;
         if (i == Pa_GetDefaultInputDevice()) {
+            #ifdef GFYRE_PORTAUDIO_DBG_VERBOSITY_ENBL
             std::cout << tr("[ Default input").toStdString();
+            #endif
             defaultDisplayed = 1;
         } else if (i == Pa_GetHostApiInfo(deviceInfo->hostApi)->defaultInputDevice) {
             const PaHostApiInfo *hostInfo = Pa_GetHostApiInfo(deviceInfo->hostApi);
             std::string hostInfoStr = hostInfo->name;
+            #ifdef GFYRE_PORTAUDIO_DBG_VERBOSITY_ENBL
             std::cout << tr("[ Default %1 Input").arg(QString::fromStdString(hostInfoStr)).toStdString();
+            #endif
             defaultDisplayed = 1;
             device.default_dev = true;
         }
 
         if (i == Pa_GetDefaultOutputDevice()) {
             printf((defaultDisplayed ? "," : "["));
+            #ifdef GFYRE_PORTAUDIO_DBG_VERBOSITY_ENBL
             std::cout << tr(" Default Output").toStdString();
+            #endif
             defaultDisplayed = 1;
         } else if (i == Pa_GetHostApiInfo(deviceInfo->hostApi)->defaultOutputDevice) {
             const PaHostApiInfo *hostInfo = Pa_GetHostApiInfo(deviceInfo->hostApi);
             printf((defaultDisplayed ? "," : "["));
             std::string hostInfoStr = hostInfo->name;
+            #ifdef GFYRE_PORTAUDIO_DBG_VERBOSITY_ENBL
             std::cout << tr(" Default %1 Output").arg(QString::fromStdString(hostInfoStr)).toStdString();
+            #endif
             defaultDisplayed = 1;
             device.default_dev = true;
         }
 
         if (defaultDisplayed) {
+            #ifdef GFYRE_PORTAUDIO_DBG_VERBOSITY_ENBL
             std::cout << "]" << std::endl;
+            #endif
             device.default_disp = true;
         } else {
             device.default_disp = false;

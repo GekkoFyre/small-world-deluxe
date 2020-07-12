@@ -144,19 +144,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                                   General::productName, this);
 
         //
-        // Initialize the list of frequencies that Small World Deluxe needs to communicate with other users
-        // throughout the globe/world!
-        //
-        gkFreqList = new GkFrequencies(this);
-        QObject::connect(gkFreqList, SIGNAL(addFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
-                         this, SLOT(addFreqToDb(const GekkoFyre::AmateurRadio::GkFreqs &)));
-        QObject::connect(gkFreqList, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
-                         this, SLOT(removeFreqFromDb(const GekkoFyre::AmateurRadio::GkFreqs &)));
-
-
-        gkFreqList->publishFreqList();
-
-        //
         // Create a status bar at the bottom of the window with a default message
         // https://doc.qt.io/qt-5/qstatusbar.html
         //
@@ -440,6 +427,18 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 on_pushButton_radio_receive_clicked();
             }
         }
+
+        //
+        // Initialize the list of frequencies that Small World Deluxe needs to communicate with other users
+        // throughout the globe/world!
+        //
+        gkFreqList = new GkFrequencies(this);
+        QObject::connect(gkFreqList, SIGNAL(addFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
+                         this, SLOT(addFreqToDb(const GekkoFyre::AmateurRadio::GkFreqs &)));
+        QObject::connect(gkFreqList, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
+                         this, SLOT(removeFreqFromDb(const GekkoFyre::AmateurRadio::GkFreqs &)));
+
+        gkFreqList->publishFreqList();
 
         //
         // This connects `widget_mesg_outgoing` to any transmission protocols, such as Codec2!
@@ -1052,8 +1051,10 @@ void MainWindow::updateVolumeSliderLabel(const float &vol_level)
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param freq_to_remove
  */
-void MainWindow::removeFreqFromDb(const GkFreqs &freq_to_remove)
+void MainWindow::removeFreqFromDb(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_remove)
 {
+    GkDb->remove_frequencies_db(freq_to_remove, false);
+
     return;
 }
 
@@ -1063,8 +1064,13 @@ void MainWindow::removeFreqFromDb(const GkFreqs &freq_to_remove)
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param freq_to_add
  */
-void MainWindow::addFreqToDb(const GkFreqs &freq_to_add)
+void MainWindow::addFreqToDb(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_add)
 {
+    bool freq_already_init = GkDb->isFreqAlreadyInit();
+    if (!freq_already_init) {
+        GkDb->write_frequencies_db(freq_to_add);
+    }
+
     return;
 }
 
