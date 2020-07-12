@@ -328,15 +328,21 @@
                     <layout class="QVBoxLayout" name="verticalLayout_20">
                      <item>
                       <widget class="QGroupBox" name="groupBox_working_freqs">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                         <horstretch>0</horstretch>
+                         <verstretch>66</verstretch>
+                        </sizepolicy>
+                       </property>
                        <property name="title">
                         <string>Working Frequencies</string>
                        </property>
                        <layout class="QHBoxLayout" name="horizontalLayout_2">
                         <item>
-                         <widget class="QTableWidget" name="tableWidget_working_freqs">
+                         <widget class="QTableView" name="tableView_working_freqs">
                           <property name="sizePolicy">
                            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                            <horstretch>0</horstretch>
+                            <horstretch>67</horstretch>
                             <verstretch>0</verstretch>
                            </sizepolicy>
                           </property>
@@ -346,77 +352,157 @@
                          </widget>
                         </item>
                         <item>
-                         <widget class="QGroupBox" name="groupBox_freq_calibration">
-                          <property name="title">
-                           <string>Frequency Calib.</string>
+                         <widget class="QFrame" name="frame_working_freqs_right">
+                          <property name="frameShape">
+                           <enum>QFrame::NoFrame</enum>
                           </property>
-                          <layout class="QFormLayout" name="formLayout_9">
-                           <item row="0" column="0">
-                            <widget class="QLabel" name="label_freq_calib_intercept">
-                             <property name="text">
-                              <string>Intercept: </string>
+                          <property name="frameShadow">
+                           <enum>QFrame::Plain</enum>
+                          </property>
+                          <layout class="QVBoxLayout" name="verticalLayout_31">
+                           <property name="leftMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="topMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="rightMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="bottomMargin">
+                            <number>0</number>
+                           </property>
+                           <item>
+                            <widget class="QGroupBox" name="groupBox_working_freqs_controls">
+                             <property name="title">
+                              <string>Controls</string>
                              </property>
+                             <layout class="QVBoxLayout" name="verticalLayout_32">
+                              <item>
+                               <widget class="QPushButton" name="pushButton_freq_list_new">
+                                <property name="text">
+                                 <string>New</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QPushButton" name="pushButton_freq_list_edit">
+                                <property name="text">
+                                 <string>Edit</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QPushButton" name="pushButton_freq_list_delete">
+                                <property name="text">
+                                 <string>Delete</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QPushButton" name="pushButton_freq_list_print">
+                                <property name="text">
+                                 <string>Print List</string>
+                                </property>
+                               </widget>
+                              </item>
+                             </layout>
                             </widget>
                            </item>
-                           <item row="0" column="1">
-                            <widget class="QDoubleSpinBox" name="doubleSpinBox_freq_calib_intercept">
+                           <item>
+                            <widget class="QGroupBox" name="groupBox_freq_calibration">
                              <property name="sizePolicy">
-                              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                               <horstretch>0</horstretch>
+                              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                               <horstretch>33</horstretch>
                                <verstretch>0</verstretch>
                               </sizepolicy>
                              </property>
-                             <property name="suffix">
-                              <string> Hz</string>
+                             <property name="title">
+                              <string>Frequency Calib.</string>
                              </property>
-                             <property name="minimum">
-                              <double>-99999.000000000000000</double>
-                             </property>
-                             <property name="stepType">
-                              <enum>QAbstractSpinBox::AdaptiveDecimalStepType</enum>
-                             </property>
-                             <property name="value">
-                              <double>0.000000000000000</double>
-                             </property>
+                             <layout class="QFormLayout" name="formLayout_9">
+                              <item row="0" column="0">
+                               <widget class="QLabel" name="label_freq_calib_intercept">
+                                <property name="text">
+                                 <string>Intercept: </string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="0" column="1">
+                               <widget class="QDoubleSpinBox" name="doubleSpinBox_freq_calib_intercept">
+                                <property name="sizePolicy">
+                                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                                  <horstretch>0</horstretch>
+                                  <verstretch>0</verstretch>
+                                 </sizepolicy>
+                                </property>
+                                <property name="suffix">
+                                 <string> Hz</string>
+                                </property>
+                                <property name="minimum">
+                                 <double>-99999.000000000000000</double>
+                                </property>
+                                <property name="stepType">
+                                 <enum>QAbstractSpinBox::AdaptiveDecimalStepType</enum>
+                                </property>
+                                <property name="value">
+                                 <double>0.000000000000000</double>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="1" column="0">
+                               <widget class="QLabel" name="label_freq_calib_slope">
+                                <property name="text">
+                                 <string>Slope: </string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="1" column="1">
+                               <widget class="QDoubleSpinBox" name="doubleSpinBox_freq_calib_slope">
+                                <property name="sizePolicy">
+                                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                                  <horstretch>0</horstretch>
+                                  <verstretch>0</verstretch>
+                                 </sizepolicy>
+                                </property>
+                                <property name="accelerated">
+                                 <bool>true</bool>
+                                </property>
+                                <property name="suffix">
+                                 <string> ppm</string>
+                                </property>
+                                <property name="decimals">
+                                 <number>4</number>
+                                </property>
+                                <property name="minimum">
+                                 <double>-999.999900000000025</double>
+                                </property>
+                                <property name="maximum">
+                                 <double>999.999900000000025</double>
+                                </property>
+                                <property name="singleStep">
+                                 <double>0.000100000000000</double>
+                                </property>
+                                <property name="stepType">
+                                 <enum>QAbstractSpinBox::AdaptiveDecimalStepType</enum>
+                                </property>
+                               </widget>
+                              </item>
+                             </layout>
                             </widget>
                            </item>
-                           <item row="1" column="0">
-                            <widget class="QLabel" name="label_freq_calib_slope">
-                             <property name="text">
-                              <string>Slope: </string>
+                           <item>
+                            <spacer name="verticalSpacer_8">
+                             <property name="orientation">
+                              <enum>Qt::Vertical</enum>
                              </property>
-                            </widget>
-                           </item>
-                           <item row="1" column="1">
-                            <widget class="QDoubleSpinBox" name="doubleSpinBox_freq_calib_slope">
-                             <property name="sizePolicy">
-                              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                               <horstretch>0</horstretch>
-                               <verstretch>0</verstretch>
-                              </sizepolicy>
+                             <property name="sizeHint" stdset="0">
+                              <size>
+                               <width>20</width>
+                               <height>40</height>
+                              </size>
                              </property>
-                             <property name="accelerated">
-                              <bool>true</bool>
-                             </property>
-                             <property name="suffix">
-                              <string> ppm</string>
-                             </property>
-                             <property name="decimals">
-                              <number>4</number>
-                             </property>
-                             <property name="minimum">
-                              <double>-999.999900000000025</double>
-                             </property>
-                             <property name="maximum">
-                              <double>999.999900000000025</double>
-                             </property>
-                             <property name="singleStep">
-                              <double>0.000100000000000</double>
-                             </property>
-                             <property name="stepType">
-                              <enum>QAbstractSpinBox::AdaptiveDecimalStepType</enum>
-                             </property>
-                            </widget>
+                            </spacer>
                            </item>
                           </layout>
                          </widget>
@@ -426,6 +512,12 @@
                      </item>
                      <item>
                       <widget class="QGroupBox" name="groupBox_station_info_freqs">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                         <horstretch>0</horstretch>
+                         <verstretch>37</verstretch>
+                        </sizepolicy>
+                       </property>
                        <property name="title">
                         <string>Station Information</string>
                        </property>
@@ -1381,8 +1473,8 @@
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>732</width>
-                      <height>603</height>
+                      <width>211</width>
+                      <height>121</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_28">
@@ -2829,8 +2921,8 @@
                         <rect>
                          <x>0</x>
                          <y>0</y>
-                         <width>100</width>
-                         <height>30</height>
+                         <width>63</width>
+                         <height>16</height>
                         </rect>
                        </property>
                       </widget>

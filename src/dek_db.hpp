@@ -69,6 +69,12 @@ public:
     void write_mainwindow_settings(const QString &value, const Database::Settings::general_mainwindow_cfg &key);
     void write_misc_audio_settings(const QString &value, const Database::Settings::audio_cfg &key);
 
+    void write_frequencies_db(const AmateurRadio::GkFreqs &write_new_value);
+    void remove_frequencies_db(const AmateurRadio::GkFreqs &freq_to_remove);
+    void remove_frequencies_db(const bool &del_all);
+    void writeFreqInit();
+    bool isFreqAlreadyInit();
+
     QString read_rig_settings(const Database::Settings::radio_cfg &key);
     QString read_rig_settings_comms(const Database::Settings::radio_cfg &key,
                                     const AmateurRadio::GkConnType &conn_type = AmateurRadio::GkConnType::None);
@@ -88,6 +94,10 @@ public:
 
     QString convAudioBitrateToStr(const GekkoFyre::GkAudioFramework::Bitrate &bitrate);
 
+    QString convBandsToStr(const GekkoFyre::AmateurRadio::GkFreqBands &band);
+    QString convDigitalModesToStr(const GekkoFyre::AmateurRadio::DigitalModes &digital_mode);
+    QString convIARURegionToStr(const GekkoFyre::AmateurRadio::IARURegions &iaru_region);
+
     void write_audio_api_settings(const PaHostApiTypeId &interface);
     PaHostApiTypeId read_audio_api_settings();
     QString portAudioApiToStr(const PaHostApiTypeId &interface);
@@ -100,6 +110,9 @@ public:
 private:
     QPointer<GekkoFyre::FileIo> fileIo;
     leveldb::DB *db;
+
+    std::string processCsvToDB(const std::string &comma_sep_values, const std::string &data_to_append);
+    std::string deleteCsvValForDb(const std::string &comma_sep_values, const std::string &data_to_remove);
 
 };
 };

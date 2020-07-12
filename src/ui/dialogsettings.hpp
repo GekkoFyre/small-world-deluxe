@@ -41,6 +41,7 @@
 #include "src/radiolibs.hpp"
 #include "src/dek_db.hpp"
 #include "src/audio_devices.hpp"
+#include "src/models/tableview/gk_frequency_model.hpp"
 #include <boost/logic/tribool.hpp>
 #include <list>
 #include <tuple>
@@ -79,6 +80,7 @@ public:
                             std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> radioPtr,
                             const std::list<GekkoFyre::Database::Settings::GkComPort> &com_ports,
                             QPointer<GekkoFyre::GkFrequencies> gkFreqList,
+                            QPointer<GekkoFyre::GkFreqTableViewModel> freqTableModel,
                             QWidget *parent = nullptr);
     ~DialogSettings();
 
@@ -174,6 +176,16 @@ private slots:
     void on_horizontalSlider_spectro_min_freq_valueChanged(int value);
     void on_horizontalSlider_spectro_max_freq_valueChanged(int value);
 
+    //
+    // Frequency List
+    //
+    void on_pushButton_freq_list_new_clicked();
+    void on_pushButton_freq_list_edit_clicked();
+    void on_pushButton_freq_list_delete_clicked();
+    void on_pushButton_freq_list_print_clicked();
+    void on_doubleSpinBox_freq_calib_intercept_valueChanged(double arg1);
+    void on_doubleSpinBox_freq_calib_slope_valueChanged(double arg1);
+
 signals:
     void usbPortsDisabled(const bool &active);
     void comPortsDisabled(const bool &active);
@@ -236,12 +248,12 @@ private:
     static QMultiMap<rig_model_t, std::tuple<QString, QString, GekkoFyre::AmateurRadio::rig_type>> init_model_names();
 
     QPointer<GekkoFyre::GkFrequencies> gkFreqs;
+    QPointer<GekkoFyre::GkFreqTableViewModel> gkFreqTableModel;
     std::shared_ptr<QSettings> gkSettings;
 
     void prefill_audio_api_avail(const QVector<PaHostApiTypeId> &portaudio_api_vec);
     void prefill_audio_devices(const std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> &audio_devices_vec);
     void prefill_audio_encode_comboboxes();
-    void init_working_freqs();
     void init_station_info();
 
     void print_exception(const std::exception &e, int level = 0);

@@ -72,6 +72,7 @@
 #include <list>
 #include <QList>
 #include <QString>
+#include <QObject>
 #include <QPointer>
 #include <QPrinter>
 #include <QMetaType>
@@ -163,6 +164,17 @@ private slots:
     //
     void updateVolume(const float &value);
 
+    //
+    // Transmission & Digital Signalling
+    //
+    void msgOutgoingProcess();
+
+    //
+    // Frequencies related
+    //
+    void removeFreqFromDb(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_remove);
+    void addFreqToDb(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_add);
+
 protected slots:
     void closeEvent(QCloseEvent *event);
 
@@ -184,12 +196,6 @@ public slots:
                                const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void addRigToMemory(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void disconnectRigInMemory(std::shared_ptr<Rig> rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
-
-    //
-    // Frequencies related
-    //
-    void updateFreqSettingsDb(const quint64 &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
-                        const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq);
 
 signals:
     void updatePaVol(const int &percentage);

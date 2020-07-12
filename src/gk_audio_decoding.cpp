@@ -39,7 +39,7 @@
  **
  ****************************************************************************************************/
 
-#include "gk_audio_decoding.hpp"
+#include "src/gk_audio_decoding.hpp"
 #include <boost/exception/all.hpp>
 #include <fstream>
 #include <iomanip>

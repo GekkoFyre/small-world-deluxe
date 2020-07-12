@@ -42,44 +42,23 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/dek_db.hpp"
-#include <memory>
 #include <QObject>
-#include <QList>
+#include <QKeyEvent>
+#include <QPlainTextEdit>
 
 namespace GekkoFyre {
 
-class GkFrequencies : public QObject {
+class GkPlainTextSubmit : public QPlainTextEdit {
     Q_OBJECT
 
 public:
-    explicit GkFrequencies(std::shared_ptr<GekkoFyre::GkLevelDb> database, QObject *parent = nullptr);
-    ~GkFrequencies();
+    explicit GkPlainTextSubmit(QWidget *parent = nullptr);
+    ~GkPlainTextSubmit();
 
-    void publishFreqList();
-
-    bool approximatelyEqual(const float &a, const float &b, const float &epsilon);
-    bool essentiallyEqual(const float &a, const float &b, const float &epsilon);
-    bool definitelyGreaterThan(const float &a, const float &b, const float &epsilon);
-    bool definitelyLessThan(const float &a, const float &b, const float &epsilon);
-
-    QList<GekkoFyre::AmateurRadio::GkFreqs> listOfFreqs();
-    int size();
-    GekkoFyre::AmateurRadio::GkFreqs at(const int &idx);
+    void keyPressEvent(QKeyEvent *event);
 
 signals:
-    void updateFrequencies(const quint64 &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
-                           const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq);
-    void removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_remove);
-    void addFreq(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_add);
-
-private slots:
-    void updateFreqsInMem(const quint64 &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
-                          const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq);
-
-private:
-    QList<GekkoFyre::AmateurRadio::GkFreqs> frequencyList;
-    std::shared_ptr<GekkoFyre::GkLevelDb> GkDb;
+    void execFuncAfterEvent();
 
 };
 };

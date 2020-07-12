@@ -39,7 +39,7 @@
  **
  ****************************************************************************************************/
 
-#include "gk_cli.hpp"
+#include "src/gk_cli.hpp"
 #include <boost/exception/all.hpp>
 #include <vector>
 #include <iostream>

@@ -41,6 +41,7 @@
 
 #include "dek_db.hpp"
 #include "src/audio_devices.hpp"
+#include "src/contrib/rapidcsv/src/rapidcsv.h"
 #include <leveldb/cache.h>
 #include <leveldb/options.h>
 #include <leveldb/slice.h>
@@ -381,9 +382,251 @@ void GkLevelDb::write_misc_audio_settings(const QString &value, const audio_cfg 
 }
 
 /**
+ * @brief GkLevelDb::write_frequencies_db manages the storage of frequency information within Small World Deluxe, such as
+ * deletion, addition, and modification.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param write_new_value The newer frequency information values to be written to Google LevelDB.
+ */
+void GkLevelDb::write_frequencies_db(const GkFreqs &write_new_value)
+{
+    try {
+        leveldb::WriteBatch batch;
+        leveldb::Status status;
+        leveldb::ReadOptions read_options;
+        read_options.verify_checksums = true;
+
+        // Frequency
+        std::string gk_stored_freq_value = "";
+        db->Get(read_options, "GkStoredFreq", &gk_stored_freq_value);
+        std::string csv_stored_freq;
+        csv_stored_freq = processCsvToDB(gk_stored_freq_value, QString::number(write_new_value.frequency).toStdString()); // Frequency (CSV)
+        batch.Put("GkStoredFreq", csv_stored_freq);
+
+        // Closest matching frequency band
+        std::string gk_closest_band_value = "";
+        db->Get(read_options, "GkClosestBand", &gk_closest_band_value);
+        std::string csv_closest_band;
+        csv_closest_band = processCsvToDB(gk_closest_band_value, convBandsToStr(write_new_value.closest_freq_band).toStdString()); // Closest matching frequency band (CSV)
+        batch.Put("GkClosestBand", csv_closest_band);
+
+        // Digital mode
+        std::string gk_digital_mode_value = "";
+        db->Get(read_options, "GkDigitalMode", &gk_digital_mode_value);
+        std::string csv_digital_mode;
+        csv_digital_mode = processCsvToDB(gk_digital_mode_value, convDigitalModesToStr(write_new_value.digital_mode).toStdString()); // Digital mode (CSV)
+        batch.Put("GkDigitalMode", csv_digital_mode);
+
+        // IARU Region
+        std::string gk_iaru_region_value = "";
+        db->Get(read_options, "GkIARURegion", &gk_iaru_region_value);
+        std::string csv_iaru_region;
+        csv_iaru_region = processCsvToDB(gk_iaru_region_value, convIARURegionToStr(write_new_value.iaru_region).toStdString()); // IARU Region (CSV)
+        batch.Put("GkIARURegion", csv_iaru_region);
+
+        remove_frequencies_db(true); // Delete all the frequencies and their component values!
+
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
+
+        status = db->Write(write_options, &batch);
+
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        }
+
+        return;
+    } catch (const std::exception &e) { // https://en.cppreference.com/w/cpp/error/nested_exception
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return;
+}
+
+/**
+ * @brief GkLevelDb::remove_frequencies_db will remove a given frequencies and all of its component values from the Google LevelDB database.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param freq_to_remove The given frequency and its component values to remove.
+ * @param del_all Whether to delete all frequencies and their component values or not.
+ */
+void GkLevelDb::remove_frequencies_db(const GkFreqs &freq_to_remove)
+{
+    try {
+        leveldb::WriteBatch batch;
+        leveldb::Status status;
+        leveldb::ReadOptions read_options;
+        read_options.verify_checksums = true;
+
+        //
+        // Only delete the given frequency and its component values
+        //
+
+        // Frequency
+        std::string gk_stored_freq_value = "";
+        status = db->Get(read_options, "GkStoredFreq", &gk_stored_freq_value);
+        std::string csv_stored_freq;
+        csv_stored_freq = deleteCsvValForDb(gk_stored_freq_value, QString::number(freq_to_remove.frequency).toStdString()); // Frequency (CSV)
+
+        batch.Delete("GkStoredFreq"); // Delete the key before rewriting the values again!
+        batch.Put("GkStoredFreq", csv_stored_freq);
+
+        // Closest matching frequency band
+        std::string gk_closest_band_value = "";
+        status = db->Get(read_options, "GkClosestBand", &gk_closest_band_value);
+        std::string csv_closest_band;
+        csv_closest_band = deleteCsvValForDb(gk_closest_band_value, convBandsToStr(freq_to_remove.closest_freq_band).toStdString()); // Closest matching frequency band (CSV)
+
+        batch.Delete("GkClosestBand"); // Delete the key before rewriting the values again!
+        batch.Put("GkClosestBand", csv_closest_band);
+
+        // Digital mode
+        std::string gk_digital_mode_value = "";
+        status = db->Get(read_options, "GkDigitalMode", &gk_digital_mode_value);
+        std::string csv_digital_mode;
+        csv_digital_mode = deleteCsvValForDb(gk_digital_mode_value, convDigitalModesToStr(freq_to_remove.digital_mode).toStdString()); // Digital mode (CSV)
+
+        batch.Delete("GkDigitalMode"); // Delete the key before rewriting the values again!
+        batch.Put("GkDigitalMode", csv_digital_mode);
+
+        // IARU Region
+        std::string gk_iaru_region_value = "";
+        status = db->Get(read_options, "GkIARURegion", &gk_iaru_region_value);
+        std::string csv_iaru_region;
+        csv_iaru_region = deleteCsvValForDb(gk_iaru_region_value, convIARURegionToStr(freq_to_remove.iaru_region).toStdString()); // IARU Region (CSV)
+
+        batch.Delete("GkIARURegion"); // Delete the key before rewriting the values again!
+        batch.Put("GkIARURegion", csv_iaru_region);
+
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
+
+        status = db->Write(write_options, &batch);
+
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        }
+    } catch (const std::exception &e) { // https://en.cppreference.com/w/cpp/error/nested_exception
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return;
+}
+
+/**
+ * @brief GkLevelDb::remove_frequencies_db deletes all the frequencies that are stored within the program's Google LevelDB database along with
+ * their component values.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param del_all Whether to delete all the frequencies and their component values or not.
+ */
+void GkLevelDb::remove_frequencies_db(const bool &del_all)
+{
+    try {
+        if (del_all) {
+            //
+            // Delete all the frequencies and their component values!
+            //
+
+            leveldb::WriteBatch batch;
+            leveldb::Status status;
+
+            // Frequency
+            batch.Delete("GkStoredFreq");
+
+            // Closest matching frequency band
+            batch.Delete("GkClosestBand");
+
+            // Digital mode
+            batch.Delete("GkDigitalMode");
+
+            // IARU Region
+            batch.Delete("GkIARURegion");
+
+            leveldb::WriteOptions write_options;
+            write_options.sync = true;
+
+            status = db->Write(write_options, &batch);
+
+            if (!status.ok()) { // Abort because of error!
+                throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+            }
+        }
+    } catch (const std::exception &e) { // https://en.cppreference.com/w/cpp/error/nested_exception
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return;
+}
+
+/**
+ * @brief GkLevelDb::writeFreqInit
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkLevelDb::writeFreqInit()
+{
+    bool already_init = isFreqAlreadyInit();
+
+    if (!already_init) {
+        leveldb::WriteBatch batch;
+        leveldb::Status status;
+
+        batch.Put("GkFreqInit", boolEnum(true));
+
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
+
+        status = db->Write(write_options, &batch);
+
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        }
+    }
+
+    return;
+}
+
+/**
+ * @brief GkLevelDb::isFreqAlreadyInit determines whether the Google LevelDB database has been primed with the base frequency set and
+ * their component values or not. This is kind'a required for the basic functioning of Small World Deluxe, at least and until the user
+ * starts making their own customizations to the software application itself.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return True or false regarding whether Google LevelDB has been primed or not.
+ */
+bool GkLevelDb::isFreqAlreadyInit()
+{
+    try {
+        std::mutex mtx_freq_already_init;
+        leveldb::Status status;
+        leveldb::ReadOptions read_options;
+        std::string freq_init_str = "";
+        bool freq_init_bool = false;
+
+        std::lock_guard<std::mutex> lck_guard(mtx_freq_already_init);
+        read_options.verify_checksums = true;
+
+        status = db->Get(read_options, "GkFreqInit", &freq_init_str);
+
+        if (!status.ok()) { // Abort because of error!
+            std::cout << tr("Frequencies have not yet been initialized for this user!").toStdString() << std::endl;
+            return false;
+        }
+
+        if (!freq_init_str.empty()) {
+            // Convert to a boolean value
+            freq_init_bool = boolStr(freq_init_str);
+        }
+
+        return freq_init_bool;
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return false;
+}
+
+/**
  * @brief DekodeDb::read_rig_settings reads out the stored Small World Deluxe settings which are kept within a Google LevelDB
  * database that are stored within the user's storage media, either via a default storage place or through specified means as
  * configured by the user themselves.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param key The key which is required for retrieving the desired value(s) from the Google LevelDB database itself.
  * @return The desired value from the Google LevelDB database.
  */
@@ -1081,6 +1324,100 @@ QString GkLevelDb::convAudioBitrateToStr(const GkAudioFramework::Bitrate &bitrat
 }
 
 /**
+ * @brief GkLevelDb::translateBandsToStr will translate a given band to the equivalent QString().
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param band The given amateur radio band, in meters.
+ * @return The amateur radio band, in meters, provided as a QString().
+ */
+QString GkLevelDb::convBandsToStr(const GkFreqBands &band)
+{
+    switch (band) {
+    case GkFreqBands::BAND160:
+        return tr("None");
+    case GkFreqBands::BAND80:
+        return tr("80 meters");
+    case GkFreqBands::BAND60:
+        return tr("60 meters");
+    case GkFreqBands::BAND40:
+        return tr("40 meters");
+    case GkFreqBands::BAND30:
+        return tr("30 meters");
+    case GkFreqBands::BAND20:
+        return tr("20 meters");
+    case GkFreqBands::BAND17:
+        return tr("15 meters");
+    case GkFreqBands::BAND15:
+        return tr("17 meters");
+    case GkFreqBands::BAND12:
+        return tr("12 meters");
+    case GkFreqBands::BAND10:
+        return tr("10 meters");
+    case GkFreqBands::BAND6:
+        return tr("6 meters");
+    case GkFreqBands::BAND2:
+        return tr("2 meters");
+    default:
+        return tr("Unsupported!");
+    }
+
+    return tr("Error!");
+}
+
+/**
+ * @brief GkLevelDb::convDigitalModesToStr
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param digital_mode
+ * @return
+ */
+QString GkLevelDb::convDigitalModesToStr(const DigitalModes &digital_mode)
+{
+    switch (digital_mode) {
+    case DigitalModes::WSPR:
+        return tr("WSPR");
+    case DigitalModes::JT65:
+        return tr("JT65");
+    case DigitalModes::JT9:
+        return tr("JT9");
+    case DigitalModes::T10:
+        return tr("T10");
+    case DigitalModes::FT8:
+        return tr("FT8");
+    case DigitalModes::FT4:
+        return tr("FT4");
+    case DigitalModes::Codec2:
+        return tr("Codec2");
+    default:
+        return tr("Unsupported!");
+    }
+
+    return tr("Error!");
+}
+
+/**
+ * @brief GkLevelDb::convIARURegionToStr
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param iaru_region
+ * @return
+ */
+QString GkLevelDb::convIARURegionToStr(const IARURegions &iaru_region)
+{
+    switch (iaru_region) {
+    case IARURegions::ALL:
+        return tr("ALL");
+    case IARURegions::R1:
+        return tr("R1");
+    case IARURegions::R2:
+        return tr("R2");
+    case IARURegions::R3:
+        return tr("R3");
+    default:
+        return tr("Unsupported!");
+    }
+
+    return tr("Error!");
+}
+
+/**
  * @brief DekodeDb::boolEnum Will enumerate a boolean value to an std::string, ready for use within a database.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param is_true Whether we are dealing with a true or false situation.
@@ -1106,14 +1443,83 @@ std::string GkLevelDb::boolEnum(const bool &is_true)
  */
 bool GkLevelDb::boolStr(const std::string &is_true)
 {
-    // TODO: Maybe convert to a Boost C++ tribool?
-
     bool ret = false;
-    if (std::strcmp(is_true.c_str(), "true")) {
+    if (is_true == "true") {
         ret = true;
     } else {
         ret = false;
     }
 
     return ret;
+}
+
+/**
+ * @brief GkLevelDb::processCsvToDB takes pre-existing data and appends new values towards it, in the form of CSV. It then returns
+ * all the newly made data as a CSV string. Data modifications to existing rows can be made too, which are automatically detected.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param comma_sep_values The pre-existing CSV information.
+ * @param data_to_append The information to append onto the pre-existing CSV information, if any.
+ * @return The newly made data, with the appended information, as a CSV string.
+ */
+std::string GkLevelDb::processCsvToDB(const std::string &comma_sep_values, const std::string &data_to_append)
+{
+    try {
+        if (!data_to_append.empty()) {
+            std::stringstream sstream;
+
+            if (!comma_sep_values.empty()) {
+                sstream << comma_sep_values << std::endl;
+            } else {
+                sstream << "FreqValues" << std::endl;
+            }
+
+            sstream << data_to_append;
+            return sstream.str();
+        } else {
+            return "";
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::invalid_argument(tr("An error has occurred whilst processing CSV for Google LevelDB!").toStdString()));
+    }
+
+    return "";
+}
+
+/**
+ * @brief GkLevelDb::deleteCsvValForDb
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param comma_sep_values
+ * @param data_to_remove
+ * @return
+ */
+std::string GkLevelDb::deleteCsvValForDb(const std::string &comma_sep_values, const std::string &data_to_remove)
+{
+    try {
+        if (!comma_sep_values.empty() && !data_to_remove.empty()) {
+            std::stringstream sstream(comma_sep_values);
+            rapidcsv::Document doc(sstream, rapidcsv::LabelParams(0, 0));
+            std::vector<std::string> csv_vals = doc.GetColumn<std::string>("FreqValues");
+
+            for (size_t i = 0; i < csv_vals.size(); ++i) {
+                if (csv_vals[i] == data_to_remove) {
+                    // The value to be removed does indeed exist within the Google LevelDB database!
+                    doc.RemoveRow(i);
+                    break;
+                }
+            }
+
+            std::stringstream output_stream;
+            output_stream << "FreqValues" << std::endl;
+            for (const auto &csv: csv_vals) {
+                // Print out as a bunch of textual CSV data, ready for insertion into a Google LevelDB database!
+                output_stream << csv << std::endl;
+            }
+
+            return output_stream.str();
+        } // Otherwise return an empty std::string!
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::invalid_argument(tr("An error has occurred whilst processing CSV for Google LevelDB!").toStdString()));
+    }
+
+    return "";
 }

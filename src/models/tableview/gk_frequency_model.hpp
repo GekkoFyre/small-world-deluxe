@@ -42,44 +42,70 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/dek_db.hpp"
-#include <memory>
-#include <QObject>
 #include <QList>
+#include <QMenu>
+#include <QPoint>
+#include <QObject>
+#include <QString>
+#include <QVariant>
+#include <QPointer>
+#include <QTableView>
+#include <QModelIndex>
+#include <QMouseEvent>
+#include <QStandardItemModel>
+#include <QAbstractTableModel>
 
 namespace GekkoFyre {
 
-class GkFrequencies : public QObject {
+class GkFreqTableContextMenu : public QStandardItemModel {
     Q_OBJECT
 
 public:
-    explicit GkFrequencies(std::shared_ptr<GekkoFyre::GkLevelDb> database, QObject *parent = nullptr);
-    ~GkFrequencies();
+    explicit GkFreqTableContextMenu(QWidget *parent = nullptr);
+    ~GkFreqTableContextMenu();
 
-    void publishFreqList();
+public slots:
+    void customMenuRequested(QPoint pos);
+    void customHeaderMenuRequested(QPoint pos);
 
-    bool approximatelyEqual(const float &a, const float &b, const float &epsilon);
-    bool essentiallyEqual(const float &a, const float &b, const float &epsilon);
-    bool definitelyGreaterThan(const float &a, const float &b, const float &epsilon);
-    bool definitelyLessThan(const float &a, const float &b, const float &epsilon);
-
-    QList<GekkoFyre::AmateurRadio::GkFreqs> listOfFreqs();
-    int size();
-    GekkoFyre::AmateurRadio::GkFreqs at(const int &idx);
+private slots:
+    void mousePressEvent(QMouseEvent *e);
 
 signals:
-    void updateFrequencies(const quint64 &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
-                           const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq);
+    void rightClicked(QPoint pos);
+
+private:
+    QPointer<QTableView> table;
+    QPointer<QMenu> menu;
+
+};
+
+class GkFreqTableViewModel : public QAbstractTableModel {
+    Q_OBJECT
+
+public:
+    explicit GkFreqTableViewModel(QWidget *parent = nullptr);
+    ~GkFreqTableViewModel();
+
+    void populateData(const QList<GekkoFyre::AmateurRadio::GkFreqs> &frequencies);
+    void populateData(const QList<GekkoFyre::AmateurRadio::GkFreqs> &frequencies, const bool &populate_freq_db);
+    void insertData(const GekkoFyre::AmateurRadio::GkFreqs &freq_val);
+    void insertData(const GekkoFyre::AmateurRadio::GkFreqs &freq_val, const bool &populate_freq_db);
+    void removeData(const GekkoFyre::AmateurRadio::GkFreqs &freq_val);
+    void removeData(const GekkoFyre::AmateurRadio::GkFreqs &freq_val, const bool &remove_freq_db);
+    int rowCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
+    int columnCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
+
+    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
+    QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
+
+signals:
     void removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_remove);
     void addFreq(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_add);
 
-private slots:
-    void updateFreqsInMem(const quint64 &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
-                          const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq);
-
 private:
-    QList<GekkoFyre::AmateurRadio::GkFreqs> frequencyList;
-    std::shared_ptr<GekkoFyre::GkLevelDb> GkDb;
+    QList<GekkoFyre::AmateurRadio::GkFreqs> m_data;
+    QPointer<GkFreqTableContextMenu> context_menu;
 
 };
 };
