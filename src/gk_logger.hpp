@@ -42,41 +42,28 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include <QVariant>
 #include <QObject>
+#include <QString>
 #include <QList>
 
 namespace GekkoFyre {
 
-class GkFrequencies : public QObject {
+class GkEventLogger : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkFrequencies(QObject *parent = nullptr);
-    ~GkFrequencies();
+    explicit GkEventLogger(QObject *parent = nullptr);
+    ~GkEventLogger();
 
-    void publishFreqList();
-
-    bool approximatelyEqual(const float &a, const float &b, const float &epsilon);
-    bool essentiallyEqual(const float &a, const float &b, const float &epsilon);
-    bool definitelyGreaterThan(const float &a, const float &b, const float &epsilon);
-    bool definitelyLessThan(const float &a, const float &b, const float &epsilon);
-
-    QList<GekkoFyre::AmateurRadio::GkFreqs> listOfFreqs();
-    int size();
-    GekkoFyre::AmateurRadio::GkFreqs at(const int &idx);
-
-signals:
-    void updateFrequencies(const quint64 &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
-                           const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq);
-    void removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_remove);
-    void addFreq(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_add);
-
-private slots:
-    void updateFreqsInMem(const quint64 &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
-                          const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq);
+    void publishEvent(const QString &event, const GekkoFyre::System::Events::Logging::GkSeverity &severity = GekkoFyre::System::Events::Logging::GkSeverity::Warning,
+                      const QVariant &arguments = "");
 
 private:
-    QList<GekkoFyre::AmateurRadio::GkFreqs> frequencyList;
+    QList<GekkoFyre::System::Events::Logging::GkEventLogging> eventLogDb;                       // Where the event log itself is stored in memory...
+
+    qint64 setDate();
+    int setEventNo();
 
 };
 };

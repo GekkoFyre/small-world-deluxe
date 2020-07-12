@@ -35,13 +35,12 @@
  **
  ****************************************************************************************************/
 
-#include "mainwindow.hpp"
+#include "src/ui/mainwindow.hpp"
 #include "ui_mainwindow.h"
-#include "aboutdialog.hpp"
-#include "spectrodialog.hpp"
-#include "./../gk_timer.hpp"
-#include "./../spectro_cuda.h"
-#include "./../contrib/rapidcsv/src/rapidcsv.h"
+#include "src/ui/aboutdialog.hpp"
+#include "src/ui/spectrodialog.hpp"
+#include "src/gk_submit_msg.hpp"
+#include "src/models/tableview/gk_frequency_model.hpp"
 #include <boost/exception/all.hpp>
 #include <boost/chrono/chrono.hpp>
 #include <cmath>
@@ -72,6 +71,10 @@
 
 #ifdef _WIN32
 #include <Windows.h>
+#endif
+
+#ifdef GK_CUDA_FFT_ENBL
+#include "./../spectro_cuda.h"
 #endif
 
 using namespace GekkoFyre;
@@ -139,13 +142,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         sw_settings = std::make_shared<QSettings>(QSettings::SystemScope, General::companyName,
                                                   General::productName, this);
-
-        //
-        // Initialize the list of frequencies that Small World Deluxe needs to communicate with other users
-        // throughout the globe/world!
-        //
-        gkFreqList = new GkFrequencies(this);
-        gkFreqList->publishFreqList();
 
         //
         // Create a status bar at the bottom of the window with a default message
@@ -431,6 +427,27 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 on_pushButton_radio_receive_clicked();
             }
         }
+
+        //
+        // Initialize the list of frequencies that Small World Deluxe needs to communicate with other users
+        // throughout the globe/world!
+        //
+        gkFreqList = new GkFrequencies(this);
+        QObject::connect(gkFreqList, SIGNAL(addFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
+                         this, SLOT(addFreqToDb(const GekkoFyre::AmateurRadio::GkFreqs &)));
+        QObject::connect(gkFreqList, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
+                         this, SLOT(removeFreqFromDb(const GekkoFyre::AmateurRadio::GkFreqs &)));
+
+        gkFreqList->publishFreqList();
+
+        //
+        // This connects `widget_mesg_outgoing` to any transmission protocols, such as Codec2!
+        //
+        QPointer<GkPlainTextSubmit> widget_mesg_outgoing = new GkPlainTextSubmit(ui->frame_mesg_log);
+        ui->verticalLayout_3->addWidget(widget_mesg_outgoing);
+        widget_mesg_outgoing->setTabChangesFocus(true);
+        widget_mesg_outgoing->setPlaceholderText(tr("Enter your outgoing messages here..."));
+        QObject::connect(widget_mesg_outgoing, SIGNAL(execFuncAfterEvent()), this, SLOT(msgOutgoingProcess()));
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
@@ -542,18 +559,18 @@ QStringList MainWindow::getAmateurBands()
 {
     try {
         QStringList bands;
-        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND160));
-        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND80));
-        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND60));
-        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND40));
-        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND30));
-        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND20));
-        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND17));
-        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND15));
-        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND12));
-        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND10));
-        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND6));
-        bands.push_back(gkRadioLibs->translateBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND2));
+        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND160));
+        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND80));
+        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND60));
+        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND40));
+        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND30));
+        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND20));
+        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND17));
+        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND15));
+        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND12));
+        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND10));
+        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND6));
+        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND2));
 
         return bands;
     } catch (const std::exception &e) {
@@ -589,9 +606,15 @@ bool MainWindow::prefillAmateurBands()
  */
 void MainWindow::launchSettingsWin()
 {
+    QPointer<GkFreqTableViewModel> gkFreqTableModel = new GkFreqTableViewModel(this);
+    QObject::connect(gkFreqTableModel, SIGNAL(addFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
+                     gkFreqList, SIGNAL(addFreq(const GekkoFyre::AmateurRadio::GkFreqs &)));
+    QObject::connect(gkFreqTableModel, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
+                     gkFreqList, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)));
+
     QPointer<DialogSettings> dlg_settings = new DialogSettings(GkDb, fileIo, gkAudioDevices, gkRadioLibs, sw_settings,
                                                                gkPortAudioInit, usb_ctx_ptr, gkRadioPtr, status_com_ports,
-                                                               gkFreqList, this);
+                                                               gkFreqList, gkFreqTableModel, this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
@@ -1024,6 +1047,34 @@ void MainWindow::updateVolumeSliderLabel(const float &vol_level)
 }
 
 /**
+ * @brief MainWindow::removeFreqFromDb will remove a frequency and its related values from the Google LevelDB database.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param freq_to_remove
+ */
+void MainWindow::removeFreqFromDb(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_remove)
+{
+    GkDb->remove_frequencies_db(freq_to_remove);
+
+    return;
+}
+
+/**
+ * @brief MainWindow::addFreqToDb will add a new frequency and any of its related values (such as digital mode
+ * used, IARU region, etc.) to the Google LevelDB database.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param freq_to_add
+ */
+void MainWindow::addFreqToDb(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_add)
+{
+    bool freq_already_init = GkDb->isFreqAlreadyInit();
+    if (!freq_already_init) {
+        GkDb->write_frequencies_db(freq_to_add);
+    }
+
+    return;
+}
+
+/**
  * @brief MainWindow::createStatusBar creates a status bar at the bottom of the window.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @note <https://doc.qt.io/qt-5/qstatusbar.html>
@@ -1332,6 +1383,18 @@ void MainWindow::updateVolume(const float &value)
         //
         output_audio_buf->setVolume(value);
     }
+
+    return;
+}
+
+/**
+ * @brief MainWindow::msgOutgoingProcess will process outgoing messages and prepare them for transmission with regards to
+ * libraries such as Codec2, whilst clearing `ui->plainTextEdit_mesg_outgoing` of any text at the same time.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::msgOutgoingProcess()
+{
+    QMessageBox::warning(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
 
     return;
 }
@@ -2011,20 +2074,6 @@ void MainWindow::disconnectRigInMemory(std::shared_ptr<Rig> rig_to_disconnect, c
         }
     }
 
-    return;
-}
-
-/**
- * @brief MainWindow::updateFreqSettingsDb Updates the database of frequencies managed by the user and saves them within Google LevelDB.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param frequency The frequency to update.
- * @param digital_mode What digital mode is being used, whether it be WSPR, JT65, FT8, etc.
- * @param iaru_region The IARU Region that this particular frequency applies towards, such as ALL, R1, etc.
- * @param remove_freq Whether to remove the frequency in question from the global list or not.
- */
-void MainWindow::updateFreqSettingsDb(const quint64 &frequency, const DigitalModes &digital_mode,
-                                      const IARURegions &iaru_region, const bool &remove_freq)
-{
     return;
 }
 

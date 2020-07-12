@@ -39,7 +39,7 @@
  **
  ****************************************************************************************************/
 
-#include "gk_frequency_list.hpp"
+#include "src/gk_frequency_list.hpp"
 #include <cmath>
 #include <cstdlib>
 
@@ -50,6 +50,14 @@ using namespace Audio;
 using namespace AmateurRadio;
 using namespace Control;
 
+/**
+ * @brief GkFrequencies::GkFrequencies has been setup in such a way that when a signal is emitted here (for the addition or removal
+ * of a frequency and its component values), it too will be added to the relevant QTableViews where required, as well as the Google
+ * LevelDB database if appropriate. Signals emitting from said QTableViews will also ensure that the relevant frequencies and their
+ * component values will be added/deleted where required too.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param parent
+ */
 GkFrequencies::GkFrequencies(QObject *parent)
 {
     QObject::connect(this, SIGNAL(updateFrequencies(const quint64 &, const GekkoFyre::AmateurRadio::DigitalModes &, const GekkoFyre::AmateurRadio::IARURegions &, const bool &)),
@@ -306,6 +314,8 @@ void GkFrequencies::updateFreqsInMem(const quint64 &frequency, const GekkoFyre::
             for (int i = 0; i < frequencyList.size(); ++i) {
                 if (frequencyList[i].frequency == freq.frequency) {
                     frequencyList.erase(frequencyList.begin() + i);
+                    emit removeFreq(frequencyList[i]);
+
                     break;
                 }
             }
@@ -316,6 +326,7 @@ void GkFrequencies::updateFreqsInMem(const quint64 &frequency, const GekkoFyre::
         //
         frequencyList.reserve(1);
         frequencyList.push_back(freq);
+        emit addFreq(freq);
     }
 
     return;

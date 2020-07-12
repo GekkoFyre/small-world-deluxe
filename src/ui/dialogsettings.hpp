@@ -41,6 +41,7 @@
 #include "src/radiolibs.hpp"
 #include "src/dek_db.hpp"
 #include "src/audio_devices.hpp"
+#include "src/models/tableview/gk_frequency_model.hpp"
 #include <boost/logic/tribool.hpp>
 #include <list>
 #include <tuple>
@@ -79,6 +80,7 @@ public:
                             std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> radioPtr,
                             const std::list<GekkoFyre::Database::Settings::GkComPort> &com_ports,
                             QPointer<GekkoFyre::GkFrequencies> gkFreqList,
+                            QPointer<GekkoFyre::GkFreqTableViewModel> freqTableModel,
                             QWidget *parent = nullptr);
     ~DialogSettings();
 
@@ -236,12 +238,12 @@ private:
     static QMultiMap<rig_model_t, std::tuple<QString, QString, GekkoFyre::AmateurRadio::rig_type>> init_model_names();
 
     QPointer<GekkoFyre::GkFrequencies> gkFreqs;
+    QPointer<GekkoFyre::GkFreqTableViewModel> gkFreqTableModel;
     std::shared_ptr<QSettings> gkSettings;
 
     void prefill_audio_api_avail(const QVector<PaHostApiTypeId> &portaudio_api_vec);
     void prefill_audio_devices(const std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> &audio_devices_vec);
     void prefill_audio_encode_comboboxes();
-    void init_working_freqs();
     void init_station_info();
 
     void print_exception(const std::exception &e, int level = 0);

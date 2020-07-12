@@ -61,6 +61,7 @@
 #include <utility>
 #include <QString>
 #include <QVector>
+#include <QVariant>
 #include <QPointer>
 #include <QDateTime>
 #include <QStringList>
@@ -185,6 +186,13 @@ namespace GekkoFyre {
 #define RS232_DEFAULT_BAUD_SPEED (9600)                 // The default baud speed made for any RS232 connections, mostly made for testing purposes.
 #define RS232_DEFAULT_TIMEOUT (5000)                    // The default timeout value for any RS232 connections, mostly made for testing purposes.
 
+//
+// QTableView Models
+//
+#define GK_FREQ_TABLEVIEW_MODEL_FREQUENCY_IDX (0)       // The desired ordering for the 'Frequency' heading within the QTableView model for class, `GkFreqTableViewModel`.
+#define GK_FREQ_TABLEVIEW_MODEL_MODE_IDX (1)            // The desired ordering for the 'Mode' heading within the QTableView model for class, `GkFreqTableViewModel`.
+#define GK_FREQ_TABLEVIEW_MODEL_IARU_REGION_IDX (2)     // The desired ordering for the 'IARU Region' heading within the QTableView model for class, `GkFreqTableViewModel`.
+
 #ifndef M_PI
 #define M_PI (3.14159265358979323846) /* pi */
 #endif
@@ -218,6 +226,35 @@ namespace System {
             CommandLineVersionRequested,
             CommandLineHelpRequested
         };
+    }
+
+    namespace Events {
+        namespace Logging {
+            enum GkSeverity {
+                Fatal,
+                Error,
+                Warning,
+                Info,
+                Debug,
+                Verbose,
+                None
+            };
+        }
+
+        struct GkMsg {
+            qint64 date;                                // The date and time at which the message was spawned!
+            Logging::GkSeverity severity;               // The severity of the event, whether it was 'informational' or a 'fatal error'.
+            QString message;                            // The actual details of the message itself.
+            QVariant arguments;                         // If any arguments were provided alongside the message itself as well.
+        };
+
+        namespace Logging {
+            struct GkEventLogging {
+                GkMsg mesg;                             // Details concerning the event log itself.
+                int event_no;                           // The unique 'index number' for the given event.
+                bool show;                              // Whether to show this event within the UI interface(s) or not.
+            };
+        }
     }
 }
 
@@ -393,7 +430,8 @@ namespace AmateurRadio {
         JT9,
         T10,
         FT8,
-        FT4
+        FT4,
+        Codec2
     };
 
     enum IARURegions {
@@ -453,6 +491,13 @@ namespace AmateurRadio {
         BAUD38400,
         BAUD57600,
         BAUD115200
+    };
+
+    enum GkFreqsDb {
+        GkStoredFreq,
+        GkClosestBand,
+        GkDigitalMode,
+        GkIARURegion
     };
 
     struct GkFreqs {

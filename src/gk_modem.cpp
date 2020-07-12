@@ -39,7 +39,7 @@
  **
  ****************************************************************************************************/
 
-#include "gk_modem.hpp"
+#include "src/gk_modem.hpp"
 
 using namespace GekkoFyre;
 using namespace Database;

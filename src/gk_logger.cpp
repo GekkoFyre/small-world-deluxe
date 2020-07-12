@@ -1,3 +1,4 @@
+ 
 /**
  **     __                 _ _   __    __           _     _ 
  **    / _\_ __ ___   __ _| | | / / /\ \ \___  _ __| | __| |
@@ -39,44 +40,64 @@
  **
  ****************************************************************************************************/
 
-#pragma once
+#include "src/gk_logger.hpp"
 
-#include "src/defines.hpp"
-#include <QObject>
-#include <QList>
+using namespace GekkoFyre;
+using namespace Database;
+using namespace Settings;
+using namespace Audio;
+using namespace AmateurRadio;
+using namespace Control;
+using namespace Spectrograph;
+using namespace System;
+using namespace Events;
+using namespace Logging;
 
-namespace GekkoFyre {
+/**
+ * @brief GkEventLogger::GkEventLogger
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param parent
+ */
+GkEventLogger::GkEventLogger(QObject *parent)
+{
+    setParent(parent);
 
-class GkFrequencies : public QObject {
-    Q_OBJECT
+    return;
+}
 
-public:
-    explicit GkFrequencies(QObject *parent = nullptr);
-    ~GkFrequencies();
+GkEventLogger::~GkEventLogger()
+{
+    return;
+}
 
-    void publishFreqList();
+/**
+ * @brief GkEventLogger::publishEvent
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param event
+ * @param severity
+ * @param arguments
+ */
+void GkEventLogger::publishEvent(const QString &event, const GkSeverity &severity, const QVariant &arguments)
+{
+    return;
+}
 
-    bool approximatelyEqual(const float &a, const float &b, const float &epsilon);
-    bool essentiallyEqual(const float &a, const float &b, const float &epsilon);
-    bool definitelyGreaterThan(const float &a, const float &b, const float &epsilon);
-    bool definitelyLessThan(const float &a, const float &b, const float &epsilon);
+/**
+ * @brief GkEventLogger::setDate
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return
+ */
+qint64 GkEventLogger::setDate()
+{
+    return -1;
+}
 
-    QList<GekkoFyre::AmateurRadio::GkFreqs> listOfFreqs();
-    int size();
-    GekkoFyre::AmateurRadio::GkFreqs at(const int &idx);
-
-signals:
-    void updateFrequencies(const quint64 &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
-                           const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq);
-    void removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_remove);
-    void addFreq(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_add);
-
-private slots:
-    void updateFreqsInMem(const quint64 &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
-                          const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq);
-
-private:
-    QList<GekkoFyre::AmateurRadio::GkFreqs> frequencyList;
-
-};
-};
+/**
+ * @brief GkEventLogger::setEventNo
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return
+ */
+int GkEventLogger::setEventNo()
+{
+    return -1;
+}

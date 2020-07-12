@@ -84,6 +84,7 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
                                std::shared_ptr<GkRadio> radioPtr,
                                const std::list<GekkoFyre::Database::Settings::GkComPort> &com_ports,
                                QPointer<GkFrequencies> gkFreqList,
+                               QPointer<GkFreqTableViewModel> freqTableModel,
                                QWidget *parent)
     : QDialog(parent), ui(new Ui::DialogSettings)
 {
@@ -101,6 +102,7 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
         usb_ctx_ptr = std::move(usb_lib_ctx);
         gkRadioPtr = std::move(radioPtr);
         gkFreqs = std::move(gkFreqList);
+        gkFreqTableModel = std::move(freqTableModel);
         status_com_ports = com_ports;
 
         gkSettings = std::move(settings);
@@ -114,6 +116,10 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
             8000.0, 9600.0, 11025.0, 12000.0, 16000.0, 22050.0, 24000.0, 32000.0,
             44100.0, 48000.0, 88200.0, 96000.0, 192000.0, -1 /* negative terminated list */
         };
+
+        ui->tableView_working_freqs->setModel(gkFreqTableModel);
+        ui->tableView_working_freqs->horizontalHeader()->setVisible(true);
+        ui->tableView_working_freqs->show();
 
         QObject::connect(this, SIGNAL(usbPortsDisabled(const bool &)), this, SLOT(disableUsbPorts(const bool &)));
         QObject::connect(this, SIGNAL(comPortsDisabled(const bool &)), this, SLOT(disableComPorts(const bool &)));
@@ -168,7 +174,6 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
         prefill_com_baud_speed(com_baud_rates::BAUD57600);
         prefill_com_baud_speed(com_baud_rates::BAUD115200);
 
-        init_working_freqs();
         init_station_info();
 
         if (gkDekodeDb.get() != nullptr) {
@@ -708,30 +713,6 @@ void DialogSettings::prefill_audio_devices(const std::vector<GkDevice> &audio_de
 void DialogSettings::prefill_audio_encode_comboboxes()
 {
     // gkDekodeDb->convAudioBitrateToStr();
-
-    return;
-}
-
-void DialogSettings::init_working_freqs()
-{
-    try {
-        ui->tableWidget_working_freqs->setColumnCount(3);
-        ui->tableWidget_working_freqs->setRowCount(1);
-
-        QTableWidgetItem *header_iaru_region = new QTableWidgetItem(tr("IARU Region"));
-        QTableWidgetItem *header_digital_mode = new QTableWidgetItem(tr("Mode"));
-        QTableWidgetItem *header_frequency = new QTableWidgetItem(tr("Frequency"));
-
-        header_iaru_region->setTextAlignment(Qt::AlignHCenter);
-        header_digital_mode->setTextAlignment(Qt::AlignHCenter);
-        header_frequency->setTextAlignment(Qt::AlignHCenter);
-
-        ui->tableWidget_working_freqs->setItem(0, 0, header_iaru_region);
-        ui->tableWidget_working_freqs->setItem(0, 1, header_digital_mode);
-        ui->tableWidget_working_freqs->setItem(0, 2, header_frequency);
-    } catch (const std::exception &e) {
-        QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
-    }
 
     return;
 }

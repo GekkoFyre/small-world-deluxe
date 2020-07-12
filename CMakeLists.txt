@@ -85,6 +85,7 @@ option(GFYRE_PACKAGE_MAINTAINER "Are you a package maintainer? If so, set this o
 option(GFYRE_BUILD_STATIC "Build Small World Deluxe as a static library/package. This will result in a larger executable at the benefit of requiring less DLL dependencies." ON)
 option(GFYRE_BUILD_SHARED "Build Small World Deluxe as a shared library/package. This will result in a smaller executable at the cost of requiring further DLL dependencies." OFF)
 option(GFYRE_HAMLIB_DBG_VERBOSITY "Enable DEBUG verbosity for the Hamlib library and its use throughout Small World Deluxe." OFF)
+option(GFYRE_PORTAUDIO_DBG_VERBOSITY "Enable DEBUG verbosity for the PortAudio library and its use throughout Small World Deluxe." OFF)
 
 option(BUILD_CODEC2_SUPPORT "Enable support for the 'Codec2' open source speech codec library." ON)
 option(BUILD_OPUS_SUPPORT "Enable support for the 'Opus' codec library." OFF)
@@ -411,7 +412,10 @@ set(GALAXY_UI_CPP
     src/gk_modem.cpp
     src/gk_frequency_list.cpp
     src/gk_string_funcs.cpp
-    src/gk_codec2.cpp)
+    src/gk_submit_msg.cpp
+    src/gk_logger.cpp
+    src/gk_codec2.cpp
+    src/models/tableview/gk_frequency_model.cpp)
 
 if(WIN32 OR MSYS OR MINGW)
     # Nothing here at the moment!
@@ -480,7 +484,10 @@ set(GALAXY_OBJ_HEADERS
     src/gk_frequency_list.hpp
     src/gk_string_funcs.hpp
     src/gk_messagebox.hpp
-    src/gk_codec2.hpp)
+    src/gk_submit_msg.hpp
+    src/gk_logger.hpp
+    src/gk_codec2.hpp
+    src/models/tableview/gk_frequency_model.hpp)
 
 if(WIN32 OR MSYS OR MINGW)
     # Nothing here at the moment!
@@ -592,9 +599,14 @@ if(LINUX)
     check_include_file("linux/serial.h" HAVE_LSERIAL_H)
 endif()
 
-if(GFYRE_HAMLIB_DBG_VERBOSITY)
+if (GFYRE_HAMLIB_DBG_VERBOSITY)
     message(STATUS "Enabled maximum verbosity with the Hamlib library throughout Small World Deluxe; debug mode now activated!")
     add_definitions(-DGFYRE_HAMLIB_DBG_VERBOSITY_ENBL)
+endif()
+
+if (GFYRE_PORTAUDIO_DBG_VERBOSITY)
+    message(STATUS "Enabled maximum verbosity with the PortAudio library throughout Small World Deluxe; debug mode now activated!")
+    add_definitions(-DGFYRE_PORTAUDIO_DBG_VERBOSITY_ENBL)
 endif()
 
 #

@@ -39,44 +39,30 @@
  **
  ****************************************************************************************************/
 
-#pragma once
+#include "src/gk_submit_msg.hpp" 
 
-#include "src/defines.hpp"
-#include <QObject>
-#include <QList>
+GekkoFyre::GkPlainTextSubmit::GkPlainTextSubmit(QWidget *parent)
+{
+    setParent(parent);
 
-namespace GekkoFyre {
+    return;
+}
 
-class GkFrequencies : public QObject {
-    Q_OBJECT
+GekkoFyre::GkPlainTextSubmit::~GkPlainTextSubmit()
+{
+    return;
+}
 
-public:
-    explicit GkFrequencies(QObject *parent = nullptr);
-    ~GkFrequencies();
+void GekkoFyre::GkPlainTextSubmit::keyPressEvent(QKeyEvent *event)
+{
+    if (event->key() == Qt::Key_Return) {
+        // The ENTER key has been pressed!
+        clear();
+        emit execFuncAfterEvent(); // Execute desired functions now!
+    } else {
+        // Some other key has been pressed, process as normal...
+        QPlainTextEdit::keyPressEvent(event);
+    }
 
-    void publishFreqList();
-
-    bool approximatelyEqual(const float &a, const float &b, const float &epsilon);
-    bool essentiallyEqual(const float &a, const float &b, const float &epsilon);
-    bool definitelyGreaterThan(const float &a, const float &b, const float &epsilon);
-    bool definitelyLessThan(const float &a, const float &b, const float &epsilon);
-
-    QList<GekkoFyre::AmateurRadio::GkFreqs> listOfFreqs();
-    int size();
-    GekkoFyre::AmateurRadio::GkFreqs at(const int &idx);
-
-signals:
-    void updateFrequencies(const quint64 &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
-                           const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq);
-    void removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_remove);
-    void addFreq(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_add);
-
-private slots:
-    void updateFreqsInMem(const quint64 &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
-                          const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq);
-
-private:
-    QList<GekkoFyre::AmateurRadio::GkFreqs> frequencyList;
-
-};
-};
+    return;
+}
