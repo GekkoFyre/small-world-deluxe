@@ -606,7 +606,7 @@ bool MainWindow::prefillAmateurBands()
  */
 void MainWindow::launchSettingsWin()
 {
-    QPointer<GkFreqTableViewModel> gkFreqTableModel = new GkFreqTableViewModel(this);
+    QPointer<GkFreqTableViewModel> gkFreqTableModel = new GkFreqTableViewModel(GkDb, this);
     QObject::connect(gkFreqTableModel, SIGNAL(addFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
                      gkFreqList, SIGNAL(addFreq(const GekkoFyre::AmateurRadio::GkFreqs &)));
     QObject::connect(gkFreqTableModel, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
