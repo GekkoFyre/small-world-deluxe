@@ -397,39 +397,33 @@ void GkLevelDb::write_frequencies_db(const GkFreqs &write_new_value)
 
         // Frequency
         std::string gk_stored_freq_value = "";
-        status = db->Get(read_options, "GkStoredFreq", &gk_stored_freq_value);
+        db->Get(read_options, "GkStoredFreq", &gk_stored_freq_value);
         std::string csv_stored_freq;
         csv_stored_freq = processCsvToDB(gk_stored_freq_value, QString::number(write_new_value.frequency).toStdString()); // Frequency (CSV)
-
-        batch.Delete("GkStoredFreq"); // Delete the key before rewriting the values again!
         batch.Put("GkStoredFreq", csv_stored_freq);
 
         // Closest matching frequency band
         std::string gk_closest_band_value = "";
-        status = db->Get(read_options, "GkClosestBand", &gk_closest_band_value);
+        db->Get(read_options, "GkClosestBand", &gk_closest_band_value);
         std::string csv_closest_band;
         csv_closest_band = processCsvToDB(gk_closest_band_value, convBandsToStr(write_new_value.closest_freq_band).toStdString()); // Closest matching frequency band (CSV)
-
-        batch.Delete("GkClosestBand"); // Delete the key before rewriting the values again!
         batch.Put("GkClosestBand", csv_closest_band);
 
         // Digital mode
         std::string gk_digital_mode_value = "";
-        status = db->Get(read_options, "GkDigitalMode", &gk_digital_mode_value);
+        db->Get(read_options, "GkDigitalMode", &gk_digital_mode_value);
         std::string csv_digital_mode;
         csv_digital_mode = processCsvToDB(gk_digital_mode_value, convDigitalModesToStr(write_new_value.digital_mode).toStdString()); // Digital mode (CSV)
-
-        batch.Delete("GkDigitalMode"); // Delete the key before rewriting the values again!
         batch.Put("GkDigitalMode", csv_digital_mode);
 
         // IARU Region
         std::string gk_iaru_region_value = "";
-        status = db->Get(read_options, "GkIARURegion", &gk_iaru_region_value);
+        db->Get(read_options, "GkIARURegion", &gk_iaru_region_value);
         std::string csv_iaru_region;
         csv_iaru_region = processCsvToDB(gk_iaru_region_value, convIARURegionToStr(write_new_value.iaru_region).toStdString()); // IARU Region (CSV)
-
-        batch.Delete("GkIARURegion"); // Delete the key before rewriting the values again!
         batch.Put("GkIARURegion", csv_iaru_region);
+
+        remove_frequencies_db(true); // Delete all the frequencies and their component values!
 
         leveldb::WriteOptions write_options;
         write_options.sync = true;
@@ -454,7 +448,7 @@ void GkLevelDb::write_frequencies_db(const GkFreqs &write_new_value)
  * @param freq_to_remove The given frequency and its component values to remove.
  * @param del_all Whether to delete all frequencies and their component values or not.
  */
-void GkLevelDb::remove_frequencies_db(const GkFreqs &freq_to_remove, const bool &del_all)
+void GkLevelDb::remove_frequencies_db(const GkFreqs &freq_to_remove)
 {
     try {
         leveldb::WriteBatch batch;
@@ -462,50 +456,77 @@ void GkLevelDb::remove_frequencies_db(const GkFreqs &freq_to_remove, const bool 
         leveldb::ReadOptions read_options;
         read_options.verify_checksums = true;
 
-        if (!del_all) {
+        //
+        // Only delete the given frequency and its component values
+        //
+
+        // Frequency
+        std::string gk_stored_freq_value = "";
+        status = db->Get(read_options, "GkStoredFreq", &gk_stored_freq_value);
+        std::string csv_stored_freq;
+        csv_stored_freq = deleteCsvValForDb(gk_stored_freq_value, QString::number(freq_to_remove.frequency).toStdString()); // Frequency (CSV)
+
+        batch.Delete("GkStoredFreq"); // Delete the key before rewriting the values again!
+        batch.Put("GkStoredFreq", csv_stored_freq);
+
+        // Closest matching frequency band
+        std::string gk_closest_band_value = "";
+        status = db->Get(read_options, "GkClosestBand", &gk_closest_band_value);
+        std::string csv_closest_band;
+        csv_closest_band = deleteCsvValForDb(gk_closest_band_value, convBandsToStr(freq_to_remove.closest_freq_band).toStdString()); // Closest matching frequency band (CSV)
+
+        batch.Delete("GkClosestBand"); // Delete the key before rewriting the values again!
+        batch.Put("GkClosestBand", csv_closest_band);
+
+        // Digital mode
+        std::string gk_digital_mode_value = "";
+        status = db->Get(read_options, "GkDigitalMode", &gk_digital_mode_value);
+        std::string csv_digital_mode;
+        csv_digital_mode = deleteCsvValForDb(gk_digital_mode_value, convDigitalModesToStr(freq_to_remove.digital_mode).toStdString()); // Digital mode (CSV)
+
+        batch.Delete("GkDigitalMode"); // Delete the key before rewriting the values again!
+        batch.Put("GkDigitalMode", csv_digital_mode);
+
+        // IARU Region
+        std::string gk_iaru_region_value = "";
+        status = db->Get(read_options, "GkIARURegion", &gk_iaru_region_value);
+        std::string csv_iaru_region;
+        csv_iaru_region = deleteCsvValForDb(gk_iaru_region_value, convIARURegionToStr(freq_to_remove.iaru_region).toStdString()); // IARU Region (CSV)
+
+        batch.Delete("GkIARURegion"); // Delete the key before rewriting the values again!
+        batch.Put("GkIARURegion", csv_iaru_region);
+
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
+
+        status = db->Write(write_options, &batch);
+
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        }
+    } catch (const std::exception &e) { // https://en.cppreference.com/w/cpp/error/nested_exception
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return;
+}
+
+/**
+ * @brief GkLevelDb::remove_frequencies_db deletes all the frequencies that are stored within the program's Google LevelDB database along with
+ * their component values.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param del_all Whether to delete all the frequencies and their component values or not.
+ */
+void GkLevelDb::remove_frequencies_db(const bool &del_all)
+{
+    try {
+        if (del_all) {
             //
-            // Only delete the given frequency and its component values
+            // Delete all the frequencies and their component values!
             //
 
-            // Frequency
-            std::string gk_stored_freq_value = "";
-            status = db->Get(read_options, "GkStoredFreq", &gk_stored_freq_value);
-            std::string csv_stored_freq;
-            csv_stored_freq = deleteCsvValForDb(gk_stored_freq_value, QString::number(freq_to_remove.frequency).toStdString()); // Frequency (CSV)
-
-            batch.Delete("GkStoredFreq"); // Delete the key before rewriting the values again!
-            batch.Put("GkStoredFreq", csv_stored_freq);
-
-            // Closest matching frequency band
-            std::string gk_closest_band_value = "";
-            status = db->Get(read_options, "GkClosestBand", &gk_closest_band_value);
-            std::string csv_closest_band;
-            csv_closest_band = deleteCsvValForDb(gk_closest_band_value, convBandsToStr(freq_to_remove.closest_freq_band).toStdString()); // Closest matching frequency band (CSV)
-
-            batch.Delete("GkClosestBand"); // Delete the key before rewriting the values again!
-            batch.Put("GkClosestBand", csv_closest_band);
-
-            // Digital mode
-            std::string gk_digital_mode_value = "";
-            status = db->Get(read_options, "GkDigitalMode", &gk_digital_mode_value);
-            std::string csv_digital_mode;
-            csv_digital_mode = deleteCsvValForDb(gk_digital_mode_value, convDigitalModesToStr(freq_to_remove.digital_mode).toStdString()); // Digital mode (CSV)
-
-            batch.Delete("GkDigitalMode"); // Delete the key before rewriting the values again!
-            batch.Put("GkDigitalMode", csv_digital_mode);
-
-            // IARU Region
-            std::string gk_iaru_region_value = "";
-            status = db->Get(read_options, "GkIARURegion", &gk_iaru_region_value);
-            std::string csv_iaru_region;
-            csv_iaru_region = deleteCsvValForDb(gk_iaru_region_value, convIARURegionToStr(freq_to_remove.iaru_region).toStdString()); // IARU Region (CSV)
-
-            batch.Delete("GkIARURegion"); // Delete the key before rewriting the values again!
-            batch.Put("GkIARURegion", csv_iaru_region);
-        } else {
-            //
-            // Delete all frequencies and their component values!
-            //
+            leveldb::WriteBatch batch;
+            leveldb::Status status;
 
             // Frequency
             batch.Delete("GkStoredFreq");
@@ -518,15 +539,15 @@ void GkLevelDb::remove_frequencies_db(const GkFreqs &freq_to_remove, const bool 
 
             // IARU Region
             batch.Delete("GkIARURegion");
-        }
 
-        leveldb::WriteOptions write_options;
-        write_options.sync = true;
+            leveldb::WriteOptions write_options;
+            write_options.sync = true;
 
-        status = db->Write(write_options, &batch);
+            status = db->Write(write_options, &batch);
 
-        if (!status.ok()) { // Abort because of error!
-            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+            if (!status.ok()) { // Abort because of error!
+                throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+            }
         }
     } catch (const std::exception &e) { // https://en.cppreference.com/w/cpp/error/nested_exception
         std::throw_with_nested(std::runtime_error(e.what()));
@@ -1416,11 +1437,16 @@ bool GkLevelDb::boolStr(const std::string &is_true)
 std::string GkLevelDb::processCsvToDB(const std::string &comma_sep_values, const std::string &data_to_append)
 {
     try {
-        if (!comma_sep_values.empty() && !data_to_append.empty()) {
+        if (!data_to_append.empty()) {
             std::stringstream sstream;
-            sstream << "FreqValues" << std::endl;
-            sstream << data_to_append << std::endl;
 
+            if (!comma_sep_values.empty()) {
+                sstream << comma_sep_values << std::endl;
+            } else {
+                sstream << "FreqValues" << std::endl;
+            }
+
+            sstream << data_to_append;
             return sstream.str();
         } else {
             return "";
@@ -1463,7 +1489,7 @@ std::string GkLevelDb::deleteCsvValForDb(const std::string &comma_sep_values, co
             }
 
             return output_stream.str();
-        }
+        } // Otherwise return an empty std::string!
     } catch (const std::exception &e) {
         std::throw_with_nested(std::invalid_argument(tr("An error has occurred whilst processing CSV for Google LevelDB!").toStdString()));
     }

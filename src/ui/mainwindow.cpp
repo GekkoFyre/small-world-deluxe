@@ -1053,7 +1053,7 @@ void MainWindow::updateVolumeSliderLabel(const float &vol_level)
  */
 void MainWindow::removeFreqFromDb(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_remove)
 {
-    GkDb->remove_frequencies_db(freq_to_remove, false);
+    GkDb->remove_frequencies_db(freq_to_remove);
 
     return;
 }
