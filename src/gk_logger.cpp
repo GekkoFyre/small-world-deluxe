@@ -42,6 +42,7 @@
 
 #include "src/gk_logger.hpp"
 #include <utility>
+#include <QDateTime>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -96,6 +97,9 @@ void GkEventLogger::publishEvent(const QString &event, const GkSeverity &severit
     } else {
         setEventNo(); // Set the event number accordingly!
     }
+
+    QDateTime curr_time;
+    event_log.mesg.date = curr_time.currentMSecsSinceEpoch();
 
     eventLogDb.push_back(event_log);
     emit sendEvent(event_log);

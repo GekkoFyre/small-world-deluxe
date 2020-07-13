@@ -101,9 +101,12 @@ GkFreqTableViewModel::~GkFreqTableViewModel()
  */
 void GkFreqTableViewModel::populateData(const QList<GkFreqs> &frequencies)
 {
+    dataBatchMutex.lock();
+
     m_data.clear();
     m_data = frequencies;
 
+    dataBatchMutex.unlock();
     return;
 }
 
@@ -118,11 +121,13 @@ void GkFreqTableViewModel::populateData(const QList<GkFreqs> &frequencies, const
     populateData(frequencies);
 
     if (populate_freq_db) {
+        dataBatchMutex.lock();
         for (const auto &data: frequencies) {
             emit addFreq(data);
         }
     }
 
+    dataBatchMutex.unlock();
     return;
 }
 
@@ -133,8 +138,17 @@ void GkFreqTableViewModel::populateData(const QList<GkFreqs> &frequencies, const
  */
 void GkFreqTableViewModel::insertData(const GkFreqs &freq_val)
 {
-    m_data.push_back(freq_val);
+    dataBatchMutex.lock();
 
+    beginInsertRows(QModelIndex(), m_data.count(), m_data.count());
+    m_data.append(freq_val);
+    endInsertRows();
+
+    auto top = this->createIndex((m_data.count() - 1), 0, nullptr);
+    auto bottom = this->createIndex((m_data.count() - 1), GK_EVENTLOG_TABLEVIEW_MODEL_TOTAL_IDX, nullptr);
+    emit dataChanged(top, bottom);
+
+    dataBatchMutex.unlock();
     return;
 }
 
@@ -149,7 +163,9 @@ void GkFreqTableViewModel::insertData(const GkFreqs &freq_val, const bool &popul
     insertData(freq_val);
 
     if (populate_freq_db) {
+        dataBatchMutex.lock();
         emit addFreq(freq_val);
+        dataBatchMutex.unlock();
     }
 
     return;
@@ -162,13 +178,21 @@ void GkFreqTableViewModel::insertData(const GkFreqs &freq_val, const bool &popul
  */
 void GkFreqTableViewModel::removeData(const GkFreqs &freq_val)
 {
+    dataBatchMutex.lock();
     for (int i = 0; i < m_data.size(); ++i) {
         if ((m_data[i].frequency == freq_val.frequency) && ((m_data[i].digital_mode == freq_val.digital_mode) ||
                                                             (m_data[i].iaru_region == freq_val.iaru_region))) {
+            beginRemoveRows(QModelIndex(), (m_data.count() - 1), (m_data.count() - 1));
             m_data.removeAt(i); // Remove any occurrence of this value, one at a time!
+            endRemoveRows();
         }
     }
 
+    auto top = this->createIndex((m_data.count() - 1), 0, nullptr);
+    auto bottom = this->createIndex((m_data.count() - 1), GK_EVENTLOG_TABLEVIEW_MODEL_TOTAL_IDX, nullptr);
+    emit dataChanged(top, bottom);
+
+    dataBatchMutex.unlock();
     return;
 }
 
@@ -181,12 +205,15 @@ void GkFreqTableViewModel::removeData(const GkFreqs &freq_val)
 void GkFreqTableViewModel::removeData(const GkFreqs &freq_val, const bool &remove_freq_db)
 {
     if (remove_freq_db) {
+        dataBatchMutex.lock();
         for (int i = 0; i < m_data.size(); ++i) {
             if ((m_data[i].frequency == freq_val.frequency) && ((m_data[i].digital_mode == freq_val.digital_mode) ||
                                                                 (m_data[i].iaru_region == freq_val.iaru_region))) {
                 emit removeFreq(freq_val);
             }
         }
+
+        dataBatchMutex.unlock();
     }
 
     removeData(freq_val);
@@ -219,7 +246,7 @@ int GkFreqTableViewModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
 
-    return 3; // Make sure to add the total of columns from within `GkFreqTableViewModel::headerData()`!
+    return GK_FREQ_TABLEVIEW_MODEL_TOTAL_IDX; // Make sure to add the total of columns from within `GkFreqTableViewModel::headerData()`!
 }
 
 /**

@@ -102,7 +102,7 @@ void GkEventLoggerTableViewModel::insertData(const GkEventLogging &event)
     endInsertRows();
 
     auto top = this->createIndex((m_data.count() - 1), 0, nullptr);
-    auto bottom = this->createIndex((m_data.count() - 1), 4, nullptr);
+    auto bottom = this->createIndex((m_data.count() - 1), GK_EVENTLOG_TABLEVIEW_MODEL_TOTAL_IDX, nullptr);
     emit dataChanged(top, bottom);
 
     dataBatchMutex.unlock();
@@ -115,9 +115,15 @@ void GkEventLoggerTableViewModel::removeData(const GkEventLogging &event)
 
     for (int i = 0; i < m_data.size(); ++i) {
         if (m_data[i].event_no == event.event_no) {
+            beginRemoveRows(QModelIndex(), (m_data.count() - 1), (m_data.count() - 1));
             m_data.removeAt(i); // Remove any occurrence of this value, one at a time!
+            endRemoveRows();
         }
     }
+
+    auto top = this->createIndex((m_data.count() - 1), 0, nullptr);
+    auto bottom = this->createIndex((m_data.count() - 1), GK_EVENTLOG_TABLEVIEW_MODEL_TOTAL_IDX, nullptr);
+    emit dataChanged(top, bottom);
 
     dataBatchMutex.unlock();
     return;
@@ -134,7 +140,7 @@ int GkEventLoggerTableViewModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
 
-    return 4; // Make sure to add the total of columns from within `GkEventLoggerTableViewModel::headerData()`!
+    return GK_EVENTLOG_TABLEVIEW_MODEL_TOTAL_IDX; // Make sure to add the total of columns from within `GkEventLoggerTableViewModel::headerData()`!
 }
 
 QVariant GkEventLoggerTableViewModel::data(const QModelIndex &index, int role) const

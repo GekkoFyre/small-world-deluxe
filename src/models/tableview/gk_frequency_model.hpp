@@ -47,6 +47,7 @@
 #include <QList>
 #include <QMenu>
 #include <QPoint>
+#include <QMutex>
 #include <QObject>
 #include <QString>
 #include <QVariant>
@@ -91,6 +92,8 @@ private:
     QPointer<QTableView> table;
     QPointer<QMenu> menu;
     QPointer<QSortFilterProxyModel> proxyModel;
+
+    QMutex dataBatchMutex;
 
 };
 };
