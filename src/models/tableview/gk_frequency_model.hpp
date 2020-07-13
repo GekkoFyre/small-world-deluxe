@@ -42,49 +42,28 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include "src/dek_db.hpp"
+#include <memory>
 #include <QList>
 #include <QMenu>
 #include <QPoint>
+#include <QMutex>
 #include <QObject>
 #include <QString>
 #include <QVariant>
 #include <QPointer>
 #include <QTableView>
 #include <QModelIndex>
-#include <QMouseEvent>
-#include <QStandardItemModel>
 #include <QAbstractTableModel>
+#include <QSortFilterProxyModel>
 
 namespace GekkoFyre {
-
-class GkFreqTableContextMenu : public QStandardItemModel {
-    Q_OBJECT
-
-public:
-    explicit GkFreqTableContextMenu(QWidget *parent = nullptr);
-    ~GkFreqTableContextMenu();
-
-public slots:
-    void customMenuRequested(QPoint pos);
-    void customHeaderMenuRequested(QPoint pos);
-
-private slots:
-    void mousePressEvent(QMouseEvent *e);
-
-signals:
-    void rightClicked(QPoint pos);
-
-private:
-    QPointer<QTableView> table;
-    QPointer<QMenu> menu;
-
-};
 
 class GkFreqTableViewModel : public QAbstractTableModel {
     Q_OBJECT
 
 public:
-    explicit GkFreqTableViewModel(QWidget *parent = nullptr);
+    explicit GkFreqTableViewModel(std::shared_ptr<GekkoFyre::GkLevelDb> database, QWidget *parent = nullptr);
     ~GkFreqTableViewModel();
 
     void populateData(const QList<GekkoFyre::AmateurRadio::GkFreqs> &frequencies);
@@ -99,13 +78,22 @@ public:
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
 
+public slots:
+    void customHeaderMenuRequested(QPoint pos);
+
 signals:
     void removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_remove);
     void addFreq(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_add);
 
 private:
+    std::shared_ptr<GekkoFyre::GkLevelDb> GkDb;
     QList<GekkoFyre::AmateurRadio::GkFreqs> m_data;
-    QPointer<GkFreqTableContextMenu> context_menu;
+
+    QPointer<QTableView> table;
+    QPointer<QMenu> menu;
+    QPointer<QSortFilterProxyModel> proxyModel;
+
+    QMutex dataBatchMutex;
 
 };
 };

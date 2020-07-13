@@ -41,6 +41,8 @@
  ****************************************************************************************************/
 
 #include "src/gk_logger.hpp"
+#include <utility>
+#include <QDateTime>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -56,6 +58,7 @@ using namespace Logging;
 /**
  * @brief GkEventLogger::GkEventLogger
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param viewModel
  * @param parent
  */
 GkEventLogger::GkEventLogger(QObject *parent)
@@ -71,33 +74,60 @@ GkEventLogger::~GkEventLogger()
 }
 
 /**
- * @brief GkEventLogger::publishEvent
+ * @brief GkEventLogger::publishEvent allows the publishing of an event log and any of its component characteristics.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param event
- * @param severity
- * @param arguments
+ * @param event The event message itself.
+ * @param severity The severity of the issue, where it's just a warning all the way to a fatal error.
+ * @param arguments Any arguments that are associated with the event message. This tends to be left blank.
  */
 void GkEventLogger::publishEvent(const QString &event, const GkSeverity &severity, const QVariant &arguments)
 {
+    GkEventLogging event_log;
+    event_log.mesg.message = event;
+    event_log.mesg.severity = severity;
+
+    if (arguments.isValid()) {
+        event_log.mesg.arguments = arguments;
+    } else {
+        event_log.mesg.arguments = "";
+    }
+
+    if (eventLogDb.empty()) {
+        event_log.event_no = 1;
+    } else {
+        setEventNo(); // Set the event number accordingly!
+    }
+
+    QDateTime curr_time;
+    event_log.mesg.date = curr_time.currentMSecsSinceEpoch();
+
+    eventLogDb.push_back(event_log);
+    emit sendEvent(event_log);
+
     return;
 }
 
 /**
- * @brief GkEventLogger::setDate
+ * @brief GkEventLogger::setDate will set the date as according to the milliseconds from UNIX epoch. There is no need to format
+ * beforehand, as this will be done accordingly by the QTableView model.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @return
+ * @return The date since UNIX epoch, in milliseconds!
  */
 qint64 GkEventLogger::setDate()
 {
-    return -1;
+    qint64 curr_date = QDateTime::currentMSecsSinceEpoch();
+    return curr_date;
 }
 
 /**
- * @brief GkEventLogger::setEventNo
+ * @brief GkEventLogger::setEventNo creates a particular identification number for each event to uniquely identify and characterise
+ * them, which not only makes data manipulation easier, but makes identifying by the user easier too!
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @return
+ * @return The unique ID for each event entry.
  */
 int GkEventLogger::setEventNo()
 {
-    return -1;
+    int event_number = eventLogDb.back().event_no;
+    event_number += 1;
+    return event_number;
 }

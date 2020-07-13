@@ -40,6 +40,9 @@
  ****************************************************************************************************/
 
 #include "src/models/tableview/gk_frequency_model.hpp"
+#include <utility>
+#include <iomanip>
+#include <sstream>
 #include <QAction>
 #include <QVBoxLayout>
 #include <QHeaderView>
@@ -55,9 +58,33 @@ using namespace System;
 using namespace Events;
 using namespace Logging;
 
-GkFreqTableViewModel::GkFreqTableViewModel(QWidget *parent) : QAbstractTableModel(parent)
+GkFreqTableViewModel::GkFreqTableViewModel(std::shared_ptr<GekkoFyre::GkLevelDb> database, QWidget *parent)
+    : QAbstractTableModel(parent)
 {
-    context_menu = new GkFreqTableContextMenu(parent);
+    GkDb = std::move(database);
+
+    table = new QTableView(parent);
+    QPointer<QVBoxLayout> layout = new QVBoxLayout(parent);
+    proxyModel = new QSortFilterProxyModel(parent);
+
+    table->setModel(proxyModel);
+    table->setSelectionBehavior(QAbstractItemView::SelectRows);
+    table->setSelectionMode(QAbstractItemView::SingleSelection);
+    table->setContextMenuPolicy(Qt::CustomContextMenu);
+    QObject::connect(table, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(customMenuRequested(QPoint)));
+
+    table->horizontalHeader()->setContextMenuPolicy(Qt::CustomContextMenu);
+    QObject::connect(table->horizontalHeader(), SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(customHeaderMenuRequested(QPoint)));
+    layout->addWidget(table);
+
+    // table->horizontalHeader()->setSectionResizeMode(GK_FREQ_TABLEVIEW_MODEL_FREQUENCY_IDX, QHeaderView::Stretch);
+
+    menu = new QMenu(parent);
+    menu->addAction(new QAction(tr("New"), this));
+    menu->addAction(new QAction(tr("Edit"), this));
+    menu->addAction(new QAction(tr("Delete"), this));
+
+    proxyModel->setSourceModel(this);
 
     return;
 }
@@ -74,9 +101,12 @@ GkFreqTableViewModel::~GkFreqTableViewModel()
  */
 void GkFreqTableViewModel::populateData(const QList<GkFreqs> &frequencies)
 {
+    dataBatchMutex.lock();
+
     m_data.clear();
     m_data = frequencies;
 
+    dataBatchMutex.unlock();
     return;
 }
 
@@ -91,11 +121,13 @@ void GkFreqTableViewModel::populateData(const QList<GkFreqs> &frequencies, const
     populateData(frequencies);
 
     if (populate_freq_db) {
+        dataBatchMutex.lock();
         for (const auto &data: frequencies) {
             emit addFreq(data);
         }
     }
 
+    dataBatchMutex.unlock();
     return;
 }
 
@@ -106,8 +138,17 @@ void GkFreqTableViewModel::populateData(const QList<GkFreqs> &frequencies, const
  */
 void GkFreqTableViewModel::insertData(const GkFreqs &freq_val)
 {
-    m_data.push_back(freq_val);
+    dataBatchMutex.lock();
 
+    beginInsertRows(QModelIndex(), m_data.count(), m_data.count());
+    m_data.append(freq_val);
+    endInsertRows();
+
+    auto top = this->createIndex((m_data.count() - 1), 0, nullptr);
+    auto bottom = this->createIndex((m_data.count() - 1), GK_EVENTLOG_TABLEVIEW_MODEL_TOTAL_IDX, nullptr);
+    emit dataChanged(top, bottom);
+
+    dataBatchMutex.unlock();
     return;
 }
 
@@ -122,7 +163,9 @@ void GkFreqTableViewModel::insertData(const GkFreqs &freq_val, const bool &popul
     insertData(freq_val);
 
     if (populate_freq_db) {
+        dataBatchMutex.lock();
         emit addFreq(freq_val);
+        dataBatchMutex.unlock();
     }
 
     return;
@@ -135,13 +178,21 @@ void GkFreqTableViewModel::insertData(const GkFreqs &freq_val, const bool &popul
  */
 void GkFreqTableViewModel::removeData(const GkFreqs &freq_val)
 {
+    dataBatchMutex.lock();
     for (int i = 0; i < m_data.size(); ++i) {
         if ((m_data[i].frequency == freq_val.frequency) && ((m_data[i].digital_mode == freq_val.digital_mode) ||
                                                             (m_data[i].iaru_region == freq_val.iaru_region))) {
+            beginRemoveRows(QModelIndex(), (m_data.count() - 1), (m_data.count() - 1));
             m_data.removeAt(i); // Remove any occurrence of this value, one at a time!
+            endRemoveRows();
         }
     }
 
+    auto top = this->createIndex((m_data.count() - 1), 0, nullptr);
+    auto bottom = this->createIndex((m_data.count() - 1), GK_EVENTLOG_TABLEVIEW_MODEL_TOTAL_IDX, nullptr);
+    emit dataChanged(top, bottom);
+
+    dataBatchMutex.unlock();
     return;
 }
 
@@ -154,12 +205,15 @@ void GkFreqTableViewModel::removeData(const GkFreqs &freq_val)
 void GkFreqTableViewModel::removeData(const GkFreqs &freq_val, const bool &remove_freq_db)
 {
     if (remove_freq_db) {
+        dataBatchMutex.lock();
         for (int i = 0; i < m_data.size(); ++i) {
             if ((m_data[i].frequency == freq_val.frequency) && ((m_data[i].digital_mode == freq_val.digital_mode) ||
                                                                 (m_data[i].iaru_region == freq_val.iaru_region))) {
                 emit removeFreq(freq_val);
             }
         }
+
+        dataBatchMutex.unlock();
     }
 
     removeData(freq_val);
@@ -192,7 +246,7 @@ int GkFreqTableViewModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
 
-    return 3; // Make sure to add the total of columns from within `GkFreqTableViewModel::headerData()`!
+    return GK_FREQ_TABLEVIEW_MODEL_TOTAL_IDX; // Make sure to add the total of columns from within `GkFreqTableViewModel::headerData()`!
 }
 
 /**
@@ -208,13 +262,32 @@ QVariant GkFreqTableViewModel::data(const QModelIndex &index, int role) const
         return QVariant();
     }
 
+    double row_freq = m_data[index.row()].frequency;
+    quint64 num_base_10 = m_data[index.row()].frequency % 1000;
+    QString row_freq_str = "";
+
+    std::stringstream sstream;
+    if (num_base_10 > 0 && num_base_10 < 1000) {
+        row_freq /= 1000;
+        sstream << std::setprecision(GK_FREQ_TABLEVIEW_MODEL_NUM_PRECISION) << row_freq;
+        row_freq_str = tr("%1 KHz").arg(QString::fromStdString(sstream.str()));
+    } else {
+        row_freq /= 1000;
+        row_freq /= 1000;
+        sstream << std::setprecision(GK_FREQ_TABLEVIEW_MODEL_NUM_PRECISION) << row_freq;
+        row_freq_str = tr("%1 MHz").arg(QString::fromStdString(sstream.str()));
+    }
+
+    QString row_digital_mode = GkDb->convDigitalModesToStr(m_data[index.row()].digital_mode);
+    QString row_iaru_region = GkDb->convIARURegionToStr(m_data[index.row()].iaru_region);
+
     switch (index.column()) {
-    case 0:
-        return m_data[index.row()].frequency;
-    case 1:
-        return m_data[index.row()].digital_mode;
-    case 2:
-        return m_data[index.row()].iaru_region;
+    case GK_FREQ_TABLEVIEW_MODEL_FREQUENCY_IDX:
+        return row_freq_str;
+    case GK_FREQ_TABLEVIEW_MODEL_MODE_IDX:
+        return row_digital_mode;
+    case GK_FREQ_TABLEVIEW_MODEL_IARU_REGION_IDX:
+        return row_iaru_region;
     }
 
     return QVariant();
@@ -246,71 +319,9 @@ QVariant GkFreqTableViewModel::headerData(int section, Qt::Orientation orientati
     return QVariant();
 }
 
-/**
- * @brief GkFreqTableContextMenu::GkFreqTableContextMenu
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param parent
- */
-GkFreqTableContextMenu::GkFreqTableContextMenu(QWidget *parent)
-{
-    table = new QTableView(parent);
-    QPointer<QVBoxLayout> layout = new QVBoxLayout(parent);
-
-    table->setModel(this);
-    table->setContextMenuPolicy(Qt::CustomContextMenu);
-    QObject::connect(table, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(customMenuRequested(QPoint)));
-
-    table->horizontalHeader()->setContextMenuPolicy(Qt::CustomContextMenu);
-    QObject::connect(table->horizontalHeader(), SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(customHeaderMenuRequested(QPoint)));
-    layout->addWidget(table);
-
-    menu = new QMenu(parent);
-    menu->addAction(new QAction(tr("New"), this));
-    menu->addAction(new QAction(tr("Edit"), this));
-    menu->addAction(new QAction(tr("Delete"), this));
-
-    QObject::connect(this, SIGNAL(rightClicked(QPoint)), this, SLOT(customHeaderMenuRequested(QPoint)));
-
-    return;
-}
-
-GkFreqTableContextMenu::~GkFreqTableContextMenu()
-{
-    return;
-}
-
-/**
- * @brief GkFreqTableContextMenu::customMenuRequested
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param pos
- */
-void GkFreqTableContextMenu::customMenuRequested(QPoint pos)
-{
-    QModelIndex index = table->indexAt(pos);
-    Q_UNUSED(index);
-
-    menu->popup(table->viewport()->mapToGlobal(pos));
-
-    return;
-}
-
-/**
- * @brief GkFreqTableContextMenu::customHeaderMenuRequested
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param pos
- */
-void GkFreqTableContextMenu::customHeaderMenuRequested(QPoint pos)
+void GkFreqTableViewModel::customHeaderMenuRequested(QPoint pos)
 {
     menu->popup(table->horizontalHeader()->viewport()->mapToGlobal(pos));
-
-    return;
-}
-
-void GkFreqTableContextMenu::mousePressEvent(QMouseEvent *e)
-{
-    if (e->button() == Qt::RightButton) {
-        emit rightClicked(QCursor::pos());
-    }
 
     return;
 }
