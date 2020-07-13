@@ -84,6 +84,10 @@ using namespace Settings;
 using namespace Audio;
 using namespace AmateurRadio;
 using namespace Control;
+using namespace Spectrograph;
+using namespace System;
+using namespace Events;
+using namespace Logging;
 
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
@@ -444,11 +448,22 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         gkFreqList->publishFreqList();
 
+        //
+        // Events logger
+        //
         QPointer<GkEventLoggerTableViewModel> gkEventLoggerModel = new GkEventLoggerTableViewModel(GkDb, this);
         ui->tableView_maingui_logs->setModel(gkEventLoggerModel);
         ui->tableView_maingui_logs->horizontalHeader()->setVisible(true);
         ui->tableView_maingui_logs->horizontalHeader()->setStretchLastSection(true);
         ui->tableView_maingui_logs->show();
+
+        gkEventLogger = new GkEventLogger(this);
+        QObject::connect(gkEventLogger, SIGNAL(sendEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &)),
+                         gkEventLoggerModel, SLOT(insertData(const GekkoFyre::System::Events::Logging::GkEventLogging &)));
+        QObject::connect(gkEventLogger, SIGNAL(removeEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &)),
+                         gkEventLoggerModel, SLOT(removeData(const GekkoFyre::System::Events::Logging::GkEventLogging &)));
+
+        gkEventLogger->publishEvent(tr("Events log initiated."), GkSeverity::Info);
 
         //
         // This connects `widget_mesg_outgoing` to any transmission protocols, such as Codec2!

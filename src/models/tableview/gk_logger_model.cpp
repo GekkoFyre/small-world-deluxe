@@ -42,6 +42,7 @@
 #include "src/models/tableview/gk_logger_model.hpp" 
 #include <utility>
 #include <QDateTime>
+#include <QVBoxLayout>
 #include <QHeaderView>
 
 using namespace GekkoFyre;
@@ -61,7 +62,12 @@ GkEventLoggerTableViewModel::GkEventLoggerTableViewModel(std::shared_ptr<GkLevel
     GkDb = std::move(database);
 
     table = new QTableView(parent);
-    table->setModel(this);
+    QPointer<QVBoxLayout> layout = new QVBoxLayout(parent);
+    proxyModel = new QSortFilterProxyModel(parent);
+
+    table->setModel(proxyModel);
+    layout->addWidget(table);
+    proxyModel->setSourceModel(this);
 
     return;
 }
@@ -78,27 +84,42 @@ GkEventLoggerTableViewModel::~GkEventLoggerTableViewModel()
  */
 void GkEventLoggerTableViewModel::populateData(const QList<GkEventLogging> &event_logs)
 {
+    dataBatchMutex.lock();
+
     m_data.clear();
     m_data = event_logs;
 
+    dataBatchMutex.unlock();
     return;
 }
 
 void GkEventLoggerTableViewModel::insertData(const GkEventLogging &event)
 {
-    m_data.push_back(event);
+    dataBatchMutex.lock();
 
+    beginInsertRows(QModelIndex(), m_data.count(), m_data.count());
+    m_data.append(event);
+    endInsertRows();
+
+    auto top = this->createIndex((m_data.count() - 1), 0, nullptr);
+    auto bottom = this->createIndex((m_data.count() - 1), 4, nullptr);
+    emit dataChanged(top, bottom);
+
+    dataBatchMutex.unlock();
     return;
 }
 
 void GkEventLoggerTableViewModel::removeData(const GkEventLogging &event)
 {
+    dataBatchMutex.lock();
+
     for (int i = 0; i < m_data.size(); ++i) {
         if (m_data[i].event_no == event.event_no) {
             m_data.removeAt(i); // Remove any occurrence of this value, one at a time!
         }
     }
 
+    dataBatchMutex.unlock();
     return;
 }
 
@@ -118,6 +139,12 @@ int GkEventLoggerTableViewModel::columnCount(const QModelIndex &parent) const
 
 QVariant GkEventLoggerTableViewModel::data(const QModelIndex &index, int role) const
 {
+
+
+    if (!index.isValid() || role != Qt::DisplayRole) {
+        return QVariant();
+    }
+
     int row_event_no = m_data[index.row()].event_no;
 
     qint64 row_date_time = m_data[index.row()].mesg.date;

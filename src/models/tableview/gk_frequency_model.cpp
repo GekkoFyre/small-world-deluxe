@@ -255,11 +255,11 @@ QVariant GkFreqTableViewModel::data(const QModelIndex &index, int role) const
     QString row_iaru_region = GkDb->convIARURegionToStr(m_data[index.row()].iaru_region);
 
     switch (index.column()) {
-    case 0:
+    case GK_FREQ_TABLEVIEW_MODEL_FREQUENCY_IDX:
         return row_freq_str;
-    case 1:
+    case GK_FREQ_TABLEVIEW_MODEL_MODE_IDX:
         return row_digital_mode;
-    case 2:
+    case GK_FREQ_TABLEVIEW_MODEL_IARU_REGION_IDX:
         return row_iaru_region;
     }
 

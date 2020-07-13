@@ -51,6 +51,7 @@
 #include "src/gk_audio_encoding.hpp"
 #include "src/gk_audio_decoding.hpp"
 #include "src/gk_fft.hpp"
+#include "src/gk_logger.hpp"
 #include "src/ui/gkaudioplaydialog.hpp"
 #include "src/ui/gk_vu_meter_widget.hpp"
 #include <boost/filesystem.hpp>
@@ -268,6 +269,11 @@ private:
     std::shared_ptr<QSettings> sw_settings;
     std::shared_ptr<QCommandLineParser> gkCliParser;
     // std::shared_ptr<QPrinter> printer;
+
+    //
+    // Events logger
+    //
+    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
     //
     // Filesystem

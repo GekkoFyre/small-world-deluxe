@@ -60,10 +60,9 @@ using namespace Logging;
  * @param viewModel
  * @param parent
  */
-GkEventLogger::GkEventLogger(QPointer<GkEventLoggerTableViewModel> viewModel, QObject *parent)
+GkEventLogger::GkEventLogger(QObject *parent)
 {
     setParent(parent);
-    tableViewModel = std::move(viewModel);
 
     return;
 }
@@ -98,8 +97,8 @@ void GkEventLogger::publishEvent(const QString &event, const GkSeverity &severit
         setEventNo(); // Set the event number accordingly!
     }
 
-    tableViewModel->insertData(event_log);
     eventLogDb.push_back(event_log);
+    emit sendEvent(event_log);
 
     return;
 }

@@ -45,12 +45,14 @@
 #include "src/dek_db.hpp"
 #include <memory>
 #include <QList>
+#include <QMutex>
 #include <QObject>
 #include <QString>
 #include <QVariant>
 #include <QTableView>
 #include <QModelIndex>
 #include <QAbstractTableModel>
+#include <QSortFilterProxyModel>
 
 namespace GekkoFyre {
 
@@ -62,19 +64,24 @@ public:
     ~GkEventLoggerTableViewModel();
 
     void populateData(const QList<GekkoFyre::System::Events::Logging::GkEventLogging> &event_logs);
-    void insertData(const GekkoFyre::System::Events::Logging::GkEventLogging &event);
-    void removeData(const GekkoFyre::System::Events::Logging::GkEventLogging &event);
     int rowCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
     int columnCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
 
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
 
+public slots:
+    void insertData(const GekkoFyre::System::Events::Logging::GkEventLogging &event);
+    void removeData(const GekkoFyre::System::Events::Logging::GkEventLogging &event);
+
 private:
     std::shared_ptr<GekkoFyre::GkLevelDb> GkDb;
     QList<GekkoFyre::System::Events::Logging::GkEventLogging> m_data;
 
+    QPointer<QSortFilterProxyModel> proxyModel;
     QPointer<QTableView> table;
+
+    QMutex dataBatchMutex;
 
 };
 };
