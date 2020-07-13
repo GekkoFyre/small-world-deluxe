@@ -51,6 +51,7 @@
 #include "src/gk_audio_encoding.hpp"
 #include "src/gk_audio_decoding.hpp"
 #include "src/gk_fft.hpp"
+#include "src/gk_logger.hpp"
 #include "src/ui/gkaudioplaydialog.hpp"
 #include "src/ui/gk_vu_meter_widget.hpp"
 #include <boost/filesystem.hpp>
@@ -175,6 +176,26 @@ private slots:
     void removeFreqFromDb(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_remove);
     void addFreqToDb(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_add);
 
+    //
+    // SSTV related (RX)
+    //
+    void on_pushButton_sstv_rx_navigate_left_clicked();
+    void on_pushButton_sstv_rx_navigate_right_clicked();
+    void on_pushButton_sstv_rx_save_image_clicked();
+    void on_pushButton_sstv_rx_listen_rx_clicked();
+    void on_pushButton_sstv_rx_saved_image_nav_left_clicked();
+    void on_pushButton_sstv_rx_saved_image_nav_right_clicked();
+    void on_pushButton_sstv_rx_saved_image_load_clicked();
+    void on_pushButton_sstv_rx_saved_image_delete_clicked();
+
+    //
+    // SSTV related (TX)
+    //
+    void on_pushButton_sstv_tx_navigate_left_clicked();
+    void on_pushButton_sstv_tx_navigate_right_clicked();
+    void on_pushButton_sstv_tx_load_image_clicked();
+    void on_pushButton_sstv_tx_send_image_clicked();
+
 protected slots:
     void closeEvent(QCloseEvent *event);
 
@@ -248,6 +269,11 @@ private:
     std::shared_ptr<QSettings> sw_settings;
     std::shared_ptr<QCommandLineParser> gkCliParser;
     // std::shared_ptr<QPrinter> printer;
+
+    //
+    // Events logger
+    //
+    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
     //
     // Filesystem
@@ -346,6 +372,7 @@ private:
 
 Q_DECLARE_METATYPE(std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>);
 Q_DECLARE_METATYPE(GekkoFyre::Database::Settings::GkUsbPort);
+Q_DECLARE_METATYPE(GekkoFyre::System::Events::Logging::GkEventLogging);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkConnType);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::DigitalModes);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::IARURegions);

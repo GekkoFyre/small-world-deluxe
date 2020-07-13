@@ -41,6 +41,7 @@
 #include "src/ui/spectrodialog.hpp"
 #include "src/gk_submit_msg.hpp"
 #include "src/models/tableview/gk_frequency_model.hpp"
+#include "src/models/tableview/gk_logger_model.hpp"
 #include <boost/exception/all.hpp>
 #include <boost/chrono/chrono.hpp>
 #include <cmath>
@@ -83,6 +84,10 @@ using namespace Settings;
 using namespace Audio;
 using namespace AmateurRadio;
 using namespace Control;
+using namespace Spectrograph;
+using namespace System;
+using namespace Events;
+using namespace Logging;
 
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
@@ -105,6 +110,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     ui->setupUi(this);
     qRegisterMetaType<std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>>("std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>");
     qRegisterMetaType<GekkoFyre::Database::Settings::GkUsbPort>("GekkoFyre::Database::Settings::GkUsbPort");
+    qRegisterMetaType<GekkoFyre::System::Events::Logging::GkEventLogging>("GekkoFyre::System::Events::Logging::GkEventLogging");
     qRegisterMetaType<GekkoFyre::AmateurRadio::GkConnType>("GekkoFyre::AmateurRadio::GkConnType");
     qRegisterMetaType<GekkoFyre::AmateurRadio::DigitalModes>("GekkoFyre::AmateurRadio::DigitalModes");
     qRegisterMetaType<GekkoFyre::AmateurRadio::IARURegions>("GekkoFyre::AmateurRadio::IARURegions");
@@ -123,6 +129,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         // Print out the current date
         std::cout << QDate::currentDate().toString().toStdString() << std::endl;
+
+        this->window()->showMaximized();; // Maximize the window!
 
         fs::path slash = "/";
         native_slash = slash.make_preferred().native();
@@ -441,6 +449,23 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         gkFreqList->publishFreqList();
 
         //
+        // Events logger
+        //
+        QPointer<GkEventLoggerTableViewModel> gkEventLoggerModel = new GkEventLoggerTableViewModel(GkDb, this);
+        ui->tableView_maingui_logs->setModel(gkEventLoggerModel);
+        ui->tableView_maingui_logs->horizontalHeader()->setVisible(true);
+        ui->tableView_maingui_logs->horizontalHeader()->setStretchLastSection(true);
+        ui->tableView_maingui_logs->show();
+
+        gkEventLogger = new GkEventLogger(this);
+        QObject::connect(gkEventLogger, SIGNAL(sendEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &)),
+                         gkEventLoggerModel, SLOT(insertData(const GekkoFyre::System::Events::Logging::GkEventLogging &)));
+        QObject::connect(gkEventLogger, SIGNAL(removeEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &)),
+                         gkEventLoggerModel, SLOT(removeData(const GekkoFyre::System::Events::Logging::GkEventLogging &)));
+
+        gkEventLogger->publishEvent(tr("Events log initiated."), GkSeverity::Info);
+
+        //
         // This connects `widget_mesg_outgoing` to any transmission protocols, such as Codec2!
         //
         QPointer<GkPlainTextSubmit> widget_mesg_outgoing = new GkPlainTextSubmit(ui->frame_mesg_log);
@@ -606,7 +631,7 @@ bool MainWindow::prefillAmateurBands()
  */
 void MainWindow::launchSettingsWin()
 {
-    QPointer<GkFreqTableViewModel> gkFreqTableModel = new GkFreqTableViewModel(this);
+    QPointer<GkFreqTableViewModel> gkFreqTableModel = new GkFreqTableViewModel(GkDb, this);
     QObject::connect(gkFreqTableModel, SIGNAL(addFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
                      gkFreqList, SIGNAL(addFreq(const GekkoFyre::AmateurRadio::GkFreqs &)));
     QObject::connect(gkFreqTableModel, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
@@ -2210,5 +2235,65 @@ void MainWindow::on_actionPrint_triggered()
     }
     */
 
+    return;
+}
+
+void MainWindow::on_pushButton_sstv_rx_navigate_left_clicked()
+{
+    return;
+}
+
+void MainWindow::on_pushButton_sstv_rx_navigate_right_clicked()
+{
+    return;
+}
+
+void MainWindow::on_pushButton_sstv_rx_save_image_clicked()
+{
+    return;
+}
+
+void MainWindow::on_pushButton_sstv_rx_listen_rx_clicked()
+{
+    return;
+}
+
+void MainWindow::on_pushButton_sstv_rx_saved_image_nav_left_clicked()
+{
+    return;
+}
+
+void MainWindow::on_pushButton_sstv_rx_saved_image_nav_right_clicked()
+{
+    return;
+}
+
+void MainWindow::on_pushButton_sstv_rx_saved_image_load_clicked()
+{
+    return;
+}
+
+void MainWindow::on_pushButton_sstv_rx_saved_image_delete_clicked()
+{
+    return;
+}
+
+void MainWindow::on_pushButton_sstv_tx_navigate_left_clicked()
+{
+    return;
+}
+
+void MainWindow::on_pushButton_sstv_tx_navigate_right_clicked()
+{
+    return;
+}
+
+void MainWindow::on_pushButton_sstv_tx_load_image_clicked()
+{
+    return;
+}
+
+void MainWindow::on_pushButton_sstv_tx_send_image_clicked()
+{
     return;
 }

@@ -63,6 +63,11 @@ using namespace Database;
 using namespace Settings;
 using namespace Audio;
 using namespace AmateurRadio;
+using namespace Control;
+using namespace Spectrograph;
+using namespace System;
+using namespace Events;
+using namespace Logging;
 
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
@@ -620,6 +625,30 @@ bool GkLevelDb::isFreqAlreadyInit()
     }
 
     return false;
+}
+
+QString GkLevelDb::convSeverityToStr(const GkSeverity &severity)
+{
+    switch (severity) {
+    case GkSeverity::Fatal:
+        return tr("Fatal");
+    case GkSeverity::Error:
+        return tr("Error");
+    case GkSeverity::Warning:
+        return tr("Warning");
+    case GkSeverity::Info:
+        return tr("Info");
+    case GkSeverity::Debug:
+        return tr("Debug");
+    case GkSeverity::Verbose:
+        return tr("Verbose");
+    case GkSeverity::None:
+        return tr("None");
+    default:
+        return tr("Undefined");
+    }
+
+    return tr("Error!");
 }
 
 /**
