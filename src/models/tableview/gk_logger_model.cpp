@@ -40,7 +40,9 @@
  ****************************************************************************************************/
 
 #include "src/models/tableview/gk_logger_model.hpp" 
+#include <utility>
 #include <QDateTime>
+#include <QHeaderView>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -53,8 +55,14 @@ using namespace System;
 using namespace Events;
 using namespace Logging;
 
-GkEventLoggerTableViewModel::GkEventLoggerTableViewModel(QWidget *parent) : QAbstractTableModel(parent)
+GkEventLoggerTableViewModel::GkEventLoggerTableViewModel(std::shared_ptr<GkLevelDb> database, QWidget *parent)
+    : QAbstractTableModel(parent)
 {
+    GkDb = std::move(database);
+
+    table = new QTableView(parent);
+    table->setModel(this);
+
     return;
 }
 
@@ -105,24 +113,28 @@ int GkEventLoggerTableViewModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
 
-    return 3; // Make sure to add the total of columns from within `GkEventLoggerTableViewModel::headerData()`!
+    return 4; // Make sure to add the total of columns from within `GkEventLoggerTableViewModel::headerData()`!
 }
 
 QVariant GkEventLoggerTableViewModel::data(const QModelIndex &index, int role) const
 {
     int row_event_no = m_data[index.row()].event_no;
-    QString row_message = m_data[index.row()].mesg.message;
 
     qint64 row_date_time = m_data[index.row()].mesg.date;
     QDateTime timestamp;
     timestamp.setMSecsSinceEpoch(row_date_time);
 
+    QString row_severity = GkDb->convSeverityToStr(m_data[index.row()].mesg.severity);
+    QString row_message = m_data[index.row()].mesg.message;
+
     switch (index.column()) {
-    case 0:
+    case GK_EVENTLOG_TABLEVIEW_MODEL_EVENT_NO_IDX:
         return row_event_no;
-    case 1:
+    case GK_EVENTLOG_TABLEVIEW_MODEL_DATETIME_IDX:
         return timestamp.toString(tr("yyyy-MM-dd hh:mm:ss"));
-    case 2:
+    case GK_EVENTLOG_TABLEVIEW_MODEL_SEVERITY_IDX:
+        return row_severity;
+    case GK_EVENTLOG_TABLEVIEW_MODEL_MESSAGE_IDX:
         return row_message;
     }
 
@@ -137,6 +149,8 @@ QVariant GkEventLoggerTableViewModel::headerData(int section, Qt::Orientation or
             return tr("Event No.");
         case GK_EVENTLOG_TABLEVIEW_MODEL_DATETIME_IDX:
             return tr("Date & Time");
+        case GK_EVENTLOG_TABLEVIEW_MODEL_SEVERITY_IDX:
+            return tr("Severity");
         case GK_EVENTLOG_TABLEVIEW_MODEL_MESSAGE_IDX:
             return tr("Message");
         }

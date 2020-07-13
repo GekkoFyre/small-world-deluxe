@@ -120,6 +120,7 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
         gkFreqTableModel->populateData(gkFreqs->listOfFreqs());
         ui->tableView_working_freqs->setModel(gkFreqTableModel);
         ui->tableView_working_freqs->horizontalHeader()->setVisible(true);
+        ui->tableView_working_freqs->horizontalHeader()->setSectionResizeMode(GK_FREQ_TABLEVIEW_MODEL_FREQUENCY_IDX, QHeaderView::Stretch);
         ui->tableView_working_freqs->show();
 
         QObject::connect(this, SIGNAL(usbPortsDisabled(const bool &)), this, SLOT(disableUsbPorts(const bool &)));

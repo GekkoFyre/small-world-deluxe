@@ -42,6 +42,8 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include "src/models/tableview/gk_logger_model.hpp"
+#include <QPointer>
 #include <QVariant>
 #include <QObject>
 #include <QString>
@@ -53,13 +55,14 @@ class GkEventLogger : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkEventLogger(QObject *parent = nullptr);
+    explicit GkEventLogger(QPointer<GkEventLoggerTableViewModel> viewModel, QObject *parent = nullptr);
     ~GkEventLogger();
 
     void publishEvent(const QString &event, const GekkoFyre::System::Events::Logging::GkSeverity &severity = GekkoFyre::System::Events::Logging::GkSeverity::Warning,
                       const QVariant &arguments = "");
 
 private:
+    QPointer<GkEventLoggerTableViewModel> tableViewModel;
     QList<GekkoFyre::System::Events::Logging::GkEventLogging> eventLogDb;                       // Where the event log itself is stored in memory...
 
     qint64 setDate();

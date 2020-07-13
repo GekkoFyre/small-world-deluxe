@@ -75,6 +75,8 @@ public:
     void writeFreqInit();
     bool isFreqAlreadyInit();
 
+    QString convSeverityToStr(const GekkoFyre::System::Events::Logging::GkSeverity &severity);
+
     QString read_rig_settings(const Database::Settings::radio_cfg &key);
     QString read_rig_settings_comms(const Database::Settings::radio_cfg &key,
                                     const AmateurRadio::GkConnType &conn_type = AmateurRadio::GkConnType::None);

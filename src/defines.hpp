@@ -192,11 +192,12 @@ namespace GekkoFyre {
 #define GK_FREQ_TABLEVIEW_MODEL_FREQUENCY_IDX (0)       // The desired ordering for the 'Frequency' heading within the QTableView model for class, `GkFreqTableViewModel`.
 #define GK_FREQ_TABLEVIEW_MODEL_MODE_IDX (1)            // The desired ordering for the 'Mode' heading within the QTableView model for class, `GkFreqTableViewModel`.
 #define GK_FREQ_TABLEVIEW_MODEL_IARU_REGION_IDX (2)     // The desired ordering for the 'IARU Region' heading within the QTableView model for class, `GkFreqTableViewModel`.
-#define GK_FREQ_TABLEVIEW_MODEL_NUM_PRECISION (15)       // The number of decimal places for which to display the frequencies as!
+#define GK_FREQ_TABLEVIEW_MODEL_NUM_PRECISION (15)      // The number of decimal places for which to display the frequencies as!
 
-#define GK_EVENTLOG_TABLEVIEW_MODEL_EVENT_NO_IDX (0)
-#define GK_EVENTLOG_TABLEVIEW_MODEL_DATETIME_IDX (1)
-#define GK_EVENTLOG_TABLEVIEW_MODEL_MESSAGE_IDX (2)
+#define GK_EVENTLOG_TABLEVIEW_MODEL_EVENT_NO_IDX (0)    // The desired ordering for the 'Event No.' heading within the QTableView model for class, `GkEventLoggerTableViewModel`.
+#define GK_EVENTLOG_TABLEVIEW_MODEL_DATETIME_IDX (1)    // The desired ordering for the 'Date & Time' heading within the QTableView model for class, `GkEventLoggerTableViewModel`.
+#define GK_EVENTLOG_TABLEVIEW_MODEL_SEVERITY_IDX (2)    // The desired ordering for the 'Severity' heading within the QTableView model for class, `GkEventLoggerTableViewModel`.
+#define GK_EVENTLOG_TABLEVIEW_MODEL_MESSAGE_IDX (3)     // The desired ordering for the 'Message' heading within the QTableView model for class, `GkEventLoggerTableViewModel`.
 
 #ifndef M_PI
 #define M_PI (3.14159265358979323846) /* pi */

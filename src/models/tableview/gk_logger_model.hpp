@@ -42,6 +42,7 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include "src/dek_db.hpp"
 #include <memory>
 #include <QList>
 #include <QObject>
@@ -57,7 +58,7 @@ class GkEventLoggerTableViewModel : public QAbstractTableModel {
     Q_OBJECT
 
 public:
-    explicit GkEventLoggerTableViewModel(QWidget *parent = nullptr);
+    explicit GkEventLoggerTableViewModel(std::shared_ptr<GekkoFyre::GkLevelDb> database, QWidget *parent = nullptr);
     ~GkEventLoggerTableViewModel();
 
     void populateData(const QList<GekkoFyre::System::Events::Logging::GkEventLogging> &event_logs);
@@ -70,7 +71,10 @@ public:
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
 
 private:
+    std::shared_ptr<GekkoFyre::GkLevelDb> GkDb;
     QList<GekkoFyre::System::Events::Logging::GkEventLogging> m_data;
+
+    QPointer<QTableView> table;
 
 };
 };

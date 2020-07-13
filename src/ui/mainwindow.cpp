@@ -444,9 +444,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         gkFreqList->publishFreqList();
 
-        QPointer<GkEventLoggerTableViewModel> gkEventLoggerModel = new GkEventLoggerTableViewModel(this);
+        QPointer<GkEventLoggerTableViewModel> gkEventLoggerModel = new GkEventLoggerTableViewModel(GkDb, this);
         ui->tableView_maingui_logs->setModel(gkEventLoggerModel);
         ui->tableView_maingui_logs->horizontalHeader()->setVisible(true);
+        ui->tableView_maingui_logs->horizontalHeader()->setStretchLastSection(true);
         ui->tableView_maingui_logs->show();
 
         //
