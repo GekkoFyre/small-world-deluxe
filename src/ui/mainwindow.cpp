@@ -126,6 +126,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // Print out the current date
         std::cout << QDate::currentDate().toString().toStdString() << std::endl;
 
+        this->window()->showMaximized();; // Maximize the window!
+
         fs::path slash = "/";
         native_slash = slash.make_preferred().native();
 
@@ -2217,5 +2219,65 @@ void MainWindow::on_actionPrint_triggered()
     }
     */
 
+    return;
+}
+
+void MainWindow::on_pushButton_sstv_rx_navigate_left_clicked()
+{
+    return;
+}
+
+void MainWindow::on_pushButton_sstv_rx_navigate_right_clicked()
+{
+    return;
+}
+
+void MainWindow::on_pushButton_sstv_rx_save_image_clicked()
+{
+    return;
+}
+
+void MainWindow::on_pushButton_sstv_rx_listen_rx_clicked()
+{
+    return;
+}
+
+void MainWindow::on_pushButton_sstv_rx_saved_image_nav_left_clicked()
+{
+    return;
+}
+
+void MainWindow::on_pushButton_sstv_rx_saved_image_nav_right_clicked()
+{
+    return;
+}
+
+void MainWindow::on_pushButton_sstv_rx_saved_image_load_clicked()
+{
+    return;
+}
+
+void MainWindow::on_pushButton_sstv_rx_saved_image_delete_clicked()
+{
+    return;
+}
+
+void MainWindow::on_pushButton_sstv_tx_navigate_left_clicked()
+{
+    return;
+}
+
+void MainWindow::on_pushButton_sstv_tx_navigate_right_clicked()
+{
+    return;
+}
+
+void MainWindow::on_pushButton_sstv_tx_load_image_clicked()
+{
+    return;
+}
+
+void MainWindow::on_pushButton_sstv_tx_send_image_clicked()
+{
     return;
 }

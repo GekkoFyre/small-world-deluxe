@@ -175,6 +175,26 @@ private slots:
     void removeFreqFromDb(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_remove);
     void addFreqToDb(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_add);
 
+    //
+    // SSTV related (RX)
+    //
+    void on_pushButton_sstv_rx_navigate_left_clicked();
+    void on_pushButton_sstv_rx_navigate_right_clicked();
+    void on_pushButton_sstv_rx_save_image_clicked();
+    void on_pushButton_sstv_rx_listen_rx_clicked();
+    void on_pushButton_sstv_rx_saved_image_nav_left_clicked();
+    void on_pushButton_sstv_rx_saved_image_nav_right_clicked();
+    void on_pushButton_sstv_rx_saved_image_load_clicked();
+    void on_pushButton_sstv_rx_saved_image_delete_clicked();
+
+    //
+    // SSTV related (TX)
+    //
+    void on_pushButton_sstv_tx_navigate_left_clicked();
+    void on_pushButton_sstv_tx_navigate_right_clicked();
+    void on_pushButton_sstv_tx_load_image_clicked();
+    void on_pushButton_sstv_tx_send_image_clicked();
+
 protected slots:
     void closeEvent(QCloseEvent *event);
 
