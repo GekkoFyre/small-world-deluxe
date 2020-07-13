@@ -42,55 +42,35 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/dek_db.hpp"
 #include <memory>
 #include <QList>
-#include <QMenu>
-#include <QPoint>
 #include <QObject>
 #include <QString>
 #include <QVariant>
-#include <QPointer>
 #include <QTableView>
 #include <QModelIndex>
 #include <QAbstractTableModel>
-#include <QSortFilterProxyModel>
 
 namespace GekkoFyre {
 
-class GkFreqTableViewModel : public QAbstractTableModel {
+class GkEventLoggerTableViewModel : public QAbstractTableModel {
     Q_OBJECT
 
 public:
-    explicit GkFreqTableViewModel(std::shared_ptr<GekkoFyre::GkLevelDb> database, QWidget *parent = nullptr);
-    ~GkFreqTableViewModel();
+    explicit GkEventLoggerTableViewModel(QWidget *parent = nullptr);
+    ~GkEventLoggerTableViewModel();
 
-    void populateData(const QList<GekkoFyre::AmateurRadio::GkFreqs> &frequencies);
-    void populateData(const QList<GekkoFyre::AmateurRadio::GkFreqs> &frequencies, const bool &populate_freq_db);
-    void insertData(const GekkoFyre::AmateurRadio::GkFreqs &freq_val);
-    void insertData(const GekkoFyre::AmateurRadio::GkFreqs &freq_val, const bool &populate_freq_db);
-    void removeData(const GekkoFyre::AmateurRadio::GkFreqs &freq_val);
-    void removeData(const GekkoFyre::AmateurRadio::GkFreqs &freq_val, const bool &remove_freq_db);
+    void populateData(const QList<GekkoFyre::System::Events::Logging::GkEventLogging> &event_logs);
+    void insertData(const GekkoFyre::System::Events::Logging::GkEventLogging &event);
+    void removeData(const GekkoFyre::System::Events::Logging::GkEventLogging &event);
     int rowCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
     int columnCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
 
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
 
-public slots:
-    void customHeaderMenuRequested(QPoint pos);
-
-signals:
-    void removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_remove);
-    void addFreq(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_add);
-
 private:
-    std::shared_ptr<GekkoFyre::GkLevelDb> GkDb;
-    QList<GekkoFyre::AmateurRadio::GkFreqs> m_data;
-
-    QPointer<QTableView> table;
-    QPointer<QMenu> menu;
-    QPointer<QSortFilterProxyModel> proxyModel;
+    QList<GekkoFyre::System::Events::Logging::GkEventLogging> m_data;
 
 };
 };

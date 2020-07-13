@@ -68,6 +68,8 @@ GkFreqTableViewModel::GkFreqTableViewModel(std::shared_ptr<GekkoFyre::GkLevelDb>
     proxyModel = new QSortFilterProxyModel(parent);
 
     table->setModel(proxyModel);
+    table->setSelectionBehavior(QAbstractItemView::SelectRows);
+    table->setSelectionMode(QAbstractItemView::SingleSelection);
     table->setContextMenuPolicy(Qt::CustomContextMenu);
     QObject::connect(table, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(customMenuRequested(QPoint)));
 
@@ -75,12 +77,12 @@ GkFreqTableViewModel::GkFreqTableViewModel(std::shared_ptr<GekkoFyre::GkLevelDb>
     QObject::connect(table->horizontalHeader(), SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(customHeaderMenuRequested(QPoint)));
     layout->addWidget(table);
 
+    // table->horizontalHeader()->setSectionResizeMode(GK_FREQ_TABLEVIEW_MODEL_FREQUENCY_IDX, QHeaderView::Stretch);
+
     menu = new QMenu(parent);
     menu->addAction(new QAction(tr("New"), this));
     menu->addAction(new QAction(tr("Edit"), this));
     menu->addAction(new QAction(tr("Delete"), this));
-
-    QObject::connect(this, SIGNAL(rightClicked(QPoint)), this, SLOT(customHeaderMenuRequested(QPoint)));
 
     proxyModel->setSourceModel(this);
 
@@ -290,28 +292,9 @@ QVariant GkFreqTableViewModel::headerData(int section, Qt::Orientation orientati
     return QVariant();
 }
 
-void GkFreqTableViewModel::customMenuRequested(QPoint pos)
-{
-    QModelIndex index = table->indexAt(pos);
-    Q_UNUSED(index);
-
-    menu->popup(table->viewport()->mapToGlobal(pos));
-
-    return;
-}
-
 void GkFreqTableViewModel::customHeaderMenuRequested(QPoint pos)
 {
     menu->popup(table->horizontalHeader()->viewport()->mapToGlobal(pos));
-
-    return;
-}
-
-void GkFreqTableViewModel::mousePressEvent(QMouseEvent *e)
-{
-    if (e->button() == Qt::RightButton) {
-        emit rightClicked(QCursor::pos());
-    }
 
     return;
 }

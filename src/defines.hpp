@@ -194,6 +194,10 @@ namespace GekkoFyre {
 #define GK_FREQ_TABLEVIEW_MODEL_IARU_REGION_IDX (2)     // The desired ordering for the 'IARU Region' heading within the QTableView model for class, `GkFreqTableViewModel`.
 #define GK_FREQ_TABLEVIEW_MODEL_NUM_PRECISION (15)       // The number of decimal places for which to display the frequencies as!
 
+#define GK_EVENTLOG_TABLEVIEW_MODEL_EVENT_NO_IDX (0)
+#define GK_EVENTLOG_TABLEVIEW_MODEL_DATETIME_IDX (1)
+#define GK_EVENTLOG_TABLEVIEW_MODEL_MESSAGE_IDX (2)
+
 #ifndef M_PI
 #define M_PI (3.14159265358979323846) /* pi */
 #endif

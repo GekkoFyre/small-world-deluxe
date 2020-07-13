@@ -539,23 +539,7 @@ color: white;</string>
                      <number>0</number>
                     </property>
                     <item>
-                     <widget class="QTableWidget" name="tableWidget_maingui_logs">
-                      <column>
-                       <property name="text">
-                        <string>Event No.</string>
-                       </property>
-                      </column>
-                      <column>
-                       <property name="text">
-                        <string>Date &amp; Time</string>
-                       </property>
-                      </column>
-                      <column>
-                       <property name="text">
-                        <string>Message</string>
-                       </property>
-                      </column>
-                     </widget>
+                     <widget class="QTableView" name="tableView_maingui_logs"/>
                     </item>
                    </layout>
                   </widget>
@@ -664,9 +648,12 @@ QPushButton:disabled {
                 <item>
                  <layout class="QHBoxLayout" name="horizontalLayout_10">
                   <item>
-                   <widget class="QComboBox" name="comboBox_select_callsign_use">
+                   <widget class="QComboBox" name="comboBox_select_frequency_fine_tuning">
                     <property name="toolTip">
                      <string>Select the call-sign you wish to use to send out with your next transmission.</string>
+                    </property>
+                    <property name="editable">
+                     <bool>true</bool>
                     </property>
                    </widget>
                   </item>
