@@ -114,8 +114,6 @@ extern "C"
   typedef std::string tstring;
 #endif
 
-typedef short int16_t;
-
 namespace GekkoFyre {
 
 #define GK_EXIT_TIMEOUT (6)                             // The amount of time, in seconds, to leave 'Small World Deluxe' hanging upon exit before terminating forcefully!
@@ -382,7 +380,7 @@ namespace Database {
             struct GkPaAudioData {
                 int frameIndex;                                                     // Frame index into sample array
                 int maxFrameIndex;                                                  // Maximum frame index given into sample array
-                int16_t *recordedSamples;                                             // Audio samples that have been recorded and saved to a buffer
+                qint16 *recordedSamples;                                             // Audio samples that have been recorded and saved to a buffer
                 portaudio::SampleDataFormat sample_format;                          // Currently used sample format by given audio source, whether output or input
             };
 

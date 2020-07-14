@@ -168,13 +168,14 @@ private slots:
     //
     // Transmission & Digital Signalling
     //
-    void msgOutgoingProcess();
+    void msgOutgoingProcess(const QString &curr_text);
 
     //
     // Frequencies related
     //
     void removeFreqFromDb(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_remove);
     void addFreqToDb(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_add);
+    void tuneActiveFreq(const quint64 &freq_tune);
 
     //
     // SSTV related (RX)
@@ -195,6 +196,10 @@ private slots:
     void on_pushButton_sstv_tx_navigate_right_clicked();
     void on_pushButton_sstv_tx_load_image_clicked();
     void on_pushButton_sstv_tx_send_image_clicked();
+
+    void on_pushButton_sstv_rx_remove_clicked();
+
+    void on_pushButton_sstv_tx_remove_clicked();
 
 protected slots:
     void closeEvent(QCloseEvent *event);
@@ -288,9 +293,9 @@ private:
     portaudio::System *gkPortAudioInit;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
-    std::shared_ptr<GekkoFyre::PaAudioBuf<int16_t>> input_audio_buf;
-    std::shared_ptr<GekkoFyre::PaAudioBuf<int16_t>> output_audio_buf;
-    portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<int16_t>> *inputAudioStream;
+    std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> input_audio_buf;
+    std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> output_audio_buf;
+    portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<qint16>> *inputAudioStream;
 
     //
     // Audio sub-system
@@ -323,6 +328,13 @@ private:
     static QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>> gkRadioModels;
     std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> gkRadioPtr;
     QList<GekkoFyre::AmateurRadio::GkFreqs> frequencyList;
+
+    //
+    // SSTV related
+    //
+    QStringList sstv_tx_pic_files;
+    int sstv_tx_image_idx;
+    int sstv_rx_image_idx;
 
     //
     // Timing and date related

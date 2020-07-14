@@ -681,11 +681,11 @@ void AudioDevices::systemVolumeSetting()
  * @note RobertT <https://stackoverflow.com/questions/2445756/how-can-i-calculate-audio-db-level>,
  * Vassilis <https://stackoverflow.com/questions/37963115/how-to-make-smooth-levelpeak-meter-with-qt>
  */
-float AudioDevices::vuMeter(const int &channels, const int &count, int16_t *buffer)
+float AudioDevices::vuMeter(const int &channels, const int &count, qint16 *buffer)
 {
     float dB_val = 0.0f;
     if (buffer != nullptr) {
-        int16_t max_val = buffer[0];
+        qint16 max_val = buffer[0];
 
         // Find maximum!
         // Traverse the array elements from second and compare every element with current maximum...
@@ -713,9 +713,9 @@ float AudioDevices::vuMeter(const int &channels, const int &count, int16_t *buff
  * @param buffer The given audio data buffer.
  * @return The maximum, peak audio signal for a given lot of buffered data.
  */
-int16_t AudioDevices::vuMeterPeakAmplitude(const size_t &count, int16_t *buffer)
+qint16 AudioDevices::vuMeterPeakAmplitude(const size_t &count, qint16 *buffer)
 {
-    int16_t peak_signal = 0;
+    qint16 peak_signal = 0;
     if (buffer != nullptr) {
         peak_signal = buffer[0];
 
@@ -740,9 +740,9 @@ int16_t AudioDevices::vuMeterPeakAmplitude(const size_t &count, int16_t *buffer)
  * @return The averaged RMS of a given data buffer of audio samples.
  * @note <https://stackoverflow.com/questions/8227030/how-to-find-highest-volume-level-of-a-wav-file-using-c>
  */
-float AudioDevices::vuMeterRMS(const size_t &count, int16_t *buffer)
+float AudioDevices::vuMeterRMS(const size_t &count, qint16 *buffer)
 {
-    int16_t sample = 0;
+    qint16 sample = 0;
     if (buffer != nullptr) {
         for (size_t i = 0; i < count; ++i) {
             sample += buffer[i] * buffer[i];
@@ -789,7 +789,7 @@ portaudio::SampleDataFormat AudioDevices::sampleFormatConvert(const unsigned lon
  * @return
  * @note Archie <https://stackoverflow.com/questions/35959523/portaudio-iterate-through-audio-data>
  */
-PaStreamCallbackResult AudioDevices::openPlaybackStream(portaudio::System &portAudioSys, PaAudioBuf<int16_t> *audio_buf,
+PaStreamCallbackResult AudioDevices::openPlaybackStream(portaudio::System &portAudioSys, PaAudioBuf<qint16> *audio_buf,
                                                         const GkDevice &device, const bool &stereo)
 {
     try {
@@ -806,7 +806,7 @@ PaStreamCallbackResult AudioDevices::openPlaybackStream(portaudio::System &portA
                                                                       false, prefOutputLatency, nullptr);
             portaudio::StreamParameters playbackParams(portaudio::DirectionSpecificStreamParameters::null(), outputParams, device.def_sample_rate,
                                                        AUDIO_FRAMES_PER_BUFFER, paNoFlag);
-            portaudio::MemFunCallbackStream<PaAudioBuf<int16_t>> streamPlayback(playbackParams, *audio_buf, &PaAudioBuf<int16_t>::playbackCallback);
+            portaudio::MemFunCallbackStream<PaAudioBuf<qint16>> streamPlayback(playbackParams, *audio_buf, &PaAudioBuf<qint16>::playbackCallback);
 
             streamPlayback.start();
             while (streamPlayback.isActive()) {

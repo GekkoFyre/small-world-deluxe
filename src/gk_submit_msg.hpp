@@ -44,6 +44,7 @@
 #include "src/defines.hpp"
 #include <QObject>
 #include <QKeyEvent>
+#include <QComboBox>
 #include <QPlainTextEdit>
 
 namespace GekkoFyre {
@@ -58,7 +59,22 @@ public:
     void keyPressEvent(QKeyEvent *event);
 
 signals:
-    void execFuncAfterEvent();
+    void execFuncAfterEvent(const QString &curr_text);
 
 };
+
+class GkComboBoxSubmit : public QComboBox {
+    Q_OBJECT
+
+public:
+    explicit GkComboBoxSubmit(QWidget *parent = nullptr);
+    ~GkComboBoxSubmit();
+
+    void keyPressEvent(QKeyEvent *event);
+
+signals:
+    void execFuncAfterEvent(const quint64 &freq_tune);
+
+};
+
 };

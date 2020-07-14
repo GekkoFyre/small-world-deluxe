@@ -80,15 +80,15 @@ public:
     void portAudioErr(const PaError &err);
 
     void systemVolumeSetting();
-    float vuMeter(const int &channels, const int &count, int16_t *buffer);
-    int16_t vuMeterPeakAmplitude(const size_t &count, int16_t *buffer);
-    float vuMeterRMS(const size_t &count, int16_t *buffer);
+    float vuMeter(const int &channels, const int &count, qint16 *buffer);
+    qint16 vuMeterPeakAmplitude(const size_t &count, qint16 *buffer);
+    float vuMeterRMS(const size_t &count, qint16 *buffer);
 
     portaudio::SampleDataFormat sampleFormatConvert(const unsigned long sample_rate);
 
     PaStreamCallbackResult testSinewave(portaudio::System &portAudioSys, const Database::Settings::Audio::GkDevice device,
                                         const bool &is_output_dev = true);
-    PaStreamCallbackResult openPlaybackStream(portaudio::System &portAudioSys, PaAudioBuf<int16_t> *audio_buf,
+    PaStreamCallbackResult openPlaybackStream(portaudio::System &portAudioSys, PaAudioBuf<qint16> *audio_buf,
                                               const GekkoFyre::Database::Settings::Audio::GkDevice &device,
                                               const bool &stereo = true);
 

@@ -591,6 +591,9 @@ color: white;</string>
                            </property>
                            <item>
                             <widget class="QPushButton" name="pushButton_sstv_rx_navigate_left">
+                             <property name="toolTip">
+                              <string>Navigate to the next image.</string>
+                             </property>
                              <property name="text">
                               <string>&lt;&lt;</string>
                              </property>
@@ -598,20 +601,29 @@ color: white;</string>
                            </item>
                            <item>
                             <widget class="QPushButton" name="pushButton_sstv_rx_navigate_right">
+                             <property name="toolTip">
+                              <string>Navigate to the previous image.</string>
+                             </property>
                              <property name="text">
                               <string>&gt;&gt;</string>
                              </property>
                             </widget>
                            </item>
                            <item>
-                            <widget class="QPushButton" name="pushButton_sstv_rx_save_image">
+                            <widget class="QPushButton" name="pushButton_sstv_rx_remove">
+                             <property name="toolTip">
+                              <string>Permanently delete this image from memory.</string>
+                             </property>
                              <property name="text">
-                              <string>Save</string>
+                              <string>Remove</string>
                              </property>
                             </widget>
                            </item>
                            <item>
                             <widget class="QPushButton" name="pushButton_sstv_rx_listen_rx">
+                             <property name="toolTip">
+                              <string>Listen to the airwaves (RX) for SSTV transmissions.</string>
+                             </property>
                              <property name="text">
                               <string>Listen (RX)</string>
                              </property>
@@ -695,6 +707,9 @@ color: white;</string>
                            </property>
                            <item>
                             <widget class="QPushButton" name="pushButton_sstv_rx_saved_image_nav_left">
+                             <property name="toolTip">
+                              <string>Navigate to the next image.</string>
+                             </property>
                              <property name="text">
                               <string>&lt;&lt;</string>
                              </property>
@@ -702,13 +717,29 @@ color: white;</string>
                            </item>
                            <item>
                             <widget class="QPushButton" name="pushButton_sstv_rx_saved_image_nav_right">
+                             <property name="toolTip">
+                              <string>Navigate to the previous image.</string>
+                             </property>
                              <property name="text">
                               <string>&gt;&gt;</string>
                              </property>
                             </widget>
                            </item>
                            <item>
+                            <widget class="QPushButton" name="pushButton_sstv_rx_save_image">
+                             <property name="toolTip">
+                              <string>Do you wish to save this received (RX) image to your storage media?</string>
+                             </property>
+                             <property name="text">
+                              <string>Save</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item>
                             <widget class="QPushButton" name="pushButton_sstv_rx_saved_image_load">
+                             <property name="toolTip">
+                              <string>Load the selected, received (RX) image into memory and store it in history.</string>
+                             </property>
                              <property name="text">
                               <string>Load</string>
                              </property>
@@ -716,6 +747,9 @@ color: white;</string>
                            </item>
                            <item>
                             <widget class="QPushButton" name="pushButton_sstv_rx_saved_image_delete">
+                             <property name="toolTip">
+                              <string>Delete this image permanently from your storage media.</string>
+                             </property>
                              <property name="text">
                               <string>Delete</string>
                              </property>
@@ -806,6 +840,9 @@ color: white;</string>
                            </property>
                            <item>
                             <widget class="QPushButton" name="pushButton_sstv_tx_navigate_left">
+                             <property name="toolTip">
+                              <string>Navigate to the next image.</string>
+                             </property>
                              <property name="text">
                               <string>&lt;&lt;</string>
                              </property>
@@ -813,6 +850,9 @@ color: white;</string>
                            </item>
                            <item>
                             <widget class="QPushButton" name="pushButton_sstv_tx_navigate_right">
+                             <property name="toolTip">
+                              <string>Navigate to the previous image.</string>
+                             </property>
                              <property name="text">
                               <string>&gt;&gt;</string>
                              </property>
@@ -820,13 +860,29 @@ color: white;</string>
                            </item>
                            <item>
                             <widget class="QPushButton" name="pushButton_sstv_tx_load_image">
+                             <property name="toolTip">
+                              <string>Load an image and prepare it for transmission (TX) via SSTV.</string>
+                             </property>
                              <property name="text">
                               <string>Load</string>
                              </property>
                             </widget>
                            </item>
                            <item>
+                            <widget class="QPushButton" name="pushButton_sstv_tx_remove">
+                             <property name="toolTip">
+                              <string>Hold down the 'Ctrl' key when pressing this button to delete the image permanently from your storage media!</string>
+                             </property>
+                             <property name="text">
+                              <string>Remove</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item>
                             <widget class="QPushButton" name="pushButton_sstv_tx_send_image">
+                             <property name="toolTip">
+                              <string>Do you wish to transmit (TX) this image over the air via SSTV?</string>
+                             </property>
                              <property name="text">
                               <string>Send (TX)</string>
                              </property>
@@ -1061,18 +1117,7 @@ QPushButton:disabled {
                  </layout>
                 </item>
                 <item>
-                 <layout class="QHBoxLayout" name="horizontalLayout_10">
-                  <item>
-                   <widget class="QComboBox" name="comboBox_select_frequency_fine_tuning">
-                    <property name="toolTip">
-                     <string>Select the call-sign you wish to use to send out with your next transmission.</string>
-                    </property>
-                    <property name="editable">
-                     <bool>true</bool>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
+                 <layout class="QHBoxLayout" name="horizontalLayout_10"/>
                 </item>
                 <item>
                  <layout class="QHBoxLayout" name="horizontalLayout_15">
