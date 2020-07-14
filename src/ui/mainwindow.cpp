@@ -66,6 +66,7 @@
 #include <QMultiMap>
 #include <QtGlobal>
 #include <QWidget>
+#include <QVector>
 #include <QPixmap>
 #include <QTimer>
 #include <QDate>
@@ -183,8 +184,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // SSTV related
         //
-        sstv_rx_image_idx = 0; // Value is otherwise '1' if an image is loaded at startup!
         sstv_tx_image_idx = 0; // Value is otherwise '1' if an image is loaded at startup!
+        sstv_rx_image_idx = 0; // Value is otherwise '1' if an image is loaded at startup!
+        sstv_rx_saved_image_idx = 0; // Value is otherwise '1' if an image is loaded at startup!
 
         //
         // Initialize Hamlib!
@@ -1086,6 +1088,42 @@ void MainWindow::updateVolumeSliderLabel(const float &vol_level)
     emit changeVolume(vol_multiplier);
 
     return;
+}
+
+/**
+ * @brief MainWindow::fileOverloadWarning will warn the user about loading too many files (i.e. usually images in this case) into
+ * memory and ask via QMessageBox if they really wish to proceed, despite being given all warnings about the dangers.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param file_count The total count of files that the user wishes to load into memory.
+ * @param max_num_files The given maximum amount of files to be exceeded before displaying the QMessageBox warning.
+ * @return Whether the user wishes to proceed (i.e. true) or not (i.e. false), despite being given all the warnings.
+ */
+bool MainWindow::fileOverloadWarning(const int &file_count, const int &max_num_files)
+{
+    if (file_count > max_num_files) {
+        // Warn the user about the implications of loading too many files into memory all at once!
+        QMessageBox msgBoxWarn;
+        msgBoxWarn.setWindowTitle(tr("Warning!"));
+        msgBoxWarn.setText(tr("You have selected an excessive number of files/images to load into memory (i.e. %1 files)! Proceeding with this "
+                              "fact in mind can mean instability with Small World Deluxe.").arg(QString::number(file_count)));
+        msgBoxWarn.setStandardButtons(QMessageBox::Cancel | QMessageBox::Abort | QMessageBox::Ok);
+        msgBoxWarn.setDefaultButton(QMessageBox::Abort);
+        msgBoxWarn.setIcon(QMessageBox::Icon::Warning);
+        int ret = msgBoxWarn.exec();
+
+        switch (ret) {
+        case QMessageBox::Cancel:
+            return false;
+        case QMessageBox::Abort:
+            return false;
+        case QMessageBox::Ok:
+            return true;
+        default:
+            return false;
+        }
+    }
+
+    return false;
 }
 
 /**
@@ -2303,6 +2341,16 @@ void MainWindow::on_pushButton_sstv_rx_saved_image_nav_left_clicked()
     // Navigate to the next image!
     //
 
+    const int mem_pixmap_array_size = sstv_rx_saved_image_pixmap.size();
+    if (sstv_rx_saved_image_idx < mem_pixmap_array_size) {
+        sstv_rx_saved_image_idx += 1;
+    } else {
+        sstv_rx_saved_image_idx = 1;
+    }
+
+    const QPixmap pic(sstv_rx_saved_image_pixmap.at(sstv_rx_saved_image_idx - 1));
+    ui->label_sstv_rx_saved_image->setPixmap(pic);
+
     return;
 }
 
@@ -2311,6 +2359,16 @@ void MainWindow::on_pushButton_sstv_rx_saved_image_nav_right_clicked()
     //
     // Navigate to the previous image!
     //
+
+    const int mem_pixmap_array_size = sstv_rx_saved_image_pixmap.size();
+    if (sstv_rx_saved_image_idx > 1) {
+        sstv_rx_saved_image_idx -= 1;
+    } else {
+        sstv_rx_saved_image_idx = mem_pixmap_array_size;
+    }
+
+    const QPixmap pic(sstv_rx_saved_image_pixmap.at(sstv_rx_saved_image_idx - 1));
+    ui->label_sstv_rx_saved_image->setPixmap(pic);
 
     return;
 }
@@ -2338,7 +2396,7 @@ void MainWindow::on_pushButton_sstv_tx_navigate_left_clicked()
         sstv_tx_image_idx = 1;
     }
 
-    const QPixmap pic(sstv_tx_pic_files.at(sstv_tx_image_idx));
+    const QPixmap pic(sstv_tx_pic_files.at(sstv_tx_image_idx - 1));
     ui->label_sstv_tx_image->setPixmap(pic);
 
     return;
@@ -2351,13 +2409,13 @@ void MainWindow::on_pushButton_sstv_tx_navigate_right_clicked()
     //
 
     const int files_array_size = sstv_tx_pic_files.size();
-    if ((sstv_tx_image_idx < files_array_size) && (sstv_tx_image_idx > 0)) {
+    if (sstv_tx_image_idx > 1) {
         sstv_tx_image_idx -= 1;
     } else {
-        sstv_tx_image_idx = 1;
+        sstv_tx_image_idx = files_array_size;
     }
 
-    const QPixmap pic(sstv_tx_pic_files.at(sstv_tx_image_idx));
+    const QPixmap pic(sstv_tx_pic_files.at(sstv_tx_image_idx - 1));
     ui->label_sstv_tx_image->setPixmap(pic);
 
     return;
@@ -2380,7 +2438,29 @@ void MainWindow::on_pushButton_sstv_tx_load_image_clicked()
         if (fileDialog.exec()) {
             sstv_tx_pic_files = fileDialog.selectedFiles();
             if (!sstv_tx_pic_files.isEmpty()) {
+                if (sstv_tx_pic_files.size() > GK_SSTV_FILE_DLG_LOAD_IMGS_MAX_FILES_WARN) {
+                    if (!fileOverloadWarning(sstv_tx_pic_files.size(), GK_SSTV_FILE_DLG_LOAD_IMGS_MAX_FILES_WARN)) {
+                        return;
+                    }
+                } // Otherwise carry on as normal!
+
+                qint64 total_fize_sizes = 0;
+                for (const auto &data: sstv_tx_pic_files) {
+                    QFile file(data);
+
+                    file.open(QIODevice::ReadOnly);
+                    total_fize_sizes += file.size();
+                    file.close();
+                }
+
+                const QPixmap pic(sstv_tx_pic_files.first());
+                ui->label_sstv_tx_image->setPixmap(pic);
                 sstv_tx_image_idx = 1; // TODO: Make it so that this function can load images 'in-between' other images and so on!
+
+                // Publish an event within the event log!
+                gkEventLogger->publishEvent(tr("Loaded %1 images into memory, ready for transmission. Total file size: %2 kB")
+                                            .arg(QString::number(fileDialog.selectedFiles().size())).arg(QString::number(total_fize_sizes)),
+                                            GkSeverity::Info);
             }
 
             return;

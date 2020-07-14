@@ -332,9 +332,13 @@ private:
     //
     // SSTV related
     //
-    QStringList sstv_tx_pic_files;
-    int sstv_tx_image_idx;
-    int sstv_rx_image_idx;
+    QStringList sstv_tx_pic_files;                  // Images loaded from the user's storage media and prepared for transmission
+    QStringList sstv_rx_saved_image_files;          // Images saved to history and then to the user's storage media
+    QList<QPixmap> sstv_rx_image_pixmap;            // Images received in real-time
+    QList<QPixmap> sstv_rx_saved_image_pixmap;      // Images saved to history
+    int sstv_tx_image_idx;                          // Images loaded and prepared for transmission
+    int sstv_rx_image_idx;                          // Images received in real-time
+    int sstv_rx_saved_image_idx;                    // Images saved to history
 
     //
     // Timing and date related
@@ -370,6 +374,11 @@ private:
 
     void updateVolumeDisplayWidgets();
     void updateVolumeSliderLabel(const float &vol_level);
+
+    //
+    // QFileDialog related
+    //
+    bool fileOverloadWarning(const int &file_count, const int &max_num_files = GK_SSTV_FILE_DLG_LOAD_IMGS_MAX_FILES_WARN);
 
     //
     // Spectrograph related
