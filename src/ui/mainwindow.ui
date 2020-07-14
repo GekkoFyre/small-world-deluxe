@@ -558,13 +558,6 @@ color: white;</string>
                            <property name="bottomMargin">
                             <number>0</number>
                            </property>
-                           <item>
-                            <widget class="QLabel" name="label_sstv_rx_live_image">
-                             <property name="text">
-                              <string/>
-                             </property>
-                            </widget>
-                           </item>
                           </layout>
                          </widget>
                         </item>
@@ -674,13 +667,6 @@ color: white;</string>
                            <property name="bottomMargin">
                             <number>0</number>
                            </property>
-                           <item>
-                            <widget class="QLabel" name="label_sstv_rx_saved_image">
-                             <property name="text">
-                              <string/>
-                             </property>
-                            </widget>
-                           </item>
                           </layout>
                          </widget>
                         </item>
@@ -807,13 +793,6 @@ color: white;</string>
                            <property name="bottomMargin">
                             <number>0</number>
                            </property>
-                           <item>
-                            <widget class="QLabel" name="label_sstv_tx_image">
-                             <property name="text">
-                              <string/>
-                             </property>
-                            </widget>
-                           </item>
                           </layout>
                          </widget>
                         </item>

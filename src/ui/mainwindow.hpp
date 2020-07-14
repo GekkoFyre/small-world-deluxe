@@ -46,6 +46,7 @@
 #include "src/pa_audio_buf.hpp"
 #include "src/spectro_gui.hpp"
 #include "src/gk_circ_buffer.hpp"
+#include "src/gk_display_image.hpp"
 #include "src/gk_frequency_list.hpp"
 #include "src/ui/dialogsettings.hpp"
 #include "src/gk_audio_encoding.hpp"
@@ -332,13 +333,16 @@ private:
     //
     // SSTV related
     //
-    QStringList sstv_tx_pic_files;                  // Images loaded from the user's storage media and prepared for transmission
-    QStringList sstv_rx_saved_image_files;          // Images saved to history and then to the user's storage media
-    QList<QPixmap> sstv_rx_image_pixmap;            // Images received in real-time
-    QList<QPixmap> sstv_rx_saved_image_pixmap;      // Images saved to history
-    int sstv_tx_image_idx;                          // Images loaded and prepared for transmission
-    int sstv_rx_image_idx;                          // Images received in real-time
-    int sstv_rx_saved_image_idx;                    // Images saved to history
+    QPointer<GekkoFyre::GkDisplayImage> label_sstv_tx_image;
+    QPointer<GekkoFyre::GkDisplayImage> label_sstv_rx_live_image;
+    QPointer<GekkoFyre::GkDisplayImage> label_sstv_rx_saved_image;
+    QStringList sstv_tx_pic_files;                                      // Images loaded from the user's storage media and prepared for transmission
+    QStringList sstv_rx_saved_image_files;                              // Images saved to history and then to the user's storage media
+    QList<QPixmap> sstv_rx_image_pixmap;                                // Images received in real-time
+    QList<QPixmap> sstv_rx_saved_image_pixmap;                          // Images saved to history
+    int sstv_tx_image_idx;                                              // Images loaded and prepared for transmission
+    int sstv_rx_image_idx;                                              // Images received in real-time
+    int sstv_rx_saved_image_idx;                                        // Images saved to history
 
     //
     // Timing and date related

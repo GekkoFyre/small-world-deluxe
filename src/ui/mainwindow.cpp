@@ -477,6 +477,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         gkEventLogger->publishEvent(tr("Events log initiated."), GkSeverity::Info);
 
         //
+        // Setup the SSTV sections in QMainWindow!
+        //
+        label_sstv_tx_image = new GkDisplayImage(ui->frame_sstv_tx_image_top);
+        label_sstv_rx_live_image = new GkDisplayImage(ui->frame_sstv_rx_image_top);
+        label_sstv_rx_saved_image = new GkDisplayImage(ui->frame_sstv_rx_saved_top);
+        ui->horizontalLayout_19->addWidget(label_sstv_tx_image);
+        ui->horizontalLayout_18->addWidget(label_sstv_rx_live_image);
+        ui->horizontalLayout_23->addWidget(label_sstv_rx_saved_image);
+        label_sstv_tx_image->setText("");
+        label_sstv_rx_live_image->setText("");
+        label_sstv_rx_saved_image->setText("");
+
+        //
         // This connects `widget_mesg_outgoing` to any transmission protocols, such as Codec2!
         //
         QPointer<GkPlainTextSubmit> widget_mesg_outgoing = new GkPlainTextSubmit(ui->frame_mesg_log);
@@ -2349,7 +2362,7 @@ void MainWindow::on_pushButton_sstv_rx_saved_image_nav_left_clicked()
     }
 
     const QPixmap pic(sstv_rx_saved_image_pixmap.at(sstv_rx_saved_image_idx - 1));
-    ui->label_sstv_rx_saved_image->setPixmap(pic);
+    label_sstv_rx_saved_image->setPixmap(pic);
 
     return;
 }
@@ -2368,7 +2381,7 @@ void MainWindow::on_pushButton_sstv_rx_saved_image_nav_right_clicked()
     }
 
     const QPixmap pic(sstv_rx_saved_image_pixmap.at(sstv_rx_saved_image_idx - 1));
-    ui->label_sstv_rx_saved_image->setPixmap(pic);
+    label_sstv_rx_saved_image->setPixmap(pic);
 
     return;
 }
@@ -2397,7 +2410,7 @@ void MainWindow::on_pushButton_sstv_tx_navigate_left_clicked()
     }
 
     const QPixmap pic(sstv_tx_pic_files.at(sstv_tx_image_idx - 1));
-    ui->label_sstv_tx_image->setPixmap(pic);
+    label_sstv_tx_image->setPixmap(pic);
 
     return;
 }
@@ -2416,7 +2429,7 @@ void MainWindow::on_pushButton_sstv_tx_navigate_right_clicked()
     }
 
     const QPixmap pic(sstv_tx_pic_files.at(sstv_tx_image_idx - 1));
-    ui->label_sstv_tx_image->setPixmap(pic);
+    label_sstv_tx_image->setPixmap(pic);
 
     return;
 }
@@ -2454,7 +2467,7 @@ void MainWindow::on_pushButton_sstv_tx_load_image_clicked()
                 }
 
                 const QPixmap pic(sstv_tx_pic_files.first());
-                ui->label_sstv_tx_image->setPixmap(pic);
+                label_sstv_tx_image->setPixmap(pic);
                 sstv_tx_image_idx = 1; // TODO: Make it so that this function can load images 'in-between' other images and so on!
 
                 // Publish an event within the event log!

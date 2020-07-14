@@ -415,6 +415,7 @@ set(GALAXY_UI_CPP
     src/gk_submit_msg.cpp
     src/gk_logger.cpp
     src/gk_codec2.cpp
+    src/gk_display_image.cpp
     src/models/tableview/gk_frequency_model.cpp
     src/models/tableview/gk_logger_model.cpp)
 
@@ -488,6 +489,7 @@ set(GALAXY_OBJ_HEADERS
     src/gk_submit_msg.hpp
     src/gk_logger.hpp
     src/gk_codec2.hpp
+    src/gk_display_image.hpp
     src/models/tableview/gk_frequency_model.hpp
     src/models/tableview/gk_logger_model.hpp)
 
