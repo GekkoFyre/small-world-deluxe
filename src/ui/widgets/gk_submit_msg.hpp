@@ -23,7 +23,7 @@
  **   the Free Software Foundation, either version 3 of the License, or
  **   (at your option) any later version.
  **
- **   Small World is distributed in the hope that it will be useful,
+ **   Small world is distributed in the hope that it will be useful,
  **   but WITHOUT ANY WARRANTY; without even the implied warranty of
  **   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  **   GNU General Public License for more details.
@@ -41,6 +41,40 @@
 
 #pragma once
 
-typedef short qint16;
+#include "src/defines.hpp"
+#include <QObject>
+#include <QKeyEvent>
+#include <QComboBox>
+#include <QPlainTextEdit>
 
-void processCUDAFFT(qint16 *inputData, float *outputData, unsigned int numSamples);
+namespace GekkoFyre {
+
+class GkPlainTextSubmit : public QPlainTextEdit {
+    Q_OBJECT
+
+public:
+    explicit GkPlainTextSubmit(QWidget *parent = nullptr);
+    ~GkPlainTextSubmit();
+
+    void keyPressEvent(QKeyEvent *event);
+
+signals:
+    void execFuncAfterEvent(const QString &curr_text);
+
+};
+
+class GkComboBoxSubmit : public QComboBox {
+    Q_OBJECT
+
+public:
+    explicit GkComboBoxSubmit(QWidget *parent = nullptr);
+    ~GkComboBoxSubmit();
+
+    void keyPressEvent(QKeyEvent *event);
+
+signals:
+    void execFuncAfterEvent(const quint64 &freq_tune);
+
+};
+
+};

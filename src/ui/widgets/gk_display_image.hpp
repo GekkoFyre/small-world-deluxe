@@ -42,23 +42,33 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include <QPointer>
 #include <QObject>
-#include <QKeyEvent>
-#include <QPlainTextEdit>
+#include <QWidget>
+#include <QString>
+#include <QPixmap>
+#include <QLabel>
+#include <QSize>
 
 namespace GekkoFyre {
 
-class GkPlainTextSubmit : public QPlainTextEdit {
+class GkDisplayImage : public QLabel {
     Q_OBJECT
 
 public:
-    explicit GkPlainTextSubmit(QWidget *parent = nullptr);
-    ~GkPlainTextSubmit();
+    explicit GkDisplayImage(QWidget *parent = nullptr);
+    ~GkDisplayImage();
 
-    void keyPressEvent(QKeyEvent *event);
+    virtual int heightForWidth(int width) const;
+    virtual QSize sizeHint() const;
+    QPixmap scaledPixmap() const;
 
-signals:
-    void execFuncAfterEvent();
+public slots:
+    void setPixmap(const QPixmap &p);
+    void resizeEvent(QResizeEvent *e);
+
+private:
+    QPixmap pixmap;
 
 };
 };

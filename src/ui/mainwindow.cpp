@@ -39,7 +39,7 @@
 #include "ui_mainwindow.h"
 #include "src/ui/aboutdialog.hpp"
 #include "src/ui/spectrodialog.hpp"
-#include "src/gk_submit_msg.hpp"
+#include "src/ui/widgets/gk_submit_msg.hpp"
 #include "src/models/tableview/gk_frequency_model.hpp"
 #include "src/models/tableview/gk_logger_model.hpp"
 #include <boost/exception/all.hpp>
@@ -61,13 +61,17 @@
 #include <QSerialPort>
 #include <QMessageBox>
 #include <QFileDialog>
+#include <QIODevice>
 #include <QResource>
 #include <QMultiMap>
 #include <QtGlobal>
 #include <QWidget>
+#include <QVector>
 #include <QPixmap>
 #include <QTimer>
 #include <QDate>
+#include <QFile>
+#include <QDir>
 #include <QUrl>
 
 #ifdef _WIN32
@@ -176,6 +180,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         rx_vol_control_selected = true; // By default it is ticked!
         global_rx_audio_volume = 0.0;
         global_tx_audio_volume = 0.0;
+
+        //
+        // SSTV related
+        //
+        sstv_tx_image_idx = 0; // Value is otherwise '1' if an image is loaded at startup!
+        sstv_rx_image_idx = 0; // Value is otherwise '1' if an image is loaded at startup!
+        sstv_rx_saved_image_idx = 0; // Value is otherwise '1' if an image is loaded at startup!
 
         //
         // Initialize Hamlib!
@@ -294,7 +305,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         int window_width = GkDb->read_mainwindow_settings(general_mainwindow_cfg::WindowHSize).toInt();
         int window_height = GkDb->read_mainwindow_settings(general_mainwindow_cfg::WindowVSize).toInt();
-        bool window_maximized = GkDb->read_mainwindow_settings(general_mainwindow_cfg::WindowMaximized).toInt();
+        bool window_minimized = GkDb->read_mainwindow_settings(general_mainwindow_cfg::WindowMaximized).toInt();
 
         // Set the x-axis size of QMainWindow
         if (window_width >= MIN_MAIN_WINDOW_WIDTH) {
@@ -307,12 +318,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
 
         // Whether to maximize the QMainWindow or not
-        if (window_maximized == 1) {
+        if (window_minimized == 0) {
             this->window()->showMaximized();
-        } else if (window_maximized == 0) {
+        } else if (window_minimized == 1) {
             this->window()->showNormal();
         } else {
-            window_maximized = false;
+            window_minimized = false;
         }
 
         //
@@ -383,7 +394,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                          gkSpectroGui, SLOT(refreshDateTime(const qint64 &, const qint64 &)));
 
         if (!pref_audio_devices.empty()) {
-            input_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<int16_t>>(AUDIO_FRAMES_PER_BUFFER, pref_output_device, pref_input_device);
+            input_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<qint16>>(AUDIO_FRAMES_PER_BUFFER, pref_output_device, pref_input_device);
         }
 
         //
@@ -403,7 +414,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             //
             // Setup the audio encoding/decoding libraries!
             //
-            output_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<int16_t>>(AUDIO_FRAMES_PER_BUFFER, pref_output_device, pref_input_device);
+            output_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<qint16>>(AUDIO_FRAMES_PER_BUFFER, pref_output_device, pref_input_device);
 
             gkAudioEncoding = new GkAudioEncoding(fileIo, input_audio_buf, GkDb, gkSpectroGui,
                                                   gkStringFuncs, pref_input_device, this);
@@ -466,13 +477,34 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         gkEventLogger->publishEvent(tr("Events log initiated."), GkSeverity::Info);
 
         //
+        // Setup the SSTV sections in QMainWindow!
+        //
+        label_sstv_tx_image = new GkDisplayImage(ui->frame_sstv_tx_image_top);
+        label_sstv_rx_live_image = new GkDisplayImage(ui->frame_sstv_rx_image_top);
+        label_sstv_rx_saved_image = new GkDisplayImage(ui->frame_sstv_rx_saved_top);
+        ui->horizontalLayout_19->addWidget(label_sstv_tx_image);
+        ui->horizontalLayout_18->addWidget(label_sstv_rx_live_image);
+        ui->horizontalLayout_23->addWidget(label_sstv_rx_saved_image);
+        label_sstv_tx_image->setText("");
+        label_sstv_rx_live_image->setText("");
+        label_sstv_rx_saved_image->setText("");
+
+        //
         // This connects `widget_mesg_outgoing` to any transmission protocols, such as Codec2!
         //
         QPointer<GkPlainTextSubmit> widget_mesg_outgoing = new GkPlainTextSubmit(ui->frame_mesg_log);
         ui->verticalLayout_3->addWidget(widget_mesg_outgoing);
         widget_mesg_outgoing->setTabChangesFocus(true);
         widget_mesg_outgoing->setPlaceholderText(tr("Enter your outgoing messages here..."));
-        QObject::connect(widget_mesg_outgoing, SIGNAL(execFuncAfterEvent()), this, SLOT(msgOutgoingProcess()));
+        QObject::connect(widget_mesg_outgoing, SIGNAL(execFuncAfterEvent(const QString &)),
+                         this, SLOT(msgOutgoingProcess(const QString &)));
+
+        QPointer<GkComboBoxSubmit> widget_change_freq = new GkComboBoxSubmit(ui->frame_spect_buttons_top);
+        ui->horizontalLayout_10->addWidget(widget_change_freq);
+        widget_change_freq->setEditable(true);
+        widget_change_freq->setToolTip(tr("Enter or fine-tune the frequency that you would like to transmit/receive with!"));
+        QObject::connect(widget_change_freq, SIGNAL(execFuncAfterEvent(const quint64 &)),
+                         this, SLOT(tuneActiveFreq(const quint64 &)));
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
@@ -1024,8 +1056,8 @@ void MainWindow::updateVolumeDisplayWidgets()
             //
             // Input audio stream is open and active!
             //
-            auto audio_buf_tmp = std::make_shared<PaAudioBuf<int16_t>>(*input_audio_buf);
-            std::vector<int16_t> recv_buf;
+            auto audio_buf_tmp = std::make_shared<PaAudioBuf<qint16>>(*input_audio_buf);
+            std::vector<qint16> recv_buf;
             while (audio_buf_tmp->size() > 0) {
                 recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
                 recv_buf.push_back(audio_buf_tmp->get());
@@ -1072,6 +1104,42 @@ void MainWindow::updateVolumeSliderLabel(const float &vol_level)
 }
 
 /**
+ * @brief MainWindow::fileOverloadWarning will warn the user about loading too many files (i.e. usually images in this case) into
+ * memory and ask via QMessageBox if they really wish to proceed, despite being given all warnings about the dangers.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param file_count The total count of files that the user wishes to load into memory.
+ * @param max_num_files The given maximum amount of files to be exceeded before displaying the QMessageBox warning.
+ * @return Whether the user wishes to proceed (i.e. true) or not (i.e. false), despite being given all the warnings.
+ */
+bool MainWindow::fileOverloadWarning(const int &file_count, const int &max_num_files)
+{
+    if (file_count > max_num_files) {
+        // Warn the user about the implications of loading too many files into memory all at once!
+        QMessageBox msgBoxWarn;
+        msgBoxWarn.setWindowTitle(tr("Warning!"));
+        msgBoxWarn.setText(tr("You have selected an excessive number of files/images to load into memory (i.e. %1 files)! Proceeding with this "
+                              "fact in mind can mean instability with Small World Deluxe.").arg(QString::number(file_count)));
+        msgBoxWarn.setStandardButtons(QMessageBox::Cancel | QMessageBox::Abort | QMessageBox::Ok);
+        msgBoxWarn.setDefaultButton(QMessageBox::Abort);
+        msgBoxWarn.setIcon(QMessageBox::Icon::Warning);
+        int ret = msgBoxWarn.exec();
+
+        switch (ret) {
+        case QMessageBox::Cancel:
+            return false;
+        case QMessageBox::Abort:
+            return false;
+        case QMessageBox::Ok:
+            return true;
+        default:
+            return false;
+        }
+    }
+
+    return false;
+}
+
+/**
  * @brief MainWindow::removeFreqFromDb will remove a frequency and its related values from the Google LevelDB database.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param freq_to_remove
@@ -1095,6 +1163,19 @@ void MainWindow::addFreqToDb(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_add
     if (!freq_already_init) {
         GkDb->write_frequencies_db(freq_to_add);
     }
+
+    return;
+}
+
+/**
+ * @brief MainWindow::tuneActiveFreq will tune the active frequency for the connected (transceiver) radio rig to the user's
+ * desired value.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::tuneActiveFreq(const quint64 &freq_tune)
+{
+    Q_UNUSED(freq_tune);
+    QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
 
     return;
 }
@@ -1417,8 +1498,9 @@ void MainWindow::updateVolume(const float &value)
  * libraries such as Codec2, whilst clearing `ui->plainTextEdit_mesg_outgoing` of any text at the same time.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void MainWindow::msgOutgoingProcess()
+void MainWindow::msgOutgoingProcess(const QString &curr_text)
 {
+    Q_UNUSED(curr_text);
     QMessageBox::warning(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
 
     return;
@@ -1449,8 +1531,8 @@ void MainWindow::updateSpectrograph()
                     //
                     // Input audio stream is open and active!
                     //
-                    auto audio_buf_tmp = std::make_shared<PaAudioBuf<int16_t>>(*input_audio_buf);
-                    std::vector<int16_t> recv_buf;
+                    auto audio_buf_tmp = std::make_shared<PaAudioBuf<qint16>>(*input_audio_buf);
+                    std::vector<qint16> recv_buf;
                     while (audio_buf_tmp->size() > 0) {
                         recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
                         recv_buf.push_back(audio_buf_tmp->get());
@@ -1529,8 +1611,8 @@ void MainWindow::updateSpectrograph()
                     //
                     // Input audio stream is open and active!
                     //
-                    auto audio_buf_tmp = std::make_shared<PaAudioBuf<int16_t>>(*input_audio_buf);
-                    std::vector<int16_t> recv_buf;
+                    auto audio_buf_tmp = std::make_shared<PaAudioBuf<qint16>>(*input_audio_buf);
+                    std::vector<qint16> recv_buf;
                     while (audio_buf_tmp->size() > 0) {
                         recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
                         recv_buf.push_back(audio_buf_tmp->get());
@@ -1863,8 +1945,8 @@ void MainWindow::startRecordingInput(const int &wait_time)
     auto pa_stream_param = portaudio::StreamParameters(pref_input_device.cpp_stream_param, portaudio::DirectionSpecificStreamParameters::null(),
                                                        pref_input_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
                                                        paPrimeOutputBuffersUsingStreamCallback);
-    inputAudioStream = new portaudio::MemFunCallbackStream<PaAudioBuf<int16_t>>(pa_stream_param, *input_audio_buf,
-                                                                                 &PaAudioBuf<int16_t>::recordCallback);
+    inputAudioStream = new portaudio::MemFunCallbackStream<PaAudioBuf<qint16>>(pa_stream_param, *input_audio_buf,
+                                                                                 &PaAudioBuf<qint16>::recordCallback);
     inputAudioStream->start();
 
     pref_input_device.is_dev_active = true; // State that this recording device is now active!
@@ -2240,11 +2322,19 @@ void MainWindow::on_actionPrint_triggered()
 
 void MainWindow::on_pushButton_sstv_rx_navigate_left_clicked()
 {
+    //
+    // Navigate to the next image!
+    //
+
     return;
 }
 
 void MainWindow::on_pushButton_sstv_rx_navigate_right_clicked()
 {
+    //
+    // Navigate to the previous image!
+    //
+
     return;
 }
 
@@ -2260,11 +2350,39 @@ void MainWindow::on_pushButton_sstv_rx_listen_rx_clicked()
 
 void MainWindow::on_pushButton_sstv_rx_saved_image_nav_left_clicked()
 {
+    //
+    // Navigate to the next image!
+    //
+
+    const int mem_pixmap_array_size = sstv_rx_saved_image_pixmap.size();
+    if (sstv_rx_saved_image_idx < mem_pixmap_array_size) {
+        sstv_rx_saved_image_idx += 1;
+    } else {
+        sstv_rx_saved_image_idx = 1;
+    }
+
+    const QPixmap pic(sstv_rx_saved_image_pixmap.at(sstv_rx_saved_image_idx - 1));
+    label_sstv_rx_saved_image->setPixmap(pic);
+
     return;
 }
 
 void MainWindow::on_pushButton_sstv_rx_saved_image_nav_right_clicked()
 {
+    //
+    // Navigate to the previous image!
+    //
+
+    const int mem_pixmap_array_size = sstv_rx_saved_image_pixmap.size();
+    if (sstv_rx_saved_image_idx > 1) {
+        sstv_rx_saved_image_idx -= 1;
+    } else {
+        sstv_rx_saved_image_idx = mem_pixmap_array_size;
+    }
+
+    const QPixmap pic(sstv_rx_saved_image_pixmap.at(sstv_rx_saved_image_idx - 1));
+    label_sstv_rx_saved_image->setPixmap(pic);
+
     return;
 }
 
@@ -2280,20 +2398,104 @@ void MainWindow::on_pushButton_sstv_rx_saved_image_delete_clicked()
 
 void MainWindow::on_pushButton_sstv_tx_navigate_left_clicked()
 {
+    //
+    // Navigate to the next image!
+    //
+
+    const int files_array_size = sstv_tx_pic_files.size();
+    if (sstv_tx_image_idx < files_array_size) {
+        sstv_tx_image_idx += 1;
+    } else {
+        sstv_tx_image_idx = 1;
+    }
+
+    const QPixmap pic(sstv_tx_pic_files.at(sstv_tx_image_idx - 1));
+    label_sstv_tx_image->setPixmap(pic);
+
     return;
 }
 
 void MainWindow::on_pushButton_sstv_tx_navigate_right_clicked()
 {
+    //
+    // Navigate to the previous image!
+    //
+
+    const int files_array_size = sstv_tx_pic_files.size();
+    if (sstv_tx_image_idx > 1) {
+        sstv_tx_image_idx -= 1;
+    } else {
+        sstv_tx_image_idx = files_array_size;
+    }
+
+    const QPixmap pic(sstv_tx_pic_files.at(sstv_tx_image_idx - 1));
+    label_sstv_tx_image->setPixmap(pic);
+
     return;
 }
 
+/**
+ * @brief MainWindow::on_pushButton_sstv_tx_load_image_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @note QFileDialog <https://doc.qt.io/qt-5/qfiledialog.html>
+ */
 void MainWindow::on_pushButton_sstv_tx_load_image_clicked()
 {
+    try {
+        QFileDialog fileDialog(this, tr("Load Image for Transmission"), QStandardPaths::writableLocation(QStandardPaths::PicturesLocation),
+                               tr("Images (*.bmp *.gif *.jpg *.jpeg *.png *.pbm *.pgm *.ppm *.xbm *.xpm)"));
+        fileDialog.setFileMode(QFileDialog::ExistingFiles);
+        fileDialog.setAcceptMode(QFileDialog::AcceptOpen);
+        fileDialog.setViewMode(QFileDialog::Detail);
+
+        if (fileDialog.exec()) {
+            sstv_tx_pic_files = fileDialog.selectedFiles();
+            if (!sstv_tx_pic_files.isEmpty()) {
+                if (sstv_tx_pic_files.size() > GK_SSTV_FILE_DLG_LOAD_IMGS_MAX_FILES_WARN) {
+                    if (!fileOverloadWarning(sstv_tx_pic_files.size(), GK_SSTV_FILE_DLG_LOAD_IMGS_MAX_FILES_WARN)) {
+                        return;
+                    }
+                } // Otherwise carry on as normal!
+
+                qint64 total_fize_sizes = 0;
+                for (const auto &data: sstv_tx_pic_files) {
+                    QFile file(data);
+
+                    file.open(QIODevice::ReadOnly);
+                    total_fize_sizes += file.size();
+                    file.close();
+                }
+
+                const QPixmap pic(sstv_tx_pic_files.first());
+                label_sstv_tx_image->setPixmap(pic);
+                sstv_tx_image_idx = 1; // TODO: Make it so that this function can load images 'in-between' other images and so on!
+
+                // Publish an event within the event log!
+                gkEventLogger->publishEvent(tr("Loaded %1 images into memory, ready for transmission. Total file size: %2 kB")
+                                            .arg(QString::number(fileDialog.selectedFiles().size())).arg(QString::number(total_fize_sizes)),
+                                            GkSeverity::Info);
+            }
+
+            return;
+        }
+    }  catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
     return;
 }
 
 void MainWindow::on_pushButton_sstv_tx_send_image_clicked()
+{
+    return;
+}
+
+void MainWindow::on_pushButton_sstv_rx_remove_clicked()
+{
+    return;
+}
+
+void MainWindow::on_pushButton_sstv_tx_remove_clicked()
 {
     return;
 }

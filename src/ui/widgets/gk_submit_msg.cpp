@@ -39,29 +39,88 @@
  **
  ****************************************************************************************************/
 
-#include "src/gk_submit_msg.hpp" 
+#include "src/ui/widgets/gk_submit_msg.hpp"
+#include <QVariant>
 
-GekkoFyre::GkPlainTextSubmit::GkPlainTextSubmit(QWidget *parent)
+using namespace GekkoFyre;
+using namespace Database;
+using namespace Settings;
+using namespace Audio;
+using namespace AmateurRadio;
+using namespace Control;
+using namespace Spectrograph;
+using namespace System;
+using namespace Events;
+using namespace Logging;
+
+/**
+ * @brief GkPlainTextSubmit::GkPlainTextSubmit
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param parent
+ */
+GkPlainTextSubmit::GkPlainTextSubmit(QWidget *parent)
 {
     setParent(parent);
 
     return;
 }
 
-GekkoFyre::GkPlainTextSubmit::~GkPlainTextSubmit()
+GkPlainTextSubmit::~GkPlainTextSubmit()
 {
     return;
 }
 
-void GekkoFyre::GkPlainTextSubmit::keyPressEvent(QKeyEvent *event)
+/**
+ * @brief GkPlainTextSubmit::keyPressEvent
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param event
+ */
+void GkPlainTextSubmit::keyPressEvent(QKeyEvent *event)
 {
-    if (event->key() == Qt::Key_Return) {
+    if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
         // The ENTER key has been pressed!
+        QVariant curr_value = toPlainText();
         clear();
-        emit execFuncAfterEvent(); // Execute desired functions now!
+        emit execFuncAfterEvent(curr_value.toString()); // Execute desired functions now!
     } else {
         // Some other key has been pressed, process as normal...
         QPlainTextEdit::keyPressEvent(event);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkComboBoxSubmit::GkComboBoxSubmit
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param parent
+ */
+GkComboBoxSubmit::GkComboBoxSubmit(QWidget *parent)
+{
+    setParent(parent);
+
+    return;
+}
+
+GkComboBoxSubmit::~GkComboBoxSubmit()
+{
+    return;
+}
+
+/**
+ * @brief GkComboBoxSubmit::keyPressEvent
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param event
+ */
+void GkComboBoxSubmit::keyPressEvent(QKeyEvent *event)
+{
+    if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
+        // The ENTER key has been pressed!
+        QVariant curr_val = currentText();
+        emit execFuncAfterEvent(curr_val.toULongLong()); // Execute desired functions now!
+    } else {
+        // Some other key has been pressed, process as normal...
+        QComboBox::keyPressEvent(event);
     }
 
     return;
