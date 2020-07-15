@@ -43,6 +43,7 @@
 
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
+#include "src/gk_logger.hpp"
 #include <boost/logic/tribool.hpp>
 #include <QPointer>
 #include <QObject>
@@ -74,7 +75,7 @@ class RadioLibs : public QObject {
 public:
     explicit RadioLibs(QPointer<GekkoFyre::FileIo> filePtr, std::shared_ptr<GekkoFyre::StringFuncs> stringPtr,
                        std::shared_ptr<GkLevelDb> dkDb, std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> radioPtr,
-                       QObject *parent = nullptr);
+                       QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~RadioLibs();
 
     static int convertBaudRateInt(const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate);
@@ -94,7 +95,6 @@ public:
     QMap<std::string, Database::Settings::GkUsbPort> enumUsbDevices(libusb_context *usb_ctx_ptr);
 
 signals:
-    void gatherPortType(const bool &is_cat_mode);
     void disconnectRigInUse(std::shared_ptr<Rig> rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
 
 private:
@@ -102,10 +102,12 @@ private:
     std::shared_ptr<GekkoFyre::GkLevelDb> gkDekodeDb;
     std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> gkRadioPtr;
     QPointer<GekkoFyre::FileIo> gkFileIo;
+    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
     static void hamlibStatus(const int &retcode);
     static std::string getUsbPortId(libusb_device *usb_device);
 
+    libusb_error convLibUSBErrorToEnum(const int &error);
     void print_exception(const std::exception &e, int level = 0);
 
     #if defined(_MSC_VER) && (_MSC_VER > 1900)

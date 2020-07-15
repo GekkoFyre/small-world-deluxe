@@ -85,18 +85,26 @@ extern "C"
 using namespace GekkoFyre;
 using namespace Database;
 using namespace Settings;
+using namespace Audio;
 using namespace AmateurRadio;
 using namespace Control;
+using namespace Spectrograph;
+using namespace System;
+using namespace Events;
+using namespace Logging;
+
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
 RadioLibs::RadioLibs(QPointer<FileIo> filePtr, std::shared_ptr<StringFuncs> stringPtr,
-                     std::shared_ptr<GkLevelDb> dkDb, std::shared_ptr<GkRadio> radioPtr, QObject *parent) : QObject(parent)
+                     std::shared_ptr<GkLevelDb> dkDb, std::shared_ptr<GkRadio> radioPtr,
+                     QPointer<GkEventLogger> eventLogger, QObject *parent) : QObject(parent)
 {
     gkStringFuncs = std::move(stringPtr);
     gkDekodeDb = std::move(dkDb);
     gkFileIo = std::move(filePtr);
     gkRadioPtr = std::move(radioPtr);
+    gkEventLogger = std::move(eventLogger);
 }
 
 RadioLibs::~RadioLibs()
@@ -396,6 +404,44 @@ std::string RadioLibs::getUsbPortId(libusb_device *usb_device)
     return "";
 }
 
+libusb_error RadioLibs::convLibUSBErrorToEnum(const int &error)
+{
+    switch (error) {
+    case 0:
+        return LIBUSB_SUCCESS;
+    case -1:
+        return LIBUSB_ERROR_IO;
+    case -2:
+        return LIBUSB_ERROR_INVALID_PARAM;
+    case -3:
+        return LIBUSB_ERROR_ACCESS;
+    case -4:
+        return LIBUSB_ERROR_NO_DEVICE;
+    case -5:
+        return LIBUSB_ERROR_NOT_FOUND;
+    case -6:
+        return LIBUSB_ERROR_BUSY;
+    case -7:
+        return LIBUSB_ERROR_TIMEOUT;
+    case -8:
+        return LIBUSB_ERROR_OVERFLOW;
+    case -9:
+        return LIBUSB_ERROR_PIPE;
+    case -10:
+        return LIBUSB_ERROR_INTERRUPTED;
+    case -11:
+        return LIBUSB_ERROR_NO_MEM;
+    case -12:
+        return LIBUSB_ERROR_NOT_SUPPORTED;
+    case -99:
+        return LIBUSB_ERROR_OTHER;
+    default:
+        return LIBUSB_ERROR_OTHER;
+    }
+
+    return libusb_error::LIBUSB_ERROR_OTHER;
+}
+
 /**
  * @brief RadioLibs::enumUsbDevices will enumerate out any USB devices present/connected on the user's computer system, giving valuable
  * details for each device.
@@ -419,7 +465,7 @@ QMap<std::string, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDe
         }
 
         libusb_device *dev = nullptr;
-        while ((dev = devices[++i]) != nullptr) {
+        while ((dev = std::move(devices[++i])) != nullptr) {
             GkUsbPort *usb = new GkUsbPort();
 
             usb->usb_enum.handle = nullptr;
@@ -441,7 +487,7 @@ QMap<std::string, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDe
                 usb->usb_enum.config = new libusb_config_descriptor();
                 int ret_cfg_desc = libusb_get_config_descriptor(dev, 0, &usb->usb_enum.config);
                 if (ret_cfg_desc != LIBUSB_SUCCESS) {
-                    std::cerr << tr("Error with enumerating `libusb` interface! Couldn't retrieve descriptors.").toStdString() << std::endl;
+                    gkEventLogger->publishEvent(tr("Unable to enumerate USB port/device. Couldn't retrieve descriptors!"), GkSeverity::Warning);
                 }
 
                 // https://cpp.hotexamples.com/examples/-/-/libusb_get_bus_number/cpp-libusb_get_bus_number-function-examples.html
@@ -516,6 +562,10 @@ QMap<std::string, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDe
                         }
                     }
                 }
+            } else {
+                gkEventLogger->publishEvent(tr("Unable to enumerate USB port/device: %1")
+                                            .arg(QString::fromStdString(libusb_strerror(convLibUSBErrorToEnum(ret_usb_open)))),
+                                            GkSeverity::Warning);
             }
 
             delete usb;

@@ -43,6 +43,7 @@
 
 #include "src/defines.hpp"
 #include "src/models/tableview/gk_logger_model.hpp"
+#include <mutex>
 #include <QVariant>
 #include <QObject>
 #include <QString>

@@ -108,12 +108,6 @@ extern "C"
 #define snprintf _snprintf
 #endif
 
-#ifdef _UNICODE
-  typedef std::wstring tstring;
-#else
-  typedef std::string tstring;
-#endif
-
 namespace GekkoFyre {
 
 #define GK_EXIT_TIMEOUT (6)                             // The amount of time, in seconds, to leave 'Small World Deluxe' hanging upon exit before terminating forcefully!
@@ -290,8 +284,6 @@ namespace Database {
             PttConnType,
             ComDeviceCat,
             ComDevicePtt,
-            UsbDeviceCat,
-            UsbDevicePtt,
             ParallelCat,
             ParallelPtt,
             ComBaudRate,
@@ -500,6 +492,11 @@ namespace AmateurRadio {
         CM108,
         GPIO,
         None
+    };
+
+    enum GkConnMethod {
+        CAT,
+        PTT
     };
 
     enum com_baud_rates {

@@ -114,6 +114,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     ui->setupUi(this);
     qRegisterMetaType<std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>>("std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>");
     qRegisterMetaType<GekkoFyre::Database::Settings::GkUsbPort>("GekkoFyre::Database::Settings::GkUsbPort");
+    qRegisterMetaType<GekkoFyre::AmateurRadio::GkConnMethod>("GekkoFyre::AmateurRadio::GkConnMethod");
     qRegisterMetaType<GekkoFyre::System::Events::Logging::GkEventLogging>("GekkoFyre::System::Events::Logging::GkEventLogging");
     qRegisterMetaType<GekkoFyre::AmateurRadio::GkConnType>("GekkoFyre::AmateurRadio::GkConnType");
     qRegisterMetaType<GekkoFyre::AmateurRadio::DigitalModes>("GekkoFyre::AmateurRadio::DigitalModes");
@@ -243,23 +244,33 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 GkDb = std::make_shared<GekkoFyre::GkLevelDb>(db, fileIo, this);
 
                 //
-                // Initialize the ability to change Connection Type, depending on whether we are connecting to the amateur radio rig
-                // by USB, RS232, GPIO, etc.!
-                //
-                QObject::connect(this, SIGNAL(changePortType(const GekkoFyre::AmateurRadio::GkConnType &, const bool &)),
-                                 this, SLOT(selectedPortType(const GekkoFyre::AmateurRadio::GkConnType &, const bool &)));
-                QObject::connect(this, SIGNAL(gatherPortType(const bool &)),
-                                 this, SLOT(analyzePortType(const bool &)));
-
-                //
                 // Load some of the primary abilities to work with the Hamlib libraries!
                 //
+                QObject::connect(this, SIGNAL(changeConnPort(const QString &, const GekkoFyre::AmateurRadio::GkConnMethod &)),
+                                 this, SLOT(procRigPort(const QString &, const GekkoFyre::AmateurRadio::GkConnMethod &)));
                 QObject::connect(this, SIGNAL(recvRigCapabilities(const rig_model_t &, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
                                  this, SLOT(gatherRigCapabilities(const rig_model_t &, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
                 QObject::connect(this, SIGNAL(addRigInUse(const rig_model_t &, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
                                  this, SLOT(addRigToMemory(const rig_model_t &, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
                 QObject::connect(this, SIGNAL(disconnectRigInUse(std::shared_ptr<Rig>, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
                                  this, SLOT(disconnectRigInMemory(std::shared_ptr<Rig>, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
+
+                //
+                // Events logger
+                //
+                QPointer<GkEventLoggerTableViewModel> gkEventLoggerModel = new GkEventLoggerTableViewModel(GkDb, this);
+                ui->tableView_maingui_logs->setModel(gkEventLoggerModel);
+                ui->tableView_maingui_logs->horizontalHeader()->setVisible(true);
+                ui->tableView_maingui_logs->horizontalHeader()->setStretchLastSection(true);
+                ui->tableView_maingui_logs->show();
+
+                gkEventLogger = new GkEventLogger(this);
+                QObject::connect(gkEventLogger, SIGNAL(sendEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &)),
+                                 gkEventLoggerModel, SLOT(insertData(const GekkoFyre::System::Events::Logging::GkEventLogging &)));
+                QObject::connect(gkEventLogger, SIGNAL(removeEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &)),
+                                 gkEventLoggerModel, SLOT(removeData(const GekkoFyre::System::Events::Logging::GkEventLogging &)));
+
+                gkEventLogger->publishEvent(tr("Events log initiated."), GkSeverity::Info);
 
                 // Initialize the Radio Database pointer!
                 if (gkRadioPtr.get() == nullptr) {
@@ -270,7 +281,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 emit addRigInUse(gkRadioPtr->rig_model, gkRadioPtr);
 
                 // Initialize USB devices!
-                gkRadioLibs = new GekkoFyre::RadioLibs(fileIo, gkStringFuncs, GkDb, gkRadioPtr, this);
+                gkRadioLibs = new GekkoFyre::RadioLibs(fileIo, gkStringFuncs, GkDb, gkRadioPtr, gkEventLogger, this);
                 status_com_ports = gkRadioLibs->status_com_ports();
                 usb_ctx_ptr = gkRadioLibs->initUsbLib();
                 gkUsbPortPtr = std::make_shared<GkUsbPort>();
@@ -278,8 +289,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 //
                 // Setup the SIGNALS & SLOTS for `gkRadioLibs`...
                 //
-                QObject::connect(gkRadioLibs, SIGNAL(gatherPortType(const bool &)),
-                                 this, SLOT(analyzePortType(const bool &)));
                 QObject::connect(gkRadioLibs, SIGNAL(disconnectRigInUse(std::shared_ptr<Rig>, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
                                  this, SLOT(disconnectRigInMemory(std::shared_ptr<Rig>, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
             } else {
@@ -460,28 +469,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         gkFreqList->publishFreqList();
 
         //
-        // Events logger
-        //
-        QPointer<GkEventLoggerTableViewModel> gkEventLoggerModel = new GkEventLoggerTableViewModel(GkDb, this);
-        ui->tableView_maingui_logs->setModel(gkEventLoggerModel);
-        ui->tableView_maingui_logs->horizontalHeader()->setVisible(true);
-        ui->tableView_maingui_logs->horizontalHeader()->setStretchLastSection(true);
-        ui->tableView_maingui_logs->show();
-
-        gkEventLogger = new GkEventLogger(this);
-        QObject::connect(gkEventLogger, SIGNAL(sendEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &)),
-                         gkEventLoggerModel, SLOT(insertData(const GekkoFyre::System::Events::Logging::GkEventLogging &)));
-        QObject::connect(gkEventLogger, SIGNAL(removeEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &)),
-                         gkEventLoggerModel, SLOT(removeData(const GekkoFyre::System::Events::Logging::GkEventLogging &)));
-
-        gkEventLogger->publishEvent(tr("Events log initiated."), GkSeverity::Info);
-
-        //
         // Setup the SSTV sections in QMainWindow!
         //
-        label_sstv_tx_image = new GkDisplayImage(Gui::sstvWindow::txSendImage, ui->scrollArea_sstv_tx_image);
-        label_sstv_rx_live_image = new GkDisplayImage(Gui::sstvWindow::rxLiveImage, ui->scrollArea_sstv_rx_live_image);
-        label_sstv_rx_saved_image = new GkDisplayImage(Gui::sstvWindow::rxSavedImage, ui->scrollArea_sstv_rx_saved_image);
+        label_sstv_tx_image = new GkDisplayImage(Gui::sstvWindow::txSendImage, gkEventLogger, ui->scrollArea_sstv_tx_image);
+        label_sstv_rx_live_image = new GkDisplayImage(Gui::sstvWindow::rxLiveImage, gkEventLogger, ui->scrollArea_sstv_rx_live_image);
+        label_sstv_rx_saved_image = new GkDisplayImage(Gui::sstvWindow::rxSavedImage, gkEventLogger, ui->scrollArea_sstv_rx_saved_image);
         ui->verticalLayout_21->addWidget(label_sstv_tx_image);
         ui->verticalLayout_19->addWidget(label_sstv_rx_live_image);
         ui->verticalLayout_20->addWidget(label_sstv_rx_saved_image);
@@ -676,12 +668,10 @@ void MainWindow::launchSettingsWin()
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
 
+    QObject::connect(dlg_settings, SIGNAL(changeConnPort(const QString &, const GekkoFyre::AmateurRadio::GkConnMethod &)),
+                     this, SIGNAL(changeConnPort(const QString &, const GekkoFyre::AmateurRadio::GkConnMethod &)));
     QObject::connect(dlg_settings, SIGNAL(recvRigCapabilities(const rig_model_t &, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
                      this, SLOT(gatherRigCapabilities(const rig_model_t &, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
-    QObject::connect(dlg_settings, SIGNAL(changePortType(const GekkoFyre::AmateurRadio::GkConnType &, const bool &)),
-                     this, SLOT(selectedPortType(const GekkoFyre::AmateurRadio::GkConnType &, const bool &)));
-    QObject::connect(dlg_settings, SIGNAL(gatherPortType(const bool &)),
-                     this, SLOT(analyzePortType(const bool &)));
     QObject::connect(dlg_settings, SIGNAL(addRigInUse(const rig_model_t &, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
                      this, SLOT(addRigToMemory(const rig_model_t &, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
 
@@ -709,7 +699,7 @@ bool MainWindow::radioInitStart()
         }
 
         // TODO: Very important! Expand this section!
-        QString com_baud_rate = GkDb->read_rig_settings_comms(radio_cfg::ComBaudRate, GkConnType::RS232);
+        QString com_baud_rate = GkDb->read_rig_settings_comms(radio_cfg::ComBaudRate);
         if (!com_baud_rate.isEmpty() || !com_baud_rate.isNull()) {
             gkRadioPtr->dev_baud_rate = gkRadioLibs->convertBaudRateToEnum(com_baud_rate.toInt());
         } else {
@@ -784,9 +774,6 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
 
         Q_UNUSED(rigVers);
         // if (!rigVers.isNull() || !rigVers.isEmpty()) {}
-
-        emit gatherPortType(true);
-        emit gatherPortType(false);
 
         if (!comBaudRate.isNull() || !comBaudRate.isEmpty()) {
             int conv_com_baud_rate = comBaudRate.toInt();
@@ -1902,6 +1889,20 @@ void MainWindow::closeEvent(QCloseEvent *event)
 }
 
 /**
+ * @brief MainWindow::procRigPort changes the port used by Hamlib that's to be connected towards for communication with the
+ * user's (transceiver) radio rig, whether it be a RS232/USB/Parallel/etc connection or something else entirely.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param conn_port The port itself that's to be connected towards (i.e. ttyS0, ttyUSB1, COM5, COM6, etc.).
+ */
+void MainWindow::procRigPort(const QString &conn_port, const GekkoFyre::AmateurRadio::GkConnMethod &conn_method)
+{
+    Q_UNUSED(conn_port);
+    Q_UNUSED(conn_method);
+
+    return;
+}
+
+/**
  * @brief MainWindow::stopRecordingInput The idea of this function is to stop recording of
  * all input audio devices related to the spectrograph / waterfall upon activation,
  * globally, across all threads.
@@ -1977,113 +1978,6 @@ void MainWindow::updateProgressBar(const bool &enable, const size_t &min, const 
 }
 
 /**
- * @brief MainWindow::selectedPortType notifies Small World Deluxe as to what kind of connection you are using
- * for CAT and PTT, whether it be RS232, USB, Parallel, GPIO, etc.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param rig_conn_type The type of connection in use for CAT and PTT modes.
- * @param is_cat_mode Whether we are modifying CAT mode or PTT instead.
- */
-void MainWindow::selectedPortType(const GekkoFyre::AmateurRadio::GkConnType &rig_conn_type, const bool &is_cat_mode)
-{
-    if (is_cat_mode) {
-        QString comDeviceCat = "";
-        if (rig_conn_type == GkConnType::RS232) {
-            comDeviceCat = GkDb->read_rig_settings_comms(radio_cfg::ComDeviceCat, GkConnType::RS232);
-        } else if (rig_conn_type == GkConnType::USB) {
-            comDeviceCat = GkDb->read_rig_settings_comms(radio_cfg::UsbDeviceCat, GkConnType::USB);
-        } else if (rig_conn_type == GkConnType::Parallel) {
-            comDeviceCat = GkDb->read_rig_settings_comms(radio_cfg::ParallelCat, GkConnType::Parallel);
-        } else {
-            gkRadioPtr->cat_conn_type = GkConnType::None;
-            gkRadioPtr->cat_conn_port = "";
-            return;
-        }
-
-        gkRadioPtr->cat_conn_type = rig_conn_type;
-        gkRadioPtr->cat_conn_port = comDeviceCat.toStdString();
-    } else {
-        QString comDevicePtt = "";
-        if (rig_conn_type == GkConnType::RS232) {
-            comDevicePtt = GkDb->read_rig_settings_comms(radio_cfg::ComDevicePtt, GkConnType::RS232);
-        } else if (rig_conn_type == GkConnType::USB) {
-            comDevicePtt = GkDb->read_rig_settings_comms(radio_cfg::UsbDevicePtt, GkConnType::USB);
-        } else if (rig_conn_type == GkConnType::Parallel) {
-            comDevicePtt = GkDb->read_rig_settings_comms(radio_cfg::ParallelPtt, GkConnType::Parallel);
-        } else {
-            gkRadioPtr->ptt_conn_type = GkConnType::None;
-            gkRadioPtr->ptt_conn_port = "";
-            return;
-        }
-
-        gkRadioPtr->ptt_conn_type = rig_conn_type;
-        gkRadioPtr->ptt_conn_port = comDevicePtt.toStdString();
-    }
-
-    return;
-}
-
-/**
- * @brief MainWindow::analyzePortType
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param is_cat_mode
- */
-void MainWindow::analyzePortType(const bool &is_cat_mode)
-{
-    std::unique_ptr<GkRadio> gk_radio_tmp = std::make_unique<GkRadio>();
-    if (is_cat_mode) {
-        //
-        // CAT Mode
-        //
-        QString catConnType = GkDb->read_rig_settings(radio_cfg::CatConnType);
-        if (!catConnType.isNull() || !catConnType.isEmpty()) {
-            int conv_cat_conn_type = catConnType.toInt();
-            gk_radio_tmp->cat_conn_type = GkDb->convConnTypeToEnum(conv_cat_conn_type);
-
-            switch (gk_radio_tmp->cat_conn_type) {
-            case GkConnType::RS232:
-                emit changePortType(GekkoFyre::AmateurRadio::GkConnType::RS232, true);
-                break;
-            case GkConnType::USB:
-                emit changePortType(GekkoFyre::AmateurRadio::GkConnType::USB, true);
-                break;
-            case GkConnType::Parallel:
-                emit changePortType(GekkoFyre::AmateurRadio::GkConnType::Parallel, true);
-                break;
-            default:
-                emit changePortType(GekkoFyre::AmateurRadio::GkConnType::None, true);
-                break;
-            }
-        }
-    } else {
-        //
-        // PTT Mode
-        //
-        QString pttConnType = GkDb->read_rig_settings(radio_cfg::PttConnType);
-        if (!pttConnType.isNull() || !pttConnType.isEmpty()) {
-            int conv_ptt_conn_type = pttConnType.toInt();
-            gk_radio_tmp->ptt_conn_type = GkDb->convConnTypeToEnum(conv_ptt_conn_type);
-
-            switch (gk_radio_tmp->ptt_conn_type) {
-            case GkConnType::RS232:
-                emit changePortType(GekkoFyre::AmateurRadio::GkConnType::RS232, false);
-                break;
-            case GkConnType::USB:
-                emit changePortType(GekkoFyre::AmateurRadio::GkConnType::USB, false);
-                break;
-            case GkConnType::Parallel:
-                emit changePortType(GekkoFyre::AmateurRadio::GkConnType::Parallel, false);
-                break;
-            default:
-                emit changePortType(GekkoFyre::AmateurRadio::GkConnType::None, false);
-                break;
-            }
-        }
-    }
-
-    return;
-}
-
-/**
  * @brief MainWindow::gatherRigCapabilities updates the capabilities of any rig that is currently in use, or about to be
  * within use.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -2130,8 +2024,6 @@ void MainWindow::addRigToMemory(const rig_model_t &rig_model_update, const std::
     //
     // Attempt to initialize the amateur radio rig!
     //
-    emit gatherPortType(true);
-    emit gatherPortType(false);
     emit recvRigCapabilities(rig_model_update, radio_ptr);
     radioInitStart();
 
