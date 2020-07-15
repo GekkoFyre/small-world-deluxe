@@ -39,7 +39,7 @@
 #include "ui_mainwindow.h"
 #include "src/ui/aboutdialog.hpp"
 #include "src/ui/spectrodialog.hpp"
-#include "src/gk_submit_msg.hpp"
+#include "src/ui/widgets/gk_submit_msg.hpp"
 #include "src/models/tableview/gk_frequency_model.hpp"
 #include "src/models/tableview/gk_logger_model.hpp"
 #include <boost/exception/all.hpp>
@@ -305,7 +305,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         int window_width = GkDb->read_mainwindow_settings(general_mainwindow_cfg::WindowHSize).toInt();
         int window_height = GkDb->read_mainwindow_settings(general_mainwindow_cfg::WindowVSize).toInt();
-        bool window_maximized = GkDb->read_mainwindow_settings(general_mainwindow_cfg::WindowMaximized).toInt();
+        bool window_minimized = GkDb->read_mainwindow_settings(general_mainwindow_cfg::WindowMaximized).toInt();
 
         // Set the x-axis size of QMainWindow
         if (window_width >= MIN_MAIN_WINDOW_WIDTH) {
@@ -318,12 +318,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
 
         // Whether to maximize the QMainWindow or not
-        if (window_maximized == 1) {
+        if (window_minimized == 0) {
             this->window()->showMaximized();
-        } else if (window_maximized == 0) {
+        } else if (window_minimized == 1) {
             this->window()->showNormal();
         } else {
-            window_maximized = false;
+            window_minimized = false;
         }
 
         //

@@ -39,7 +39,7 @@
  **
  ****************************************************************************************************/
 
-#include "src/gk_submit_msg.hpp"
+#include "src/ui/widgets/gk_submit_msg.hpp"
 #include <QVariant>
 
 using namespace GekkoFyre;

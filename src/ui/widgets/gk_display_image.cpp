@@ -39,7 +39,7 @@
  **
  ****************************************************************************************************/
 
-#include "src/gk_display_image.hpp"
+#include "src/ui/widgets/gk_display_image.hpp"
 
 using namespace GekkoFyre;
 using namespace Database;
