@@ -422,6 +422,15 @@ namespace Database {
 namespace AmateurRadio {
 #define STATUS_CHECK_TIMEOUT 500       // Milliseconds
 
+    namespace Gui {
+        enum sstvWindow {
+            rxLiveImage,
+            rxSavedImage,
+            txSendImage,
+            None
+        };
+    }
+
     enum rig_type {
         Transceiver,
         Handheld,

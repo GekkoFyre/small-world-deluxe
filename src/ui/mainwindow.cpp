@@ -479,12 +479,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Setup the SSTV sections in QMainWindow!
         //
-        label_sstv_tx_image = new GkDisplayImage(ui->frame_sstv_tx_image_top);
-        label_sstv_rx_live_image = new GkDisplayImage(ui->frame_sstv_rx_image_top);
-        label_sstv_rx_saved_image = new GkDisplayImage(ui->frame_sstv_rx_saved_top);
-        ui->horizontalLayout_19->addWidget(label_sstv_tx_image);
-        ui->horizontalLayout_18->addWidget(label_sstv_rx_live_image);
-        ui->horizontalLayout_23->addWidget(label_sstv_rx_saved_image);
+        label_sstv_tx_image = new GkDisplayImage(Gui::sstvWindow::txSendImage, ui->scrollArea_sstv_tx_image);
+        label_sstv_rx_live_image = new GkDisplayImage(Gui::sstvWindow::rxLiveImage, ui->scrollArea_sstv_rx_live_image);
+        label_sstv_rx_saved_image = new GkDisplayImage(Gui::sstvWindow::rxSavedImage, ui->scrollArea_sstv_rx_saved_image);
+        ui->verticalLayout_21->addWidget(label_sstv_tx_image);
+        ui->verticalLayout_19->addWidget(label_sstv_rx_live_image);
+        ui->verticalLayout_20->addWidget(label_sstv_rx_saved_image);
         label_sstv_tx_image->setText("");
         label_sstv_rx_live_image->setText("");
         label_sstv_rx_saved_image->setText("");

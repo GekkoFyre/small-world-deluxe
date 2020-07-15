@@ -40,6 +40,8 @@
  ****************************************************************************************************/
 
 #include "src/ui/widgets/gk_display_image.hpp"
+#include <QMenu>
+#include <QAction>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -57,9 +59,31 @@ using namespace Logging;
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param parent
  */
-GkDisplayImage::GkDisplayImage(QWidget *parent)
+GkDisplayImage::GkDisplayImage(const Gui::sstvWindow &sstv_win, QWidget *parent)
 {
     setParent(parent);
+    setAlignment(Qt::AlignCenter);
+
+    sstvWindow = sstv_win;
+    if (sstvWindow != Gui::sstvWindow::None) {
+        QPointer<QAction> pAction1 = new QAction(tr("Transmit (TX)"), this);
+        QPointer<QAction> pAction2 = new QAction(tr("Load"), this);
+        QPointer<QAction> pAction3 = new QAction(tr("Save"), this);
+        QPointer<QAction> pAction4 = new QAction(tr("Clear"), this);
+        QPointer<QAction> pAction5 = new QAction(tr("Delete"), this);
+
+        this->addAction(pAction1);
+        this->addAction(pAction2);
+        this->addAction(pAction3);
+        this->addAction(pAction4);
+        this->addAction(pAction5);
+
+        QObject::connect(pAction1, SIGNAL(triggered()), this, SLOT(txImage()));
+        QObject::connect(pAction2, SIGNAL(triggered()), this, SLOT(loadImage()));
+        QObject::connect(pAction3, SIGNAL(triggered()), this, SLOT(saveImage()));
+        QObject::connect(pAction4, SIGNAL(triggered()), this, SLOT(clearImages()));
+        QObject::connect(pAction5, SIGNAL(triggered()), this, SLOT(delImage()));
+    }
 
     return;
 }
@@ -102,6 +126,17 @@ QPixmap GkDisplayImage::scaledPixmap() const
     return scaled;
 }
 
+void GkDisplayImage::mouseReleaseEvent(QMouseEvent *e)
+{
+    if (e->button() == Qt::RightButton) {
+        QMenu menu(this);
+        menu.addActions(this->actions());
+        menu.exec(e->globalPos());
+    }
+
+    return;
+}
+
 /**
  * @brief GkDisplayImage::setPixmap
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -128,5 +163,50 @@ void GkDisplayImage::resizeEvent(QResizeEvent *e)
         QLabel::setPixmap(scaledPixmap());
     }
 
+    return;
+}
+
+/**
+ * @brief GkDisplayImage::txImage
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkDisplayImage::txImage()
+{
+    return;
+}
+
+/**
+ * @brief GkDisplayImage::loadImage
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkDisplayImage::loadImage()
+{
+    return;
+}
+
+/**
+ * @brief GkDisplayImage::saveImage
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkDisplayImage::saveImage()
+{
+    return;
+}
+
+/**
+ * @brief GkDisplayImage::clearImages
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkDisplayImage::clearImages()
+{
+    return;
+}
+
+/**
+ * @brief GkDisplayImage::delImage
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkDisplayImage::delImage()
+{
     return;
 }
