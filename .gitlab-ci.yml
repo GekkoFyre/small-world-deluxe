@@ -67,8 +67,6 @@ variables:
 sworld_prepare_archlinux_x86_64:
     stage: sworld_prepare_archlinux_x86_64
     image: archlinux:latest
-    tags:
-        - "preparatory-build"
     script:
         - sudo pacman -Sy --noconfirm
         - sudo pacman -Syu --noconfirm
@@ -118,8 +116,6 @@ sworld_debug_archlinux_x86_64:
     image: archlinux:latest
     dependencies:
         - sworld_prepare_archlinux_x86_64
-    tags:
-        - "small-world-deluxe_debug"
     script:
         - mkdir -p artifact-build
         - cd artifact-build
