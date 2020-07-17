@@ -43,11 +43,11 @@
 
 ### --------------------------------------------------------------------------------------------------- ###
 
-image: burningdaylight/docker-mingw-qt5:latest
+image: archlinux:latest
 
 stages:
-    - sworld_debug_mingw_x86_64
-    - sworld_debug_linux_x86_64
+    - sworld_prepare_archlinux_x86_64
+    - sworld_debug_archlinux_x86_64
     - test
 
 include:
@@ -64,114 +64,70 @@ variables:
 #
 # https://code.gekkofyre.io/help/user/application_security/sast/index
 #
-sworld_debug_mingw_x86_64:
-    stage: sworld_debug_mingw_x86_64
-    image: burningdaylight/docker-mingw-qt5:latest
-    cache:
-        paths:
-            - "binaries/*.exe"
+sworld_prepare_archlinux_x86_64:
+    stage: sworld_prepare_archlinux_x86_64
+    image: archlinux:latest
     tags:
-        - "debug-build"
+        - "preparatory-build"
     script:
         - sudo pacman -Sy --noconfirm
         - sudo pacman -Syu --noconfirm
-        - yay -S mingw-w64-gcc --noconfirm
-        - yay -S mingw-w64-configure --noconfirm
-        - yay -S mingw-w64-qt5-base --noconfirm
-        - yay -S mingw-w64-qt5-tools --noconfirm
-        - yay -S mingw-w64-qt5-serialport --noconfirm
-        - yay -S mingw-w64-qt5-sensors --noconfirm
-        - yay -S mingw-w64-qt5-imageformats --noconfirm
-        - yay -S mingw-w64-qt5-translations --noconfirm
-        - yay -S mingw-w64-qt5-svg --noconfirm
-        - yay -S mingw-w64-qt5-multimedia --noconfirm
-        - yay -S mingw-w64-qt5-xmlpatterns --noconfirm
-        - yay -S mingw-w64-qt5-winextras --noconfirm
-        - yay -S mingw-w64-qt5-charts --noconfirm
-        - yay -S mingw-w64-qt5-3d --noconfirm
-        - yay -S mingw-w64-qt5-connectivity --noconfirm
-        - yay -S mingw-w64-zstd --noconfirm
-        - yay -S mingw-w64-lz4 --noconfirm
-        - yay -S mingw-w64-zlib --noconfirm
-        - yay -S mingw-w64-leveldb --noconfirm
-        - yay -S mingw-w64-portaudio --noconfirm
-        - yay -S mingw-w64-libusb --noconfirm
-        - yay -S mingw-w64-fftw --noconfirm
-        - yay -S mingw-w64-qwt --noconfirm
-        - yay -S mingw-w64-libogg --noconfirm
-        - yay -S mingw-w64-libvorbis --noconfirm
-        - yay -S mingw-w64-opus --noconfirm
-        - yay -S mingw-w64-opusfile --noconfirm
-        - cd docker/arch/mingw-w64-texinfo && sudo makepkg -sri
-        - cd ./..
-        - cd mingw-w64-libusb-compat-0.1 && sudo makepkg -sri
-        - cd ./..
-        - cd mingw-w64-hamlib && sudo makepkg -sri
-        - cd ./../../..
-        - sudo strip --remove-section=.note.ABI-tag /usr/lib64/libQt5Core.so.5
-        - mkdir -p artifact-build
-        - cd artifact-build
-        - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE="~/toolchains/x86_64-w64-mingw32_linux.cmake" ..
-        - make -j 4
-        - cd ..
+        - yay -S gcc --noconfirm
+        - yay -S qt5-base --noconfirm
+        - yay -S qt5-tools --noconfirm
+        - yay -S qt5-serialport --noconfirm
+        - yay -S qt5-sensors --noconfirm
+        - yay -S qt5-imageformats --noconfirm
+        - yay -S qt5-translations --noconfirm
+        - yay -S qt5-svg --noconfirm
+        - yay -S qt5-multimedia --noconfirm
+        - yay -S qt5-xmlpatterns --noconfirm
+        - yay -S qt5-winextras --noconfirm
+        - yay -S qt5-charts --noconfirm
+        - yay -S qt5-3d --noconfirm
+        - yay -S qt5-connectivity --noconfirm
+        - yay -S zstd --noconfirm
+        - yay -S lz4 --noconfirm
+        - yay -S zlib --noconfirm
+        - yay -S leveldb --noconfirm
+        - yay -S portaudio --noconfirm
+        - yay -S libusb --noconfirm
+        - yay -S fftw --noconfirm
+        - yay -S qwt --noconfirm
+        - yay -S libogg --noconfirm
+        - yay -S libvorbis --noconfirm
+        - yay -S opus --noconfirm
+        - yay -S opusfile --noconfirm
+        - yay -S texinfo --noconfirm
+        - yay -S libusb-compat --noconfirm
+        - yay -S git --noconfirm
+        - git clone https://github.com/Hamlib/Hamlib.git
+        - cd Hamlib && mkdir build && cd build
+        - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=YES ..
+        - make -j 6
+        - sudo make install
+        - cd ./../..
     after_script:
-        - echo "Finished execution of Microsoft Window's (i.e. MinGW) build and primary stage!"
+        - echo "Finished execution of Preparatory Build and secondary, lesser stage!"
     when: always
 
 ### --------------------------------------------------------------------------------------------------- ###
 
-sworld_debug_linux_x86_64:
-    stage: sworld_debug_linux_x86_64
-    image: burningdaylight/docker-mingw-qt5:latest
+sworld_debug_archlinux_x86_64:
+    stage: sworld_debug_archlinux_x86_64
+    image: archlinux:latest
     dependencies:
-        - sworld_debug_mingw_x86_64
-    cache:
-        paths:
-            - "binaries/*.deb"
+        - sworld_prepare_archlinux_x86_64
     tags:
-        - "debug-build"
+        - "small-world-deluxe_debug"
     script:
-        - sudo pacman -Sy --noconfirm
-        - sudo pacman -Syu --noconfirm
-        - sudo pacman -S boost --noconfirm
-        - sudo pacman -S boost-libs --noconfirm
-        - sudo pacman -S qt5-base --noconfirm
-        - sudo pacman -S qt5-imageformats --noconfirm
-        - sudo pacman -S qt5-multimedia --noconfirm
-        - sudo pacman -S qt5-sensors --noconfirm
-        - sudo pacman -S qt5-serialbus --noconfirm
-        - sudo pacman -S qt5-serialport --noconfirm
-        - sudo pacman -S qt5-svg --noconfirm
-        - sudo pacman -S qt5-systems --noconfirm
-        - sudo pacman -S qt5-tools --noconfirm
-        - sudo pacman -S qt5-translations --noconfirm
-        - sudo pacman -S qt5-wayland --noconfirm
-        - sudo pacman -S qt5-xmlpatterns --noconfirm
-        - sudo pacman -S qtspell --noconfirm
-        - sudo pacman -S portaudio --noconfirm
-        - sudo pacman -S zstd --noconfirm
-        - sudo pacman -S leveldb --noconfirm
-        - sudo pacman -S lz4 --noconfirm
-        - sudo pacman -S zlib --noconfirm
-        - sudo pacman -S libusb --noconfirm
-        - sudo pacman -S fftw --noconfirm
-        - sudo pacman -S qwt --noconfirm
-        - sudo pacman -S qwtpolar --noconfirm
-        - sudo pacman -S libogg --noconfirm
-        - sudo pacman -S libvorbis --noconfirm
-        - sudo pacman -S opus --noconfirm
-        - sudo pacman -S opusfile --noconfirm
-        - sudo pacman -S opus-tools --noconfirm
-        - sudo pacman -S texinfo --noconfirm
-        - sudo pacman -S hamlib --noconfirm
-        - sudo strip --remove-section=.note.ABI-tag /usr/lib64/libQt5Core.so.5'
         - mkdir -p artifact-build
         - cd artifact-build
-        - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug ..
-        - make -j 4
+        - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DGFYRE_BUILD_STATIC=ON -DBoost_USE_STATIC_LIBS=ON -DBUILD_CODEC2_SUPPORT=ON -DBUILD_OPUS_SUPPORT=ON ..
+        - make -j 6
         - cd ..
     after_script:
-        - echo "Finished execution of both the Linux build and the secondary stage!"
+        - echo "Finished execution of both the Linux debug, primary build and the secondary, preparatory stage!"
     when: always
 
 ### --------------------------------------------------------------------------------------------------- ###
@@ -181,8 +137,7 @@ sworld_debug_linux_x86_64:
 #
 spotbugs-sast:
     dependencies:
-        - sworld_debug_mingw_x86_64
-        - sworld_debug_linux_x86_64
+        - sworld_debug_archlinux_x86_64
     script:
         - /analyzer run -compile=false
     variables:
