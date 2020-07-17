@@ -76,7 +76,6 @@ sworld_prepare_archlinux_x86_64:
         - pacman -S python --noconfirm
         - pacman -S gdb --noconfirm
         - pacman -S clang --noconfirm
-        - pacman -S autoreconf --noconfirm
         - pacman -S automake --noconfirm
         - pacman -S autoconf --noconfirm
         - pacman -S autoconf-archive --noconfirm
