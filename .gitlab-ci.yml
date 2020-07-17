@@ -68,8 +68,8 @@ sworld_prepare_archlinux_x86_64:
     stage: sworld_prepare_archlinux_x86_64
     image: archlinux:latest
     script:
-        - sudo pacman -Sy --noconfirm
-        - sudo pacman -Syu --noconfirm
+        - pacman -Sy --noconfirm
+        - pacman -Syu --noconfirm
         - yay -S gcc --noconfirm
         - yay -S qt5-base --noconfirm
         - yay -S qt5-tools --noconfirm
@@ -103,7 +103,7 @@ sworld_prepare_archlinux_x86_64:
         - cd Hamlib && mkdir build && cd build
         - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=YES ..
         - make -j 6
-        - sudo make install
+        - make install
         - cd ./../..
     after_script:
         - echo "Finished execution of Preparatory Build and secondary, lesser stage!"
