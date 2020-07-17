@@ -376,7 +376,9 @@ qt5_wrap_ui(UI_HEADERS
     src/ui/spectrodialog.ui
     src/ui/gkaudioplaydialog.ui)
 
-qt5_add_resources(UI_RESOURCES src/sworld_res.qrc)
+# https://doc.qt.io/qt-5/cmake-command-reference.html
+# rcc -no-compress -binary smallworld_res.qrc -o smallworld_res.rcc
+qt5_add_resources(UI_RESOURCES src/sworld_res.qrc OPTIONS -binary -compress-algo zstd -compress 19)
 
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_BINARY_DIR})
@@ -644,9 +646,8 @@ endif(GFYRE_BUILD_SHARED)
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
 target_link_libraries(galaxy ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::SerialPort Qt5::PrintSupport Threads::Threads SingleApplication::SingleApplication ${LIBS})
 
-# rcc -no-compress -binary smallworld_res.qrc -o smallworld_res.rcc
-qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)
-add_dependencies(galaxy resources)
+# qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)
+# add_dependencies(galaxy resources)
 
 set(SWRLD_EXEC ${SWRLD_EXEC}
     src/main.cpp)

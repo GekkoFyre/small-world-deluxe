@@ -1466,7 +1466,23 @@ void DialogSettings::on_comboBox_ptt_method_port_currentIndexChanged(int index)
 {
     try {
         if (index > 0) { // Make sure that we haven't selected the dummy retainer item, "N/A"!
-            // Process port change!
+            for (const auto &ptt_port_list: status_com_ports) {
+                for (const auto &usb_port_list: available_usb_ports.toStdMap()) {
+                    if (usb_port_list.first == ui->comboBox_ptt_method_port->currentData().toString()) {
+                        // A USB port has been found!
+                        emit changeConnPort(usb_port_list.first, GkConnMethod::CAT);
+                    } else if (ptt_port_list.port_info.portName() == ui->comboBox_ptt_method_port->currentData().toString()) {
+                        // An RS232/Serial port has been found!
+                        #ifdef _UNICODE
+                        ui->lineEdit_device_port_name->setText(QString::fromStdWString(com_port_list.second.first));
+                        #else
+                        ui->lineEdit_device_port_name->setText(ptt_port_list.port_info.systemLocation());
+                        #endif
+
+                        emit changeConnPort(ptt_port_list.port_info.portName(), GkConnMethod::CAT);
+                    }
+                }
+            }
         }
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);

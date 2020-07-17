@@ -88,7 +88,7 @@ public:
     GekkoFyre::AmateurRadio::GkConnType convGkConnTypeToEnum(const QString &conn_type);
     rig_port_e convGkConnTypeToHamlib(const GekkoFyre::AmateurRadio::GkConnType &conn_type);
 
-    void gkInitRadioRig(std::shared_ptr<AmateurRadio::Control::GkRadio> radio_ptr, std::shared_ptr<Database::Settings::GkUsbPort> usb_ptr);
+    void gkInitRadioRig(std::shared_ptr<AmateurRadio::Control::GkRadio> radio_ptr);
     qint16 calibrateAudioInputSignal(const qint16 *data_buf);
 
     libusb_context *initUsbLib();

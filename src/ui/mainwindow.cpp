@@ -256,7 +256,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                  this, SLOT(disconnectRigInMemory(std::shared_ptr<Rig>, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
 
                 //
-                // Events logger
+                // Initialize the Events logger
                 //
                 QPointer<GkEventLoggerTableViewModel> gkEventLoggerModel = new GkEventLoggerTableViewModel(GkDb, this);
                 ui->tableView_maingui_logs->setModel(gkEventLoggerModel);
@@ -277,14 +277,17 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                     gkRadioPtr = std::make_shared<GkRadio>();
                 }
 
-                gkRadioPtr = readRadioSettings();
-                emit addRigInUse(gkRadioPtr->rig_model, gkRadioPtr);
-
-                // Initialize USB devices!
-                gkRadioLibs = new GekkoFyre::RadioLibs(fileIo, gkStringFuncs, GkDb, gkRadioPtr, gkEventLogger, this);
+                //
+                // Initialize the all-important `GkRadioPtr`!
+                //
                 status_com_ports = gkRadioLibs->status_com_ports();
                 usb_ctx_ptr = gkRadioLibs->initUsbLib();
                 gkUsbPortPtr = std::make_shared<GkUsbPort>();
+                gkRadioPtr = readRadioSettings();
+                emit addRigInUse(gkRadioPtr->rig_model, gkRadioPtr);
+
+                // Initialize the other radio libraries!
+                gkRadioLibs = new GekkoFyre::RadioLibs(fileIo, gkStringFuncs, GkDb, gkRadioPtr, gkEventLogger, this);
 
                 //
                 // Setup the SIGNALS & SLOTS for `gkRadioLibs`...
@@ -480,6 +483,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         label_sstv_tx_image->setText("");
         label_sstv_rx_live_image->setText("");
         label_sstv_rx_saved_image->setText("");
+
+        label_sstv_rx_live_image->setPixmap(QPixmap(":/resources/contrib/images/raster/unknown-author/sstv/sstv-image-placeholder.jpg"));
 
         //
         // This connects `widget_mesg_outgoing` to any transmission protocols, such as Codec2!
@@ -716,7 +721,7 @@ bool MainWindow::radioInitStart()
         // Initialize Hamlib!
         //
         gkRadioPtr->is_open = false;
-        rig_thread = std::thread(&RadioLibs::gkInitRadioRig, gkRadioLibs, gkRadioPtr, gkUsbPortPtr);
+        rig_thread = std::thread(&RadioLibs::gkInitRadioRig, gkRadioLibs, gkRadioPtr);
         rig_thread.detach();
 
         return true;
@@ -757,6 +762,42 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
 
         std::shared_ptr<GkRadio> gk_radio_tmp = std::make_shared<GkRadio>();
 
+        //
+        // CAT Port
+        //
+        QString comDeviceCat = GkDb->read_rig_settings_comms(radio_cfg::ComDeviceCat);
+        if (!comDeviceCat.isNull() && !comDeviceCat.isEmpty()) {
+            // Verify that the port still exists!
+            for (const auto &port: status_com_ports) {
+                if (comDeviceCat == port.port_info.portName()) {
+                    // The port does indeed continue to exist!
+                    gk_radio_tmp->cat_conn_port = comDeviceCat;
+                    gkEventLogger->publishEvent(tr("Successfully found a port for making a CAT connection with (%1)!").arg(comDeviceCat), GkSeverity::Info);
+                }
+            }
+        } else {
+            // No ports could be found!
+            gkEventLogger->publishEvent(tr("Error with enumerating out ports for CAT connections. Please check that your settings are valid."), GkSeverity::Warning);
+        }
+
+        //
+        // PTT Port
+        //
+        QString comDevicePtt = GkDb->read_rig_settings_comms(radio_cfg::ComDevicePtt);
+        if (!comDevicePtt.isNull() && !comDevicePtt.isEmpty()) {
+            // Verify that the port still exists!
+            for (const auto &port: status_com_ports) {
+                if (comDevicePtt == port.port_info.portName()) {
+                    // The port does indeed continue to exist!
+                    gk_radio_tmp->ptt_conn_port = comDevicePtt;
+                    gkEventLogger->publishEvent(tr("Successfully found a port for making a PTT connection with (%1)!").arg(comDevicePtt), GkSeverity::Info);
+                }
+            }
+        } else {
+            // No ports could be found!
+            gkEventLogger->publishEvent(tr("Error with enumerating out ports for PTT connections. Please check that your settings are valid."), GkSeverity::Warning);
+        }
+
         if (!rigBrand.isNull() || !rigBrand.isEmpty()) { // The manufacturer!
             int conv_rig_brand = rigBrand.toInt();
             gk_radio_tmp->rig_brand = conv_rig_brand;
@@ -781,6 +822,8 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
         } else {
             gk_radio_tmp->port_details.parm.serial.rate = 38400;
         }
+
+        gkEventLogger->publishEvent(tr("Using a serial baud rate of %1 bps.").arg(QString::number(gk_radio_tmp->port_details.parm.serial.rate)), GkSeverity::Info);
 
         if (!stopBits.isNull() || !stopBits.isEmpty()) {
             int conv_serial_stop_bits = stopBits.toInt();
@@ -1896,8 +1939,19 @@ void MainWindow::closeEvent(QCloseEvent *event)
  */
 void MainWindow::procRigPort(const QString &conn_port, const GekkoFyre::AmateurRadio::GkConnMethod &conn_method)
 {
-    Q_UNUSED(conn_port);
-    Q_UNUSED(conn_method);
+    try {
+        if (conn_method == GkConnMethod::CAT) {
+            // CAT
+            gkRadioPtr->cat_conn_port = conn_port;
+        } else if (conn_method == GkConnMethod::PTT) {
+            // PTT
+            gkRadioPtr->ptt_conn_port = conn_port;
+        } else {
+            throw std::invalid_argument(tr("An error was encountered in determining the connection method used for your radio rig!").toStdString());
+        }
+    }  catch (const std::exception &e) {
+        std::throw_with_nested(std::invalid_argument(e.what()));
+    }
 
     return;
 }
@@ -2052,7 +2106,7 @@ void MainWindow::disconnectRigInMemory(std::shared_ptr<Rig> rig_to_disconnect, c
                     //
                     // CAT Port
                     //
-                    if (std::strcmp(radio_ptr->cat_conn_port.c_str(), port.port_info.portName().toStdString().c_str()) == 0) {
+                    if (radio_ptr->cat_conn_port == port.port_info.portName()) {
                         QSerialPort serial(port.port_info);
                         if (serial.isOpen()) {
                             serial.close();
@@ -2062,7 +2116,7 @@ void MainWindow::disconnectRigInMemory(std::shared_ptr<Rig> rig_to_disconnect, c
                     //
                     // PTT Port
                     //
-                    if (std::strcmp(radio_ptr->ptt_conn_port.c_str(), port.port_info.portName().toStdString().c_str()) == 0) {
+                    if (radio_ptr->ptt_conn_port == port.port_info.portName()) {
                         QSerialPort serial(port.port_info);
                         if (serial.isOpen()) {
                             serial.close();

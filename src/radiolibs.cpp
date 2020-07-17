@@ -643,7 +643,7 @@ bool RadioLibs::modalDlgBoxLinux(uint32_t flags, const QString &title, const QSt
  * @param usb_ptr A pointer which contains all the information on user's configured USB devices, if any.
  * @note Ref: HamLib <https://github.com/Hamlib/Hamlib/>. Example: <https://github.com/Hamlib/Hamlib/blob/master/tests/example.c>
  */
-void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_ptr<GkUsbPort> usb_ptr)
+void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr)
 {
     std::mutex mtx_init_rig;
     std::lock_guard<std::mutex> lck_guard(mtx_init_rig);
@@ -745,9 +745,9 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_p
         //
         // Determine the port necessary and let Hamlib know about it!
         //
-        if (!radio_ptr->cat_conn_port.empty()) {
-            radio_ptr->gkRig->setConf("ptt_pathname", radio_ptr->ptt_conn_port.c_str());
-            radio_ptr->gkRig->setConf("rig_pathname", radio_ptr->cat_conn_port.c_str());
+        if (!radio_ptr->cat_conn_port.isNull() && !radio_ptr->cat_conn_port.isEmpty()) {
+            radio_ptr->gkRig->setConf("ptt_pathname", radio_ptr->ptt_conn_port.toStdString().c_str());
+            radio_ptr->gkRig->setConf("rig_pathname", radio_ptr->cat_conn_port.toStdString().c_str());
         }
 
         if (radio_ptr->rig_model < 1) { // No amateur radio rig has been configured and/or adequately detected!

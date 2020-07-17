@@ -547,8 +547,8 @@ namespace AmateurRadio {
             std::string info_buf;                           // Hamlib information buffer
             GkConnType cat_conn_type;                       // The type of connection, whether USB, RS232, etc.
             GkConnType ptt_conn_type;                       // The type of connection, whether USB, RS232, etc.
-            std::string cat_conn_port;                      // The actual port address itself
-            std::string ptt_conn_port;                      // The actual port address itself
+            QString cat_conn_port;                          // The actual port address itself
+            QString ptt_conn_port;                          // The actual port address itself
             std::string mm;                                 // Hamlib modulation mode
             rig_debug_level_e verbosity;                    // The debug level and verbosity of Hamlib
             com_baud_rates dev_baud_rate;                   // Communication device baud rate
