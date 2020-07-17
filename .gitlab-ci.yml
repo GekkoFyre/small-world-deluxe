@@ -71,6 +71,7 @@ sworld_prepare_archlinux_x86_64:
         - pacman -Sy --noconfirm
         - pacman -Syu --noconfirm
         - pacman -S gcc --noconfirm
+        - pacman -S clang --noconfirm
         - pacman -S qt5-base --noconfirm
         - pacman -S qt5-tools --noconfirm
         - pacman -S qt5-serialport --noconfirm
@@ -83,6 +84,9 @@ sworld_prepare_archlinux_x86_64:
         - pacman -S qt5-charts --noconfirm
         - pacman -S qt5-3d --noconfirm
         - pacman -S qt5-connectivity --noconfirm
+        - pacman -S boost --noconfirm
+        - pacman -S codec2 --noconfirm
+        - pacman -S sdl2 --noconfirm
         - pacman -S zstd --noconfirm
         - pacman -S lz4 --noconfirm
         - pacman -S zlib --noconfirm
@@ -98,11 +102,16 @@ sworld_prepare_archlinux_x86_64:
         - pacman -S texinfo --noconfirm
         - pacman -S libusb-compat --noconfirm
         - pacman -S git --noconfirm
+        - pacman -S cmake --noconfirm
+        - wget https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.16.tar.gz
+        - tar -xvzf libiconv-1.16.tar.gz && cd libiconv-1.16
+        - ./configure --enable-static --enable-shared
+        - make -j 6 && make install
+        - cd ./..
         - git clone https://github.com/Hamlib/Hamlib.git
         - cd Hamlib && mkdir build && cd build
         - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=YES ..
-        - make -j 6
-        - make install
+        - make -j 6 && make install
         - cd ./../..
     after_script:
         - echo "Finished execution of Preparatory Build and secondary, lesser stage!"
