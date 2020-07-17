@@ -70,35 +70,35 @@ sworld_prepare_archlinux_x86_64:
     script:
         - pacman -Sy --noconfirm
         - pacman -Syu --noconfirm
-        - yay -S gcc --noconfirm
-        - yay -S qt5-base --noconfirm
-        - yay -S qt5-tools --noconfirm
-        - yay -S qt5-serialport --noconfirm
-        - yay -S qt5-sensors --noconfirm
-        - yay -S qt5-imageformats --noconfirm
-        - yay -S qt5-translations --noconfirm
-        - yay -S qt5-svg --noconfirm
-        - yay -S qt5-multimedia --noconfirm
-        - yay -S qt5-xmlpatterns --noconfirm
-        - yay -S qt5-winextras --noconfirm
-        - yay -S qt5-charts --noconfirm
-        - yay -S qt5-3d --noconfirm
-        - yay -S qt5-connectivity --noconfirm
-        - yay -S zstd --noconfirm
-        - yay -S lz4 --noconfirm
-        - yay -S zlib --noconfirm
-        - yay -S leveldb --noconfirm
-        - yay -S portaudio --noconfirm
-        - yay -S libusb --noconfirm
-        - yay -S fftw --noconfirm
-        - yay -S qwt --noconfirm
-        - yay -S libogg --noconfirm
-        - yay -S libvorbis --noconfirm
-        - yay -S opus --noconfirm
-        - yay -S opusfile --noconfirm
-        - yay -S texinfo --noconfirm
-        - yay -S libusb-compat --noconfirm
-        - yay -S git --noconfirm
+        - pacman -S gcc --noconfirm
+        - pacman -S qt5-base --noconfirm
+        - pacman -S qt5-tools --noconfirm
+        - pacman -S qt5-serialport --noconfirm
+        - pacman -S qt5-sensors --noconfirm
+        - pacman -S qt5-imageformats --noconfirm
+        - pacman -S qt5-translations --noconfirm
+        - pacman -S qt5-svg --noconfirm
+        - pacman -S qt5-multimedia --noconfirm
+        - pacman -S qt5-xmlpatterns --noconfirm
+        - pacman -S qt5-winextras --noconfirm
+        - pacman -S qt5-charts --noconfirm
+        - pacman -S qt5-3d --noconfirm
+        - pacman -S qt5-connectivity --noconfirm
+        - pacman -S zstd --noconfirm
+        - pacman -S lz4 --noconfirm
+        - pacman -S zlib --noconfirm
+        - pacman -S leveldb --noconfirm
+        - pacman -S portaudio --noconfirm
+        - pacman -S libusb --noconfirm
+        - pacman -S fftw --noconfirm
+        - pacman -S qwt --noconfirm
+        - pacman -S libogg --noconfirm
+        - pacman -S libvorbis --noconfirm
+        - pacman -S opus --noconfirm
+        - pacman -S opusfile --noconfirm
+        - pacman -S texinfo --noconfirm
+        - pacman -S libusb-compat --noconfirm
+        - pacman -S git --noconfirm
         - git clone https://github.com/Hamlib/Hamlib.git
         - cd Hamlib && mkdir build && cd build
         - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=YES ..
