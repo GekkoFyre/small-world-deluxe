@@ -843,14 +843,12 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
                 //
                 // CAT Control
                 //
-                ui->comboBox_com_port->insertItem(counter, QString::fromStdString(port.port_info.portName().toStdString()),
-                                                  QString::fromStdString(port.port_info.portName().toStdString()));
+                ui->comboBox_com_port->insertItem(counter, port.port_info.portName(), port.port_info.portName());
 
                 //
                 // PTT Method
                 //
-                ui->comboBox_ptt_method_port->insertItem(counter, QString::fromStdString(port.port_info.portName().toStdString()),
-                                                         QString::fromStdString(port.port_info.portName().toStdString()));\
+                ui->comboBox_ptt_method_port->insertItem(counter, port.port_info.portName(), port.port_info.portName());
 
                 available_com_ports.insert(port.port_info.description(), counter);
             }
@@ -862,7 +860,7 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
             if (!comDeviceCat.isEmpty() && !available_com_ports.isEmpty()) {
                 for (const auto &sel_port: available_com_ports.toStdMap()) {
                     for (const auto &device: status_com_ports) {
-                        if ((device.port_info.description() == sel_port.first) && (comDeviceCat.toStdString() == device.port_info.portName().toStdString())) {
+                        if ((device.port_info.description() == sel_port.first) && (comDeviceCat == device.port_info.portName())) {
                             // NOTE: The recorded setting used to identify the chosen serial device is the COM Port name
                             ui->comboBox_com_port->setCurrentIndex(sel_port.second);
                             on_comboBox_com_port_currentIndexChanged(sel_port.second);
@@ -878,7 +876,7 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
             if (!comDevicePtt.isEmpty() && !available_com_ports.isEmpty()) {
                 for (const auto &sel_port: available_com_ports.toStdMap()) {
                     for (const auto &device: status_com_ports) {
-                        if ((device.port_info.description() == sel_port.first) && (comDevicePtt.toStdString() == device.port_info.portName().toStdString())) {
+                        if ((device.port_info.description() == sel_port.first) && (comDevicePtt == device.port_info.portName())) {
                             // NOTE: The recorded setting used to identify the chosen serial device is the COM Port name
                             ui->comboBox_ptt_method_port->setCurrentIndex(sel_port.second);
                             on_comboBox_ptt_method_port_currentIndexChanged(sel_port.second);
@@ -1470,7 +1468,7 @@ void DialogSettings::on_comboBox_ptt_method_port_currentIndexChanged(int index)
                 for (const auto &usb_port_list: available_usb_ports.toStdMap()) {
                     if (usb_port_list.first == ui->comboBox_ptt_method_port->currentData().toString()) {
                         // A USB port has been found!
-                        emit changeConnPort(usb_port_list.first, GkConnMethod::CAT);
+                        emit changeConnPort(usb_port_list.first, GkConnMethod::PTT);
                     } else if (ptt_port_list.port_info.portName() == ui->comboBox_ptt_method_port->currentData().toString()) {
                         // An RS232/Serial port has been found!
                         #ifdef _UNICODE
@@ -1479,7 +1477,7 @@ void DialogSettings::on_comboBox_ptt_method_port_currentIndexChanged(int index)
                         ui->lineEdit_device_port_name->setText(ptt_port_list.port_info.systemLocation());
                         #endif
 
-                        emit changeConnPort(ptt_port_list.port_info.portName(), GkConnMethod::CAT);
+                        emit changeConnPort(ptt_port_list.port_info.portName(), GkConnMethod::PTT);
                     }
                 }
             }

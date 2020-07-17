@@ -103,6 +103,7 @@ sworld_prepare_archlinux_x86_64:
         - pacman -S libusb-compat --noconfirm
         - pacman -S git --noconfirm
         - pacman -S cmake --noconfirm
+        - pacman -S wget --noconfirm
         - wget https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.16.tar.gz
         - tar -xvzf libiconv-1.16.tar.gz && cd libiconv-1.16
         - ./configure --enable-static --enable-shared
