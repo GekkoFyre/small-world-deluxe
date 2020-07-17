@@ -70,8 +70,16 @@ sworld_prepare_archlinux_x86_64:
     script:
         - pacman -Sy --noconfirm
         - pacman -Syu --noconfirm
+        - pacman -S base-devel --noconfirm
         - pacman -S gcc --noconfirm
+        - pacman -S octave --noconfirm
+        - pacman -S python --noconfirm
+        - pacman -S gdb --noconfirm
         - pacman -S clang --noconfirm
+        - pacman -S autoreconf --noconfirm
+        - pacman -S automake --noconfirm
+        - pacman -S autoconf --noconfirm
+        - pacman -S autoconf-archive --noconfirm
         - pacman -S qt5-base --noconfirm
         - pacman -S qt5-tools --noconfirm
         - pacman -S qt5-serialport --noconfirm
