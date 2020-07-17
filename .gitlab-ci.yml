@@ -80,7 +80,6 @@ sworld_prepare_archlinux_x86_64:
         - pacman -S qt5-svg --noconfirm
         - pacman -S qt5-multimedia --noconfirm
         - pacman -S qt5-xmlpatterns --noconfirm
-        - pacman -S qt5-winextras --noconfirm
         - pacman -S qt5-charts --noconfirm
         - pacman -S qt5-3d --noconfirm
         - pacman -S qt5-connectivity --noconfirm
