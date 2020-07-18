@@ -109,6 +109,7 @@ sworld_debug_archlinux_x86_64:
         - pacman -S opusfile --noconfirm
         - pacman -S texinfo --noconfirm
         - pacman -S libusb-compat --noconfirm
+        - pacman -S hamlib --noconfirm
         - pacman -S git --noconfirm
         - pacman -S cmake --noconfirm
         - pacman -S wget --noconfirm
@@ -116,11 +117,6 @@ sworld_debug_archlinux_x86_64:
         - export CXX=/usr/bin/clang++
         - wget https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.16.tar.gz
         - tar -xvzf libiconv-1.16.tar.gz && cd libiconv-1.16
-        - ./configure --enable-static --enable-shared
-        - make -j 6 && make install
-        - cd ./..
-        - git clone https://github.com/Hamlib/Hamlib.git
-        - cd Hamlib && ./bootstrap
         - ./configure --enable-static --enable-shared
         - make -j 6 && make install
         - cd ./..
