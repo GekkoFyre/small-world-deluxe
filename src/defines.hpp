@@ -536,7 +536,7 @@ namespace AmateurRadio {
             std::shared_ptr<Rig> gkRig;                     // Hamlib rig pointer
             int rig_brand;                                  // Hamlib rig brand/manufacturer
             rig_model_t rig_model;                          // The actual amateur radio rig itself!
-            std::unique_ptr<capabilities> capabilities;     // Read-only; the capabilities of the configured amateur radio rig in question, as defined by Hamlib.
+            std::unique_ptr<rig_caps> capabilities;         // Read-only; the capabilities of the configured amateur radio rig in question, as defined by Hamlib.
             std::unique_ptr<rig_state> rig_status;          // Rig state containing live data and customized fields
             powerstat_t power_status;                       // Whether the radio rig is electrically powered on or off
             hamlib_port_t port_details;                     // Information concerning details about RS232 ports, etc.
