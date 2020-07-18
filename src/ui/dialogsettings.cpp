@@ -1098,8 +1098,8 @@ bool DialogSettings::read_settings()
         if (!comBaudRate.isEmpty()) {
             ui->comboBox_baud_rate->setCurrentIndex(comBaudRate.toInt());
         } else {
-            if (gkRadioPtr->rig_caps != nullptr) {
-                ui->comboBox_baud_rate->setCurrentIndex(gkRadioLibs->convertBaudRateFromEnum(gkRadioLibs->convertBaudRateIntToEnum(gkRadioPtr->rig_caps->serial_rate_min)));
+            if (gkRadioPtr->capabilities != nullptr) {
+                ui->comboBox_baud_rate->setCurrentIndex(gkRadioLibs->convertBaudRateFromEnum(gkRadioLibs->convertBaudRateIntToEnum(gkRadioPtr->capabilities->serial_rate_min)));
             }
         }
 
@@ -1120,8 +1120,8 @@ bool DialogSettings::read_settings()
                 throw std::invalid_argument(tr("Invalid value for amount of Stop Bits!").toStdString());
             }
         } else {
-            if (gkRadioPtr->rig_caps != nullptr) {
-                switch (gkRadioPtr->rig_caps->serial_stop_bits) {
+            if (gkRadioPtr->capabilities != nullptr) {
+                switch (gkRadioPtr->capabilities->serial_stop_bits) {
                 case 0:
                     ui->radioButton_stop_bits_default->setDown(true);
                     ui->radioButton_stop_bits_one->setDown(false);
@@ -1160,8 +1160,8 @@ bool DialogSettings::read_settings()
                 throw std::invalid_argument(tr("Invalid value for amount of Data Bits!").toStdString());
             }
         } else {
-            if (gkRadioPtr->rig_caps != nullptr) {
-                switch (gkRadioPtr->rig_caps->serial_data_bits) {
+            if (gkRadioPtr->capabilities != nullptr) {
+                switch (gkRadioPtr->capabilities->serial_data_bits) {
                 case 0:
                     ui->radioButton_data_bits_default->setDown(true);
                     ui->radioButton_data_bits_seven->setDown(false);
@@ -1203,8 +1203,8 @@ bool DialogSettings::read_settings()
                 throw std::invalid_argument(tr("Invalid value for amount of Stop Bits!").toStdString());
             }
         } else {
-            if (gkRadioPtr->rig_caps != nullptr) {
-                switch (gkRadioPtr->rig_caps->serial_handshake) {
+            if (gkRadioPtr->capabilities != nullptr) {
+                switch (gkRadioPtr->capabilities->serial_handshake) {
                 case serial_handshake_e::RIG_HANDSHAKE_NONE:
                     ui->radioButton_handshake_none->setDown(true);
                     ui->radioButton_handshake_xon_xoff->setDown(false);
@@ -1263,8 +1263,8 @@ bool DialogSettings::read_settings()
                 throw std::invalid_argument(tr("Invalid value for amount of PTT Method!").toStdString());
             }
         } else {
-            if (gkRadioPtr->rig_caps != nullptr) {
-                switch (gkRadioPtr->rig_caps->ptt_type) {
+            if (gkRadioPtr->capabilities != nullptr) {
+                switch (gkRadioPtr->capabilities->ptt_type) {
                 case ptt_type_t::RIG_PTT_RIG_MICDATA:
                     ui->radioButton_ptt_method_vox->setDown(true);
                     ui->radioButton_ptt_method_dtr->setDown(false);
@@ -1844,10 +1844,10 @@ void DialogSettings::on_comboBox_rig_selection_currentIndexChanged(int index)
 
     emit recvRigCapabilities(ui->comboBox_rig_selection->currentData().toInt(), gkRadioPtr);
 
-    if (gkRadioPtr->rig_caps != nullptr) {
-        ui->comboBox_baud_rate->setCurrentIndex(gkRadioLibs->convertBaudRateFromEnum(gkRadioLibs->convertBaudRateIntToEnum(gkRadioPtr->rig_caps->serial_rate_min)));
+    if (gkRadioPtr->capabilities != nullptr) {
+        ui->comboBox_baud_rate->setCurrentIndex(gkRadioLibs->convertBaudRateFromEnum(gkRadioLibs->convertBaudRateIntToEnum(gkRadioPtr->capabilities->serial_rate_min)));
 
-        switch (gkRadioPtr->rig_caps->serial_stop_bits) {
+        switch (gkRadioPtr->capabilities->serial_stop_bits) {
         case 0:
             ui->radioButton_stop_bits_default->setDown(true);
             ui->radioButton_stop_bits_one->setDown(false);
@@ -1867,7 +1867,7 @@ void DialogSettings::on_comboBox_rig_selection_currentIndexChanged(int index)
             throw std::invalid_argument(tr("Invalid value for amount of Stop Bits!").toStdString());
         }
 
-        switch (gkRadioPtr->rig_caps->serial_data_bits) {
+        switch (gkRadioPtr->capabilities->serial_data_bits) {
         case 0:
             ui->radioButton_data_bits_default->setDown(true);
             ui->radioButton_data_bits_seven->setDown(false);
@@ -1887,7 +1887,7 @@ void DialogSettings::on_comboBox_rig_selection_currentIndexChanged(int index)
             throw std::invalid_argument(tr("Invalid value for amount of Data Bits!").toStdString());
         }
 
-        switch (gkRadioPtr->rig_caps->serial_handshake) {
+        switch (gkRadioPtr->capabilities->serial_handshake) {
         case serial_handshake_e::RIG_HANDSHAKE_NONE:
             ui->radioButton_handshake_none->setDown(true);
             ui->radioButton_handshake_xon_xoff->setDown(false);
@@ -1914,7 +1914,7 @@ void DialogSettings::on_comboBox_rig_selection_currentIndexChanged(int index)
             break;
         }
 
-        switch (gkRadioPtr->rig_caps->ptt_type) {
+        switch (gkRadioPtr->capabilities->ptt_type) {
         case ptt_type_t::RIG_PTT_RIG_MICDATA:
             ui->radioButton_ptt_method_vox->setDown(true);
             ui->radioButton_ptt_method_dtr->setDown(false);

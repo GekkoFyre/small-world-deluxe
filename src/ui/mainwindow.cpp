@@ -1338,8 +1338,8 @@ void MainWindow::on_action_Disconnect_triggered()
     try {
         QMessageBox msgBox;
         msgBox.setWindowTitle(tr("Disconnect"));
-        if ((gkRadioPtr.get() != nullptr) && (gkRadioPtr->rig_caps.get() != nullptr) && (gkRadioPtr->rig_caps->model_name != nullptr)) {
-            msgBox.setText(tr("Are you sure you wish to disconnect from your [ %1 ] radio rig?").arg(QString::fromStdString(gkRadioPtr->rig_caps->model_name)));
+        if ((gkRadioPtr.get() != nullptr) && (gkRadioPtr->capabilities.get() != nullptr) && (gkRadioPtr->capabilities->model_name != nullptr)) {
+            msgBox.setText(tr("Are you sure you wish to disconnect from your [ %1 ] radio rig?").arg(QString::fromStdString(gkRadioPtr->capabilities->model_name)));
         } else {
             msgBox.setText(tr("Are you sure you wish to disconnect from your radio rig?"));
         }
@@ -2048,8 +2048,8 @@ void MainWindow::gatherRigCapabilities(const rig_model_t &rig_model_update,
             for (const auto &model: gkRadioModels.toStdMap()) {
                 if (rig_model_update == model.first) {
                     // We have the desired amateur radio rig in question!
-                    radio_ptr->rig_caps.reset();
-                    radio_ptr->rig_caps = std::make_unique<rig_caps>(*std::get<0>(model.second));
+                    radio_ptr->capabilities.reset();
+                    radio_ptr->capabilities = std::make_unique<rig_caps>(*std::get<0>(model.second));
 
                     return;
                 }

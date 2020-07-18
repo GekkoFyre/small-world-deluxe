@@ -76,6 +76,9 @@ sworld_debug_archlinux_x86_64:
         - pacman -S python --noconfirm
         - pacman -S gdb --noconfirm
         - pacman -S clang --noconfirm
+        - pacman -S llvm --noconfirm
+        - pacman -S llvm-libs --noconfirm
+        - pacman -S binutils --noconfirm
         - pacman -S automake --noconfirm
         - pacman -S autoconf --noconfirm
         - pacman -S autoconf-archive --noconfirm
@@ -91,8 +94,6 @@ sworld_debug_archlinux_x86_64:
         - pacman -S qt5-charts --noconfirm
         - pacman -S qt5-3d --noconfirm
         - pacman -S qt5-connectivity --noconfirm
-        - pacman -S boost --noconfirm
-        - pacman -S codec2 --noconfirm
         - pacman -S zstd --noconfirm
         - pacman -S lz4 --noconfirm
         - pacman -S zlib --noconfirm
@@ -110,17 +111,27 @@ sworld_debug_archlinux_x86_64:
         - pacman -S git --noconfirm
         - pacman -S cmake --noconfirm
         - pacman -S wget --noconfirm
+        - export CC=/usr/bin/clang
+        - export CXX=/usr/bin/clang++
         - wget https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.16.tar.gz
         - tar -xvzf libiconv-1.16.tar.gz && cd libiconv-1.16
         - ./configure --enable-static --enable-shared
         - make -j 6 && make install
         - cd ./..
+        - wget https://dl.bintray.com/boostorg/release/1.73.0/source/boost_1_73_0.tar.gz
+        - tar -xvzf boost_1_73_0.tar.gz && cd boost_1_73_0 && sh ./bootstrap.sh
+        - ./b2 install address-model=64 instruction-set=native link=static threading=multi runtime-link=shared variant=debug --build-type=complete --layout=versioned
+        - cd ./..
         - git clone https://github.com/Hamlib/Hamlib.git
-        - cd Hamlib
-        - ./bootstrap
+        - cd Hamlib && ./bootstrap
         - ./configure --enable-static --enable-shared
         - make -j 6 && make install
         - cd ./..
+        - git clone https://github.com/drowe67/codec2.git
+        - cd codec2 && mkdir build && cd build
+        - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=NO ..
+        - make -j 6 && make install
+        - cd ./../..
         - strip --remove-section=.note.ABI-tag /usr/lib64/libQt5Core.so.5
     script:
         - mkdir -p artifact-build
