@@ -118,22 +118,25 @@ sworld_debug_archlinux_x86_64:
         - wget https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.16.tar.gz
         - tar -xvzf libiconv-1.16.tar.gz && cd libiconv-1.16
         - ./configure --enable-static --enable-shared
-        - make -j 6 && make install
+        - make -j 8 && make install
         - cd ./..
         - git clone https://github.com/drowe67/codec2.git
         - cd codec2 && mkdir build && cd build
         - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=NO ..
-        - make -j 6 && make install
+        - make -j 8 && make install
         - cd ./../..
         - strip --remove-section=.note.ABI-tag /usr/lib64/libQt5Core.so.5
     script:
-        - mkdir -p artifact-build
-        - cd artifact-build
+        - mkdir -p debug_archlinux_x86_64 && cd debug_archlinux_x86_64
         - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DGFYRE_BUILD_STATIC=ON -DBUILD_CODEC2_SUPPORT=ON -DBUILD_OPUS_SUPPORT=ON ..
-        - make -j 6
-        - cd ..
+        - make -j 8
+        - cd ./..
     after_script:
         - echo "Finished execution of Preparatory Build and secondary, lesser stage!"
+    artifacts:
+        expire_in: 1 week
+        paths:
+            - debug_archlinux_x86_64/
     when: always
 
 ### --------------------------------------------------------------------------------------------------- ###
@@ -146,10 +149,16 @@ spotbugs-sast:
     dependencies:
         - sworld_debug_archlinux_x86_64
     script:
-        - /analyzer run -compile=false
+        - /analyzer run
     variables:
+        SAST_DEFAULT_ANALYZERS: "flawfinder,gitleaks,trufflehog"
         SAST_GOSEC_LEVEL: 2
+        COMPILE: false
+    # https://docs.gitlab.com/ee/ci/yaml/README.html#artifacts
     artifacts:
+        expire_in: 1 week
+        paths:
+            - debug_archlinux_x86_64/
         reports:
             sast: gl-sast-report.json
     allow_failure: true
