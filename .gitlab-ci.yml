@@ -121,7 +121,7 @@ sworld_debug_archlinux_x86_64:
         - ./bootstrap
         - ./configure --enable-static --enable-shared
         - make -j 6 && make install
-        - cd ./../..
+        - cd ./..
     script:
         - mkdir -p artifact-build
         - cd artifact-build
