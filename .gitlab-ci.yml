@@ -127,7 +127,7 @@ sworld_debug_archlinux_x86_64:
         - cd ./../..
         - strip --remove-section=.note.ABI-tag /usr/lib64/libQt5Core.so.5
     script:
-        - mkdir -p debug_archlinux_x86_64 && cd debug_archlinux_x86_64
+        - mkdir -p src_build && cd src_build
         - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DGFYRE_BUILD_STATIC=ON -DBUILD_CODEC2_SUPPORT=ON -DBUILD_OPUS_SUPPORT=ON ..
         - make -j 8
         - cd ./..
@@ -136,7 +136,7 @@ sworld_debug_archlinux_x86_64:
     artifacts:
         expire_in: 1 week
         paths:
-            - debug_archlinux_x86_64/
+            - src_build/
     when: always
 
 ### --------------------------------------------------------------------------------------------------- ###
@@ -149,16 +149,15 @@ spotbugs-sast:
     dependencies:
         - sworld_debug_archlinux_x86_64
     script:
-        - /analyzer run
+        - /analyzer run -compile=false
     variables:
         SAST_DEFAULT_ANALYZERS: "flawfinder,gitleaks,trufflehog"
         SAST_GOSEC_LEVEL: 2
-        COMPILE: false
     # https://docs.gitlab.com/ee/ci/yaml/README.html#artifacts
     artifacts:
         expire_in: 1 week
         paths:
-            - debug_archlinux_x86_64/
+            - src_build/
         reports:
             sast: gl-sast-report.json
     allow_failure: true
