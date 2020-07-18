@@ -187,10 +187,9 @@ private slots:
     void on_doubleSpinBox_freq_calib_slope_valueChanged(double arg1);
 
 signals:
+    void changeConnPort(const QString &conn_port, const GekkoFyre::AmateurRadio::GkConnMethod &conn_method);
     void usbPortsDisabled(const bool &active);
     void comPortsDisabled(const bool &active);
-    void changePortType(const GekkoFyre::AmateurRadio::GkConnType &rig_conn_type, const bool &is_cat_mode);
-    void gatherPortType(const bool &is_cat_mode);
     void recvRigCapabilities(const rig_model_t &, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void addRigInUse(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
 
@@ -235,7 +234,7 @@ private:
     QMap<QString, int> available_com_ports; // For tracking the *available* RS232, etc. device ports that the user can choose from...
 
     // The key is the Port Number for the USB device in question, while the value is what's displayed in the QComboBox...
-    QMap<QString, tstring> available_usb_ports; // For tracking the *available* USB device ports that the user can choose from...
+    QMap<QString, QString> available_usb_ports; // For tracking the *available* USB device ports that the user can choose from...
 
     // The key corresponds to the position within the QComboBoxes
     QMap<int, PaHostApiTypeId> avail_portaudio_api;
@@ -265,7 +264,6 @@ private:
     void prefill_avail_usb_ports(const QMap<std::string, GekkoFyre::Database::Settings::GkUsbPort> usb_devices);
     void prefill_com_baud_speed(const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate);
     void enable_device_port_options();
-    void get_device_port_details(const tstring &port, const tstring &device,
-                                 const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate = GekkoFyre::AmateurRadio::com_baud_rates::BAUD9600);
+
     bool read_settings();
 };

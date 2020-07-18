@@ -42,6 +42,8 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include "src/gk_logger.hpp"
+#include <QMouseEvent>
 #include <QPointer>
 #include <QObject>
 #include <QWidget>
@@ -56,19 +58,35 @@ class GkDisplayImage : public QLabel {
     Q_OBJECT
 
 public:
-    explicit GkDisplayImage(QWidget *parent = nullptr);
+    explicit GkDisplayImage(const GekkoFyre::AmateurRadio::Gui::sstvWindow &sstv_win, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                            QWidget *parent = nullptr);
     ~GkDisplayImage();
 
     virtual int heightForWidth(int width) const;
     virtual QSize sizeHint() const;
     QPixmap scaledPixmap() const;
 
+protected:
+    virtual void mouseReleaseEvent(QMouseEvent *e);
+
 public slots:
     void setPixmap(const QPixmap &p);
     void resizeEvent(QResizeEvent *e);
 
+private slots:
+    void txImage();
+    void loadImage();
+    void copyToClipboard();
+    void saveImage();
+    void clearImages();
+    void delImage();
+
 private:
+    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     QPixmap pixmap;
+    GekkoFyre::AmateurRadio::Gui::sstvWindow sstvWindow;
+
+    QString sstvResource;
 
 };
 };

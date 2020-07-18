@@ -108,12 +108,6 @@ extern "C"
 #define snprintf _snprintf
 #endif
 
-#ifdef _UNICODE
-  typedef std::wstring tstring;
-#else
-  typedef std::string tstring;
-#endif
-
 namespace GekkoFyre {
 
 #define GK_EXIT_TIMEOUT (6)                             // The amount of time, in seconds, to leave 'Small World Deluxe' hanging upon exit before terminating forcefully!
@@ -290,8 +284,6 @@ namespace Database {
             PttConnType,
             ComDeviceCat,
             ComDevicePtt,
-            UsbDeviceCat,
-            UsbDevicePtt,
             ParallelCat,
             ParallelPtt,
             ComBaudRate,
@@ -422,6 +414,15 @@ namespace Database {
 namespace AmateurRadio {
 #define STATUS_CHECK_TIMEOUT 500       // Milliseconds
 
+    namespace Gui {
+        enum sstvWindow {
+            rxLiveImage,
+            rxSavedImage,
+            txSendImage,
+            None
+        };
+    }
+
     enum rig_type {
         Transceiver,
         Handheld,
@@ -493,6 +494,11 @@ namespace AmateurRadio {
         None
     };
 
+    enum GkConnMethod {
+        CAT,
+        PTT
+    };
+
     enum com_baud_rates {
         BAUD1200,
         BAUD2400,
@@ -530,7 +536,7 @@ namespace AmateurRadio {
             std::shared_ptr<Rig> gkRig;                     // Hamlib rig pointer
             int rig_brand;                                  // Hamlib rig brand/manufacturer
             rig_model_t rig_model;                          // The actual amateur radio rig itself!
-            std::unique_ptr<rig_caps> rig_caps;             // Read-only; the capabilities of the configured amateur radio rig in question, as defined by Hamlib.
+            std::unique_ptr<rig_caps> capabilities;         // Read-only; the capabilities of the configured amateur radio rig in question, as defined by Hamlib.
             std::unique_ptr<rig_state> rig_status;          // Rig state containing live data and customized fields
             powerstat_t power_status;                       // Whether the radio rig is electrically powered on or off
             hamlib_port_t port_details;                     // Information concerning details about RS232 ports, etc.
@@ -541,8 +547,8 @@ namespace AmateurRadio {
             std::string info_buf;                           // Hamlib information buffer
             GkConnType cat_conn_type;                       // The type of connection, whether USB, RS232, etc.
             GkConnType ptt_conn_type;                       // The type of connection, whether USB, RS232, etc.
-            std::string cat_conn_port;                      // The actual port address itself
-            std::string ptt_conn_port;                      // The actual port address itself
+            QString cat_conn_port;                          // The actual port address itself
+            QString ptt_conn_port;                          // The actual port address itself
             std::string mm;                                 // Hamlib modulation mode
             rig_debug_level_e verbosity;                    // The debug level and verbosity of Hamlib
             com_baud_rates dev_baud_rate;                   // Communication device baud rate

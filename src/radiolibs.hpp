@@ -43,6 +43,7 @@
 
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
+#include "src/gk_logger.hpp"
 #include <boost/logic/tribool.hpp>
 #include <QPointer>
 #include <QObject>
@@ -61,11 +62,6 @@
 #include <Windows.h>
 #endif
 
-#ifdef __MINGW64__
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_stdinc.h>
-#endif
-
 namespace GekkoFyre {
 
 class RadioLibs : public QObject {
@@ -74,7 +70,7 @@ class RadioLibs : public QObject {
 public:
     explicit RadioLibs(QPointer<GekkoFyre::FileIo> filePtr, std::shared_ptr<GekkoFyre::StringFuncs> stringPtr,
                        std::shared_ptr<GkLevelDb> dkDb, std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> radioPtr,
-                       QObject *parent = nullptr);
+                       QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~RadioLibs();
 
     static int convertBaudRateInt(const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate);
@@ -87,14 +83,13 @@ public:
     GekkoFyre::AmateurRadio::GkConnType convGkConnTypeToEnum(const QString &conn_type);
     rig_port_e convGkConnTypeToHamlib(const GekkoFyre::AmateurRadio::GkConnType &conn_type);
 
-    void gkInitRadioRig(std::shared_ptr<AmateurRadio::Control::GkRadio> radio_ptr, std::shared_ptr<Database::Settings::GkUsbPort> usb_ptr);
+    void gkInitRadioRig(std::shared_ptr<AmateurRadio::Control::GkRadio> radio_ptr);
     qint16 calibrateAudioInputSignal(const qint16 *data_buf);
 
     libusb_context *initUsbLib();
     QMap<std::string, Database::Settings::GkUsbPort> enumUsbDevices(libusb_context *usb_ctx_ptr);
 
 signals:
-    void gatherPortType(const bool &is_cat_mode);
     void disconnectRigInUse(std::shared_ptr<Rig> rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
 
 private:
@@ -102,17 +97,13 @@ private:
     std::shared_ptr<GekkoFyre::GkLevelDb> gkDekodeDb;
     std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> gkRadioPtr;
     QPointer<GekkoFyre::FileIo> gkFileIo;
+    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
     static void hamlibStatus(const int &retcode);
     static std::string getUsbPortId(libusb_device *usb_device);
 
+    libusb_error convLibUSBErrorToEnum(const int &error);
     void print_exception(const std::exception &e, int level = 0);
-
-    #if defined(_MSC_VER) && (_MSC_VER > 1900)
-    bool modalDlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon);
-    #else
-    bool modalDlgBoxLinux(uint32_t flags, const QString &title, const QString &msgTxt);
-    #endif
 
     template <class T>
     void removeDuplicates(std::vector<T> &vec) {

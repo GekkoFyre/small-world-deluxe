@@ -57,6 +57,9 @@ using namespace Audio;
 using namespace AmateurRadio;
 using namespace Control;
 using namespace Spectrograph;
+using namespace System;
+using namespace Events;
+using namespace Logging;
 
 /**
  * @brief SpectroGui::SpectroGui
@@ -65,7 +68,7 @@ using namespace Spectrograph;
  * @note <http://dronin.org/doxygen/ground/html/plotdata_8h_source.html>
  * <https://github.com/medvedvvs/QwtWaterfall>
  */
-SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &enablePanner,
+SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QPointer<GkEventLogger> eventLogger, const bool &enablePanner,
                        const bool &enableZoomer, QWidget *parent)
     : gkAlpha(255)
 {
@@ -75,6 +78,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
     try {
         setParent(parent);
         gkStringFuncs = std::move(stringFuncs);
+        gkEventLogger = std::move(eventLogger);
 
         //
         // This is the default graph-type that will be initialized when Small World Deluxe is launched by a user!
@@ -211,7 +215,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, const bool &ena
         gkStringFuncs->modalDlgBoxOk(hwnd_spectro_gui_main, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd_spectro_gui_main);
         #else
-        gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()));
+        gkEventLogger->publishEvent(tr("An error occurred during the handling of waterfall / spectrograph data!"), GkSeverity::Error, e.what(), true);
         #endif
     }
 
@@ -345,7 +349,7 @@ void SpectroGui::changeSpectroType(const GekkoFyre::Spectrograph::GkGraphType &g
         gkStringFuncs->modalDlgBoxOk(hwnd_spectro_gui_main, tr("Error!"), e.what(), MB_ICONERROR);
         DestroyWindow(hwnd_spectro_gui_main);
         #else
-        gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
+        gkEventLogger->publishEvent(e.what(), GkSeverity::Error, "", true);
         #endif
     }
 

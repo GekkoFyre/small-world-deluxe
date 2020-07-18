@@ -46,6 +46,7 @@
 #include "src/audio_devices.hpp"
 #include "src/pa_audio_buf.hpp"
 #include "src/dek_db.hpp"
+#include "src/gk_logger.hpp"
 #include "contrib/portaudio/cpp/include/portaudiocpp/PortAudioCpp.hxx"
 #include <ogg/os_types.h>
 #include <boost/filesystem.hpp>
@@ -105,6 +106,7 @@ public:
                              std::shared_ptr<GekkoFyre::GkLevelDb> database,
                              std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs,
                              GekkoFyre::Database::Settings::Audio::GkDevice output_device,
+                             QPointer<GekkoFyre::GkEventLogger> eventLogger,
                              QObject *parent = nullptr);
     virtual ~GkAudioDecoding();
 
@@ -117,6 +119,7 @@ private:
     std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> gkAudioBuf;
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GkLevelDb> gkDb;
+    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     GekkoFyre::Database::Settings::Audio::GkDevice gkOutputDev;
 
     #ifdef OPUS_LIBS_ENBLD

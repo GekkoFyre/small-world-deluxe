@@ -43,11 +43,10 @@
 
 ### --------------------------------------------------------------------------------------------------- ###
 
-image: burningdaylight/docker-mingw-qt5:latest
+image: archlinux:latest
 
 stages:
-    - sworld_debug_mingw_x86_64
-    - sworld_debug_linux_x86_64
+    - sworld_debug_archlinux_x86_64
     - test
 
 include:
@@ -58,136 +57,107 @@ include:
 variables:
     SAST_DISABLE_DIND: "true"
     DS_DISABLE_DIND: "true"
+    GIT_SUBMODULE_STRATEGY: recursive
 
 ### --------------------------------------------------------------------------------------------------- ###
 
 #
 # https://code.gekkofyre.io/help/user/application_security/sast/index
 #
-sworld_debug_mingw_x86_64:
-    stage: sworld_debug_mingw_x86_64
-    image: burningdaylight/docker-mingw-qt5:latest
-    cache:
-        paths:
-            - "binaries/*.exe"
-    tags:
-        - "debug-build"
-    script:
-        - sudo pacman -Sy --noconfirm
-        - sudo pacman -Syu --noconfirm
-        - yay -S mingw-w64-gcc --noconfirm
-        - yay -S mingw-w64-configure --noconfirm
-        - yay -S mingw-w64-qt5-base --noconfirm
-        - yay -S mingw-w64-qt5-tools --noconfirm
-        - yay -S mingw-w64-qt5-serialport --noconfirm
-        - yay -S mingw-w64-qt5-sensors --noconfirm
-        - yay -S mingw-w64-qt5-imageformats --noconfirm
-        - yay -S mingw-w64-qt5-translations --noconfirm
-        - yay -S mingw-w64-qt5-svg --noconfirm
-        - yay -S mingw-w64-qt5-multimedia --noconfirm
-        - yay -S mingw-w64-qt5-xmlpatterns --noconfirm
-        - yay -S mingw-w64-qt5-winextras --noconfirm
-        - yay -S mingw-w64-qt5-charts --noconfirm
-        - yay -S mingw-w64-qt5-3d --noconfirm
-        - yay -S mingw-w64-qt5-connectivity --noconfirm
-        - yay -S mingw-w64-zstd --noconfirm
-        - yay -S mingw-w64-lz4 --noconfirm
-        - yay -S mingw-w64-zlib --noconfirm
-        - yay -S mingw-w64-leveldb --noconfirm
-        - yay -S mingw-w64-portaudio --noconfirm
-        - yay -S mingw-w64-libusb --noconfirm
-        - yay -S mingw-w64-fftw --noconfirm
-        - yay -S mingw-w64-qwt --noconfirm
-        - yay -S mingw-w64-libogg --noconfirm
-        - yay -S mingw-w64-libvorbis --noconfirm
-        - yay -S mingw-w64-opus --noconfirm
-        - yay -S mingw-w64-opusfile --noconfirm
-        - cd docker/arch/mingw-w64-texinfo && sudo makepkg -sri
+sworld_debug_archlinux_x86_64:
+    stage: sworld_debug_archlinux_x86_64
+    image: archlinux:latest
+    before_script:
+        - pacman -Sy --noconfirm
+        - pacman -Syu --noconfirm
+        - pacman -S base-devel --noconfirm
+        - pacman -S gcc --noconfirm
+        - pacman -S octave --noconfirm
+        - pacman -S python --noconfirm
+        - pacman -S gdb --noconfirm
+        - pacman -S clang --noconfirm
+        - pacman -S llvm --noconfirm
+        - pacman -S llvm-libs --noconfirm
+        - pacman -S binutils --noconfirm
+        - pacman -S automake --noconfirm
+        - pacman -S autoconf --noconfirm
+        - pacman -S autoconf-archive --noconfirm
+        - pacman -S boost --noconfirm
+        - pacman -S qt5-base --noconfirm
+        - pacman -S qt5-tools --noconfirm
+        - pacman -S qt5-serialport --noconfirm
+        - pacman -S qt5-sensors --noconfirm
+        - pacman -S qt5-imageformats --noconfirm
+        - pacman -S qt5-translations --noconfirm
+        - pacman -S qt5-svg --noconfirm
+        - pacman -S qt5-multimedia --noconfirm
+        - pacman -S qt5-xmlpatterns --noconfirm
+        - pacman -S qt5-charts --noconfirm
+        - pacman -S qt5-3d --noconfirm
+        - pacman -S qt5-connectivity --noconfirm
+        - pacman -S zstd --noconfirm
+        - pacman -S lz4 --noconfirm
+        - pacman -S zlib --noconfirm
+        - pacman -S leveldb --noconfirm
+        - pacman -S portaudio --noconfirm
+        - pacman -S libusb --noconfirm
+        - pacman -S fftw --noconfirm
+        - pacman -S qwt --noconfirm
+        - pacman -S libogg --noconfirm
+        - pacman -S libvorbis --noconfirm
+        - pacman -S opus --noconfirm
+        - pacman -S opusfile --noconfirm
+        - pacman -S texinfo --noconfirm
+        - pacman -S libusb-compat --noconfirm
+        - pacman -S hamlib --noconfirm
+        - pacman -S git --noconfirm
+        - pacman -S cmake --noconfirm
+        - pacman -S wget --noconfirm
+        - export CC=/usr/bin/clang
+        - export CXX=/usr/bin/clang++
+        - wget https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.16.tar.gz
+        - tar -xvzf libiconv-1.16.tar.gz && cd libiconv-1.16
+        - ./configure --enable-static --enable-shared
+        - make -j 8 && make install
         - cd ./..
-        - cd mingw-w64-libusb-compat-0.1 && sudo makepkg -sri
-        - cd ./..
-        - cd mingw-w64-hamlib && sudo makepkg -sri
-        - cd ./../../..
-        - sudo strip --remove-section=.note.ABI-tag /usr/lib64/libQt5Core.so.5
-        - mkdir -p artifact-build
-        - cd artifact-build
-        - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE="~/toolchains/x86_64-w64-mingw32_linux.cmake" ..
-        - make -j 4
-        - cd ..
-    after_script:
-        - echo "Finished execution of Microsoft Window's (i.e. MinGW) build and primary stage!"
-    when: always
-
-### --------------------------------------------------------------------------------------------------- ###
-
-sworld_debug_linux_x86_64:
-    stage: sworld_debug_linux_x86_64
-    image: burningdaylight/docker-mingw-qt5:latest
-    dependencies:
-        - sworld_debug_mingw_x86_64
-    cache:
-        paths:
-            - "binaries/*.deb"
-    tags:
-        - "debug-build"
+        - git clone https://github.com/drowe67/codec2.git
+        - cd codec2 && mkdir build && cd build
+        - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=NO ..
+        - make -j 8 && make install
+        - cd ./../..
+        - strip --remove-section=.note.ABI-tag /usr/lib64/libQt5Core.so.5
     script:
-        - sudo pacman -Sy --noconfirm
-        - sudo pacman -Syu --noconfirm
-        - sudo pacman -S boost --noconfirm
-        - sudo pacman -S boost-libs --noconfirm
-        - sudo pacman -S qt5-base --noconfirm
-        - sudo pacman -S qt5-imageformats --noconfirm
-        - sudo pacman -S qt5-multimedia --noconfirm
-        - sudo pacman -S qt5-sensors --noconfirm
-        - sudo pacman -S qt5-serialbus --noconfirm
-        - sudo pacman -S qt5-serialport --noconfirm
-        - sudo pacman -S qt5-svg --noconfirm
-        - sudo pacman -S qt5-systems --noconfirm
-        - sudo pacman -S qt5-tools --noconfirm
-        - sudo pacman -S qt5-translations --noconfirm
-        - sudo pacman -S qt5-wayland --noconfirm
-        - sudo pacman -S qt5-xmlpatterns --noconfirm
-        - sudo pacman -S qtspell --noconfirm
-        - sudo pacman -S portaudio --noconfirm
-        - sudo pacman -S zstd --noconfirm
-        - sudo pacman -S leveldb --noconfirm
-        - sudo pacman -S lz4 --noconfirm
-        - sudo pacman -S zlib --noconfirm
-        - sudo pacman -S libusb --noconfirm
-        - sudo pacman -S fftw --noconfirm
-        - sudo pacman -S qwt --noconfirm
-        - sudo pacman -S qwtpolar --noconfirm
-        - sudo pacman -S libogg --noconfirm
-        - sudo pacman -S libvorbis --noconfirm
-        - sudo pacman -S opus --noconfirm
-        - sudo pacman -S opusfile --noconfirm
-        - sudo pacman -S opus-tools --noconfirm
-        - sudo pacman -S texinfo --noconfirm
-        - sudo pacman -S hamlib --noconfirm
-        - sudo strip --remove-section=.note.ABI-tag /usr/lib64/libQt5Core.so.5'
-        - mkdir -p artifact-build
-        - cd artifact-build
-        - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug ..
-        - make -j 4
-        - cd ..
+        - mkdir -p src_build && cd src_build
+        - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DGFYRE_BUILD_STATIC=ON -DBUILD_CODEC2_SUPPORT=ON -DBUILD_OPUS_SUPPORT=ON ..
+        - make -j 8
+        - cd ./..
     after_script:
-        - echo "Finished execution of both the Linux build and the secondary stage!"
+        - echo "Finished execution of Preparatory Build and secondary, lesser stage!"
+    artifacts:
+        expire_in: 1 week
+        paths:
+            - src_build/
     when: always
 
 ### --------------------------------------------------------------------------------------------------- ###
 
 #
+# https://docs.gitlab.com/ee/user/application_security/sast/
 # https://github.com/antiagainst/codeclimate-cppcheck
 #
 spotbugs-sast:
     dependencies:
-        - sworld_debug_mingw_x86_64
-        - sworld_debug_linux_x86_64
+        - sworld_debug_archlinux_x86_64
     script:
         - /analyzer run -compile=false
     variables:
+        SAST_DEFAULT_ANALYZERS: "flawfinder,gitleaks,trufflehog"
         SAST_GOSEC_LEVEL: 2
+    # https://docs.gitlab.com/ee/ci/yaml/README.html#artifacts
     artifacts:
+        expire_in: 1 week
+        paths:
+            - src_build/
         reports:
             sast: gl-sast-report.json
     allow_failure: true

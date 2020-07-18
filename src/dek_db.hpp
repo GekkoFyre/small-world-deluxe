@@ -62,8 +62,7 @@ public:
     ~GkLevelDb();
 
     void write_rig_settings(const QString &value, const Database::Settings::radio_cfg &key);
-    void write_rig_settings_comms(const QString &value, const Database::Settings::radio_cfg &key,
-                                  const AmateurRadio::GkConnType &conn_type = AmateurRadio::GkConnType::None);
+    void write_rig_settings_comms(const QString &value, const Database::Settings::radio_cfg &key);
     void write_audio_device_settings(const GekkoFyre::Database::Settings::Audio::GkDevice &value,
                                      const bool &is_output_device);
     void write_mainwindow_settings(const QString &value, const Database::Settings::general_mainwindow_cfg &key);
@@ -78,8 +77,7 @@ public:
     QString convSeverityToStr(const GekkoFyre::System::Events::Logging::GkSeverity &severity);
 
     QString read_rig_settings(const Database::Settings::radio_cfg &key);
-    QString read_rig_settings_comms(const Database::Settings::radio_cfg &key,
-                                    const AmateurRadio::GkConnType &conn_type = AmateurRadio::GkConnType::None);
+    QString read_rig_settings_comms(const Database::Settings::radio_cfg &key);
     int read_audio_device_settings(const bool &is_output_device);
     GekkoFyre::Database::Settings::Audio::GkDevice read_audio_details_settings(const bool &is_output_device);
     QString read_mainwindow_settings(const Database::Settings::general_mainwindow_cfg &key);

@@ -40,6 +40,12 @@
  ****************************************************************************************************/
 
 #include "src/ui/widgets/gk_display_image.hpp"
+#include <utility>
+#include <QMenu>
+#include <QAction>
+#include <QClipboard>
+#include <QMessageBox>
+#include <QApplication>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -57,9 +63,51 @@ using namespace Logging;
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param parent
  */
-GkDisplayImage::GkDisplayImage(QWidget *parent)
+GkDisplayImage::GkDisplayImage(const Gui::sstvWindow &sstv_win, QPointer<GkEventLogger> eventLogger, QWidget *parent)
 {
     setParent(parent);
+    setAlignment(Qt::AlignCenter);
+
+    gkEventLogger = std::move(eventLogger);
+
+    sstvWindow = sstv_win;
+    if (sstvWindow != Gui::sstvWindow::None) {
+        QPointer<QAction> pAction1 = new QAction(tr("Transmit (TX)"), this);
+        QPointer<QAction> pAction2 = new QAction(tr("Load"), this);
+        QPointer<QAction> pAction3 = new QAction(tr("Copy to Clipboard"), this);
+        QPointer<QAction> pAction4 = new QAction(tr("Save As"), this);
+        QPointer<QAction> pAction5 = new QAction(tr("Clear"), this);
+        QPointer<QAction> pAction6 = new QAction(tr("Delete"), this);
+
+        this->addAction(pAction1);
+        this->addAction(pAction2);
+        this->addAction(pAction3);
+        this->addAction(pAction4);
+        this->addAction(pAction5);
+        this->addAction(pAction6);
+
+        QObject::connect(pAction1, SIGNAL(triggered()), this, SLOT(txImage()));
+        QObject::connect(pAction2, SIGNAL(triggered()), this, SLOT(loadImage()));
+        QObject::connect(pAction3, SIGNAL(triggered()), this, SLOT(copyToClipboard()));
+        QObject::connect(pAction4, SIGNAL(triggered()), this, SLOT(saveImage()));
+        QObject::connect(pAction5, SIGNAL(triggered()), this, SLOT(clearImages()));
+        QObject::connect(pAction6, SIGNAL(triggered()), this, SLOT(delImage()));
+    }
+
+    switch (sstvWindow) {
+    case Gui::sstvWindow::rxLiveImage:
+        sstvResource = tr("SSTV (RX) Live Image");
+        break;
+    case Gui::sstvWindow::rxSavedImage:
+        sstvResource = tr("SSTV (RX) Saved Image");
+        break;
+    case Gui::sstvWindow::txSendImage:
+        sstvResource = tr("SSTV (TX)");
+        break;
+    default:
+        sstvResource = tr("SSTV (TX)");
+        break;
+    }
 
     return;
 }
@@ -102,6 +150,17 @@ QPixmap GkDisplayImage::scaledPixmap() const
     return scaled;
 }
 
+void GkDisplayImage::mouseReleaseEvent(QMouseEvent *e)
+{
+    if (e->button() == Qt::RightButton) {
+        QMenu menu(this);
+        menu.addActions(this->actions());
+        menu.exec(e->globalPos());
+    }
+
+    return;
+}
+
 /**
  * @brief GkDisplayImage::setPixmap
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -127,6 +186,73 @@ void GkDisplayImage::resizeEvent(QResizeEvent *e)
     if(!pixmap.isNull()) {
         QLabel::setPixmap(scaledPixmap());
     }
+
+    return;
+}
+
+/**
+ * @brief GkDisplayImage::txImage
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkDisplayImage::txImage()
+{
+    QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+
+    return;
+}
+
+/**
+ * @brief GkDisplayImage::loadImage
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkDisplayImage::loadImage()
+{
+    QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+
+    return;
+}
+
+/**
+ * @brief GkDisplayImage::copyToClipboard
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkDisplayImage::copyToClipboard()
+{
+    QApplication::clipboard()->setPixmap(pixmap);
+    gkEventLogger->publishEvent(tr("Image from %1 copied to the operating system's clipboard.").arg(sstvResource), GkSeverity::Info);
+
+    return;
+}
+
+/**
+ * @brief GkDisplayImage::saveImage
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkDisplayImage::saveImage()
+{
+    QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+
+    return;
+}
+
+/**
+ * @brief GkDisplayImage::clearImages
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkDisplayImage::clearImages()
+{
+    QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+
+    return;
+}
+
+/**
+ * @brief GkDisplayImage::delImage
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkDisplayImage::delImage()
+{
+    QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
 
     return;
 }
