@@ -52,21 +52,6 @@
 #include <Windows.h>
 #endif
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#if defined(__linux__) || defined(__MINGW64__)
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_stdinc.h>
-#include <SDL2/SDL_messagebox.h>
-#endif
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
-
 namespace GekkoFyre {
 
 class StringFuncs : public QObject {
@@ -81,8 +66,6 @@ public:
     static std::wstring strToWStrWin(const std::string &s);
     std::wstring removeSpecialChars(std::wstring wstr);
     bool modalDlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon);
-    #else
-    bool modalDlgBoxLinux(uint32_t flags, const QString &title, const QString &msgTxt);
     #endif
 
 };

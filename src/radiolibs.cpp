@@ -68,11 +68,6 @@ extern "C"
 #endif
 #endif
 
-#if defined(__linux__) || defined(__MINGW64__)
-#include <SDL2/SDL_video.h>
-#include <SDL2/SDL_messagebox.h>
-#endif
-
 #if __linux__
 #include <sys/ioctl.h>
 #include <linux/serial.h>
@@ -590,13 +585,7 @@ QMap<std::string, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDe
  */
 void RadioLibs::print_exception(const std::exception &e, int level)
 {
-    #if defined(_MSC_VER) && (_MSC_VER > 1900)
-    HWND hwnd = nullptr;
-    modalDlgBoxOk(hwnd, tr("Error!"), e.what(), MB_ICONERROR);
-    DestroyWindow(hwnd);
-    #else
-    modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
-    #endif
+    gkEventLogger->publishEvent(e.what(), GkSeverity::Warning, "", true);
 
     try {
         std::rethrow_if_nested(e);
@@ -606,33 +595,6 @@ void RadioLibs::print_exception(const std::exception &e, int level)
 
     return;
 }
-
-#if defined(_MSC_VER) && (_MSC_VER > 1900)
-bool RadioLibs::modalDlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon)
-{
-    // TODO: Make this dialog modal
-    std::mutex mtx_modal_dlg_box;
-    std::lock_guard<std::mutex> lck_guard(mtx_modal_dlg_box);
-    int msgBoxId = MessageBoxA(hwnd, msgTxt.toStdString().c_str(), title.toStdString().c_str(), icon | MB_OK);
-
-    switch (msgBoxId) {
-    case IDOK:
-        return true;
-    default:
-        return false;
-    }
-
-    return false;
-}
-#else
-bool RadioLibs::modalDlgBoxLinux(uint32_t flags, const QString &title, const QString &msgTxt)
-{
-    SDL_Window *sdlWindow = SDL_CreateWindow(General::productName, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, DLG_BOX_WINDOW_WIDTH, DLG_BOX_WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
-    int ret = SDL_ShowSimpleMessageBox(flags, title.toStdString().c_str(), msgTxt.toStdString().c_str(), sdlWindow);
-    SDL_DestroyWindow(sdlWindow);
-    return ret;
-}
-#endif
 
 /**
  * @brief RadioLibs::gkInitRadioRig Initializes the struct, `GekkoFyre::AmateurRadio::Control::GkRadio`, and all of the values within,

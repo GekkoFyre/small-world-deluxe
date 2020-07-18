@@ -46,6 +46,7 @@
 #include "src/spectro_gui.hpp"
 #include "src/pa_audio_buf.hpp"
 #include "src/dek_db.hpp"
+#include "src/gk_logger.hpp"
 #include "contrib/portaudio/cpp/include/portaudiocpp/PortAudioCpp.hxx"
 #include <boost/filesystem.hpp>
 #include <memory>
@@ -106,6 +107,7 @@ public:
                              QPointer<SpectroGui> spectroGui,
                              std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs,
                              GekkoFyre::Database::Settings::Audio::GkDevice input_device,
+                             QPointer<GekkoFyre::GkEventLogger> eventLogger,
                              QObject *parent = nullptr);
     virtual ~GkAudioEncoding();
 
@@ -146,6 +148,7 @@ private:
     std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> gkAudioBuf;
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GkLevelDb> gkDb;
+    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     GekkoFyre::Database::Settings::Audio::GkDevice gkInputDev;
 
     bool recording_in_progress;

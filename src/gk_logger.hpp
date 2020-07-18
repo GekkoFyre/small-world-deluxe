@@ -59,7 +59,7 @@ public:
     ~GkEventLogger();
 
     void publishEvent(const QString &event, const GekkoFyre::System::Events::Logging::GkSeverity &severity = GekkoFyre::System::Events::Logging::GkSeverity::Warning,
-                      const QVariant &arguments = "");
+                      const QVariant &arguments = "", const bool &sys_notification = false);
 
 signals:
     void sendEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &event);
@@ -70,6 +70,7 @@ private:
 
     qint64 setDate();
     int setEventNo();
+    void systemNotification(const QString &title, const QString &msg);
 
 };
 };

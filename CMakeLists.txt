@@ -75,8 +75,7 @@ if(CMAKE_VERSION VERSION_LESS "3.7.0")
 endif()
 
 set(CMAKE_MODULE_PATH
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/"
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/third-party/basic-c-sdl-project/cmake/sdl2/") # Do not delete this submodule!
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/")
 
 #
 # Custom options specific to Small World Deluxe and/or GekkoFyre Networks <https://gekkofyre.io/>
@@ -172,22 +171,6 @@ if (Boost_FOUND)
 else()
     message(FATAL_ERROR "The required 'Boost C++' libraries are either not installed, or not multithreaded and/or of not an up-to-date version. Boost C++ 1.54.0 is the minimally required version.")
 endif(Boost_FOUND)
-
-#
-# Don't forget to include SDLmain.h and SDLmain.m your project for the
-# OS X framework based version.  (Other versions link to -lSDLmain which
-# this module will try to find on your behalf.) Also for OS X, this
-# module will automatically add the -framework Cocoa on your behalf.
-#
-if (LINUX OR MSYS OR MINGW)
-    find_package(SDL2 REQUIRED)
-    if (SDL2MAIN_FOUND AND SDL2_VERSION_STRING MATCHES "2.*.*")
-        include_directories(${SDL2_INCLUDE_DIRS})
-        set(LIBS ${LIBS} ${SDL2_LIBRARIES})
-    else()
-        message(FATAL_ERROR "The cross-platform Simple DirectMedia Layer (libSDL2) library could not be found!")
-    endif()
-endif()
 
 find_package(ZLIB REQUIRED)
 if (ZLIB_FOUND)
@@ -487,7 +470,6 @@ set(GALAXY_OBJ_HEADERS
     src/gk_modem.hpp
     src/gk_frequency_list.hpp
     src/gk_string_funcs.hpp
-    src/gk_messagebox.hpp
     src/gk_logger.hpp
     src/gk_codec2.hpp
     src/ui/widgets/gk_submit_msg.hpp

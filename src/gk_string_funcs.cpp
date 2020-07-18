@@ -46,19 +46,6 @@
 #include <stringapiset.h>
 #endif
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#if defined(__linux__) || defined(__MINGW64__)
-#include <SDL2/SDL_video.h>
-#endif
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
-
 using namespace GekkoFyre;
 
 StringFuncs::StringFuncs(QObject *parent) : QObject(parent)
@@ -148,13 +135,5 @@ bool StringFuncs::modalDlgBoxOk(const HWND &hwnd, const QString &title, const QS
     }
 
     return false;
-}
-#else
-bool StringFuncs::modalDlgBoxLinux(uint32_t flags, const QString &title, const QString &msgTxt)
-{
-    SDL_Window *sdlWindow = SDL_CreateWindow(General::productName, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, DLG_BOX_WINDOW_WIDTH, DLG_BOX_WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
-    int ret = SDL_ShowSimpleMessageBox(flags, title.toStdString().c_str(), msgTxt.toStdString().c_str(), sdlWindow);
-    SDL_DestroyWindow(sdlWindow);
-    return ret;
 }
 #endif

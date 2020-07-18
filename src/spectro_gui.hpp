@@ -42,6 +42,7 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include "src/gk_logger.hpp"
 #include <qwt.h>
 #include <qwt_plot.h>
 #include <qwt_plot_spectrogram.h>
@@ -120,7 +121,7 @@ class SpectroGui: public QwtPlot {
     Q_OBJECT
 
 public:
-    SpectroGui(std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs, const bool &enablePanner = false,
+    SpectroGui(std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger, const bool &enablePanner = false,
                const bool &enableZoomer = false, QWidget *parent = nullptr);
     ~SpectroGui();
 
@@ -150,6 +151,7 @@ private:
     QwtMatrixRasterData *gkMatrixData;
 
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
+    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     int gkAlpha;                                                // Controls the alpha value of the waterfall chart.
     qint64 spectro_begin_time;                                  // The time at which the spectrograph was initialized.
     qint64 spectro_latest_update;                               // The latest time for when the spectrograph was updated with new data/information.

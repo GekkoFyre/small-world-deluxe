@@ -80,7 +80,7 @@ GkEventLogger::~GkEventLogger()
  * @param severity The severity of the issue, where it's just a warning all the way to a fatal error.
  * @param arguments Any arguments that are associated with the event message. This tends to be left blank.
  */
-void GkEventLogger::publishEvent(const QString &event, const GkSeverity &severity, const QVariant &arguments)
+void GkEventLogger::publishEvent(const QString &event, const GkSeverity &severity, const QVariant &arguments, const bool &sys_notification)
 {
     std::mutex dataBatchMutex;
     const std::lock_guard<std::mutex> lock(dataBatchMutex);
@@ -106,6 +106,10 @@ void GkEventLogger::publishEvent(const QString &event, const GkSeverity &severit
 
     eventLogDb.push_back(event_log);
     emit sendEvent(event_log);
+
+    if (sys_notification) {
+        systemNotification(tr("Small World Deluxe"), event);
+    }
 
     return;
 }
@@ -140,4 +144,20 @@ int GkEventLogger::setEventNo()
     event_number += 1;
 
     return event_number;
+}
+
+void GkEventLogger::systemNotification(const QString &title, const QString &msg)
+{
+    try {
+        if (!msg.isNull() && !msg.isEmpty()) {
+            // Send out a system notification!
+            system(QString("notify-send '%1' \"%2\"").arg(title).arg(msg).toStdString().c_str());
+            return;
+        }
+    }  catch (const std::exception &e) {
+        std::cerr << tr("Attempted to send out a system notification popup, but failed! Please check with the maintainer/distributor of the release you are using. Error:\n\n%1")
+                     .arg(QString::fromStdString(e.what())).toStdString() << std::endl;
+    }
+
+    return;
 }

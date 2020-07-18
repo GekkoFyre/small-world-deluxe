@@ -62,11 +62,6 @@
 #include <Windows.h>
 #endif
 
-#ifdef __MINGW64__
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_stdinc.h>
-#endif
-
 namespace GekkoFyre {
 
 class RadioLibs : public QObject {
@@ -109,12 +104,6 @@ private:
 
     libusb_error convLibUSBErrorToEnum(const int &error);
     void print_exception(const std::exception &e, int level = 0);
-
-    #if defined(_MSC_VER) && (_MSC_VER > 1900)
-    bool modalDlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon);
-    #else
-    bool modalDlgBoxLinux(uint32_t flags, const QString &title, const QString &msgTxt);
-    #endif
 
     template <class T>
     void removeDuplicates(std::vector<T> &vec) {

@@ -93,7 +93,6 @@ sworld_debug_archlinux_x86_64:
         - pacman -S qt5-connectivity --noconfirm
         - pacman -S boost --noconfirm
         - pacman -S codec2 --noconfirm
-        - pacman -S sdl2 --noconfirm
         - pacman -S zstd --noconfirm
         - pacman -S lz4 --noconfirm
         - pacman -S zlib --noconfirm
