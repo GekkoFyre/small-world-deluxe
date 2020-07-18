@@ -361,7 +361,7 @@ qt5_wrap_ui(UI_HEADERS
 
 # https://doc.qt.io/qt-5/cmake-command-reference.html
 # rcc -no-compress -binary smallworld_res.qrc -o smallworld_res.rcc
-qt5_add_resources(UI_RESOURCES src/sworld_res.qrc OPTIONS -binary -compress-algo zstd -compress 19)
+qt5_add_resources(UI_RESOURCES src/sworld_res.qrc OPTIONS -compress-algo zstd -compress 19)
 
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_BINARY_DIR})

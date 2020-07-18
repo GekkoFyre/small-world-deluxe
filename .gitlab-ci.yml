@@ -47,7 +47,6 @@ image: archlinux:latest
 
 stages:
     - sworld_debug_archlinux_x86_64
-    - sworld_debug_archlinux_x86_64
     - test
 
 include:
@@ -58,6 +57,7 @@ include:
 variables:
     SAST_DISABLE_DIND: "true"
     DS_DISABLE_DIND: "true"
+    GIT_SUBMODULE_STRATEGY: recursive
 
 ### --------------------------------------------------------------------------------------------------- ###
 
