@@ -82,6 +82,7 @@ sworld_debug_archlinux_x86_64:
         - pacman -S automake --noconfirm
         - pacman -S autoconf --noconfirm
         - pacman -S autoconf-archive --noconfirm
+        - pacman -S boost --noconfirm
         - pacman -S qt5-base --noconfirm
         - pacman -S qt5-tools --noconfirm
         - pacman -S qt5-serialport --noconfirm
@@ -118,10 +119,6 @@ sworld_debug_archlinux_x86_64:
         - ./configure --enable-static --enable-shared
         - make -j 6 && make install
         - cd ./..
-        - wget https://dl.bintray.com/boostorg/release/1.73.0/source/boost_1_73_0.tar.gz
-        - tar -xvzf boost_1_73_0.tar.gz && cd boost_1_73_0 && sh ./bootstrap.sh
-        - ./b2 install address-model=64 instruction-set=native link=static threading=multi runtime-link=shared variant=debug --build-type=complete --layout=versioned | tee -a boost_cpp.log
-        - cd ./..
         - git clone https://github.com/Hamlib/Hamlib.git
         - cd Hamlib && ./bootstrap
         - ./configure --enable-static --enable-shared
@@ -136,7 +133,7 @@ sworld_debug_archlinux_x86_64:
     script:
         - mkdir -p artifact-build
         - cd artifact-build
-        - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DGFYRE_BUILD_STATIC=ON -DBoost_USE_STATIC_LIBS=ON -DBUILD_CODEC2_SUPPORT=ON -DBUILD_OPUS_SUPPORT=ON ..
+        - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DGFYRE_BUILD_STATIC=ON -DBUILD_CODEC2_SUPPORT=ON -DBUILD_OPUS_SUPPORT=ON ..
         - make -j 6
         - cd ..
     after_script:
