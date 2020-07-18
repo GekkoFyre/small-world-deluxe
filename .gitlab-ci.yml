@@ -46,7 +46,7 @@
 image: archlinux:latest
 
 stages:
-    - sworld_prepare_archlinux_x86_64
+    - sworld_debug_archlinux_x86_64
     - sworld_debug_archlinux_x86_64
     - test
 
@@ -64,10 +64,10 @@ variables:
 #
 # https://code.gekkofyre.io/help/user/application_security/sast/index
 #
-sworld_prepare_archlinux_x86_64:
-    stage: sworld_prepare_archlinux_x86_64
+sworld_debug_archlinux_x86_64:
+    stage: sworld_debug_archlinux_x86_64
     image: archlinux:latest
-    script:
+    before_script:
         - pacman -Sy --noconfirm
         - pacman -Syu --noconfirm
         - pacman -S base-devel --noconfirm
@@ -122,17 +122,6 @@ sworld_prepare_archlinux_x86_64:
         - ./configure --enable-static --enable-shared
         - make -j 6 && make install
         - cd ./../..
-    after_script:
-        - echo "Finished execution of Preparatory Build and secondary, lesser stage!"
-    when: always
-
-### --------------------------------------------------------------------------------------------------- ###
-
-sworld_debug_archlinux_x86_64:
-    stage: sworld_debug_archlinux_x86_64
-    image: archlinux:latest
-    dependencies:
-        - sworld_prepare_archlinux_x86_64
     script:
         - mkdir -p artifact-build
         - cd artifact-build
@@ -140,12 +129,13 @@ sworld_debug_archlinux_x86_64:
         - make -j 6
         - cd ..
     after_script:
-        - echo "Finished execution of both the Linux debug, primary build and the secondary, preparatory stage!"
+        - echo "Finished execution of Preparatory Build and secondary, lesser stage!"
     when: always
 
 ### --------------------------------------------------------------------------------------------------- ###
 
 #
+# https://docs.gitlab.com/ee/user/application_security/sast/
 # https://github.com/antiagainst/codeclimate-cppcheck
 #
 spotbugs-sast:
