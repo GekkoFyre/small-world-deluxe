@@ -51,12 +51,11 @@ stages:
 
 include:
     - template: SAST.gitlab-ci.yml
-    - template: Dependency-Scanning.gitlab-ci.yml
     - template: License-Scanning.gitlab-ci.yml
+    - template: Secret-Detection.gitlab-ci.yml
 
 variables:
     SAST_DISABLE_DIND: "true"
-    DS_DISABLE_DIND: "true"
     GIT_SUBMODULE_STRATEGY: recursive
 
 ### --------------------------------------------------------------------------------------------------- ###
@@ -152,7 +151,17 @@ spotbugs-sast:
         - /analyzer run -compile=false
     variables:
         SAST_DEFAULT_ANALYZERS: "flawfinder,gitleaks,trufflehog"
+        SAST_EXCLUDED_PATHS:
+            - assets/**
+            - cmake/**
+            - docker/**
+            - docs/**
+            - po/**
+            - toolchains/**
+            - src/contrib/**
         SAST_GOSEC_LEVEL: 2
+        SAST_FLAWFINDER_LEVEL: 2
+        SECRET_DETECTION_HISTORIC_SCAN: true
     # https://docs.gitlab.com/ee/ci/yaml/README.html#artifacts
     artifacts:
         expire_in: 1 week
