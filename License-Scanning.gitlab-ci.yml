@@ -9,7 +9,7 @@ variables:
   # (SAST, Dependency Scanning, ...)
   SECURE_ANALYZERS_PREFIX: "registry.gitlab.com/gitlab-org/security-products/analyzers"
 
-  LICENSE_MANAGEMENT_SETUP_CMD: ''  # If needed, specify a command to setup your environment with a custom package manager.
+  LICENSE_MANAGEMENT_SETUP_CMD: 'sh licenses-setup.sh'  # If needed, specify a command to setup your environment with a custom package manager.
   LICENSE_MANAGEMENT_VERSION: 3
 
 license_scanning:
