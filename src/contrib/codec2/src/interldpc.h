@@ -50,7 +50,7 @@ void interleaver_sync_state_machine(struct OFDM *ofdm, struct LDPC *ldpc, struct
                                     int *inter, int *parityCheckCount, int *Nerrs_coded);
 int count_uncoded_errors(struct LDPC *ldpc, struct OFDM_CONFIG *config, int Nerrs_raw[], int interleave_frames, COMP codeword_symbols_de[]);
 int count_errors(uint8_t tx_bits[], uint8_t rx_bits[], int n);
-void ofdm_ldpc_interleave_tx(struct OFDM *ofdm, struct LDPC *ldpc, complex float tx_sams[], uint8_t tx_bits[], uint8_t txt_bits[], int interleave_frames, struct OFDM_CONFIG *config);
-void build_modulated_uw(struct OFDM *ofdm, complex float tx_symbols[], uint8_t txt_bits[], struct OFDM_CONFIG *config);
+void ofdm_ldpc_interleave_tx(struct OFDM *ofdm, struct LDPC *ldpc, _Complex float tx_sams[], uint8_t tx_bits[], uint8_t txt_bits[], int interleave_frames, struct OFDM_CONFIG *config);
+void build_modulated_uw(struct OFDM *ofdm, _Complex float tx_symbols[], uint8_t txt_bits[], struct OFDM_CONFIG *config);
 
 #endif

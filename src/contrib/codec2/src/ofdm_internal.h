@@ -132,12 +132,12 @@ struct OFDM {
 
     struct quisk_cfFilter *tx_bpf;
     
-    complex float *pilot_samples;
-    complex float *rxbuf;
-    complex float *pilots;
-    complex float **rx_sym;
-    complex float *rx_np;
-    complex float *tx_uw_syms;
+    _Complex float *pilot_samples;
+    _Complex float *rxbuf;
+    _Complex float *pilots;
+    _Complex float **rx_sym;
+    _Complex float *rx_np;
+    _Complex float *tx_uw_syms;
     
     float *rx_amp;
     float *aphase_est_pilot_log;
@@ -160,8 +160,8 @@ struct OFDM {
 
     int phase_est_bandwidth_mode;
 
-    // Complex
-    complex float foff_metric;
+    // _Complex
+    _Complex float foff_metric;
      
     // Float
     float foff_est_gain;
@@ -197,11 +197,11 @@ struct OFDM {
 
 /* Prototypes */
 
-complex float qpsk_mod(int *);
-void qpsk_demod(complex float, int *);
-void ofdm_txframe(struct OFDM *, complex float *, complex float []);
+_Complex float qpsk_mod(int *);
+void qpsk_demod(_Complex float, int *);
+void ofdm_txframe(struct OFDM *, _Complex float *, _Complex float []);
 void ofdm_assemble_modem_frame(struct OFDM *, uint8_t [], uint8_t [], uint8_t []);
-void ofdm_assemble_modem_frame_symbols(struct OFDM *, complex float [], COMP [], uint8_t []);
+void ofdm_assemble_modem_frame_symbols(struct OFDM *, _Complex float [], COMP [], uint8_t []);
 void ofdm_disassemble_modem_frame(struct OFDM *, uint8_t [], COMP [], float [], short []);
 void ofdm_rand(uint16_t [], int);
 void ofdm_generate_payload_data_bits(uint8_t [], int);
