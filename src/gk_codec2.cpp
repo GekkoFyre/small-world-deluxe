@@ -40,13 +40,22 @@
  ****************************************************************************************************/
 
 #include "src/gk_codec2.hpp"
-#include "src/contrib/codec2/src/ofdm_internal.h"
+#include <utility>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #include "src/contrib/codec2/src/interldpc.h"
 #include "src/contrib/codec2/src/gp_interleaver.h"
 #include <codec2/codec2_ofdm.h>
 #include <codec2/varicode.h>
 #include <codec2/freedv_api.h>
-#include <utility>
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -74,10 +83,14 @@ GkCodec2::GkCodec2(const Codec2Mode &freedv_mode, const int &freedv_clip, const 
         gkFreeDvClip = freedv_clip;
         gkFreeDvTXBpf = freedv_txbpf;
 
+        if ((ofdm_cfg = (struct OFDM_CONFIG *) calloc(1, sizeof (struct OFDM_CONFIG))) == nullptr) {
+            throw std::runtime_error(tr("Not enough memory to initialize the OFDM libraries!").toStdString());
+        }
+
         return;
     }  catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), tr("Error with initializing Codec2 library! Error:\n\n%1")
-                             .arg(QString::fromStdString(e.what())), QMessageBox::Ok, QMessageBox::Ok);
+        std::throw_with_nested(tr("Error with initializing Codec2 library! Error:\n\n%1")
+                               .arg(QString::fromStdString(e.what())).toStdString());
     }
 
     return;
@@ -88,8 +101,106 @@ GkCodec2::~GkCodec2()
     return;
 }
 
-void GkCodec2::txCodec2OfdmRawData(const GkRadio &gkRadio, const GkDevice &gkAudioDevice)
+/**
+ * @brief GkCodec2::txCodec2OfdmRawData
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param gkRadio
+ * @param gkAudioDevice
+ * @param verbose
+ * @param use_text
+ * @param dpsk
+ * @param rx_center
+ * @param tx_center
+ * @param data_bits_per_symbol
+ * @param sample_frequency
+ * @param num_carriers
+ * @note Codec2 @ GitHub <https://github.com/drowe67/codec2/blob/master/src/ofdm_mod.c>
+ */
+void GkCodec2::txCodec2OfdmRawData(const GkRadio &gkRadio, const GkDevice &gkAudioDevice, const int &verbose, const int &use_text,
+                                   const int &dpsk, const float &rx_center, const float &tx_center, const int &data_bits_per_symbol,
+                                   int data_bits_per_frame, const int &num_sample_frames, const float &sample_frequency,
+                                    const int &num_carriers, const float &ts)
 {
+    try {
+        const int ldpc_en = convertFreeDvModeToInt(gkFreeDvMode);
+        const int interleave_frames = 1;
+
+        if (ldpc_en >= 0) {
+            ofdm_cfg->fs = sample_frequency;        // Sample Frequency
+            ofdm_cfg->timing_mx_thresh = 0.30f;
+            ofdm_cfg->ftwindowwidth = 11;
+            ofdm_cfg->bps = data_bits_per_symbol;   // Bits per Symbol
+            ofdm_cfg->txtbits = 4;                  // number of auxiliary data bits
+            ofdm_cfg->ns = num_sample_frames;       // Number of Symbol frames
+
+            ofdm_cfg->tx_centre = tx_center;        // Set an optional modulation TX centre frequency (1500.0 default)
+            ofdm_cfg->rx_centre = rx_center;        // Set an optional modulation RX centre frequency (1500.0 default)
+            ofdm_cfg->nc = num_carriers;            // Number of Carriers (17 default, 62 max)
+            ofdm_cfg->tcp = 0.002f;                 // Cyclic Prefix Duration
+            ofdm_cfg->ts = 0.018f;                  // Symbol Duration
+
+            ofdm_cfg->rs = (1.0f / ts);             // Modulating Symbol Rate
+
+            struct OFDM *ofdm = ofdm_create(ofdm_cfg);
+            Q_ASSERT(ofdm != nullptr);
+            free(ofdm_cfg);
+
+            //
+            // Get a copy of the completed modem config (ofdm_create() fills in more parameters)
+            //
+
+            ofdm_cfg = ofdm_get_config_param(ofdm);
+
+            ofdm_bitsperframe = ofdm_get_bits_per_frame(ofdm);
+            ofdm_nuwbits = ((ofdm_cfg->ns - 1) * ofdm_cfg->bps - ofdm_cfg->txtbits);
+            ofdm_ntxtbits = ofdm_cfg->txtbits;
+
+            //
+            // Set up default LPDC code. We could add other codes here if we like...
+            //
+
+            struct LDPC ldpc;
+
+            int Nbitsperframe;
+            int coded_bits_per_frame;
+
+            if (ldpc_en) {
+                if (ldpc_en == 1) {
+                    set_up_hra_112_112(&ldpc, ofdm_cfg);
+                } else {
+                    set_up_hra_504_396(&ldpc, ofdm_cfg);
+                }
+
+                // Here is where we can change data bits per frame to a number smaller than LDPC code input data bits_per_frame
+                if (data_bits_per_frame) {
+                    set_data_bits_per_frame(&ldpc, data_bits_per_frame, ofdm_cfg->bps);
+                }
+
+                data_bits_per_frame = ldpc.data_bits_per_frame;
+                coded_bits_per_frame = ldpc.coded_bits_per_frame;
+
+                assert(data_bits_per_frame <= ldpc.ldpc_data_bits_per_frame);
+                assert(coded_bits_per_frame <= ldpc.ldpc_coded_bits_per_frame);
+
+                if (verbose > 1) {
+                    gkEventLogger->publishEvent(tr("ldpc_data_bits_per_frame = %1").arg(QString::number(ldpc.ldpc_data_bits_per_frame)), GkSeverity::Debug);
+                    gkEventLogger->publishEvent(tr("ldpc_coded_bits_per_frame  = %1").arg(QString::number(ldpc.ldpc_coded_bits_per_frame)), GkSeverity::Debug);
+                    gkEventLogger->publishEvent(tr("data_bits_per_frame = %1").arg(QString::number(data_bits_per_frame)), GkSeverity::Debug);
+                    gkEventLogger->publishEvent(tr("coded_bits_per_frame  = %1").arg(QString::number(coded_bits_per_frame)), GkSeverity::Debug);
+                    gkEventLogger->publishEvent(tr("ofdm_bits_per_frame  = %1").arg(QString::number(ofdm_bitsperframe)), GkSeverity::Debug);
+                    gkEventLogger->publishEvent(tr("interleave_frames: %1").arg(QString::number(interleave_frames)), GkSeverity::Debug);
+                }
+
+                assert((ofdm_nuwbits + ofdm_ntxtbits + coded_bits_per_frame) <= ofdm_bitsperframe); // Just a sanity check
+
+                Nbitsperframe = (interleave_frames * data_bits_per_frame);
+            }
+        } else {}
+    }  catch (const std::exception &e) {
+        std::throw_with_nested(tr("Unexpected issue with the Codec2 OFDM transmission! Error:\n\n%1")
+                               .arg(QString::fromStdString(e.what())).toStdString());
+    }
+
     return;
 }
 

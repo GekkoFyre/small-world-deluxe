@@ -43,12 +43,23 @@
 
 #include "src/defines.hpp"
 #include "src/gk_logger.hpp"
-#include <codec2/codec2.h>
 #include <memory>
 #include <string>
 #include <QString>
 #include <QObject>
 #include <QPointer>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#include "src/contrib/codec2/src/ofdm_internal.h"
+#include <codec2/codec2.h>
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 namespace GekkoFyre {
 
@@ -60,13 +71,15 @@ public:
                       QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkCodec2();
 
-    void txCodec2OfdmRawData(const AmateurRadio::Control::GkRadio &gkRadio, const Database::Settings::Audio::GkDevice &gkAudioDevice);
+    void txCodec2OfdmRawData(const AmateurRadio::Control::GkRadio &gkRadio, const Database::Settings::Audio::GkDevice &gkAudioDevice, const int &verbose,
+                             const int &use_text, const int &dpsk, const float &rx_center, const float &tx_center, const int &data_bits_per_symbol,
+                             int data_bits_per_frame, const int &num_sample_frames, const float &sample_frequency = 8000.0f,
+                             const int &num_carriers = 2, const float &ts = 0.0180f);
 
 private:
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
-
-    struct OFDM_CONFIG *ofdm_config;
     Database::Settings::Codec2Mode gkFreeDvMode;
+    struct OFDM_CONFIG *ofdm_cfg;
     int gkFreeDvClip;
     int gkFreeDvTXBpf;                      // OFDM TX Filter (off by default)
 
