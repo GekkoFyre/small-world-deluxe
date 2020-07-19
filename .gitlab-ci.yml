@@ -133,19 +133,9 @@ sworld_debug_archlinux_x86_64:
     after_script:
         - echo "Finished execution of Preparatory Build and secondary, lesser stage!"
     artifacts:
-        expire_in: 1 week
+        expire_in: 2 weeks
         paths:
             - src_build/
-        exclude:
-            - "CMakeFiles/"
-            - "galaxy_autogen/"
-            - "smallworld_autogen/"
-            - "src/"
-            - "*.o"
-            - "*.txt"
-            - "Makefile"
-            - "*.cmake"
-            - "*.h"
     when: always
 
 ### --------------------------------------------------------------------------------------------------- ###

@@ -245,6 +245,32 @@ if (BUILD_CODEC2_SUPPORT)
     endif()
 endif(BUILD_CODEC2_SUPPORT)
 
+#
+# Source code 'contrib' files for Codec2
+#
+set(GALAXY_CODEC2_C
+    ${GALAXY_CODEC2_C}
+    src/contrib/codec2/src/debug_alloc.h
+    src/contrib/codec2/src/gp_interleaver.c
+    src/contrib/codec2/src/gp_interleaver.h
+    src/contrib/codec2/src/HRA_112_112.c
+    src/contrib/codec2/src/HRA_112_112.h
+    src/contrib/codec2/src/HRAb_396_504.c
+    src/contrib/codec2/src/HRAb_396_504.h
+    src/contrib/codec2/src/interldpc.c
+    src/contrib/codec2/src/interldpc.h
+    src/contrib/codec2/src/machdep.h
+    src/contrib/codec2/src/mpdecode_core.c
+    src/contrib/codec2/src/mpdecode_core.h
+    src/contrib/codec2/src/ofdm_internal.h
+    src/contrib/codec2/src/phi0.c
+    src/contrib/codec2/src/phi0.h
+    src/contrib/codec2/src/filter_coef.h
+    src/contrib/codec2/src/filter.c
+    src/contrib/codec2/src/filter.h)
+
+set_property(SOURCE ${GALAXY_CODEC2_C} PROPERTY SKIP_AUTOUIC ON)
+
 find_package(USB REQUIRED)
 if (USB_FOUND)
     include_directories(${LIBUSB_INCLUDE_DIRS})
@@ -607,7 +633,7 @@ include(GNUInstallDirs)
 # Build Small World Deluxe as a static package!
 #
 if(GFYRE_BUILD_STATIC)
-    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP})
+    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP} ${GALAXY_CODEC2_C})
     if(GK_CUDA_FFT)
         add_library(galaxy_cuda STATIC ${GALAXY_CUDA})
     endif()
@@ -619,7 +645,7 @@ endif(GFYRE_BUILD_STATIC)
 # Build Small World Deluxe as a shared package!
 #
 if(GFYRE_BUILD_SHARED)
-    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP})
+    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP} ${GALAXY_CODEC2_C})
     if(GK_CUDA_FFT)
         add_library(galaxy_cuda STATIC ${GALAXY_CUDA})
     endif()

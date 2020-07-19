@@ -303,6 +303,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
 
         //
+        // Initialize any amateur radio modems!
+        //
+        gkCodec2 = new GkCodec2(Codec2Mode::freeDvMode2020, 0, 0, gkEventLogger, this);
+
+        //
         // Setup the CLI parser and its settings!
         // https://doc.qt.io/qt-5/qcommandlineparser.html
         //
@@ -388,8 +393,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Sound & Audio Devices
         //
-        QObject::connect(this, SIGNAL(stopRecording(const int &)), this, SLOT(stopRecordingInput(const int &)));
-        QObject::connect(this, SIGNAL(startRecording(const int &)), this, SLOT(startRecordingInput(const int &)));
+        QObject::connect(this, SIGNAL(stopRecording()), this, SLOT(stopRecordingInput()));
+        QObject::connect(this, SIGNAL(startRecording()), this, SLOT(startRecordingInput()));
+        QObject::connect(this, SIGNAL(stopTxAudio()), this, SLOT(stopTransmitOutput()));
+        QObject::connect(this, SIGNAL(startTxAudio()), this, SLOT(startTransmitOutput()));
         QObject::connect(this, SIGNAL(refreshVuDisplay(const qreal &, const qreal &, const int &)),
                          gkVuMeter, SLOT(levelChanged(const qreal &, const qreal &, const int &)));
 
@@ -1965,10 +1972,8 @@ void MainWindow::procRigPort(const QString &conn_port, const GekkoFyre::AmateurR
  * a termination/interrupt.
  * @return If recording of input audio devices have actually stopped or not.
  */
-void MainWindow::stopRecordingInput(const int &wait_time)
+void MainWindow::stopRecordingInput()
 {
-    Q_UNUSED(wait_time);
-
     if (inputAudioStream != nullptr && pref_input_device.is_dev_active) {
         if (inputAudioStream->isActive()) {
             inputAudioStream->close();
@@ -1987,9 +1992,8 @@ void MainWindow::stopRecordingInput(const int &wait_time)
  * an abortion of the operation altogether.
  * @note PortAudio Documentation <https://app.assembla.com/spaces/portaudio/git/source/master/bindings/cpp/example/sine.cxx>.
  */
-void MainWindow::startRecordingInput(const int &wait_time)
+void MainWindow::startRecordingInput()
 {
-    Q_UNUSED(wait_time);
     emit stopRecording();
 
     // To minimise startup latency for this use-case (i.e. expecting StartStream() to give minimum
@@ -2005,6 +2009,36 @@ void MainWindow::startRecordingInput(const int &wait_time)
     inputAudioStream->start();
 
     pref_input_device.is_dev_active = true; // State that this recording device is now active!
+    return;
+}
+
+/**
+ * @brief MainWindow::stopTransmitOutput
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::stopTransmitOutput()
+{
+    return;
+}
+
+/**
+ * @brief MainWindow::startTransmitOutput
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::startTransmitOutput()
+{
+    // To minimise startup latency for this use-case (i.e. expecting StartStream() to give minimum
+    // startup latency) you should use the paPrimeOutputBuffersUsingStreamCallback stream flag.
+    // Otherwise the initial buffers will be zero and the time it takes for the sound to hit the
+    // DACs will include playing out the buffer length of zeros (which would be around 80ms on
+    // Windows WMME or DirectSound with the default PA settings).
+    auto pa_stream_param = portaudio::StreamParameters(portaudio::DirectionSpecificStreamParameters::null(), pref_output_device.cpp_stream_param,
+                                                       pref_output_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
+                                                       paPrimeOutputBuffersUsingStreamCallback);
+    outputAudioStream = new portaudio::MemFunCallbackStream<PaAudioBuf<qint16>>(pa_stream_param, *output_audio_buf,
+                                                                                &PaAudioBuf<qint16>::recordCallback);
+    outputAudioStream->start();
+
     return;
 }
 

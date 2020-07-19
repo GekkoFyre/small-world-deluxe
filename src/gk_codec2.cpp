@@ -40,6 +40,13 @@
  ****************************************************************************************************/
 
 #include "src/gk_codec2.hpp"
+#include "src/contrib/codec2/src/ofdm_internal.h"
+#include "src/contrib/codec2/src/interldpc.h"
+#include "src/contrib/codec2/src/gp_interleaver.h"
+#include <codec2/codec2_ofdm.h>
+#include <codec2/varicode.h>
+#include <codec2/freedv_api.h>
+#include <utility>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -48,18 +55,30 @@ using namespace Audio;
 using namespace AmateurRadio;
 using namespace Control;
 using namespace Spectrograph;
+using namespace System;
+using namespace Events;
+using namespace Logging;
 
-GkCodec2::GkCodec2(const int &freedv_mode, const int &freedv_clip, const int &freedv_txbpf)
+static int ofdm_bitsperframe;
+static int ofdm_nuwbits;
+static int ofdm_ntxtbits;
+
+GkCodec2::GkCodec2(const Codec2Mode &freedv_mode, const int &freedv_clip, const int &freedv_txbpf, QPointer<GkEventLogger> eventLogger,
+                   QObject *parent)
 {
-    gkFreeDvMode = freedv_mode;
-    gkFreeDvClip = freedv_clip;
-    gkFreeDvTXBpf = freedv_txbpf;
+    try {
+        setParent(parent);
+        gkEventLogger = std::move(eventLogger);
 
-    freedv = freedv_open(gkFreeDvMode);
-    assert(freedv != nullptr);
+        gkFreeDvMode = freedv_mode;
+        gkFreeDvClip = freedv_clip;
+        gkFreeDvTXBpf = freedv_txbpf;
 
-    freedv_set_clip(freedv, gkFreeDvClip);
-    freedv_set_tx_bpf(freedv, gkFreeDvTXBpf);
+        return;
+    }  catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("Error with initializing Codec2 library! Error:\n\n%1")
+                             .arg(QString::fromStdString(e.what())), QMessageBox::Ok, QMessageBox::Ok);
+    }
 
     return;
 }
@@ -69,7 +88,36 @@ GkCodec2::~GkCodec2()
     return;
 }
 
-void GkCodec2::txCodec2RawData(const GkRadio &gkRadio, const GkDevice &gkAudioDevice)
+void GkCodec2::txCodec2OfdmRawData(const GkRadio &gkRadio, const GkDevice &gkAudioDevice)
 {
     return;
+}
+
+/**
+ * @brief GkCodec2::convertFreeDvModeToInt
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param freedv_mode
+ */
+int GkCodec2::convertFreeDvModeToInt(const Codec2Mode &freedv_mode)
+{
+    switch (freedv_mode) {
+    case Codec2Mode::freeDvMode2020:
+        return FREEDV_MODE_2020;
+    case Codec2Mode::freeDvMode700D:
+        return FREEDV_MODE_700D;
+    case Codec2Mode::freeDvMode700C:
+        return FREEDV_MODE_700C;
+    case Codec2Mode::freeDvMode800XA:
+        return FREEDV_MODE_800XA;
+    case Codec2Mode::freeDvMode2400B:
+        return FREEDV_MODE_2400B;
+    case Codec2Mode::freeDvMode2400A:
+        return FREEDV_MODE_2400A;
+    case Codec2Mode::freeDvMode1600:
+        return FREEDV_MODE_1600;
+    default:
+        return -1;
+    }
+
+    return -1;
 }

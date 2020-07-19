@@ -42,9 +42,13 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include "src/gk_logger.hpp"
 #include <codec2/codec2.h>
-#include <codec2/freedv_api.h>
+#include <memory>
+#include <string>
+#include <QString>
 #include <QObject>
+#include <QPointer>
 
 namespace GekkoFyre {
 
@@ -52,16 +56,21 @@ class GkCodec2 : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkCodec2(const int &freedv_mode, const int &freedv_clip, const int &freedv_txbpf);
+    explicit GkCodec2(const Database::Settings::Codec2Mode &freedv_mode, const int &freedv_clip, const int &freedv_txbpf,
+                      QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkCodec2();
 
-    void txCodec2RawData(const AmateurRadio::Control::GkRadio &gkRadio, const Database::Settings::Audio::GkDevice &gkAudioDevice);
+    void txCodec2OfdmRawData(const AmateurRadio::Control::GkRadio &gkRadio, const Database::Settings::Audio::GkDevice &gkAudioDevice);
 
 private:
-    struct freedv *freedv;
-    int gkFreeDvMode;
+    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
+
+    struct OFDM_CONFIG *ofdm_config;
+    Database::Settings::Codec2Mode gkFreeDvMode;
     int gkFreeDvClip;
-    int gkFreeDvTXBpf;
+    int gkFreeDvTXBpf;                      // OFDM TX Filter (off by default)
+
+    int convertFreeDvModeToInt(const Database::Settings::Codec2Mode &freedv_mode);
 
 };
 };

@@ -52,6 +52,7 @@
 #include "src/gk_audio_decoding.hpp"
 #include "src/gk_fft.hpp"
 #include "src/gk_logger.hpp"
+#include "src/gk_codec2.hpp"
 #include "src/ui/widgets/gk_display_image.hpp"
 #include "src/ui/gkaudioplaydialog.hpp"
 #include "src/ui/gk_vu_meter_widget.hpp"
@@ -216,8 +217,10 @@ public slots:
     //
     // Audio related
     //
-    void stopRecordingInput(const int &wait_time = 5000);
-    void startRecordingInput(const int &wait_time = 5000);
+    void stopRecordingInput();
+    void startRecordingInput();
+    void stopTransmitOutput();
+    void startTransmitOutput();
 
     //
     // Radio and Hamlib specific functions
@@ -245,8 +248,10 @@ signals:
     //
     void refreshVuDisplay(const qreal &rmsLevel, const qreal &peakLevel, const int &numSamples);
     void changeVolume(const float &value);
-    void stopRecording(const int &wait_time = 5000);
-    void startRecording(const int &wait_time = 5000);
+    void stopRecording();
+    void startRecording();
+    void stopTxAudio();
+    void startTxAudio();
 
     //
     // Spectrograph related
@@ -299,6 +304,7 @@ private:
     std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> input_audio_buf;
     std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> output_audio_buf;
     portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<qint16>> *inputAudioStream;
+    portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<qint16>> *outputAudioStream;
 
     //
     // Audio sub-system
@@ -330,6 +336,7 @@ private:
     //
     static QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>> gkRadioModels;
     std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> gkRadioPtr;
+    QPointer<GekkoFyre::GkCodec2> gkCodec2;
     QList<GekkoFyre::AmateurRadio::GkFreqs> frequencyList;
 
     //

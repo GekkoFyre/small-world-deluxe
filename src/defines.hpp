@@ -43,8 +43,6 @@
 
 #include "src/gk_string_funcs.hpp"
 #include <portaudiocpp/PortAudioCpp.hxx>
-#include <codec2/codec2.h>
-#include <codec2/freedv_api.h>
 #include <boost/exception/all.hpp>
 #include <boost/logic/tribool.hpp>
 #include <boost/filesystem.hpp>
@@ -330,6 +328,16 @@ namespace Database {
             WindowMaximized,
             WindowHSize,
             WindowVSize
+        };
+
+        enum Codec2Mode {
+            freeDvMode2020,
+            freeDvMode700D,
+            freeDvMode700C,
+            freeDvMode800XA,
+            freeDvMode2400B,
+            freeDvMode2400A,
+            freeDvMode1600
         };
 
         struct UsbVers3 {

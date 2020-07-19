@@ -77,7 +77,15 @@ To begin with, you will need to install the following dependencies along with th
 - `zstd` [ [real-time compresion algorithm](https://facebook.github.io/zstd/) ]
 - `iconv` [ [converts between different character encodings](https://www.gnu.org/software/libiconv/) ]
 
-Once you have downloaded these dependencies with the appropriate package manager, whether that be `apt-get`, `yum`, `dnf`, `pacman`, or something else entirely, you are ready to begin the compilation process! You will need to secondly download the source repository: `git clone https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe.git`
+Some of the aforementioned dependencies need to be manually cloned via their respective Git repositories (links provided above) and compiled by hand, due to the fact that we are working with bleeding edge technology and code. The dependencies we are aware of which fall into this camp are the following:
+
+- `Codec2`
+- `PortAudio`
+- `Hamlib` (and the `C++ bindings`)
+
+Hints on how to compile this software can be taken from the `.gitlab-ci.yml` file within the root of our Git repository, for where we are in deficient provisioning of such documentation for. We cannot stress enough that binaries will be provided soon, it's just that `Small World Deluxe` is not quite at that stage yet of being demonstrated on a larger scale.
+
+Once you have downloaded and/or compiled the aforementioned dependencies with the appropriate package manager or dev-tools, whether that be `apt-get`, `yum`, `dnf`, `pacman`, or something else entirely, you are ready to begin the compilation process of `Small World Deluxe` itself! You will firstly need to download the source repository though: `git clone https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe.git`
 
 Then `cd small-world-deluxe` before executing `mkdir build` and going into that directory too, where you'll finally perform a `cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..`
 
