@@ -52,6 +52,7 @@
 #include "src/gk_audio_decoding.hpp"
 #include "src/gk_fft.hpp"
 #include "src/gk_logger.hpp"
+#include "src/ui/widgets/gk_display_image.hpp"
 #include "src/ui/gkaudioplaydialog.hpp"
 #include "src/ui/gk_vu_meter_widget.hpp"
 #include <boost/filesystem.hpp>
@@ -168,13 +169,14 @@ private slots:
     //
     // Transmission & Digital Signalling
     //
-    void msgOutgoingProcess();
+    void msgOutgoingProcess(const QString &curr_text);
 
     //
     // Frequencies related
     //
     void removeFreqFromDb(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_remove);
     void addFreqToDb(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_add);
+    void tuneActiveFreq(const quint64 &freq_tune);
 
     //
     // SSTV related (RX)
@@ -196,8 +198,17 @@ private slots:
     void on_pushButton_sstv_tx_load_image_clicked();
     void on_pushButton_sstv_tx_send_image_clicked();
 
+    void on_pushButton_sstv_rx_remove_clicked();
+
+    void on_pushButton_sstv_tx_remove_clicked();
+
 protected slots:
     void closeEvent(QCloseEvent *event);
+
+    //
+    // Radio and Hamlib specific functions
+    //
+    void procRigPort(const QString &conn_port, const GekkoFyre::AmateurRadio::GkConnMethod &conn_method);
 
 public slots:
     void updateProgressBar(const bool &enable, const size_t &min, const size_t &max);
@@ -211,8 +222,6 @@ public slots:
     //
     // Radio and Hamlib specific functions
     //
-    void selectedPortType(const GekkoFyre::AmateurRadio::GkConnType &rig_conn_type, const bool &is_cat_mode);
-    void analyzePortType(const bool &is_cat_mode);
     void gatherRigCapabilities(const rig_model_t &rig_model_update,
                                const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void addRigToMemory(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
@@ -226,8 +235,7 @@ signals:
     //
     // Radio and Hamlib specific functions
     //
-    void gatherPortType(const bool &is_cat_mode);
-    void changePortType(const GekkoFyre::AmateurRadio::GkConnType &rig_conn_type, const bool &is_cat_mode);
+    void changeConnPort(const QString &conn_port, const GekkoFyre::AmateurRadio::GkConnMethod &conn_method);
     void addRigInUse(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void recvRigCapabilities(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void disconnectRigInUse(std::shared_ptr<Rig> rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
@@ -288,9 +296,9 @@ private:
     portaudio::System *gkPortAudioInit;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
-    std::shared_ptr<GekkoFyre::PaAudioBuf<int16_t>> input_audio_buf;
-    std::shared_ptr<GekkoFyre::PaAudioBuf<int16_t>> output_audio_buf;
-    portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<int16_t>> *inputAudioStream;
+    std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> input_audio_buf;
+    std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> output_audio_buf;
+    portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<qint16>> *inputAudioStream;
 
     //
     // Audio sub-system
@@ -323,6 +331,20 @@ private:
     static QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>> gkRadioModels;
     std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> gkRadioPtr;
     QList<GekkoFyre::AmateurRadio::GkFreqs> frequencyList;
+
+    //
+    // SSTV related
+    //
+    QPointer<GekkoFyre::GkDisplayImage> label_sstv_tx_image;
+    QPointer<GekkoFyre::GkDisplayImage> label_sstv_rx_live_image;
+    QPointer<GekkoFyre::GkDisplayImage> label_sstv_rx_saved_image;
+    QStringList sstv_tx_pic_files;                                      // Images loaded from the user's storage media and prepared for transmission
+    QStringList sstv_rx_saved_image_files;                              // Images saved to history and then to the user's storage media
+    QList<QPixmap> sstv_rx_image_pixmap;                                // Images received in real-time
+    QList<QPixmap> sstv_rx_saved_image_pixmap;                          // Images saved to history
+    int sstv_tx_image_idx;                                              // Images loaded and prepared for transmission
+    int sstv_rx_image_idx;                                              // Images received in real-time
+    int sstv_rx_saved_image_idx;                                        // Images saved to history
 
     //
     // Timing and date related
@@ -360,6 +382,11 @@ private:
     void updateVolumeSliderLabel(const float &vol_level);
 
     //
+    // QFileDialog related
+    //
+    bool fileOverloadWarning(const int &file_count, const int &max_num_files = GK_SSTV_FILE_DLG_LOAD_IMGS_MAX_FILES_WARN);
+
+    //
     // Spectrograph related
     //
     void updateSpectrograph();
@@ -372,6 +399,7 @@ private:
 
 Q_DECLARE_METATYPE(std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>);
 Q_DECLARE_METATYPE(GekkoFyre::Database::Settings::GkUsbPort);
+Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkConnMethod);
 Q_DECLARE_METATYPE(GekkoFyre::System::Events::Logging::GkEventLogging);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkConnType);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::DigitalModes);

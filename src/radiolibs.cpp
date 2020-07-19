@@ -68,11 +68,6 @@ extern "C"
 #endif
 #endif
 
-#if defined(__linux__) || defined(__MINGW64__)
-#include <SDL2/SDL_video.h>
-#include <SDL2/SDL_messagebox.h>
-#endif
-
 #if __linux__
 #include <sys/ioctl.h>
 #include <linux/serial.h>
@@ -85,18 +80,26 @@ extern "C"
 using namespace GekkoFyre;
 using namespace Database;
 using namespace Settings;
+using namespace Audio;
 using namespace AmateurRadio;
 using namespace Control;
+using namespace Spectrograph;
+using namespace System;
+using namespace Events;
+using namespace Logging;
+
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
 RadioLibs::RadioLibs(QPointer<FileIo> filePtr, std::shared_ptr<StringFuncs> stringPtr,
-                     std::shared_ptr<GkLevelDb> dkDb, std::shared_ptr<GkRadio> radioPtr, QObject *parent) : QObject(parent)
+                     std::shared_ptr<GkLevelDb> dkDb, std::shared_ptr<GkRadio> radioPtr,
+                     QPointer<GkEventLogger> eventLogger, QObject *parent) : QObject(parent)
 {
     gkStringFuncs = std::move(stringPtr);
     gkDekodeDb = std::move(dkDb);
     gkFileIo = std::move(filePtr);
     gkRadioPtr = std::move(radioPtr);
+    gkEventLogger = std::move(eventLogger);
 }
 
 RadioLibs::~RadioLibs()
@@ -396,6 +399,44 @@ std::string RadioLibs::getUsbPortId(libusb_device *usb_device)
     return "";
 }
 
+libusb_error RadioLibs::convLibUSBErrorToEnum(const int &error)
+{
+    switch (error) {
+    case 0:
+        return LIBUSB_SUCCESS;
+    case -1:
+        return LIBUSB_ERROR_IO;
+    case -2:
+        return LIBUSB_ERROR_INVALID_PARAM;
+    case -3:
+        return LIBUSB_ERROR_ACCESS;
+    case -4:
+        return LIBUSB_ERROR_NO_DEVICE;
+    case -5:
+        return LIBUSB_ERROR_NOT_FOUND;
+    case -6:
+        return LIBUSB_ERROR_BUSY;
+    case -7:
+        return LIBUSB_ERROR_TIMEOUT;
+    case -8:
+        return LIBUSB_ERROR_OVERFLOW;
+    case -9:
+        return LIBUSB_ERROR_PIPE;
+    case -10:
+        return LIBUSB_ERROR_INTERRUPTED;
+    case -11:
+        return LIBUSB_ERROR_NO_MEM;
+    case -12:
+        return LIBUSB_ERROR_NOT_SUPPORTED;
+    case -99:
+        return LIBUSB_ERROR_OTHER;
+    default:
+        return LIBUSB_ERROR_OTHER;
+    }
+
+    return libusb_error::LIBUSB_ERROR_OTHER;
+}
+
 /**
  * @brief RadioLibs::enumUsbDevices will enumerate out any USB devices present/connected on the user's computer system, giving valuable
  * details for each device.
@@ -419,7 +460,7 @@ QMap<std::string, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDe
         }
 
         libusb_device *dev = nullptr;
-        while ((dev = devices[++i]) != nullptr) {
+        while ((dev = std::move(devices[++i])) != nullptr) {
             GkUsbPort *usb = new GkUsbPort();
 
             usb->usb_enum.handle = nullptr;
@@ -441,7 +482,7 @@ QMap<std::string, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDe
                 usb->usb_enum.config = new libusb_config_descriptor();
                 int ret_cfg_desc = libusb_get_config_descriptor(dev, 0, &usb->usb_enum.config);
                 if (ret_cfg_desc != LIBUSB_SUCCESS) {
-                    std::cerr << tr("Error with enumerating `libusb` interface! Couldn't retrieve descriptors.").toStdString() << std::endl;
+                    gkEventLogger->publishEvent(tr("Unable to enumerate USB port/device. Couldn't retrieve descriptors!"), GkSeverity::Warning);
                 }
 
                 // https://cpp.hotexamples.com/examples/-/-/libusb_get_bus_number/cpp-libusb_get_bus_number-function-examples.html
@@ -516,6 +557,10 @@ QMap<std::string, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDe
                         }
                     }
                 }
+            } else {
+                gkEventLogger->publishEvent(tr("Unable to enumerate USB port/device: %1")
+                                            .arg(QString::fromStdString(libusb_strerror(convLibUSBErrorToEnum(ret_usb_open)))),
+                                            GkSeverity::Warning);
             }
 
             delete usb;
@@ -540,13 +585,7 @@ QMap<std::string, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDe
  */
 void RadioLibs::print_exception(const std::exception &e, int level)
 {
-    #if defined(_MSC_VER) && (_MSC_VER > 1900)
-    HWND hwnd = nullptr;
-    modalDlgBoxOk(hwnd, tr("Error!"), e.what(), MB_ICONERROR);
-    DestroyWindow(hwnd);
-    #else
-    modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), e.what());
-    #endif
+    gkEventLogger->publishEvent(e.what(), GkSeverity::Warning, "", true);
 
     try {
         std::rethrow_if_nested(e);
@@ -557,33 +596,6 @@ void RadioLibs::print_exception(const std::exception &e, int level)
     return;
 }
 
-#if defined(_MSC_VER) && (_MSC_VER > 1900)
-bool RadioLibs::modalDlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon)
-{
-    // TODO: Make this dialog modal
-    std::mutex mtx_modal_dlg_box;
-    std::lock_guard<std::mutex> lck_guard(mtx_modal_dlg_box);
-    int msgBoxId = MessageBoxA(hwnd, msgTxt.toStdString().c_str(), title.toStdString().c_str(), icon | MB_OK);
-
-    switch (msgBoxId) {
-    case IDOK:
-        return true;
-    default:
-        return false;
-    }
-
-    return false;
-}
-#else
-bool RadioLibs::modalDlgBoxLinux(uint32_t flags, const QString &title, const QString &msgTxt)
-{
-    SDL_Window *sdlWindow = SDL_CreateWindow(General::productName, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, DLG_BOX_WINDOW_WIDTH, DLG_BOX_WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
-    int ret = SDL_ShowSimpleMessageBox(flags, title.toStdString().c_str(), msgTxt.toStdString().c_str(), sdlWindow);
-    SDL_DestroyWindow(sdlWindow);
-    return ret;
-}
-#endif
-
 /**
  * @brief RadioLibs::gkInitRadioRig Initializes the struct, `GekkoFyre::AmateurRadio::Control::GkRadio`, and all of the values within,
  * along with the user's desired amateur radio rig of choice, including anything needed to power it up and enable communication between
@@ -593,7 +605,7 @@ bool RadioLibs::modalDlgBoxLinux(uint32_t flags, const QString &title, const QSt
  * @param usb_ptr A pointer which contains all the information on user's configured USB devices, if any.
  * @note Ref: HamLib <https://github.com/Hamlib/Hamlib/>. Example: <https://github.com/Hamlib/Hamlib/blob/master/tests/example.c>
  */
-void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_ptr<GkUsbPort> usb_ptr)
+void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr)
 {
     std::mutex mtx_init_rig;
     std::lock_guard<std::mutex> lck_guard(mtx_init_rig);
@@ -695,9 +707,9 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_p
         //
         // Determine the port necessary and let Hamlib know about it!
         //
-        if (!radio_ptr->cat_conn_port.empty()) {
-            radio_ptr->gkRig->setConf("ptt_pathname", radio_ptr->ptt_conn_port.c_str());
-            radio_ptr->gkRig->setConf("rig_pathname", radio_ptr->cat_conn_port.c_str());
+        if (!radio_ptr->cat_conn_port.isNull() && !radio_ptr->cat_conn_port.isEmpty()) {
+            radio_ptr->gkRig->setConf("ptt_pathname", radio_ptr->ptt_conn_port.toStdString().c_str());
+            radio_ptr->gkRig->setConf("rig_pathname", radio_ptr->cat_conn_port.toStdString().c_str());
         }
 
         if (radio_ptr->rig_model < 1) { // No amateur radio rig has been configured and/or adequately detected!
@@ -769,7 +781,7 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr, std::shared_p
  * @param data_buf The raw audio stream itself.
  * @return A factor for which to multiply the volume of the audio signal itself by.
  */
-int16_t RadioLibs::calibrateAudioInputSignal(const int16_t *data_buf)
+qint16 RadioLibs::calibrateAudioInputSignal(const qint16 *data_buf)
 {
     return -1;
 }

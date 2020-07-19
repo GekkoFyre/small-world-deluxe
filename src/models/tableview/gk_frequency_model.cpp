@@ -43,9 +43,10 @@
 #include <utility>
 #include <iomanip>
 #include <sstream>
+#include <QMenu>
+#include <QPoint>
 #include <QAction>
 #include <QVBoxLayout>
-#include <QHeaderView>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -71,19 +72,20 @@ GkFreqTableViewModel::GkFreqTableViewModel(std::shared_ptr<GekkoFyre::GkLevelDb>
     table->setSelectionBehavior(QAbstractItemView::SelectRows);
     table->setSelectionMode(QAbstractItemView::SingleSelection);
     table->setContextMenuPolicy(Qt::CustomContextMenu);
-    QObject::connect(table, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(customMenuRequested(QPoint)));
 
-    table->horizontalHeader()->setContextMenuPolicy(Qt::CustomContextMenu);
-    QObject::connect(table->horizontalHeader(), SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(customHeaderMenuRequested(QPoint)));
+    QPointer<QAction> pAction1 = new QAction(tr("New"), this);
+    QPointer<QAction> pAction2 = new QAction(tr("Edit"), this);
+    QPointer<QAction> pAction3 = new QAction(tr("Remove"), this);
+
+    table->addAction(pAction1);
+    table->addAction(pAction2);
+    table->addAction(pAction3);
+
+    QPointer<GkFreqTableHorizHeader> horiz_header = new GkFreqTableHorizHeader(Qt::Horizontal);
+    table->setHorizontalHeader(horiz_header);
+    QObject::connect(horiz_header, SIGNAL(mouseRightPressed(int)), this, SLOT(customHeaderMenuRequested(int)));
+
     layout->addWidget(table);
-
-    // table->horizontalHeader()->setSectionResizeMode(GK_FREQ_TABLEVIEW_MODEL_FREQUENCY_IDX, QHeaderView::Stretch);
-
-    menu = new QMenu(parent);
-    menu->addAction(new QAction(tr("New"), this));
-    menu->addAction(new QAction(tr("Edit"), this));
-    menu->addAction(new QAction(tr("Delete"), this));
-
     proxyModel->setSourceModel(this);
 
     return;
@@ -319,9 +321,23 @@ QVariant GkFreqTableViewModel::headerData(int section, Qt::Orientation orientati
     return QVariant();
 }
 
-void GkFreqTableViewModel::customHeaderMenuRequested(QPoint pos)
+void GkFreqTableViewModel::customHeaderMenuRequested(int section)
 {
-    menu->popup(table->horizontalHeader()->viewport()->mapToGlobal(pos));
+    Q_UNUSED(section);
 
+    QMenu menu(table);
+    menu.addActions(table->actions());
+    menu.exec(QCursor::pos());
+
+    return;
+}
+
+void GkFreqTableHorizHeader::mouseReleaseEvent(QMouseEvent *e)
+{
+    if (e->button() == Qt::RightButton) {
+        emit mouseRightPressed(logicalIndexAt(e->pos()));
+    }
+
+    QHeaderView::mouseReleaseEvent(e);
     return;
 }

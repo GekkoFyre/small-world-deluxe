@@ -75,8 +75,7 @@ if(CMAKE_VERSION VERSION_LESS "3.7.0")
 endif()
 
 set(CMAKE_MODULE_PATH
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/"
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/third-party/basic-c-sdl-project/cmake/sdl2/") # Do not delete this submodule!
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/")
 
 #
 # Custom options specific to Small World Deluxe and/or GekkoFyre Networks <https://gekkofyre.io/>
@@ -172,22 +171,6 @@ if (Boost_FOUND)
 else()
     message(FATAL_ERROR "The required 'Boost C++' libraries are either not installed, or not multithreaded and/or of not an up-to-date version. Boost C++ 1.54.0 is the minimally required version.")
 endif(Boost_FOUND)
-
-#
-# Don't forget to include SDLmain.h and SDLmain.m your project for the
-# OS X framework based version.  (Other versions link to -lSDLmain which
-# this module will try to find on your behalf.) Also for OS X, this
-# module will automatically add the -framework Cocoa on your behalf.
-#
-if (LINUX OR MSYS OR MINGW)
-    find_package(SDL2 REQUIRED)
-    if (SDL2MAIN_FOUND AND SDL2_VERSION_STRING MATCHES "2.*.*")
-        include_directories(${SDL2_INCLUDE_DIRS})
-        set(LIBS ${LIBS} ${SDL2_LIBRARIES})
-    else()
-        message(FATAL_ERROR "The cross-platform Simple DirectMedia Layer (libSDL2) library could not be found!")
-    endif()
-endif()
 
 find_package(ZLIB REQUIRED)
 if (ZLIB_FOUND)
@@ -376,7 +359,9 @@ qt5_wrap_ui(UI_HEADERS
     src/ui/spectrodialog.ui
     src/ui/gkaudioplaydialog.ui)
 
-qt5_add_resources(UI_RESOURCES src/sworld_res.qrc)
+# https://doc.qt.io/qt-5/cmake-command-reference.html
+# rcc -no-compress -binary smallworld_res.qrc -o smallworld_res.rcc
+qt5_add_resources(UI_RESOURCES src/sworld_res.qrc OPTIONS -compress-algo zstd -compress 19)
 
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_BINARY_DIR})
@@ -412,9 +397,10 @@ set(GALAXY_UI_CPP
     src/gk_modem.cpp
     src/gk_frequency_list.cpp
     src/gk_string_funcs.cpp
-    src/gk_submit_msg.cpp
     src/gk_logger.cpp
     src/gk_codec2.cpp
+    src/ui/widgets/gk_submit_msg.cpp
+    src/ui/widgets/gk_display_image.cpp
     src/models/tableview/gk_frequency_model.cpp
     src/models/tableview/gk_logger_model.cpp)
 
@@ -484,10 +470,10 @@ set(GALAXY_OBJ_HEADERS
     src/gk_modem.hpp
     src/gk_frequency_list.hpp
     src/gk_string_funcs.hpp
-    src/gk_messagebox.hpp
-    src/gk_submit_msg.hpp
     src/gk_logger.hpp
     src/gk_codec2.hpp
+    src/ui/widgets/gk_submit_msg.hpp
+    src/ui/widgets/gk_display_image.hpp
     src/models/tableview/gk_frequency_model.hpp
     src/models/tableview/gk_logger_model.hpp)
 
@@ -642,9 +628,8 @@ endif(GFYRE_BUILD_SHARED)
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
 target_link_libraries(galaxy ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::SerialPort Qt5::PrintSupport Threads::Threads SingleApplication::SingleApplication ${LIBS})
 
-# rcc -no-compress -binary smallworld_res.qrc -o smallworld_res.rcc
-qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)
-add_dependencies(galaxy resources)
+# qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)
+# add_dependencies(galaxy resources)
 
 set(SWRLD_EXEC ${SWRLD_EXEC}
     src/main.cpp)

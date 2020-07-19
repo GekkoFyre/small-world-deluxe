@@ -75,6 +75,11 @@ using namespace Database;
 using namespace Settings;
 using namespace Audio;
 using namespace AmateurRadio;
+using namespace Control;
+using namespace Spectrograph;
+using namespace System;
+using namespace Events;
+using namespace Logging;
 
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
@@ -85,11 +90,12 @@ namespace sys = boost::system;
 size_t GkAudioEncoding::ogg_buf_counter = 0;
 
 GkAudioEncoding::GkAudioEncoding(QPointer<FileIo> fileIo,
-                                 std::shared_ptr<PaAudioBuf<int16_t>> audio_buf,
+                                 std::shared_ptr<PaAudioBuf<qint16>> audio_buf,
                                  std::shared_ptr<GkLevelDb> database,
                                  QPointer<GekkoFyre::SpectroGui> spectroGui,
                                  std::shared_ptr<StringFuncs> stringFuncs,
                                  Database::Settings::Audio::GkDevice input_device,
+                                 QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                  QObject *parent)
 {
     qRegisterMetaType<GekkoFyre::GkAudioFramework::Bitrate>("GekkoFyre::GkAudioFramework::Bitrate");
@@ -101,6 +107,7 @@ GkAudioEncoding::GkAudioEncoding(QPointer<FileIo> fileIo,
     gkDb = std::move(database);
     gkInputDev = std::move(input_device);
     gkSpectroGui = std::move(spectroGui);
+    gkEventLogger = std::move(eventLogger);
 
     #ifdef OPUS_LIBS_ENBLD
     opus_state = std::make_unique<OpusState>(AUDIO_FRAMES_PER_BUFFER, AUDIO_CODECS_OPUS_MAX_PACKETS, gkInputDev.dev_input_channel_count);
@@ -160,7 +167,7 @@ void GkAudioEncoding::recordAudioFile(const CodecSupport &codec, const Bitrate &
             std::future<std::vector<signed char>> ogg_frame_future = ogg_frame_promise.get_future();
 
             while (recording_in_progress) {
-                // ogg_audio_frame_thread = std::thread(&PaAudioBuf<int16_t>::prepOggVorbisBuf, gkAudioBuf, std::move(ogg_frame_promise));
+                // ogg_audio_frame_thread = std::thread(&PaAudioBuf<qint16>::prepOggVorbisBuf, gkAudioBuf, std::move(ogg_frame_promise));
                 std::vector<signed char> audio_frame_vec = ogg_frame_future.get();
 
                 if (audio_frame_vec.empty()) {
@@ -367,7 +374,7 @@ void GkAudioEncoding::recordOggVorbis(const std::vector<signed char> &audio_fram
         gkStringFuncs->modalDlgBoxOk(hwnd_record_ogg_vorbis_vec, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd_record_ogg_vorbis_vec);
         #else
-        gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()));
+        gkEventLogger->publishEvent(tr("An error occurred during the handling of waterfall / spectrograph data!"), GkSeverity::Error, e.what(), true);
         #endif
     }
 

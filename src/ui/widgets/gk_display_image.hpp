@@ -42,23 +42,51 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include "src/gk_logger.hpp"
+#include <QMouseEvent>
+#include <QPointer>
 #include <QObject>
-#include <QKeyEvent>
-#include <QPlainTextEdit>
+#include <QWidget>
+#include <QString>
+#include <QPixmap>
+#include <QLabel>
+#include <QSize>
 
 namespace GekkoFyre {
 
-class GkPlainTextSubmit : public QPlainTextEdit {
+class GkDisplayImage : public QLabel {
     Q_OBJECT
 
 public:
-    explicit GkPlainTextSubmit(QWidget *parent = nullptr);
-    ~GkPlainTextSubmit();
+    explicit GkDisplayImage(const GekkoFyre::AmateurRadio::Gui::sstvWindow &sstv_win, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                            QWidget *parent = nullptr);
+    ~GkDisplayImage();
 
-    void keyPressEvent(QKeyEvent *event);
+    virtual int heightForWidth(int width) const;
+    virtual QSize sizeHint() const;
+    QPixmap scaledPixmap() const;
 
-signals:
-    void execFuncAfterEvent();
+protected:
+    virtual void mouseReleaseEvent(QMouseEvent *e);
+
+public slots:
+    void setPixmap(const QPixmap &p);
+    void resizeEvent(QResizeEvent *e);
+
+private slots:
+    void txImage();
+    void loadImage();
+    void copyToClipboard();
+    void saveImage();
+    void clearImages();
+    void delImage();
+
+private:
+    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
+    QPixmap pixmap;
+    GekkoFyre::AmateurRadio::Gui::sstvWindow sstvWindow;
+
+    QString sstvResource;
 
 };
 };

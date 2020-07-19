@@ -108,14 +108,6 @@ extern "C"
 #define snprintf _snprintf
 #endif
 
-#ifdef _UNICODE
-  typedef std::wstring tstring;
-#else
-  typedef std::string tstring;
-#endif
-
-typedef short int16_t;
-
 namespace GekkoFyre {
 
 #define GK_EXIT_TIMEOUT (6)                             // The amount of time, in seconds, to leave 'Small World Deluxe' hanging upon exit before terminating forcefully!
@@ -200,6 +192,11 @@ namespace GekkoFyre {
 #define GK_EVENTLOG_TABLEVIEW_MODEL_SEVERITY_IDX (2)    // The desired ordering for the 'Severity' heading within the QTableView model for class, `GkEventLoggerTableViewModel`.
 #define GK_EVENTLOG_TABLEVIEW_MODEL_MESSAGE_IDX (3)     // The desired ordering for the 'Message' heading within the QTableView model for class, `GkEventLoggerTableViewModel`.
 #define GK_EVENTLOG_TABLEVIEW_MODEL_TOTAL_IDX (4)       // The total amount of indexes (i.e. columns) for the QTableView model, `GkEventLoggerTableViewModel`. Be sure to keep this up-to-date!
+
+//
+// SSTV related
+//
+#define GK_SSTV_FILE_DLG_LOAD_IMGS_MAX_FILES_WARN (32)  // The maximum amount of individual images/files to allow to be loaded through a QFileDialog before warning the user about any implications of loading too many into memory at once!
 
 #ifndef M_PI
 #define M_PI (3.14159265358979323846) /* pi */
@@ -287,8 +284,6 @@ namespace Database {
             PttConnType,
             ComDeviceCat,
             ComDevicePtt,
-            UsbDeviceCat,
-            UsbDevicePtt,
             ParallelCat,
             ParallelPtt,
             ComBaudRate,
@@ -382,7 +377,7 @@ namespace Database {
             struct GkPaAudioData {
                 int frameIndex;                                                     // Frame index into sample array
                 int maxFrameIndex;                                                  // Maximum frame index given into sample array
-                int16_t *recordedSamples;                                             // Audio samples that have been recorded and saved to a buffer
+                qint16 *recordedSamples;                                             // Audio samples that have been recorded and saved to a buffer
                 portaudio::SampleDataFormat sample_format;                          // Currently used sample format by given audio source, whether output or input
             };
 
@@ -418,6 +413,15 @@ namespace Database {
 
 namespace AmateurRadio {
 #define STATUS_CHECK_TIMEOUT 500       // Milliseconds
+
+    namespace Gui {
+        enum sstvWindow {
+            rxLiveImage,
+            rxSavedImage,
+            txSendImage,
+            None
+        };
+    }
 
     enum rig_type {
         Transceiver,
@@ -490,6 +494,11 @@ namespace AmateurRadio {
         None
     };
 
+    enum GkConnMethod {
+        CAT,
+        PTT
+    };
+
     enum com_baud_rates {
         BAUD1200,
         BAUD2400,
@@ -527,7 +536,7 @@ namespace AmateurRadio {
             std::shared_ptr<Rig> gkRig;                     // Hamlib rig pointer
             int rig_brand;                                  // Hamlib rig brand/manufacturer
             rig_model_t rig_model;                          // The actual amateur radio rig itself!
-            std::unique_ptr<rig_caps> rig_caps;             // Read-only; the capabilities of the configured amateur radio rig in question, as defined by Hamlib.
+            std::unique_ptr<rig_caps> capabilities;         // Read-only; the capabilities of the configured amateur radio rig in question, as defined by Hamlib.
             std::unique_ptr<rig_state> rig_status;          // Rig state containing live data and customized fields
             powerstat_t power_status;                       // Whether the radio rig is electrically powered on or off
             hamlib_port_t port_details;                     // Information concerning details about RS232 ports, etc.
@@ -538,8 +547,8 @@ namespace AmateurRadio {
             std::string info_buf;                           // Hamlib information buffer
             GkConnType cat_conn_type;                       // The type of connection, whether USB, RS232, etc.
             GkConnType ptt_conn_type;                       // The type of connection, whether USB, RS232, etc.
-            std::string cat_conn_port;                      // The actual port address itself
-            std::string ptt_conn_port;                      // The actual port address itself
+            QString cat_conn_port;                          // The actual port address itself
+            QString ptt_conn_port;                          // The actual port address itself
             std::string mm;                                 // Hamlib modulation mode
             rig_debug_level_e verbosity;                    // The debug level and verbosity of Hamlib
             com_baud_rates dev_baud_rate;                   // Communication device baud rate

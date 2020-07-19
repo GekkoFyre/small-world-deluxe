@@ -60,10 +60,6 @@
 #include <QWidget>
 #include <QResource>
 
-#ifdef __MINGW64__
-#include <SDL2/SDL.h>
-#endif
-
 namespace fs = boost::filesystem;
 
 int main(int argc, char *argv[])
@@ -105,13 +101,6 @@ int main(int argc, char *argv[])
     fs::path native_slash = slash.make_preferred().native();
     fs::path resource_path = fs::path(QCoreApplication::applicationDirPath().toStdString() + native_slash.string()  + GekkoFyre::Filesystem::resourceFile);
     QResource::registerResource(QString::fromStdString(resource_path.string())); // https://doc.qt.io/qt-5/resources.html
-
-    #ifdef __MINGW64__
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        std::cout << "Failed to initialize the SDL2 library!" << std::endl;
-        return -1;
-    }
-    #endif
 
     //
     // Display a splash screen!

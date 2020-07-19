@@ -45,8 +45,6 @@
 #include "src/dek_db.hpp"
 #include <memory>
 #include <QList>
-#include <QMenu>
-#include <QPoint>
 #include <QMutex>
 #include <QObject>
 #include <QString>
@@ -54,10 +52,26 @@
 #include <QPointer>
 #include <QTableView>
 #include <QModelIndex>
+#include <QMouseEvent>
+#include <QHeaderView>
 #include <QAbstractTableModel>
 #include <QSortFilterProxyModel>
 
 namespace GekkoFyre {
+
+class GkFreqTableHorizHeader : public QHeaderView {
+    Q_OBJECT;
+
+public:
+    using QHeaderView::QHeaderView;
+
+protected:
+    virtual void mouseReleaseEvent(QMouseEvent *e);
+
+signals:
+    void mouseRightPressed(int section);
+
+};
 
 class GkFreqTableViewModel : public QAbstractTableModel {
     Q_OBJECT
@@ -78,8 +92,8 @@ public:
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
 
-public slots:
-    void customHeaderMenuRequested(QPoint pos);
+protected:
+    virtual void customHeaderMenuRequested(int section);
 
 signals:
     void removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_remove);
@@ -90,7 +104,6 @@ private:
     QList<GekkoFyre::AmateurRadio::GkFreqs> m_data;
 
     QPointer<QTableView> table;
-    QPointer<QMenu> menu;
     QPointer<QSortFilterProxyModel> proxyModel;
 
     QMutex dataBatchMutex;

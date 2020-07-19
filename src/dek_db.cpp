@@ -182,47 +182,25 @@ void GkLevelDb::write_rig_settings(const QString &value, const Database::Setting
  * @param key The key which is required for _later retrieving_ the desired value(s) from the Google LevelDB database itself.
  * @param conn_type The type of connection that is being used, whether it be USB, RS232, GPIO, etc.
  */
-void GkLevelDb::write_rig_settings_comms(const QString &value, const radio_cfg &key, const GkConnType &conn_type)
+void GkLevelDb::write_rig_settings_comms(const QString &value, const radio_cfg &key)
 {
     try {
         // Put key-value
         leveldb::WriteBatch batch;
         leveldb::Status status;
 
-        using namespace Database::Settings;
-        if (conn_type == AmateurRadio::GkConnType::RS232 || conn_type == AmateurRadio::GkConnType::None) {
-            //
-            // RS232 or no specific connection type has been given!
-            //
-            switch (key) {
-            case radio_cfg::ComDeviceCat:
-                batch.Put("ComDeviceCat", value.toStdString());
-                break;
-            case radio_cfg::ComDevicePtt:
-                batch.Put("ComDevicePtt", value.toStdString());
-                break;
-            case radio_cfg::ComBaudRate:
-                batch.Put("ComBaudRate", value.toStdString());
-                break;
-            default:
-                return;
-            }
-        } else if (conn_type == AmateurRadio::GkConnType::USB) {
-            //
-            // USB
-            //
-            switch (key) {
-            case radio_cfg::UsbDeviceCat:
-                batch.Put("UsbDeviceCat", value.toStdString());
-                break;
-            case radio_cfg::UsbDevicePtt:
-                batch.Put("UsbDevicePtt", value.toStdString());
-                break;
-            default:
-                return;
-            }
-        } else {
-            throw std::invalid_argument(tr("Connection type could not be detected when writing radio rig details to setting's database!").toStdString());
+        switch (key) {
+        case radio_cfg::ComDeviceCat:
+            batch.Put("ComDeviceCat", value.toStdString());
+            break;
+        case radio_cfg::ComDevicePtt:
+            batch.Put("ComDevicePtt", value.toStdString());
+            break;
+        case radio_cfg::ComBaudRate:
+            batch.Put("ComBaudRate", value.toStdString());
+            break;
+        default:
+            return;
         }
 
         leveldb::WriteOptions write_options;
@@ -736,7 +714,7 @@ QString GkLevelDb::read_rig_settings(const Database::Settings::radio_cfg &key)
  * @param conn_type The type of connection that is being used, whether it be USB, RS232, GPIO, etc.
  * @return The desired value from the Google LevelDB database.
  */
-QString GkLevelDb::read_rig_settings_comms(const radio_cfg &key, const GkConnType &conn_type)
+QString GkLevelDb::read_rig_settings_comms(const radio_cfg &key)
 {
     leveldb::Status status;
     leveldb::ReadOptions read_options;
@@ -744,40 +722,18 @@ QString GkLevelDb::read_rig_settings_comms(const radio_cfg &key, const GkConnTyp
 
     read_options.verify_checksums = true;
 
-    using namespace Database::Settings;
-    if (conn_type == AmateurRadio::GkConnType::RS232 || conn_type == AmateurRadio::GkConnType::None) {
-        //
-        // RS232 or no specific connection type has been given!
-        //
-        switch (key) {
-        case radio_cfg::ComDeviceCat:
-            status = db->Get(read_options, "ComDeviceCat", &value);
-            break;
-        case radio_cfg::ComDevicePtt:
-            status = db->Get(read_options, "ComDevicePtt", &value);
-            break;
-        case radio_cfg::ComBaudRate:
-            status = db->Get(read_options, "ComBaudRate", &value);
-            break;
-        default:
-            return "";
-        }
-    } else if (conn_type == AmateurRadio::GkConnType::USB) {
-        //
-        // USB
-        //
-        switch (key) {
-        case radio_cfg::UsbDeviceCat:
-            status = db->Get(read_options, "UsbDeviceCat", &value);
-            break;
-        case radio_cfg::UsbDevicePtt:
-            status = db->Get(read_options, "UsbDevicePtt", &value);
-            break;
-        default:
-            return "";
-        }
-    } else {
-        throw std::invalid_argument(tr("Connection type could not be detected when reading radio rig details from setting's database!").toStdString());
+    switch (key) {
+    case radio_cfg::ComDeviceCat:
+        status = db->Get(read_options, "ComDeviceCat", &value);
+        break;
+    case radio_cfg::ComDevicePtt:
+        status = db->Get(read_options, "ComDevicePtt", &value);
+        break;
+    case radio_cfg::ComBaudRate:
+        status = db->Get(read_options, "ComBaudRate", &value);
+        break;
+    default:
+        return "";
     }
 
     return QString::fromStdString(value);

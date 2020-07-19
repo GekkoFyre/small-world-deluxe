@@ -42,35 +42,39 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/models/tableview/gk_logger_model.hpp"
-#include <mutex>
-#include <QVariant>
 #include <QObject>
-#include <QString>
-#include <QList>
+#include <QKeyEvent>
+#include <QComboBox>
+#include <QPlainTextEdit>
 
 namespace GekkoFyre {
 
-class GkEventLogger : public QObject {
+class GkPlainTextSubmit : public QPlainTextEdit {
     Q_OBJECT
 
 public:
-    explicit GkEventLogger(QObject *parent = nullptr);
-    ~GkEventLogger();
+    explicit GkPlainTextSubmit(QWidget *parent = nullptr);
+    ~GkPlainTextSubmit();
 
-    void publishEvent(const QString &event, const GekkoFyre::System::Events::Logging::GkSeverity &severity = GekkoFyre::System::Events::Logging::GkSeverity::Warning,
-                      const QVariant &arguments = "", const bool &sys_notification = false);
+    void keyPressEvent(QKeyEvent *event);
 
 signals:
-    void sendEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &event);
-    void removeEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &event);
-
-private:
-    QList<GekkoFyre::System::Events::Logging::GkEventLogging> eventLogDb;                       // Where the event log itself is stored in memory...
-
-    qint64 setDate();
-    int setEventNo();
-    void systemNotification(const QString &title, const QString &msg);
+    void execFuncAfterEvent(const QString &curr_text);
 
 };
+
+class GkComboBoxSubmit : public QComboBox {
+    Q_OBJECT
+
+public:
+    explicit GkComboBoxSubmit(QWidget *parent = nullptr);
+    ~GkComboBoxSubmit();
+
+    void keyPressEvent(QKeyEvent *event);
+
+signals:
+    void execFuncAfterEvent(const quint64 &freq_tune);
+
+};
+
 };

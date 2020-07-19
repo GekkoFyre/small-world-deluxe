@@ -78,21 +78,30 @@ using namespace Database;
 using namespace Settings;
 using namespace Audio;
 using namespace AmateurRadio;
+using namespace Control;
+using namespace Spectrograph;
+using namespace System;
+using namespace Events;
+using namespace Logging;
 
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
 GkAudioDecoding::GkAudioDecoding(QPointer<FileIo> fileIo,
-                                 std::shared_ptr<PaAudioBuf<int16_t>> output_audio_buf,
+                                 std::shared_ptr<PaAudioBuf<qint16>> output_audio_buf,
                                  std::shared_ptr<GkLevelDb> database,
                                  std::shared_ptr<StringFuncs> stringFuncs,
                                  Database::Settings::Audio::GkDevice output_device,
+                                 QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                  QObject *parent)
 {
+    setParent(parent);
+
     gkFileIo = std::move(fileIo);
     gkAudioBuf = std::move(output_audio_buf);
     gkStringFuncs = std::move(stringFuncs);
     gkDb = std::move(database);
+    gkEventLogger = std::move(eventLogger);
 
     gkOutputDev = output_device;
 
@@ -148,7 +157,7 @@ AudioFileInfo GkAudioDecoding::gatherOggInfo(const boost::filesystem::path &file
         gkStringFuncs->modalDlgBoxOk(hwnd_gather_ogg_info, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd_gather_ogg_info);
         #else
-        gkStringFuncs->modalDlgBoxLinux(SDL_MESSAGEBOX_ERROR, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()));
+        gkEventLogger->publishEvent(tr("An error occurred during the handling of waterfall / spectrograph data!"), GkSeverity::Error, e.what(), true);
         #endif
     }
 

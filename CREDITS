@@ -66,14 +66,22 @@ Qwt by Uwe Rathmann & Josef Wilgen et al.
     <https://qwt.sourceforge.io/>
         GNU Lesser General Public License (LGPL, version 2.1)
 
-PortAudio-Wrapper by Ollie Razdow
-    <https://github.com/orazdow/PortAudio-Wrapper>
-        Public License
-
 SingleApplication by Itay Grudev
     <https://github.com/itay-grudev/SingleApplication>
         The MIT License
 
+RapidCSV by Kristofer Berggren
+    <https://github.com/d99kris/rapidcsv/>
+        BSD 3-clause License
+
 getopt for Microsoft Windows by Chunde
     <https://github.com/Chunde/getopt-for-windows>
         GNU Lesser General Public License (LGPL, version 2.1)
+
+Art642.com by New Media in Art et al.
+    <src/contrib/images/raster/art642.com/>
+        Public License
+
+fdecomite via www.flickr.com
+    <src/contrib/images/raster/fdecomite>
+        Attribution 2.0 Generic (CC BY 2.0)

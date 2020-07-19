@@ -220,14 +220,18 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         int sel_rig_index = ui->comboBox_rig_selection->currentIndex();
         int cat_conn_type = gkDekodeDb->convConnTypeToInt(gkRadioPtr->cat_conn_type);
         int ptt_conn_type = gkDekodeDb->convConnTypeToInt(gkRadioPtr->ptt_conn_type);
-        int com_device_cat = ui->comboBox_com_port->currentIndex();
-        int com_device_ptt = ui->comboBox_ptt_method_port->currentIndex();
-        QString usb_device_cat = ui->comboBox_com_port->currentData().toString();
-        QString usb_device_ptt = ui->comboBox_ptt_method_port->currentData().toString();
+        QString com_device_cat = ui->comboBox_com_port->currentData().toString();
+        QString com_device_ptt = ui->comboBox_ptt_method_port->currentData().toString();
         int com_baud_rate = ui->comboBox_baud_rate->currentIndex();
         QString ptt_adv_cmd = ui->lineEdit_adv_ptt_cmd->text();
 
-        Q_UNUSED(usb_device_ptt);
+        if (com_device_cat.isNull() || com_device_cat.isEmpty()) {
+            com_device_cat = "";
+        }
+
+        if (com_device_ptt.isNull() || com_device_ptt.isEmpty()) {
+            com_device_ptt = "";
+        }
 
         //
         // Audio --> Configuration
@@ -244,54 +248,6 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         //
         int curr_input_device_channels = ui->comboBox_soundcard_input_channels->currentIndex();
         int curr_output_device_channels = ui->comboBox_soundcard_output_channels->currentIndex();
-
-        //
-        // RS-232 Settings
-        //
-        QString chosen_com_port_cat;
-        QString chosen_com_port_ptt;
-        for (const auto &sel_port: available_com_ports.toStdMap()) {
-            for (const auto &avail_port: status_com_ports) {
-                // List out the current serial ports in use
-                if (com_device_cat == sel_port.second) {
-                    if (sel_port.first == avail_port.port_info.description()) {
-                        //
-                        // CAT Control
-                        //
-                        chosen_com_port_cat = avail_port.port_info.portName(); // The chosen serial device uses its own name as a reference
-                        break;
-                    }
-                }
-
-                if (com_device_ptt == sel_port.second) {
-                    if (sel_port.first == avail_port.port_info.description()) {
-                        //
-                        // PTT Method
-                        //
-                        chosen_com_port_ptt = avail_port.port_info.portName(); // The chosen serial device uses its own name as a reference
-                        break;
-                    }
-                }
-            }
-        }
-
-        //
-        // USB Device settings
-        //
-        tstring chosen_usb_port_cat;
-        tstring chosen_usb_port_ptt;
-        for (const auto &sel_usb_port: available_usb_ports.toStdMap()) { // The key is the Port Number whilst the value is what's displayed within the QComboBox...
-            for (const auto &avail_usb_port: status_usb_devices.toStdMap()) {
-                // List out the current USB devices in use
-                if (usb_device_cat == sel_usb_port.first) {
-                    if (QString::fromStdString(avail_usb_port.first) == sel_usb_port.first) {
-                        chosen_usb_port_cat = avail_usb_port.first;
-                        chosen_usb_port_ptt = avail_usb_port.first;
-                        break;
-                    }
-                }
-            }
-        }
 
         //
         // Operating System's own Settings (e.g. the registry under Microsoft Windows)
@@ -439,10 +395,9 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         enum_force_ctrl_lines_dtr = ui->comboBox_force_ctrl_lines_dtr->currentIndex();
         enum_force_ctrl_lines_rts = ui->comboBox_force_ctrl_lines_rts->currentIndex();
 
-        gkDekodeDb->write_rig_settings_comms(chosen_com_port_cat, radio_cfg::ComDeviceCat, GkConnType::RS232);
-        gkDekodeDb->write_rig_settings_comms(chosen_com_port_ptt, radio_cfg::ComDevicePtt, GkConnType::RS232);
-        gkDekodeDb->write_rig_settings_comms(QString::fromStdString(chosen_usb_port_cat), radio_cfg::UsbDeviceCat, GkConnType::USB);
-        gkDekodeDb->write_rig_settings_comms(QString::fromStdString(chosen_usb_port_ptt), radio_cfg::UsbDevicePtt, GkConnType::USB);
+        gkDekodeDb->write_rig_settings_comms(com_device_cat, radio_cfg::ComDeviceCat);
+        gkDekodeDb->write_rig_settings_comms(com_device_ptt, radio_cfg::ComDevicePtt);
+        gkDekodeDb->write_rig_settings_comms(QString::number(com_baud_rate), radio_cfg::ComBaudRate);
 
         using namespace Database::Settings;
         gkDekodeDb->write_rig_settings(QString::number(brand), radio_cfg::RigBrand);
@@ -450,7 +405,6 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         gkDekodeDb->write_rig_settings(QString::number(sel_rig_index), radio_cfg::RigModelIndex);
         gkDekodeDb->write_rig_settings(QString::number(cat_conn_type), radio_cfg::CatConnType);
         gkDekodeDb->write_rig_settings(QString::number(ptt_conn_type), radio_cfg::PttConnType);
-        gkDekodeDb->write_rig_settings_comms(QString::number(com_baud_rate), radio_cfg::ComBaudRate, GkConnType::RS232);
         gkDekodeDb->write_rig_settings(QString::number(enum_stop_bits), radio_cfg::StopBits);
         gkDekodeDb->write_rig_settings(QString::number(enum_data_bits), radio_cfg::DataBits);
         gkDekodeDb->write_rig_settings(QString::number(enum_handshake), radio_cfg::Handshake);
@@ -889,14 +843,12 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
                 //
                 // CAT Control
                 //
-                ui->comboBox_com_port->insertItem(counter, QString::fromStdString(port.port_info.portName().toStdString()),
-                                                  QString::fromStdString(port.port_info.portName().toStdString()));
+                ui->comboBox_com_port->insertItem(counter, port.port_info.portName(), port.port_info.portName());
 
                 //
                 // PTT Method
                 //
-                ui->comboBox_ptt_method_port->insertItem(counter, QString::fromStdString(port.port_info.portName().toStdString()),
-                                                         QString::fromStdString(port.port_info.portName().toStdString()));\
+                ui->comboBox_ptt_method_port->insertItem(counter, port.port_info.portName(), port.port_info.portName());
 
                 available_com_ports.insert(port.port_info.description(), counter);
             }
@@ -904,11 +856,11 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
             //
             // CAT Control
             //
-            QString comDeviceCat = gkDekodeDb->read_rig_settings_comms(radio_cfg::ComDeviceCat, GkConnType::RS232);
+            QString comDeviceCat = gkDekodeDb->read_rig_settings_comms(radio_cfg::ComDeviceCat);
             if (!comDeviceCat.isEmpty() && !available_com_ports.isEmpty()) {
                 for (const auto &sel_port: available_com_ports.toStdMap()) {
                     for (const auto &device: status_com_ports) {
-                        if ((device.port_info.description() == sel_port.first) && (comDeviceCat.toStdString() == device.port_info.portName().toStdString())) {
+                        if ((device.port_info.description() == sel_port.first) && (comDeviceCat == device.port_info.portName())) {
                             // NOTE: The recorded setting used to identify the chosen serial device is the COM Port name
                             ui->comboBox_com_port->setCurrentIndex(sel_port.second);
                             on_comboBox_com_port_currentIndexChanged(sel_port.second);
@@ -920,11 +872,11 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
             //
             // PTT Method
             //
-            QString comDevicePtt = gkDekodeDb->read_rig_settings_comms(radio_cfg::ComDevicePtt, GkConnType::RS232);
+            QString comDevicePtt = gkDekodeDb->read_rig_settings_comms(radio_cfg::ComDevicePtt);
             if (!comDevicePtt.isEmpty() && !available_com_ports.isEmpty()) {
                 for (const auto &sel_port: available_com_ports.toStdMap()) {
                     for (const auto &device: status_com_ports) {
-                        if ((device.port_info.description() == sel_port.first) && (comDevicePtt.toStdString() == device.port_info.portName().toStdString())) {
+                        if ((device.port_info.description() == sel_port.first) && (comDevicePtt == device.port_info.portName())) {
                             // NOTE: The recorded setting used to identify the chosen serial device is the COM Port name
                             ui->comboBox_ptt_method_port->setCurrentIndex(sel_port.second);
                             on_comboBox_ptt_method_port_currentIndexChanged(sel_port.second);
@@ -965,7 +917,7 @@ void DialogSettings::prefill_avail_usb_ports(const QMap<std::string, GekkoFyre::
                 available_usb_ports.insert(dev_port, combined_str.toStdWString());
                 #else
                 QString combined_str = QString("[ #%1 ] %2").arg(dev_port).arg(device.usb_enum.product);
-                available_usb_ports.insert(dev_port, combined_str.toStdString());
+                available_usb_ports.insert(dev_port, combined_str);
                 #endif
 
                 //
@@ -1088,33 +1040,6 @@ void DialogSettings::enable_device_port_options()
 }
 
 /**
- * @brief DialogSettings::get_device_port_details grabs details about the chosen COM/Serial/RS232 Port and sends details of it out where needed
- * within DialogSettings.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param port The chosen COM/Serial/RS232 port in question.
- * @param device Further, more advanced dtails of the chosen COM/Serial/RS232 port.
- * @param baud_rate The Baud Rate of the chosen COM/Serial/RS232 port, whether it be `38400 bps` or some other value.
- */
-void DialogSettings::get_device_port_details(const tstring &port, const tstring &device,
-                                             const AmateurRadio::com_baud_rates &baud_rate)
-{
-    Q_UNUSED(port);
-    Q_UNUSED(baud_rate);
-
-    try {
-        #ifdef _UNICODE
-        ui->lineEdit_device_port_name->setText(QString::fromStdWString(device));
-        #else
-        ui->lineEdit_device_port_name->setText(QString::fromStdString(device));
-        #endif
-    } catch (const std::exception &e) {
-        QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
-    }
-
-    return;
-}
-
-/**
  * @brief DialogSettings::read_settings reads/loads out the previously saved settings from the Setting's Dialog that the user has personally
  * configured and loads them nicely into all the widgets that are present, while doing some basic filtering, error checking, etc. within
  * itself and through some external functions.
@@ -1130,7 +1055,7 @@ bool DialogSettings::read_settings()
         QString rigModel = gkDekodeDb->read_rig_settings(radio_cfg::RigModel);
         QString rigModelIndex = gkDekodeDb->read_rig_settings(radio_cfg::RigModelIndex);
         QString rigVers = gkDekodeDb->read_rig_settings(radio_cfg::RigVersion);
-        QString comBaudRate = gkDekodeDb->read_rig_settings_comms(radio_cfg::ComBaudRate, GkConnType::RS232);
+        QString comBaudRate = gkDekodeDb->read_rig_settings_comms(radio_cfg::ComBaudRate);
         QString stopBits = gkDekodeDb->read_rig_settings(radio_cfg::StopBits);
         QString data_bits = gkDekodeDb->read_rig_settings(radio_cfg::DataBits);
         QString handshake = gkDekodeDb->read_rig_settings(radio_cfg::Handshake);
@@ -1173,8 +1098,8 @@ bool DialogSettings::read_settings()
         if (!comBaudRate.isEmpty()) {
             ui->comboBox_baud_rate->setCurrentIndex(comBaudRate.toInt());
         } else {
-            if (gkRadioPtr->rig_caps != nullptr) {
-                ui->comboBox_baud_rate->setCurrentIndex(gkRadioLibs->convertBaudRateFromEnum(gkRadioLibs->convertBaudRateIntToEnum(gkRadioPtr->rig_caps->serial_rate_min)));
+            if (gkRadioPtr->capabilities != nullptr) {
+                ui->comboBox_baud_rate->setCurrentIndex(gkRadioLibs->convertBaudRateFromEnum(gkRadioLibs->convertBaudRateIntToEnum(gkRadioPtr->capabilities->serial_rate_min)));
             }
         }
 
@@ -1195,8 +1120,8 @@ bool DialogSettings::read_settings()
                 throw std::invalid_argument(tr("Invalid value for amount of Stop Bits!").toStdString());
             }
         } else {
-            if (gkRadioPtr->rig_caps != nullptr) {
-                switch (gkRadioPtr->rig_caps->serial_stop_bits) {
+            if (gkRadioPtr->capabilities != nullptr) {
+                switch (gkRadioPtr->capabilities->serial_stop_bits) {
                 case 0:
                     ui->radioButton_stop_bits_default->setDown(true);
                     ui->radioButton_stop_bits_one->setDown(false);
@@ -1235,8 +1160,8 @@ bool DialogSettings::read_settings()
                 throw std::invalid_argument(tr("Invalid value for amount of Data Bits!").toStdString());
             }
         } else {
-            if (gkRadioPtr->rig_caps != nullptr) {
-                switch (gkRadioPtr->rig_caps->serial_data_bits) {
+            if (gkRadioPtr->capabilities != nullptr) {
+                switch (gkRadioPtr->capabilities->serial_data_bits) {
                 case 0:
                     ui->radioButton_data_bits_default->setDown(true);
                     ui->radioButton_data_bits_seven->setDown(false);
@@ -1278,8 +1203,8 @@ bool DialogSettings::read_settings()
                 throw std::invalid_argument(tr("Invalid value for amount of Stop Bits!").toStdString());
             }
         } else {
-            if (gkRadioPtr->rig_caps != nullptr) {
-                switch (gkRadioPtr->rig_caps->serial_handshake) {
+            if (gkRadioPtr->capabilities != nullptr) {
+                switch (gkRadioPtr->capabilities->serial_handshake) {
                 case serial_handshake_e::RIG_HANDSHAKE_NONE:
                     ui->radioButton_handshake_none->setDown(true);
                     ui->radioButton_handshake_xon_xoff->setDown(false);
@@ -1338,8 +1263,8 @@ bool DialogSettings::read_settings()
                 throw std::invalid_argument(tr("Invalid value for amount of PTT Method!").toStdString());
             }
         } else {
-            if (gkRadioPtr->rig_caps != nullptr) {
-                switch (gkRadioPtr->rig_caps->ptt_type) {
+            if (gkRadioPtr->capabilities != nullptr) {
+                switch (gkRadioPtr->capabilities->ptt_type) {
                 case ptt_type_t::RIG_PTT_RIG_MICDATA:
                     ui->radioButton_ptt_method_vox->setDown(true);
                     ui->radioButton_ptt_method_dtr->setDown(false);
@@ -1505,39 +1430,23 @@ void DialogSettings::on_comboBox_com_port_currentIndexChanged(int index)
 {
     try {
         if (index > 0) { // Make sure that we haven't selected the dummy retainer item, "N/A"!
-            //
-            // Determine whether a USB or RS232 port has been selected!
-            //
             for (const auto &com_port_list: status_com_ports) {
                 for (const auto &usb_port_list: available_usb_ports.toStdMap()) {
                     if (usb_port_list.first == ui->comboBox_com_port->currentData().toString()) {
-                        //
-                        // A USB port has been chosen!
-                        //
-                        emit changePortType(GekkoFyre::AmateurRadio::GkConnType::USB, true);
-                        return;
+                        // A USB port has been found!
+                        emit changeConnPort(usb_port_list.first, GkConnMethod::CAT);
                     } else if (com_port_list.port_info.portName() == ui->comboBox_com_port->currentData().toString()) {
-                        //
-                        // An RS232 port has been chosen!
-                        //
+                        // An RS232/Serial port has been found!
                         #ifdef _UNICODE
                         ui->lineEdit_device_port_name->setText(QString::fromStdWString(com_port_list.second.first));
                         #else
                         ui->lineEdit_device_port_name->setText(com_port_list.port_info.systemLocation());
                         #endif
 
-                        emit changePortType(GekkoFyre::AmateurRadio::GkConnType::RS232, true);
-                        return;
-                    } else {
-                        continue;
+                        emit changeConnPort(com_port_list.port_info.portName(), GkConnMethod::CAT);
                     }
                 }
             }
-
-            //
-            // Nothing has been chosen!
-            //
-            emit changePortType(GekkoFyre::AmateurRadio::GkConnType::None, true);
         }
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
@@ -1554,40 +1463,24 @@ void DialogSettings::on_comboBox_com_port_currentIndexChanged(int index)
 void DialogSettings::on_comboBox_ptt_method_port_currentIndexChanged(int index)
 {
     try {
-        if (index > 0) {
-            //
-            // Determine whether a USB or RS232 port has been selected!
-            //
-            for (const auto &com_port_list: status_com_ports) {
+        if (index > 0) { // Make sure that we haven't selected the dummy retainer item, "N/A"!
+            for (const auto &ptt_port_list: status_com_ports) {
                 for (const auto &usb_port_list: available_usb_ports.toStdMap()) {
                     if (usb_port_list.first == ui->comboBox_ptt_method_port->currentData().toString()) {
-                        //
-                        // A USB port has been chosen!
-                        //
-                        emit changePortType(GekkoFyre::AmateurRadio::GkConnType::USB, false);
-                        return;
-                    } else if (com_port_list.port_info.portName() == ui->comboBox_com_port->currentData().toString()) {
-                        //
-                        // An RS232 port has been chosen!
-                        //
+                        // A USB port has been found!
+                        emit changeConnPort(usb_port_list.first, GkConnMethod::PTT);
+                    } else if (ptt_port_list.port_info.portName() == ui->comboBox_ptt_method_port->currentData().toString()) {
+                        // An RS232/Serial port has been found!
                         #ifdef _UNICODE
-                        ui->lineEdit_ptt_method_dev_path->setText(QString::fromStdWString(com_port_list.second.first));
+                        ui->lineEdit_device_port_name->setText(QString::fromStdWString(com_port_list.second.first));
                         #else
-                        ui->lineEdit_ptt_method_dev_path->setText(com_port_list.port_info.systemLocation());
+                        ui->lineEdit_device_port_name->setText(ptt_port_list.port_info.systemLocation());
                         #endif
 
-                        emit changePortType(GekkoFyre::AmateurRadio::GkConnType::RS232, false);
-                        return;
-                    } else {
-                        continue;
+                        emit changeConnPort(ptt_port_list.port_info.portName(), GkConnMethod::PTT);
                     }
                 }
             }
-
-            //
-            // Nothing has been chosen!
-            //
-            emit changePortType(GekkoFyre::AmateurRadio::GkConnType::None, false);
         }
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
@@ -1951,10 +1844,10 @@ void DialogSettings::on_comboBox_rig_selection_currentIndexChanged(int index)
 
     emit recvRigCapabilities(ui->comboBox_rig_selection->currentData().toInt(), gkRadioPtr);
 
-    if (gkRadioPtr->rig_caps != nullptr) {
-        ui->comboBox_baud_rate->setCurrentIndex(gkRadioLibs->convertBaudRateFromEnum(gkRadioLibs->convertBaudRateIntToEnum(gkRadioPtr->rig_caps->serial_rate_min)));
+    if (gkRadioPtr->capabilities != nullptr) {
+        ui->comboBox_baud_rate->setCurrentIndex(gkRadioLibs->convertBaudRateFromEnum(gkRadioLibs->convertBaudRateIntToEnum(gkRadioPtr->capabilities->serial_rate_min)));
 
-        switch (gkRadioPtr->rig_caps->serial_stop_bits) {
+        switch (gkRadioPtr->capabilities->serial_stop_bits) {
         case 0:
             ui->radioButton_stop_bits_default->setDown(true);
             ui->radioButton_stop_bits_one->setDown(false);
@@ -1974,7 +1867,7 @@ void DialogSettings::on_comboBox_rig_selection_currentIndexChanged(int index)
             throw std::invalid_argument(tr("Invalid value for amount of Stop Bits!").toStdString());
         }
 
-        switch (gkRadioPtr->rig_caps->serial_data_bits) {
+        switch (gkRadioPtr->capabilities->serial_data_bits) {
         case 0:
             ui->radioButton_data_bits_default->setDown(true);
             ui->radioButton_data_bits_seven->setDown(false);
@@ -1994,7 +1887,7 @@ void DialogSettings::on_comboBox_rig_selection_currentIndexChanged(int index)
             throw std::invalid_argument(tr("Invalid value for amount of Data Bits!").toStdString());
         }
 
-        switch (gkRadioPtr->rig_caps->serial_handshake) {
+        switch (gkRadioPtr->capabilities->serial_handshake) {
         case serial_handshake_e::RIG_HANDSHAKE_NONE:
             ui->radioButton_handshake_none->setDown(true);
             ui->radioButton_handshake_xon_xoff->setDown(false);
@@ -2021,7 +1914,7 @@ void DialogSettings::on_comboBox_rig_selection_currentIndexChanged(int index)
             break;
         }
 
-        switch (gkRadioPtr->rig_caps->ptt_type) {
+        switch (gkRadioPtr->capabilities->ptt_type) {
         case ptt_type_t::RIG_PTT_RIG_MICDATA:
             ui->radioButton_ptt_method_vox->setDown(true);
             ui->radioButton_ptt_method_dtr->setDown(false);
