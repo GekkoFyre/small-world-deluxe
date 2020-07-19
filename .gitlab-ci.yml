@@ -136,6 +136,16 @@ sworld_debug_archlinux_x86_64:
         expire_in: 1 week
         paths:
             - src_build/
+        exclude:
+            - "CMakeFiles/"
+            - "galaxy_autogen/"
+            - "smallworld_autogen/"
+            - "src/"
+            - "*.o"
+            - "*.txt"
+            - "Makefile"
+            - "*.cmake"
+            - "*.h"
     when: always
 
 ### --------------------------------------------------------------------------------------------------- ###
@@ -145,13 +155,14 @@ sworld_debug_archlinux_x86_64:
 # https://github.com/antiagainst/codeclimate-cppcheck
 #
 spotbugs-sast:
+    stage: test
     dependencies:
         - sworld_debug_archlinux_x86_64
     script:
         - /analyzer run -compile=false
     variables:
-        SAST_DEFAULT_ANALYZERS: "flawfinder,gitleaks,trufflehog"
-        SAST_EXCLUDED_PATHS: "assets/**,cmake/**,docker/**,docs/**,po/**,toolchains/**,src/contrib/**"
+        SAST_DEFAULT_ANALYZERS: "flawfinder, gitleaks, trufflehog"
+        SAST_EXCLUDED_PATHS: "assets/**, cmake/**, docker/**, docs/**, po/**, toolchains/**, src/contrib/**"
         SAST_GOSEC_LEVEL: 2
         SAST_FLAWFINDER_LEVEL: 2
         SECRET_DETECTION_HISTORIC_SCAN: "true"
@@ -163,3 +174,9 @@ spotbugs-sast:
         reports:
             sast: gl-sast-report.json
     allow_failure: true
+
+### --------------------------------------------------------------------------------------------------- ###
+
+#
+# https://docs.gitlab.com/ee/ci/yaml/#complete-example-for-release
+#
