@@ -43,6 +43,7 @@
 
 #include "src/defines.hpp"
 #include "src/gk_circ_buffer.hpp"
+#include <codec2/codec2.h>
 #include <exception>
 #include <algorithm>
 #include <iostream>
@@ -63,6 +64,13 @@ using namespace Audio;
 using namespace AmateurRadio;
 using namespace Control;
 
+typedef struct
+{
+  void          *codec2;
+  unsigned char *bits;
+}
+callbackData;
+
 template <class T>
 class PaAudioBuf {
 
@@ -80,6 +88,8 @@ public:
                          const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags);
     int recordCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
                        const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags);
+    int codec2LocalCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
+                            const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags, void *userData);
     void setVolume(const float &value);
 
     virtual size_t size() const;
@@ -231,6 +241,36 @@ int PaAudioBuf<T>::recordCallback(const void *inputBuffer, void *outputBuffer, u
     }
 
     return finished;
+}
+
+/**
+ * @note <https://github.com/keithmgould/tiptoe/blob/master/codec2/main.c>
+ */
+template<class T>
+int PaAudioBuf<T>::codec2LocalCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
+                                       const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags,
+                                       void *userData)
+{
+    std::mutex record_loop_mtx;
+    std::lock_guard<std::mutex> lck_guard(record_loop_mtx);
+
+    Q_UNUSED(timeInfo);
+    Q_UNUSED(statusFlags);
+
+    callbackData *data = (callbackData*)userData;
+    T out = outputBuffer;
+    T in = inputBuffer;
+
+    if (inputBuffer == nullptr) {
+        for (size_t i = 0; i < framesPerBuffer; ++i) {
+            *out++ = 0;
+        }
+    } else {
+        codec2_encode(data->codec2, data->bits, in);
+        codec2_decode(data->codec2, out, data->bits);
+    }
+
+    return paContinue;
 }
 
 /**

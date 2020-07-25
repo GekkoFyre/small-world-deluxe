@@ -2008,8 +2008,8 @@ void MainWindow::startRecordingInput()
     auto pa_stream_param = portaudio::StreamParameters(pref_input_device.cpp_stream_param, portaudio::DirectionSpecificStreamParameters::null(),
                                                        pref_input_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
                                                        paPrimeOutputBuffersUsingStreamCallback);
-    inputAudioStream = new portaudio::MemFunCallbackStream<PaAudioBuf<qint16>>(pa_stream_param, *input_audio_buf,
-                                                                                 &PaAudioBuf<qint16>::recordCallback);
+    inputAudioStream = std::make_shared<portaudio::MemFunCallbackStream<PaAudioBuf<qint16>>>(pa_stream_param, *input_audio_buf,
+                                                                                             &PaAudioBuf<qint16>::recordCallback);
     inputAudioStream->start();
 
     pref_input_device.is_dev_active = true; // State that this recording device is now active!
@@ -2024,6 +2024,7 @@ void MainWindow::stopTransmitOutput()
 {
     if (outputAudioStream != nullptr && pref_output_device.is_dev_active) {
         if (outputAudioStream->isActive()) {
+            outputAudioStream->stop();
             outputAudioStream->close();
 
             pref_output_device.is_dev_active = false; // State that this recording device is now non-active!
@@ -2047,8 +2048,8 @@ void MainWindow::startTransmitOutput()
     auto pa_stream_param = portaudio::StreamParameters(portaudio::DirectionSpecificStreamParameters::null(), pref_output_device.cpp_stream_param,
                                                        pref_output_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
                                                        paPrimeOutputBuffersUsingStreamCallback);
-    outputAudioStream = new portaudio::MemFunCallbackStream<PaAudioBuf<qint16>>(pa_stream_param, *output_audio_buf,
-                                                                                &PaAudioBuf<qint16>::recordCallback);
+    outputAudioStream = std::make_shared<portaudio::MemFunCallbackStream<PaAudioBuf<qint16>>>(pa_stream_param, *output_audio_buf,
+                                                                                              &PaAudioBuf<qint16>::recordCallback);
     outputAudioStream->start();
 
     return;

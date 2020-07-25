@@ -81,18 +81,6 @@ GkCodec2::~GkCodec2()
     return;
 }
 
-int GkCodec2::transmitAudio(const void *inputBuffer, void *outputBuffer, const quint32 &framesPerBuffer, PaStreamCallbackFlags statusFlags)
-{
-    try {
-        // Process
-    }  catch (const std::exception &e) {
-        std::throw_with_nested(tr("An issue has occurred with transmitting audio via the Codec2 modem! Error:\n\n%1")
-                               .arg(QString::fromStdString(e.what())).toStdString());
-    }
-
-    return paAbort;
-}
-
 /**
  * @brief GkCodec2::transmitData prepares a waveform that is readily transmissible over-the-air with another function that can do
  * just that.
