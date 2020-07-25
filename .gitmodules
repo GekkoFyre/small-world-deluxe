@@ -7,6 +7,3 @@
 [submodule "src/contrib/rapidcsv"]
 	path = src/contrib/rapidcsv
 	url = https://github.com/d99kris/rapidcsv.git
-[submodule "src/contrib/kissfft"]
-	path = src/contrib/kissfft
-	url = https://github.com/mborgerding/kissfft.git
