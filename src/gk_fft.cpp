@@ -40,8 +40,7 @@
  ****************************************************************************************************/
 
 #include "src/gk_fft.hpp"
-#include "src/contrib/kissfft/kiss_fft.h"
-#include "src/contrib/kissfft/tools/kiss_fftr.h"
+#include <fftw3.h>
 #include <iostream>
 #include <cmath>
 
@@ -51,6 +50,10 @@ using namespace Settings;
 using namespace Audio;
 using namespace AmateurRadio;
 using namespace Control;
+using namespace Spectrograph;
+using namespace System;
+using namespace Events;
+using namespace Logging;
 
 /**
  * @brief GkFFT::GkFFT
@@ -67,15 +70,78 @@ GkFFT::~GkFFT()
 }
 
 /**
- * @brief GkFFT::FFTCompute
+ * @brief GkFFT::FFTCompute performs fast-fourier transforms on given sample data.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param pOut
- * @param pIn
+ * @param signal
+ * @param signal_length
+ * @param window_size
+ * @param hop_size
+ * @return
+ * @note Paul R. <https://stackoverflow.com/questions/4675457/how-to-generate-the-audio-spectrum-using-fft-in-c>
  */
-void GkFFT::FFTCompute(std::complex<float> *pOut, const float *pIn)
+std::vector<GkFFTComplex> GkFFT::FFTCompute(std::vector<float> signal, int signal_length, int window_size, int hop_size)
 {
-    kiss_fftr_cfg fft = kiss_fftr_alloc(1, 0, nullptr, nullptr); // Is inverse FFT!
-    kiss_fftr(fft, pIn, (kiss_fft_cpx*)pOut);
+    fftw_complex *data, *fft_result, *ifft_result;
+    data = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * window_size);
+    fft_result = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * window_size);
+    ifft_result = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * window_size);
 
-    return;
+    fftw_plan plan_forward  = fftw_plan_dft_1d(window_size, data, fft_result, FFTW_FORWARD, FFTW_ESTIMATE);
+
+    // Create a hamming window of appropriate length
+    float window[window_size];
+    hamming(window_size, window);
+
+    int chunkPosition = 0;
+    int readIndex;
+    int bStop = 0;
+    int numChunks = 0;
+    std::vector<GkFFTComplex> gkFftComplex;
+
+    // Process each chunk of the signal
+    int i = 0;
+    while (chunkPosition < signal_length && !bStop) {
+        // Copy the chunk into our buffer
+        for(i = 0; i < window_size; i++) {
+            readIndex = chunkPosition + i;
+            if(readIndex < signal_length) {
+                // Note the windowing!
+                data[i][0] = (signal)[readIndex] * window[i];
+                data[i][1] = 0.0;
+            } else {
+                // we have read beyond the signal, so zero-pad it!
+                data[i][0] = 0.0;
+                data[i][1] = 0.0;
+
+                bStop = 1;
+            }
+        }
+
+        fftw_execute(plan_forward);
+
+        for (i = 0; i < ((window_size / 2) + 1); i++) {
+            GkFFTComplex fftComplex;
+            fftComplex.real = fft_result[i][0]; // Real
+            fftComplex.imaginary = fft_result[i][1]; // Imaginary
+            gkFftComplex.push_back(fftComplex);
+        }
+
+        chunkPosition += hop_size;
+        numChunks++;
+    }
+
+    fftw_destroy_plan(plan_forward);
+
+    fftw_free(data);
+    fftw_free(fft_result);
+    fftw_free(ifft_result);
+
+    return gkFftComplex;
+}
+
+void GkFFT::hamming(int windowLength, float *buffer)
+{
+    for (int i = 0; i < windowLength; i++) {
+        buffer[i] = 0.54 - (0.46 * cos( 2 * M_PI * (i / ((windowLength - 1) * 1.0))));
+    }
 }

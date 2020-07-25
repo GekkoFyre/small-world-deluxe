@@ -609,6 +609,11 @@ namespace Spectrograph {
         int x;
     };
 
+    struct GkFFTComplex {
+        double real;
+        double imaginary;
+    };
+
     struct GkAxisData {
         QwtInterval z_interval;                                                 // Interval values for the z-axis.
         QwtInterval x_interval;                                                 // Interval values for the x-axis.

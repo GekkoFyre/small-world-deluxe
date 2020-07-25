@@ -1641,7 +1641,7 @@ void MainWindow::updateSpectrograph()
     try {
         if ((inputAudioStream != nullptr) && (pref_input_device.is_dev_active == true) && (AUDIO_FRAMES_PER_BUFFER > 0)) {
             while (inputAudioStream->isActive()) {
-                std::vector<std::complex<float>> fftData;
+                std::vector<float> fftData;
                 fftData.reserve(GK_FFT_SIZE + 1);
                 const qint64 measure_start_time = QDateTime::currentMSecsSinceEpoch();
                 while (fftData.size() < GK_FFT_SIZE) {
@@ -1661,8 +1661,8 @@ void MainWindow::updateSpectrograph()
                         recv_buf.shrink_to_fit();
 
                         if (fftData.size() == GK_FFT_SIZE) {
-                            std::vector<float> fftDataVals;
-                            gkFFT->FFTCompute(fftData.data(), fftDataVals.data());
+                            std::vector<GkFFTComplex> fftDataVals;
+                            fftDataVals = gkFFT->FFTCompute(fftData, fftData.size(), 1, GK_FFT_SIZE);
 
                             //
                             // Perform the timing and date calculations!
@@ -1678,16 +1678,22 @@ void MainWindow::updateSpectrograph()
                             }
 
                             //
-                            // In order to get the frequency information for each audio sample, you must:
-                            // 1) Use a real-to-complex FFT of size N to generate frequency domain data.
-                            // 2) Calculate the magnitude of your complex frequency domain data (i.e., `magnitude = std::sqrt(re^2 + im^2)`).
-                            // 3) Optionally convert magnitude to a log scale (dB) (i.e., `magnitude_dB = 20 * std::log10(magnitude)`).
+                            // The input data are sound intensity values taken over time, equally spaced. They are
+                            // said to be, appropriately enough, in the time domain. The output of the FT is said
+                            // to be in the frequency domain because the horizontal axis is frequency. The vertical
+                            // scale remains intensity. Although it isn't obvious from the input data, there is phase
+                            // information in the input as well. Although all of the sound is sinusoidal, there is
+                            // nothing that fixes the phases of the sine waves. This phase information appears in
+                            // the frequency domain as the phases of the individual complex numbers, but often we
+                            // don't care about it (and often we do too!). It just depends upon what you are doing!
+                            //
+                            // https://stackoverflow.com/questions/1679974/converting-an-fft-to-a-spectogram/10643179
                             //
 
                             std::vector<double> magnitude_buf;
                             magnitude_buf.reserve(fftDataVals.size() + 1);
                             for (const auto &calc: fftDataVals) {
-                                const double magnitude = std::sqrt(std::pow(calc, 2) + std::pow(calc, 2));
+                                const double magnitude = std::sqrt(std::pow(calc.real, 2) + std::pow(calc.imaginary, 2));
                                 magnitude_buf.push_back(magnitude);
                             }
 
@@ -1701,7 +1707,7 @@ void MainWindow::updateSpectrograph()
                             QVector<double> fft_spectro_vals;
                             fft_spectro_vals.reserve(GK_FFT_SIZE + 1);
                             for (size_t i = 0; i < GK_FFT_SIZE; ++i) {
-                                auto abs_val = std::abs(fftDataVals[i]) / ((double)GK_FFT_SIZE);
+                                auto abs_val = std::abs(fftDataVals[i].real) / ((double)GK_FFT_SIZE);
                                 fft_spectro_vals.push_back(abs_val);
                             }
 

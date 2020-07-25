@@ -53,7 +53,10 @@ public:
     explicit GkFFT();
     ~GkFFT();
 
-    void FFTCompute(std::complex<float> *pOut, const float *pIn);
+    std::vector<Spectrograph::GkFFTComplex> FFTCompute(std::vector<float> signal, int signal_length, int window_size, int hop_size);
+
+private:
+    void hamming(int windowLength, float *buffer);
 
 };
 };
