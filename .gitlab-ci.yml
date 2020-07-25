@@ -136,6 +136,16 @@ sworld_debug_archlinux_x86_64:
         expire_in: 2 weeks
         paths:
             - src_build/
+        exclude:
+            - "CMakeFiles/"
+            - "galaxy_autogen/"
+            - "smallworld_autogen/"
+            - "src/"
+            - "*.o"
+            - "*.txt"
+            - "Makefile"
+            - "*.cmake"
+            - "*.h"
     when: always
 
 ### --------------------------------------------------------------------------------------------------- ###

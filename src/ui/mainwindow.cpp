@@ -305,7 +305,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize any amateur radio modems!
         //
-        gkCodec2 = new GkCodec2(Codec2Mode::freeDvMode2020, 0, 0, gkEventLogger, this);
+        gkCodec2 = new GkCodec2(Codec2Mode::freeDvMode2020, Codec2ModeCustom::GekkoFyreV1, 0, 0, gkEventLogger, this);
 
         //
         // Setup the CLI parser and its settings!
@@ -1866,10 +1866,14 @@ void MainWindow::on_pushButton_radio_transmit_clicked()
         // Set the QPushButton to 'Green'
         changePushButtonColor(ui->pushButton_radio_transmit, false);
         btn_radio_tx = true;
+
+        emit startTxAudio();
     } else {
         // Set the QPushButton to 'Red'
         changePushButtonColor(ui->pushButton_radio_transmit, true);
         btn_radio_tx = false;
+
+        emit stopTxAudio();
     }
 
     return;
@@ -2018,6 +2022,14 @@ void MainWindow::startRecordingInput()
  */
 void MainWindow::stopTransmitOutput()
 {
+    if (outputAudioStream != nullptr && pref_output_device.is_dev_active) {
+        if (outputAudioStream->isActive()) {
+            outputAudioStream->close();
+
+            pref_output_device.is_dev_active = false; // State that this recording device is now non-active!
+        }
+    }
+
     return;
 }
 

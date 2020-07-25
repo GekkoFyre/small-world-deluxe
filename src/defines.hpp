@@ -346,6 +346,11 @@ namespace Database {
             freeDvMode1600
         };
 
+        enum Codec2ModeCustom {
+            GekkoFyreV1,
+            Disabled
+        };
+
         struct UsbVers3 {
             libusb_ss_endpoint_companion_descriptor *ss_desc;                       // Details that are applicable for USB 3.0 superspeed interfaces
             const libusb_endpoint_descriptor *endpoint;                             // A structure representing the standard USB 3.0 endpoint descriptor

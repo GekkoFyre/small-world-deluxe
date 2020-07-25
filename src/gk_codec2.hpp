@@ -59,8 +59,8 @@ class GkCodec2 : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkCodec2(const Database::Settings::Codec2Mode &freedv_mode, const int &freedv_clip, const int &freedv_txbpf,
-                      QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
+    explicit GkCodec2(const Database::Settings::Codec2Mode &freedv_mode, const Database::Settings::Codec2ModeCustom &custom_mode, const int &freedv_clip,
+                      const int &freedv_txbpf, QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkCodec2();
 
     int transmitAudio(const void *inputBuffer, void *outputBuffer, const quint32 &framesPerBuffer, PaStreamCallbackFlags statusFlags);
@@ -69,11 +69,11 @@ public:
 private:
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     Database::Settings::Codec2Mode gkFreeDvMode;
+    Database::Settings::Codec2ModeCustom gkCustomMode;
     int gkFreeDvClip;
     int gkFreeDvTXBpf;                      // OFDM TX Filter (off by default)
 
     QList<QByteArray> createPayloadForTx(const QByteArray &byte_array);
-    void zlibCompressToMemory(void *in_data, size_t in_data_size, std::vector<uint8_t> &out_data);
 
     int convertFreeDvModeToInt(const Database::Settings::Codec2Mode &freedv_mode);
 

@@ -29,7 +29,11 @@ LZ4 by various
 LevelDB by Google
     <https://github.com/google/leveldb>
         BSD 3-clause License
-        
+
+Snappy by Google
+    <https://github.com/google/snappy>
+        Public License
+
 Hamlib by The Hamlib Group
     <https://github.com/Hamlib/Hamlib>
         GNU General Public License (GPL, version 2)

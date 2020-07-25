@@ -41,7 +41,7 @@
 
 #include "src/gk_codec2.hpp"
 #include <codec2/freedv_api.h>
-#include <zlib.h>
+#include <snappy.h>
 #include <utility>
 
 using namespace GekkoFyre;
@@ -55,14 +55,15 @@ using namespace System;
 using namespace Events;
 using namespace Logging;
 
-GkCodec2::GkCodec2(const Codec2Mode &freedv_mode, const int &freedv_clip, const int &freedv_txbpf, QPointer<GkEventLogger> eventLogger,
-                   QObject *parent)
+GkCodec2::GkCodec2(const Codec2Mode &freedv_mode, const Codec2ModeCustom &custom_mode, const int &freedv_clip, const int &freedv_txbpf,
+                   QPointer<GkEventLogger> eventLogger, QObject *parent)
 {
     try {
         setParent(parent);
         gkEventLogger = std::move(eventLogger);
 
         gkFreeDvMode = freedv_mode;
+        gkCustomMode = custom_mode;
         gkFreeDvClip = freedv_clip;
         gkFreeDvTXBpf = freedv_txbpf;
 
@@ -93,10 +94,11 @@ int GkCodec2::transmitAudio(const void *inputBuffer, void *outputBuffer, const q
 }
 
 /**
- * @brief GkCodec2::transmitData
+ * @brief GkCodec2::transmitData prepares a waveform that is readily transmissible over-the-air with another function that can do
+ * just that.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param byte_array
- * @return
+ * @param byte_array The data that is to be prepped for transmission.
+ * @return The prepped data for transmission.
  * @note <https://github.com/drowe67/codec2/blob/master/README_data.md>
  * <https://cpp.hotexamples.com/examples/-/-/codec2_encode/cpp-codec2_encode-function-examples.html>
  */
@@ -106,10 +108,6 @@ int GkCodec2::transmitData(const QByteArray &byte_array)
         auto txData = createPayloadForTx(byte_array);
 
         struct freedv *fdv;
-        if (byte_array.size() > GK_CODEC2_FRAME_SIZE) {
-            // We must break up the QByteArray into multiple frames!
-        }
-
         fdv = freedv_open(convertFreeDvModeToInt(gkFreeDvMode));
         if (fdv == nullptr) {
             throw std::runtime_error(tr("Issue encountered with opening Codec2 modem for transmission! Are you out of memory?").toStdString());
@@ -131,7 +129,10 @@ int GkCodec2::transmitData(const QByteArray &byte_array)
         uint8_t bytes_in[bytes_per_modem_frame];
         short mod_out[n_mod_out];
 
-        // freedv_rawdatatx();
+        while(n_mod_out < bytes_per_modem_frame) {
+            // Stream the data until finish!
+            freedv_rawdatatx(fdv, mod_out, bytes_in);
+        }
     }  catch (const std::exception &e) {
         std::throw_with_nested(tr("An issue has occurred with transmitting data via the Codec2 modem! Error:\n\n%1")
                                .arg(QString::fromStdString(e.what())).toStdString());
@@ -152,14 +153,21 @@ int GkCodec2::transmitData(const QByteArray &byte_array)
 QList<QByteArray> GkCodec2::createPayloadForTx(const QByteArray &byte_array)
 {
     try {
-        //
-        // Keeps the trailing padding equal signs at the end of the encoded data, so the data
-        // is always a size multiple of four.
-        //
-        QByteArray base64_conv_data = byte_array.toBase64(QByteArray::KeepTrailingEquals); // Convert to Base64 for easier transmission!
+        QByteArray base64_conv_data;
+        if (gkCustomMode == Codec2ModeCustom::GekkoFyreV1) {
+            std::string compressed_string;
+            snappy::Compress(byte_array.data(), byte_array.size(), &compressed_string);
+            QByteArray comprData(compressed_string.c_str(), compressed_string.length());
+            base64_conv_data = comprData.toBase64(QByteArray::KeepTrailingEquals); // Convert to Base64 for easier transmission!
+        } else {
+            // Keeps the trailing padding equal signs at the end of the encoded data, so the data
+            // is always a size multiple of four.
+            base64_conv_data = byte_array.toBase64(QByteArray::KeepTrailingEquals); // Convert to Base64 for easier transmission!
+        }
 
         int payload_size = base64_conv_data.size();
         QList<QByteArray> payload_data;
+
         if (payload_size > GK_CODEC2_FRAME_SIZE) {
             // We need to break up the payload!
             QByteArray tmp_data;
@@ -187,58 +195,6 @@ QList<QByteArray> GkCodec2::createPayloadForTx(const QByteArray &byte_array)
     }
 
     return QList<QByteArray>();
-}
-
-/**
- * @brief GkCodec2::zlibCompressToMemory will make use of the zlib library to compress any given data strings.
- * @param in_data The data to be compressed.
- * @param in_data_size The size of the data to be compressed.
- * @param out_data The outputted, compressed data.
- */
-void GkCodec2::zlibCompressToMemory(void *in_data, size_t in_data_size, std::vector<uint8_t> &out_data)
-{
-    std::vector<uint8_t> buffer;
-
-    const size_t buf_size = (GK_ZLIB_BUFFER_SIZE * 1024);
-    uint8_t temp_buffer[buf_size];
-
-    z_stream strm;
-    strm.zalloc = 0;
-    strm.zfree = 0;
-    strm.next_in = reinterpret_cast<uint8_t *>(in_data);
-    strm.avail_in = in_data_size;
-    strm.next_out = temp_buffer;
-    strm.avail_out = buf_size;
-
-    deflateInit(&strm, Z_BEST_COMPRESSION);
-
-    while (strm.avail_in != 0) {
-        int res = deflate(&strm, Z_NO_FLUSH);
-        assert(res == Z_OK);
-        if (strm.avail_out == 0) {
-            buffer.insert(buffer.end(), temp_buffer, temp_buffer + buf_size);
-            strm.next_out = temp_buffer;
-            strm.avail_out = buf_size;
-        }
-    }
-
-    int deflate_res = Z_OK;
-    while (deflate_res == Z_OK) {
-        if (strm.avail_out == 0) {
-            buffer.insert(buffer.end(), temp_buffer, temp_buffer + buf_size);
-            strm.next_out = temp_buffer;
-            strm.avail_out = buf_size;
-        }
-
-        deflate_res = deflate(&strm, Z_FINISH);
-    }
-
-    assert(deflate_res == Z_STREAM_END);
-    buffer.insert(buffer.end(), temp_buffer, temp_buffer + buf_size - strm.avail_out);
-    deflateEnd(&strm);
-
-    out_data.swap(buffer);
-    return;
 }
 
 /**

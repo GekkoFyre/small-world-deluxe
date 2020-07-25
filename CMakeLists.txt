@@ -245,6 +245,14 @@ if (BUILD_CODEC2_SUPPORT)
     endif()
 endif(BUILD_CODEC2_SUPPORT)
 
+find_package(Snappy REQUIRED)
+if (SNAPPY_FOUND)
+    include_directories(${SNAPPY_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${SNAPPY_LIBRARIES})
+else()
+    message(FATAL_ERROR "The 'Snappy' compression libraries could not be found!")
+endif(SNAPPY_FOUND)
+
 find_package(USB REQUIRED)
 if (USB_FOUND)
     include_directories(${LIBUSB_INCLUDE_DIRS})
@@ -628,8 +636,8 @@ endif(GFYRE_BUILD_SHARED)
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
 target_link_libraries(galaxy ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::SerialPort Qt5::PrintSupport Threads::Threads SingleApplication::SingleApplication ${LIBS})
 
-# qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)
-# add_dependencies(galaxy resources)
+qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)
+add_dependencies(galaxy resources)
 
 set(SWRLD_EXEC ${SWRLD_EXEC}
     src/main.cpp)
