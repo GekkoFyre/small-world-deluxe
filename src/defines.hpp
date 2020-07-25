@@ -43,8 +43,6 @@
 
 #include "src/gk_string_funcs.hpp"
 #include <portaudiocpp/PortAudioCpp.hxx>
-#include <codec2/codec2.h>
-#include <codec2/freedv_api.h>
 #include <boost/exception/all.hpp>
 #include <boost/logic/tribool.hpp>
 #include <boost/filesystem.hpp>
@@ -116,6 +114,7 @@ namespace GekkoFyre {
 #define MAX_TOLERATE_WINDOW_WIDTH (16384)               // This value is mostly for error correction purposes.
 #define DLG_BOX_WINDOW_WIDTH (480)                      // The width of non-Qt generated dialog boxes
 #define DLG_BOX_WINDOW_HEIGHT (120)                     // The height of non-Qt generated dialog boxes
+#define GK_ZLIB_BUFFER_SIZE (4096)                      // The size of the buffer, in kilobytes, as-used by Zlib throughout Small World Deluxe's code-base...
 
 //
 // Amateur radio specific functions
@@ -143,7 +142,7 @@ namespace GekkoFyre {
 //
 #define SPECTRO_BANDWIDTH_MAX_SIZE (2048)               // The size and bandwidth of the spectrograph / waterfall window, in hertz.
 #define SPECTRO_BANDWIDTH_MIN_SIZE (125)                // The size and bandwidth of the spectrograph / waterfall window, in hertz.
-#define GK_FFT_SIZE (256)
+#define GK_FFT_SIZE (2048)
 
 //
 // Concerns spectrograph / waterfall calculations and settings
@@ -197,6 +196,11 @@ namespace GekkoFyre {
 // SSTV related
 //
 #define GK_SSTV_FILE_DLG_LOAD_IMGS_MAX_FILES_WARN (32)  // The maximum amount of individual images/files to allow to be loaded through a QFileDialog before warning the user about any implications of loading too many into memory at once!
+
+//
+// CODEC2 Modem related
+//
+#define GK_CODEC2_FRAME_SIZE (320)                      // The size of a single frame, in bytes, for the Codec2 modem.
 
 #ifndef M_PI
 #define M_PI (3.14159265358979323846) /* pi */
@@ -330,6 +334,21 @@ namespace Database {
             WindowMaximized,
             WindowHSize,
             WindowVSize
+        };
+
+        enum Codec2Mode {
+            freeDvMode2020,
+            freeDvMode700D,
+            freeDvMode700C,
+            freeDvMode800XA,
+            freeDvMode2400B,
+            freeDvMode2400A,
+            freeDvMode1600
+        };
+
+        enum Codec2ModeCustom {
+            GekkoFyreV1,
+            Disabled
         };
 
         struct UsbVers3 {
@@ -522,13 +541,6 @@ namespace AmateurRadio {
         GkFreqBands closest_freq_band;                      // The closest matching frequency band grouping
         DigitalModes digital_mode;                          // The type of digital mode this frequency applies towards, or should apply toward
         IARURegions iaru_region;                            // The IARU Region that this frequency falls under
-    };
-
-    struct GkFreeDV {                                       // <https://github.com/drowe67/codec2/blob/master/README_data.md>.
-        struct freedv *freedv;
-        int mode;
-        int use_clip;
-        int use_txbpf;
     };
 
     namespace Control {
