@@ -88,7 +88,6 @@ namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
 GkAudioDecoding::GkAudioDecoding(QPointer<FileIo> fileIo,
-                                 std::shared_ptr<PaAudioBuf<qint16>> output_audio_buf,
                                  std::shared_ptr<GkLevelDb> database,
                                  std::shared_ptr<StringFuncs> stringFuncs,
                                  Database::Settings::Audio::GkDevice output_device,
@@ -98,7 +97,6 @@ GkAudioDecoding::GkAudioDecoding(QPointer<FileIo> fileIo,
     setParent(parent);
 
     gkFileIo = std::move(fileIo);
-    gkAudioBuf = std::move(output_audio_buf);
     gkStringFuncs = std::move(stringFuncs);
     gkDb = std::move(database);
     gkEventLogger = std::move(eventLogger);

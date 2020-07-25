@@ -302,9 +302,7 @@ private:
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
     std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> input_audio_buf;
-    std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> output_audio_buf;
     std::shared_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<qint16>>> inputAudioStream;
-    std::shared_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<qint16>>> outputAudioStream;
 
     //
     // Audio sub-system

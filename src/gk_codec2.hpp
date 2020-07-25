@@ -43,7 +43,6 @@
 
 #include "src/defines.hpp"
 #include "src/gk_logger.hpp"
-#include "src/pa_audio_buf.hpp"
 #include <codec2/codec2.h>
 #include <memory>
 #include <string>

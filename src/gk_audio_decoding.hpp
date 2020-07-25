@@ -102,7 +102,6 @@ private:
 
 public:
     explicit GkAudioDecoding(QPointer<GekkoFyre::FileIo> fileIo,
-                             std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> audio_buf,
                              std::shared_ptr<GekkoFyre::GkLevelDb> database,
                              std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs,
                              GekkoFyre::Database::Settings::Audio::GkDevice output_device,
@@ -116,7 +115,6 @@ public:
 
 private:
     QPointer<GekkoFyre::FileIo> gkFileIo;
-    std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> gkAudioBuf;
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GkLevelDb> gkDb;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;

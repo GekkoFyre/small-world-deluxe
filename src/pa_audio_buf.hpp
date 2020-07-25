@@ -95,7 +95,8 @@ public:
     virtual size_t size() const;
     virtual bool empty() const;
     virtual bool clear() const;
-    virtual T get() const;
+    virtual T grab() const;
+    virtual void append(const T &data);
     virtual bool full() const;
 
 private:
@@ -159,56 +160,22 @@ PaAudioBuf<T>::~PaAudioBuf()
  */
 template<class T>
 int PaAudioBuf<T>::playbackCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
-                                 const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags)
+                                    const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags)
 {
-    //
-    // TODO - Implement the volume controls for this data buffer!
-    //
-
     std::mutex playback_loop_mtx;
     std::lock_guard<std::mutex> lck_guard(playback_loop_mtx);
 
     Q_UNUSED(inputBuffer);
     Q_UNUSED(timeInfo);
     Q_UNUSED(statusFlags);
+    Q_UNUSED(outputBuffer);
+    Q_UNUSED(framesPerBuffer);
 
-    int numChannels = prefOutputDevice.sel_channels;
-    std::unique_ptr<GkPaAudioData> data = std::make_unique<GkPaAudioData>();
-    auto *rptr = (&data->recordedSamples[data->frameIndex * numChannels]);
-    auto *wptr = (T *)outputBuffer;
-    size_t framesLeft = (data->maxFrameIndex - data->frameIndex);
-    int finished;
+    //
+    // Nothing needs to be specifically here, unless you wish to decode something like Opus or somesuch!
+    //
 
-    if (framesLeft < framesPerBuffer) {
-        // Final buffer!
-        for (size_t i = 0; i < framesLeft; ++i) {
-            *wptr++ = *rptr++;  // Left
-            if (numChannels == 2) {
-                *wptr++ = *rptr++; // Right
-            }
-        }
-        for (size_t i = 0; i < framesPerBuffer; ++i) {
-            *wptr++ = 0; // Left
-            if (numChannels == 2) {
-                *wptr++ = 0;  // Right
-            }
-        }
-
-        data->frameIndex += framesLeft;
-        finished = paComplete;
-    } else {
-        for (size_t i = 0; i < framesPerBuffer; ++i) {
-            *wptr++ = *rptr++;  // Left
-            if (numChannels == 2) {
-                *wptr++ = *rptr++;  // Right
-            }
-        }
-
-        data->frameIndex += framesPerBuffer;
-        finished = paContinue;
-    }
-
-    return finished;
+    return paContinue;
 }
 
 /**
@@ -344,9 +311,18 @@ bool PaAudioBuf<T>::clear() const
  * @return
  */
 template<class T>
-T PaAudioBuf<T>::get() const
+T PaAudioBuf<T>::grab() const
 {
-    return gkCircBuffer->get();
+    return gkCircBuffer->grab();
+}
+
+/**
+ * @brief PaAudioBuf<T>::append
+ */
+template<class T>
+void PaAudioBuf<T>::append(const T &data)
+{
+    return;
 }
 
 /**
