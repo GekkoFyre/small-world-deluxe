@@ -100,6 +100,8 @@ public:
 
     bool is_rec_active;
 
+    int playbackCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
+                         const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags);
     int wireCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
                      const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags, void *userData);
     int recordCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
@@ -163,6 +165,61 @@ template<class T>
 PaAudioBuf<T>::~PaAudioBuf()
 {
     return;
+}
+
+template<class T>
+int PaAudioBuf<T>::playbackCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
+                                    const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags)
+{
+    std::mutex playback_loop_mtx;
+    std::lock_guard<std::mutex> lck_guard(playback_loop_mtx);
+
+    //
+    // Please do not modify this without advanced knowledge, as complicated as it looks, it should allow the playback of audio...
+    // http://portaudio.com/docs/v19-doxydocs/api_overview.html
+    //
+
+    Q_UNUSED(inputBuffer);
+    Q_UNUSED(timeInfo);
+    Q_UNUSED(statusFlags);
+
+    int numChannels = prefOutputDevice.sel_channels;
+    std::unique_ptr<GkPaAudioData> data = std::make_unique<GkPaAudioData>();
+    auto *rptr = (&data->recordedSamples[data->frameIndex * numChannels]);
+    auto *wptr = (T *)outputBuffer;
+    size_t framesLeft = (data->maxFrameIndex - data->frameIndex);
+    int finished;
+
+    if (framesLeft < framesPerBuffer) {
+        // Final buffer!
+        for (size_t i = 0; i < framesLeft; ++i) {
+            *wptr++ = *rptr++;  // Left
+            if (numChannels == 2) {
+                *wptr++ = *rptr++; // Right
+            }
+        }
+        for (size_t i = 0; i < framesPerBuffer; ++i) {
+            *wptr++ = 0; // Left
+            if (numChannels == 2) {
+                *wptr++ = 0;  // Right
+            }
+        }
+
+        data->frameIndex += framesLeft;
+        finished = paComplete;
+    } else {
+        for (size_t i = 0; i < framesPerBuffer; ++i) {
+            *wptr++ = *rptr++;  // Left
+            if (numChannels == 2) {
+                *wptr++ = *rptr++;  // Right
+            }
+        }
+
+        data->frameIndex += framesPerBuffer;
+        finished = paContinue;
+    }
+
+    return finished;
 }
 
 /**

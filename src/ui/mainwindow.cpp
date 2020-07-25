@@ -2047,7 +2047,7 @@ void MainWindow::startTransmitOutput()
                                                        pref_output_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
                                                        paPrimeOutputBuffersUsingStreamCallback);
     outputAudioStream = std::make_shared<portaudio::MemFunCallbackStream<PaAudioBuf<qint16>>>(pa_stream_param, *output_audio_buf,
-                                                                                              &PaAudioBuf<qint16>::wireCallback);
+                                                                                              &PaAudioBuf<qint16>::playbackCallback);
     outputAudioStream->start();
 
     return;
