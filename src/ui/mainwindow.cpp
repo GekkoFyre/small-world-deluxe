@@ -1661,7 +1661,8 @@ void MainWindow::updateSpectrograph()
                         recv_buf.shrink_to_fit();
 
                         if (fftData.size() == GK_FFT_SIZE) {
-                            gkFFT->FFTCompute(fftData.data(), GK_FFT_SIZE);
+                            std::vector<float> fftDataVals;
+                            gkFFT->FFTCompute(fftData.data(), fftDataVals.data());
 
                             //
                             // Perform the timing and date calculations!
@@ -1684,9 +1685,9 @@ void MainWindow::updateSpectrograph()
                             //
 
                             std::vector<double> magnitude_buf;
-                            magnitude_buf.reserve(fftData.size() + 1);
-                            for (const auto &calc: fftData) {
-                                const double magnitude = std::sqrt(std::pow(calc.real(), 2) + std::pow(calc.imag(), 2));
+                            magnitude_buf.reserve(fftDataVals.size() + 1);
+                            for (const auto &calc: fftDataVals) {
+                                const double magnitude = std::sqrt(std::pow(calc, 2) + std::pow(calc, 2));
                                 magnitude_buf.push_back(magnitude);
                             }
 
@@ -1700,7 +1701,7 @@ void MainWindow::updateSpectrograph()
                             QVector<double> fft_spectro_vals;
                             fft_spectro_vals.reserve(GK_FFT_SIZE + 1);
                             for (size_t i = 0; i < GK_FFT_SIZE; ++i) {
-                                auto abs_val = std::abs(fftData[i]) / ((double)GK_FFT_SIZE);
+                                auto abs_val = std::abs(fftDataVals[i]) / ((double)GK_FFT_SIZE);
                                 fft_spectro_vals.push_back(abs_val);
                             }
 
@@ -1709,7 +1710,7 @@ void MainWindow::updateSpectrograph()
 
                             magnitude_buf.clear();
                             magnitude_db_buf.clear();
-                            fftData.clear();
+                            fftDataVals.clear();
                         }
                     }
                 }

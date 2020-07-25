@@ -40,6 +40,8 @@
  ****************************************************************************************************/
 
 #include "src/gk_fft.hpp"
+#include "src/contrib/kissfft/kiss_fft.h"
+#include "src/contrib/kissfft/tools/kiss_fftr.h"
 #include <iostream>
 #include <cmath>
 
@@ -66,50 +68,14 @@ GkFFT::~GkFFT()
 
 /**
  * @brief GkFFT::FFTCompute
- * @author Ville Räisänen <https://github.com/vsr83/QSpectrogram/blob/master/spectrogram.cpp>
- * @param data
- * @param dataLength
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param pOut
+ * @param pIn
  */
-void GkFFT::FFTCompute(std::complex<float> *data, unsigned int dataLength)
+void GkFFT::FFTCompute(std::complex<float> *pOut, const float *pIn)
 {
-    for (unsigned int pos = 0; pos < dataLength; ++pos) {
-         unsigned int mask = dataLength;
-         unsigned int mirrormask = 1;
-         unsigned int target = 0;
-
-        while (mask != 1) {
-            mask >>= 1;
-            if (pos & mirrormask) {
-                target |= mask;
-            }
-
-            mirrormask <<= 1;
-        }
-
-        if (target > pos) {
-            std::complex<float> tmp = data[pos];
-            data[pos] = data[target];
-            data[target] = tmp;
-        }
-    }
-
-    for (unsigned int step = 1; step < dataLength; step <<= 1) {
-        const unsigned int jump = step << 1;
-        const float delta = M_PI / float(step);
-        const float sine = std::sin(delta * 0.5);
-        const std::complex<float> mult(-2.*sine*sine, std::sin(delta));
-        std::complex<float> factor(1.0, 0.0);
-
-        for (unsigned int group = 0; group < step; ++group) {
-            for (unsigned int pair = group; pair < dataLength; pair += jump) {
-                const unsigned int match = pair + step;
-                const std::complex<float> prod(factor * data[match]);
-                data[match] = data[pair] - prod;
-                data[pair] += prod;
-            }
-            factor = mult * factor + factor;
-        }
-    }
+    kiss_fftr_cfg fft = kiss_fftr_alloc(1, 0, nullptr, nullptr); // Is inverse FFT!
+    kiss_fftr(fft, pIn, (kiss_fft_cpx*)pOut);
 
     return;
 }

@@ -317,6 +317,29 @@ endif(Iconv_FOUND)
 set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-arcs -ftest-coverage -mwindows")
 
 #
+# KissFFT
+#
+set(GALAXY_KISSFFT_C
+    ${GALAXY_KISSFFT_C}
+    src/contrib/kissfft/_kiss_fft_guts.h
+    src/contrib/kissfft/kiss_fft_log.h
+    src/contrib/kissfft/kiss_fft.c
+    src/contrib/kissfft/kiss_fft.h
+    src/contrib/kissfft/kissfft_i32.hh
+    src/contrib/kissfft/kissfft.hh
+    src/contrib/kissfft/tools/fftutil.c
+    src/contrib/kissfft/tools/kfc.c
+    src/contrib/kissfft/tools/kfc.h
+    src/contrib/kissfft/tools/kiss_fastfir.c
+    src/contrib/kissfft/tools/kiss_fftnd.c
+    src/contrib/kissfft/tools/kiss_fftnd.h
+    src/contrib/kissfft/tools/kiss_fftndr.c
+    src/contrib/kissfft/tools/kiss_fftndr.h
+    src/contrib/kissfft/tools/kiss_fftr.c
+    src/contrib/kissfft/tools/kiss_fftr.h
+    src/contrib/kissfft/tools/psdpng.c)
+
+#
 # PortAudio's C++ bindings
 #
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/portaudio/cpp/include")

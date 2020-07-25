@@ -53,7 +53,7 @@ public:
     explicit GkFFT();
     ~GkFFT();
 
-    void FFTCompute(std::complex<float> *data, unsigned int dataLength);
+    void FFTCompute(std::complex<float> *pOut, const float *pIn);
 
 };
 };
