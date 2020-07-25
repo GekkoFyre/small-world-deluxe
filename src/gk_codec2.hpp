@@ -46,9 +46,12 @@
 #include <codec2/codec2.h>
 #include <memory>
 #include <string>
+#include <vector>
+#include <QList>
 #include <QString>
 #include <QObject>
 #include <QPointer>
+#include <QByteArray>
 
 namespace GekkoFyre {
 
@@ -60,11 +63,17 @@ public:
                       QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkCodec2();
 
+    int transmitAudio(const void *inputBuffer, void *outputBuffer, const quint32 &framesPerBuffer, PaStreamCallbackFlags statusFlags);
+    int transmitData(const QByteArray &byte_array);
+
 private:
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     Database::Settings::Codec2Mode gkFreeDvMode;
     int gkFreeDvClip;
     int gkFreeDvTXBpf;                      // OFDM TX Filter (off by default)
+
+    QList<QByteArray> createPayloadForTx(const QByteArray &byte_array);
+    void zlibCompressToMemory(void *in_data, size_t in_data_size, std::vector<uint8_t> &out_data);
 
     int convertFreeDvModeToInt(const Database::Settings::Codec2Mode &freedv_mode);
 

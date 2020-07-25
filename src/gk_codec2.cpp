@@ -40,9 +40,8 @@
  ****************************************************************************************************/
 
 #include "src/gk_codec2.hpp"
-#include <codec2/codec2_ofdm.h>
-#include <codec2/varicode.h>
 #include <codec2/freedv_api.h>
+#include <zlib.h>
 #include <utility>
 
 using namespace GekkoFyre;
@@ -78,6 +77,167 @@ GkCodec2::GkCodec2(const Codec2Mode &freedv_mode, const int &freedv_clip, const 
 
 GkCodec2::~GkCodec2()
 {
+    return;
+}
+
+int GkCodec2::transmitAudio(const void *inputBuffer, void *outputBuffer, const quint32 &framesPerBuffer, PaStreamCallbackFlags statusFlags)
+{
+    try {
+        // Process
+    }  catch (const std::exception &e) {
+        std::throw_with_nested(tr("An issue has occurred with transmitting audio via the Codec2 modem! Error:\n\n%1")
+                               .arg(QString::fromStdString(e.what())).toStdString());
+    }
+
+    return paAbort;
+}
+
+/**
+ * @brief GkCodec2::transmitData
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param byte_array
+ * @return
+ * @note <https://github.com/drowe67/codec2/blob/master/README_data.md>
+ * <https://cpp.hotexamples.com/examples/-/-/codec2_encode/cpp-codec2_encode-function-examples.html>
+ */
+int GkCodec2::transmitData(const QByteArray &byte_array)
+{
+    try {
+        auto txData = createPayloadForTx(byte_array);
+
+        struct freedv *fdv;
+        if (byte_array.size() > GK_CODEC2_FRAME_SIZE) {
+            // We must break up the QByteArray into multiple frames!
+        }
+
+        fdv = freedv_open(convertFreeDvModeToInt(gkFreeDvMode));
+        if (fdv == nullptr) {
+            throw std::runtime_error(tr("Issue encountered with opening Codec2 modem for transmission! Are you out of memory?").toStdString());
+        }
+
+        freedv_set_clip(fdv, gkFreeDvClip);
+        freedv_set_tx_bpf(fdv, gkFreeDvTXBpf);
+
+        // For streaming bytes it is much easier to use modes that have a multiple of 8 payload bits/frame...
+        int bytes_per_modem_frame = (freedv_get_bits_per_modem_frame(fdv) / 8);
+        gkEventLogger->publishEvent(tr("Bits per modem frame: %1. Bytes per modem frame: %2.")
+                                    .arg(QString::number(freedv_get_bits_per_modem_frame(fdv)))
+                                    .arg(QString::number(bytes_per_modem_frame)), GkSeverity::Debug);
+        if ((freedv_get_bits_per_modem_frame(fdv) % 8) != 0) {
+            throw std::invalid_argument(tr("Bits per modem frame do not equal a multiple of eight for the Codec2 modem! Please contact the developer with this message.").toStdString());
+        }
+
+        int n_mod_out = freedv_get_n_nom_modem_samples(fdv);
+        uint8_t bytes_in[bytes_per_modem_frame];
+        short mod_out[n_mod_out];
+
+        // freedv_rawdatatx();
+    }  catch (const std::exception &e) {
+        std::throw_with_nested(tr("An issue has occurred with transmitting data via the Codec2 modem! Error:\n\n%1")
+                               .arg(QString::fromStdString(e.what())).toStdString());
+    }
+
+    return paAbort;
+}
+
+/**
+ * @brief GkCodec2::createPayloadForTx creates a payload out of a QByteArray of data that's more suitable for transmission of
+ * said data over radio waves. It will convert the data to be transmitted towards Base64 encoding while padding out said data
+ * to a length that's more easily divisible by a value of eight.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param byte_array The QByteArray to be processed.
+ * @return The data to be transmitted over the radio waves.
+ * @note <https://stackoverflow.com/questions/9811235/best-way-to-split-a-vector-into-two-smaller-arrays>
+ */
+QList<QByteArray> GkCodec2::createPayloadForTx(const QByteArray &byte_array)
+{
+    try {
+        //
+        // Keeps the trailing padding equal signs at the end of the encoded data, so the data
+        // is always a size multiple of four.
+        //
+        QByteArray base64_conv_data = byte_array.toBase64(QByteArray::KeepTrailingEquals); // Convert to Base64 for easier transmission!
+
+        int payload_size = base64_conv_data.size();
+        QList<QByteArray> payload_data;
+        if (payload_size > GK_CODEC2_FRAME_SIZE) {
+            // We need to break up the payload!
+            QByteArray tmp_data;
+            while (payload_size > GK_CODEC2_FRAME_SIZE) {
+                for (int i = 0; i < GK_CODEC2_FRAME_SIZE; ++i) {
+                    tmp_data.insert(i, base64_conv_data[i]);
+                }
+
+                payload_size -= GK_CODEC2_FRAME_SIZE;
+                payload_data.append(tmp_data);
+            }
+        }
+
+        // Add any remaining data...
+        QByteArray tmp_data;
+        for (int i = 0; i < payload_size; ++i) {
+            tmp_data.insert(i, base64_conv_data[i]);
+        }
+
+        payload_data.append(tmp_data);
+        return payload_data;
+    }  catch (const std::exception &e) {
+        std::throw_with_nested(tr("An issue has occurred with transmitting audio via the Codec2 modem! Error:\n\n%1")
+                               .arg(QString::fromStdString(e.what())).toStdString());
+    }
+
+    return QList<QByteArray>();
+}
+
+/**
+ * @brief GkCodec2::zlibCompressToMemory will make use of the zlib library to compress any given data strings.
+ * @param in_data The data to be compressed.
+ * @param in_data_size The size of the data to be compressed.
+ * @param out_data The outputted, compressed data.
+ */
+void GkCodec2::zlibCompressToMemory(void *in_data, size_t in_data_size, std::vector<uint8_t> &out_data)
+{
+    std::vector<uint8_t> buffer;
+
+    const size_t buf_size = (GK_ZLIB_BUFFER_SIZE * 1024);
+    uint8_t temp_buffer[buf_size];
+
+    z_stream strm;
+    strm.zalloc = 0;
+    strm.zfree = 0;
+    strm.next_in = reinterpret_cast<uint8_t *>(in_data);
+    strm.avail_in = in_data_size;
+    strm.next_out = temp_buffer;
+    strm.avail_out = buf_size;
+
+    deflateInit(&strm, Z_BEST_COMPRESSION);
+
+    while (strm.avail_in != 0) {
+        int res = deflate(&strm, Z_NO_FLUSH);
+        assert(res == Z_OK);
+        if (strm.avail_out == 0) {
+            buffer.insert(buffer.end(), temp_buffer, temp_buffer + buf_size);
+            strm.next_out = temp_buffer;
+            strm.avail_out = buf_size;
+        }
+    }
+
+    int deflate_res = Z_OK;
+    while (deflate_res == Z_OK) {
+        if (strm.avail_out == 0) {
+            buffer.insert(buffer.end(), temp_buffer, temp_buffer + buf_size);
+            strm.next_out = temp_buffer;
+            strm.avail_out = buf_size;
+        }
+
+        deflate_res = deflate(&strm, Z_FINISH);
+    }
+
+    assert(deflate_res == Z_STREAM_END);
+    buffer.insert(buffer.end(), temp_buffer, temp_buffer + buf_size - strm.avail_out);
+    deflateEnd(&strm);
+
+    out_data.swap(buffer);
     return;
 }
 
