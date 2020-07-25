@@ -264,7 +264,7 @@ void SpectroGui::insertData(const QVector<double> &values, const int &numCols)
             gkRasterBuf.push_back(data); // Store the matrix values within a QVector, for up to `SPECTRO_Y_AXIS_SIZE` milliseconds!
         }
 
-        const int buf_total_cols = (buf_overall_size / GK_FFT_SIZE);
+        const int buf_total_cols = (buf_overall_size / GK_FFT_SAMPLE_SIZE);
         if (graph_in_use == GkGraphType::GkMomentInTime) {
             //
             // Waterfall (moment-in-time, i.e. without 'date and time' axis)
@@ -282,7 +282,7 @@ void SpectroGui::insertData(const QVector<double> &values, const int &numCols)
         }
 
         int i = 0;
-        while (i < GK_FFT_SIZE) {
+        while (i < GK_FFT_SAMPLE_SIZE) {
             gkRasterBuf.pop_front(); // Delete the last amount of `GK_FFT_SIZE` at the very front of the QList!
             ++i;
         }

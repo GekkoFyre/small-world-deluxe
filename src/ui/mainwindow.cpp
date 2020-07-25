@@ -1662,7 +1662,7 @@ void MainWindow::updateSpectrograph()
 
                         if (fftData.size() == GK_FFT_SIZE) {
                             std::vector<GkFFTComplex> fftDataVals;
-                            fftDataVals = gkFFT->FFTCompute(fftData, fftData.size(), 1, GK_FFT_SIZE);
+                            fftDataVals = gkFFT->FFTCompute(fftData, fftData.size(), (GK_FFT_SIZE / 2), GK_FFT_SIZE);
 
                             //
                             // Perform the timing and date calculations!
@@ -1697,7 +1697,7 @@ void MainWindow::updateSpectrograph()
                                 magnitude_buf.push_back(magnitude);
                             }
 
-                            std::vector<double> magnitude_db_buf;
+                            QVector<double> magnitude_db_buf;
                             magnitude_buf.reserve(magnitude_buf.size() + 1);
                             for (const auto &calc: magnitude_buf) {
                                 const double magnitude_db = 20 * std::log10(calc);
@@ -1705,10 +1705,9 @@ void MainWindow::updateSpectrograph()
                             }
 
                             QVector<double> fft_spectro_vals;
-                            fft_spectro_vals.reserve(GK_FFT_SIZE + 1);
-                            for (size_t i = 0; i < GK_FFT_SIZE; ++i) {
-                                auto abs_val = std::abs(fftDataVals[i].real) / ((double)GK_FFT_SIZE);
-                                fft_spectro_vals.push_back(abs_val);
+                            fft_spectro_vals.reserve(GK_FFT_SAMPLE_SIZE + 1);
+                            for (size_t i = 0; i < GK_FFT_SAMPLE_SIZE; ++i) {
+                                fft_spectro_vals.push_back(fftDataVals[i].imaginary);
                             }
 
                             gkSpectroGui->insertData(fft_spectro_vals, 1); // This is the data for the spectrograph / waterfall itself!
