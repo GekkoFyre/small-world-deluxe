@@ -433,6 +433,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             //
             // Setup the audio encoding/decoding libraries!
             //
+            output_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<qint16>>(AUDIO_FRAMES_PER_BUFFER, pref_output_device, pref_input_device);
+
             gkAudioEncoding = new GkAudioEncoding(fileIo, input_audio_buf, GkDb, gkSpectroGui,
                                                   gkStringFuncs, pref_input_device, gkEventLogger, this);
             gkAudioDecoding = new GkAudioDecoding(fileIo, GkDb, gkStringFuncs, pref_output_device,
@@ -1522,7 +1524,7 @@ void MainWindow::updateVolume(const float &value)
         //
         // Output device!
         //
-        // output_audio_buf->setVolume(value);
+        output_audio_buf->setVolume(value);
     }
 
     return;
@@ -2018,6 +2020,15 @@ void MainWindow::startRecordingInput()
  */
 void MainWindow::stopTransmitOutput()
 {
+    if (outputAudioStream != nullptr && pref_output_device.is_dev_active) {
+        if (outputAudioStream->isActive()) {
+            outputAudioStream->stop();
+            outputAudioStream->close();
+
+            pref_output_device.is_dev_active = false; // State that this recording device is now non-active!
+        }
+    }
+
     return;
 }
 
@@ -2035,6 +2046,9 @@ void MainWindow::startTransmitOutput()
     auto pa_stream_param = portaudio::StreamParameters(portaudio::DirectionSpecificStreamParameters::null(), pref_output_device.cpp_stream_param,
                                                        pref_output_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
                                                        paPrimeOutputBuffersUsingStreamCallback);
+    outputAudioStream = std::make_shared<portaudio::MemFunCallbackStream<PaAudioBuf<qint16>>>(pa_stream_param, *output_audio_buf,
+                                                                                              &PaAudioBuf<qint16>::wireCallback);
+    outputAudioStream->start();
 
     return;
 }

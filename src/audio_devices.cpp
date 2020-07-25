@@ -783,57 +783,6 @@ portaudio::SampleDataFormat AudioDevices::sampleFormatConvert(const unsigned lon
 }
 
 /**
- * @brief AudioDevices::openPlaybackStream
- * @param device
- * @param stereo
- * @return
- * @note Archie <https://stackoverflow.com/questions/35959523/portaudio-iterate-through-audio-data>
- */
-PaStreamCallbackResult AudioDevices::openPlaybackStream(portaudio::System &portAudioSys, PaAudioBuf<qint16> *audio_buf,
-                                                        const GkDevice &device, const bool &stereo)
-{
-    try {
-        if (audio_buf != nullptr) {
-            std::mutex playback_stream_mtx;
-            std::lock_guard<std::mutex> lck_guard(playback_stream_mtx);
-            portaudio::SampleDataFormat prefOutputLatency = sampleFormatConvert(portAudioSys.deviceByIndex(device.stream_parameters.device).defaultLowOutputLatency());
-
-            //
-            // Speakers output stream
-            //
-            portaudio::DirectionSpecificStreamParameters outputParams(portAudioSys.deviceByIndex(device.stream_parameters.device),
-                                                                      device.dev_output_channel_count, portaudio::FLOAT32,
-                                                                      false, prefOutputLatency, nullptr);
-            portaudio::StreamParameters playbackParams(portaudio::DirectionSpecificStreamParameters::null(), outputParams, device.def_sample_rate,
-                                                       AUDIO_FRAMES_PER_BUFFER, paNoFlag);
-            portaudio::MemFunCallbackStream<PaAudioBuf<qint16>> streamPlayback(playbackParams, *audio_buf, &PaAudioBuf<qint16>::playbackCallback);
-
-            streamPlayback.start();
-            while (streamPlayback.isActive()) {
-                portAudioSys.sleep(100);
-            }
-
-            streamPlayback.stop();
-            streamPlayback.close();
-
-            return paContinue;
-        } else {
-            throw std::runtime_error(tr("You must firstly choose an output audio device within the settings!").toStdString());
-        }
-    } catch (const portaudio::PaException &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText()), QMessageBox::Ok);
-    } catch (const portaudio::PaCppException &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
-    } catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), tr("A generic exception has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
-    } catch (...) {
-        QMessageBox::warning(nullptr, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), QMessageBox::Ok);
-    }
-
-    return paAbort;
-}
-
-/**
  * @brief AudioDevices::filterPortAudioHostType filters out the audio/multimedia devices on the user's system as they relate
  * to their associated operating system's API, via PortAudio. This is all dependent on how Small World Deluxe and its
  * associated libraries were compiled.

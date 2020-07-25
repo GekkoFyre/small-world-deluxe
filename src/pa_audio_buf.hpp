@@ -71,6 +71,22 @@ typedef struct
 }
 callbackData;
 
+typedef struct WireConfig_s
+{
+    int isInputInterleaved;
+    int isOutputInterleaved;
+    int numInputChannels;
+    int numOutputChannels;
+    int framesPerCallback;
+    /* count status flags */
+    int numInputUnderflows;
+    int numInputOverflows;
+    int numOutputUnderflows;
+    int numOutputOverflows;
+    int numPrimingOutputs;
+    int numCallbacks;
+} WireConfig_t;
+
 template <class T>
 class PaAudioBuf {
 
@@ -84,8 +100,8 @@ public:
 
     bool is_rec_active;
 
-    int playbackCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
-                         const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags);
+    int wireCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
+                     const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags, void *userData);
     int recordCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
                        const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags);
     int codec2LocalCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
@@ -150,30 +166,78 @@ PaAudioBuf<T>::~PaAudioBuf()
 }
 
 /**
- * @brief PaAudioBuf<T>::playbackCallback
- * @param inputBuffer
- * @param outputBuffer
- * @param framesPerBuffer
- * @param timeInfo
- * @param statusFlags
- * @return
+ * @brief PaAudioBuf<T>::wireCallback allows complete audio passthrough without any modifications to the data itself!
+ * @note <https://github.com/EddieRingle/portaudio/blob/master/test/patest_wire.c>
+ * @return Whether to continue with the audio stream or not.
  */
 template<class T>
-int PaAudioBuf<T>::playbackCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
-                                    const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags)
+int PaAudioBuf<T>::wireCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
+                                const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags, void *userData)
 {
     std::mutex playback_loop_mtx;
     std::lock_guard<std::mutex> lck_guard(playback_loop_mtx);
 
-    Q_UNUSED(inputBuffer);
     Q_UNUSED(timeInfo);
-    Q_UNUSED(statusFlags);
-    Q_UNUSED(outputBuffer);
-    Q_UNUSED(framesPerBuffer);
 
-    //
-    // Nothing needs to be specifically here, unless you wish to decode something like Opus or somesuch!
-    //
+    T *in;
+    T *out;
+    int inStride;
+    int outStride;
+    int inDone = 0;
+    int outDone = 0;
+    WireConfig_t *config = (WireConfig_t *)userData;
+    unsigned int i;
+    int inChannel, outChannel;
+
+    // This may get called with NULL inputBuffer during initial setup.
+    if (inputBuffer == nullptr) {
+        return 0;
+    }
+
+    // Count flags
+    if((statusFlags & paInputUnderflow) != 0) config->numInputUnderflows += 1;
+    if((statusFlags & paInputOverflow) != 0) config->numInputOverflows += 1;
+    if((statusFlags & paOutputUnderflow) != 0) config->numOutputUnderflows += 1;
+    if((statusFlags & paOutputOverflow) != 0) config->numOutputOverflows += 1;
+    if((statusFlags & paPrimingOutput) != 0) config->numPrimingOutputs += 1;
+    config->numCallbacks += 1;
+
+    inChannel = 0, outChannel = 0;
+    while (!(inDone && outDone)) {
+        if (config->isInputInterleaved) {
+            in = ((T*)inputBuffer) + inChannel;
+            inStride = config->numInputChannels;
+        } else {
+            in = ((T**)inputBuffer)[inChannel];
+            inStride = 1;
+        }
+
+        if (config->isOutputInterleaved) {
+            out = ((T*)outputBuffer) + outChannel;
+            outStride = config->numOutputChannels;
+        } else {
+            out = ((T**)outputBuffer)[outChannel];
+            outStride = 1;
+        }
+
+        for (i = 0; i < framesPerBuffer; ++i) {
+            *out = *in;
+            out += outStride;
+            in += inStride;
+        }
+
+        if(inChannel < (config->numInputChannels - 1)) {
+            inChannel++;
+        } else {
+            inDone = 1;
+        }
+
+        if(outChannel < (config->numOutputChannels - 1)) {
+            outChannel++;
+        } else {
+            outDone = 1;
+        }
+    }
 
     return paContinue;
 }
