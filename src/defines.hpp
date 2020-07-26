@@ -57,6 +57,8 @@
 #include <memory>
 #include <cstdlib>
 #include <utility>
+#include <iostream>
+#include <streambuf>
 #include <QString>
 #include <QVector>
 #include <QVariant>
@@ -228,6 +230,29 @@ namespace Filesystem {
 }
 
 namespace System {
+    /**
+     * @brief The membuf struct
+     * @author Dietmar Kühl <https://stackoverflow.com/questions/13059091/creating-an-input-stream-from-constant-memory/13059195#13059195>
+     * @note <https://stackoverflow.com/a/52492027>
+     */
+    struct membuf: std::streambuf {
+        membuf(char const* base, size_t size) {
+            char* p(const_cast<char*>(base));
+            this->setg(p, p, p + size);
+        }
+    };
+
+    /**
+     * @brief The imemstream struct
+     * @author Dietmar Kühl <https://stackoverflow.com/questions/13059091/creating-an-input-stream-from-constant-memory/13059195#13059195>
+     * @note <https://stackoverflow.com/a/52492027>
+     */
+    struct imemstream: virtual membuf, std::istream {
+        imemstream(char const *base, size_t size):
+            membuf(base, size), std::istream(static_cast<std::streambuf*>(this)) {
+        }
+    };
+
     namespace Cli {
         enum CommandLineParseResult
         {

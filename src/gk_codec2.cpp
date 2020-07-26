@@ -43,6 +43,7 @@
 #include <codec2/freedv_api.h>
 #include <snappy.h>
 #include <utility>
+#include <sstream>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -120,12 +121,18 @@ int GkCodec2::transmitData(const QByteArray &byte_array, const bool &play_output
         uint8_t bytes_in[bytes_per_modem_frame];
         short mod_out[n_mod_out];
 
-        while(n_mod_out < bytes_per_modem_frame) {
-            // Stream the data until finish!
-            freedv_rawdatatx(fdv, mod_out, bytes_in);
+        for (const auto &to_tx: txData) {
+            imemstream in(to_tx.data(), (size_t)to_tx.size());
+            for (;;) {
+                std::string buffer;
+                if (!std::getline(in, buffer)) { continue; }
+                auto uchrs = reinterpret_cast<unsigned char *>(const_cast<char *>(buffer.c_str()));
+                // Stream the data until finish!
+                freedv_rawdatatx(fdv, mod_out, uchrs);
 
-            if (play_output_sound) {
-                outputAudioBuf->append(&mod_out[0], n_mod_out);
+                if (play_output_sound) {
+                    outputAudioBuf->append(&mod_out[0], n_mod_out);
+                }
             }
         }
 
