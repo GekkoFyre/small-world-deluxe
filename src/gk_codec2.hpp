@@ -77,6 +77,8 @@ private:
     int gkFreeDvTXBpf;                      // OFDM TX Filter (off by default)
 
     QList<QByteArray> createPayloadForTx(const QByteArray &byte_array);
+    short *convCharToAudioData(unsigned char *str, const size_t &len);
+    unsigned char *convAudioDataToChar(short *audio_data, const size_t &len);
 
     int convertFreeDvModeToInt(const Database::Settings::Codec2Mode &freedv_mode);
 

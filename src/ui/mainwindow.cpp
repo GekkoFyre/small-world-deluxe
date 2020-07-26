@@ -127,7 +127,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<uint8_t>("uint8_t");
     qRegisterMetaType<rig_model_t>("rig_model_t");
     qRegisterMetaType<PaHostApiTypeId>("PaHostApiTypeId");
-    qRegisterMetaType<std::vector<short>>("std::vector<short>");
+    qRegisterMetaType<std::vector<qint16>>("std::vector<qint16>");
 
     try {
         // Initialize QMainWindow to a full-screen after a single second!

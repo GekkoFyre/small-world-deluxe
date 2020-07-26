@@ -42,8 +42,10 @@
 #include "src/gk_codec2.hpp"
 #include <codec2/freedv_api.h>
 #include <snappy.h>
+#include <QDataStream>
 #include <utility>
 #include <sstream>
+#include <cstring>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -99,44 +101,38 @@ int GkCodec2::transmitData(const QByteArray &byte_array, const bool &play_output
     try {
         auto txData = createPayloadForTx(byte_array);
 
-        struct freedv *fdv;
-        fdv = freedv_open(convertFreeDvModeToInt(gkFreeDvMode));
-        if (fdv == nullptr) {
+        struct CODEC2 *codec2;
+        codec2 = codec2_create(convertFreeDvModeToInt(gkFreeDvMode));
+        if (codec2 == nullptr) {
             throw std::runtime_error(tr("Issue encountered with opening Codec2 modem for transmission! Are you out of memory?").toStdString());
         }
 
-        freedv_set_clip(fdv, gkFreeDvClip);
-        freedv_set_tx_bpf(fdv, gkFreeDvTXBpf);
-
         // For streaming bytes it is much easier to use modes that have a multiple of 8 payload bits/frame...
-        int bytes_per_modem_frame = (freedv_get_bits_per_modem_frame(fdv) / 8);
-        gkEventLogger->publishEvent(tr("Bits per modem frame: %1. Bytes per modem frame: %2.")
-                                    .arg(QString::number(freedv_get_bits_per_modem_frame(fdv)))
-                                    .arg(QString::number(bytes_per_modem_frame)), GkSeverity::Debug);
-        if ((freedv_get_bits_per_modem_frame(fdv) % 8) != 0) {
-            throw std::invalid_argument(tr("Bits per modem frame do not equal a multiple of eight for the Codec2 modem! Please contact the developer with this message.").toStdString());
-        }
+        int nbit = codec2_bits_per_frame(codec2);
+        auto out_bits = (unsigned char *)malloc(nbit * sizeof(char));
 
-        int n_mod_out = freedv_get_n_nom_modem_samples(fdv);
-        uint8_t bytes_in[bytes_per_modem_frame];
-        short mod_out[n_mod_out];
+        gkEventLogger->publishEvent(tr("Bits per modem frame: %1. Samples per modem frame: %2.")
+                                    .arg(QString::number(codec2_bits_per_frame(codec2)))
+                                    .arg(QString::number(codec2_samples_per_frame(codec2))), GkSeverity::Debug);
 
         for (const auto &to_tx: txData) {
             imemstream in(to_tx.data(), (size_t)to_tx.size());
             for (;;) {
                 std::string buffer;
                 if (!std::getline(in, buffer)) { continue; }
-                auto uchrs = reinterpret_cast<unsigned char *>(const_cast<char *>(buffer.c_str()));
+                unsigned char *uchrs = reinterpret_cast<unsigned char *>(const_cast<char *>(buffer.c_str()));
+
                 // Stream the data until finish!
-                freedv_rawdatatx(fdv, mod_out, uchrs);
+                codec2_encode(codec2, out_bits, (short *)uchrs);
 
                 if (play_output_sound) {
-                    outputAudioBuf->append(&mod_out[0], n_mod_out);
+                    size_t out_len = std::strlen((char *)out_bits);
+                    outputAudioBuf->append(convCharToAudioData(out_bits, out_len), out_len);
                 }
             }
         }
 
-        freedv_close(fdv);
+        codec2_destroy(codec2);
     }  catch (const std::exception &e) {
         std::throw_with_nested(tr("An issue has occurred with transmitting data via the Codec2 modem! Error:\n\n%1")
                                .arg(QString::fromStdString(e.what())).toStdString());
@@ -199,6 +195,40 @@ QList<QByteArray> GkCodec2::createPayloadForTx(const QByteArray &byte_array)
     }
 
     return QList<QByteArray>();
+}
+
+/**
+ * @brief GkCodec2::convCharToAudioData
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param str
+ * @param len
+ * @return
+ */
+short *GkCodec2::convCharToAudioData(unsigned char *str, const size_t &len)
+{
+    short *buffer = new short();
+    for (size_t i = 0; i < len; ++i) {
+        buffer[i] = (short)str[i];
+    }
+
+    return buffer;
+}
+
+/**
+ * @brief GkCodec2::convAudioDataToChar
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param audio_data
+ * @param len
+ * @return
+ */
+unsigned char *GkCodec2::convAudioDataToChar(short *audio_data, const size_t &len)
+{
+    unsigned char *buffer = new unsigned char();
+    for (size_t i = 0; i < len; ++i) {
+        buffer[i] = (unsigned char)audio_data[i];
+    }
+
+    return buffer;
 }
 
 /**

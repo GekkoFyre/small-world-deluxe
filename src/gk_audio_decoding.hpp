@@ -93,7 +93,7 @@ private:
     struct OpusState {
         OpusState(int max_frame_size, int max_payload_bytes, int channels): out(max_frame_size * channels),
             fbytes(max_frame_size * channels * sizeof(decltype(out)::value_type)), data(max_payload_bytes) {}
-        std::vector<short> out;
+        std::vector<qint16> out;
         std::vector<unsigned char> fbytes, data;
         int32_t frameno = 0;
         bool lost_prev = true;

@@ -419,4 +419,4 @@ Q_DECLARE_METATYPE(size_t);
 Q_DECLARE_METATYPE(uint8_t);
 Q_DECLARE_METATYPE(rig_model_t);
 Q_DECLARE_METATYPE(PaHostApiTypeId);
-Q_DECLARE_METATYPE(std::vector<short>);
+Q_DECLARE_METATYPE(std::vector<qint16>);

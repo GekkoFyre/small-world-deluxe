@@ -422,7 +422,7 @@ namespace Database {
             struct GkPaAudioData {
                 int frameIndex;                                                     // Frame index into sample array
                 int maxFrameIndex;                                                  // Maximum frame index given into sample array
-                short *recordedSamples;                                             // Audio samples that have been recorded and saved to a buffer
+                qint16 *recordedSamples;                                             // Audio samples that have been recorded and saved to a buffer
                 portaudio::SampleDataFormat sample_format;                          // Currently used sample format by given audio source, whether output or input
             };
 
