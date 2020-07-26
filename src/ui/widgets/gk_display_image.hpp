@@ -64,6 +64,7 @@ public:
 
     virtual int heightForWidth(int width) const;
     virtual QSize sizeHint() const;
+    virtual QPixmap pixmap() const;
     QPixmap scaledPixmap() const;
 
 protected:
@@ -83,7 +84,7 @@ private slots:
 
 private:
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
-    QPixmap pixmap;
+    QPixmap pixmapMem;
     GekkoFyre::AmateurRadio::Gui::sstvWindow sstvWindow;
 
     QString sstvResource;

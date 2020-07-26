@@ -114,7 +114,7 @@ public:
     virtual bool empty() const;
     virtual bool clear() const;
     virtual T grab() const;
-    virtual void append(const T &data);
+    virtual void append(T *data, const size_t &length);
     virtual bool full() const;
 
 private:
@@ -441,8 +441,12 @@ T PaAudioBuf<T>::grab() const
  * @brief PaAudioBuf<T>::append
  */
 template<class T>
-void PaAudioBuf<T>::append(const T &data)
+void PaAudioBuf<T>::append(T *data, const size_t &length)
 {
+    for (size_t i = 0; i < length; ++i) {
+        gkCircBuffer->put(data[i]);
+    }
+
     return;
 }
 

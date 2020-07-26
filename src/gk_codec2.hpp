@@ -43,6 +43,7 @@
 
 #include "src/defines.hpp"
 #include "src/gk_logger.hpp"
+#include "src/pa_audio_buf.hpp"
 #include <codec2/codec2.h>
 #include <memory>
 #include <string>
@@ -61,13 +62,15 @@ class GkCodec2 : public QObject {
 public:
     explicit GkCodec2(const Database::Settings::Codec2Mode &freedv_mode, const Database::Settings::Codec2ModeCustom &custom_mode, const int &freedv_clip,
                       const int &freedv_txbpf, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                      std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> output_audio_buf,
                       QObject *parent = nullptr);
     ~GkCodec2();
 
-    int transmitData(const QByteArray &byte_array);
+    int transmitData(const QByteArray &byte_array, const bool &play_output_sound = false);
 
 private:
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
+    std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> outputAudioBuf;
     Database::Settings::Codec2Mode gkFreeDvMode;
     Database::Settings::Codec2ModeCustom gkCustomMode;
     int gkFreeDvClip;

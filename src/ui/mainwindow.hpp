@@ -81,6 +81,7 @@
 #include <QMetaType>
 #include <QDateTime>
 #include <QSettings>
+#include <QByteArray>
 #include <QStringList>
 #include <QMainWindow>
 #include <QPushButton>

@@ -68,6 +68,7 @@
 #include <QWidget>
 #include <QVector>
 #include <QPixmap>
+#include <QBuffer>
 #include <QTimer>
 #include <QDate>
 #include <QFile>
@@ -305,7 +306,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize any amateur radio modems!
         //
-        gkCodec2 = new GkCodec2(Codec2Mode::freeDvMode2020, Codec2ModeCustom::GekkoFyreV1, 0, 0, gkEventLogger, this);
+        gkCodec2 = new GkCodec2(Codec2Mode::freeDvMode2020, Codec2ModeCustom::Disabled, 0, 0, gkEventLogger, output_audio_buf, this);
 
         //
         // Setup the CLI parser and its settings!
@@ -2478,6 +2479,14 @@ void MainWindow::on_pushButton_sstv_tx_load_image_clicked()
 
 void MainWindow::on_pushButton_sstv_tx_send_image_clicked()
 {
+    QPixmap tx_send_img = label_sstv_tx_image->pixmap();
+    QByteArray byte_array;
+    QBuffer buffer(&byte_array);
+    buffer.open(QIODevice::WriteOnly);
+    tx_send_img.save(&buffer, "JPEG");
+
+    gkCodec2->transmitData(byte_array, true);
+
     return;
 }
 

@@ -56,10 +56,11 @@ using namespace Events;
 using namespace Logging;
 
 GkCodec2::GkCodec2(const Codec2Mode &freedv_mode, const Codec2ModeCustom &custom_mode, const int &freedv_clip, const int &freedv_txbpf,
-                   QPointer<GkEventLogger> eventLogger, QObject *parent)
+                   QPointer<GkEventLogger> eventLogger, std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> output_audio_buf, QObject *parent)
 {
     try {
         setParent(parent);
+        outputAudioBuf = std::move(output_audio_buf);
         gkEventLogger = std::move(eventLogger);
 
         gkFreeDvMode = freedv_mode;
@@ -86,11 +87,13 @@ GkCodec2::~GkCodec2()
  * just that.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param byte_array The data that is to be prepped for transmission.
+ * @param play_output_sound Whether to play the modulating signal over the user's output audio device or not.
  * @return The prepped data for transmission.
  * @note <https://github.com/drowe67/codec2/blob/master/README_data.md>
+ * <https://github.com/drowe67/codec2/blob/master/src/freedv_data_raw_tx.c>
  * <https://cpp.hotexamples.com/examples/-/-/codec2_encode/cpp-codec2_encode-function-examples.html>
  */
-int GkCodec2::transmitData(const QByteArray &byte_array)
+int GkCodec2::transmitData(const QByteArray &byte_array, const bool &play_output_sound)
 {
     try {
         auto txData = createPayloadForTx(byte_array);
@@ -120,7 +123,13 @@ int GkCodec2::transmitData(const QByteArray &byte_array)
         while(n_mod_out < bytes_per_modem_frame) {
             // Stream the data until finish!
             freedv_rawdatatx(fdv, mod_out, bytes_in);
+
+            if (play_output_sound) {
+                outputAudioBuf->append(&mod_out[0], n_mod_out);
+            }
         }
+
+        freedv_close(fdv);
     }  catch (const std::exception &e) {
         std::throw_with_nested(tr("An issue has occurred with transmitting data via the Codec2 modem! Error:\n\n%1")
                                .arg(QString::fromStdString(e.what())).toStdString());
