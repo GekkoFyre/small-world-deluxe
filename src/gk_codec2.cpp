@@ -100,39 +100,41 @@ int GkCodec2::transmitData(const QByteArray &byte_array, const bool &play_output
 {
     try {
         auto txData = createPayloadForTx(byte_array);
+        if (!txData.isEmpty()) {
+            struct CODEC2 *codec2;
+            codec2 = codec2_create(convertFreeDvModeToInt(gkFreeDvMode));
+            if (codec2 == nullptr) {
+                throw std::runtime_error(tr("Issue encountered with opening Codec2 modem for transmission! Are you out of memory?").toStdString());
+            }
 
-        struct CODEC2 *codec2;
-        codec2 = codec2_create(convertFreeDvModeToInt(gkFreeDvMode));
-        if (codec2 == nullptr) {
-            throw std::runtime_error(tr("Issue encountered with opening Codec2 modem for transmission! Are you out of memory?").toStdString());
-        }
+            // For streaming bytes it is much easier to use modes that have a multiple of 8 payload bits/frame...
+            int nbit = codec2_bits_per_frame(codec2);
+            auto out_bits = (unsigned char *)malloc(nbit * sizeof(char));
 
-        // For streaming bytes it is much easier to use modes that have a multiple of 8 payload bits/frame...
-        int nbit = codec2_bits_per_frame(codec2);
-        auto out_bits = (unsigned char *)malloc(nbit * sizeof(char));
+            gkEventLogger->publishEvent(tr("Bits per modem frame: %1. Samples per modem frame: %2.")
+                                        .arg(QString::number(codec2_bits_per_frame(codec2)))
+                                        .arg(QString::number(codec2_samples_per_frame(codec2))), GkSeverity::Debug);
 
-        gkEventLogger->publishEvent(tr("Bits per modem frame: %1. Samples per modem frame: %2.")
-                                    .arg(QString::number(codec2_bits_per_frame(codec2)))
-                                    .arg(QString::number(codec2_samples_per_frame(codec2))), GkSeverity::Debug);
+            for (const auto &to_tx: txData) {
+                imemstream in(to_tx.data(), (size_t)to_tx.size());
+                for (;;) {
+                    std::string buffer;
+                    if (!std::getline(in, buffer)) { continue; }
+                    std::vector<short> audio_in(buffer.size());
+                    std::copy(buffer.begin(), buffer.end(), audio_in.begin());
 
-        for (const auto &to_tx: txData) {
-            imemstream in(to_tx.data(), (size_t)to_tx.size());
-            for (;;) {
-                std::string buffer;
-                if (!std::getline(in, buffer)) { continue; }
-                unsigned char *uchrs = reinterpret_cast<unsigned char *>(const_cast<char *>(buffer.c_str()));
+                    // Stream the data until finish!
+                    codec2_encode(codec2, out_bits, audio_in.data());
 
-                // Stream the data until finish!
-                codec2_encode(codec2, out_bits, (short *)uchrs);
-
-                if (play_output_sound) {
-                    size_t out_len = std::strlen((char *)out_bits);
-                    outputAudioBuf->append(convCharToAudioData(out_bits, out_len), out_len);
+                    if (play_output_sound) {
+                        size_t out_len = std::strlen((char *)out_bits);
+                        outputAudioBuf->append(convCharToAudioData(out_bits, out_len), out_len);
+                    }
                 }
             }
-        }
 
-        codec2_destroy(codec2);
+            codec2_destroy(codec2);
+        }
     }  catch (const std::exception &e) {
         std::throw_with_nested(tr("An issue has occurred with transmitting data via the Codec2 modem! Error:\n\n%1")
                                .arg(QString::fromStdString(e.what())).toStdString());
@@ -165,25 +167,25 @@ QList<QByteArray> GkCodec2::createPayloadForTx(const QByteArray &byte_array)
             base64_conv_data = byte_array.toBase64(QByteArray::KeepTrailingEquals); // Convert to Base64 for easier transmission!
         }
 
-        int payload_size = base64_conv_data.size();
+        int payload_length = base64_conv_data.length();
         QList<QByteArray> payload_data;
 
-        if (payload_size > GK_CODEC2_FRAME_SIZE) {
+        if (payload_length > GK_CODEC2_FRAME_SIZE) {
             // We need to break up the payload!
             QByteArray tmp_data;
-            while (payload_size > GK_CODEC2_FRAME_SIZE) {
+            while (payload_length > GK_CODEC2_FRAME_SIZE) {
                 for (int i = 0; i < GK_CODEC2_FRAME_SIZE; ++i) {
                     tmp_data.insert(i, base64_conv_data[i]);
                 }
 
-                payload_size -= GK_CODEC2_FRAME_SIZE;
+                payload_length -= GK_CODEC2_FRAME_SIZE;
                 payload_data.append(tmp_data);
             }
         }
 
         // Add any remaining data...
         QByteArray tmp_data;
-        for (int i = 0; i < payload_size; ++i) {
+        for (int i = 0; i < payload_length; ++i) {
             tmp_data.insert(i, base64_conv_data[i]);
         }
 

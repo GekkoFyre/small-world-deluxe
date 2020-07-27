@@ -2477,24 +2477,40 @@ void MainWindow::on_pushButton_sstv_tx_load_image_clicked()
     return;
 }
 
+/**
+ * @brief MainWindow::on_pushButton_sstv_tx_send_image_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
 void MainWindow::on_pushButton_sstv_tx_send_image_clicked()
 {
     QPixmap tx_send_img = label_sstv_tx_image->pixmap();
-    QByteArray byte_array;
-    QBuffer buffer(&byte_array);
-    buffer.open(QIODevice::WriteOnly);
-    tx_send_img.save(&buffer, "JPEG");
+    if (!tx_send_img.isNull()) {
+        QByteArray byte_array;
+        QBuffer buffer(&byte_array);
+        buffer.open(QIODevice::WriteOnly);
+        tx_send_img.save(&buffer, "JPEG"); // Writes pixmap into bytes in JPEG format
 
-    gkCodec2->transmitData(byte_array, true);
+        gkCodec2->transmitData(byte_array, true);
+    } else {
+        QMessageBox::information(this, tr("No image!"), tr("Please ensure to have an image loaded before attempting to make a transmission."), QMessageBox::Ok, QMessageBox::Ok);
+    }
 
     return;
 }
 
+/**
+ * @brief MainWindow::on_pushButton_sstv_rx_remove_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
 void MainWindow::on_pushButton_sstv_rx_remove_clicked()
 {
     return;
 }
 
+/**
+ * @brief MainWindow::on_pushButton_sstv_tx_remove_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
 void MainWindow::on_pushButton_sstv_tx_remove_clicked()
 {
     return;
