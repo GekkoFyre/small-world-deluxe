@@ -285,7 +285,7 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         //
         // Data Bits
         //
-        short enum_data_bits = 0;
+        qint16 enum_data_bits = 0;
         if (ui->radioButton_data_bits_default->isChecked()) {
             // Default
             enum_data_bits = 0;
@@ -300,7 +300,7 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         //
         // Stop Bits
         //
-        short enum_stop_bits = 0;
+        qint16 enum_stop_bits = 0;
         if (ui->radioButton_stop_bits_default->isChecked()) {
             // Default
             enum_stop_bits = 0;
@@ -315,7 +315,7 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         //
         // Handshake
         //
-        short enum_handshake = 0;
+        qint16 enum_handshake = 0;
         if (ui->radioButton_handshake_default->isChecked()) {
             // Default
             enum_handshake = 0;
@@ -333,7 +333,7 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         //
         // PTT Method
         //
-        short enum_ptt_method = 0;
+        qint16 enum_ptt_method = 0;
         if (ui->radioButton_ptt_method_vox->isChecked()) {
             // VOX
             enum_ptt_method = 0;
@@ -351,7 +351,7 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         //
         // Transmit Audio Source
         //
-        short enum_tx_audio_src = 0;
+        qint16 enum_tx_audio_src = 0;
         if (ui->radioButton_tx_audio_src_rear_data->isChecked()) {
             // Rear / Data
             enum_tx_audio_src = 0;
@@ -363,7 +363,7 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         //
         // Mode
         //
-        short enum_mode = 0;
+        qint16 enum_mode = 0;
         if (ui->radioButton_mode_none->isChecked()) {
             // None
             enum_mode = 0;
@@ -378,7 +378,7 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         //
         // Split Operation
         //
-        short enum_split_oper = 0;
+        qint16 enum_split_oper = 0;
         if (ui->radioButton_split_none->isChecked()) {
             // None
             enum_split_oper = 0;
@@ -390,8 +390,8 @@ void DialogSettings::on_pushButton_submit_config_clicked()
             enum_split_oper = 2;
         }
 
-        short enum_force_ctrl_lines_dtr = 0;
-        short enum_force_ctrl_lines_rts = 0;
+        qint16 enum_force_ctrl_lines_dtr = 0;
+        qint16 enum_force_ctrl_lines_rts = 0;
         enum_force_ctrl_lines_dtr = ui->comboBox_force_ctrl_lines_dtr->currentIndex();
         enum_force_ctrl_lines_rts = ui->comboBox_force_ctrl_lines_rts->currentIndex();
 
@@ -835,7 +835,7 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
         ui->comboBox_ptt_method_port->insertItem(0, tr("N/A"), tr("N/A"));
 
         if (!com_ports.empty()) {
-            unsigned short counter = 0;
+            quint16 counter = 0;
             emit comPortsDisabled(true); // Enable all GUI widgets relating to COM/Serial Ports
             for (const auto &port: com_ports) {
                 ++counter;
@@ -1104,7 +1104,7 @@ bool DialogSettings::read_settings()
         }
 
         if (!stopBits.isEmpty()) {
-            short int_val_stop_bits = 0;
+            qint16 int_val_stop_bits = 0;
             int_val_stop_bits = stopBits.toInt();
             switch (int_val_stop_bits) {
             case 0:
@@ -1144,7 +1144,7 @@ bool DialogSettings::read_settings()
         }
 
         if (!data_bits.isEmpty()) {
-            short int_val_data_bits = 0;
+            qint16 int_val_data_bits = 0;
             int_val_data_bits = data_bits.toInt();
             switch (int_val_data_bits) {
             case 0:
@@ -1184,7 +1184,7 @@ bool DialogSettings::read_settings()
         }
 
         if (!handshake.isEmpty()) {
-            short int_val_handshake = 0;
+            qint16 int_val_handshake = 0;
             int_val_handshake = handshake.toInt();
             switch (int_val_handshake) {
             case 0:
@@ -1234,17 +1234,17 @@ bool DialogSettings::read_settings()
         }
 
         if (!force_ctrl_lines_dtr.isEmpty()) {
-            short int_val_force_ctrl_lines_dtr = 0; // TODO: Finish this critical area!
+            qint16 int_val_force_ctrl_lines_dtr = 0; // TODO: Finish this critical area!
             ui->comboBox_force_ctrl_lines_dtr->setCurrentIndex(int_val_force_ctrl_lines_dtr);
         }
 
         if (!force_ctrl_lines_rts.isEmpty()) {
-            short int_val_force_ctrl_lines_rts = 0; // TODO: Finish this critical area!
+            qint16 int_val_force_ctrl_lines_rts = 0; // TODO: Finish this critical area!
             ui->comboBox_force_ctrl_lines_rts->setCurrentIndex(int_val_force_ctrl_lines_rts);
         }
 
         if (!ptt_method.isEmpty()) {
-            short int_val_ptt_method = 0;
+            qint16 int_val_ptt_method = 0;
             int_val_ptt_method = ptt_method.toInt();
             switch (int_val_ptt_method) {
             case 0:
@@ -1300,7 +1300,7 @@ bool DialogSettings::read_settings()
         }
 
         if (!tx_audio_src.isEmpty()) {
-            short int_val_tx_audio_src = 0;
+            qint16 int_val_tx_audio_src = 0;
             int_val_tx_audio_src = tx_audio_src.toInt();
             switch (int_val_tx_audio_src) {
             case 0:
@@ -1315,7 +1315,7 @@ bool DialogSettings::read_settings()
         }
 
         if (!ptt_mode.isEmpty()) {
-            short int_val_ptt_mode = 0;
+            qint16 int_val_ptt_mode = 0;
             int_val_ptt_mode = ptt_mode.toInt();
             switch (int_val_ptt_mode) {
             case 0:
@@ -1335,7 +1335,7 @@ bool DialogSettings::read_settings()
         }
 
         if (!split_operation.isEmpty()) {
-            short int_val_split_operation = 0;
+            qint16 int_val_split_operation = 0;
             int_val_split_operation = split_operation.toInt();
             switch (int_val_split_operation) {
             case 0:

@@ -1439,6 +1439,24 @@ bool GkLevelDb::boolStr(const std::string &is_true)
 }
 
 /**
+ * @brief GkLevelDb::boolInt
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param is_true
+ * @return
+ */
+int GkLevelDb::boolInt(const bool &is_true)
+{
+    int ret = -1;
+    if (is_true == true) {
+        return 1;
+    } else {
+        return 0;
+    }
+
+    return ret;
+}
+
+/**
  * @brief GkLevelDb::processCsvToDB takes pre-existing data and appends new values towards it, in the form of CSV. It then returns
  * all the newly made data as a CSV string. Data modifications to existing rows can be made too, which are automatically detected.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>

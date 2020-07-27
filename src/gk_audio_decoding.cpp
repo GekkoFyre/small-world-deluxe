@@ -88,7 +88,6 @@ namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
 GkAudioDecoding::GkAudioDecoding(QPointer<FileIo> fileIo,
-                                 std::shared_ptr<PaAudioBuf<qint16>> output_audio_buf,
                                  std::shared_ptr<GkLevelDb> database,
                                  std::shared_ptr<StringFuncs> stringFuncs,
                                  Database::Settings::Audio::GkDevice output_device,
@@ -98,7 +97,6 @@ GkAudioDecoding::GkAudioDecoding(QPointer<FileIo> fileIo,
     setParent(parent);
 
     gkFileIo = std::move(fileIo);
-    gkAudioBuf = std::move(output_audio_buf);
     gkStringFuncs = std::move(stringFuncs);
     gkDb = std::move(database);
     gkEventLogger = std::move(eventLogger);
@@ -243,13 +241,13 @@ bool GkAudioDecoding::decodeOpusFrame(std::istream &file_in, std::ostream &file_
     output_samples = opus_decode(_decoder.get(), lost ? NULL : opus_state->data.data(), len, opus_state->out.data(), output_samples, 0);
     if (output_samples > 0) {
         for (int i = 0; i < (output_samples) * gkOutputDev.dev_output_channel_count; i++) {
-            short s;
+            qint16 s;
             s = opus_state->out[i];
             opus_state->fbytes[2 * i]   = s&0xFF;
             opus_state->fbytes[2 * i + 1] = (s >> 8)&0xFF;
         }
 
-        if (!file_out.write(reinterpret_cast<char *>(opus_state->fbytes.data()), sizeof(short) * gkOutputDev.dev_output_channel_count * output_samples)) {
+        if (!file_out.write(reinterpret_cast<char *>(opus_state->fbytes.data()), sizeof(qint16) * gkOutputDev.dev_output_channel_count * output_samples)) {
             throw std::runtime_error(tr("Error writing").toStdString());
         }
     } else {

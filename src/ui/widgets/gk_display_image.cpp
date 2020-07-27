@@ -125,7 +125,7 @@ GkDisplayImage::~GkDisplayImage()
  */
 int GkDisplayImage::heightForWidth(int width) const
 {
-    return pixmap.isNull() ? this->height() : ((qreal)pixmap.height() * width) / pixmap.width();
+    return pixmapMem.isNull() ? this->height() : ((qreal)pixmapMem.height() * width) / pixmapMem.width();
 }
 
 /**
@@ -139,6 +139,11 @@ QSize GkDisplayImage::sizeHint() const
     return QSize(w, heightForWidth(w));
 }
 
+QPixmap GkDisplayImage::pixmap() const
+{
+    return pixmapMem;
+}
+
 /**
  * @brief GkDisplayImage::scaledPixmap
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -146,7 +151,7 @@ QSize GkDisplayImage::sizeHint() const
  */
 QPixmap GkDisplayImage::scaledPixmap() const
 {
-    auto scaled = pixmap.scaled(this->size() * devicePixelRatioF(), Qt::KeepAspectRatio, Qt::SmoothTransformation); scaled.setDevicePixelRatio(devicePixelRatioF());
+    auto scaled = pixmapMem.scaled(this->size() * devicePixelRatioF(), Qt::KeepAspectRatio, Qt::SmoothTransformation); scaled.setDevicePixelRatio(devicePixelRatioF());
     return scaled;
 }
 
@@ -168,7 +173,7 @@ void GkDisplayImage::mouseReleaseEvent(QMouseEvent *e)
  */
 void GkDisplayImage::setPixmap(const QPixmap &p)
 {
-    pixmap = p;
+    pixmapMem = p;
     QLabel::setPixmap(scaledPixmap());
 
     return;
@@ -183,7 +188,7 @@ void GkDisplayImage::resizeEvent(QResizeEvent *e)
 {
     Q_UNUSED(e);
 
-    if(!pixmap.isNull()) {
+    if(!pixmapMem.isNull()) {
         QLabel::setPixmap(scaledPixmap());
     }
 
@@ -218,7 +223,7 @@ void GkDisplayImage::loadImage()
  */
 void GkDisplayImage::copyToClipboard()
 {
-    QApplication::clipboard()->setPixmap(pixmap);
+    QApplication::clipboard()->setPixmap(pixmapMem);
     gkEventLogger->publishEvent(tr("Image from %1 copied to the operating system's clipboard.").arg(sstvResource), GkSeverity::Info);
 
     return;

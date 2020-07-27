@@ -832,7 +832,7 @@ color: white;</string>
                       <widget class="QGroupBox" name="groupBox_sstv_tx">
                        <property name="sizePolicy">
                         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
-                         <horstretch>50</horstretch>
+                         <horstretch>60</horstretch>
                          <verstretch>0</verstretch>
                         </sizepolicy>
                        </property>
@@ -883,7 +883,7 @@ color: white;</string>
                                <rect>
                                 <x>0</x>
                                 <y>0</y>
-                                <width>444</width>
+                                <width>528</width>
                                 <height>133</height>
                                </rect>
                               </property>
@@ -985,83 +985,129 @@ color: white;</string>
                       </widget>
                      </item>
                      <item>
-                      <widget class="QGroupBox" name="groupBox_sstv_tx_settings">
+                      <widget class="QScrollArea" name="scrollArea_sstv_tx_settings_frame_right">
                        <property name="sizePolicy">
-                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
-                         <horstretch>50</horstretch>
+                        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                         <horstretch>40</horstretch>
                          <verstretch>0</verstretch>
                         </sizepolicy>
                        </property>
-                       <property name="title">
-                        <string>Settings</string>
+                       <property name="horizontalScrollBarPolicy">
+                        <enum>Qt::ScrollBarAlwaysOff</enum>
                        </property>
-                       <layout class="QVBoxLayout" name="verticalLayout_18">
-                        <item>
-                         <widget class="QFrame" name="frame_sstv_tx_settings_top">
-                          <property name="frameShape">
-                           <enum>QFrame::NoFrame</enum>
-                          </property>
-                          <property name="frameShadow">
-                           <enum>QFrame::Plain</enum>
-                          </property>
-                          <layout class="QFormLayout" name="formLayout">
-                           <property name="horizontalSpacing">
-                            <number>0</number>
+                       <property name="widgetResizable">
+                        <bool>true</bool>
+                       </property>
+                       <widget class="QWidget" name="scrollAreaWidgetContents">
+                        <property name="geometry">
+                         <rect>
+                          <x>0</x>
+                          <y>0</y>
+                          <width>337</width>
+                          <height>217</height>
+                         </rect>
+                        </property>
+                        <layout class="QVBoxLayout" name="verticalLayout_22">
+                         <property name="leftMargin">
+                          <number>0</number>
+                         </property>
+                         <property name="topMargin">
+                          <number>0</number>
+                         </property>
+                         <property name="rightMargin">
+                          <number>0</number>
+                         </property>
+                         <property name="bottomMargin">
+                          <number>0</number>
+                         </property>
+                         <item>
+                          <widget class="QGroupBox" name="groupBox_2">
+                           <property name="title">
+                            <string>Settings</string>
                            </property>
-                           <property name="leftMargin">
-                            <number>0</number>
-                           </property>
-                           <property name="topMargin">
-                            <number>0</number>
-                           </property>
-                           <property name="rightMargin">
-                            <number>0</number>
-                           </property>
-                           <property name="bottomMargin">
-                            <number>0</number>
-                           </property>
-                           <item row="0" column="0">
-                            <widget class="QLabel" name="label_sstv_tx_settings_my_callsign">
-                             <property name="text">
-                              <string>My Callsign: </string>
-                             </property>
-                            </widget>
-                           </item>
-                           <item row="0" column="1">
-                            <widget class="QLineEdit" name="lineEdit_sstv_tx_settings_my_callsign">
-                             <property name="clearButtonEnabled">
-                              <bool>true</bool>
-                             </property>
-                            </widget>
-                           </item>
-                           <item row="1" column="0">
-                            <widget class="QLabel" name="label_sstv_tx_settings_my_qth">
-                             <property name="text">
-                              <string>QTH: </string>
-                             </property>
-                            </widget>
-                           </item>
-                           <item row="1" column="1">
-                            <widget class="QComboBox" name="comboBox_sstv_tx_settings_my_qth"/>
-                           </item>
-                           <item row="2" column="0">
-                            <widget class="QLabel" name="label_sstv_tx_settings_note">
-                             <property name="text">
-                              <string>Note: </string>
-                             </property>
-                            </widget>
-                           </item>
-                           <item row="2" column="1">
-                            <widget class="QLineEdit" name="lineEdit_sstv_tx_settings_note">
-                             <property name="clearButtonEnabled">
-                              <bool>true</bool>
-                             </property>
-                            </widget>
-                           </item>
-                          </layout>
-                         </widget>
-                        </item>
-                       </layout>
+                           <layout class="QFormLayout" name="formLayout_2">
+                            <item row="0" column="0">
+                             <widget class="QLabel" name="label_sstv_tx_settings_my_callsign">
+                              <property name="text">
+                               <string>My Callsign: </string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="0" column="1">
+                             <widget class="QLineEdit" name="lineEdit_sstv_tx_settings_my_callsign">
+                              <property name="clearButtonEnabled">
+                               <bool>true</bool>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="1" column="0">
+                             <widget class="QLabel" name="label_sstv_tx_settings_my_qth">
+                              <property name="text">
+                               <string>QTH: </string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="1" column="1">
+                             <widget class="QComboBox" name="comboBox_sstv_tx_settings_my_qth"/>
+                            </item>
+                            <item row="2" column="0">
+                             <widget class="QLabel" name="label_sstv_tx_settings_note">
+                              <property name="text">
+                               <string>Note: </string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="2" column="1">
+                             <widget class="QLineEdit" name="lineEdit_sstv_tx_settings_note">
+                              <property name="clearButtonEnabled">
+                               <bool>true</bool>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="3" column="0">
+                             <widget class="QLabel" name="label_sstv_tx_settings_image_size">
+                              <property name="text">
+                               <string>Image Size: </string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="3" column="1">
+                             <widget class="QComboBox" name="comboBox_sstv_tx_settings_image_size"/>
+                            </item>
+                            <item row="4" column="0">
+                             <widget class="QLabel" name="label_sstv_tx_settings_image_quality">
+                              <property name="text">
+                               <string>Quality: </string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="4" column="1">
+                             <widget class="QSlider" name="horizontalSlider_sstv_tx_settings_image_quality">
+                              <property name="minimum">
+                               <number>1</number>
+                              </property>
+                              <property name="maximum">
+                               <number>100</number>
+                              </property>
+                              <property name="value">
+                               <number>75</number>
+                              </property>
+                              <property name="orientation">
+                               <enum>Qt::Horizontal</enum>
+                              </property>
+                              <property name="tickPosition">
+                               <enum>QSlider::TicksBelow</enum>
+                              </property>
+                              <property name="tickInterval">
+                               <number>10</number>
+                              </property>
+                             </widget>
+                            </item>
+                           </layout>
+                          </widget>
+                         </item>
+                        </layout>
+                       </widget>
                       </widget>
                      </item>
                     </layout>

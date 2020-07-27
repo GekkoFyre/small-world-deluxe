@@ -88,9 +88,6 @@ public:
 
     PaStreamCallbackResult testSinewave(portaudio::System &portAudioSys, const Database::Settings::Audio::GkDevice device,
                                         const bool &is_output_dev = true);
-    PaStreamCallbackResult openPlaybackStream(portaudio::System &portAudioSys, PaAudioBuf<qint16> *audio_buf,
-                                              const GekkoFyre::Database::Settings::Audio::GkDevice &device,
-                                              const bool &stereo = true);
 
     std::vector<Database::Settings::Audio::GkDevice> filterPortAudioHostType(const std::vector<Database::Settings::Audio::GkDevice> &audio_devices_vec);
     QVector<PaHostApiTypeId> portAudioApiChooser(const std::vector<Database::Settings::Audio::GkDevice> &audio_devices_vec);

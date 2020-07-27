@@ -93,7 +93,7 @@ private:
     struct OpusState {
         OpusState(int max_frame_size, int max_payload_bytes, int channels): out(max_frame_size * channels),
                   fbytes(max_frame_size * channels * sizeof(decltype(out)::value_type)), data(max_payload_bytes) {}
-        std::vector<short> out;
+        std::vector<qint16> out;
         std::vector<unsigned char> fbytes, data;
         int32_t frameno = 0;
         bool lost_prev = true;
@@ -117,16 +117,16 @@ signals:
     void recAudioFrameOgg(std::vector<signed char> &audio_rec, const int &buf_size,
                           const GkAudioFramework::Bitrate &bitrate,
                           const boost::filesystem::path &filePath);
-    void recAudioFramePcm(const std::vector<short> &audio_rec, const int &buf_size,
+    void recAudioFramePcm(const std::vector<qint16> &audio_rec, const int &buf_size,
                           const boost::filesystem::path &filePath);
-    void recAudioFrameFlac(const std::vector<short> &audio_rec, const int &buf_size,
+    void recAudioFrameFlac(const std::vector<qint16> &audio_rec, const int &buf_size,
                            const boost::filesystem::path &filePath);
 
     void submitOggVorbisBuf(const std::vector<signed char> &audio_frame_buf,
                             const GkAudioFramework::Bitrate &bitrate,
                             const boost::filesystem::path &filePath);
-    void submitPcmBuf(const std::vector<short> &audio_rec, const boost::filesystem::path &filePath);
-    void submitFlacBuf(const std::vector<short> &audio_rec, const boost::filesystem::path &filePath);
+    void submitPcmBuf(const std::vector<qint16> &audio_rec, const boost::filesystem::path &filePath);
+    void submitFlacBuf(const std::vector<qint16> &audio_rec, const boost::filesystem::path &filePath);
 
 public slots:
     void startRecording(const bool &recording_is_started);
@@ -139,8 +139,8 @@ private slots:
     void recordOggVorbis(const std::vector<signed char> &audio_frame_buf,
                          const GkAudioFramework::Bitrate &bitrate,
                          const boost::filesystem::path &filePath);
-    void recordPcm(const std::vector<short> &audio_rec, const boost::filesystem::path &filePath);
-    void recordFlac(const std::vector<short> &audio_rec, const boost::filesystem::path &filePath);
+    void recordPcm(const std::vector<qint16> &audio_rec, const boost::filesystem::path &filePath);
+    void recordFlac(const std::vector<qint16> &audio_rec, const boost::filesystem::path &filePath);
 
 private:
     QPointer<GekkoFyre::FileIo> gkFileIo;

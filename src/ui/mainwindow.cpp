@@ -42,6 +42,7 @@
 #include "src/ui/widgets/gk_submit_msg.hpp"
 #include "src/models/tableview/gk_frequency_model.hpp"
 #include "src/models/tableview/gk_logger_model.hpp"
+#include "src/gk_codec2.hpp"
 #include <boost/exception/all.hpp>
 #include <boost/chrono/chrono.hpp>
 #include <cmath>
@@ -68,6 +69,7 @@
 #include <QWidget>
 #include <QVector>
 #include <QPixmap>
+#include <QBuffer>
 #include <QTimer>
 #include <QDate>
 #include <QFile>
@@ -126,7 +128,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<uint8_t>("uint8_t");
     qRegisterMetaType<rig_model_t>("rig_model_t");
     qRegisterMetaType<PaHostApiTypeId>("PaHostApiTypeId");
-    qRegisterMetaType<std::vector<short>>("std::vector<short>");
+    qRegisterMetaType<std::vector<qint16>>("std::vector<qint16>");
 
     try {
         // Initialize QMainWindow to a full-screen after a single second!
@@ -303,11 +305,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
 
         //
-        // Initialize any amateur radio modems!
-        //
-        gkCodec2 = new GkCodec2(Codec2Mode::freeDvMode2020, Codec2ModeCustom::GekkoFyreV1, 0, 0, gkEventLogger, this);
-
-        //
         // Setup the CLI parser and its settings!
         // https://doc.qt.io/qt-5/qcommandlineparser.html
         //
@@ -437,8 +434,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
             gkAudioEncoding = new GkAudioEncoding(fileIo, input_audio_buf, GkDb, gkSpectroGui,
                                                   gkStringFuncs, pref_input_device, gkEventLogger, this);
-            gkAudioDecoding = new GkAudioDecoding(fileIo, output_audio_buf, GkDb, gkStringFuncs,
-                                                  pref_output_device, gkEventLogger, this);
+            gkAudioDecoding = new GkAudioDecoding(fileIo, GkDb, gkStringFuncs, pref_output_device,
+                                                  gkEventLogger, this);
 
             //
             // Audio encoding signals and slots
@@ -718,7 +715,7 @@ bool MainWindow::radioInitStart()
             gkRadioPtr->dev_baud_rate = AmateurRadio::com_baud_rates::BAUD9600;
         }
 
-        #ifdef GFYRE_HAMLIB_DBG_VERBOSITY_ENBL
+        #ifdef GFYRE_SWORLD_DBG_VERBOSITY
         gkRadioPtr->verbosity = RIG_DEBUG_VERBOSE;
         #else
         gkRadioPtr->verbosity = RIG_DEBUG_BUG;
@@ -1097,7 +1094,7 @@ void MainWindow::updateVolumeDisplayWidgets()
             std::vector<qint16> recv_buf;
             while (audio_buf_tmp->size() > 0) {
                 recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
-                recv_buf.push_back(audio_buf_tmp->get());
+                recv_buf.push_back(audio_buf_tmp->grab());
             }
 
             if (!recv_buf.empty()) {
@@ -1641,7 +1638,7 @@ void MainWindow::updateSpectrograph()
     try {
         if ((inputAudioStream != nullptr) && (pref_input_device.is_dev_active == true) && (AUDIO_FRAMES_PER_BUFFER > 0)) {
             while (inputAudioStream->isActive()) {
-                std::vector<std::complex<float>> fftData;
+                std::vector<float> fftData;
                 fftData.reserve(GK_FFT_SIZE + 1);
                 const qint64 measure_start_time = QDateTime::currentMSecsSinceEpoch();
                 while (fftData.size() < GK_FFT_SIZE) {
@@ -1652,7 +1649,7 @@ void MainWindow::updateSpectrograph()
                     std::vector<qint16> recv_buf;
                     while (audio_buf_tmp->size() > 0) {
                         recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
-                        recv_buf.push_back(audio_buf_tmp->get());
+                        recv_buf.push_back(audio_buf_tmp->grab());
                     }
 
                     if (!recv_buf.empty()) {
@@ -1661,7 +1658,8 @@ void MainWindow::updateSpectrograph()
                         recv_buf.shrink_to_fit();
 
                         if (fftData.size() == GK_FFT_SIZE) {
-                            gkFFT->FFTCompute(fftData.data(), GK_FFT_SIZE);
+                            std::vector<GkFFTComplex> fftDataVals;
+                            fftDataVals = gkFFT->FFTCompute(fftData, fftData.size(), (GK_FFT_SIZE / 2), GK_FFT_SIZE);
 
                             //
                             // Perform the timing and date calculations!
@@ -1677,39 +1675,36 @@ void MainWindow::updateSpectrograph()
                             }
 
                             //
-                            // In order to get the frequency information for each audio sample, you must:
-                            // 1) Use a real-to-complex FFT of size N to generate frequency domain data.
-                            // 2) Calculate the magnitude of your complex frequency domain data (i.e., `magnitude = std::sqrt(re^2 + im^2)`).
-                            // 3) Optionally convert magnitude to a log scale (dB) (i.e., `magnitude_dB = 20 * std::log10(magnitude)`).
+                            // The input data are sound intensity values taken over time, equally spaced. They are
+                            // said to be, appropriately enough, in the time domain. The output of the FT is said
+                            // to be in the frequency domain because the horizontal axis is frequency. The vertical
+                            // scale remains intensity. Although it isn't obvious from the input data, there is phase
+                            // information in the input as well. Although all of the sound is sinusoidal, there is
+                            // nothing that fixes the phases of the sine waves. This phase information appears in
+                            // the frequency domain as the phases of the individual complex numbers, but often we
+                            // don't care about it (and often we do too!). It just depends upon what you are doing!
+                            //
+                            // https://stackoverflow.com/questions/1679974/converting-an-fft-to-a-spectogram/10643179
                             //
 
                             std::vector<double> magnitude_buf;
-                            magnitude_buf.reserve(fftData.size() + 1);
-                            for (const auto &calc: fftData) {
-                                const double magnitude = std::sqrt(std::pow(calc.real(), 2) + std::pow(calc.imag(), 2));
+                            magnitude_buf.reserve(fftDataVals.size() + 1);
+                            for (const auto &calc: fftDataVals) {
+                                const double magnitude = std::sqrt(std::pow(calc.real, 2) + std::pow(calc.imaginary, 2));
                                 magnitude_buf.push_back(magnitude);
                             }
 
-                            std::vector<double> magnitude_db_buf;
-                            magnitude_buf.reserve(magnitude_buf.size() + 1);
-                            for (const auto &calc: magnitude_buf) {
-                                const double magnitude_db = 20 * std::log10(calc);
-                                magnitude_db_buf.push_back(magnitude_db);
-                            }
-
                             QVector<double> fft_spectro_vals;
-                            fft_spectro_vals.reserve(GK_FFT_SIZE + 1);
-                            for (size_t i = 0; i < GK_FFT_SIZE; ++i) {
-                                auto abs_val = std::abs(fftData[i]) / ((double)GK_FFT_SIZE);
-                                fft_spectro_vals.push_back(abs_val);
+                            fft_spectro_vals.reserve(GK_FFT_SAMPLE_SIZE + 1);
+                            for (size_t i = 0; i < GK_FFT_SAMPLE_SIZE; ++i) {
+                                fft_spectro_vals.push_back(fftDataVals[i].imaginary);
                             }
 
                             gkSpectroGui->insertData(fft_spectro_vals, 1); // This is the data for the spectrograph / waterfall itself!
                             emit refreshSpectrograph(gk_spectro_latest_time, gk_spectro_start_time);
 
                             magnitude_buf.clear();
-                            magnitude_db_buf.clear();
-                            fftData.clear();
+                            fftDataVals.clear();
                         }
                     }
                 }
@@ -2049,7 +2044,7 @@ void MainWindow::startTransmitOutput()
                                                        pref_output_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
                                                        paPrimeOutputBuffersUsingStreamCallback);
     outputAudioStream = std::make_shared<portaudio::MemFunCallbackStream<PaAudioBuf<qint16>>>(pa_stream_param, *output_audio_buf,
-                                                                                              &PaAudioBuf<qint16>::recordCallback);
+                                                                                              &PaAudioBuf<qint16>::playbackCallback);
     outputAudioStream->start();
 
     return;
@@ -2478,16 +2473,46 @@ void MainWindow::on_pushButton_sstv_tx_load_image_clicked()
     return;
 }
 
+/**
+ * @brief MainWindow::on_pushButton_sstv_tx_send_image_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
 void MainWindow::on_pushButton_sstv_tx_send_image_clicked()
 {
+    QPixmap tx_send_img = label_sstv_tx_image->pixmap();
+    if (!tx_send_img.isNull()) {
+        QByteArray byte_array;
+        QBuffer buffer(&byte_array);
+        buffer.open(QIODevice::WriteOnly);
+        tx_send_img.save(&buffer, "JPEG"); // Writes pixmap into bytes in JPEG format
+
+        //
+        // Initialize any amateur radio modems!
+        //
+        #ifdef CODEC2_LIBS_ENBLD
+        QPointer<GkCodec2> gkCodec2 = new GkCodec2(Codec2Mode::freeDvMode2020, Codec2ModeCustom::GekkoFyreV1, 0, 0, GkDb, gkEventLogger, output_audio_buf, this);
+        gkCodec2->transmitData(byte_array, true);
+        #endif
+    } else {
+        QMessageBox::information(this, tr("No image!"), tr("Please ensure to have an image loaded before attempting to make a transmission."), QMessageBox::Ok, QMessageBox::Ok);
+    }
+
     return;
 }
 
+/**
+ * @brief MainWindow::on_pushButton_sstv_rx_remove_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
 void MainWindow::on_pushButton_sstv_rx_remove_clicked()
 {
     return;
 }
 
+/**
+ * @brief MainWindow::on_pushButton_sstv_tx_remove_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
 void MainWindow::on_pushButton_sstv_tx_remove_clicked()
 {
     return;
