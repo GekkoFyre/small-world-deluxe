@@ -38,23 +38,12 @@
 #   [ 1 ] - https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe
 #
 
-find_package(PkgConfig)
-pkg_check_modules(PC_HAMLIBCPP QUIET hamlib)
-set(HAMLIBCPP_DEFINITIONS ${PC_HAMLIBCPP_CFLAGS_OTHER})
+set(PACKAGE_VERSION "0.0.1")
+set(SWORLD_PACKAGE_VERS ${PACKAGE_VERSION})
 
-find_path(HAMLIBCPP_INCLUDE_DIR
-    NAMES "hamlib/rigclass.h"
-    HINTS ${PC_HAMLIBCPP_INCLUDE_DIR} ${PC_HAMLIBCPP_INCLUDE_DIRS}
-    PATH_SUFFIXES hamlib)
+@PACKAGE_INIT@
 
-find_library(HAMLIBCPP_LIBRARY
-    NAMES  "hamlib++" "libhamlib++"
-    HINTS ${PC_HAMLIBCPP_LIBDIR} ${PC_HAMLIBCPP_LIBRARY_DIRS})
+set_and_check(SWORLD_INCLUDE_DIR "@PACKAGE_INCLUDE_INSTALL_DIR@")
+set_and_check(SWORLD_SYSCONFIG_DIR "@PACKAGE_SYSCONFIG_INSTALL_DIR@")
 
-include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(HamlibCpp DEFAULT_MSG HAMLIBCPP_LIBRARY HAMLIBCPP_INCLUDE_DIR)
-
-mark_as_advanced(HAMLIBCPP_INCLUDE_DIR HAMLIBCPP_LIBRARY)
-
-set(HAMLIBCPP_LIBRARIES ${HAMLIBCPP_LIBRARY})
-set(HAMLIBCPP_INCLUDE_DIRS ${HAMLIBCPP_INCLUDE_DIR}) 
+check_required_components(smallworld)
