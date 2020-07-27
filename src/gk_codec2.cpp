@@ -119,7 +119,7 @@ int GkCodec2::transmitData(const QByteArray &byte_array, const bool &play_output
                 imemstream in(to_tx.data(), (size_t)to_tx.size());
                 for (;;) {
                     std::string buffer;
-                    if (!std::getline(in, buffer)) { continue; }
+                    if (!std::getline(in, buffer)) { break; }
                     std::vector<short> audio_in(buffer.size());
                     std::copy(buffer.begin(), buffer.end(), audio_in.begin());
 
@@ -127,8 +127,10 @@ int GkCodec2::transmitData(const QByteArray &byte_array, const bool &play_output
                     codec2_encode(codec2, out_bits, audio_in.data());
 
                     if (play_output_sound) {
+                        std::vector<short> audio_conv(buffer.size());
                         size_t out_len = std::strlen((char *)out_bits);
-                        outputAudioBuf->append(convCharToAudioData(out_bits, out_len), out_len);
+                        std::copy(out_bits, out_bits + out_len, audio_conv.begin());
+                        outputAudioBuf->append(audio_conv);
                     }
                 }
             }
@@ -197,40 +199,6 @@ QList<QByteArray> GkCodec2::createPayloadForTx(const QByteArray &byte_array)
     }
 
     return QList<QByteArray>();
-}
-
-/**
- * @brief GkCodec2::convCharToAudioData
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param str
- * @param len
- * @return
- */
-short *GkCodec2::convCharToAudioData(unsigned char *str, const size_t &len)
-{
-    short *buffer = new short();
-    for (size_t i = 0; i < len; ++i) {
-        buffer[i] = (short)str[i];
-    }
-
-    return buffer;
-}
-
-/**
- * @brief GkCodec2::convAudioDataToChar
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param audio_data
- * @param len
- * @return
- */
-unsigned char *GkCodec2::convAudioDataToChar(short *audio_data, const size_t &len)
-{
-    unsigned char *buffer = new unsigned char();
-    for (size_t i = 0; i < len; ++i) {
-        buffer[i] = (unsigned char)audio_data[i];
-    }
-
-    return buffer;
 }
 
 /**

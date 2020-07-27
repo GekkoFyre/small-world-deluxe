@@ -42,6 +42,7 @@
 #include "src/ui/widgets/gk_submit_msg.hpp"
 #include "src/models/tableview/gk_frequency_model.hpp"
 #include "src/models/tableview/gk_logger_model.hpp"
+#include "src/gk_codec2.hpp"
 #include <boost/exception/all.hpp>
 #include <boost/chrono/chrono.hpp>
 #include <cmath>
@@ -302,11 +303,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             QMessageBox::warning(this, tr("Error!"), tr("%1\n\nAborting...").arg(e.what()), QMessageBox::Ok);
             QApplication::exit(EXIT_FAILURE);
         }
-
-        //
-        // Initialize any amateur radio modems!
-        //
-        gkCodec2 = new GkCodec2(Codec2Mode::freeDvMode2020, Codec2ModeCustom::Disabled, 0, 0, gkEventLogger, output_audio_buf, this);
 
         //
         // Setup the CLI parser and its settings!
@@ -2490,6 +2486,10 @@ void MainWindow::on_pushButton_sstv_tx_send_image_clicked()
         buffer.open(QIODevice::WriteOnly);
         tx_send_img.save(&buffer, "JPEG"); // Writes pixmap into bytes in JPEG format
 
+        //
+        // Initialize any amateur radio modems!
+        //
+        QPointer<GkCodec2> gkCodec2 = new GkCodec2(Codec2Mode::freeDvMode2020, Codec2ModeCustom::GekkoFyreV1, 0, 0, gkEventLogger, output_audio_buf, this);
         gkCodec2->transmitData(byte_array, true);
     } else {
         QMessageBox::information(this, tr("No image!"), tr("Please ensure to have an image loaded before attempting to make a transmission."), QMessageBox::Ok, QMessageBox::Ok);
