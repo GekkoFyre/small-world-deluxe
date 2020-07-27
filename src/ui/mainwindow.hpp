@@ -52,7 +52,6 @@
 #include "src/gk_audio_decoding.hpp"
 #include "src/gk_fft.hpp"
 #include "src/gk_logger.hpp"
-#include "src/gk_codec2.hpp"
 #include "src/ui/widgets/gk_display_image.hpp"
 #include "src/ui/gkaudioplaydialog.hpp"
 #include "src/ui/gk_vu_meter_widget.hpp"
@@ -81,6 +80,7 @@
 #include <QMetaType>
 #include <QDateTime>
 #include <QSettings>
+#include <QByteArray>
 #include <QStringList>
 #include <QMainWindow>
 #include <QPushButton>
@@ -336,7 +336,6 @@ private:
     //
     static QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>> gkRadioModels;
     std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> gkRadioPtr;
-    QPointer<GekkoFyre::GkCodec2> gkCodec2;
     QList<GekkoFyre::AmateurRadio::GkFreqs> frequencyList;
 
     //
@@ -418,4 +417,4 @@ Q_DECLARE_METATYPE(size_t);
 Q_DECLARE_METATYPE(uint8_t);
 Q_DECLARE_METATYPE(rig_model_t);
 Q_DECLARE_METATYPE(PaHostApiTypeId);
-Q_DECLARE_METATYPE(std::vector<short>);
+Q_DECLARE_METATYPE(std::vector<qint16>);

@@ -56,7 +56,7 @@ public:
                           max_size_(size) { /* empty */ }
 
     void put(T item);
-    T get();
+    T grab();
     void reset();
     bool empty() const;
     bool full() const;
@@ -93,7 +93,7 @@ void GkCircBuffer<T>::put(T item)
  * @author Phillip and Rozi <https://embeddedartistry.com/blog/2017/05/17/creating-a-circular-buffer-in-c-and-c/>
  */
 template<class T>
-T GkCircBuffer<T>::GkCircBuffer::get()
+T GkCircBuffer<T>::GkCircBuffer::grab()
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if(empty()) {

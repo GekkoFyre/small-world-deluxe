@@ -381,7 +381,7 @@ void GkAudioEncoding::recordOggVorbis(const std::vector<signed char> &audio_fram
     return;
 }
 
-void GkAudioEncoding::recordPcm(const std::vector<short> &audio_rec, const boost::filesystem::path &filePath)
+void GkAudioEncoding::recordPcm(const std::vector<qint16> &audio_rec, const boost::filesystem::path &filePath)
 {
     Q_UNUSED(filePath);
     Q_UNUSED(audio_rec);
@@ -389,7 +389,7 @@ void GkAudioEncoding::recordPcm(const std::vector<short> &audio_rec, const boost
     return;
 }
 
-void GkAudioEncoding::recordFlac(const std::vector<short> &audio_rec, const boost::filesystem::path &filePath)
+void GkAudioEncoding::recordFlac(const std::vector<qint16> &audio_rec, const boost::filesystem::path &filePath)
 {
     Q_UNUSED(filePath);
     Q_UNUSED(audio_rec);

@@ -83,7 +83,7 @@ set(CMAKE_MODULE_PATH
 option(GFYRE_PACKAGE_MAINTAINER "Are you a package maintainer? If so, set this option to `ON`! It'll enable specific build settings to make your life easier." ON)
 option(GFYRE_BUILD_STATIC "Build Small World Deluxe as a static library/package. This will result in a larger executable at the benefit of requiring less DLL dependencies." ON)
 option(GFYRE_BUILD_SHARED "Build Small World Deluxe as a shared library/package. This will result in a smaller executable at the cost of requiring further DLL dependencies." OFF)
-option(GFYRE_HAMLIB_DBG_VERBOSITY "Enable DEBUG verbosity for the Hamlib library and its use throughout Small World Deluxe." OFF)
+option(GFYRE_SWORLD_DBG_VERBOSITY "Enable DEBUG verbosity for Small World Deluxe and its use of third-party libraries throughout the program itself." OFF)
 option(GFYRE_PORTAUDIO_DBG_VERBOSITY "Enable DEBUG verbosity for the PortAudio library and its use throughout Small World Deluxe." OFF)
 
 option(BUILD_CODEC2_SUPPORT "Enable support for the 'Codec2' open source speech codec library." ON)
@@ -229,6 +229,18 @@ else()
     message(FATAL_ERROR "The 'Hamlib' amateur radio library could not be found!")
 endif(HAMLIB_FOUND)
 
+#
+# Left blank intentionally!
+#
+set(GALAXY_CODEC2_CPP
+    ${GALAXY_CODEC2_CPP})
+
+#
+# Left blank intentionally!
+#
+set(GALAXY_CODEC2_HPP
+    ${GALAXY_CODEC2_HPP})
+
 if (BUILD_CODEC2_SUPPORT)
     if (MSYS OR MINGW OR LINUX OR UNIX)
         message(STATUS "Support for 'Codec2' has been enabled! Finding package...")
@@ -237,6 +249,14 @@ if (BUILD_CODEC2_SUPPORT)
             include_directories(${CODEC2_INCLUDE_DIRS})
             set(LIBS ${LIBS} ${CODEC2_LIBRARIES})
             add_definitions("-DCODEC2_LIBS_ENBLD")
+            
+            set(GALAXY_CODEC2_CPP
+                ${GALAXY_CODEC2_CPP}
+                src/gk_codec2.cpp)
+            
+            set(GALAXY_CODEC2_HPP
+                ${GALAXY_CODEC2_HPP}
+                src/gk_codec2.hpp)
         else()
             message(FATAL_ERROR "The 'Codec2' open source speech codec library could not be found!")
         endif(CODEC2_FOUND)
@@ -252,6 +272,14 @@ if (SNAPPY_FOUND)
 else()
     message(FATAL_ERROR "The 'Snappy' compression libraries could not be found!")
 endif(SNAPPY_FOUND)
+
+find_package(FFTW REQUIRED)
+if (FFTW_FOUND)
+    include_directories(${FFTW_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${FFTW_LIBRARIES})
+else()
+    message(FATAL_ERROR "The 'FFTW' mathematical libraries could not be found!")
+endif(FFTW_FOUND)
 
 find_package(USB REQUIRED)
 if (USB_FOUND)
@@ -406,7 +434,6 @@ set(GALAXY_UI_CPP
     src/gk_frequency_list.cpp
     src/gk_string_funcs.cpp
     src/gk_logger.cpp
-    src/gk_codec2.cpp
     src/ui/widgets/gk_submit_msg.cpp
     src/ui/widgets/gk_display_image.cpp
     src/models/tableview/gk_frequency_model.cpp
@@ -479,7 +506,6 @@ set(GALAXY_OBJ_HEADERS
     src/gk_frequency_list.hpp
     src/gk_string_funcs.hpp
     src/gk_logger.hpp
-    src/gk_codec2.hpp
     src/ui/widgets/gk_submit_msg.hpp
     src/ui/widgets/gk_display_image.hpp
     src/models/tableview/gk_frequency_model.hpp
@@ -595,9 +621,9 @@ if(LINUX)
     check_include_file("linux/serial.h" HAVE_LSERIAL_H)
 endif()
 
-if (GFYRE_HAMLIB_DBG_VERBOSITY)
-    message(STATUS "Enabled maximum verbosity with the Hamlib library throughout Small World Deluxe; debug mode now activated!")
-    add_definitions(-DGFYRE_HAMLIB_DBG_VERBOSITY_ENBL)
+if (GFYRE_SWORLD_DBG_VERBOSITY)
+    message(STATUS "Enabled maximum verbosity with Small World Deluxe and its use of third-party libraries throughout the application itself; debug mode now activated!")
+    add_definitions(-DGFYRE_SWORLD_DBG_VERBOSITY)
 endif()
 
 if (GFYRE_PORTAUDIO_DBG_VERBOSITY)
@@ -615,7 +641,7 @@ include(GNUInstallDirs)
 # Build Small World Deluxe as a static package!
 #
 if(GFYRE_BUILD_STATIC)
-    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP})
+    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP})
     if(GK_CUDA_FFT)
         add_library(galaxy_cuda STATIC ${GALAXY_CUDA})
     endif()
@@ -627,7 +653,7 @@ endif(GFYRE_BUILD_STATIC)
 # Build Small World Deluxe as a shared package!
 #
 if(GFYRE_BUILD_SHARED)
-    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP})
+    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP})
     if(GK_CUDA_FFT)
         add_library(galaxy_cuda STATIC ${GALAXY_CUDA})
     endif()

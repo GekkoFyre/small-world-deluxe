@@ -101,6 +101,7 @@ sworld_debug_archlinux_x86_64:
         - pacman -S portaudio --noconfirm
         - pacman -S libusb --noconfirm
         - pacman -S fftw --noconfirm
+        - pacman -S snappy --noconfirm
         - pacman -S qwt --noconfirm
         - pacman -S libogg --noconfirm
         - pacman -S libvorbis --noconfirm

@@ -57,6 +57,8 @@
 #include <memory>
 #include <cstdlib>
 #include <utility>
+#include <iostream>
+#include <streambuf>
 #include <QString>
 #include <QVector>
 #include <QVariant>
@@ -142,7 +144,8 @@ namespace GekkoFyre {
 //
 #define SPECTRO_BANDWIDTH_MAX_SIZE (2048)               // The size and bandwidth of the spectrograph / waterfall window, in hertz.
 #define SPECTRO_BANDWIDTH_MIN_SIZE (125)                // The size and bandwidth of the spectrograph / waterfall window, in hertz.
-#define GK_FFT_SIZE (2048)
+#define GK_FFT_SIZE (4096)
+#define GK_FFT_SAMPLE_SIZE (GK_FFT_SIZE / 4)
 
 //
 // Concerns spectrograph / waterfall calculations and settings
@@ -227,6 +230,29 @@ namespace Filesystem {
 }
 
 namespace System {
+    /**
+     * @brief The membuf struct
+     * @author Dietmar Kühl <https://stackoverflow.com/questions/13059091/creating-an-input-stream-from-constant-memory/13059195#13059195>
+     * @note <https://stackoverflow.com/a/52492027>
+     */
+    struct membuf: std::streambuf {
+        membuf(char const* base, size_t size) {
+            char* p(const_cast<char*>(base));
+            this->setg(p, p, p + size);
+        }
+    };
+
+    /**
+     * @brief The imemstream struct
+     * @author Dietmar Kühl <https://stackoverflow.com/questions/13059091/creating-an-input-stream-from-constant-memory/13059195#13059195>
+     * @note <https://stackoverflow.com/a/52492027>
+     */
+    struct imemstream: virtual membuf, std::istream {
+        imemstream(char const *base, size_t size):
+            membuf(base, size), std::istream(static_cast<std::streambuf*>(this)) {
+        }
+    };
+
     namespace Cli {
         enum CommandLineParseResult
         {
@@ -606,6 +632,11 @@ namespace Spectrograph {
     struct Window {
         int y;
         int x;
+    };
+
+    struct GkFFTComplex {
+        double real;
+        double imaginary;
     };
 
     struct GkAxisData {
