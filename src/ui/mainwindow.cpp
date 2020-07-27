@@ -715,7 +715,7 @@ bool MainWindow::radioInitStart()
             gkRadioPtr->dev_baud_rate = AmateurRadio::com_baud_rates::BAUD9600;
         }
 
-        #ifdef GFYRE_HAMLIB_DBG_VERBOSITY_ENBL
+        #ifdef GFYRE_SWORLD_DBG_VERBOSITY
         gkRadioPtr->verbosity = RIG_DEBUG_VERBOSE;
         #else
         gkRadioPtr->verbosity = RIG_DEBUG_BUG;
@@ -2489,8 +2489,10 @@ void MainWindow::on_pushButton_sstv_tx_send_image_clicked()
         //
         // Initialize any amateur radio modems!
         //
-        QPointer<GkCodec2> gkCodec2 = new GkCodec2(Codec2Mode::freeDvMode2020, Codec2ModeCustom::GekkoFyreV1, 0, 0, gkEventLogger, output_audio_buf, this);
+        #ifdef CODEC2_LIBS_ENBLD
+        QPointer<GkCodec2> gkCodec2 = new GkCodec2(Codec2Mode::freeDvMode2020, Codec2ModeCustom::GekkoFyreV1, 0, 0, GkDb, gkEventLogger, output_audio_buf, this);
         gkCodec2->transmitData(byte_array, true);
+        #endif
     } else {
         QMessageBox::information(this, tr("No image!"), tr("Please ensure to have an image loaded before attempting to make a transmission."), QMessageBox::Ok, QMessageBox::Ok);
     }

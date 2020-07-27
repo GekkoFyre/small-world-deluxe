@@ -106,6 +106,7 @@ public:
     std::string removeInvalidChars(const std::string &string_to_modify);
     std::string boolEnum(const bool &is_true);
     bool boolStr(const std::string &is_true);
+    int boolInt(const bool &is_true);
 
 private:
     QPointer<GekkoFyre::FileIo> fileIo;

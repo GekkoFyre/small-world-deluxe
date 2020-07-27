@@ -59,10 +59,12 @@ using namespace Events;
 using namespace Logging;
 
 GkCodec2::GkCodec2(const Codec2Mode &freedv_mode, const Codec2ModeCustom &custom_mode, const int &freedv_clip, const int &freedv_txbpf,
-                   QPointer<GkEventLogger> eventLogger, std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> output_audio_buf, QObject *parent)
+                   std::shared_ptr<GkLevelDb> levelDb, QPointer<GkEventLogger> eventLogger,
+                   std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> output_audio_buf, QObject *parent)
 {
     try {
         setParent(parent);
+        GkDb = std::move(levelDb);
         outputAudioBuf = std::move(output_audio_buf);
         gkEventLogger = std::move(eventLogger);
 
@@ -96,46 +98,65 @@ GkCodec2::~GkCodec2()
  * <https://github.com/drowe67/codec2/blob/master/src/freedv_data_raw_tx.c>
  * <https://cpp.hotexamples.com/examples/-/-/codec2_encode/cpp-codec2_encode-function-examples.html>
  */
-int GkCodec2::transmitData(const QByteArray &byte_array, const bool &play_output_sound)
+int GkCodec2::transmitData(const QByteArray &byte_array, const bool &play_output_sound, const bool &squelch_enable, const float &squelch_thresh)
 {
     try {
         auto txData = createPayloadForTx(byte_array);
         if (!txData.isEmpty()) {
-            struct CODEC2 *codec2;
-            codec2 = codec2_create(convertFreeDvModeToInt(gkFreeDvMode));
-            if (codec2 == nullptr) {
+            struct CODEC2 *c2;
+            struct freedv *freedv;
+            c2 = codec2_create(convertFreeDvModeToInt(gkFreeDvMode));
+            freedv = freedv_open(convertFreeDvModeToInt(gkFreeDvMode));
+
+            if (c2 == nullptr || freedv == nullptr) {
                 throw std::runtime_error(tr("Issue encountered with opening Codec2 modem for transmission! Are you out of memory?").toStdString());
             }
 
+            unsigned char header[6] = { 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc };
+            freedv_set_data_header(freedv, header);
+
+            freedv_set_snr_squelch_thresh(freedv, squelch_thresh);
+            freedv_set_squelch_en(freedv, GkDb->boolInt(squelch_enable));
+            freedv_set_clip(freedv, gkFreeDvClip);
+            freedv_set_tx_bpf(freedv, gkFreeDvTXBpf);
+            // freedv_set_dpsk(freedv, GkDb->boolInt(true));
+            freedv_set_ext_vco(freedv, GkDb->boolInt(false));
+
+            #ifdef GFYRE_SWORLD_DBG_VERBOSITY
+            freedv_set_verbose(freedv, GkDb->boolInt(true));
+            #else
+            freedv_set_verbose(freedv, GkDb->boolInt(false));
+            #endif
+
             // For streaming bytes it is much easier to use modes that have a multiple of 8 payload bits/frame...
-            int nbit = codec2_bits_per_frame(codec2);
-            auto out_bits = (unsigned char *)malloc(nbit * sizeof(char));
+            int bytes_per_modem_frame = (freedv_get_bits_per_modem_frame(freedv) / 8);
+            int n_mod_out = freedv_get_n_nom_modem_samples(freedv);
+            short mod_out[n_mod_out];
 
             gkEventLogger->publishEvent(tr("Bits per modem frame: %1. Samples per modem frame: %2.")
-                                        .arg(QString::number(codec2_bits_per_frame(codec2)))
-                                        .arg(QString::number(codec2_samples_per_frame(codec2))), GkSeverity::Debug);
+                                        .arg(QString::number(freedv_get_bits_per_modem_frame(freedv)))
+                                        .arg(QString::number(bytes_per_modem_frame)), GkSeverity::Debug);
 
             for (const auto &to_tx: txData) {
                 imemstream in(to_tx.data(), (size_t)to_tx.size());
                 for (;;) {
                     std::string buffer;
                     if (!std::getline(in, buffer)) { break; }
-                    std::vector<short> audio_in(buffer.size());
-                    std::copy(buffer.begin(), buffer.end(), audio_in.begin());
+                    unsigned char *audio_in = reinterpret_cast<unsigned char *>(const_cast<char *>(buffer.c_str()));
 
                     // Stream the data until finish!
-                    codec2_encode(codec2, out_bits, audio_in.data());
+                    freedv_rawdatatx(freedv, mod_out, audio_in);
 
                     if (play_output_sound) {
                         std::vector<short> audio_conv(buffer.size());
-                        size_t out_len = std::strlen((char *)out_bits);
-                        std::copy(out_bits, out_bits + out_len, audio_conv.begin());
+                        size_t out_len = std::strlen((char *)mod_out);
+                        std::copy(mod_out, mod_out + out_len, audio_conv.begin());
                         outputAudioBuf->append(audio_conv);
                     }
                 }
             }
 
-            codec2_destroy(codec2);
+            freedv_close(freedv);
         }
     }  catch (const std::exception &e) {
         std::throw_with_nested(tr("An issue has occurred with transmitting data via the Codec2 modem! Error:\n\n%1")
