@@ -834,6 +834,7 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
         ui->comboBox_com_port->insertItem(0, tr("N/A"), tr("N/A"));
         ui->comboBox_ptt_method_port->insertItem(0, tr("N/A"), tr("N/A"));
 
+        bool unsupported_port = true;
         if (!com_ports.empty()) {
             quint16 counter = 0;
             emit comPortsDisabled(true); // Enable all GUI widgets relating to COM/Serial Ports
@@ -861,9 +862,42 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
                 for (const auto &sel_port: available_com_ports.toStdMap()) {
                     for (const auto &device: status_com_ports) {
                         if ((device.port_info.description() == sel_port.first) && (comDeviceCat == device.port_info.portName())) {
+                            //
+                            // COM/RS232/Serial Port
+                            //
+
                             // NOTE: The recorded setting used to identify the chosen serial device is the COM Port name
                             ui->comboBox_com_port->setCurrentIndex(sel_port.second);
                             on_comboBox_com_port_currentIndexChanged(sel_port.second);
+                            unsupported_port = false;
+                        } else {
+                            //
+                            // Something else entirely!
+                            //
+                            unsupported_port = true;
+                        }
+                    }
+                }
+            }
+
+            if (!comDeviceCat.isEmpty() && !available_usb_ports.isEmpty()) {
+                for (const auto &sel_port: available_usb_ports.toStdMap()) {
+                    for (const auto &device: status_usb_devices) {
+                        QString combined_str = QString("[ #%1 ] %2").arg(QString::fromStdString(device.port)).arg(device.usb_enum.product);
+                        if ((QString::fromStdString(device.port) == sel_port.first) && (comDeviceCat == combined_str)) {
+                            //
+                            // USB Port
+                            //
+
+                            // NOTE: The recorded setting used to identify the chosen serial device is the COM Port name
+                            ui->comboBox_com_port->setCurrentIndex(std::stoi(device.port));
+                            on_comboBox_com_port_currentIndexChanged(std::stoi(device.port));
+                            unsupported_port = false;
+                        } else {
+                            //
+                            // Something else entirely!
+                            //
+                            unsupported_port = true;
                         }
                     }
                 }
@@ -886,6 +920,10 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
             }
         } else {
             emit comPortsDisabled(false);
+        }
+
+        if (unsupported_port) {
+            throw std::invalid_argument(tr("An unsupported port-type has been chosen! Only USB, RS232 (i.e. COM/Serial/etc), and a few other related types are supported right now, sorry!").toStdString());
         }
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
@@ -910,10 +948,11 @@ void DialogSettings::prefill_avail_usb_ports(const QMap<std::string, GekkoFyre::
             emit usbPortsDisabled(true);
 
             available_usb_ports.clear();
+            quint16 counter = 0;
             for (const auto &device: usb_devices) {
                 QString dev_port = QString::fromStdString(device.port);
                 #ifdef _UNICODE
-                QString combined_str = QString("[ #%1 ] %2").arg(QString::number(dev_port)).arg(QString::fromStdWString(device.usb_enum.product));
+                QString combined_str = QString("[ #%1 ] %2").arg(QString::fromStdWString(device.port)).arg(device.usb_enum.product);
                 available_usb_ports.insert(dev_port, combined_str.toStdWString());
                 #else
                 QString combined_str = QString("[ #%1 ] %2").arg(dev_port).arg(device.usb_enum.product);
@@ -923,14 +962,15 @@ void DialogSettings::prefill_avail_usb_ports(const QMap<std::string, GekkoFyre::
                 //
                 // CAT Control
                 //
-                ui->comboBox_com_port->addItem(combined_str, dev_port);
+                ui->comboBox_com_port->insertItem(counter, combined_str, dev_port);
 
                 //
                 // PTT Method
                 //
-                ui->comboBox_ptt_method_port->addItem(combined_str, dev_port);
+                ui->comboBox_ptt_method_port->insertItem(counter, combined_str, dev_port);
 
                 combined_str.clear();
+                ++counter;
             }
         } else {
             // There exists no USB devices...

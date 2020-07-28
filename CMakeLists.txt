@@ -47,9 +47,17 @@ endif()
 
 cmake_policy(SET CMP0074 NEW)
 cmake_policy(SET CMP0054 NEW)
+cmake_policy(SET CMP0087 NEW)
+
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 
 option(GK_CUDA_FFT "Enable NVIDIA CUDA support within Small World Deluxe and allow your GPU to do heavy calculations instead of your CPU!" OFF)
+
+#
+# RPATH is aimed at Linux installations primarily
+#
+set(CMAKE_INSTALL_RPATH $ORIGIN $ORIGIN/lib) # Relative path to lib-dir...
+set(INSTALL_RPATH_USE_LINK_PATH true)
 
 if(GK_CUDA_FFT)
     message(STATUS "Enable NVIDIA CUDA support within Small World Deluxe and allow your GPU to do heavy calculations instead of your CPU!")
@@ -117,6 +125,18 @@ if(WIN32 OR MSYS OR MINGW)
     get_WIN32_WINNT(ver)
     message(STATUS "Your Microsoft Windows has determined to be version: " ${ver})
     add_definitions(-D_WIN32_WINNT=${ver})
+endif()
+
+#
+# The below is required for when we decide to start programming an install target for this CMake script!
+#
+include(CMakePackageConfigHelpers)
+include(GNUInstallDirs)
+
+if (LINUX)
+    set(INCLUDE_INSTALL_DIR "/usr/local/include/small-world-deluxe/" CACHE PATH "Where Small World Deluxe itself should be installed.")
+    set(LIB_INSTALL_DIR "/usr/local/lib/small-world-deluxe/" CACHE PATH "Location for the libraries/dependencies.")
+    set(SYSCONFIG_INSTALL_DIR "/etc/small-world-deluxe/" CACHE PATH "Location for the settings directory.")
 endif()
 
 #
@@ -573,54 +593,6 @@ endif()
 
 add_definitions("-DQWT_DLL")
 
-#
-# Check that the following for the applicable systems actually exist! Abort otherwise...
-# https://cmake.org/cmake/help/latest/module/CheckSymbolExists.html
-# https://cmake.org/cmake/help/latest/module/CheckCXXSymbolExists.html
-#
-# include(CheckSymbolExists)
-# include(CheckCXXSymbolExists)
-#
-include(CheckIncludeFile)
-include(CheckIncludeFileCXX)
-
-if(WIN32 OR MSYS OR MINGW OR LINUX OR UNIX)
-    check_include_file("stdio.h" HAVE_STDIO_H)
-    check_include_file("string.h" HAVE_CSTRING_H)
-    check_include_file("stdlib.h" HAVE_STDLIB_H)
-    check_include_file("stdint.h" HAVE_STDINT_H)
-    check_include_file("time.h" HAVE_CTIME_H)
-    check_include_file("math.h" HAVE_CMATH_H)
-endif()
-
-if(WIN32)
-    check_include_file_cxx("atlbase.h" HAVE_ATLBASE_H)
-    check_include_file_cxx("atlstr.h" HAVE_ATLSTR_H)
-endif()
-
-if(WIN32 OR MSYS OR MINGW)
-    check_include_file_cxx("Windows.h" HAVE_WINDOWS_H)
-    check_include_file_cxx("winsdkver.h" HAVE_WINSDKVER_H)
-    check_include_file_cxx("tchar.h" HAVE_TCHAR_H)
-    check_include_file_cxx("stringapiset.h" HAVE_STRINGAPISET_H)
-endif()
-
-if(LINUX OR MSYS OR MINGW)
-    check_include_file("termios.h" HAVE_TERMIOS_H)
-    check_include_file("unistd.h" HAVE_UNISTD_H)
-    check_include_file("fcntl.h" HAVE_FCNTL_H)
-    check_include_file("limits.h" HAVE_LIMITS_H)
-    check_include_file("errno.h" HAVE_ERRNO_H)
-    check_include_file("sys/ioctl.h" HAVE_IOCTL_H)
-    check_include_file("sys/types.h" HAVE_TYPES_H)
-    check_include_file("sys/stat.h" HAVE_STAT_H)
-    check_include_file("sys/file.h" HAVE_FILE_H)
-endif()
-
-if(LINUX)
-    check_include_file("linux/serial.h" HAVE_LSERIAL_H)
-endif()
-
 if (GFYRE_SWORLD_DBG_VERBOSITY)
     message(STATUS "Enabled maximum verbosity with Small World Deluxe and its use of third-party libraries throughout the application itself; debug mode now activated!")
     add_definitions(-DGFYRE_SWORLD_DBG_VERBOSITY)
@@ -630,12 +602,6 @@ if (GFYRE_PORTAUDIO_DBG_VERBOSITY)
     message(STATUS "Enabled maximum verbosity with the PortAudio library throughout Small World Deluxe; debug mode now activated!")
     add_definitions(-DGFYRE_PORTAUDIO_DBG_VERBOSITY_ENBL)
 endif()
-
-#
-# The below is required for when we decide to start programming an install target for this CMake script!
-#
-include(CMakePackageConfigHelpers)
-include(GNUInstallDirs)
 
 #
 # Build Small World Deluxe as a static package!
@@ -674,6 +640,55 @@ target_link_libraries(smallworld galaxy)
 if(GK_CUDA_FFT)
     target_link_libraries(smallworld galaxy_cuda)
 endif()
+
+install(CODE [[
+    include(CMakePackageConfigHelpers)
+    include(GNUInstallDirs)
+    
+    configure_package_config_file("${CMAKE_SOURCE_DIR}/cmake/modules/SmallWorldDeluxeConfig.cmake.in"
+        "${PROJECT_BINARY_DIR}/SmallWorldDeluxeConfig.cmake"
+        INSTALL_DESTINATION "${LIB_INSTALL_DIR}/small-world-deluxe/cmake"
+        PATH_VARS INCLUDE_INSTALL_DIR SYSCONFIG_INSTALL_DIR)
+
+    write_basic_package_version_file(
+        "${PROJECT_BINARY_DIR}/SWorldConfigVersion.cmake"
+        VERSION "${PACKAGE_VERSION}"
+        COMPATIBILITY ExactVersion)
+
+    # Install the CMake configuration files...
+    INSTALL(FILES
+        "${PROJECT_BINARY_DIR}/SmallWorldDeluxeConfig.cmake"
+        "${PROJECT_BINARY_DIR}/SWorldConfigVersion.cmake"
+        DESTINATION "${LIB_INSTALL_DIR}/small-world-deluxe/cmake")
+
+    file(GET_RUNTIME_DEPENDENCIES
+        EXECUTABLES "${CMAKE_BINARY_DIR}"
+        RESOLVED_DEPENDENCIES_VAR GK_FOUND_LIBS
+        UNRESOLVED_DEPENDENCIES_VAR GK_UNFOUND_LIBS)
+
+    if (GK_UNFOUND_LIBS)
+        message(WARNING "Some of the libraries/dependencies for Small World Deluxe could not be found! The application may or may not work without them; consider this a warning!")
+    endif()
+
+    foreach (GK_FOUND_LIB IN LISTS GK_FOUND_LIBS)
+        # TODO: Determine if the libraries should be copied over...
+        configure_file("${GK_FOUND_LIB}" "${CMAKE_BINARY_DIR}" COPY_ONLY)
+    endforeach()
+
+    file(TOUCH "${tagfile}")
+
+    add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/tagfile"
+                    COMMAND "${CMAKE_COMMAND}"
+                    "-Dexe=$<TARGET_FILE:smallworld>"
+                    "-Ddest_libdir=${CMAKE_BINARY_DIR}/lib"
+                    "-Dtagfile=${CMAKE_CURRENT_BINARY_DIR}/tagfile"
+                    -P "${path_to_above_file}"
+                    DEPENDS "$<TARGET_FILE:smallworld>"
+                    "${path_to_above_file}"
+                    DOC "Copying dependencies for smallworld")
+]])
+
+INSTALL(TARGETS smallworld)
 
 #
 # https://stackoverflow.com/questions/23995019/what-is-the-modern-method-for-setting-general-compile-flags-in-cmake

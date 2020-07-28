@@ -7,3 +7,6 @@
 [submodule "src/contrib/rapidcsv"]
 	path = src/contrib/rapidcsv
 	url = https://github.com/d99kris/rapidcsv.git
+[submodule "src/contrib/QtUsb"]
+	path = src/contrib/QtUsb
+	url = https://github.com/fpoussin/QtUsb.git
