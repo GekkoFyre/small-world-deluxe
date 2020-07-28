@@ -133,6 +133,12 @@ endif()
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
+if (LINUX)
+    set(INCLUDE_INSTALL_DIR "/usr/local/include/small-world-deluxe/" CACHE PATH "Where Small World Deluxe itself should be installed.")
+    set(LIB_INSTALL_DIR "/usr/local/lib/small-world-deluxe/" CACHE PATH "Location for the libraries/dependencies.")
+    set(SYSCONFIG_INSTALL_DIR "/etc/small-world-deluxe/" CACHE PATH "Location for the settings directory.")
+endif()
+
 #
 # https://stackoverflow.com/questions/33991918/link-to-pthread-library-using-cmake-in-clion
 # Find 'libpthreads'
@@ -638,12 +644,6 @@ endif()
 install(CODE [[
     include(CMakePackageConfigHelpers)
     include(GNUInstallDirs)
-
-    if (LINUX)
-        set(INCLUDE_INSTALL_DIR "/usr/local/include/small-world-deluxe/" CACHE PATH "Where Small World Deluxe itself should be installed.")
-        set(LIB_INSTALL_DIR "/usr/local/lib/small-world-deluxe/" CACHE PATH "Location for the libraries/dependencies.")
-        set(SYSCONFIG_INSTALL_DIR "/etc/small-world-deluxe/" CACHE PATH "Location for the settings directory.")
-    endif()
     
     configure_package_config_file("${CMAKE_SOURCE_DIR}/cmake/modules/SmallWorldDeluxeConfig.cmake.in"
         "${PROJECT_BINARY_DIR}/SmallWorldDeluxeConfig.cmake"
@@ -687,6 +687,8 @@ install(CODE [[
                     "${path_to_above_file}"
                     DOC "Copying dependencies for smallworld")
 ]])
+
+INSTALL(TARGETS smallworld)
 
 #
 # https://stackoverflow.com/questions/23995019/what-is-the-modern-method-for-setting-general-compile-flags-in-cmake

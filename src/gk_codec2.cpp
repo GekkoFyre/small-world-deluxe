@@ -43,6 +43,7 @@
 #include <codec2/freedv_api.h>
 #include <snappy.h>
 #include <QDataStream>
+#include <algorithm>
 #include <utility>
 #include <sstream>
 #include <cstring>
@@ -95,14 +96,14 @@ GkCodec2::~GkCodec2()
  * @param play_output_sound Whether to play the modulating signal over the user's output audio device or not.
  * @return The prepped data for transmission.
  * @note <https://github.com/drowe67/codec2/blob/master/README_data.md>
- * <https://github.com/drowe67/codec2/blob/master/src/freedv_data_raw_tx.c>
+ * <https://github.com/drowe67/codec2/blob/master/unittest/tfreedv_2400B_rawdata.c>
  * <https://cpp.hotexamples.com/examples/-/-/codec2_encode/cpp-codec2_encode-function-examples.html>
  */
 int GkCodec2::transmitData(const QByteArray &byte_array, const bool &play_output_sound, const bool &squelch_enable, const float &squelch_thresh)
 {
     try {
         auto txData = createPayloadForTx(byte_array);
-        if (!txData.isEmpty()) {
+        if (!txData.empty()) {
             struct CODEC2 *c2;
             struct freedv *freedv;
             c2 = codec2_create(convertFreeDvModeToInt(gkFreeDvMode));
@@ -138,21 +139,15 @@ int GkCodec2::transmitData(const QByteArray &byte_array, const bool &play_output
                                         .arg(QString::number(bytes_per_modem_frame)), GkSeverity::Debug);
 
             for (const auto &to_tx: txData) {
-                imemstream in(to_tx.data(), (size_t)to_tx.size());
-                for (;;) {
-                    std::string buffer;
-                    if (!std::getline(in, buffer)) { break; }
-                    unsigned char *audio_in = reinterpret_cast<unsigned char *>(const_cast<char *>(buffer.c_str()));
+                unsigned char *audio_in = reinterpret_cast<unsigned char *>(const_cast<char *>(to_tx.data()));
 
-                    // Stream the data until finish!
-                    freedv_rawdatatx(freedv, mod_out, audio_in);
+                // Stream the data until finish!
+                freedv_rawdatatx(freedv, mod_out, audio_in); // NOTE: A codec frame is only 6.5 bytes! So the seventh byte will be half empty!
 
-                    if (play_output_sound) {
-                        std::vector<short> audio_conv(buffer.size());
-                        size_t out_len = std::strlen((char *)mod_out);
-                        std::copy(mod_out, mod_out + out_len, audio_conv.begin());
-                        outputAudioBuf->append(audio_conv);
-                    }
+                if (play_output_sound) {
+                    std::vector<short> audio_conv(n_mod_out);
+                    std::copy(mod_out, mod_out + n_mod_out, audio_conv.begin());
+                    outputAudioBuf->append(audio_conv);
                 }
             }
 
@@ -175,7 +170,7 @@ int GkCodec2::transmitData(const QByteArray &byte_array, const bool &play_output
  * @return The data to be transmitted over the radio waves.
  * @note <https://stackoverflow.com/questions/9811235/best-way-to-split-a-vector-into-two-smaller-arrays>
  */
-QList<QByteArray> GkCodec2::createPayloadForTx(const QByteArray &byte_array)
+std::list<std::vector<char>> GkCodec2::createPayloadForTx(const QByteArray &byte_array)
 {
     try {
         QByteArray base64_conv_data;
@@ -191,35 +186,28 @@ QList<QByteArray> GkCodec2::createPayloadForTx(const QByteArray &byte_array)
         }
 
         int payload_length = base64_conv_data.length();
-        QList<QByteArray> payload_data;
+        int length = (payload_length / GK_CODEC2_FRAME_SIZE);
+        int remain = (payload_length % GK_CODEC2_FRAME_SIZE);
 
-        if (payload_length > GK_CODEC2_FRAME_SIZE) {
-            // We need to break up the payload!
-            QByteArray tmp_data;
-            while (payload_length > GK_CODEC2_FRAME_SIZE) {
-                for (int i = 0; i < GK_CODEC2_FRAME_SIZE; ++i) {
-                    tmp_data.insert(i, base64_conv_data[i]);
-                }
+        int begin = 0;
+        int end = 0;
 
-                payload_length -= GK_CODEC2_FRAME_SIZE;
-                payload_data.append(tmp_data);
-            }
+        std::list<std::vector<char>> result;
+
+        for (int i = 0; i < std::min(GK_CODEC2_FRAME_SIZE, payload_length); ++i) {
+            end += ((remain > 0) ? (length + !!(remain--)) : length);
+            result.push_back(std::vector<char>(base64_conv_data.begin() + begin, base64_conv_data.begin() + end));
+
+            begin = end;
         }
 
-        // Add any remaining data...
-        QByteArray tmp_data;
-        for (int i = 0; i < payload_length; ++i) {
-            tmp_data.insert(i, base64_conv_data[i]);
-        }
-
-        payload_data.append(tmp_data);
-        return payload_data;
+        return result;
     }  catch (const std::exception &e) {
         std::throw_with_nested(tr("An issue has occurred with transmitting audio via the Codec2 modem! Error:\n\n%1")
                                .arg(QString::fromStdString(e.what())).toStdString());
     }
 
-    return QList<QByteArray>();
+    return std::list<std::vector<char>>();
 }
 
 /**
