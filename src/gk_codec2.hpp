@@ -79,7 +79,7 @@ private:
     int gkFreeDvClip;
     int gkFreeDvTXBpf;                      // OFDM TX Filter (off by default)
 
-    std::list<std::vector<char>> createPayloadForTx(const QByteArray &byte_array);
+    QList<QByteArray> createPayloadForTx(const QByteArray &byte_array);
 
     int convertFreeDvModeToInt(const Database::Settings::Codec2Mode &freedv_mode);
 

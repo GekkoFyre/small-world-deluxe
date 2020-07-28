@@ -103,7 +103,7 @@ int GkCodec2::transmitData(const QByteArray &byte_array, const bool &play_output
 {
     try {
         auto txData = createPayloadForTx(byte_array);
-        if (!txData.empty()) {
+        if (!txData.isEmpty()) {
             struct CODEC2 *c2;
             struct freedv *freedv;
             c2 = codec2_create(convertFreeDvModeToInt(gkFreeDvMode));
@@ -139,15 +139,21 @@ int GkCodec2::transmitData(const QByteArray &byte_array, const bool &play_output
                                         .arg(QString::number(bytes_per_modem_frame)), GkSeverity::Debug);
 
             for (const auto &to_tx: txData) {
-                unsigned char *audio_in = reinterpret_cast<unsigned char *>(const_cast<char *>(to_tx.data()));
+                imemstream in(to_tx.data(), (size_t)to_tx.size());
+                for (;;) {
+                    std::string buffer;
+                    if (!std::getline(in, buffer)) { break; }
+                    unsigned char *audio_in = reinterpret_cast<unsigned char *>(const_cast<char *>(buffer.c_str()));
 
-                // Stream the data until finish!
-                freedv_rawdatatx(freedv, mod_out, audio_in); // NOTE: A codec frame is only 6.5 bytes! So the seventh byte will be half empty!
+                    // Stream the data until finish!
+                    freedv_rawdatatx(freedv, mod_out, audio_in);
 
-                if (play_output_sound) {
-                    std::vector<short> audio_conv(n_mod_out);
-                    std::copy(mod_out, mod_out + n_mod_out, audio_conv.begin());
-                    outputAudioBuf->append(audio_conv);
+                    if (play_output_sound) {
+                        std::vector<short> audio_conv(buffer.size());
+                        size_t out_len = std::strlen((char *)mod_out);
+                        std::copy(mod_out, mod_out + out_len, audio_conv.begin());
+                        outputAudioBuf->append(audio_conv);
+                    }
                 }
             }
 
@@ -170,7 +176,7 @@ int GkCodec2::transmitData(const QByteArray &byte_array, const bool &play_output
  * @return The data to be transmitted over the radio waves.
  * @note <https://stackoverflow.com/questions/9811235/best-way-to-split-a-vector-into-two-smaller-arrays>
  */
-std::list<std::vector<char>> GkCodec2::createPayloadForTx(const QByteArray &byte_array)
+QList<QByteArray> GkCodec2::createPayloadForTx(const QByteArray &byte_array)
 {
     try {
         QByteArray base64_conv_data;
@@ -185,29 +191,29 @@ std::list<std::vector<char>> GkCodec2::createPayloadForTx(const QByteArray &byte
             base64_conv_data = byte_array.toBase64(QByteArray::KeepTrailingEquals); // Convert to Base64 for easier transmission!
         }
 
-        int payload_length = base64_conv_data.length();
-        int length = (payload_length / GK_CODEC2_FRAME_SIZE);
-        int remain = (payload_length % GK_CODEC2_FRAME_SIZE);
+        size_t payload_size = (size_t)base64_conv_data.size();
+        QList<QByteArray> base64_conv_data_tmp;
+        QList<QByteArray> payload_data;
+        size_t counter = 0;
 
-        int begin = 0;
-        int end = 0;
-
-        std::list<std::vector<char>> result;
-
-        for (int i = 0; i < std::min(GK_CODEC2_FRAME_SIZE, payload_length); ++i) {
-            end += ((remain > 0) ? (length + !!(remain--)) : length);
-            result.push_back(std::vector<char>(base64_conv_data.begin() + begin, base64_conv_data.begin() + end));
-
-            begin = end;
+        base64_conv_data_tmp.push_back(base64_conv_data);
+        for(size_t i = 0; i < payload_size; i += GK_CODEC2_FRAME_SIZE) {
+            auto last = std::min(payload_size, i + GK_CODEC2_FRAME_SIZE);
+            auto index = (i / GK_CODEC2_FRAME_SIZE);
+            auto &vec = base64_conv_data_tmp[index];
+            vec.reserve(last - i);
+            std::move(base64_conv_data.begin() + i, base64_conv_data.begin() + last, std::back_inserter(vec));
+            payload_data.insert(counter, vec);
+            ++counter;
         }
 
-        return result;
+        return payload_data;
     }  catch (const std::exception &e) {
         std::throw_with_nested(tr("An issue has occurred with transmitting audio via the Codec2 modem! Error:\n\n%1")
                                .arg(QString::fromStdString(e.what())).toStdString());
     }
 
-    return std::list<std::vector<char>>();
+    return QList<QByteArray>();
 }
 
 /**

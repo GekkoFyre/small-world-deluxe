@@ -575,7 +575,7 @@ color: white;</string>
                                 <x>0</x>
                                 <y>0</y>
                                 <width>430</width>
-                                <height>133</height>
+                                <height>141</height>
                                </rect>
                               </property>
                               <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -721,7 +721,7 @@ color: white;</string>
                                 <x>0</x>
                                 <y>0</y>
                                 <width>444</width>
-                                <height>133</height>
+                                <height>141</height>
                                </rect>
                               </property>
                               <layout class="QVBoxLayout" name="verticalLayout_20">
@@ -883,8 +883,8 @@ color: white;</string>
                                <rect>
                                 <x>0</x>
                                 <y>0</y>
-                                <width>528</width>
-                                <height>133</height>
+                                <width>100</width>
+                                <height>30</height>
                                </rect>
                               </property>
                               <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -1003,7 +1003,7 @@ color: white;</string>
                          <rect>
                           <x>0</x>
                           <y>0</y>
-                          <width>337</width>
+                          <width>186</width>
                           <height>217</height>
                          </rect>
                         </property>
@@ -1589,10 +1589,13 @@ QPushButton:disabled {
      <addaction name="separator"/>
      <addaction name="action_Incoming"/>
      <addaction name="action_Outgoing"/>
+     <addaction name="separator"/>
+     <addaction name="actionStatus"/>
     </widget>
     <addaction name="actionShow_Waterfall"/>
     <addaction name="separator"/>
     <addaction name="menuCl_ear_Logs"/>
+    <addaction name="actionView_Logs"/>
    </widget>
    <widget class="QMenu" name="menu_Help">
     <property name="title">
@@ -1624,9 +1627,16 @@ QPushButton:disabled {
       <property name="title">
        <string>&amp;Modulation</string>
       </property>
+      <widget class="QMenu" name="menuSSB">
+       <property name="title">
+        <string>SSB</string>
+       </property>
+       <addaction name="actionDATA"/>
+      </widget>
       <addaction name="actionAM"/>
       <addaction name="actionFM"/>
-      <addaction name="actionSSB"/>
+      <addaction name="menuSSB"/>
+      <addaction name="separator"/>
       <addaction name="actionCW"/>
      </widget>
      <widget class="QMenu" name="menuSS_B">
@@ -1821,14 +1831,6 @@ QPushButton:disabled {
     <string>&amp;LSB</string>
    </property>
   </action>
-  <action name="actionSSB">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>SSB</string>
-   </property>
-  </action>
   <action name="actionCW">
    <property name="checkable">
     <bool>true</bool>
@@ -1888,7 +1890,7 @@ QPushButton:disabled {
   </action>
   <action name="action_Input">
    <property name="text">
-    <string>&amp;Input</string>
+    <string>&amp;Input (RX)</string>
    </property>
    <property name="toolTip">
     <string>The input speakers, such as your microphone which is used to record sounds</string>
@@ -1896,7 +1898,7 @@ QPushButton:disabled {
   </action>
   <action name="actionOut_put">
    <property name="text">
-    <string>Out&amp;put</string>
+    <string>Out&amp;put (TX)</string>
    </property>
    <property name="toolTip">
     <string>Your output speakers (i.e. the stereo speakers that play music from YouTube, etc.)</string>
@@ -1962,6 +1964,24 @@ QPushButton:disabled {
   <action name="action_Disconnect">
    <property name="text">
     <string>&amp;Disconnect</string>
+   </property>
+  </action>
+  <action name="actionDATA">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>DATA</string>
+   </property>
+  </action>
+  <action name="actionStatus">
+   <property name="text">
+    <string>Status</string>
+   </property>
+  </action>
+  <action name="actionView_Logs">
+   <property name="text">
+    <string>View Logs</string>
    </property>
   </action>
  </widget>
