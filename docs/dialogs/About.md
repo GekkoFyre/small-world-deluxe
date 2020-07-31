@@ -2,7 +2,7 @@
 
 Copyright © 2019-2020 – [GekkoFyre Networks](https://gekkofyre.io/), All Rights Reserved.
 
-Authored with my beloved partner always in mind. Much love to you, Norwaro!
+Authored with my beloved partner always in mind. Much love to you, Norwaro! Along with many thanks to my closest of friends, Arctic Emerald and Hiddensoul ^,==,^
 
 #### Authors
 

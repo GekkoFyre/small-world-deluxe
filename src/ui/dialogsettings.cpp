@@ -958,13 +958,13 @@ void DialogSettings::prefill_avail_usb_ports(const QMap<quint16, GekkoFyre::Data
                 #endif
 
                 //
-                // CAT Control
+                // CAT Control (via USB)
                 //
                 ui->comboBox_com_port->insertItem(counter, device.name, dev_port);
                 ui->lineEdit_device_port_name->setText(device.product);
 
                 //
-                // PTT Method
+                // PTT Method (via USB)
                 //
                 ui->comboBox_ptt_method_port->insertItem(counter, device.name, dev_port);
                 ui->lineEdit_ptt_method_dev_path->setText(device.product);
@@ -1476,12 +1476,10 @@ void DialogSettings::on_comboBox_com_port_currentIndexChanged(int index)
                         emit changeConnPort(usb_port_list.second, GkConnMethod::CAT);
                     } else if (com_port_list.port_info.portName() == ui->comboBox_com_port->currentData().toString()) {
                         // An RS232/Serial port has been found!
-                        #ifdef _UNICODE
-                        ui->lineEdit_device_port_name->setText(QString::fromStdWString(com_port_list.second.first));
-                        #else
-                        ui->lineEdit_device_port_name->setText(com_port_list.port_info.systemLocation());
-                        #endif
-
+                        QString combined_str = QString("%1 [ PID: #%2 ]")
+                                .arg(com_port_list.port_info.description())
+                                .arg(QString::number(com_port_list.port_info.productIdentifier()));
+                        ui->lineEdit_device_port_name->setText(combined_str);
                         emit changeConnPort(com_port_list.port_info.portName(), GkConnMethod::CAT);
                     }
                 }
@@ -1510,12 +1508,10 @@ void DialogSettings::on_comboBox_ptt_method_port_currentIndexChanged(int index)
                         emit changeConnPort(usb_port_list.second, GkConnMethod::PTT);
                     } else if (ptt_port_list.port_info.portName() == ui->comboBox_ptt_method_port->currentData().toString()) {
                         // An RS232/Serial port has been found!
-                        #ifdef _UNICODE
-                        ui->lineEdit_device_port_name->setText(QString::fromStdWString(com_port_list.second.first));
-                        #else
-                        ui->lineEdit_device_port_name->setText(ptt_port_list.port_info.systemLocation());
-                        #endif
-
+                        QString combined_str = QString("%1 [ PID: #%2 ]")
+                                .arg(ptt_port_list.port_info.description())
+                                .arg(QString::number(ptt_port_list.port_info.productIdentifier()));
+                        ui->lineEdit_device_port_name->setText(combined_str);
                         emit changeConnPort(ptt_port_list.port_info.portName(), GkConnMethod::PTT);
                     }
                 }

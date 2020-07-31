@@ -310,9 +310,9 @@ std::list<GkComPort> RadioLibs::filter_com_ports(const QList<QSerialPortInfo> &s
         std::list<GkComPort> com_map;
         for (const auto &info: serial_port_info) {
             if (!info.isNull()) {
+                bool is_usb = false; // Are we dealing with a USB device or not? Since we have a separate library for handling such connections...
                 for (const auto &port: info.availablePorts()) {
-                    bool is_usb = false; // Are we dealing with a USB device or not? Since we have a separate library for handling such connections...
-                    if (!port.isBusy()) {
+                    if (!port.isNull() && port.hasProductIdentifier()) {
                         GkComPort com_struct;
                         if (port.portName().contains(QString("USB"), Qt::CaseSensitive)) {
                             is_usb = true;
@@ -321,6 +321,7 @@ std::list<GkComPort> RadioLibs::filter_com_ports(const QList<QSerialPortInfo> &s
                         if (!is_usb) {
                             com_struct.port_info = info;
                             com_map.push_back(com_struct);
+                            is_usb = false;
                         }
                     }
                 }
@@ -399,7 +400,6 @@ QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDevice
     try {
         // Enumerate USB devices!
         QUsbInfo usb_info;
-        QHidDevice usb_hid(this);
         auto list = usb_info.devices();
 
         for (const auto &device: list) {
@@ -411,6 +411,7 @@ QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDevice
             usb.d_class = (quint16)device.dClass;
             usb.d_sub_class = (quint16)device.dSubClass;
 
+            QHidDevice usb_hid(new QHidDevice());
             usb_hid.open(usb.vid, usb.pid);
             usb.mfg = usb_hid.manufacturer();
             usb.product = usb_hid.product();
