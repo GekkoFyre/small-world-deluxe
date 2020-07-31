@@ -41,6 +41,7 @@
 
 #include "src/gk_string_funcs.hpp"
 #include <QSettings>
+#include <cstring>
 
 #if _WIN32
 #include <stringapiset.h>
@@ -53,6 +54,18 @@ StringFuncs::StringFuncs(QObject *parent) : QObject(parent)
 
 StringFuncs::~StringFuncs()
 {}
+
+/**
+ * @brief StringFuncs::getStringFromUnsignedChar
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param str
+ * @return
+ */
+QString StringFuncs::getStringFromUnsignedChar(unsigned char *str)
+{
+    QString qstr = QString::fromUtf8(reinterpret_cast<const char *>(str));
+    return qstr;
+}
 
 #if defined(_MSC_VER) && (_MSC_VER > 1900)
 /**

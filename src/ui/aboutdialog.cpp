@@ -56,3 +56,12 @@ void AboutDialog::on_buttonBox_close_rejected()
 {
     this->close();
 }
+
+/**
+ * @brief AboutDialog::on_pushButton_icon_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void AboutDialog::on_pushButton_icon_clicked()
+{
+    return;
+}

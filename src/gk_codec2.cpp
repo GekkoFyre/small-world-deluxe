@@ -113,7 +113,7 @@ int GkCodec2::transmitData(const QByteArray &byte_array, const bool &play_output
                 throw std::runtime_error(tr("Issue encountered with opening Codec2 modem for transmission! Are you out of memory?").toStdString());
             }
 
-            unsigned char header[6] = { 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc };
+            quint8 header[6] = { 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc };
             freedv_set_data_header(freedv, header);
 
             freedv_set_snr_squelch_thresh(freedv, squelch_thresh);
@@ -143,7 +143,7 @@ int GkCodec2::transmitData(const QByteArray &byte_array, const bool &play_output
                 for (;;) {
                     std::string buffer;
                     if (!std::getline(in, buffer)) { break; }
-                    unsigned char *audio_in = reinterpret_cast<unsigned char *>(const_cast<char *>(buffer.c_str()));
+                    quint8 *audio_in = reinterpret_cast<quint8 *>(const_cast<char *>(buffer.c_str()));
 
                     // Stream the data until finish!
                     freedv_rawdatatx(freedv, mod_out, audio_in);

@@ -54,6 +54,8 @@ public:
 private slots:
     void on_buttonBox_close_rejected();
 
+    void on_pushButton_icon_clicked();
+
 private:
     Ui::AboutDialog *ui;
 };

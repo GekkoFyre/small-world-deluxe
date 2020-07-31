@@ -21,10 +21,6 @@ CMake (Cross Platform Makefile Generator) by Kitware
 Doxygen by Dimitri van Heesch et al.
     <http://www.stack.nl/~dimitri/doxygen/>
         GNU General Public License (GPL, version 2)
-        
-LZ4 by various
-    <https://github.com/lz4/lz4>
-        BSD 2-Clause License & GNU General Public License (GPL, version 2)
 
 LevelDB by Google
     <https://github.com/google/leveldb>
@@ -38,17 +34,21 @@ Hamlib by The Hamlib Group
     <https://github.com/Hamlib/Hamlib>
         GNU General Public License (GPL, version 2)
 
+WSJT-X by Joe Taylor (K1JT) <k1jt@arrl.net> et al.
+    <https://physics.princeton.edu/pulsar/K1JT/wsjtx.html>
+        GNU General Public License (GPL, version 3)
+
 PortAudio by the PortAudio community
     <http://www.portaudio.com/>
         The MIT License
 
-LibUSB by Hans de Goede & Chris Dickens et al.
-    <https://github.com/libusb/libusb>
-        GNU Lesser General Public License (LGPL, version 2.1)
-
 FFTW3 by Matteo Frigo & Steven G. Johnson et al.
     <https://github.com/FFTW/fftw3>
         GNU General Public License (GPL, version 2)
+
+QtUSB by Fabien Poussin
+    <https://github.com/fpoussin/QtUsb>
+        GNU Lesser General Public License (LGPL, version 3.0)
 
 libvorbis by Xiph.org
     <https://www.xiph.org/vorbis/>
@@ -65,10 +65,6 @@ libopus by Xiph.org et al.
 libiconv-win-build by Bruno Haible
     <https://github.com/kiyolee/libiconv-win-build/>
         GNU General Public License (GPL, version 3)
-
-libSDL2 by Cliff Matthews & Gabriel Jacobo et al.
-    <https://www.libsdl.org/>
-        zlib License
 
 Qwt by Uwe Rathmann & Josef Wilgen et al.
     <https://qwt.sourceforge.io/>

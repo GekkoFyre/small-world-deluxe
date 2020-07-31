@@ -41,6 +41,7 @@
 #include "src/radiolibs.hpp"
 #include "src/dek_db.hpp"
 #include "src/audio_devices.hpp"
+#include "src/gk_string_funcs.hpp"
 #include "src/models/tableview/gk_frequency_model.hpp"
 #include <boost/logic/tribool.hpp>
 #include <list>
@@ -74,9 +75,9 @@ public:
                             QPointer<GekkoFyre::FileIo> filePtr,
                             std::shared_ptr<GekkoFyre::AudioDevices> audioDevices,
                             QPointer<GekkoFyre::RadioLibs> radioLibs,
+                            std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs,
                             std::shared_ptr<QSettings> settings,
                             portaudio::System *portAudioInit,
-                            libusb_context *usb_lib_ctx,
                             std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> radioPtr,
                             const std::list<GekkoFyre::Database::Settings::GkComPort> &com_ports,
                             QPointer<GekkoFyre::GkFrequencies> gkFreqList,
@@ -205,12 +206,11 @@ private:
     }
 
     portaudio::System *gkPortAudioInit;
-    libusb_context *usb_ctx_ptr;
-
     std::vector<double> standardSampleRates;
 
     QPointer<GekkoFyre::RadioLibs> gkRadioLibs;
     std::shared_ptr<GekkoFyre::GkLevelDb> gkDekodeDb;
+    std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::FileIo> gkFileIo;
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
     std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> gkRadioPtr;
@@ -225,7 +225,7 @@ private:
     std::list<GekkoFyre::Database::Settings::GkComPort> status_com_ports;
 
     // The key is the USB devices' port number and the value is the associated struct
-    QMap<std::string, GekkoFyre::Database::Settings::GkUsbPort> status_usb_devices;
+    QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> status_usb_devices;
 
     bool com_ports_active;
     bool usb_ports_active;
@@ -234,7 +234,7 @@ private:
     QMap<QString, int> available_com_ports; // For tracking the *available* RS232, etc. device ports that the user can choose from...
 
     // The key is the Port Number for the USB device in question, while the value is what's displayed in the QComboBox...
-    QMap<QString, QString> available_usb_ports; // For tracking the *available* USB device ports that the user can choose from...
+    QMap<quint16, QString> available_usb_ports; // For tracking the *available* USB device ports that the user can choose from...
 
     // The key corresponds to the position within the QComboBoxes
     QMap<int, PaHostApiTypeId> avail_portaudio_api;
@@ -261,7 +261,7 @@ private:
     QMap<int, int> collectComboBoxIndexes(const QComboBox *combo_box);
     void prefill_rig_force_ctrl_lines(const ptt_type_t &ptt_type);
     void prefill_avail_com_ports(const std::list<GekkoFyre::Database::Settings::GkComPort> &com_ports);
-    void prefill_avail_usb_ports(const QMap<std::string, GekkoFyre::Database::Settings::GkUsbPort> usb_devices);
+    void prefill_avail_usb_ports(const QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> &usb_devices);
     void prefill_com_baud_speed(const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate);
     void enable_device_port_options();
 
