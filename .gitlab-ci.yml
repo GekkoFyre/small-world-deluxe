@@ -71,6 +71,7 @@ sworld_debug_archlinux_x86_64:
         - pacman -Syu --noconfirm
         - pacman -S base-devel --noconfirm
         - pacman -S gcc --noconfirm
+        - pacman -S gcc-fortran --noconfirm
         - pacman -S octave --noconfirm
         - pacman -S python --noconfirm
         - pacman -S gdb --noconfirm

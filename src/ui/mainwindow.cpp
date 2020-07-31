@@ -504,6 +504,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         widget_change_freq->setToolTip(tr("Enter or fine-tune the frequency that you would like to transmit/receive with!"));
         QObject::connect(widget_change_freq, SIGNAL(execFuncAfterEvent(const quint64 &)),
                          this, SLOT(tuneActiveFreq(const quint64 &)));
+
+        gkModem = new GekkoFyre::GkModem(gkAudioDevices, GkDb, gkEventLogger, gkStringFuncs, this);
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);

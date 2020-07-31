@@ -41,6 +41,7 @@
 
 #include "src/gk_string_funcs.hpp"
 #include <QSettings>
+#include <algorithm>
 #include <cstring>
 
 #if _WIN32
@@ -65,6 +66,15 @@ QString StringFuncs::getStringFromUnsignedChar(unsigned char *str)
 {
     QString qstr = QString::fromUtf8(reinterpret_cast<const char *>(str));
     return qstr;
+}
+
+std::vector<int> StringFuncs::convStrToIntArray(const QString &str)
+{
+    const std::string buffer = str.toStdString();
+    std::vector<int> int_arr(buffer.size());
+    std::copy(buffer.begin(), buffer.end(), int_arr.begin());
+
+    return int_arr;
 }
 
 #if defined(_MSC_VER) && (_MSC_VER > 1900)

@@ -64,7 +64,7 @@ if(GK_CUDA_FFT)
     add_definitions(-DGK_CUDA_FFT_ENBL)
     project(smallworld C CXX CUDA)
 else()
-    project(smallworld C CXX)
+    project(smallworld C CXX Fortran)
 endif()
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
@@ -405,6 +405,42 @@ endif()
 
 set_property(SOURCE ${GALAXY_PORTAUDIO_CPP} PROPERTY SKIP_AUTOUIC ON)
 
+set(GALAXY_WSJTX_QRA64_C
+    ${GALAXY_WSJTX_QRA64_C}
+    src/contrib/wsjtx/lib/ftrsd/int.h
+    src/contrib/wsjtx/lib/qra/qra64/main.c
+    src/contrib/wsjtx/lib/qra/qra64/fadengauss.c
+    src/contrib/wsjtx/lib/qra/qra64/fadenlorentz.c
+    src/contrib/wsjtx/lib/qra/qra64/qra64_subs.c
+    src/contrib/wsjtx/lib/qra/qra64/qra64.c
+    src/contrib/wsjtx/lib/qra/qra64/qra64.h
+    src/contrib/wsjtx/lib/qra/qracodes/normrnd.c
+    src/contrib/wsjtx/lib/qra/qracodes/normrnd.h
+    src/contrib/wsjtx/lib/qra/qracodes/npfwht.c
+    src/contrib/wsjtx/lib/qra/qracodes/npfwht.h
+    src/contrib/wsjtx/lib/qra/qracodes/pdmath.c
+    src/contrib/wsjtx/lib/qra/qracodes/pdmath.h
+    src/contrib/wsjtx/lib/qra/qracodes/qra12_63_64_irr_b.c
+    src/contrib/wsjtx/lib/qra/qracodes/qra12_63_64_irr_b.h
+    src/contrib/wsjtx/lib/qra/qracodes/qra13_64_64_irr_e.c
+    src/contrib/wsjtx/lib/qra/qracodes/qra13_64_64_irr_e.h
+    src/contrib/wsjtx/lib/qra/qracodes/qracodes.c
+    src/contrib/wsjtx/lib/qra/qracodes/qracodes.h)
+
+set_property(SOURCE ${GALAXY_WSJTX_QRA64_C} PROPERTY SKIP_AUTOUIC ON)
+
+set(GALAXY_WSJTX_WSPR_C
+    ${GALAXY_WSJTX_WSPR_C}
+    src/contrib/wsjtx/lib/wsprd/nhash.c
+    src/contrib/wsjtx/lib/wsprd/wsprd_utils.c
+    src/contrib/wsjtx/lib/wsprd/wsprd_utils.h
+    src/contrib/wsjtx/lib/wsprd/fano.c
+    src/contrib/wsjtx/lib/wsprd/fano.h
+    src/contrib/wsjtx/lib/wsprd/jelinek.c
+    src/contrib/wsjtx/lib/wsprd/jelinek.h)
+
+set_property(SOURCE ${GALAXY_WSJTX_WSPR_C} PROPERTY SKIP_AUTOUIC ON)
+
 #
 # SingleApplication
 # https://github.com/itay-grudev/SingleApplication
@@ -615,10 +651,12 @@ endif()
 # Build Small World Deluxe as a static package!
 #
 if(GFYRE_BUILD_STATIC)
-    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP})
+    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_QRA64_C} ${GALAXY_WSJTX_WSPR_C})
     if(GK_CUDA_FFT)
         add_library(galaxy_cuda STATIC ${GALAXY_CUDA})
     endif()
+    
+    # add_library(galaxy_fort STATIC ${GALAXY_WSJTX_QRA64_FORT})
 else()
     set(GFYRE_BUILD_SHARED ON)
 endif(GFYRE_BUILD_STATIC)
@@ -627,10 +665,12 @@ endif(GFYRE_BUILD_STATIC)
 # Build Small World Deluxe as a shared package!
 #
 if(GFYRE_BUILD_SHARED)
-    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP})
+    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_QRA64_C} ${GALAXY_WSJTX_WSPR_C})
     if(GK_CUDA_FFT)
         add_library(galaxy_cuda STATIC ${GALAXY_CUDA})
     endif()
+    
+    # add_library(galaxy_fort STATIC ${GALAXY_WSJTX_QRA64_FORT})
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
