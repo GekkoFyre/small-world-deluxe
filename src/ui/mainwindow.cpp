@@ -102,7 +102,6 @@ namespace sys = boost::system;
 // Statically declared members
 //
 QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>> MainWindow::gkRadioModels = initRadioModelsVar();
-std::list<GekkoFyre::Database::Settings::GkComPort> MainWindow::status_com_ports;
 
 /**
  * @brief MainWindow::MainWindow
@@ -282,8 +281,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 //
                 // Initialize the all-important `GkRadioPtr`!
                 //
-                status_com_ports = gkRadioLibs->status_com_ports();
-                usb_ctx_ptr = gkRadioLibs->initUsbLib();
+                status_com_ports = gkRadioLibs->filter_com_ports(gkRadioLibs->status_com_ports());
                 gkUsbPortPtr = std::make_shared<GkUsbPort>();
                 gkRadioPtr = readRadioSettings();
                 emit addRigInUse(gkRadioPtr->rig_model, gkRadioPtr);
@@ -529,13 +527,8 @@ MainWindow::~MainWindow()
         spectro_timing_thread.join();
     }
 
-    emit stopRecording();
+    emit stopRecording(); // TODO: Fix the SEGFAULT that occurs with this!
     emit disconnectRigInUse(gkRadioPtr->gkRig, gkRadioPtr);
-
-    // Free the pointer for the libusb library!
-    if (usb_ctx_ptr != nullptr) {
-        libusb_exit(usb_ctx_ptr);
-    }
 
     // Free the pointer for the Google LevelDB library!
     delete db;
@@ -670,8 +663,8 @@ void MainWindow::launchSettingsWin()
     QObject::connect(gkFreqTableModel, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
                      gkFreqList, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)));
 
-    QPointer<DialogSettings> dlg_settings = new DialogSettings(GkDb, fileIo, gkAudioDevices, gkRadioLibs, sw_settings,
-                                                               gkPortAudioInit, usb_ctx_ptr, gkRadioPtr, status_com_ports,
+    QPointer<DialogSettings> dlg_settings = new DialogSettings(GkDb, fileIo, gkAudioDevices, gkRadioLibs, gkStringFuncs,
+                                                               sw_settings, gkPortAudioInit, gkRadioPtr, status_com_ports,
                                                                gkFreqList, gkFreqTableModel, this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
@@ -1645,7 +1638,7 @@ void MainWindow::updateSpectrograph()
                     //
                     // Input audio stream is open and active!
                     //
-                    auto audio_buf_tmp = std::make_shared<PaAudioBuf<qint16>>(*input_audio_buf);
+                    auto audio_buf_tmp = std::make_shared<PaAudioBuf<qint16>>(*input_audio_buf); // TODO: Possible SEGFAULT related to this with shutdown of Small World Deluxe...
                     std::vector<qint16> recv_buf;
                     while (audio_buf_tmp->size() > 0) {
                         recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);

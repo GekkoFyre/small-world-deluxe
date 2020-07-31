@@ -43,6 +43,10 @@
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
 #include <boost/algorithm/string/replace.hpp>
+#include <QtUsb/QUsbDevice>
+#include <QtUsb/QHidDevice>
+#include <QtUsb/QUsbEndpoint>
+#include <QtUsb/QUsbInfo>
 #include <ios>
 #include <list>
 #include <iostream>
@@ -57,8 +61,6 @@
 extern "C"
 {
 #endif
-
-#include <libusb.h>
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 #ifdef _WIN64
@@ -273,49 +275,64 @@ int RadioLibs::convertBaudRateFromEnum(const com_baud_rates &baud_rate)
 }
 
 /**
- * @brief RadioLibs::initUsbPorts initializes the `libusb` library for use.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @return Returns an array of possible USB devices on the user's system.
- */
-libusb_context *RadioLibs::initUsbLib()
-{
-    libusb_context *context;
-    int r;
-
-    r = libusb_init(&context);
-    if (r < 0) {
-        throw std::runtime_error(tr("Unable to initialize `libusb` interface!").toStdString());
-    }
-
-    return context;
-}
-
-/**
  * @brief RadioLibs::status_com_ports Checks the status of a COM/Serial port and whether it is active or not.
- * @author Michael Jacob Mathew <https://stackoverflow.com/questions/2674048/what-is-proper-way-to-detect-all-available-serial-ports-on-windows>
- * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * Søren Holm <https://stackoverflow.com/questions/2530096/how-to-find-all-serial-devices-ttys-ttyusb-on-linux-without-opening-them/9914339#9914339>
- * @return A QMap where the COM/Serial port name itself is the key and the value is the Target Path plus a
- * Boost C++ triboolean that signifies whether the port is active or not.
- * @see GekkoFyre::RadioLibs::detect_com_ports()
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return
  */
-std::list<GkComPort> RadioLibs::status_com_ports()
+QList<QSerialPortInfo> RadioLibs::status_com_ports() const
 {
     std::mutex mtx_status_com_ports;
     std::lock_guard<std::mutex> lck_guard(mtx_status_com_ports);
 
-    std::list<GkComPort> com_map;
-    const auto rs232_data = QSerialPortInfo::availablePorts();
-
-    for (const auto &info: rs232_data) {
-        if (!info.isNull()) {
-            GkComPort com_struct;
-            com_struct.port_info = info;
-            com_map.push_back(com_struct);
-        }
+    try {
+        const auto rs232_data = QSerialPortInfo::availablePorts();
+        return rs232_data;
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(tr("An issue was encountered whilst enumerating RS232 ports!\n\n%1")
+                                                  .arg(QString::fromStdString(e.what())).toStdString()));
     }
 
-    return com_map;
+    return QList<QSerialPortInfo>();
+}
+
+/**
+ * @brief RadioLibs::filter_com_ports
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param serial_port_info
+ * @return
+ */
+std::list<GkComPort> RadioLibs::filter_com_ports(const QList<QSerialPortInfo> &serial_port_info) const
+{
+    std::mutex mtx_filter_com_ports;
+    std::lock_guard<std::mutex> lck_guard(mtx_filter_com_ports);
+
+    try {
+        std::list<GkComPort> com_map;
+        for (const auto &info: serial_port_info) {
+            if (!info.isNull()) {
+                bool is_usb = false; // Are we dealing with a USB device or not? Since we have a separate library for handling such connections...
+                for (const auto &port: info.availablePorts()) {
+                    if (!port.isNull() && port.hasProductIdentifier()) {
+                        GkComPort com_struct;
+                        if (port.portName().contains(QString("USB"), Qt::CaseSensitive)) {
+                            is_usb = true;
+                        }
+
+                        if (!is_usb) {
+                            com_struct.port_info = info;
+                            com_map.push_back(com_struct);
+                            is_usb = false;
+                        }
+                    }
+                }
+            }
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(tr("An issue was encountered whilst enumerating RS232 ports!\n\n%1")
+                                                  .arg(QString::fromStdString(e.what())).toStdString()));
+    }
+
+    return std::list<GkComPort>();
 }
 
 /**
@@ -371,211 +388,51 @@ void RadioLibs::hamlibStatus(const int &retcode)
 }
 
 /**
- * @brief RadioLibs::getUsbPortId gets the Port Identification number for the given USB Device.
- * @author Unknown <https://cpp.hotexamples.com/examples/-/-/libusb_get_bus_number/cpp-libusb_get_bus_number-function-examples.html>
- * @param usb_device The given USB Device to query.
- * @return The Port Identification number for the given USB Device.
- */
-std::string RadioLibs::getUsbPortId(libusb_device *usb_device)
-{
-    try {
-        auto usb_bus = std::to_string(libusb_get_bus_number(usb_device));
-
-        // As per the USB 3.0 specs, the current maximum limit for the depth is 7...
-        const auto max_usb_depth = 8;
-        uint8_t usb_ports[max_usb_depth] = {};
-        std::stringstream port_path;
-        auto port_count = libusb_get_port_numbers(usb_device, usb_ports, max_usb_depth);
-        auto usb_dev = std::to_string(libusb_get_device_address(usb_device));
-        for (size_t i = 0; i < port_count; ++i) {
-            port_path << std::to_string(usb_ports[i]) << (((i + 1) < port_count) ? "." : "");
-        }
-
-        return usb_bus + "-" + port_path.str() + "-" + usb_dev;
-    } catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
-    }
-
-    return "";
-}
-
-libusb_error RadioLibs::convLibUSBErrorToEnum(const int &error)
-{
-    switch (error) {
-    case 0:
-        return LIBUSB_SUCCESS;
-    case -1:
-        return LIBUSB_ERROR_IO;
-    case -2:
-        return LIBUSB_ERROR_INVALID_PARAM;
-    case -3:
-        return LIBUSB_ERROR_ACCESS;
-    case -4:
-        return LIBUSB_ERROR_NO_DEVICE;
-    case -5:
-        return LIBUSB_ERROR_NOT_FOUND;
-    case -6:
-        return LIBUSB_ERROR_BUSY;
-    case -7:
-        return LIBUSB_ERROR_TIMEOUT;
-    case -8:
-        return LIBUSB_ERROR_OVERFLOW;
-    case -9:
-        return LIBUSB_ERROR_PIPE;
-    case -10:
-        return LIBUSB_ERROR_INTERRUPTED;
-    case -11:
-        return LIBUSB_ERROR_NO_MEM;
-    case -12:
-        return LIBUSB_ERROR_NOT_SUPPORTED;
-    case -99:
-        return LIBUSB_ERROR_OTHER;
-    default:
-        return LIBUSB_ERROR_OTHER;
-    }
-
-    return libusb_error::LIBUSB_ERROR_OTHER;
-}
-
-/**
  * @brief RadioLibs::enumUsbDevices will enumerate out any USB devices present/connected on the user's computer system, giving valuable
  * details for each device.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param usb_ctx_ptr Required for `libusb` library (de-)initialization.
  * @note Example code file <https://github.com/libusb/libusb/blob/master/examples/testlibusb.c>
  * @return A list of USB devices present on the user's computer system, with valuable details about each device.
  */
-QMap<std::string, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDevices(libusb_context *usb_ctx_ptr)
+QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDevices()
 {
-    QMap<std::string, GekkoFyre::Database::Settings::GkUsbPort> usb_hash;
-    libusb_device **devices = nullptr;
-    int dev_cnt = 0;
+    QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> usb_hash;
     try {
-        size_t i = 0;
-        dev_cnt = libusb_get_device_list(usb_ctx_ptr, &devices);
-        if (dev_cnt < 0) {
-            libusb_exit(usb_ctx_ptr);
-            std::cout << tr("No USB devices were detected!").toStdString() << std::endl;
-            return QMap<std::string, GekkoFyre::Database::Settings::GkUsbPort>();
+        // Enumerate USB devices!
+        QUsbInfo usb_info;
+        auto list = usb_info.devices();
+
+        for (const auto &device: list) {
+            GekkoFyre::Database::Settings::GkUsbPort usb;
+            usb.port = (quint16)device.port;
+            usb.bus = (quint16)device.bus;
+            usb.pid = device.pid;
+            usb.vid = device.vid;
+            usb.d_class = (quint16)device.dClass;
+            usb.d_sub_class = (quint16)device.dSubClass;
+
+            QHidDevice usb_hid(new QHidDevice());
+            usb_hid.open(usb.vid, usb.pid);
+            usb.mfg = usb_hid.manufacturer();
+            usb.product = usb_hid.product();
+
+            #ifdef _WIN32
+            // TODO: URGENT - Finish this section!
+            #elif __linux__
+            std::stringstream ss;
+            ss << "ttyUSB" << usb.port;
+            #endif
+
+            usb.name = QString::fromStdString(ss.str());
+            usb_hash.insert(usb.port, usb);
         }
 
-        libusb_device *dev = nullptr;
-        while ((dev = std::move(devices[++i])) != nullptr) {
-            GkUsbPort *usb = new GkUsbPort();
-
-            usb->usb_enum.handle = nullptr;
-            usb->usb_enum.dev = dev;
-            usb->usb_enum.context = usb_ctx_ptr;
-
-            // Get the underlying configuration details!
-            int ret = libusb_get_device_descriptor(usb->usb_enum.dev, &usb->usb_enum.desc);
-            if (ret < 0) {
-                throw std::runtime_error(tr("Failed to get device descriptor for USB!").toStdString());
-            }
-
-            unsigned char tmp_val[32 + 1];
-            // uint8_t port_numbers_len[8];
-
-            // Open the USB device itself
-            int ret_usb_open = libusb_open(dev, &usb->usb_enum.handle);
-            if (ret_usb_open == LIBUSB_SUCCESS) {
-                usb->usb_enum.config = new libusb_config_descriptor();
-                int ret_cfg_desc = libusb_get_config_descriptor(dev, 0, &usb->usb_enum.config);
-                if (ret_cfg_desc != LIBUSB_SUCCESS) {
-                    gkEventLogger->publishEvent(tr("Unable to enumerate USB port/device. Couldn't retrieve descriptors!"), GkSeverity::Warning);
-                }
-
-                // https://cpp.hotexamples.com/examples/-/-/libusb_get_bus_number/cpp-libusb_get_bus_number-function-examples.html
-                for (size_t j = 0; j < usb->usb_enum.config->bNumInterfaces; ++j) {
-                    for (size_t k = 0; k < usb->usb_enum.config->interface[j].num_altsetting; ++k) {
-                        for (size_t m = 0; m < usb->usb_enum.config->interface[j].altsetting[k].bNumEndpoints; ++m) {
-                            // Export only audio devices!
-                            if (usb->usb_enum.config->interface[j].altsetting[k].bInterfaceClass == LIBUSB_CLASS_AUDIO) {
-                                //
-                                // Export device information
-                                // Obtain the BUS, Address and Port details
-                                //
-                                std::ostringstream os_bus;
-                                std::ostringstream os_addr;
-                                os_bus << std::dec << libusb_get_bus_number(dev);
-                                os_addr << std::dec << libusb_get_device_address(dev);
-
-                                usb->bus = gkDekodeDb->removeInvalidChars(os_bus.str());
-                                usb->addr = gkDekodeDb->removeInvalidChars(os_addr.str());
-                                usb->port = gkDekodeDb->removeInvalidChars(getUsbPortId(dev));
-
-                                usb->usb_enum.vendor_id = static_cast<int>(usb->usb_enum.desc.idVendor);
-                                usb->usb_enum.product_id = static_cast<int>(usb->usb_enum.desc.idProduct);
-                                usb->usb_enum.conv_conf = static_cast<int>(usb->usb_enum.desc.bNumConfigurations);
-
-                                usb->usb_vers_3.inter_desc = &usb->usb_enum.config->interface[j].altsetting[k];
-                                usb->usb_vers_3.endpoint = &usb->usb_enum.config->interface[j].altsetting[k].endpoint[m];
-                                libusb_get_ss_endpoint_companion_descriptor(usb->usb_enum.context, usb->usb_vers_3.endpoint, &usb->usb_vers_3.ss_desc);
-
-                                usb->usb_vers_3.interface_number = static_cast<int>(usb->usb_enum.config->interface[j].altsetting[k].bInterfaceNumber);
-                                usb->usb_vers_3.alternate_setting = static_cast<int>(usb->usb_enum.config->interface[j].altsetting[k].bAlternateSetting);
-
-                                usb->usb_vers_3.max_packet_size = static_cast<int>(usb->usb_enum.config->interface[j].altsetting[k].endpoint[m].wMaxPacketSize);
-                                usb->usb_vers_3.interval = static_cast<int>(usb->usb_enum.config->interface[j].altsetting[k].endpoint[m].bInterval);
-                                usb->usb_vers_3.refresh = static_cast<int>(usb->usb_enum.config->interface[j].altsetting[k].endpoint[m].bRefresh);
-                                usb->usb_vers_3.sync_address = static_cast<int>(usb->usb_enum.config->interface[j].altsetting[k].endpoint[m].bSynchAddress);
-
-                                if (usb->usb_enum.desc.iManufacturer) { // Obtain the manufacturer details
-                                    int ret_cfg_mfg = libusb_get_string_descriptor_ascii(usb->usb_enum.handle, usb->usb_enum.desc.iManufacturer,
-                                                                                         tmp_val, sizeof(tmp_val));
-                                    if (ret_cfg_mfg > 0) {
-                                        usb->usb_enum.mfg = QString::fromLocal8Bit((char *)tmp_val, sizeof(tmp_val)).trimmed();
-                                    } else {
-                                        throw std::runtime_error(tr("Error with enumerating `libusb` interface! Unable to obtain the manufacturer descriptor!").toStdString());
-                                    }
-
-                                }
-                                if (usb->usb_enum.desc.iProduct) { // Obtain the product description
-                                    int ret_cfg_prod = libusb_get_string_descriptor_ascii(usb->usb_enum.handle, usb->usb_enum.desc.iProduct,
-                                                                                          tmp_val, sizeof(tmp_val));
-                                    if (ret_cfg_prod > 0) {
-                                        usb->usb_enum.product = QString::fromLocal8Bit((char *)tmp_val, sizeof(tmp_val)).trimmed();
-                                    } else {
-                                        throw std::runtime_error(tr("Error with enumerating `libusb` interface! Unable to obtain the product descriptor!").toStdString());
-                                    }
-                                }
-
-                                if (usb->usb_enum.desc.iSerialNumber) { // Obtain the serial number
-                                    int ret_cfg_serial = libusb_get_string_descriptor_ascii(usb->usb_enum.handle, usb->usb_enum.desc.iSerialNumber,
-                                                                                          tmp_val, sizeof(tmp_val));
-                                    if (ret_cfg_serial > 0) {
-                                        usb->usb_enum.serial_number = QString::fromLocal8Bit((char *)tmp_val, sizeof(tmp_val)).trimmed();
-                                    } else {
-                                        throw std::runtime_error(tr("Error with enumerating `libusb` interface! Unable to obtain the serial number descriptor!").toStdString());
-                                    }
-                                }
-
-                                if (!usb_hash.contains(usb->port)) {
-                                    usb_hash.insert(usb->port, *usb);
-                                }
-                            }
-                        }
-                    }
-                }
-            } else {
-                gkEventLogger->publishEvent(tr("Unable to enumerate USB port/device: %1")
-                                            .arg(QString::fromStdString(libusb_strerror(convLibUSBErrorToEnum(ret_usb_open)))),
-                                            GkSeverity::Warning);
-            }
-
-            delete usb;
-        }
-    } catch (const std::exception &e) {
+        return usb_hash;
+    }  catch (const std::exception &e) {
         QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
     }
 
-    // libusb_close(usb->usb_enum.handle);
-    libusb_free_device_list(devices, dev_cnt);
-    if (!usb_hash.isEmpty()) {
-        return usb_hash;
-    }
-
-    return QMap<std::string, GekkoFyre::Database::Settings::GkUsbPort>();
+    return QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort>();
 }
 
 /**
@@ -623,6 +480,11 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr)
         if (baud_rate_tmp <= 115200 && baud_rate_tmp >= 9600) {
             baud_rate = baud_rate_tmp;
         }
+
+        //
+        // Check the most up-to-date information on RS232 ports
+        //
+        auto recent_serial_port_info = filter_com_ports(status_com_ports());
 
         radio_ptr->gkRig->setConf("data_bits", std::to_string(radio_ptr->port_details.parm.serial.data_bits).c_str());
         radio_ptr->gkRig->setConf("stop_bits", std::to_string(radio_ptr->port_details.parm.serial.stop_bits).c_str());
