@@ -327,9 +327,8 @@ private:
     //
     // USB & RS232
     //
-    libusb_context *usb_ctx_ptr;
     std::shared_ptr<GekkoFyre::Database::Settings::GkUsbPort> gkUsbPortPtr; // This is used for making connections to radio rigs with Hamlib!
-    static std::list<GekkoFyre::Database::Settings::GkComPort> status_com_ports; // This variable is responsible for managing the COM/RS232/Serial ports!
+    std::list<GekkoFyre::Database::Settings::GkComPort> status_com_ports; // This variable is responsible for managing the COM/RS232/Serial ports!
 
     //
     // Radio and Hamlib related

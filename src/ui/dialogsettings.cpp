@@ -77,10 +77,9 @@ QVector<QString> DialogSettings::unique_mfgs = { "None" };
 DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
                                QPointer<FileIo> filePtr,
                                std::shared_ptr<AudioDevices> audioDevices,
-                               QPointer<RadioLibs> radioLibs,
+                               QPointer<RadioLibs> radioLibs, std::shared_ptr<StringFuncs> stringFuncs,
                                std::shared_ptr<QSettings> settings,
                                portaudio::System *portAudioInit,
-                               libusb_context *usb_lib_ctx,
                                std::shared_ptr<GkRadio> radioPtr,
                                const std::list<GekkoFyre::Database::Settings::GkComPort> &com_ports,
                                QPointer<GkFrequencies> gkFreqList,
@@ -96,10 +95,10 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
         //
         gkPortAudioInit = std::move(portAudioInit);
         gkRadioLibs = std::move(radioLibs);
+        gkStringFuncs = std::move(stringFuncs);
         gkDekodeDb = std::move(dkDb);
         gkFileIo = std::move(filePtr);
         gkAudioDevices = std::move(audioDevices);
-        usb_ctx_ptr = std::move(usb_lib_ctx);
         gkRadioPtr = std::move(radioPtr);
         gkFreqs = std::move(gkFreqList);
         gkFreqTableModel = std::move(freqTableModel);
@@ -148,7 +147,7 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
         // also two separate functions for enumerating out these ports!
         prefill_rig_force_ctrl_lines(ptt_type_t::RIG_PTT_SERIAL_DTR);
         prefill_rig_force_ctrl_lines(ptt_type_t::RIG_PTT_SERIAL_RTS);
-        status_usb_devices = gkRadioLibs->enumUsbDevices(usb_ctx_ptr);
+        status_usb_devices = gkRadioLibs->enumUsbDevices();
         prefill_avail_com_ports(status_com_ports);
         prefill_avail_usb_ports(status_usb_devices);
 
@@ -840,16 +839,17 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
             emit comPortsDisabled(true); // Enable all GUI widgets relating to COM/Serial Ports
             for (const auto &port: com_ports) {
                 ++counter;
+                QString portName = port.port_info.portName();
 
                 //
                 // CAT Control
                 //
-                ui->comboBox_com_port->insertItem(counter, port.port_info.portName(), port.port_info.portName());
+                ui->comboBox_com_port->insertItem(counter, portName, portName);
 
                 //
                 // PTT Method
                 //
-                ui->comboBox_ptt_method_port->insertItem(counter, port.port_info.portName(), port.port_info.portName());
+                ui->comboBox_ptt_method_port->insertItem(counter, portName, portName);
 
                 available_com_ports.insert(port.port_info.description(), counter);
             }
@@ -883,15 +883,14 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
             if (!comDeviceCat.isEmpty() && !available_usb_ports.isEmpty()) {
                 for (const auto &sel_port: available_usb_ports.toStdMap()) {
                     for (const auto &device: status_usb_devices) {
-                        QString combined_str = QString("[ #%1 ] %2").arg(QString::fromStdString(device.port)).arg(device.usb_enum.product);
-                        if ((QString::fromStdString(device.port) == sel_port.first) && (comDeviceCat == combined_str)) {
+                        if ((device.port == sel_port.first) && (comDeviceCat == device.name)) {
                             //
                             // USB Port
                             //
 
                             // NOTE: The recorded setting used to identify the chosen serial device is the COM Port name
-                            ui->comboBox_com_port->setCurrentIndex(std::stoi(device.port));
-                            on_comboBox_com_port_currentIndexChanged(std::stoi(device.port));
+                            ui->comboBox_com_port->setCurrentIndex(device.port);
+                            on_comboBox_com_port_currentIndexChanged(device.port);
                             unsupported_port = false;
                         } else {
                             //
@@ -938,7 +937,7 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
  * @param usb_devices The available USB devices (of the audial type) within the user's system.
  * @see GekkoFyre::RadioLibs::enumUsbDevices(), DialogSettings::prefill_avail_com_ports()
  */
-void DialogSettings::prefill_avail_usb_ports(const QMap<std::string, GekkoFyre::Database::Settings::GkUsbPort> usb_devices)
+void DialogSettings::prefill_avail_usb_ports(const QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> &usb_devices)
 {
     using namespace Database::Settings;
 
@@ -950,26 +949,24 @@ void DialogSettings::prefill_avail_usb_ports(const QMap<std::string, GekkoFyre::
             available_usb_ports.clear();
             quint16 counter = 0;
             for (const auto &device: usb_devices) {
-                QString dev_port = QString::fromStdString(device.port);
+                quint16 dev_port = device.port;
                 #ifdef _UNICODE
                 QString combined_str = QString("[ #%1 ] %2").arg(QString::fromStdWString(device.port)).arg(device.usb_enum.product);
                 available_usb_ports.insert(dev_port, combined_str.toStdWString());
                 #else
-                QString combined_str = QString("[ #%1 ] %2").arg(dev_port).arg(device.usb_enum.product);
-                available_usb_ports.insert(dev_port, combined_str);
+                available_usb_ports.insert(dev_port, device.name);
                 #endif
 
                 //
                 // CAT Control
                 //
-                ui->comboBox_com_port->insertItem(counter, combined_str, dev_port);
+                ui->comboBox_com_port->insertItem(counter, device.name, dev_port);
 
                 //
                 // PTT Method
                 //
-                ui->comboBox_ptt_method_port->insertItem(counter, combined_str, dev_port);
+                ui->comboBox_ptt_method_port->insertItem(counter, device.name, dev_port);
 
-                combined_str.clear();
                 ++counter;
             }
         } else {
@@ -1474,7 +1471,7 @@ void DialogSettings::on_comboBox_com_port_currentIndexChanged(int index)
                 for (const auto &usb_port_list: available_usb_ports.toStdMap()) {
                     if (usb_port_list.first == ui->comboBox_com_port->currentData().toString()) {
                         // A USB port has been found!
-                        emit changeConnPort(usb_port_list.first, GkConnMethod::CAT);
+                        emit changeConnPort(usb_port_list.second, GkConnMethod::CAT);
                     } else if (com_port_list.port_info.portName() == ui->comboBox_com_port->currentData().toString()) {
                         // An RS232/Serial port has been found!
                         #ifdef _UNICODE
@@ -1508,7 +1505,7 @@ void DialogSettings::on_comboBox_ptt_method_port_currentIndexChanged(int index)
                 for (const auto &usb_port_list: available_usb_ports.toStdMap()) {
                     if (usb_port_list.first == ui->comboBox_ptt_method_port->currentData().toString()) {
                         // A USB port has been found!
-                        emit changeConnPort(usb_port_list.first, GkConnMethod::PTT);
+                        emit changeConnPort(usb_port_list.second, GkConnMethod::PTT);
                     } else if (ptt_port_list.port_info.portName() == ui->comboBox_ptt_method_port->currentData().toString()) {
                         // An RS232/Serial port has been found!
                         #ifdef _UNICODE

@@ -86,8 +86,7 @@ public:
     void gkInitRadioRig(std::shared_ptr<AmateurRadio::Control::GkRadio> radio_ptr);
     qint16 calibrateAudioInputSignal(const qint16 *data_buf);
 
-    libusb_context *initUsbLib();
-    QMap<std::string, Database::Settings::GkUsbPort> enumUsbDevices(libusb_context *usb_ctx_ptr);
+    QMap<quint16, Database::Settings::GkUsbPort> enumUsbDevices();
 
 signals:
     void disconnectRigInUse(std::shared_ptr<Rig> rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
@@ -100,9 +99,7 @@ private:
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
     static void hamlibStatus(const int &retcode);
-    static std::string getUsbPortId(libusb_device *usb_device);
 
-    libusb_error convLibUSBErrorToEnum(const int &error);
     void print_exception(const std::exception &e, int level = 0);
 
     template <class T>

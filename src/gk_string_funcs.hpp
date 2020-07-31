@@ -44,6 +44,7 @@
 #include "src/defines.hpp"
 #include <QObject>
 #include <QMessageBox>
+#include <QString>
 #include <string>
 #include <memory>
 #include <mutex>
@@ -67,6 +68,8 @@ public:
     std::wstring removeSpecialChars(std::wstring wstr);
     bool modalDlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon);
     #endif
+
+    QString getStringFromUnsignedChar(unsigned char *str);
 
 };
 };

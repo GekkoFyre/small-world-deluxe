@@ -65,6 +65,7 @@
 #include <QPointer>
 #include <QDateTime>
 #include <QStringList>
+#include <QtUsb/QUsbDevice>
 #include <QSerialPortInfo>
 
 #ifdef _WIN32
@@ -87,7 +88,6 @@ extern "C"
 {
 #endif
 
-#include <libusb.h>
 #include <hamlib/rig.h>
 #include <hamlib/riglist.h>
 
@@ -96,7 +96,6 @@ extern "C"
 #if defined(_MSC_VER) && (_MSC_VER > 1915)
 #endif
 #elif __linux__
-#include <libusb-1.0/libusb.h>
     typedef std::string gkwstring;
 #endif
 
@@ -378,9 +377,6 @@ namespace Database {
         };
 
         struct UsbVers3 {
-            libusb_ss_endpoint_companion_descriptor *ss_desc;                       // Details that are applicable for USB 3.0 superspeed interfaces
-            const libusb_endpoint_descriptor *endpoint;                             // A structure representing the standard USB 3.0 endpoint descriptor
-            const libusb_interface_descriptor *inter_desc;                          // Details about the interface itself pertaining to the `libusb` library
             int interface_number;                                                   // Number of this interface!
             int alternate_setting;                                                  // Value used to select this alternate setting for this interface
             int max_packet_size;                                                    // Maximum packet size this endpoint is capable of sending/receiving
@@ -389,28 +385,14 @@ namespace Database {
             int sync_address;                                                       // For audio devices only: the address if the synch endpoint
         };
 
-        struct GkUsbDev {
-            libusb_device *dev;                                                     // Primary underlying pointer to the `libusb` device
-            libusb_context *context;                                                // The underlying context to the `libusb` library
-            libusb_device_descriptor desc;                                          // Underlying pointer to the `libusb` configuration
-            libusb_config_descriptor *config;                                       // Configuration parameters for the `libusb` device in question
-            libusb_device_handle *handle;                                           // Underlying `libusb` device handle
-            QString mfg;                                                            // Information relating to the manufacturer
-            QString serial_number;                                                  // The Product Serial Number
-            QString product;                                                        // The Product ID
-            int vendor_id;                                                          // Vendor ID as an integer
-            int product_id;                                                         // Product ID as an integer
-            int conv_conf;                                                          // USB Device configuration as an integer
-            int conv_iface;                                                         // USB Device interface as an integer
-            int conv_alt;                                                           // USB Device alternate as an integer
-        };
-
         struct GkUsbPort {
-            GkUsbDev usb_enum;                                                      // The USB Device structure, as above
-            UsbVers3 usb_vers_3;                                                    // Details specific to USB 3.0 (and SS) devices
-            std::string port;                                                       // The USB port number as determined by `libusb`
-            std::string bus;                                                        // The USB BUS number as determined by `libusb`
-            std::string addr;                                                       // The USB port's own address as determined by 'libusb'
+            QString name;                                                           // The actual name of the USB port as displayed by the operating system itself
+            quint16 port;                                                           // The USB port number as determined by `QtUsb`
+            quint16 bus;                                                            // The USB BUS number as determined by `QtUsb`
+            quint16 pid;                                                            // The USB port's own Product ID as determined by 'QtUsb'
+            quint16 vid;                                                            // The USB port's own Vendor ID as determined by 'QtUsb'
+            quint16 d_class;
+            quint16 d_sub_class;
         };
 
         struct GkComPort {
