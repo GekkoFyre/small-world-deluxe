@@ -34,6 +34,10 @@ Hamlib by The Hamlib Group
     <https://github.com/Hamlib/Hamlib>
         GNU General Public License (GPL, version 2)
 
+WSJT-X by Joe Taylor (K1JT) <k1jt@arrl.net> et al.
+    <https://physics.princeton.edu/pulsar/K1JT/wsjtx.html>
+        GNU General Public License (GPL, version 3)
+
 PortAudio by the PortAudio community
     <http://www.portaudio.com/>
         The MIT License
