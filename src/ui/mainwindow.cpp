@@ -281,7 +281,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 //
                 // Initialize the all-important `GkRadioPtr`!
                 //
-                status_com_ports = gkRadioLibs->status_com_ports();
+                status_com_ports = gkRadioLibs->filter_com_ports(gkRadioLibs->status_com_ports());
                 gkUsbPortPtr = std::make_shared<GkUsbPort>();
                 gkRadioPtr = readRadioSettings();
                 emit addRigInUse(gkRadioPtr->rig_model, gkRadioPtr);
@@ -527,7 +527,7 @@ MainWindow::~MainWindow()
         spectro_timing_thread.join();
     }
 
-    emit stopRecording();
+    emit stopRecording(); // TODO: Fix the SEGFAULT that occurs with this!
     emit disconnectRigInUse(gkRadioPtr->gkRig, gkRadioPtr);
 
     // Free the pointer for the Google LevelDB library!

@@ -126,6 +126,10 @@ sworld_debug_archlinux_x86_64:
         - make -j 8 && make install
         - cd ./../..
         - strip --remove-section=.note.ABI-tag /usr/lib64/libQt5Core.so.5
+        - echo "Done compiling primary libraries and preparing `libQt5Core.so.5`! Time to compile QtUsb..."
+        - cd src/contrib/QtUsb && mkdir build && cd build
+        - qmake -makefile .. && make -j 8 && make install
+        - cd ./../../../..
     script:
         - mkdir -p src_build && cd src_build
         - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DGFYRE_BUILD_STATIC=ON -DBUILD_CODEC2_SUPPORT=ON -DBUILD_OPUS_SUPPORT=ON ..

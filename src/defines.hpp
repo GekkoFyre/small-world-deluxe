@@ -391,8 +391,10 @@ namespace Database {
             quint16 bus;                                                            // The USB BUS number as determined by `QtUsb`
             quint16 pid;                                                            // The USB port's own Product ID as determined by 'QtUsb'
             quint16 vid;                                                            // The USB port's own Vendor ID as determined by 'QtUsb'
-            quint16 d_class;
-            quint16 d_sub_class;
+            quint16 d_class;                                                        // Unknown
+            quint16 d_sub_class;                                                    // Unknown
+            QString mfg;                                                            // The manufacturer of this USB device, as determined by 'QtUSB'
+            QString product;                                                        // The product name/identity of this USB device, as determined by 'QtUSB'
         };
 
         struct GkComPort {

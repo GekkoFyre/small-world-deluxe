@@ -44,6 +44,7 @@
 #include <boost/exception/all.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <QtUsb/QUsbDevice>
+#include <QtUsb/QHidDevice>
 #include <QtUsb/QUsbEndpoint>
 #include <QtUsb/QUsbInfo>
 #include <ios>
@@ -275,23 +276,39 @@ int RadioLibs::convertBaudRateFromEnum(const com_baud_rates &baud_rate)
 
 /**
  * @brief RadioLibs::status_com_ports Checks the status of a COM/Serial port and whether it is active or not.
- * @author Michael Jacob Mathew <https://stackoverflow.com/questions/2674048/what-is-proper-way-to-detect-all-available-serial-ports-on-windows>
- * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * Søren Holm <https://stackoverflow.com/questions/2530096/how-to-find-all-serial-devices-ttys-ttyusb-on-linux-without-opening-them/9914339#9914339>
- * @return A QMap where the COM/Serial port name itself is the key and the value is the Target Path plus a
- * Boost C++ triboolean that signifies whether the port is active or not.
- * @see GekkoFyre::RadioLibs::detect_com_ports()
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return
  */
-std::list<GkComPort> RadioLibs::status_com_ports()
+QList<QSerialPortInfo> RadioLibs::status_com_ports() const
 {
     std::mutex mtx_status_com_ports;
     std::lock_guard<std::mutex> lck_guard(mtx_status_com_ports);
 
     try {
-        std::list<GkComPort> com_map;
         const auto rs232_data = QSerialPortInfo::availablePorts();
+        return rs232_data;
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(tr("An issue was encountered whilst enumerating RS232 ports!\n\n%1")
+                                                  .arg(QString::fromStdString(e.what())).toStdString()));
+    }
 
-        for (const auto &info: rs232_data) {
+    return QList<QSerialPortInfo>();
+}
+
+/**
+ * @brief RadioLibs::filter_com_ports
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param serial_port_info
+ * @return
+ */
+std::list<GkComPort> RadioLibs::filter_com_ports(const QList<QSerialPortInfo> &serial_port_info) const
+{
+    std::mutex mtx_filter_com_ports;
+    std::lock_guard<std::mutex> lck_guard(mtx_filter_com_ports);
+
+    try {
+        std::list<GkComPort> com_map;
+        for (const auto &info: serial_port_info) {
             if (!info.isNull()) {
                 for (const auto &port: info.availablePorts()) {
                     bool is_usb = false; // Are we dealing with a USB device or not? Since we have a separate library for handling such connections...
@@ -309,12 +326,12 @@ std::list<GkComPort> RadioLibs::status_com_ports()
                 }
             }
         }
-
-        return com_map;
-    }  catch (const std::exception &e) {
+    } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(tr("An issue was encountered whilst enumerating RS232 ports!\n\n%1")
                                                   .arg(QString::fromStdString(e.what())).toStdString()));
     }
+
+    return std::list<GkComPort>();
 }
 
 /**
@@ -382,6 +399,7 @@ QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDevice
     try {
         // Enumerate USB devices!
         QUsbInfo usb_info;
+        QHidDevice usb_hid(this);
         auto list = usb_info.devices();
 
         for (const auto &device: list) {
@@ -392,6 +410,10 @@ QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDevice
             usb.vid = device.vid;
             usb.d_class = (quint16)device.dClass;
             usb.d_sub_class = (quint16)device.dSubClass;
+
+            usb_hid.open(usb.vid, usb.pid);
+            usb.mfg = usb_hid.manufacturer();
+            usb.product = usb_hid.product();
 
             #ifdef _WIN32
             // TODO: URGENT - Finish this section!
@@ -457,6 +479,11 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr)
         if (baud_rate_tmp <= 115200 && baud_rate_tmp >= 9600) {
             baud_rate = baud_rate_tmp;
         }
+
+        //
+        // Check the most up-to-date information on RS232 ports
+        //
+        auto recent_serial_port_info = filter_com_ports(status_com_ports());
 
         radio_ptr->gkRig->setConf("data_bits", std::to_string(radio_ptr->port_details.parm.serial.data_bits).c_str());
         radio_ptr->gkRig->setConf("stop_bits", std::to_string(radio_ptr->port_details.parm.serial.stop_bits).c_str());

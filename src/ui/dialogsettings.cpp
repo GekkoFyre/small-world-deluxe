@@ -961,11 +961,13 @@ void DialogSettings::prefill_avail_usb_ports(const QMap<quint16, GekkoFyre::Data
                 // CAT Control
                 //
                 ui->comboBox_com_port->insertItem(counter, device.name, dev_port);
+                ui->lineEdit_device_port_name->setText(device.product);
 
                 //
                 // PTT Method
                 //
                 ui->comboBox_ptt_method_port->insertItem(counter, device.name, dev_port);
+                ui->lineEdit_ptt_method_dev_path->setText(device.product);
 
                 ++counter;
             }

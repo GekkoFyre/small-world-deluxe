@@ -133,3 +133,14 @@ CMD rm -rvf codec2
 # this version of Arch Linux's package!
 #
 RUN strip --remove-section=.note.ABI-tag /usr/lib64/libQt5Core.so.5
+
+#
+# Compile the final library required!
+#
+CMD cd src/contrib/QtUsb
+CMD [ "mkdir", "build" ]
+CMD cd build
+RUN [ "qmake", "-makefile .." ]
+CMD [ "make", "-j 8" ]
+CMD [ "make", "install" ]
+CMD cd ./../../../..
