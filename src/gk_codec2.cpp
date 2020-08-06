@@ -192,22 +192,20 @@ QList<QByteArray> GkCodec2::createPayloadForTx(const QByteArray &byte_array)
         }
 
         size_t payload_size = (size_t)base64_conv_data.size();
-        QList<QByteArray> base64_conv_data_tmp;
         QList<QByteArray> payload_data;
-        size_t counter = 0;
+        QByteArray vec;
+        vec.reserve(GK_CODEC2_FRAME_SIZE);
 
-        base64_conv_data_tmp.push_back(base64_conv_data);
         for(size_t i = 0; i < payload_size; i += GK_CODEC2_FRAME_SIZE) {
-            auto last = std::min(payload_size, i + GK_CODEC2_FRAME_SIZE);
-            auto index = (i / GK_CODEC2_FRAME_SIZE);
-            auto &vec = base64_conv_data_tmp[index];
-            vec.reserve(last - i);
-            std::move(base64_conv_data.begin() + i, base64_conv_data.begin() + last, std::back_inserter(vec));
-            payload_data.insert(counter, vec);
-            ++counter;
+            auto last_index_of_next = std::min(payload_size-1, i + GK_CODEC2_FRAME_SIZE);
+            auto out_index = (i / GK_CODEC2_FRAME_SIZE);
+
+            std::move(base64_conv_data.begin() + i, base64_conv_data.begin() + last_index_of_next, std::back_inserter(vec));
+            payload_data.insert(out_index, vec);
         }
 
         return payload_data;
+
     }  catch (const std::exception &e) {
         std::throw_with_nested(tr("An issue has occurred with transmitting audio via the Codec2 modem! Error:\n\n%1")
                                .arg(QString::fromStdString(e.what())).toStdString());
