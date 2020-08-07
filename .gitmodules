@@ -19,3 +19,6 @@
 [submodule "src/contrib/crashpad"]
 	path = src/contrib/crashpad
 	url = https://chromium.googlesource.com/crashpad/crashpad
+[submodule "src/contrib/breakpad"]
+	path = src/contrib/breakpad
+	url = https://chromium.googlesource.com/breakpad/breakpad

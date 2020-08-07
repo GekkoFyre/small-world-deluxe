@@ -139,6 +139,12 @@ if (LINUX)
     set(SYSCONFIG_INSTALL_DIR "/etc/small-world-deluxe/" CACHE PATH "Location for the settings directory.")
 endif()
 
+if (GFYRE_BUILD_STATIC)
+    set(${BUILD_SHARED_LIBS} OFF) # Regarding Sentry, setting this to OFF will build said library as a STATIC one!
+else()
+    set(${BUILD_SHARED_LIBS} ON)
+endif(GFYRE_BUILD_STATIC)
+
 #
 # https://stackoverflow.com/questions/33991918/link-to-pthread-library-using-cmake-in-clion
 # Find 'libpthreads'
@@ -369,6 +375,32 @@ if (Iconv_FOUND)
 else()
     message(FATAL_ERROR "The 'libiconv' character encoding and conversion library could not be found!")
 endif(Iconv_FOUND)
+
+#
+# Sentry (Native SDK for C/C++)
+# https://github.com/getsentry/sentry-native
+#
+option(SENTRY_PIC "Build Sentry as a position independent library" ON)
+option(SENTRY_EXPORT_SYMBOLS "By default, sentry exposes all symbols in the dynamic symbol table. You might want to disable it in case the program intends to dlopen third-party shared libraries and avoid symbol collisions." OFF)
+
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+    option(SENTRY_BUILD_RUNTIMESTATIC "Disables linking with the static MSVC runtime. Has no effect if the compiler is not MSVC" OFF)
+endif()
+
+option(SENTRY_LINK_PTHREAD "Links to the pthread library on Unix targets." ON)
+option(SENTRY_BUILD_FORCE32 "Otherwise forces cross-compilation from 64-bit host to 32-bit target. Only has an effect on Linux." OFF)
+
+if(WIN32 OR MSYS OR MINGW)
+    set(${SENTRY_TRANSPORT} "winhttp")
+    set(${SENTRY_BACKEND} "crashpad")
+    option(SENTRY_CRASHPAD_SYSTEM "This instructs the build system to use system-installed breakpad or crashpad libraries instead of using the in-tree version. This is generally not recommended for crashpad, as sentry uses a patched version that has attachment support." OFF)
+else()
+    set(${SENTRY_TRANSPORT} "curl")
+    set(${SENTRY_BACKEND} "breakpad")
+    option(SENTRY_BREAKPAD_SYSTEM "This instructs the build system to use system-installed breakpad or crashpad libraries instead of using the in-tree version. This is generally not recommended for crashpad, as sentry uses a patched version that has attachment support." OFF)
+endif()
+
+add_subdirectory(src/contrib/sentry-native)
 
 set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-arcs -ftest-coverage -mwindows")
 
