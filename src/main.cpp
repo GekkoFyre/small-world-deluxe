@@ -41,6 +41,7 @@
 
 #include "src/defines.hpp"
 #include "src/ui/mainwindow.hpp"
+#include <sentry.h>
 #include <boost/exception/all.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/locale.hpp>
@@ -96,6 +97,11 @@ int main(int argc, char *argv[])
     QCoreApplication::setOrganizationDomain(GekkoFyre::General::codeRepository);
     QCoreApplication::setApplicationName(GekkoFyre::General::productName);
     QCoreApplication::setApplicationVersion(GekkoFyre::General::appVersion);
+
+    // sentry_options_t *options = sentry_options_new();
+
+    // The handler is a Crashpad-specific background process
+    // sentry_options_set_handler_path(options, "bin/Release/crashpad_handler.exe");
 
     fs::path slash = "/";
     fs::path native_slash = slash.make_preferred().native();

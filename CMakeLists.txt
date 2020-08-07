@@ -376,33 +376,32 @@ else()
     message(FATAL_ERROR "The 'libiconv' character encoding and conversion library could not be found!")
 endif(Iconv_FOUND)
 
+set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-arcs -ftest-coverage -mwindows")
+
 #
 # Sentry (Native SDK for C/C++)
 # https://github.com/getsentry/sentry-native
 #
-option(SENTRY_PIC "Build Sentry as a position independent library" ON)
-option(SENTRY_EXPORT_SYMBOLS "By default, sentry exposes all symbols in the dynamic symbol table. You might want to disable it in case the program intends to dlopen third-party shared libraries and avoid symbol collisions." OFF)
+add_subdirectory(src/contrib/sentry-native)
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/sentry-native/include")
+
+set(SENTRY_PIC CACHE BOOL "Build Sentry as a position independent library" ON)
+set(SENTRY_EXPORT_SYMBOLS CACHE BOOL "By default, sentry exposes all symbols in the dynamic symbol table. You might want to disable it in case the program intends to dlopen third-party shared libraries and avoid symbol collisions." OFF)
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     option(SENTRY_BUILD_RUNTIMESTATIC "Disables linking with the static MSVC runtime. Has no effect if the compiler is not MSVC" OFF)
 endif()
 
-option(SENTRY_LINK_PTHREAD "Links to the pthread library on Unix targets." ON)
-option(SENTRY_BUILD_FORCE32 "Otherwise forces cross-compilation from 64-bit host to 32-bit target. Only has an effect on Linux." OFF)
+set(SENTRY_LINK_PTHREAD CACHE BOOL "Links to the pthread library on Unix targets." ON)
+set(SENTRY_BUILD_FORCE32 CACHE BOOL "Otherwise forces cross-compilation from 64-bit host to 32-bit target. Only has an effect on Linux." OFF)
+set(SENTRY_BACKEND "crashpad" CACHE STRING "The type of crash manager to use." FORCE) 
+set(SENTRY_CRASHPAD_SYSTEM CACHE BOOL "This instructs the build system to use system-installed breakpad or crashpad libraries instead of using the in-tree version. This is generally not recommended for crashpad, as sentry uses a patched version that has attachment support." OFF)
 
 if(WIN32 OR MSYS OR MINGW)
-    set(${SENTRY_TRANSPORT} "winhttp")
-    set(${SENTRY_BACKEND} "crashpad")
-    option(SENTRY_CRASHPAD_SYSTEM "This instructs the build system to use system-installed breakpad or crashpad libraries instead of using the in-tree version. This is generally not recommended for crashpad, as sentry uses a patched version that has attachment support." OFF)
+    set(SENTRY_TRANSPORT "winhttp" CACHE STRING "Please do not modify this.")
 else()
-    set(${SENTRY_TRANSPORT} "curl")
-    set(${SENTRY_BACKEND} "breakpad")
-    option(SENTRY_BREAKPAD_SYSTEM "This instructs the build system to use system-installed breakpad or crashpad libraries instead of using the in-tree version. This is generally not recommended for crashpad, as sentry uses a patched version that has attachment support." OFF)
+    set(SENTRY_TRANSPORT "curl" CACHE STRING "Please do not modify this.")
 endif()
-
-add_subdirectory(src/contrib/sentry-native)
-
-set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-arcs -ftest-coverage -mwindows")
 
 #
 # PortAudio's C++ bindings
@@ -768,6 +767,25 @@ install(CODE [[
                     "${path_to_above_file}"
                     DOC "Copying dependencies for smallworld")
 ]])
+
+#
+# Copy the crashpad handler to the root of the binary build directory, for easy access!
+#
+if(${SENTRY_BACKEND} STREQUAL "crashpad")
+    if(WIN32 OR MSYS OR MINGW)
+        configure_file("${CMAKE_CURRENT_BINARY_DIR}/src/contrib/sentry-native/crashpad_build/handler/crashpad_handler.exe" "${CMAKE_CURRENT_BINARY_DIR}/crashpad_handler.exe" COPYONLY)
+    else()
+        configure_file("${CMAKE_CURRENT_BINARY_DIR}/src/contrib/sentry-native/crashpad_build/handler/crashpad_handler" "${CMAKE_CURRENT_BINARY_DIR}/crashpad_handler" COPYONLY)
+    endif()
+elseif(${SENTRY_BACKEND} STREQUAL "breakpad")
+    if(WIN32 OR MSYS OR MINGW)
+        # TODO: Finish this section ASAP!
+    else()
+        # TODO: Finish this section ASAP!
+    endif()
+else()
+    message(FATAL_ERROR "Unable to determine the stack trace handler!")
+endif()
 
 INSTALL(TARGETS smallworld)
 

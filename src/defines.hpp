@@ -48,6 +48,7 @@
 #include <boost/filesystem.hpp>
 #include <hamlib/rigclass.h>
 #include <qwt_interval.h>
+#include <sentry.h>
 #include <vector>
 #include <exception>
 #include <string>
