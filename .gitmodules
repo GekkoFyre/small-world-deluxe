@@ -16,9 +16,3 @@
 [submodule "src/contrib/sentry-native"]
 	path = src/contrib/sentry-native
 	url = https://github.com/getsentry/sentry-native.git
-[submodule "src/contrib/crashpad"]
-	path = src/contrib/crashpad
-	url = https://chromium.googlesource.com/crashpad/crashpad
-[submodule "src/contrib/breakpad"]
-	path = src/contrib/breakpad
-	url = https://chromium.googlesource.com/breakpad/breakpad
