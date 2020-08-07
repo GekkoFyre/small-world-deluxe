@@ -78,6 +78,10 @@ RapidCSV by Kristofer Berggren
     <https://github.com/d99kris/rapidcsv/>
         BSD 3-clause License
 
+AudioFile by Adam Stark
+    <https://github.com/adamstark/AudioFile>
+        GNU General Public License (GPL, version 3)
+
 getopt for Microsoft Windows by Chunde
     <https://github.com/Chunde/getopt-for-windows>
         GNU Lesser General Public License (LGPL, version 2.1)

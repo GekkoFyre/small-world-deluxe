@@ -13,3 +13,9 @@
 [submodule "src/contrib/AudioFile"]
 	path = src/contrib/AudioFile
 	url = https://github.com/adamstark/AudioFile
+[submodule "src/contrib/sentry-native"]
+	path = src/contrib/sentry-native
+	url = https://github.com/getsentry/sentry-native.git
+[submodule "src/contrib/crashpad"]
+	path = src/contrib/crashpad
+	url = https://chromium.googlesource.com/crashpad/crashpad

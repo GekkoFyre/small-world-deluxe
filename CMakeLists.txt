@@ -593,7 +593,8 @@ set(GALAXY_SRC_HEADERS
     src/gk_timer.hpp
     src/gk_circ_buffer.hpp
     src/gk_fft.hpp
-    src/contrib/rapidcsv/src/rapidcsv.h)
+    src/contrib/rapidcsv/src/rapidcsv.h
+    src/contrib/AudioFile/AudioFile.h)
 
 if(LINUX)
     set(GALAXY_SRC_HEADERS
