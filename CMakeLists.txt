@@ -140,9 +140,9 @@ if (LINUX)
 endif()
 
 if (GFYRE_BUILD_STATIC)
-    set(${BUILD_SHARED_LIBS} OFF) # Regarding Sentry, setting this to OFF will build said library as a STATIC one!
+    set(BUILD_SHARED_LIBS OFF) # Regarding Sentry, setting this to OFF will build said library as a STATIC one!
 else()
-    set(${BUILD_SHARED_LIBS} ON)
+    set(BUILD_SHARED_LIBS ON)
 endif(GFYRE_BUILD_STATIC)
 
 #
@@ -383,7 +383,10 @@ set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-arcs -ftest-c
 # https://github.com/getsentry/sentry-native
 #
 add_subdirectory(src/contrib/sentry-native)
+add_subdirectory(src/contrib/sentry-native/external/crashpad)
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/sentry-native/include")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/sentry-native/external/crashpad")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/sentry-native/external/crashpad/third_party/mini_chromium/mini_chromium")
 
 set(SENTRY_PIC CACHE BOOL "Build Sentry as a position independent library" ON)
 set(SENTRY_EXPORT_SYMBOLS CACHE BOOL "By default, sentry exposes all symbols in the dynamic symbol table. You might want to disable it in case the program intends to dlopen third-party shared libraries and avoid symbol collisions." OFF)
@@ -770,12 +773,19 @@ install(CODE [[
 
 #
 # Copy the crashpad handler to the root of the binary build directory, for easy access!
+# https://cmake.org/cmake/help/latest/module/FetchContent.html
 #
+set(GK_CRASHPAD_HNDLR_WINDOWS "${CMAKE_CURRENT_BINARY_DIR}/src/contrib/sentry-native/crashpad_build/handler/crashpad_handler.exe" "${CMAKE_CURRENT_BINARY_DIR}/crashpad_handler.exe")
+set(GK_CRASHPAD_HNDLR_LINUX "${CMAKE_CURRENT_BINARY_DIR}/src/contrib/sentry-native/crashpad_build/handler/crashpad_handler" "${CMAKE_CURRENT_BINARY_DIR}/crashpad_handler")
 if(${SENTRY_BACKEND} STREQUAL "crashpad")
     if(WIN32 OR MSYS OR MINGW)
-        configure_file("${CMAKE_CURRENT_BINARY_DIR}/src/contrib/sentry-native/crashpad_build/handler/crashpad_handler.exe" "${CMAKE_CURRENT_BINARY_DIR}/crashpad_handler.exe" COPYONLY)
+        add_custom_command(TARGET smallworld
+                           POST_BUILD COMMAND configure_file(${GK_CRASHPAD_HNDLR_WINDOWS} COPYONLY)
+                           WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
     else()
-        configure_file("${CMAKE_CURRENT_BINARY_DIR}/src/contrib/sentry-native/crashpad_build/handler/crashpad_handler" "${CMAKE_CURRENT_BINARY_DIR}/crashpad_handler" COPYONLY)
+        add_custom_command(TARGET smallworld
+                           POST_BUILD COMMAND configure_file(${GK_CRASHPAD_HNDLR_LINUX} COPYONLY)
+                           WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
     endif()
 elseif(${SENTRY_BACKEND} STREQUAL "breakpad")
     if(WIN32 OR MSYS OR MINGW)

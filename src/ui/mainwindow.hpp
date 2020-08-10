@@ -56,6 +56,10 @@
 #include "src/ui/widgets/gk_display_image.hpp"
 #include "src/ui/gkaudioplaydialog.hpp"
 #include "src/ui/gk_vu_meter_widget.hpp"
+#include <client/crashpad_client.h>
+#include <client/crashpad_info.h>
+#include <client/crash_report_database.h>
+#include <client/settings.h>
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
