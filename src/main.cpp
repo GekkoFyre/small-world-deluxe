@@ -41,7 +41,6 @@
 
 #include "src/defines.hpp"
 #include "src/ui/mainwindow.hpp"
-#include <sentry.h>
 #include <boost/exception/all.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/locale.hpp>
@@ -97,23 +96,6 @@ int main(int argc, char *argv[])
     QCoreApplication::setOrganizationDomain(GekkoFyre::General::codeRepository);
     QCoreApplication::setApplicationName(GekkoFyre::General::productName);
     QCoreApplication::setApplicationVersion(GekkoFyre::General::appVersion);
-
-    //
-    // Initialize Sentry!
-    // https://blog.sentry.io/2019/09/26/fixing-native-apps-with-sentry
-    // https://docs.sentry.io/platforms/native/
-    //
-    sentry_options_t *options = sentry_options_new();
-
-    // The handler is a Crashpad-specific background process
-    sentry_options_set_handler_path(options, "crashpad_handler.exe");
-
-    // This is where Minidumps and attachments live before upload
-    sentry_options_set_database_path(options, "sentry-db");
-    sentry_options_add_attachment(options, "application.log");
-
-    // Initialize the SDK and start the Crashpad handler
-    sentry_init(options);
 
     fs::path slash = "/";
     fs::path native_slash = slash.make_preferred().native();

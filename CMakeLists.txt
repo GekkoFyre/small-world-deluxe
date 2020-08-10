@@ -382,12 +382,6 @@ set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-arcs -ftest-c
 # Sentry (Native SDK for C/C++)
 # https://github.com/getsentry/sentry-native
 #
-add_subdirectory(src/contrib/sentry-native)
-add_subdirectory(src/contrib/sentry-native/external/crashpad)
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/sentry-native/include")
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/sentry-native/external/crashpad")
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/sentry-native/external/crashpad/third_party/mini_chromium/mini_chromium")
-
 set(SENTRY_PIC CACHE BOOL "Build Sentry as a position independent library" ON)
 set(SENTRY_EXPORT_SYMBOLS CACHE BOOL "By default, sentry exposes all symbols in the dynamic symbol table. You might want to disable it in case the program intends to dlopen third-party shared libraries and avoid symbol collisions." OFF)
 
@@ -405,6 +399,9 @@ if(WIN32 OR MSYS OR MINGW)
 else()
     set(SENTRY_TRANSPORT "curl" CACHE STRING "Please do not modify this.")
 endif()
+
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/sentry-native")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/sentry-native/include")
 
 #
 # PortAudio's C++ bindings
@@ -709,7 +706,7 @@ if(GFYRE_BUILD_SHARED)
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
-target_link_libraries(galaxy ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::SerialPort Qt5::PrintSupport Threads::Threads SingleApplication::SingleApplication ${LIBS})
+target_link_libraries(galaxy ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::SerialPort Qt5::PrintSupport Threads::Threads SingleApplication::SingleApplication sentry::sentry ${LIBS})
 
 qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)
 add_dependencies(galaxy resources)
@@ -779,13 +776,9 @@ set(GK_CRASHPAD_HNDLR_WINDOWS "${CMAKE_CURRENT_BINARY_DIR}/src/contrib/sentry-na
 set(GK_CRASHPAD_HNDLR_LINUX "${CMAKE_CURRENT_BINARY_DIR}/src/contrib/sentry-native/crashpad_build/handler/crashpad_handler" "${CMAKE_CURRENT_BINARY_DIR}/crashpad_handler")
 if(${SENTRY_BACKEND} STREQUAL "crashpad")
     if(WIN32 OR MSYS OR MINGW)
-        add_custom_command(TARGET smallworld
-                           POST_BUILD COMMAND configure_file(${GK_CRASHPAD_HNDLR_WINDOWS} COPYONLY)
-                           WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+        configure_file("${GK_CRASHPAD_HNDLR_WINDOWS} COPYONLY)
     else()
-        add_custom_command(TARGET smallworld
-                           POST_BUILD COMMAND configure_file(${GK_CRASHPAD_HNDLR_LINUX} COPYONLY)
-                           WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+        configure_file("${GK_CRASHPAD_HNDLR_LINUX} COPYONLY)
     endif()
 elseif(${SENTRY_BACKEND} STREQUAL "breakpad")
     if(WIN32 OR MSYS OR MINGW)
