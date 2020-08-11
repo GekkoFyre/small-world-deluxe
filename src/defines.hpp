@@ -221,7 +221,7 @@ namespace General {
     constexpr char appRelease[] = "Pre-alpha";
     constexpr char codeRepository[] = "https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe";
 
-    constexpr char gk_sentry_uri[] = "https://ff45bfc885204880bb609e26ff9b6dd7@sentry.gekkofyre.io/2";
+    constexpr char gk_sentry_uri[] = "https://5532275153ce4eb4865b89eb2441f356@sentry.gekkofyre.io/2";
 }
 
 namespace Filesystem {
