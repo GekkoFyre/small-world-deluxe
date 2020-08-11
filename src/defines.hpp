@@ -235,6 +235,7 @@ namespace Filesystem {
     constexpr char gk_crashpad_handler_linux[] = "crashpad_handler";    // The name of the Crashpad handler executable under Linux and possibly Unix-like operating systems.
 
 
+    constexpr char gk_sentry_uri[] = "https://ff45bfc885204880bb609e26ff9b6dd7@sentry.gekkofyre.io/2";
     constexpr char linux_sys_tty[] = "/sys/class/tty/"; // The location of the TTY-devices under most major Linux distributions
 }
 

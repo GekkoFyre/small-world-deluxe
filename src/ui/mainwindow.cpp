@@ -137,46 +137,74 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     const fs::path swrld_save_path = fileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation),
                                                               true, QString::fromStdString(dir_to_append.string())).toStdString(); // Path to save final database towards
 
-    //
-    // Initialize Sentry!
-    // https://blog.sentry.io/2019/09/26/fixing-native-apps-with-sentry
-    // https://docs.sentry.io/platforms/native/
-    //
-    sen_opt = sentry_options_new();
+    try {
+        bool enableSentry = false;
+        QMessageBox optInMsgBox;
+        optInMsgBox.setWindowTitle(tr("Help improve Small World!"));
+        optInMsgBox.setText(tr("With your voluntary consent, Small World Deluxe can report anonymous information that helps developers improve this "
+                               "application. This includes things like your screen resolution, along with any crashes you wish to submit."));
+        optInMsgBox.setStandardButtons(QMessageBox::Cancel | QMessageBox::Ok);
+        optInMsgBox.setDefaultButton(QMessageBox::Ok);
+        optInMsgBox.setIcon(QMessageBox::Icon::Question);
+        int ret = optInMsgBox.exec();
 
-    const QString curr_path = QDir::currentPath();
-    const fs::path crashpad_handler_windows = fs::path(curr_path.toStdString() + native_slash.string() + Filesystem::gk_crashpad_handler_win);
-    const fs::path crashpad_handler_linux = fs::path(curr_path.toStdString() + native_slash.string() + Filesystem::gk_crashpad_handler_linux);
-    fs::path handler_to_use;
+        switch (ret) {
+        case QMessageBox::Ok:
+            enableSentry = true;
+            return;
+        case QMessageBox::Cancel:
+            enableSentry = false;
+        default:
+            enableSentry = false;
+        }
 
-    if (fs::exists(crashpad_handler_linux, ec)) {
-        // The handler exists as if we're under a Linux system!
-        handler_to_use = crashpad_handler_linux;
-    } else if (fs::exists(crashpad_handler_windows, ec)) {
-        // The handler exists as if we're under a Microsoft Windows system!
-        handler_to_use = crashpad_handler_windows;
-    } else {
-        throw std::invalid_argument(tr("Unable to find the Crashpad handler for your installation of Small World Deluxe!").toStdString());
+        if (enableSentry) {
+            //
+            // Initialize Sentry!
+            // https://blog.sentry.io/2019/09/26/fixing-native-apps-with-sentry
+            // https://docs.sentry.io/platforms/native/
+            //
+            sen_opt = sentry_options_new();
+
+            const QString curr_path = QDir::currentPath();
+            const fs::path crashpad_handler_windows = fs::path(curr_path.toStdString() + native_slash.string() + Filesystem::gk_crashpad_handler_win);
+            const fs::path crashpad_handler_linux = fs::path(curr_path.toStdString() + native_slash.string() + Filesystem::gk_crashpad_handler_linux);
+            fs::path handler_to_use;
+
+            if (fs::exists(crashpad_handler_linux, ec)) {
+                // The handler exists as if we're under a Linux system!
+                handler_to_use = crashpad_handler_linux;
+            } else if (fs::exists(crashpad_handler_windows, ec)) {
+                // The handler exists as if we're under a Microsoft Windows system!
+                handler_to_use = crashpad_handler_windows;
+            } else {
+                throw std::invalid_argument(tr("Unable to find the Crashpad handler for your installation of Small World Deluxe!").toStdString());
+            }
+
+            // The handler is a Crashpad-specific background process
+            sentry_options_set_handler_path(sen_opt, handler_to_use.c_str());
+
+            const qint64 sentry_curr_epoch = QDateTime::currentMSecsSinceEpoch();
+            const fs::path gk_minidump = std::string(swrld_save_path.string() + native_slash.string() + tr("crash-db").toStdString());
+            const fs::path gk_sentry_attachments = std::string(gk_minidump.string() + native_slash.string() + QString::number(sentry_curr_epoch).toStdString()
+                                                               + Filesystem::gk_sentry_dump_file_ext);
+
+            if (!fs::exists(gk_minidump, ec)) {
+                fs::create_directories(gk_minidump, ec);
+            }
+
+            // This is where Minidumps and attachments live before upload
+            sentry_options_set_database_path(sen_opt, gk_minidump.c_str());
+            sentry_options_add_attachment(sen_opt, gk_sentry_attachments.c_str());
+
+            sentry_options_set_dsn(sen_opt, Filesystem::gk_sentry_uri);
+
+            // Initialize the SDK and start the Crashpad handler
+            sentry_init(sen_opt);
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), tr("An issue was encountered while lauching Crashpad! Error:\n\n%1").arg(e.what()), QMessageBox::Ok);
     }
-
-    // The handler is a Crashpad-specific background process
-    sentry_options_set_handler_path(sen_opt, handler_to_use.c_str());
-
-    const qint64 sentry_curr_epoch = QDateTime::currentMSecsSinceEpoch();
-    const fs::path gk_minidump = std::string(swrld_save_path.string() + native_slash.string() + tr("crash-db").toStdString());
-    const fs::path gk_sentry_attachments = std::string(gk_minidump.string() + native_slash.string() + QString::number(sentry_curr_epoch).toStdString()
-                                                       + Filesystem::gk_sentry_dump_file_ext);
-
-    if (!fs::exists(gk_minidump, ec)) {
-        fs::create_directories(gk_minidump, ec);
-    }
-
-    // This is where Minidumps and attachments live before upload
-    sentry_options_set_database_path(sen_opt, gk_minidump.c_str());
-    sentry_options_add_attachment(sen_opt, gk_sentry_attachments.c_str());
-
-    // Initialize the SDK and start the Crashpad handler
-    sentry_init(sen_opt);
 
     try {
         // Print out the current date
