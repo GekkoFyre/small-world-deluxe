@@ -81,7 +81,6 @@
 #include <QPrinter>
 #include <QMetaType>
 #include <QDateTime>
-#include <QSettings>
 #include <QByteArray>
 #include <QStringList>
 #include <QMainWindow>
@@ -283,7 +282,6 @@ private:
     QPointer<GekkoFyre::GkVuMeter> gkVuMeter;
     QPointer<GekkoFyre::GkModem> gkModem;
 
-    std::shared_ptr<QSettings> sw_settings;
     std::shared_ptr<QCommandLineParser> gkCliParser;
     // std::shared_ptr<QPrinter> printer;
 

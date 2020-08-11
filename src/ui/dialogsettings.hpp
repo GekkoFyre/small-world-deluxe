@@ -59,7 +59,6 @@
 #include <QPointer>
 #include <QMultiMap>
 #include <QComboBox>
-#include <QSettings>
 #include <QSharedPointer>
 
 namespace Ui {
@@ -76,7 +75,6 @@ public:
                             std::shared_ptr<GekkoFyre::AudioDevices> audioDevices,
                             QPointer<GekkoFyre::RadioLibs> radioLibs,
                             std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs,
-                            std::shared_ptr<QSettings> settings,
                             portaudio::System *portAudioInit,
                             std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> radioPtr,
                             const std::list<GekkoFyre::Database::Settings::GkComPort> &com_ports,
@@ -248,7 +246,6 @@ private:
 
     QPointer<GekkoFyre::GkFrequencies> gkFreqs;
     QPointer<GekkoFyre::GkFreqTableViewModel> gkFreqTableModel;
-    std::shared_ptr<QSettings> gkSettings;
 
     void prefill_audio_api_avail(const QVector<PaHostApiTypeId> &portaudio_api_vec);
     void prefill_audio_devices(const std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> &audio_devices_vec);

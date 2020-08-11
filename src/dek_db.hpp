@@ -74,6 +74,9 @@ public:
     void writeFreqInit();
     bool isFreqAlreadyInit();
 
+    void write_sentry_settings(const bool &value, const GekkoFyre::System::Events::Logging::GkSentry &key);
+    bool read_sentry_settings(const GekkoFyre::System::Events::Logging::GkSentry &key);
+
     QString convSeverityToStr(const GekkoFyre::System::Events::Logging::GkSeverity &severity);
 
     QString read_rig_settings(const Database::Settings::radio_cfg &key);

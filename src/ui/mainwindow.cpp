@@ -138,75 +138,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                                               true, QString::fromStdString(dir_to_append.string())).toStdString(); // Path to save final database towards
 
     try {
-        bool enableSentry = false;
-        QMessageBox optInMsgBox;
-        optInMsgBox.setWindowTitle(tr("Help improve Small World!"));
-        optInMsgBox.setText(tr("With your voluntary consent, Small World Deluxe can report anonymous information that helps developers improve this "
-                               "application. This includes things like your screen resolution, along with any crashes you wish to submit."));
-        optInMsgBox.setStandardButtons(QMessageBox::Cancel | QMessageBox::Ok);
-        optInMsgBox.setDefaultButton(QMessageBox::Ok);
-        optInMsgBox.setIcon(QMessageBox::Icon::Question);
-        int ret = optInMsgBox.exec();
-
-        switch (ret) {
-        case QMessageBox::Ok:
-            enableSentry = true;
-            return;
-        case QMessageBox::Cancel:
-            enableSentry = false;
-        default:
-            enableSentry = false;
-        }
-
-        if (enableSentry) {
-            //
-            // Initialize Sentry!
-            // https://blog.sentry.io/2019/09/26/fixing-native-apps-with-sentry
-            // https://docs.sentry.io/platforms/native/
-            //
-            sen_opt = sentry_options_new();
-
-            const QString curr_path = QDir::currentPath();
-            const fs::path crashpad_handler_windows = fs::path(curr_path.toStdString() + native_slash.string() + Filesystem::gk_crashpad_handler_win);
-            const fs::path crashpad_handler_linux = fs::path(curr_path.toStdString() + native_slash.string() + Filesystem::gk_crashpad_handler_linux);
-            fs::path handler_to_use;
-
-            if (fs::exists(crashpad_handler_linux, ec)) {
-                // The handler exists as if we're under a Linux system!
-                handler_to_use = crashpad_handler_linux;
-            } else if (fs::exists(crashpad_handler_windows, ec)) {
-                // The handler exists as if we're under a Microsoft Windows system!
-                handler_to_use = crashpad_handler_windows;
-            } else {
-                throw std::invalid_argument(tr("Unable to find the Crashpad handler for your installation of Small World Deluxe!").toStdString());
-            }
-
-            // The handler is a Crashpad-specific background process
-            sentry_options_set_handler_path(sen_opt, handler_to_use.c_str());
-
-            const qint64 sentry_curr_epoch = QDateTime::currentMSecsSinceEpoch();
-            const fs::path gk_minidump = std::string(swrld_save_path.string() + native_slash.string() + tr("crash-db").toStdString());
-            const fs::path gk_sentry_attachments = std::string(gk_minidump.string() + native_slash.string() + QString::number(sentry_curr_epoch).toStdString()
-                                                               + Filesystem::gk_sentry_dump_file_ext);
-
-            if (!fs::exists(gk_minidump, ec)) {
-                fs::create_directories(gk_minidump, ec);
-            }
-
-            // This is where Minidumps and attachments live before upload
-            sentry_options_set_database_path(sen_opt, gk_minidump.c_str());
-            sentry_options_add_attachment(sen_opt, gk_sentry_attachments.c_str());
-
-            sentry_options_set_dsn(sen_opt, Filesystem::gk_sentry_uri);
-
-            // Initialize the SDK and start the Crashpad handler
-            sentry_init(sen_opt);
-        }
-    } catch (const std::exception &e) {
-        QMessageBox::warning(this, tr("Error!"), tr("An issue was encountered while lauching Crashpad! Error:\n\n%1").arg(e.what()), QMessageBox::Ok);
-    }
-
-    try {
         // Print out the current date
         std::cout << QDate::currentDate().toString().toStdString() << std::endl;
 
@@ -224,9 +155,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         ui->actionE_xit->setIcon(QIcon(":/resources/contrib/images/vector/purchased/iconfinder_turn_off_on_power_181492.svg"));
         ui->action_Settings->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/settings-flat.svg"));
         ui->actionCheck_for_Updates->setIcon(QIcon(":/resources/contrib/images/vector/purchased/iconfinder_chemistry_226643.svg"));
-
-        sw_settings = std::make_shared<QSettings>(QSettings::SystemScope, General::companyName,
-                                                  General::productName, this);
 
         //
         // Create a status bar at the bottom of the window with a default message
@@ -268,7 +196,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         rig_list_foreach(parseRigCapabilities, nullptr);
 
         // Create class pointers
-        fileIo = new GekkoFyre::FileIo(sw_settings, this);
+        fileIo = new GekkoFyre::FileIo(this);
         gkStringFuncs = std::make_shared<GekkoFyre::StringFuncs>(this);
 
         //
@@ -317,6 +245,84 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             if (!save_db_path.empty()) {
                 status = leveldb::DB::Open(options, save_db_path.string(), &db);
                 GkDb = std::make_shared<GekkoFyre::GkLevelDb>(db, fileIo, this);
+
+                bool enableSentry = false;
+                bool askSentry = GkDb->read_sentry_settings(GkSentry::AskedDialog);
+                if (!askSentry) {
+                    QMessageBox optInMsgBox;
+                    optInMsgBox.setWindowTitle(tr("Help improve Small World!"));
+                    optInMsgBox.setText(tr("With your voluntary consent, Small World Deluxe can report anonymous information that helps developers improve this "
+                                           "application. This includes things like your screen resolution, along with any crashes you wish to submit."));
+                    optInMsgBox.setStandardButtons(QMessageBox::No | QMessageBox::Yes);
+                    optInMsgBox.setDefaultButton(QMessageBox::Yes);
+                    optInMsgBox.setIcon(QMessageBox::Icon::Question);
+                    int ret = optInMsgBox.exec();
+
+                    switch (ret) {
+                    case QMessageBox::Yes:
+                        enableSentry = true;
+                        GkDb->write_sentry_settings(true, GkSentry::GivenConsent);
+                        break;
+                    case QMessageBox::No:
+                        enableSentry = false;
+                        GkDb->write_sentry_settings(false, GkSentry::GivenConsent);
+                        break;
+                    default:
+                        enableSentry = false;
+                        GkDb->write_sentry_settings(false, GkSentry::GivenConsent);
+                        break;
+                    }
+
+                    // We have now asked the user this question at least once!
+                    GkDb->write_sentry_settings(true, GkSentry::AskedDialog);
+                } else {
+                    enableSentry = GkDb->read_sentry_settings(GkSentry::GivenConsent);
+                }
+
+                if (enableSentry) {
+                    //
+                    // Initialize Sentry!
+                    // https://blog.sentry.io/2019/09/26/fixing-native-apps-with-sentry
+                    // https://docs.sentry.io/platforms/native/
+                    //
+                    sen_opt = sentry_options_new();
+
+                    const QString curr_path = QDir::currentPath();
+                    const fs::path crashpad_handler_windows = fs::path(curr_path.toStdString() + native_slash.string() + Filesystem::gk_crashpad_handler_win);
+                    const fs::path crashpad_handler_linux = fs::path(curr_path.toStdString() + native_slash.string() + Filesystem::gk_crashpad_handler_linux);
+                    fs::path handler_to_use;
+
+                    if (fs::exists(crashpad_handler_linux, ec)) {
+                        // The handler exists as if we're under a Linux system!
+                        handler_to_use = crashpad_handler_linux;
+                    } else if (fs::exists(crashpad_handler_windows, ec)) {
+                        // The handler exists as if we're under a Microsoft Windows system!
+                        handler_to_use = crashpad_handler_windows;
+                    } else {
+                        throw std::invalid_argument(tr("Unable to find the Crashpad handler for your installation of Small World Deluxe!").toStdString());
+                    }
+
+                    // The handler is a Crashpad-specific background process
+                    sentry_options_set_handler_path(sen_opt, handler_to_use.c_str());
+
+                    const qint64 sentry_curr_epoch = QDateTime::currentMSecsSinceEpoch();
+                    const fs::path gk_minidump = std::string(swrld_save_path.string() + native_slash.string() + tr("crash-db").toStdString());
+                    const fs::path gk_sentry_attachments = std::string(gk_minidump.string() + native_slash.string() + QString::number(sentry_curr_epoch).toStdString()
+                                                                       + Filesystem::gk_sentry_dump_file_ext);
+
+                    if (!fs::exists(gk_minidump, ec)) {
+                        fs::create_directories(gk_minidump, ec);
+                    }
+
+                    // This is where Minidumps and attachments live before upload
+                    sentry_options_set_database_path(sen_opt, gk_minidump.c_str());
+                    sentry_options_add_attachment(sen_opt, gk_sentry_attachments.c_str());
+
+                    sentry_options_set_dsn(sen_opt, General::gk_sentry_uri);
+
+                    // Initialize the SDK and start the Crashpad handler
+                    sentry_init(sen_opt);
+                }
 
                 //
                 // Load some of the primary abilities to work with the Hamlib libraries!
@@ -743,7 +749,7 @@ void MainWindow::launchSettingsWin()
                      gkFreqList, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)));
 
     QPointer<DialogSettings> dlg_settings = new DialogSettings(GkDb, fileIo, gkAudioDevices, gkRadioLibs, gkStringFuncs,
-                                                               sw_settings, gkPortAudioInit, gkRadioPtr, status_com_ports,
+                                                               gkPortAudioInit, gkRadioPtr, status_com_ports,
                                                                gkFreqList, gkFreqTableModel, this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);

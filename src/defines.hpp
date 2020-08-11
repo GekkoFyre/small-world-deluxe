@@ -220,6 +220,8 @@ namespace General {
     constexpr char appVersion[] = "0.0.1";
     constexpr char appRelease[] = "Pre-alpha";
     constexpr char codeRepository[] = "https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe";
+
+    constexpr char gk_sentry_uri[] = "https://ff45bfc885204880bb609e26ff9b6dd7@sentry.gekkofyre.io/2";
 }
 
 namespace Filesystem {
@@ -234,9 +236,7 @@ namespace Filesystem {
     constexpr char gk_crashpad_handler_win[] = "crashpad_handler.exe";  // The name of the Crashpad handler executable under Microsoft Windows operating systems.
     constexpr char gk_crashpad_handler_linux[] = "crashpad_handler";    // The name of the Crashpad handler executable under Linux and possibly Unix-like operating systems.
 
-
-    constexpr char gk_sentry_uri[] = "https://ff45bfc885204880bb609e26ff9b6dd7@sentry.gekkofyre.io/2";
-    constexpr char linux_sys_tty[] = "/sys/class/tty/"; // The location of the TTY-devices under most major Linux distributions
+    constexpr char linux_sys_tty[] = "/sys/class/tty/";                 // The location of the TTY-devices under most major Linux distributions
 }
 
 namespace System {
@@ -283,6 +283,11 @@ namespace System {
                 Debug,
                 Verbose,
                 None
+            };
+
+            enum GkSentry {
+                AskedDialog,
+                GivenConsent
             };
         }
 
