@@ -56,6 +56,7 @@
 #include "src/ui/widgets/gk_display_image.hpp"
 #include "src/ui/gkaudioplaydialog.hpp"
 #include "src/ui/gk_vu_meter_widget.hpp"
+#include <sentry.h>
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
@@ -266,6 +267,7 @@ private:
     // Class pointers
     //
     leveldb::DB *db;
+    sentry_options_t *sen_opt;
     std::shared_ptr<GekkoFyre::GkLevelDb> GkDb;
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
