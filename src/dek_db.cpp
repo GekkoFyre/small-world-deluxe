@@ -605,6 +605,77 @@ bool GkLevelDb::isFreqAlreadyInit()
     return false;
 }
 
+/**
+ * @brief GkLevelDb::write_sentry_settings
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value
+ * @param key
+ */
+void GkLevelDb::write_sentry_settings(const bool &value, const GkSentry &key)
+{
+    leveldb::WriteBatch batch;
+    leveldb::Status status;
+
+    switch (key) {
+    case GkSentry::AskedDialog:
+        batch.Put("AskedDialog", boolEnum(value));
+        break;
+    case GkSentry::GivenConsent:
+        batch.Put("GivenConsent", boolEnum(value));
+        break;
+    default:
+        return;
+    }
+
+    std::time_t curr_time = std::time(nullptr);
+    std::stringstream ss;
+    ss << curr_time;
+    batch.Put("CurrTime", ss.str());
+
+    leveldb::WriteOptions write_options;
+    write_options.sync = true;
+
+    status = db->Write(write_options, &batch);
+
+    if (!status.ok()) { // Abort because of error!
+        throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+    }
+
+    return;
+}
+
+/**
+ * @brief GkLevelDb::read_sentry_settings
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param key
+ * @return
+ */
+bool GkLevelDb::read_sentry_settings(const GkSentry &key)
+{
+    leveldb::Status status;
+    leveldb::ReadOptions read_options;
+    std::string value = "";
+
+    read_options.verify_checksums = true;
+
+    switch (key) {
+    case GkSentry::AskedDialog:
+        status = db->Get(read_options, "AskedDialog", &value);
+        break;
+    case GkSentry::GivenConsent:
+        status = db->Get(read_options, "GivenConsent", &value);
+        break;
+    default:
+        break;
+    }
+
+    if (!value.empty()) {
+        return boolStr(value);
+    }
+
+    return false;
+}
+
 QString GkLevelDb::convSeverityToStr(const GkSeverity &severity)
 {
     switch (severity) {

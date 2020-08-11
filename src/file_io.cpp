@@ -65,13 +65,15 @@ namespace sys = boost::system;
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param parent N/A.
  */
-FileIo::FileIo(std::shared_ptr<QSettings> settings, QObject *parent)
+FileIo::FileIo(QObject *parent)
 {
-    gkSettings = settings;
+    return;
 }
 
 FileIo::~FileIo()
-{}
+{
+    return;
+}
 
 /**
  * @brief FileIo::create_random_string Creates a random string of given length
@@ -197,6 +199,7 @@ bool FileIo::checkSettingsExist(const bool &is_file, const boost::filesystem::pa
  */
 void FileIo::write_initial_settings(const QString &value, const Database::Settings::init_cfg &key)
 {
+    /*
     switch (key) {
     case DbName:
         gkSettings->setValue(Settings::dbName, value);
@@ -210,6 +213,7 @@ void FileIo::write_initial_settings(const QString &value, const Database::Settin
     default:
         return;
     }
+    */
 
     return;
 }
@@ -229,13 +233,13 @@ QString FileIo::read_initial_settings(const Database::Settings::init_cfg &key)
 
     switch (key) {
     case DbName:
-        value = gkSettings->value(Settings::dbName, QString::fromStdString(fs::path(Filesystem::defaultDirAppend + native_slash.string() + Filesystem::fileName).string()));
+        value = QString::fromStdString(fs::path(Filesystem::defaultDirAppend + native_slash.string() + Filesystem::fileName).string());
         break;
     case DbExt:
-        value = gkSettings->value(Settings::dbExt, "");
+        value = "";
         break;
     case DbLoc:
-        value = gkSettings->value(Settings::dbLoc, QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation));
+        value = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation);
         break;
     default:
         return "";
