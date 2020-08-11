@@ -391,7 +391,7 @@ endif()
 
 set(SENTRY_LINK_PTHREAD CACHE BOOL "Links to the pthread library on Unix targets." ON)
 set(SENTRY_BUILD_FORCE32 CACHE BOOL "Otherwise forces cross-compilation from 64-bit host to 32-bit target. Only has an effect on Linux." OFF)
-set(SENTRY_BACKEND "crashpad" CACHE STRING "The type of crash manager to use." FORCE) 
+set(SENTRY_BACKEND "crashpad" CACHE STRING "The type of crash manager to use." FORCE)
 set(SENTRY_CRASHPAD_SYSTEM CACHE BOOL "This instructs the build system to use system-installed breakpad or crashpad libraries instead of using the in-tree version. This is generally not recommended for crashpad, as sentry uses a patched version that has attachment support." OFF)
 
 if(WIN32 OR MSYS OR MINGW)
@@ -771,23 +771,18 @@ install(CODE [[
 #
 # Copy the crashpad handler to the root of the binary build directory, for easy access!
 # https://cmake.org/cmake/help/latest/module/FetchContent.html
+# https://www.thetopsites.net/article/52110824.shtml
 #
-set(GK_CRASHPAD_HNDLR_WINDOWS "${CMAKE_CURRENT_BINARY_DIR}/src/contrib/sentry-native/crashpad_build/handler/crashpad_handler.exe" "${CMAKE_CURRENT_BINARY_DIR}/crashpad_handler.exe")
-set(GK_CRASHPAD_HNDLR_LINUX "${CMAKE_CURRENT_BINARY_DIR}/src/contrib/sentry-native/crashpad_build/handler/crashpad_handler" "${CMAKE_CURRENT_BINARY_DIR}/crashpad_handler")
-if(${SENTRY_BACKEND} STREQUAL "crashpad")
-    if(WIN32 OR MSYS OR MINGW)
-        configure_file("${GK_CRASHPAD_HNDLR_WINDOWS} COPYONLY)
-    else()
-        configure_file("${GK_CRASHPAD_HNDLR_LINUX} COPYONLY)
-    endif()
-elseif(${SENTRY_BACKEND} STREQUAL "breakpad")
-    if(WIN32 OR MSYS OR MINGW)
-        # TODO: Finish this section ASAP!
-    else()
-        # TODO: Finish this section ASAP!
-    endif()
+if(WIN32 OR MSYS OR MINGW)
+    add_custom_command(TARGET smallworld
+                       POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy
+                       ${CMAKE_CURRENT_BINARY_DIR}/src/contrib/sentry-native/crashpad_build/handler/crashpad_handler.exe
+                       ${CMAKE_CURRENT_BINARY_DIR}/crashpad_handler.exe)
 else()
-    message(FATAL_ERROR "Unable to determine the stack trace handler!")
+    add_custom_command(TARGET smallworld
+                       POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy
+                       ${CMAKE_CURRENT_BINARY_DIR}/src/contrib/sentry-native/crashpad_build/handler/crashpad_handler
+                       ${CMAKE_CURRENT_BINARY_DIR}/crashpad_handler)
 endif()
 
 INSTALL(TARGETS smallworld)
