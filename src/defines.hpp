@@ -48,6 +48,7 @@
 #include <boost/filesystem.hpp>
 #include <hamlib/rigclass.h>
 #include <qwt_interval.h>
+#include <sentry.h>
 #include <vector>
 #include <exception>
 #include <string>
@@ -203,6 +204,11 @@ namespace GekkoFyre {
 // CODEC2 Modem related
 //
 #define GK_CODEC2_FRAME_SIZE (320)                      // The size of a single frame, in bytes, for the Codec2 modem.
+
+//
+// JT65 Modem related
+//
+#define GK_WSJTX_JT65_CALLSIGN_SYMBOL_MAX_SIZE (6)      // The maximum amount of characters, or rather, symbols that the callsigns used in communications with JT65 can be.
 
 #ifndef M_PI
 #define M_PI (3.14159265358979323846) /* pi */

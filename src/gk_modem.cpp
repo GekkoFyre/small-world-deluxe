@@ -47,16 +47,137 @@ using namespace Settings;
 using namespace Audio;
 
 /**
- * @brief PaMic::PaMic handles most microphone functions via PortAudio.
+ * @brief GkModem::GkModem
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param gkAudio
+ * @param dbPtr
+ * @param eventLogger
  * @param parent
  */
-GkModem::GkModem(std::shared_ptr<AudioDevices> gkAudio, std::shared_ptr<GkLevelDb> dbPtr, QObject *parent)
+GkModem::GkModem(std::shared_ptr<AudioDevices> gkAudio, std::shared_ptr<GkLevelDb> dbPtr, QPointer<GkEventLogger> eventLogger,
+                 std::shared_ptr<StringFuncs> stringFuncs, QObject *parent)
     : QObject(parent)
 {
+    setParent(parent);
+
     gkAudioDevices = std::move(gkAudio);
     gkDb = std::move(dbPtr);
+    gkStringFuncs = std::move(stringFuncs);
+    gkEventLogger = std::move(eventLogger);
+
+    //
+    // Initialize the Reed Solomon encoder/decoder...
+    //
+    // rs = init_rs_int(6, 0x43, 3, 1, 51, 0); // These settings are applicable to JT65!
+
+    //
+    // Initialize the JT65 encoder/decoder class...
+    //
+    gkModemQRA64 = std::make_unique<GkModemQRA64>(gkAudioDevices, gkEventLogger, gkStringFuncs, 0, 0, 0, this);
+
+    return;
 }
 
 GkModem::~GkModem()
-{}
+{
+    return;
+}
+
+/**
+ * @brief GkModemQRA64::GkModemQRA64
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param gkAudio
+ * @param eventLogger
+ * @param channel_type
+ * @param EbNodB
+ * @param mode
+ */
+GkModemQRA64::GkModemQRA64(std::shared_ptr<AudioDevices> gkAudio, QPointer<GkEventLogger> eventLogger, std::shared_ptr<StringFuncs> stringFuncs,
+                           const int &channel_type, const int &EbNodB, const int &mode, QObject *parent)
+{
+    Q_UNUSED(channel_type);
+    Q_UNUSED(EbNodB);
+    Q_UNUSED(parent);
+
+    gkAudioDevices = std::move(gkAudio);
+    gkStringFuncs = std::move(stringFuncs);
+    gkEventLogger = std::move(eventLogger);
+
+    x = new int[QRA64_K];
+    y = new int[QRA64_N];
+    xdec = new int[QRA64_K];
+    rc = 0;
+
+    codec_iv3nwv = qra64_init(mode); // codec for IV3NWV
+    code_k1jt = qra64_init(mode); // codec for K1JT
+
+    return;
+}
+
+GkModemQRA64::~GkModemQRA64()
+{
+    delete x;
+    delete y;
+    delete xdec;
+
+    return;
+}
+
+/**
+ * @brief GkModemQRA64::encodeWithJT65 will encoded given data, which is provided by QString's, into a JT65 modulated
+ * signal with the given code for this provided by the WSJT-X project <https://physics.princeton.edu/pulsar/K1JT/wsjtx.html>.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param callsign_1
+ * @param callsign_2
+ * @param maidenhead_grid This refers towards the Maidenhead Locator System (a.k.a. QTH Locator and IARU Locator) which is a
+ * geographic co-ordinate system used by amateur radio operators to succinctly describe their locations.
+ */
+void GkModemQRA64::encodeWithJT65(const QString &callsign_1, const QString &callsign_2, const QString &maidenhead_grid)
+{
+    std::vector<int> own_callsign = gkStringFuncs->convStrToIntArray(callsign_1);
+    std::vector<int> reply_callsign = gkStringFuncs->convStrToIntArray(callsign_2);
+    std::vector<int> maidenhead_int = gkStringFuncs->convStrToIntArray(maidenhead_grid); // TODO: Check for the size of this that it's not over the limits!
+
+    //
+    // Determine whether we are over the symbol/character limit or not...
+    //
+    if ((own_callsign.size() > GK_WSJTX_JT65_CALLSIGN_SYMBOL_MAX_SIZE) && (reply_callsign.size() > GK_WSJTX_JT65_CALLSIGN_SYMBOL_MAX_SIZE)) {
+        int extra_chars_own_call = GK_WSJTX_JT65_CALLSIGN_SYMBOL_MAX_SIZE - own_callsign.size();
+        int extra_chars_reply_call = GK_WSJTX_JT65_CALLSIGN_SYMBOL_MAX_SIZE - reply_callsign.size();
+        int result = 0;
+        if (extra_chars_own_call > extra_chars_reply_call) {
+            result = extra_chars_own_call;
+        } else {
+            result = extra_chars_reply_call;
+        }
+
+        throw std::invalid_argument(tr("Error with JT65 modem input! Callsigns are too big by an extra %1 characters!")
+                                    .arg(QString::number(result)).toStdString());
+    }
+
+    //
+    // Step 1a) IV3NWV makes a CQ call (with no grid)...
+    //
+    // encodemsg_jt65(x, *own_callsign.data(), *reply_callsign.data(), GRID_BLANK);
+    // qra64_encode(); // `x` is the input buffer whilst `y` is the output buffer
+    // rx = mfskchannel();
+
+    return;
+}
+
+/**
+ * @brief GkModemQRA64::decodeFromJT65 will decode any perceptible JT65 modulated signals out of a given audio stream with
+ * the given code for this provided by the WSJT-X project <https://physics.princeton.edu/pulsar/K1JT/wsjtx.html>.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param callsign_1
+ * @param callsign_2
+ * @param maidenhead_grid This refers towards the Maidenhead Locator System (a.k.a. QTH Locator and IARU Locator) which is a
+ * geographic co-ordinate system used by amateur radio operators to succinctly describe their locations.
+ * @return The decoded output of the captured JT65 signal.
+ */
+QString GkModemQRA64::decodeFromJT65(const QString &callsign_1, const QString &callsign_2, const QString &maidenhead_grid)
+{
+    // qra64_decode();
+
+    return "";
+}

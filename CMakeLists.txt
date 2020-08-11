@@ -64,7 +64,7 @@ if(GK_CUDA_FFT)
     add_definitions(-DGK_CUDA_FFT_ENBL)
     project(smallworld C CXX CUDA)
 else()
-    project(smallworld C CXX)
+    project(smallworld C CXX Fortran)
 endif()
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
@@ -138,6 +138,12 @@ if (LINUX)
     set(LIB_INSTALL_DIR "/usr/local/lib/small-world-deluxe/" CACHE PATH "Location for the libraries/dependencies.")
     set(SYSCONFIG_INSTALL_DIR "/etc/small-world-deluxe/" CACHE PATH "Location for the settings directory.")
 endif()
+
+if (GFYRE_BUILD_STATIC)
+    set(BUILD_SHARED_LIBS OFF) # Regarding Sentry, setting this to OFF will build said library as a STATIC one!
+else()
+    set(BUILD_SHARED_LIBS ON)
+endif(GFYRE_BUILD_STATIC)
 
 #
 # https://stackoverflow.com/questions/33991918/link-to-pthread-library-using-cmake-in-clion
@@ -373,6 +379,31 @@ endif(Iconv_FOUND)
 set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-arcs -ftest-coverage -mwindows")
 
 #
+# Sentry (Native SDK for C/C++)
+# https://github.com/getsentry/sentry-native
+#
+set(SENTRY_PIC CACHE BOOL "Build Sentry as a position independent library" ON)
+set(SENTRY_EXPORT_SYMBOLS CACHE BOOL "By default, sentry exposes all symbols in the dynamic symbol table. You might want to disable it in case the program intends to dlopen third-party shared libraries and avoid symbol collisions." OFF)
+
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+    option(SENTRY_BUILD_RUNTIMESTATIC "Disables linking with the static MSVC runtime. Has no effect if the compiler is not MSVC" OFF)
+endif()
+
+set(SENTRY_LINK_PTHREAD CACHE BOOL "Links to the pthread library on Unix targets." ON)
+set(SENTRY_BUILD_FORCE32 CACHE BOOL "Otherwise forces cross-compilation from 64-bit host to 32-bit target. Only has an effect on Linux." OFF)
+set(SENTRY_BACKEND "crashpad" CACHE STRING "The type of crash manager to use." FORCE)
+set(SENTRY_CRASHPAD_SYSTEM CACHE BOOL "This instructs the build system to use system-installed breakpad or crashpad libraries instead of using the in-tree version. This is generally not recommended for crashpad, as sentry uses a patched version that has attachment support." OFF)
+
+if(WIN32 OR MSYS OR MINGW)
+    set(SENTRY_TRANSPORT "winhttp" CACHE STRING "Please do not modify this.")
+else()
+    set(SENTRY_TRANSPORT "curl" CACHE STRING "Please do not modify this.")
+endif()
+
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/sentry-native")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/sentry-native/include")
+
+#
 # PortAudio's C++ bindings
 #
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/portaudio/cpp/include")
@@ -404,6 +435,42 @@ if(WIN32 OR MSYS OR MINGW)
 endif()
 
 set_property(SOURCE ${GALAXY_PORTAUDIO_CPP} PROPERTY SKIP_AUTOUIC ON)
+
+set(GALAXY_WSJTX_QRA64_C
+    ${GALAXY_WSJTX_QRA64_C}
+    src/contrib/wsjtx/lib/ftrsd/int.h
+    src/contrib/wsjtx/lib/qra/qra64/main.c
+    src/contrib/wsjtx/lib/qra/qra64/fadengauss.c
+    src/contrib/wsjtx/lib/qra/qra64/fadenlorentz.c
+    src/contrib/wsjtx/lib/qra/qra64/qra64_subs.c
+    src/contrib/wsjtx/lib/qra/qra64/qra64.c
+    src/contrib/wsjtx/lib/qra/qra64/qra64.h
+    src/contrib/wsjtx/lib/qra/qracodes/normrnd.c
+    src/contrib/wsjtx/lib/qra/qracodes/normrnd.h
+    src/contrib/wsjtx/lib/qra/qracodes/npfwht.c
+    src/contrib/wsjtx/lib/qra/qracodes/npfwht.h
+    src/contrib/wsjtx/lib/qra/qracodes/pdmath.c
+    src/contrib/wsjtx/lib/qra/qracodes/pdmath.h
+    src/contrib/wsjtx/lib/qra/qracodes/qra12_63_64_irr_b.c
+    src/contrib/wsjtx/lib/qra/qracodes/qra12_63_64_irr_b.h
+    src/contrib/wsjtx/lib/qra/qracodes/qra13_64_64_irr_e.c
+    src/contrib/wsjtx/lib/qra/qracodes/qra13_64_64_irr_e.h
+    src/contrib/wsjtx/lib/qra/qracodes/qracodes.c
+    src/contrib/wsjtx/lib/qra/qracodes/qracodes.h)
+
+set_property(SOURCE ${GALAXY_WSJTX_QRA64_C} PROPERTY SKIP_AUTOUIC ON)
+
+set(GALAXY_WSJTX_WSPR_C
+    ${GALAXY_WSJTX_WSPR_C}
+    src/contrib/wsjtx/lib/wsprd/nhash.c
+    src/contrib/wsjtx/lib/wsprd/wsprd_utils.c
+    src/contrib/wsjtx/lib/wsprd/wsprd_utils.h
+    src/contrib/wsjtx/lib/wsprd/fano.c
+    src/contrib/wsjtx/lib/wsprd/fano.h
+    src/contrib/wsjtx/lib/wsprd/jelinek.c
+    src/contrib/wsjtx/lib/wsprd/jelinek.h)
+
+set_property(SOURCE ${GALAXY_WSJTX_WSPR_C} PROPERTY SKIP_AUTOUIC ON)
 
 #
 # SingleApplication
@@ -557,7 +624,8 @@ set(GALAXY_SRC_HEADERS
     src/gk_timer.hpp
     src/gk_circ_buffer.hpp
     src/gk_fft.hpp
-    src/contrib/rapidcsv/src/rapidcsv.h)
+    src/contrib/rapidcsv/src/rapidcsv.h
+    src/contrib/AudioFile/AudioFile.h)
 
 if(LINUX)
     set(GALAXY_SRC_HEADERS
@@ -615,10 +683,12 @@ endif()
 # Build Small World Deluxe as a static package!
 #
 if(GFYRE_BUILD_STATIC)
-    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP})
+    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_QRA64_C} ${GALAXY_WSJTX_WSPR_C})
     if(GK_CUDA_FFT)
         add_library(galaxy_cuda STATIC ${GALAXY_CUDA})
     endif()
+    
+    # add_library(galaxy_fort STATIC ${GALAXY_WSJTX_QRA64_FORT})
 else()
     set(GFYRE_BUILD_SHARED ON)
 endif(GFYRE_BUILD_STATIC)
@@ -627,14 +697,16 @@ endif(GFYRE_BUILD_STATIC)
 # Build Small World Deluxe as a shared package!
 #
 if(GFYRE_BUILD_SHARED)
-    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP})
+    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_QRA64_C} ${GALAXY_WSJTX_WSPR_C})
     if(GK_CUDA_FFT)
         add_library(galaxy_cuda STATIC ${GALAXY_CUDA})
     endif()
+    
+    # add_library(galaxy_fort STATIC ${GALAXY_WSJTX_QRA64_FORT})
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
-target_link_libraries(galaxy ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::SerialPort Qt5::PrintSupport Threads::Threads SingleApplication::SingleApplication ${LIBS})
+target_link_libraries(galaxy ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::SerialPort Qt5::PrintSupport Threads::Threads SingleApplication::SingleApplication sentry::sentry ${LIBS})
 
 qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)
 add_dependencies(galaxy resources)
@@ -695,6 +767,23 @@ install(CODE [[
                     "${path_to_above_file}"
                     DOC "Copying dependencies for smallworld")
 ]])
+
+#
+# Copy the crashpad handler to the root of the binary build directory, for easy access!
+# https://cmake.org/cmake/help/latest/module/FetchContent.html
+# https://www.thetopsites.net/article/52110824.shtml
+#
+if(WIN32 OR MSYS OR MINGW)
+    add_custom_command(TARGET smallworld
+                       POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy
+                       ${CMAKE_CURRENT_BINARY_DIR}/src/contrib/sentry-native/crashpad_build/handler/crashpad_handler.exe
+                       ${CMAKE_CURRENT_BINARY_DIR}/crashpad_handler.exe)
+else()
+    add_custom_command(TARGET smallworld
+                       POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy
+                       ${CMAKE_CURRENT_BINARY_DIR}/src/contrib/sentry-native/crashpad_build/handler/crashpad_handler
+                       ${CMAKE_CURRENT_BINARY_DIR}/crashpad_handler)
+endif()
 
 INSTALL(TARGETS smallworld)
 

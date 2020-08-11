@@ -52,6 +52,7 @@
 #include "src/gk_audio_decoding.hpp"
 #include "src/gk_fft.hpp"
 #include "src/gk_logger.hpp"
+#include "src/gk_modem.hpp"
 #include "src/ui/widgets/gk_display_image.hpp"
 #include "src/ui/gkaudioplaydialog.hpp"
 #include "src/ui/gk_vu_meter_widget.hpp"
@@ -278,6 +279,7 @@ private:
     QPointer<GekkoFyre::SpectroGui> gkSpectroGui;
     QPointer<GkAudioPlayDialog> gkAudioPlayDlg;
     QPointer<GekkoFyre::GkVuMeter> gkVuMeter;
+    QPointer<GekkoFyre::GkModem> gkModem;
 
     std::shared_ptr<QSettings> sw_settings;
     std::shared_ptr<QCommandLineParser> gkCliParser;

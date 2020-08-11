@@ -71,6 +71,7 @@ sworld_debug_archlinux_x86_64:
         - pacman -Syu --noconfirm
         - pacman -S base-devel --noconfirm
         - pacman -S gcc --noconfirm
+        - pacman -S gcc-fortran --noconfirm
         - pacman -S octave --noconfirm
         - pacman -S python --noconfirm
         - pacman -S gdb --noconfirm
@@ -95,11 +96,12 @@ sworld_debug_archlinux_x86_64:
         - pacman -S qt5-3d --noconfirm
         - pacman -S qt5-connectivity --noconfirm
         - pacman -S zstd --noconfirm
+        - pacman -S libusb --noconfirm
+        - pacman -S hidapi --noconfirm
         - pacman -S lz4 --noconfirm
         - pacman -S zlib --noconfirm
         - pacman -S leveldb --noconfirm
         - pacman -S portaudio --noconfirm
-        - pacman -S libusb --noconfirm
         - pacman -S fftw --noconfirm
         - pacman -S snappy --noconfirm
         - pacman -S qwt --noconfirm

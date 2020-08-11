@@ -47,6 +47,7 @@
 #include <QString>
 #include <string>
 #include <memory>
+#include <vector>
 #include <mutex>
 
 #ifdef _WIN32
@@ -70,6 +71,7 @@ public:
     #endif
 
     QString getStringFromUnsignedChar(unsigned char *str);
+    std::vector<int> convStrToIntArray(const QString &str);
 
 };
 };

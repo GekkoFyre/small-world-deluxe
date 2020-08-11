@@ -10,3 +10,9 @@
 [submodule "src/contrib/QtUsb"]
 	path = src/contrib/QtUsb
 	url = https://github.com/fpoussin/QtUsb.git
+[submodule "src/contrib/AudioFile"]
+	path = src/contrib/AudioFile
+	url = https://github.com/adamstark/AudioFile
+[submodule "src/contrib/sentry-native"]
+	path = src/contrib/sentry-native
+	url = https://github.com/getsentry/sentry-native.git

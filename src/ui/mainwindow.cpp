@@ -43,6 +43,7 @@
 #include "src/models/tableview/gk_frequency_model.hpp"
 #include "src/models/tableview/gk_logger_model.hpp"
 #include "src/gk_codec2.hpp"
+#include <sentry.h>
 #include <boost/exception/all.hpp>
 #include <boost/chrono/chrono.hpp>
 #include <cmath>
@@ -130,8 +131,22 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<std::vector<qint16>>("std::vector<qint16>");
 
     try {
-        // Initialize QMainWindow to a full-screen after a single second!
-        // QTimer::singleShot(0, this, SLOT(showFullScreen()));
+        //
+        // Initialize Sentry!
+        // https://blog.sentry.io/2019/09/26/fixing-native-apps-with-sentry
+        // https://docs.sentry.io/platforms/native/
+        //
+        sentry_options_t *sen_opt = sentry_options_new();
+
+        // The handler is a Crashpad-specific background process
+        sentry_options_set_handler_path(sen_opt, "crashpad_handler.exe");
+
+        // This is where Minidumps and attachments live before upload
+        sentry_options_set_database_path(sen_opt, "sentry-db");
+        sentry_options_add_attachment(sen_opt, "application.log");
+
+        // Initialize the SDK and start the Crashpad handler
+        sentry_init(sen_opt);
 
         // Print out the current date
         std::cout << QDate::currentDate().toString().toStdString() << std::endl;
@@ -504,6 +519,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         widget_change_freq->setToolTip(tr("Enter or fine-tune the frequency that you would like to transmit/receive with!"));
         QObject::connect(widget_change_freq, SIGNAL(execFuncAfterEvent(const quint64 &)),
                          this, SLOT(tuneActiveFreq(const quint64 &)));
+
+        gkModem = new GekkoFyre::GkModem(gkAudioDevices, GkDb, gkEventLogger, gkStringFuncs, this);
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
