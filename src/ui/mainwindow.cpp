@@ -305,8 +305,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                     // The handler is a Crashpad-specific background process
                     sentry_options_set_handler_path(sen_opt, handler_to_use.c_str());
 
+                    const fs::path sentry_crash_dir = fs::path(Filesystem::defaultDirAppend + native_slash.string() + Filesystem::gk_sentry_dump_dir);
+                    const fs::path gk_minidump = fileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation),
+                                                                          true, QString::fromStdString(sentry_crash_dir.string())).toStdString();
+
                     const qint64 sentry_curr_epoch = QDateTime::currentMSecsSinceEpoch();
-                    const fs::path gk_minidump = std::string(swrld_save_path.string() + native_slash.string() + tr("crash-db").toStdString());
                     const fs::path gk_sentry_attachments = std::string(gk_minidump.string() + native_slash.string() + QString::number(sentry_curr_epoch).toStdString()
                                                                        + Filesystem::gk_sentry_dump_file_ext);
 
