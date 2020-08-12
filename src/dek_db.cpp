@@ -808,6 +808,7 @@ void GkLevelDb::create_unique_id()
         ret_num = sentry_unique_id.toInt();
     } else {
         ret_num = randomNumber();
+        write_optin_settings(QString::number(ret_num), GkOptIn::UserUniqueId);
     }
 
     sentry_value_t user = sentry_value_new_object();
@@ -1797,5 +1798,10 @@ qint64 GkLevelDb::randomNumber()
     std::mt19937 gen(seed);
     std::uniform_int_distribution<unsigned> distrib(1, 6);
 
-    return distrib(gen);
+    std::stringstream ss;
+    for (qint64 i = 0; i < 100500; ++i) {
+        ss << distrib(gen) << ' ';
+    }
+
+    return std::stoul(ss.str());
 }

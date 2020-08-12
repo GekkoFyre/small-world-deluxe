@@ -120,8 +120,8 @@ class SpectroGui: public QwtPlot {
     Q_OBJECT
 
 public:
-    SpectroGui(std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger, const bool &enablePanner = false,
-               const bool &enableZoomer = false, QWidget *parent = nullptr);
+    explicit SpectroGui(std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger, const bool &enablePanner = false,
+                        const bool &enableZoomer = false, QWidget *parent = nullptr);
     ~SpectroGui();
 
     void insertData(const QVector<double> &values, const int &numCols);
@@ -135,19 +135,19 @@ public slots:
     void updateFFTSize(const int &value);
 
 private:
-    QwtPlotZoomer *zoomer;
+    QPointer<QwtPlotZoomer> zoomer;
     LinearColorMapRGB *color_map;
-    QwtPlotCanvas *canvas;
-    QwtPlotCurve *curve;
-    QwtPlotPanner *panner;
-    QwtScaleWidget *top_x_axis;
-    QwtScaleWidget *right_y_axis;
+    QPointer<QwtPlotCanvas> canvas;
+    std::unique_ptr<QwtPlotCurve> curve;
+    QPointer<QwtPlotPanner> panner;
+    QwtScaleWidget *top_x_axis;         // This makes use of RAII!
+    QwtScaleWidget *right_y_axis;       // This makes use of RAII!
 
     int buf_overall_size;
     int buf_total_size;
     QList<double> gkRasterBuf;
-    GkSpectroRasterData *gkRasterData;
-    QwtMatrixRasterData *gkMatrixData;
+    std::unique_ptr<GkSpectroRasterData> gkRasterData;
+    std::unique_ptr<QwtMatrixRasterData> gkMatrixData;
 
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
@@ -158,8 +158,8 @@ private:
     //
     // Date & Timing
     //
-    QwtDateScaleDraw *date_scale_draw;
-    QwtDateScaleEngine *date_scale_engine;
+    std::unique_ptr<QwtDateScaleDraw> date_scale_draw;
+    std::unique_ptr<QwtDateScaleEngine> date_scale_engine;
 
     //
     // Threads

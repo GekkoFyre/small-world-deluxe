@@ -322,10 +322,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                     sentry_options_add_attachment(sen_opt, gk_sentry_attachments.c_str());
 
                     // Miscellaneous settings pertaining to Sentry
-                    sentry_options_set_auto_session_tracking(sen_opt, false);
+                    sentry_options_set_auto_session_tracking(sen_opt, true);
                     sentry_options_set_symbolize_stacktraces(sen_opt, true);
-                    sentry_options_set_environment(sen_opt, General::gk_sentry_env);
 
+                    // Release information
+                    sentry_options_set_environment(sen_opt, General::gk_sentry_env);
+                    sentry_options_set_release(sen_opt, General::appVersion);
+
+                    // Server and URI details!
                     sentry_options_set_dsn(sen_opt, General::gk_sentry_uri);
 
                     // Initialize the SDK and start the Crashpad handler
@@ -333,7 +337,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
                     // Initialize a Unique ID for the given user on the local machine, which is much more anonymous and sanitized than
                     // dealing with IP Addresses!
-                    // GkDb->create_unique_id();
+                    GkDb->create_unique_id();
                 }
 
                 //
