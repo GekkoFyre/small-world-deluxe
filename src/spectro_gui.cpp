@@ -87,7 +87,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QPointer<GkEven
 
         gkRasterData = std::make_unique<GkSpectroRasterData>();
         gkMatrixData = std::make_unique<QwtMatrixRasterData>();
-        color_map = new LinearColorMapRGB();
+        color_map = std::make_unique<LinearColorMapRGB>();
         canvas = new QwtPlotCanvas();
 
         //
@@ -105,7 +105,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QPointer<GkEven
         gkRasterData->setRenderThreadCount(0); // https://docs.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getlogicalprocessorinformation?redirectedfrom=MSDN
         gkRasterData->setCachePolicy(QwtPlotRasterItem::PaintCache);
         gkRasterData->setDisplayMode(QwtPlotSpectrogram::DisplayMode::ImageMode, true);
-        gkRasterData->setColorMap(color_map);
+        gkRasterData->setColorMap(color_map.get());
 
         // These are said to use quite a few system resources!
         gkRasterData->setRenderHint(QwtPlotItem::RenderAntialiased);
@@ -163,6 +163,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QPointer<GkEven
 
         //
         // Colour Bar on the right axis
+        // https://www.qtcentre.org/threads/69050-Simple-example-with-QwtPlot-multiaxes
         //
         top_x_axis = axisWidget(QwtPlot::xTop);
         top_x_axis->setTitle(tr("Bandwidth (Hz)"));
@@ -175,7 +176,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QPointer<GkEven
         right_y_axis = axisWidget(QwtPlot::yRight);
         right_y_axis->setColorBarWidth(16);
         right_y_axis->setColorBarEnabled(true);
-        right_y_axis->setColorMap(gkRasterData->interval(Qt::ZAxis), color_map);
+        right_y_axis->setColorMap(gkRasterData->interval(Qt::ZAxis), color_map.get());
         right_y_axis->setEnabled(true);
         enableAxis(QwtPlot::yRight, true);
 

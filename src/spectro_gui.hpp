@@ -136,7 +136,7 @@ public slots:
 
 private:
     QPointer<QwtPlotZoomer> zoomer;
-    LinearColorMapRGB *color_map;
+    std::unique_ptr<LinearColorMapRGB> color_map;
     QPointer<QwtPlotCanvas> canvas;
     std::unique_ptr<QwtPlotCurve> curve;
     QPointer<QwtPlotPanner> panner;
