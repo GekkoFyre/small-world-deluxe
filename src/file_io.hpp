@@ -57,7 +57,6 @@
 #include <array>
 #include <QObject>
 #include <QString>
-#include <QSettings>
 
 namespace GekkoFyre {
 
@@ -65,7 +64,7 @@ class FileIo : public QObject {
     Q_OBJECT
 
 public:
-    explicit FileIo(std::shared_ptr<QSettings> settings, QObject *parent = nullptr);
+    explicit FileIo(QObject *parent = nullptr);
     ~FileIo();
 
     static std::vector<boost::filesystem::path> boost_dir_iterator(const boost::filesystem::path &dirPath, boost::system::error_code ec,
@@ -88,8 +87,6 @@ protected:
     static std::vector<boost::filesystem::path> analyze_dir(const boost::filesystem::path &dirPath, const std::vector<std::string> &dirsToSkip = { });
 
 private:
-    std::shared_ptr<QSettings> gkSettings;
-
     //
     // Author: Konrad Rudolph <https://stackoverflow.com/a/444614/4293625>
     //

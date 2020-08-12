@@ -85,8 +85,8 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QPointer<GkEven
         //
         graph_in_use = GkGraphType::GkWaterfall;
 
-        gkRasterData = new GkSpectroRasterData();
-        gkMatrixData = new QwtMatrixRasterData();
+        gkRasterData = std::make_unique<GkSpectroRasterData>();
+        gkMatrixData = std::make_unique<QwtMatrixRasterData>();
         color_map = new LinearColorMapRGB();
         canvas = new QwtPlotCanvas();
 
@@ -116,7 +116,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QPointer<GkEven
         }
 
         gkRasterData->setContourLevels(contourLevels);
-        gkRasterData->setData(gkMatrixData);
+        gkRasterData->setData(gkMatrixData.get());
         // gkSpectrogram->attach(this);
 
         gkMatrixData->setInterval(Qt::XAxis, QwtInterval(0, 2500.0f));
@@ -135,14 +135,14 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QPointer<GkEven
         setAxisLabelRotation(QwtPlot::yLeft, -50.0); // Puts the label markings (i.e. frequency response labels) at an angle
         setAxisLabelAlignment(QwtPlot::yLeft, Qt::AlignVCenter);
 
-        date_scale_draw = new QwtDateScaleDraw(Qt::UTC);
-        date_scale_engine = new QwtDateScaleEngine(Qt::UTC);
+        date_scale_draw = std::make_unique<QwtDateScaleDraw>(Qt::UTC);
+        date_scale_engine = std::make_unique<QwtDateScaleEngine>(Qt::UTC);
         date_scale_draw->setTimeSpec(Qt::TimeSpec::UTC);
         date_scale_engine->setTimeSpec(Qt::TimeSpec::UTC);
         date_scale_draw->setDateFormat(QwtDate::Second, tr("hh:mm:ss"));
 
-        setAxisScaleDraw(QwtPlot::yLeft, date_scale_draw);
-        setAxisScaleEngine(QwtPlot::yLeft, date_scale_engine);
+        setAxisScaleDraw(QwtPlot::yLeft, date_scale_draw.get());
+        setAxisScaleEngine(QwtPlot::yLeft, date_scale_engine.get());
         // date_scale_engine->divideScale(spectro_begin_time, spectro_latest_update, 0, 0);
 
         // const QwtInterval zInterval = gkSpectrogram->data()->interval(Qt::ZAxis);
@@ -155,7 +155,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QPointer<GkEven
         //
         plotLayout()->setAlignCanvasToScales(true);
 
-        curve = new QwtPlotCurve();
+        curve = std::make_unique<QwtPlotCurve>();
         curve->setTitle("Frequency Response");
         curve->setPen(Qt::black, 4);
         curve->setRenderHint(QwtPlotItem::RenderAntialiased, true);
@@ -223,29 +223,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QPointer<GkEven
 }
 
 SpectroGui::~SpectroGui()
-{
-    if (color_map != nullptr) {
-        delete color_map;
-    }
-
-    if (canvas != nullptr) {
-        delete canvas;
-    }
-
-    if (date_scale_draw != nullptr) {
-        delete date_scale_draw;
-    }
-
-    if (date_scale_engine != nullptr) {
-        delete date_scale_engine;
-    }
-
-    if (curve != nullptr) {
-        delete curve;
-    }
-
-    return;
-}
+{}
 
 /**
  * @brief SpectroGui::insertData
@@ -388,11 +366,6 @@ void SpectroGui::refreshDateTime(const qint64 &latest_time_update, const qint64 
  * @param value
  */
 void SpectroGui::updateFFTSize(const int &value)
-{
-    return;
-}
-
-GkSpectroRasterData::~GkSpectroRasterData()
 {
     return;
 }

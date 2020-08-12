@@ -30,6 +30,18 @@ Snappy by Google
     <https://github.com/google/snappy>
         Public License
 
+Sentry (Native SDK for C/C++) by Armin Ronacher & Arpad Borsos et al.
+    <https://github.com/getsentry/sentry-native>
+        The MIT License
+
+Crashpad by Mark Mentovai <mark@chromium.org>
+    <https://chromium.googlesource.com/crashpad/crashpad/>
+        Apache License (APL, version 2)
+
+Breakpad by Google
+    <https://chromium.googlesource.com/breakpad/breakpad/>
+        Public License
+
 Hamlib by The Hamlib Group
     <https://github.com/Hamlib/Hamlib>
         GNU General Public License (GPL, version 2)
@@ -77,6 +89,10 @@ SingleApplication by Itay Grudev
 RapidCSV by Kristofer Berggren
     <https://github.com/d99kris/rapidcsv/>
         BSD 3-clause License
+
+AudioFile by Adam Stark
+    <https://github.com/adamstark/AudioFile>
+        GNU General Public License (GPL, version 3)
 
 getopt for Microsoft Windows by Chunde
     <https://github.com/Chunde/getopt-for-windows>

@@ -45,21 +45,91 @@
 #include "src/dek_db.hpp"
 #include "src/audio_devices.hpp"
 #include "src/pa_audio_buf.hpp"
+#include "src/gk_logger.hpp"
+#include "src/gk_string_funcs.hpp"
+#include "src/contrib/wsjtx/lib/qra/qra64/qra64.h"
 #include <QObject>
+#include <QPointer>
+#include <memory>
 
 namespace GekkoFyre {
+
+class GkModemQRA64 : public QObject {
+    Q_OBJECT
+
+public:
+    explicit GkModemQRA64(std::shared_ptr<GekkoFyre::AudioDevices> gkAudio, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                          std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs, const int &channel_type, const int &EbNodB,
+                          const int &mode, QObject *parent = nullptr);
+    ~GkModemQRA64();
+
+    /*
+    The QSO is counted as successfull if IV3NWV received the last message
+    When mode=QRA_AUTOAP each decoder attempts to decode the message sent
+    by the other station using the a-priori information derived by what
+    has been already decoded in a previous phase of the QSO if decoding
+    with no a-priori information has not been successful.
+
+    Step 1) K1JT's decoder first attempts to decode msgs of type [? ? ?]
+    and if this attempt fails, it attempts to decode [CQ/QRZ ? ?]  or
+    [CQ/QRZ ?] msgs
+
+    Step 2) if IV3NWV's decoder is unable to decode K1JT's without AP it
+    attempts to decode messages of the type [IV3NWV ? ?] and [IV3NWV ?].
+
+    Step 3) K1JT's decoder attempts to decode [? ? ?] and [K1JT IV3NWV ?]
+    (this last decode type has been enabled by K1JT's encoder at step 2)
+
+    Step 4) IV3NWV's decoder attempts to decode [? ? ?] and [IV3NWV K1JT
+    ?] (this last decode type has been enabled by IV3NWV's encoder at step
+    3)
+
+    At each step the simulation reports if a decode was successful.  In
+    this case it also reports the type of decode (see table decode_type
+    above)
+
+    When mode=QRA_NOAP, only [? ? ?] decodes are attempted and no a-priori
+    information is used by the decoder
+
+    The function returns 0 if all of the four messages have been decoded
+    by their recipients (with no retries) and -1 if any of them could not
+    be decoded
+    */
+
+    void encodeWithJT65(const QString &callsign_1, const QString &callsign_2, const QString &maidenhead_grid);
+    QString decodeFromJT65(const QString &callsign_1, const QString &callsign_2, const QString &maidenhead_grid);
+
+private:
+    std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
+    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
+    std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
+
+    int *x;
+    int *y;
+    int rc;
+    float *rx;
+    int *xdec;
+
+    qra64codec *codec_iv3nwv;
+    qra64codec *code_k1jt;
+
+};
 
 class GkModem : public QObject {
     Q_OBJECT
 
 public:
     explicit GkModem(std::shared_ptr<GekkoFyre::AudioDevices> gkAudio, std::shared_ptr<GekkoFyre::GkLevelDb> dbPtr,
-                     QObject *parent = nullptr);
+                     QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                     std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs, QObject *parent = nullptr);
     ~GkModem();
 
 private:
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
     std::shared_ptr<GekkoFyre::GkLevelDb> gkDb;
+    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
+    std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
+    std::unique_ptr<GkModemQRA64> gkModemQRA64;
 
 };
 };

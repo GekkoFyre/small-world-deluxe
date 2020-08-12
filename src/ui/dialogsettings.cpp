@@ -78,7 +78,6 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
                                QPointer<FileIo> filePtr,
                                std::shared_ptr<AudioDevices> audioDevices,
                                QPointer<RadioLibs> radioLibs, std::shared_ptr<StringFuncs> stringFuncs,
-                               std::shared_ptr<QSettings> settings,
                                portaudio::System *portAudioInit,
                                std::shared_ptr<GkRadio> radioPtr,
                                const std::list<GekkoFyre::Database::Settings::GkComPort> &com_ports,
@@ -104,7 +103,6 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
         gkFreqTableModel = std::move(freqTableModel);
         status_com_ports = com_ports;
 
-        gkSettings = std::move(settings);
         usb_ports_active = false;
         com_ports_active = false;
 
@@ -251,8 +249,8 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         //
         // Operating System's own Settings (e.g. the registry under Microsoft Windows)
         //
-        gkFileIo->write_initial_settings(Filesystem::fileName, init_cfg::DbName);
-        gkFileIo->write_initial_settings(ui->lineEdit_db_save_loc->text(), init_cfg::DbLoc);
+        // gkFileIo->write_initial_settings(Filesystem::fileName, init_cfg::DbName);
+        // gkFileIo->write_initial_settings(ui->lineEdit_db_save_loc->text(), init_cfg::DbLoc);
 
         //
         // PortAudio API

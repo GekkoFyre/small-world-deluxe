@@ -129,17 +129,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<PaHostApiTypeId>("PaHostApiTypeId");
     qRegisterMetaType<std::vector<qint16>>("std::vector<qint16>");
 
-    try {
-        // Initialize QMainWindow to a full-screen after a single second!
-        // QTimer::singleShot(0, this, SLOT(showFullScreen()));
+    sys::error_code ec;
+    fs::path slash = "/";
+    native_slash = slash.make_preferred().native();
 
+    const fs::path dir_to_append = fs::path(Filesystem::defaultDirAppend + native_slash.string() + Filesystem::fileName);
+    const fs::path swrld_save_path = fileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation),
+                                                              true, QString::fromStdString(dir_to_append.string())).toStdString(); // Path to save final database towards
+
+    try {
         // Print out the current date
         std::cout << QDate::currentDate().toString().toStdString() << std::endl;
 
         this->window()->showMaximized();; // Maximize the window!
-
-        fs::path slash = "/";
-        native_slash = slash.make_preferred().native();
 
         this->setWindowIcon(QIcon(":/resources/contrib/images/vector/purchased/2020-03/iconfinder_293_Frequency_News_Radio_5711690.svg"));
         ui->actionPlay->setIcon(QIcon(":/resources/contrib/images/vector/Kameleon/Record-Player.svg"));
@@ -153,9 +155,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         ui->actionE_xit->setIcon(QIcon(":/resources/contrib/images/vector/purchased/iconfinder_turn_off_on_power_181492.svg"));
         ui->action_Settings->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/settings-flat.svg"));
         ui->actionCheck_for_Updates->setIcon(QIcon(":/resources/contrib/images/vector/purchased/iconfinder_chemistry_226643.svg"));
-
-        sw_settings = std::make_shared<QSettings>(QSettings::SystemScope, General::companyName,
-                                                  General::productName, this);
 
         //
         // Create a status bar at the bottom of the window with a default message
@@ -197,7 +196,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         rig_list_foreach(parseRigCapabilities, nullptr);
 
         // Create class pointers
-        fileIo = new GekkoFyre::FileIo(sw_settings, this);
+        fileIo = new GekkoFyre::FileIo(this);
         gkStringFuncs = std::make_shared<GekkoFyre::StringFuncs>(this);
 
         //
@@ -207,7 +206,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QString init_settings_db_name = fileIo->read_initial_settings(init_cfg::DbName);
 
         // Create path to file-database
-        sys::error_code ec;
         try {
             if (!init_settings_db_loc.isEmpty() && !init_settings_db_name.isEmpty()) {
                 // A path has already been created, or should've been, and is stored in the QSetting's
@@ -218,10 +216,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                     // Directory presently exists
                     save_db_path = new_path;
                 } else {
-                    // Directory does not exist despite been saved as a setting, so we must create it first!
-                    fs::path dir_to_append = fs::path(Filesystem::defaultDirAppend + native_slash.string() + Filesystem::fileName);
-                    save_db_path = fileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation),
-                                                                            true, QString::fromStdString(dir_to_append.string())).toStdString(); // Path to save final database towards
+                    if (fs::exists(swrld_save_path, ec)) {
+                        save_db_path = swrld_save_path;
+                    } else {
+                        //
+                        // Directory does not exist despite the fact that it should, due to being created in a previous step!
+                        //
+                        throw std::invalid_argument(tr("A required directory does not exist; please report this to the developer!").toStdString());
+                    }
                 }
             }
         } catch (const sys::system_error &e) {
@@ -243,6 +245,100 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             if (!save_db_path.empty()) {
                 status = leveldb::DB::Open(options, save_db_path.string(), &db);
                 GkDb = std::make_shared<GekkoFyre::GkLevelDb>(db, fileIo, this);
+
+                bool enableSentry = false;
+                bool askSentry = GkDb->read_sentry_settings(GkSentry::AskedDialog);
+                if (!askSentry) {
+                    QMessageBox optInMsgBox;
+                    optInMsgBox.setWindowTitle(tr("Help improve Small World!"));
+                    optInMsgBox.setText(tr("With your voluntary consent, Small World Deluxe can report anonymous information that helps developers improve this "
+                                           "application. This includes things like your screen resolution, along with any crashes you wish to submit."));
+                    optInMsgBox.setStandardButtons(QMessageBox::No | QMessageBox::Yes);
+                    optInMsgBox.setDefaultButton(QMessageBox::Yes);
+                    optInMsgBox.setIcon(QMessageBox::Icon::Question);
+                    int ret = optInMsgBox.exec();
+
+                    switch (ret) {
+                    case QMessageBox::Yes:
+                        enableSentry = true;
+                        GkDb->write_sentry_settings(true, GkSentry::GivenConsent);
+                        break;
+                    case QMessageBox::No:
+                        enableSentry = false;
+                        GkDb->write_sentry_settings(false, GkSentry::GivenConsent);
+                        break;
+                    default:
+                        enableSentry = false;
+                        GkDb->write_sentry_settings(false, GkSentry::GivenConsent);
+                        break;
+                    }
+
+                    // We have now asked the user this question at least once!
+                    GkDb->write_sentry_settings(true, GkSentry::AskedDialog);
+                } else {
+                    enableSentry = GkDb->read_sentry_settings(GkSentry::GivenConsent);
+                }
+
+                if (enableSentry) {
+                    //
+                    // Initialize Sentry!
+                    // https://blog.sentry.io/2019/09/26/fixing-native-apps-with-sentry
+                    // https://docs.sentry.io/platforms/native/
+                    //
+                    sen_opt = sentry_options_new();
+
+                    const QString curr_path = QDir::currentPath();
+                    const fs::path crashpad_handler_windows = fs::path(curr_path.toStdString() + native_slash.string() + Filesystem::gk_crashpad_handler_win);
+                    const fs::path crashpad_handler_linux = fs::path(curr_path.toStdString() + native_slash.string() + Filesystem::gk_crashpad_handler_linux);
+                    fs::path handler_to_use;
+
+                    if (fs::exists(crashpad_handler_linux, ec)) {
+                        // The handler exists as if we're under a Linux system!
+                        handler_to_use = crashpad_handler_linux;
+                    } else if (fs::exists(crashpad_handler_windows, ec)) {
+                        // The handler exists as if we're under a Microsoft Windows system!
+                        handler_to_use = crashpad_handler_windows;
+                    } else {
+                        throw std::invalid_argument(tr("Unable to find the Crashpad handler for your installation of Small World Deluxe!").toStdString());
+                    }
+
+                    // The handler is a Crashpad-specific background process
+                    sentry_options_set_handler_path(sen_opt, handler_to_use.c_str());
+
+                    const fs::path sentry_crash_dir = fs::path(Filesystem::defaultDirAppend + native_slash.string() + Filesystem::gk_sentry_dump_dir);
+                    const fs::path gk_minidump = fileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation),
+                                                                          true, QString::fromStdString(sentry_crash_dir.string())).toStdString();
+
+                    const qint64 sentry_curr_epoch = QDateTime::currentMSecsSinceEpoch();
+                    const fs::path gk_sentry_attachments = std::string(gk_minidump.string() + native_slash.string() + QString::number(sentry_curr_epoch).toStdString()
+                                                                       + Filesystem::gk_sentry_dump_file_ext);
+
+                    if (!fs::exists(gk_minidump, ec)) {
+                        fs::create_directories(gk_minidump, ec);
+                    }
+
+                    // This is where Minidumps and attachments live before upload
+                    sentry_options_set_database_path(sen_opt, gk_minidump.c_str());
+                    sentry_options_add_attachment(sen_opt, gk_sentry_attachments.c_str());
+
+                    // Miscellaneous settings pertaining to Sentry
+                    sentry_options_set_auto_session_tracking(sen_opt, true);
+                    sentry_options_set_symbolize_stacktraces(sen_opt, true);
+
+                    // Release information
+                    sentry_options_set_environment(sen_opt, General::gk_sentry_env);
+                    sentry_options_set_release(sen_opt, General::appVersion);
+
+                    // Server and URI details!
+                    sentry_options_set_dsn(sen_opt, General::gk_sentry_uri);
+
+                    // Initialize the SDK and start the Crashpad handler
+                    sentry_init(sen_opt);
+
+                    // Initialize a Unique ID for the given user on the local machine, which is much more anonymous and sanitized than
+                    // dealing with IP Addresses!
+                    GkDb->create_unique_id();
+                }
 
                 //
                 // Load some of the primary abilities to work with the Hamlib libraries!
@@ -332,10 +428,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // Whether to maximize the QMainWindow or not
         if (window_minimized == 0) {
             this->window()->showMaximized();
-        } else if (window_minimized == 1) {
-            this->window()->showNormal();
         } else {
-            window_minimized = false;
+            this->window()->showNormal();
         }
 
         //
@@ -504,6 +598,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         widget_change_freq->setToolTip(tr("Enter or fine-tune the frequency that you would like to transmit/receive with!"));
         QObject::connect(widget_change_freq, SIGNAL(execFuncAfterEvent(const quint64 &)),
                          this, SLOT(tuneActiveFreq(const quint64 &)));
+
+        gkModem = new GekkoFyre::GkModem(gkAudioDevices, GkDb, gkEventLogger, gkStringFuncs, this);
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
@@ -516,8 +612,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
  */
 MainWindow::~MainWindow()
 {
-    std::mutex main_win_termination_mtx;
-    std::lock_guard<std::mutex> lck_guard(main_win_termination_mtx);
+    emit stopRecording(); // TODO: Fix the SEGFAULT that occurs with this!
+    emit disconnectRigInUse(gkRadioPtr->gkRig, gkRadioPtr);
 
     if (vu_meter_thread.joinable()) {
         vu_meter_thread.join();
@@ -527,15 +623,15 @@ MainWindow::~MainWindow()
         spectro_timing_thread.join();
     }
 
-    emit stopRecording(); // TODO: Fix the SEGFAULT that occurs with this!
-    emit disconnectRigInUse(gkRadioPtr->gkRig, gkRadioPtr);
-
     // Free the pointer for the Google LevelDB library!
     delete db;
 
     // Free the pointer for the PortAudio library!
     autoSys.terminate();
     gkPortAudioInit->terminate();
+
+    // Clear any memory used by Sentry & Crashpad before making sure the process itself terminates!
+    sentry_shutdown();
 
     delete ui;
 }
@@ -664,7 +760,7 @@ void MainWindow::launchSettingsWin()
                      gkFreqList, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)));
 
     QPointer<DialogSettings> dlg_settings = new DialogSettings(GkDb, fileIo, gkAudioDevices, gkRadioLibs, gkStringFuncs,
-                                                               sw_settings, gkPortAudioInit, gkRadioPtr, status_com_ports,
+                                                               gkPortAudioInit, gkRadioPtr, status_com_ports,
                                                                gkFreqList, gkFreqTableModel, this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
@@ -1968,6 +2064,7 @@ void MainWindow::stopRecordingInput()
 {
     if (inputAudioStream != nullptr && pref_input_device.is_dev_active) {
         if (inputAudioStream->isActive()) {
+            inputAudioStream->stop();
             inputAudioStream->close();
 
             pref_input_device.is_dev_active = false; // State that this recording device is now non-active!

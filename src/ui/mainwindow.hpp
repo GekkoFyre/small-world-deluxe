@@ -52,9 +52,11 @@
 #include "src/gk_audio_decoding.hpp"
 #include "src/gk_fft.hpp"
 #include "src/gk_logger.hpp"
+#include "src/gk_modem.hpp"
 #include "src/ui/widgets/gk_display_image.hpp"
 #include "src/ui/gkaudioplaydialog.hpp"
 #include "src/ui/gk_vu_meter_widget.hpp"
+#include <sentry.h>
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
@@ -79,7 +81,6 @@
 #include <QPrinter>
 #include <QMetaType>
 #include <QDateTime>
-#include <QSettings>
 #include <QByteArray>
 #include <QStringList>
 #include <QMainWindow>
@@ -265,6 +266,7 @@ private:
     // Class pointers
     //
     leveldb::DB *db;
+    sentry_options_t *sen_opt;
     std::shared_ptr<GekkoFyre::GkLevelDb> GkDb;
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
@@ -278,8 +280,8 @@ private:
     QPointer<GekkoFyre::SpectroGui> gkSpectroGui;
     QPointer<GkAudioPlayDialog> gkAudioPlayDlg;
     QPointer<GekkoFyre::GkVuMeter> gkVuMeter;
+    QPointer<GekkoFyre::GkModem> gkModem;
 
-    std::shared_ptr<QSettings> sw_settings;
     std::shared_ptr<QCommandLineParser> gkCliParser;
     // std::shared_ptr<QPrinter> printer;
 
