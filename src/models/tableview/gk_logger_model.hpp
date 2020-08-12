@@ -43,6 +43,7 @@
 
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
+#include <sentry.h>
 #include <memory>
 #include <QList>
 #include <QMutex>

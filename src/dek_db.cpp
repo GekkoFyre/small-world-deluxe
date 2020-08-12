@@ -42,6 +42,7 @@
 #include "dek_db.hpp"
 #include "src/audio_devices.hpp"
 #include "src/contrib/rapidcsv/src/rapidcsv.h"
+#include <sentry.h>
 #include <leveldb/cache.h>
 #include <leveldb/options.h>
 #include <leveldb/slice.h>
@@ -54,6 +55,8 @@
 #include <utility>
 #include <iterator>
 #include <vector>
+#include <random>
+#include <chrono>
 #include <ctime>
 #include <QDebug>
 #include <QVariant>
@@ -198,6 +201,53 @@ void GkLevelDb::write_rig_settings_comms(const QString &value, const radio_cfg &
             break;
         case radio_cfg::ComBaudRate:
             batch.Put("ComBaudRate", value.toStdString());
+            break;
+        default:
+            return;
+        }
+
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
+
+        status = db->Write(write_options, &batch);
+
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkLevelDb::write_general_settings
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value
+ * @param key
+ */
+void GkLevelDb::write_general_settings(const QString &value, const general_stat_cfg &key)
+{
+    try {
+        leveldb::WriteBatch batch;
+        leveldb::Status status;
+
+        switch (key) {
+        case general_stat_cfg::defCqMsg:
+            batch.Put("defCqMsg", value.toStdString());
+            break;
+        case general_stat_cfg::myCallsign:
+            batch.Put("myCallsign", value.toStdString());
+            break;
+        case general_stat_cfg::defReplyMsg:
+            batch.Put("defReplyMsg", value.toStdString());
+            break;
+        case general_stat_cfg::myMaidenhead:
+            batch.Put("myMaidenhead", value.toStdString());
+            break;
+        case general_stat_cfg::defStationInfo:
+            batch.Put("defStationInfo", value.toStdString());
             break;
         default:
             return;
@@ -613,32 +663,76 @@ bool GkLevelDb::isFreqAlreadyInit()
  */
 void GkLevelDb::write_sentry_settings(const bool &value, const GkSentry &key)
 {
-    leveldb::WriteBatch batch;
-    leveldb::Status status;
+    try {
+        leveldb::WriteBatch batch;
+        leveldb::Status status;
 
-    switch (key) {
-    case GkSentry::AskedDialog:
-        batch.Put("AskedDialog", boolEnum(value));
-        break;
-    case GkSentry::GivenConsent:
-        batch.Put("GivenConsent", boolEnum(value));
-        break;
-    default:
-        return;
+        switch (key) {
+        case GkSentry::AskedDialog:
+            batch.Put("AskedDialog", boolEnum(value));
+            break;
+        case GkSentry::GivenConsent:
+            batch.Put("GivenConsent", boolEnum(value));
+            break;
+        default:
+            return;
+        }
+
+        std::time_t curr_time = std::time(nullptr);
+        std::stringstream ss;
+        ss << curr_time;
+        batch.Put("CurrTime", ss.str());
+
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
+
+        status = db->Write(write_options, &batch);
+
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
     }
 
-    std::time_t curr_time = std::time(nullptr);
-    std::stringstream ss;
-    ss << curr_time;
-    batch.Put("CurrTime", ss.str());
+    return;
+}
 
-    leveldb::WriteOptions write_options;
-    write_options.sync = true;
+/**
+ * @brief GkLevelDb::write_optin_settings
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value
+ * @param key
+ */
+void GkLevelDb::write_optin_settings(const QString &value, const GkOptIn &key)
+{
+    try {
+        leveldb::WriteBatch batch;
+        leveldb::Status status;
 
-    status = db->Write(write_options, &batch);
+        switch (key) {
+        case GkOptIn::UserUniqueId:
+            batch.Put("UserUniqueId", value.toStdString());
+            break;
+        default:
+            break;
+        }
 
-    if (!status.ok()) { // Abort because of error!
-        throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        std::time_t curr_time = std::time(nullptr);
+        std::stringstream ss;
+        ss << curr_time;
+        batch.Put("CurrTime", ss.str());
+
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
+
+        status = db->Write(write_options, &batch);
+
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
     }
 
     return;
@@ -676,6 +770,60 @@ bool GkLevelDb::read_sentry_settings(const GkSentry &key)
     return false;
 }
 
+/**
+ * @brief GkLevelDb::read_optin_settings
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param key
+ * @return
+ */
+QString GkLevelDb::read_optin_settings(const GkOptIn &key)
+{
+    leveldb::Status status;
+    leveldb::ReadOptions read_options;
+    std::string value = "";
+
+    read_options.verify_checksums = true;
+
+    switch (key) {
+    case GkOptIn::UserUniqueId:
+        status = db->Get(read_options, "UserUniqueId", &value);
+        break;
+    default:
+        break;
+    }
+
+    return QString::fromStdString(value);
+}
+
+/**
+ * @brief GkLevelDb::create_unique_id will create a Unique ID as pertaining to the user on the given, local machine for tracking of bug-reports
+ * without having to rely on IP addresses. The data is much more sanitized and anonymous this way!
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkLevelDb::create_unique_id()
+{
+    qint32 ret_num = -1;
+    QString sentry_unique_id = read_optin_settings(GkOptIn::UserUniqueId);
+    if (!sentry_unique_id.isNull() && !sentry_unique_id.isEmpty()) {
+        ret_num = sentry_unique_id.toInt();
+    } else {
+        ret_num = randomNumber();
+        write_optin_settings(QString::number(ret_num), GkOptIn::UserUniqueId);
+    }
+
+    sentry_value_t user = sentry_value_new_object();
+    sentry_value_set_by_key(user, "id", sentry_value_new_int32(ret_num));
+    sentry_set_user(user);
+
+    return;
+}
+
+/**
+ * @brief GkLevelDb::convSeverityToStr
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param severity
+ * @return
+ */
 QString GkLevelDb::convSeverityToStr(const GkSeverity &severity)
 {
     switch (severity) {
@@ -805,6 +953,43 @@ QString GkLevelDb::read_rig_settings_comms(const radio_cfg &key)
         break;
     default:
         return "";
+    }
+
+    return QString::fromStdString(value);
+}
+
+/**
+ * @brief GkLevelDb::read_general_settings
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param key
+ * @return
+ */
+QString GkLevelDb::read_general_settings(const general_stat_cfg &key)
+{
+    leveldb::Status status;
+    leveldb::ReadOptions read_options;
+    std::string value = "";
+
+    read_options.verify_checksums = true;
+
+    switch (key) {
+    case general_stat_cfg::defCqMsg:
+        status = db->Get(read_options, "defCqMsg", &value);
+        break;
+    case general_stat_cfg::myCallsign:
+        status = db->Get(read_options, "myCallsign", &value);
+        break;
+    case general_stat_cfg::defReplyMsg:
+        status = db->Get(read_options, "defReplyMsg", &value);
+        break;
+    case general_stat_cfg::myMaidenhead:
+        status = db->Get(read_options, "myMaidenhead", &value);
+        break;
+    case general_stat_cfg::defStationInfo:
+        status = db->Get(read_options, "defStationInfo", &value);
+        break;
+    default:
+        break;
     }
 
     return QString::fromStdString(value);
@@ -1596,4 +1781,27 @@ std::string GkLevelDb::deleteCsvValForDb(const std::string &comma_sep_values, co
     }
 
     return "";
+}
+
+/**
+ * @brief GkLevelDb::randomNumber
+ * @author Serge Dundich <https://stackoverflow.com/questions/13445688/how-to-generate-a-random-number-in-c>
+ * @return
+ */
+qint64 GkLevelDb::randomNumber()
+{
+    std::random_device rd;
+    std::mt19937::result_type seed = rd() ^ ((std::mt19937::result_type)std::chrono::duration_cast<std::chrono::seconds>
+                                             (std::chrono::system_clock::now().time_since_epoch()).count() +
+                                             (std::mt19937::result_type)std::chrono::duration_cast<std::chrono::microseconds>
+                                             (std::chrono::high_resolution_clock::now().time_since_epoch()).count());
+    std::mt19937 gen(seed);
+    std::uniform_int_distribution<unsigned> distrib(1, 6);
+
+    std::stringstream ss;
+    for (qint64 i = 0; i < 100500; ++i) {
+        ss << distrib(gen) << ' ';
+    }
+
+    return std::stoul(ss.str());
 }

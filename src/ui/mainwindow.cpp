@@ -305,8 +305,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                     // The handler is a Crashpad-specific background process
                     sentry_options_set_handler_path(sen_opt, handler_to_use.c_str());
 
+                    const fs::path sentry_crash_dir = fs::path(Filesystem::defaultDirAppend + native_slash.string() + Filesystem::gk_sentry_dump_dir);
+                    const fs::path gk_minidump = fileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation),
+                                                                          true, QString::fromStdString(sentry_crash_dir.string())).toStdString();
+
                     const qint64 sentry_curr_epoch = QDateTime::currentMSecsSinceEpoch();
-                    const fs::path gk_minidump = std::string(swrld_save_path.string() + native_slash.string() + tr("crash-db").toStdString());
                     const fs::path gk_sentry_attachments = std::string(gk_minidump.string() + native_slash.string() + QString::number(sentry_curr_epoch).toStdString()
                                                                        + Filesystem::gk_sentry_dump_file_ext);
 
@@ -318,10 +321,23 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                     sentry_options_set_database_path(sen_opt, gk_minidump.c_str());
                     sentry_options_add_attachment(sen_opt, gk_sentry_attachments.c_str());
 
+                    // Miscellaneous settings pertaining to Sentry
+                    sentry_options_set_auto_session_tracking(sen_opt, true);
+                    sentry_options_set_symbolize_stacktraces(sen_opt, true);
+
+                    // Release information
+                    sentry_options_set_environment(sen_opt, General::gk_sentry_env);
+                    sentry_options_set_release(sen_opt, General::appVersion);
+
+                    // Server and URI details!
                     sentry_options_set_dsn(sen_opt, General::gk_sentry_uri);
 
                     // Initialize the SDK and start the Crashpad handler
                     sentry_init(sen_opt);
+
+                    // Initialize a Unique ID for the given user on the local machine, which is much more anonymous and sanitized than
+                    // dealing with IP Addresses!
+                    GkDb->create_unique_id();
                 }
 
                 //
@@ -412,10 +428,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // Whether to maximize the QMainWindow or not
         if (window_minimized == 0) {
             this->window()->showMaximized();
-        } else if (window_minimized == 1) {
-            this->window()->showNormal();
         } else {
-            window_minimized = false;
+            this->window()->showNormal();
         }
 
         //
@@ -598,8 +612,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
  */
 MainWindow::~MainWindow()
 {
-    std::mutex main_win_termination_mtx;
-    std::lock_guard<std::mutex> lck_guard(main_win_termination_mtx);
+    emit stopRecording(); // TODO: Fix the SEGFAULT that occurs with this!
+    emit disconnectRigInUse(gkRadioPtr->gkRig, gkRadioPtr);
 
     if (vu_meter_thread.joinable()) {
         vu_meter_thread.join();
@@ -608,9 +622,6 @@ MainWindow::~MainWindow()
     if (spectro_timing_thread.joinable()) {
         spectro_timing_thread.join();
     }
-
-    emit stopRecording(); // TODO: Fix the SEGFAULT that occurs with this!
-    emit disconnectRigInUse(gkRadioPtr->gkRig, gkRadioPtr);
 
     // Free the pointer for the Google LevelDB library!
     delete db;
@@ -2053,6 +2064,7 @@ void MainWindow::stopRecordingInput()
 {
     if (inputAudioStream != nullptr && pref_input_device.is_dev_active) {
         if (inputAudioStream->isActive()) {
+            inputAudioStream->stop();
             inputAudioStream->close();
 
             pref_input_device.is_dev_active = false; // State that this recording device is now non-active!
