@@ -96,9 +96,8 @@ public:
 class GkSpectroRasterData: public QwtPlotSpectrogram {
 
 public:
-    ~GkSpectroRasterData();
-
     void draw(QPainter *painter, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRectF &canvasRect) const override;
+
 };
 
 /**

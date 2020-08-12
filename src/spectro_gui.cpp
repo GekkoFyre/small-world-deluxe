@@ -224,6 +224,14 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QPointer<GkEven
 
 SpectroGui::~SpectroGui()
 {
+    if (zoomer != nullptr) {
+        delete zoomer;
+    }
+
+    if (panner != nullptr) {
+        delete panner;
+    }
+
     if (color_map != nullptr) {
         delete color_map;
     }
@@ -244,7 +252,23 @@ SpectroGui::~SpectroGui()
         delete curve;
     }
 
-    return;
+    if (top_x_axis != nullptr) {
+        delete top_x_axis;
+    }
+
+    /*
+    if (gkMatrixData != nullptr) {
+        delete gkMatrixData;
+    }
+
+    if (gkRasterData != nullptr) {
+        delete gkRasterData;
+    }
+
+    if (right_y_axis != nullptr) {
+        delete right_y_axis;
+    }
+    */
 }
 
 /**
@@ -388,11 +412,6 @@ void SpectroGui::refreshDateTime(const qint64 &latest_time_update, const qint64 
  * @param value
  */
 void SpectroGui::updateFFTSize(const int &value)
-{
-    return;
-}
-
-GkSpectroRasterData::~GkSpectroRasterData()
 {
     return;
 }

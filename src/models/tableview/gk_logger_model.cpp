@@ -69,6 +69,11 @@ GkEventLoggerTableViewModel::GkEventLoggerTableViewModel(std::shared_ptr<GkLevel
     layout->addWidget(table);
     proxyModel->setSourceModel(this);
 
+    //
+    // Initialize Sentry variables applicable to this class!
+    // https://github.com/getsentry/sentry-native/blob/master/examples/example.c
+    //
+
     return;
 }
 

@@ -222,6 +222,7 @@ namespace General {
     constexpr char codeRepository[] = "https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe";
 
     constexpr char gk_sentry_uri[] = "https://5532275153ce4eb4865b89eb2441f356@sentry.gekkofyre.io/2";
+    constexpr char gk_sentry_env[] = "development";
 }
 
 namespace Filesystem {
@@ -289,6 +290,10 @@ namespace System {
             enum GkSentry {
                 AskedDialog,
                 GivenConsent
+            };
+
+            enum GkOptIn {
+                UserUniqueId
             };
         }
 
