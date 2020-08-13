@@ -168,7 +168,7 @@ spotbugs-sast:
     script:
         - /analyzer run -compile=false
     variables:
-        SAST_DEFAULT_ANALYZERS: "flawfinder, gitleaks, trufflehog"
+        SAST_DEFAULT_ANALYZERS: "flawfinder, gitleaks, trufflehog, secrets"
         SAST_EXCLUDED_PATHS: "assets/**, cmake/**, docker/**, docs/**, po/**, toolchains/**, src/contrib/**"
         SAST_GOSEC_LEVEL: 2
         SAST_FLAWFINDER_LEVEL: 2
