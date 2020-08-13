@@ -1800,7 +1800,9 @@ void MainWindow::updateSpectrograph()
             }
         }
     } catch (const std::exception &e) {
-        print_exception(e);
+        // TODO: We are using this method of reporting an exception because sometimes they are thrown upon termination of the application!
+        std::cerr << tr("An error has occurred whilst undertaking calculations for the spectrograph / waterfall! Error:\n\n%1")
+        .arg(QString::fromStdString(e.what())).toStdString() << std::endl;
     }
 
     #endif
@@ -2047,7 +2049,7 @@ void MainWindow::procRigPort(const QString &conn_port, const GekkoFyre::AmateurR
             throw std::invalid_argument(tr("An error was encountered in determining the connection method used for your radio rig!").toStdString());
         }
     }  catch (const std::exception &e) {
-        std::throw_with_nested(std::invalid_argument(e.what()));
+        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok, QMessageBox::Ok);
     }
 
     return;

@@ -267,7 +267,8 @@ void SpectroGui::insertData(const QVector<double> &values, const int &numCols)
 
         mtx_raster_data.unlock();
     } catch (const std::exception &e) {
-        std::throw_with_nested(std::runtime_error(tr("An error has occurred whilst doing calculations for the spectrograph / waterfall!").toStdString()));
+        throw std::runtime_error(tr("An error has occurred whilst doing calculations for the spectrograph / waterfall! Error:\n\n%1")
+        .arg(QString::fromStdString(e.what())).toStdString());
     }
 
     return;

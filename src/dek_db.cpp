@@ -469,7 +469,7 @@ void GkLevelDb::write_frequencies_db(const GkFreqs &write_new_value)
 
         return;
     } catch (const std::exception &e) { // https://en.cppreference.com/w/cpp/error/nested_exception
-        std::throw_with_nested(std::runtime_error(e.what()));
+        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok, QMessageBox::Ok);
     }
 
     return;
@@ -538,7 +538,7 @@ void GkLevelDb::remove_frequencies_db(const GkFreqs &freq_to_remove)
             throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
         }
     } catch (const std::exception &e) { // https://en.cppreference.com/w/cpp/error/nested_exception
-        std::throw_with_nested(std::runtime_error(e.what()));
+        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok, QMessageBox::Ok);
     }
 
     return;
@@ -583,7 +583,7 @@ void GkLevelDb::remove_frequencies_db(const bool &del_all)
             }
         }
     } catch (const std::exception &e) { // https://en.cppreference.com/w/cpp/error/nested_exception
-        std::throw_with_nested(std::runtime_error(e.what()));
+        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok, QMessageBox::Ok);
     }
 
     return;
@@ -649,7 +649,7 @@ bool GkLevelDb::isFreqAlreadyInit()
 
         return freq_init_bool;
     } catch (const std::exception &e) {
-        std::throw_with_nested(std::runtime_error(e.what()));
+        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok, QMessageBox::Ok);
     }
 
     return false;
