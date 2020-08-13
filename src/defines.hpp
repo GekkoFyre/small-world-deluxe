@@ -47,7 +47,7 @@
 #include <boost/logic/tribool.hpp>
 #include <boost/filesystem.hpp>
 #include <hamlib/rigclass.h>
-#include <qwt_interval.h>
+#include <qwt/qwt_interval.h>
 #include <sentry.h>
 #include <vector>
 #include <exception>

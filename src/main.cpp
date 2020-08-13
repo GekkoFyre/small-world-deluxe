@@ -87,10 +87,15 @@ int main(int argc, char *argv[])
 
     QCoreApplication::addLibraryPath(".");
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+
+    #ifdef GK_ENBL_VALGRIND_SUPPORT
+    QApplication a(argc, argv);
+    #else
     SingleApplication app(argc, argv, false, SingleApplication::Mode::System);
     if (app.isSecondary()) {
         app.exit();
     }
+    #endif
 
     QCoreApplication::setOrganizationName(GekkoFyre::General::companyName);
     QCoreApplication::setOrganizationDomain(GekkoFyre::General::codeRepository);
@@ -115,5 +120,9 @@ int main(int argc, char *argv[])
     MainWindow w;
     w.show();
 
+    #ifdef GK_ENBL_VALGRIND_SUPPORT
+    return a.exec();
+    #else
     return app.exec();
+    #endif
 }

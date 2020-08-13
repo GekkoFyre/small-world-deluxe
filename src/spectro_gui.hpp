@@ -43,22 +43,22 @@
 
 #include "src/defines.hpp"
 #include "src/gk_logger.hpp"
-#include <qwt.h>
-#include <qwt_plot.h>
-#include <qwt_plot_spectrogram.h>
-#include <qwt_plot_zoomer.h>
-#include <qwt_color_map.h>
-#include <qwt_matrix_raster_data.h>
-#include <qwt_plot_canvas.h>
-#include <qwt_raster_data.h>
-#include <qwt_plot_panner.h>
-#include <qwt_interval.h>
-#include <qwt_scale_widget.h>
-#include <qwt_scale_draw.h>
-#include <qwt_plot_curve.h>
-#include <qwt_scale_engine.h>
-#include <qwt_date_scale_engine.h>
-#include <qwt_date_scale_draw.h>
+#include <qwt/qwt.h>
+#include <qwt/qwt_plot.h>
+#include <qwt/qwt_plot_spectrogram.h>
+#include <qwt/qwt_plot_zoomer.h>
+#include <qwt/qwt_color_map.h>
+#include <qwt/qwt_matrix_raster_data.h>
+#include <qwt/qwt_plot_canvas.h>
+#include <qwt/qwt_raster_data.h>
+#include <qwt/qwt_plot_panner.h>
+#include <qwt/qwt_interval.h>
+#include <qwt/qwt_scale_widget.h>
+#include <qwt/qwt_scale_draw.h>
+#include <qwt/qwt_plot_curve.h>
+#include <qwt/qwt_scale_engine.h>
+#include <qwt/qwt_date_scale_engine.h>
+#include <qwt/qwt_date_scale_draw.h>
 #include <mutex>
 #include <cmath>
 #include <vector>
@@ -136,7 +136,7 @@ public slots:
 
 private:
     QPointer<QwtPlotZoomer> zoomer;
-    LinearColorMapRGB *color_map;
+    std::unique_ptr<LinearColorMapRGB> color_map;
     QPointer<QwtPlotCanvas> canvas;
     std::unique_ptr<QwtPlotCurve> curve;
     QPointer<QwtPlotPanner> panner;
