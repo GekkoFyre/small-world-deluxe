@@ -1,15 +1,15 @@
 /**
- **     __                 _ _   __    __           _     _ 
+ **     __                 _ _   __    __           _     _
  **    / _\_ __ ___   __ _| | | / / /\ \ \___  _ __| | __| |
  **    \ \| '_ ` _ \ / _` | | | \ \/  \/ / _ \| '__| |/ _` |
  **    _\ \ | | | | | (_| | | |  \  /\  / (_) | |  | | (_| |
  **    \__/_| |_| |_|\__,_|_|_|   \/  \/ \___/|_|  |_|\__,_|
- **                                                         
- **                  ___     _                              
- **                 /   \___| |_   ___  _____               
- **                / /\ / _ \ | | | \ \/ / _ \              
- **               / /_//  __/ | |_| |>  <  __/              
- **              /___,' \___|_|\__,_/_/\_\___|              
+ **
+ **                  ___     _
+ **                 /   \___| |_   ___  _____
+ **                / /\ / _ \ | | | \ \/ / _ \
+ **               / /_//  __/ | |_| |>  <  __/
+ **              /___,' \___|_|\__,_/_/\_\___|
  **
  **
  **   If you have downloaded the source code for "Small World Deluxe" and are reading this,
@@ -85,9 +85,8 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QPointer<GkEven
         //
         graph_in_use = GkGraphType::GkWaterfall;
 
-        gkRasterData = std::make_unique<GkSpectroRasterData>();
-        gkMatrixData = std::make_unique<QwtMatrixRasterData>();
-        color_map = std::make_unique<LinearColorMapRGB>();
+        gkRasterData = new GkSpectroRasterData();
+        gkMatrixData = new QwtMatrixRasterData();
         canvas = new QwtPlotCanvas();
 
         //
@@ -105,7 +104,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QPointer<GkEven
         gkRasterData->setRenderThreadCount(0); // https://docs.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getlogicalprocessorinformation?redirectedfrom=MSDN
         gkRasterData->setCachePolicy(QwtPlotRasterItem::PaintCache);
         gkRasterData->setDisplayMode(QwtPlotSpectrogram::DisplayMode::ImageMode, true);
-        gkRasterData->setColorMap(color_map.get());
+        gkRasterData->setColorMap(new LinearColorMapRGB());
 
         // These are said to use quite a few system resources!
         gkRasterData->setRenderHint(QwtPlotItem::RenderAntialiased);
@@ -116,7 +115,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QPointer<GkEven
         }
 
         gkRasterData->setContourLevels(contourLevels);
-        gkRasterData->setData(gkMatrixData.get());
+        gkRasterData->setData(gkMatrixData);
         // gkSpectrogram->attach(this);
 
         gkMatrixData->setInterval(Qt::XAxis, QwtInterval(0, 2500.0f));
@@ -135,14 +134,14 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QPointer<GkEven
         setAxisLabelRotation(QwtPlot::yLeft, -50.0); // Puts the label markings (i.e. frequency response labels) at an angle
         setAxisLabelAlignment(QwtPlot::yLeft, Qt::AlignVCenter);
 
-        date_scale_draw = std::make_unique<QwtDateScaleDraw>(Qt::UTC);
-        date_scale_engine = std::make_unique<QwtDateScaleEngine>(Qt::UTC);
+        date_scale_draw = new QwtDateScaleDraw(Qt::UTC);
+        date_scale_engine = new QwtDateScaleEngine(Qt::UTC);
         date_scale_draw->setTimeSpec(Qt::TimeSpec::UTC);
         date_scale_engine->setTimeSpec(Qt::TimeSpec::UTC);
         date_scale_draw->setDateFormat(QwtDate::Second, tr("hh:mm:ss"));
 
-        setAxisScaleDraw(QwtPlot::yLeft, date_scale_draw.get());
-        setAxisScaleEngine(QwtPlot::yLeft, date_scale_engine.get());
+        setAxisScaleDraw(QwtPlot::yLeft, date_scale_draw);
+        setAxisScaleEngine(QwtPlot::yLeft, date_scale_engine);
         // date_scale_engine->divideScale(spectro_begin_time, spectro_latest_update, 0, 0);
 
         // const QwtInterval zInterval = gkSpectrogram->data()->interval(Qt::ZAxis);
@@ -176,7 +175,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QPointer<GkEven
         right_y_axis = axisWidget(QwtPlot::yRight);
         right_y_axis->setColorBarWidth(16);
         right_y_axis->setColorBarEnabled(true);
-        right_y_axis->setColorMap(gkRasterData->interval(Qt::ZAxis), color_map.get());
+        right_y_axis->setColorMap(gkRasterData->interval(Qt::ZAxis), new LinearColorMapRGB());
         right_y_axis->setEnabled(true);
         enableAxis(QwtPlot::yRight, true);
 
