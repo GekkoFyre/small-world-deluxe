@@ -7,12 +7,15 @@
 [submodule "src/contrib/rapidcsv"]
 	path = src/contrib/rapidcsv
 	url = https://github.com/d99kris/rapidcsv.git
-[submodule "src/contrib/QtUsb"]
-	path = src/contrib/QtUsb
-	url = https://github.com/fpoussin/QtUsb.git
 [submodule "src/contrib/AudioFile"]
 	path = src/contrib/AudioFile
 	url = https://github.com/adamstark/AudioFile
 [submodule "src/contrib/sentry-native"]
 	path = src/contrib/sentry-native
 	url = https://github.com/getsentry/sentry-native.git
+[submodule "src/contrib/QtUsb"]
+	path = src/contrib/QtUsb
+	url = https://github.com/fpoussin/QtUsb.git
+[submodule "src/contrib/codec2"]
+	path = src/contrib/codec2
+	url = https://github.com/drowe67/codec2.git

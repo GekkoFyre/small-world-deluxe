@@ -39,15 +39,18 @@
 #
 
 find_package(PkgConfig)
-pkg_check_modules(PC_QWT QUIET qwt)
+pkg_check_modules(PC_QWT QUIET "qwt")
 set(QWT_DEFINITIONS ${PC_QWT_CFLAGS_OTHER})
 
-find_path(QWT_INCLUDE_DIR NAMES "qwt.h"
-            HINTS ${PC_QWT_INCLUDE_DIR} ${PC_QWT_INCLUDE_DIRS}
-            PATH_SUFFIXES qwt)
+find_path(QWT_INCLUDE_DIR
+    NAMES "qwt/qwt.h"
+    HINTS ${PC_QWT_INCLUDE_DIR} ${PC_QWT_INCLUDE_DIRS}
+    PATHS "/usr/local/include" "/usr/include")
 
-find_library(QWT_LIBRARY NAMES "libqwtd" "qwtd" "libqwt" "qwt"
-            HINTS ${PC_QWT_LIBDIR} ${PC_QWT_LIBRARY_DIRS})
+find_library(QWT_LIBRARY
+    NAMES "qwt-qt5" "libqwt-qt5"
+    HINTS ${PC_QWT_LIBDIR} ${PC_QWT_LIBRARY_DIRS}
+    PATHS "/usr/local/lib" "/usr/local/lib64" "/usr/lib" "/usr/lib64")
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(QWT DEFAULT_MSG QWT_LIBRARY QWT_INCLUDE_DIR)

@@ -94,6 +94,8 @@ option(GFYRE_BUILD_SHARED "Build Small World Deluxe as a shared library/package.
 option(GFYRE_SWORLD_DBG_VERBOSITY "Enable DEBUG verbosity for Small World Deluxe and its use of third-party libraries throughout the program itself." OFF)
 option(GFYRE_PORTAUDIO_DBG_VERBOSITY "Enable DEBUG verbosity for the PortAudio library and its use throughout Small World Deluxe." OFF)
 
+option(ENBL_VALGRIND_SUPPORT "Allows for the use of Valgrind memory analysis on the application, thereby disabling certain, otherwise needed features that enhance the user-experience." OFF)
+
 option(BUILD_CODEC2_SUPPORT "Enable support for the 'Codec2' open source speech codec library." ON)
 option(BUILD_OPUS_SUPPORT "Enable support for the 'Opus' codec library." OFF)
 
@@ -677,6 +679,12 @@ endif()
 if (GFYRE_PORTAUDIO_DBG_VERBOSITY)
     message(STATUS "Enabled maximum verbosity with the PortAudio library throughout Small World Deluxe; debug mode now activated!")
     add_definitions(-DGFYRE_PORTAUDIO_DBG_VERBOSITY_ENBL)
+endif()
+
+if (ENBL_VALGRIND_SUPPORT)
+    if (LINUX)
+        add_definitions(-DGK_ENBL_VALGRIND_SUPPORT)
+    endif()
 endif()
 
 #
