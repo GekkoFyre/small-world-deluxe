@@ -120,7 +120,7 @@ class SpectroGui: public QwtPlot {
     Q_OBJECT
 
 public:
-    explicit SpectroGui(std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger, const bool &enablePanner = false,
+    explicit SpectroGui(QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger, const bool &enablePanner = false,
                         const bool &enableZoomer = false, QWidget *parent = nullptr);
     ~SpectroGui();
 
@@ -148,7 +148,7 @@ private:
     GkSpectroRasterData *gkRasterData;
     QwtMatrixRasterData *gkMatrixData;
 
-    std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
+    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     int gkAlpha;                                                // Controls the alpha value of the waterfall chart.
     qint64 spectro_begin_time;                                  // The time at which the spectrograph was initialized.

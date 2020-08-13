@@ -102,8 +102,8 @@ private:
 
 public:
     explicit GkAudioDecoding(QPointer<GekkoFyre::FileIo> fileIo,
-                             std::shared_ptr<GekkoFyre::GkLevelDb> database,
-                             std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs,
+                             QPointer<GekkoFyre::GkLevelDb> database,
+                             QPointer<GekkoFyre::StringFuncs> stringFuncs,
                              GekkoFyre::Database::Settings::Audio::GkDevice output_device,
                              QPointer<GekkoFyre::GkEventLogger> eventLogger,
                              QObject *parent = nullptr);
@@ -114,9 +114,9 @@ public:
     GekkoFyre::GkAudioFramework::AudioFileInfo initAudioFileInfoStruct();
 
 private:
+    QPointer<GkLevelDb> gkDb;
     QPointer<GekkoFyre::FileIo> gkFileIo;
-    std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
-    std::shared_ptr<GkLevelDb> gkDb;
+    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     GekkoFyre::Database::Settings::Audio::GkDevice gkOutputDev;
 

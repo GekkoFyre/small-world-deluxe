@@ -60,7 +60,7 @@ using namespace Events;
 using namespace Logging;
 
 GkCodec2::GkCodec2(const Codec2Mode &freedv_mode, const Codec2ModeCustom &custom_mode, const int &freedv_clip, const int &freedv_txbpf,
-                   std::shared_ptr<GkLevelDb> levelDb, QPointer<GkEventLogger> eventLogger,
+                   QPointer<GkLevelDb> levelDb, QPointer<GkEventLogger> eventLogger,
                    std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> output_audio_buf, QObject *parent)
 {
     try {

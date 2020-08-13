@@ -61,7 +61,7 @@ class GkEventLoggerTableViewModel : public QAbstractTableModel {
     Q_OBJECT
 
 public:
-    explicit GkEventLoggerTableViewModel(std::shared_ptr<GekkoFyre::GkLevelDb> database, QWidget *parent = nullptr);
+    explicit GkEventLoggerTableViewModel(QPointer<GekkoFyre::GkLevelDb> database, QWidget *parent = nullptr);
     ~GkEventLoggerTableViewModel();
 
     void populateData(const QList<GekkoFyre::System::Events::Logging::GkEventLogging> &event_logs);
@@ -76,7 +76,7 @@ public slots:
     void removeData(const GekkoFyre::System::Events::Logging::GkEventLogging &event);
 
 private:
-    std::shared_ptr<GekkoFyre::GkLevelDb> GkDb;
+    QPointer<GekkoFyre::GkLevelDb> GkDb;
     QList<GekkoFyre::System::Events::Logging::GkEventLogging> m_data;
 
     QPointer<QSortFilterProxyModel> proxyModel;

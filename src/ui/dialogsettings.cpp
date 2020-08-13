@@ -74,10 +74,10 @@ QVector<QString> DialogSettings::unique_mfgs = { "None" };
  * @param filePtr
  * @param parent
  */
-DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
+DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
                                QPointer<FileIo> filePtr,
                                std::shared_ptr<AudioDevices> audioDevices,
-                               QPointer<RadioLibs> radioLibs, std::shared_ptr<StringFuncs> stringFuncs,
+                               QPointer<RadioLibs> radioLibs, QPointer<StringFuncs> stringFuncs,
                                portaudio::System *portAudioInit,
                                std::shared_ptr<GkRadio> radioPtr,
                                const std::list<GekkoFyre::Database::Settings::GkComPort> &com_ports,
@@ -175,7 +175,7 @@ DialogSettings::DialogSettings(std::shared_ptr<GkLevelDb> dkDb,
 
         init_station_info();
 
-        if (gkDekodeDb.get() != nullptr) {
+        if (gkDekodeDb != nullptr) {
             read_settings();
         }
     } catch (const portaudio::PaException &e) {

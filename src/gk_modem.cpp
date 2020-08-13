@@ -54,8 +54,8 @@ using namespace Audio;
  * @param eventLogger
  * @param parent
  */
-GkModem::GkModem(std::shared_ptr<AudioDevices> gkAudio, std::shared_ptr<GkLevelDb> dbPtr, QPointer<GkEventLogger> eventLogger,
-                 std::shared_ptr<StringFuncs> stringFuncs, QObject *parent)
+GkModem::GkModem(std::shared_ptr<AudioDevices> gkAudio, QPointer<GkLevelDb> dbPtr, QPointer<GkEventLogger> eventLogger,
+                 QPointer<StringFuncs> stringFuncs, QObject *parent)
     : QObject(parent)
 {
     setParent(parent);
@@ -92,7 +92,7 @@ GkModem::~GkModem()
  * @param EbNodB
  * @param mode
  */
-GkModemQRA64::GkModemQRA64(std::shared_ptr<AudioDevices> gkAudio, QPointer<GkEventLogger> eventLogger, std::shared_ptr<StringFuncs> stringFuncs,
+GkModemQRA64::GkModemQRA64(std::shared_ptr<AudioDevices> gkAudio, QPointer<GkEventLogger> eventLogger, QPointer<StringFuncs> stringFuncs,
                            const int &channel_type, const int &EbNodB, const int &mode, QObject *parent)
 {
     Q_UNUSED(channel_type);
