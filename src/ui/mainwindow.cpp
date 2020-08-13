@@ -324,6 +324,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                     // Miscellaneous settings pertaining to Sentry
                     sentry_options_set_auto_session_tracking(sen_opt, true);
                     sentry_options_set_symbolize_stacktraces(sen_opt, true);
+                    sentry_options_set_system_crash_reporter_enabled(sen_opt, true);
 
                     // Release information
                     sentry_options_set_environment(sen_opt, General::gk_sentry_env);
@@ -334,6 +335,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
                     // Initialize the SDK and start the Crashpad handler
                     sentry_init(sen_opt);
+
+                    //
+                    // BUG: Workaround to fix the issue of data not uploading to Sentry server!
+                    // See: https://forum.sentry.io/t/problem-with-sentry-native-c-minidumps/8878/6
+                    //
+                    sentry_set_transaction("init");
 
                     // Initialize a Unique ID for the given user on the local machine, which is much more anonymous and sanitized than
                     // dealing with IP Addresses!
