@@ -59,7 +59,7 @@ class GkAudioPlayDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit GkAudioPlayDialog(std::shared_ptr<GekkoFyre::GkLevelDb> database,
+    explicit GkAudioPlayDialog(QPointer<GekkoFyre::GkLevelDb> database,
                                QPointer<GekkoFyre::GkAudioDecoding> audio_decoding,
                                std::shared_ptr<GekkoFyre::AudioDevices> audio_devices,
                                QPointer<GekkoFyre::FileIo> file_io,
@@ -83,7 +83,7 @@ private slots:
 private:
     Ui::GkAudioPlayDialog *ui;
 
-    std::shared_ptr<GekkoFyre::GkLevelDb> gkDb;
+    QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::GkAudioDecoding> gkAudioDecode;
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevs;
     QPointer<GekkoFyre::FileIo> gkFileIo;

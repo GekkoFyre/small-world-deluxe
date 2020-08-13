@@ -59,7 +59,7 @@ using namespace System;
 using namespace Events;
 using namespace Logging;
 
-GkFreqTableViewModel::GkFreqTableViewModel(std::shared_ptr<GekkoFyre::GkLevelDb> database, QWidget *parent)
+GkFreqTableViewModel::GkFreqTableViewModel(QPointer<GekkoFyre::GkLevelDb> database, QWidget *parent)
     : QAbstractTableModel(parent)
 {
     GkDb = std::move(database);

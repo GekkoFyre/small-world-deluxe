@@ -91,9 +91,9 @@ size_t GkAudioEncoding::ogg_buf_counter = 0;
 
 GkAudioEncoding::GkAudioEncoding(QPointer<FileIo> fileIo,
                                  std::shared_ptr<PaAudioBuf<qint16>> audio_buf,
-                                 std::shared_ptr<GkLevelDb> database,
+                                 QPointer<GkLevelDb> database,
                                  QPointer<GekkoFyre::SpectroGui> spectroGui,
-                                 std::shared_ptr<StringFuncs> stringFuncs,
+                                 QPointer<StringFuncs> stringFuncs,
                                  Database::Settings::Audio::GkDevice input_device,
                                  QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                  QObject *parent)

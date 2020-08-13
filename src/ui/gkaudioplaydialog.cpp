@@ -51,7 +51,7 @@ using namespace Audio;
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
-GkAudioPlayDialog::GkAudioPlayDialog(std::shared_ptr<GkLevelDb> database,
+GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
                                      QPointer<GkAudioDecoding> audio_decoding,
                                      std::shared_ptr<AudioDevices> audio_devices,
                                      QPointer<FileIo> file_io,

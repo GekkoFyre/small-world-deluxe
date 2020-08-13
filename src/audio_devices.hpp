@@ -64,8 +64,8 @@ class AudioDevices : public QObject {
     Q_OBJECT
 
 public:
-    explicit AudioDevices(std::shared_ptr<GekkoFyre::GkLevelDb> gkDb, QPointer<GekkoFyre::FileIo> filePtr,
-                          QPointer<GekkoFyre::GkFrequencies> freqList, std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs,
+    explicit AudioDevices(QPointer<GekkoFyre::GkLevelDb> gkDb, QPointer<GekkoFyre::FileIo> filePtr,
+                          QPointer<GekkoFyre::GkFrequencies> freqList, QPointer<GekkoFyre::StringFuncs> stringFuncs,
                           QObject *parent = nullptr);
     ~AudioDevices();
 
@@ -100,10 +100,10 @@ public:
     QString portAudioVersionText(const portaudio::System &portAudioSys);
 
 private:
-    std::shared_ptr<GkLevelDb> gkDekodeDb;
+    QPointer<GkLevelDb> gkDekodeDb;
     QPointer<GekkoFyre::FileIo> gkFileIo;
     QPointer<GekkoFyre::GkFrequencies> gkFreqList;
-    std::shared_ptr<StringFuncs> gkStringFuncs;
+    QPointer<StringFuncs> gkStringFuncs;
 
     bool filterAudioEnumPreexisting(const std::vector<Database::Settings::Audio::GkDevice> &device_vec,
                                     const Database::Settings::Audio::GkDevice &device_compare);

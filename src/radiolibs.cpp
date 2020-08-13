@@ -93,8 +93,8 @@ using namespace Logging;
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
-RadioLibs::RadioLibs(QPointer<FileIo> filePtr, std::shared_ptr<StringFuncs> stringPtr,
-                     std::shared_ptr<GkLevelDb> dkDb, std::shared_ptr<GkRadio> radioPtr,
+RadioLibs::RadioLibs(QPointer<FileIo> filePtr, QPointer<StringFuncs> stringPtr,
+                     QPointer<GkLevelDb> dkDb, std::shared_ptr<GkRadio> radioPtr,
                      QPointer<GkEventLogger> eventLogger, QObject *parent) : QObject(parent)
 {
     gkStringFuncs = std::move(stringPtr);

@@ -62,7 +62,7 @@ class GkCodec2 : public QObject {
 
 public:
     explicit GkCodec2(const Database::Settings::Codec2Mode &freedv_mode, const Database::Settings::Codec2ModeCustom &custom_mode, const int &freedv_clip,
-                      const int &freedv_txbpf, std::shared_ptr<GekkoFyre::GkLevelDb> levelDb,
+                      const int &freedv_txbpf, QPointer<GekkoFyre::GkLevelDb> levelDb,
                       QPointer<GekkoFyre::GkEventLogger> eventLogger,
                       std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> output_audio_buf, QObject *parent = nullptr);
     ~GkCodec2();
@@ -71,7 +71,7 @@ public:
                      const float &squelch_thresh = -100.0f);
 
 private:
-    std::shared_ptr<GekkoFyre::GkLevelDb> GkDb;
+    QPointer<GekkoFyre::GkLevelDb> GkDb;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> outputAudioBuf;
     Database::Settings::Codec2Mode gkFreeDvMode;

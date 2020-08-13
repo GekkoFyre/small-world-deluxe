@@ -197,7 +197,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         // Create class pointers
         fileIo = new GekkoFyre::FileIo(this);
-        gkStringFuncs = std::make_shared<GekkoFyre::StringFuncs>(this);
+        gkStringFuncs = new GekkoFyre::StringFuncs(this);
 
         //
         // Settings database-related logic
@@ -244,7 +244,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         try {
             if (!save_db_path.empty()) {
                 status = leveldb::DB::Open(options, save_db_path.string(), &db);
-                GkDb = std::make_shared<GekkoFyre::GkLevelDb>(db, fileIo, this);
+                GkDb = new GekkoFyre::GkLevelDb(db, fileIo, this);
 
                 bool enableSentry = false;
                 bool askSentry = GkDb->read_sentry_settings(GkSentry::AskedDialog);
