@@ -43,6 +43,7 @@
 
 #include "src/defines.hpp"
 #include "src/file_io.hpp"
+#include <sentry.h>
 #include <leveldb/db.h>
 #include <leveldb/status.h>
 #include <memory>
@@ -82,6 +83,7 @@ public:
     void create_unique_id();
 
     QString convSeverityToStr(const GekkoFyre::System::Events::Logging::GkSeverity &severity);
+    sentry_level_e convSeverityToSentry(const GekkoFyre::System::Events::Logging::GkSeverity &severity);
 
     QString read_rig_settings(const Database::Settings::radio_cfg &key);
     QString read_rig_settings_comms(const Database::Settings::radio_cfg &key);
@@ -123,7 +125,7 @@ private:
     std::string processCsvToDB(const std::string &comma_sep_values, const std::string &data_to_append);
     std::string deleteCsvValForDb(const std::string &comma_sep_values, const std::string &data_to_remove);
 
-    qint64 randomNumber();
+    std::string randomString(const size_t &length);
 
 };
 };

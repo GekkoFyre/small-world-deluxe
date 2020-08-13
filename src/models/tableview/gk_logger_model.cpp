@@ -165,6 +165,11 @@ QVariant GkEventLoggerTableViewModel::data(const QModelIndex &index, int role) c
     QString row_severity = GkDb->convSeverityToStr(m_data[index.row()].mesg.severity);
     QString row_message = m_data[index.row()].mesg.message;
 
+    sentry_value_t crumb = sentry_value_new_breadcrumb("default", "Events Logger");
+    sentry_value_set_by_key(crumb, "message", sentry_value_new_string(row_message.toStdString().c_str()));
+    sentry_value_set_by_key(crumb, "level", sentry_value_new_string(row_severity.toStdString().c_str()));
+    sentry_add_breadcrumb(crumb);
+
     switch (index.column()) {
     case GK_EVENTLOG_TABLEVIEW_MODEL_EVENT_NO_IDX:
         return row_event_no;
