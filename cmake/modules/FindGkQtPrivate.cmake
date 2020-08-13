@@ -39,23 +39,15 @@
 #
 
 find_package(PkgConfig)
-pkg_check_modules(PC_QTUSB QUIET "qtusb")
-set(QTUSB_DEFINITIONS ${PC_QTUSB_CFLAGS_OTHER})
+set(GkQtPrivate_DEFINITIONS ${PC_GkQtPrivate_CFLAGS_OTHER})
 
-find_path(QTUSB_INCLUDE_DIR
-    NAMES "qusbglobal.h"
-    HINTS ${PC_QTUSB_INCLUDE_DIR} ${PC_QTUSB_INCLUDE_DIRS}
-    PATHS "/usr/local/include" "/usr/include" "/usr/include/qt" "/usr/include/qt/QtUsb" "/usr/include/x86_64-linux-gnu/qt5/QtUsb")
-
-find_library(QTUSB_LIBRARY
-    NAMES  "Qt5Usb" "libQt5Usb"
-    HINTS ${PC_QTUSB_LIBDIR} ${PC_QTUSB_LIBRARY_DIRS}
-    PATHS "/usr/local/lib" "/usr/local/lib64" "/usr/lib" "/usr/lib64" "/usr/lib/x86_64-linux-gnu")
+find_path(GkQtPrivate_INCLUDE_DIR
+    NAMES "private/qobject_p.h"
+    HINTS ${PC_GkQtPrivate_INCLUDE_DIR} ${PC_GkQtPrivate_INCLUDE_DIRS}
+    PATHS "/usr/include/x86_64-linux-gnu/qt5/QtCore/5.12.8/QtCore")
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(QTUSB DEFAULT_MSG QTUSB_LIBRARY QTUSB_INCLUDE_DIR)
+find_package_handle_standard_args(GkQtPrivate DEFAULT_MSG GkQtPrivate_INCLUDE_DIR)
 
-mark_as_advanced(QTUSB_INCLUDE_DIR QTUSB_LIBRARY)
-
-set(QTUSB_LIBRARIES ${QTUSB_LIBRARY})
-set(QTUSB_INCLUDE_DIRS ${QTUSB_INCLUDE_DIR})
+mark_as_advanced(GkQtPrivate_INCLUDE_DIR)
+set(GkQtPrivate_INCLUDE_DIRS ${GkQtPrivate_INCLUDE_DIR})

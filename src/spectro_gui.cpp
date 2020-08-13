@@ -40,9 +40,9 @@
  ****************************************************************************************************/
 
 #include "src/spectro_gui.hpp"
-#include <qwt_plot_renderer.h>
-#include <qwt_plot_layout.h>
-#include <qwt_panner.h>
+#include <qwt/qwt_plot_renderer.h>
+#include <qwt/qwt_plot_layout.h>
+#include <qwt/qwt_panner.h>
 #include <algorithm>
 #include <stdexcept>
 #include <exception>
