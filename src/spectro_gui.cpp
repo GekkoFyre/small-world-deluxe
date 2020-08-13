@@ -1,15 +1,15 @@
 /**
- **     __                 _ _   __    __           _     _ 
+ **     __                 _ _   __    __           _     _
  **    / _\_ __ ___   __ _| | | / / /\ \ \___  _ __| | __| |
  **    \ \| '_ ` _ \ / _` | | | \ \/  \/ / _ \| '__| |/ _` |
  **    _\ \ | | | | | (_| | | |  \  /\  / (_) | |  | | (_| |
  **    \__/_| |_| |_|\__,_|_|_|   \/  \/ \___/|_|  |_|\__,_|
- **                                                         
- **                  ___     _                              
- **                 /   \___| |_   ___  _____               
- **                / /\ / _ \ | | | \ \/ / _ \              
- **               / /_//  __/ | |_| |>  <  __/              
- **              /___,' \___|_|\__,_/_/\_\___|              
+ **
+ **                  ___     _
+ **                 /   \___| |_   ___  _____
+ **                / /\ / _ \ | | | \ \/ / _ \
+ **               / /_//  __/ | |_| |>  <  __/
+ **              /___,' \___|_|\__,_/_/\_\___|
  **
  **
  **   If you have downloaded the source code for "Small World Deluxe" and are reading this,
@@ -85,9 +85,9 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QPointer<GkEven
         //
         graph_in_use = GkGraphType::GkWaterfall;
 
-        gkRasterData = std::make_unique<GkSpectroRasterData>();
-        gkMatrixData = std::make_unique<QwtMatrixRasterData>();
-        color_map = std::make_unique<LinearColorMapRGB>();
+        gkRasterData = new GkSpectroRasterData();
+        gkMatrixData = new QwtMatrixRasterData();
+        color_map = new LinearColorMapRGB();
         canvas = new QwtPlotCanvas();
 
         //
@@ -105,7 +105,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QPointer<GkEven
         gkRasterData->setRenderThreadCount(0); // https://docs.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getlogicalprocessorinformation?redirectedfrom=MSDN
         gkRasterData->setCachePolicy(QwtPlotRasterItem::PaintCache);
         gkRasterData->setDisplayMode(QwtPlotSpectrogram::DisplayMode::ImageMode, true);
-        gkRasterData->setColorMap(color_map.get());
+        gkRasterData->setColorMap(color_map);
 
         // These are said to use quite a few system resources!
         gkRasterData->setRenderHint(QwtPlotItem::RenderAntialiased);
@@ -116,7 +116,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QPointer<GkEven
         }
 
         gkRasterData->setContourLevels(contourLevels);
-        gkRasterData->setData(gkMatrixData.get());
+        gkRasterData->setData(gkMatrixData);
         // gkSpectrogram->attach(this);
 
         gkMatrixData->setInterval(Qt::XAxis, QwtInterval(0, 2500.0f));
@@ -176,7 +176,7 @@ SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QPointer<GkEven
         right_y_axis = axisWidget(QwtPlot::yRight);
         right_y_axis->setColorBarWidth(16);
         right_y_axis->setColorBarEnabled(true);
-        right_y_axis->setColorMap(gkRasterData->interval(Qt::ZAxis), color_map.get());
+        right_y_axis->setColorMap(gkRasterData->interval(Qt::ZAxis), color_map);
         right_y_axis->setEnabled(true);
         enableAxis(QwtPlot::yRight, true);
 
