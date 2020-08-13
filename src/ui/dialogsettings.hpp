@@ -70,11 +70,11 @@ class DialogSettings : public QDialog
     Q_OBJECT
 
 public:
-    explicit DialogSettings(std::shared_ptr<GekkoFyre::GkLevelDb> dkDb,
+    explicit DialogSettings(QPointer<GekkoFyre::GkLevelDb> dkDb,
                             QPointer<GekkoFyre::FileIo> filePtr,
                             std::shared_ptr<GekkoFyre::AudioDevices> audioDevices,
                             QPointer<GekkoFyre::RadioLibs> radioLibs,
-                            std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs,
+                            QPointer<GekkoFyre::StringFuncs> stringFuncs,
                             portaudio::System *portAudioInit,
                             std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> radioPtr,
                             const std::list<GekkoFyre::Database::Settings::GkComPort> &com_ports,
@@ -207,8 +207,8 @@ private:
     std::vector<double> standardSampleRates;
 
     QPointer<GekkoFyre::RadioLibs> gkRadioLibs;
-    std::shared_ptr<GekkoFyre::GkLevelDb> gkDekodeDb;
-    std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
+    QPointer<GekkoFyre::GkLevelDb> gkDekodeDb;
+    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::FileIo> gkFileIo;
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
     std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> gkRadioPtr;

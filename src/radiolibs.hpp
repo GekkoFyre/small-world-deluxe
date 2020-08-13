@@ -68,8 +68,8 @@ class RadioLibs : public QObject {
     Q_OBJECT
 
 public:
-    explicit RadioLibs(QPointer<GekkoFyre::FileIo> filePtr, std::shared_ptr<GekkoFyre::StringFuncs> stringPtr,
-                       std::shared_ptr<GkLevelDb> dkDb, std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> radioPtr,
+    explicit RadioLibs(QPointer<GekkoFyre::FileIo> filePtr, QPointer<GekkoFyre::StringFuncs> stringPtr,
+                       QPointer<GkLevelDb> dkDb, std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> radioPtr,
                        QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~RadioLibs();
 
@@ -93,9 +93,9 @@ signals:
     void disconnectRigInUse(std::shared_ptr<Rig> rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
 
 private:
-    std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
-    std::shared_ptr<GekkoFyre::GkLevelDb> gkDekodeDb;
+    QPointer<GekkoFyre::GkLevelDb> gkDekodeDb;
     std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> gkRadioPtr;
+    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::FileIo> gkFileIo;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 

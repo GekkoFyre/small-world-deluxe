@@ -56,7 +56,7 @@ using namespace System;
 using namespace Events;
 using namespace Logging;
 
-GkEventLoggerTableViewModel::GkEventLoggerTableViewModel(std::shared_ptr<GkLevelDb> database, QWidget *parent)
+GkEventLoggerTableViewModel::GkEventLoggerTableViewModel(QPointer<GkLevelDb> database, QWidget *parent)
     : QAbstractTableModel(parent)
 {
     GkDb = std::move(database);

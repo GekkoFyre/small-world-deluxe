@@ -61,7 +61,7 @@ class GkCli : public QObject {
 public:
     explicit GkCli(std::shared_ptr<QCommandLineParser> parser,
                    QPointer<GekkoFyre::FileIo> fileIo,
-                   std::shared_ptr<GekkoFyre::GkLevelDb> database,
+                   QPointer<GekkoFyre::GkLevelDb> database,
                    QPointer<GekkoFyre::RadioLibs> radioLibs,
                    QObject *parent);
     virtual ~GkCli();
@@ -70,7 +70,7 @@ public:
 
 private:
     QPointer<GekkoFyre::FileIo> gkFileIo;
-    std::shared_ptr<GekkoFyre::GkLevelDb> gkDb;
+    QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::RadioLibs> gkRadioLibs;
     std::shared_ptr<QCommandLineParser> gkCliParser;
 

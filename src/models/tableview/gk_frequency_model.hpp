@@ -77,7 +77,7 @@ class GkFreqTableViewModel : public QAbstractTableModel {
     Q_OBJECT
 
 public:
-    explicit GkFreqTableViewModel(std::shared_ptr<GekkoFyre::GkLevelDb> database, QWidget *parent = nullptr);
+    explicit GkFreqTableViewModel(QPointer<GekkoFyre::GkLevelDb> database, QWidget *parent = nullptr);
     ~GkFreqTableViewModel();
 
     void populateData(const QList<GekkoFyre::AmateurRadio::GkFreqs> &frequencies);
@@ -100,7 +100,7 @@ signals:
     void addFreq(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_add);
 
 private:
-    std::shared_ptr<GekkoFyre::GkLevelDb> GkDb;
+    QPointer<GekkoFyre::GkLevelDb> GkDb;
     QList<GekkoFyre::AmateurRadio::GkFreqs> m_data;
 
     QPointer<QTableView> table;

@@ -59,7 +59,7 @@ class GkModemQRA64 : public QObject {
 
 public:
     explicit GkModemQRA64(std::shared_ptr<GekkoFyre::AudioDevices> gkAudio, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                          std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs, const int &channel_type, const int &EbNodB,
+                          QPointer<GekkoFyre::StringFuncs> stringFuncs, const int &channel_type, const int &EbNodB,
                           const int &mode, QObject *parent = nullptr);
     ~GkModemQRA64();
 
@@ -102,7 +102,7 @@ public:
 private:
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
-    std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
+    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
 
     int *x;
     int *y;
@@ -119,16 +119,16 @@ class GkModem : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkModem(std::shared_ptr<GekkoFyre::AudioDevices> gkAudio, std::shared_ptr<GekkoFyre::GkLevelDb> dbPtr,
+    explicit GkModem(std::shared_ptr<GekkoFyre::AudioDevices> gkAudio, QPointer<GekkoFyre::GkLevelDb> dbPtr,
                      QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                     std::shared_ptr<GekkoFyre::StringFuncs> stringFuncs, QObject *parent = nullptr);
+                     QPointer<GekkoFyre::StringFuncs> stringFuncs, QObject *parent = nullptr);
     ~GkModem();
 
 private:
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
-    std::shared_ptr<GekkoFyre::GkLevelDb> gkDb;
+    QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
-    std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
+    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     std::unique_ptr<GkModemQRA64> gkModemQRA64;
 
 };

@@ -68,7 +68,7 @@ using namespace Logging;
  * @note <http://dronin.org/doxygen/ground/html/plotdata_8h_source.html>
  * <https://github.com/medvedvvs/QwtWaterfall>
  */
-SpectroGui::SpectroGui(std::shared_ptr<StringFuncs> stringFuncs, QPointer<GkEventLogger> eventLogger, const bool &enablePanner,
+SpectroGui::SpectroGui(QPointer<StringFuncs> stringFuncs, QPointer<GkEventLogger> eventLogger, const bool &enablePanner,
                        const bool &enableZoomer, QWidget *parent)
     : gkAlpha(255)
 {

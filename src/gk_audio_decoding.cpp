@@ -88,8 +88,8 @@ namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
 GkAudioDecoding::GkAudioDecoding(QPointer<FileIo> fileIo,
-                                 std::shared_ptr<GkLevelDb> database,
-                                 std::shared_ptr<StringFuncs> stringFuncs,
+                                 QPointer<GkLevelDb> database,
+                                 QPointer<StringFuncs> stringFuncs,
                                  Database::Settings::Audio::GkDevice output_device,
                                  QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                  QObject *parent)

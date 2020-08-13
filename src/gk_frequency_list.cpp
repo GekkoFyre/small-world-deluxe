@@ -59,7 +59,7 @@ using namespace Control;
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param parent
  */
-GkFrequencies::GkFrequencies(std::shared_ptr<GekkoFyre::GkLevelDb> database, QObject *parent)
+GkFrequencies::GkFrequencies(QPointer<GekkoFyre::GkLevelDb> database, QObject *parent)
 {
     GkDb = std::move(database);
 
