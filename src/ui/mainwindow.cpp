@@ -1898,11 +1898,13 @@ void MainWindow::on_pushButton_radio_receive_clicked()
                             changePushButtonColor(ui->pushButton_radio_receive, false);
                             emit startRecording();
 
+                            #ifndef GK_ENBL_VALGRIND_SUPPORT
                             spectro_timing_thread = std::thread(&MainWindow::updateSpectrograph, this);
                             spectro_timing_thread.detach();
 
                             vu_meter_thread = std::thread(&MainWindow::updateVolumeDisplayWidgets, this);
                             vu_meter_thread.detach();
+                            #endif
 
                             changeStatusBarMsg(tr("Please wait! Beginning to receive audio..."));
 

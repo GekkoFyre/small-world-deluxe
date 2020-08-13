@@ -136,7 +136,6 @@ public slots:
 
 private:
     QPointer<QwtPlotZoomer> zoomer;
-    std::unique_ptr<LinearColorMapRGB> color_map;
     QPointer<QwtPlotCanvas> canvas;
     std::unique_ptr<QwtPlotCurve> curve;
     QPointer<QwtPlotPanner> panner;
@@ -146,8 +145,8 @@ private:
     int buf_overall_size;
     int buf_total_size;
     QList<double> gkRasterBuf;
-    std::unique_ptr<GkSpectroRasterData> gkRasterData;
-    std::unique_ptr<QwtMatrixRasterData> gkMatrixData;
+    GkSpectroRasterData *gkRasterData;
+    QwtMatrixRasterData *gkMatrixData;
 
     std::shared_ptr<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
@@ -158,8 +157,8 @@ private:
     //
     // Date & Timing
     //
-    std::unique_ptr<QwtDateScaleDraw> date_scale_draw;
-    std::unique_ptr<QwtDateScaleEngine> date_scale_engine;
+    QwtDateScaleDraw *date_scale_draw;
+    QwtDateScaleEngine *date_scale_engine;
 
     //
     // Threads

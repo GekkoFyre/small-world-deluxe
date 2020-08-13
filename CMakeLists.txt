@@ -142,9 +142,9 @@ if (LINUX)
 endif()
 
 if (GFYRE_BUILD_STATIC)
-    set(BUILD_SHARED_LIBS OFF) # Regarding Sentry, setting this to OFF will build said library as a STATIC one!
+    option(BUILD_SHARED_LIBS "Set this option to OFF in order to compile a static set of libraries." OFF)
 else()
-    set(BUILD_SHARED_LIBS ON)
+    option(BUILD_SHARED_LIBS "Set this option to OFF in order to compile a static set of libraries." ON)
 endif(GFYRE_BUILD_STATIC)
 
 #
@@ -384,17 +384,17 @@ set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-arcs -ftest-c
 # Sentry (Native SDK for C/C++)
 # https://github.com/getsentry/sentry-native
 #
-set(SENTRY_PIC CACHE BOOL "Build Sentry as a position independent library" ON)
-set(SENTRY_EXPORT_SYMBOLS CACHE BOOL "By default, sentry exposes all symbols in the dynamic symbol table. You might want to disable it in case the program intends to dlopen third-party shared libraries and avoid symbol collisions." OFF)
+option(SENTRY_PIC "Build Sentry as a position independent library" ON)
+option(SENTRY_EXPORT_SYMBOLS "By default, sentry exposes all symbols in the dynamic symbol table. You might want to disable it in case the program intends to dlopen third-party shared libraries and avoid symbol collisions." OFF)
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     option(SENTRY_BUILD_RUNTIMESTATIC "Disables linking with the static MSVC runtime. Has no effect if the compiler is not MSVC" OFF)
 endif()
 
-set(SENTRY_LINK_PTHREAD CACHE BOOL "Links to the pthread library on Unix targets." ON)
-set(SENTRY_BUILD_FORCE32 CACHE BOOL "Otherwise forces cross-compilation from 64-bit host to 32-bit target. Only has an effect on Linux." OFF)
 set(SENTRY_BACKEND "crashpad" CACHE STRING "The type of crash manager to use." FORCE)
-set(SENTRY_CRASHPAD_SYSTEM CACHE BOOL "This instructs the build system to use system-installed breakpad or crashpad libraries instead of using the in-tree version. This is generally not recommended for crashpad, as sentry uses a patched version that has attachment support." OFF)
+option(SENTRY_LINK_PTHREAD "Links to the pthread library on Unix targets." ON)
+option(SENTRY_BUILD_FORCE32 "Otherwise forces cross-compilation from 64-bit host to 32-bit target. Only has an effect on Linux." OFF)
+option(SENTRY_CRASHPAD_SYSTEM "This instructs the build system to use system-installed breakpad or crashpad libraries instead of using the in-tree version. This is generally not recommended for crashpad, as sentry uses a patched version that has attachment support." OFF)
 
 if(WIN32 OR MSYS OR MINGW)
     set(SENTRY_TRANSPORT "winhttp" CACHE STRING "Please do not modify this.")
