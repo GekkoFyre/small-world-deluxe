@@ -324,6 +324,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                     // Miscellaneous settings pertaining to Sentry
                     sentry_options_set_auto_session_tracking(sen_opt, true);
                     sentry_options_set_symbolize_stacktraces(sen_opt, true);
+                    sentry_options_set_system_crash_reporter_enabled(sen_opt, true);
 
                     // Release information
                     sentry_options_set_environment(sen_opt, General::gk_sentry_env);
@@ -334,6 +335,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
                     // Initialize the SDK and start the Crashpad handler
                     sentry_init(sen_opt);
+
+                    //
+                    // BUG: Workaround to fix the issue of data not uploading to Sentry server!
+                    // See: https://forum.sentry.io/t/problem-with-sentry-native-c-minidumps/8878/6
+                    //
+                    sentry_set_transaction("init");
 
                     // Initialize a Unique ID for the given user on the local machine, which is much more anonymous and sanitized than
                     // dealing with IP Addresses!
@@ -1800,7 +1807,9 @@ void MainWindow::updateSpectrograph()
             }
         }
     } catch (const std::exception &e) {
-        print_exception(e);
+        // TODO: We are using this method of reporting an exception because sometimes they are thrown upon termination of the application!
+        std::cerr << tr("An error has occurred whilst undertaking calculations for the spectrograph / waterfall! Error:\n\n%1")
+        .arg(QString::fromStdString(e.what())).toStdString() << std::endl;
     }
 
     #endif
@@ -2047,7 +2056,7 @@ void MainWindow::procRigPort(const QString &conn_port, const GekkoFyre::AmateurR
             throw std::invalid_argument(tr("An error was encountered in determining the connection method used for your radio rig!").toStdString());
         }
     }  catch (const std::exception &e) {
-        std::throw_with_nested(std::invalid_argument(e.what()));
+        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok, QMessageBox::Ok);
     }
 
     return;

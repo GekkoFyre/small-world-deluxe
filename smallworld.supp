@@ -1,0 +1,35 @@
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:qra64_init
+   fun:_ZN9GekkoFyre12GkModemQRA64C1ESt10shared_ptrINS_12AudioDevicesEE8QPointerINS_13GkEventLoggerEES4_INS_11StringFuncsEERKiSA_SA_P7QObject
+   fun:_ZSt11make_uniqueIN9GekkoFyre12GkModemQRA64EJRSt10shared_ptrINS0_12AudioDevicesEER8QPointerINS0_13GkEventLoggerEERS6_INS0_11StringFuncsEEiiiPNS0_7GkModemEEENSt9_MakeUniqIT_E15__single_objectEDpOT0_
+   fun:_ZN9GekkoFyre7GkModemC1ESt10shared_ptrINS_12AudioDevicesEE8QPointerINS_9GkLevelDbEES4_INS_13GkEventLoggerEES4_INS_11StringFuncsEEP7QObject
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN3Rig7setConfEPKcS1_
+   fun:_ZN9GekkoFyre9RadioLibs14gkInitRadioRigESt10shared_ptrINS_12AmateurRadio7Control7GkRadioEE
+   fun:_ZSt13__invoke_implIvMN9GekkoFyre9RadioLibsEFvSt10shared_ptrINS0_12AmateurRadio7Control7GkRadioEEE8QPointerIS1_EJS6_EET_St21__invoke_memfun_derefOT0_OT1_DpOT2_
+   fun:_ZSt8__invokeIMN9GekkoFyre9RadioLibsEFvSt10shared_ptrINS0_12AmateurRadio7Control7GkRadioEEEJ8QPointerIS1_ES6_EENSt15__invoke_resultIT_JDpT0_EE4typeEOSC_DpOSD_
+   fun:_ZNSt6thread8_InvokerISt5tupleIJMN9GekkoFyre9RadioLibsEFvSt10shared_ptrINS2_12AmateurRadio7Control7GkRadioEEE8QPointerIS3_ES8_EEE9_M_invokeIJLm0ELm1ELm2EEEEvSt12_Index_tupleIJXspT_EEE
+   fun:_ZNSt6thread8_InvokerISt5tupleIJMN9GekkoFyre9RadioLibsEFvSt10shared_ptrINS2_12AmateurRadio7Control7GkRadioEEE8QPointerIS3_ES8_EEEclEv
+   fun:_ZNSt6thread11_State_implINS_8_InvokerISt5tupleIJMN9GekkoFyre9RadioLibsEFvSt10shared_ptrINS3_12AmateurRadio7Control7GkRadioEEE8QPointerIS4_ES9_EEEEE6_M_runEv
+   obj:/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.28
+   fun:start_thread
+   fun:clone
+}

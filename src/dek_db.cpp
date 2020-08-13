@@ -51,15 +51,16 @@
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
 #include <QMessageBox>
+#include <QVariant>
+#include <QDebug>
+#include <algorithm>
+#include <iterator>
 #include <sstream>
 #include <utility>
-#include <iterator>
 #include <vector>
 #include <random>
 #include <chrono>
 #include <ctime>
-#include <QDebug>
-#include <QVariant>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -469,7 +470,7 @@ void GkLevelDb::write_frequencies_db(const GkFreqs &write_new_value)
 
         return;
     } catch (const std::exception &e) { // https://en.cppreference.com/w/cpp/error/nested_exception
-        std::throw_with_nested(std::runtime_error(e.what()));
+        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok, QMessageBox::Ok);
     }
 
     return;
@@ -538,7 +539,7 @@ void GkLevelDb::remove_frequencies_db(const GkFreqs &freq_to_remove)
             throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
         }
     } catch (const std::exception &e) { // https://en.cppreference.com/w/cpp/error/nested_exception
-        std::throw_with_nested(std::runtime_error(e.what()));
+        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok, QMessageBox::Ok);
     }
 
     return;
@@ -583,7 +584,7 @@ void GkLevelDb::remove_frequencies_db(const bool &del_all)
             }
         }
     } catch (const std::exception &e) { // https://en.cppreference.com/w/cpp/error/nested_exception
-        std::throw_with_nested(std::runtime_error(e.what()));
+        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok, QMessageBox::Ok);
     }
 
     return;
@@ -649,7 +650,7 @@ bool GkLevelDb::isFreqAlreadyInit()
 
         return freq_init_bool;
     } catch (const std::exception &e) {
-        std::throw_with_nested(std::runtime_error(e.what()));
+        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok, QMessageBox::Ok);
     }
 
     return false;
@@ -802,17 +803,17 @@ QString GkLevelDb::read_optin_settings(const GkOptIn &key)
  */
 void GkLevelDb::create_unique_id()
 {
-    qint32 ret_num = -1;
+    std::string ret_str = "";
     QString sentry_unique_id = read_optin_settings(GkOptIn::UserUniqueId);
-    if (!sentry_unique_id.isNull() && !sentry_unique_id.isEmpty()) {
-        ret_num = sentry_unique_id.toInt();
+    if (!sentry_unique_id.isEmpty()) {
+        ret_str = sentry_unique_id.toStdString();
     } else {
-        ret_num = randomNumber();
-        write_optin_settings(QString::number(ret_num), GkOptIn::UserUniqueId);
+        ret_str = randomString(24);
+        write_optin_settings(QString::fromStdString(ret_str), GkOptIn::UserUniqueId);
     }
 
     sentry_value_t user = sentry_value_new_object();
-    sentry_value_set_by_key(user, "id", sentry_value_new_int32(ret_num));
+    sentry_value_set_by_key(user, "id", sentry_value_new_string(ret_str.c_str()));
     sentry_set_user(user);
 
     return;
@@ -846,6 +847,36 @@ QString GkLevelDb::convSeverityToStr(const GkSeverity &severity)
     }
 
     return tr("Error!");
+}
+
+/**
+ * @brief GkLevelDb::convSeverityToSentry
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param severity
+ * @return
+ */
+sentry_level_e GkLevelDb::convSeverityToSentry(const Events::Logging::GkSeverity &severity)
+{
+    switch (severity) {
+        case GkSeverity::Fatal:
+            return SENTRY_LEVEL_FATAL;
+        case GkSeverity::Error:
+            return SENTRY_LEVEL_ERROR;
+        case GkSeverity::Warning:
+            return SENTRY_LEVEL_WARNING;
+        case GkSeverity::Info:
+            return SENTRY_LEVEL_INFO;
+        case GkSeverity::Debug:
+            return SENTRY_LEVEL_DEBUG;
+        case GkSeverity::Verbose:
+            return SENTRY_LEVEL_DEBUG;
+        case GkSeverity::None:
+            return SENTRY_LEVEL_INFO;
+        default:
+            return SENTRY_LEVEL_INFO;
+    }
+
+    return SENTRY_LEVEL_INFO;
 }
 
 /**
@@ -1784,24 +1815,22 @@ std::string GkLevelDb::deleteCsvValForDb(const std::string &comma_sep_values, co
 }
 
 /**
- * @brief GkLevelDb::randomNumber
- * @author Serge Dundich <https://stackoverflow.com/questions/13445688/how-to-generate-a-random-number-in-c>
+ * @brief GkLevelDb::randomString
+ * @author Carl <https://stackoverflow.com/a/12468109>
  * @return
  */
-qint64 GkLevelDb::randomNumber()
+std::string GkLevelDb::randomString(const size_t &length)
 {
-    std::random_device rd;
-    std::mt19937::result_type seed = rd() ^ ((std::mt19937::result_type)std::chrono::duration_cast<std::chrono::seconds>
-                                             (std::chrono::system_clock::now().time_since_epoch()).count() +
-                                             (std::mt19937::result_type)std::chrono::duration_cast<std::chrono::microseconds>
-                                             (std::chrono::high_resolution_clock::now().time_since_epoch()).count());
-    std::mt19937 gen(seed);
-    std::uniform_int_distribution<unsigned> distrib(1, 6);
+    auto randchar = []() -> char {
+        const char charset[] =
+                "0123456789"
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                "abcdefghijklmnopqrstuvwxyz";
+        const size_t max_index = (sizeof(charset) - 1);
+        return charset[ rand() % max_index ];
+    };
 
-    std::stringstream ss;
-    for (qint64 i = 0; i < 100500; ++i) {
-        ss << distrib(gen) << ' ';
-    }
-
-    return std::stoul(ss.str());
+    std::string str(length,0);
+    std::generate_n( str.begin(), length, randchar );
+    return str;
 }

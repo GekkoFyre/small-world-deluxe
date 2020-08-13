@@ -288,8 +288,8 @@ QList<QSerialPortInfo> RadioLibs::status_com_ports() const
         const auto rs232_data = QSerialPortInfo::availablePorts();
         return rs232_data;
     } catch (const std::exception &e) {
-        std::throw_with_nested(std::runtime_error(tr("An issue was encountered whilst enumerating RS232 ports!\n\n%1")
-                                                  .arg(QString::fromStdString(e.what())).toStdString()));
+        QMessageBox::warning(nullptr, tr("Error!"), tr("An issue was encountered whilst enumerating RS232 ports!\n\n%1").arg(QString::fromStdString(e.what())),
+        QMessageBox::Ok, QMessageBox::Ok);
     }
 
     return QList<QSerialPortInfo>();
@@ -328,8 +328,8 @@ std::list<GkComPort> RadioLibs::filter_com_ports(const QList<QSerialPortInfo> &s
             }
         }
     } catch (const std::exception &e) {
-        std::throw_with_nested(std::runtime_error(tr("An issue was encountered whilst enumerating RS232 ports!\n\n%1")
-                                                  .arg(QString::fromStdString(e.what())).toStdString()));
+        QMessageBox::warning(nullptr, tr("Error!"), tr("An issue was encountered whilst enumerating RS232 ports!\n\n%1")
+                .arg(QString::fromStdString(e.what())), QMessageBox::Ok, QMessageBox::Ok);
     }
 
     return std::list<GkComPort>();
