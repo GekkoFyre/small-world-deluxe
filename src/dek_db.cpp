@@ -393,6 +393,12 @@ void GkLevelDb::write_misc_audio_settings(const QString &value, const audio_cfg 
         case audio_cfg::AudioOutputChannels:
             batch.Put("AudioOutputChannels", value.toStdString());
             break;
+        case audio_cfg::AudioInputSampleRate:
+            batch.Put("AudioInputSampleRate", value.toStdString());
+            break;
+        case audio_cfg::AudioOutputSampleRate:
+            batch.Put("AudioOutputSampleRate", value.toStdString());
+            break;
         }
 
         std::time_t curr_time = std::time(nullptr);
@@ -1375,6 +1381,12 @@ QString GkLevelDb::read_misc_audio_settings(const audio_cfg &key)
         break;
     case audio_cfg::AudioOutputChannels:
         status = db->Get(read_options, "AudioOutputChannels", &value);
+        break;
+    case audio_cfg::AudioInputSampleRate:
+        status = db->Get(read_options, "AudioInputSampleRate", &value);
+        break;
+    case audio_cfg::AudioOutputSampleRate:
+        status = db->Get(read_options, "AudioOutputSampleRate", &value);
         break;
     }
 

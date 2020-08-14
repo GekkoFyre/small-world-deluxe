@@ -639,6 +639,7 @@ MainWindow::~MainWindow()
 
     // Clear any memory used by Sentry & Crashpad before making sure the process itself terminates!
     sentry_shutdown();
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
     delete ui;
 }

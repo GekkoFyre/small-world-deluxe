@@ -93,8 +93,6 @@ private slots:
     void on_pushButton_audio_logs_save_dir_clicked();
     void on_comboBox_soundcard_input_currentIndexChanged(int index = -1);
     void on_comboBox_soundcard_output_currentIndexChanged(int index = -1);
-    void on_comboBox_audio_input_sample_rate_currentIndexChanged(int index);
-    void on_comboBox_audio_output_sample_rate_currentIndexChanged(int index);
     void on_comboBox_soundcard_api_currentIndexChanged(int index = -1);
     void on_comboBox_brand_selection_currentIndexChanged(const QString &arg1);
     void on_comboBox_com_port_currentIndexChanged(int index);
@@ -205,6 +203,8 @@ private:
 
     portaudio::System *gkPortAudioInit;
     std::vector<double> standardSampleRates;
+    QList<double> supportedInputSampleRates;    // The supported sample rates for the chosen input audio device!
+    QList<double> supportedOutputSampleRates;   // The supported sample rates for the chosen output audio device!
 
     QPointer<GekkoFyre::RadioLibs> gkRadioLibs;
     QPointer<GekkoFyre::GkLevelDb> gkDekodeDb;
@@ -261,6 +261,8 @@ private:
     void prefill_avail_usb_ports(const QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> &usb_devices);
     void prefill_com_baud_speed(const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate);
     void enable_device_port_options();
+
+    void update_sample_rates(const bool &is_output_device = false);
 
     bool read_settings();
 };
