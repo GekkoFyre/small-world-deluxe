@@ -84,7 +84,8 @@ sworld_debug_archlinux_x86_64:
 
 sworld_sentry_archlinux_x86_64:
     stage: sworld_sentry_archlinux_x86_64
-    dependencies: sworld_debug_archlinux_x86_64
+    dependencies:
+        - sworld_debug_archlinux_x86_64
     script:
         - sentry-cli upload-dif -o gekkofyre-networks -p small-world-deluxe ./src_build/ --include-sources --log-level=info --auth-token $GK_SENTRY_AUTH_KEY
     after_script:
