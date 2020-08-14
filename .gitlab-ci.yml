@@ -43,10 +43,11 @@
 
 ### --------------------------------------------------------------------------------------------------- ###
 
-image: archlinux:latest
+image: code.gekkofyre.io:5050/amateur-radio/small-world-deluxe/swd-arch-latest
 
 stages:
     - sworld_debug_archlinux_x86_64
+    - sworld_sentry_archlinux_x86_64
     - test
 
 include:
@@ -65,73 +66,7 @@ variables:
 #
 sworld_debug_archlinux_x86_64:
     stage: sworld_debug_archlinux_x86_64
-    image: archlinux:latest
-    before_script:
-        - pacman -Sy --noconfirm
-        - pacman -Syu --noconfirm
-        - pacman -S base-devel --noconfirm
-        - pacman -S gcc --noconfirm
-        - pacman -S gcc-fortran --noconfirm
-        - pacman -S octave --noconfirm
-        - pacman -S python --noconfirm
-        - pacman -S gdb --noconfirm
-        - pacman -S clang --noconfirm
-        - pacman -S llvm --noconfirm
-        - pacman -S llvm-libs --noconfirm
-        - pacman -S binutils --noconfirm
-        - pacman -S automake --noconfirm
-        - pacman -S autoconf --noconfirm
-        - pacman -S autoconf-archive --noconfirm
-        - pacman -S boost --noconfirm
-        - pacman -S qt5-base --noconfirm
-        - pacman -S qt5-tools --noconfirm
-        - pacman -S qt5-serialport --noconfirm
-        - pacman -S qt5-sensors --noconfirm
-        - pacman -S qt5-imageformats --noconfirm
-        - pacman -S qt5-translations --noconfirm
-        - pacman -S qt5-svg --noconfirm
-        - pacman -S qt5-multimedia --noconfirm
-        - pacman -S qt5-xmlpatterns --noconfirm
-        - pacman -S qt5-charts --noconfirm
-        - pacman -S qt5-3d --noconfirm
-        - pacman -S qt5-connectivity --noconfirm
-        - pacman -S zstd --noconfirm
-        - pacman -S libusb --noconfirm
-        - pacman -S hidapi --noconfirm
-        - pacman -S lz4 --noconfirm
-        - pacman -S zlib --noconfirm
-        - pacman -S leveldb --noconfirm
-        - pacman -S portaudio --noconfirm
-        - pacman -S fftw --noconfirm
-        - pacman -S snappy --noconfirm
-        - pacman -S qwt --noconfirm
-        - pacman -S libogg --noconfirm
-        - pacman -S libvorbis --noconfirm
-        - pacman -S opus --noconfirm
-        - pacman -S opusfile --noconfirm
-        - pacman -S texinfo --noconfirm
-        - pacman -S libusb-compat --noconfirm
-        - pacman -S hamlib --noconfirm
-        - pacman -S git --noconfirm
-        - pacman -S cmake --noconfirm
-        - pacman -S wget --noconfirm
-        - export CC=/usr/bin/clang
-        - export CXX=/usr/bin/clang++
-        - wget https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.16.tar.gz
-        - tar -xvzf libiconv-1.16.tar.gz && cd libiconv-1.16
-        - ./configure --enable-static --enable-shared
-        - make -j 8 && make install
-        - cd ./..
-        - git clone https://github.com/drowe67/codec2.git
-        - cd codec2 && mkdir build && cd build
-        - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=NO ..
-        - make -j 8 && make install
-        - cd ./../..
-        - strip --remove-section=.note.ABI-tag /usr/lib64/libQt5Core.so.5
-        - echo "Done compiling primary libraries and preparing `libQt5Core.so.5`! Time to compile QtUsb..."
-        - cd src/contrib/QtUsb && mkdir build && cd build
-        - qmake -makefile .. && make -j 8 && make install
-        - cd ./../../../..
+    image: code.gekkofyre.io:5050/amateur-radio/small-world-deluxe/swd-arch-latest
     script:
         - mkdir -p src_build && cd src_build
         - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DGFYRE_BUILD_STATIC=ON -DBUILD_CODEC2_SUPPORT=ON -DBUILD_OPUS_SUPPORT=ON ..
@@ -143,17 +78,22 @@ sworld_debug_archlinux_x86_64:
         expire_in: 2 weeks
         paths:
             - src_build/
-        exclude:
-            - "CMakeFiles/"
-            - "galaxy_autogen/"
-            - "smallworld_autogen/"
-            - "src/"
-            - "*.o"
-            - "*.txt"
-            - "Makefile"
-            - "*.cmake"
-            - "*.h"
     when: always
+
+### --------------------------------------------------------------------------------------------------- ###
+
+sworld_sentry_archlinux_x86_64:
+    stage: sworld_sentry_archlinux_x86_64
+    dependencies: sworld_debug_archlinux_x86_64
+    script:
+        - sentry-cli upload-dif -o gekkofyre-networks -p small-world-deluxe ./src_build/ --include-sources --log-level=info --auth-token $GK_SENTRY_AUTH_KEY
+    after_script:
+        - echo "Finished uploading data to Sentry server!"
+    artifacts:
+        expire_in: 1 week
+        paths:
+            - src_build/
+    allow_failure: true
 
 ### --------------------------------------------------------------------------------------------------- ###
 

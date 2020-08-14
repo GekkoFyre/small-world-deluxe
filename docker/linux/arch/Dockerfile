@@ -100,6 +100,7 @@ RUN pacman -S hamlib --noconfirm
 RUN pacman -S git --noconfirm
 RUN pacman -S cmake --noconfirm
 RUN pacman -S wget --noconfirm
+RUN pacman -S curl --noconfirm
 
 # Make sure to cleanup after all the updates and installations are completed!
 RUN pacman -Sc --noconfirm
@@ -107,6 +108,15 @@ RUN pacman -Sc --noconfirm
 # Set the required environmental variables...
 ENV CC=/usr/bin/clang
 ENV CXX=/usr/bin/clang++
+
+#
+# Setup information for the Sentry server [ sentry.gekkofyre.io ]
+#
+CMD [ "curl", "-sL https://sentry.io/get-cli/ | bash" ]
+CMD echo "[defaults]" >> ~/.sentryclirc
+CMD echo "org=gekkofyre-networks" >> ~/.sentryclirc
+CMD echo "project=small-world-deluxe" >> ~/.sentryclirc
+CMD echo "url=https://sentry.gekkofyre.io/" >> ~/.sentryclirc
 
 #
 # Compile the following programs...
