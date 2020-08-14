@@ -38,6 +38,10 @@
 #   [ 1 ] - https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe
 #
 
+#
+# http://tutorials.jenkov.com/docker/dockerfile.html
+#
+
 # Use the official Arch Linux image as a parent image...
 FROM archlinux:latest
 
@@ -51,6 +55,7 @@ RUN pacman -Sy --noconfirm
 RUN pacman -Syu --noconfirm
 RUN pacman -S base-devel --noconfirm
 RUN pacman -S gcc --noconfirm
+RUN pacman -S gcc-fortran --noconfirm
 RUN pacman -S octave --noconfirm
 RUN pacman -S python --noconfirm
 RUN pacman -S gdb --noconfirm
@@ -75,6 +80,8 @@ RUN pacman -S qt5-charts --noconfirm
 RUN pacman -S qt5-3d --noconfirm
 RUN pacman -S qt5-connectivity --noconfirm
 RUN pacman -S zstd --noconfirm
+RUN pacman -S libusb --noconfirm
+RUN pacman -S hidapi --noconfirm
 RUN pacman -S lz4 --noconfirm
 RUN pacman -S zlib --noconfirm
 RUN pacman -S leveldb --noconfirm
@@ -104,28 +111,22 @@ ENV CXX=/usr/bin/clang++
 #
 # Compile the following programs...
 #
-CMD pwd
 RUN [ "wget", "https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.16.tar.gz" ]
 RUN tar -xvzf libiconv-1.16.tar.gz
 CMD cd libiconv-1.16
-CMD pwd
 CMD [ "./configure", "--enable-static --enable-shared" ]
-CMD [ "make", "-j 8" ]
+CMD [ "make", "-j 12" ]
 CMD [ "make", "install" ]
 CMD cd ./..
-CMD pwd
 CMD rm -rvf libiconv-1.16
 CMD [ "git", "clone https://github.com/drowe67/codec2.git" ]
 CMD cd codec2
-CMD pwd
-CMD [ "mkdir", "build" ]
+CMD mkdir build
 CMD cd build
-CMD pwd
-RUN [ "cmake", "-DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=NO .." ]
-CMD [ "make", "-j 8" ]
+CMD [ "cmake", "-G 'Unix Makefiles' -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=NO .." ]
+CMD [ "make", "-j 12" ]
 CMD [ "make", "install" ]
 CMD cd ./../..
-CMD pwd
 CMD rm -rvf codec2
 
 #
@@ -138,9 +139,9 @@ RUN strip --remove-section=.note.ABI-tag /usr/lib64/libQt5Core.so.5
 # Compile the final library required!
 #
 CMD cd src/contrib/QtUsb
-CMD [ "mkdir", "build" ]
+CMD mkdir build
 CMD cd build
-RUN [ "qmake", "-makefile .." ]
-CMD [ "make", "-j 8" ]
+CMD [ "qmake", "-makefile .." ]
+CMD [ "make", "-j 12" ]
 CMD [ "make", "install" ]
 CMD cd ./../../../..
