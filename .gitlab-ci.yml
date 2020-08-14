@@ -52,7 +52,6 @@ stages:
 
 include:
     - template: SAST.gitlab-ci.yml
-    - template: License-Scanning.gitlab-ci.yml
     - template: Secret-Detection.gitlab-ci.yml
 
 variables:
@@ -67,6 +66,22 @@ variables:
 sworld_debug_archlinux_x86_64:
     stage: sworld_debug_archlinux_x86_64
     image: code.gekkofyre.io:5050/amateur-radio/small-world-deluxe/swd-arch-latest
+    before_script:
+        - export CC=/usr/bin/clang
+        - export CXX=/usr/bin/clang++
+        - wget https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.16.tar.gz
+        - tar -xvzf libiconv-1.16.tar.gz && cd libiconv-1.16
+        - ./configure --enable-static --enable-shared
+        - make -j 8 && make install
+        - cd ./..
+        - git clone https://github.com/drowe67/codec2.git
+        - cd codec2 && mkdir build && cd build
+        - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=NO ..
+        - make -j 8 && make install
+        - cd ./../..
+        - cd src/contrib/QtUsb && mkdir build && cd build
+        - qmake -makefile .. && make -j 8 && make install
+        - cd ./../../../..
     script:
         - mkdir -p src_build && cd src_build
         - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DGFYRE_BUILD_STATIC=ON -DBUILD_CODEC2_SUPPORT=ON -DBUILD_OPUS_SUPPORT=ON ..
