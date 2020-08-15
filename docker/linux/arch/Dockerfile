@@ -42,8 +42,18 @@
 # http://tutorials.jenkov.com/docker/dockerfile.html
 #
 
+#
+# Some functionality was borrowed from the Dockerfile linked just below!
+# Many thanks to Mykola Dimura <mykola.dimura@gmail.com> :)
+# 
+# https://hub.docker.com/r/burningdaylight/docker-mingw-qt5/dockerfile
+#
+
 # Use the official Arch Linux image as a parent image...
 FROM archlinux:latest
+MAINTAINER "Phobos A. D'thorga <phobos.gekko@gekkofyre.io>"
+
+ENV EDITOR=nano
 
 # Set the working directory...
 WORKDIR /opt/gekkofyre/app
@@ -52,7 +62,25 @@ WORKDIR /opt/gekkofyre/app
 # Install the following packages and update the system!
 #
 RUN pacman -Sy --noconfirm
-RUN pacman -Syu --noconfirm
+RUN pacman -Syyu --noconfirm
+
+# Create devel user...
+RUN useradd -m -d /home/devel -u 1000 -U -G users,tty -s /bin/bash devel
+RUN echo 'devel ALL=(ALL) NOPASSWD: /usr/sbin/pacman, /usr/sbin/makepkg' >> /etc/sudoers;
+
+# Workaround for the "setrlimit(RLIMIT_CORE): Operation not permitted" error
+RUN echo "Set disable_coredump false" >> /etc/sudo.conf
+
+# Install yay
+USER devel
+ARG BUILDDIR=/tmp/tmp-build
+RUN  mkdir "${BUILDDIR}" && cd "${BUILDDIR}" && \
+     git clone https://aur.archlinux.org/yay.git && \
+     cd yay && makepkg -si --noconfirm --rmdeps && \
+     rm -rvf "${BUILDDIR}"
+
+USER root
+
 RUN pacman -S base-devel --noconfirm
 RUN pacman -S gcc --noconfirm
 RUN pacman -S gcc-fortran --noconfirm
