@@ -391,10 +391,24 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     option(SENTRY_BUILD_RUNTIMESTATIC "Disables linking with the static MSVC runtime. Has no effect if the compiler is not MSVC" OFF)
 endif()
 
-set(SENTRY_BACKEND "crashpad" CACHE STRING "The type of crash manager to use." FORCE)
+if (LINUX)
+    #
+    # Currently Crashpad support on Linux via Sentry is very much unsupported as of the moment; see the link(s) down below...
+    # https://github.com/getsentry/sentry-native
+    # https://github.com/getsentry/sentry-native/issues/46
+    #
+    set(SENTRY_BACKEND "breakpad" CACHE STRING "The type of crash manager to use." FORCE)
+    option(SENTRY_BREAKPAD_SYSTEM "This instructs the build system to use system-installed breakpad or crashpad libraries instead of using the in-tree version. This is generally not recommended for crashpad, as sentry uses a patched version that has attachment support." OFF)
+else()
+    #
+    # Use Crashpad for all other operating systems, since support for everything but Linux is okay as of the moment (with the exception of Android but we have no plans for that right now)...
+    #
+    set(SENTRY_BACKEND "crashpad" CACHE STRING "The type of crash manager to use." FORCE)
+    option(SENTRY_CRASHPAD_SYSTEM "This instructs the build system to use system-installed breakpad or crashpad libraries instead of using the in-tree version. This is generally not recommended for crashpad, as sentry uses a patched version that has attachment support." OFF)
+endif()
+
 option(SENTRY_LINK_PTHREAD "Links to the pthread library on Unix targets." ON)
 option(SENTRY_BUILD_FORCE32 "Otherwise forces cross-compilation from 64-bit host to 32-bit target. Only has an effect on Linux." OFF)
-option(SENTRY_CRASHPAD_SYSTEM "This instructs the build system to use system-installed breakpad or crashpad libraries instead of using the in-tree version. This is generally not recommended for crashpad, as sentry uses a patched version that has attachment support." OFF)
 
 if(WIN32 OR MSYS OR MINGW)
     set(SENTRY_TRANSPORT "winhttp" CACHE STRING "Please do not modify this.")
@@ -776,21 +790,23 @@ install(CODE [[
                     DOC "Copying dependencies for smallworld")
 ]])
 
-#
-# Copy the crashpad handler to the root of the binary build directory, for easy access!
-# https://cmake.org/cmake/help/latest/module/FetchContent.html
-# https://www.thetopsites.net/article/52110824.shtml
-#
-if(WIN32 OR MSYS OR MINGW)
-    add_custom_command(TARGET smallworld
-                       POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy
-                       ${CMAKE_CURRENT_BINARY_DIR}/src/contrib/sentry-native/crashpad_build/handler/crashpad_handler.exe
-                       ${CMAKE_CURRENT_BINARY_DIR}/crashpad_handler.exe)
-else()
-    add_custom_command(TARGET smallworld
-                       POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy
-                       ${CMAKE_CURRENT_BINARY_DIR}/src/contrib/sentry-native/crashpad_build/handler/crashpad_handler
-                       ${CMAKE_CURRENT_BINARY_DIR}/crashpad_handler)
+if (NOT LINUX)
+    #
+    # Copy the crashpad handler to the root of the binary build directory, for easy access!
+    # https://cmake.org/cmake/help/latest/module/FetchContent.html
+    # https://www.thetopsites.net/article/52110824.shtml
+    #
+    if(WIN32 OR MSYS OR MINGW)
+        add_custom_command(TARGET smallworld
+                        POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy
+                        ${CMAKE_CURRENT_BINARY_DIR}/src/contrib/sentry-native/crashpad_build/handler/crashpad_handler.exe
+                        ${CMAKE_CURRENT_BINARY_DIR}/crashpad_handler.exe)
+    else()
+        add_custom_command(TARGET smallworld
+                        POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy
+                        ${CMAKE_CURRENT_BINARY_DIR}/src/contrib/sentry-native/crashpad_build/handler/crashpad_handler
+                        ${CMAKE_CURRENT_BINARY_DIR}/crashpad_handler)
+    endif()
 endif()
 
 INSTALL(TARGETS smallworld)

@@ -50,8 +50,10 @@
 #include <leveldb/write_batch.h>
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
+#include <QGuiApplication>
 #include <QMessageBox>
 #include <QVariant>
+#include <QScreen>
 #include <QDebug>
 #include <algorithm>
 #include <iterator>
@@ -61,6 +63,19 @@
 #include <random>
 #include <chrono>
 #include <ctime>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#ifdef __linux__
+#include <sys/utsname.h>
+#endif
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -812,17 +827,132 @@ void GkLevelDb::create_unique_id()
     std::string ret_str = "";
     QString sentry_unique_id = read_optin_settings(GkOptIn::UserUniqueId);
     if (!sentry_unique_id.isEmpty()) {
-        ret_str = sentry_unique_id.toStdString();
+        const std::string ret_str = sentry_unique_id.toStdString();
     } else {
-        ret_str = randomString(24);
+        const std::string ret_str = randomString(24);
         write_optin_settings(QString::fromStdString(ret_str), GkOptIn::UserUniqueId);
     }
 
+    //
+    // Create a new event whereby a unique user-identity is determined!
+    //
     sentry_value_t user = sentry_value_new_object();
     sentry_value_set_by_key(user, "id", sentry_value_new_string(ret_str.c_str()));
+
+    QString callsign = read_general_settings(general_stat_cfg::myCallsign);
+    QString maidenhead = read_general_settings(general_stat_cfg::myMaidenhead);
+
+    if (!callsign.isEmpty()) {
+        sentry_value_set_by_key(user, "username", sentry_value_new_string(callsign.toStdString().c_str()));
+    } else {
+        sentry_value_set_by_key(user, "username", sentry_value_new_string("Unknown"));
+    }
+
+    if (!maidenhead.isEmpty()) {
+        sentry_value_set_by_key(user, "maidenhead", sentry_value_new_string(maidenhead.toStdString().c_str()));
+    } else {
+        sentry_value_set_by_key(user, "maidenhead", sentry_value_new_string("JJ00aa")); // Null value for the Maidenhead grid system!
+    }
+
     sentry_set_user(user);
 
+    //
+    // Create a new event whereby the operating system type and version is determined!
+    //
+    const std::string os_vers_str = detect_operating_system();
+    sentry_value_t os_obj = sentry_value_new_object();
+    sentry_value_set_by_key(os_obj, "", sentry_value_new_string(os_vers_str.c_str()));
+
+    std::string os_name = "";
+    #ifdef _WIN32
+    os_name = "Microsoft Windows";
+    #elif __linux__
+    os_name = "Linux";
+    #elif __APPLE__ || __MACH__
+    os_name = "Macintosh OS/X";
+    #else
+    os_name = "Other / Unknown";
+    #endif
+
+    sentry_value_set_by_key(os_obj, "name", sentry_value_new_string(os_name.c_str()));
+    sentry_set_extra("client_os", os_obj);
+
+    //
+    // Grab the screen resolution of the user's desktop and create a new object for such!
+    //
+    const QSizeF screen_res = detect_desktop_resolution();
+    const qreal width = screen_res.width();
+    const qreal height = screen_res.height();
+
+    sentry_value_t screen_res_event = sentry_value_new_event();
+
+    sentry_value_t screen_res_obj = sentry_value_new_object();
+    sentry_value_set_by_key(screen_res_obj, "width", sentry_value_new_double(width));
+    sentry_value_set_by_key(screen_res_obj, "height", sentry_value_new_double(height));
+
+    // https://docs.sentry.io/platforms/native/#capturing-events
+    sentry_value_t screen_res_extra = sentry_value_new_object();
+    sentry_value_set_by_key(screen_res_extra, "screen_size", screen_res_obj);
+    sentry_value_set_by_key(screen_res_event, "extra", screen_res_extra);
+    sentry_capture_event(screen_res_event);
+
     return;
+}
+
+/**
+ * @brief GkLevelDb::detect_operating_system will detect the operating system and hopefully, version, used by the user of this
+ * application, mostly for purposes needed by Sentry.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return
+ */
+std::string GkLevelDb::detect_operating_system()
+{
+    #ifdef _WIN32
+    OSVERSIONINFOEX info;
+    ZeroMemory(&info, sizeof(OSVERSIONINFOEX));
+    info.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+
+    GetVersionEx(&info);
+    QString version = QString("Microsoft Windows %1.%2")
+            .arg(QString::fromStdString(info.dwMajorVersion))
+            .arg(QString::fromStdString(info.dwMinorVersion));
+
+    return version.toStdString;
+    #elif __linux__
+    struct utsname unameData;
+
+    std::string release = unameData.release;
+    std::string version = unameData.version;
+    std::string sysname = unameData.sysname;
+    std::string nodename = unameData.nodename;
+
+    QString identifier = QString("%1 (%2) v%3 -- %4")
+            .arg(QString::fromStdString(version))
+            .arg(QString::fromStdString(sysname))
+            .arg(QString::fromStdString(release))
+            .arg(QString::fromStdString(nodename));
+
+    return identifier.toStdString();
+    #elif __APPLE__ || __MACH__
+    return "Macintosh OS/X";
+    #else
+    "Other";
+    #endif
+
+    return "Unknown";
+}
+
+/**
+ * @brief GkLevelDb::detect_desktop_resolution will detect the currently used screen resolution of the user's desktop, mostly
+ * for the purposes needed by Sentry.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param horizontal
+ * @param vertical
+ */
+QSizeF GkLevelDb::detect_desktop_resolution()
+{
+    QSizeF rec = QGuiApplication::primaryScreen()->physicalSize();
+    return rec;
 }
 
 /**

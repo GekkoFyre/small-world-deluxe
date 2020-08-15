@@ -287,6 +287,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                     //
                     sen_opt = sentry_options_new();
 
+                    #ifndef __linux__
                     const QString curr_path = QDir::currentPath();
                     const fs::path crashpad_handler_windows = fs::path(curr_path.toStdString() + native_slash.string() + Filesystem::gk_crashpad_handler_win);
                     const fs::path crashpad_handler_linux = fs::path(curr_path.toStdString() + native_slash.string() + Filesystem::gk_crashpad_handler_linux);
@@ -304,6 +305,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
                     // The handler is a Crashpad-specific background process
                     sentry_options_set_handler_path(sen_opt, handler_to_use.c_str());
+                    #endif
 
                     const fs::path sentry_crash_dir = fs::path(Filesystem::defaultDirAppend + native_slash.string() + Filesystem::gk_sentry_dump_dir);
                     const fs::path gk_minidump = fileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation),
