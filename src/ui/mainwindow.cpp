@@ -335,18 +335,18 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                     // Server and URI details!
                     sentry_options_set_dsn(sen_opt, General::gk_sentry_uri);
 
-                    // Initialize the SDK and start the Crashpad handler
+                    // Initialize the SDK and start the Crashpad/Breakpad handler
                     sentry_init(sen_opt);
+
+                    // Initialize a Unique ID for the given user on the local machine, which is much more anonymous and sanitized than
+                    // dealing with IP Addresses!
+                    GkDb->capture_sys_info();
 
                     //
                     // BUG: Workaround to fix the issue of data not uploading to Sentry server!
                     // See: https://forum.sentry.io/t/problem-with-sentry-native-c-minidumps/8878/6
                     //
                     sentry_set_transaction("init");
-
-                    // Initialize a Unique ID for the given user on the local machine, which is much more anonymous and sanitized than
-                    // dealing with IP Addresses!
-                    GkDb->create_unique_id();
                 }
 
                 //

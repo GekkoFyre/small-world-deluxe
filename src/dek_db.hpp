@@ -51,7 +51,7 @@
 #include <QObject>
 #include <QString>
 #include <QPointer>
-#include <QSizeF>
+#include <QRect>
 
 namespace GekkoFyre {
 
@@ -82,7 +82,7 @@ public:
     bool read_sentry_settings(const GekkoFyre::System::Events::Logging::GkSentry &key);
     QString read_optin_settings(const GekkoFyre::System::Events::Logging::GkOptIn &key);
 
-    void create_unique_id();
+    void capture_sys_info();
 
     QString convSeverityToStr(const GekkoFyre::System::Events::Logging::GkSeverity &severity);
     sentry_level_e convSeverityToSentry(const GekkoFyre::System::Events::Logging::GkSeverity &severity);
@@ -127,8 +127,10 @@ private:
     std::string processCsvToDB(const std::string &comma_sep_values, const std::string &data_to_append);
     std::string deleteCsvValForDb(const std::string &comma_sep_values, const std::string &data_to_remove);
 
-    std::string detect_operating_system();
-    QSizeF detect_desktop_resolution();
+    void detect_operating_system(QString &build_cpu_arch, QString &curr_cpu_arch, QString &kernel_type, QString &kernel_vers,
+                                 QString &machine_host_name, QString &machine_unique_id, QString &pretty_prod_name,
+                                 QString &prod_type, QString &prod_vers);
+    QRect detect_desktop_resolution();
 
     std::string randomString(const size_t &length);
 
