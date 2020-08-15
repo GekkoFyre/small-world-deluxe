@@ -287,6 +287,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                     //
                     sen_opt = sentry_options_new();
 
+                    #ifndef __linux__
                     const QString curr_path = QDir::currentPath();
                     const fs::path crashpad_handler_windows = fs::path(curr_path.toStdString() + native_slash.string() + Filesystem::gk_crashpad_handler_win);
                     const fs::path crashpad_handler_linux = fs::path(curr_path.toStdString() + native_slash.string() + Filesystem::gk_crashpad_handler_linux);
@@ -304,6 +305,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
                     // The handler is a Crashpad-specific background process
                     sentry_options_set_handler_path(sen_opt, handler_to_use.c_str());
+                    #endif
 
                     const fs::path sentry_crash_dir = fs::path(Filesystem::defaultDirAppend + native_slash.string() + Filesystem::gk_sentry_dump_dir);
                     const fs::path gk_minidump = fileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation),
@@ -333,18 +335,18 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                     // Server and URI details!
                     sentry_options_set_dsn(sen_opt, General::gk_sentry_uri);
 
-                    // Initialize the SDK and start the Crashpad handler
+                    // Initialize the SDK and start the Crashpad/Breakpad handler
                     sentry_init(sen_opt);
+
+                    // Initialize a Unique ID for the given user on the local machine, which is much more anonymous and sanitized than
+                    // dealing with IP Addresses!
+                    GkDb->capture_sys_info();
 
                     //
                     // BUG: Workaround to fix the issue of data not uploading to Sentry server!
                     // See: https://forum.sentry.io/t/problem-with-sentry-native-c-minidumps/8878/6
                     //
                     sentry_set_transaction("init");
-
-                    // Initialize a Unique ID for the given user on the local machine, which is much more anonymous and sanitized than
-                    // dealing with IP Addresses!
-                    GkDb->create_unique_id();
                 }
 
                 //
@@ -639,6 +641,7 @@ MainWindow::~MainWindow()
 
     // Clear any memory used by Sentry & Crashpad before making sure the process itself terminates!
     sentry_shutdown();
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
     delete ui;
 }

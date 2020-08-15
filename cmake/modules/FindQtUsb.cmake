@@ -39,23 +39,23 @@
 #
 
 find_package(PkgConfig)
-pkg_check_modules(PC_QTUSB QUIET "qtusb")
-set(QTUSB_DEFINITIONS ${PC_QTUSB_CFLAGS_OTHER})
+pkg_check_modules(PC_QtUsb QUIET "qtusb")
+set(QtUsb_DEFINITIONS ${PC_QtUsb_CFLAGS_OTHER})
 
-find_path(QTUSB_INCLUDE_DIR
+find_path(QtUsb_INCLUDE_DIR
     NAMES "qusbglobal.h"
-    HINTS ${PC_QTUSB_INCLUDE_DIR} ${PC_QTUSB_INCLUDE_DIRS}
+    HINTS ${PC_QtUsb_INCLUDE_DIR} ${PC_QtUsb_INCLUDE_DIRS}
     PATHS "/usr/local/include" "/usr/include" "/usr/include/qt" "/usr/include/qt/QtUsb" "/usr/include/x86_64-linux-gnu/qt5/QtUsb")
 
-find_library(QTUSB_LIBRARY
+find_library(QtUsb_LIBRARY
     NAMES  "Qt5Usb" "libQt5Usb"
-    HINTS ${PC_QTUSB_LIBDIR} ${PC_QTUSB_LIBRARY_DIRS}
+    HINTS ${PC_QtUsb_LIBDIR} ${PC_QtUsb_LIBRARY_DIRS}
     PATHS "/usr/local/lib" "/usr/local/lib64" "/usr/lib" "/usr/lib64" "/usr/lib/x86_64-linux-gnu")
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(QTUSB DEFAULT_MSG QTUSB_LIBRARY QTUSB_INCLUDE_DIR)
+find_package_handle_standard_args(QtUsb DEFAULT_MSG QtUsb_LIBRARY QtUsb_INCLUDE_DIR)
 
-mark_as_advanced(QTUSB_INCLUDE_DIR QTUSB_LIBRARY)
+mark_as_advanced(QtUsb_INCLUDE_DIR QtUsb_LIBRARY)
 
-set(QTUSB_LIBRARIES ${QTUSB_LIBRARY})
-set(QTUSB_INCLUDE_DIRS ${QTUSB_INCLUDE_DIR})
+set(QtUsb_LIBRARIES ${QtUsb_LIBRARY})
+set(QtUsb_INCLUDE_DIRS ${QtUsb_INCLUDE_DIR})

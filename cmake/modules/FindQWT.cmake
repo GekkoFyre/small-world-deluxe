@@ -48,7 +48,7 @@ find_path(QWT_INCLUDE_DIR
     PATHS "/usr/local/include" "/usr/include")
 
 find_library(QWT_LIBRARY
-    NAMES "qwt-qt5" "libqwt-qt5"
+    NAMES "qwt-qt5" "libqwt-qt5" "qwtd" "qwt" "libqwtd"
     HINTS ${PC_QWT_LIBDIR} ${PC_QWT_LIBRARY_DIRS}
     PATHS "/usr/local/lib" "/usr/local/lib64" "/usr/lib" "/usr/lib64")
 

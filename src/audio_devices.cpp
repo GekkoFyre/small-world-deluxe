@@ -200,12 +200,10 @@ bool AudioDevices::enumSupportedStdSampleRates(const PaStreamParameters *audioPa
     }
 
     if (err == paFormatIsSupported) {
-        std::cout << tr("Sample rate of [ %1 ] is supported!").arg(QString::number(sampleRateToTest)).toStdString();
+        std::cout << tr("Sample rate of [ %1 ] is supported!").arg(QString::number(sampleRateToTest)).toStdString() << std::endl;
         return true;
     }
 
-    QMessageBox::information(nullptr, tr("Unsupported!"), tr("Sample rate of %1 KHz is not supported! Please make another selection.")
-                             .arg(QString::number(std::abs(sampleRateToTest))), QMessageBox::Ok);
     return false;
 }
 

@@ -38,8 +38,22 @@
 #   [ 1 ] - https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe
 #
 
+#
+# http://tutorials.jenkov.com/docker/dockerfile.html
+#
+
+#
+# Some functionality was borrowed from the Dockerfile linked just below!
+# Many thanks to Mykola Dimura <mykola.dimura@gmail.com> :)
+# 
+# https://hub.docker.com/r/burningdaylight/docker-mingw-qt5/dockerfile
+#
+
 # Use the official Arch Linux image as a parent image...
 FROM archlinux:latest
+MAINTAINER "Phobos A. D'thorga <phobos.gekko@gekkofyre.io>"
+
+ENV EDITOR=nano
 
 # Set the working directory...
 WORKDIR /opt/gekkofyre/app
@@ -48,9 +62,28 @@ WORKDIR /opt/gekkofyre/app
 # Install the following packages and update the system!
 #
 RUN pacman -Sy --noconfirm
-RUN pacman -Syu --noconfirm
+RUN pacman -Syyu --noconfirm
+
+# Create devel user...
+RUN useradd -m -d /home/devel -u 1000 -U -G users,tty -s /bin/bash devel
+RUN echo 'devel ALL=(ALL) NOPASSWD: /usr/sbin/pacman, /usr/sbin/makepkg' >> /etc/sudoers;
+
+# Workaround for the "setrlimit(RLIMIT_CORE): Operation not permitted" error
+RUN echo "Set disable_coredump false" >> /etc/sudo.conf
+
+# Install yay
+USER devel
+ARG BUILDDIR=/tmp/tmp-build
+RUN  mkdir "${BUILDDIR}" && cd "${BUILDDIR}" && \
+     git clone https://aur.archlinux.org/yay.git && \
+     cd yay && makepkg -si --noconfirm --rmdeps && \
+     rm -rvf "${BUILDDIR}"
+
+USER root
+
 RUN pacman -S base-devel --noconfirm
 RUN pacman -S gcc --noconfirm
+RUN pacman -S gcc-fortran --noconfirm
 RUN pacman -S octave --noconfirm
 RUN pacman -S python --noconfirm
 RUN pacman -S gdb --noconfirm
@@ -75,6 +108,8 @@ RUN pacman -S qt5-charts --noconfirm
 RUN pacman -S qt5-3d --noconfirm
 RUN pacman -S qt5-connectivity --noconfirm
 RUN pacman -S zstd --noconfirm
+RUN pacman -S libusb --noconfirm
+RUN pacman -S hidapi --noconfirm
 RUN pacman -S lz4 --noconfirm
 RUN pacman -S zlib --noconfirm
 RUN pacman -S leveldb --noconfirm
@@ -93,6 +128,7 @@ RUN pacman -S hamlib --noconfirm
 RUN pacman -S git --noconfirm
 RUN pacman -S cmake --noconfirm
 RUN pacman -S wget --noconfirm
+RUN pacman -S curl --noconfirm
 
 # Make sure to cleanup after all the updates and installations are completed!
 RUN pacman -Sc --noconfirm
@@ -102,30 +138,33 @@ ENV CC=/usr/bin/clang
 ENV CXX=/usr/bin/clang++
 
 #
+# Setup information for the Sentry server [ sentry.gekkofyre.io ]
+#
+CMD [ "curl", "-sL https://sentry.io/get-cli/ | bash" ]
+CMD echo "[defaults]" >> ~/.sentryclirc
+CMD echo "org=gekkofyre-networks" >> ~/.sentryclirc
+CMD echo "project=small-world-deluxe" >> ~/.sentryclirc
+CMD echo "url=https://sentry.gekkofyre.io/" >> ~/.sentryclirc
+
+#
 # Compile the following programs...
 #
-CMD pwd
 RUN [ "wget", "https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.16.tar.gz" ]
 RUN tar -xvzf libiconv-1.16.tar.gz
 CMD cd libiconv-1.16
-CMD pwd
 CMD [ "./configure", "--enable-static --enable-shared" ]
-CMD [ "make", "-j 8" ]
+CMD [ "make", "-j 12" ]
 CMD [ "make", "install" ]
 CMD cd ./..
-CMD pwd
 CMD rm -rvf libiconv-1.16
 CMD [ "git", "clone https://github.com/drowe67/codec2.git" ]
 CMD cd codec2
-CMD pwd
-CMD [ "mkdir", "build" ]
+CMD mkdir build
 CMD cd build
-CMD pwd
-RUN [ "cmake", "-DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=NO .." ]
-CMD [ "make", "-j 8" ]
+CMD [ "cmake", "-G 'Unix Makefiles' -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=NO .." ]
+CMD [ "make", "-j 12" ]
 CMD [ "make", "install" ]
 CMD cd ./../..
-CMD pwd
 CMD rm -rvf codec2
 
 #
@@ -138,9 +177,9 @@ RUN strip --remove-section=.note.ABI-tag /usr/lib64/libQt5Core.so.5
 # Compile the final library required!
 #
 CMD cd src/contrib/QtUsb
-CMD [ "mkdir", "build" ]
+CMD mkdir build
 CMD cd build
-RUN [ "qmake", "-makefile .." ]
-CMD [ "make", "-j 8" ]
+CMD [ "qmake", "-makefile .." ]
+CMD [ "make", "-j 12" ]
 CMD [ "make", "install" ]
 CMD cd ./../../../..
