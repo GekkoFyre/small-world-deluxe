@@ -817,8 +817,13 @@ QString GkLevelDb::read_optin_settings(const GkOptIn &key)
 void GkLevelDb::capture_sys_info()
 {
     try {
+        //
+        // https://docs.sentry.io/enriching-error-data/additional-data/?platform=native
         // https://docs.sentry.io/platforms/native/#capturing-events
+        //
+        sentry_set_level(SENTRY_LEVEL_INFO); // We are only sending informational data!
         sentry_value_t info_capture_event = sentry_value_new_event();
+        sentry_value_t info_capture_extra = sentry_value_new_object();
 
         std::string ret_str = "";
         QString sentry_unique_id = read_optin_settings(GkOptIn::UserUniqueId);
@@ -874,37 +879,37 @@ void GkLevelDb::capture_sys_info()
 
         if (!build_cpu_arch.isEmpty()) {
             // CPU Architecture used for the building of this particular version of Small World Deluxe application
-            sentry_value_set_by_key(device_obj, "build_cpu_arch", sentry_value_new_string(prod_type.toStdString().c_str()));
+            sentry_value_set_by_key(device_obj, "build_cpu_arch", sentry_value_new_string(build_cpu_arch.toStdString().c_str()));
         }
 
         if (!curr_cpu_arch.isEmpty()) {
             // CPU Architecture of the host operating system
-            sentry_value_set_by_key(device_obj, "curr_cpu_arch", sentry_value_new_string(prod_type.toStdString().c_str()));
+            sentry_value_set_by_key(device_obj, "curr_cpu_arch", sentry_value_new_string(curr_cpu_arch.toStdString().c_str()));
         }
 
         if (!kernel_type.isEmpty()) {
             // Kernel type
-            sentry_value_set_by_key(kernel_obj, "type", sentry_value_new_string(prod_type.toStdString().c_str()));
+            sentry_value_set_by_key(kernel_obj, "type", sentry_value_new_string(kernel_type.toStdString().c_str()));
         }
 
         if (!kernel_vers.isEmpty()) {
             // Kernel version
-            sentry_value_set_by_key(kernel_obj, "version", sentry_value_new_string(prod_type.toStdString().c_str()));
+            sentry_value_set_by_key(kernel_obj, "version", sentry_value_new_string(kernel_vers.toStdString().c_str()));
         }
 
         if (!machine_host_name.isEmpty()) {
             // Machine host name
-            sentry_value_set_by_key(device_obj, "hostname", sentry_value_new_string(prod_type.toStdString().c_str()));
+            sentry_value_set_by_key(device_obj, "hostname", sentry_value_new_string(machine_host_name.toStdString().c_str()));
         }
 
         if (!machine_unique_id.isEmpty()) {
             // Machine unique ID
-            sentry_value_set_by_key(device_obj, "unique_id", sentry_value_new_string(prod_type.toStdString().c_str()));
+            sentry_value_set_by_key(device_obj, "unique_id", sentry_value_new_string(machine_unique_id.toStdString().c_str()));
         }
 
         if (!pretty_prod_name.isEmpty()) {
             // Operating System name (pretty version)
-            sentry_value_set_by_key(os_obj, "name", sentry_value_new_string(prod_type.toStdString().c_str()));
+            sentry_value_set_by_key(os_obj, "name", sentry_value_new_string(pretty_prod_name.toStdString().c_str()));
         }
 
         if (!prod_type.isEmpty()) {
@@ -914,29 +919,26 @@ void GkLevelDb::capture_sys_info()
 
         if (!prod_vers.isEmpty()) {
             // Operating System version
-            sentry_value_set_by_key(os_obj, "version", sentry_value_new_string(prod_type.toStdString().c_str()));
+            sentry_value_set_by_key(os_obj, "version", sentry_value_new_string(prod_vers.toStdString().c_str()));
         }
 
         //
         // Kernel Information
         //
-        sentry_value_t kernel_extra = sentry_value_new_object();
-        sentry_value_set_by_key(kernel_extra, "kernel", kernel_obj);
-        sentry_value_set_by_key(info_capture_event, "extra", kernel_extra);
+        sentry_value_set_by_key(info_capture_extra, "kernel", kernel_obj);
+        sentry_value_set_by_key(info_capture_event, "extra", info_capture_extra);
 
         //
         // Device Information
         //
-        sentry_value_t device_extra = sentry_value_new_object();
-        sentry_value_set_by_key(device_extra, "device", device_obj);
-        sentry_value_set_by_key(info_capture_event, "extra", device_extra);
+        sentry_value_set_by_key(info_capture_extra, "device", device_obj);
+        sentry_value_set_by_key(info_capture_event, "extra", info_capture_extra);
 
         //
         // Operating System
         //
-        sentry_value_t os_extra = sentry_value_new_object();
-        sentry_value_set_by_key(os_extra, "os", os_obj);
-        sentry_value_set_by_key(info_capture_event, "extra", os_extra);
+        sentry_value_set_by_key(info_capture_extra, "os", os_obj);
+        sentry_value_set_by_key(info_capture_event, "extra", info_capture_extra);
 
         //
         // Grab the screen resolution of the user's desktop and create a new object for such!
@@ -952,9 +954,8 @@ void GkLevelDb::capture_sys_info()
         //
         // Screen Size information
         //
-        sentry_value_t screen_res_extra = sentry_value_new_object();
-        sentry_value_set_by_key(screen_res_extra, "screen_size", screen_res_obj);
-        sentry_value_set_by_key(info_capture_event, "extra", screen_res_extra);
+        sentry_value_set_by_key(info_capture_extra, "screen_size", screen_res_obj);
+        sentry_value_set_by_key(info_capture_event, "extra", info_capture_extra);
 
         //
         // Send the captured information to the GekkoFyre Networks' Sentry server!
@@ -1050,6 +1051,43 @@ QString GkLevelDb::convSeverityToStr(const GkSeverity &severity)
     }
 
     return tr("Error!");
+}
+
+/**
+ * @brief GkLevelDb::convSeverityToEnum
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param severity
+ * @return
+ */
+GekkoFyre::System::Events::Logging::GkSeverity GkLevelDb::convSeverityToEnum(const QString &severity)
+{
+    if (severity == tr("Fatal")) {
+        // Fatal
+        return GkSeverity::Fatal;
+    } else if (severity == tr("Error")) {
+        // Error
+        return GkSeverity::Error;
+    } else if (severity == tr("Warning")) {
+        // Warning
+        return GkSeverity::Warning;
+    } else if (severity == tr("Info")) {
+        // Info
+        return GkSeverity::Info;
+    } else if (severity == tr("Debug")) {
+        // Debug
+        return GkSeverity::Debug;
+    } else if (severity == tr("Verbose")) {
+        // Verbose
+        return GkSeverity::Verbose;
+    } else if (severity == tr("None")) {
+        // None
+        return GkSeverity::None;
+    } else {
+        // Unknown!
+        return GkSeverity::None;
+    }
+
+    return Events::Logging::None;
 }
 
 /**

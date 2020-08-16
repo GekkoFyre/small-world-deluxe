@@ -85,6 +85,7 @@ public:
     void capture_sys_info();
 
     QString convSeverityToStr(const GekkoFyre::System::Events::Logging::GkSeverity &severity);
+    GekkoFyre::System::Events::Logging::GkSeverity convSeverityToEnum(const QString &severity);
     sentry_level_e convSeverityToSentry(const GekkoFyre::System::Events::Logging::GkSeverity &severity);
 
     QString read_rig_settings(const Database::Settings::radio_cfg &key);

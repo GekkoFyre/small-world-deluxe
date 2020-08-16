@@ -107,9 +107,9 @@ sworld_sentry_archlinux_x86_64:
         # Upload debugging information
         - sentry-cli --auth-token $GK_SENTRY_AUTH_KEY --url $GK_SENTRY_URL upload-dif -o gekkofyre-networks -p small-world-deluxe ./src_build/ --include-sources --log-level=error
         # Create a release
-        - sentry-cli --auth-token $GK_SENTRY_AUTH_KEY --url $GK_SENTRY_URL releases new -p small-world-deluxe $GK_SENTRY_VERSION
+        - sentry-cli releases new -p small-world-deluxe $GK_SENTRY_VERSION
         # Associate commits with the release
-        - sentry-cli --url $GK_SENTRY_URL releases set-commits --auto $GK_SENTRY_VERSION
+        - sentry-cli releases set-commits --auto $GK_SENTRY_VERSION
         # TODO: When we are ready to do so, we require a command to finalize the releases!
     after_script:
         - echo "Finished uploading data to Sentry server!"
