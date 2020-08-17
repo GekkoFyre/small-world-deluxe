@@ -58,6 +58,10 @@ using namespace Settings;
 using namespace Audio;
 using namespace AmateurRadio;
 using namespace Control;
+using namespace Spectrograph;
+using namespace System;
+using namespace Events;
+using namespace Logging;
 
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
@@ -83,6 +87,7 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
                                const std::list<GekkoFyre::Database::Settings::GkComPort> &com_ports,
                                QPointer<GkFrequencies> gkFreqList,
                                QPointer<GkFreqTableViewModel> freqTableModel,
+                               QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                QWidget *parent)
     : QDialog(parent), ui(new Ui::DialogSettings)
 {
@@ -92,7 +97,7 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         //
         // Initialize PortAudio for Settings Dialog!
         //
-        gkPortAudioInit = std::move(portAudioInit);
+        gkPortAudioInit = portAudioInit;
         gkRadioLibs = std::move(radioLibs);
         gkStringFuncs = std::move(stringFuncs);
         gkDekodeDb = std::move(dkDb);
@@ -101,10 +106,12 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         gkRadioPtr = std::move(radioPtr);
         gkFreqs = std::move(gkFreqList);
         gkFreqTableModel = std::move(freqTableModel);
+        gkEventLogger = std::move(eventLogger);
         status_com_ports = com_ports;
 
         usb_ports_active = false;
         com_ports_active = false;
+        audio_quality_val = 0.0;
 
         //
         // The detectable and thusly, testable, PortAudio 'sample rates' for each found audio device on the user's system!
@@ -179,13 +186,21 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
             read_settings();
         }
     } catch (const portaudio::PaException &e) {
-        QMessageBox::warning(this, tr("Error!"), tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText()), QMessageBox::Ok);
+        QString error_msg = tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText());
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     } catch (const portaudio::PaCppException &e) {
-        QMessageBox::warning(this, tr("Error!"), tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+        QString error_msg = tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what());
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     } catch (const std::exception &e) {
-        QMessageBox::warning(this, tr("Error!"), tr("A generic exception has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+        QString error_msg = tr("A generic exception has occurred:\n\n%1").arg(e.what());
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     } catch (...) {
-        QMessageBox::warning(this, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), QMessageBox::Ok);
+        QString error_msg = tr("An unknown exception has occurred. There are no further details.");
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     }
 }
 
@@ -562,13 +577,21 @@ void DialogSettings::prefill_audio_api_avail(const QVector<PaHostApiTypeId> &por
             }
         }
     } catch (const portaudio::PaException &e) {
-        QMessageBox::warning(this, tr("Error!"), tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText()), QMessageBox::Ok);
+        QString error_msg = tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText());
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     } catch (const portaudio::PaCppException &e) {
-        QMessageBox::warning(this, tr("Error!"), tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+        QString error_msg = tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what());
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     } catch (const std::exception &e) {
-        QMessageBox::warning(this, tr("Error!"), tr("A generic exception has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+        QString error_msg = tr("A generic exception has occurred:\n\n%1").arg(e.what());
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     } catch (...) {
-        QMessageBox::warning(this, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), QMessageBox::Ok);
+        QString error_msg = tr("An unknown exception has occurred. There are no further details.");
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     }
 
     return;
@@ -657,13 +680,21 @@ void DialogSettings::prefill_audio_devices(const std::vector<GkDevice> &audio_de
             return;
         }
     } catch (const portaudio::PaException &e) {
-        QMessageBox::warning(this, tr("Error!"), tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText()), QMessageBox::Ok);
+        QString error_msg = tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText());
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     } catch (const portaudio::PaCppException &e) {
-        QMessageBox::warning(this, tr("Error!"), tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+        QString error_msg = tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what());
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     } catch (const std::exception &e) {
-        QMessageBox::warning(this, tr("Error!"), tr("A generic exception has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+        QString error_msg = tr("A generic exception has occurred:\n\n%1").arg(e.what());
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     } catch (...) {
-        QMessageBox::warning(this, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), QMessageBox::Ok);
+        QString error_msg = tr("An unknown exception has occurred. There are no further details.");
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     }
 
     return;
@@ -1656,13 +1687,21 @@ void DialogSettings::on_pushButton_output_sound_test_clicked()
             return;
         }
     } catch (const portaudio::PaException &e) {
-        QMessageBox::warning(this, tr("Error!"), tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText()), QMessageBox::Ok);
+        QString error_msg = tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText());
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     } catch (const portaudio::PaCppException &e) {
-        QMessageBox::warning(this, tr("Error!"), tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+        QString error_msg = tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what());
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     } catch (const std::exception &e) {
-        QMessageBox::warning(this, tr("Error!"), tr("A generic exception has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+        QString error_msg = tr("A generic exception has occurred:\n\n%1").arg(e.what());
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     } catch (...) {
-        QMessageBox::warning(this, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), QMessageBox::Ok);
+        QString error_msg = tr("An unknown exception has occurred. There are no further details.");
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     }
 
     return;
@@ -1703,13 +1742,21 @@ void DialogSettings::on_comboBox_soundcard_input_currentIndexChanged(int index)
             }
         }
     } catch (const portaudio::PaException &e) {
-        QMessageBox::warning(this, tr("Error!"), tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText()), QMessageBox::Ok);
+        QString error_msg = tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText());
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     } catch (const portaudio::PaCppException &e) {
-        QMessageBox::warning(this, tr("Error!"), tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+        QString error_msg = tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what());
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     } catch (const std::exception &e) {
-        QMessageBox::warning(this, tr("Error!"), tr("A generic exception has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+        QString error_msg = tr("A generic exception has occurred:\n\n%1").arg(e.what());
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     } catch (...) {
-        QMessageBox::warning(this, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), QMessageBox::Ok);
+        QString error_msg = tr("An unknown exception has occurred. There are no further details.");
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     }
 
     return;
@@ -1750,13 +1797,21 @@ void DialogSettings::on_comboBox_soundcard_output_currentIndexChanged(int index)
             }
         }
     } catch (const portaudio::PaException &e) {
-        QMessageBox::warning(this, tr("Error!"), tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText()), QMessageBox::Ok);
+        QString error_msg = tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText());
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     } catch (const portaudio::PaCppException &e) {
-        QMessageBox::warning(this, tr("Error!"), tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+        QString error_msg = tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what());
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     } catch (const std::exception &e) {
-        QMessageBox::warning(this, tr("Error!"), tr("A generic exception has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+        QString error_msg = tr("A generic exception has occurred:\n\n%1").arg(e.what());
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     } catch (...) {
-        QMessageBox::warning(this, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), QMessageBox::Ok);
+        QString error_msg = tr("An unknown exception has occurred. There are no further details.");
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     }
 
     return;
@@ -1843,13 +1898,21 @@ void DialogSettings::on_comboBox_soundcard_api_currentIndexChanged(int index)
             }
         }
     } catch (const portaudio::PaException &e) {
-        QMessageBox::warning(this, tr("Error!"), tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText()), QMessageBox::Ok);
+        QString error_msg = tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText());
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     } catch (const portaudio::PaCppException &e) {
-        QMessageBox::warning(this, tr("Error!"), tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+        QString error_msg = tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what());
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     } catch (const std::exception &e) {
-        QMessageBox::warning(this, tr("Error!"), tr("A generic exception has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+        QString error_msg = tr("A generic exception has occurred:\n\n%1").arg(e.what());
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     } catch (...) {
-        QMessageBox::warning(this, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), QMessageBox::Ok);
+        QString error_msg = tr("An unknown exception has occurred. There are no further details.");
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     }
 
     return;

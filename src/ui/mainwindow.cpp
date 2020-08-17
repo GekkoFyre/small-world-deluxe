@@ -459,7 +459,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         autoSys.initialize();
         gkPortAudioInit = new portaudio::System(portaudio::System::instance());
 
-        gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(GkDb, fileIo, gkFreqList, gkStringFuncs, this);
+        gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(GkDb, fileIo, gkFreqList, gkStringFuncs, gkEventLogger, this);
         auto pref_audio_devices = gkAudioDevices->initPortAudio(gkPortAudioInit);
 
         if (!pref_audio_devices.empty()) {
@@ -772,7 +772,7 @@ void MainWindow::launchSettingsWin()
 
     QPointer<DialogSettings> dlg_settings = new DialogSettings(GkDb, fileIo, gkAudioDevices, gkRadioLibs, gkStringFuncs,
                                                                gkPortAudioInit, gkRadioPtr, status_com_ports,
-                                                               gkFreqList, gkFreqTableModel, this);
+                                                               gkFreqList, gkFreqTableModel, gkEventLogger, this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
@@ -1184,36 +1184,54 @@ QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, rig_type>> MainWind
  */
 void MainWindow::updateVolumeDisplayWidgets()
 {
-    std::this_thread::sleep_for(std::chrono::milliseconds(2500));
-    if (inputAudioStream != nullptr && AUDIO_FRAMES_PER_BUFFER > 0) {
-        while (inputAudioStream->isActive()) {
-            //
-            // Input audio stream is open and active!
-            //
-            auto audio_buf_tmp = std::make_shared<PaAudioBuf<qint16>>(*input_audio_buf);
-            std::vector<qint16> recv_buf;
-            while (audio_buf_tmp->size() > 0) {
-                recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
-                recv_buf.push_back(audio_buf_tmp->grab());
-            }
+    try {
+        std::this_thread::sleep_for(std::chrono::milliseconds(2500));
+        if (inputAudioStream != nullptr && AUDIO_FRAMES_PER_BUFFER > 0) {
+            while (inputAudioStream->isActive()) {
+                //
+                // Input audio stream is open and active!
+                //
+                auto audio_buf_tmp = std::make_shared<PaAudioBuf<qint16>>(*input_audio_buf);
+                std::vector<qint16> recv_buf;
+                while (audio_buf_tmp->size() > 0) {
+                    recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
+                    recv_buf.push_back(audio_buf_tmp->grab());
+                }
 
-            if (!recv_buf.empty()) {
-                qreal peakLevel = 0;
-                qreal sum = 0.0;
+                if (!recv_buf.empty()) {
+                    qreal peakLevel = 0;
+                    qreal sum = 0.0;
 
-                const qint16 value = *reinterpret_cast<const qint16*>(recv_buf.data());
-                const qreal amplitudeToReal = (static_cast<qreal>(value) / SHRT_MAX);
-                peakLevel = qMax(peakLevel, amplitudeToReal);
-                sum += amplitudeToReal * amplitudeToReal;
+                    const qint16 value = *reinterpret_cast<const qint16*>(recv_buf.data());
+                    const qreal amplitudeToReal = (static_cast<qreal>(value) / SHRT_MAX);
+                    peakLevel = qMax(peakLevel, amplitudeToReal);
+                    sum += amplitudeToReal * amplitudeToReal;
 
-                const int numSamples = (AUDIO_FRAMES_PER_BUFFER);
-                qreal rmsLevel = std::sqrt(sum / static_cast<qreal>(numSamples));
+                    const int numSamples = (AUDIO_FRAMES_PER_BUFFER);
+                    qreal rmsLevel = std::sqrt(sum / static_cast<qreal>(numSamples));
 
-                emit refreshVuDisplay(rmsLevel, peakLevel, numSamples);
-                recv_buf.clear();
-                recv_buf.shrink_to_fit();
+                    emit refreshVuDisplay(rmsLevel, peakLevel, numSamples);
+                    recv_buf.clear();
+                    recv_buf.shrink_to_fit();
+                }
             }
         }
+    } catch (const portaudio::PaException &e) {
+        QString error_msg = tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText());
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
+    } catch (const portaudio::PaCppException &e) {
+        QString error_msg = tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what());
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
+    } catch (const std::exception &e) {
+        QString error_msg = tr("A generic exception has occurred:\n\n%1").arg(e.what());
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
+    } catch (...) {
+        QString error_msg = tr("An unknown exception has occurred. There are no further details.");
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     }
 
     return;
@@ -1477,17 +1495,27 @@ void MainWindow::on_actionShow_Waterfall_toggled(bool arg1)
 {
     Q_UNUSED(arg1);
 
+    /*
     try {
         // QWT is started!
     } catch (const portaudio::PaException &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText()), QMessageBox::Ok);
+        QString error_msg = tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText());
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     } catch (const portaudio::PaCppException &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+        QString error_msg = tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what());
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     } catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), tr("A generic exception has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+        QString error_msg = tr("A generic exception has occurred:\n\n%1").arg(e.what());
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     } catch (...) {
-        QMessageBox::warning(nullptr, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), QMessageBox::Ok);
+        QString error_msg = tr("An unknown exception has occurred. There are no further details.");
+        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     }
+    */
 
     return;
 }

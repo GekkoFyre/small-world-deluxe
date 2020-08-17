@@ -89,6 +89,8 @@ GkEventLoggerTableViewModel::~GkEventLoggerTableViewModel()
     // Send a stacktrace via Brakepad / Crashpad by way of Sentry upon exit, whether it be a
     // normal exit or one made by a system exception!
     //
+    // https://docs.sentry.io/error-reporting/capturing/?platform=native
+    //
     const QString severityStr = determineSeverity();
     const GkSeverity gkSeverityEnum = GkDb->convSeverityToEnum(severityStr);
 

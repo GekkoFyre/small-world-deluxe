@@ -823,7 +823,6 @@ void GkLevelDb::capture_sys_info()
         //
         sentry_set_level(SENTRY_LEVEL_INFO); // We are only sending informational data!
         sentry_value_t info_capture_event = sentry_value_new_event();
-        sentry_value_t info_capture_extra = sentry_value_new_object();
 
         std::string ret_str = "";
         QString sentry_unique_id = read_optin_settings(GkOptIn::UserUniqueId);
@@ -885,6 +884,7 @@ void GkLevelDb::capture_sys_info()
         if (!curr_cpu_arch.isEmpty()) {
             // CPU Architecture of the host operating system
             sentry_value_set_by_key(device_obj, "curr_cpu_arch", sentry_value_new_string(curr_cpu_arch.toStdString().c_str()));
+            sentry_set_tag("cpu_arch", curr_cpu_arch.toStdString().c_str());
         }
 
         if (!kernel_type.isEmpty()) {
@@ -915,30 +915,32 @@ void GkLevelDb::capture_sys_info()
         if (!prod_type.isEmpty()) {
             // Operating System type
             sentry_value_set_by_key(os_obj, "type", sentry_value_new_string(prod_type.toStdString().c_str()));
+            sentry_set_tag("os_type", prod_type.toStdString().c_str());
         }
 
         if (!prod_vers.isEmpty()) {
             // Operating System version
             sentry_value_set_by_key(os_obj, "version", sentry_value_new_string(prod_vers.toStdString().c_str()));
+            sentry_set_tag("os_version", prod_vers.toStdString().c_str());
         }
 
         //
         // Kernel Information
+        // https://docs.sentry.io/enriching-error-data/additional-data/?platform=native#tags
         //
-        sentry_value_set_by_key(info_capture_extra, "kernel", kernel_obj);
-        sentry_value_set_by_key(info_capture_event, "extra", info_capture_extra);
+        sentry_set_extra("kernel", kernel_obj);
 
         //
         // Device Information
+        // https://docs.sentry.io/enriching-error-data/additional-data/?platform=native#tags
         //
-        sentry_value_set_by_key(info_capture_extra, "device", device_obj);
-        sentry_value_set_by_key(info_capture_event, "extra", info_capture_extra);
+        sentry_set_extra("device", device_obj);
 
         //
         // Operating System
+        // https://docs.sentry.io/enriching-error-data/additional-data/?platform=native#tags
         //
-        sentry_value_set_by_key(info_capture_extra, "os", os_obj);
-        sentry_value_set_by_key(info_capture_event, "extra", info_capture_extra);
+        sentry_set_extra("os", os_obj);
 
         //
         // Grab the screen resolution of the user's desktop and create a new object for such!
@@ -954,8 +956,7 @@ void GkLevelDb::capture_sys_info()
         //
         // Screen Size information
         //
-        sentry_value_set_by_key(info_capture_extra, "screen_size", screen_res_obj);
-        sentry_value_set_by_key(info_capture_event, "extra", info_capture_extra);
+        sentry_set_extra("screen_size", screen_res_obj);
 
         //
         // Send the captured information to the GekkoFyre Networks' Sentry server!

@@ -80,6 +80,7 @@ public:
                             const std::list<GekkoFyre::Database::Settings::GkComPort> &com_ports,
                             QPointer<GekkoFyre::GkFrequencies> gkFreqList,
                             QPointer<GekkoFyre::GkFreqTableViewModel> freqTableModel,
+                            QPointer<GekkoFyre::GkEventLogger> eventLogger,
                             QWidget *parent = nullptr);
     ~DialogSettings();
 
@@ -210,6 +211,7 @@ private:
     QPointer<GekkoFyre::GkLevelDb> gkDekodeDb;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::FileIo> gkFileIo;
+    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
     std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> gkRadioPtr;
     static QComboBox *rig_comboBox;
