@@ -1764,7 +1764,7 @@ void MainWindow::updateSpectrograph()
     }
     #else
     try {
-        if ((inputAudioStream != nullptr) && (pref_input_device.is_dev_active == true) && (AUDIO_FRAMES_PER_BUFFER > 0)) {
+        if (inputAudioStream->isOpen() && pref_input_device.is_dev_active) {
             while (inputAudioStream->isActive()) {
                 std::vector<float> fftData;
                 fftData.reserve(GK_FFT_SIZE + 1);
@@ -1775,7 +1775,7 @@ void MainWindow::updateSpectrograph()
                     //
                     auto audio_buf_tmp = std::make_shared<PaAudioBuf<qint16>>(*input_audio_buf); // TODO: Possible SEGFAULT related to this with shutdown of Small World Deluxe...
                     std::vector<qint16> recv_buf;
-                    while (audio_buf_tmp->size() > 0) {
+                    while (!audio_buf_tmp->empty()) {
                         recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
                         recv_buf.push_back(audio_buf_tmp->grab());
                     }

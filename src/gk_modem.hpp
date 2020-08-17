@@ -61,7 +61,7 @@ public:
     explicit GkModemQRA64(std::shared_ptr<GekkoFyre::AudioDevices> gkAudio, QPointer<GekkoFyre::GkEventLogger> eventLogger,
                           QPointer<GekkoFyre::StringFuncs> stringFuncs, const int &channel_type, const int &EbNodB,
                           const int &mode, QObject *parent = nullptr);
-    ~GkModemQRA64();
+    ~GkModemQRA64() override;
 
     /*
     The QSO is counted as successfull if IV3NWV received the last message
@@ -122,7 +122,7 @@ public:
     explicit GkModem(std::shared_ptr<GekkoFyre::AudioDevices> gkAudio, QPointer<GekkoFyre::GkLevelDb> dbPtr,
                      QPointer<GekkoFyre::GkEventLogger> eventLogger,
                      QPointer<GekkoFyre::StringFuncs> stringFuncs, QObject *parent = nullptr);
-    ~GkModem();
+    ~GkModem() override;
 
 private:
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;

@@ -615,7 +615,7 @@ GkDevice AudioDevices::gatherAudioDeviceDetails(portaudio::System *portAudioSys,
  * @param stereo
  * @return
  */
-PaStreamCallbackResult AudioDevices::testSinewave(portaudio::System &portAudioSys, const GkDevice device,
+PaStreamCallbackResult AudioDevices::testSinewave(portaudio::System &portAudioSys, const GkDevice &device,
                                                   const bool &is_output_dev)
 {
     try {
@@ -781,7 +781,7 @@ float AudioDevices::vuMeterRMS(const size_t &count, qint16 *buffer)
  * @param sample_rate The desired sample rate to be converted.
  * @return The converted sample rate that is now readable by PortAudio's C++ bindings.
  */
-portaudio::SampleDataFormat AudioDevices::sampleFormatConvert(const unsigned long sample_rate)
+portaudio::SampleDataFormat AudioDevices::sampleFormatConvert(const unsigned long &sample_rate)
 {
     switch (sample_rate) {
     case paFloat32:

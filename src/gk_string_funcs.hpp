@@ -61,7 +61,7 @@ class StringFuncs : public QObject {
 
 public:
     explicit StringFuncs(QObject *parent = nullptr);
-    ~StringFuncs();
+    ~StringFuncs() override;
 
     #if defined(_MSC_VER) && (_MSC_VER > 1900)
     static std::string multiByteFromWide(LPCWSTR pwsz, UINT cp);

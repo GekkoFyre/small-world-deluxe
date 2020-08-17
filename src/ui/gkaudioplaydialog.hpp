@@ -64,7 +64,7 @@ public:
                                std::shared_ptr<GekkoFyre::AudioDevices> audio_devices,
                                QPointer<GekkoFyre::FileIo> file_io,
                                QWidget *parent = nullptr);
-    ~GkAudioPlayDialog();
+    ~GkAudioPlayDialog() override;
 
 private slots:
     void on_pushButton_reset_clicked();

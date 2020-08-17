@@ -65,7 +65,7 @@ public:
                       const int &freedv_txbpf, QPointer<GekkoFyre::GkLevelDb> levelDb,
                       QPointer<GekkoFyre::GkEventLogger> eventLogger,
                       std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> output_audio_buf, QObject *parent = nullptr);
-    ~GkCodec2();
+    ~GkCodec2() override;
 
     int transmitData(const QByteArray &byte_array, const bool &play_output_sound = false, const bool &squelch_enable = false,
                      const float &squelch_thresh = -100.0f);

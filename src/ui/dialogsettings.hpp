@@ -82,7 +82,7 @@ public:
                             QPointer<GekkoFyre::GkFreqTableViewModel> freqTableModel,
                             QPointer<GekkoFyre::GkEventLogger> eventLogger,
                             QWidget *parent = nullptr);
-    ~DialogSettings();
+    ~DialogSettings() override;
 
 private slots:
     void on_pushButton_submit_config_clicked();

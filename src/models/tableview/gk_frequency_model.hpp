@@ -66,7 +66,7 @@ public:
     using QHeaderView::QHeaderView;
 
 protected:
-    virtual void mouseReleaseEvent(QMouseEvent *e);
+    void mouseReleaseEvent(QMouseEvent *e) override;
 
 signals:
     void mouseRightPressed(int section);
@@ -78,7 +78,7 @@ class GkFreqTableViewModel : public QAbstractTableModel {
 
 public:
     explicit GkFreqTableViewModel(QPointer<GekkoFyre::GkLevelDb> database, QWidget *parent = nullptr);
-    ~GkFreqTableViewModel();
+    ~GkFreqTableViewModel() override;
 
     void populateData(const QList<GekkoFyre::AmateurRadio::GkFreqs> &frequencies);
     void populateData(const QList<GekkoFyre::AmateurRadio::GkFreqs> &frequencies, const bool &populate_freq_db);

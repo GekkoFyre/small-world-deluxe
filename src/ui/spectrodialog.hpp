@@ -55,7 +55,7 @@ class SpectroDialog : public QDialog
 
 public:
     explicit SpectroDialog(QPointer<GekkoFyre::SpectroGui> spectroGui, QWidget *parent = nullptr);
-    ~SpectroDialog();
+    ~SpectroDialog() override;
 
 private slots:
     void on_pushButton_apply_clicked();
@@ -81,6 +81,6 @@ private:
 
     void prefillGraphTypes(const GekkoFyre::Spectrograph::GkGraphType &graph_type);
     void prefillGraphTiming(const GekkoFyre::Spectrograph::GkGraphTiming &graph_timing);
-    bool eventFilter(QObject *obj, QEvent *event);
+    bool eventFilter(QObject *obj, QEvent *event) override;
 };
 

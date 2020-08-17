@@ -50,8 +50,8 @@ class GkVuMeter : public QWidget {
     Q_OBJECT
 
 public:
-    explicit GkVuMeter(QWidget *parent = 0);
-    ~GkVuMeter();
+    explicit GkVuMeter(QWidget *parent = nullptr);
+    ~GkVuMeter() override;
 
     void paintEvent(QPaintEvent *event) override;
 
