@@ -46,6 +46,7 @@
 #include "src/file_io.hpp"
 #include "src/pa_audio_buf.hpp"
 #include "src/gk_frequency_list.hpp"
+#include "src/gk_logger.hpp"
 #include <QObject>
 #include <vector>
 #include <string>
@@ -66,8 +67,8 @@ class AudioDevices : public QObject {
 public:
     explicit AudioDevices(QPointer<GekkoFyre::GkLevelDb> gkDb, QPointer<GekkoFyre::FileIo> filePtr,
                           QPointer<GekkoFyre::GkFrequencies> freqList, QPointer<GekkoFyre::StringFuncs> stringFuncs,
-                          QObject *parent = nullptr);
-    ~AudioDevices();
+                          QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
+    ~AudioDevices() override;
 
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> initPortAudio(portaudio::System *portAudioSys);
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> defaultAudioDevices(portaudio::System *portAudioSys);
@@ -84,9 +85,9 @@ public:
     qint16 vuMeterPeakAmplitude(const size_t &count, qint16 *buffer);
     float vuMeterRMS(const size_t &count, qint16 *buffer);
 
-    portaudio::SampleDataFormat sampleFormatConvert(const unsigned long sample_rate);
+    portaudio::SampleDataFormat sampleFormatConvert(const unsigned long &sample_rate);
 
-    PaStreamCallbackResult testSinewave(portaudio::System &portAudioSys, const Database::Settings::Audio::GkDevice device,
+    PaStreamCallbackResult testSinewave(portaudio::System &portAudioSys, const Database::Settings::Audio::GkDevice &device,
                                         const bool &is_output_dev = true);
 
     std::vector<Database::Settings::Audio::GkDevice> filterPortAudioHostType(const std::vector<Database::Settings::Audio::GkDevice> &audio_devices_vec);
@@ -104,6 +105,7 @@ private:
     QPointer<GekkoFyre::FileIo> gkFileIo;
     QPointer<GekkoFyre::GkFrequencies> gkFreqList;
     QPointer<StringFuncs> gkStringFuncs;
+    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
     bool filterAudioEnumPreexisting(const std::vector<Database::Settings::Audio::GkDevice> &device_vec,
                                     const Database::Settings::Audio::GkDevice &device_compare);

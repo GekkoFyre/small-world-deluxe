@@ -358,7 +358,9 @@ namespace Database {
             LogsDirLoc,
             AudioRecLoc,
             AudioInputChannels,
-            AudioOutputChannels
+            AudioOutputChannels,
+            AudioInputSampleRate,
+            AudioOutputSampleRate
         };
 
         enum audio_channels {

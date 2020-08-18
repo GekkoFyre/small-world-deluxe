@@ -9,8 +9,8 @@ variables:
   # (SAST, Dependency Scanning, ...)
   SECURE_ANALYZERS_PREFIX: "registry.gitlab.com/gitlab-org/security-products/analyzers"
 
-  SAST_DEFAULT_ANALYZERS: "bandit, brakeman, gosec, spotbugs, flawfinder, phpcs-security-audit, security-code-scan, nodejs-scan, eslint, secrets, sobelow, pmd-apex, kubesec"
-  SAST_EXCLUDED_PATHS: "spec, test, tests, tmp"
+  SAST_DEFAULT_ANALYZERS: "flawfinder, secrets"
+  SAST_EXCLUDED_PATHS: "spec, test, tests, tmp, assets, cmake, docs, po, toolchains, AudioFile, codec2, images, libiconv-win-build, portaudio, QtUsb, rapidcsv, sentry-native, SingleApplication, wsjtx, contrib"
   SAST_ANALYZER_IMAGE_TAG: 2
   SAST_DISABLE_DIND: "true"
   SCAN_KUBERNETES_MANIFESTS: "false"

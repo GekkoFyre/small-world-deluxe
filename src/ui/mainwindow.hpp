@@ -98,7 +98,7 @@ class MainWindow : public QMainWindow
 
 public:
     explicit MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
+    ~MainWindow() override;
 
 private slots:
     void on_actionE_xit_triggered();
@@ -205,7 +205,7 @@ private slots:
     void on_pushButton_sstv_tx_remove_clicked();
 
 protected slots:
-    void closeEvent(QCloseEvent *event);
+    void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
 
     //
     // Radio and Hamlib specific functions
@@ -314,7 +314,6 @@ private:
     bool rx_vol_control_selected;
     double global_rx_audio_volume;
     double global_tx_audio_volume;
-    bool recording_in_progress;
 
     //
     // Multithreading
@@ -408,6 +407,7 @@ Q_DECLARE_METATYPE(std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>);
 Q_DECLARE_METATYPE(GekkoFyre::Database::Settings::GkUsbPort);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkConnMethod);
 Q_DECLARE_METATYPE(GekkoFyre::System::Events::Logging::GkEventLogging);
+Q_DECLARE_METATYPE(GekkoFyre::System::Events::Logging::GkSeverity);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkConnType);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::DigitalModes);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::IARURegions);

@@ -62,18 +62,21 @@ class GkEventLoggerTableViewModel : public QAbstractTableModel {
 
 public:
     explicit GkEventLoggerTableViewModel(QPointer<GekkoFyre::GkLevelDb> database, QWidget *parent = nullptr);
-    ~GkEventLoggerTableViewModel();
+    ~GkEventLoggerTableViewModel() override;
 
     void populateData(const QList<GekkoFyre::System::Events::Logging::GkEventLogging> &event_logs);
-    int rowCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
-    int columnCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
+    [[nodiscard]] int rowCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
+    [[nodiscard]] int columnCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
 
-    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
-    QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
+    [[nodiscard]] QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
+    [[nodiscard]] QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
 
 public slots:
     void insertData(const GekkoFyre::System::Events::Logging::GkEventLogging &event);
     void removeData(const GekkoFyre::System::Events::Logging::GkEventLogging &event);
+
+signals:
+    void grabRowSeverity(const GekkoFyre::System::Events::Logging::GkSeverity &severity);
 
 private:
     QPointer<GekkoFyre::GkLevelDb> GkDb;
@@ -84,5 +87,6 @@ private:
 
     QMutex dataBatchMutex;
 
+    QString determineSeverity() const;
 };
 };

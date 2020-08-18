@@ -90,9 +90,9 @@ namespace sys = boost::system;
 size_t GkAudioEncoding::ogg_buf_counter = 0;
 
 GkAudioEncoding::GkAudioEncoding(QPointer<FileIo> fileIo,
-                                 std::shared_ptr<PaAudioBuf<qint16>> audio_buf,
+                                 std::shared_ptr<PaAudioBuf<qint16>> input_audio_buf,
                                  QPointer<GkLevelDb> database,
-                                 QPointer<GekkoFyre::SpectroGui> spectroGui,
+                                 QPointer<SpectroGui> spectroGui,
                                  QPointer<StringFuncs> stringFuncs,
                                  Database::Settings::Audio::GkDevice input_device,
                                  QPointer<GekkoFyre::GkEventLogger> eventLogger,
@@ -102,7 +102,7 @@ GkAudioEncoding::GkAudioEncoding(QPointer<FileIo> fileIo,
     qRegisterMetaType<GekkoFyre::GkAudioFramework::CodecSupport>("GekkoFyre::GkAudioFramework::CodecSupport");
 
     gkFileIo = std::move(fileIo);
-    gkAudioBuf = std::move(audio_buf);
+    gkAudioBuf = std::move(input_audio_buf);
     gkStringFuncs = std::move(stringFuncs);
     gkDb = std::move(database);
     gkInputDev = std::move(input_device);

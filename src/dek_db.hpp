@@ -51,6 +51,7 @@
 #include <QObject>
 #include <QString>
 #include <QPointer>
+#include <QRect>
 
 namespace GekkoFyre {
 
@@ -60,7 +61,7 @@ class GkLevelDb : public QObject {
 public:
     explicit GkLevelDb(leveldb::DB *db_ptr, QPointer<GekkoFyre::FileIo> filePtr,
                        QObject *parent = nullptr);
-    ~GkLevelDb();
+    ~GkLevelDb() override;
 
     void write_rig_settings(const QString &value, const Database::Settings::radio_cfg &key);
     void write_rig_settings_comms(const QString &value, const Database::Settings::radio_cfg &key);
@@ -80,9 +81,11 @@ public:
     void write_optin_settings(const QString &value, const GekkoFyre::System::Events::Logging::GkOptIn &key);
     bool read_sentry_settings(const GekkoFyre::System::Events::Logging::GkSentry &key);
     QString read_optin_settings(const GekkoFyre::System::Events::Logging::GkOptIn &key);
-    void create_unique_id();
+
+    void capture_sys_info();
 
     QString convSeverityToStr(const GekkoFyre::System::Events::Logging::GkSeverity &severity);
+    GekkoFyre::System::Events::Logging::GkSeverity convSeverityToEnum(const QString &severity);
     sentry_level_e convSeverityToSentry(const GekkoFyre::System::Events::Logging::GkSeverity &severity);
 
     QString read_rig_settings(const Database::Settings::radio_cfg &key);
@@ -94,8 +97,8 @@ public:
     QString read_misc_audio_settings(const GekkoFyre::Database::Settings::audio_cfg &key);
 
     GekkoFyre::Database::Settings::audio_channels convertAudioChannelsEnum(const int &audio_channel_sel);
-    int convertAudioChannelsInt(const GekkoFyre::Database::Settings::audio_channels &channel_enum) const;
-    bool convertAudioEnumIsStereo(const GekkoFyre::Database::Settings::audio_channels &channel_enum) const;
+    [[nodiscard]] int convertAudioChannelsInt(const GekkoFyre::Database::Settings::audio_channels &channel_enum) const;
+    [[nodiscard]] bool convertAudioEnumIsStereo(const GekkoFyre::Database::Settings::audio_channels &channel_enum) const;
 
     ptt_type_t convPttTypeToEnum(const QString &ptt_type_str);
     QString convPttTypeToStr(const ptt_type_t &ptt_type_enum);
@@ -124,6 +127,11 @@ private:
 
     std::string processCsvToDB(const std::string &comma_sep_values, const std::string &data_to_append);
     std::string deleteCsvValForDb(const std::string &comma_sep_values, const std::string &data_to_remove);
+
+    void detect_operating_system(QString &build_cpu_arch, QString &curr_cpu_arch, QString &kernel_type, QString &kernel_vers,
+                                 QString &machine_host_name, QString &machine_unique_id, QString &pretty_prod_name,
+                                 QString &prod_type, QString &prod_vers);
+    QRect detect_desktop_resolution();
 
     std::string randomString(const size_t &length);
 

@@ -54,7 +54,7 @@ class GkFrequencies : public QObject {
 
 public:
     explicit GkFrequencies(QPointer<GekkoFyre::GkLevelDb> database, QObject *parent = nullptr);
-    ~GkFrequencies();
+    ~GkFrequencies() override;
 
     void publishFreqList();
 

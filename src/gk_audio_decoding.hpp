@@ -107,7 +107,7 @@ public:
                              GekkoFyre::Database::Settings::Audio::GkDevice output_device,
                              QPointer<GekkoFyre::GkEventLogger> eventLogger,
                              QObject *parent = nullptr);
-    virtual ~GkAudioDecoding();
+    ~GkAudioDecoding() override;
 
     GekkoFyre::GkAudioFramework::AudioFileInfo gatherOggInfo(const boost::filesystem::path &filePath,
                                                              boost::system::error_code &ec);

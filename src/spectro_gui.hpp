@@ -79,11 +79,11 @@ namespace GekkoFyre {
 class GkZoomer: public QwtPlotZoomer {
 
 public:
-    GkZoomer(QWidget *canvas): QwtPlotZoomer(QwtPlot::xTop, QwtPlot::yLeft, canvas) {
+    explicit GkZoomer(QWidget *canvas): QwtPlotZoomer(QwtPlot::xTop, QwtPlot::yLeft, canvas) {
         setTrackerMode(AlwaysOn);
     }
 
-    virtual QwtText trackerTextF(const QPointF &pos) const {
+    [[nodiscard]] QwtText trackerTextF(const QPointF &pos) const override {
         QColor bg(Qt::white);
         bg.setAlpha(200);
 
@@ -122,7 +122,7 @@ class SpectroGui: public QwtPlot {
 public:
     explicit SpectroGui(QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger, const bool &enablePanner = false,
                         const bool &enableZoomer = false, QWidget *parent = nullptr);
-    ~SpectroGui();
+    ~SpectroGui() override;
 
     void insertData(const QVector<double> &values, const int &numCols);
 

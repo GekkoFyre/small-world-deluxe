@@ -65,7 +65,7 @@ class FileIo : public QObject {
 
 public:
     explicit FileIo(QObject *parent = nullptr);
-    ~FileIo();
+    ~FileIo() override;
 
     static std::vector<boost::filesystem::path> boost_dir_iterator(const boost::filesystem::path &dirPath, boost::system::error_code ec,
             const std::vector<std::string> &dirsToSkip = { });
@@ -74,7 +74,7 @@ public:
     void write_initial_settings(const QString &value, const GekkoFyre::Database::Settings::init_cfg &key);
     QString read_initial_settings(const GekkoFyre::Database::Settings::init_cfg &key);
 
-    size_t generateRandInteger(const size_t &min_integer_size, const size_t &max_integer_size,
+    [[nodiscard]] size_t generateRandInteger(const size_t &min_integer_size, const size_t &max_integer_size,
                                const size_t &desired_result_less_than) const;
     static std::string create_random_string(const size_t &len);
     boost::filesystem::path dummy_path();

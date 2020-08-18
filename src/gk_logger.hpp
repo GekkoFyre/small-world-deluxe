@@ -56,7 +56,7 @@ class GkEventLogger : public QObject {
 
 public:
     explicit GkEventLogger(QObject *parent = nullptr);
-    ~GkEventLogger();
+    ~GkEventLogger() override;
 
     void publishEvent(const QString &event, const GekkoFyre::System::Events::Logging::GkSeverity &severity = GekkoFyre::System::Events::Logging::GkSeverity::Warning,
                       const QVariant &arguments = "", const bool &sys_notification = false);

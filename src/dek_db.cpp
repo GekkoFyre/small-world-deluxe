@@ -50,8 +50,12 @@
 #include <leveldb/write_batch.h>
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
+#include <QGuiApplication>
+#include <QDesktopWidget>
+#include <QApplication>
 #include <QMessageBox>
 #include <QVariant>
+#include <QSysInfo>
 #include <QDebug>
 #include <algorithm>
 #include <iterator>
@@ -392,6 +396,12 @@ void GkLevelDb::write_misc_audio_settings(const QString &value, const audio_cfg 
             break;
         case audio_cfg::AudioOutputChannels:
             batch.Put("AudioOutputChannels", value.toStdString());
+            break;
+        case audio_cfg::AudioInputSampleRate:
+            batch.Put("AudioInputSampleRate", value.toStdString());
+            break;
+        case audio_cfg::AudioOutputSampleRate:
+            batch.Put("AudioOutputSampleRate", value.toStdString());
             break;
         }
 
@@ -797,26 +807,221 @@ QString GkLevelDb::read_optin_settings(const GkOptIn &key)
 }
 
 /**
- * @brief GkLevelDb::create_unique_id will create a Unique ID as pertaining to the user on the given, local machine for tracking of bug-reports
- * without having to rely on IP addresses. The data is much more sanitized and anonymous this way!
+ * @brief GkLevelDb::capture_sys_info will not only create a Unique ID as pertaining to the user on the given, local machine for tracking of bug-reports
+ * without having to rely on IP addresses, but will also capture some unique information pertaining to said local machine that will be useful for what
+ * direction to take with the development of Small World Deluxe. This includes such things as screen resolution, operating system used along with
+ * versioning (i.e. of the kernel and distro as well if applicable), along with a few other bits and bobs while ensuring anonymity of the user in question at
+ * all times. Consent has to be given by the user upon initial program launch, of course, to send any of this information.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void GkLevelDb::create_unique_id()
+void GkLevelDb::capture_sys_info()
 {
-    std::string ret_str = "";
-    QString sentry_unique_id = read_optin_settings(GkOptIn::UserUniqueId);
-    if (!sentry_unique_id.isEmpty()) {
-        ret_str = sentry_unique_id.toStdString();
-    } else {
-        ret_str = randomString(24);
-        write_optin_settings(QString::fromStdString(ret_str), GkOptIn::UserUniqueId);
+    try {
+        //
+        // https://docs.sentry.io/enriching-error-data/additional-data/?platform=native
+        // https://docs.sentry.io/platforms/native/#capturing-events
+        //
+        sentry_set_level(SENTRY_LEVEL_INFO); // We are only sending informational data!
+        sentry_value_t info_capture_event = sentry_value_new_event();
+
+        std::string ret_str = "";
+        QString sentry_unique_id = read_optin_settings(GkOptIn::UserUniqueId);
+        if (!sentry_unique_id.isEmpty()) {
+            const std::string ret_str = sentry_unique_id.toStdString();
+        } else {
+            const std::string ret_str = randomString(24);
+            write_optin_settings(QString::fromStdString(ret_str), GkOptIn::UserUniqueId);
+        }
+
+        //
+        // Create a new event whereby a unique user-identity is determined!
+        //
+        sentry_value_t user = sentry_value_new_object();
+        sentry_value_set_by_key(user, "id", sentry_value_new_string(ret_str.c_str()));
+
+        QString callsign = read_general_settings(general_stat_cfg::myCallsign);
+        QString maidenhead = read_general_settings(general_stat_cfg::myMaidenhead);
+
+        if (!callsign.isEmpty()) {
+            sentry_value_set_by_key(user, "username", sentry_value_new_string(callsign.toStdString().c_str()));
+        } else {
+            sentry_value_set_by_key(user, "username", sentry_value_new_string("Unknown"));
+        }
+
+        if (!maidenhead.isEmpty()) {
+            sentry_value_set_by_key(user, "maidenhead", sentry_value_new_string(maidenhead.toStdString().c_str()));
+        } else {
+            sentry_value_set_by_key(user, "maidenhead", sentry_value_new_string("JJ00aa")); // Null value for the Maidenhead grid system!
+        }
+
+        sentry_set_user(user);
+
+        //
+        // Create a new event whereby the operating system type and version is determined!
+        //
+        const QString def_val = "Unknown";
+        QString build_cpu_arch = def_val;
+        QString curr_cpu_arch = def_val;
+        QString kernel_type = def_val;
+        QString kernel_vers = def_val;
+        QString machine_host_name = def_val;
+        QString machine_unique_id = def_val;
+        QString pretty_prod_name = def_val;
+        QString prod_type = def_val;
+        QString prod_vers = def_val;
+
+        sentry_value_t os_obj = sentry_value_new_object();
+        sentry_value_t device_obj = sentry_value_new_object();
+        sentry_value_t kernel_obj = sentry_value_new_object();
+        detect_operating_system(build_cpu_arch, curr_cpu_arch, kernel_type, kernel_vers, machine_host_name, machine_unique_id,
+                                pretty_prod_name, prod_type, prod_vers);
+
+        if (!build_cpu_arch.isEmpty()) {
+            // CPU Architecture used for the building of this particular version of Small World Deluxe application
+            sentry_value_set_by_key(device_obj, "build_cpu_arch", sentry_value_new_string(build_cpu_arch.toStdString().c_str()));
+        }
+
+        if (!curr_cpu_arch.isEmpty()) {
+            // CPU Architecture of the host operating system
+            sentry_value_set_by_key(device_obj, "curr_cpu_arch", sentry_value_new_string(curr_cpu_arch.toStdString().c_str()));
+            sentry_set_tag("cpu_arch", curr_cpu_arch.toStdString().c_str());
+        }
+
+        if (!kernel_type.isEmpty()) {
+            // Kernel type
+            sentry_value_set_by_key(kernel_obj, "type", sentry_value_new_string(kernel_type.toStdString().c_str()));
+        }
+
+        if (!kernel_vers.isEmpty()) {
+            // Kernel version
+            sentry_value_set_by_key(kernel_obj, "version", sentry_value_new_string(kernel_vers.toStdString().c_str()));
+        }
+
+        if (!machine_host_name.isEmpty()) {
+            // Machine host name
+            sentry_value_set_by_key(device_obj, "hostname", sentry_value_new_string(machine_host_name.toStdString().c_str()));
+        }
+
+        if (!machine_unique_id.isEmpty()) {
+            // Machine unique ID
+            sentry_value_set_by_key(device_obj, "unique_id", sentry_value_new_string(machine_unique_id.toStdString().c_str()));
+        }
+
+        if (!pretty_prod_name.isEmpty()) {
+            // Operating System name (pretty version)
+            sentry_value_set_by_key(os_obj, "name", sentry_value_new_string(pretty_prod_name.toStdString().c_str()));
+        }
+
+        if (!prod_type.isEmpty()) {
+            // Operating System type
+            sentry_value_set_by_key(os_obj, "type", sentry_value_new_string(prod_type.toStdString().c_str()));
+            sentry_set_tag("os_type", prod_type.toStdString().c_str());
+        }
+
+        if (!prod_vers.isEmpty()) {
+            // Operating System version
+            sentry_value_set_by_key(os_obj, "version", sentry_value_new_string(prod_vers.toStdString().c_str()));
+            sentry_set_tag("os_version", prod_vers.toStdString().c_str());
+        }
+
+        //
+        // Kernel Information
+        // https://docs.sentry.io/enriching-error-data/additional-data/?platform=native#tags
+        //
+        sentry_set_extra("kernel", kernel_obj);
+
+        //
+        // Device Information
+        // https://docs.sentry.io/enriching-error-data/additional-data/?platform=native#tags
+        //
+        sentry_set_extra("device", device_obj);
+
+        //
+        // Operating System
+        // https://docs.sentry.io/enriching-error-data/additional-data/?platform=native#tags
+        //
+        sentry_set_extra("os", os_obj);
+
+        //
+        // Grab the screen resolution of the user's desktop and create a new object for such!
+        //
+        const QRect screen_res = detect_desktop_resolution();
+        const qreal width = screen_res.width();
+        const qreal height = screen_res.height();
+
+        sentry_value_t screen_res_obj = sentry_value_new_object();
+        sentry_value_set_by_key(screen_res_obj, "width", sentry_value_new_double(width));
+        sentry_value_set_by_key(screen_res_obj, "height", sentry_value_new_double(height));
+
+        //
+        // Screen Size information
+        //
+        sentry_set_extra("screen_size", screen_res_obj);
+
+        //
+        // Send the captured information to the GekkoFyre Networks' Sentry server!
+        // https://docs.sentry.io/platforms/native/#capturing-events
+        //
+        sentry_capture_event(info_capture_event);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("An issue was encountered with the crash-reporting subsystem; please report this to the developers. Error:\n\n%1")
+        .arg(QString::fromStdString(e.what())), QMessageBox::Ok, QMessageBox::Ok);
     }
 
-    sentry_value_t user = sentry_value_new_object();
-    sentry_value_set_by_key(user, "id", sentry_value_new_string(ret_str.c_str()));
-    sentry_set_user(user);
+    return;
+}
+
+/**
+ * @brief GkLevelDb::detect_operating_system will detect the operating system and hopefully, version, used by the user of this
+ * application, mostly for purposes needed by Sentry.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param build_cpu_arch
+ * @param curr_cpu_arch
+ * @param kernel_type
+ * @param kernel_vers
+ * @param machine_host_name
+ * @param machine_unique_id
+ * @param pretty_prod_name
+ * @param prod_type
+ * @param prod_vers
+ * @note <https://doc.qt.io/qt-5/qsysinfo.html>.
+ */
+void GkLevelDb::detect_operating_system(QString &build_cpu_arch, QString &curr_cpu_arch, QString &kernel_type, QString &kernel_vers,
+                                        QString &machine_host_name, QString &machine_unique_id, QString &pretty_prod_name,
+                                        QString &prod_type, QString &prod_vers)
+{
+    try {
+        QSysInfo sys_info;
+
+        build_cpu_arch = sys_info.buildCpuArchitecture();
+        curr_cpu_arch = sys_info.currentCpuArchitecture();
+        kernel_type = sys_info.kernelType();
+        kernel_vers = sys_info.kernelVersion();
+
+        machine_host_name = sys_info.machineHostName();
+        machine_unique_id = sys_info.machineUniqueId();
+
+        pretty_prod_name = sys_info.prettyProductName();
+        prod_type = sys_info.productType();
+        prod_vers = sys_info.productVersion();
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok, QMessageBox::Ok);
+    }
 
     return;
+}
+
+/**
+ * @brief GkLevelDb::detect_desktop_resolution will detect the currently used screen resolution of the user's desktop, mostly
+ * for the purposes needed by Sentry.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param horizontal
+ * @param vertical
+ */
+QRect GkLevelDb::detect_desktop_resolution()
+{
+    QRect rec = QApplication::desktop()->screenGeometry();
+    return rec;
 }
 
 /**
@@ -847,6 +1052,43 @@ QString GkLevelDb::convSeverityToStr(const GkSeverity &severity)
     }
 
     return tr("Error!");
+}
+
+/**
+ * @brief GkLevelDb::convSeverityToEnum
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param severity
+ * @return
+ */
+GekkoFyre::System::Events::Logging::GkSeverity GkLevelDb::convSeverityToEnum(const QString &severity)
+{
+    if (severity == tr("Fatal")) {
+        // Fatal
+        return GkSeverity::Fatal;
+    } else if (severity == tr("Error")) {
+        // Error
+        return GkSeverity::Error;
+    } else if (severity == tr("Warning")) {
+        // Warning
+        return GkSeverity::Warning;
+    } else if (severity == tr("Info")) {
+        // Info
+        return GkSeverity::Info;
+    } else if (severity == tr("Debug")) {
+        // Debug
+        return GkSeverity::Debug;
+    } else if (severity == tr("Verbose")) {
+        // Verbose
+        return GkSeverity::Verbose;
+    } else if (severity == tr("None")) {
+        // None
+        return GkSeverity::None;
+    } else {
+        // Unknown!
+        return GkSeverity::None;
+    }
+
+    return Events::Logging::None;
 }
 
 /**
@@ -1375,6 +1617,12 @@ QString GkLevelDb::read_misc_audio_settings(const audio_cfg &key)
         break;
     case audio_cfg::AudioOutputChannels:
         status = db->Get(read_options, "AudioOutputChannels", &value);
+        break;
+    case audio_cfg::AudioInputSampleRate:
+        status = db->Get(read_options, "AudioInputSampleRate", &value);
+        break;
+    case audio_cfg::AudioOutputSampleRate:
+        status = db->Get(read_options, "AudioOutputSampleRate", &value);
         break;
     }
 

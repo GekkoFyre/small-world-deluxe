@@ -72,6 +72,7 @@ SpectroDialog::SpectroDialog(QPointer<GekkoFyre::SpectroGui> spectroGui, QWidget
 
     fft_size_prev_value = 0;
     fft_size_updated = 0;
+    fft_size_spinbox_sel = false;
 
     gkSpectroGui = std::move(spectroGui);
     QObject::connect(this, SIGNAL(changeGraphType(const GekkoFyre::Spectrograph::GkGraphType &)),
