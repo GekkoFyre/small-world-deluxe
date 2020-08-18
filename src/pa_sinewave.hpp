@@ -49,7 +49,7 @@ namespace GekkoFyre {
 class PaSinewave {
 
 public:
-    PaSinewave(int table_size);
+    explicit PaSinewave(int table_size);
     virtual ~PaSinewave();
 
     int generate(const void *input_buffer, void *output_buffer, unsigned long frames_per_buffer,

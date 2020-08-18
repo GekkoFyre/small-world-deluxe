@@ -64,7 +64,7 @@ public:
                    QPointer<GekkoFyre::GkLevelDb> database,
                    QPointer<GekkoFyre::RadioLibs> radioLibs,
                    QObject *parent);
-    virtual ~GkCli();
+    ~GkCli() override;
 
     System::Cli::CommandLineParseResult parseCommandLine(QString *error_msg);
 

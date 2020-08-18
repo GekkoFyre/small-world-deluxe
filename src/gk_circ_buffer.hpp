@@ -58,10 +58,10 @@ public:
     void put(T item);
     T grab();
     void reset();
-    bool empty() const;
-    bool full() const;
-    size_t capacity() const;
-    size_t size() const;
+    [[nodiscard]] bool empty() const;
+    [[nodiscard]] bool full() const;
+    [[nodiscard]] size_t capacity() const;
+    [[nodiscard]] size_t size() const;
 
 private:
     std::mutex mutex_;

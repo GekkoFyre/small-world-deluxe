@@ -130,6 +130,8 @@ RUN pacman -S cmake --noconfirm
 RUN pacman -S wget --noconfirm
 RUN pacman -S curl --noconfirm
 
+RUN yay -S conan --noconfirm
+
 # Make sure to cleanup after all the updates and installations are completed!
 RUN pacman -Sc --noconfirm
 

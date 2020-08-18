@@ -71,14 +71,14 @@ public:
     explicit RadioLibs(QPointer<GekkoFyre::FileIo> filePtr, QPointer<GekkoFyre::StringFuncs> stringPtr,
                        QPointer<GkLevelDb> dkDb, std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> radioPtr,
                        QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
-    ~RadioLibs();
+    ~RadioLibs() override;
 
     static int convertBaudRateInt(const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate);
     GekkoFyre::AmateurRadio::com_baud_rates convertBaudRateToEnum(const int &baud_rate_sel);
     GekkoFyre::AmateurRadio::com_baud_rates convertBaudRateIntToEnum(const int &baud_rate);
     int convertBaudRateFromEnum(const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate);
-    QList<QSerialPortInfo> status_com_ports() const;
-    std::list<Database::Settings::GkComPort> filter_com_ports(const QList<QSerialPortInfo> &serial_port_info) const;
+    [[nodiscard]] QList<QSerialPortInfo> status_com_ports() const;
+    [[nodiscard]] std::list<Database::Settings::GkComPort> filter_com_ports(const QList<QSerialPortInfo> &serial_port_info) const;
     QString hamlibModulEnumToStr(const rmode_t &modulation);
 
     GekkoFyre::AmateurRadio::GkConnType convGkConnTypeToEnum(const QString &conn_type);

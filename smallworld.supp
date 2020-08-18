@@ -33,3 +33,5084 @@
    fun:start_thread
    fun:clone
 }
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_dummy
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN10QBoxLayout12insertWidgetEiP7QWidgeti6QFlagsIN2Qt13AlignmentFlagEE
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN15QtSharedPointer20ExternalRefCountData9getAndRefEPK7QObject
+   fun:_ZN12QWeakPointerI7QObjectEC1I11QVBoxLayoutEEPT_b
+   fun:_ZN8QPointerI11QVBoxLayoutEC1EPS0_
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN5QListIN9GekkoFyre12AmateurRadio7GkFreqsEE14node_constructEPNS3_4NodeERKS2_
+   fun:_ZN5QListIN9GekkoFyre12AmateurRadio7GkFreqsEE6appendERKS2_
+   fun:_ZN5QListIN9GekkoFyre12AmateurRadio7GkFreqsEE9push_backERKS2_
+   fun:_ZN9GekkoFyre13GkFrequencies16updateFreqsInMemERKyRKNS_12AmateurRadio12DigitalModesERKNS3_11IARURegionsERKb
+   fun:_ZN9GekkoFyre13GkFrequencies18qt_static_metacallEP7QObjectN11QMetaObject4CallEiPPv
+   fun:_ZN11QMetaObject8activateEP7QObjectiiPPv
+   fun:_ZN9GekkoFyre13GkFrequencies17updateFrequenciesERKyRKNS_12AmateurRadio12DigitalModesERKNS3_11IARURegionsERKb
+   fun:_ZN9GekkoFyre13GkFrequencies15publishFreqListEv
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:sentry_malloc
+   fun:sentry_value_new_object
+   fun:get_scope
+   fun:sentry__scope_lock
+   fun:sentry_set_level
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:PaUtil_CreateAllocationGroup
+   fun:PaAlsa_Initialize
+   fun:InitializeHostApis
+   fun:Pa_Initialize
+   fun:_ZN9portaudio6System10initializeEv
+   fun:_ZN9portaudio10AutoSystemC1Eb
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN26QAbstractScrollAreaPrivate4initEv
+   fun:_ZN17QAbstractItemViewC1ER24QAbstractItemViewPrivateP7QWidget
+   fun:_ZN10QTableViewC1EP7QWidget
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN14QObjectPrivate13addConnectionEiPNS_10ConnectionE
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN9GekkoFyre13GkFrequenciesC1E8QPointerINS_9GkLevelDbEEP7QObject
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:sentry_malloc
+   fun:new_thing_value
+   fun:sentry__value_new_string_owned
+   fun:sentry_value_new_string
+   fun:get_client_sdk
+   fun:get_scope
+   fun:sentry__scope_lock
+   fun:sentry_set_level
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN9GekkoFyre15GkAudioEncodingC1E8QPointerINS_6FileIoEESt10shared_ptrINS_10PaAudioBufIsEEES1_INS_9GkLevelDbEES1_INS_10SpectroGuiEES1_INS_11StringFuncsEENS_8Database8Settings5Audio8GkDeviceES1_INS_13GkEventLoggerEEP7QObject
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_yaesu
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:sentry_malloc
+   fun:sentry__string_clonen
+   fun:sentry__string_clone
+   fun:sentry_value_new_string
+   fun:get_client_sdk
+   fun:get_scope
+   fun:sentry__scope_lock
+   fun:sentry_set_level
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:InitializeHostApis
+   fun:Pa_Initialize
+   fun:_ZN9portaudio6System10initializeEv
+   fun:_ZN9portaudio10AutoSystemC1Eb
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN26QAbstractScrollAreaPrivate4initEv
+   fun:_ZN17QAbstractItemViewC1ER24QAbstractItemViewPrivateP7QWidget
+   fun:_ZN10QTableViewC1EP7QWidget
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:sentry_malloc
+   fun:sentry_value_new_list
+   fun:get_scope
+   fun:sentry__scope_lock
+   fun:sentry_set_level
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:sentry_malloc
+   fun:sentry_value_new_object
+   fun:get_client_sdk
+   fun:get_scope
+   fun:sentry__scope_lock
+   fun:sentry_set_level
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:sentry_malloc
+   fun:sentry_value_new_object
+   fun:get_client_sdk
+   fun:get_scope
+   fun:sentry__scope_lock
+   fun:sentry_set_level
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:sentry_malloc
+   fun:sentry_value_new_list
+   fun:get_client_sdk
+   fun:get_scope
+   fun:sentry__scope_lock
+   fun:sentry_set_level
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:sentry_malloc
+   fun:sentry__string_clonen
+   fun:sentry__string_clone
+   fun:sentry_value_new_string
+   fun:get_client_sdk
+   fun:get_scope
+   fun:sentry__scope_lock
+   fun:sentry_set_level
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN14QObjectPrivate13addConnectionEiPNS_10ConnectionE
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN14QObjectPrivate13addConnectionEiPNS_10ConnectionE
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN21QSortFilterProxyModelC1EP7QObject
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:_ZN9QListData11detach_growEPii
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN10QBoxLayout12insertWidgetEiP7QWidgeti6QFlagsIN2Qt13AlignmentFlagEE
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:_ZN9QListData11detach_growEPii
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN10QBoxLayout12insertWidgetEiP7QWidgeti6QFlagsIN2Qt13AlignmentFlagEE
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN26QAbstractScrollAreaPrivate4initEv
+   fun:_ZN17QAbstractItemViewC1ER24QAbstractItemViewPrivateP7QWidget
+   fun:_ZN10QTableViewC1EP7QWidget
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN7QObject13setObjectNameERK7QString
+   fun:_ZN26QAbstractScrollAreaPrivate4initEv
+   fun:_ZN17QAbstractItemViewC1ER24QAbstractItemViewPrivateP7QWidget
+   fun:_ZN10QTableViewC1EP7QWidget
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN7QObject13setObjectNameERK7QString
+   fun:_ZN26QAbstractScrollAreaPrivate4initEv
+   fun:_ZN17QAbstractItemViewC1ER24QAbstractItemViewPrivateP7QWidget
+   fun:_ZN10QTableViewC1EP7QWidget
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN7QObject18installEventFilterEPS_
+   fun:_ZN26QAbstractScrollAreaPrivate4initEv
+   fun:_ZN17QAbstractItemViewC1ER24QAbstractItemViewPrivateP7QWidget
+   fun:_ZN10QTableViewC1EP7QWidget
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN7QObject13setObjectNameERK7QString
+   fun:_ZN26QAbstractScrollAreaPrivate4initEv
+   fun:_ZN17QAbstractItemViewC1ER24QAbstractItemViewPrivateP7QWidget
+   fun:_ZN10QTableViewC1EP7QWidget
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN7QObject18installEventFilterEPS_
+   fun:_ZN26QAbstractScrollAreaPrivate4initEv
+   fun:_ZN17QAbstractItemViewC1ER24QAbstractItemViewPrivateP7QWidget
+   fun:_ZN10QTableViewC1EP7QWidget
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN7QObject13setObjectNameERK7QString
+   fun:_ZN26QAbstractScrollAreaPrivate4initEv
+   fun:_ZN17QAbstractItemViewC1ER24QAbstractItemViewPrivateP7QWidget
+   fun:_ZN10QTableViewC1EP7QWidget
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN26QAbstractScrollAreaPrivate4initEv
+   fun:_ZN17QAbstractItemViewC1ER24QAbstractItemViewPrivateP7QWidget
+   fun:_ZN11QHeaderViewC1EN2Qt11OrientationEP7QWidget
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN26QAbstractScrollAreaPrivate4initEv
+   fun:_ZN17QAbstractItemViewC1ER24QAbstractItemViewPrivateP7QWidget
+   fun:_ZN11QHeaderViewC1EN2Qt11OrientationEP7QWidget
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QRegularExpressionC1Ev
+   fun:RegularExpressionData
+   fun:QSortFilterProxyModelPrivate
+   fun:_ZN21QSortFilterProxyModelC1EP7QObject
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:sentry_malloc
+   fun:new_thing_value
+   fun:sentry_value_new_object
+   fun:get_scope
+   fun:sentry__scope_lock
+   fun:sentry_set_level
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:sentry_malloc
+   fun:new_thing_value
+   fun:sentry_value_new_object
+   fun:get_scope
+   fun:sentry__scope_lock
+   fun:sentry_set_level
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:sentry_malloc
+   fun:new_thing_value
+   fun:sentry_value_new_object
+   fun:get_scope
+   fun:sentry__scope_lock
+   fun:sentry_set_level
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:sentry_malloc
+   fun:new_thing_value
+   fun:sentry_value_new_list
+   fun:get_scope
+   fun:sentry__scope_lock
+   fun:sentry_set_level
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN26QAbstractScrollAreaPrivate4initEv
+   fun:_ZN17QAbstractItemViewC1ER24QAbstractItemViewPrivateP7QWidget
+   fun:_ZN10QTableViewC1EP7QWidget
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN26QAbstractScrollAreaPrivate4initEv
+   fun:_ZN17QAbstractItemViewC1ER24QAbstractItemViewPrivateP7QWidget
+   fun:_ZN10QTableViewC1EP7QWidget
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN10QTableViewC1EP7QWidget
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN10QTableViewC1EP7QWidget
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN10QTableViewC1EP7QWidget
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN10QTableViewC1EP7QWidget
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN26QAbstractScrollAreaPrivate4initEv
+   fun:_ZN17QAbstractItemViewC1ER24QAbstractItemViewPrivateP7QWidget
+   fun:_ZN11QHeaderViewC1EN2Qt11OrientationEP7QWidget
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN26QAbstractScrollAreaPrivate4initEv
+   fun:_ZN17QAbstractItemViewC1ER24QAbstractItemViewPrivateP7QWidget
+   fun:_ZN11QHeaderViewC1EN2Qt11OrientationEP7QWidget
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN10QTableView17setVerticalHeaderEP11QHeaderView
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN10QTableView17setVerticalHeaderEP11QHeaderView
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN10QTableView17setVerticalHeaderEP11QHeaderView
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN10QTableView17setVerticalHeaderEP11QHeaderView
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN10QTableView17setVerticalHeaderEP11QHeaderView
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN10QTableView17setVerticalHeaderEP11QHeaderView
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN10QTableView17setVerticalHeaderEP11QHeaderView
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN26QAbstractScrollAreaPrivate4initEv
+   fun:_ZN17QAbstractItemViewC1ER24QAbstractItemViewPrivateP7QWidget
+   fun:_ZN11QHeaderViewC1EN2Qt11OrientationEP7QWidget
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN26QAbstractScrollAreaPrivate4initEv
+   fun:_ZN17QAbstractItemViewC1ER24QAbstractItemViewPrivateP7QWidget
+   fun:_ZN11QHeaderViewC1EN2Qt11OrientationEP7QWidget
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN10QTableView19setHorizontalHeaderEP11QHeaderView
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN10QTableView19setHorizontalHeaderEP11QHeaderView
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN10QTableView19setHorizontalHeaderEP11QHeaderView
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN10QTableView19setHorizontalHeaderEP11QHeaderView
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN10QTableView19setHorizontalHeaderEP11QHeaderView
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN10QTableView19setHorizontalHeaderEP11QHeaderView
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN10QTableView19setHorizontalHeaderEP11QHeaderView
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN21QSortFilterProxyModelC1EP7QObject
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN11QHeaderView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN11QHeaderView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN11QHeaderView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN11QHeaderView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN11QHeaderView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN11QHeaderView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN11QHeaderView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN11QHeaderView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN11QHeaderView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN11QHeaderView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN11QHeaderView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN11QHeaderView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN11QHeaderView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN11QHeaderView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN11QHeaderView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN11QHeaderView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN17QAbstractItemView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN17QAbstractItemView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN17QAbstractItemView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN17QAbstractItemView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN17QAbstractItemView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN17QAbstractItemView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN17QAbstractItemView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN17QAbstractItemView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN17QAbstractItemView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN17QAbstractItemView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN17QAbstractItemView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN17QAbstractItemView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN17QAbstractItemView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN17QAbstractItemView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN17QAbstractItemView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN19QAbstractProxyModel14setSourceModelEP18QAbstractItemModel
+   fun:_ZN21QSortFilterProxyModel14setSourceModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN21QSortFilterProxyModel14setSourceModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN21QSortFilterProxyModel14setSourceModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN21QSortFilterProxyModel14setSourceModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN21QSortFilterProxyModel14setSourceModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN21QSortFilterProxyModel14setSourceModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN21QSortFilterProxyModel14setSourceModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN21QSortFilterProxyModel14setSourceModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN21QSortFilterProxyModel14setSourceModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN21QSortFilterProxyModel14setSourceModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN21QSortFilterProxyModel14setSourceModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN21QSortFilterProxyModel14setSourceModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN21QSortFilterProxyModel14setSourceModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN21QSortFilterProxyModel14setSourceModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN21QSortFilterProxyModel14setSourceModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN21QSortFilterProxyModel14setSourceModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN21QSortFilterProxyModel14setSourceModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN21QSortFilterProxyModel14setSourceModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN21QSortFilterProxyModel14setSourceModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN14QLayoutPrivate16createWidgetItemEPK7QLayoutP7QWidget
+   fun:_ZN10QBoxLayout12insertWidgetEiP7QWidgeti6QFlagsIN2Qt13AlignmentFlagEE
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN14QLayoutPrivate16createWidgetItemEPK7QLayoutP7QWidget
+   fun:_ZN10QBoxLayout12insertWidgetEiP7QWidgeti6QFlagsIN2Qt13AlignmentFlagEE
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   QSortFilterProxyModelPrivate::_q_sourceDataChanged(QModelIndex const&, QModelIndex const&, QVector<int> const&)[Memcheck:Cond]
+   Memcheck:Cond
+   fun:_ZN28QSortFilterProxyModelPrivate20_q_sourceDataChangedERK11QModelIndexS2_RK7QVectorIiE
+   fun:_ZN21QSortFilterProxyModel18qt_static_metacallEP7QObjectN11QMetaObject4CallEiPPv
+   fun:_ZN11QMetaObject8activateEP7QObjectiiPPv
+   fun:_ZN18QAbstractItemModel11dataChangedERK11QModelIndexS2_RK7QVectorIiE
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModel10insertDataERKNS_6System6Events7Logging14GkEventLoggingE
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModel18qt_static_metacallEP7QObjectN11QMetaObject4CallEiPPv
+   fun:_ZN11QMetaObject8activateEP7QObjectiiPPv
+   fun:_ZN9GekkoFyre13GkEventLogger9sendEventERKNS_6System6Events7Logging14GkEventLoggingE
+   fun:_ZN9GekkoFyre13GkEventLogger12publishEventERK7QStringRKNS_6System6Events7Logging10GkSeverityERK8QVariantRKb
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:sentry_malloc
+   fun:sentry__string_clonen
+   fun:sentry__string_clone
+   fun:sentry_value_set_by_key
+   fun:get_client_sdk
+   fun:get_scope
+   fun:sentry__scope_lock
+   fun:sentry_set_level
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:sentry_malloc
+   fun:sentry__string_clonen
+   fun:sentry__string_clone
+   fun:sentry_value_set_by_key
+   fun:get_client_sdk
+   fun:get_scope
+   fun:sentry__scope_lock
+   fun:sentry_set_level
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:sentry_malloc
+   fun:sentry__string_clonen
+   fun:sentry__string_clone
+   fun:sentry_value_set_by_key
+   fun:get_client_sdk
+   fun:get_scope
+   fun:sentry__scope_lock
+   fun:sentry_set_level
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:sentry_malloc
+   fun:sentry__string_clonen
+   fun:sentry__string_clone
+   fun:sentry_value_set_by_key
+   fun:get_client_sdk
+   fun:get_scope
+   fun:sentry__scope_lock
+   fun:sentry_set_level
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:sentry_malloc
+   fun:sentry__string_clonen
+   fun:sentry__string_clone
+   fun:sentry_value_set_by_key
+   fun:get_client_sdk
+   fun:get_scope
+   fun:sentry__scope_lock
+   fun:sentry_set_level
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kenwood
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icom
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icmarine
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icmarine
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_icmarine
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_pcr
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_pcr
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_pcr
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_pcr
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_aor
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_aor
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_aor
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_aor
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_aor
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_aor
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_aor
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_aor
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_aor
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_aor
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_aor
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_jrc
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_jrc
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_jrc
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_uniden
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_uniden
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_uniden
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_uniden
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_uniden
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_uniden
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_uniden
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_uniden
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_drake
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_drake
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_lowe
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_racal
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_racal
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_wj
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_skanti
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_skanti
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_winradio
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_winradio
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_winradio
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_winradio
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_winradio
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_winradio
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_winradio
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_winradio
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_tentec
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_tentec
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_tentec
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_tentec
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_tentec
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_tentec
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_tentec
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_tentec
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_tentec
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_tentec
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_tentec
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_alinco
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kachina
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_tapr
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_flexradio
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_flexradio
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_flexradio
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_rft
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kit
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kit
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kit
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kit
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kit
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kit
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kit
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kit
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kit
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kit
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kit
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kit
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kit
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kit
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kit
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_kit
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_tuner
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_tuner
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_rs
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_rs
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_rs
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_prm80
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_adat
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_dorji
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_dorji
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:rig_register
+   fun:initrigs3_barrett
+   fun:rig_load_all_backends
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN15QtSharedPointer20ExternalRefCountData9getAndRefEPK7QObject
+   fun:_ZN12QWeakPointerI7QObjectEC1IS0_EEPT_b
+   fun:_ZN12QWeakPointerI7QObjectE6assignIS0_EERS1_PT_
+   fun:_ZN8QPointerIN9GekkoFyre9GkLevelDbEEaSEPS1_
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN10QTableViewC1EP7QWidget
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN15QtSharedPointer20ExternalRefCountData9getAndRefEPK7QObject
+   fun:_ZN17QAbstractItemView15setItemDelegateEP21QAbstractItemDelegate
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN10QTableViewC1EP7QWidget
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN15QtSharedPointer20ExternalRefCountData9getAndRefEPK7QObject
+   fun:_ZN12QWeakPointerI7QObjectEC1IS0_EEPT_b
+   fun:_ZN12QWeakPointerI7QObjectE6assignIS0_EERS1_PT_
+   fun:_ZN8QPointerI21QSortFilterProxyModelEaSEPS0_
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN17QAbstractItemView8setModelEP18QAbstractItemModel
+   fun:_ZN11QHeaderView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN17QAbstractItemView8setModelEP18QAbstractItemModel
+   fun:_ZN11QHeaderView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN17QAbstractItemView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN15QtSharedPointer20ExternalRefCountData9getAndRefEPK7QObject
+   fun:_ZN12QWeakPointerI7QObjectEC1IS0_EEPT_b
+   fun:_ZN12QWeakPointerI7QObjectE6assignIS0_EERS1_PT_
+   fun:_ZN8QPointerIN9GekkoFyre6FileIoEEaSEPS1_
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN15QtSharedPointer20ExternalRefCountData9getAndRefEPK7QObject
+   fun:_ZN12QWeakPointerI7QObjectEC1IS0_EEPT_b
+   fun:_ZN12QWeakPointerI7QObjectE6assignIS0_EERS1_PT_
+   fun:_ZN8QPointerIN9GekkoFyre11StringFuncsEEaSEPS1_
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN15QtSharedPointer20ExternalRefCountData9getAndRefEPK7QObject
+   fun:_ZN12QWeakPointerI7QObjectEC1I11QVBoxLayoutEEPT_b
+   fun:_ZN8QPointerI11QVBoxLayoutEC1EPS0_
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN15QtSharedPointer20ExternalRefCountData9getAndRefEPK7QObject
+   fun:_ZN12QWeakPointerI7QObjectEC1IS0_EEPT_b
+   fun:_ZN12QWeakPointerI7QObjectE6assignIS0_EERS1_PT_
+   fun:_ZN8QPointerIN9GekkoFyre13GkEventLoggerEEaSEPS1_
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN15QtSharedPointer20ExternalRefCountData9getAndRefEPK7QObject
+   fun:_ZN12QWeakPointerI7QObjectEC1IS0_EEPT_b
+   fun:_ZN12QWeakPointerI7QObjectE6assignIS0_EERS1_PT_
+   fun:_ZN8QPointerIN9GekkoFyre15GkAudioEncodingEEaSEPS1_
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN15QtSharedPointer20ExternalRefCountData9getAndRefEPK7QObject
+   fun:_ZN12QWeakPointerI7QObjectEC1IS0_EEPT_b
+   fun:_ZN12QWeakPointerI7QObjectE6assignIS0_EERS1_PT_
+   fun:_ZN8QPointerIN9GekkoFyre13GkFrequenciesEEaSEPS1_
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:PaUtil_CreateAllocationGroup
+   fun:PaOSS_Initialize
+   fun:InitializeHostApis
+   fun:Pa_Initialize
+   fun:_ZN9portaudio6System10initializeEv
+   fun:_ZN9portaudio10AutoSystemC1Eb
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN14QObjectPrivate13addConnectionEiPNS_10ConnectionE
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN9GekkoFyre15GkAudioEncodingC1E8QPointerINS_6FileIoEESt10shared_ptrINS_10PaAudioBufIsEEES1_INS_9GkLevelDbEES1_INS_10SpectroGuiEES1_INS_11StringFuncsEENS_8Database8Settings5Audio8GkDeviceES1_INS_13GkEventLoggerEEP7QObject
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE9_M_assignERKS4_
+   fun:_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEaSERKS4_
+   fun:_ZN9GekkoFyre8Database8Settings5Audio8GkDeviceaSERKS3_
+   fun:_ZN9GekkoFyre10PaAudioBufIsEC1EiRKNS_8Database8Settings5Audio8GkDeviceES7_
+   fun:_ZN9__gnu_cxx13new_allocatorIN9GekkoFyre10PaAudioBufIsEEE9constructIS3_JiRNS1_8Database8Settings5Audio8GkDeviceESA_EEEvPT_DpOT0_
+   fun:_ZNSt16allocator_traitsISaIN9GekkoFyre10PaAudioBufIsEEEE9constructIS2_JiRNS0_8Database8Settings5Audio8GkDeviceESA_EEEvRS3_PT_DpOT0_
+   fun:_ZNSt23_Sp_counted_ptr_inplaceIN9GekkoFyre10PaAudioBufIsEESaIS2_ELN9__gnu_cxx12_Lock_policyE2EEC1IJiRNS0_8Database8Settings5Audio8GkDeviceESC_EEES3_DpOT_
+   fun:_ZNSt14__shared_countILN9__gnu_cxx12_Lock_policyE2EEC1IN9GekkoFyre10PaAudioBufIsEESaIS6_EJiRNS4_8Database8Settings5Audio8GkDeviceESC_EEERPT_St20_Sp_alloc_shared_tagIT0_EDpOT1_
+   fun:_ZNSt12__shared_ptrIN9GekkoFyre10PaAudioBufIsEELN9__gnu_cxx12_Lock_policyE2EEC1ISaIS2_EJiRNS0_8Database8Settings5Audio8GkDeviceESC_EEESt20_Sp_alloc_shared_tagIT_EDpOT0_
+   fun:_ZNSt10shared_ptrIN9GekkoFyre10PaAudioBufIsEEEC1ISaIS2_EJiRNS0_8Database8Settings5Audio8GkDeviceESA_EEESt20_Sp_alloc_shared_tagIT_EDpOT0_
+   fun:_ZSt15allocate_sharedIN9GekkoFyre10PaAudioBufIsEESaIS2_EJiRNS0_8Database8Settings5Audio8GkDeviceES8_EESt10shared_ptrIT_ERKT0_DpOT1_
+   fun:_ZSt11make_sharedIN9GekkoFyre10PaAudioBufIsEEJiRNS0_8Database8Settings5Audio8GkDeviceES7_EESt10shared_ptrIT_EDpOT0_
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE12_M_constructIPcEEvT_S7_St20forward_iterator_tag
+   fun:_ZN9GekkoFyre8Database8Settings5Audio8GkDeviceC1ERKS3_
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN5QFontC1ERK7QStringiib
+   obj:/usr/lib/x86_64-linux-gnu/qt5/plugins/platformthemes/KDEPlasmaPlatformTheme.so
+   fun:_ZN19QApplicationPrivate24initializeWidgetFontHashEv
+   fun:_ZN19QApplicationPrivate4initEv
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN7QObjectC1EPS_
+   fun:_ZN26QAbstractScrollAreaPrivate4initEv
+   fun:_ZN17QAbstractItemViewC1ER24QAbstractItemViewPrivateP7QWidget
+   fun:_ZN10QTableViewC1EP7QWidget
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN7QObjectC1EPS_
+   fun:_ZN9GekkoFyre6FileIoC1EP7QObject
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN7QObjectC1EPS_
+   fun:_ZN9GekkoFyre15GkAudioEncodingC1E8QPointerINS_6FileIoEESt10shared_ptrINS_10PaAudioBufIsEEES1_INS_9GkLevelDbEES1_INS_10SpectroGuiEES1_INS_11StringFuncsEENS_8Database8Settings5Audio8GkDeviceES1_INS_13GkEventLoggerEEP7QObject
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN7QObjectC1EPS_
+   fun:_ZN9GekkoFyre13GkFrequenciesC1E8QPointerINS_9GkLevelDbEEP7QObject
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN19QStyledItemDelegateC1EP7QObject
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN10QTableViewC1EP7QWidget
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:sentry_malloc
+   fun:reserve
+   fun:sentry_value_append
+   fun:get_client_sdk
+   fun:get_scope
+   fun:sentry__scope_lock
+   fun:sentry_set_level
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QAbstractItemModelC1EP7QObject
+   fun:_ZN19QAbstractTableModelC1EP7QObject
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:sentry_malloc
+   fun:new_thing_value
+   fun:sentry_value_new_list
+   fun:get_client_sdk
+   fun:get_scope
+   fun:sentry__scope_lock
+   fun:sentry_set_level
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN7QRegExpC1Ev
+   fun:RegularExpressionData
+   fun:QSortFilterProxyModelPrivate
+   fun:_ZN21QSortFilterProxyModelC1EP7QObject
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN19QItemSelectionModelC1EP18QAbstractItemModelP7QObject
+   fun:_ZN17QAbstractItemView8setModelEP18QAbstractItemModel
+   fun:_ZN11QHeaderView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN19QItemSelectionModelC1EP18QAbstractItemModelP7QObject
+   fun:_ZN17QAbstractItemView8setModelEP18QAbstractItemModel
+   fun:_ZN11QHeaderView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN19QItemSelectionModelC1EP18QAbstractItemModelP7QObject
+   fun:_ZN17QAbstractItemView8setModelEP18QAbstractItemModel
+   fun:_ZN10QTableView8setModelEP18QAbstractItemModel
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN10QBoxLayoutC1ENS_9DirectionEP7QWidget
+   fun:_ZN11QVBoxLayoutC1EP7QWidget
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:sentry_malloc
+   fun:reserve
+   fun:sentry_value_set_by_key
+   fun:get_client_sdk
+   fun:get_scope
+   fun:sentry__scope_lock
+   fun:sentry_set_level
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:sentry_malloc
+   fun:reserve
+   fun:sentry_value_set_by_key
+   fun:get_client_sdk
+   fun:get_scope
+   fun:sentry__scope_lock
+   fun:sentry_set_level
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:PaAlsa_Initialize
+   fun:InitializeHostApis
+   fun:Pa_Initialize
+   fun:_ZN9portaudio6System10initializeEv
+   fun:_ZN9portaudio10AutoSystemC1Eb
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:PaOSS_Initialize
+   fun:InitializeHostApis
+   fun:Pa_Initialize
+   fun:_ZN9portaudio6System10initializeEv
+   fun:_ZN9portaudio10AutoSystemC1Eb
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN9QResource16registerResourceERK7QStringS2_
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN21QSortFilterProxyModelC1EP7QObject
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:sentry_malloc
+   fun:new_thing_value
+   fun:sentry_value_new_object
+   fun:get_client_sdk
+   fun:get_scope
+   fun:sentry__scope_lock
+   fun:sentry_set_level
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   malloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:malloc
+   fun:sentry_malloc
+   fun:new_thing_value
+   fun:sentry_value_new_object
+   fun:get_client_sdk
+   fun:get_scope
+   fun:sentry__scope_lock
+   fun:sentry_set_level
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN10QBoxLayoutC1ENS_9DirectionEP7QWidget
+   fun:_ZN11QVBoxLayoutC1EP7QWidget
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   operator new[](unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znam
+   fun:_ZN9GekkoFyre12GkCircBufferIsEC1ERKm
+   fun:_ZN9__gnu_cxx13new_allocatorIN9GekkoFyre12GkCircBufferIsEEE9constructIS3_JRiEEEvPT_DpOT0_
+   fun:_ZNSt16allocator_traitsISaIN9GekkoFyre12GkCircBufferIsEEEE9constructIS2_JRiEEEvRS3_PT_DpOT0_
+   fun:_ZNSt23_Sp_counted_ptr_inplaceIN9GekkoFyre12GkCircBufferIsEESaIS2_ELN9__gnu_cxx12_Lock_policyE2EEC1IJRiEEES3_DpOT_
+   fun:_ZNSt14__shared_countILN9__gnu_cxx12_Lock_policyE2EEC1IN9GekkoFyre12GkCircBufferIsEESaIS6_EJRiEEERPT_St20_Sp_alloc_shared_tagIT0_EDpOT1_
+   fun:_ZNSt12__shared_ptrIN9GekkoFyre12GkCircBufferIsEELN9__gnu_cxx12_Lock_policyE2EEC1ISaIS2_EJRiEEESt20_Sp_alloc_shared_tagIT_EDpOT0_
+   fun:_ZNSt10shared_ptrIN9GekkoFyre12GkCircBufferIsEEEC1ISaIS2_EJRiEEESt20_Sp_alloc_shared_tagIT_EDpOT0_
+   fun:_ZSt15allocate_sharedIN9GekkoFyre12GkCircBufferIsEESaIS2_EJRiEESt10shared_ptrIT_ERKT0_DpOT1_
+   fun:_ZSt11make_sharedIN9GekkoFyre12GkCircBufferIsEEJRiEESt10shared_ptrIT_EDpOT0_
+   fun:_ZN9GekkoFyre10PaAudioBufIsEC1EiRKNS_8Database8Settings5Audio8GkDeviceES7_
+   fun:_ZN9__gnu_cxx13new_allocatorIN9GekkoFyre10PaAudioBufIsEEE9constructIS3_JiRNS1_8Database8Settings5Audio8GkDeviceESA_EEEvPT_DpOT0_
+   fun:_ZNSt16allocator_traitsISaIN9GekkoFyre10PaAudioBufIsEEEE9constructIS2_JiRNS0_8Database8Settings5Audio8GkDeviceESA_EEEvRS3_PT_DpOT0_
+   fun:_ZNSt23_Sp_counted_ptr_inplaceIN9GekkoFyre10PaAudioBufIsEESaIS2_ELN9__gnu_cxx12_Lock_policyE2EEC1IJiRNS0_8Database8Settings5Audio8GkDeviceESC_EEES3_DpOT_
+   fun:_ZNSt14__shared_countILN9__gnu_cxx12_Lock_policyE2EEC1IN9GekkoFyre10PaAudioBufIsEESaIS6_EJiRNS4_8Database8Settings5Audio8GkDeviceESC_EEERPT_St20_Sp_alloc_shared_tagIT0_EDpOT1_
+   fun:_ZNSt12__shared_ptrIN9GekkoFyre10PaAudioBufIsEELN9__gnu_cxx12_Lock_policyE2EEC1ISaIS2_EJiRNS0_8Database8Settings5Audio8GkDeviceESC_EEESt20_Sp_alloc_shared_tagIT_EDpOT0_
+   fun:_ZNSt10shared_ptrIN9GekkoFyre10PaAudioBufIsEEEC1ISaIS2_EJiRNS0_8Database8Settings5Audio8GkDeviceESA_EEESt20_Sp_alloc_shared_tagIT_EDpOT0_
+   fun:_ZSt15allocate_sharedIN9GekkoFyre10PaAudioBufIsEESaIS2_EJiRNS0_8Database8Settings5Audio8GkDeviceES8_EESt10shared_ptrIT_ERKT0_DpOT1_
+   fun:_ZSt11make_sharedIN9GekkoFyre10PaAudioBufIsEEJiRNS0_8Database8Settings5Audio8GkDeviceES7_EESt10shared_ptrIT_EDpOT0_
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN15QAbstractButtonC1EP7QWidget
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   realloc[Memcheck:Leak]
+   Memcheck:Leak
+   fun:realloc
+   fun:_ZN9QListData12realloc_growEi
+   fun:_ZN9QListData6appendEi
+   fun:_ZN5QListIN9GekkoFyre12AmateurRadio7GkFreqsEE6appendERKS2_
+   fun:_ZN5QListIN9GekkoFyre12AmateurRadio7GkFreqsEE9push_backERKS2_
+   fun:_ZN9GekkoFyre13GkFrequencies16updateFreqsInMemERKyRKNS_12AmateurRadio12DigitalModesERKNS3_11IARURegionsERKb
+   fun:_ZN9GekkoFyre13GkFrequencies18qt_static_metacallEP7QObjectN11QMetaObject4CallEiPPv
+   fun:_ZN11QMetaObject8activateEP7QObjectiiPPv
+   fun:_ZN9GekkoFyre13GkFrequencies17updateFrequenciesERKyRKNS_12AmateurRadio12DigitalModesERKNS3_11IARURegionsERKb
+   fun:_ZN9GekkoFyre13GkFrequencies15publishFreqListEv
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN11QHeaderViewC1EN2Qt11OrientationEP7QWidget
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN11QHeaderViewC1EN2Qt11OrientationEP7QWidget
+   obj:/usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.12.8
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelC1E8QPointerINS_9GkLevelDbEEP7QWidget
+   fun:_ZNK9GekkoFyre27GkEventLoggerTableViewModel17determineSeverityEv
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD1Ev
+   fun:_ZN9GekkoFyre27GkEventLoggerTableViewModelD0Ev
+   fun:_ZN14QObjectPrivate14deleteChildrenEv
+   fun:_ZN7QWidgetD1Ev
+   fun:_ZN10MainWindowD1Ev
+   fun:main
+}
+
+{
+   operator new(unsigned long)[Memcheck:Leak]
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN18QMetaObjectPrivate7connectEPK7QObjectiPK11QMetaObjectS2_iS5_iPi
+   fun:_ZN7QObject7connectEPKS_PKcS1_S3_N2Qt14ConnectionTypeE
+   fun:_ZN9GekkoFyre13GkFrequenciesC1E8QPointerINS_9GkLevelDbEEP7QObject
+   fun:_ZN10MainWindowC1EP7QWidget
+   fun:main
+}

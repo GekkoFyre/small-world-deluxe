@@ -109,7 +109,7 @@ public:
                              GekkoFyre::Database::Settings::Audio::GkDevice input_device,
                              QPointer<GekkoFyre::GkEventLogger> eventLogger,
                              QObject *parent = nullptr);
-    virtual ~GkAudioEncoding();
+    ~GkAudioEncoding() override;
 
     void recordAudioFile(const GkAudioFramework::CodecSupport &codec, const GkAudioFramework::Bitrate &bitrate);
 

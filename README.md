@@ -4,9 +4,9 @@
 
 |            |                         Experimental                         |                           Develop                            |                            Master                            |
 | :--------: | :----------------------------------------------------------: | :----------------------------------------------------------: | :----------------------------------------------------------: |
-| **Status** | [![pipeline status](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/badges/experimental/pipeline.svg)](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/commits/experimental) | [![pipeline status](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/badges/develop/pipeline.svg)](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/commits/develop) | [![pipeline status](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/badges/master/pipeline.svg)](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/commits/master) |
+| **Status** | [![pipeline status](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/badges/experimental/pipeline.svg)](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/commits/experimental) | [![pipeline status](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/badges/develop/pipeline.svg)](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/commits/develop) | [![pipeline status](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/badges/master/pipeline.svg)](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/commits/master) |
 
-As a software project just only recently borne mid-July, 2019, `Small World Deluxe` is an ultra-modern weak-signal digital communicator powered by low bit-rate, digital voice codecs such as the highly regarded and open-source [Codec2](https://en.wikipedia.org/wiki/Codec_2), with others like [FT8](https://physics.princeton.edu/pulsar/K1JT/wsjtx.html) and [related](https://www.jtdx.tech/) to come within the near future. Typical usage requires a radio transceiver with [SSB support](https://en.wikipedia.org/wiki/Single-sideband_modulation) and a [personal computer](https://en.wikipedia.org/wiki/Personal_computer) with a capable sound-card. Said computer must also be powerful enough to be running a modern [operating system](https://en.wikipedia.org/wiki/Operating_system) that is still supported with regular updates ([see requirements below](#General-Requirements)).
+As a software project just only semi-recently borne mid-July, 2019, `Small World Deluxe` is an ultra-modern weak-signal digital communicator powered by low bit-rate, digital voice codecs such as the highly regarded and open-source [Codec2](https://en.wikipedia.org/wiki/Codec_2), with others like [FT8](https://physics.princeton.edu/pulsar/K1JT/wsjtx.html) and [related](https://www.jtdx.tech/) to come within the near future. Typical usage requires a radio transceiver with [SSB support](https://en.wikipedia.org/wiki/Single-sideband_modulation) and a [personal computer](https://en.wikipedia.org/wiki/Personal_computer) with a capable sound-card. Said computer must also be powerful enough to be running a modern [operating system](https://en.wikipedia.org/wiki/Operating_system) that is still supported with regular updates ([see requirements below](#General-Requirements)).
 
 Having been written from the ground-up with the C++ programming language and the [Qt5 Project](https://www.qt.io/) set of libraries, which is the standard within the computing industry for cross-platform software applications that make use of a GUI, this project is designed for ease-of-use by both computer programmer and casual amateur radio user alike. We have also implemented the [Hamlib libraries](https://hamlib.github.io/) so that our users have the easiest time possible configuring their radios with `Small World Deluxe`.
 
@@ -22,15 +22,15 @@ Following is a short list of features, both planned and partially already implem
   - This will allow digital communication primarily on the shortwave frequencies over great distances to far away places in the world from your own location, with excellent error correction features and so on.
 - A functioning spectrograph / waterfall that will give you a highly detailed view of current signaling conditions, both outgoing (TX) and incoming (RX). There is already a basic operating version of this present, we just need to amp up the resolution along with performance and we'll have an excellent spectrogram feature to boot!
 - The ability to record/playback [WAV](https://en.wikipedia.org/wiki/WAV)/[OGG](https://xiph.org/vorbis/)/[Opus](https://opus-codec.org/)/etc files. These are not meant for real-time communications due to the inherent latency issues therein of these codecs and the requirement for a high-performance computer to keep up.
-- A settings dialog rich with customization options that you can configure to your heart's desire. Reasonably decent support for this is already present.
+- A settings dialog rich with customisation options that you can configure to your heart's desire. Reasonably decent support for this is already present.
 - Easily send messages to others throughout the world and efficiently make sense of the information you receive in-turn.
 - As hinted at just above, this software application is cross-platform with excellent support for both [Linux](https://ubuntu.com/) and [Microsoft Windows 7 through to 10](https://www.microsoft.com/). Although for `Microsoft Windows`, you must compile the program with [MinGW](http://www.mingw.org/) or [Cygwin](https://www.cygwin.com/) due to `Codec2` having no support with [Microsoft Visual Studio](https://visualstudio.microsoft.com/).
-  - There is planned support for [Microsoft Windows XP](https://www.microsoft.com/) and onwards, along with [Macintosh OS/X](https://www.apple.com/macos), so stay tuned!
+  - There is planned support for legacy operating systems such as [Microsoft Windows XP](https://www.microsoft.com/) and perhaps earlier, along with other such systems like [Macintosh OS/X](https://www.apple.com/macos) where there is no current implemented support, so stay tuned!
 - Make extensive use of the [PortAudio project](http://www.portaudio.com/) for easy cross-compatibility with audio/multimedia devices between `Linux`, `Macintosh OS/X`, and `Microsoft Windows` systems. The support for this within `Small World Deluxe` is largely established already.
 
 ##### Screenshots
 
-Please note that what is displayed just below may/perhaps be awfully out-of-date. If you want to see how `Small World Deluxe` currently looks, then we advise you to [download the latest release](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/releases), or if one is not available, then to please wait and until a sufficient version *is* available. The *lack of a release* means that we're not stable enough yet.
+Please note that what is displayed just below may/perhaps be awfully out-of-date. If you want to see how `Small World Deluxe` currently looks, then we advise you to [download the latest release](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/releases), or if a binary is not available, then to please wait and until a sufficient version *is* available. The *lack of a release* means that we're not stable enough yet.
 
 ![smallworld_mainwindow_1](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/raw/f72a0eb986abe8c94fb755b2457da0ace7ac281c/assets/images/screenshots/2020-07-15/Screenshot_20200715_001410.png)
 
@@ -48,7 +48,7 @@ Please note that what is displayed just below may/perhaps be awfully out-of-date
 
 #### Binaries
 
-At the time of writing this (July 19th, 2020), we expect to be providing binaries for `Small World Deluxe` within the coming weeks/months as the project slowly becomes further realized. It is not worth providing such currently since the project has only just recently been commissioned and there's very little to see, other than a proof-of-concept.
+At the time of writing this (17th August, 2020), we expect to be providing binaries for `Small World Deluxe` within the coming weeks/months as the project slowly becomes further realized. It is not worth providing such currently since the project has only just recently been commissioned and there's very little to see, other than a proof-of-concept.
 
 Be sure to check back often for further updates!
 
@@ -127,6 +127,14 @@ This could be due to the individual settings of your radio itself. For example, 
 
 If you have a particularly stubborn problem regarding this, then we'd be glad to help you out to the best of our ability within the [Issues section of this code repository](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/issues). You might also benefit from reading [the Hamlib FAQ](https://github.com/Hamlib/Hamlib/wiki/FAQ) as well, since this software is powered by it in some respects.
 
+##### I'm being asked to contribute 'crash reports'? What's this and why am I being asked?
+
+This is a very good question. Our application reports on such metrics so that we may better develop `Small World Deluxe` that tailors to the needs of our users. You are given the choice of whether to consent to this or not upon initial program start, and then the ability to change said choice later on by navigating to the Setting's Dialog.
+
+![smallworld_ask_consent_1](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/raw/develop/assets/images/screenshots/2020-08-17/Screenshot_20200817_125947.png)
+
+We feel that this tailors to most user's privacy needs although we'd really appreciate to hear all and any feedback on this. It is the community surrounding Small World Deluxe that drives the development in general.
+
 ##### How may I contribute to the project?
 
 You may contribute to `Small World Deluxe` in a number of ways, and they don't all necessarily require you to be a computer programmer of skill either!
@@ -141,13 +149,13 @@ Although if you do have skills with regard to computer programming and would lik
 
 ##### Who are the authors?
 
-Please refer to the files, `AUTHORS` and `CREDITS`.
+Please refer to the files, `AUTHORS` and `CREDITS`, with the latter being a collection of who's responsible for writing the libraries we make use of. We try and keep this file up-to-date as much as possible but we are only Human (to some degree!).
 
 ##### What programming language is Small World written in?
 
-At present, it is largely written in `C++` with small amounts of `C` here and there. Any scripts responsible for building this application are written with [CMake](https://cmake.org/) for maximum portability across a multitude of system architectures and operating systems themselves. The libraries that `Small World Deluxe` depends upon might contain other bits from differing languages though, mind you :)
+At present, it is largely written in `C++` with sprinklings of `C` here and there. Any scripts responsible for building this application are both largely and preferrably written with [CMake](https://cmake.org/) for maximum portability across a multitude of system architectures and operating systems. The libraries that `Small World Deluxe` depends upon might contain other bits from differing languages though, mind you, with `Fortran` being a big one for radio-related code :)
 
-We also use `YAML` for CI/CD with [GitLab Runner](https://docs.gitlab.com/runner/), for example.
+We also use `YAML` extensively for controlling CI/CD-related actions with [GitLab Runner](https://docs.gitlab.com/runner/), for example.
 
 ##### Is there a release date?
 
@@ -157,12 +165,15 @@ There is no firm date for when `Small World Deluxe` may be released as a 'stable
 
 We have verified, `Small World Deluxe`, to be working okay on the following operating systems:
 
-- [Microsoft Windows 10](https://en.wikipedia.org/wiki/Windows_10) Professional & Home
-  - MinGW (April, 2020)
-- [Linux](https://en.wikipedia.org/wiki/Linux)
-  - [Linux Mint](https://en.wikipedia.org/wiki/Linux_Mint) 19.2 Cinnamon
-  - [Manjaro KDE Linux 20.0.1](https://manjaro.org/)
-  - Kernel: <= `4.15.0`
+- x86_64
+  - [Microsoft Windows 10](https://en.wikipedia.org/wiki/Windows_10) Professional & Home
+    - MinGW (April, 2020)
+  - [Linux](https://en.wikipedia.org/wiki/Linux)
+    - [Arch Linux](https://www.archlinux.org/) (August, 2020)
+    - [Linux Mint](https://en.wikipedia.org/wiki/Linux_Mint) 19.2 Cinnamon
+    - [Linux Mint](https://en.wikipedia.org/wiki/Linux_Mint) [20 Cinnamon "Ulyana"](https://linuxmint.com/edition.php?id=281) & [KDE](https://kde.org/)
+    - [Manjaro KDE Linux 20.0.1](https://manjaro.org/)
+    - Kernel: <= `4.15.0` & `5.4.0-42-generic`
 
 Please remember that this is not a complete list!
 

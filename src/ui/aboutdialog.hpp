@@ -49,7 +49,7 @@ class AboutDialog : public QDialog
 
 public:
     explicit AboutDialog(QWidget *parent = nullptr);
-    ~AboutDialog();
+    ~AboutDialog() override;
 
 private slots:
     void on_buttonBox_close_rejected();
