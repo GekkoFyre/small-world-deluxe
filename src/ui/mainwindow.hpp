@@ -1,12 +1,12 @@
 /**
- **  ______  ______  ___   ___  ______  ______  ______  ______       
- ** /_____/\/_____/\/___/\/__/\/_____/\/_____/\/_____/\/_____/\      
- ** \:::_ \ \::::_\/\::.\ \\ \ \:::_ \ \:::_ \ \::::_\/\:::_ \ \     
- **  \:\ \ \ \:\/___/\:: \/_) \ \:\ \ \ \:\ \ \ \:\/___/\:(_) ) )_   
- **   \:\ \ \ \::___\/\:. __  ( (\:\ \ \ \:\ \ \ \::___\/\: __ `\ \  
- **    \:\/.:| \:\____/\: \ )  \ \\:\_\ \ \:\/.:| \:\____/\ \ `\ \ \ 
- **     \____/_/\_____\/\__\/\__\/ \_____\/\____/_/\_____\/\_\/ \_\/ 
- **                                                                 
+ **  ______  ______  ___   ___  ______  ______  ______  ______
+ ** /_____/\/_____/\/___/\/__/\/_____/\/_____/\/_____/\/_____/\
+ ** \:::_ \ \::::_\/\::.\ \\ \ \:::_ \ \:::_ \ \::::_\/\:::_ \ \
+ **  \:\ \ \ \:\/___/\:: \/_) \ \:\ \ \ \:\ \ \ \:\/___/\:(_) ) )_
+ **   \:\ \ \ \::___\/\:. __  ( (\:\ \ \ \:\ \ \ \::___\/\: __ `\ \
+ **    \:\/.:| \:\____/\: \ )  \ \\:\_\ \ \:\/.:| \:\____/\ \ `\ \ \
+ **     \____/_/\_____\/\__\/\__\/ \_____\/\____/_/\_____\/\_\/ \_\/
+ **
  **
  **   If you have downloaded the source code for "Small World Deluxe" and are reading this,
  **   then thank you from the bottom of our hearts for making use of our hard work, sweat
@@ -120,6 +120,8 @@ private slots:
     void on_action_Incoming_triggered();
     void on_action_Outgoing_triggered();
     void on_actionPrint_triggered();
+    void on_action_Documentation_triggered();
+    void on_action_SendReport_triggered();
 
     void on_action_Connect_triggered();
     void on_action_Disconnect_triggered();
@@ -191,6 +193,7 @@ private slots:
     void on_pushButton_sstv_rx_saved_image_nav_right_clicked();
     void on_pushButton_sstv_rx_saved_image_load_clicked();
     void on_pushButton_sstv_rx_saved_image_delete_clicked();
+    void on_pushButton_sstv_rx_remove_clicked();
 
     //
     // SSTV related (TX)
@@ -199,9 +202,6 @@ private slots:
     void on_pushButton_sstv_tx_navigate_right_clicked();
     void on_pushButton_sstv_tx_load_image_clicked();
     void on_pushButton_sstv_tx_send_image_clicked();
-
-    void on_pushButton_sstv_rx_remove_clicked();
-
     void on_pushButton_sstv_tx_remove_clicked();
 
 protected slots:

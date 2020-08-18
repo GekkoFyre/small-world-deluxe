@@ -1,12 +1,12 @@
 /**
- **  ______  ______  ___   ___  ______  ______  ______  ______       
- ** /_____/\/_____/\/___/\/__/\/_____/\/_____/\/_____/\/_____/\      
- ** \:::_ \ \::::_\/\::.\ \\ \ \:::_ \ \:::_ \ \::::_\/\:::_ \ \     
- **  \:\ \ \ \:\/___/\:: \/_) \ \:\ \ \ \:\ \ \ \:\/___/\:(_) ) )_   
- **   \:\ \ \ \::___\/\:. __  ( (\:\ \ \ \:\ \ \ \::___\/\: __ `\ \  
- **    \:\/.:| \:\____/\: \ )  \ \\:\_\ \ \:\/.:| \:\____/\ \ `\ \ \ 
- **     \____/_/\_____\/\__\/\__\/ \_____\/\____/_/\_____\/\_\/ \_\/ 
- **                                                                 
+ **  ______  ______  ___   ___  ______  ______  ______  ______
+ ** /_____/\/_____/\/___/\/__/\/_____/\/_____/\/_____/\/_____/\
+ ** \:::_ \ \::::_\/\::.\ \\ \ \:::_ \ \:::_ \ \::::_\/\:::_ \ \
+ **  \:\ \ \ \:\/___/\:: \/_) \ \:\ \ \ \:\ \ \ \:\/___/\:(_) ) )_
+ **   \:\ \ \ \::___\/\:. __  ( (\:\ \ \ \:\ \ \ \::___\/\: __ `\ \
+ **    \:\/.:| \:\____/\: \ )  \ \\:\_\ \ \:\/.:| \:\____/\ \ `\ \ \
+ **     \____/_/\_____\/\__\/\__\/ \_____\/\____/_/\_____\/\_\/ \_\/
+ **
  **
  **   If you have downloaded the source code for "Small World Deluxe" and are reading this,
  **   then thank you from the bottom of our hearts for making use of our hard work, sweat
@@ -39,6 +39,7 @@
 #include "ui_mainwindow.h"
 #include "src/ui/aboutdialog.hpp"
 #include "src/ui/spectrodialog.hpp"
+#include "src/ui/sendreportdialog.hpp"
 #include "src/ui/widgets/gk_submit_msg.hpp"
 #include "src/models/tableview/gk_frequency_model.hpp"
 #include "src/models/tableview/gk_logger_model.hpp"
@@ -2651,5 +2652,22 @@ void MainWindow::on_pushButton_sstv_rx_remove_clicked()
  */
 void MainWindow::on_pushButton_sstv_tx_remove_clicked()
 {
+    return;
+}
+
+void MainWindow::on_action_Documentation_triggered()
+{
+    return;
+}
+
+void MainWindow::on_action_SendReport_triggered()
+{
+    QPointer<SendReportDialog> gkSendReport = new SendReportDialog(this);
+    gkSendReport->setWindowFlags(Qt::Window);
+    gkSendReport->setAttribute(Qt::WA_DeleteOnClose, true);
+    QObject::connect(gkSendReport, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
+
+    gkSendReport->show();
+
     return;
 }
