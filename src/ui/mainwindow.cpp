@@ -183,6 +183,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         global_rx_audio_volume = 0.0;
         global_tx_audio_volume = 0.0;
 
+        gk_spectro_start_time = 0;
+        gk_spectro_latest_time = 0;
+
         //
         // SSTV related
         //
@@ -380,7 +383,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 gkEventLogger->publishEvent(tr("Events log initiated."), GkSeverity::Info);
 
                 // Initialize the Radio Database pointer!
-                if (gkRadioPtr.get() == nullptr) {
+                if (gkRadioPtr == nullptr) {
                     gkRadioPtr = std::make_shared<GkRadio>();
                 }
 
@@ -556,10 +559,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // Set a default value for the Volume Slider and its QLabel
         //
         const int vol_slider_max_val = ui->verticalSlider_vol_control->maximum();
-        const float real_vol_val = (static_cast<float>(ui->verticalSlider_vol_control->value()) / vol_slider_max_val);
+        const float real_vol_val = (static_cast<float>(ui->verticalSlider_vol_control->value()) / static_cast<float>(vol_slider_max_val));
         updateVolumeSliderLabel(real_vol_val);
 
-        if (input_audio_buf.get() != nullptr) {
+        if (input_audio_buf != nullptr) {
             if (pref_input_device.dev_number > 0 && pref_input_device.dev_input_channel_count > 0) {
                 on_pushButton_radio_receive_clicked();
             }
@@ -1193,7 +1196,7 @@ void MainWindow::updateVolumeDisplayWidgets()
                 //
                 auto audio_buf_tmp = std::make_shared<PaAudioBuf<qint16>>(*input_audio_buf);
                 std::vector<qint16> recv_buf;
-                while (audio_buf_tmp->size() > 0) {
+                while (!audio_buf_tmp->empty()) {
                     recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
                     recv_buf.push_back(audio_buf_tmp->grab());
                 }
@@ -1624,6 +1627,8 @@ void MainWindow::infoBar()
  */
 void MainWindow::uponExit()
 {
+    emit stopRecording();
+
     GkDb->write_mainwindow_settings(QString::number(this->window()->size().width()), general_mainwindow_cfg::WindowHSize);
     GkDb->write_mainwindow_settings(QString::number(this->window()->size().height()), general_mainwindow_cfg::WindowVSize);
     GkDb->write_mainwindow_settings(QString::number(this->window()->isMaximized()), general_mainwindow_cfg::WindowMaximized);
@@ -1764,76 +1769,74 @@ void MainWindow::updateSpectrograph()
     }
     #else
     try {
-        if (inputAudioStream->isOpen() && pref_input_device.is_dev_active) {
-            while (inputAudioStream->isActive()) {
-                std::vector<float> fftData;
-                fftData.reserve(GK_FFT_SIZE + 1);
-                const qint64 measure_start_time = QDateTime::currentMSecsSinceEpoch();
-                while (fftData.size() < GK_FFT_SIZE) {
-                    //
-                    // Input audio stream is open and active!
-                    //
-                    auto audio_buf_tmp = std::make_shared<PaAudioBuf<qint16>>(*input_audio_buf); // TODO: Possible SEGFAULT related to this with shutdown of Small World Deluxe...
-                    std::vector<qint16> recv_buf;
-                    while (!audio_buf_tmp->empty()) {
-                        recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
-                        recv_buf.push_back(audio_buf_tmp->grab());
-                    }
+        while (inputAudioStream->isActive() && inputAudioStream->isOpen() && pref_input_device.is_dev_active) {
+            std::vector<float> fftData;
+            fftData.reserve(GK_FFT_SIZE + 1);
+            const qint64 measure_start_time = QDateTime::currentMSecsSinceEpoch();
+            auto audio_buf_tmp = std::make_shared<PaAudioBuf<qint16>>(*input_audio_buf); // TODO: Possible SEGFAULT related to this with shutdown of Small World Deluxe...
+            while (fftData.size() < GK_FFT_SIZE) {
+                //
+                // Input audio stream is open and active!
+                //
+                std::vector<qint16> recv_buf;
+                while (!audio_buf_tmp->empty()) {
+                    recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
+                    recv_buf.push_back(audio_buf_tmp->grab());
+                }
 
-                    if (!recv_buf.empty()) {
-                        fftData.push_back(*recv_buf.data());
-                        recv_buf.clear();
-                        recv_buf.shrink_to_fit();
+                if (!recv_buf.empty()) {
+                    fftData.push_back(*recv_buf.data());
+                    recv_buf.clear();
+                    recv_buf.shrink_to_fit();
 
-                        if (fftData.size() == GK_FFT_SIZE) {
-                            std::vector<GkFFTComplex> fftDataVals;
-                            fftDataVals = gkFFT->FFTCompute(fftData, fftData.size(), (GK_FFT_SIZE / 2), GK_FFT_SIZE);
+                    if (fftData.size() == GK_FFT_SIZE) {
+                        std::vector<GkFFTComplex> fftDataVals;
+                        fftDataVals = gkFFT->FFTCompute(fftData, fftData.size(), (GK_FFT_SIZE / 2), GK_FFT_SIZE);
 
-                            //
-                            // Perform the timing and date calculations!
-                            //
-                            const qint64 measure_end_time = QDateTime::currentMSecsSinceEpoch(); // The end time at the finalization of all calculations
-                            const qint64 total_calc_time = measure_end_time - measure_start_time; // The total time it took to calculate everything
-                            gk_spectro_latest_time = measure_end_time;
+                        //
+                        // Perform the timing and date calculations!
+                        //
+                        const qint64 measure_end_time = QDateTime::currentMSecsSinceEpoch(); // The end time at the finalization of all calculations
+                        const qint64 total_calc_time = measure_end_time - measure_start_time; // The total time it took to calculate everything
+                        gk_spectro_latest_time = measure_end_time;
 
-                            const qint64 spectro_time_diff = total_calc_time;
-                            if (spectro_time_diff > SPECTRO_Y_AXIS_SIZE) {
-                                // Stop the y-axis from growing more than `SPECTRO_Y_AXIS_SIZE` in size!
-                                gk_spectro_start_time = gk_spectro_latest_time - SPECTRO_Y_AXIS_SIZE;
-                            }
-
-                            //
-                            // The input data are sound intensity values taken over time, equally spaced. They are
-                            // said to be, appropriately enough, in the time domain. The output of the FT is said
-                            // to be in the frequency domain because the horizontal axis is frequency. The vertical
-                            // scale remains intensity. Although it isn't obvious from the input data, there is phase
-                            // information in the input as well. Although all of the sound is sinusoidal, there is
-                            // nothing that fixes the phases of the sine waves. This phase information appears in
-                            // the frequency domain as the phases of the individual complex numbers, but often we
-                            // don't care about it (and often we do too!). It just depends upon what you are doing!
-                            //
-                            // https://stackoverflow.com/questions/1679974/converting-an-fft-to-a-spectogram/10643179
-                            //
-
-                            std::vector<double> magnitude_buf;
-                            magnitude_buf.reserve(fftDataVals.size() + 1);
-                            for (const auto &calc: fftDataVals) {
-                                const double magnitude = std::sqrt(std::pow(calc.real, 2) + std::pow(calc.imaginary, 2));
-                                magnitude_buf.push_back(magnitude);
-                            }
-
-                            QVector<double> fft_spectro_vals;
-                            fft_spectro_vals.reserve(GK_FFT_SAMPLE_SIZE + 1);
-                            for (size_t i = 0; i < GK_FFT_SAMPLE_SIZE; ++i) {
-                                fft_spectro_vals.push_back(fftDataVals[i].imaginary);
-                            }
-
-                            gkSpectroGui->insertData(fft_spectro_vals, 1); // This is the data for the spectrograph / waterfall itself!
-                            emit refreshSpectrograph(gk_spectro_latest_time, gk_spectro_start_time);
-
-                            magnitude_buf.clear();
-                            fftDataVals.clear();
+                        const qint64 spectro_time_diff = total_calc_time;
+                        if (spectro_time_diff > SPECTRO_Y_AXIS_SIZE) {
+                            // Stop the y-axis from growing more than `SPECTRO_Y_AXIS_SIZE` in size!
+                            gk_spectro_start_time = gk_spectro_latest_time - SPECTRO_Y_AXIS_SIZE;
                         }
+
+                        //
+                        // The input data are sound intensity values taken over time, equally spaced. They are
+                        // said to be, appropriately enough, in the time domain. The output of the FT is said
+                        // to be in the frequency domain because the horizontal axis is frequency. The vertical
+                        // scale remains intensity. Although it isn't obvious from the input data, there is phase
+                        // information in the input as well. Although all of the sound is sinusoidal, there is
+                        // nothing that fixes the phases of the sine waves. This phase information appears in
+                        // the frequency domain as the phases of the individual complex numbers, but often we
+                        // don't care about it (and often we do too!). It just depends upon what you are doing!
+                        //
+                        // https://stackoverflow.com/questions/1679974/converting-an-fft-to-a-spectogram/10643179
+                        //
+
+                        std::vector<double> magnitude_buf;
+                        magnitude_buf.reserve(fftDataVals.size() + 1);
+                        for (const auto &calc: fftDataVals) {
+                            const double magnitude = std::sqrt(std::pow(calc.real, 2) + std::pow(calc.imaginary, 2));
+                            magnitude_buf.push_back(magnitude);
+                        }
+
+                        QVector<double> fft_spectro_vals;
+                        fft_spectro_vals.reserve(GK_FFT_SAMPLE_SIZE + 1);
+                        for (size_t i = 0; i < GK_FFT_SAMPLE_SIZE; ++i) {
+                            fft_spectro_vals.push_back(fftDataVals[i].imaginary);
+                        }
+
+                        gkSpectroGui->insertData(fft_spectro_vals, 1); // This is the data for the spectrograph / waterfall itself!
+                        emit refreshSpectrograph(gk_spectro_latest_time, gk_spectro_start_time);
+
+                        magnitude_buf.clear();
+                        fftDataVals.clear();
                     }
                 }
             }
@@ -1866,7 +1869,7 @@ void MainWindow::on_verticalSlider_vol_control_valueChanged(int value)
     // simple playback.
     //
     const int vol_slider_max_val = ui->verticalSlider_vol_control->maximum();
-    const float real_val = (static_cast<float>(value) / vol_slider_max_val);
+    const float real_val = (static_cast<float>(value) / static_cast<float>(vol_slider_max_val));
 
     if (rx_vol_control_selected) {
         if (inputAudioStream != nullptr) {
@@ -2066,7 +2069,7 @@ void MainWindow::on_comboBox_select_callsign_use_currentIndexChanged(int index)
 void MainWindow::closeEvent(QCloseEvent *event)
 {
     emit gkExitApp();
-    event->ignore();
+    event->accept();
 }
 
 /**
@@ -2270,8 +2273,8 @@ void MainWindow::disconnectRigInMemory(std::shared_ptr<Rig> rig_to_disconnect, c
 {
     Q_UNUSED(rig_to_disconnect);
 
-    if (gkRadioPtr.get() != nullptr) {
-        if (gkRadioPtr->gkRig.get() != nullptr) {
+    if (gkRadioPtr != nullptr) {
+        if (gkRadioPtr->gkRig != nullptr) {
             if (gkRadioPtr->is_open) {
                 // Free the pointer(s) for the Hamlib library!
                 rig_to_disconnect->close(); // Close port

@@ -713,9 +713,9 @@ void DialogSettings::init_station_info()
         ui->tableWidget_station_info->setColumnCount(3);
         ui->tableWidget_station_info->setRowCount(1);
 
-        QTableWidgetItem *header_band = new QTableWidgetItem(tr("Band"));
-        QTableWidgetItem *header_offset = new QTableWidgetItem(tr("Offset"));
-        QTableWidgetItem *header_antenna_desc = new QTableWidgetItem(tr("Antenna Description"));
+        auto *header_band = new QTableWidgetItem(tr("Band"));
+        auto *header_offset = new QTableWidgetItem(tr("Offset"));
+        auto *header_antenna_desc = new QTableWidgetItem(tr("Antenna Description"));
 
         header_band->setTextAlignment(Qt::AlignHCenter);
         header_offset->setTextAlignment(Qt::AlignHCenter);
@@ -1064,7 +1064,7 @@ void DialogSettings::prefill_com_baud_speed(const AmateurRadio::com_baud_rates &
 void DialogSettings::enable_device_port_options()
 {
     bool widget_enable = false;
-    if (usb_ports_active == false && com_ports_active == false) {
+    if (!usb_ports_active && !com_ports_active) {
         widget_enable = false;
     } else {
         widget_enable = true;

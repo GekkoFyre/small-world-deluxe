@@ -101,8 +101,7 @@ void GkEventLogger::publishEvent(const QString &event, const GkSeverity &severit
         event_log.event_no = setEventNo(); // Set the event number accordingly!
     }
 
-    QDateTime curr_time;
-    event_log.mesg.date = curr_time.currentMSecsSinceEpoch();
+    event_log.mesg.date = QDateTime::currentMSecsSinceEpoch();
 
     eventLogDb.push_back(event_log);
     emit sendEvent(event_log);

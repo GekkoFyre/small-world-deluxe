@@ -94,10 +94,6 @@ public:
     explicit PaAudioBuf(int buffer_size, const GekkoFyre::Database::Settings::Audio::GkDevice &pref_output_device,
                         const GekkoFyre::Database::Settings::Audio::GkDevice &pref_input_device);
     virtual ~PaAudioBuf();
-
-    PaAudioBuf operator*(const PaAudioBuf &) const;
-    PaAudioBuf operator+(const PaAudioBuf &) const;
-
     bool is_rec_active;
 
     int playbackCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
@@ -110,12 +106,12 @@ public:
                             const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags, void *userData);
     void setVolume(const float &value);
 
-    virtual size_t size() const;
-    virtual bool empty() const;
-    virtual bool clear() const;
+    [[nodiscard]] virtual size_t size() const;
+    [[nodiscard]] virtual bool empty() const;
+    [[nodiscard]] virtual bool clear() const;
     virtual T grab() const;
     virtual void append(const std::vector<T> &vec);
-    virtual bool full() const;
+    [[nodiscard]] virtual bool full() const;
 
 private:
     std::shared_ptr<GekkoFyre::GkCircBuffer<T>> gkCircBuffer;
@@ -126,10 +122,6 @@ private:
     int maxFrameIndex;
     int frameIndex;
     float calcVolIdx; // A floating-point value between 0.0 - 1.0 that determines the amplitude of the audio signal (i.e. raw data buffer).
-
-    std::vector<T> fillVecZeros(const int &buf_size);
-
-    portaudio::SampleDataFormat sampleFormatConvert(const unsigned long sample_rate);
 
 };
 

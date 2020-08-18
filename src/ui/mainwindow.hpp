@@ -205,7 +205,7 @@ private slots:
     void on_pushButton_sstv_tx_remove_clicked();
 
 protected slots:
-    void closeEvent(QCloseEvent *event);
+    void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
 
     //
     // Radio and Hamlib specific functions
@@ -314,7 +314,6 @@ private:
     bool rx_vol_control_selected;
     double global_rx_audio_volume;
     double global_tx_audio_volume;
-    bool recording_in_progress;
 
     //
     // Multithreading

@@ -399,8 +399,7 @@ QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDevice
     QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> usb_hash;
     try {
         // Enumerate USB devices!
-        QUsbInfo usb_info;
-        auto list = usb_info.devices();
+        auto list = QUsbInfo::devices();
 
         for (const auto &device: list) {
             GekkoFyre::Database::Settings::GkUsbPort usb;
