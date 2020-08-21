@@ -70,6 +70,8 @@ endif()
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CXX_STANDARD 17)
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 #
 # https://doc.qt.io/qt-5/cmake-manual.html
 # https://cmake.org/cmake/help/v3.15/manual/cmake-qt.7.html#automoc
@@ -333,6 +335,14 @@ else()
     message(FATAL_ERROR "The 'QWT' graphing/charting library could not be found!")
 endif(QWT_FOUND)
 
+find_package(PAM REQUIRED)
+if (PAM_FOUND)
+    include_directories(${PAM_INCLUDE_DIR})
+    set(LIBS ${LIBS} ${PAM_LIBRARIES})
+else()
+    message(FATAL_ERROR "The 'PAM' authentication libraries could not be found!")
+endif(PAM_FOUND)
+
 #
 # https://xiph.org/vorbis/
 #
@@ -547,6 +557,7 @@ set(GALAXY_UI_CPP
     src/gk_frequency_list.cpp
     src/gk_string_funcs.cpp
     src/gk_logger.cpp
+    src/gk_system.cpp
     src/ui/widgets/gk_submit_msg.cpp
     src/ui/widgets/gk_display_image.cpp
     src/models/tableview/gk_frequency_model.cpp
@@ -620,6 +631,7 @@ set(GALAXY_OBJ_HEADERS
     src/gk_frequency_list.hpp
     src/gk_string_funcs.hpp
     src/gk_logger.hpp
+    src/gk_system.hpp
     src/ui/widgets/gk_submit_msg.hpp
     src/ui/widgets/gk_display_image.hpp
     src/models/tableview/gk_frequency_model.hpp
@@ -740,6 +752,7 @@ set(SWRLD_EXEC ${SWRLD_EXEC}
     src/main.cpp)
 
 add_executable(smallworld WIN32 ${SWRLD_EXEC})
+target_compile_options(smallworld PRIVATE -fPIC)
 target_link_libraries(smallworld PRIVATE galaxy)
 
 if(GK_CUDA_FFT)
@@ -794,6 +807,7 @@ endif()
 if (GFYRE_ENABLE_PVS_STUDIO)
     include(PVS-Studio.cmake)
     pvs_studio_add_target(TARGET smallworld.analyze ALL
+                          PREPROCESSOR clang
                           OUTPUT FORMAT errorfile
                           ANALYZE smallworld galaxy
                           LOG swd.err)

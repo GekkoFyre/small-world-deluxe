@@ -53,6 +53,7 @@
 #include "src/gk_fft.hpp"
 #include "src/gk_logger.hpp"
 #include "src/gk_modem.hpp"
+#include "src/gk_system.hpp"
 #include "src/ui/widgets/gk_display_image.hpp"
 #include "src/ui/gkaudioplaydialog.hpp"
 #include "src/ui/gk_vu_meter_widget.hpp"
@@ -281,6 +282,7 @@ private:
     QPointer<GkAudioPlayDialog> gkAudioPlayDlg;
     QPointer<GekkoFyre::GkVuMeter> gkVuMeter;
     QPointer<GekkoFyre::GkModem> gkModem;
+    QPointer<GekkoFyre::GkSystem> gkSystem;
 
     std::shared_ptr<QCommandLineParser> gkCliParser;
     // std::shared_ptr<QPrinter> printer;

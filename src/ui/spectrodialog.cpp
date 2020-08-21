@@ -35,7 +35,7 @@
  **
  ****************************************************************************************************/
 
-#include "spectrodialog.hpp"
+#include "src/ui/spectrodialog.hpp"
 #include "ui_spectrodialog.h"
 #include <QMessageBox>
 #include <utility>

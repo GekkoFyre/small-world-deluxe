@@ -69,6 +69,12 @@ int main(int argc, char *argv[])
         // We wish to enforce the encoding on Microsoft Windows (typically UTF-8)
         std::locale::global(boost::locale::generator().generate("en_US.UTF-8"));
         #else
+        //
+        // Run the application as `sudo`
+        // https://stackoverflow.com/questions/47885043/proper-method-to-acquire-root-access-on-linux-for-qt-applications
+        //
+        QCoreApplication::setSetuidAllowed(true);
+
         // This suffices for Linux, Apple OS/X, etc.
         std::locale::global(std::locale::classic());
         #endif

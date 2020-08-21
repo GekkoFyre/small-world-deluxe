@@ -395,51 +395,55 @@ void RadioLibs::hamlibStatus(const int &retcode)
 QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDevices()
 {
     QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> usb_hash;
+
     try {
         // Enumerate USB devices!
         auto list = QUsbInfo::devices();
+        if (!list.isEmpty()) {
+            for (const auto &device: list) {
+                GekkoFyre::Database::Settings::GkUsbPort usb;
+                usb.port = (quint16)device.port;
+                usb.bus = (quint16)device.bus;
+                usb.pid = device.pid;
+                usb.vid = device.vid;
+                usb.d_class = (quint16)device.dClass;
+                usb.d_sub_class = (quint16)device.dSubClass;
 
-        for (const auto &device: list) {
-            GekkoFyre::Database::Settings::GkUsbPort usb;
-            usb.port = (quint16)device.port;
-            usb.bus = (quint16)device.bus;
-            usb.pid = device.pid;
-            usb.vid = device.vid;
-            usb.d_class = (quint16)device.dClass;
-            usb.d_sub_class = (quint16)device.dSubClass;
-
-            libusb_device **devs;
-            int r = libusb_init(nullptr);
-            if (r < 0) {
-                throw std::runtime_error(tr("Error whilst initializing `libusb`!").toStdString());
-            }
-
-            ssize_t cnt = libusb_get_device_list(nullptr, &devs);
-            if (cnt < 0) {
-                libusb_exit(nullptr);
-                throw std::runtime_error(tr("Error whilst initializing `libusb`!").toStdString());
-            }
-
-            auto usb_bos_info = printLibUsb(devs);
-            for (const auto &bos_dev: usb_bos_info) {
-                if ((bos_dev.pid == usb.pid) && (bos_dev.vid == usb.vid)) {
-                    // We have a match!
-                    usb.bos_usb = bos_dev;
+                libusb_device **devs;
+                int r = libusb_init(nullptr);
+                if (r < 0) {
+                    throw std::runtime_error(tr("Error whilst initializing `libusb`!").toStdString());
                 }
+
+                ssize_t cnt = libusb_get_device_list(nullptr, &devs);
+                if (cnt < 0) {
+                    libusb_exit(nullptr);
+                    throw std::runtime_error(tr("Error whilst initializing `libusb`!").toStdString());
+                }
+
+                auto usb_bos_info = printLibUsb(devs);
+                if (!usb_bos_info.empty()) {
+                    for (const auto &bos_dev: usb_bos_info) {
+                        if ((bos_dev.pid == usb.pid) && (bos_dev.vid == usb.vid)) {
+                            // We have a match!
+                            usb.bos_usb = bos_dev;
+                        }
+                    }
+                }
+
+                libusb_free_device_list(devs, 1);
+                libusb_exit(nullptr);
+
+                #ifdef _WIN32
+                    // TODO: URGENT - Finish this section!
+                #elif __linux__
+                    std::stringstream ss;
+                    ss << "ttyUSB" << usb.port;
+                #endif
+
+                usb.name = QString::fromStdString(ss.str());
+                usb_hash.insert(usb.port, usb);
             }
-
-            libusb_free_device_list(devs, 1);
-            libusb_exit(nullptr);
-
-            #ifdef _WIN32
-            // TODO: URGENT - Finish this section!
-            #elif __linux__
-            std::stringstream ss;
-            ss << "ttyUSB" << usb.port;
-            #endif
-
-            usb.name = QString::fromStdString(ss.str());
-            usb_hash.insert(usb.port, usb);
         }
 
         return usb_hash;
@@ -507,26 +511,40 @@ std::vector<GkBosUsb> RadioLibs::printLibUsb(libusb_device **devs)
 
                 usb.lib_usb = lib_usb;
                 auto usb_bos_info = printBosUsb(handle);
-                for (const auto &bos_data: usb_bos_info) {
-                    if ((bos_data.vid == usb.vid) && (bos_data.pid == usb.pid)) {
-                        // We have a match!
-                        GkBosUsb bos {};
+                if (!usb_bos_info.empty()) {
+                    for (const auto &bos_data: usb_bos_info) {
+                        if ((bos_data.vid == usb.vid) && (bos_data.pid == usb.pid)) {
+                            // We have a match!
+                            GkBosUsb bos {};
 
-                        bos.usb_2.dev_cap_type = bos_data.usb_2.dev_cap_type;
-                        bos.usb_2.bm_attribs = bos_data.usb_2.bm_attribs;
+                            bos.usb_2.dev_cap_type = bos_data.usb_2.dev_cap_type;
+                            bos.usb_2.bm_attribs = bos_data.usb_2.bm_attribs;
 
-                        bos.usb_3.dev_cap_type = bos_data.usb_3.dev_cap_type;
-                        bos.usb_3.bm_attribs = bos_data.usb_3.bm_attribs;
-                        bos.usb_3.write_speed_supported = bos_data.usb_3.write_speed_supported;
-                        bos.usb_3.functionality_support = bos_data.usb_3.functionality_support;
-                        bos.usb_3.b_u1_dev_exit_lat = bos_data.usb_3.b_u1_dev_exit_lat;
-                        bos.usb_3.b_u2_dev_exit_lat = bos_data.usb_3.b_u2_dev_exit_lat;
+                            bos.usb_3.dev_cap_type = bos_data.usb_3.dev_cap_type;
+                            bos.usb_3.bm_attribs = bos_data.usb_3.bm_attribs;
+                            bos.usb_3.write_speed_supported = bos_data.usb_3.write_speed_supported;
+                            bos.usb_3.functionality_support = bos_data.usb_3.functionality_support;
+                            bos.usb_3.b_u1_dev_exit_lat = bos_data.usb_3.b_u1_dev_exit_lat;
+                            bos.usb_3.b_u2_dev_exit_lat = bos_data.usb_3.b_u2_dev_exit_lat;
 
-                        usb.usb_3 = bos.usb_3;
-                        usb.usb_2 = bos.usb_2;
-                        break;
+                            usb.usb_3 = bos.usb_3;
+                            usb.usb_2 = bos.usb_2;
+                            break;
+                        }
                     }
                 }
+            } else if (ret == LIBUSB_ERROR_NOT_SUPPORTED) {
+                // Missing driver, perhaps?
+                throw std::runtime_error(tr("Unable to gather `libusb` handle; perhaps there is a missing driver?").toStdString());
+            } else if (ret == LIBUSB_ERROR_ACCESS) {
+                // Unknown error
+                throw std::runtime_error(tr("Insufficient permissions! Please try running Small World Deluxe as root/administrator.").toStdString());
+            } else if (ret == LIBUSB_ERROR_BUSY) {
+                std::cerr << tr("Given USB port is busy!").toStdString() << std::endl;
+                continue;
+            } else {
+                // Unknown error
+                throw std::runtime_error(tr("Unknown error pertaining to `libusb`.").toStdString());
             }
 
             usb_vec.push_back(usb);
@@ -620,7 +638,8 @@ std::vector<Database::Settings::GkBosUsb> RadioLibs::printBosUsb(libusb_device_h
  */
 void RadioLibs::print_exception(const std::exception &e, int level)
 {
-    gkEventLogger->publishEvent(e.what(), GkSeverity::Warning, "", true);
+    gkEventLogger->publishEvent(e.what(), GkSeverity::Warning, "", false);
+    QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok, QMessageBox::Ok);
 
     try {
         std::rethrow_if_nested(e);

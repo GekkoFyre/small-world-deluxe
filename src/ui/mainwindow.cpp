@@ -413,6 +413,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
 
         //
+        // Initialize the GkSystem library!
+        //
+        gkSystem = new GkSystem(this);
+
+        //
         // Setup the CLI parser and its settings!
         // https://doc.qt.io/qt-5/qcommandlineparser.html
         //
