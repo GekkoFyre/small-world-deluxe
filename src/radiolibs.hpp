@@ -85,7 +85,7 @@ public:
     GekkoFyre::AmateurRadio::GkConnType convGkConnTypeToEnum(const QString &conn_type);
     rig_port_e convGkConnTypeToHamlib(const GekkoFyre::AmateurRadio::GkConnType &conn_type);
 
-    void gkInitRadioRig(std::shared_ptr<AmateurRadio::Control::GkRadio> radio_ptr);
+    void gkInitRadioRig(const std::shared_ptr<AmateurRadio::Control::GkRadio> &radio_ptr);
 
     QMap<quint16, Database::Settings::GkUsbPort> enumUsbDevices();
     std::vector<Database::Settings::GkBosUsb> printLibUsb(libusb_device **devs);

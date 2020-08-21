@@ -49,6 +49,8 @@
 # https://hub.docker.com/r/burningdaylight/docker-mingw-qt5/dockerfile
 #
 
+ARG DOCKER_TAG=qt
+
 # Use the official Arch Linux image as a parent image...
 FROM archlinux:latest
 MAINTAINER "Phobos A. D'thorga <phobos.gekko@gekkofyre.io>"
@@ -63,6 +65,11 @@ WORKDIR /opt/gekkofyre/app
 #
 RUN pacman -Sy --noconfirm
 RUN pacman -Syyu --noconfirm
+RUN pacman -S git --noconfirm
+RUN pacman -S sudo --noconfirm
+RUN pacman -S fakeroot --noconfirm
+RUN pacman -S binutils --noconfirm
+RUN pacman -S base-devel --noconfirm
 
 # Create devel user...
 RUN useradd -m -d /home/devel -u 1000 -U -G users,tty -s /bin/bash devel
@@ -81,7 +88,109 @@ RUN  mkdir "${BUILDDIR}" && cd "${BUILDDIR}" && \
 
 USER root
 
-RUN pacman -S base-devel --noconfirm
+# Add mingw-repo
+RUN    echo "[ownstuff]" >> /etc/pacman.conf \
+    && echo "SigLevel = Optional TrustAll" >> /etc/pacman.conf \
+    && echo "Server = https://martchus.no-ip.biz/repo/arch/ownstuff/os/\$arch" >> /etc/pacman.conf \
+    && pacman -Sy
+
+# Install essential MinGW packages (from the repository immediately above)
+RUN pacman -S --noconfirm --noprogressbar \
+        mingw-w64-binutils \
+        mingw-w64-crt \
+        mingw-w64-gcc \
+        mingw-w64-headers \
+        mingw-w64-winpthreads \
+        mingw-w64-cmake \
+        mingw-w64-tools \
+        mingw-w64-zlib
+
+# Cleanup
+USER root
+RUN pacman -Scc --noconfirm
+RUN paccache -r -k0; \
+    rm -rf /usr/share/man/*; \
+    rm -rf /tmp/*; \
+    rm -rf /var/tmp/*;
+USER devel
+RUN yay -Scc
+
+ENV HOME=/home/devel
+
+WORKDIR /opt/gekkofyre/app
+ONBUILD USER root
+ONBUILD WORKDIR /
+
+USER root
+
+# Install Qt5 and some other MinGW-related packages (from the aforementioned repository)
+RUN pacman -S --noconfirm --noprogressbar \        
+        mingw-w64-bzip2 \
+        mingw-w64-expat \
+        mingw-w64-fontconfig \
+        mingw-w64-freeglut \
+        mingw-w64-freetype2 \
+        mingw-w64-gettext \
+        mingw-w64-libdbus \
+        mingw-w64-libiconv \
+        mingw-w64-libjpeg-turbo \
+        mingw-w64-libpng \
+        mingw-w64-libtiff \
+        mingw-w64-libxml2 \
+        mingw-w64-mariadb-connector-c \
+        mingw-w64-openssl \
+        mingw-w64-openjpeg \
+        mingw-w64-openjpeg2 \
+        mingw-w64-pcre \
+        mingw-w64-pdcurses \
+        mingw-w64-pkg-config \
+        mingw-w64-readline \
+        mingw-w64-sdl2 \
+        mingw-w64-sqlite \
+        mingw-w64-termcap \
+        mingw-w64-qt5-base \
+        mingw-w64-qt5-declarative \
+        mingw-w64-qt5-graphicaleffects \
+        mingw-w64-qt5-imageformats \
+        mingw-w64-qt5-location \
+        mingw-w64-qt5-multimedia \
+        mingw-w64-qt5-quickcontrols \
+        mingw-w64-qt5-script \
+        mingw-w64-qt5-sensors \
+        mingw-w64-qt5-svg \
+        mingw-w64-qt5-tools \
+        mingw-w64-qt5-translations \
+        mingw-w64-qt5-websockets \
+        mingw-w64-qt5-winextras
+
+# Install AUR packages
+USER devel
+RUN yay -S --noconfirm --noprogressbar --needed \
+        mingw-w64-boost \
+        mingw-w64-eigen \
+        mingw-w64-qt5-quickcontrols2 \
+        mingw-w64-qt5-serialport \
+        mingw-w64-configure \
+        mingw-w64-python-bin 
+
+# Cleanup
+USER root
+RUN pacman -Scc --noconfirm
+RUN paccache -r -k0; \
+    rm -rf /usr/share/man/*; \
+    rm -rf /tmp/*; \
+    rm -rf /var/tmp/*;
+USER devel
+RUN yay -Scc
+
+WORKDIR /opt/gekkofyre/app
+ONBUILD USER root
+ONBUILD WORKDIR /
+
+USER root
+RUN pacman -Sy --noconfirm
+RUN pacman -Syyu --noconfirm
+
 RUN pacman -S gcc --noconfirm
 RUN pacman -S gcc-fortran --noconfirm
 RUN pacman -S octave --noconfirm
@@ -90,7 +199,6 @@ RUN pacman -S gdb --noconfirm
 RUN pacman -S clang --noconfirm
 RUN pacman -S llvm --noconfirm
 RUN pacman -S llvm-libs --noconfirm
-RUN pacman -S binutils --noconfirm
 RUN pacman -S automake --noconfirm
 RUN pacman -S autoconf --noconfirm
 RUN pacman -S autoconf-archive --noconfirm
@@ -125,15 +233,16 @@ RUN pacman -S opusfile --noconfirm
 RUN pacman -S texinfo --noconfirm
 RUN pacman -S libusb-compat --noconfirm
 RUN pacman -S hamlib --noconfirm
-RUN pacman -S git --noconfirm
 RUN pacman -S cmake --noconfirm
 RUN pacman -S wget --noconfirm
 RUN pacman -S curl --noconfirm
 
+USER devel
 RUN yay -S conan --noconfirm
 
 # Make sure to cleanup after all the updates and installations are completed!
-RUN pacman -Sc --noconfirm
+USER root
+RUN pacman -Scc --noconfirm
 
 # Set the required environmental variables...
 ENV CC=/usr/bin/clang

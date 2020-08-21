@@ -506,28 +506,32 @@ std::vector<GkBosUsb> RadioLibs::printLibUsb(libusb_device **devs)
                 }
 
                 usb.lib_usb = lib_usb;
-                if (handle && desc.bcdUSB >= 0x0201) {
-                    auto usb_bos_info = printBosUsb(handle);
-                    GkBosUsb bos {};
+                auto usb_bos_info = printBosUsb(handle);
+                for (const auto &bos_data: usb_bos_info) {
+                    if ((bos_data.vid == usb.vid) && (bos_data.pid == usb.pid)) {
+                        // We have a match!
+                        GkBosUsb bos {};
 
-                    bos.usb_2.dev_cap_type = usb_bos_info.at(i).usb_2.dev_cap_type;
-                    bos.usb_2.bm_attribs = usb_bos_info.at(i).usb_2.bm_attribs;
+                        bos.usb_2.dev_cap_type = bos_data.usb_2.dev_cap_type;
+                        bos.usb_2.bm_attribs = bos_data.usb_2.bm_attribs;
 
-                    bos.usb_3.dev_cap_type = usb_bos_info.at(i).usb_3.dev_cap_type;
-                    bos.usb_3.bm_attribs = usb_bos_info.at(i).usb_3.bm_attribs;
-                    bos.usb_3.write_speed_supported = usb_bos_info.at(i).usb_3.write_speed_supported;
-                    bos.usb_3.functionality_support = usb_bos_info.at(i).usb_3.functionality_support;
-                    bos.usb_3.b_u1_dev_exit_lat = usb_bos_info.at(i).usb_3.b_u1_dev_exit_lat;
-                    bos.usb_3.b_u2_dev_exit_lat = usb_bos_info.at(i).usb_3.b_u2_dev_exit_lat;
+                        bos.usb_3.dev_cap_type = bos_data.usb_3.dev_cap_type;
+                        bos.usb_3.bm_attribs = bos_data.usb_3.bm_attribs;
+                        bos.usb_3.write_speed_supported = bos_data.usb_3.write_speed_supported;
+                        bos.usb_3.functionality_support = bos_data.usb_3.functionality_support;
+                        bos.usb_3.b_u1_dev_exit_lat = bos_data.usb_3.b_u1_dev_exit_lat;
+                        bos.usb_3.b_u2_dev_exit_lat = bos_data.usb_3.b_u2_dev_exit_lat;
 
-                    usb.usb_3 = bos.usb_3;
-                    usb.usb_2 = bos.usb_2;
+                        usb.usb_3 = bos.usb_3;
+                        usb.usb_2 = bos.usb_2;
+                        break;
+                    }
                 }
+            }
 
-                usb_vec.push_back(usb);
-                if (handle) {
-                    libusb_close(handle);
-                }
+            usb_vec.push_back(usb);
+            if (handle) {
+                libusb_close(handle);
             }
         }
 
@@ -549,54 +553,58 @@ std::vector<GkBosUsb> RadioLibs::printLibUsb(libusb_device **devs)
 std::vector<Database::Settings::GkBosUsb> RadioLibs::printBosUsb(libusb_device_handle *handle)
 {
     try {
-        struct libusb_bos_descriptor *bos;
-        int ret = libusb_get_bos_descriptor(handle, &bos);
-        if (ret < 0) {
-            throw std::runtime_error(tr("Failed to get USB BoS device descriptor!").toStdString());
-        }
-
-        for (uint8_t i = 0; i < bos->bNumDeviceCaps; i++) {
-            GkBosUsb bos_usb {};
-            struct libusb_bos_dev_capability_descriptor *dev_cap = bos->dev_capability[i];
-
-            if (dev_cap->bDevCapabilityType == LIBUSB_BT_USB_2_0_EXTENSION) {
-                //
-                // USB 2.0 capabilities
-                //
-                struct libusb_usb_2_0_extension_descriptor *usb_2_0_extension;
-                ret = libusb_get_usb_2_0_extension_descriptor(nullptr, dev_cap, &usb_2_0_extension);
-                if (ret < 0) {
-                    throw std::runtime_error(tr("Failed to get USB 2.0 device extension descriptor!").toStdString());
-                }
-
-                GkUsb2Exts usb_2_exts {};
-                struct libusb_usb_2_0_extension_descriptor *usb_2_0_ext_cap = usb_2_0_extension;
-                usb_2_exts.dev_cap_type = usb_2_0_ext_cap->bDevCapabilityType;
-                usb_2_exts.bm_attribs = usb_2_0_ext_cap->bmAttributes;
-
-                bos_usb.usb_2 = usb_2_exts;
-                libusb_free_usb_2_0_extension_descriptor(usb_2_0_extension);
-            } else if (dev_cap->bDevCapabilityType == LIBUSB_BT_SS_USB_DEVICE_CAPABILITY) {
-                //
-                // USB 3.0 capabilities
-                //
-                struct libusb_ss_usb_device_capability_descriptor *ss_dev_cap;
-                ret = libusb_get_ss_usb_device_capability_descriptor(nullptr, dev_cap, &ss_dev_cap);
-                if (ret < 0) {
-                    throw std::runtime_error(tr("Failed to get SS USB 2.0 device capability descriptor!").toStdString());
-                }
-
-                GkUsb3Exts usb_3_exts {};
-                struct libusb_ss_usb_device_capability_descriptor *ss_usb_cap = ss_dev_cap;
-                usb_3_exts.dev_cap_type = ss_usb_cap->bDevCapabilityType;
-                usb_3_exts.bm_attribs = ss_usb_cap->bmAttributes;
-                usb_3_exts.write_speed_supported = ss_usb_cap->wSpeedSupported;
-                usb_3_exts.functionality_support = ss_usb_cap->bFunctionalitySupport;
-                usb_3_exts.b_u1_dev_exit_lat = ss_usb_cap->bU1DevExitLat;
-                usb_3_exts.b_u2_dev_exit_lat = ss_usb_cap->bU2DevExitLat;
-
-                libusb_free_ss_usb_device_capability_descriptor(ss_dev_cap);
+        if (handle) {
+            struct libusb_bos_descriptor *bos;
+            int ret = libusb_get_bos_descriptor(handle, &bos);
+            if (ret < 0) {
+                throw std::runtime_error(tr("Failed to get USB BoS device descriptor!").toStdString());
             }
+
+            for (uint8_t i = 0; i < bos->bNumDeviceCaps; i++) {
+                GkBosUsb bos_usb {};
+                struct libusb_bos_dev_capability_descriptor *dev_cap = bos->dev_capability[i];
+
+                if (dev_cap->bDevCapabilityType == LIBUSB_BT_USB_2_0_EXTENSION) {
+                    //
+                    // USB 2.0 capabilities
+                    //
+                    struct libusb_usb_2_0_extension_descriptor *usb_2_0_extension;
+                    ret = libusb_get_usb_2_0_extension_descriptor(nullptr, dev_cap, &usb_2_0_extension);
+                    if (ret < 0) {
+                        throw std::runtime_error(tr("Failed to get USB 2.0 device extension descriptor!").toStdString());
+                    }
+
+                    GkUsb2Exts usb_2_exts {};
+                    struct libusb_usb_2_0_extension_descriptor *usb_2_0_ext_cap = usb_2_0_extension;
+                    usb_2_exts.dev_cap_type = usb_2_0_ext_cap->bDevCapabilityType;
+                    usb_2_exts.bm_attribs = usb_2_0_ext_cap->bmAttributes;
+
+                    bos_usb.usb_2 = usb_2_exts;
+                    libusb_free_usb_2_0_extension_descriptor(usb_2_0_extension);
+                } else if (dev_cap->bDevCapabilityType == LIBUSB_BT_SS_USB_DEVICE_CAPABILITY) {
+                    //
+                    // USB 3.0 capabilities
+                    //
+                    struct libusb_ss_usb_device_capability_descriptor *ss_dev_cap;
+                    ret = libusb_get_ss_usb_device_capability_descriptor(nullptr, dev_cap, &ss_dev_cap);
+                    if (ret < 0) {
+                        throw std::runtime_error(tr("Failed to get SS USB 2.0 device capability descriptor!").toStdString());
+                    }
+
+                    GkUsb3Exts usb_3_exts {};
+                    struct libusb_ss_usb_device_capability_descriptor *ss_usb_cap = ss_dev_cap;
+                    usb_3_exts.dev_cap_type = ss_usb_cap->bDevCapabilityType;
+                    usb_3_exts.bm_attribs = ss_usb_cap->bmAttributes;
+                    usb_3_exts.write_speed_supported = ss_usb_cap->wSpeedSupported;
+                    usb_3_exts.functionality_support = ss_usb_cap->bFunctionalitySupport;
+                    usb_3_exts.b_u1_dev_exit_lat = ss_usb_cap->bU1DevExitLat;
+                    usb_3_exts.b_u2_dev_exit_lat = ss_usb_cap->bU2DevExitLat;
+
+                    libusb_free_ss_usb_device_capability_descriptor(ss_dev_cap);
+                }
+            }
+        } else {
+            throw std::runtime_error(tr("Invalid handle provided for `libusb`!").toStdString());
         }
     } catch (...) {
         std::throw_with_nested(std::runtime_error(tr("Unable to gather USB device capability details.").toStdString()));
@@ -632,12 +640,12 @@ void RadioLibs::print_exception(const std::exception &e, int level)
  * @param usb_ptr A pointer which contains all the information on user's configured USB devices, if any.
  * @note Ref: HamLib <https://github.com/Hamlib/Hamlib/>. Example: <https://github.com/Hamlib/Hamlib/blob/master/tests/example.c>
  */
-void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr)
+void RadioLibs::gkInitRadioRig(const std::shared_ptr<GkRadio> &radio_ptr)
 {
-    std::mutex mtx_init_rig;
-    std::lock_guard<std::mutex> lck_guard(mtx_init_rig);
-
     try {
+        std::mutex mtx_init_rig;
+        std::lock_guard<std::mutex> lck_guard(mtx_init_rig);
+
         // https://github.com/Hamlib/Hamlib/blob/master/tests/example.c
         // Set verbosity level
         rig_set_debug(radio_ptr->verbosity);
@@ -651,151 +659,153 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr)
             baud_rate = baud_rate_tmp;
         }
 
-        //
-        // Check the most up-to-date information on RS232 ports
-        //
-        auto recent_serial_port_info = filter_com_ports(status_com_ports());
-
-        radio_ptr->gkRig->setConf("data_bits", std::to_string(radio_ptr->port_details.parm.serial.data_bits).c_str());
-        radio_ptr->gkRig->setConf("stop_bits", std::to_string(radio_ptr->port_details.parm.serial.stop_bits).c_str());
-        radio_ptr->gkRig->setConf("serial_speed", std::to_string(baud_rate).c_str());
-        radio_ptr->port_details.type.rig = convGkConnTypeToHamlib(radio_ptr->cat_conn_type);
-
-        switch (radio_ptr->ptt_type) { // TODO: Add type for 'Parallel'!
-        case RIG_PTT_SERIAL_RTS:
-            radio_ptr->gkRig->setConf("ptt_type", "RTS");
-            radio_ptr->gkRig->setConf("rts_state", "ON");
-            radio_ptr->gkRig->setConf("dtr_state", "OFF");
-            break;
-        case RIG_PTT_SERIAL_DTR:
-            radio_ptr->gkRig->setConf("ptt_type", "DTR");
-            radio_ptr->gkRig->setConf("dtr_state", "ON");
-            radio_ptr->gkRig->setConf("rts_state", "OFF");
-            break;
-        case RIG_PTT_RIG:
-            radio_ptr->gkRig->setConf("ptt_type", "RIG");
-            radio_ptr->gkRig->setConf("dtr_state", "OFF");
-            radio_ptr->gkRig->setConf("rts_state", "OFF");
-            break;
-        case RIG_PTT_RIG_MICDATA:
-            radio_ptr->gkRig->setConf("ptt_type", "RIGMICDATA");
-            radio_ptr->gkRig->setConf("dtr_state", "OFF");
-            radio_ptr->gkRig->setConf("rts_state", "OFF");
-            break;
-        case RIG_PTT_NONE:
-            radio_ptr->gkRig->setConf("ptt_type", "None");
-            radio_ptr->gkRig->setConf("dtr_state", "OFF");
-            radio_ptr->gkRig->setConf("rts_state", "OFF");
-            break;
-        default:
-            radio_ptr->gkRig->setConf("ptt_type", "None");
-            radio_ptr->gkRig->setConf("dtr_state", "OFF");
-            radio_ptr->gkRig->setConf("rts_state", "OFF");
-            break;
-        }
-
-        switch (radio_ptr->port_details.parm.serial.dtr_state) {
-        case serial_control_state_e::RIG_SIGNAL_ON:
-            // High
-            radio_ptr->gkRig->setConf("dtr_state", "ON");
-            break;
-        case serial_control_state_e::RIG_SIGNAL_OFF:
-            // Low
-            radio_ptr->gkRig->setConf("dtr_state", "OFF");
-            break;
-        default:
-            // Nothing
-            radio_ptr->gkRig->setConf("dtr_state", "UNSET");
-            break;
-        }
-
-        switch (radio_ptr->port_details.parm.serial.handshake) {
-        case serial_handshake_e::RIG_HANDSHAKE_NONE:
-            // Default
-            radio_ptr->gkRig->setConf("serial_handshake", "None");
-            break;
-        case serial_handshake_e::RIG_HANDSHAKE_XONXOFF:
-            // XON / XOFF
-            radio_ptr->gkRig->setConf("serial_handshake", "XONXOFF");
-            break;
-        case serial_handshake_e::RIG_HANDSHAKE_HARDWARE:
-            // Hardware
-            radio_ptr->gkRig->setConf("serial_handshake", "Hardware");
-            break;
-        default:
-            // Nothing
-            radio_ptr->gkRig->setConf("serial_handshake", "None");
-            break;
-        }
-
-        #if __MINGW64__
-        //
-        // Modify the COM Port so that it's suitable for Hamlib!
-        //
-        boost::replace_all(radio_ptr->cat_conn_port, "COM", "/dev/ttyS");
-        boost::replace_all(radio_ptr->ptt_conn_port, "COM", "/dev/ttyS");
-        #endif
-
-        //
-        // Determine the port necessary and let Hamlib know about it!
-        //
-        if (!radio_ptr->cat_conn_port.isNull() && !radio_ptr->cat_conn_port.isEmpty()) {
-            radio_ptr->gkRig->setConf("ptt_pathname", radio_ptr->ptt_conn_port.toStdString().c_str());
-            radio_ptr->gkRig->setConf("rig_pathname", radio_ptr->cat_conn_port.toStdString().c_str());
-        }
-
-        if (radio_ptr->rig_model < 1) { // No amateur radio rig has been configured and/or adequately detected!
+        if (radio_ptr) {
             //
-            // Probe the given communications port, whether it be RS232, USB, GPIO, etc.
-            // With this information, provided a connection has been made successfully, we can infer the amateur radio
-            // rig that the user is making use of!
+            // Check the most up-to-date information on RS232 ports
             //
-            radio_ptr->rig_model = rig_probe(&radio_ptr->port_details);
-        }
+            auto recent_serial_port_info = filter_com_ports(status_com_ports());
 
-        rig_debug(radio_ptr->verbosity, "Backend version: %s, Status: %s\n\n", radio_ptr->gkRig->caps->version, rig_strstatus(radio_ptr->gkRig->caps->status));
+            radio_ptr->gkRig->setConf("data_bits", std::to_string(radio_ptr->port_details.parm.serial.data_bits).c_str());
+            radio_ptr->gkRig->setConf("stop_bits", std::to_string(radio_ptr->port_details.parm.serial.stop_bits).c_str());
+            radio_ptr->gkRig->setConf("serial_speed", std::to_string(baud_rate).c_str());
+            radio_ptr->port_details.type.rig = convGkConnTypeToHamlib(radio_ptr->cat_conn_type);
 
-        //
-        // Open our rig in question
-        //
-        radio_ptr->gkRig->open();
-        radio_ptr->is_open = true; // Set the flag that the aforementioned pointer has been initialized
-
-        while (radio_ptr->is_open) {
-            //
-            // IMPORTANT!!!
-            // Note from Hamlib Developers: As a general practice, we should check to see if a given function
-            // is within the rig's capabilities before calling it, but we are simplifying here. Also, we should
-            // check each call's returned status in case of error.
-            //
-            if (radio_ptr->gkRig->getInfo() != nullptr) {
-                radio_ptr->info_buf = radio_ptr->gkRig->getInfo();
+            switch (radio_ptr->ptt_type) { // TODO: Add type for 'Parallel'!
+                case RIG_PTT_SERIAL_RTS:
+                    radio_ptr->gkRig->setConf("ptt_type", "RTS");
+                    radio_ptr->gkRig->setConf("rts_state", "ON");
+                    radio_ptr->gkRig->setConf("dtr_state", "OFF");
+                    break;
+                case RIG_PTT_SERIAL_DTR:
+                    radio_ptr->gkRig->setConf("ptt_type", "DTR");
+                    radio_ptr->gkRig->setConf("dtr_state", "ON");
+                    radio_ptr->gkRig->setConf("rts_state", "OFF");
+                    break;
+                case RIG_PTT_RIG:
+                    radio_ptr->gkRig->setConf("ptt_type", "RIG");
+                    radio_ptr->gkRig->setConf("dtr_state", "OFF");
+                    radio_ptr->gkRig->setConf("rts_state", "OFF");
+                    break;
+                case RIG_PTT_RIG_MICDATA:
+                    radio_ptr->gkRig->setConf("ptt_type", "RIGMICDATA");
+                    radio_ptr->gkRig->setConf("dtr_state", "OFF");
+                    radio_ptr->gkRig->setConf("rts_state", "OFF");
+                    break;
+                case RIG_PTT_NONE:
+                    radio_ptr->gkRig->setConf("ptt_type", "None");
+                    radio_ptr->gkRig->setConf("dtr_state", "OFF");
+                    radio_ptr->gkRig->setConf("rts_state", "OFF");
+                    break;
+                default:
+                    radio_ptr->gkRig->setConf("ptt_type", "None");
+                    radio_ptr->gkRig->setConf("dtr_state", "OFF");
+                    radio_ptr->gkRig->setConf("rts_state", "OFF");
+                    break;
             }
 
-            // Main VFO frequency
-            radio_ptr->freq = radio_ptr->gkRig->getFreq(RIG_VFO_CURR);
-
-            // Current mode
-            radio_ptr->mode = radio_ptr->gkRig->getMode(radio_ptr->width, RIG_VFO_CURR);
-
-            // Determine the mode of modulation that's being currently used, and output as a textual value
-            radio_ptr->mm = hamlibModulEnumToStr(radio_ptr->mode).toStdString();
-
-            // Rig power output
-            if (radio_ptr->gkRig->hasGetLevel(RIG_LEVEL_RFPOWER)) {
-                radio_ptr->gkRig->getLevel(RIG_LEVEL_RFPOWER, radio_ptr->power, RIG_VFO_CURR);
+            switch (radio_ptr->port_details.parm.serial.dtr_state) {
+                case serial_control_state_e::RIG_SIGNAL_ON:
+                    // High
+                    radio_ptr->gkRig->setConf("dtr_state", "ON");
+                    break;
+                case serial_control_state_e::RIG_SIGNAL_OFF:
+                    // Low
+                    radio_ptr->gkRig->setConf("dtr_state", "OFF");
+                    break;
+                default:
+                    // Nothing
+                    radio_ptr->gkRig->setConf("dtr_state", "UNSET");
+                    break;
             }
 
-            // Convert power reading to watts
-            radio_ptr->gkRig->power2mW(radio_ptr->power, radio_ptr->freq, radio_ptr->mode);
-
-            // Raw and calibrated S-meter values
-            if (radio_ptr->gkRig->hasGetLevel(RIG_LEVEL_RAWSTR)) {
-                radio_ptr->gkRig->getLevel(RIG_LEVEL_RAWSTR, radio_ptr->raw_strength, RIG_VFO_CURR);
+            switch (radio_ptr->port_details.parm.serial.handshake) {
+                case serial_handshake_e::RIG_HANDSHAKE_NONE:
+                    // Default
+                    radio_ptr->gkRig->setConf("serial_handshake", "None");
+                    break;
+                case serial_handshake_e::RIG_HANDSHAKE_XONXOFF:
+                    // XON / XOFF
+                    radio_ptr->gkRig->setConf("serial_handshake", "XONXOFF");
+                    break;
+                case serial_handshake_e::RIG_HANDSHAKE_HARDWARE:
+                    // Hardware
+                    radio_ptr->gkRig->setConf("serial_handshake", "Hardware");
+                    break;
+                default:
+                    // Nothing
+                    radio_ptr->gkRig->setConf("serial_handshake", "None");
+                    break;
             }
 
-            if (radio_ptr->gkRig->hasGetLevel(RIG_LEVEL_STRENGTH)) {
-                radio_ptr->gkRig->getLevel(RIG_LEVEL_STRENGTH, radio_ptr->strength, RIG_VFO_CURR);
+            #if __MINGW64__
+            //
+            // Modify the COM Port so that it's suitable for Hamlib!
+            //
+            boost::replace_all(radio_ptr->cat_conn_port, "COM", "/dev/ttyS");
+            boost::replace_all(radio_ptr->ptt_conn_port, "COM", "/dev/ttyS");
+            #endif
+
+            //
+            // Determine the port necessary and let Hamlib know about it!
+            //
+            if (!radio_ptr->cat_conn_port.isNull() && !radio_ptr->cat_conn_port.isEmpty()) {
+                radio_ptr->gkRig->setConf("ptt_pathname", radio_ptr->ptt_conn_port.toStdString().c_str());
+                radio_ptr->gkRig->setConf("rig_pathname", radio_ptr->cat_conn_port.toStdString().c_str());
+            }
+
+            if (radio_ptr->rig_model < 1) { // No amateur radio rig has been configured and/or adequately detected!
+                //
+                // Probe the given communications port, whether it be RS232, USB, GPIO, etc.
+                // With this information, provided a connection has been made successfully, we can infer the amateur radio
+                // rig that the user is making use of!
+                //
+                radio_ptr->rig_model = rig_probe(&radio_ptr->port_details);
+            }
+
+            rig_debug(radio_ptr->verbosity, "Backend version: %s, Status: %s\n\n", radio_ptr->gkRig->caps->version, rig_strstatus(radio_ptr->gkRig->caps->status));
+
+            //
+            // Open our rig in question
+            //
+            radio_ptr->gkRig->open();
+            radio_ptr->is_open = true; // Set the flag that the aforementioned pointer has been initialized
+
+            while (radio_ptr->is_open) {
+                //
+                // IMPORTANT!!!
+                // Note from Hamlib Developers: As a general practice, we should check to see if a given function
+                // is within the rig's capabilities before calling it, but we are simplifying here. Also, we should
+                // check each call's returned status in case of error.
+                //
+                if (radio_ptr->gkRig->getInfo() != nullptr) {
+                    radio_ptr->info_buf = radio_ptr->gkRig->getInfo();
+                }
+
+                // Main VFO frequency
+                radio_ptr->freq = radio_ptr->gkRig->getFreq(RIG_VFO_CURR);
+
+                // Current mode
+                radio_ptr->mode = radio_ptr->gkRig->getMode(radio_ptr->width, RIG_VFO_CURR);
+
+                // Determine the mode of modulation that's being currently used, and output as a textual value
+                radio_ptr->mm = hamlibModulEnumToStr(radio_ptr->mode).toStdString();
+
+                // Rig power output
+                if (radio_ptr->gkRig->hasGetLevel(RIG_LEVEL_RFPOWER)) {
+                    radio_ptr->gkRig->getLevel(RIG_LEVEL_RFPOWER, radio_ptr->power, RIG_VFO_CURR);
+                }
+
+                // Convert power reading to watts
+                radio_ptr->gkRig->power2mW(radio_ptr->power, radio_ptr->freq, radio_ptr->mode);
+
+                // Raw and calibrated S-meter values
+                if (radio_ptr->gkRig->hasGetLevel(RIG_LEVEL_RAWSTR)) {
+                    radio_ptr->gkRig->getLevel(RIG_LEVEL_RAWSTR, radio_ptr->raw_strength, RIG_VFO_CURR);
+                }
+
+                if (radio_ptr->gkRig->hasGetLevel(RIG_LEVEL_STRENGTH)) {
+                    radio_ptr->gkRig->getLevel(RIG_LEVEL_STRENGTH, radio_ptr->strength, RIG_VFO_CURR);
+                }
             }
         }
     } catch (const RigException &e) {

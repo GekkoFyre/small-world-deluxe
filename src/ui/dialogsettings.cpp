@@ -984,7 +984,7 @@ void DialogSettings::prefill_avail_usb_ports(const QMap<quint16, GekkoFyre::Data
             for (const auto &device: usb_devices) {
                 quint16 dev_port = device.port;
                 #ifdef _UNICODE
-                QString combined_str = QString("[ #%1 ] %2").arg(QString::fromStdWString(device.port)).arg(device.usb_enum.product);
+                QString combined_str = QString("[ #%1 ] %2").arg(QString::fromStdWString(device.port)).arg(device.bos_usb.lib_usb.product);
                 available_usb_ports.insert(dev_port, combined_str.toStdWString());
                 #else
                 available_usb_ports.insert(dev_port, device.name);
@@ -995,7 +995,7 @@ void DialogSettings::prefill_avail_usb_ports(const QMap<quint16, GekkoFyre::Data
                 //
                 ui->comboBox_com_port->insertItem(counter, device.name, dev_port);
                 if (ui->comboBox_com_port->currentData().toInt() == device.port) {
-                    ui->lineEdit_device_port_name->setText(device.product);
+                    ui->lineEdit_device_port_name->setText(device.bos_usb.lib_usb.product);
                 }
 
                 //
@@ -1003,7 +1003,7 @@ void DialogSettings::prefill_avail_usb_ports(const QMap<quint16, GekkoFyre::Data
                 //
                 ui->comboBox_ptt_method_port->insertItem(counter, device.name, dev_port);
                 if (ui->comboBox_ptt_method_port->currentData().toInt() == device.port) {
-                    ui->lineEdit_ptt_method_dev_path->setText(device.product);
+                    ui->lineEdit_ptt_method_dev_path->setText(device.bos_usb.lib_usb.product);
                 }
 
                 ++counter;
