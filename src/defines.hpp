@@ -409,7 +409,40 @@ namespace Database {
             int sync_address;                                                       // For audio devices only: the address if the synch endpoint
         };
 
+        struct GkLibUsb {
+            QString mfg;                                                            // The manufacturer of this USB device, as determined by 'libusb'.
+            QString product;                                                        // The product name/identity of this USB device, as determined by 'libusb'.
+            QString serial;                                                         // The unique serial number associated with this USB device, as determined by 'libusb'.
+        };
+
+        struct GkUsb2Exts {
+            // USB 2.0 capabilities                                                 // Structure which exists strictly for USB >2.0+ devices.
+            quint8 dev_cap_type;                                                    // Compatibility type for USB 2.0 devices.
+            quint32 bm_attribs;                                                     // Bitmap encoding of supported device level features.
+        };
+
+        struct GkUsb3Exts {
+            // USB 3.0 capabilities                                                 // Structure which exists strictly for USB >3.0+ devices.
+            quint8 dev_cap_type;                                                    // Capability type.
+            quint8 bm_attribs;                                                      // Bitmap encoding of supported device level features.
+            quint16 write_speed_supported;                                          // Bitmap encoding of the speed supported by this device when operating in SuperSpeed mode.
+            quint8 functionality_support;                                           // The lowest speed at which all the functionality supported by the device is available to the user. For example if the device supports all its functionality when connected at full speed and above then it sets this value to 1.
+            quint8 b_u1_dev_exit_lat;                                               // U1 Device Exit Latency.
+            quint16 b_u2_dev_exit_lat;                                              // U2 Device Exit Latency.
+        };
+
+        struct GkBosUsb {                                                           // USB Binary Object Store structure.
+            GkUsb2Exts usb_2;                                                       // Extensions for USB >2.0+ devices.
+            GkUsb3Exts usb_3;                                                       // Extensions for USB >3.0+ devices.
+            GkLibUsb lib_usb;                                                       // Additional information pertaining to USB devices, both old and new.
+            quint16 pid;
+            quint16 vid;
+            quint8 addr;
+            quint8 bus;
+        };
+
         struct GkUsbPort {
+            GkBosUsb bos_usb;                                                       // USB Binary Object Store structure.
             QString name;                                                           // The actual name of the USB port as displayed by the operating system itself
             quint16 port;                                                           // The USB port number as determined by `QtUsb`
             quint16 bus;                                                            // The USB BUS number as determined by `QtUsb`
@@ -417,8 +450,6 @@ namespace Database {
             quint16 vid;                                                            // The USB port's own Vendor ID as determined by 'QtUsb'
             quint16 d_class;                                                        // Unknown
             quint16 d_sub_class;                                                    // Unknown
-            QString mfg;                                                            // The manufacturer of this USB device, as determined by 'QtUSB'
-            QString product;                                                        // The product name/identity of this USB device, as determined by 'QtUSB'
         };
 
         struct GkComPort {
@@ -430,7 +461,7 @@ namespace Database {
             struct GkPaAudioData {
                 int frameIndex;                                                     // Frame index into sample array
                 int maxFrameIndex;                                                  // Maximum frame index given into sample array
-                qint16 *recordedSamples;                                             // Audio samples that have been recorded and saved to a buffer
+                qint16 *recordedSamples;                                            // Audio samples that have been recorded and saved to a buffer
                 portaudio::SampleDataFormat sample_format;                          // Currently used sample format by given audio source, whether output or input
             };
 

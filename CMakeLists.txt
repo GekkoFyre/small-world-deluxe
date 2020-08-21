@@ -62,7 +62,7 @@ set(INSTALL_RPATH_USE_LINK_PATH true)
 if(GK_CUDA_FFT)
     message(STATUS "Enable NVIDIA CUDA support within Small World Deluxe and allow your GPU to do heavy calculations instead of your CPU!")
     add_definitions(-DGK_CUDA_FFT_ENBL)
-    project(smallworld C CXX CUDA)
+    project(smallworld C CXX Fortran CUDA)
 else()
     project(smallworld C CXX Fortran)
 endif()
@@ -504,7 +504,8 @@ qt5_wrap_ui(UI_HEADERS
     src/ui/dialogsettings.ui
     src/ui/aboutdialog.ui
     src/ui/spectrodialog.ui
-    src/ui/gkaudioplaydialog.ui)
+    src/ui/gkaudioplaydialog.ui
+    src/ui/sendreportdialog.ui)
 
 # https://doc.qt.io/qt-5/cmake-command-reference.html
 # rcc -no-compress -binary smallworld_res.qrc -o smallworld_res.rcc
@@ -533,6 +534,7 @@ set(GALAXY_UI_CPP
     src/ui/gkaudioplaydialog.cpp
     src/ui/spectrodialog.cpp
     src/ui/gk_vu_meter_widget.cpp
+    src/ui/sendreportdialog.cpp
     src/radiolibs.cpp
     src/dek_db.cpp
     src/file_io.cpp
@@ -605,6 +607,7 @@ set(GALAXY_OBJ_HEADERS
     src/ui/gkaudioplaydialog.hpp
     src/ui/spectrodialog.hpp
     src/ui/gk_vu_meter_widget.hpp
+    src/ui/sendreportdialog.hpp
     src/radiolibs.hpp
     src/dek_db.hpp
     src/file_io.hpp
@@ -743,52 +746,8 @@ if(GK_CUDA_FFT)
     target_link_libraries(smallworld PRIVATE galaxy_cuda)
 endif()
 
-install(CODE [[
-    include(CMakePackageConfigHelpers)
-    include(GNUInstallDirs)
-    
-    configure_package_config_file("${CMAKE_SOURCE_DIR}/cmake/modules/SmallWorldDeluxeConfig.cmake.in"
-        "${PROJECT_BINARY_DIR}/SmallWorldDeluxeConfig.cmake"
-        INSTALL_DESTINATION "${LIB_INSTALL_DIR}/small-world-deluxe/cmake"
-        PATH_VARS INCLUDE_INSTALL_DIR SYSCONFIG_INSTALL_DIR)
-
-    write_basic_package_version_file(
-        "${PROJECT_BINARY_DIR}/SWorldConfigVersion.cmake"
-        VERSION "${PACKAGE_VERSION}"
-        COMPATIBILITY ExactVersion)
-
-    # Install the CMake configuration files...
-    INSTALL(FILES
-        "${PROJECT_BINARY_DIR}/SmallWorldDeluxeConfig.cmake"
-        "${PROJECT_BINARY_DIR}/SWorldConfigVersion.cmake"
-        DESTINATION "${LIB_INSTALL_DIR}/small-world-deluxe/cmake")
-
-    file(GET_RUNTIME_DEPENDENCIES
-        EXECUTABLES "${CMAKE_BINARY_DIR}"
-        RESOLVED_DEPENDENCIES_VAR GK_FOUND_LIBS
-        UNRESOLVED_DEPENDENCIES_VAR GK_UNFOUND_LIBS)
-
-    if (GK_UNFOUND_LIBS)
-        message(WARNING "Some of the libraries/dependencies for Small World Deluxe could not be found! The application may or may not work without them; consider this a warning!")
-    endif()
-
-    foreach (GK_FOUND_LIB IN LISTS GK_FOUND_LIBS)
-        # TODO: Determine if the libraries should be copied over...
-        configure_file("${GK_FOUND_LIB}" "${CMAKE_BINARY_DIR}" COPY_ONLY)
-    endforeach()
-
-    file(TOUCH "${tagfile}")
-
-    add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/tagfile"
-                    COMMAND "${CMAKE_COMMAND}"
-                    "-Dexe=$<TARGET_FILE:smallworld>"
-                    "-Ddest_libdir=${CMAKE_BINARY_DIR}/lib"
-                    "-Dtagfile=${CMAKE_CURRENT_BINARY_DIR}/tagfile"
-                    -P "${path_to_above_file}"
-                    DEPENDS "$<TARGET_FILE:smallworld>"
-                    "${path_to_above_file}"
-                    DOC "Copying dependencies for smallworld")
-]])
+include(CMakePackageConfigHelpers)
+include(GNUInstallDirs)
 
 if (NOT LINUX)
     #

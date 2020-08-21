@@ -30,5 +30,6 @@
         <file>contrib/images/raster/gekkofyre-networks/RaptorVonSqueaker/73124cddfa13a8e5.png</file>
         <file>contrib/images/vector/gekkofyre-networks/rionquosue/logo_blank_border_text_square_rionquosue.svg</file>
         <file>contrib/images/raster/unknown-author/sstv/sstv-image-placeholder.jpg</file>
+        <file>contrib/sounds/notifications/notification_1.ogg</file>
     </qresource>
 </RCC>

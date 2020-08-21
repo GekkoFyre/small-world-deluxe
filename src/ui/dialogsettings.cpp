@@ -1,12 +1,12 @@
 /**
- **  ______  ______  ___   ___  ______  ______  ______  ______       
- ** /_____/\/_____/\/___/\/__/\/_____/\/_____/\/_____/\/_____/\      
- ** \:::_ \ \::::_\/\::.\ \\ \ \:::_ \ \:::_ \ \::::_\/\:::_ \ \     
- **  \:\ \ \ \:\/___/\:: \/_) \ \:\ \ \ \:\ \ \ \:\/___/\:(_) ) )_   
- **   \:\ \ \ \::___\/\:. __  ( (\:\ \ \ \:\ \ \ \::___\/\: __ `\ \  
- **    \:\/.:| \:\____/\: \ )  \ \\:\_\ \ \:\/.:| \:\____/\ \ `\ \ \ 
- **     \____/_/\_____\/\__\/\__\/ \_____\/\____/_/\_____\/\_\/ \_\/ 
- **                                                                 
+ **  ______  ______  ___   ___  ______  ______  ______  ______
+ ** /_____/\/_____/\/___/\/__/\/_____/\/_____/\/_____/\/_____/\
+ ** \:::_ \ \::::_\/\::.\ \\ \ \:::_ \ \:::_ \ \::::_\/\:::_ \ \
+ **  \:\ \ \ \:\/___/\:: \/_) \ \:\ \ \ \:\ \ \ \:\/___/\:(_) ) )_
+ **   \:\ \ \ \::___\/\:. __  ( (\:\ \ \ \:\ \ \ \::___\/\: __ `\ \
+ **    \:\/.:| \:\____/\: \ )  \ \\:\_\ \ \:\/.:| \:\____/\ \ `\ \ \
+ **     \____/_/\_____\/\__\/\__\/ \_____\/\____/_/\_____\/\_\/ \_\/
+ **
  **
  **   If you have downloaded the source code for "Small World Deluxe" and are reading this,
  **   then thank you from the bottom of our hearts for making use of our hard work, sweat
@@ -865,8 +865,6 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
         //
         // Default values!
         //
-        ui->comboBox_com_port->insertItem(0, tr("N/A"), tr("N/A"));
-        ui->comboBox_ptt_method_port->insertItem(0, tr("N/A"), tr("N/A"));
 
         bool unsupported_port = true;
         if (!com_ports.empty()) {
@@ -986,7 +984,7 @@ void DialogSettings::prefill_avail_usb_ports(const QMap<quint16, GekkoFyre::Data
             for (const auto &device: usb_devices) {
                 quint16 dev_port = device.port;
                 #ifdef _UNICODE
-                QString combined_str = QString("[ #%1 ] %2").arg(QString::fromStdWString(device.port)).arg(device.usb_enum.product);
+                QString combined_str = QString("[ #%1 ] %2").arg(QString::fromStdWString(device.port)).arg(device.bos_usb.lib_usb.product);
                 available_usb_ports.insert(dev_port, combined_str.toStdWString());
                 #else
                 available_usb_ports.insert(dev_port, device.name);
@@ -996,13 +994,17 @@ void DialogSettings::prefill_avail_usb_ports(const QMap<quint16, GekkoFyre::Data
                 // CAT Control (via USB)
                 //
                 ui->comboBox_com_port->insertItem(counter, device.name, dev_port);
-                ui->lineEdit_device_port_name->setText(device.product);
+                if (ui->comboBox_com_port->currentData().toInt() == device.port) {
+                    ui->lineEdit_device_port_name->setText(device.bos_usb.lib_usb.product);
+                }
 
                 //
                 // PTT Method (via USB)
                 //
                 ui->comboBox_ptt_method_port->insertItem(counter, device.name, dev_port);
-                ui->lineEdit_ptt_method_dev_path->setText(device.product);
+                if (ui->comboBox_ptt_method_port->currentData().toInt() == device.port) {
+                    ui->lineEdit_ptt_method_dev_path->setText(device.bos_usb.lib_usb.product);
+                }
 
                 ++counter;
             }
@@ -1549,7 +1551,7 @@ void DialogSettings::on_comboBox_com_port_currentIndexChanged(int index)
         if (index > 0) { // Make sure that we haven't selected the dummy retainer item, "N/A"!
             for (const auto &com_port_list: status_com_ports) {
                 for (const auto &usb_port_list: available_usb_ports.toStdMap()) {
-                    if (usb_port_list.first == ui->comboBox_com_port->currentData().toString()) {
+                    if (usb_port_list.first == ui->comboBox_com_port->currentData().toInt()) {
                         // A USB port has been found!
                         emit changeConnPort(usb_port_list.second, GkConnMethod::CAT);
                     } else if (com_port_list.port_info.portName() == ui->comboBox_com_port->currentData().toString()) {
@@ -1581,7 +1583,7 @@ void DialogSettings::on_comboBox_ptt_method_port_currentIndexChanged(int index)
         if (index > 0) { // Make sure that we haven't selected the dummy retainer item, "N/A"!
             for (const auto &ptt_port_list: status_com_ports) {
                 for (const auto &usb_port_list: available_usb_ports.toStdMap()) {
-                    if (usb_port_list.first == ui->comboBox_ptt_method_port->currentData().toString()) {
+                    if (usb_port_list.first == ui->comboBox_ptt_method_port->currentData().toInt()) {
                         // A USB port has been found!
                         emit changeConnPort(usb_port_list.second, GkConnMethod::PTT);
                     } else if (ptt_port_list.port_info.portName() == ui->comboBox_ptt_method_port->currentData().toString()) {
