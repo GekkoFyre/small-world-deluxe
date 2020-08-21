@@ -42,9 +42,7 @@
 #include "src/radiolibs.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
-#include <boost/algorithm/string/replace.hpp>
 #include <QtUsb/QUsbDevice>
-#include <QtUsb/QHidDevice>
 #include <QtUsb/QUsbEndpoint>
 #include <QtUsb/QUsbInfo>
 #include <ios>
@@ -410,10 +408,28 @@ QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDevice
             usb.d_class = (quint16)device.dClass;
             usb.d_sub_class = (quint16)device.dSubClass;
 
-            QHidDevice usb_hid(new QHidDevice());
-            usb_hid.open(usb.vid, usb.pid);
-            usb.mfg = usb_hid.manufacturer();
-            usb.product = usb_hid.product();
+            libusb_device **devs;
+            int r = libusb_init(nullptr);
+            if (r < 0) {
+                throw std::runtime_error(tr("Error whilst initializing `libusb`!").toStdString());
+            }
+
+            ssize_t cnt = libusb_get_device_list(nullptr, &devs);
+            if (cnt < 0) {
+                libusb_exit(nullptr);
+                throw std::runtime_error(tr("Error whilst initializing `libusb`!").toStdString());
+            }
+
+            auto usb_bos_info = printLibUsb(devs);
+            for (const auto &bos_dev: usb_bos_info) {
+                if ((bos_dev.pid == usb.pid) && (bos_dev.vid == usb.vid)) {
+                    // We have a match!
+                    usb.bos_usb = bos_dev;
+                }
+            }
+
+            libusb_free_device_list(devs, 1);
+            libusb_exit(nullptr);
 
             #ifdef _WIN32
             // TODO: URGENT - Finish this section!
@@ -428,10 +444,165 @@ QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDevice
 
         return usb_hash;
     }  catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+        print_exception(e);
     }
 
     return QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort>();
+}
+
+/**
+ * @brief RadioLibs::printLibUsb
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param devs
+ * @return
+ * @note <https://github.com/libusb/libusb/blob/master/examples/testlibusb.c>
+ */
+std::vector<GkBosUsb> RadioLibs::printLibUsb(libusb_device **devs)
+{
+    try {
+        std::vector<GkBosUsb> usb_vec;
+        libusb_device *dev;
+        int i = 0;
+        while ((dev = devs[i++]) != nullptr) {
+            int ret = 0;
+            GkBosUsb usb;
+            GkLibUsb lib_usb;
+            unsigned char string[256];
+            struct libusb_device_descriptor desc {};
+
+            ret = libusb_get_device_descriptor(dev, &desc);
+            if (ret < 0) {
+                throw std::runtime_error(tr("Failed to get device descriptor!").toStdString());
+            }
+
+            libusb_device_handle *handle = nullptr;
+
+            usb.bus = libusb_get_bus_number(dev);
+            usb.addr = libusb_get_device_address(dev);
+            usb.vid = desc.idVendor;
+            usb.pid = desc.idProduct;
+
+            ret = libusb_open(dev, &handle);
+            if (ret == LIBUSB_SUCCESS) {
+                if (desc.iManufacturer) {
+                    ret = libusb_get_string_descriptor_ascii(handle, desc.iManufacturer, string, sizeof(string));
+                    if (ret > 0) {
+                        lib_usb.mfg = QString::fromStdString((char *)(string));
+                    }
+                }
+
+                if (desc.iProduct) {
+                    ret = libusb_get_string_descriptor_ascii(handle, desc.iProduct, string, sizeof(string));
+                    if (ret > 0) {
+                        lib_usb.product = QString::fromStdString((char *)(string));
+                    }
+                }
+
+                if (desc.iSerialNumber) {
+                    ret = libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, string, sizeof(string));
+                    if (ret > 0) {
+                        lib_usb.serial = QString::fromStdString((char *)(string));
+                    }
+                }
+
+                usb.lib_usb = lib_usb;
+                if (handle && desc.bcdUSB >= 0x0201) {
+                    auto usb_bos_info = printBosUsb(handle);
+                    GkBosUsb bos {};
+
+                    bos.usb_2.dev_cap_type = usb_bos_info.at(i).usb_2.dev_cap_type;
+                    bos.usb_2.bm_attribs = usb_bos_info.at(i).usb_2.bm_attribs;
+
+                    bos.usb_3.dev_cap_type = usb_bos_info.at(i).usb_3.dev_cap_type;
+                    bos.usb_3.bm_attribs = usb_bos_info.at(i).usb_3.bm_attribs;
+                    bos.usb_3.write_speed_supported = usb_bos_info.at(i).usb_3.write_speed_supported;
+                    bos.usb_3.functionality_support = usb_bos_info.at(i).usb_3.functionality_support;
+                    bos.usb_3.b_u1_dev_exit_lat = usb_bos_info.at(i).usb_3.b_u1_dev_exit_lat;
+                    bos.usb_3.b_u2_dev_exit_lat = usb_bos_info.at(i).usb_3.b_u2_dev_exit_lat;
+
+                    usb.usb_3 = bos.usb_3;
+                    usb.usb_2 = bos.usb_2;
+                }
+
+                usb_vec.push_back(usb);
+                if (handle) {
+                    libusb_close(handle);
+                }
+            }
+        }
+
+        return usb_vec;
+    } catch (...) {
+        std::throw_with_nested(std::runtime_error(tr("Unable to gather extra USB device details.").toStdString()));
+    }
+
+    return std::vector<GkBosUsb>();
+}
+
+/**
+ * @brief RadioLibs::printBosUsb
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param handle
+ * @return
+ * @note <https://github.com/libusb/libusb/blob/master/examples/testlibusb.c>
+ */
+std::vector<Database::Settings::GkBosUsb> RadioLibs::printBosUsb(libusb_device_handle *handle)
+{
+    try {
+        struct libusb_bos_descriptor *bos;
+        int ret = libusb_get_bos_descriptor(handle, &bos);
+        if (ret < 0) {
+            throw std::runtime_error(tr("Failed to get USB BoS device descriptor!").toStdString());
+        }
+
+        for (uint8_t i = 0; i < bos->bNumDeviceCaps; i++) {
+            GkBosUsb bos_usb {};
+            struct libusb_bos_dev_capability_descriptor *dev_cap = bos->dev_capability[i];
+
+            if (dev_cap->bDevCapabilityType == LIBUSB_BT_USB_2_0_EXTENSION) {
+                //
+                // USB 2.0 capabilities
+                //
+                struct libusb_usb_2_0_extension_descriptor *usb_2_0_extension;
+                ret = libusb_get_usb_2_0_extension_descriptor(nullptr, dev_cap, &usb_2_0_extension);
+                if (ret < 0) {
+                    throw std::runtime_error(tr("Failed to get USB 2.0 device extension descriptor!").toStdString());
+                }
+
+                GkUsb2Exts usb_2_exts {};
+                struct libusb_usb_2_0_extension_descriptor *usb_2_0_ext_cap = usb_2_0_extension;
+                usb_2_exts.dev_cap_type = usb_2_0_ext_cap->bDevCapabilityType;
+                usb_2_exts.bm_attribs = usb_2_0_ext_cap->bmAttributes;
+
+                bos_usb.usb_2 = usb_2_exts;
+                libusb_free_usb_2_0_extension_descriptor(usb_2_0_extension);
+            } else if (dev_cap->bDevCapabilityType == LIBUSB_BT_SS_USB_DEVICE_CAPABILITY) {
+                //
+                // USB 3.0 capabilities
+                //
+                struct libusb_ss_usb_device_capability_descriptor *ss_dev_cap;
+                ret = libusb_get_ss_usb_device_capability_descriptor(nullptr, dev_cap, &ss_dev_cap);
+                if (ret < 0) {
+                    throw std::runtime_error(tr("Failed to get SS USB 2.0 device capability descriptor!").toStdString());
+                }
+
+                GkUsb3Exts usb_3_exts {};
+                struct libusb_ss_usb_device_capability_descriptor *ss_usb_cap = ss_dev_cap;
+                usb_3_exts.dev_cap_type = ss_usb_cap->bDevCapabilityType;
+                usb_3_exts.bm_attribs = ss_usb_cap->bmAttributes;
+                usb_3_exts.write_speed_supported = ss_usb_cap->wSpeedSupported;
+                usb_3_exts.functionality_support = ss_usb_cap->bFunctionalitySupport;
+                usb_3_exts.b_u1_dev_exit_lat = ss_usb_cap->bU1DevExitLat;
+                usb_3_exts.b_u2_dev_exit_lat = ss_usb_cap->bU2DevExitLat;
+
+                libusb_free_ss_usb_device_capability_descriptor(ss_dev_cap);
+            }
+        }
+    } catch (...) {
+        std::throw_with_nested(std::runtime_error(tr("Unable to gather USB device capability details.").toStdString()));
+    }
+
+    return std::vector<Database::Settings::GkBosUsb>();
 }
 
 /**
@@ -633,18 +804,6 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr)
     }
 
     return;
-}
-
-/**
- * @brief RadioLibs::calibrateAudioInputSignal calibrates an audio input signal so that the obtained volume is around
- * a value of 60 decibels instead, which is much better for FFT analysis and so on.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param data_buf The raw audio stream itself.
- * @return A factor for which to multiply the volume of the audio signal itself by.
- */
-qint16 RadioLibs::calibrateAudioInputSignal(const qint16 *data_buf)
-{
-    return -1;
 }
 
 /**

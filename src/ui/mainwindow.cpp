@@ -2660,7 +2660,7 @@ void MainWindow::on_action_Documentation_triggered()
     return;
 }
 
-void MainWindow::on_action_SendReport_triggered()
+void MainWindow::on_actionSend_Report_triggered()
 {
     QPointer<SendReportDialog> gkSendReport = new SendReportDialog(this);
     gkSendReport->setWindowFlags(Qt::Window);

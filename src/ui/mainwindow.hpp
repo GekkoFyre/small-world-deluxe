@@ -121,7 +121,7 @@ private slots:
     void on_action_Outgoing_triggered();
     void on_actionPrint_triggered();
     void on_action_Documentation_triggered();
-    void on_action_SendReport_triggered();
+    void on_actionSend_Report_triggered();
 
     void on_action_Connect_triggered();
     void on_action_Disconnect_triggered();
