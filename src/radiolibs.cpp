@@ -434,14 +434,19 @@ QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDevice
                 libusb_free_device_list(devs, 1);
                 libusb_exit(nullptr);
 
-                #ifdef _WIN32
-                    // TODO: URGENT - Finish this section!
-                #elif __linux__
-                    std::stringstream ss;
-                    ss << "ttyUSB" << usb.port;
-                #endif
+                if (!usb.bos_usb.lib_usb.path.isEmpty()) {
+                    usb.name = usb.bos_usb.lib_usb.path;
+                } else {
+                    #ifdef _WIN32
+                        // TODO: URGENT - Finish this section!
+                    #elif __linux__
+                        std::stringstream ss;
+                        ss << "ttyUSB" << usb.port;
+                    #endif
 
-                usb.name = QString::fromStdString(ss.str());
+                    usb.name = QString::fromStdString(ss.str());
+                }
+
                 usb_hash.insert(usb.port, usb);
             }
         }
@@ -459,7 +464,8 @@ QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDevice
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param devs
  * @return
- * @note <https://github.com/libusb/libusb/blob/master/examples/testlibusb.c>
+ * @note <https://github.com/libusb/libusb/blob/master/examples/testlibusb.c>,
+ * <https://unix.stackexchange.com/questions/61484/find-the-information-of-usb-devices-in-c>
  */
 std::vector<GkBosUsb> RadioLibs::printLibUsb(libusb_device **devs)
 {
@@ -537,8 +543,55 @@ std::vector<GkBosUsb> RadioLibs::printLibUsb(libusb_device **devs)
                 // Missing driver, perhaps?
                 throw std::runtime_error(tr("Unable to gather `libusb` handle; perhaps there is a missing driver?").toStdString());
             } else if (ret == LIBUSB_ERROR_ACCESS) {
-                // Unknown error
-                throw std::runtime_error(tr("Insufficient permissions! Please try running Small World Deluxe as root/administrator.").toStdString());
+                // Insufficient permissions
+                std::cerr << tr("Insufficient permissions! Trying alternative method for gathering USB device details...").toStdString() << std::endl;
+
+                if (handle) {
+                    //
+                    // Make sure to tie up any loose ends, since we will be making a second attempt at creating a connection!
+                    //
+                    libusb_close(handle);
+                }
+
+                bool proceed = true;
+                struct usb_bus *bus;
+                struct usb_device *usb_compat_dev;
+                static usb_dev_handle *usb_compat_handle;
+                usb_init();
+                usb_find_busses();
+                usb_find_devices();
+
+                for (bus = usb_busses; bus; bus = bus->next) {
+                    for (usb_compat_dev = bus->devices; usb_compat_dev; usb_compat_dev = usb_compat_dev->next) {
+                        if ((usb_compat_dev->descriptor.idVendor == usb.vid) && (usb_compat_dev->descriptor.idProduct == usb.pid)) {
+                            if ((usb_compat_handle = usb_open(usb_compat_dev)) == nullptr) {
+                                std::cerr << tr("Unable to connect with USB device, despite second attempt: %1")
+                                        .arg(QString::fromStdString(usb_strerror())).toStdString() << std::endl;
+                                proceed = false;
+                                break;
+                            }
+
+                            std::cout << tr("Trying USB device %1/%2")
+                                    .arg(QString::fromStdString(bus->dirname))
+                                    .arg(QString::fromStdString(usb_compat_dev->filename))
+                                    .toStdString() << std::endl;
+
+                            usb.lib_usb.path = QString::fromStdString(bus->dirname);
+                            usb.lib_usb.product = QString::fromStdString(usb_compat_dev->filename);
+
+                            usb_get_driver_np
+
+                            if (usb_compat_handle) {
+                                // Clean up any remaining connections
+                                usb_close(usb_compat_handle);
+                                proceed = false;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!proceed) { break; } // Do not proceed if the aforementioned USB connection attempt failed!
+                }
             } else if (ret == LIBUSB_ERROR_BUSY) {
                 std::cerr << tr("Given USB port is busy!").toStdString() << std::endl;
                 continue;

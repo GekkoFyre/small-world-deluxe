@@ -413,6 +413,7 @@ namespace Database {
             QString mfg;                                                            // The manufacturer of this USB device, as determined by 'libusb'.
             QString product;                                                        // The product name/identity of this USB device, as determined by 'libusb'.
             QString serial;                                                         // The unique serial number associated with this USB device, as determined by 'libusb'.
+            QString path;                                                           // The system path for the given USB device, as provided by `lsusb` <https://github.com/gregkh/usbutils>.
         };
 
         struct GkUsb2Exts {
