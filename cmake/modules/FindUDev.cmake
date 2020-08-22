@@ -39,21 +39,20 @@
 #
 
 find_package(PkgConfig)
-pkg_check_modules(PC_LIBUSB_COMPAT QUIET libusb_compat)
-set(LIBUSB_COMPAT_DEFINITIONS ${PC_LIBUSB_COMPAT_CFLAGS_OTHER})
+pkg_check_modules(PC_UDEV QUIET libudev)
+set(UDEV_DEFINITIONS ${PC_UDEV_CFLAGS_OTHER})
 
-find_path(LIBUSB_COMPAT_INCLUDE_DIR
-            NAMES "usb.h"
-            HINTS ${PC_LIBUSB_COMPAT_INCLUDE_DIR} ${PC_LIBUSB_COMPAT_INCLUDE_DIRS}
-            PATHS "/usr/local/include" "/usr/include")
+find_path(UDEV_INCLUDE_DIR NAMES "libudev.h"
+            HINTS ${PC_UDEV_INCLUDE_DIR} ${PC_UDEV_INCLUDE_DIRS}
+            PATH_SUFFIXES include)
 
-find_library(LIBUSB_COMPAT_LIBRARY NAMES "usb" "libusb"
-            HINTS ${PC_LIBUSB_COMPAT_LIBDIR} ${PC_LIBUSB_COMPAT_LIBRARY_DIRS})
+find_library(UDEV_LIBRARY NAMES "udev" "libudev"
+            HINTS ${PC_UDEV_LIBDIR} ${PC_UDEV_LIBRARY_DIRS})
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(USB_COMPAT DEFAULT_MSG LIBUSB_COMPAT_LIBRARY LIBUSB_COMPAT_INCLUDE_DIR)
+find_package_handle_standard_args(udev DEFAULT_MSG UDEV_LIBRARY UDEV_INCLUDE_DIR)
 
-mark_as_advanced(LIBUSB_COMPAT_INCLUDE_DIR LIBUSB_COMPAT_LIBRARY)
+mark_as_advanced(UDEV_INCLUDE_DIR UDEV_LIBRARY)
 
-set(LIBUSB_COMPAT_LIBRARIES ${LIBUSB_COMPAT_LIBRARY})
-set(LIBUSB_COMPAT_INCLUDE_DIRS ${LIBUSB_COMPAT_INCLUDE_DIR})
+set(UDEV_LIBRARIES ${UDEV_LIBRARY})
+set(UDEV_INCLUDE_DIRS ${UDEV_INCLUDE_DIR})

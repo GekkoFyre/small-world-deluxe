@@ -67,7 +67,6 @@ extern "C"
 {
 #endif
 
-#include <usb.h>
 #include <libusb.h>
 
 #ifdef __cplusplus

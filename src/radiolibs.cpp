@@ -40,6 +40,8 @@
  ****************************************************************************************************/
 
 #include "src/radiolibs.hpp"
+#include "src/contrib/udev/device.hpp"
+#include "src/contrib/udev/enumerate.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
 #include <QtUsb/QUsbDevice>
@@ -478,7 +480,7 @@ std::vector<GkBosUsb> RadioLibs::printLibUsb(libusb_device **devs)
             GkBosUsb usb;
             GkLibUsb lib_usb;
             unsigned char string[256];
-            struct libusb_device_descriptor desc {};
+            struct libusb_device_descriptor desc;
 
             ret = libusb_get_device_descriptor(dev, &desc);
             if (ret < 0) {
@@ -541,67 +543,47 @@ std::vector<GkBosUsb> RadioLibs::printLibUsb(libusb_device **devs)
                 }
             } else if (ret == LIBUSB_ERROR_NOT_SUPPORTED) {
                 // Missing driver, perhaps?
+                gkEventLogger->publishEvent(tr("Unable to gather `libusb` handle; perhaps there is a missing driver?"), GkSeverity::Fatal, "", false);
                 throw std::runtime_error(tr("Unable to gather `libusb` handle; perhaps there is a missing driver?").toStdString());
             } else if (ret == LIBUSB_ERROR_ACCESS) {
                 // Insufficient permissions
                 std::cerr << tr("Insufficient permissions! Trying alternative method for gathering USB device details...").toStdString() << std::endl;
 
-                if (handle) {
-                    //
-                    // Make sure to tie up any loose ends, since we will be making a second attempt at creating a connection!
-                    //
-                    libusb_close(handle);
-                }
+                //
+                // Use the sub-system, `udevadm`, instead as an alternative!
+                // https://github.com/dimitry-ishenko/udev
+                //
+                udev::enumerate enu;
+                enu.match_subsystem(tr("block").toStdString());
+                auto devices = enu.get();
 
-                bool proceed = true;
-                struct usb_bus *bus;
-                struct usb_device *usb_compat_dev;
-                static usb_dev_handle *usb_compat_handle;
-                usb_init();
-                usb_find_busses();
-                usb_find_devices();
-
-                for (bus = usb_busses; bus; bus = bus->next) {
-                    for (usb_compat_dev = bus->devices; usb_compat_dev; usb_compat_dev = usb_compat_dev->next) {
-                        if ((usb_compat_dev->descriptor.idVendor == usb.vid) && (usb_compat_dev->descriptor.idProduct == usb.pid)) {
-                            if ((usb_compat_handle = usb_open(usb_compat_dev)) == nullptr) {
-                                std::cerr << tr("Unable to connect with USB device, despite second attempt: %1")
-                                        .arg(QString::fromStdString(usb_strerror())).toStdString() << std::endl;
-                                proceed = false;
-                                break;
-                            }
-
-                            std::cout << tr("Trying USB device %1/%2")
-                                    .arg(QString::fromStdString(bus->dirname))
-                                    .arg(QString::fromStdString(usb_compat_dev->filename))
-                                    .toStdString() << std::endl;
-
-                            usb.lib_usb.path = QString::fromStdString(bus->dirname);
-                            usb.lib_usb.product = QString::fromStdString(usb_compat_dev->filename);
-
-                            usb_get_driver_np
-
-                            if (usb_compat_handle) {
-                                // Clean up any remaining connections
-                                usb_close(usb_compat_handle);
-                                proceed = false;
-                                break;
-                            }
-                        }
+                for (auto const &dev: devices) {
+                    if((dev.subsystem() == tr("tty").toStdString()) && (dev.property("ID_BUS") == tr("usb").toStdString())) {
+                        std::cout << tr("Found USB device!").toStdString() << std::endl;
+                        std::cout << tr("Path: %1").arg(QString::fromStdString(dev.path())).toStdString() << std::endl;
+                        std::cout << tr("Node: %1").arg(QString::fromStdString(dev.node())).toStdString() << std::endl;
+                        std::cout << tr("Name: %1").arg(QString::fromStdString(dev.name())).toStdString() << std::endl;
+                        std::cout << tr("No.: %1").arg(QString::fromStdString(dev.num())).toStdString() << std::endl;
                     }
-
-                    if (!proceed) { break; } // Do not proceed if the aforementioned USB connection attempt failed!
                 }
             } else if (ret == LIBUSB_ERROR_BUSY) {
                 std::cerr << tr("Given USB port is busy!").toStdString() << std::endl;
                 continue;
             } else {
                 // Unknown error
+                gkEventLogger->publishEvent(tr("Unknown error pertaining to `libusb`."), GkSeverity::Error, "", false);
                 throw std::runtime_error(tr("Unknown error pertaining to `libusb`.").toStdString());
             }
 
             usb_vec.push_back(usb);
             if (handle) {
+                libusb_close(handle);
+            }
+
+            if (handle) {
+                //
+                // Make sure to tie up any loose ends, since we will be making a second attempt at creating a connection!
+                //
                 libusb_close(handle);
             }
         }

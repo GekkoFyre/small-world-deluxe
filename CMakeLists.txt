@@ -327,14 +327,6 @@ else()
     message(FATAL_ERROR "Either `libusb.h` and/or `usb.h` could not be found for the 'libusb' system device and enumeration libraries!")
 endif(USB_FOUND)
 
-find_package(USBCompat)
-if (USB_COMPAT_FOUND)
-    include_directories(${LIBUSB_COMPAT_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${LIBUSB_COMPAT_LIBRARIES})
-else()
-    message(FATAL_ERROR "Either `libusb.h` and/or `usb.h` could not be found for the 'libusb' system device and enumeration libraries!")
-endif(USB_COMPAT_FOUND)
-
 find_package(QWT REQUIRED)
 if (QWT_FOUND)
     include_directories(${QWT_INCLUDE_DIRS})
@@ -342,6 +334,16 @@ if (QWT_FOUND)
 else()
     message(FATAL_ERROR "The 'QWT' graphing/charting library could not be found!")
 endif(QWT_FOUND)
+
+if (LINUX)
+    find_package(UDev REQUIRED)
+    if (udev_FOUND)
+        include_directories(${UDEV_INCLUDE_DIRS})
+        set(LIBS ${LIBS} ${UDEV_LIBRARIES})
+    else()
+        message(FATAL_ERROR "The 'udev' SystemD libraries could not be found!")
+    endif(udev_FOUND)
+endif(LINUX)
 
 #
 # https://xiph.org/vorbis/
@@ -577,7 +579,13 @@ endif()
 set(GALAXY_SRC_CPP
     ${GALAXY_SRC_CPP}
     src/pa_sinewave.cpp
-    src/gk_fft.cpp)
+    src/gk_fft.cpp
+    src/contrib/udev/device.cpp
+    src/contrib/udev/enumerate.cpp
+    src/contrib/udev/monitor.cpp
+    src/contrib/udev/udev.cpp
+    src/contrib/udev/posix/error.cpp
+    src/contrib/udev/posix/resource.cpp)
 
 if(LINUX)
     set(GALAXY_SRC_CPP
@@ -656,7 +664,13 @@ set(GALAXY_SRC_HEADERS
     src/gk_circ_buffer.hpp
     src/gk_fft.hpp
     src/contrib/rapidcsv/src/rapidcsv.h
-    src/contrib/AudioFile/AudioFile.h)
+    src/contrib/AudioFile/AudioFile.h
+    src/contrib/udev/device.hpp
+    src/contrib/udev/enumerate.hpp
+    src/contrib/udev/monitor.hpp
+    src/contrib/udev/udev.hpp
+    src/contrib/udev/posix/error.hpp
+    src/contrib/udev/posix/resource.hpp)
 
 if(LINUX)
     set(GALAXY_SRC_HEADERS
