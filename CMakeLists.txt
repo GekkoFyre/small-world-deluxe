@@ -335,14 +335,6 @@ else()
     message(FATAL_ERROR "The 'QWT' graphing/charting library could not be found!")
 endif(QWT_FOUND)
 
-find_package(PAM REQUIRED)
-if (PAM_FOUND)
-    include_directories(${PAM_INCLUDE_DIR})
-    set(LIBS ${LIBS} ${PAM_LIBRARIES})
-else()
-    message(FATAL_ERROR "The 'PAM' authentication libraries could not be found!")
-endif(PAM_FOUND)
-
 #
 # https://xiph.org/vorbis/
 #
