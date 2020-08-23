@@ -43,7 +43,6 @@
 #include "src/contrib/udev/device.hpp"
 #include "src/contrib/udev/enumerate.hpp"
 #include <boost/filesystem.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/exception/all.hpp>
 #include <QtUsb/QUsbDevice>
 #include <QtUsb/QUsbEndpoint>
@@ -53,8 +52,7 @@
 #include <iostream>
 #include <exception>
 #include <utility>
-#include <cstring>
-#include <sstream>
+#include <QStringList>
 #include <QMessageBox>
 #include <QSerialPortInfo>
 
@@ -401,6 +399,7 @@ QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDevice
 
     try {
         // Enumerate USB devices!
+        QStringList already_added;
         auto list = QUsbInfo::devices();
         if (!list.isEmpty()) {
             for (const auto &device: list) {
@@ -432,8 +431,11 @@ QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDevice
                             usb.bos_usb = bos_dev;
 
                             if (!bos_dev.lib_usb.path.isEmpty()) {
-                                usb.name = bos_dev.lib_usb.path;
-                                break;
+                                if (!already_added.contains(bos_dev.lib_usb.path)) {
+                                    usb.name = bos_dev.lib_usb.path;
+                                    already_added.push_back(usb.name);
+                                    break;
+                                }
                             } else {
                                 #ifdef _WIN32
                                 // TODO: URGENT - Finish this section!
@@ -442,8 +444,12 @@ QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDevice
                                 ss << "ttyUSB" << usb.port;
                                 #endif
 
-                                usb.name = QString::fromStdString(ss.str());
-                                break;
+                                const QString str_name = QString::fromStdString(ss.str());
+                                if (!already_added.contains(str_name)) {
+                                    usb.name = str_name;
+                                    already_added.push_back(usb.name);
+                                    break;
+                                }
                             }
                         }
                     }
@@ -452,7 +458,9 @@ QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDevice
                 libusb_free_device_list(devs, 1);
                 libusb_exit(nullptr);
 
-                usb_hash.insert(usb.port, usb);
+                if (!usb.name.isEmpty()) {
+                    usb_hash.insert(usb.port, usb);
+                }
             }
         }
 
@@ -604,7 +612,6 @@ std::vector<GkBosUsb> RadioLibs::printLibUsb(libusb_device **devs)
                 std::cout << tr("Serial: %1").arg(usb.lib_usb.serial).toStdString() << std::endl;
 
                 usb_vec.push_back(usb);
-                break;
             }
         }
         #endif

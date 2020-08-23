@@ -45,10 +45,6 @@
 #include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
 #include <boost/logic/tribool.hpp>
-#include <QPointer>
-#include <QObject>
-#include <QString>
-#include <QMap>
 #include <memory>
 #include <vector>
 #include <string>
@@ -57,6 +53,10 @@
 #include <mutex>
 #include <list>
 #include <set>
+#include <QMap>
+#include <QPointer>
+#include <QObject>
+#include <QString>
 
 #ifdef _WIN32
 #include <Windows.h>
