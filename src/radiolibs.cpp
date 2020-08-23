@@ -43,6 +43,7 @@
 #include "src/contrib/udev/device.hpp"
 #include "src/contrib/udev/enumerate.hpp"
 #include <boost/filesystem.hpp>
+#include <boost/lexical_cast.hpp>
 #include <boost/exception/all.hpp>
 #include <QtUsb/QUsbDevice>
 #include <QtUsb/QUsbEndpoint>
@@ -426,28 +427,30 @@ QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDevice
                 auto usb_bos_info = printLibUsb(devs);
                 if (!usb_bos_info.empty()) {
                     for (const auto &bos_dev: usb_bos_info) {
-                        if ((bos_dev.pid == usb.pid) && (bos_dev.vid == usb.vid)) {
+                        if (bos_dev.lib_usb.dev_num == usb.port) {
                             // We have a match!
                             usb.bos_usb = bos_dev;
+
+                            if (!bos_dev.lib_usb.path.isEmpty()) {
+                                usb.name = bos_dev.lib_usb.path;
+                                break;
+                            } else {
+                                #ifdef _WIN32
+                                // TODO: URGENT - Finish this section!
+                                #elif __linux__
+                                std::stringstream ss;
+                                ss << "ttyUSB" << usb.port;
+                                #endif
+
+                                usb.name = QString::fromStdString(ss.str());
+                                break;
+                            }
                         }
                     }
                 }
 
                 libusb_free_device_list(devs, 1);
                 libusb_exit(nullptr);
-
-                if (!usb.bos_usb.lib_usb.path.isEmpty()) {
-                    usb.name = usb.bos_usb.lib_usb.path;
-                } else {
-                    #ifdef _WIN32
-                        // TODO: URGENT - Finish this section!
-                    #elif __linux__
-                        std::stringstream ss;
-                        ss << "ttyUSB" << usb.port;
-                    #endif
-
-                    usb.name = QString::fromStdString(ss.str());
-                }
 
                 usb_hash.insert(usb.port, usb);
             }
@@ -473,6 +476,8 @@ std::vector<GkBosUsb> RadioLibs::printLibUsb(libusb_device **devs)
 {
     try {
         std::vector<GkBosUsb> usb_vec;
+
+        #if defined(_WIN32) || defined(__MINGW64__)
         libusb_device *dev;
         int i = 0;
         while ((dev = devs[i++]) != nullptr) {
@@ -548,24 +553,7 @@ std::vector<GkBosUsb> RadioLibs::printLibUsb(libusb_device **devs)
             } else if (ret == LIBUSB_ERROR_ACCESS) {
                 // Insufficient permissions
                 std::cerr << tr("Insufficient permissions! Trying alternative method for gathering USB device details...").toStdString() << std::endl;
-
-                //
-                // Use the sub-system, `udevadm`, instead as an alternative!
-                // https://github.com/dimitry-ishenko/udev
-                //
-                udev::enumerate enu;
-                enu.match_subsystem(tr("block").toStdString());
-                auto devices = enu.get();
-
-                for (auto const &dev: devices) {
-                    if((dev.subsystem() == tr("tty").toStdString()) && (dev.property("ID_BUS") == tr("usb").toStdString())) {
-                        std::cout << tr("Found USB device!").toStdString() << std::endl;
-                        std::cout << tr("Path: %1").arg(QString::fromStdString(dev.path())).toStdString() << std::endl;
-                        std::cout << tr("Node: %1").arg(QString::fromStdString(dev.node())).toStdString() << std::endl;
-                        std::cout << tr("Name: %1").arg(QString::fromStdString(dev.name())).toStdString() << std::endl;
-                        std::cout << tr("No.: %1").arg(QString::fromStdString(dev.num())).toStdString() << std::endl;
-                    }
-                }
+                continue;
             } else if (ret == LIBUSB_ERROR_BUSY) {
                 std::cerr << tr("Given USB port is busy!").toStdString() << std::endl;
                 continue;
@@ -587,6 +575,39 @@ std::vector<GkBosUsb> RadioLibs::printLibUsb(libusb_device **devs)
                 libusb_close(handle);
             }
         }
+        #elif __linux__
+        //
+        // Use the sub-system, `udevadm`, instead as an alternative!
+        // https://github.com/dimitry-ishenko/udev
+        //
+        udev::enumerate enu;
+        enu.match_subsystem(tr("tty").toStdString());
+        auto devices = enu.get();
+
+        for (auto const &udev: devices) {
+            if(udev.property("ID_BUS") == tr("usb").toStdString()) {
+                GkBosUsb usb;
+                usb.lib_usb.path = QString::fromStdString(udev.node());
+                usb.lib_usb.mfg = QString::fromStdString(udev.property(tr("ID_VENDOR_FROM_DATABASE").toStdString()));
+                usb.lib_usb.product = QString::fromStdString(udev.property(tr("ID_MODEL_FROM_DATABASE").toStdString()));
+                usb.lib_usb.serial = QString::fromStdString(udev.property(tr("ID_SERIAL").toStdString()));
+
+                int dev_num_conv = std::stoi(udev.num());
+                usb.lib_usb.dev_num = static_cast<quint16>(dev_num_conv);
+
+                // Output the information gathered to console as well, so the user can do any debugging necessary for if they need to!
+                std::cout << tr("Found USB device!").toStdString() << std::endl;
+                std::cout << tr("No.: %1").arg(QString::fromStdString(udev.num())).toStdString() << std::endl;
+                std::cout << tr("Node: %1").arg(usb.lib_usb.path).toStdString() << std::endl;
+                std::cout << tr("Vendor: %1").arg(usb.lib_usb.mfg).toStdString() << std::endl;
+                std::cout << tr("Model: %1").arg(usb.lib_usb.product).toStdString() << std::endl;
+                std::cout << tr("Serial: %1").arg(usb.lib_usb.serial).toStdString() << std::endl;
+
+                usb_vec.push_back(usb);
+                break;
+            }
+        }
+        #endif
 
         return usb_vec;
     } catch (...) {
