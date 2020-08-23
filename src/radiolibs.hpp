@@ -45,10 +45,6 @@
 #include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
 #include <boost/logic/tribool.hpp>
-#include <QPointer>
-#include <QObject>
-#include <QString>
-#include <QMap>
 #include <memory>
 #include <vector>
 #include <string>
@@ -57,9 +53,24 @@
 #include <mutex>
 #include <list>
 #include <set>
+#include <QMap>
+#include <QPointer>
+#include <QObject>
+#include <QString>
 
 #ifdef _WIN32
 #include <Windows.h>
+#endif
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#include <libusb.h>
+
+#ifdef __cplusplus
+}
 #endif
 
 namespace GekkoFyre {
@@ -84,10 +95,11 @@ public:
     GekkoFyre::AmateurRadio::GkConnType convGkConnTypeToEnum(const QString &conn_type);
     rig_port_e convGkConnTypeToHamlib(const GekkoFyre::AmateurRadio::GkConnType &conn_type);
 
-    void gkInitRadioRig(std::shared_ptr<AmateurRadio::Control::GkRadio> radio_ptr);
-    qint16 calibrateAudioInputSignal(const qint16 *data_buf);
+    void gkInitRadioRig(const std::shared_ptr<AmateurRadio::Control::GkRadio> &radio_ptr);
 
     QMap<quint16, Database::Settings::GkUsbPort> enumUsbDevices();
+    std::vector<Database::Settings::GkBosUsb> printLibUsb(libusb_device **devs);
+    std::vector<Database::Settings::GkBosUsb> printBosUsb(libusb_device_handle *handle);
 
 signals:
     void disconnectRigInUse(std::shared_ptr<Rig> rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);

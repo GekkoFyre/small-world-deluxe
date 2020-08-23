@@ -445,3 +445,7 @@ settings.db
 src/contrib/RS232/demo_rx\.c
 src/contrib/RS232/demo_tx\.c
 .idea/
+build/
+.kdev4/
+*.kdev4
+pvs_studio/src/

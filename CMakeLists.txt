@@ -62,13 +62,15 @@ set(INSTALL_RPATH_USE_LINK_PATH true)
 if(GK_CUDA_FFT)
     message(STATUS "Enable NVIDIA CUDA support within Small World Deluxe and allow your GPU to do heavy calculations instead of your CPU!")
     add_definitions(-DGK_CUDA_FFT_ENBL)
-    project(smallworld C CXX CUDA)
+    project(smallworld C CXX Fortran CUDA)
 else()
     project(smallworld C CXX Fortran)
 endif()
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CXX_STANDARD 17)
+
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 #
 # https://doc.qt.io/qt-5/cmake-manual.html
@@ -322,7 +324,7 @@ if (USB_FOUND)
         message(FATAL_ERROR "The 'QtUSB' system device and enumeration library could not be found!")
     endif(QtUsb_FOUND)
 else()
-    message(FATAL_ERROR "The 'libusb' system device and enumeration library could not be found!")
+    message(FATAL_ERROR "Either `libusb.h` and/or `usb.h` could not be found for the 'libusb' system device and enumeration libraries!")
 endif(USB_FOUND)
 
 find_package(QWT REQUIRED)
@@ -332,6 +334,16 @@ if (QWT_FOUND)
 else()
     message(FATAL_ERROR "The 'QWT' graphing/charting library could not be found!")
 endif(QWT_FOUND)
+
+if (LINUX)
+    find_package(UDev REQUIRED)
+    if (udev_FOUND)
+        include_directories(${UDEV_INCLUDE_DIRS})
+        set(LIBS ${LIBS} ${UDEV_LIBRARIES})
+    else()
+        message(FATAL_ERROR "The 'udev' SystemD libraries could not be found!")
+    endif(udev_FOUND)
+endif(LINUX)
 
 #
 # https://xiph.org/vorbis/
@@ -504,7 +516,8 @@ qt5_wrap_ui(UI_HEADERS
     src/ui/dialogsettings.ui
     src/ui/aboutdialog.ui
     src/ui/spectrodialog.ui
-    src/ui/gkaudioplaydialog.ui)
+    src/ui/gkaudioplaydialog.ui
+    src/ui/sendreportdialog.ui)
 
 # https://doc.qt.io/qt-5/cmake-command-reference.html
 # rcc -no-compress -binary smallworld_res.qrc -o smallworld_res.rcc
@@ -533,6 +546,7 @@ set(GALAXY_UI_CPP
     src/ui/gkaudioplaydialog.cpp
     src/ui/spectrodialog.cpp
     src/ui/gk_vu_meter_widget.cpp
+    src/ui/sendreportdialog.cpp
     src/radiolibs.cpp
     src/dek_db.cpp
     src/file_io.cpp
@@ -545,6 +559,7 @@ set(GALAXY_UI_CPP
     src/gk_frequency_list.cpp
     src/gk_string_funcs.cpp
     src/gk_logger.cpp
+    src/gk_system.cpp
     src/ui/widgets/gk_submit_msg.cpp
     src/ui/widgets/gk_display_image.cpp
     src/models/tableview/gk_frequency_model.cpp
@@ -564,7 +579,13 @@ endif()
 set(GALAXY_SRC_CPP
     ${GALAXY_SRC_CPP}
     src/pa_sinewave.cpp
-    src/gk_fft.cpp)
+    src/gk_fft.cpp
+    src/contrib/udev/device.cpp
+    src/contrib/udev/enumerate.cpp
+    src/contrib/udev/monitor.cpp
+    src/contrib/udev/udev.cpp
+    src/contrib/udev/posix/error.cpp
+    src/contrib/udev/posix/resource.cpp)
 
 if(LINUX)
     set(GALAXY_SRC_CPP
@@ -605,6 +626,7 @@ set(GALAXY_OBJ_HEADERS
     src/ui/gkaudioplaydialog.hpp
     src/ui/spectrodialog.hpp
     src/ui/gk_vu_meter_widget.hpp
+    src/ui/sendreportdialog.hpp
     src/radiolibs.hpp
     src/dek_db.hpp
     src/file_io.hpp
@@ -617,6 +639,7 @@ set(GALAXY_OBJ_HEADERS
     src/gk_frequency_list.hpp
     src/gk_string_funcs.hpp
     src/gk_logger.hpp
+    src/gk_system.hpp
     src/ui/widgets/gk_submit_msg.hpp
     src/ui/widgets/gk_display_image.hpp
     src/models/tableview/gk_frequency_model.hpp
@@ -641,7 +664,13 @@ set(GALAXY_SRC_HEADERS
     src/gk_circ_buffer.hpp
     src/gk_fft.hpp
     src/contrib/rapidcsv/src/rapidcsv.h
-    src/contrib/AudioFile/AudioFile.h)
+    src/contrib/AudioFile/AudioFile.h
+    src/contrib/udev/device.hpp
+    src/contrib/udev/enumerate.hpp
+    src/contrib/udev/monitor.hpp
+    src/contrib/udev/udev.hpp
+    src/contrib/udev/posix/error.hpp
+    src/contrib/udev/posix/resource.hpp)
 
 if(LINUX)
     set(GALAXY_SRC_HEADERS
@@ -737,58 +766,15 @@ set(SWRLD_EXEC ${SWRLD_EXEC}
     src/main.cpp)
 
 add_executable(smallworld WIN32 ${SWRLD_EXEC})
+target_compile_options(smallworld PRIVATE -fPIC)
 target_link_libraries(smallworld PRIVATE galaxy)
 
 if(GK_CUDA_FFT)
     target_link_libraries(smallworld PRIVATE galaxy_cuda)
 endif()
 
-install(CODE [[
-    include(CMakePackageConfigHelpers)
-    include(GNUInstallDirs)
-    
-    configure_package_config_file("${CMAKE_SOURCE_DIR}/cmake/modules/SmallWorldDeluxeConfig.cmake.in"
-        "${PROJECT_BINARY_DIR}/SmallWorldDeluxeConfig.cmake"
-        INSTALL_DESTINATION "${LIB_INSTALL_DIR}/small-world-deluxe/cmake"
-        PATH_VARS INCLUDE_INSTALL_DIR SYSCONFIG_INSTALL_DIR)
-
-    write_basic_package_version_file(
-        "${PROJECT_BINARY_DIR}/SWorldConfigVersion.cmake"
-        VERSION "${PACKAGE_VERSION}"
-        COMPATIBILITY ExactVersion)
-
-    # Install the CMake configuration files...
-    INSTALL(FILES
-        "${PROJECT_BINARY_DIR}/SmallWorldDeluxeConfig.cmake"
-        "${PROJECT_BINARY_DIR}/SWorldConfigVersion.cmake"
-        DESTINATION "${LIB_INSTALL_DIR}/small-world-deluxe/cmake")
-
-    file(GET_RUNTIME_DEPENDENCIES
-        EXECUTABLES "${CMAKE_BINARY_DIR}"
-        RESOLVED_DEPENDENCIES_VAR GK_FOUND_LIBS
-        UNRESOLVED_DEPENDENCIES_VAR GK_UNFOUND_LIBS)
-
-    if (GK_UNFOUND_LIBS)
-        message(WARNING "Some of the libraries/dependencies for Small World Deluxe could not be found! The application may or may not work without them; consider this a warning!")
-    endif()
-
-    foreach (GK_FOUND_LIB IN LISTS GK_FOUND_LIBS)
-        # TODO: Determine if the libraries should be copied over...
-        configure_file("${GK_FOUND_LIB}" "${CMAKE_BINARY_DIR}" COPY_ONLY)
-    endforeach()
-
-    file(TOUCH "${tagfile}")
-
-    add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/tagfile"
-                    COMMAND "${CMAKE_COMMAND}"
-                    "-Dexe=$<TARGET_FILE:smallworld>"
-                    "-Ddest_libdir=${CMAKE_BINARY_DIR}/lib"
-                    "-Dtagfile=${CMAKE_CURRENT_BINARY_DIR}/tagfile"
-                    -P "${path_to_above_file}"
-                    DEPENDS "$<TARGET_FILE:smallworld>"
-                    "${path_to_above_file}"
-                    DOC "Copying dependencies for smallworld")
-]])
+include(CMakePackageConfigHelpers)
+include(GNUInstallDirs)
 
 if (NOT LINUX)
     #
@@ -835,6 +821,7 @@ endif()
 if (GFYRE_ENABLE_PVS_STUDIO)
     include(PVS-Studio.cmake)
     pvs_studio_add_target(TARGET smallworld.analyze ALL
+                          PREPROCESSOR clang
                           OUTPUT FORMAT errorfile
                           ANALYZE smallworld galaxy
                           LOG swd.err)

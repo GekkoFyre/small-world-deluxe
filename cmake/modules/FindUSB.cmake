@@ -46,7 +46,7 @@ find_path(LIBUSB_INCLUDE_DIR NAMES "libusb.h"
             HINTS ${PC_LIBUSB_INCLUDE_DIR} ${PC_LIBUSB_INCLUDE_DIRS}
             PATH_SUFFIXES libusb-1.0)
 
-find_library(LIBUSB_LIBRARY NAMES "usb-1.0" "libusb-1.0" "usb" "libusb"
+find_library(LIBUSB_LIBRARY NAMES "usb-1.0" "libusb-1.0"
             HINTS ${PC_LIBUSB_LIBDIR} ${PC_LIBUSB_LIBRARY_DIRS})
 
 include(FindPackageHandleStandardArgs)

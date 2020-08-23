@@ -40,11 +40,11 @@
  ****************************************************************************************************/
 
 #include "src/radiolibs.hpp"
+#include "src/contrib/udev/device.hpp"
+#include "src/contrib/udev/enumerate.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
-#include <boost/algorithm/string/replace.hpp>
 #include <QtUsb/QUsbDevice>
-#include <QtUsb/QHidDevice>
 #include <QtUsb/QUsbEndpoint>
 #include <QtUsb/QUsbInfo>
 #include <ios>
@@ -52,8 +52,7 @@
 #include <iostream>
 #include <exception>
 #include <utility>
-#include <cstring>
-#include <sstream>
+#include <QStringList>
 #include <QMessageBox>
 #include <QSerialPortInfo>
 
@@ -397,41 +396,302 @@ void RadioLibs::hamlibStatus(const int &retcode)
 QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDevices()
 {
     QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> usb_hash;
+
     try {
         // Enumerate USB devices!
+        QStringList already_added;
         auto list = QUsbInfo::devices();
+        if (!list.isEmpty()) {
+            for (const auto &device: list) {
+                GekkoFyre::Database::Settings::GkUsbPort usb;
+                usb.port = (quint16)device.port;
+                usb.bus = (quint16)device.bus;
+                usb.pid = device.pid;
+                usb.vid = device.vid;
+                usb.d_class = (quint16)device.dClass;
+                usb.d_sub_class = (quint16)device.dSubClass;
 
-        for (const auto &device: list) {
-            GekkoFyre::Database::Settings::GkUsbPort usb;
-            usb.port = (quint16)device.port;
-            usb.bus = (quint16)device.bus;
-            usb.pid = device.pid;
-            usb.vid = device.vid;
-            usb.d_class = (quint16)device.dClass;
-            usb.d_sub_class = (quint16)device.dSubClass;
+                libusb_device **devs;
+                int r = libusb_init(nullptr);
+                if (r < 0) {
+                    throw std::runtime_error(tr("Error whilst initializing `libusb`!").toStdString());
+                }
 
-            QHidDevice usb_hid(new QHidDevice());
-            usb_hid.open(usb.vid, usb.pid);
-            usb.mfg = usb_hid.manufacturer();
-            usb.product = usb_hid.product();
+                ssize_t cnt = libusb_get_device_list(nullptr, &devs);
+                if (cnt < 0) {
+                    libusb_exit(nullptr);
+                    throw std::runtime_error(tr("Error whilst initializing `libusb`!").toStdString());
+                }
 
-            #ifdef _WIN32
-            // TODO: URGENT - Finish this section!
-            #elif __linux__
-            std::stringstream ss;
-            ss << "ttyUSB" << usb.port;
-            #endif
+                auto usb_bos_info = printLibUsb(devs);
+                if (!usb_bos_info.empty()) {
+                    for (const auto &bos_dev: usb_bos_info) {
+                        if (bos_dev.lib_usb.dev_num == usb.port) {
+                            // We have a match!
+                            usb.bos_usb = bos_dev;
 
-            usb.name = QString::fromStdString(ss.str());
-            usb_hash.insert(usb.port, usb);
+                            if (!bos_dev.lib_usb.path.isEmpty()) {
+                                if (!already_added.contains(bos_dev.lib_usb.path)) {
+                                    usb.name = bos_dev.lib_usb.path;
+                                    already_added.push_back(usb.name);
+                                    break;
+                                }
+                            } else {
+                                #ifdef _WIN32
+                                // TODO: URGENT - Finish this section!
+                                #elif __linux__
+                                std::stringstream ss;
+                                ss << "ttyUSB" << usb.port;
+                                #endif
+
+                                const QString str_name = QString::fromStdString(ss.str());
+                                if (!already_added.contains(str_name)) {
+                                    usb.name = str_name;
+                                    already_added.push_back(usb.name);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                libusb_free_device_list(devs, 1);
+                libusb_exit(nullptr);
+
+                if (!usb.name.isEmpty()) {
+                    usb_hash.insert(usb.port, usb);
+                }
+            }
         }
 
         return usb_hash;
     }  catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+        print_exception(e);
     }
 
     return QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort>();
+}
+
+/**
+ * @brief RadioLibs::printLibUsb
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param devs
+ * @return
+ * @note <https://github.com/libusb/libusb/blob/master/examples/testlibusb.c>,
+ * <https://unix.stackexchange.com/questions/61484/find-the-information-of-usb-devices-in-c>
+ */
+std::vector<GkBosUsb> RadioLibs::printLibUsb(libusb_device **devs)
+{
+    try {
+        std::vector<GkBosUsb> usb_vec;
+
+        #if defined(_WIN32) || defined(__MINGW64__)
+        libusb_device *dev;
+        int i = 0;
+        while ((dev = devs[i++]) != nullptr) {
+            int ret = 0;
+            GkBosUsb usb;
+            GkLibUsb lib_usb;
+            unsigned char string[256];
+            struct libusb_device_descriptor desc;
+
+            ret = libusb_get_device_descriptor(dev, &desc);
+            if (ret < 0) {
+                throw std::runtime_error(tr("Failed to get device descriptor!").toStdString());
+            }
+
+            libusb_device_handle *handle = nullptr;
+
+            usb.bus = libusb_get_bus_number(dev);
+            usb.addr = libusb_get_device_address(dev);
+            usb.vid = desc.idVendor;
+            usb.pid = desc.idProduct;
+
+            ret = libusb_open(dev, &handle);
+            if (ret == LIBUSB_SUCCESS) {
+                if (desc.iManufacturer) {
+                    ret = libusb_get_string_descriptor_ascii(handle, desc.iManufacturer, string, sizeof(string));
+                    if (ret > 0) {
+                        lib_usb.mfg = QString::fromStdString((char *)(string));
+                    }
+                }
+
+                if (desc.iProduct) {
+                    ret = libusb_get_string_descriptor_ascii(handle, desc.iProduct, string, sizeof(string));
+                    if (ret > 0) {
+                        lib_usb.product = QString::fromStdString((char *)(string));
+                    }
+                }
+
+                if (desc.iSerialNumber) {
+                    ret = libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, string, sizeof(string));
+                    if (ret > 0) {
+                        lib_usb.serial = QString::fromStdString((char *)(string));
+                    }
+                }
+
+                usb.lib_usb = lib_usb;
+                auto usb_bos_info = printBosUsb(handle);
+                if (!usb_bos_info.empty()) {
+                    for (const auto &bos_data: usb_bos_info) {
+                        if ((bos_data.vid == usb.vid) && (bos_data.pid == usb.pid)) {
+                            // We have a match!
+                            GkBosUsb bos {};
+
+                            bos.usb_2.dev_cap_type = bos_data.usb_2.dev_cap_type;
+                            bos.usb_2.bm_attribs = bos_data.usb_2.bm_attribs;
+
+                            bos.usb_3.dev_cap_type = bos_data.usb_3.dev_cap_type;
+                            bos.usb_3.bm_attribs = bos_data.usb_3.bm_attribs;
+                            bos.usb_3.write_speed_supported = bos_data.usb_3.write_speed_supported;
+                            bos.usb_3.functionality_support = bos_data.usb_3.functionality_support;
+                            bos.usb_3.b_u1_dev_exit_lat = bos_data.usb_3.b_u1_dev_exit_lat;
+                            bos.usb_3.b_u2_dev_exit_lat = bos_data.usb_3.b_u2_dev_exit_lat;
+
+                            usb.usb_3 = bos.usb_3;
+                            usb.usb_2 = bos.usb_2;
+                            break;
+                        }
+                    }
+                }
+            } else if (ret == LIBUSB_ERROR_NOT_SUPPORTED) {
+                // Missing driver, perhaps?
+                gkEventLogger->publishEvent(tr("Unable to gather `libusb` handle; perhaps there is a missing driver?"), GkSeverity::Fatal, "", false);
+                throw std::runtime_error(tr("Unable to gather `libusb` handle; perhaps there is a missing driver?").toStdString());
+            } else if (ret == LIBUSB_ERROR_ACCESS) {
+                // Insufficient permissions
+                std::cerr << tr("Insufficient permissions! Trying alternative method for gathering USB device details...").toStdString() << std::endl;
+                continue;
+            } else if (ret == LIBUSB_ERROR_BUSY) {
+                std::cerr << tr("Given USB port is busy!").toStdString() << std::endl;
+                continue;
+            } else {
+                // Unknown error
+                gkEventLogger->publishEvent(tr("Unknown error pertaining to `libusb`."), GkSeverity::Error, "", false);
+                throw std::runtime_error(tr("Unknown error pertaining to `libusb`.").toStdString());
+            }
+
+            usb_vec.push_back(usb);
+            if (handle) {
+                libusb_close(handle);
+            }
+
+            if (handle) {
+                //
+                // Make sure to tie up any loose ends, since we will be making a second attempt at creating a connection!
+                //
+                libusb_close(handle);
+            }
+        }
+        #elif __linux__
+        //
+        // Use the sub-system, `udevadm`, instead as an alternative!
+        // https://github.com/dimitry-ishenko/udev
+        //
+        udev::enumerate enu;
+        enu.match_subsystem(tr("tty").toStdString());
+        auto devices = enu.get();
+
+        for (auto const &udev: devices) {
+            if(udev.property("ID_BUS") == tr("usb").toStdString()) {
+                GkBosUsb usb;
+                usb.lib_usb.path = QString::fromStdString(udev.node());
+                usb.lib_usb.mfg = QString::fromStdString(udev.property(tr("ID_VENDOR_FROM_DATABASE").toStdString()));
+                usb.lib_usb.product = QString::fromStdString(udev.property(tr("ID_MODEL_FROM_DATABASE").toStdString()));
+                usb.lib_usb.serial = QString::fromStdString(udev.property(tr("ID_SERIAL").toStdString()));
+
+                int dev_num_conv = std::stoi(udev.num());
+                usb.lib_usb.dev_num = static_cast<quint16>(dev_num_conv);
+
+                // Output the information gathered to console as well, so the user can do any debugging necessary for if they need to!
+                std::cout << tr("Found USB device!").toStdString() << std::endl;
+                std::cout << tr("No.: %1").arg(QString::fromStdString(udev.num())).toStdString() << std::endl;
+                std::cout << tr("Node: %1").arg(usb.lib_usb.path).toStdString() << std::endl;
+                std::cout << tr("Vendor: %1").arg(usb.lib_usb.mfg).toStdString() << std::endl;
+                std::cout << tr("Model: %1").arg(usb.lib_usb.product).toStdString() << std::endl;
+                std::cout << tr("Serial: %1").arg(usb.lib_usb.serial).toStdString() << std::endl;
+
+                usb_vec.push_back(usb);
+            }
+        }
+        #endif
+
+        return usb_vec;
+    } catch (...) {
+        std::throw_with_nested(std::runtime_error(tr("Unable to gather extra USB device details.").toStdString()));
+    }
+
+    return std::vector<GkBosUsb>();
+}
+
+/**
+ * @brief RadioLibs::printBosUsb
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param handle
+ * @return
+ * @note <https://github.com/libusb/libusb/blob/master/examples/testlibusb.c>
+ */
+std::vector<Database::Settings::GkBosUsb> RadioLibs::printBosUsb(libusb_device_handle *handle)
+{
+    try {
+        if (handle) {
+            struct libusb_bos_descriptor *bos;
+            int ret = libusb_get_bos_descriptor(handle, &bos);
+            if (ret < 0) {
+                throw std::runtime_error(tr("Failed to get USB BoS device descriptor!").toStdString());
+            }
+
+            for (uint8_t i = 0; i < bos->bNumDeviceCaps; i++) {
+                GkBosUsb bos_usb {};
+                struct libusb_bos_dev_capability_descriptor *dev_cap = bos->dev_capability[i];
+
+                if (dev_cap->bDevCapabilityType == LIBUSB_BT_USB_2_0_EXTENSION) {
+                    //
+                    // USB 2.0 capabilities
+                    //
+                    struct libusb_usb_2_0_extension_descriptor *usb_2_0_extension;
+                    ret = libusb_get_usb_2_0_extension_descriptor(nullptr, dev_cap, &usb_2_0_extension);
+                    if (ret < 0) {
+                        throw std::runtime_error(tr("Failed to get USB 2.0 device extension descriptor!").toStdString());
+                    }
+
+                    GkUsb2Exts usb_2_exts {};
+                    struct libusb_usb_2_0_extension_descriptor *usb_2_0_ext_cap = usb_2_0_extension;
+                    usb_2_exts.dev_cap_type = usb_2_0_ext_cap->bDevCapabilityType;
+                    usb_2_exts.bm_attribs = usb_2_0_ext_cap->bmAttributes;
+
+                    bos_usb.usb_2 = usb_2_exts;
+                    libusb_free_usb_2_0_extension_descriptor(usb_2_0_extension);
+                } else if (dev_cap->bDevCapabilityType == LIBUSB_BT_SS_USB_DEVICE_CAPABILITY) {
+                    //
+                    // USB 3.0 capabilities
+                    //
+                    struct libusb_ss_usb_device_capability_descriptor *ss_dev_cap;
+                    ret = libusb_get_ss_usb_device_capability_descriptor(nullptr, dev_cap, &ss_dev_cap);
+                    if (ret < 0) {
+                        throw std::runtime_error(tr("Failed to get SS USB 2.0 device capability descriptor!").toStdString());
+                    }
+
+                    GkUsb3Exts usb_3_exts {};
+                    struct libusb_ss_usb_device_capability_descriptor *ss_usb_cap = ss_dev_cap;
+                    usb_3_exts.dev_cap_type = ss_usb_cap->bDevCapabilityType;
+                    usb_3_exts.bm_attribs = ss_usb_cap->bmAttributes;
+                    usb_3_exts.write_speed_supported = ss_usb_cap->wSpeedSupported;
+                    usb_3_exts.functionality_support = ss_usb_cap->bFunctionalitySupport;
+                    usb_3_exts.b_u1_dev_exit_lat = ss_usb_cap->bU1DevExitLat;
+                    usb_3_exts.b_u2_dev_exit_lat = ss_usb_cap->bU2DevExitLat;
+
+                    libusb_free_ss_usb_device_capability_descriptor(ss_dev_cap);
+                }
+            }
+        } else {
+            throw std::runtime_error(tr("Invalid handle provided for `libusb`!").toStdString());
+        }
+    } catch (...) {
+        std::throw_with_nested(std::runtime_error(tr("Unable to gather USB device capability details.").toStdString()));
+    }
+
+    return std::vector<Database::Settings::GkBosUsb>();
 }
 
 /**
@@ -441,7 +701,8 @@ QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDevice
  */
 void RadioLibs::print_exception(const std::exception &e, int level)
 {
-    gkEventLogger->publishEvent(e.what(), GkSeverity::Warning, "", true);
+    gkEventLogger->publishEvent(e.what(), GkSeverity::Warning, "", false);
+    QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok, QMessageBox::Ok);
 
     try {
         std::rethrow_if_nested(e);
@@ -461,12 +722,12 @@ void RadioLibs::print_exception(const std::exception &e, int level)
  * @param usb_ptr A pointer which contains all the information on user's configured USB devices, if any.
  * @note Ref: HamLib <https://github.com/Hamlib/Hamlib/>. Example: <https://github.com/Hamlib/Hamlib/blob/master/tests/example.c>
  */
-void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr)
+void RadioLibs::gkInitRadioRig(const std::shared_ptr<GkRadio> &radio_ptr)
 {
-    std::mutex mtx_init_rig;
-    std::lock_guard<std::mutex> lck_guard(mtx_init_rig);
-
     try {
+        std::mutex mtx_init_rig;
+        std::lock_guard<std::mutex> lck_guard(mtx_init_rig);
+
         // https://github.com/Hamlib/Hamlib/blob/master/tests/example.c
         // Set verbosity level
         rig_set_debug(radio_ptr->verbosity);
@@ -480,151 +741,153 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr)
             baud_rate = baud_rate_tmp;
         }
 
-        //
-        // Check the most up-to-date information on RS232 ports
-        //
-        auto recent_serial_port_info = filter_com_ports(status_com_ports());
-
-        radio_ptr->gkRig->setConf("data_bits", std::to_string(radio_ptr->port_details.parm.serial.data_bits).c_str());
-        radio_ptr->gkRig->setConf("stop_bits", std::to_string(radio_ptr->port_details.parm.serial.stop_bits).c_str());
-        radio_ptr->gkRig->setConf("serial_speed", std::to_string(baud_rate).c_str());
-        radio_ptr->port_details.type.rig = convGkConnTypeToHamlib(radio_ptr->cat_conn_type);
-
-        switch (radio_ptr->ptt_type) { // TODO: Add type for 'Parallel'!
-        case RIG_PTT_SERIAL_RTS:
-            radio_ptr->gkRig->setConf("ptt_type", "RTS");
-            radio_ptr->gkRig->setConf("rts_state", "ON");
-            radio_ptr->gkRig->setConf("dtr_state", "OFF");
-            break;
-        case RIG_PTT_SERIAL_DTR:
-            radio_ptr->gkRig->setConf("ptt_type", "DTR");
-            radio_ptr->gkRig->setConf("dtr_state", "ON");
-            radio_ptr->gkRig->setConf("rts_state", "OFF");
-            break;
-        case RIG_PTT_RIG:
-            radio_ptr->gkRig->setConf("ptt_type", "RIG");
-            radio_ptr->gkRig->setConf("dtr_state", "OFF");
-            radio_ptr->gkRig->setConf("rts_state", "OFF");
-            break;
-        case RIG_PTT_RIG_MICDATA:
-            radio_ptr->gkRig->setConf("ptt_type", "RIGMICDATA");
-            radio_ptr->gkRig->setConf("dtr_state", "OFF");
-            radio_ptr->gkRig->setConf("rts_state", "OFF");
-            break;
-        case RIG_PTT_NONE:
-            radio_ptr->gkRig->setConf("ptt_type", "None");
-            radio_ptr->gkRig->setConf("dtr_state", "OFF");
-            radio_ptr->gkRig->setConf("rts_state", "OFF");
-            break;
-        default:
-            radio_ptr->gkRig->setConf("ptt_type", "None");
-            radio_ptr->gkRig->setConf("dtr_state", "OFF");
-            radio_ptr->gkRig->setConf("rts_state", "OFF");
-            break;
-        }
-
-        switch (radio_ptr->port_details.parm.serial.dtr_state) {
-        case serial_control_state_e::RIG_SIGNAL_ON:
-            // High
-            radio_ptr->gkRig->setConf("dtr_state", "ON");
-            break;
-        case serial_control_state_e::RIG_SIGNAL_OFF:
-            // Low
-            radio_ptr->gkRig->setConf("dtr_state", "OFF");
-            break;
-        default:
-            // Nothing
-            radio_ptr->gkRig->setConf("dtr_state", "UNSET");
-            break;
-        }
-
-        switch (radio_ptr->port_details.parm.serial.handshake) {
-        case serial_handshake_e::RIG_HANDSHAKE_NONE:
-            // Default
-            radio_ptr->gkRig->setConf("serial_handshake", "None");
-            break;
-        case serial_handshake_e::RIG_HANDSHAKE_XONXOFF:
-            // XON / XOFF
-            radio_ptr->gkRig->setConf("serial_handshake", "XONXOFF");
-            break;
-        case serial_handshake_e::RIG_HANDSHAKE_HARDWARE:
-            // Hardware
-            radio_ptr->gkRig->setConf("serial_handshake", "Hardware");
-            break;
-        default:
-            // Nothing
-            radio_ptr->gkRig->setConf("serial_handshake", "None");
-            break;
-        }
-
-        #if __MINGW64__
-        //
-        // Modify the COM Port so that it's suitable for Hamlib!
-        //
-        boost::replace_all(radio_ptr->cat_conn_port, "COM", "/dev/ttyS");
-        boost::replace_all(radio_ptr->ptt_conn_port, "COM", "/dev/ttyS");
-        #endif
-
-        //
-        // Determine the port necessary and let Hamlib know about it!
-        //
-        if (!radio_ptr->cat_conn_port.isNull() && !radio_ptr->cat_conn_port.isEmpty()) {
-            radio_ptr->gkRig->setConf("ptt_pathname", radio_ptr->ptt_conn_port.toStdString().c_str());
-            radio_ptr->gkRig->setConf("rig_pathname", radio_ptr->cat_conn_port.toStdString().c_str());
-        }
-
-        if (radio_ptr->rig_model < 1) { // No amateur radio rig has been configured and/or adequately detected!
+        if (radio_ptr) {
             //
-            // Probe the given communications port, whether it be RS232, USB, GPIO, etc.
-            // With this information, provided a connection has been made successfully, we can infer the amateur radio
-            // rig that the user is making use of!
+            // Check the most up-to-date information on RS232 ports
             //
-            radio_ptr->rig_model = rig_probe(&radio_ptr->port_details);
-        }
+            auto recent_serial_port_info = filter_com_ports(status_com_ports());
 
-        rig_debug(radio_ptr->verbosity, "Backend version: %s, Status: %s\n\n", radio_ptr->gkRig->caps->version, rig_strstatus(radio_ptr->gkRig->caps->status));
+            radio_ptr->gkRig->setConf("data_bits", std::to_string(radio_ptr->port_details.parm.serial.data_bits).c_str());
+            radio_ptr->gkRig->setConf("stop_bits", std::to_string(radio_ptr->port_details.parm.serial.stop_bits).c_str());
+            radio_ptr->gkRig->setConf("serial_speed", std::to_string(baud_rate).c_str());
+            radio_ptr->port_details.type.rig = convGkConnTypeToHamlib(radio_ptr->cat_conn_type);
 
-        //
-        // Open our rig in question
-        //
-        radio_ptr->gkRig->open();
-        radio_ptr->is_open = true; // Set the flag that the aforementioned pointer has been initialized
-
-        while (radio_ptr->is_open) {
-            //
-            // IMPORTANT!!!
-            // Note from Hamlib Developers: As a general practice, we should check to see if a given function
-            // is within the rig's capabilities before calling it, but we are simplifying here. Also, we should
-            // check each call's returned status in case of error.
-            //
-            if (radio_ptr->gkRig->getInfo() != nullptr) {
-                radio_ptr->info_buf = radio_ptr->gkRig->getInfo();
+            switch (radio_ptr->ptt_type) { // TODO: Add type for 'Parallel'!
+                case RIG_PTT_SERIAL_RTS:
+                    radio_ptr->gkRig->setConf("ptt_type", "RTS");
+                    radio_ptr->gkRig->setConf("rts_state", "ON");
+                    radio_ptr->gkRig->setConf("dtr_state", "OFF");
+                    break;
+                case RIG_PTT_SERIAL_DTR:
+                    radio_ptr->gkRig->setConf("ptt_type", "DTR");
+                    radio_ptr->gkRig->setConf("dtr_state", "ON");
+                    radio_ptr->gkRig->setConf("rts_state", "OFF");
+                    break;
+                case RIG_PTT_RIG:
+                    radio_ptr->gkRig->setConf("ptt_type", "RIG");
+                    radio_ptr->gkRig->setConf("dtr_state", "OFF");
+                    radio_ptr->gkRig->setConf("rts_state", "OFF");
+                    break;
+                case RIG_PTT_RIG_MICDATA:
+                    radio_ptr->gkRig->setConf("ptt_type", "RIGMICDATA");
+                    radio_ptr->gkRig->setConf("dtr_state", "OFF");
+                    radio_ptr->gkRig->setConf("rts_state", "OFF");
+                    break;
+                case RIG_PTT_NONE:
+                    radio_ptr->gkRig->setConf("ptt_type", "None");
+                    radio_ptr->gkRig->setConf("dtr_state", "OFF");
+                    radio_ptr->gkRig->setConf("rts_state", "OFF");
+                    break;
+                default:
+                    radio_ptr->gkRig->setConf("ptt_type", "None");
+                    radio_ptr->gkRig->setConf("dtr_state", "OFF");
+                    radio_ptr->gkRig->setConf("rts_state", "OFF");
+                    break;
             }
 
-            // Main VFO frequency
-            radio_ptr->freq = radio_ptr->gkRig->getFreq(RIG_VFO_CURR);
-
-            // Current mode
-            radio_ptr->mode = radio_ptr->gkRig->getMode(radio_ptr->width, RIG_VFO_CURR);
-
-            // Determine the mode of modulation that's being currently used, and output as a textual value
-            radio_ptr->mm = hamlibModulEnumToStr(radio_ptr->mode).toStdString();
-
-            // Rig power output
-            if (radio_ptr->gkRig->hasGetLevel(RIG_LEVEL_RFPOWER)) {
-                radio_ptr->gkRig->getLevel(RIG_LEVEL_RFPOWER, radio_ptr->power, RIG_VFO_CURR);
+            switch (radio_ptr->port_details.parm.serial.dtr_state) {
+                case serial_control_state_e::RIG_SIGNAL_ON:
+                    // High
+                    radio_ptr->gkRig->setConf("dtr_state", "ON");
+                    break;
+                case serial_control_state_e::RIG_SIGNAL_OFF:
+                    // Low
+                    radio_ptr->gkRig->setConf("dtr_state", "OFF");
+                    break;
+                default:
+                    // Nothing
+                    radio_ptr->gkRig->setConf("dtr_state", "UNSET");
+                    break;
             }
 
-            // Convert power reading to watts
-            radio_ptr->gkRig->power2mW(radio_ptr->power, radio_ptr->freq, radio_ptr->mode);
-
-            // Raw and calibrated S-meter values
-            if (radio_ptr->gkRig->hasGetLevel(RIG_LEVEL_RAWSTR)) {
-                radio_ptr->gkRig->getLevel(RIG_LEVEL_RAWSTR, radio_ptr->raw_strength, RIG_VFO_CURR);
+            switch (radio_ptr->port_details.parm.serial.handshake) {
+                case serial_handshake_e::RIG_HANDSHAKE_NONE:
+                    // Default
+                    radio_ptr->gkRig->setConf("serial_handshake", "None");
+                    break;
+                case serial_handshake_e::RIG_HANDSHAKE_XONXOFF:
+                    // XON / XOFF
+                    radio_ptr->gkRig->setConf("serial_handshake", "XONXOFF");
+                    break;
+                case serial_handshake_e::RIG_HANDSHAKE_HARDWARE:
+                    // Hardware
+                    radio_ptr->gkRig->setConf("serial_handshake", "Hardware");
+                    break;
+                default:
+                    // Nothing
+                    radio_ptr->gkRig->setConf("serial_handshake", "None");
+                    break;
             }
 
-            if (radio_ptr->gkRig->hasGetLevel(RIG_LEVEL_STRENGTH)) {
-                radio_ptr->gkRig->getLevel(RIG_LEVEL_STRENGTH, radio_ptr->strength, RIG_VFO_CURR);
+            #if __MINGW64__
+            //
+            // Modify the COM Port so that it's suitable for Hamlib!
+            //
+            boost::replace_all(radio_ptr->cat_conn_port, "COM", "/dev/ttyS");
+            boost::replace_all(radio_ptr->ptt_conn_port, "COM", "/dev/ttyS");
+            #endif
+
+            //
+            // Determine the port necessary and let Hamlib know about it!
+            //
+            if (!radio_ptr->cat_conn_port.isNull() && !radio_ptr->cat_conn_port.isEmpty()) {
+                radio_ptr->gkRig->setConf("ptt_pathname", radio_ptr->ptt_conn_port.toStdString().c_str());
+                radio_ptr->gkRig->setConf("rig_pathname", radio_ptr->cat_conn_port.toStdString().c_str());
+            }
+
+            if (radio_ptr->rig_model < 1) { // No amateur radio rig has been configured and/or adequately detected!
+                //
+                // Probe the given communications port, whether it be RS232, USB, GPIO, etc.
+                // With this information, provided a connection has been made successfully, we can infer the amateur radio
+                // rig that the user is making use of!
+                //
+                radio_ptr->rig_model = rig_probe(&radio_ptr->port_details);
+            }
+
+            rig_debug(radio_ptr->verbosity, "Backend version: %s, Status: %s\n\n", radio_ptr->gkRig->caps->version, rig_strstatus(radio_ptr->gkRig->caps->status));
+
+            //
+            // Open our rig in question
+            //
+            radio_ptr->gkRig->open();
+            radio_ptr->is_open = true; // Set the flag that the aforementioned pointer has been initialized
+
+            while (radio_ptr->is_open) {
+                //
+                // IMPORTANT!!!
+                // Note from Hamlib Developers: As a general practice, we should check to see if a given function
+                // is within the rig's capabilities before calling it, but we are simplifying here. Also, we should
+                // check each call's returned status in case of error.
+                //
+                if (radio_ptr->gkRig->getInfo() != nullptr) {
+                    radio_ptr->info_buf = radio_ptr->gkRig->getInfo();
+                }
+
+                // Main VFO frequency
+                radio_ptr->freq = radio_ptr->gkRig->getFreq(RIG_VFO_CURR);
+
+                // Current mode
+                radio_ptr->mode = radio_ptr->gkRig->getMode(radio_ptr->width, RIG_VFO_CURR);
+
+                // Determine the mode of modulation that's being currently used, and output as a textual value
+                radio_ptr->mm = hamlibModulEnumToStr(radio_ptr->mode).toStdString();
+
+                // Rig power output
+                if (radio_ptr->gkRig->hasGetLevel(RIG_LEVEL_RFPOWER)) {
+                    radio_ptr->gkRig->getLevel(RIG_LEVEL_RFPOWER, radio_ptr->power, RIG_VFO_CURR);
+                }
+
+                // Convert power reading to watts
+                radio_ptr->gkRig->power2mW(radio_ptr->power, radio_ptr->freq, radio_ptr->mode);
+
+                // Raw and calibrated S-meter values
+                if (radio_ptr->gkRig->hasGetLevel(RIG_LEVEL_RAWSTR)) {
+                    radio_ptr->gkRig->getLevel(RIG_LEVEL_RAWSTR, radio_ptr->raw_strength, RIG_VFO_CURR);
+                }
+
+                if (radio_ptr->gkRig->hasGetLevel(RIG_LEVEL_STRENGTH)) {
+                    radio_ptr->gkRig->getLevel(RIG_LEVEL_STRENGTH, radio_ptr->strength, RIG_VFO_CURR);
+                }
             }
         }
     } catch (const RigException &e) {
@@ -633,18 +896,6 @@ void RadioLibs::gkInitRadioRig(std::shared_ptr<GkRadio> radio_ptr)
     }
 
     return;
-}
-
-/**
- * @brief RadioLibs::calibrateAudioInputSignal calibrates an audio input signal so that the obtained volume is around
- * a value of 60 decibels instead, which is much better for FFT analysis and so on.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param data_buf The raw audio stream itself.
- * @return A factor for which to multiply the volume of the audio signal itself by.
- */
-qint16 RadioLibs::calibrateAudioInputSignal(const qint16 *data_buf)
-{
-    return -1;
 }
 
 /**

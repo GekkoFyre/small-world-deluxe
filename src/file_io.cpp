@@ -56,6 +56,11 @@ using namespace Database;
 using namespace Settings;
 using namespace Audio;
 using namespace AmateurRadio;
+using namespace Control;
+using namespace Spectrograph;
+using namespace System;
+using namespace Events;
+using namespace Logging;
 
 namespace fs = boost::filesystem;
 namespace sys = boost::system;

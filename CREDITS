@@ -94,6 +94,10 @@ AudioFile by Adam Stark
     <https://github.com/adamstark/AudioFile>
         GNU General Public License (GPL, version 3)
 
+udev related C++ classes by Dimitry Ishenko
+    <https://github.com/dimitry-ishenko/udev>
+        GNU General Public License (GPL, version 3)
+
 getopt for Microsoft Windows by Chunde
     <https://github.com/Chunde/getopt-for-windows>
         GNU Lesser General Public License (LGPL, version 2.1)
@@ -102,6 +106,10 @@ Art642.com by New Media in Art et al.
     <src/contrib/images/raster/art642.com/>
         Public License
 
+notification_1 by Notification Sounds (www.notificationsounds.com)
+    <src/contrib/sounds/notifications/notification_1.(mp3/ogg)>
+        Creative Commons Attribution 4.0 International (CC BY 4.0)
+
 fdecomite via www.flickr.com
     <src/contrib/images/raster/fdecomite>
-        Attribution 2.0 Generic (CC BY 2.0)
+        Creative Commons Attribution 2.0 Generic (CC BY 2.0)

@@ -574,8 +574,8 @@ color: white;</string>
                                <rect>
                                 <x>0</x>
                                 <y>0</y>
-                                <width>430</width>
-                                <height>141</height>
+                                <width>445</width>
+                                <height>200</height>
                                </rect>
                               </property>
                               <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -721,7 +721,7 @@ color: white;</string>
                                 <x>0</x>
                                 <y>0</y>
                                 <width>444</width>
-                                <height>141</height>
+                                <height>200</height>
                                </rect>
                               </property>
                               <layout class="QVBoxLayout" name="verticalLayout_20">
@@ -1003,8 +1003,8 @@ color: white;</string>
                          <rect>
                           <x>0</x>
                           <y>0</y>
-                          <width>186</width>
-                          <height>217</height>
+                          <width>180</width>
+                          <height>171</height>
                          </rect>
                         </property>
                         <layout class="QVBoxLayout" name="verticalLayout_22">
@@ -1558,7 +1558,7 @@ QPushButton:disabled {
      <x>0</x>
      <y>0</y>
      <width>1024</width>
-     <height>30</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -1601,14 +1601,15 @@ QPushButton:disabled {
     <property name="title">
      <string>&amp;Help</string>
     </property>
-    <widget class="QMenu" name="menu_Documentation">
+    <widget class="QMenu" name="menu_Support">
      <property name="title">
-      <string>&amp;Documentation</string>
+      <string>&amp;Support</string>
      </property>
-     <addaction name="action_Q_codes"/>
+     <addaction name="action_Documentation"/>
+     <addaction name="actionSend_Report"/>
     </widget>
     <addaction name="actionCheck_for_Updates"/>
-    <addaction name="menu_Documentation"/>
+    <addaction name="menu_Support"/>
     <addaction name="separator"/>
     <addaction name="action_About_Dekoder"/>
    </widget>
@@ -1982,6 +1983,16 @@ QPushButton:disabled {
   <action name="actionView_Logs">
    <property name="text">
     <string>View Logs</string>
+   </property>
+  </action>
+  <action name="action_Documentation">
+   <property name="text">
+    <string>&amp;Documentation</string>
+   </property>
+  </action>
+  <action name="actionSend_Report">
+   <property name="text">
+    <string>Send &amp;Report</string>
    </property>
   </action>
  </widget>
