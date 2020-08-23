@@ -87,6 +87,11 @@ using namespace Logging;
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
+std::mutex gather_ogg_info_mtx;
+std::mutex read_ogg_file_mtx;
+std::mutex seek_ogg_file_mtx;
+std::mutex tell_ogg_file_mtx;
+
 GkAudioDecoding::GkAudioDecoding(QPointer<FileIo> fileIo,
                                  QPointer<GkLevelDb> database,
                                  QPointer<StringFuncs> stringFuncs,
@@ -118,7 +123,6 @@ GkAudioDecoding::~GkAudioDecoding()
 AudioFileInfo GkAudioDecoding::gatherOggInfo(const boost::filesystem::path &filePath,
                                              sys::error_code &ec)
 {
-    std::mutex gather_ogg_info_mtx;
     std::lock_guard<std::mutex> lck_guard(gather_ogg_info_mtx);
 
     AudioFileInfo audio_file_info = initAudioFileInfoStruct();
@@ -285,7 +289,6 @@ bool GkAudioDecoding::decodeOpusFrame(std::istream &file_in, std::ostream &file_
  */
 size_t GkAudioDecoding::readOgg(void *buffer, size_t element_size, size_t element_count, void *data_source)
 {
-    std::mutex read_ogg_file_mtx;
     std::lock_guard<std::mutex> lck_guard(read_ogg_file_mtx);
 
     std::ifstream &stream = *static_cast<std::ifstream *>(data_source);
@@ -306,7 +309,6 @@ size_t GkAudioDecoding::readOgg(void *buffer, size_t element_size, size_t elemen
  */
 int GkAudioDecoding::seekOgg(void *data_source, ogg_int64_t offset, int origin)
 {
-    std::mutex seek_ogg_file_mtx;
     std::lock_guard<std::mutex> lck_guard(seek_ogg_file_mtx);
 
     static const std::vector<std::ios_base::seekdir> seekDirections {
@@ -328,7 +330,6 @@ int GkAudioDecoding::seekOgg(void *data_source, ogg_int64_t offset, int origin)
  */
 long GkAudioDecoding::tellOgg(void *data_source)
 {
-    std::mutex tell_ogg_file_mtx;
     std::lock_guard<std::mutex> lck_guard(tell_ogg_file_mtx);
 
     std::ifstream &stream = *static_cast<std::ifstream *>(data_source);

@@ -19,6 +19,3 @@
 [submodule "src/contrib/codec2"]
 	path = src/contrib/codec2
 	url = https://github.com/drowe67/codec2.git
-[submodule "src/contrib/usbutils"]
-	path = src/contrib/usbutils
-	url = https://github.com/gregkh/usbutils

@@ -68,6 +68,10 @@ using namespace System;
 using namespace Events;
 using namespace Logging;
 
+std::mutex enum_audio_dev_mtx;
+std::mutex test_sinewave_mtx;
+std::mutex init_port_audio_mtx;
+
 /**
  * @brief AudioDevices::AudioDevices
  * @param parent
@@ -100,7 +104,6 @@ std::vector<GkDevice> AudioDevices::initPortAudio(portaudio::System *portAudioSy
     try {
         std::vector<GkDevice> enum_devices;
         std::vector<GkDevice> device_export;
-        std::mutex init_port_audio_mtx;
 
         // The number of this device; this was saved to the Google LevelDB database as the user's preference
         int chosen_output_dev = 0;
@@ -395,7 +398,6 @@ std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp(portaudio::System *portA
     try {
         std::vector<GkDevice> audio_devices_vec;                        // The vector responsible for storage all audio device sessions
         int device_number = 0;                                          // The index number for the input/output audio device in question
-        std::mutex enum_audio_dev_mtx;
 
         std::lock_guard<std::mutex> audio_guard(enum_audio_dev_mtx);
         for (portaudio::System::DeviceIterator i = portAudioSys->devicesBegin(); i != portAudioSys->devicesEnd(); ++i) {
@@ -619,7 +621,6 @@ PaStreamCallbackResult AudioDevices::testSinewave(portaudio::System &portAudioSy
                                                   const bool &is_output_dev)
 {
     try {
-        std::mutex test_sinewave_mtx;
         std::lock_guard<std::mutex> lck_guard(test_sinewave_mtx);
 
         PaTime prefOutputLatency = portAudioSys.deviceByIndex(device.stream_parameters.device).defaultLowOutputLatency();

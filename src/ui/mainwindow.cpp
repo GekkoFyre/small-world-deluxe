@@ -104,6 +104,10 @@ namespace sys = boost::system;
 //
 QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>> MainWindow::gkRadioModels = initRadioModelsVar();
 
+std::mutex steady_timer_mtx;
+std::mutex mtx_update_vol_widgets;
+std::mutex info_bar_mtx;
+
 /**
  * @brief MainWindow::MainWindow
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -1194,7 +1198,8 @@ QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, rig_type>> MainWind
 void MainWindow::updateVolumeDisplayWidgets()
 {
     try {
-        std::this_thread::sleep_for(std::chrono::milliseconds(2500));
+        std::lock_guard<std::mutex> lck_guard(mtx_update_vol_widgets);
+        std::this_thread::sleep_for(std::chrono::milliseconds(2500)); // TODO: This is a huge source of SEGFAULTS!
         if (inputAudioStream != nullptr && AUDIO_FRAMES_PER_BUFFER > 0) {
             while (inputAudioStream->isActive()) {
                 //
@@ -1383,7 +1388,6 @@ bool MainWindow::changeStatusBarMsg(const QString &statusMsg)
 bool MainWindow::steadyTimer(const int &seconds)
 {
     try {
-        std::mutex steady_timer_mtx;
         std::lock_guard<std::mutex> lck_guard(steady_timer_mtx);
         std::chrono::steady_clock::time_point t_counter = std::chrono::steady_clock::now();
         std::chrono::duration<int> time_span;
@@ -1598,7 +1602,6 @@ void MainWindow::on_actionSettings_triggered()
  */
 void MainWindow::infoBar()
 {
-    std::mutex info_bar_mtx;
     std::lock_guard<std::mutex> lck_guard(info_bar_mtx);
 
     try {
@@ -1779,7 +1782,7 @@ void MainWindow::updateSpectrograph()
             std::vector<float> fftData;
             fftData.reserve(GK_FFT_SIZE + 1);
             const qint64 measure_start_time = QDateTime::currentMSecsSinceEpoch();
-            auto audio_buf_tmp = std::make_shared<PaAudioBuf<qint16>>(*input_audio_buf); // TODO: Possible SEGFAULT related to this with shutdown of Small World Deluxe...
+            auto audio_buf_tmp = std::make_shared<PaAudioBuf<qint16>>(*input_audio_buf);
             while (fftData.size() < GK_FFT_SIZE) {
                 //
                 // Input audio stream is open and active!
