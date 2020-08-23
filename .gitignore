@@ -449,3 +449,5 @@ build/
 .kdev4/
 *.kdev4
 pvs_studio/src/
+cov-int/
+pvs-studio/

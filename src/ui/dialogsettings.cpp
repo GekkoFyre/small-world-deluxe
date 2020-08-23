@@ -71,6 +71,8 @@ QComboBox *DialogSettings::mfg_comboBox = nullptr;
 QMultiMap<rig_model_t, std::tuple<QString, QString, GekkoFyre::AmateurRadio::rig_type>> DialogSettings::radio_model_names = init_model_names();
 QVector<QString> DialogSettings::unique_mfgs = { "None" };
 
+std::mutex index_loop_mtx;
+
 /**
  * @brief DialogSettings::DialogSettings
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -804,7 +806,6 @@ QMap<int, int> DialogSettings::collectComboBoxIndexes(const QComboBox *combo_box
 {
     try {
         if (combo_box != nullptr) {
-            std::mutex index_loop_mtx;
             int combo_box_size = combo_box->count();
             QMap<int, int> collected_indexes;
 

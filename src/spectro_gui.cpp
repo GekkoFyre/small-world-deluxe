@@ -61,6 +61,11 @@ using namespace System;
 using namespace Events;
 using namespace Logging;
 
+std::mutex spectro_main_mtx;
+std::mutex mtx_spectro_raster_draw;
+std::mutex mtx_spectro_align_scales;
+std::mutex mtx_spectro_refresh_date_time;
+
 /**
  * @brief SpectroGui::SpectroGui
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -72,7 +77,6 @@ SpectroGui::SpectroGui(QPointer<StringFuncs> stringFuncs, QPointer<GkEventLogger
                        const bool &enableZoomer, QWidget *parent)
     : gkAlpha(255)
 {
-    std::mutex spectro_main_mtx;
     std::lock_guard<std::mutex> lck_guard(spectro_main_mtx);
 
     try {
@@ -280,7 +284,6 @@ void SpectroGui::insertData(const QVector<double> &values, const int &numCols)
  */
 void SpectroGui::alignScales()
 {
-    std::mutex mtx_spectro_align_scales;
     std::lock_guard<std::mutex> lck_guard(mtx_spectro_align_scales);
 
     for (int i = 0; i < QwtPlot::axisCnt; ++i) {
@@ -341,7 +344,6 @@ void SpectroGui::changeSpectroType(const GekkoFyre::Spectrograph::GkGraphType &g
  */
 void SpectroGui::refreshDateTime(const qint64 &latest_time_update, const qint64 &time_since)
 {
-    std::mutex mtx_spectro_refresh_date_time;
     std::lock_guard<std::mutex> lck_guard(mtx_spectro_refresh_date_time);
 
     spectro_latest_update = latest_time_update;
@@ -381,7 +383,6 @@ void SpectroGui::updateFFTSize(const int &value)
  */
 void GkSpectroRasterData::draw(QPainter *painter, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRectF &canvasRect) const
 {
-    std::mutex mtx_spectro_raster_draw;
     std::lock_guard<std::mutex> lck_guard(mtx_spectro_raster_draw);
 
     QwtScaleMap xMapLin(xMap);

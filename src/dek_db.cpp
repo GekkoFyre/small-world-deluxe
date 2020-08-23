@@ -80,6 +80,10 @@ using namespace Logging;
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
+std::mutex read_audio_dev_mtx;
+std::mutex read_audio_api_mtx;
+std::mutex mtx_freq_already_init;
+
 GkLevelDb::GkLevelDb(leveldb::DB *db_ptr, QPointer<FileIo> filePtr, QObject *parent) : QObject(parent)
 {
     db = db_ptr;
@@ -637,7 +641,6 @@ void GkLevelDb::writeFreqInit()
 bool GkLevelDb::isFreqAlreadyInit()
 {
     try {
-        std::mutex mtx_freq_already_init;
         leveldb::Status status;
         leveldb::ReadOptions read_options;
         std::string freq_init_str = "";
@@ -1278,7 +1281,6 @@ QString GkLevelDb::read_general_settings(const general_stat_cfg &key)
  */
 int GkLevelDb::read_audio_device_settings(const bool &is_output_device)
 {
-    std::mutex read_audio_dev_mtx;
     leveldb::Status status;
     leveldb::ReadOptions read_options;
     std::string value;
@@ -1341,7 +1343,6 @@ void GkLevelDb::write_audio_api_settings(const PaHostApiTypeId &interface)
  */
 PaHostApiTypeId GkLevelDb::read_audio_api_settings()
 {
-    std::mutex read_audio_api_mtx;
     leveldb::Status status;
     leveldb::ReadOptions read_options;
     std::string value;
