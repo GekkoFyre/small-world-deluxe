@@ -70,6 +70,8 @@ endif()
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CXX_STANDARD 17)
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 #
 # https://doc.qt.io/qt-5/cmake-manual.html
 # https://cmake.org/cmake/help/v3.15/manual/cmake-qt.7.html#automoc
@@ -322,7 +324,7 @@ if (USB_FOUND)
         message(FATAL_ERROR "The 'QtUSB' system device and enumeration library could not be found!")
     endif(QtUsb_FOUND)
 else()
-    message(FATAL_ERROR "The 'libusb' system device and enumeration library could not be found!")
+    message(FATAL_ERROR "Either `libusb.h` and/or `usb.h` could not be found for the 'libusb' system device and enumeration libraries!")
 endif(USB_FOUND)
 
 find_package(QWT REQUIRED)
@@ -332,6 +334,16 @@ if (QWT_FOUND)
 else()
     message(FATAL_ERROR "The 'QWT' graphing/charting library could not be found!")
 endif(QWT_FOUND)
+
+if (LINUX)
+    find_package(UDev REQUIRED)
+    if (udev_FOUND)
+        include_directories(${UDEV_INCLUDE_DIRS})
+        set(LIBS ${LIBS} ${UDEV_LIBRARIES})
+    else()
+        message(FATAL_ERROR "The 'udev' SystemD libraries could not be found!")
+    endif(udev_FOUND)
+endif(LINUX)
 
 #
 # https://xiph.org/vorbis/
@@ -547,6 +559,7 @@ set(GALAXY_UI_CPP
     src/gk_frequency_list.cpp
     src/gk_string_funcs.cpp
     src/gk_logger.cpp
+    src/gk_system.cpp
     src/ui/widgets/gk_submit_msg.cpp
     src/ui/widgets/gk_display_image.cpp
     src/models/tableview/gk_frequency_model.cpp
@@ -566,7 +579,13 @@ endif()
 set(GALAXY_SRC_CPP
     ${GALAXY_SRC_CPP}
     src/pa_sinewave.cpp
-    src/gk_fft.cpp)
+    src/gk_fft.cpp
+    src/contrib/udev/device.cpp
+    src/contrib/udev/enumerate.cpp
+    src/contrib/udev/monitor.cpp
+    src/contrib/udev/udev.cpp
+    src/contrib/udev/posix/error.cpp
+    src/contrib/udev/posix/resource.cpp)
 
 if(LINUX)
     set(GALAXY_SRC_CPP
@@ -620,6 +639,7 @@ set(GALAXY_OBJ_HEADERS
     src/gk_frequency_list.hpp
     src/gk_string_funcs.hpp
     src/gk_logger.hpp
+    src/gk_system.hpp
     src/ui/widgets/gk_submit_msg.hpp
     src/ui/widgets/gk_display_image.hpp
     src/models/tableview/gk_frequency_model.hpp
@@ -644,7 +664,13 @@ set(GALAXY_SRC_HEADERS
     src/gk_circ_buffer.hpp
     src/gk_fft.hpp
     src/contrib/rapidcsv/src/rapidcsv.h
-    src/contrib/AudioFile/AudioFile.h)
+    src/contrib/AudioFile/AudioFile.h
+    src/contrib/udev/device.hpp
+    src/contrib/udev/enumerate.hpp
+    src/contrib/udev/monitor.hpp
+    src/contrib/udev/udev.hpp
+    src/contrib/udev/posix/error.hpp
+    src/contrib/udev/posix/resource.hpp)
 
 if(LINUX)
     set(GALAXY_SRC_HEADERS
@@ -740,6 +766,7 @@ set(SWRLD_EXEC ${SWRLD_EXEC}
     src/main.cpp)
 
 add_executable(smallworld WIN32 ${SWRLD_EXEC})
+target_compile_options(smallworld PRIVATE -fPIC)
 target_link_libraries(smallworld PRIVATE galaxy)
 
 if(GK_CUDA_FFT)
@@ -794,6 +821,7 @@ endif()
 if (GFYRE_ENABLE_PVS_STUDIO)
     include(PVS-Studio.cmake)
     pvs_studio_add_target(TARGET smallworld.analyze ALL
+                          PREPROCESSOR clang
                           OUTPUT FORMAT errorfile
                           ANALYZE smallworld galaxy
                           LOG swd.err)

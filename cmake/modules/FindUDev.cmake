@@ -39,15 +39,20 @@
 #
 
 find_package(PkgConfig)
-set(GkQtPrivate_DEFINITIONS ${PC_GkQtPrivate_CFLAGS_OTHER})
+pkg_check_modules(PC_UDEV QUIET libudev)
+set(UDEV_DEFINITIONS ${PC_UDEV_CFLAGS_OTHER})
 
-find_path(GkQtPrivate_INCLUDE_DIR
-    NAMES "private/qobject_p.h"
-    HINTS ${PC_GkQtPrivate_INCLUDE_DIR} ${PC_GkQtPrivate_INCLUDE_DIRS}
-    PATHS "/usr/include/x86_64-linux-gnu/qt5/QtCore/5.12.8/QtCore")
+find_path(UDEV_INCLUDE_DIR NAMES "libudev.h"
+            HINTS ${PC_UDEV_INCLUDE_DIR} ${PC_UDEV_INCLUDE_DIRS}
+            PATH_SUFFIXES include)
+
+find_library(UDEV_LIBRARY NAMES "udev" "libudev"
+            HINTS ${PC_UDEV_LIBDIR} ${PC_UDEV_LIBRARY_DIRS})
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(GkQtPrivate DEFAULT_MSG GkQtPrivate_INCLUDE_DIR)
+find_package_handle_standard_args(udev DEFAULT_MSG UDEV_LIBRARY UDEV_INCLUDE_DIR)
 
-mark_as_advanced(GkQtPrivate_INCLUDE_DIR)
-set(GkQtPrivate_INCLUDE_DIRS ${GkQtPrivate_INCLUDE_DIR})
+mark_as_advanced(UDEV_INCLUDE_DIR UDEV_LIBRARY)
+
+set(UDEV_LIBRARIES ${UDEV_LIBRARY})
+set(UDEV_INCLUDE_DIRS ${UDEV_INCLUDE_DIR})

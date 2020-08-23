@@ -448,3 +448,4 @@ src/contrib/RS232/demo_tx\.c
 build/
 .kdev4/
 *.kdev4
+pvs_studio/src/
