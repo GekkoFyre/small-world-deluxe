@@ -84,10 +84,12 @@ std::mutex read_audio_dev_mtx;
 std::mutex read_audio_api_mtx;
 std::mutex mtx_freq_already_init;
 
-GkLevelDb::GkLevelDb(leveldb::DB *db_ptr, QPointer<FileIo> filePtr, QObject *parent) : QObject(parent)
+GkLevelDb::GkLevelDb(leveldb::DB *db_ptr, QPointer<FileIo> filePtr, QPointer<GekkoFyre::StringFuncs> stringFuncs,
+                     QObject *parent) : QObject(parent)
 {
     db = db_ptr;
     fileIo = std::move(filePtr);
+    gkStringFuncs = std::move(stringFuncs);
 }
 
 GkLevelDb::~GkLevelDb()

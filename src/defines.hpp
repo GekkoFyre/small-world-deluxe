@@ -49,11 +49,11 @@
 #include <hamlib/rigclass.h>
 #include <qwt/qwt_interval.h>
 #include <sentry.h>
+#include <list>
 #include <vector>
 #include <exception>
 #include <string>
 #include <locale>
-#include <vector>
 #include <cstdio>
 #include <memory>
 #include <cstdlib>
@@ -476,7 +476,7 @@ namespace Database {
                 boost::tribool is_output_dev;                                       // Is the audio device in question an input? Output if FALSE, UNSURE if either
                 int dev_number;                                                     // The number of this device; this is saved to the Google LevelDB database as the user's preference
                 PaError dev_err;                                                    // Any errors that belong to this audio device specifically
-                std::vector<double> supp_sample_rates;                              // Supported sample rates by this audio device
+                std::list<double> supp_sample_rates;                                // Supported sample rates by this audio device
                 long asio_min_latency;                                              // ASIO specific
                 long asio_max_latency;                                              // ASIO specific
                 long asio_granularity;                                              // ASIO specific

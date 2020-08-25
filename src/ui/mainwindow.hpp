@@ -303,6 +303,8 @@ private:
     //
     portaudio::AutoSystem autoSys;
     portaudio::System *gkPortAudioInit;
+    QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> avail_input_audio_devs;
+    QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> avail_output_audio_devs;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
     std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> input_audio_buf;
@@ -410,6 +412,7 @@ Q_DECLARE_METATYPE(GekkoFyre::Database::Settings::GkUsbPort);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkConnMethod);
 Q_DECLARE_METATYPE(GekkoFyre::System::Events::Logging::GkEventLogging);
 Q_DECLARE_METATYPE(GekkoFyre::System::Events::Logging::GkSeverity);
+Q_DECLARE_METATYPE(GekkoFyre::Database::Settings::Audio::GkDevice);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkConnType);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::DigitalModes);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::IARURegions);
