@@ -42,6 +42,7 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include "src/gk_string_funcs.hpp"
 #include "src/file_io.hpp"
 #include <sentry.h>
 #include <leveldb/db.h>
@@ -60,7 +61,7 @@ class GkLevelDb : public QObject {
 
 public:
     explicit GkLevelDb(leveldb::DB *db_ptr, QPointer<GekkoFyre::FileIo> filePtr,
-                       QObject *parent = nullptr);
+                       QPointer<GekkoFyre::StringFuncs> stringFuncs, QObject *parent = nullptr);
     ~GkLevelDb() override;
 
     void write_rig_settings(const QString &value, const Database::Settings::radio_cfg &key);
@@ -122,6 +123,7 @@ public:
     int boolInt(const bool &is_true);
 
 private:
+    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::FileIo> fileIo;
     leveldb::DB *db;
 

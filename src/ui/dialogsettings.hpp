@@ -1,12 +1,12 @@
 /**
- **  ______  ______  ___   ___  ______  ______  ______  ______       
- ** /_____/\/_____/\/___/\/__/\/_____/\/_____/\/_____/\/_____/\      
- ** \:::_ \ \::::_\/\::.\ \\ \ \:::_ \ \:::_ \ \::::_\/\:::_ \ \     
- **  \:\ \ \ \:\/___/\:: \/_) \ \:\ \ \ \:\ \ \ \:\/___/\:(_) ) )_   
- **   \:\ \ \ \::___\/\:. __  ( (\:\ \ \ \:\ \ \ \::___\/\: __ `\ \  
- **    \:\/.:| \:\____/\: \ )  \ \\:\_\ \ \:\/.:| \:\____/\ \ `\ \ \ 
- **     \____/_/\_____\/\__\/\__\/ \_____\/\____/_/\_____\/\_\/ \_\/ 
- **                                                                 
+ **  ______  ______  ___   ___  ______  ______  ______  ______
+ ** /_____/\/_____/\/___/\/__/\/_____/\/_____/\/_____/\/_____/\
+ ** \:::_ \ \::::_\/\::.\ \\ \ \:::_ \ \:::_ \ \::::_\/\:::_ \ \
+ **  \:\ \ \ \:\/___/\:: \/_) \ \:\ \ \ \:\ \ \ \:\/___/\:(_) ) )_
+ **   \:\ \ \ \::___\/\:. __  ( (\:\ \ \ \:\ \ \ \::___\/\: __ `\ \
+ **    \:\/.:| \:\____/\: \ )  \ \\:\_\ \ \:\/.:| \:\____/\ \ `\ \ \
+ **     \____/_/\_____\/\__\/\__\/ \_____\/\____/_/\_____\/\_\/ \_\/
+ **
  **
  **   If you have downloaded the source code for "Small World Deluxe" and are reading this,
  **   then thank you from the bottom of our hearts for making use of our hard work, sweat
@@ -53,6 +53,7 @@
 #include <exception>
 #include <type_traits>
 #include <QMap>
+#include <QList>
 #include <QDialog>
 #include <QString>
 #include <QVector>
@@ -73,6 +74,8 @@ public:
     explicit DialogSettings(QPointer<GekkoFyre::GkLevelDb> dkDb,
                             QPointer<GekkoFyre::FileIo> filePtr,
                             std::shared_ptr<GekkoFyre::AudioDevices> audioDevices,
+                            QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> audioInputDevs,
+                            QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> audioOutputDevs,
                             QPointer<GekkoFyre::RadioLibs> radioLibs,
                             QPointer<GekkoFyre::StringFuncs> stringFuncs,
                             portaudio::System *portAudioInit,
@@ -95,6 +98,7 @@ private slots:
     void on_comboBox_soundcard_input_currentIndexChanged(int index = -1);
     void on_comboBox_soundcard_output_currentIndexChanged(int index = -1);
     void on_comboBox_soundcard_api_currentIndexChanged(int index = -1);
+    void on_pushButton_audio_refresh_cache_clicked();
     void on_comboBox_brand_selection_currentIndexChanged(const QString &arg1);
     void on_comboBox_com_port_currentIndexChanged(int index);
     void on_comboBox_ptt_method_port_currentIndexChanged(int index);
