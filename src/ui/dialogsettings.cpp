@@ -1738,6 +1738,7 @@ void DialogSettings::on_comboBox_soundcard_input_currentIndexChanged(int index)
                 if (device.first == idx) {
                     GkDevice chosen_input;
                     chosen_input = gkAudioDevices->gatherAudioDeviceDetails(gkPortAudioInit, idx);
+                    chosen_input_audio_dev = chosen_input;
 
                     if (device.second.supp_sample_rates.empty()) {
                         for (const auto &sampleRate: standardSampleRates) {
@@ -1747,8 +1748,7 @@ void DialogSettings::on_comboBox_soundcard_input_currentIndexChanged(int index)
                             }
                         }
 
-                        chosen_input.supp_sample_rates = supportedInputSampleRates.toStdList();
-                        chosen_input_audio_dev = chosen_input;
+                        chosen_input_audio_dev.supp_sample_rates = supportedInputSampleRates.toStdList();
                         if (avail_input_audio_devs.contains(idx)) {
                             avail_input_audio_devs.remove(idx);
                         }
@@ -1804,6 +1804,7 @@ void DialogSettings::on_comboBox_soundcard_output_currentIndexChanged(int index)
                 if (device.first == idx) {
                     GkDevice chosen_output;
                     chosen_output = gkAudioDevices->gatherAudioDeviceDetails(gkPortAudioInit, idx);
+                    chosen_output_audio_dev = chosen_output;
 
                     if (device.second.supp_sample_rates.empty()) {
                         for (const auto &sampleRate: standardSampleRates) {
@@ -1813,8 +1814,7 @@ void DialogSettings::on_comboBox_soundcard_output_currentIndexChanged(int index)
                             }
                         }
 
-                        chosen_output.supp_sample_rates = supportedOutputSampleRates.toStdList();
-                        chosen_output_audio_dev = chosen_output;
+                        chosen_output_audio_dev.supp_sample_rates = supportedOutputSampleRates.toStdList();
                         if (avail_output_audio_devs.contains(idx)) {
                             avail_output_audio_devs.remove(idx);
                         }
