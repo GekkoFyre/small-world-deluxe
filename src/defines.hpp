@@ -376,7 +376,9 @@ namespace Database {
             myMaidenhead,
             defCqMsg,
             defReplyMsg,
-            defStationInfo
+            defStationInfo,
+            MsgAudioNotif,
+            FailAudioNotif
         };
 
         enum general_mainwindow_cfg {
