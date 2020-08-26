@@ -2638,7 +2638,8 @@ void MainWindow::on_pushButton_sstv_tx_send_image_clicked()
         // Initialize any amateur radio modems!
         //
         #ifdef CODEC2_LIBS_ENBLD
-        QPointer<GkCodec2> gkCodec2 = new GkCodec2(Codec2Mode::freeDvMode2020, Codec2ModeCustom::GekkoFyreV1, 0, 0, GkDb, gkEventLogger, output_audio_buf, this);
+        QPointer<GkCodec2> gkCodec2 = new GkCodec2(Codec2Mode::freeDvMode2020, Codec2ModeCustom::GekkoFyreV1, 0, 0, GkDb,
+                                                   gkEventLogger, gkStringFuncs, output_audio_buf, this);
         gkCodec2->transmitData(byte_array, true);
         #endif
     } else {

@@ -59,8 +59,9 @@ using namespace System;
 using namespace Events;
 using namespace Logging;
 
-GkCodec2::GkCodec2(const Codec2Mode &freedv_mode, const Codec2ModeCustom &custom_mode, const int &freedv_clip, const int &freedv_txbpf,
-                   QPointer<GkLevelDb> levelDb, QPointer<GkEventLogger> eventLogger,
+GkCodec2::GkCodec2(const Codec2Mode &freedv_mode, const Codec2ModeCustom &custom_mode, const int &freedv_clip,
+                   const int &freedv_txbpf, QPointer<GkLevelDb> levelDb, QPointer<GkEventLogger> eventLogger,
+                   QPointer<GekkoFyre::StringFuncs> stringFuncs,
                    std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> output_audio_buf, QObject *parent)
 {
     try {
@@ -68,6 +69,7 @@ GkCodec2::GkCodec2(const Codec2Mode &freedv_mode, const Codec2ModeCustom &custom
         GkDb = std::move(levelDb);
         outputAudioBuf = std::move(output_audio_buf);
         gkEventLogger = std::move(eventLogger);
+        gkStringFuncs = std::move(stringFuncs);
 
         gkFreeDvMode = freedv_mode;
         gkCustomMode = custom_mode;
@@ -191,21 +193,21 @@ QList<QByteArray> GkCodec2::createPayloadForTx(const QByteArray &byte_array)
             base64_conv_data = byte_array.toBase64(QByteArray::KeepTrailingEquals); // Convert to Base64 for easier transmission!
         }
 
-        size_t payload_size = (size_t)base64_conv_data.size();
+        std::vector<unsigned char> base64_data_vec(base64_conv_data.begin(), base64_conv_data.end());
+        auto payload_data_tmp = gkStringFuncs->splitVec<unsigned char>(base64_data_vec, GK_CODEC2_FRAME_SIZE);
+
         QList<QByteArray> payload_data;
-        QByteArray vec;
-        vec.reserve(GK_CODEC2_FRAME_SIZE);
+        for (const auto &vec: payload_data_tmp) {
+            if (!vec.empty()) {
+                QByteArray byte_tmp;
+                payload_data.reserve(vec.size());
+                std::copy(vec.begin(), vec.end(), std::back_inserter(byte_tmp));
 
-        for(size_t i = 0; i < payload_size; i += GK_CODEC2_FRAME_SIZE) {
-            auto last_index_of_next = std::min(payload_size-1, i + GK_CODEC2_FRAME_SIZE);
-            auto out_index = (i / GK_CODEC2_FRAME_SIZE);
-
-            std::move(base64_conv_data.begin() + i, base64_conv_data.begin() + last_index_of_next, std::back_inserter(vec));
-            payload_data.insert(out_index, vec);
+                payload_data.push_back(byte_tmp);
+            }
         }
 
         return payload_data;
-
     }  catch (const std::exception &e) {
         std::throw_with_nested(tr("An issue has occurred with transmitting audio via the Codec2 modem! Error:\n\n%1")
                                .arg(QString::fromStdString(e.what())).toStdString());
