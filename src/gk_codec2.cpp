@@ -194,7 +194,7 @@ QList<QByteArray> GkCodec2::createPayloadForTx(const QByteArray &byte_array)
         }
 
         std::vector<unsigned char> base64_data_vec(base64_conv_data.begin(), base64_conv_data.end());
-        auto payload_data_tmp = gkStringFuncs->splitVec<unsigned char>(base64_data_vec, GK_CODEC2_FRAME_SIZE);
+        auto payload_data_tmp = gkStringFuncs->chunker(base64_data_vec, GK_CODEC2_FRAME_SIZE);
 
         QList<QByteArray> payload_data;
         for (const auto &vec: payload_data_tmp) {
