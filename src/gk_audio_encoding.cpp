@@ -89,6 +89,9 @@ namespace sys = boost::system;
 // Static variables
 size_t GkAudioEncoding::ogg_buf_counter = 0;
 
+std::mutex record_ogg_vorbis_mtx;
+std::mutex record_audio_file_mtx;
+
 GkAudioEncoding::GkAudioEncoding(QPointer<FileIo> fileIo,
                                  std::shared_ptr<PaAudioBuf<qint16>> input_audio_buf,
                                  QPointer<GkLevelDb> database,
@@ -134,7 +137,6 @@ GkAudioEncoding::~GkAudioEncoding()
  */
 void GkAudioEncoding::recordAudioFile(const CodecSupport &codec, const Bitrate &bitrate)
 {
-    std::mutex record_audio_file_mtx;
     std::lock_guard<std::mutex> lck_guard(record_audio_file_mtx);
     sys::error_code ec;
 
@@ -214,7 +216,6 @@ void GkAudioEncoding::recordOggVorbis(const std::vector<signed char> &audio_fram
                                       const Bitrate &bitrate,
                                       const fs::path &filePath)
 {
-    std::mutex record_ogg_vorbis_mtx;
     std::lock_guard<std::mutex> lck_guard(record_ogg_vorbis_mtx);
 
     try {

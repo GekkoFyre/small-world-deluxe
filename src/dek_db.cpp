@@ -80,10 +80,16 @@ using namespace Logging;
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
-GkLevelDb::GkLevelDb(leveldb::DB *db_ptr, QPointer<FileIo> filePtr, QObject *parent) : QObject(parent)
+std::mutex read_audio_dev_mtx;
+std::mutex read_audio_api_mtx;
+std::mutex mtx_freq_already_init;
+
+GkLevelDb::GkLevelDb(leveldb::DB *db_ptr, QPointer<FileIo> filePtr, QPointer<GekkoFyre::StringFuncs> stringFuncs,
+                     QObject *parent) : QObject(parent)
 {
     db = db_ptr;
     fileIo = std::move(filePtr);
+    gkStringFuncs = std::move(stringFuncs);
 }
 
 GkLevelDb::~GkLevelDb()
@@ -239,23 +245,29 @@ void GkLevelDb::write_general_settings(const QString &value, const general_stat_
         leveldb::Status status;
 
         switch (key) {
-        case general_stat_cfg::defCqMsg:
-            batch.Put("defCqMsg", value.toStdString());
-            break;
-        case general_stat_cfg::myCallsign:
-            batch.Put("myCallsign", value.toStdString());
-            break;
-        case general_stat_cfg::defReplyMsg:
-            batch.Put("defReplyMsg", value.toStdString());
-            break;
-        case general_stat_cfg::myMaidenhead:
-            batch.Put("myMaidenhead", value.toStdString());
-            break;
-        case general_stat_cfg::defStationInfo:
-            batch.Put("defStationInfo", value.toStdString());
-            break;
-        default:
-            return;
+            case general_stat_cfg::defCqMsg:
+                batch.Put("defCqMsg", value.toStdString());
+                break;
+            case general_stat_cfg::myCallsign:
+                batch.Put("myCallsign", value.toStdString());
+                break;
+            case general_stat_cfg::defReplyMsg:
+                batch.Put("defReplyMsg", value.toStdString());
+                break;
+            case general_stat_cfg::myMaidenhead:
+                batch.Put("myMaidenhead", value.toStdString());
+                break;
+            case general_stat_cfg::defStationInfo:
+                batch.Put("defStationInfo", value.toStdString());
+                break;
+            case general_stat_cfg::MsgAudioNotif:
+                batch.Put("MsgAudioNotif", value.toStdString());
+                break;
+            case general_stat_cfg::FailAudioNotif:
+                batch.Put("FailAudioNotif", value.toStdString());
+                break;
+            default:
+                return;
         }
 
         leveldb::WriteOptions write_options;
@@ -637,7 +649,6 @@ void GkLevelDb::writeFreqInit()
 bool GkLevelDb::isFreqAlreadyInit()
 {
     try {
-        std::mutex mtx_freq_already_init;
         leveldb::Status status;
         leveldb::ReadOptions read_options;
         std::string freq_init_str = "";
@@ -1246,23 +1257,29 @@ QString GkLevelDb::read_general_settings(const general_stat_cfg &key)
     read_options.verify_checksums = true;
 
     switch (key) {
-    case general_stat_cfg::defCqMsg:
-        status = db->Get(read_options, "defCqMsg", &value);
-        break;
-    case general_stat_cfg::myCallsign:
-        status = db->Get(read_options, "myCallsign", &value);
-        break;
-    case general_stat_cfg::defReplyMsg:
-        status = db->Get(read_options, "defReplyMsg", &value);
-        break;
-    case general_stat_cfg::myMaidenhead:
-        status = db->Get(read_options, "myMaidenhead", &value);
-        break;
-    case general_stat_cfg::defStationInfo:
-        status = db->Get(read_options, "defStationInfo", &value);
-        break;
-    default:
-        break;
+        case general_stat_cfg::defCqMsg:
+            status = db->Get(read_options, "defCqMsg", &value);
+            break;
+        case general_stat_cfg::myCallsign:
+            status = db->Get(read_options, "myCallsign", &value);
+            break;
+        case general_stat_cfg::defReplyMsg:
+            status = db->Get(read_options, "defReplyMsg", &value);
+            break;
+        case general_stat_cfg::myMaidenhead:
+            status = db->Get(read_options, "myMaidenhead", &value);
+            break;
+        case general_stat_cfg::defStationInfo:
+            status = db->Get(read_options, "defStationInfo", &value);
+            break;
+        case general_stat_cfg::MsgAudioNotif:
+            status = db->Get(read_options, "MsgAudioNotif", &value);
+            break;
+        case general_stat_cfg::FailAudioNotif:
+            status = db->Get(read_options, "FailAudioNotif", &value);
+            break;
+        default:
+            break;
     }
 
     return QString::fromStdString(value);
@@ -1278,7 +1295,6 @@ QString GkLevelDb::read_general_settings(const general_stat_cfg &key)
  */
 int GkLevelDb::read_audio_device_settings(const bool &is_output_device)
 {
-    std::mutex read_audio_dev_mtx;
     leveldb::Status status;
     leveldb::ReadOptions read_options;
     std::string value;
@@ -1341,7 +1357,6 @@ void GkLevelDb::write_audio_api_settings(const PaHostApiTypeId &interface)
  */
 PaHostApiTypeId GkLevelDb::read_audio_api_settings()
 {
-    std::mutex read_audio_api_mtx;
     leveldb::Status status;
     leveldb::ReadOptions read_options;
     std::string value;

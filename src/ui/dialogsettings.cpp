@@ -71,6 +71,8 @@ QComboBox *DialogSettings::mfg_comboBox = nullptr;
 QMultiMap<rig_model_t, std::tuple<QString, QString, GekkoFyre::AmateurRadio::rig_type>> DialogSettings::radio_model_names = init_model_names();
 QVector<QString> DialogSettings::unique_mfgs = { "None" };
 
+std::mutex index_loop_mtx;
+
 /**
  * @brief DialogSettings::DialogSettings
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -81,6 +83,8 @@ QVector<QString> DialogSettings::unique_mfgs = { "None" };
 DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
                                QPointer<FileIo> filePtr,
                                std::shared_ptr<AudioDevices> audioDevices,
+                               QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> audioInputDevs,
+                               QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> audioOutputDevs,
                                QPointer<RadioLibs> radioLibs, QPointer<StringFuncs> stringFuncs,
                                portaudio::System *portAudioInit,
                                std::shared_ptr<GkRadio> radioPtr,
@@ -108,6 +112,9 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         gkFreqTableModel = std::move(freqTableModel);
         gkEventLogger = std::move(eventLogger);
         status_com_ports = com_ports;
+
+        avail_input_audio_devs = std::move(audioInputDevs);
+        avail_output_audio_devs = std::move(audioOutputDevs);
 
         usb_ports_active = false;
         com_ports_active = false;
@@ -804,7 +811,6 @@ QMap<int, int> DialogSettings::collectComboBoxIndexes(const QComboBox *combo_box
 {
     try {
         if (combo_box != nullptr) {
-            std::mutex index_loop_mtx;
             int combo_box_size = combo_box->count();
             QMap<int, int> collected_indexes;
 
@@ -1116,9 +1122,10 @@ void DialogSettings::enable_device_port_options()
 }
 
 /**
- * @brief DialogSettings::update_sample_rates
+ * @brief DialogSettings::update_sample_rates manages the sample rates for each audio device, whether it be an input or
+ * output audio device.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param is_output_device
+ * @param is_output_device Is the device in question an output audio device?
  */
 void DialogSettings::update_sample_rates(const bool &is_output_device)
 {
@@ -1178,6 +1185,9 @@ bool DialogSettings::read_settings()
         QString logsDirLoc = gkDekodeDb->read_misc_audio_settings(audio_cfg::LogsDirLoc);
         QString audioRecLoc = gkDekodeDb->read_misc_audio_settings(audio_cfg::AudioRecLoc);
         QString settingsDbLoc = gkDekodeDb->read_misc_audio_settings(audio_cfg::settingsDbLoc);
+
+        const QString msg_audio_notif = gkDekodeDb->read_general_settings(general_stat_cfg::MsgAudioNotif);
+        const QString fail_event_notif = gkDekodeDb->read_general_settings(general_stat_cfg::FailAudioNotif);
 
         QString inputSampleRateIdx = gkDekodeDb->read_misc_audio_settings(audio_cfg::AudioInputSampleRate);
         QString outputSampleRateIdx = gkDekodeDb->read_misc_audio_settings(audio_cfg::AudioOutputSampleRate);
@@ -1505,6 +1515,19 @@ bool DialogSettings::read_settings()
             ui->comboBox_audio_output_sample_rate->setCurrentIndex(outputSampleRateIdx.toInt());
         }
 
+        //
+        // General --> User Interface
+        //
+        if (!msg_audio_notif.isEmpty()) {
+            const bool msg_audio_notif_bool = gkDekodeDb->boolStr(msg_audio_notif.toStdString());
+            ui->checkBox_new_msg_audio_notification->setChecked(msg_audio_notif_bool);
+        }
+
+        if (!fail_event_notif.isEmpty()) {
+            const bool fail_event_notif_bool = gkDekodeDb->boolStr(fail_event_notif.toStdString());
+            ui->checkBox_failed_event_audio_notification->setChecked(fail_event_notif_bool);
+        }
+
         return true;
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
@@ -1724,21 +1747,32 @@ void DialogSettings::on_comboBox_soundcard_input_currentIndexChanged(int index)
         //
         // Input audio devices
         //
+        supportedInputSampleRates.clear();
+        const qint32 idx = ui->comboBox_soundcard_input->currentData().toInt();
         if (!avail_portaudio_api.isEmpty() || !avail_input_audio_devs.isEmpty()) {
             for (const auto &device: avail_input_audio_devs.toStdMap()) {
-                if (device.first == ui->comboBox_soundcard_input->currentData().toInt()) {
+                if (device.first == idx) {
                     GkDevice chosen_input;
-                    chosen_input = gkAudioDevices->gatherAudioDeviceDetails(gkPortAudioInit, ui->comboBox_soundcard_input->currentData().toInt());
+                    chosen_input = gkAudioDevices->gatherAudioDeviceDetails(gkPortAudioInit, idx);
                     chosen_input_audio_dev = chosen_input;
 
-                    for (const auto &sampleRate: standardSampleRates) {
-                        bool supported = gkAudioDevices->enumSupportedStdSampleRates(&chosen_input_audio_dev.stream_parameters, sampleRate, false);
-                        if (supported) {
-                            supportedInputSampleRates.push_back(sampleRate);
+                    if (device.second.supp_sample_rates.empty()) {
+                        for (const auto &sampleRate: standardSampleRates) {
+                            bool supported = gkAudioDevices->enumSupportedStdSampleRates(&chosen_input_audio_dev.stream_parameters, sampleRate, false);
+                            if (supported) {
+                                supportedInputSampleRates.push_back(sampleRate);
+                            }
                         }
+
+                        chosen_input_audio_dev.supp_sample_rates = supportedInputSampleRates.toStdList();
+                        if (avail_input_audio_devs.contains(idx)) {
+                            avail_input_audio_devs.remove(idx);
+                        }
+
+                        avail_input_audio_devs.insert(idx, chosen_input_audio_dev);
+                        update_sample_rates(false);
                     }
 
-                    update_sample_rates(false);
                     return;
                 }
             }
@@ -1779,21 +1813,32 @@ void DialogSettings::on_comboBox_soundcard_output_currentIndexChanged(int index)
         //
         // Output audio devices
         //
+        supportedOutputSampleRates.clear();
+        const qint32 idx = ui->comboBox_soundcard_output->currentData().toInt();
         if (!avail_portaudio_api.isEmpty() || !avail_output_audio_devs.isEmpty()) {
             for (const auto &device: avail_output_audio_devs.toStdMap()) {
-                if (device.first == ui->comboBox_soundcard_output->currentData().toInt()) {
+                if (device.first == idx) {
                     GkDevice chosen_output;
-                    chosen_output = gkAudioDevices->gatherAudioDeviceDetails(gkPortAudioInit, ui->comboBox_soundcard_output->currentData().toInt());
+                    chosen_output = gkAudioDevices->gatherAudioDeviceDetails(gkPortAudioInit, idx);
                     chosen_output_audio_dev = chosen_output;
 
-                    for (const auto &sampleRate: standardSampleRates) {
-                        bool supported = gkAudioDevices->enumSupportedStdSampleRates(&chosen_output_audio_dev.stream_parameters, sampleRate, true);
-                        if (supported) {
-                            supportedOutputSampleRates.push_back(sampleRate);
+                    if (device.second.supp_sample_rates.empty()) {
+                        for (const auto &sampleRate: standardSampleRates) {
+                            bool supported = gkAudioDevices->enumSupportedStdSampleRates(&chosen_output_audio_dev.stream_parameters, sampleRate, true);
+                            if (supported) {
+                                supportedOutputSampleRates.push_back(sampleRate);
+                            }
                         }
+
+                        chosen_output_audio_dev.supp_sample_rates = supportedOutputSampleRates.toStdList();
+                        if (avail_output_audio_devs.contains(idx)) {
+                            avail_output_audio_devs.remove(idx);
+                        }
+
+                        avail_output_audio_devs.insert(idx, chosen_output_audio_dev);
+                        update_sample_rates(true);
                     }
 
-                    update_sample_rates(true);
                     return;
                 }
             }
@@ -1917,6 +1962,16 @@ void DialogSettings::on_comboBox_soundcard_api_currentIndexChanged(int index)
         gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     }
 
+    return;
+}
+
+/**
+ * @brief DialogSettings::on_pushButton_audio_refresh_cache_clicked refreshes the audio devices that are available to the user, while
+ * adding any new ones to the Google LevelDB database, and removing non-existing ones too.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void DialogSettings::on_pushButton_audio_refresh_cache_clicked()
+{
     return;
 }
 
@@ -2370,6 +2425,20 @@ void DialogSettings::on_doubleSpinBox_freq_calib_intercept_valueChanged(double a
 void DialogSettings::on_doubleSpinBox_freq_calib_slope_valueChanged(double arg1)
 {
     Q_UNUSED(arg1);
+
+    return;
+}
+
+void DialogSettings::on_checkBox_new_msg_audio_notification_stateChanged(int arg1)
+{
+    gkDekodeDb->write_general_settings(QString::number(arg1), general_stat_cfg::MsgAudioNotif);
+
+    return;
+}
+
+void DialogSettings::on_checkBox_failed_event_audio_notification_stateChanged(int arg1)
+{
+    gkDekodeDb->write_general_settings(QString::number(arg1), general_stat_cfg::FailAudioNotif);
 
     return;
 }

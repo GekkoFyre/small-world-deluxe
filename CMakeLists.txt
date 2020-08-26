@@ -703,7 +703,9 @@ if (MSYS OR MINGW)
     set(GK_EXTRA_LIBS
         ${GK_EXTRA_LIBS}
         -lhid
-        -lsetupapi)
+        -lsetupapi
+        -lole32
+        -loleaut32)
 else()
     #
     # Just an empty container for now!

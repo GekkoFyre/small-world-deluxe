@@ -92,6 +92,10 @@ using namespace Logging;
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
+std::mutex mtx_status_com_ports;
+std::mutex mtx_filter_com_ports;
+std::mutex mtx_init_rig;
+
 RadioLibs::RadioLibs(QPointer<FileIo> filePtr, QPointer<StringFuncs> stringPtr,
                      QPointer<GkLevelDb> dkDb, std::shared_ptr<GkRadio> radioPtr,
                      QPointer<GkEventLogger> eventLogger, QObject *parent) : QObject(parent)
@@ -280,7 +284,6 @@ int RadioLibs::convertBaudRateFromEnum(const com_baud_rates &baud_rate)
  */
 QList<QSerialPortInfo> RadioLibs::status_com_ports() const
 {
-    std::mutex mtx_status_com_ports;
     std::lock_guard<std::mutex> lck_guard(mtx_status_com_ports);
 
     try {
@@ -302,7 +305,6 @@ QList<QSerialPortInfo> RadioLibs::status_com_ports() const
  */
 std::list<GkComPort> RadioLibs::filter_com_ports(const QList<QSerialPortInfo> &serial_port_info) const
 {
-    std::mutex mtx_filter_com_ports;
     std::lock_guard<std::mutex> lck_guard(mtx_filter_com_ports);
 
     try {
@@ -725,7 +727,6 @@ void RadioLibs::print_exception(const std::exception &e, int level)
 void RadioLibs::gkInitRadioRig(const std::shared_ptr<GkRadio> &radio_ptr)
 {
     try {
-        std::mutex mtx_init_rig;
         std::lock_guard<std::mutex> lck_guard(mtx_init_rig);
 
         // https://github.com/Hamlib/Hamlib/blob/master/tests/example.c
@@ -892,7 +893,7 @@ void RadioLibs::gkInitRadioRig(const std::shared_ptr<GkRadio> &radio_ptr)
         }
     } catch (const RigException &e) {
         QMessageBox::warning(nullptr, tr("Error!"), tr("Unable to make a connection with your radio rig! Error:\n\n%1")
-                             .arg(QString::fromStdString(e.message)), QMessageBox::Ok) ;
+                             .arg(QString::fromStdString(e.message)), QMessageBox::Ok);
     }
 
     return;

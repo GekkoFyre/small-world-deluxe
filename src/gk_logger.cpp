@@ -55,6 +55,10 @@ using namespace System;
 using namespace Events;
 using namespace Logging;
 
+std::mutex dataBatchMutex;
+std::mutex setDateMutex;
+std::mutex setEventNoMutex;
+
 /**
  * @brief GkEventLogger::GkEventLogger
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -82,7 +86,6 @@ GkEventLogger::~GkEventLogger()
  */
 void GkEventLogger::publishEvent(const QString &event, const GkSeverity &severity, const QVariant &arguments, const bool &sys_notification)
 {
-    std::mutex dataBatchMutex;
     const std::lock_guard<std::mutex> lock(dataBatchMutex);
 
     GkEventLogging event_log;
@@ -121,7 +124,6 @@ void GkEventLogger::publishEvent(const QString &event, const GkSeverity &severit
  */
 qint64 GkEventLogger::setDate()
 {
-    std::mutex setDateMutex;
     const std::lock_guard<std::mutex> lock(setDateMutex);
 
     qint64 curr_date = QDateTime::currentMSecsSinceEpoch();
@@ -136,7 +138,6 @@ qint64 GkEventLogger::setDate()
  */
 int GkEventLogger::setEventNo()
 {
-    std::mutex setEventNoMutex;
     const std::lock_guard<std::mutex> lock(setEventNoMutex);
 
     int event_number = eventLogDb.back().event_no;

@@ -62,3 +62,20 @@ GkSystem::~GkSystem()
 {
     return;
 }
+
+#if defined(_WIN32) || defined(__MINGW64__)
+/**
+ * @brief GkSystem::isWindowsFirewallEnabled will detect whether the Microsoft Windows firewall is enabled or
+ * not, programmatically, via the Microsoft Windows C++ API.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param INetFwProfile
+ * @param fwOn
+ * @return
+ * @note <https://docs.microsoft.com/en-us/previous-versions//aa364726(v=vs.85)>
+ * <https://docs.microsoft.com/en-us/previous-versions/windows/desktop/ics/c-adding-an-outbound-rule>
+ */
+GkSystem::isWindowsFirewallEnabled(IN INetFwProfile *fwProfile, OUT BOOL *fwOn)
+{
+    return;
+}
+#endif
