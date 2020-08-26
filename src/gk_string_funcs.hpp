@@ -73,5 +73,32 @@ public:
     QString getStringFromUnsignedChar(unsigned char *str);
     std::vector<int> convStrToIntArray(const QString &str);
 
+    /**
+     * @brief StringFuncs::splitVec will split a given std::vector<T> into many sub-vectors of a given size. This is
+     * particularly useful for multithreading, for example.
+     * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+     * @tparam T The desired datatype.
+     * @param input_data The input data you wish to have split-up.
+     * @param desired_size The (approximate) resultant size of your given sub-vectors.
+     * @return The desired sub-vectors, as according to the given (approximate) size.
+     */
+    template<typename T>
+    std::vector<std::vector<T>> splitVec(const std::vector<T> &input_data, const size_t &desired_size) {
+        std::vector<std::vector<T>> ret_vec;
+        size_t length = input_data.size() / desired_size;
+        size_t remaining = input_data.size() % desired_size;
+
+        size_t begin = 0;
+        size_t end = 0;
+
+        for (size_t i = 0; i < std::min(desired_size, input_data.size()); ++i) {
+            end += (remaining > 0) ? (length + !!(remaining--)) : length;
+            ret_vec.push_back(std::vector<T>(input_data.begin() + begin, input_data.begin() + end));
+            begin = end;
+        }
+
+        return ret_vec;
+    }
+
 };
 };
