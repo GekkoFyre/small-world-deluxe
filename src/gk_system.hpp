@@ -46,6 +46,14 @@
 #include <QString>
 #include <string>
 
+#if defined(_WIN32) || defined(__MINGW64__)
+#include <windows.h>
+#include <crtdbg.h>
+#include <netfw.h>
+#include <objbase.h>
+#include <oleauto.h>
+#endif
+
 namespace GekkoFyre {
 
 class GkSystem : public QObject {
@@ -54,6 +62,11 @@ class GkSystem : public QObject {
 public:
     explicit GkSystem(QObject *parent = nullptr);
     ~GkSystem() override;
+
+private:
+    #if defined(_WIN32) || defined(__MINGW64__)
+    HRESULT isWindowsFirewallEnabled(IN INetFwProfile *fwProfile, OUT BOOL *fwOn);
+    #endif
 
 };
 };

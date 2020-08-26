@@ -188,6 +188,12 @@ private slots:
     void on_doubleSpinBox_freq_calib_intercept_valueChanged(double arg1);
     void on_doubleSpinBox_freq_calib_slope_valueChanged(double arg1);
 
+    //
+    // General Settings
+    //
+    void on_checkBox_new_msg_audio_notification_stateChanged(int arg1);
+    void on_checkBox_failed_event_audio_notification_stateChanged(int arg1);
+
 signals:
     void changeConnPort(const QString &conn_port, const GekkoFyre::AmateurRadio::GkConnMethod &conn_method);
     void usbPortsDisabled(const bool &active);

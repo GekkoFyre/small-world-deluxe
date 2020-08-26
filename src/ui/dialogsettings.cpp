@@ -1186,6 +1186,9 @@ bool DialogSettings::read_settings()
         QString audioRecLoc = gkDekodeDb->read_misc_audio_settings(audio_cfg::AudioRecLoc);
         QString settingsDbLoc = gkDekodeDb->read_misc_audio_settings(audio_cfg::settingsDbLoc);
 
+        const QString msg_audio_notif = gkDekodeDb->read_general_settings(general_stat_cfg::MsgAudioNotif);
+        const QString fail_event_notif = gkDekodeDb->read_general_settings(general_stat_cfg::FailAudioNotif);
+
         QString inputSampleRateIdx = gkDekodeDb->read_misc_audio_settings(audio_cfg::AudioInputSampleRate);
         QString outputSampleRateIdx = gkDekodeDb->read_misc_audio_settings(audio_cfg::AudioOutputSampleRate);
 
@@ -1510,6 +1513,19 @@ bool DialogSettings::read_settings()
 
         if (!outputSampleRateIdx.isEmpty()) {
             ui->comboBox_audio_output_sample_rate->setCurrentIndex(outputSampleRateIdx.toInt());
+        }
+
+        //
+        // General --> User Interface
+        //
+        if (!msg_audio_notif.isEmpty()) {
+            const bool msg_audio_notif_bool = gkDekodeDb->boolStr(msg_audio_notif.toStdString());
+            ui->checkBox_new_msg_audio_notification->setChecked(msg_audio_notif_bool);
+        }
+
+        if (!fail_event_notif.isEmpty()) {
+            const bool fail_event_notif_bool = gkDekodeDb->boolStr(fail_event_notif.toStdString());
+            ui->checkBox_failed_event_audio_notification->setChecked(fail_event_notif_bool);
         }
 
         return true;
@@ -2409,6 +2425,20 @@ void DialogSettings::on_doubleSpinBox_freq_calib_intercept_valueChanged(double a
 void DialogSettings::on_doubleSpinBox_freq_calib_slope_valueChanged(double arg1)
 {
     Q_UNUSED(arg1);
+
+    return;
+}
+
+void DialogSettings::on_checkBox_new_msg_audio_notification_stateChanged(int arg1)
+{
+    gkDekodeDb->write_general_settings(QString::number(arg1), general_stat_cfg::MsgAudioNotif);
+
+    return;
+}
+
+void DialogSettings::on_checkBox_failed_event_audio_notification_stateChanged(int arg1)
+{
+    gkDekodeDb->write_general_settings(QString::number(arg1), general_stat_cfg::FailAudioNotif);
 
     return;
 }
