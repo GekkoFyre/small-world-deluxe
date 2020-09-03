@@ -1758,8 +1758,8 @@ void DialogSettings::on_comboBox_soundcard_input_currentIndexChanged(int index)
 
                     if (device.second.supp_sample_rates.empty()) {
                         auto supported_rates = gkAudioDevices->enumSupportedStdSampleRates(&chosen_input_audio_dev.stream_parameters, standardSampleRates, false);
-                        for (const auto &sampleRate: supported_rates.toStdMap()) {
-                            const auto support = sampleRate.second;
+                        for (const auto &sampleRate: supported_rates) {
+                            const PaError support = sampleRate.second;
                             if (support == paFormatIsSupported) {
                                 // This sample rate is supported!
                                 supportedInputSampleRates.push_back(sampleRate.first);
@@ -1826,11 +1826,11 @@ void DialogSettings::on_comboBox_soundcard_output_currentIndexChanged(int index)
 
                     if (device.second.supp_sample_rates.empty()) {
                         auto supported_rates = gkAudioDevices->enumSupportedStdSampleRates(&chosen_input_audio_dev.stream_parameters, standardSampleRates, false);
-                        for (const auto &sampleRate: supported_rates.toStdMap()) {
-                            const auto support = sampleRate.second;
+                        for (const auto &sampleRate: supported_rates) {
+                            const PaError support = sampleRate.second;
                             if (support == paFormatIsSupported) {
                                 // This sample rate is supported!
-                                supportedInputSampleRates.push_back(sampleRate.first);
+                                supportedOutputSampleRates.push_back(sampleRate.first);
                             }
                         }
 
