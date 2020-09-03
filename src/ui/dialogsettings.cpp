@@ -1757,10 +1757,12 @@ void DialogSettings::on_comboBox_soundcard_input_currentIndexChanged(int index)
                     chosen_input_audio_dev = chosen_input;
 
                     if (device.second.supp_sample_rates.empty()) {
-                        for (const auto &sampleRate: standardSampleRates) {
-                            bool supported = gkAudioDevices->enumSupportedStdSampleRates(&chosen_input_audio_dev.stream_parameters, sampleRate, false);
-                            if (supported) {
-                                supportedInputSampleRates.push_back(sampleRate);
+                        auto supported_rates = gkAudioDevices->enumSupportedStdSampleRates(&chosen_input_audio_dev.stream_parameters, standardSampleRates, false);
+                        for (const auto &sampleRate: supported_rates.toStdMap()) {
+                            const auto support = sampleRate.second;
+                            if (support == paFormatIsSupported) {
+                                // This sample rate is supported!
+                                supportedInputSampleRates.push_back(sampleRate.first);
                             }
                         }
 
@@ -1823,10 +1825,12 @@ void DialogSettings::on_comboBox_soundcard_output_currentIndexChanged(int index)
                     chosen_output_audio_dev = chosen_output;
 
                     if (device.second.supp_sample_rates.empty()) {
-                        for (const auto &sampleRate: standardSampleRates) {
-                            bool supported = gkAudioDevices->enumSupportedStdSampleRates(&chosen_output_audio_dev.stream_parameters, sampleRate, true);
-                            if (supported) {
-                                supportedOutputSampleRates.push_back(sampleRate);
+                        auto supported_rates = gkAudioDevices->enumSupportedStdSampleRates(&chosen_input_audio_dev.stream_parameters, standardSampleRates, false);
+                        for (const auto &sampleRate: supported_rates.toStdMap()) {
+                            const auto support = sampleRate.second;
+                            if (support == paFormatIsSupported) {
+                                // This sample rate is supported!
+                                supportedInputSampleRates.push_back(sampleRate.first);
                             }
                         }
 

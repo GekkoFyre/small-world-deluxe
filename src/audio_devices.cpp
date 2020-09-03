@@ -195,34 +195,67 @@ std::vector<GkDevice> AudioDevices::defaultAudioDevices(portaudio::System *portA
 }
 
 /**
- * @brief AudioDevices::enumSupportedStdSampleRates
+ * @brief AudioDevices::enumSupportedStdSampleRates will test the supported sample rates of the given audio device, whether it
+ * be an input or output audio device.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param inputParameters
- * @param outputParameters
- * @return
+ * @param audioParameters The necessary parameters required to make a connection to the enumerated audio device itself.
+ * @param sampleRatesToTest The sample rates to test for.
+ * @param isOutputDevice Whether this device in question is an output or input audio device.
+ * @return The successfully supported sample rates for the given audio device.
  */
-bool AudioDevices::enumSupportedStdSampleRates(const PaStreamParameters *audioParameters, const double &sampleRateToTest,
-                                               const bool &isOutputDevice)
+QMap<double, PaError> AudioDevices::enumSupportedStdSampleRates(const PaStreamParameters *audioParameters, const std::vector<double> &sampleRatesToTest,
+                                                                const bool &isOutputDevice)
 {
-    PaError err;
+    QMap<double, PaError> mapped_data;
+    qint32 chunksToUse = 1;
+    auto numCpuCores = gkStringFuncs->getNumCpuCores();
+    while (numCpuCores % chunksToUse != 1) { // This determines the amount of ideal CPU cores to use!
+        ++chunksToUse;
+    }
+
+    std::vector<double> vec_copy;
+    vec_copy.assign(sampleRatesToTest.begin(), sampleRatesToTest.end());
+    auto payload_tmp = gkStringFuncs->chunker(vec_copy, chunksToUse);
+    std::map<double, std::future<PaError>> async_tasks;
     if (isOutputDevice) {
         //
         // Output audio device!
         //
-        err = Pa_IsFormatSupported(nullptr, audioParameters, sampleRateToTest);
+        for (const auto &payload: payload_tmp) {
+            for (const auto &sample_rate: payload) {
+                async_tasks.insert(std::make_pair(sample_rate, std::async(std::launch::async, &Pa_IsFormatSupported, nullptr, std::ref(audioParameters), std::ref(sample_rate))));
+            }
+        }
+
+        for (auto &f: async_tasks) {
+            PaError err;
+            err = f.second.get();
+            if (err == paFormatIsSupported) {
+                std::cout << tr("Sample rate of [ %1 ] is supported!").arg(QString::number(f.first)).toStdString() << std::endl;
+                mapped_data.insert(f.first, err);
+            }
+        }
     } else {
         //
         // Input audio device!
         //
-        err = Pa_IsFormatSupported(audioParameters, nullptr, sampleRateToTest);
+        for (const auto &payload: payload_tmp) {
+            for (const auto &sample_rate: payload) {
+                async_tasks.insert(std::make_pair(sample_rate, std::async(std::launch::async, &Pa_IsFormatSupported, std::ref(audioParameters), nullptr, std::ref(sample_rate))));
+            }
+        }
+
+        for (auto &f: async_tasks) {
+            PaError err;
+            err = f.second.get();
+            if (err == paFormatIsSupported) {
+                std::cout << tr("Sample rate of [ %1 ] is supported!").arg(QString::number(f.first)).toStdString() << std::endl;
+                mapped_data.insert(f.first, err);
+            }
+        }
     }
 
-    if (err == paFormatIsSupported) {
-        std::cout << tr("Sample rate of [ %1 ] is supported!").arg(QString::number(sampleRateToTest)).toStdString() << std::endl;
-        return true;
-    }
-
-    return false;
+    return QMap<double, PaError>();
 }
 
 /**

@@ -73,6 +73,8 @@ public:
     QString getStringFromUnsignedChar(unsigned char *str);
     std::vector<int> convStrToIntArray(const QString &str);
 
+    qint32 getNumCpuCores();
+
     /**
      * @brief StringFuncs::splitVec will split a given std::vector<T> into many sub-vectors of a given size. This is
      * particularly useful for multithreading, for example.
@@ -80,9 +82,9 @@ public:
      * @return The desired sub-vectors, as according to the given (approximate) size.
      */
     template <typename T, typename A, template <typename , typename > class C>C<C<T,A>, std::allocator<C<T,A>>>
-    chunker(C<T,A>& c, const typename C<T,A>::size_type& k) {
+    chunker(C<T,A> &c, const typename C<T,A>::size_type &k) {
         if (k <= 0) {
-            throw std::domain_error("chunker() requires k > 0");
+            throw std::domain_error(tr("chunker() requires k > 0").toStdString());
         }
 
         using INPUT_CONTAINER_TYPE = C<T,A>;
