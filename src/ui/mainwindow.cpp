@@ -785,7 +785,6 @@ void MainWindow::launchSettingsWin()
                      gkFreqList, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)));
 
     QPointer<DialogSettings> dlg_settings = new DialogSettings(GkDb, fileIo, gkAudioDevices,
-                                                               avail_input_audio_devs, avail_output_audio_devs,
                                                                gkRadioLibs, gkStringFuncs, gkPortAudioInit,
                                                                gkRadioPtr, status_com_ports,gkFreqList, gkFreqTableModel,
                                                                gkEventLogger, this);

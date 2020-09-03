@@ -218,14 +218,14 @@
                         <string>Logs Save Directory</string>
                        </property>
                        <layout class="QFormLayout" name="formLayout_5">
-                        <item row="0" column="0">
+                        <item row="1" column="0">
                          <widget class="QLabel" name="label_audio_logs_save_dir">
                           <property name="text">
                            <string>Location: </string>
                           </property>
                          </widget>
                         </item>
-                        <item row="0" column="1">
+                        <item row="1" column="1">
                          <widget class="QFrame" name="frame_audio_location_power">
                           <property name="sizePolicy">
                            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
@@ -280,6 +280,9 @@
                            </item>
                           </layout>
                          </widget>
+                        </item>
+                        <item row="0" column="1">
+                         <layout class="QFormLayout" name="formLayout_21"/>
                         </item>
                        </layout>
                       </widget>
@@ -562,32 +565,537 @@
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>742</width>
-                      <height>621</height>
+                      <width>732</width>
+                      <height>878</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_23">
+                     <item>
+                      <widget class="QGroupBox" name="groupBox_accessibility">
+                       <property name="title">
+                        <string>Accessibility</string>
+                       </property>
+                       <layout class="QVBoxLayout" name="verticalLayout_50">
+                        <item>
+                         <widget class="QGroupBox" name="groupBox_accessibility_speech_to_text">
+                          <property name="title">
+                           <string>Speech-to-Text</string>
+                          </property>
+                          <layout class="QVBoxLayout" name="verticalLayout_51">
+                           <item>
+                            <widget class="QFrame" name="frame_access_stt_form">
+                             <property name="frameShape">
+                              <enum>QFrame::NoFrame</enum>
+                             </property>
+                             <property name="frameShadow">
+                              <enum>QFrame::Plain</enum>
+                             </property>
+                             <layout class="QFormLayout" name="formLayout_22">
+                              <property name="leftMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="topMargin">
+                               <number>6</number>
+                              </property>
+                              <property name="rightMargin">
+                               <number>0</number>
+                              </property>
+                              <item row="0" column="0">
+                               <widget class="QLabel" name="label_access_stt_volume">
+                                <property name="text">
+                                 <string>Volume: </string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="0" column="1">
+                               <widget class="QSlider" name="horizontalSlider_access_stt_volume">
+                                <property name="pageStep">
+                                 <number>15</number>
+                                </property>
+                                <property name="value">
+                                 <number>50</number>
+                                </property>
+                                <property name="orientation">
+                                 <enum>Qt::Horizontal</enum>
+                                </property>
+                                <property name="tickPosition">
+                                 <enum>QSlider::TicksBelow</enum>
+                                </property>
+                                <property name="tickInterval">
+                                 <number>10</number>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="1" column="0">
+                               <widget class="QLabel" name="label_access_stt_rate">
+                                <property name="text">
+                                 <string>Rate: </string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="1" column="1">
+                               <widget class="QSlider" name="horizontalSlider_access_stt_rate">
+                                <property name="pageStep">
+                                 <number>5</number>
+                                </property>
+                                <property name="sliderPosition">
+                                 <number>33</number>
+                                </property>
+                                <property name="orientation">
+                                 <enum>Qt::Horizontal</enum>
+                                </property>
+                                <property name="tickPosition">
+                                 <enum>QSlider::TicksBelow</enum>
+                                </property>
+                                <property name="tickInterval">
+                                 <number>10</number>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="2" column="0">
+                               <widget class="QLabel" name="label_access_stt_pitch">
+                                <property name="text">
+                                 <string>Pitch: </string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="2" column="1">
+                               <widget class="QSlider" name="horizontalSlider_access_stt_pitch">
+                                <property name="pageStep">
+                                 <number>5</number>
+                                </property>
+                                <property name="sliderPosition">
+                                 <number>25</number>
+                                </property>
+                                <property name="orientation">
+                                 <enum>Qt::Horizontal</enum>
+                                </property>
+                                <property name="tickPosition">
+                                 <enum>QSlider::TicksBelow</enum>
+                                </property>
+                                <property name="tickInterval">
+                                 <number>10</number>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="3" column="0">
+                               <widget class="QLabel" name="label_access_stt_language">
+                                <property name="text">
+                                 <string>Language: </string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="3" column="1">
+                               <widget class="QComboBox" name="comboBox_access_stt_language"/>
+                              </item>
+                              <item row="4" column="0">
+                               <widget class="QLabel" name="label_access_stt_preset_voice">
+                                <property name="text">
+                                 <string>Voice: </string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="4" column="1">
+                               <widget class="QComboBox" name="comboBox_access_stt_preset_voice"/>
+                              </item>
+                             </layout>
+                            </widget>
+                           </item>
+                           <item>
+                            <widget class="QFrame" name="frame_access_stt_pushbuttons">
+                             <property name="frameShape">
+                              <enum>QFrame::NoFrame</enum>
+                             </property>
+                             <property name="frameShadow">
+                              <enum>QFrame::Plain</enum>
+                             </property>
+                             <layout class="QHBoxLayout" name="horizontalLayout_28">
+                              <property name="leftMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="rightMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="bottomMargin">
+                               <number>0</number>
+                              </property>
+                              <item>
+                               <widget class="QPushButton" name="pushButton_access_stt_speak">
+                                <property name="text">
+                                 <string>Speak</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QPushButton" name="pushButton_access_stt_pause">
+                                <property name="text">
+                                 <string>Pause</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QPushButton" name="pushButton_access_stt_enable">
+                                <property name="text">
+                                 <string>Enable</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QPushButton" name="pushButton_access_stt_resume">
+                                <property name="text">
+                                 <string>Resume</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QPushButton" name="pushButton_access_stt_stop">
+                                <property name="text">
+                                 <string>Stop</string>
+                                </property>
+                               </widget>
+                              </item>
+                             </layout>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QGroupBox" name="groupBox_accessibility_speech_recognition">
+                          <property name="title">
+                           <string>Speech Recognition</string>
+                          </property>
+                          <layout class="QHBoxLayout" name="horizontalLayout_29">
+                           <item>
+                            <widget class="QPlainTextEdit" name="plainTextEdit_access_speech_recog_future_updates">
+                             <property name="minimumSize">
+                              <size>
+                               <width>0</width>
+                               <height>96</height>
+                              </size>
+                             </property>
+                             <property name="plainText">
+                              <string>Speech recognition is a feature that is not available at this time, but is planned to be implemented in the near-future. Please check our main website for regular updates by going towards 'Help --&gt; About SWD' from within the main screen!
+
+Thanks.</string>
+                             </property>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QGroupBox" name="groupBox_accessibility_miscellaneous">
+                          <property name="title">
+                           <string>Miscellaneous</string>
+                          </property>
+                          <layout class="QHBoxLayout" name="horizontalLayout_30">
+                           <item>
+                            <widget class="QFrame" name="frame_access_misc_left_frame">
+                             <property name="frameShape">
+                              <enum>QFrame::NoFrame</enum>
+                             </property>
+                             <property name="frameShadow">
+                              <enum>QFrame::Plain</enum>
+                             </property>
+                             <layout class="QFormLayout" name="formLayout_23">
+                              <property name="leftMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="topMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="rightMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="bottomMargin">
+                               <number>0</number>
+                              </property>
+                              <item row="0" column="0">
+                               <spacer name="horizontalSpacer_11">
+                                <property name="orientation">
+                                 <enum>Qt::Horizontal</enum>
+                                </property>
+                                <property name="sizeHint" stdset="0">
+                                 <size>
+                                  <width>40</width>
+                                  <height>20</height>
+                                 </size>
+                                </property>
+                               </spacer>
+                              </item>
+                              <item row="0" column="1">
+                               <widget class="QFrame" name="frame_4">
+                                <property name="frameShape">
+                                 <enum>QFrame::NoFrame</enum>
+                                </property>
+                                <property name="frameShadow">
+                                 <enum>QFrame::Plain</enum>
+                                </property>
+                                <layout class="QHBoxLayout" name="horizontalLayout_31">
+                                 <property name="leftMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="topMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="rightMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="bottomMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <item>
+                                  <widget class="QCheckBox" name="checkBox_access_misc_enbl_magnifier">
+                                   <property name="text">
+                                    <string>Enable magnifying lens</string>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                 <item>
+                                  <spacer name="horizontalSpacer_13">
+                                   <property name="orientation">
+                                    <enum>Qt::Horizontal</enum>
+                                   </property>
+                                   <property name="sizeHint" stdset="0">
+                                    <size>
+                                     <width>40</width>
+                                     <height>20</height>
+                                    </size>
+                                   </property>
+                                  </spacer>
+                                 </item>
+                                </layout>
+                               </widget>
+                              </item>
+                             </layout>
+                            </widget>
+                           </item>
+                           <item>
+                            <widget class="QFrame" name="frame_access_misc_right_frame">
+                             <property name="frameShape">
+                              <enum>QFrame::NoFrame</enum>
+                             </property>
+                             <property name="frameShadow">
+                              <enum>QFrame::Plain</enum>
+                             </property>
+                             <layout class="QFormLayout" name="formLayout_24">
+                              <property name="leftMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="topMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="rightMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="bottomMargin">
+                               <number>0</number>
+                              </property>
+                              <item row="0" column="0">
+                               <widget class="QLabel" name="label_access_misc_shortcut_key_magnifier">
+                                <property name="text">
+                                 <string>Shortcut key for magnifier: </string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="0" column="1">
+                               <widget class="QLineEdit" name="lineEdit_access_misc_shortcut_key_magnifier">
+                                <property name="maxLength">
+                                 <number>512</number>
+                                </property>
+                                <property name="alignment">
+                                 <set>Qt::AlignCenter</set>
+                                </property>
+                                <property name="readOnly">
+                                 <bool>true</bool>
+                                </property>
+                                <property name="placeholderText">
+                                 <string>Select and press keys...</string>
+                                </property>
+                                <property name="clearButtonEnabled">
+                                 <bool>true</bool>
+                                </property>
+                               </widget>
+                              </item>
+                             </layout>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                       </layout>
+                      </widget>
+                     </item>
                      <item>
                       <widget class="QGroupBox" name="groupBox_general_settings">
                        <property name="title">
                         <string>General Settings</string>
                        </property>
-                       <layout class="QFormLayout" name="formLayout_2">
-                        <item row="0" column="0">
-                         <widget class="QCheckBox" name="checkBox_compress_settings_db">
-                          <property name="text">
-                           <string>Compress settings database</string>
+                       <layout class="QHBoxLayout" name="horizontalLayout_34">
+                        <item>
+                         <widget class="QFrame" name="frame_7">
+                          <property name="frameShape">
+                           <enum>QFrame::NoFrame</enum>
                           </property>
-                          <property name="checked">
-                           <bool>true</bool>
+                          <property name="frameShadow">
+                           <enum>QFrame::Plain</enum>
                           </property>
+                          <layout class="QFormLayout" name="formLayout_25">
+                           <property name="leftMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="topMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="rightMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="bottomMargin">
+                            <number>0</number>
+                           </property>
+                           <item row="0" column="0">
+                            <spacer name="horizontalSpacer_15">
+                             <property name="orientation">
+                              <enum>Qt::Horizontal</enum>
+                             </property>
+                             <property name="sizeHint" stdset="0">
+                              <size>
+                               <width>40</width>
+                               <height>20</height>
+                              </size>
+                             </property>
+                            </spacer>
+                           </item>
+                           <item row="0" column="1">
+                            <widget class="QFrame" name="frame_5">
+                             <property name="frameShape">
+                              <enum>QFrame::NoFrame</enum>
+                             </property>
+                             <property name="frameShadow">
+                              <enum>QFrame::Plain</enum>
+                             </property>
+                             <layout class="QHBoxLayout" name="horizontalLayout_32">
+                              <property name="leftMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="topMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="rightMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="bottomMargin">
+                               <number>0</number>
+                              </property>
+                              <item>
+                               <widget class="QCheckBox" name="checkBox_compress_settings_db">
+                                <property name="text">
+                                 <string>Compress settings database</string>
+                                </property>
+                                <property name="checked">
+                                 <bool>true</bool>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <spacer name="horizontalSpacer_12">
+                                <property name="orientation">
+                                 <enum>Qt::Horizontal</enum>
+                                </property>
+                                <property name="sizeHint" stdset="0">
+                                 <size>
+                                  <width>40</width>
+                                  <height>20</height>
+                                 </size>
+                                </property>
+                               </spacer>
+                              </item>
+                             </layout>
+                            </widget>
+                           </item>
+                          </layout>
                          </widget>
                         </item>
-                        <item row="1" column="0">
-                         <widget class="QCheckBox" name="checkBox_send_anon_crash_reports">
-                          <property name="text">
-                           <string>Send anonymous crash reports</string>
+                        <item>
+                         <widget class="QFrame" name="frame_8">
+                          <property name="frameShape">
+                           <enum>QFrame::NoFrame</enum>
                           </property>
+                          <property name="frameShadow">
+                           <enum>QFrame::Plain</enum>
+                          </property>
+                          <layout class="QFormLayout" name="formLayout_26">
+                           <property name="leftMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="topMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="rightMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="bottomMargin">
+                            <number>0</number>
+                           </property>
+                           <item row="0" column="0">
+                            <spacer name="horizontalSpacer_16">
+                             <property name="orientation">
+                              <enum>Qt::Horizontal</enum>
+                             </property>
+                             <property name="sizeHint" stdset="0">
+                              <size>
+                               <width>40</width>
+                               <height>20</height>
+                              </size>
+                             </property>
+                            </spacer>
+                           </item>
+                           <item row="0" column="1">
+                            <widget class="QFrame" name="frame_6">
+                             <property name="frameShape">
+                              <enum>QFrame::NoFrame</enum>
+                             </property>
+                             <property name="frameShadow">
+                              <enum>QFrame::Plain</enum>
+                             </property>
+                             <layout class="QHBoxLayout" name="horizontalLayout_33">
+                              <property name="leftMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="topMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="rightMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="bottomMargin">
+                               <number>0</number>
+                              </property>
+                              <item>
+                               <widget class="QCheckBox" name="checkBox_send_anon_crash_reports">
+                                <property name="text">
+                                 <string>Send anonymous crash reports</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <spacer name="horizontalSpacer_14">
+                                <property name="orientation">
+                                 <enum>Qt::Horizontal</enum>
+                                </property>
+                                <property name="sizeHint" stdset="0">
+                                 <size>
+                                  <width>40</width>
+                                  <height>20</height>
+                                 </size>
+                                </property>
+                               </spacer>
+                              </item>
+                             </layout>
+                            </widget>
+                           </item>
+                          </layout>
                          </widget>
                         </item>
                        </layout>
@@ -598,14 +1106,98 @@
                        <property name="title">
                         <string>Windowing &amp;&amp; Views</string>
                        </property>
-                       <layout class="QFormLayout" name="formLayout_4">
-                        <item row="0" column="0">
-                         <widget class="QCheckBox" name="checkBox_waterfall_upon_start">
-                          <property name="text">
-                           <string>Initialize waterfall upon startup</string>
+                       <layout class="QHBoxLayout" name="horizontalLayout_36">
+                        <item>
+                         <widget class="QFrame" name="frame_10">
+                          <property name="frameShape">
+                           <enum>QFrame::NoFrame</enum>
                           </property>
-                          <property name="checked">
-                           <bool>true</bool>
+                          <property name="frameShadow">
+                           <enum>QFrame::Plain</enum>
+                          </property>
+                          <layout class="QFormLayout" name="formLayout_2">
+                           <property name="leftMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="topMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="rightMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="bottomMargin">
+                            <number>0</number>
+                           </property>
+                           <item row="0" column="0">
+                            <spacer name="horizontalSpacer_17">
+                             <property name="orientation">
+                              <enum>Qt::Horizontal</enum>
+                             </property>
+                             <property name="sizeHint" stdset="0">
+                              <size>
+                               <width>40</width>
+                               <height>20</height>
+                              </size>
+                             </property>
+                            </spacer>
+                           </item>
+                           <item row="0" column="1">
+                            <widget class="QFrame" name="frame_11">
+                             <property name="frameShape">
+                              <enum>QFrame::NoFrame</enum>
+                             </property>
+                             <property name="frameShadow">
+                              <enum>QFrame::Plain</enum>
+                             </property>
+                             <layout class="QHBoxLayout" name="horizontalLayout_37">
+                              <property name="leftMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="topMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="rightMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="bottomMargin">
+                               <number>0</number>
+                              </property>
+                              <item>
+                               <widget class="QCheckBox" name="checkBox_waterfall_upon_start">
+                                <property name="text">
+                                 <string>Initialize waterfall upon startup</string>
+                                </property>
+                                <property name="checked">
+                                 <bool>true</bool>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <spacer name="horizontalSpacer_18">
+                                <property name="orientation">
+                                 <enum>Qt::Horizontal</enum>
+                                </property>
+                                <property name="sizeHint" stdset="0">
+                                 <size>
+                                  <width>40</width>
+                                  <height>20</height>
+                                 </size>
+                                </property>
+                               </spacer>
+                              </item>
+                             </layout>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QFrame" name="frame_9">
+                          <property name="frameShape">
+                           <enum>QFrame::StyledPanel</enum>
+                          </property>
+                          <property name="frameShadow">
+                           <enum>QFrame::Raised</enum>
                           </property>
                          </widget>
                         </item>
@@ -613,20 +1205,20 @@
                       </widget>
                      </item>
                      <item>
-                      <widget class="QGroupBox" name="groupBox_notification_settings">
+                      <widget class="QGroupBox" name="groupBox">
                        <property name="title">
                         <string>Notifications</string>
                        </property>
-                       <layout class="QHBoxLayout" name="horizontalLayout_20">
+                       <layout class="QHBoxLayout" name="horizontalLayout_38">
                         <item>
-                         <widget class="QFrame" name="frame_notification_settings_left_frame">
+                         <widget class="QFrame" name="frame_12">
                           <property name="frameShape">
                            <enum>QFrame::NoFrame</enum>
                           </property>
                           <property name="frameShadow">
                            <enum>QFrame::Plain</enum>
                           </property>
-                          <layout class="QVBoxLayout" name="verticalLayout_48">
+                          <layout class="QFormLayout" name="formLayout_4">
                            <property name="leftMargin">
                             <number>0</number>
                            </property>
@@ -639,28 +1231,78 @@
                            <property name="bottomMargin">
                             <number>0</number>
                            </property>
-                           <item>
-                            <widget class="QCheckBox" name="checkBox_new_msg_audio_notification">
-                             <property name="text">
-                              <string>Enable 'new message' audio notification</string>
+                           <item row="0" column="0">
+                            <spacer name="horizontalSpacer_19">
+                             <property name="orientation">
+                              <enum>Qt::Horizontal</enum>
                              </property>
-                             <property name="checked">
-                              <bool>true</bool>
+                             <property name="sizeHint" stdset="0">
+                              <size>
+                               <width>40</width>
+                               <height>20</height>
+                              </size>
                              </property>
+                            </spacer>
+                           </item>
+                           <item row="0" column="1">
+                            <widget class="QFrame" name="frame_14">
+                             <property name="frameShape">
+                              <enum>QFrame::NoFrame</enum>
+                             </property>
+                             <property name="frameShadow">
+                              <enum>QFrame::Plain</enum>
+                             </property>
+                             <layout class="QHBoxLayout" name="horizontalLayout_39">
+                              <property name="leftMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="topMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="rightMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="bottomMargin">
+                               <number>0</number>
+                              </property>
+                              <item>
+                               <widget class="QCheckBox" name="checkBox_new_msg_audio_notification">
+                                <property name="text">
+                                 <string>Enable 'new message' audio notification</string>
+                                </property>
+                                <property name="checked">
+                                 <bool>true</bool>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <spacer name="horizontalSpacer_21">
+                                <property name="orientation">
+                                 <enum>Qt::Horizontal</enum>
+                                </property>
+                                <property name="sizeHint" stdset="0">
+                                 <size>
+                                  <width>22</width>
+                                  <height>20</height>
+                                 </size>
+                                </property>
+                               </spacer>
+                              </item>
+                             </layout>
                             </widget>
                            </item>
                           </layout>
                          </widget>
                         </item>
                         <item>
-                         <widget class="QFrame" name="frame_notification_settings_right_frame">
+                         <widget class="QFrame" name="frame_13">
                           <property name="frameShape">
                            <enum>QFrame::NoFrame</enum>
                           </property>
                           <property name="frameShadow">
                            <enum>QFrame::Plain</enum>
                           </property>
-                          <layout class="QVBoxLayout" name="verticalLayout_49">
+                          <layout class="QFormLayout" name="formLayout_27">
                            <property name="leftMargin">
                             <number>0</number>
                            </property>
@@ -673,14 +1315,64 @@
                            <property name="bottomMargin">
                             <number>0</number>
                            </property>
-                           <item>
-                            <widget class="QCheckBox" name="checkBox_failed_event_audio_notification">
-                             <property name="text">
-                              <string>Enable 'failed event' audio notification</string>
+                           <item row="0" column="0">
+                            <spacer name="horizontalSpacer_20">
+                             <property name="orientation">
+                              <enum>Qt::Horizontal</enum>
                              </property>
-                             <property name="checked">
-                              <bool>true</bool>
+                             <property name="sizeHint" stdset="0">
+                              <size>
+                               <width>40</width>
+                               <height>20</height>
+                              </size>
                              </property>
+                            </spacer>
+                           </item>
+                           <item row="0" column="1">
+                            <widget class="QFrame" name="frame_15">
+                             <property name="frameShape">
+                              <enum>QFrame::NoFrame</enum>
+                             </property>
+                             <property name="frameShadow">
+                              <enum>QFrame::Plain</enum>
+                             </property>
+                             <layout class="QHBoxLayout" name="horizontalLayout_40">
+                              <property name="leftMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="topMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="rightMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="bottomMargin">
+                               <number>0</number>
+                              </property>
+                              <item>
+                               <widget class="QCheckBox" name="checkBox_failed_event_audio_notification">
+                                <property name="text">
+                                 <string>Enable 'failed event' audio notification</string>
+                                </property>
+                                <property name="checked">
+                                 <bool>true</bool>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <spacer name="horizontalSpacer_22">
+                                <property name="orientation">
+                                 <enum>Qt::Horizontal</enum>
+                                </property>
+                                <property name="sizeHint" stdset="0">
+                                 <size>
+                                  <width>23</width>
+                                  <height>20</height>
+                                 </size>
+                                </property>
+                               </spacer>
+                              </item>
+                             </layout>
                             </widget>
                            </item>
                           </layout>
@@ -1451,9 +2143,12 @@
                                </spacer>
                               </item>
                               <item>
-                               <widget class="QPushButton" name="pushButton_audio_refresh_cache">
+                               <widget class="QPushButton" name="pushButton_refresh_audio_devices">
+                                <property name="toolTip">
+                                 <string>Refresh the enumerated audio devices, for if there have been any updates within the host operating system.</string>
+                                </property>
                                 <property name="text">
-                                 <string>   Refresh cache   </string>
+                                 <string>   Refresh audio devices   </string>
                                 </property>
                                </widget>
                               </item>
@@ -3091,8 +3786,8 @@
                         <rect>
                          <x>0</x>
                          <y>0</y>
-                         <width>86</width>
-                         <height>16</height>
+                         <width>742</width>
+                         <height>621</height>
                         </rect>
                        </property>
                       </widget>

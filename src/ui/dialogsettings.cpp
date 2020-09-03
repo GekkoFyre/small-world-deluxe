@@ -47,9 +47,7 @@
 #include <utility>
 #include <exception>
 #include <set>
-#include <cmath>
 #include <iomanip>
-#include <sstream>
 #include <cstdlib>
 
 using namespace GekkoFyre;
@@ -83,8 +81,6 @@ std::mutex index_loop_mtx;
 DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
                                QPointer<FileIo> filePtr,
                                std::shared_ptr<AudioDevices> audioDevices,
-                               QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> audioInputDevs,
-                               QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> audioOutputDevs,
                                QPointer<RadioLibs> radioLibs, QPointer<StringFuncs> stringFuncs,
                                portaudio::System *portAudioInit,
                                std::shared_ptr<GkRadio> radioPtr,
@@ -112,9 +108,6 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         gkFreqTableModel = std::move(freqTableModel);
         gkEventLogger = std::move(eventLogger);
         status_com_ports = com_ports;
-
-        avail_input_audio_devs = std::move(audioInputDevs);
-        avail_output_audio_devs = std::move(audioOutputDevs);
 
         usb_ports_active = false;
         com_ports_active = false;
@@ -1733,6 +1726,16 @@ void DialogSettings::on_pushButton_output_sound_test_clicked()
 }
 
 /**
+ * @brief DialogSettings::on_pushButton_refresh_audio_devices_clicked refreshes the enumerated audio devices (both input and output) that are
+ * found within the host operating system, and which are then displayed to the end-user for setting their options.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void DialogSettings::on_pushButton_refresh_audio_devices_clicked()
+{
+    return;
+}
+
+/**
  * @brief DialogSettings::on_comboBox_soundcard_input_currentIndexChanged is activated when someone makes
  * a selection within the QComboBox of the Input Audio Device. This is particularly useful regarding
  * the audio sinusoidal test functionality.
@@ -1757,14 +1760,16 @@ void DialogSettings::on_comboBox_soundcard_input_currentIndexChanged(int index)
                     chosen_input_audio_dev = chosen_input;
 
                     if (device.second.supp_sample_rates.empty()) {
-                        for (const auto &sampleRate: standardSampleRates) {
-                            bool supported = gkAudioDevices->enumSupportedStdSampleRates(&chosen_input_audio_dev.stream_parameters, sampleRate, false);
-                            if (supported) {
-                                supportedInputSampleRates.push_back(sampleRate);
+                        auto supported_rates = gkAudioDevices->enumSupportedStdSampleRates(&chosen_input_audio_dev.stream_parameters, standardSampleRates, false);
+                        for (const auto &sampleRate: supported_rates) {
+                            const PaError support = sampleRate.second;
+                            if (support == paFormatIsSupported) {
+                                // This sample rate is supported!
+                                supportedInputSampleRates.emplace_back(sampleRate.first);
                             }
                         }
 
-                        chosen_input_audio_dev.supp_sample_rates = supportedInputSampleRates.toStdList();
+                        chosen_input_audio_dev.supp_sample_rates = supportedInputSampleRates;
                         if (avail_input_audio_devs.contains(idx)) {
                             avail_input_audio_devs.remove(idx);
                         }
@@ -1823,14 +1828,16 @@ void DialogSettings::on_comboBox_soundcard_output_currentIndexChanged(int index)
                     chosen_output_audio_dev = chosen_output;
 
                     if (device.second.supp_sample_rates.empty()) {
-                        for (const auto &sampleRate: standardSampleRates) {
-                            bool supported = gkAudioDevices->enumSupportedStdSampleRates(&chosen_output_audio_dev.stream_parameters, sampleRate, true);
-                            if (supported) {
-                                supportedOutputSampleRates.push_back(sampleRate);
+                        auto supported_rates = gkAudioDevices->enumSupportedStdSampleRates(&chosen_input_audio_dev.stream_parameters, standardSampleRates, false);
+                        for (const auto &sampleRate: supported_rates) {
+                            const PaError support = sampleRate.second;
+                            if (support == paFormatIsSupported) {
+                                // This sample rate is supported!
+                                supportedOutputSampleRates.emplace_back(sampleRate.first);
                             }
                         }
 
-                        chosen_output_audio_dev.supp_sample_rates = supportedOutputSampleRates.toStdList();
+                        chosen_output_audio_dev.supp_sample_rates = supportedOutputSampleRates;
                         if (avail_output_audio_devs.contains(idx)) {
                             avail_output_audio_devs.remove(idx);
                         }
@@ -1962,16 +1969,6 @@ void DialogSettings::on_comboBox_soundcard_api_currentIndexChanged(int index)
         gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
     }
 
-    return;
-}
-
-/**
- * @brief DialogSettings::on_pushButton_audio_refresh_cache_clicked refreshes the audio devices that are available to the user, while
- * adding any new ones to the Google LevelDB database, and removing non-existing ones too.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void DialogSettings::on_pushButton_audio_refresh_cache_clicked()
-{
     return;
 }
 
