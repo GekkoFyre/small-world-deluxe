@@ -122,7 +122,7 @@ SpectroGui::SpectroGui(QPointer<StringFuncs> stringFuncs, QPointer<GkEventLogger
         gkRasterData->setData(gkMatrixData);
         // gkSpectrogram->attach(this);
 
-        gkMatrixData->setInterval(Qt::XAxis, QwtInterval(0, 2500.0f));
+        gkMatrixData->setInterval(Qt::XAxis, QwtInterval(SPECTRO_X_MIN_AXIS_SIZE, SPECTRO_X_MAX_AXIS_SIZE));
         gkMatrixData->setInterval(Qt::ZAxis, QwtInterval(0, 5000.0f));
 
         const static qint64 start_time = QDateTime::currentMSecsSinceEpoch();

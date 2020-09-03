@@ -409,6 +409,7 @@ private:
 
 Q_DECLARE_METATYPE(std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>);
 Q_DECLARE_METATYPE(GekkoFyre::Database::Settings::GkUsbPort);
+Q_DECLARE_METATYPE(GekkoFyre::Spectrograph::GkFFTSpectrum);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkConnMethod);
 Q_DECLARE_METATYPE(GekkoFyre::System::Events::Logging::GkEventLogging);
 Q_DECLARE_METATYPE(GekkoFyre::System::Events::Logging::GkSeverity);

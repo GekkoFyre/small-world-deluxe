@@ -432,6 +432,13 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/sentry-native")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/sentry-native/include")
 
 #
+# KissFFT
+# https://github.com/mborgerding/kissfft
+#
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/kissfft")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/kissfft")
+
+#
 # PortAudio's C++ bindings
 #
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/portaudio/cpp/include")
@@ -551,6 +558,7 @@ set(GALAXY_UI_CPP
     src/dek_db.cpp
     src/file_io.cpp
     src/audio_devices.cpp
+    src/gk_fft.cpp
     src/spectro_gui.cpp
     src/gk_audio_encoding.cpp
     src/gk_audio_decoding.cpp
@@ -579,7 +587,6 @@ endif()
 set(GALAXY_SRC_CPP
     ${GALAXY_SRC_CPP}
     src/pa_sinewave.cpp
-    src/gk_fft.cpp
     src/contrib/udev/device.cpp
     src/contrib/udev/enumerate.cpp
     src/contrib/udev/monitor.cpp
@@ -631,6 +638,7 @@ set(GALAXY_OBJ_HEADERS
     src/dek_db.hpp
     src/file_io.hpp
     src/audio_devices.hpp
+    src/gk_fft.hpp
     src/spectro_gui.hpp
     src/gk_audio_encoding.hpp
     src/gk_audio_decoding.hpp
@@ -662,7 +670,6 @@ set(GALAXY_SRC_HEADERS
     src/pa_sinewave.hpp
     src/gk_timer.hpp
     src/gk_circ_buffer.hpp
-    src/gk_fft.hpp
     src/contrib/rapidcsv/src/rapidcsv.h
     src/contrib/AudioFile/AudioFile.h
     src/contrib/udev/device.hpp

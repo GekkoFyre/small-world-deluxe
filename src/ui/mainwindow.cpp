@@ -121,6 +121,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>>("std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>");
     qRegisterMetaType<GekkoFyre::Database::Settings::GkUsbPort>("GekkoFyre::Database::Settings::GkUsbPort");
     qRegisterMetaType<GekkoFyre::AmateurRadio::GkConnMethod>("GekkoFyre::AmateurRadio::GkConnMethod");
+    qRegisterMetaType<GekkoFyre::Spectrograph::GkFFTSpectrum>("GekkoFyre::Spectrograph::GkFFTSpectrum");
     qRegisterMetaType<GekkoFyre::System::Events::Logging::GkEventLogging>("GekkoFyre::System::Events::Logging::GkEventLogging");
     qRegisterMetaType<GekkoFyre::System::Events::Logging::GkSeverity>("GekkoFyre::System::Events::Logging::GkSeverity");
     qRegisterMetaType<GekkoFyre::Database::Settings::Audio::GkDevice>("GekkoFyre::Database::Settings::Audio::GkDevice");
@@ -494,7 +495,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize any FFT libraries/resources
         //
-        gkFFT = std::make_unique<GkFFT>();
+        gkFFT = std::make_unique<GkFFT>(this);
 
         //
         // Initialize the Waterfall / Spectrograph
@@ -1801,8 +1802,8 @@ void MainWindow::updateSpectrograph()
                     recv_buf.shrink_to_fit();
 
                     if (fftData.size() == GK_FFT_SIZE) {
-                        std::vector<GkFFTComplex> fftDataVals;
-                        fftDataVals = gkFFT->FFTCompute(fftData, fftData.size(), (GK_FFT_SIZE / 2), GK_FFT_SIZE);
+                        std::vector<GkFFTSpectrum> fftDataVals;
+                        fftDataVals = gkFFT->FFTCompute(fftData, pref_input_device, fftData.size());
 
                         //
                         // Perform the timing and date calculations!
@@ -1830,23 +1831,15 @@ void MainWindow::updateSpectrograph()
                         // https://stackoverflow.com/questions/1679974/converting-an-fft-to-a-spectogram/10643179
                         //
 
-                        std::vector<double> magnitude_buf;
-                        magnitude_buf.reserve(fftDataVals.size() + 1);
-                        for (const auto &calc: fftDataVals) {
-                            const double magnitude = std::sqrt(std::pow(calc.real, 2) + std::pow(calc.imaginary, 2));
-                            magnitude_buf.push_back(magnitude);
-                        }
-
                         QVector<double> fft_spectro_vals;
-                        fft_spectro_vals.reserve(GK_FFT_SAMPLE_SIZE + 1);
-                        for (size_t i = 0; i < GK_FFT_SAMPLE_SIZE; ++i) {
-                            fft_spectro_vals.push_back(fftDataVals[i].imaginary);
+                        fft_spectro_vals.reserve(fftDataVals.size());
+                        for (size_t i = 0; i < fftDataVals.size(); ++i) {
+                            fft_spectro_vals.push_back(fftDataVals[i].magnitude);
                         }
 
                         gkSpectroGui->insertData(fft_spectro_vals, 1); // This is the data for the spectrograph / waterfall itself!
                         emit refreshSpectrograph(gk_spectro_latest_time, gk_spectro_start_time);
 
-                        magnitude_buf.clear();
                         fftDataVals.clear();
                     }
                 }

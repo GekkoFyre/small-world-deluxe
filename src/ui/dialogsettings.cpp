@@ -574,6 +574,15 @@ void DialogSettings::prefill_audio_api_avail(const QVector<PaHostApiTypeId> &por
                         }
                     }
                 }
+
+                #ifdef __linux__
+                if (pa_api != PaHostApiTypeId::paSoundManager || pa_api != PaHostApiTypeId::paCoreAudio || pa_api != PaHostApiTypeId::paJACK ||
+                    pa_api != PaHostApiTypeId::paALSA || pa_api != PaHostApiTypeId::paAL || pa_api != PaHostApiTypeId::paBeOS ||
+                    pa_api != PaHostApiTypeId::paOSS) {
+                    // Unknown API(s)
+                    ui->comboBox_soundcard_api->insertItem(-2, tr("Unrecognized API(s)"), -2);
+                }
+                #endif
             }
         }
     } catch (const portaudio::PaException &e) {

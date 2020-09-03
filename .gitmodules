@@ -19,3 +19,6 @@
 [submodule "src/contrib/codec2"]
 	path = src/contrib/codec2
 	url = https://github.com/drowe67/codec2.git
+[submodule "src/contrib/kissfft"]
+	path = src/contrib/kissfft
+	url = https://github.com/mborgerding/kissfft.git

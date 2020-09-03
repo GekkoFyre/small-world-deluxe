@@ -42,21 +42,35 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include <fftw3.h>
+#include <kiss_fft.h>
 #include <list>
 #include <vector>
 #include <complex>
+#include <QObject>
+#include <QVector>
+#include <QByteArray>
 
 namespace GekkoFyre {
-class GkFFT {
+class GkFFT : public QObject {
+    Q_OBJECT
 
 public:
-    explicit GkFFT();
+    explicit GkFFT(QObject *parent = nullptr);
     ~GkFFT();
 
-    std::vector<Spectrograph::GkFFTComplex> FFTCompute(std::vector<float> signal, int signal_length, int window_size, int hop_size);
+    std::vector<GekkoFyre::Spectrograph::GkFFTSpectrum> FFTCompute(const std::vector<float> &data, const GekkoFyre::Database::Settings::Audio::GkDevice &audioDevice, const qint32 &numSamples);
+    fftw_complex *FFTCompute2DWaveform(const int &fft_size);
 
 private:
-    void hamming(int windowLength, float *buffer);
+    double *fftIn;
+    double *fftOutAbs;
+    fftw_plan fftwPlan;
+
+    kiss_fft_cfg m_fft;
+    std::vector<GekkoFyre::Spectrograph::GkFFTSpectrum> m_spectrum;
+    std::vector<float> m_window;
+    QVector<float> m_spectrum_buffer;
 
 };
 };
