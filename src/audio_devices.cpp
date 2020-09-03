@@ -207,15 +207,17 @@ std::map<double, PaError> AudioDevices::enumSupportedStdSampleRates(const PaStre
                                                                     const bool &isOutputDevice)
 {
     try {
-        qint32 chunksToUse = 1;
         auto numCpuCores = gkStringFuncs->getNumCpuCores();
-        while (numCpuCores % chunksToUse != 1) { // This determines the amount of ideal CPU cores to use!
+        const size_t sample_rate_vec_size = sampleRatesToTest.size();
+        size_t chunksToUse = 1;
+
+        while (chunksToUse < (numCpuCores % sample_rate_vec_size)) {
             ++chunksToUse;
         }
 
         std::vector<double> vec_copy;
         vec_copy.assign(sampleRatesToTest.begin(), sampleRatesToTest.end());
-        auto payload_tmp = gkStringFuncs->chunker(vec_copy, chunksToUse);
+        auto payload_tmp = gkStringFuncs->splitVec<double>(vec_copy, chunksToUse);
         std::map<double, PaError> mapped_data;
         std::map<double, std::future<PaError>> async_tasks;
         if (isOutputDevice) {

@@ -218,14 +218,14 @@
                         <string>Logs Save Directory</string>
                        </property>
                        <layout class="QFormLayout" name="formLayout_5">
-                        <item row="0" column="0">
+                        <item row="1" column="0">
                          <widget class="QLabel" name="label_audio_logs_save_dir">
                           <property name="text">
                            <string>Location: </string>
                           </property>
                          </widget>
                         </item>
-                        <item row="0" column="1">
+                        <item row="1" column="1">
                          <widget class="QFrame" name="frame_audio_location_power">
                           <property name="sizePolicy">
                            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
@@ -281,6 +281,9 @@
                           </layout>
                          </widget>
                         </item>
+                        <item row="0" column="1">
+                         <layout class="QFormLayout" name="formLayout_21"/>
+                        </item>
                        </layout>
                       </widget>
                      </item>
@@ -324,8 +327,8 @@
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>742</width>
-                      <height>621</height>
+                      <width>299</width>
+                      <height>382</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_20">
@@ -562,8 +565,8 @@
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>742</width>
-                      <height>621</height>
+                      <width>585</width>
+                      <height>450</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_23">
@@ -1451,9 +1454,12 @@
                                </spacer>
                               </item>
                               <item>
-                               <widget class="QPushButton" name="pushButton_audio_refresh_cache">
+                               <widget class="QPushButton" name="pushButton_refresh_audio_devices">
+                                <property name="toolTip">
+                                 <string>Refresh the enumerated audio devices, for if there have been any updates within the host operating system.</string>
+                                </property>
                                 <property name="text">
-                                 <string>   Refresh cache   </string>
+                                 <string>   Refresh audio devices   </string>
                                 </property>
                                </widget>
                               </item>
