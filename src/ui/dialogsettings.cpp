@@ -1755,12 +1755,12 @@ void DialogSettings::on_comboBox_soundcard_input_currentIndexChanged(int index)
         if (!avail_portaudio_api.isEmpty() || !avail_input_audio_devs.isEmpty()) {
             for (const auto &device: avail_input_audio_devs.toStdMap()) {
                 if (device.first == idx) {
-                    GkDevice chosen_input;
-                    chosen_input = gkAudioDevices->gatherAudioDeviceDetails(gkPortAudioInit, idx);
-                    chosen_input_audio_dev = chosen_input;
+                    chosen_input_audio_dev = GkDevice(); // Blank any previous values firstly!
+                    chosen_input_audio_dev = gkAudioDevices->gatherAudioDeviceDetails(gkPortAudioInit, idx);
 
-                    if (device.second.supp_sample_rates.empty()) {
-                        auto supported_rates = gkAudioDevices->enumSupportedStdSampleRates(&chosen_input_audio_dev.stream_parameters, standardSampleRates, false);
+                    supportedInputSampleRates.clear();
+                    auto supported_rates = gkAudioDevices->enumSupportedStdSampleRates(&chosen_input_audio_dev.stream_parameters, standardSampleRates, false);
+                    if (!supported_rates.empty()) {
                         for (const auto &sampleRate: supported_rates) {
                             const PaError support = sampleRate.second;
                             if (support == paFormatIsSupported) {
@@ -1772,15 +1772,15 @@ void DialogSettings::on_comboBox_soundcard_input_currentIndexChanged(int index)
                         chosen_input_audio_dev.supp_sample_rates = supportedInputSampleRates;
                         if (avail_input_audio_devs.contains(idx)) {
                             avail_input_audio_devs.remove(idx);
+                            avail_input_audio_devs.insert(idx, chosen_input_audio_dev);
                         }
 
-                        avail_input_audio_devs.insert(idx, chosen_input_audio_dev);
                         update_sample_rates(false);
                     }
-
-                    return;
                 }
             }
+
+            return;
         }
     } catch (const portaudio::PaException &e) {
         QString error_msg = tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText());
@@ -1823,12 +1823,11 @@ void DialogSettings::on_comboBox_soundcard_output_currentIndexChanged(int index)
         if (!avail_portaudio_api.isEmpty() || !avail_output_audio_devs.isEmpty()) {
             for (const auto &device: avail_output_audio_devs.toStdMap()) {
                 if (device.first == idx) {
-                    GkDevice chosen_output;
-                    chosen_output = gkAudioDevices->gatherAudioDeviceDetails(gkPortAudioInit, idx);
-                    chosen_output_audio_dev = chosen_output;
+                    chosen_output_audio_dev = GkDevice(); // Blank any previous values firstly!
+                    chosen_output_audio_dev = gkAudioDevices->gatherAudioDeviceDetails(gkPortAudioInit, idx);
 
-                    if (device.second.supp_sample_rates.empty()) {
-                        auto supported_rates = gkAudioDevices->enumSupportedStdSampleRates(&chosen_input_audio_dev.stream_parameters, standardSampleRates, false);
+                    auto supported_rates = gkAudioDevices->enumSupportedStdSampleRates(&chosen_input_audio_dev.stream_parameters, standardSampleRates, false);
+                    if (!supported_rates.empty()) {
                         for (const auto &sampleRate: supported_rates) {
                             const PaError support = sampleRate.second;
                             if (support == paFormatIsSupported) {
@@ -1840,15 +1839,15 @@ void DialogSettings::on_comboBox_soundcard_output_currentIndexChanged(int index)
                         chosen_output_audio_dev.supp_sample_rates = supportedOutputSampleRates;
                         if (avail_output_audio_devs.contains(idx)) {
                             avail_output_audio_devs.remove(idx);
+                            avail_output_audio_devs.insert(idx, chosen_output_audio_dev);
                         }
 
-                        avail_output_audio_devs.insert(idx, chosen_output_audio_dev);
                         update_sample_rates(true);
                     }
-
-                    return;
                 }
             }
+
+            return;
         }
     } catch (const portaudio::PaException &e) {
         QString error_msg = tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText());
