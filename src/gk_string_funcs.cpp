@@ -126,6 +126,28 @@ qint32 StringFuncs::getNumCpuCores()
     #endif
 }
 
+/**
+ * @brief StringFuncs::addErrorMsg
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param orig_msg
+ * @param err_msg
+ * @return
+ */
+QString StringFuncs::addErrorMsg(const QString &orig_msg, const QString &err_msg)
+{
+    if (!orig_msg.isNull() && !orig_msg.isEmpty()) {
+        if (!err_msg.isNull() && !err_msg.isEmpty()) {
+            QString orig_msg_modified = orig_msg;
+            orig_msg_modified += tr(" Error:\n\n");
+            orig_msg_modified += err_msg;
+
+            return orig_msg_modified;
+        }
+    }
+
+    return QString();
+}
+
 #if defined(_MSC_VER) && (_MSC_VER > 1900)
 /**
  * @brief StringFuncs::multiByteFromWide Converts a widestring to a multibyte string, when concerning Microsoft Windows

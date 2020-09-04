@@ -65,9 +65,10 @@ std::mutex setEventNoMutex;
  * @param viewModel
  * @param parent
  */
-GkEventLogger::GkEventLogger(QObject *parent)
+GkEventLogger::GkEventLogger(QPointer<GekkoFyre::StringFuncs> stringFuncs, QObject *parent)
 {
     setParent(parent);
+    gkStringFuncs = std::move(stringFuncs);
 
     return;
 }
@@ -84,7 +85,8 @@ GkEventLogger::~GkEventLogger()
  * @param severity The severity of the issue, where it's just a warning all the way to a fatal error.
  * @param arguments Any arguments that are associated with the event message. This tends to be left blank.
  */
-void GkEventLogger::publishEvent(const QString &event, const GkSeverity &severity, const QVariant &arguments, const bool &sys_notification)
+void GkEventLogger::publishEvent(const QString &event, const GkSeverity &severity, const QVariant &arguments, const bool &sys_notification,
+                                 const bool &publishToConsole)
 {
     const std::lock_guard<std::mutex> lock(dataBatchMutex);
 
@@ -110,7 +112,11 @@ void GkEventLogger::publishEvent(const QString &event, const GkSeverity &severit
     emit sendEvent(event_log);
 
     if (sys_notification) {
-        systemNotification(tr("Small World Deluxe"), event);
+        systemNotification(tr("Small World Deluxe"), event_log);
+    }
+
+    if (publishToConsole) {
+        sendToConsole(event_log, event_log.mesg.severity);
     }
 
     return;
@@ -146,10 +152,22 @@ int GkEventLogger::setEventNo()
     return event_number;
 }
 
-void GkEventLogger::systemNotification(const QString &title, const QString &msg)
+/**
+ * @brief GkEventLogger::systemNotification
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param title
+ * @param msg
+ */
+void GkEventLogger::systemNotification(const QString &title, const GkEventLogging &event_msg)
 {
     try {
-        if (!msg.isNull() && !msg.isEmpty()) {
+        if (!event_msg.mesg.message.isNull() && !event_msg.mesg.message.isEmpty()) {
+            QString msg = event_msg.mesg.message;
+            if (!event_msg.mesg.arguments.isNull() && !event_msg.mesg.arguments.toString().isEmpty()) {
+                msg.clear();
+                msg = gkStringFuncs->addErrorMsg(event_msg.mesg.message, event_msg.mesg.arguments.toString());
+            }
+
             // Send out a system notification!
             system(QString("notify-send '%1' \"%2\"").arg(title).arg(msg).toStdString().c_str());
             return;
@@ -157,6 +175,35 @@ void GkEventLogger::systemNotification(const QString &title, const QString &msg)
     }  catch (const std::exception &e) {
         std::cerr << tr("Attempted to send out a system notification popup, but failed! Please check with the maintainer/distributor of the release you are using. Error:\n\n%1")
                      .arg(QString::fromStdString(e.what())).toStdString() << std::endl;
+    }
+
+    return;
+}
+
+/**
+ * @brief GkEventLogger::sendToConsole if the correct flag for this function is enabled, then the event log message will be published
+ * via CLI interface as well in order to provide extra information to the user via as many means as possible, so that it is ensured
+ * the event's message is as widely seen/noticed as possible.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param msg The event log message in question that is to be published.
+ * @param severity The severity of the event log message in question, that will thus determine the std::out() interface to
+ * be used (i.e. `std::cout` vs. `std::cerr`).
+ */
+void GkEventLogger::sendToConsole(const GkEventLogging &event_msg, const Events::Logging::GkSeverity &severity)
+{
+    if (!event_msg.mesg.message.isNull() && !event_msg.mesg.message.isEmpty()) {
+        QString msg = event_msg.mesg.message;
+        if (!event_msg.mesg.arguments.isNull() && !event_msg.mesg.arguments.toString().isEmpty()) {
+            msg.clear();
+            msg = gkStringFuncs->addErrorMsg(event_msg.mesg.message, event_msg.mesg.arguments.toString());
+        }
+
+        if (severity == GkSeverity::None || severity == GkSeverity::Debug || severity == GkSeverity::Verbose ||
+            severity == GkSeverity::Info) {
+            std::cout << msg.toStdString() << std::endl;
+        } else {
+            std::cerr << msg.toStdString() << std::endl;
+        }
     }
 
     return;

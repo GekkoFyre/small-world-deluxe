@@ -45,6 +45,7 @@
 #include "src/models/tableview/gk_logger_model.hpp"
 #include <mutex>
 #include <QVariant>
+#include <QPointer>
 #include <QObject>
 #include <QString>
 #include <QList>
@@ -55,22 +56,25 @@ class GkEventLogger : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkEventLogger(QObject *parent = nullptr);
+    explicit GkEventLogger(QPointer<GekkoFyre::StringFuncs> stringFuncs, QObject *parent = nullptr);
     ~GkEventLogger() override;
 
     void publishEvent(const QString &event, const GekkoFyre::System::Events::Logging::GkSeverity &severity = GekkoFyre::System::Events::Logging::GkSeverity::Warning,
-                      const QVariant &arguments = "", const bool &sys_notification = false);
+                      const QVariant &arguments = "", const bool &sys_notification = false, const bool &publishToConsole = true);
 
 signals:
     void sendEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &event);
     void removeEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &event);
 
 private:
+    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QList<GekkoFyre::System::Events::Logging::GkEventLogging> eventLogDb;                       // Where the event log itself is stored in memory...
 
     qint64 setDate();
     int setEventNo();
-    void systemNotification(const QString &title, const QString &msg);
+    void systemNotification(const QString &title, const GekkoFyre::System::Events::Logging::GkEventLogging &event_msg);
+    void sendToConsole(const GekkoFyre::System::Events::Logging::GkEventLogging &event_msg,
+                       const GekkoFyre::System::Events::Logging::GkSeverity &severity);
 
 };
 };

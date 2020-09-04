@@ -164,7 +164,7 @@ else()
     message(FATAL_ERROR "Could not find the Threads library!")
 endif(Threads_FOUND)
 
-find_package(Qt5 COMPONENTS Core Gui Widgets Network SerialPort PrintSupport Test REQUIRED)
+find_package(Qt5 COMPONENTS Core Gui Widgets Network SerialPort PrintSupport TextToSpeech Test REQUIRED)
 
 if (MSYS OR MINGW OR LINUX)
     set(Boost_USE_STATIC_LIBS OFF CACHE BOOL "Use static libraries when linking Boost C++.")
@@ -302,14 +302,6 @@ if (SNAPPY_FOUND)
 else()
     message(FATAL_ERROR "The 'Snappy' compression libraries could not be found!")
 endif(SNAPPY_FOUND)
-
-find_package(FFTW REQUIRED)
-if (FFTW_FOUND)
-    include_directories(${FFTW_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${FFTW_LIBRARIES})
-else()
-    message(FATAL_ERROR "The 'FFTW' mathematical libraries could not be found!")
-endif(FFTW_FOUND)
 
 find_package(USB REQUIRED)
 if (USB_FOUND)
@@ -566,6 +558,7 @@ set(GALAXY_UI_CPP
     src/gk_modem.cpp
     src/gk_frequency_list.cpp
     src/gk_string_funcs.cpp
+    src/gk_speech_to_text.cpp
     src/gk_logger.cpp
     src/gk_system.cpp
     src/ui/widgets/gk_submit_msg.cpp
@@ -646,6 +639,7 @@ set(GALAXY_OBJ_HEADERS
     src/gk_modem.hpp
     src/gk_frequency_list.hpp
     src/gk_string_funcs.hpp
+    src/gk_speech_to_text.hpp
     src/gk_logger.hpp
     src/gk_system.hpp
     src/ui/widgets/gk_submit_msg.hpp
@@ -766,7 +760,7 @@ if(GFYRE_BUILD_SHARED)
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
-target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::SerialPort Qt5::PrintSupport Threads::Threads SingleApplication::SingleApplication sentry::sentry ${LIBS})
+target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::SerialPort Qt5::PrintSupport Qt5::TextToSpeech Qt5::Test Threads::Threads SingleApplication::SingleApplication sentry::sentry ${LIBS})
 
 qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)
 add_dependencies(galaxy resources)

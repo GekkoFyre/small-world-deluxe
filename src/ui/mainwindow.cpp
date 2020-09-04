@@ -381,7 +381,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 ui->tableView_maingui_logs->horizontalHeader()->setStretchLastSection(true);
                 ui->tableView_maingui_logs->show();
 
-                gkEventLogger = new GkEventLogger(this);
+                gkEventLogger = new GkEventLogger(gkStringFuncs, this);
                 QObject::connect(gkEventLogger, SIGNAL(sendEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &)),
                                  gkEventLoggerModel, SLOT(insertData(const GekkoFyre::System::Events::Logging::GkEventLogging &)));
                 QObject::connect(gkEventLogger, SIGNAL(removeEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &)),
@@ -495,7 +495,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize any FFT libraries/resources
         //
-        gkFFT = std::make_unique<GkFFT>(this);
+        gkFFT = std::make_unique<GkFFT>(gkEventLogger, this);
 
         //
         // Initialize the Waterfall / Spectrograph
@@ -624,7 +624,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QObject::connect(widget_change_freq, SIGNAL(execFuncAfterEvent(const quint64 &)),
                          this, SLOT(tuneActiveFreq(const quint64 &)));
 
-        gkModem = new GekkoFyre::GkModem(gkAudioDevices, GkDb, gkEventLogger, gkStringFuncs, this);
+        gkModem = new GkModem(gkAudioDevices, GkDb, gkEventLogger, gkStringFuncs, this);
+        gkSpeechToText = new GkSpeechToText(this);
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
@@ -1766,7 +1767,6 @@ void MainWindow::updateSpectrograph()
                             }
 
                             gkSpectroGui->insertData(fft_spectro_vals, 1); // This is the data for the spectrograph / waterfall itself!
-                            emit refreshSpectrograph(gk_spectro_latest_time, gk_spectro_start_time);
 
                             magnitude_buf.clear();
                             magnitude_db_buf.clear();
@@ -1861,8 +1861,8 @@ void MainWindow::updateSpectrograph()
  * via the decibel formulae <https://en.wikipedia.org/wiki/Decibel#Acoustics>.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param value The value of the QSlider from the QMainWindow, ranging from 0-100 individual units.
- * @note Ansis Māliņš <https://stackoverflow.com/questions/49014440/what-is-the-correct-audio-volume-slider-formula>
- * trukvl <https://stackoverflow.com/questions/15776390/controlling-audio-volume-in-real-time>,
+ * @note Ansis Māliņš <https://stackoverflow.com/questions/49014440/what-is-the-correct-audio-volume-slider-formula>,
+ * trukvl <https://stackoverflow.com/questions/15776390/controlling-audio-volume-in-real-time>
  */
 void MainWindow::on_verticalSlider_vol_control_valueChanged(int value)
 {

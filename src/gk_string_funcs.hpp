@@ -72,6 +72,7 @@ public:
 
     QString getStringFromUnsignedChar(unsigned char *str);
     std::vector<int> convStrToIntArray(const QString &str);
+    QString addErrorMsg(const QString &orig_msg, const QString &err_msg);
 
     qint32 getNumCpuCores();
 

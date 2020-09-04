@@ -272,7 +272,7 @@ void SpectroGui::insertData(const QVector<double> &values, const int &numCols)
         mtx_raster_data.unlock();
     } catch (const std::exception &e) {
         throw std::runtime_error(tr("An error has occurred whilst doing calculations for the spectrograph / waterfall! Error:\n\n%1")
-        .arg(QString::fromStdString(e.what())).toStdString());
+                                         .arg(QString::fromStdString(e.what())).toStdString());
     }
 
     return;
@@ -366,7 +366,6 @@ void SpectroGui::refreshDateTime(const qint64 &latest_time_update, const qint64 
 /**
  * @brief SpectroGui::updateFFTSize
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param value
  */
 void SpectroGui::updateFFTSize(const int &value)
 {
