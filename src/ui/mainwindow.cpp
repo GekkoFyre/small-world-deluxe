@@ -1838,6 +1838,8 @@ void MainWindow::updateSpectrograph()
                             fft_spectro_vals.push_back(fftDataVals[i].magnitude);
                         }
 
+                        gkSpectroGui->setDataDimensions(0, SPECTRO_X_MAX_AXIS_SIZE, (SPECTRO_Y_AXIS_SIZE / 1000),
+                                                        fft_spectro_vals.size());
                         gkSpectroGui->insertData(fft_spectro_vals, 1); // This is the data for the spectrograph / waterfall itself!
                         emit refreshSpectrograph(gk_spectro_latest_time, gk_spectro_start_time);
 
@@ -1862,8 +1864,8 @@ void MainWindow::updateSpectrograph()
  * via the decibel formulae <https://en.wikipedia.org/wiki/Decibel#Acoustics>.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param value The value of the QSlider from the QMainWindow, ranging from 0-100 individual units.
- * @note Ansis Māliņš <https://stackoverflow.com/questions/49014440/what-is-the-correct-audio-volume-slider-formula>
- * trukvl <https://stackoverflow.com/questions/15776390/controlling-audio-volume-in-real-time>,
+ * @note Ansis Māliņš <https://stackoverflow.com/questions/49014440/what-is-the-correct-audio-volume-slider-formula>,
+ * trukvl <https://stackoverflow.com/questions/15776390/controlling-audio-volume-in-real-time>
  */
 void MainWindow::on_verticalSlider_vol_control_valueChanged(int value)
 {

@@ -66,6 +66,7 @@
 #include <thread>
 #include <future>
 #include <memory>
+#include <chrono>
 #include <QList>
 #include <QTimer>
 #include <QObject>
@@ -118,10 +119,18 @@ public:
                         const bool &enableZoomer = false, QWidget *parent = nullptr);
     ~SpectroGui() override;
 
-    void insertData(const QVector<double> &values, const int &numCols);
     void setDataDimensions(const double &dXMin, const double &dXMax,    // x-axis bounds
                            const size_t &historyExtent,                 // defines the y-axis width (i.e. number of layers)
                            const size_t &layerPoints);                  // FFT/Data points in a single layer
+    void getDataDimensions(double &dXMin, double &dXMax, size_t &historyExtent, size_t &layerPoints) const;
+
+    //
+    // Data
+    //
+    bool insertData(const QVector<double> &values, const std::time_t &timestamp);
+    std::time_t getLayerDate(const double &y) const;
+
+    double getOffset() const { return (gkWaterfallData) ? gkWaterfallData->getOffset() : 0; }
 
 protected:
     void alignScales();
@@ -130,6 +139,12 @@ public slots:
     void changeSpectroType(const GekkoFyre::Spectrograph::GkGraphType &graph_type);
     void refreshDateTime(const qint64 &latest_time_update, const qint64 &time_since);
     void updateFFTSize(const int &value);
+
+protected:
+    void updateCurvesData();
+
+    void allocateCurvesData();
+    void setupCurves();
 
 private:
     QPointer<GkWaterfallData<double>> gkWaterfallData;
@@ -143,8 +158,16 @@ private:
 
     int buf_overall_size;
     int buf_total_size;
+    bool zoomActive;
+    double m_markerX = 0;
+    double m_markerY = 0;
+
+    QPointer<QwtPlot> m_plotHorCurve;
+    std::unique_ptr<QwtPlotCurve> m_horCurve;
+    QVector<double> m_horCurveXAxisData;
+    QVector<double> m_horCurveYAxisData;
+
     QList<double> gkRasterBuf;
-    QwtMatrixRasterData *gkMatrixData;
 
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
@@ -175,6 +198,32 @@ private:
         }
 
         return r;
+    }
+};
+
+/**
+ * @class GekkoFyre::GkSpectroTimeScaleDraw
+ * @author Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>
+ */
+class GkSpectroTimeScaleDraw : public QwtScaleDraw {
+    const SpectroGui &m_waterfallPlot;
+    mutable QDateTime m_dateTime;
+
+public:
+    GkSpectroTimeScaleDraw(const SpectroGui &spectroGui) : m_waterfallPlot(spectroGui) {}
+    ~GkSpectroTimeScaleDraw() override {}
+
+    using QwtScaleDraw::invalidateCache;
+    virtual QwtText label(double v) const {
+        std::time_t ret = m_waterfallPlot.getLayerDate(v - m_waterfallPlot.getOffset());
+        if (ret > 0) {
+            m_dateTime.setTime_t(ret);
+            // Need something else other than time_t to have 'zzz'
+            // return m_dateTime.toString("hh:mm:ss:zzz");
+            return m_dateTime.toString("dd.MM.yy\nhh:mm:ss");
+        }
+
+        return QwtText();
     }
 };
 };
