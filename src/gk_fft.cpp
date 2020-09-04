@@ -42,6 +42,7 @@
 #include "src/gk_fft.hpp"
 #include <QtMath>
 #include <iostream>
+#include <utility>
 #include <cmath>
 
 using namespace GekkoFyre;
@@ -59,12 +60,11 @@ using namespace Logging;
  * @brief GkFFT::GkFFT
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-GkFFT::GkFFT(QObject *parent)
+GkFFT::GkFFT(QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent)
 {
     setParent(parent);
+    eventLogger = std::move(gkEventLogger);
     m_fft = nullptr;
-
-    return;
 }
 
 GkFFT::~GkFFT()
@@ -139,28 +139,9 @@ std::vector<GkFFTSpectrum> GkFFT::FFTCompute(const std::vector<float> &data, con
             return m_spectrum;
         }
     } catch (std::exception &e) {
-        std::cerr << tr("An error has been encountered while calculating FFT values for the spectrograph! Error:\n\n%1")
-        .arg(QString::fromStdString(e.what())).toStdString() << std::endl;
+        gkEventLogger->publishEvent(tr("An error has been encountered while calculating FFT values for the spectrograph! Error:\n\n"),
+                                    GkSeverity::Error, QString::fromStdString(e.what()), true);
     }
 
     return std::vector<GkFFTSpectrum>();
-}
-
-/**
- * @brief GkFFT::FFTCompute2DWaveform calculates a fast-fourier transform for 2D 'waveform-type' spectrographs.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param fft_size
- */
-fftw_complex *GkFFT::FFTCompute2DWaveform(const int &fft_size)
-{
-    const int outArraySize = fft_size / 2 + 1;
-    fftw_complex *fftOut;
-
-    fftIn = (double *) fftw_malloc(sizeof(double) * fft_size);
-    fftOut = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * outArraySize);
-    fftOutAbs = (double *) fftw_malloc(sizeof(double) * outArraySize);
-
-    fftwPlan = fftw_plan_dft_r2c_1d(fft_size, fftIn, fftOut, FFTW_ESTIMATE);
-
-    return fftOut;
 }

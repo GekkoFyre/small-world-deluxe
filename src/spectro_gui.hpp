@@ -43,6 +43,7 @@
 
 #include "src/defines.hpp"
 #include "src/gk_logger.hpp"
+#include "src/gk_waterfall_data.hpp"
 #include <qwt/qwt.h>
 #include <qwt/qwt_plot.h>
 #include <qwt/qwt_plot_spectrogram.h>
@@ -93,13 +94,6 @@ public:
     }
 };
 
-class GkSpectroRasterData: public QwtPlotSpectrogram {
-
-public:
-    void draw(QPainter *painter, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRectF &canvasRect) const override;
-
-};
-
 /**
  * @brief The LinearColorMapRGB class
  * @note <https://www.qtcentre.org/threads/60248-Any-examples-of-different-color-tables-with-Qwt>
@@ -125,6 +119,9 @@ public:
     ~SpectroGui() override;
 
     void insertData(const QVector<double> &values, const int &numCols);
+    void setDataDimensions(const double &dXMin, const double &dXMax,    // x-axis bounds
+                           const size_t &historyExtent,                 // defines the y-axis width (i.e. number of layers)
+                           const size_t &layerPoints);                  // FFT/Data points in a single layer
 
 protected:
     void alignScales();
@@ -135,17 +132,18 @@ public slots:
     void updateFFTSize(const int &value);
 
 private:
+    QPointer<GkWaterfallData<double>> gkWaterfallData;
     QPointer<QwtPlotZoomer> zoomer;
     QPointer<QwtPlotCanvas> canvas;
+    std::unique_ptr<QwtPlotSpectrogram> gkSpectro;
     std::unique_ptr<QwtPlotCurve> curve;
     QPointer<QwtPlotPanner> panner;
-    QwtScaleWidget *top_x_axis;         // This makes use of RAII!
-    QwtScaleWidget *right_y_axis;       // This makes use of RAII!
+    QwtScaleWidget *top_x_axis;                                 // This makes use of RAII!
+    QwtScaleWidget *right_y_axis;                               // This makes use of RAII!
 
     int buf_overall_size;
     int buf_total_size;
     QList<double> gkRasterBuf;
-    GkSpectroRasterData *gkRasterData;
     QwtMatrixRasterData *gkMatrixData;
 
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;

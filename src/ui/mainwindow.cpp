@@ -381,7 +381,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 ui->tableView_maingui_logs->horizontalHeader()->setStretchLastSection(true);
                 ui->tableView_maingui_logs->show();
 
-                gkEventLogger = new GkEventLogger(this);
+                gkEventLogger = new GkEventLogger(gkStringFuncs, this);
                 QObject::connect(gkEventLogger, SIGNAL(sendEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &)),
                                  gkEventLoggerModel, SLOT(insertData(const GekkoFyre::System::Events::Logging::GkEventLogging &)));
                 QObject::connect(gkEventLogger, SIGNAL(removeEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &)),
@@ -495,7 +495,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize any FFT libraries/resources
         //
-        gkFFT = std::make_unique<GkFFT>(this);
+        gkFFT = std::make_unique<GkFFT>(gkEventLogger, this);
 
         //
         // Initialize the Waterfall / Spectrograph
@@ -624,7 +624,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QObject::connect(widget_change_freq, SIGNAL(execFuncAfterEvent(const quint64 &)),
                          this, SLOT(tuneActiveFreq(const quint64 &)));
 
-        gkModem = new GekkoFyre::GkModem(gkAudioDevices, GkDb, gkEventLogger, gkStringFuncs, this);
+        gkModem = new GkModem(gkAudioDevices, GkDb, gkEventLogger, gkStringFuncs, this);
+        gkSpeechToText = new GkSpeechToText(this);
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
