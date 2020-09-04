@@ -89,7 +89,8 @@ SpectroGui::SpectroGui(QPointer<StringFuncs> stringFuncs, QPointer<GkEventLogger
         //
         graph_in_use = GkGraphType::GkWaterfall;
 
-        gkSpectro = std::make_unique<QwtPlotSpectrogram>();
+        gkRasterData = new GkSpectroRasterData();
+        gkMatrixData = new QwtMatrixRasterData();
         canvas = new QwtPlotCanvas();
         m_plotHorCurve = new QwtPlot();
         m_horCurve = std::make_unique<QwtPlotCurve>();
@@ -109,21 +110,21 @@ SpectroGui::SpectroGui(QPointer<StringFuncs> stringFuncs, QPointer<GkEventLogger
         canvas->setStyleSheet("border-radius: 8px; background-color: #000080");
         setCanvas(canvas);
 
-        gkSpectro->setRenderThreadCount(0); // https://docs.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getlogicalprocessorinformation?redirectedfrom=MSDN
-        gkSpectro->setCachePolicy(QwtPlotRasterItem::PaintCache);
-        gkSpectro->setDisplayMode(QwtPlotSpectrogram::DisplayMode::ImageMode, true);
-        gkSpectro->setColorMap(new LinearColorMapRGB());
+        gkRasterData->setRenderThreadCount(0); // https://docs.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getlogicalprocessorinformation?redirectedfrom=MSDN
+        gkRasterData->setCachePolicy(QwtPlotRasterItem::PaintCache);
+        gkRasterData->setDisplayMode(QwtPlotSpectrogram::DisplayMode::ImageMode, true);
+        gkRasterData->setColorMap(new LinearColorMapRGB());
 
         // These are said to use quite a few system resources!
-        gkSpectro->setRenderHint(QwtPlotItem::RenderAntialiased);
+        gkRasterData->setRenderHint(QwtPlotItem::RenderAntialiased);
 
         QList<double> contourLevels;
         for (double level = 0.5; level < 10.0; level += 1.0) {
             contourLevels += level;
         }
 
-        gkSpectro->setContourLevels(contourLevels);
-        gkSpectro->setData(gkWaterfallData);
+        gkRasterData->setContourLevels(contourLevels);
+        gkRasterData->setData(gkMatrixData);
         // gkSpectrogram->attach(this);
 
         const static qint64 start_time = QDateTime::currentMSecsSinceEpoch();
@@ -172,7 +173,7 @@ SpectroGui::SpectroGui(QPointer<StringFuncs> stringFuncs, QPointer<GkEventLogger
         right_y_axis = axisWidget(QwtPlot::yRight);
         right_y_axis->setColorBarWidth(16);
         right_y_axis->setColorBarEnabled(true);
-        right_y_axis->setColorMap(gkSpectro->interval(Qt::ZAxis), new LinearColorMapRGB());
+        right_y_axis->setColorMap(gkRasterData->interval(Qt::ZAxis), new LinearColorMapRGB());
         right_y_axis->setEnabled(true);
         enableAxis(QwtPlot::yRight, true);
 
@@ -200,11 +201,11 @@ SpectroGui::SpectroGui(QPointer<StringFuncs> stringFuncs, QPointer<GkEventLogger
         zoomer->setTrackerPen(c);
 
         alignScales();
-        gkSpectro->attach(this);
+        gkRasterData->attach(this);
 
         setAutoReplot(false);
         plotLayout()->setAlignCanvasToScales(true);
-        gkSpectro->invalidateCache();
+        gkRasterData->invalidateCache();
         replot();
     } catch (const std::exception &e) {
         #if defined(_MSC_VER) && (_MSC_VER > 1900)
@@ -266,52 +267,6 @@ bool SpectroGui::insertData(const QVector<double> &values, const time_t &timesta
     }
 
     return false;
-}
-
-/**
- * @brief SpectroGui::setDataDimensions
- * @author Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>,
- * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param dXMin
- * @param dXMax
- * @param historyExtent
- * @param layerPoints
- * @see
- */
-void SpectroGui::setDataDimensions(const double &dXMin, const double &dXMax, const size_t &historyExtent,
-                                   const size_t &layerPoints)
-{
-    gkWaterfallData = new GkWaterfallData<double>(dXMin, dXMax, historyExtent, layerPoints);
-
-
-    return;
-}
-
-/**
- * @brief SpectroGui::getDataDimensions
- * @author Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>,
- * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param dXMin
- * @param dXMax
- * @param historyExtent
- * @param layerPoints
- * @see SpectroGui::setDataDimensions().
- */
-void SpectroGui::getDataDimensions(double &dXMin, double &dXMax, size_t &historyExtent, size_t &layerPoints) const
-{
-    if (gkWaterfallData) {
-        dXMin = gkWaterfallData->getXMin();
-        dXMax = gkWaterfallData->getXMax();
-        historyExtent = gkWaterfallData->getMaxHistoryLength();
-        layerPoints = gkWaterfallData->getLayerPoints();
-    } else {
-        dXMin = 0;
-        dXMax = 0;
-        historyExtent = 0;
-        layerPoints = 0;
-    }
-
-    return;
 }
 
 /**
@@ -377,7 +332,6 @@ void SpectroGui::changeSpectroType(const GekkoFyre::Spectrograph::GkGraphType &g
 /**
  * @brief SpectroGui::updateFFTSize
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param value
  */
 void SpectroGui::updateFFTSize(const int &value)
 {
@@ -403,12 +357,8 @@ void SpectroGui::updateCurvesData()
         return;
     }
 
-    if (!m_horCurveXAxisData.isEmpty() && !m_horCurveYAxisData.isEmpty()) {
-        std::copy(wfData + layerPts * markerY,
-                  wfData + layerPts * (markerY + 1),
-                  std::back_inserter(m_horCurveYAxisData));
-        m_horCurve->setRawSamples(m_horCurveXAxisData.data(), m_horCurveYAxisData.data(), layerPts);
-    }
+    gkRasterData->invalidateCache();
+    replot();
 
     const double offset = gkWaterfallData->getOffset();
     
@@ -447,67 +397,30 @@ void SpectroGui::allocateCurvesData()
 }
 
 /**
- * @brief SpectroGui::setupCurves
- * @author Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>,
- * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @brief GkSpectroRasterData::draw
+ * @author Thomas <https://stackoverflow.com/questions/57342087/qwtplotspectrogram-with-log-scales>
+ * @param painter
+ * @param xMap
+ * @param yMap
+ * @param canvasRect
  */
-void SpectroGui::setupCurves()
+void GkSpectroRasterData::draw(QPainter *painter, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRectF &canvasRect) const
 {
-    m_plotHorCurve->detachItems(QwtPlotItem::Rtti_PlotCurve, true);
+    std::lock_guard<std::mutex> lck_guard(mtx_spectro_raster_draw);
 
-    //
-    // Horizontal Curve
-    //
-    m_horCurve->attach(m_plotHorCurve);
-    m_horCurve->setRenderHint(QwtPlotItem::RenderAntialiased, true);
-    m_horCurve->setStyle(QwtPlotCurve::Lines);
-}
+    QwtScaleMap xMapLin(xMap);
+    QwtScaleMap yMapLin(yMap);
 
-/**
- * @brief SpectroGui::getLayerDate
- * @author Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>
- * @param y
- * @return
- */
-std::time_t SpectroGui::getLayerDate(const double &y) const
-{
-    return gkWaterfallData ? gkWaterfallData->getLayerDate(y) : 0;
-}
+    auto const xi = data()->interval(Qt::XAxis);
+    auto const yi = data()->interval(Qt::YAxis);
 
-/**
- * @brief SpectroGui::setRange
- * @author Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>,
- * * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param dLower
- * @param dUpper
- */
-void SpectroGui::setRange(double dLower, double dUpper)
-{
-    if (dLower > dUpper) {
-        std::swap(dLower, dUpper);
-    }
+    auto const dx = xMapLin.transform(xMap.s1());
+    xMapLin.setScaleInterval(xi.minValue(), xi.maxValue());
+    auto const dy = yMapLin.transform(yMap.s2());
+    yMapLin.setScaleInterval(yi.minValue(), yi.maxValue());
 
-    if (axisEnabled(QwtPlot::yRight)) {
-        setAxisScale(QwtPlot::yRight, dLower, dUpper);
+    xMapLin.setTransformation(new QwtNullTransform());
+    yMapLin.setTransformation(new QwtNullTransform());
 
-        QwtScaleWidget *axis = axisWidget(QwtPlot::yRight);
-        if (axis->isColorBarEnabled()) {
-            // Waiting a proper method to get a reference to the QwtInterval
-            // instead of resetting a new color map to the axis !
-            if (!m_bColorBarInitialized) {
-                m_bColorBarInitialized = true;
-            }
-
-            axis->setColorMap(QwtInterval(dLower, dUpper), new LinearColorMapRGB());
-        }
-    }
-
-    // set vertical plot's X axis and horizontal plot's Y axis scales to the color bar min/max
-    m_plotHorCurve->setAxisScale(QwtPlot::yLeft, dLower, dUpper);
-
-    if (gkWaterfallData) {
-        gkWaterfallData->setRange(dLower, dUpper);
-    }
-
-    gkSpectro->invalidateCache();
+    QwtPlotSpectrogram::draw(painter, xMapLin, yMapLin, canvasRect.translated(dx, -dy));
 }
