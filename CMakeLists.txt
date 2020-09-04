@@ -164,7 +164,7 @@ else()
     message(FATAL_ERROR "Could not find the Threads library!")
 endif(Threads_FOUND)
 
-find_package(Qt5 COMPONENTS Core Gui Widgets Network SerialPort PrintSupport Test REQUIRED)
+find_package(Qt5 COMPONENTS Core Gui Widgets Network SerialPort PrintSupport TextToSpeech Test REQUIRED)
 
 if (MSYS OR MINGW OR LINUX)
     set(Boost_USE_STATIC_LIBS OFF CACHE BOOL "Use static libraries when linking Boost C++.")
@@ -303,14 +303,6 @@ else()
     message(FATAL_ERROR "The 'Snappy' compression libraries could not be found!")
 endif(SNAPPY_FOUND)
 
-find_package(FFTW REQUIRED)
-if (FFTW_FOUND)
-    include_directories(${FFTW_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${FFTW_LIBRARIES})
-else()
-    message(FATAL_ERROR "The 'FFTW' mathematical libraries could not be found!")
-endif(FFTW_FOUND)
-
 find_package(USB REQUIRED)
 if (USB_FOUND)
     include_directories(${LIBUSB_INCLUDE_DIRS})
@@ -432,6 +424,13 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/sentry-native")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/sentry-native/include")
 
 #
+# KissFFT
+# https://github.com/mborgerding/kissfft
+#
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/kissfft")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/kissfft")
+
+#
 # PortAudio's C++ bindings
 #
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/portaudio/cpp/include")
@@ -551,6 +550,7 @@ set(GALAXY_UI_CPP
     src/dek_db.cpp
     src/file_io.cpp
     src/audio_devices.cpp
+    src/gk_fft.cpp
     src/spectro_gui.cpp
     src/gk_audio_encoding.cpp
     src/gk_audio_decoding.cpp
@@ -558,6 +558,7 @@ set(GALAXY_UI_CPP
     src/gk_modem.cpp
     src/gk_frequency_list.cpp
     src/gk_string_funcs.cpp
+    src/gk_speech_to_text.cpp
     src/gk_logger.cpp
     src/gk_system.cpp
     src/ui/widgets/gk_submit_msg.cpp
@@ -579,7 +580,6 @@ endif()
 set(GALAXY_SRC_CPP
     ${GALAXY_SRC_CPP}
     src/pa_sinewave.cpp
-    src/gk_fft.cpp
     src/contrib/udev/device.cpp
     src/contrib/udev/enumerate.cpp
     src/contrib/udev/monitor.cpp
@@ -631,6 +631,7 @@ set(GALAXY_OBJ_HEADERS
     src/dek_db.hpp
     src/file_io.hpp
     src/audio_devices.hpp
+    src/gk_fft.hpp
     src/spectro_gui.hpp
     src/gk_audio_encoding.hpp
     src/gk_audio_decoding.hpp
@@ -638,6 +639,7 @@ set(GALAXY_OBJ_HEADERS
     src/gk_modem.hpp
     src/gk_frequency_list.hpp
     src/gk_string_funcs.hpp
+    src/gk_speech_to_text.hpp
     src/gk_logger.hpp
     src/gk_system.hpp
     src/ui/widgets/gk_submit_msg.hpp
@@ -662,7 +664,6 @@ set(GALAXY_SRC_HEADERS
     src/pa_sinewave.hpp
     src/gk_timer.hpp
     src/gk_circ_buffer.hpp
-    src/gk_fft.hpp
     src/contrib/rapidcsv/src/rapidcsv.h
     src/contrib/AudioFile/AudioFile.h
     src/contrib/udev/device.hpp
@@ -759,7 +760,7 @@ if(GFYRE_BUILD_SHARED)
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
-target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::SerialPort Qt5::PrintSupport Threads::Threads SingleApplication::SingleApplication sentry::sentry ${LIBS})
+target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::SerialPort Qt5::PrintSupport Qt5::TextToSpeech Qt5::Test Threads::Threads SingleApplication::SingleApplication sentry::sentry ${LIBS})
 
 qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)
 add_dependencies(galaxy resources)

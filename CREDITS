@@ -54,6 +54,10 @@ PortAudio by the PortAudio community
     <http://www.portaudio.com/>
         The MIT License
 
+KissFFT by Mark Borgerding <Mark@Borgerding.net>
+    <https://github.com/mborgerding/kissfft>
+        BSD 3-clause License
+
 FFTW3 by Matteo Frigo & Steven G. Johnson et al.
     <https://github.com/FFTW/fftw3>
         GNU General Public License (GPL, version 2)

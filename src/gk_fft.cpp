@@ -40,8 +40,9 @@
  ****************************************************************************************************/
 
 #include "src/gk_fft.hpp"
-#include <fftw3.h>
+#include <QtMath>
 #include <iostream>
+#include <utility>
 #include <cmath>
 
 using namespace GekkoFyre;
@@ -59,89 +60,88 @@ using namespace Logging;
  * @brief GkFFT::GkFFT
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-GkFFT::GkFFT()
+GkFFT::GkFFT(QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent)
 {
-    return;
+    setParent(parent);
+    eventLogger = std::move(gkEventLogger);
+    m_fft = nullptr;
 }
 
 GkFFT::~GkFFT()
 {
-    return;
+    if (m_fft) {
+        free(m_fft);
+    }
 }
 
 /**
- * @brief GkFFT::FFTCompute performs fast-fourier transforms on given sample data.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param signal
- * @param signal_length
- * @param window_size
- * @param hop_size
- * @return
- * @note Paul R. <https://stackoverflow.com/questions/4675457/how-to-generate-the-audio-spectrum-using-fft-in-c>
+ * @brief GkFFT::FFTCompute performs fast-fourier transforms on given sample data, for 'waterfall-type' spectrographs.
+ * @author antonypro <https://github.com/antonypro/AudioStreaming/blob/master/AudioStreamingLib/Demos/BroadcastClient/spectrumanalyzer.cpp>,
+ * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param data The data on which to perform the calculations.
  */
-std::vector<GkFFTComplex> GkFFT::FFTCompute(std::vector<float> signal, int signal_length, int window_size, int hop_size)
+std::vector<GkFFTSpectrum> GkFFT::FFTCompute(const std::vector<float> &data, const GkDevice &audioDevice, const qint32 &numSamples)
 {
-    fftw_complex *data, *fft_result, *ifft_result;
-    data = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * window_size);
-    fft_result = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * window_size);
-    ifft_result = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * window_size);
+    try {
+        if (!data.empty()) {
+            m_fft = kiss_fft_alloc(numSamples, 0, nullptr, nullptr);
+            m_spectrum.resize(numSamples);
+            m_window.resize(numSamples);
 
-    fftw_plan plan_forward  = fftw_plan_dft_1d(window_size, data, fft_result, FFTW_FORWARD, FFTW_ESTIMATE);
-
-    // Create a hamming window of appropriate length
-    float window[window_size];
-    hamming(window_size, window);
-
-    int chunkPosition = 0;
-    int readIndex;
-    int bStop = 0;
-    int numChunks = 0;
-    std::vector<GkFFTComplex> gkFftComplex;
-
-    // Process each chunk of the signal
-    int i = 0;
-    while (chunkPosition < signal_length && !bStop) {
-        // Copy the chunk into our buffer
-        for(i = 0; i < window_size; i++) {
-            readIndex = chunkPosition + i;
-            if(readIndex < signal_length) {
-                // Note the windowing!
-                data[i][0] = (signal)[readIndex] * window[i];
-                data[i][1] = 0.0;
-            } else {
-                // we have read beyond the signal, so zero-pad it!
-                data[i][0] = 0.0;
-                data[i][1] = 0.0;
-
-                bStop = 1;
+            // Initialize the window
+            for (int i = 0; i < numSamples; ++i) {
+                float window = 0.5f * float(1 - qCos((2 * M_PI * i) / (numSamples - 1)));
+                m_window[i] = window;
             }
+
+            m_spectrum_buffer = QVector<float>::fromStdVector(data);
+            while (m_spectrum_buffer.size() >= int(numSamples)) {
+                QVector<float> middle = m_spectrum_buffer.mid(0, numSamples * sizeof(float));
+                int len = middle.size();
+                m_spectrum_buffer.remove(0, len);
+
+                auto *samples = reinterpret_cast<const float *>(middle.constData());
+
+                kiss_fft_cpx inbuf[numSamples];
+                kiss_fft_cpx outbuf[numSamples];
+
+                // Initialize data array
+                for (int i = 0; i < numSamples; ++i) {
+                    float realSample = samples[i];
+                    float window = m_window[i];
+                    float windowedSample = realSample * window;
+                    inbuf[i].r = windowedSample;
+                    inbuf[i].i = 0;
+                }
+
+                // Calculate the FFT
+                kiss_fft(m_fft, inbuf, outbuf);
+
+                // Analyze output to obtain amplitude and phase for each frequency
+                for (int i = 2; i <= numSamples / 2; ++i) {
+                    // Calculate frequency of this complex sample
+                    m_spectrum[i].frequency = std::round(i * std::round(audioDevice.def_sample_rate) / numSamples);
+
+                    kiss_fft_cpx cpx = outbuf[i];
+
+                    float real = cpx.r;
+                    float imag = 0;
+
+                    if (i > 0 && i < numSamples / 2) {
+                        kiss_fft_cpx cpx = outbuf[numSamples / 2 + i];
+                        imag = cpx.r;
+                    }
+
+                    m_spectrum[i].magnitude = float(qSqrt(qreal(real * real + imag * imag)));
+                }
+            }
+
+            return m_spectrum;
         }
-
-        fftw_execute(plan_forward);
-
-        for (i = 0; i < ((window_size / 2) + 1); i++) {
-            GkFFTComplex fftComplex;
-            fftComplex.real = fft_result[i][0]; // Real
-            fftComplex.imaginary = fft_result[i][1]; // Imaginary
-            gkFftComplex.push_back(fftComplex);
-        }
-
-        chunkPosition += hop_size;
-        numChunks++;
+    } catch (std::exception &e) {
+        gkEventLogger->publishEvent(tr("An error has been encountered while calculating FFT values for the spectrograph! Error:\n\n"),
+                                    GkSeverity::Error, QString::fromStdString(e.what()), true);
     }
 
-    fftw_destroy_plan(plan_forward);
-
-    fftw_free(data);
-    fftw_free(fft_result);
-    fftw_free(ifft_result);
-
-    return gkFftComplex;
-}
-
-void GkFFT::hamming(int windowLength, float *buffer)
-{
-    for (int i = 0; i < windowLength; i++) {
-        buffer[i] = 0.54 - (0.46 * cos( 2 * M_PI * (i / ((windowLength - 1) * 1.0))));
-    }
+    return std::vector<GkFFTSpectrum>();
 }

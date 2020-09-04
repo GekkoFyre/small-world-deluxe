@@ -54,7 +54,6 @@
 #include <mutex>
 #include <future>
 #include <thread>
-#include <queue>
 #include <QString>
 #include <QVector>
 #include <QPointer>
@@ -72,8 +71,8 @@ public:
 
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> initPortAudio(portaudio::System *portAudioSys);
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> defaultAudioDevices(portaudio::System *portAudioSys);
-    bool enumSupportedStdSampleRates(const PaStreamParameters *audioParameters, const double &sampleRateToTest,
-                                     const bool &isOutputDevice);
+    std::map<double, PaError> enumSupportedStdSampleRates(const PaStreamParameters *audioParameters, const std::vector<double> &sampleRatesToTest,
+                                                          const bool &isOutputDevice);
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> enumAudioDevices();
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> enumAudioDevicesCpp(portaudio::System *portAudioSys);
     GekkoFyre::Database::Settings::Audio::GkDevice gatherAudioDeviceDetails(portaudio::System *portAudioSys,

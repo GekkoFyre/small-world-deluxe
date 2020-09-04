@@ -122,7 +122,7 @@ SpectroGui::SpectroGui(QPointer<StringFuncs> stringFuncs, QPointer<GkEventLogger
         gkRasterData->setData(gkMatrixData);
         // gkSpectrogram->attach(this);
 
-        gkMatrixData->setInterval(Qt::XAxis, QwtInterval(0, 2500.0f));
+        gkMatrixData->setInterval(Qt::XAxis, QwtInterval(SPECTRO_X_MIN_AXIS_SIZE, SPECTRO_X_MAX_AXIS_SIZE));
         gkMatrixData->setInterval(Qt::ZAxis, QwtInterval(0, 5000.0f));
 
         const static qint64 start_time = QDateTime::currentMSecsSinceEpoch();
@@ -272,7 +272,7 @@ void SpectroGui::insertData(const QVector<double> &values, const int &numCols)
         mtx_raster_data.unlock();
     } catch (const std::exception &e) {
         throw std::runtime_error(tr("An error has occurred whilst doing calculations for the spectrograph / waterfall! Error:\n\n%1")
-        .arg(QString::fromStdString(e.what())).toStdString());
+                                         .arg(QString::fromStdString(e.what())).toStdString());
     }
 
     return;
@@ -366,7 +366,6 @@ void SpectroGui::refreshDateTime(const qint64 &latest_time_update, const qint64 
 /**
  * @brief SpectroGui::updateFFTSize
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param value
  */
 void SpectroGui::updateFFTSize(const int &value)
 {

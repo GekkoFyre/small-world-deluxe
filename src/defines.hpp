@@ -123,17 +123,13 @@ namespace GekkoFyre {
 //
 #define GK_RADIO_VFO_FLOAT_PNT_PREC (5)                 // The floating point precision, in terms of number of digits, to be used in making comparisons (i.e. the 'epsilon') of frequencies, etc.
 
-#define AUDIO_OUTPUT_MAX_VOL_SIMPLE (100)               // The maximum volume in simple units (i.e. non decible units)
 #define AUDIO_OUTPUT_CHANNEL_MAX_LIMIT (1024)
 #define AUDIO_OUTPUT_CHANNEL_MIN_LIMIT (-1024)
 #define AUDIO_INPUT_CHANNEL_MAX_LIMIT (1024)
 #define AUDIO_INPUT_CHANNEL_MIN_LIMIT (-1024)
 #define AUDIO_FRAMES_PER_BUFFER (256)                   // Frames per buffer, i.e. the number of sample frames that PortAudio will request from the callback. Many apps may want to use paFramesPerBufferUnspecified, which tells PortAudio to pick the best, possibly changing, buffer size
-#define AUDIO_TEST_SAMPLE_LENGTH_SEC (3)
 #define AUDIO_TEST_SAMPLE_TABLE_SIZE (200)
-#define AUDIO_SPEC_FLOOR_DECIBELS (-180.0)
 
-#define AUDIO_BUFFER_STREAMING_SECS (5)
 #define AUDIO_SINE_WAVE_PLAYBACK_SECS (3)               // Play the sine wave test sample for three seconds!
 #define AUDIO_VU_METER_UPDATE_MILLISECS (125)           // How often the volume meter should update, in milliseconds.
 #define AUDIO_VU_METER_PEAK_DECAY_RATE (0.001)          // Unknown
@@ -142,8 +138,6 @@ namespace GekkoFyre {
 //
 // Mostly regarding FFTW functions
 //
-#define SPECTRO_BANDWIDTH_MAX_SIZE (2048)               // The size and bandwidth of the spectrograph / waterfall window, in hertz.
-#define SPECTRO_BANDWIDTH_MIN_SIZE (125)                // The size and bandwidth of the spectrograph / waterfall window, in hertz.
 #define GK_FFT_SIZE (4096)
 #define GK_FFT_SAMPLE_SIZE (GK_FFT_SIZE / 4)
 
@@ -153,6 +147,8 @@ namespace GekkoFyre {
 #define SPECTRO_REFRESH_CYCLE_MILLISECS (1000)          // How often the spectrograph / waterfall should update, in milliseconds.
 #define SPECTRO_TIME_UPDATE_MILLISECS (15000)           // How often, in milliseconds, the spectrograph updates the timing information on the y-axis.
 #define SPECTRO_MAX_BUFFER_SIZE (10)                    // The maximum number of items to store within the buffers associated with the spectrograph.
+#define SPECTRO_X_MIN_AXIS_SIZE (0.0f)                  // The default, lower-limit of the x-axis on the spectrograph / waterfall, in hertz.
+#define SPECTRO_X_MAX_AXIS_SIZE (2500.0f)               // The default, upper-limit of the x-axis on the spectrograph / waterfall, in hertz.
 #define SPECTRO_Y_AXIS_SIZE (60000)                     // The maximum size of the y-axis, in milliseconds, given that it is based on a timescale.
 #define SPECTRO_Y_AXIS_MINOR (15)
 #define SPECTRO_Y_AXIS_MAJOR (8)
@@ -677,9 +673,9 @@ namespace Spectrograph {
         int x;
     };
 
-    struct GkFFTComplex {
-        double real;
-        double imaginary;
+    struct GkFFTSpectrum {
+        double frequency;
+        double magnitude;
     };
 
     struct GkAxisData {

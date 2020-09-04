@@ -72,6 +72,68 @@ public:
 
     QString getStringFromUnsignedChar(unsigned char *str);
     std::vector<int> convStrToIntArray(const QString &str);
+    QString addErrorMsg(const QString &orig_msg, const QString &err_msg);
+
+    qint32 getNumCpuCores();
+
+    /**
+     * @brief StringFuncs::splitVec will split a given std::vector<T> into many sub-vectors of a given size. This is
+     * particularly useful for multithreading, for example.
+     * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+     * @tparam T The desired datatype.
+     * @param input_data The input data you wish to have split-up.
+     * @param desired_size The (approximate) resultant size of your given sub-vectors.
+     * @return The desired sub-vectors, as according to the given (approximate) size.
+     */
+        template<typename T>
+        std::vector<std::vector<T>> splitVec(const std::vector<T> &input_data, const size_t &desired_size) {
+            std::vector<std::vector<T>> ret_vec;
+            size_t length = input_data.size() / desired_size;
+            size_t remaining = input_data.size() % desired_size;
+
+            size_t begin = 0;
+            size_t end = 0;
+
+            for (size_t i = 0; i < std::min(desired_size, input_data.size()); ++i) {
+                end += (remaining > 0) ? (length + !!(remaining--)) : length;
+                ret_vec.push_back(std::vector<T>(input_data.begin() + begin, input_data.begin() + end));
+                begin = end;
+            }
+
+            return ret_vec;
+        }
+
+    /**
+     * @brief StringFuncs::splitVec will split a given std::vector<T> into many sub-vectors of a given size. This is
+     * particularly useful for multithreading, for example.
+     * @author marcinwol <https://gist.github.com/marcinwol/3283a92331ff64a8f531>.
+     * @return The desired sub-vectors, as according to the given (approximate) size.
+     */
+    template <typename T, typename A, template <typename , typename > class C>C<C<T,A>, std::allocator<C<T,A>>>
+    chunker(C<T,A> &c, const typename C<T,A>::size_type &k) {
+        if (k <= 0) {
+            throw std::domain_error(tr("chunker() requires k > 0").toStdString());
+        }
+
+        using INPUT_CONTAINER_TYPE = C<T,A>;
+        using INPUT_CONTAINER_VALUE_TYPE = typename INPUT_CONTAINER_TYPE::value_type;
+        using OUTPUT_CONTAINER_TYPE = C<INPUT_CONTAINER_TYPE, std::allocator<INPUT_CONTAINER_TYPE>>;
+
+        OUTPUT_CONTAINER_TYPE out_c;
+
+        auto chunkBeg = begin(c);
+        for (auto left = c.size(); left != 0;) {
+            auto const skip = std::min(left, k);
+            INPUT_CONTAINER_TYPE sub_container;
+            std::back_insert_iterator<INPUT_CONTAINER_TYPE> back_v(sub_container);
+            std::copy_n(chunkBeg, skip, back_v);
+            out_c.push_back(sub_container);
+            left -= skip;
+            std::advance(chunkBeg, skip);
+        }
+
+        return out_c;
+    }
 
 };
 };

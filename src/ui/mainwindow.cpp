@@ -121,6 +121,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>>("std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>");
     qRegisterMetaType<GekkoFyre::Database::Settings::GkUsbPort>("GekkoFyre::Database::Settings::GkUsbPort");
     qRegisterMetaType<GekkoFyre::AmateurRadio::GkConnMethod>("GekkoFyre::AmateurRadio::GkConnMethod");
+    qRegisterMetaType<GekkoFyre::Spectrograph::GkFFTSpectrum>("GekkoFyre::Spectrograph::GkFFTSpectrum");
     qRegisterMetaType<GekkoFyre::System::Events::Logging::GkEventLogging>("GekkoFyre::System::Events::Logging::GkEventLogging");
     qRegisterMetaType<GekkoFyre::System::Events::Logging::GkSeverity>("GekkoFyre::System::Events::Logging::GkSeverity");
     qRegisterMetaType<GekkoFyre::Database::Settings::Audio::GkDevice>("GekkoFyre::Database::Settings::Audio::GkDevice");
@@ -380,7 +381,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 ui->tableView_maingui_logs->horizontalHeader()->setStretchLastSection(true);
                 ui->tableView_maingui_logs->show();
 
-                gkEventLogger = new GkEventLogger(this);
+                gkEventLogger = new GkEventLogger(gkStringFuncs, this);
                 QObject::connect(gkEventLogger, SIGNAL(sendEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &)),
                                  gkEventLoggerModel, SLOT(insertData(const GekkoFyre::System::Events::Logging::GkEventLogging &)));
                 QObject::connect(gkEventLogger, SIGNAL(removeEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &)),
@@ -494,7 +495,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize any FFT libraries/resources
         //
-        gkFFT = std::make_unique<GkFFT>();
+        gkFFT = std::make_unique<GkFFT>(gkEventLogger, this);
 
         //
         // Initialize the Waterfall / Spectrograph
@@ -623,7 +624,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QObject::connect(widget_change_freq, SIGNAL(execFuncAfterEvent(const quint64 &)),
                          this, SLOT(tuneActiveFreq(const quint64 &)));
 
-        gkModem = new GekkoFyre::GkModem(gkAudioDevices, GkDb, gkEventLogger, gkStringFuncs, this);
+        gkModem = new GkModem(gkAudioDevices, GkDb, gkEventLogger, gkStringFuncs, this);
+        gkSpeechToText = new GkSpeechToText(this);
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
@@ -785,7 +787,6 @@ void MainWindow::launchSettingsWin()
                      gkFreqList, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)));
 
     QPointer<DialogSettings> dlg_settings = new DialogSettings(GkDb, fileIo, gkAudioDevices,
-                                                               avail_input_audio_devs, avail_output_audio_devs,
                                                                gkRadioLibs, gkStringFuncs, gkPortAudioInit,
                                                                gkRadioPtr, status_com_ports,gkFreqList, gkFreqTableModel,
                                                                gkEventLogger, this);
@@ -1766,7 +1767,6 @@ void MainWindow::updateSpectrograph()
                             }
 
                             gkSpectroGui->insertData(fft_spectro_vals, 1); // This is the data for the spectrograph / waterfall itself!
-                            emit refreshSpectrograph(gk_spectro_latest_time, gk_spectro_start_time);
 
                             magnitude_buf.clear();
                             magnitude_db_buf.clear();
@@ -1802,8 +1802,8 @@ void MainWindow::updateSpectrograph()
                     recv_buf.shrink_to_fit();
 
                     if (fftData.size() == GK_FFT_SIZE) {
-                        std::vector<GkFFTComplex> fftDataVals;
-                        fftDataVals = gkFFT->FFTCompute(fftData, fftData.size(), (GK_FFT_SIZE / 2), GK_FFT_SIZE);
+                        std::vector<GkFFTSpectrum> fftDataVals;
+                        fftDataVals = gkFFT->FFTCompute(fftData, pref_input_device, fftData.size());
 
                         //
                         // Perform the timing and date calculations!
@@ -1831,23 +1831,15 @@ void MainWindow::updateSpectrograph()
                         // https://stackoverflow.com/questions/1679974/converting-an-fft-to-a-spectogram/10643179
                         //
 
-                        std::vector<double> magnitude_buf;
-                        magnitude_buf.reserve(fftDataVals.size() + 1);
-                        for (const auto &calc: fftDataVals) {
-                            const double magnitude = std::sqrt(std::pow(calc.real, 2) + std::pow(calc.imaginary, 2));
-                            magnitude_buf.push_back(magnitude);
-                        }
-
                         QVector<double> fft_spectro_vals;
-                        fft_spectro_vals.reserve(GK_FFT_SAMPLE_SIZE + 1);
-                        for (size_t i = 0; i < GK_FFT_SAMPLE_SIZE; ++i) {
-                            fft_spectro_vals.push_back(fftDataVals[i].imaginary);
+                        fft_spectro_vals.reserve(fftDataVals.size());
+                        for (size_t i = 0; i < fftDataVals.size(); ++i) {
+                            fft_spectro_vals.push_back(fftDataVals[i].magnitude);
                         }
 
                         gkSpectroGui->insertData(fft_spectro_vals, 1); // This is the data for the spectrograph / waterfall itself!
                         emit refreshSpectrograph(gk_spectro_latest_time, gk_spectro_start_time);
 
-                        magnitude_buf.clear();
                         fftDataVals.clear();
                     }
                 }
@@ -1869,8 +1861,8 @@ void MainWindow::updateSpectrograph()
  * via the decibel formulae <https://en.wikipedia.org/wiki/Decibel#Acoustics>.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param value The value of the QSlider from the QMainWindow, ranging from 0-100 individual units.
- * @note Ansis Māliņš <https://stackoverflow.com/questions/49014440/what-is-the-correct-audio-volume-slider-formula>
- * trukvl <https://stackoverflow.com/questions/15776390/controlling-audio-volume-in-real-time>,
+ * @note Ansis Māliņš <https://stackoverflow.com/questions/49014440/what-is-the-correct-audio-volume-slider-formula>,
+ * trukvl <https://stackoverflow.com/questions/15776390/controlling-audio-volume-in-real-time>
  */
 void MainWindow::on_verticalSlider_vol_control_valueChanged(int value)
 {
@@ -2638,7 +2630,8 @@ void MainWindow::on_pushButton_sstv_tx_send_image_clicked()
         // Initialize any amateur radio modems!
         //
         #ifdef CODEC2_LIBS_ENBLD
-        QPointer<GkCodec2> gkCodec2 = new GkCodec2(Codec2Mode::freeDvMode2020, Codec2ModeCustom::GekkoFyreV1, 0, 0, GkDb, gkEventLogger, output_audio_buf, this);
+        QPointer<GkCodec2> gkCodec2 = new GkCodec2(Codec2Mode::freeDvMode2020, Codec2ModeCustom::GekkoFyreV1, 0, 0, GkDb,
+                                                   gkEventLogger, gkStringFuncs, output_audio_buf, this);
         gkCodec2->transmitData(byte_array, true);
         #endif
     } else {

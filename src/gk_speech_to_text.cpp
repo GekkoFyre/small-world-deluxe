@@ -1,15 +1,15 @@
 /**
- **     __                 _ _   __    __           _     _ 
+ **     __                 _ _   __    __           _     _
  **    / _\_ __ ___   __ _| | | / / /\ \ \___  _ __| | __| |
  **    \ \| '_ ` _ \ / _` | | | \ \/  \/ / _ \| '__| |/ _` |
  **    _\ \ | | | | | (_| | | |  \  /\  / (_) | |  | | (_| |
  **    \__/_| |_| |_|\__,_|_|_|   \/  \/ \___/|_|  |_|\__,_|
- **                                                         
- **                  ___     _                              
- **                 /   \___| |_   ___  _____               
- **                / /\ / _ \ | | | \ \/ / _ \              
- **               / /_//  __/ | |_| |>  <  __/              
- **              /___,' \___|_|\__,_/_/\_\___|              
+ **
+ **                  ___     _
+ **                 /   \___| |_   ___  _____
+ **                / /\ / _ \ | | | \ \/ / _ \
+ **               / /_//  __/ | |_| |>  <  __/
+ **              /___,' \___|_|\__,_/_/\_\___|
  **
  **
  **   If you have downloaded the source code for "Small World Deluxe" and are reading this,
@@ -23,7 +23,7 @@
  **   the Free Software Foundation, either version 3 of the License, or
  **   (at your option) any later version.
  **
- **   Small world is distributed in the hope that it will be useful,
+ **   Small World is distributed in the hope that it will be useful,
  **   but WITHOUT ANY WARRANTY; without even the implied warranty of
  **   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  **   GNU General Public License for more details.
@@ -39,36 +39,75 @@
  **
  ****************************************************************************************************/
 
-#pragma once
+#include "src/gk_speech_to_text.hpp"
 
-#include "src/defines.hpp"
-#include "src/gk_logger.hpp"
-#include <kiss_fft.h>
-#include <list>
-#include <vector>
-#include <complex>
-#include <QObject>
-#include <QVector>
-#include <QPointer>
-#include <QByteArray>
+using namespace GekkoFyre;
+using namespace Database;
+using namespace Settings;
+using namespace Audio;
+using namespace AmateurRadio;
+using namespace Control;
+using namespace Spectrograph;
+using namespace System;
+using namespace Events;
+using namespace Logging;
 
-namespace GekkoFyre {
-class GkFFT : public QObject {
-    Q_OBJECT
+GkSpeechToText::GkSpeechToText(QObject *parent) : QObject(parent)
+{
+    setParent(parent);
 
-public:
-    explicit GkFFT(QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
-    ~GkFFT();
+    m_speech = new QTextToSpeech(this);
+}
 
-    std::vector<GekkoFyre::Spectrograph::GkFFTSpectrum> FFTCompute(const std::vector<float> &data, const GekkoFyre::Database::Settings::Audio::GkDevice &audioDevice, const qint32 &numSamples);
+GkSpeechToText::~GkSpeechToText()
+{}
 
-private:
-    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
+void GkSpeechToText::speak()
+{
+    return;
+}
 
-    kiss_fft_cfg m_fft;
-    std::vector<GekkoFyre::Spectrograph::GkFFTSpectrum> m_spectrum;
-    std::vector<float> m_window;
-    QVector<float> m_spectrum_buffer;
+void GkSpeechToText::stop()
+{
+    return;
+}
 
-};
-};
+void GkSpeechToText::setRate(const int &rate)
+{
+    return;
+}
+
+void GkSpeechToText::setPitch(const int &pitch)
+{
+    return;
+}
+
+void GkSpeechToText::setVolume(const int &volume)
+{
+    return;
+}
+
+void GkSpeechToText::stateChanged(const QTextToSpeech::State &state)
+{
+    return;
+}
+
+void GkSpeechToText::engineSelected(const int &index)
+{
+    return;
+}
+
+void GkSpeechToText::languageSelected(const int &language)
+{
+    return;
+}
+
+void GkSpeechToText::voiceSelected(const int &idx)
+{
+    return;
+}
+
+void GkSpeechToText::localeChanged(const QLocale &locale)
+{
+    return;
+}

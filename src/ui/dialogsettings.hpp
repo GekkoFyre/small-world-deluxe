@@ -53,7 +53,6 @@
 #include <exception>
 #include <type_traits>
 #include <QMap>
-#include <QList>
 #include <QDialog>
 #include <QString>
 #include <QVector>
@@ -74,8 +73,6 @@ public:
     explicit DialogSettings(QPointer<GekkoFyre::GkLevelDb> dkDb,
                             QPointer<GekkoFyre::FileIo> filePtr,
                             std::shared_ptr<GekkoFyre::AudioDevices> audioDevices,
-                            QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> audioInputDevs,
-                            QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> audioOutputDevs,
                             QPointer<GekkoFyre::RadioLibs> radioLibs,
                             QPointer<GekkoFyre::StringFuncs> stringFuncs,
                             portaudio::System *portAudioInit,
@@ -94,11 +91,11 @@ private slots:
     void on_pushButton_audio_save_loc_clicked();
     void on_pushButton_input_sound_test_clicked();
     void on_pushButton_output_sound_test_clicked();
+    void on_pushButton_refresh_audio_devices_clicked();
     void on_pushButton_audio_logs_save_dir_clicked();
     void on_comboBox_soundcard_input_currentIndexChanged(int index = -1);
     void on_comboBox_soundcard_output_currentIndexChanged(int index = -1);
     void on_comboBox_soundcard_api_currentIndexChanged(int index = -1);
-    void on_pushButton_audio_refresh_cache_clicked();
     void on_comboBox_brand_selection_currentIndexChanged(const QString &arg1);
     void on_comboBox_com_port_currentIndexChanged(int index);
     void on_comboBox_ptt_method_port_currentIndexChanged(int index);
@@ -214,8 +211,8 @@ private:
 
     portaudio::System *gkPortAudioInit;
     std::vector<double> standardSampleRates;
-    QList<double> supportedInputSampleRates;    // The supported sample rates for the chosen input audio device!
-    QList<double> supportedOutputSampleRates;   // The supported sample rates for the chosen output audio device!
+    std::list<double> supportedInputSampleRates;            // The supported sample rates for the chosen input audio device!
+    std::list<double> supportedOutputSampleRates;           // The supported sample rates for the chosen output audio device!
 
     QPointer<GekkoFyre::RadioLibs> gkRadioLibs;
     QPointer<GekkoFyre::GkLevelDb> gkDekodeDb;

@@ -65,6 +65,7 @@
 #include <thread>
 #include <future>
 #include <memory>
+#include <chrono>
 #include <QList>
 #include <QTimer>
 #include <QObject>
@@ -144,6 +145,7 @@ private:
 
     int buf_overall_size;
     int buf_total_size;
+
     QList<double> gkRasterBuf;
     GkSpectroRasterData *gkRasterData;
     QwtMatrixRasterData *gkMatrixData;

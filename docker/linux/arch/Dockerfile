@@ -170,6 +170,7 @@ RUN yay -S --noconfirm --noprogressbar --needed \
         mingw-w64-eigen \
         mingw-w64-qt5-quickcontrols2 \
         mingw-w64-qt5-serialport \
+        mingw-w64-qt5-speech \
         mingw-w64-configure \
         mingw-w64-python-bin 
 
@@ -215,6 +216,7 @@ RUN pacman -S qt5-xmlpatterns --noconfirm
 RUN pacman -S qt5-charts --noconfirm
 RUN pacman -S qt5-3d --noconfirm
 RUN pacman -S qt5-connectivity --noconfirm
+RUN pacman -S qt5-speech --noconfirm
 RUN pacman -S zstd --noconfirm
 RUN pacman -S libusb --noconfirm
 RUN pacman -S hidapi --noconfirm

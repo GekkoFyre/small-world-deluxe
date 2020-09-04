@@ -42,10 +42,27 @@
 #include "src/gk_string_funcs.hpp"
 #include <QSettings>
 #include <algorithm>
-#include <cstring>
 
 #if _WIN32
+#include <windows.h>
 #include <stringapiset.h>
+#endif
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#if _WIN32
+#elif MACOS
+#include <sys/param.h>
+#include <sys/sysctl.h>
+#else
+#include <unistd.h>
+#endif
+
+#ifdef __cplusplus
+} // extern "C"
 #endif
 
 using namespace GekkoFyre;
@@ -75,6 +92,60 @@ std::vector<int> StringFuncs::convStrToIntArray(const QString &str)
     std::copy(buffer.begin(), buffer.end(), int_arr.begin());
 
     return int_arr;
+}
+
+/**
+ * @brief StringFuncs::getNumCpuCores will get the number of CPU cores on the host machine and return it as an integer, in a semi-multiplatform
+ * manner.
+ * @author Dirk-Jan Kroon <https://stackoverflow.com/a/3006416>.
+ * @return The number of CPU cores on the host machine.
+ */
+qint32 StringFuncs::getNumCpuCores()
+{
+    #ifdef WIN32
+    SYSTEM_INFO sysinfo;
+    GetSystemInfo(&sysinfo);
+    return sysinfo.dwNumberOfProcessors;
+    #elif MACOS
+    int nm[2];
+    size_t len = 4;
+    uint32_t count;
+
+    nm[0] = CTL_HW; nm[1] = HW_AVAILCPU;
+    sysctl(nm, 2, &count, &len, NULL, 0);
+
+    if(count < 1) {
+        nm[1] = HW_NCPU;
+        sysctl(nm, 2, &count, &len, nullptr, 0);
+        if (count < 1) { count = 1; }
+    }
+
+    return count;
+    #else
+    return sysconf(_SC_NPROCESSORS_ONLN);
+    #endif
+}
+
+/**
+ * @brief StringFuncs::addErrorMsg
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param orig_msg
+ * @param err_msg
+ * @return
+ */
+QString StringFuncs::addErrorMsg(const QString &orig_msg, const QString &err_msg)
+{
+    if (!orig_msg.isNull() && !orig_msg.isEmpty()) {
+        if (!err_msg.isNull() && !err_msg.isEmpty()) {
+            QString orig_msg_modified = orig_msg;
+            orig_msg_modified += tr(" Error:\n\n");
+            orig_msg_modified += err_msg;
+
+            return orig_msg_modified;
+        }
+    }
+
+    return QString();
 }
 
 #if defined(_MSC_VER) && (_MSC_VER > 1900)
