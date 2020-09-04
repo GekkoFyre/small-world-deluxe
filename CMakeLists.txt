@@ -632,7 +632,6 @@ set(GALAXY_OBJ_HEADERS
     src/file_io.hpp
     src/audio_devices.hpp
     src/gk_fft.hpp
-    src/gk_waterfall_data.hpp
     src/spectro_gui.hpp
     src/gk_audio_encoding.hpp
     src/gk_audio_decoding.hpp

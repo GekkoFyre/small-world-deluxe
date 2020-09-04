@@ -92,15 +92,10 @@ SpectroGui::SpectroGui(QPointer<StringFuncs> stringFuncs, QPointer<GkEventLogger
         gkRasterData = new GkSpectroRasterData();
         gkMatrixData = new QwtMatrixRasterData();
         canvas = new QwtPlotCanvas();
-        m_plotHorCurve = new QwtPlot();
-        m_horCurve = std::make_unique<QwtPlotCurve>();
-
-        setAxisScaleDraw(QwtPlot::yLeft, new GkSpectroTimeScaleDraw(*this));
 
         //
         // Initialize any variables here!
         //
-        zoomActive = false;
         buf_total_size = 0;
         buf_overall_size = ((SPECTRO_Y_AXIS_SIZE / SPECTRO_REFRESH_CYCLE_MILLISECS) * GK_FFT_SIZE); // Obtain the total size of the matrix values!
         gkRasterBuf.reserve(buf_overall_size + GK_FFT_SIZE);
@@ -127,6 +122,9 @@ SpectroGui::SpectroGui(QPointer<StringFuncs> stringFuncs, QPointer<GkEventLogger
         gkRasterData->setData(gkMatrixData);
         // gkSpectrogram->attach(this);
 
+        gkMatrixData->setInterval(Qt::XAxis, QwtInterval(SPECTRO_X_MIN_AXIS_SIZE, SPECTRO_X_MAX_AXIS_SIZE));
+        gkMatrixData->setInterval(Qt::ZAxis, QwtInterval(0, 5000.0f));
+
         const static qint64 start_time = QDateTime::currentMSecsSinceEpoch();
         spectro_begin_time = start_time;
         spectro_latest_update = start_time; // Set the initial value for this too!
@@ -140,7 +138,15 @@ SpectroGui::SpectroGui(QPointer<StringFuncs> stringFuncs, QPointer<GkEventLogger
         setAxisLabelRotation(QwtPlot::yLeft, -50.0); // Puts the label markings (i.e. frequency response labels) at an angle
         setAxisLabelAlignment(QwtPlot::yLeft, Qt::AlignVCenter);
 
-        setAxisScaleDraw(QwtPlot::yLeft, new GkSpectroTimeScaleDraw(*this));
+        date_scale_draw = new QwtDateScaleDraw(Qt::UTC);
+        date_scale_engine = new QwtDateScaleEngine(Qt::UTC);
+        date_scale_draw->setTimeSpec(Qt::TimeSpec::UTC);
+        date_scale_engine->setTimeSpec(Qt::TimeSpec::UTC);
+        date_scale_draw->setDateFormat(QwtDate::Second, tr("hh:mm:ss"));
+
+        setAxisScaleDraw(QwtPlot::yLeft, date_scale_draw);
+        setAxisScaleEngine(QwtPlot::yLeft, date_scale_engine);
+        // date_scale_engine->divideScale(spectro_begin_time, spectro_latest_update, 0, 0);
 
         // const QwtInterval zInterval = gkSpectrogram->data()->interval(Qt::ZAxis);
         setAxisScale(QwtPlot::yLeft, spectro_begin_time, spectro_latest_update, 1000);
@@ -229,44 +235,47 @@ SpectroGui::~SpectroGui()
  * @param values
  * @param numCols
  */
-bool SpectroGui::insertData(const QVector<double> &values, const time_t &timestamp)
+void SpectroGui::insertData(const QVector<double> &values, const int &numCols)
 {
+    Q_UNUSED(numCols);
+
     try {
         mtx_raster_data.lock();
-        if (!gkWaterfallData)
-        {
-            return false;
+
+        for (const auto &data: values) {
+            gkRasterBuf.push_back(data); // Store the matrix values within a QVector, for up to `SPECTRO_Y_AXIS_SIZE` milliseconds!
         }
 
-        const bool bRet = gkWaterfallData->addData(values.data(), values.size(), timestamp);
-        if (bRet)
-        {
-            updateCurvesData();
+        const int buf_total_cols = (buf_overall_size / GK_FFT_SAMPLE_SIZE);
+        if (graph_in_use == GkGraphType::GkMomentInTime) {
+            //
+            // Waterfall (moment-in-time, i.e. without 'date and time' axis)
+            //
+            gkMatrixData->setValueMatrix(gkRasterBuf.toVector(), buf_total_cols);
+        } else if (graph_in_use == GkGraphType::GkWaterfall) {
+            //
+            // Standard Waterfall (i.e. with 'date and time' axis)
+            //
+            gkMatrixData->setValueMatrix(gkRasterBuf.toVector(), buf_total_cols);
+        } else {
+            //
+            // 2D Spectrogram
+            //
+        }
 
-            // refresh spectrogram content and Y axis labels
-            // gkSpectro->invalidateCache();
-
-            auto const ySpectroLeftAxis = static_cast<GkSpectroTimeScaleDraw *>(axisScaleDraw(QwtPlot::yLeft));
-            ySpectroLeftAxis->invalidateCache();
-
-            const double currentOffset = getOffset();
-            const size_t maxHistory = gkWaterfallData->getMaxHistoryLength();
-
-            const QwtScaleDiv &yDiv = axisScaleDiv(QwtPlot::yLeft);
-            const double yMin = (zoomActive) ? yDiv.lowerBound() + 1 : currentOffset;
-            const double yMax = (zoomActive) ? yDiv.upperBound() + 1 : maxHistory + currentOffset;
-
-            setAxisScale(QwtPlot::yLeft, yMin, yMax);
+        int i = 0;
+        while (i < GK_FFT_SAMPLE_SIZE) {
+            gkRasterBuf.pop_front(); // Delete the last amount of `GK_FFT_SIZE` at the very front of the QList!
+            ++i;
         }
 
         mtx_raster_data.unlock();
-        return bRet;
     } catch (const std::exception &e) {
         throw std::runtime_error(tr("An error has occurred whilst doing calculations for the spectrograph / waterfall! Error:\n\n%1")
-        .arg(QString::fromStdString(e.what())).toStdString());
+                                         .arg(QString::fromStdString(e.what())).toStdString());
     }
 
-    return false;
+    return;
 }
 
 /**
@@ -330,70 +339,37 @@ void SpectroGui::changeSpectroType(const GekkoFyre::Spectrograph::GkGraphType &g
 }
 
 /**
+ * @brief SpectroGui::refreshDateTime refreshes any date/time objects within the spectrograph class.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void SpectroGui::refreshDateTime(const qint64 &latest_time_update, const qint64 &time_since)
+{
+    std::lock_guard<std::mutex> lck_guard(mtx_spectro_refresh_date_time);
+
+    spectro_latest_update = latest_time_update;
+    setAxisScale(QwtPlot::yLeft, spectro_latest_update, spectro_latest_update + SPECTRO_Y_AXIS_SIZE);
+    setAxisMaxMinor(QwtPlot::yLeft, SPECTRO_Y_AXIS_MINOR);
+    setAxisMaxMajor(QwtPlot::yLeft, SPECTRO_Y_AXIS_MAJOR);
+    // setAxisScale(QwtPlot::xTop, x_axis_bandwidth_min_size, x_axis_bandwidth_max_size, 250);
+
+    //
+    // Breakup the FFT caclulations into specific time units!
+    //
+    gkMatrixData->setInterval(Qt::YAxis, QwtInterval(time_since, spectro_latest_update));
+
+    gkRasterData->invalidateCache();
+    replot();
+
+    return;
+}
+
+/**
  * @brief SpectroGui::updateFFTSize
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void SpectroGui::updateFFTSize(const int &value)
 {
     return;
-}
-
-/**
- * @brief SpectroGui::updateCurvesData
- * @author Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>,
- * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void SpectroGui::updateCurvesData()
-{
-    // refresh curve's data
-    const size_t currentHistory = gkWaterfallData->getHistoryLength();
-    const size_t layerPts = gkWaterfallData->getLayerPoints();
-    const size_t maxHistory = gkWaterfallData->getMaxHistoryLength();
-    const double* wfData = gkWaterfallData->getData();
-
-    const size_t markerY = m_markerY;
-    if (markerY >= maxHistory)
-    {
-        return;
-    }
-
-    gkRasterData->invalidateCache();
-    replot();
-
-    const double offset = gkWaterfallData->getOffset();
-    
-    return;
-}
-
-/**
- * @brief SpectroGui::allocateCurvesData
- * @author Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>,
- * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void SpectroGui::allocateCurvesData()
-{
-    if (m_horCurveXAxisData.isEmpty() || m_horCurveYAxisData.isEmpty() || !gkWaterfallData) {
-        return;
-    }
-
-    const size_t layerPoints = gkWaterfallData->getLayerPoints();
-    const double dXMin = gkWaterfallData->getXMin();
-    const double dXMax = gkWaterfallData->getXMax();
-    const size_t historyExtent = gkWaterfallData->getMaxHistoryLength();
-
-    m_horCurveXAxisData.reserve(layerPoints);
-    m_horCurveYAxisData.reserve(layerPoints);
-
-    // Generate curve x-axis data
-    const double dx = (dXMax - dXMin) / layerPoints; // x-axis spacing
-    m_horCurveXAxisData[0] = dXMin;
-    for (size_t x = 1u; x < layerPoints; ++x) {
-        m_horCurveXAxisData[x] = m_horCurveXAxisData[x - 1] + dx;
-    }
-
-    // Reset marker to the default position
-    m_markerX = (dXMax - dXMin) / 2;
-    m_markerY = static_cast<double>(historyExtent) - 1;
 }
 
 /**

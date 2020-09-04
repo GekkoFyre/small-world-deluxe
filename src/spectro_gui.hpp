@@ -127,27 +127,13 @@ public:
 
     void insertData(const QVector<double> &values, const int &numCols);
 
-    //
-    // Data
-    //
-    bool insertData(const QVector<double> &values, const std::time_t &timestamp);
-    [[nodiscard]] std::time_t getLayerDate(const double &y) const;
-    void setRange(double dLower, double dUpper);
-
-    [[nodiscard]] double getOffset() const { return (gkWaterfallData) ? gkWaterfallData->getOffset() : 0; }
-
 protected:
     void alignScales();
 
 public slots:
     void changeSpectroType(const GekkoFyre::Spectrograph::GkGraphType &graph_type);
+    void refreshDateTime(const qint64 &latest_time_update, const qint64 &time_since);
     void updateFFTSize(const int &value);
-
-protected:
-    void updateCurvesData();
-
-    void allocateCurvesData();
-    void setupCurves();
 
 private:
     QPointer<QwtPlotZoomer> zoomer;
@@ -159,15 +145,6 @@ private:
 
     int buf_overall_size;
     int buf_total_size;
-    bool zoomActive;
-    double m_markerX = 0;
-    double m_markerY = 0;
-    bool m_bColorBarInitialized = false;
-
-    QPointer<QwtPlot> m_plotHorCurve;
-    std::unique_ptr<QwtPlotCurve> m_horCurve;
-    QVector<double> m_horCurveXAxisData;
-    QVector<double> m_horCurveYAxisData;
 
     QList<double> gkRasterBuf;
     GkSpectroRasterData *gkRasterData;
@@ -178,6 +155,12 @@ private:
     int gkAlpha;                                                // Controls the alpha value of the waterfall chart.
     qint64 spectro_begin_time;                                  // The time at which the spectrograph was initialized.
     qint64 spectro_latest_update;                               // The latest time for when the spectrograph was updated with new data/information.
+
+    //
+    // Date & Timing
+    //
+    QwtDateScaleDraw *date_scale_draw;
+    QwtDateScaleEngine *date_scale_engine;
 
     //
     // Threads
@@ -196,32 +179,6 @@ private:
         }
 
         return r;
-    }
-};
-
-/**
- * @class GekkoFyre::GkSpectroTimeScaleDraw
- * @author Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>
- */
-class GkSpectroTimeScaleDraw : public QwtScaleDraw {
-    const SpectroGui &m_waterfallPlot;
-    mutable QDateTime m_dateTime;
-
-public:
-    GkSpectroTimeScaleDraw(const SpectroGui &spectroGui) : m_waterfallPlot(spectroGui) {}
-    ~GkSpectroTimeScaleDraw() override {}
-
-    using QwtScaleDraw::invalidateCache;
-    virtual QwtText label(double v) const {
-        std::time_t ret = m_waterfallPlot.getLayerDate(v - m_waterfallPlot.getOffset());
-        if (ret > 0) {
-            m_dateTime.setTime_t(ret);
-            // Need something else other than time_t to have 'zzz'
-            // return m_dateTime.toString("hh:mm:ss:zzz");
-            return m_dateTime.toString("dd.MM.yy\nhh:mm:ss");
-        }
-
-        return QwtText();
     }
 };
 };

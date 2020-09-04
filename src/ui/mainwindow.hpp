@@ -256,6 +256,11 @@ signals:
     void stopTxAudio();
     void startTxAudio();
 
+    //
+    // Spectrograph related
+    //
+    void refreshSpectrograph(const qint64 &latest_time_update, const qint64 &time_since);
+
 private:
     Ui::MainWindow *ui;
 
