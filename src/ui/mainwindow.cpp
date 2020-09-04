@@ -523,9 +523,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         connect(info_timer, SIGNAL(timeout()), this, SLOT(infoBar()));
         info_timer->start(1000);
 
-        QObject::connect(this, SIGNAL(refreshSpectrograph(const qint64 &, const qint64 &)),
-                         gkSpectroGui, SLOT(refreshDateTime(const qint64 &, const qint64 &)));
-
         if (!pref_audio_devices.empty()) {
             input_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<qint16>>(AUDIO_FRAMES_PER_BUFFER, pref_output_device, pref_input_device);
         }
@@ -1767,7 +1764,6 @@ void MainWindow::updateSpectrograph()
                             }
 
                             gkSpectroGui->insertData(fft_spectro_vals, 1); // This is the data for the spectrograph / waterfall itself!
-                            emit refreshSpectrograph(gk_spectro_latest_time, gk_spectro_start_time);
 
                             magnitude_buf.clear();
                             magnitude_db_buf.clear();
@@ -1840,8 +1836,7 @@ void MainWindow::updateSpectrograph()
 
                         gkSpectroGui->setDataDimensions(0, SPECTRO_X_MAX_AXIS_SIZE, (SPECTRO_Y_AXIS_SIZE / 1000),
                                                         fft_spectro_vals.size());
-                        gkSpectroGui->insertData(fft_spectro_vals, 1); // This is the data for the spectrograph / waterfall itself!
-                        emit refreshSpectrograph(gk_spectro_latest_time, gk_spectro_start_time);
+                        gkSpectroGui->insertData(fft_spectro_vals, gk_spectro_latest_time); // This is the data for the spectrograph / waterfall itself!
 
                         fftDataVals.clear();
                     }

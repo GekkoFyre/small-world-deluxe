@@ -128,16 +128,16 @@ public:
     // Data
     //
     bool insertData(const QVector<double> &values, const std::time_t &timestamp);
-    std::time_t getLayerDate(const double &y) const;
+    [[nodiscard]] std::time_t getLayerDate(const double &y) const;
+    void setRange(double dLower, double dUpper);
 
-    double getOffset() const { return (gkWaterfallData) ? gkWaterfallData->getOffset() : 0; }
+    [[nodiscard]] double getOffset() const { return (gkWaterfallData) ? gkWaterfallData->getOffset() : 0; }
 
 protected:
     void alignScales();
 
 public slots:
     void changeSpectroType(const GekkoFyre::Spectrograph::GkGraphType &graph_type);
-    void refreshDateTime(const qint64 &latest_time_update, const qint64 &time_since);
     void updateFFTSize(const int &value);
 
 protected:
@@ -161,6 +161,7 @@ private:
     bool zoomActive;
     double m_markerX = 0;
     double m_markerY = 0;
+    bool m_bColorBarInitialized = false;
 
     QPointer<QwtPlot> m_plotHorCurve;
     std::unique_ptr<QwtPlotCurve> m_horCurve;
@@ -174,12 +175,6 @@ private:
     int gkAlpha;                                                // Controls the alpha value of the waterfall chart.
     qint64 spectro_begin_time;                                  // The time at which the spectrograph was initialized.
     qint64 spectro_latest_update;                               // The latest time for when the spectrograph was updated with new data/information.
-
-    //
-    // Date & Timing
-    //
-    QwtDateScaleDraw *date_scale_draw;
-    QwtDateScaleEngine *date_scale_engine;
 
     //
     // Threads

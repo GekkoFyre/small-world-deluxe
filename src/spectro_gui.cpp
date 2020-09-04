@@ -139,15 +139,7 @@ SpectroGui::SpectroGui(QPointer<StringFuncs> stringFuncs, QPointer<GkEventLogger
         setAxisLabelRotation(QwtPlot::yLeft, -50.0); // Puts the label markings (i.e. frequency response labels) at an angle
         setAxisLabelAlignment(QwtPlot::yLeft, Qt::AlignVCenter);
 
-        date_scale_draw = new QwtDateScaleDraw(Qt::UTC);
-        date_scale_engine = new QwtDateScaleEngine(Qt::UTC);
-        date_scale_draw->setTimeSpec(Qt::TimeSpec::UTC);
-        date_scale_engine->setTimeSpec(Qt::TimeSpec::UTC);
-        date_scale_draw->setDateFormat(QwtDate::Second, tr("hh:mm:ss"));
-
-        setAxisScaleDraw(QwtPlot::yLeft, date_scale_draw);
-        setAxisScaleEngine(QwtPlot::yLeft, date_scale_engine);
-        // date_scale_engine->divideScale(spectro_begin_time, spectro_latest_update, 0, 0);
+        setAxisScaleDraw(QwtPlot::yLeft, new GkSpectroTimeScaleDraw(*this));
 
         // const QwtInterval zInterval = gkSpectrogram->data()->interval(Qt::ZAxis);
         setAxisScale(QwtPlot::yLeft, spectro_begin_time, spectro_latest_update, 1000);
@@ -251,7 +243,7 @@ bool SpectroGui::insertData(const QVector<double> &values, const time_t &timesta
             updateCurvesData();
 
             // refresh spectrogram content and Y axis labels
-            // m_spectrogram->invalidateCache();
+            // gkSpectro->invalidateCache();
 
             auto const ySpectroLeftAxis = static_cast<GkSpectroTimeScaleDraw *>(axisScaleDraw(QwtPlot::yLeft));
             ySpectroLeftAxis->invalidateCache();
@@ -383,32 +375,6 @@ void SpectroGui::changeSpectroType(const GekkoFyre::Spectrograph::GkGraphType &g
 }
 
 /**
- * @brief SpectroGui::refreshDateTime refreshes any date/time objects within the spectrograph class.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @note <https://www.qtcentre.org/threads/70373-is-it-possible-to-make-spectrogram-s-Y-axis-labels-quot-fall-quot-over-time-(waterfall-case)>.
- */
-void SpectroGui::refreshDateTime(const qint64 &latest_time_update, const qint64 &time_since)
-{
-    std::lock_guard<std::mutex> lck_guard(mtx_spectro_refresh_date_time);
-
-    spectro_latest_update = latest_time_update;
-    setAxisScale(QwtPlot::yLeft, spectro_latest_update, spectro_latest_update + SPECTRO_Y_AXIS_SIZE);
-    setAxisMaxMinor(QwtPlot::yLeft, SPECTRO_Y_AXIS_MINOR);
-    setAxisMaxMajor(QwtPlot::yLeft, SPECTRO_Y_AXIS_MAJOR);
-    // setAxisScale(QwtPlot::xTop, x_axis_bandwidth_min_size, x_axis_bandwidth_max_size, 250);
-
-    //
-    // Breakup the FFT caclulations into specific time units!
-    //
-    // gkMatrixData->setInterval(Qt::YAxis, QwtInterval(time_since, spectro_latest_update));
-
-    gkSpectro->invalidateCache();
-    replot();
-
-    return;
-}
-
-/**
  * @brief SpectroGui::updateFFTSize
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param value
@@ -506,4 +472,42 @@ void SpectroGui::setupCurves()
 std::time_t SpectroGui::getLayerDate(const double &y) const
 {
     return gkWaterfallData ? gkWaterfallData->getLayerDate(y) : 0;
+}
+
+/**
+ * @brief SpectroGui::setRange
+ * @author Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>,
+ * * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param dLower
+ * @param dUpper
+ */
+void SpectroGui::setRange(double dLower, double dUpper)
+{
+    if (dLower > dUpper) {
+        std::swap(dLower, dUpper);
+    }
+
+    if (axisEnabled(QwtPlot::yRight)) {
+        setAxisScale(QwtPlot::yRight, dLower, dUpper);
+
+        QwtScaleWidget *axis = axisWidget(QwtPlot::yRight);
+        if (axis->isColorBarEnabled()) {
+            // Waiting a proper method to get a reference to the QwtInterval
+            // instead of resetting a new color map to the axis !
+            if (!m_bColorBarInitialized) {
+                m_bColorBarInitialized = true;
+            }
+
+            axis->setColorMap(QwtInterval(dLower, dUpper), new LinearColorMapRGB());
+        }
+    }
+
+    // set vertical plot's X axis and horizontal plot's Y axis scales to the color bar min/max
+    m_plotHorCurve->setAxisScale(QwtPlot::yLeft, dLower, dUpper);
+
+    if (gkWaterfallData) {
+        gkWaterfallData->setRange(dLower, dUpper);
+    }
+
+    gkSpectro->invalidateCache();
 }
