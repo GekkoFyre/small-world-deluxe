@@ -552,6 +552,7 @@ set(GALAXY_UI_CPP
     src/audio_devices.cpp
     src/gk_fft.cpp
     src/spectro_gui.cpp
+    src/spectro_curve.cpp
     src/gk_audio_encoding.cpp
     src/gk_audio_decoding.cpp
     src/gk_cli.cpp
@@ -633,6 +634,7 @@ set(GALAXY_OBJ_HEADERS
     src/audio_devices.hpp
     src/gk_fft.hpp
     src/spectro_gui.hpp
+    src/spectro_curve.hpp
     src/gk_audio_encoding.hpp
     src/gk_audio_decoding.hpp
     src/gk_cli.hpp
