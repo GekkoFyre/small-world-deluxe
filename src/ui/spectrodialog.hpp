@@ -54,7 +54,7 @@ class SpectroDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit SpectroDialog(QPointer<GekkoFyre::SpectroGui> spectroGui, QWidget *parent = nullptr);
+    explicit SpectroDialog(QPointer<GekkoFyre::GkSpectroWaterfall> spectroGui, QWidget *parent = nullptr);
     ~SpectroDialog() override;
 
 private slots:
@@ -73,7 +73,7 @@ signals:
 
 private:
     Ui::SpectroDialog *ui;
-    QPointer<GekkoFyre::SpectroGui> gkSpectroGui;
+    QPointer<GekkoFyre::GkSpectroWaterfall> gkSpectroGui;
 
     int fft_size_prev_value;                        // Remembers the previous value, for if the user does not enter a number that's divisible by '256'!
     int fft_size_updated;

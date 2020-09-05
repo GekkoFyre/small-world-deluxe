@@ -421,7 +421,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the GkSystem library!
         //
-        gkSystem = new GkSystem(this);
+        gkSystem = new GkSystem(gkStringFuncs, gkEventLogger, this);
 
         //
         // Setup the CLI parser and its settings!
@@ -500,7 +500,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the Waterfall / Spectrograph
         //
-        gkSpectroGui = new GekkoFyre::SpectroGui(gkStringFuncs, gkEventLogger, true, true, this);
+        gkSpectroGui = new GekkoFyre::GkSpectroWaterfall(gkStringFuncs, gkEventLogger, true, true, this);
         gkSpectroCurve = new GekkoFyre::GkSpectroCurve(gkStringFuncs, gkEventLogger, pref_output_device.def_sample_rate, GK_FFT_SIZE, true, true, this);
         ui->horizontalLayout_12->addWidget(gkSpectroGui);
         gkSpectroGui->setEnabled(true);

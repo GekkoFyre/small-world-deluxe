@@ -78,7 +78,7 @@
 #include <winsdkver.h>
 #include <Windows.h>
 #include <tchar.h> // https://linuxgazette.net/147/pfeiffer.html
-#if defined(_MSC_VER) && (_MSC_VER > 1900)
+#if defined(_WIN32) || defined(__MINGW64__)
 #include <atlbase.h>
 #include <atlstr.h>
 #endif
@@ -104,7 +104,7 @@ extern "C"
 } // extern "C"
 #endif
 
-#if defined(_MSC_VER) && (_MSC_VER < 1900)
+#if defined(_WIN32) || defined(__MINGW64__)
 #define snprintf _snprintf
 #endif
 
@@ -212,11 +212,13 @@ namespace GekkoFyre {
 namespace General {
     constexpr char companyName[] = "GekkoFyre Networks";
     constexpr char productName[] = "Small World Deluxe";
+    constexpr char executableName[] = "smallworld";
     constexpr char appVersion[] = "0.0.1";
     constexpr char appRelease[] = "Pre-alpha";
     constexpr char codeRepository[] = "https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe";
 
     constexpr char gk_sentry_uri[] = "https://5532275153ce4eb4865b89eb2441f356@sentry.gekkofyre.io/2";
+    constexpr char gk_sentry_user_side_uri[] = "https://sentry.gekkofyre.io/";
     constexpr char gk_sentry_env[] = "development";
 }
 

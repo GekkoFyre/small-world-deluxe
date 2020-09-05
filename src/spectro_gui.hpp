@@ -117,13 +117,13 @@ public:
     }
 };
 
-class SpectroGui: public QwtPlot {
+class GkSpectroWaterfall: public QwtPlot {
     Q_OBJECT
 
 public:
-    explicit SpectroGui(QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger, const bool &enablePanner = false,
-                        const bool &enableZoomer = false, QWidget *parent = nullptr);
-    ~SpectroGui() override;
+    explicit GkSpectroWaterfall(QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger, const bool &enablePanner = false,
+                                const bool &enableZoomer = false, QWidget *parent = nullptr);
+    ~GkSpectroWaterfall() override;
 
     void insertData(const QVector<double> &values, const int &numCols);
 

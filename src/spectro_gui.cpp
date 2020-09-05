@@ -67,14 +67,14 @@ std::mutex mtx_spectro_align_scales;
 std::mutex mtx_spectro_refresh_date_time;
 
 /**
- * @brief SpectroGui::SpectroGui
+ * @brief GkSpectroWaterfall::GkSpectroWaterfall
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param parent
  * @note <http://dronin.org/doxygen/ground/html/plotdata_8h_source.html>
  * <https://github.com/medvedvvs/QwtWaterfall>
  */
-SpectroGui::SpectroGui(QPointer<StringFuncs> stringFuncs, QPointer<GkEventLogger> eventLogger, const bool &enablePanner,
-                       const bool &enableZoomer, QWidget *parent)
+GkSpectroWaterfall::GkSpectroWaterfall(QPointer<StringFuncs> stringFuncs, QPointer<GkEventLogger> eventLogger, const bool &enablePanner,
+                                       const bool &enableZoomer, QWidget *parent)
     : gkAlpha(255)
 {
     std::lock_guard<std::mutex> lck_guard(spectro_main_mtx);
@@ -214,7 +214,7 @@ SpectroGui::SpectroGui(QPointer<StringFuncs> stringFuncs, QPointer<GkEventLogger
         gkRasterData->invalidateCache();
         replot();
     } catch (const std::exception &e) {
-        #if defined(_MSC_VER) && (_MSC_VER > 1900)
+        #if defined(_WIN32) || defined(__MINGW64__)
         HWND hwnd_spectro_gui_main = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd_spectro_gui_main, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd_spectro_gui_main);
@@ -226,16 +226,16 @@ SpectroGui::SpectroGui(QPointer<StringFuncs> stringFuncs, QPointer<GkEventLogger
     return;
 }
 
-SpectroGui::~SpectroGui()
+GkSpectroWaterfall::~GkSpectroWaterfall()
 {}
 
 /**
- * @brief SpectroGui::insertData
+ * @brief GkSpectroWaterfall::insertData
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param values
  * @param numCols
  */
-void SpectroGui::insertData(const QVector<double> &values, const int &numCols)
+void GkSpectroWaterfall::insertData(const QVector<double> &values, const int &numCols)
 {
     Q_UNUSED(numCols);
 
@@ -279,10 +279,10 @@ void SpectroGui::insertData(const QVector<double> &values, const int &numCols)
 }
 
 /**
- * @brief SpectroGui::alignScales will align the scales to the canvas frame.
+ * @brief GkSpectroWaterfall::alignScales will align the scales to the canvas frame.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void SpectroGui::alignScales()
+void GkSpectroWaterfall::alignScales()
 {
     std::lock_guard<std::mutex> lck_guard(mtx_spectro_align_scales);
 
@@ -304,12 +304,12 @@ void SpectroGui::alignScales()
 }
 
 /**
- * @brief SpectroGui::changeSpectroType
+ * @brief GkSpectroWaterfall::changeSpectroType
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param graph_type
  * @param enable
  */
-void SpectroGui::changeSpectroType(const GekkoFyre::Spectrograph::GkGraphType &graph_type)
+void GkSpectroWaterfall::changeSpectroType(const GekkoFyre::Spectrograph::GkGraphType &graph_type)
 {
     try {
         switch (graph_type) {
@@ -326,7 +326,7 @@ void SpectroGui::changeSpectroType(const GekkoFyre::Spectrograph::GkGraphType &g
             break;
         }
     } catch (const std::exception &e) {
-        #if defined(_MSC_VER) && (_MSC_VER > 1900)
+        #if defined(_WIN32) || defined(__MINGW64__)
         HWND hwnd_spectro_gui_main = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd_spectro_gui_main, tr("Error!"), e.what(), MB_ICONERROR);
         DestroyWindow(hwnd_spectro_gui_main);
@@ -339,10 +339,10 @@ void SpectroGui::changeSpectroType(const GekkoFyre::Spectrograph::GkGraphType &g
 }
 
 /**
- * @brief SpectroGui::refreshDateTime refreshes any date/time objects within the spectrograph class.
+ * @brief GkSpectroWaterfall::refreshDateTime refreshes any date/time objects within the spectrograph class.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void SpectroGui::refreshDateTime(const qint64 &latest_time_update, const qint64 &time_since)
+void GkSpectroWaterfall::refreshDateTime(const qint64 &latest_time_update, const qint64 &time_since)
 {
     std::lock_guard<std::mutex> lck_guard(mtx_spectro_refresh_date_time);
 
@@ -364,10 +364,10 @@ void SpectroGui::refreshDateTime(const qint64 &latest_time_update, const qint64 
 }
 
 /**
- * @brief SpectroGui::updateFFTSize
+ * @brief GkSpectroWaterfall::updateFFTSize
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void SpectroGui::updateFFTSize(const int &value)
+void GkSpectroWaterfall::updateFFTSize(const int &value)
 {
     return;
 }

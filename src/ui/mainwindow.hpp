@@ -281,7 +281,7 @@ private:
     QPointer<GekkoFyre::RadioLibs> gkRadioLibs;
     QPointer<GekkoFyre::GkAudioEncoding> gkAudioEncoding;
     QPointer<GekkoFyre::GkAudioDecoding> gkAudioDecoding;
-    QPointer<GekkoFyre::SpectroGui> gkSpectroGui;
+    QPointer<GekkoFyre::GkSpectroWaterfall> gkSpectroGui;
     QPointer<GekkoFyre::GkSpectroCurve> gkSpectroCurve;
     QPointer<GkAudioPlayDialog> gkAudioPlayDlg;
     QPointer<GekkoFyre::GkVuMeter> gkVuMeter;

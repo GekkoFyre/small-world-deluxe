@@ -54,7 +54,7 @@ using namespace Spectrograph;
  * @param spectroGui
  * @param parent
  */
-SpectroDialog::SpectroDialog(QPointer<GekkoFyre::SpectroGui> spectroGui, QWidget *parent) :
+SpectroDialog::SpectroDialog(QPointer<GekkoFyre::GkSpectroWaterfall> spectroGui, QWidget *parent) :
     QDialog(parent), ui(new Ui::SpectroDialog)
 {
     ui->setupUi(this);

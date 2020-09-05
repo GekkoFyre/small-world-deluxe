@@ -42,9 +42,12 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include "src/gk_string_funcs.hpp"
+#include "src/gk_logger.hpp"
+#include <string>
 #include <QObject>
 #include <QString>
-#include <string>
+#include <QPointer>
 
 #if defined(_WIN32) || defined(__MINGW64__)
 #include <windows.h>
@@ -60,10 +63,16 @@ class GkSystem : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkSystem(QObject *parent = nullptr);
+    explicit GkSystem(QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                      QObject *parent = nullptr);
     ~GkSystem() override;
 
+    void addPolicyToWindowsFirewallApi();
+
 private:
+    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
+    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
+
     #if defined(_WIN32) || defined(__MINGW64__)
     HRESULT isWindowsFirewallEnabled(IN INetFwProfile *fwProfile, OUT BOOL *fwOn);
     #endif
