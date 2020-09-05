@@ -52,6 +52,7 @@
 
 #ifdef _WIN32
 #include <Windows.h>
+#include <oleauto.h>
 #endif
 
 namespace GekkoFyre {
@@ -63,7 +64,9 @@ public:
     explicit StringFuncs(QObject *parent = nullptr);
     ~StringFuncs() override;
 
-    #if defined(_MSC_VER) && (_MSC_VER > 1900)
+    #if defined(_WIN32) || defined(__MINGW64__)
+    BSTR convQStringToWinBStr(const QString &str_to_convert);
+    QString convWinBstrToQString(const BSTR &str_to_convert);
     static std::string multiByteFromWide(LPCWSTR pwsz, UINT cp);
     static std::wstring strToWStrWin(const std::string &s);
     std::wstring removeSpecialChars(std::wstring wstr);

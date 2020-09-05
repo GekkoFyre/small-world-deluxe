@@ -54,14 +54,13 @@ using namespace Spectrograph;
  * @param spectroGui
  * @param parent
  */
-SpectroDialog::SpectroDialog(QPointer<GekkoFyre::SpectroGui> spectroGui, QWidget *parent) :
+SpectroDialog::SpectroDialog(QPointer<GekkoFyre::GkSpectroWaterfall> spectroGui, QWidget *parent) :
     QDialog(parent), ui(new Ui::SpectroDialog)
 {
     ui->setupUi(this);
     this->adjustSize(); // Resize to contents
 
     prefillGraphTypes(GkGraphType::GkWaterfall);
-    prefillGraphTypes(GkGraphType::GkMomentInTime);
     prefillGraphTypes(GkGraphType::GkSinewave);
 
     prefillGraphTiming(GkGraphTiming::GkGraphTime500Millisec);
@@ -70,14 +69,9 @@ SpectroDialog::SpectroDialog(QPointer<GekkoFyre::SpectroGui> spectroGui, QWidget
     prefillGraphTiming(GkGraphTiming::GkGraphTime5Sec);
     prefillGraphTiming(GkGraphTiming::GkGraphTime10Sec);
 
-    fft_size_prev_value = 0;
-    fft_size_updated = 0;
-    fft_size_spinbox_sel = false;
-
     gkSpectroGui = std::move(spectroGui);
-    QObject::connect(this, SIGNAL(changeGraphType(const GekkoFyre::Spectrograph::GkGraphType &)),
-                     gkSpectroGui, SLOT(changeSpectroType(const GekkoFyre::Spectrograph::GkGraphType &)));
-    QObject::connect(this, SIGNAL(changeFFTSize(const int &)), gkSpectroGui, SLOT(updateFFTSize(const int &)));
+
+    ui->comboBox_colour_map->insertItem(0, tr("Linear Colour Map (RGB)"));
 }
 
 /**
@@ -95,8 +89,15 @@ SpectroDialog::~SpectroDialog()
  */
 void SpectroDialog::on_pushButton_apply_clicked()
 {
-    if (fft_size_updated >= 256) {
-        emit changeFFTSize(fft_size_updated);
+    switch (ui->comboBox_graph_to_display->currentIndex()) {
+        case GRAPH_DISPLAY_WATERFALL_STD_IDX:
+            emit changeGraphType(GkGraphType::GkWaterfall);
+            break;
+        case GRAPH_DISPLAY_2D_SINEWAVE_IDX:
+            emit changeGraphType(GkGraphType::GkSinewave);
+            break;
+        default:
+            break;
     }
 
     return;
@@ -109,34 +110,6 @@ void SpectroDialog::on_pushButton_apply_clicked()
 void SpectroDialog::on_pushButton_exit_clicked()
 {
     this->close();
-}
-
-/**
- * @brief SpectroDialog::on_comboBox_graph_to_display_currentIndexChanged
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param index
- */
-void SpectroDialog::on_comboBox_graph_to_display_currentIndexChanged(int index)
-{
-    try {
-        switch (index) {
-        case GRAPH_DISPLAY_WATERFALL_STD_IDX:
-            emit changeGraphType(GekkoFyre::Spectrograph::GkGraphType::GkWaterfall);
-            break;
-        case GRAPH_DISPLAY_WATERFALL_MIT_IDX:
-            emit changeGraphType(GekkoFyre::Spectrograph::GkGraphType::GkMomentInTime);
-            break;
-        case GRAPH_DISPLAY_2D_SINEWAVE_IDX:
-            emit changeGraphType(GekkoFyre::Spectrograph::GkGraphType::GkSinewave);
-            break;
-        default:
-            throw std::invalid_argument(tr("An invalid selection has been made regarding choice of (spectro)graph type!").toStdString());
-        }
-    } catch (const std::exception &e) {
-        QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
-    }
-
-    return;
 }
 
 /**
@@ -171,10 +144,7 @@ void SpectroDialog::prefillGraphTypes(const GkGraphType &graph_type)
         ui->comboBox_graph_to_display->insertItem(GRAPH_DISPLAY_WATERFALL_STD_IDX, tr("Waterfall"));
         break;
     case GkGraphType::GkSinewave:
-        ui->comboBox_graph_to_display->insertItem(GRAPH_DISPLAY_2D_SINEWAVE_IDX, tr("2D Sinewave"));
-        break;
-    case GkGraphType::GkMomentInTime:
-        ui->comboBox_graph_to_display->insertItem(GRAPH_DISPLAY_WATERFALL_MIT_IDX, tr("Waterfall (moment-in-time)"));
+        ui->comboBox_graph_to_display->insertItem(GRAPH_DISPLAY_2D_SINEWAVE_IDX, tr("2D Curve / Sinewave"));
         break;
     default:
         break;
@@ -208,51 +178,16 @@ void SpectroDialog::prefillGraphTiming(const GkGraphTiming &graph_timing)
     return;
 }
 
-/**
- * @brief SpectroDialog::eventFilter
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param obj
- * @param event
- * @return
- * @note <https://stackoverflow.com/questions/26041471/make-qspinbox-react-to-mouse-wheel-events-when-cursor-is-not-over-it>
- */
-bool SpectroDialog::eventFilter(QObject *obj, QEvent *event)
+void SpectroDialog::on_comboBox_timing_currentIndexChanged(int index)
 {
-    if(obj == ui->spinBox_fft_size && event->type() == QEvent::FocusIn) {
-        fft_size_spinbox_sel = true;
-    }
-
-    if (fft_size_spinbox_sel) {
-        if (obj == this && event->type() == QEvent::MouseButtonPress) {
-            fft_size_prev_value = ui->spinBox_fft_size->value();
-        }
-    }
-
-    if(obj == ui->spinBox_fft_size && event->type() == QEvent::FocusOut) {
-        fft_size_spinbox_sel = false;
-    }
-
-    return false;
-}
-
-/**
- * @brief SpectroDialog::on_spinBox_fft_size_valueChanged
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param arg1
- */
-void SpectroDialog::on_spinBox_fft_size_valueChanged(int arg1)
-{
-    if (arg1 % 256 != 0) {
-        QMessageBox::warning(this, tr("Incorrect value!"), tr("You must enter a value that is cleanly divisible by '8' (i.e. 256, 1024, 8192, etc.)!"), QMessageBox::Ok);
-        return;
-    }
-
-    fft_size_updated = arg1;
+    Q_UNUSED(index);
 
     return;
 }
 
-void SpectroDialog::on_comboBox_timing_currentIndexChanged(int index)
+void SpectroDialog::on_horizontalSlider_freq_zoom_valueChanged(int value)
 {
+    Q_UNUSED(value);
+
     return;
 }

@@ -544,7 +544,6 @@ set(GALAXY_UI_CPP
     src/ui/aboutdialog.cpp
     src/ui/gkaudioplaydialog.cpp
     src/ui/spectrodialog.cpp
-    src/ui/gk_vu_meter_widget.cpp
     src/ui/sendreportdialog.cpp
     src/radiolibs.cpp
     src/dek_db.cpp
@@ -552,6 +551,7 @@ set(GALAXY_UI_CPP
     src/audio_devices.cpp
     src/gk_fft.cpp
     src/spectro_gui.cpp
+    src/spectro_curve.cpp
     src/gk_audio_encoding.cpp
     src/gk_audio_decoding.cpp
     src/gk_cli.cpp
@@ -561,6 +561,7 @@ set(GALAXY_UI_CPP
     src/gk_speech_to_text.cpp
     src/gk_logger.cpp
     src/gk_system.cpp
+    src/ui/widgets/gk_vu_meter_widget.cpp
     src/ui/widgets/gk_submit_msg.cpp
     src/ui/widgets/gk_display_image.cpp
     src/models/tableview/gk_frequency_model.cpp
@@ -625,7 +626,6 @@ set(GALAXY_OBJ_HEADERS
     src/ui/aboutdialog.hpp
     src/ui/gkaudioplaydialog.hpp
     src/ui/spectrodialog.hpp
-    src/ui/gk_vu_meter_widget.hpp
     src/ui/sendreportdialog.hpp
     src/radiolibs.hpp
     src/dek_db.hpp
@@ -633,6 +633,7 @@ set(GALAXY_OBJ_HEADERS
     src/audio_devices.hpp
     src/gk_fft.hpp
     src/spectro_gui.hpp
+    src/spectro_curve.hpp
     src/gk_audio_encoding.hpp
     src/gk_audio_decoding.hpp
     src/gk_cli.hpp
@@ -642,6 +643,7 @@ set(GALAXY_OBJ_HEADERS
     src/gk_speech_to_text.hpp
     src/gk_logger.hpp
     src/gk_system.hpp
+    src/ui/widgets/gk_vu_meter_widget.hpp
     src/ui/widgets/gk_submit_msg.hpp
     src/ui/widgets/gk_display_image.hpp
     src/models/tableview/gk_frequency_model.hpp

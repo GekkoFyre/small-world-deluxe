@@ -42,40 +42,50 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/gk_string_funcs.hpp"
 #include "src/gk_logger.hpp"
-#include <string>
+#include <qwt/qwt.h>
+#include <qwt/qwt_plot.h>
+#include <qwt/qwt_plot_curve.h>
+#include <qwt/qwt_plot_zoomer.h>
+#include <qwt/qwt_plot_panner.h>
+#include <qwt/qwt_plot_grid.h>
+#include <memory>
+#include <vector>
 #include <QObject>
-#include <QString>
+#include <QWidget>
 #include <QPointer>
-
-#if defined(_WIN32) || defined(__MINGW64__)
-#include <windows.h>
-#include <crtdbg.h>
-#include <netfw.h>
-#include <objbase.h>
-#include <oleauto.h>
-#endif
 
 namespace GekkoFyre {
 
-class GkSystem : public QObject {
+class GkSpectroCurve : public QwtPlot {
     Q_OBJECT
 
 public:
-    explicit GkSystem(QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                      QObject *parent = nullptr);
-    ~GkSystem() override;
+    explicit GkSpectroCurve(QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                            const double &sampleRate, const quint32 &fftSize, const bool &enablePanner = false,
+                            const bool &enableZoomer = false, QWidget *parent = nullptr);
+    ~GkSpectroCurve() override;
 
-    void addPolicyToWindowsFirewallApi();
+public slots:
+    void processFrame(const std::vector<double> &fftMagnitude);
 
 private:
+    bool gkEnablePanner;
+    bool gkEnableZoomer;
+    double gkSampleRate;
+    quint32 gkFftSize;
+
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
-    #if defined(_WIN32) || defined(__MINGW64__)
-    HRESULT isWindowsFirewallEnabled(IN INetFwProfile *fwProfile, OUT BOOL *fwOn);
-    #endif
+    std::unique_ptr<QwtPlotCurve> gkCurve;
+    QPointer<QwtPlotZoomer> gkCurveZoomer;
+
+    std::vector<double> curveXData;
+    std::vector<double> curveYData;
+
+    void initiatePlot(QwtPlot *plot, const QString &xTitle, const QString &yTitle, const int &xmin, const int &xmax,
+                      const int &ymin, const int &ymax);
 
 };
 };
