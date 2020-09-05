@@ -48,16 +48,16 @@
 #include "src/spectro_curve.hpp"
 #include "src/gk_circ_buffer.hpp"
 #include "src/gk_frequency_list.hpp"
-#include "src/ui/dialogsettings.hpp"
 #include "src/gk_audio_encoding.hpp"
 #include "src/gk_audio_decoding.hpp"
+#include "src/ui/dialogsettings.hpp"
+#include "src/ui/gkaudioplaydialog.hpp"
+#include "src/ui/widgets/gk_display_image.hpp"
+#include "src/ui/widgets/gk_vu_meter_widget.hpp"
 #include "src/gk_fft.hpp"
 #include "src/gk_logger.hpp"
 #include "src/gk_modem.hpp"
 #include "src/gk_system.hpp"
-#include "src/ui/widgets/gk_display_image.hpp"
-#include "src/ui/gkaudioplaydialog.hpp"
-#include "src/ui/gk_vu_meter_widget.hpp"
 #include "src/gk_speech_to_text.hpp"
 #include <sentry.h>
 #include <boost/filesystem.hpp>
@@ -234,6 +234,11 @@ public slots:
     void addRigToMemory(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void disconnectRigInMemory(std::shared_ptr<Rig> rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
 
+    //
+    // Spectrograph related
+    //
+    void changeGraphInUse(const GekkoFyre::Spectrograph::GkGraphType &graph_type);
+
 signals:
     void updatePaVol(const int &percentage);
     void updatePlot();
@@ -281,7 +286,7 @@ private:
     QPointer<GekkoFyre::RadioLibs> gkRadioLibs;
     QPointer<GekkoFyre::GkAudioEncoding> gkAudioEncoding;
     QPointer<GekkoFyre::GkAudioDecoding> gkAudioDecoding;
-    QPointer<GekkoFyre::GkSpectroWaterfall> gkSpectroGui;
+    QPointer<GekkoFyre::GkSpectroWaterfall> gkSpectroWaterfall;
     QPointer<GekkoFyre::GkSpectroCurve> gkSpectroCurve;
     QPointer<GkAudioPlayDialog> gkAudioPlayDlg;
     QPointer<GekkoFyre::GkVuMeter> gkVuMeter;
@@ -404,6 +409,7 @@ private:
     //
     // Spectrograph related
     //
+    GekkoFyre::Spectrograph::GkGraphType graph_in_use;
     void updateSpectrograph();
 
     void createStatusBar(const QString &statusMsg = "");

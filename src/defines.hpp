@@ -153,8 +153,7 @@ namespace GekkoFyre {
 #define SPECTRO_Y_AXIS_MAJOR (8)
 
 #define GRAPH_DISPLAY_WATERFALL_STD_IDX (0)             // Display the standard waterfall!
-#define GRAPH_DISPLAY_WATERFALL_MIT_IDX (1)             // Display the moment-in-time waterfall!
-#define GRAPH_DISPLAY_2D_SINEWAVE_IDX (2)               // Display the 2D Sinewave graph!
+#define GRAPH_DISPLAY_2D_SINEWAVE_IDX (1)               // Display the 2D Sinewave graph!
 
 #define GRAPH_DISPLAY_500_MILLISECS_IDX (0)             // Display '500 milliseconds' within the QComboBox!
 #define GRAPH_DISPLAY_1_SECONDS_IDX (1)                 // Display '1 seconds' within the QComboBox!
@@ -657,8 +656,7 @@ namespace Spectrograph {
 
     enum GkGraphType {
         GkWaterfall,
-        GkSinewave,
-        GkMomentInTime
+        GkSinewave
     };
 
     enum GkGraphTiming {

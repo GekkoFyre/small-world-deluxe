@@ -84,11 +84,6 @@ GkSpectroWaterfall::GkSpectroWaterfall(QPointer<StringFuncs> stringFuncs, QPoint
         gkStringFuncs = std::move(stringFuncs);
         gkEventLogger = std::move(eventLogger);
 
-        //
-        // This is the default graph-type that will be initialized when Small World Deluxe is launched by a user!
-        //
-        graph_in_use = GkGraphType::GkWaterfall;
-
         gkRasterData = new GkSpectroRasterData();
         gkMatrixData = new QwtMatrixRasterData();
         canvas = new QwtPlotCanvas();
@@ -247,21 +242,7 @@ void GkSpectroWaterfall::insertData(const QVector<double> &values, const int &nu
         }
 
         const int buf_total_cols = (buf_overall_size / (GK_FFT_SIZE / 2 + 1));
-        if (graph_in_use == GkGraphType::GkMomentInTime) {
-            //
-            // Waterfall (moment-in-time, i.e. without 'date and time' axis)
-            //
-            gkMatrixData->setValueMatrix(gkRasterBuf.toVector(), buf_total_cols);
-        } else if (graph_in_use == GkGraphType::GkWaterfall) {
-            //
-            // Standard Waterfall (i.e. with 'date and time' axis)
-            //
-            gkMatrixData->setValueMatrix(gkRasterBuf.toVector(), buf_total_cols);
-        } else {
-            //
-            // 2D Spectrogram
-            //
-        }
+        gkMatrixData->setValueMatrix(gkRasterBuf.toVector(), buf_total_cols);
 
         int i = 0;
         while (i < (GK_FFT_SIZE / 2 + 1)) {
@@ -304,41 +285,6 @@ void GkSpectroWaterfall::alignScales()
 }
 
 /**
- * @brief GkSpectroWaterfall::changeSpectroType
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param graph_type
- * @param enable
- */
-void GkSpectroWaterfall::changeSpectroType(const GekkoFyre::Spectrograph::GkGraphType &graph_type)
-{
-    try {
-        switch (graph_type) {
-        case GkGraphType::GkWaterfall:
-            graph_in_use = GkGraphType::GkWaterfall;
-            break;
-        case GkGraphType::GkSinewave:
-            graph_in_use = GkGraphType::GkSinewave;
-            break;
-        case GkGraphType::GkMomentInTime:
-            graph_in_use = GkGraphType::GkMomentInTime;
-            break;
-        default:
-            break;
-        }
-    } catch (const std::exception &e) {
-        #if defined(_WIN32) || defined(__MINGW64__)
-        HWND hwnd_spectro_gui_main = nullptr;
-        gkStringFuncs->modalDlgBoxOk(hwnd_spectro_gui_main, tr("Error!"), e.what(), MB_ICONERROR);
-        DestroyWindow(hwnd_spectro_gui_main);
-        #else
-        gkEventLogger->publishEvent(e.what(), GkSeverity::Error, "", true);
-        #endif
-    }
-
-    return;
-}
-
-/**
  * @brief GkSpectroWaterfall::refreshDateTime refreshes any date/time objects within the spectrograph class.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
@@ -360,15 +306,6 @@ void GkSpectroWaterfall::refreshDateTime(const qint64 &latest_time_update, const
     gkRasterData->invalidateCache();
     replot();
 
-    return;
-}
-
-/**
- * @brief GkSpectroWaterfall::updateFFTSize
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkSpectroWaterfall::updateFFTSize(const int &value)
-{
     return;
 }
 

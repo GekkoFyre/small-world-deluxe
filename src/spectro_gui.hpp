@@ -131,9 +131,7 @@ protected:
     void alignScales();
 
 public slots:
-    void changeSpectroType(const GekkoFyre::Spectrograph::GkGraphType &graph_type);
     void refreshDateTime(const qint64 &latest_time_update, const qint64 &time_since);
-    void updateFFTSize(const int &value);
 
 private:
     QPointer<QwtPlotZoomer> zoomer;
@@ -166,11 +164,6 @@ private:
     // Threads
     //
     std::mutex mtx_raster_data;
-
-    //
-    // Signals-related
-    //
-    GekkoFyre::Spectrograph::GkGraphType graph_in_use;
 
     template<class in_it, class out_it>
     out_it copy_every_nth(in_it b, in_it e, out_it r, size_t n) {
