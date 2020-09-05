@@ -89,6 +89,17 @@ SpectroDialog::~SpectroDialog()
  */
 void SpectroDialog::on_pushButton_apply_clicked()
 {
+    switch (ui->comboBox_graph_to_display->currentIndex()) {
+        case GRAPH_DISPLAY_WATERFALL_STD_IDX:
+            emit changeGraphType(GkGraphType::GkWaterfall);
+            break;
+        case GRAPH_DISPLAY_2D_SINEWAVE_IDX:
+            emit changeGraphType(GkGraphType::GkSinewave);
+            break;
+        default:
+            break;
+    }
+
     return;
 }
 
@@ -99,31 +110,6 @@ void SpectroDialog::on_pushButton_apply_clicked()
 void SpectroDialog::on_pushButton_exit_clicked()
 {
     this->close();
-}
-
-/**
- * @brief SpectroDialog::on_comboBox_graph_to_display_currentIndexChanged
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param index
- */
-void SpectroDialog::on_comboBox_graph_to_display_currentIndexChanged(int index)
-{
-    try {
-        switch (index) {
-        case GRAPH_DISPLAY_WATERFALL_STD_IDX:
-            emit changeGraphType(GekkoFyre::Spectrograph::GkGraphType::GkWaterfall);
-            break;
-        case GRAPH_DISPLAY_2D_SINEWAVE_IDX:
-            emit changeGraphType(GekkoFyre::Spectrograph::GkGraphType::GkSinewave);
-            break;
-        default:
-            throw std::invalid_argument(tr("An invalid selection has been made regarding choice of (spectro)graph type!").toStdString());
-        }
-    } catch (const std::exception &e) {
-        QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
-    }
-
-    return;
 }
 
 /**

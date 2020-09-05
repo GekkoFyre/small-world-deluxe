@@ -62,7 +62,6 @@ private slots:
     void on_pushButton_exit_clicked();
     void on_pushButton_export_graph_clicked();
     void on_pushButton_print_graph_clicked();
-    void on_comboBox_graph_to_display_currentIndexChanged(int index);
     void on_comboBox_timing_currentIndexChanged(int index);
     void on_horizontalSlider_freq_zoom_valueChanged(int value);
 

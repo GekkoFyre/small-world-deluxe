@@ -192,6 +192,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         gk_spectro_start_time = 0;
         gk_spectro_latest_time = 0;
+        gkWaterfallWidgetAdded = false;
+        gkCurveSinewaveAdded = false;
 
         //
         // SSTV related
@@ -502,8 +504,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         gkSpectroWaterfall = new GekkoFyre::GkSpectroWaterfall(gkStringFuncs, gkEventLogger, true, true, this);
         gkSpectroCurve = new GekkoFyre::GkSpectroCurve(gkStringFuncs, gkEventLogger, pref_output_device.def_sample_rate, GK_FFT_SIZE, true, true, this);
-        ui->horizontalLayout_12->addWidget(gkSpectroWaterfall);
-        gkSpectroWaterfall->setEnabled(true);
+        QObject::connect(this, SIGNAL(changeGraphType(const GekkoFyre::Spectrograph::GkGraphType &)),
+                         this, SLOT(changeGraphInUse(const GekkoFyre::Spectrograph::GkGraphType &)));
+        emit changeGraphType(GkGraphType::GkWaterfall);
 
         //
         // Sound & Audio Devices
@@ -2327,9 +2330,35 @@ void MainWindow::changeGraphInUse(const GkGraphType &graph_type)
 {
     switch (graph_type) {
         case GkGraphType::GkWaterfall:
+            if (!gkWaterfallWidgetAdded) {
+                ui->stackedWidget_maingui_spectro_graphs->addWidget(gkSpectroWaterfall);
+                gkSpectroWaterfall->setEnabled(true);
+                gkWaterfallWidgetAdded = true;
+            }
+
+            if (graph_in_use == GkGraphType::GkSinewave) {
+                gkSpectroCurve->setEnabled(false);
+                ui->stackedWidget_maingui_spectro_graphs->setCurrentWidget(gkSpectroWaterfall);
+                gkEventLogger->publishEvent(tr("Successfully changed graphs towards Waterfall Spectrography!"),
+                                            GkSeverity::Verbose, "", false, false);
+            }
+
             graph_in_use = GkGraphType::GkWaterfall;
             break;
         case GkGraphType::GkSinewave:
+            if (!gkCurveSinewaveAdded) {
+                ui->stackedWidget_maingui_spectro_graphs->addWidget(gkSpectroCurve);
+                gkSpectroCurve->setEnabled(true);
+                gkCurveSinewaveAdded = true;
+            }
+
+            if (graph_in_use == GkGraphType::GkWaterfall) {
+                gkSpectroWaterfall->setEnabled(false);
+                ui->stackedWidget_maingui_spectro_graphs->setCurrentWidget(gkSpectroCurve);
+                gkEventLogger->publishEvent(tr("Successfully changed graphs towards 2D Curve / Sinewave plot!"),
+                                            GkSeverity::Verbose, "", false, false);
+            }
+
             graph_in_use = GkGraphType::GkSinewave;
             break;
         default:

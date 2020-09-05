@@ -265,6 +265,7 @@ signals:
     //
     // Spectrograph related
     //
+    void changeGraphType(const GekkoFyre::Spectrograph::GkGraphType &graph_type);
     void refreshSpectrograph(const qint64 &latest_time_update, const qint64 &time_since);
     void onProcessFrame(const std::vector<double> &fftMagnitude);
 
@@ -409,7 +410,10 @@ private:
     //
     // Spectrograph related
     //
-    GekkoFyre::Spectrograph::GkGraphType graph_in_use;
+    GekkoFyre::Spectrograph::GkGraphType graph_in_use;                  // The type of graph in use and therefore displayed to the end-user as of the moment...
+    bool gkWaterfallWidgetAdded;                                        // Whether or not the widget has been added to `ui->stackedWidget_maingui_spectro_graphs` already...
+    bool gkCurveSinewaveAdded;                                          // Whether or not the widget has been added to `ui->stackedWidget_maingui_spectro_graphs` already...
+
     void updateSpectrograph();
 
     void createStatusBar(const QString &statusMsg = "");
