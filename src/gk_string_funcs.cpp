@@ -148,7 +148,29 @@ QString StringFuncs::addErrorMsg(const QString &orig_msg, const QString &err_msg
     return QString();
 }
 
-#if defined(_MSC_VER) && (_MSC_VER > 1900)
+#if defined(_WIN32) || defined(__MINGW64__)
+/**
+ * @brief StringFuncs::convQStringToWinBStr converts a given QString to a Microsoft Windows compatible Binary
+ * String (i.e. `BSTR` variable).
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+BSTR StringFuncs::convQStringToWinBStr(const QString &str_to_convert)
+{
+    BSTR result = SysAllocStringLen(0, str_to_convert.length());
+    str_to_convert.toWCharArray(result);
+    return result;
+}
+
+/**
+ * @brief StringFuncs::convWinBstrToQString converts a given Microsoft Windows compatible Binary String to a QString.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+QString StringFuncs::convWinBstrToQString(const BSTR &str_to_convert)
+{
+    QString result = QString::fromUtf16(reinterpret_cast<quint16 *>(str_to_convert));
+    return result;
+}
+
 /**
  * @brief StringFuncs::multiByteFromWide Converts a widestring to a multibyte string, when concerning Microsoft Windows
  * C/C++ related code/functions.

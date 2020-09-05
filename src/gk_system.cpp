@@ -40,7 +40,15 @@
  ****************************************************************************************************/
 
 #include "src/gk_system.hpp"
+#include <exception>
+#include <utility>
 #include <QMessageBox>
+#include <QtGlobal>
+
+#if defined(_WIN32) || defined(__MINGW64__)
+// Forward declarations
+HRESULT WFCOMInitialize(INetFwPolicy2** ppNetFwPolicy2);
+#endif
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -53,15 +61,143 @@ using namespace System;
 using namespace Events;
 using namespace Logging;
 
-GkSystem::GkSystem(QObject *parent) : QObject(parent)
+GkSystem::GkSystem(QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger, 
+                   QObject *parent) : QObject(parent)
 {
-    return;
+    gkStringFuncs = std::move(stringFuncs);
+    gkEventLogger = std::move(eventLogger);
 }
 
 GkSystem::~GkSystem()
 {
     return;
 }
+
+#if defined(_WIN32) || defined(__MINGW64__)
+/**
+ * @brief GkSystem::addPolicyToWindowsFirewallApi adds an outbound rule to the Microsoft Windows firewall, provided it's activated, and it
+ * does this via the official C++ API.
+ * @author Microsoft <https://docs.microsoft.com/en-us/previous-versions/windows/desktop/ics/c-adding-an-outbound-rule>,
+ * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkSystem::addPolicyToWindowsFirewallApi()
+{
+    HRESULT hrComInit = S_OK;
+    HRESULT hr = S_OK;
+
+    INetFwPolicy2 *pNetFwPolicy2 = nullptr;
+    INetFwRules *pFwRules = nullptr;
+    INetFwRule *pFwRule = nullptr;
+
+    long CurrentProfilesBitMask = 0;
+
+    QString programFilesPath(getenv("PROGRAMFILES"));
+
+    BSTR bstrRuleName = SysAllocString(L"OUTBOUND_RULE");
+    BSTR bstrRuleDescription = gkStringFuncs->convQStringToWinBStr(tr("Allow outbound network traffic from %1 over TCP port 443 towards destination, [ %2 ].")
+            .arg(General::productName).arg(General::gk_sentry_user_side_uri));
+    BSTR bstrRuleGroup = SysAllocString(L(General::companyName));
+    BSTR bstrRuleApplication = gkStringFuncs->convQStringToWinBStr(tr("%1\\%2\\%3.exe")
+            .arg(programFilesPath).arg(General::productName).arg(General::executableName));
+    BSTR bstrRuleLPorts = SysAllocString(L"443");
+
+    // Initialize COM.
+    hrComInit = CoInitializeEx(0, COINIT_APARTMENTTHREADED);
+
+    // Ignore RPC_E_CHANGED_MODE; this just means that COM has already been
+    // initialized with a different mode. Since we don't care what the mode is,
+    // we'll just use the existing mode.
+    if (hrComInit != RPC_E_CHANGED_MODE) {
+        if (FAILED(hrComInit)) {
+            gkEventLogger->publishEvent(tr("CoInitializeEx failed: 0x%08lx").arg(QString::number(hrComInit)), GkSeverity::Error, "", false, true);
+            goto Cleanup;
+        }
+    }
+
+    // Retrieve INetFwPolicy2
+    hr = WFCOMInitialize(&amp;pNetFwPolicy2);
+    if (FAILED(hr)) {
+        goto Cleanup;
+    }
+
+    // Retrieve INetFwRules
+    hr = pNetFwPolicy2->get_Rules(&amp;pFwRules);
+    if (FAILED(hr)) {
+        gkEventLogger->publishEvent(tr("get_Rules failed: 0x%08lx").arg(QString::number(hr)), GkSeverity::Error, "", false, true);
+        goto Cleanup;
+    }
+
+    // Retrieve Current Profiles bitmask
+    hr = pNetFwPolicy2->get_CurrentProfileTypes(&amp;CurrentProfilesBitMask);
+    if (FAILED(hr)) {
+        gkEventLogger->publishEvent(tr("get_CurrentProfileTypes failed: 0x%08lx").arg(QString::number(hr)), GkSeverity::Error, "", false, true);
+        goto Cleanup;
+    }
+
+    // When possible we avoid adding firewall rules to the Public profile.
+    // If Public is currently active and it is not the only active profile, we remove it from the bitmask
+    if ((CurrentProfilesBitMask & NET_FW_PROFILE2_PUBLIC) (CurrentProfilesBitMask != NET_FW_PROFILE2_PUBLIC)) {
+        CurrentProfilesBitMask ^= NET_FW_PROFILE2_PUBLIC;
+    }
+
+    // Create a new Firewall Rule object.
+    hr = CoCreateInstance(__uuidof(NetFwRule), NULL, CLSCTX_INPROC_SERVER, __uuidof(INetFwRule), (void**)&amp;pFwRule);
+    if (FAILED(hr)) {
+        gkEventLogger->publishEvent(tr("CoCreateInstance for Firewall Rule failed: 0x%08lx").arg(QString::number(hr)), GkSeverity::Error, "", true, true);
+        goto Cleanup;
+    }
+
+    // Populate the Firewall Rule object
+    pFwRule->put_Name(bstrRuleName);
+    pFwRule->put_Description(bstrRuleDescription);
+    pFwRule->put_ApplicationName(bstrRuleApplication);
+    pFwRule->put_Protocol(NET_FW_IP_PROTOCOL_TCP);
+    pFwRule->put_LocalPorts(bstrRuleLPorts);
+    pFwRule->put_Direction(NET_FW_RULE_DIR_OUT);
+    pFwRule->put_Grouping(bstrRuleGroup);
+    pFwRule->put_Profiles(CurrentProfilesBitMask);
+    pFwRule->put_Action(NET_FW_ACTION_ALLOW);
+    pFwRule->put_Enabled(VARIANT_TRUE);
+
+    // Add the Firewall Rule
+    hr = pFwRules->Add(pFwRule);
+    if (FAILED(hr)) {
+        gkEventLogger->publishEvent(tr("Firewall Rule Add failed: 0x%08lx").arg(QString::number(hr)), GkSeverity::Error, "", true, true);
+        goto Cleanup;
+    }
+
+    Cleanup:
+
+    // Free BSTR's
+    SysFreeString(bstrRuleName);
+    SysFreeString(bstrRuleDescription);
+    SysFreeString(bstrRuleGroup);
+    SysFreeString(bstrRuleApplication);
+    SysFreeString(bstrRuleLPorts);
+
+    // Release the INetFwRule object
+    if (pFwRule != NULL) {
+        pFwRule->Release();
+    }
+
+    // Release the INetFwRules object
+    if (pFwRules != NULL) {
+        pFwRules->Release();
+    }
+
+    // Release the INetFwPolicy2 object
+    if (pNetFwPolicy2 != NULL) {
+        pNetFwPolicy2->Release();
+    }
+
+    // Uninitialize COM.
+    if (SUCCEEDED(hrComInit)) {
+        CoUninitialize();
+    }
+
+    return;
+}
+#endif
 
 #if defined(_WIN32) || defined(__MINGW64__)
 /**

@@ -67,14 +67,14 @@ std::mutex mtx_spectro_align_scales;
 std::mutex mtx_spectro_refresh_date_time;
 
 /**
- * @brief SpectroGui::SpectroGui
+ * @brief GkSpectroWaterfall::GkSpectroWaterfall
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param parent
  * @note <http://dronin.org/doxygen/ground/html/plotdata_8h_source.html>
  * <https://github.com/medvedvvs/QwtWaterfall>
  */
-SpectroGui::SpectroGui(QPointer<StringFuncs> stringFuncs, QPointer<GkEventLogger> eventLogger, const bool &enablePanner,
-                       const bool &enableZoomer, QWidget *parent)
+GkSpectroWaterfall::GkSpectroWaterfall(QPointer<StringFuncs> stringFuncs, QPointer<GkEventLogger> eventLogger, const bool &enablePanner,
+                                       const bool &enableZoomer, QWidget *parent)
     : gkAlpha(255)
 {
     std::lock_guard<std::mutex> lck_guard(spectro_main_mtx);
@@ -83,11 +83,6 @@ SpectroGui::SpectroGui(QPointer<StringFuncs> stringFuncs, QPointer<GkEventLogger
         setParent(parent);
         gkStringFuncs = std::move(stringFuncs);
         gkEventLogger = std::move(eventLogger);
-
-        //
-        // This is the default graph-type that will be initialized when Small World Deluxe is launched by a user!
-        //
-        graph_in_use = GkGraphType::GkWaterfall;
 
         gkRasterData = new GkSpectroRasterData();
         gkMatrixData = new QwtMatrixRasterData();
@@ -214,7 +209,7 @@ SpectroGui::SpectroGui(QPointer<StringFuncs> stringFuncs, QPointer<GkEventLogger
         gkRasterData->invalidateCache();
         replot();
     } catch (const std::exception &e) {
-        #if defined(_MSC_VER) && (_MSC_VER > 1900)
+        #if defined(_WIN32) || defined(__MINGW64__)
         HWND hwnd_spectro_gui_main = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd_spectro_gui_main, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd_spectro_gui_main);
@@ -226,16 +221,16 @@ SpectroGui::SpectroGui(QPointer<StringFuncs> stringFuncs, QPointer<GkEventLogger
     return;
 }
 
-SpectroGui::~SpectroGui()
+GkSpectroWaterfall::~GkSpectroWaterfall()
 {}
 
 /**
- * @brief SpectroGui::insertData
+ * @brief GkSpectroWaterfall::insertData
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param values
  * @param numCols
  */
-void SpectroGui::insertData(const QVector<double> &values, const int &numCols)
+void GkSpectroWaterfall::insertData(const QVector<double> &values, const int &numCols)
 {
     Q_UNUSED(numCols);
 
@@ -246,25 +241,11 @@ void SpectroGui::insertData(const QVector<double> &values, const int &numCols)
             gkRasterBuf.push_back(data); // Store the matrix values within a QVector, for up to `SPECTRO_Y_AXIS_SIZE` milliseconds!
         }
 
-        const int buf_total_cols = (buf_overall_size / GK_FFT_SAMPLE_SIZE);
-        if (graph_in_use == GkGraphType::GkMomentInTime) {
-            //
-            // Waterfall (moment-in-time, i.e. without 'date and time' axis)
-            //
-            gkMatrixData->setValueMatrix(gkRasterBuf.toVector(), buf_total_cols);
-        } else if (graph_in_use == GkGraphType::GkWaterfall) {
-            //
-            // Standard Waterfall (i.e. with 'date and time' axis)
-            //
-            gkMatrixData->setValueMatrix(gkRasterBuf.toVector(), buf_total_cols);
-        } else {
-            //
-            // 2D Spectrogram
-            //
-        }
+        const int buf_total_cols = (buf_overall_size / (GK_FFT_SIZE / 2 + 1));
+        gkMatrixData->setValueMatrix(gkRasterBuf.toVector(), buf_total_cols);
 
         int i = 0;
-        while (i < GK_FFT_SAMPLE_SIZE) {
+        while (i < (GK_FFT_SIZE / 2 + 1)) {
             gkRasterBuf.pop_front(); // Delete the last amount of `GK_FFT_SIZE` at the very front of the QList!
             ++i;
         }
@@ -279,10 +260,10 @@ void SpectroGui::insertData(const QVector<double> &values, const int &numCols)
 }
 
 /**
- * @brief SpectroGui::alignScales will align the scales to the canvas frame.
+ * @brief GkSpectroWaterfall::alignScales will align the scales to the canvas frame.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void SpectroGui::alignScales()
+void GkSpectroWaterfall::alignScales()
 {
     std::lock_guard<std::mutex> lck_guard(mtx_spectro_align_scales);
 
@@ -304,45 +285,10 @@ void SpectroGui::alignScales()
 }
 
 /**
- * @brief SpectroGui::changeSpectroType
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param graph_type
- * @param enable
- */
-void SpectroGui::changeSpectroType(const GekkoFyre::Spectrograph::GkGraphType &graph_type)
-{
-    try {
-        switch (graph_type) {
-        case GkGraphType::GkWaterfall:
-            graph_in_use = GkGraphType::GkWaterfall;
-            break;
-        case GkGraphType::GkSinewave:
-            graph_in_use = GkGraphType::GkSinewave;
-            break;
-        case GkGraphType::GkMomentInTime:
-            graph_in_use = GkGraphType::GkMomentInTime;
-            break;
-        default:
-            break;
-        }
-    } catch (const std::exception &e) {
-        #if defined(_MSC_VER) && (_MSC_VER > 1900)
-        HWND hwnd_spectro_gui_main = nullptr;
-        gkStringFuncs->modalDlgBoxOk(hwnd_spectro_gui_main, tr("Error!"), e.what(), MB_ICONERROR);
-        DestroyWindow(hwnd_spectro_gui_main);
-        #else
-        gkEventLogger->publishEvent(e.what(), GkSeverity::Error, "", true);
-        #endif
-    }
-
-    return;
-}
-
-/**
- * @brief SpectroGui::refreshDateTime refreshes any date/time objects within the spectrograph class.
+ * @brief GkSpectroWaterfall::refreshDateTime refreshes any date/time objects within the spectrograph class.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void SpectroGui::refreshDateTime(const qint64 &latest_time_update, const qint64 &time_since)
+void GkSpectroWaterfall::refreshDateTime(const qint64 &latest_time_update, const qint64 &time_since)
 {
     std::lock_guard<std::mutex> lck_guard(mtx_spectro_refresh_date_time);
 
@@ -360,15 +306,6 @@ void SpectroGui::refreshDateTime(const qint64 &latest_time_update, const qint64 
     gkRasterData->invalidateCache();
     replot();
 
-    return;
-}
-
-/**
- * @brief SpectroGui::updateFFTSize
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void SpectroGui::updateFFTSize(const int &value)
-{
     return;
 }
 

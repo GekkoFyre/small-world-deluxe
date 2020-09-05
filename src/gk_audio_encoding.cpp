@@ -95,7 +95,7 @@ std::mutex record_audio_file_mtx;
 GkAudioEncoding::GkAudioEncoding(QPointer<FileIo> fileIo,
                                  std::shared_ptr<PaAudioBuf<qint16>> input_audio_buf,
                                  QPointer<GkLevelDb> database,
-                                 QPointer<SpectroGui> spectroGui,
+                                 QPointer<GkSpectroWaterfall> spectroGui,
                                  QPointer<StringFuncs> stringFuncs,
                                  Database::Settings::Audio::GkDevice input_device,
                                  QPointer<GekkoFyre::GkEventLogger> eventLogger,
@@ -233,7 +233,7 @@ void GkAudioEncoding::recordOggVorbis(const std::vector<signed char> &audio_fram
 
             vorbis_info_init(&vi);
             int ret = 0;
-            #if defined(_MSC_VER) && (_MSC_VER > 1900)
+            #if defined(_WIN32) || defined(__MINGW64__)
             ret = vorbis_encode_init_vbr(&vi, gkInputDev.dev_input_channel_count, gkInputDev.def_sample_rate,
                                              AUDIO_CODECS_OGG_VORBIS_ENCODE_QUALITY);
 
@@ -370,7 +370,7 @@ void GkAudioEncoding::recordOggVorbis(const std::vector<signed char> &audio_fram
             return;
         }
     } catch (const std::exception &e) {
-        #if defined(_MSC_VER) && (_MSC_VER > 1900)
+        #if defined(_WIN32) || defined(__MINGW64__)
         HWND hwnd_record_ogg_vorbis_vec = nullptr;
         gkStringFuncs->modalDlgBoxOk(hwnd_record_ogg_vorbis_vec, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
         DestroyWindow(hwnd_record_ogg_vorbis_vec);
