@@ -139,7 +139,6 @@ namespace GekkoFyre {
 // Mostly regarding FFTW functions
 //
 #define GK_FFT_SIZE (4096)
-#define GK_FFT_SAMPLE_SIZE (GK_FFT_SIZE / 4)
 
 //
 // Concerns spectrograph / waterfall calculations and settings

@@ -40,6 +40,8 @@
  ****************************************************************************************************/
 
 #include "src/spectro_curve.hpp"
+#include <qwt/qwt_series_data.h>
+#include <cmath>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -62,16 +64,17 @@ using namespace Logging;
  * @param parent
  */
 GkSpectroCurve::GkSpectroCurve(QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                               const double &sampleRate, const bool &enablePanner, const bool &enableZoomer, QWidget *parent)
+                               const double &sampleRate, const quint32 &fftSize, const bool &enablePanner,
+                               const bool &enableZoomer, QWidget *parent)
 {
     setParent(parent);
     gkStringFuncs = std::move(stringFuncs);
     gkEventLogger = std::move(eventLogger);
 
     gkSampleRate = sampleRate;
+    gkFftSize = fftSize;
     gkEnablePanner = enablePanner;
     gkEnableZoomer = enableZoomer;
-
 
     gkCurve = std::make_unique<QwtPlotCurve>();
     gkCurveZoomer = new QwtPlotZoomer(this->canvas(), true);
@@ -79,6 +82,11 @@ GkSpectroCurve::GkSpectroCurve(QPointer<GekkoFyre::StringFuncs> stringFuncs, QPo
     gkCurveZoomer = new QwtPlotZoomer(canvas(), true);
     gkCurveZoomer->setMousePattern(QwtEventPattern::MouseSelect2, Qt::RightButton, Qt::ControlModifier);
     gkCurveZoomer->setMousePattern(QwtEventPattern::MouseSelect3,Qt::RightButton);
+
+    gkCurve->attach(this);
+
+    curveXData.reserve(fftSize / 2 + 1);
+    curveYData.reserve(fftSize / 2 + 1);
 }
 
 /**
@@ -87,6 +95,27 @@ GkSpectroCurve::GkSpectroCurve(QPointer<GekkoFyre::StringFuncs> stringFuncs, QPo
  */
 GkSpectroCurve::~GkSpectroCurve()
 {}
+
+/**
+ * @brief GkSpectroCurve::processFrame processes the incoming FFT data for the spectrograph curve and allows for the displaying
+ * of it on the graph itself.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param fftMagnitude The magnitude values derived from the FFT calculations.
+ */
+void GkSpectroCurve::processFrame(const std::vector<double> &fftMagnitude)
+{
+    const quint32 n = gkFftSize / 2 + 1;
+    const double one_over_n = 1 / ((double) n); // To make it a little bit faster!
+
+    for (quint32 i = 0; i < n; ++i) {
+        curveYData[i] = 20.0 * std::log10(one_over_n * fftMagnitude[i]);
+    }
+
+    gkCurve->setSamples(curveXData.data(), curveYData.data(), gkFftSize / 2 + 1);
+    replot();
+
+    return;
+}
 
 /**
  * @brief GkSpectroCurve::initiatePlot
@@ -126,7 +155,7 @@ void GkSpectroCurve::initiatePlot(QwtPlot *plot, const QString &xTitle, const QS
     plot->setAxisTitle(QwtPlot::xBottom, xAxisTitle);
     plot->setAxisTitle(QwtPlot::yLeft, yAxisTitle);
 
-    QwtPlotGrid *grid = new QwtPlotGrid();
+    std::unique_ptr<QwtPlotGrid> grid = std::make_unique<QwtPlotGrid>();
     grid->setMajorPen(QPen(Qt::gray, 0, Qt::DotLine));
     grid->setMinorPen(QPen(Qt::gray, 0 , Qt::DotLine));
     grid->attach(plot);
@@ -138,7 +167,7 @@ void GkSpectroCurve::initiatePlot(QwtPlot *plot, const QString &xTitle, const QS
     plot->setAxisScale(QwtPlot::xBottom, xmin, xmax);
     plot->setAxisScale(QwtPlot::yLeft, ymin, ymax);
 
-    QwtPlotPanner *panner = new QwtPlotPanner(plot->canvas());
+    QPointer<QwtPlotPanner> panner = new QwtPlotPanner(plot->canvas());
     panner->setMouseButton(Qt::MidButton);
 
     return;

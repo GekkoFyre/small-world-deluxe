@@ -45,6 +45,7 @@
 #include "src/radiolibs.hpp"
 #include "src/pa_audio_buf.hpp"
 #include "src/spectro_gui.hpp"
+#include "src/spectro_curve.hpp"
 #include "src/gk_circ_buffer.hpp"
 #include "src/gk_frequency_list.hpp"
 #include "src/ui/dialogsettings.hpp"
@@ -260,6 +261,7 @@ signals:
     // Spectrograph related
     //
     void refreshSpectrograph(const qint64 &latest_time_update, const qint64 &time_since);
+    void onProcessFrame(const std::vector<double> &fftMagnitude);
 
 private:
     Ui::MainWindow *ui;
@@ -280,6 +282,7 @@ private:
     QPointer<GekkoFyre::GkAudioEncoding> gkAudioEncoding;
     QPointer<GekkoFyre::GkAudioDecoding> gkAudioDecoding;
     QPointer<GekkoFyre::SpectroGui> gkSpectroGui;
+    QPointer<GekkoFyre::GkSpectroCurve> gkSpectroCurve;
     QPointer<GkAudioPlayDialog> gkAudioPlayDlg;
     QPointer<GekkoFyre::GkVuMeter> gkVuMeter;
     QPointer<GekkoFyre::GkModem> gkModem;

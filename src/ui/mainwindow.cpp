@@ -501,6 +501,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // Initialize the Waterfall / Spectrograph
         //
         gkSpectroGui = new GekkoFyre::SpectroGui(gkStringFuncs, gkEventLogger, true, true, this);
+        gkSpectroCurve = new GekkoFyre::GkSpectroCurve(gkStringFuncs, gkEventLogger, pref_output_device.def_sample_rate, GK_FFT_SIZE, true, true, this);
         ui->horizontalLayout_12->addWidget(gkSpectroGui);
         gkSpectroGui->setEnabled(true);
 
@@ -525,6 +526,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         QObject::connect(this, SIGNAL(refreshSpectrograph(const qint64 &, const qint64 &)),
                          gkSpectroGui, SLOT(refreshDateTime(const qint64 &, const qint64 &)));
+        QObject::connect(this, SIGNAL(onProcessFrame(const std::vector<double> &)),
+                         gkSpectroGui, SLOT(processFrame(const std::vector<double> &)));
 
         if (!pref_audio_devices.empty()) {
             input_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<qint16>>(AUDIO_FRAMES_PER_BUFFER, pref_output_device, pref_input_device);
@@ -1839,6 +1842,7 @@ void MainWindow::updateSpectrograph()
 
                         gkSpectroGui->insertData(fft_spectro_vals, 1); // This is the data for the spectrograph / waterfall itself!
                         emit refreshSpectrograph(gk_spectro_latest_time, gk_spectro_start_time);
+                        emit onProcessFrame(fft_spectro_vals.toStdVector());
 
                         fftDataVals.clear();
                     }
