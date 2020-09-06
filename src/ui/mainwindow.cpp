@@ -136,6 +136,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<rig_model_t>("rig_model_t");
     qRegisterMetaType<PaHostApiTypeId>("PaHostApiTypeId");
     qRegisterMetaType<std::vector<qint16>>("std::vector<qint16>");
+    qRegisterMetaType<std::vector<double>>("std::vector<double>");
 
     sys::error_code ec;
     fs::path slash = "/";
@@ -192,8 +193,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         gk_spectro_start_time = 0;
         gk_spectro_latest_time = 0;
-        gkWaterfallWidgetAdded = false;
-        gkCurveSinewaveAdded = false;
 
         //
         // SSTV related
@@ -504,6 +503,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         gkSpectroWaterfall = new GekkoFyre::GkSpectroWaterfall(gkStringFuncs, gkEventLogger, true, true, this);
         gkSpectroCurve = new GekkoFyre::GkSpectroCurve(gkStringFuncs, gkEventLogger, pref_output_device.def_sample_rate, GK_FFT_SIZE, true, true, this);
+
+        ui->stackedWidget_maingui_spectro_graphs->addWidget(gkSpectroWaterfall);
+        ui->stackedWidget_maingui_spectro_graphs->addWidget(gkSpectroCurve);
+
         QObject::connect(this, SIGNAL(changeGraphType(const GekkoFyre::Spectrograph::GkGraphType &)),
                          this, SLOT(changeGraphInUse(const GekkoFyre::Spectrograph::GkGraphType &)));
         emit changeGraphType(GkGraphType::GkWaterfall);
@@ -530,7 +533,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QObject::connect(this, SIGNAL(refreshSpectrograph(const qint64 &, const qint64 &)),
                          gkSpectroWaterfall, SLOT(refreshDateTime(const qint64 &, const qint64 &)));
         QObject::connect(this, SIGNAL(onProcessFrame(const std::vector<double> &)),
-                         gkSpectroWaterfall, SLOT(processFrame(const std::vector<double> &)));
+                         gkSpectroCurve, SLOT(processFrame(const std::vector<double> &)));
 
         if (!pref_audio_devices.empty()) {
             input_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<qint16>>(AUDIO_FRAMES_PER_BUFFER, pref_output_device, pref_input_device);
@@ -1791,71 +1794,97 @@ void MainWindow::updateSpectrograph()
             std::vector<float> fftData;
             fftData.reserve(GK_FFT_SIZE + 1);
             const qint64 measure_start_time = QDateTime::currentMSecsSinceEpoch();
-            auto audio_buf_tmp = std::make_shared<PaAudioBuf<qint16>>(*input_audio_buf);
+            auto audio_buf_tmp = std::make_shared<PaAudioBuf<qint16>>(*input_audio_buf); // Make a secondary copy of the audio buffer for FFT calculation usage...
+
+            // TODO: Fully implement the below asynchronous tasks!
+            std::vector<std::future<std::vector<GkFFTSpectrum>>> async_fft_waterfall;
+            std::vector<std::future<std::vector<float>>> async_fft_curve_plot;
+            std::vector<std::vector<float>> fftPayload;
             while (fftData.size() < GK_FFT_SIZE) {
                 //
                 // Input audio stream is open and active!
                 //
                 std::vector<qint16> recv_buf;
                 while (!audio_buf_tmp->empty()) {
-                    recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
+                    recv_buf.reserve(GK_FFT_SIZE + 1);
                     recv_buf.push_back(audio_buf_tmp->grab());
-                }
+                    if (!recv_buf.empty()) {
+                        std::copy(recv_buf.begin(), recv_buf.end(), std::back_inserter(fftData));
+                        recv_buf.clear();
+                        recv_buf.shrink_to_fit();
+                        if (fftData.size() == GK_FFT_SIZE) {
+                            fftPayload = gkStringFuncs->chunker<float>(fftData, AUDIO_FRAMES_PER_BUFFER);
+                            fftData.clear();
+                            fftData.shrink_to_fit();
 
-                if (!recv_buf.empty()) {
-                    fftData.push_back(*recv_buf.data());
-                    recv_buf.clear();
-                    recv_buf.shrink_to_fit();
+                            for (const auto &payload: fftPayload) {
+                                async_fft_waterfall.emplace_back(std::async(std::launch::async, &GkFFT::FFTCompute, gkFFT.get(), std::ref(payload), std::ref(pref_input_device), payload.size()));
+                                async_fft_curve_plot.emplace_back(std::async(std::launch::async, &GkFFT::FFTCurvePlot, gkFFT.get(), std::ref(payload), std::ref(pref_input_device), payload.size()));
+                            }
 
-                    if (fftData.size() == GK_FFT_SIZE) {
-                        std::vector<GkFFTSpectrum> fftDataVals;
-                        fftDataVals = gkFFT->FFTCompute(fftData, pref_input_device, fftData.size());
+                            //
+                            // Perform the timing and date calculations!
+                            //
+                            const qint64 measure_end_time = QDateTime::currentMSecsSinceEpoch(); // The end time at the finalization of all calculations
+                            const qint64 total_calc_time = measure_end_time - measure_start_time; // The total time it took to calculate everything
+                            gk_spectro_latest_time = measure_end_time;
 
-                        //
-                        // Perform the timing and date calculations!
-                        //
-                        const qint64 measure_end_time = QDateTime::currentMSecsSinceEpoch(); // The end time at the finalization of all calculations
-                        const qint64 total_calc_time = measure_end_time - measure_start_time; // The total time it took to calculate everything
-                        gk_spectro_latest_time = measure_end_time;
+                            const qint64 spectro_time_diff = total_calc_time;
+                            if (spectro_time_diff > SPECTRO_Y_AXIS_SIZE) {
+                                // Stop the y-axis from growing more than `SPECTRO_Y_AXIS_SIZE` in size!
+                                gk_spectro_start_time = gk_spectro_latest_time - SPECTRO_Y_AXIS_SIZE;
+                            }
 
-                        const qint64 spectro_time_diff = total_calc_time;
-                        if (spectro_time_diff > SPECTRO_Y_AXIS_SIZE) {
-                            // Stop the y-axis from growing more than `SPECTRO_Y_AXIS_SIZE` in size!
-                            gk_spectro_start_time = gk_spectro_latest_time - SPECTRO_Y_AXIS_SIZE;
+                            //
+                            // The input data are sound intensity values taken over time, equally spaced. They are
+                            // said to be, appropriately enough, in the time domain. The output of the FT is said
+                            // to be in the frequency domain because the horizontal axis is frequency. The vertical
+                            // scale remains intensity. Although it isn't obvious from the input data, there is phase
+                            // information in the input as well. Although all of the sound is sinusoidal, there is
+                            // nothing that fixes the phases of the sine waves. This phase information appears in
+                            // the frequency domain as the phases of the individual complex numbers, but often we
+                            // don't care about it (and often we do too!). It just depends upon what you are doing!
+                            //
+                            // https://stackoverflow.com/questions/1679974/converting-an-fft-to-a-spectogram/10643179
+                            //
+
+                            std::vector<GkFFTSpectrum> fftWaterfallData;
+                            for (auto &f: async_fft_waterfall) {
+                                if (f.valid()) {
+                                    f.wait(); // Wait and until the calculations are finished!
+                                    auto data = f.get();
+                                    std::copy(data.begin(), data.end(), std::back_inserter(fftWaterfallData));
+                                }
+                            }
+
+                            std::vector<float> fftCurveData;
+                            for (auto &f: async_fft_curve_plot) {
+                                if (f.valid()) {
+                                    f.wait(); // Wait and until the calculations are finished!
+                                    auto data = f.get();
+                                    std::copy(data.begin(), data.end(), std::back_inserter(fftCurveData));
+                                }
+                            }
+
+                            QVector<double> fft_spectro_vals;
+                            fft_spectro_vals.reserve(fftWaterfallData.size());
+                            for (size_t i = 0; i < fftWaterfallData.size(); ++i) {
+                                fft_spectro_vals.push_back(fftWaterfallData[i].magnitude);
+                            }
+
+                            gkSpectroWaterfall->insertData(fft_spectro_vals, 1); // This is the data for the spectrograph / waterfall itself!
+                            emit refreshSpectrograph(gk_spectro_latest_time, gk_spectro_start_time);
+                            emit onProcessFrame(fft_spectro_vals.toStdVector());
+
+                            fftWaterfallData.clear();
                         }
-
-                        //
-                        // The input data are sound intensity values taken over time, equally spaced. They are
-                        // said to be, appropriately enough, in the time domain. The output of the FT is said
-                        // to be in the frequency domain because the horizontal axis is frequency. The vertical
-                        // scale remains intensity. Although it isn't obvious from the input data, there is phase
-                        // information in the input as well. Although all of the sound is sinusoidal, there is
-                        // nothing that fixes the phases of the sine waves. This phase information appears in
-                        // the frequency domain as the phases of the individual complex numbers, but often we
-                        // don't care about it (and often we do too!). It just depends upon what you are doing!
-                        //
-                        // https://stackoverflow.com/questions/1679974/converting-an-fft-to-a-spectogram/10643179
-                        //
-
-                        QVector<double> fft_spectro_vals;
-                        fft_spectro_vals.reserve(fftDataVals.size());
-                        for (size_t i = 0; i < fftDataVals.size(); ++i) {
-                            fft_spectro_vals.push_back(fftDataVals[i].magnitude);
-                        }
-
-                        gkSpectroWaterfall->insertData(fft_spectro_vals, 1); // This is the data for the spectrograph / waterfall itself!
-                        emit refreshSpectrograph(gk_spectro_latest_time, gk_spectro_start_time);
-                        emit onProcessFrame(fft_spectro_vals.toStdVector());
-
-                        fftDataVals.clear();
                     }
                 }
             }
         }
     } catch (const std::exception &e) {
-        // TODO: We are using this method of reporting an exception because sometimes they are thrown upon termination of the application!
-        std::cerr << tr("An error has occurred whilst undertaking calculations for the spectrograph / waterfall! Error:\n\n%1")
-        .arg(QString::fromStdString(e.what())).toStdString() << std::endl;
+        gkEventLogger->publishEvent(tr("An error has occurred whilst undertaking calculations for the spectrograph / waterfall! Error:\n\n%1").arg(QString::fromStdString(e.what())),
+                                    GkSeverity::Fatal, "", false, true);
     }
 
     #endif
@@ -1912,8 +1941,6 @@ void MainWindow::on_actionView_Spectrogram_Controller_triggered()
 {
     QPointer<SpectroDialog> dlg_spectro = new SpectroDialog(gkSpectroWaterfall, this);
     dlg_spectro->setWindowFlags(Qt::Tool | Qt::Dialog);
-    QObject::connect(dlg_spectro, SIGNAL(activateSpectroWaterfall(const bool &)),
-                     gkSpectroWaterfall, SLOT(showSpectrogram(const bool &)));
     QObject::connect(dlg_spectro, SIGNAL(changeGraphType(const GekkoFyre::Spectrograph::GkGraphType &)),
                      this, SLOT(changeGraphInUse(const GekkoFyre::Spectrograph::GkGraphType &)));
     dlg_spectro->show();
@@ -2330,15 +2357,11 @@ void MainWindow::changeGraphInUse(const GkGraphType &graph_type)
 {
     switch (graph_type) {
         case GkGraphType::GkWaterfall:
-            if (!gkWaterfallWidgetAdded) {
-                ui->stackedWidget_maingui_spectro_graphs->addWidget(gkSpectroWaterfall);
-                gkSpectroWaterfall->setEnabled(true);
-                gkWaterfallWidgetAdded = true;
-            }
+            gkSpectroWaterfall->setEnabled(true);
+            ui->stackedWidget_maingui_spectro_graphs->setCurrentWidget(gkSpectroWaterfall);
 
             if (graph_in_use == GkGraphType::GkSinewave) {
                 gkSpectroCurve->setEnabled(false);
-                ui->stackedWidget_maingui_spectro_graphs->setCurrentWidget(gkSpectroWaterfall);
                 gkEventLogger->publishEvent(tr("Successfully changed graphs towards Waterfall Spectrography!"),
                                             GkSeverity::Verbose, "", false, false);
             }
@@ -2346,15 +2369,11 @@ void MainWindow::changeGraphInUse(const GkGraphType &graph_type)
             graph_in_use = GkGraphType::GkWaterfall;
             break;
         case GkGraphType::GkSinewave:
-            if (!gkCurveSinewaveAdded) {
-                ui->stackedWidget_maingui_spectro_graphs->addWidget(gkSpectroCurve);
-                gkSpectroCurve->setEnabled(true);
-                gkCurveSinewaveAdded = true;
-            }
+            gkSpectroCurve->setEnabled(true);
+            ui->stackedWidget_maingui_spectro_graphs->setCurrentWidget(gkSpectroCurve);
 
             if (graph_in_use == GkGraphType::GkWaterfall) {
                 gkSpectroWaterfall->setEnabled(false);
-                ui->stackedWidget_maingui_spectro_graphs->setCurrentWidget(gkSpectroCurve);
                 gkEventLogger->publishEvent(tr("Successfully changed graphs towards 2D Curve / Sinewave plot!"),
                                             GkSeverity::Verbose, "", false, false);
             }
