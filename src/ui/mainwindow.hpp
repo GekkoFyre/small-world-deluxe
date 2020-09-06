@@ -411,8 +411,6 @@ private:
     // Spectrograph related
     //
     GekkoFyre::Spectrograph::GkGraphType graph_in_use;                  // The type of graph in use and therefore displayed to the end-user as of the moment...
-    bool gkWaterfallWidgetAdded;                                        // Whether or not the widget has been added to `ui->stackedWidget_maingui_spectro_graphs` already...
-    bool gkCurveSinewaveAdded;                                          // Whether or not the widget has been added to `ui->stackedWidget_maingui_spectro_graphs` already...
 
     void updateSpectrograph();
 
@@ -440,3 +438,4 @@ Q_DECLARE_METATYPE(uint8_t);
 Q_DECLARE_METATYPE(rig_model_t);
 Q_DECLARE_METATYPE(PaHostApiTypeId);
 Q_DECLARE_METATYPE(std::vector<qint16>);
+Q_DECLARE_METATYPE(std::vector<double>);

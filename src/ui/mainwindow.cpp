@@ -136,6 +136,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<rig_model_t>("rig_model_t");
     qRegisterMetaType<PaHostApiTypeId>("PaHostApiTypeId");
     qRegisterMetaType<std::vector<qint16>>("std::vector<qint16>");
+    qRegisterMetaType<std::vector<double>>("std::vector<double>");
 
     sys::error_code ec;
     fs::path slash = "/";
@@ -192,8 +193,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         gk_spectro_start_time = 0;
         gk_spectro_latest_time = 0;
-        gkWaterfallWidgetAdded = false;
-        gkCurveSinewaveAdded = false;
 
         //
         // SSTV related
@@ -504,6 +503,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         gkSpectroWaterfall = new GekkoFyre::GkSpectroWaterfall(gkStringFuncs, gkEventLogger, true, true, this);
         gkSpectroCurve = new GekkoFyre::GkSpectroCurve(gkStringFuncs, gkEventLogger, pref_output_device.def_sample_rate, GK_FFT_SIZE, true, true, this);
+
+        ui->stackedWidget_maingui_spectro_graphs->addWidget(gkSpectroWaterfall);
+        ui->stackedWidget_maingui_spectro_graphs->addWidget(gkSpectroCurve);
+
         QObject::connect(this, SIGNAL(changeGraphType(const GekkoFyre::Spectrograph::GkGraphType &)),
                          this, SLOT(changeGraphInUse(const GekkoFyre::Spectrograph::GkGraphType &)));
         emit changeGraphType(GkGraphType::GkWaterfall);
@@ -530,7 +533,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QObject::connect(this, SIGNAL(refreshSpectrograph(const qint64 &, const qint64 &)),
                          gkSpectroWaterfall, SLOT(refreshDateTime(const qint64 &, const qint64 &)));
         QObject::connect(this, SIGNAL(onProcessFrame(const std::vector<double> &)),
-                         gkSpectroWaterfall, SLOT(processFrame(const std::vector<double> &)));
+                         gkSpectroCurve, SLOT(processFrame(const std::vector<double> &)));
 
         if (!pref_audio_devices.empty()) {
             input_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<qint16>>(AUDIO_FRAMES_PER_BUFFER, pref_output_device, pref_input_device);
@@ -1792,6 +1795,10 @@ void MainWindow::updateSpectrograph()
             fftData.reserve(GK_FFT_SIZE + 1);
             const qint64 measure_start_time = QDateTime::currentMSecsSinceEpoch();
             auto audio_buf_tmp = std::make_shared<PaAudioBuf<qint16>>(*input_audio_buf);
+
+            // TODO: Fully implement the below asynchronous tasks!
+            std::vector<std::future<std::vector<GkFFTSpectrum>>> async_fft_waterfall;
+            std::vector<std::future<std::vector<float>>> async_fft_curve_plot;
             while (fftData.size() < GK_FFT_SIZE) {
                 //
                 // Input audio stream is open and active!
@@ -1808,8 +1815,13 @@ void MainWindow::updateSpectrograph()
                     recv_buf.shrink_to_fit();
 
                     if (fftData.size() == GK_FFT_SIZE) {
-                        std::vector<GkFFTSpectrum> fftDataVals;
-                        fftDataVals = gkFFT->FFTCompute(fftData, pref_input_device, fftData.size());
+                        std::vector<GkFFTSpectrum> fftWaterfallData;
+                        std::vector<float> fftCurveData;
+                        fftWaterfallData = gkFFT->FFTCompute(fftData, pref_input_device, fftData.size());
+                        fftCurveData = gkFFT->FFTCurvePlot(fftData, pref_input_device, fftData.size());
+
+                        async_fft_waterfall.emplace_back(std::async(std::launch::async, &GkFFT::FFTCompute, gkFFT.get(), std::ref(fftData), std::ref(pref_input_device), fftData.size()));
+                        async_fft_curve_plot.emplace_back(std::async(std::launch::async, &GkFFT::FFTCurvePlot, gkFFT.get(), std::ref(fftData), std::ref(pref_input_device), fftData.size()));
 
                         //
                         // Perform the timing and date calculations!
@@ -1838,16 +1850,16 @@ void MainWindow::updateSpectrograph()
                         //
 
                         QVector<double> fft_spectro_vals;
-                        fft_spectro_vals.reserve(fftDataVals.size());
-                        for (size_t i = 0; i < fftDataVals.size(); ++i) {
-                            fft_spectro_vals.push_back(fftDataVals[i].magnitude);
+                        fft_spectro_vals.reserve(fftWaterfallData.size());
+                        for (size_t i = 0; i < fftWaterfallData.size(); ++i) {
+                            fft_spectro_vals.push_back(fftWaterfallData[i].magnitude);
                         }
 
                         gkSpectroWaterfall->insertData(fft_spectro_vals, 1); // This is the data for the spectrograph / waterfall itself!
                         emit refreshSpectrograph(gk_spectro_latest_time, gk_spectro_start_time);
                         emit onProcessFrame(fft_spectro_vals.toStdVector());
 
-                        fftDataVals.clear();
+                        fftWaterfallData.clear();
                     }
                 }
             }
@@ -1912,8 +1924,6 @@ void MainWindow::on_actionView_Spectrogram_Controller_triggered()
 {
     QPointer<SpectroDialog> dlg_spectro = new SpectroDialog(gkSpectroWaterfall, this);
     dlg_spectro->setWindowFlags(Qt::Tool | Qt::Dialog);
-    QObject::connect(dlg_spectro, SIGNAL(activateSpectroWaterfall(const bool &)),
-                     gkSpectroWaterfall, SLOT(showSpectrogram(const bool &)));
     QObject::connect(dlg_spectro, SIGNAL(changeGraphType(const GekkoFyre::Spectrograph::GkGraphType &)),
                      this, SLOT(changeGraphInUse(const GekkoFyre::Spectrograph::GkGraphType &)));
     dlg_spectro->show();
@@ -2330,15 +2340,11 @@ void MainWindow::changeGraphInUse(const GkGraphType &graph_type)
 {
     switch (graph_type) {
         case GkGraphType::GkWaterfall:
-            if (!gkWaterfallWidgetAdded) {
-                ui->stackedWidget_maingui_spectro_graphs->addWidget(gkSpectroWaterfall);
-                gkSpectroWaterfall->setEnabled(true);
-                gkWaterfallWidgetAdded = true;
-            }
+            gkSpectroWaterfall->setEnabled(true);
+            ui->stackedWidget_maingui_spectro_graphs->setCurrentWidget(gkSpectroWaterfall);
 
             if (graph_in_use == GkGraphType::GkSinewave) {
                 gkSpectroCurve->setEnabled(false);
-                ui->stackedWidget_maingui_spectro_graphs->setCurrentWidget(gkSpectroWaterfall);
                 gkEventLogger->publishEvent(tr("Successfully changed graphs towards Waterfall Spectrography!"),
                                             GkSeverity::Verbose, "", false, false);
             }
@@ -2346,15 +2352,11 @@ void MainWindow::changeGraphInUse(const GkGraphType &graph_type)
             graph_in_use = GkGraphType::GkWaterfall;
             break;
         case GkGraphType::GkSinewave:
-            if (!gkCurveSinewaveAdded) {
-                ui->stackedWidget_maingui_spectro_graphs->addWidget(gkSpectroCurve);
-                gkSpectroCurve->setEnabled(true);
-                gkCurveSinewaveAdded = true;
-            }
+            gkSpectroCurve->setEnabled(true);
+            ui->stackedWidget_maingui_spectro_graphs->setCurrentWidget(gkSpectroCurve);
 
             if (graph_in_use == GkGraphType::GkWaterfall) {
                 gkSpectroWaterfall->setEnabled(false);
-                ui->stackedWidget_maingui_spectro_graphs->setCurrentWidget(gkSpectroCurve);
                 gkEventLogger->publishEvent(tr("Successfully changed graphs towards 2D Curve / Sinewave plot!"),
                                             GkSeverity::Verbose, "", false, false);
             }

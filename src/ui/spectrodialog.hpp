@@ -66,7 +66,6 @@ private slots:
     void on_horizontalSlider_freq_zoom_valueChanged(int value);
 
 signals:
-    void activateSpectroWaterfall(const bool &is_active);
     void changeGraphType(const GekkoFyre::Spectrograph::GkGraphType &graph_type);
 
 private:
