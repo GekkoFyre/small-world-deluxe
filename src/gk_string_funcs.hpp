@@ -81,7 +81,8 @@ public:
 
     /**
      * @brief StringFuncs::splitVec will split a given std::vector<T> into many sub-vectors of a given size. This is
-     * particularly useful for multithreading, for example.
+     * particularly useful for multithreading, for example, as it could split the vector into a desired number of chunks
+     * according to how many CPUs/cores the end-user has.
      * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
      * @tparam T The desired datatype.
      * @param input_data The input data you wish to have split-up.
@@ -108,7 +109,8 @@ public:
 
     /**
      * @brief StringFuncs::splitVec will split a given std::vector<T> into many sub-vectors of a given size. This is
-     * particularly useful for multithreading, for example.
+     * particularly useful for multithreading, for example, if you need multiple std::vector's of a particular size
+     * each.
      * @author marcinwol <https://gist.github.com/marcinwol/3283a92331ff64a8f531>.
      * @return The desired sub-vectors, as according to the given (approximate) size.
      */

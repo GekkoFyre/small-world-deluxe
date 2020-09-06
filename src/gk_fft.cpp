@@ -42,10 +42,12 @@
 #include "src/gk_fft.hpp"
 #include <QtMath>
 #include <algorithm>
-#include <iterator>
 #include <iostream>
 #include <utility>
 #include <cmath>
+
+std::mutex fft_compute_mtx;
+std::mutex fft_curve_mtx;
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -88,6 +90,7 @@ GkFFT::~GkFFT()
 std::vector<GkFFTSpectrum> GkFFT::FFTCompute(const std::vector<float> &data, const GkDevice &audioDevice, const qint32 &numSamples)
 {
     try {
+        std::lock_guard<std::mutex> lck_guard(fft_compute_mtx);
         if (!data.empty()) {
             m_fft = kiss_fft_alloc(numSamples, 0, nullptr, nullptr);
             m_spectrum.resize(numSamples);
@@ -163,6 +166,7 @@ std::vector<float> GkFFT::FFTCurvePlot(const std::vector<float> &data, const GkD
 {
     try {
         // The vectors must be a power of two (for FFT of course)
+        std::lock_guard<std::mutex> lck_guard(fft_curve_mtx);
         qint32 size = 64;
         while (size / 2 < numSamples) {
             size = size << 1;

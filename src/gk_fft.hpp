@@ -46,6 +46,7 @@
 #include <tools/kiss_fftr.h>
 #include <kiss_fft.h>
 #include <list>
+#include <mutex>
 #include <vector>
 #include <complex>
 #include <QObject>
