@@ -102,7 +102,7 @@ GkSpectroCurve::~GkSpectroCurve()
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param fftMagnitude The magnitude values derived from the FFT calculations.
  */
-void GkSpectroCurve::processFrame(const std::vector<double> &fftMagnitude)
+void GkSpectroCurve::processFrame(const std::vector<float> &fftMagnitude)
 {
     const quint32 n = gkFftSize / 2 + 1;
     const double one_over_n = 1 / ((double) n); // To make it a little bit faster!

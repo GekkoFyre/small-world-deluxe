@@ -267,7 +267,7 @@ signals:
     //
     void changeGraphType(const GekkoFyre::Spectrograph::GkGraphType &graph_type);
     void refreshSpectrograph(const qint64 &latest_time_update, const qint64 &time_since);
-    void onProcessFrame(const std::vector<double> &fftMagnitude);
+    void onProcessFrame(const std::vector<float> &fftMagnitude);
 
 private:
     Ui::MainWindow *ui;
@@ -343,7 +343,7 @@ private:
     //
     // USB & RS232
     //
-    std::shared_ptr<GekkoFyre::Database::Settings::GkUsbPort> gkUsbPortPtr; // This is used for making connections to radio rigs with Hamlib!
+    QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> gkUsbPortMap; // This is used for making connections to radio rigs with Hamlib!
     std::list<GekkoFyre::Database::Settings::GkComPort> status_com_ports; // This variable is responsible for managing the COM/RS232/Serial ports!
 
     //

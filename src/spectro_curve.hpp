@@ -67,7 +67,7 @@ public:
     ~GkSpectroCurve() override;
 
 public slots:
-    void processFrame(const std::vector<double> &fftMagnitude);
+    void processFrame(const std::vector<float> &fftMagnitude);
 
 private:
     bool gkEnablePanner;
