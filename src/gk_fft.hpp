@@ -43,8 +43,10 @@
 
 #include "src/defines.hpp"
 #include "src/gk_logger.hpp"
+#include <tools/kiss_fftr.h>
 #include <kiss_fft.h>
 #include <list>
+#include <mutex>
 #include <vector>
 #include <complex>
 #include <QObject>
@@ -60,7 +62,10 @@ public:
     explicit GkFFT(QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkFFT();
 
-    std::vector<GekkoFyre::Spectrograph::GkFFTSpectrum> FFTCompute(const std::vector<float> &data, const GekkoFyre::Database::Settings::Audio::GkDevice &audioDevice, const qint32 &numSamples);
+    std::vector<GekkoFyre::Spectrograph::GkFFTSpectrum> FFTCompute(const std::vector<float> &data, const GekkoFyre::Database::Settings::Audio::GkDevice &audioDevice,
+                                                                   const qint32 &numSamples);
+    std::vector<float> FFTCurvePlot(const std::vector<float> &data, const GekkoFyre::Database::Settings::Audio::GkDevice &audioDevice,
+                                    const qint32 &numSamples);
 
 private:
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;

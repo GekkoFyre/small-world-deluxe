@@ -41,9 +41,13 @@
 
 #include "src/gk_fft.hpp"
 #include <QtMath>
+#include <algorithm>
 #include <iostream>
 #include <utility>
 #include <cmath>
+
+std::mutex fft_compute_mtx;
+std::mutex fft_curve_mtx;
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -79,10 +83,14 @@ GkFFT::~GkFFT()
  * @author antonypro <https://github.com/antonypro/AudioStreaming/blob/master/AudioStreamingLib/Demos/BroadcastClient/spectrumanalyzer.cpp>,
  * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param data The data on which to perform the calculations.
+ * @param audioDevice The audio device for which the calculations are being performed on.
+ * @param numSamples The number of audio samples.
+ * @return The FFT calculations in question.
  */
 std::vector<GkFFTSpectrum> GkFFT::FFTCompute(const std::vector<float> &data, const GkDevice &audioDevice, const qint32 &numSamples)
 {
     try {
+        std::lock_guard<std::mutex> lck_guard(fft_compute_mtx);
         if (!data.empty()) {
             m_fft = kiss_fft_alloc(numSamples, 0, nullptr, nullptr);
             m_spectrum.resize(numSamples);
@@ -140,8 +148,70 @@ std::vector<GkFFTSpectrum> GkFFT::FFTCompute(const std::vector<float> &data, con
         }
     } catch (std::exception &e) {
         gkEventLogger->publishEvent(tr("An error has been encountered while calculating FFT values for the spectrograph! Error:\n\n"),
-                                    GkSeverity::Error, QString::fromStdString(e.what()), true);
+                                    GkSeverity::Fatal, QString::fromStdString(e.what()), true);
     }
 
     return std::vector<GkFFTSpectrum>();
+}
+
+/**
+ * @brief GkFFT::FFTCurvePlot performs fast-fourier transforms on given sample data, for 2D Curve / Sinewave spectrographs.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param data The data on which to perform the calculations.
+ * @param audioDevice The audio device for which the calculations are being performed on.
+ * @param numSamples The number of audio samples.
+ * @return The FFT calculations in question.
+ */
+std::vector<float> GkFFT::FFTCurvePlot(const std::vector<float> &data, const GkDevice &audioDevice, const qint32 &numSamples)
+{
+    try {
+        // The vectors must be a power of two (for FFT of course)
+        std::lock_guard<std::mutex> lck_guard(fft_curve_mtx);
+        qint32 size = 64;
+        while (size / 2 < numSamples) {
+            size = size << 1;
+        }
+
+        kiss_fftr_cfg fftConfig = kiss_fftr_alloc(size, false, nullptr,nullptr);
+        kiss_fftr_cfg ifftConfig = kiss_fftr_alloc(size, true, nullptr,nullptr);
+        kiss_fft_cpx inBuf[size / 2];
+        kiss_fft_cpx outBuf[size / 2];
+
+        std::vector<float> inData;
+        std::vector<float> outData;
+
+        inData.reserve(size + 1);
+        outData.reserve(size + 1);
+
+        std::copy(data.begin(), data.end(), std::back_inserter(inData));
+
+        // Fourier transformation of the vectors
+        kiss_fftr(fftConfig, inData.data(), inBuf);
+
+        // Convolution in spacial domain is a multiplication in fourier domain. O(n).
+        for (int i = 0; i < size/2; i++) {
+            outBuf[i].r = (inBuf[i].r * inBuf[i].r) - (inBuf[i].i * inBuf[i].i);
+            outBuf[i].i = (inBuf[i].r * inBuf[i].i) + (inBuf[i].i * inBuf[i].r);
+        }
+
+        // Inverse fast fourier tranformation to get the desired data.
+        std::vector<GkFFTSpectrum> fft_spectro;
+        const quint32 out_size = size + 1;
+
+        float *outDataArr = new float[size + 1];
+        kiss_fftri(ifftConfig, outBuf, outDataArr);
+        std::copy(outDataArr, outDataArr + size, std::back_inserter(outData));
+        delete[] outDataArr;
+
+        // Finally we perform a cleanup!
+        kiss_fftr_free(fftConfig);
+        kiss_fftr_free(ifftConfig);
+
+        return outData;
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(tr("An error has been encountered while calculating FFT values for the 2D Curve / Sinewave plot! Error:\n\n"),
+                                    GkSeverity::Fatal, QString::fromStdString(e.what()), true);
+    }
+
+    return std::vector<float>();
 }

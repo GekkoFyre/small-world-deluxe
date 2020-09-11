@@ -267,7 +267,7 @@ signals:
     //
     void changeGraphType(const GekkoFyre::Spectrograph::GkGraphType &graph_type);
     void refreshSpectrograph(const qint64 &latest_time_update, const qint64 &time_since);
-    void onProcessFrame(const std::vector<double> &fftMagnitude);
+    void onProcessFrame(const std::vector<float> &fftMagnitude);
 
 private:
     Ui::MainWindow *ui;
@@ -343,7 +343,7 @@ private:
     //
     // USB & RS232
     //
-    std::shared_ptr<GekkoFyre::Database::Settings::GkUsbPort> gkUsbPortPtr; // This is used for making connections to radio rigs with Hamlib!
+    QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> gkUsbPortMap; // This is used for making connections to radio rigs with Hamlib!
     std::list<GekkoFyre::Database::Settings::GkComPort> status_com_ports; // This variable is responsible for managing the COM/RS232/Serial ports!
 
     //
@@ -411,8 +411,6 @@ private:
     // Spectrograph related
     //
     GekkoFyre::Spectrograph::GkGraphType graph_in_use;                  // The type of graph in use and therefore displayed to the end-user as of the moment...
-    bool gkWaterfallWidgetAdded;                                        // Whether or not the widget has been added to `ui->stackedWidget_maingui_spectro_graphs` already...
-    bool gkCurveSinewaveAdded;                                          // Whether or not the widget has been added to `ui->stackedWidget_maingui_spectro_graphs` already...
 
     void updateSpectrograph();
 
@@ -440,3 +438,4 @@ Q_DECLARE_METATYPE(uint8_t);
 Q_DECLARE_METATYPE(rig_model_t);
 Q_DECLARE_METATYPE(PaHostApiTypeId);
 Q_DECLARE_METATYPE(std::vector<qint16>);
+Q_DECLARE_METATYPE(std::vector<double>);
