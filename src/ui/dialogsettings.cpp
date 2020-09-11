@@ -85,6 +85,7 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
                                portaudio::System *portAudioInit,
                                std::shared_ptr<GkRadio> radioPtr,
                                const std::list<GekkoFyre::Database::Settings::GkComPort> &com_ports,
+                               const QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> usbPortMap,
                                QPointer<GkFrequencies> gkFreqList,
                                QPointer<GkFreqTableViewModel> freqTableModel,
                                QPointer<GekkoFyre::GkEventLogger> eventLogger,
@@ -152,7 +153,7 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         // also two separate functions for enumerating out these ports!
         prefill_rig_force_ctrl_lines(ptt_type_t::RIG_PTT_SERIAL_DTR);
         prefill_rig_force_ctrl_lines(ptt_type_t::RIG_PTT_SERIAL_RTS);
-        status_usb_devices = gkRadioLibs->enumUsbDevices();
+        status_usb_devices = usbPortMap;
         prefill_avail_com_ports(status_com_ports);
         prefill_avail_usb_ports(status_usb_devices);
 

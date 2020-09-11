@@ -78,6 +78,7 @@ public:
                             portaudio::System *portAudioInit,
                             std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> radioPtr,
                             const std::list<GekkoFyre::Database::Settings::GkComPort> &com_ports,
+                            const QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> usbPortMap,
                             QPointer<GekkoFyre::GkFrequencies> gkFreqList,
                             QPointer<GekkoFyre::GkFreqTableViewModel> freqTableModel,
                             QPointer<GekkoFyre::GkEventLogger> eventLogger,

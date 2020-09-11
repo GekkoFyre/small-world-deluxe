@@ -399,7 +399,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 // Initialize the all-important `GkRadioPtr`!
                 //
                 status_com_ports = gkRadioLibs->filter_com_ports(gkRadioLibs->status_com_ports());
-                gkUsbPortPtr = std::make_shared<GkUsbPort>();
+                gkUsbPortMap = gkRadioLibs->enumUsbDevices();
                 gkRadioPtr = readRadioSettings();
                 emit addRigInUse(gkRadioPtr->rig_model, gkRadioPtr);
 
@@ -532,8 +532,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         QObject::connect(this, SIGNAL(refreshSpectrograph(const qint64 &, const qint64 &)),
                          gkSpectroWaterfall, SLOT(refreshDateTime(const qint64 &, const qint64 &)));
-        QObject::connect(this, SIGNAL(onProcessFrame(const std::vector<double> &)),
-                         gkSpectroCurve, SLOT(processFrame(const std::vector<double> &)));
+        QObject::connect(this, SIGNAL(onProcessFrame(const std::vector<float> &)),
+                         gkSpectroCurve, SLOT(processFrame(const std::vector<float> &)));
 
         if (!pref_audio_devices.empty()) {
             input_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<qint16>>(AUDIO_FRAMES_PER_BUFFER, pref_output_device, pref_input_device);
@@ -797,8 +797,8 @@ void MainWindow::launchSettingsWin()
 
     QPointer<DialogSettings> dlg_settings = new DialogSettings(GkDb, fileIo, gkAudioDevices,
                                                                gkRadioLibs, gkStringFuncs, gkPortAudioInit,
-                                                               gkRadioPtr, status_com_ports,gkFreqList, gkFreqTableModel,
-                                                               gkEventLogger, this);
+                                                               gkRadioPtr, status_com_ports, gkUsbPortMap, gkFreqList,
+                                                               gkFreqTableModel, gkEventLogger, this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
@@ -893,17 +893,40 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
         std::shared_ptr<GkRadio> gk_radio_tmp = std::make_shared<GkRadio>();
 
         //
-        // CAT Port
+        // Setup the CAT Port
         //
         QString comDeviceCat = GkDb->read_rig_settings_comms(radio_cfg::ComDeviceCat);
-        if (!comDeviceCat.isNull() && !comDeviceCat.isEmpty()) {
-            // Verify that the port still exists!
-            for (const auto &port: status_com_ports) {
-                if (comDeviceCat == port.port_info.portName()) {
-                    // The port does indeed continue to exist!
-                    gk_radio_tmp->cat_conn_port = comDeviceCat;
-                    gkEventLogger->publishEvent(tr("Successfully found a port for making a CAT connection with (%1)!").arg(comDeviceCat), GkSeverity::Info);
+        GkConnType catPortType = GkDb->convConnTypeToEnum(GkDb->read_rig_settings_comms(radio_cfg::ComDeviceCatPortType).toInt());
+        if (!comDeviceCat.isEmpty()) {
+            if (catPortType == GkConnType::RS232) {
+                if (!status_com_ports.empty()) {
+                    // Verify that the port still exists!
+                    for (const auto &port: status_com_ports) {
+                        if (comDeviceCat == port.port_info.portName()) {
+                            // The port does indeed continue to exist!
+                            gk_radio_tmp->cat_conn_port = comDeviceCat;
+                            gkEventLogger->publishEvent(tr("Successfully found a port for making a CAT connection with (%1)!").arg(comDeviceCat), GkSeverity::Info);
+                            break;
+                        }
+                    }
                 }
+            } else if (catPortType == GkConnType::USB) {
+                // USB is the connection of choice here!
+                if (!gkUsbPortMap.empty()) {
+                    // Verify that the port still exists!
+                    for (const auto &usb: gkUsbPortMap.toStdMap()) {
+                        if (comDeviceCat == usb.first) {
+                            // The port does indeed continue to exist!
+                            gk_radio_tmp->cat_conn_port = comDeviceCat;
+                            gkEventLogger->publishEvent(tr("Successfully found a port for making a CAT connection with (%1)!").arg(comDeviceCat), GkSeverity::Info);
+                            break;
+                        }
+                    }
+                }
+            } else {
+                // An unsupported mode, as of the moment, has been chosen so therefore issue an alert to the user!
+                gkEventLogger->publishEvent(tr("Unable to find a compatible CAT connection type. Please check that your settings are valid."),
+                                            GkSeverity::Warning, "", true, true);
             }
         } else {
             // No ports could be found!
@@ -911,17 +934,40 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
         }
 
         //
-        // PTT Port
+        // Setup the PTT Port
         //
         QString comDevicePtt = GkDb->read_rig_settings_comms(radio_cfg::ComDevicePtt);
-        if (!comDevicePtt.isNull() && !comDevicePtt.isEmpty()) {
-            // Verify that the port still exists!
-            for (const auto &port: status_com_ports) {
-                if (comDevicePtt == port.port_info.portName()) {
-                    // The port does indeed continue to exist!
-                    gk_radio_tmp->ptt_conn_port = comDevicePtt;
-                    gkEventLogger->publishEvent(tr("Successfully found a port for making a PTT connection with (%1)!").arg(comDevicePtt), GkSeverity::Info);
+        GkConnType pttPortType = GkDb->convConnTypeToEnum(GkDb->read_rig_settings_comms(radio_cfg::ComDevicePttPortType).toInt());
+        if (!comDevicePtt.isEmpty()) {
+            if (pttPortType == GkConnType::RS232) {
+                if (!status_com_ports.empty()) {
+                    // Verify that the port still exists!
+                    for (const auto &port: status_com_ports) {
+                        if (comDevicePtt == port.port_info.portName()) {
+                            // The port does indeed continue to exist!
+                            gk_radio_tmp->ptt_conn_port = comDevicePtt;
+                            gkEventLogger->publishEvent(tr("Successfully found a port for making a PTT connection with (%1)!").arg(comDevicePtt), GkSeverity::Info);
+                            break;
+                        }
+                    }
                 }
+            } else if (catPortType == GkConnType::USB) {
+                // USB is the connection of choice here!
+                if (!gkUsbPortMap.empty()) {
+                    // Verify that the port still exists!
+                    for (const auto &usb: gkUsbPortMap.toStdMap()) {
+                        if (comDeviceCat == usb.first) {
+                            // The port does indeed continue to exist!
+                            gk_radio_tmp->cat_conn_port = comDeviceCat;
+                            gkEventLogger->publishEvent(tr("Successfully found a port for making a CAT connection with (%1)!").arg(comDeviceCat), GkSeverity::Info);
+                            break;
+                        }
+                    }
+                }
+            } else {
+                // An unsupported mode, as of the moment, has been chosen so therefore issue an alert to the user!
+                gkEventLogger->publishEvent(tr("Unable to find a compatible PTT connection type. Please check that your settings are valid."),
+                                            GkSeverity::Warning, "", true, true);
             }
         } else {
             // No ports could be found!
@@ -1874,7 +1920,7 @@ void MainWindow::updateSpectrograph()
 
                             gkSpectroWaterfall->insertData(fft_spectro_vals, 1); // This is the data for the spectrograph / waterfall itself!
                             emit refreshSpectrograph(gk_spectro_latest_time, gk_spectro_start_time);
-                            emit onProcessFrame(fft_spectro_vals.toStdVector());
+                            emit onProcessFrame(fftCurveData);
 
                             fftWaterfallData.clear();
                         }
@@ -1985,10 +2031,10 @@ void MainWindow::on_pushButton_radio_receive_clicked()
                             #ifndef GK_ENBL_VALGRIND_SUPPORT
                             spectro_timing_thread = std::thread(&MainWindow::updateSpectrograph, this);
                             spectro_timing_thread.detach();
+                            #endif
 
                             vu_meter_thread = std::thread(&MainWindow::updateVolumeDisplayWidgets, this);
                             vu_meter_thread.detach();
-                            #endif
 
                             changeStatusBarMsg(tr("Please wait! Beginning to receive audio..."));
 

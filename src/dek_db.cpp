@@ -204,17 +204,23 @@ void GkLevelDb::write_rig_settings_comms(const QString &value, const radio_cfg &
         leveldb::Status status;
 
         switch (key) {
-        case radio_cfg::ComDeviceCat:
-            batch.Put("ComDeviceCat", value.toStdString());
-            break;
-        case radio_cfg::ComDevicePtt:
-            batch.Put("ComDevicePtt", value.toStdString());
-            break;
-        case radio_cfg::ComBaudRate:
-            batch.Put("ComBaudRate", value.toStdString());
-            break;
-        default:
-            return;
+            case radio_cfg::ComDeviceCat:
+                batch.Put("ComDeviceCat", value.toStdString());
+                break;
+            case radio_cfg::ComDevicePtt:
+                batch.Put("ComDevicePtt", value.toStdString());
+                break;
+            case radio_cfg::ComBaudRate:
+                batch.Put("ComBaudRate", value.toStdString());
+                break;
+            case radio_cfg::ComDeviceCatPortType:
+                batch.Put("ComDeviceCatPortType", value.toStdString());
+                break;
+            case radio_cfg::ComDevicePttPortType:
+                batch.Put("ComDevicePttPortType", value.toStdString());
+                break;
+            default:
+                return;
         }
 
         leveldb::WriteOptions write_options;
@@ -1226,17 +1232,23 @@ QString GkLevelDb::read_rig_settings_comms(const radio_cfg &key)
     read_options.verify_checksums = true;
 
     switch (key) {
-    case radio_cfg::ComDeviceCat:
-        status = db->Get(read_options, "ComDeviceCat", &value);
-        break;
-    case radio_cfg::ComDevicePtt:
-        status = db->Get(read_options, "ComDevicePtt", &value);
-        break;
-    case radio_cfg::ComBaudRate:
-        status = db->Get(read_options, "ComBaudRate", &value);
-        break;
-    default:
-        return "";
+        case radio_cfg::ComDeviceCat:
+            status = db->Get(read_options, "ComDeviceCat", &value);
+            break;
+        case radio_cfg::ComDevicePtt:
+            status = db->Get(read_options, "ComDevicePtt", &value);
+            break;
+        case radio_cfg::ComBaudRate:
+            status = db->Get(read_options, "ComBaudRate", &value);
+            break;
+        case radio_cfg::ComDeviceCatPortType:
+            status = db->Get(read_options, "ComDeviceCatPortType", &value);
+            break;
+        case radio_cfg::ComDevicePttPortType:
+            status = db->Get(read_options, "ComDevicePttPortType", &value);
+            break;
+        default:
+            return "";
     }
 
     return QString::fromStdString(value);
