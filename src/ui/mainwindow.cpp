@@ -951,15 +951,15 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
                         }
                     }
                 }
-            } else if (catPortType == GkConnType::USB) {
+            } else if (pttPortType == GkConnType::USB) {
                 // USB is the connection of choice here!
                 if (!gkUsbPortMap.empty()) {
                     // Verify that the port still exists!
                     for (const auto &usb: gkUsbPortMap.toStdMap()) {
-                        if (comDeviceCat == usb.first) {
+                        if (comDevicePtt == usb.first) {
                             // The port does indeed continue to exist!
-                            gk_radio_tmp->cat_conn_port = comDeviceCat;
-                            gkEventLogger->publishEvent(tr("Successfully found a port for making a CAT connection with (%1)!").arg(comDeviceCat), GkSeverity::Info);
+                            gk_radio_tmp->ptt_conn_port = comDevicePtt;
+                            gkEventLogger->publishEvent(tr("Successfully found a port for making a PTT connection with (%1)!").arg(comDevicePtt), GkSeverity::Info);
                             break;
                         }
                     }

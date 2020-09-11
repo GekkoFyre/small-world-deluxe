@@ -271,6 +271,7 @@ private:
     void prefill_avail_usb_ports(const QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> &usb_devices);
     void prefill_com_baud_speed(const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate);
     void enable_device_port_options();
+    GekkoFyre::AmateurRadio::GkConnType ascertConnType(const bool &is_ptt = false);
 
     void update_sample_rates(const bool &is_output_device = false);
 

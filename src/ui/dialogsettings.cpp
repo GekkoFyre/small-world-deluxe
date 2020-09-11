@@ -238,14 +238,6 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         int com_baud_rate = ui->comboBox_baud_rate->currentIndex();
         QString ptt_adv_cmd = ui->lineEdit_adv_ptt_cmd->text();
 
-        if (com_device_cat.isNull() || com_device_cat.isEmpty()) {
-            com_device_cat = "";
-        }
-
-        if (com_device_ptt.isNull() || com_device_ptt.isEmpty()) {
-            com_device_ptt = "";
-        }
-
         //
         // Audio --> Configuration
         //
@@ -411,8 +403,13 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         enum_force_ctrl_lines_dtr = ui->comboBox_force_ctrl_lines_dtr->currentIndex();
         enum_force_ctrl_lines_rts = ui->comboBox_force_ctrl_lines_rts->currentIndex();
 
+        GkConnType conn_type_cat = ascertConnType(false);
+        GkConnType conn_type_ptt = ascertConnType(true);
+
         gkDekodeDb->write_rig_settings_comms(com_device_cat, radio_cfg::ComDeviceCat);
         gkDekodeDb->write_rig_settings_comms(com_device_ptt, radio_cfg::ComDevicePtt);
+        gkDekodeDb->write_rig_settings_comms(QString::number(gkDekodeDb->convConnTypeToInt(conn_type_cat)), radio_cfg::ComDeviceCatPortType);
+        gkDekodeDb->write_rig_settings_comms(QString::number(gkDekodeDb->convConnTypeToInt(conn_type_ptt)), radio_cfg::ComDevicePttPortType);
         gkDekodeDb->write_rig_settings_comms(QString::number(com_baud_rate), radio_cfg::ComBaudRate);
 
         using namespace Database::Settings;
@@ -2447,4 +2444,56 @@ void DialogSettings::on_checkBox_failed_event_audio_notification_stateChanged(in
     gkDekodeDb->write_general_settings(QString::number(arg1), general_stat_cfg::FailAudioNotif);
 
     return;
+}
+
+/**
+ * @brief DialogSettings::ascertConnType ascertains the connection type used whether it be USB, RS232, Serial, Parallel,
+ * or something more exotic.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param is_ptt Is this a PTT connection type or not?
+ * @return The ascertained connection type in question.
+ */
+GkConnType DialogSettings::ascertConnType(const bool &is_ptt)
+{
+    if (!is_ptt) {
+        //
+        // CAT
+        //
+        const qint32 cat_idx = ui->comboBox_com_port->currentIndex();
+        const QString cat_str = ui->comboBox_com_port->currentText();
+        for (const auto &port: status_com_ports) {
+            if (cat_idx == port.port_info.portName()) {
+                return GkConnType::RS232;
+            }
+        }
+
+        for (const auto &usb: status_usb_devices.toStdMap()) {
+            if (cat_str == usb.second.name) {
+                return GkConnType::USB;
+            }
+        }
+
+        return GkConnType::None;
+    } else {
+        //
+        // PTT
+        //
+        const qint32 ptt_idx = ui->comboBox_ptt_method_port->currentIndex();
+        const QString ptt_str = ui->comboBox_ptt_method_port->currentText();
+        for (const auto &port: status_com_ports) {
+            if (ptt_idx == port.port_info.portName()) {
+                return GkConnType::RS232;
+            }
+        }
+
+        for (const auto &usb: status_usb_devices.toStdMap()) {
+            if (ptt_str == usb.second.name) {
+                return GkConnType::USB;
+            }
+        }
+
+        return GkConnType::None;
+    }
+
+    return USB;
 }
