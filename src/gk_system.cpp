@@ -74,6 +74,38 @@ GkSystem::~GkSystem()
 }
 
 /**
+ * @brief GkSystem::getNumCpuCores will get the number of CPU cores on the host machine and return it as an integer, in a semi-multiplatform
+ * manner.
+ * @author Dirk-Jan Kroon <https://stackoverflow.com/a/3006416>.
+ * @return The number of CPU cores on the host machine.
+ */
+qint32 GkSystem::getNumCpuCores()
+{
+    #ifdef WIN32
+    SYSTEM_INFO sysinfo;
+    GetSystemInfo(&sysinfo);
+    return sysinfo.dwNumberOfProcessors;
+    #elif MACOS
+    int nm[2];
+    size_t len = 4;
+    uint32_t count;
+
+    nm[0] = CTL_HW; nm[1] = HW_AVAILCPU;
+    sysctl(nm, 2, &count, &len, NULL, 0);
+
+    if(count < 1) {
+        nm[1] = HW_NCPU;
+        sysctl(nm, 2, &count, &len, nullptr, 0);
+        if (count < 1) { count = 1; }
+    }
+
+    return count;
+    #else
+    return sysconf(_SC_NPROCESSORS_ONLN);
+    #endif
+}
+
+/**
  * @brief GkSystem::renameCommsDevice adds the correct operating system path/port identifiers onto a given port number. So for
  * example, under Linux, the first port for USB becomes, `/dev/ttyUSB1`. This aids with the user in identifying the correct port
  * and also with Hamlib for making the right connection.
@@ -87,6 +119,7 @@ QString GkSystem::renameCommsDevice(const qint32 &port, const GkConnType &conn_t
     std::stringstream ss;
 
     #if defined(_WIN32) || defined(__MINGW64__)
+    ss.clear();
     #elif __linux__
     ss << "/dev/";
     #endif
@@ -95,6 +128,7 @@ QString GkSystem::renameCommsDevice(const qint32 &port, const GkConnType &conn_t
         case GkRS232:
         {
             #if defined(_WIN32) || defined(__MINGW64__)
+            ss << "COM" << port;
             #elif __linux__
             ss << "ttyS" << port;
             #endif
@@ -103,6 +137,7 @@ QString GkSystem::renameCommsDevice(const qint32 &port, const GkConnType &conn_t
         case GkUSB:
         {
             #if defined(_WIN32) || defined(__MINGW64__)
+            ss << "USB" << port;
             #elif __linux__
             ss << "ttyUSB" << port;
             #endif
@@ -111,14 +146,16 @@ QString GkSystem::renameCommsDevice(const qint32 &port, const GkConnType &conn_t
         case GkParallel:
         {
             #if defined(_WIN32) || defined(__MINGW64__)
+            ss << "LPT" << port;
             #elif __linux__
-            ss << "parport" << port;
+            ss << "lp" << port;
             #endif
             break;
         }
         case GkGPIO:
         {
             #if defined(_WIN32) || defined(__MINGW64__)
+            ss << "DIO" << port;
             #elif __linux__
             ss.clear();
             ss << "/sys/class/gpio/gpio" << port;
@@ -127,10 +164,8 @@ QString GkSystem::renameCommsDevice(const qint32 &port, const GkConnType &conn_t
         }
         case GkCM108:
             throw std::invalid_argument(tr("CM108 is currently not supported by %1!").arg(General::productName).toStdString());
-        case GkNone:
-            return "";
         default:
-            return "";
+            ss << "ERROR" << port;
     }
 
     return QString::fromStdString(ss.str());
