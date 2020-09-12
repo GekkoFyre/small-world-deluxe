@@ -726,7 +726,7 @@ void RadioLibs::gkInitRadioRig(const std::shared_ptr<GkRadio> &radio_ptr)
 
         // https://github.com/Hamlib/Hamlib/blob/master/tests/example.c
         // Set verbosity level
-        rig_set_debug(radio_ptr->verbosity);
+        rig_set_debug(RIG_DEBUG_TRACE);
 
         radio_ptr->gkRig = std::make_shared<Rig>(radio_ptr->rig_model);
 
@@ -751,7 +751,6 @@ void RadioLibs::gkInitRadioRig(const std::shared_ptr<GkRadio> &radio_ptr)
             switch (radio_ptr->ptt_type) { // TODO: Add type for 'Parallel'!
                 case RIG_PTT_SERIAL_RTS:
                     radio_ptr->gkRig->setConf("ptt_type", "RTS");
-                    radio_ptr->gkRig->setConf("rts_state", "ON");
                     radio_ptr->gkRig->setConf("dtr_state", "OFF");
                     break;
                 case RIG_PTT_SERIAL_DTR:
@@ -807,56 +806,18 @@ void RadioLibs::gkInitRadioRig(const std::shared_ptr<GkRadio> &radio_ptr)
                     break;
                 case serial_handshake_e::RIG_HANDSHAKE_HARDWARE:
                     // Hardware
-                    radio_ptr->gkRig->setConf("serial_handshake", "Hardware");
+                    if (radio_ptr->port_details.parm.serial.rts_state == RIG_SIGNAL_UNSET) {
+                        radio_ptr->gkRig->setConf("serial_handshake", "Hardware");
+                    } else {
+                        radio_ptr->gkRig->setConf("serial_handshake", "None");
+                        std::cerr << tr("Cannot set RTS with Hardware Handshake. Ignoring...").toStdString() << std::endl;
+                    }
+
                     break;
                 default:
                     // Nothing
                     radio_ptr->gkRig->setConf("serial_handshake", "None");
                     break;
-            }
-
-            if (radio_ptr->cat_conn_type == GkConnType::GkRS232) {
-                //
-                // RS232
-                //
-            } else if (radio_ptr->cat_conn_type == GkConnType::GkUSB) {
-                //
-                // USB
-                //
-            } else if (radio_ptr->cat_conn_type == GkConnType::GkParallel) {
-                //
-                // Parallel
-                //
-            } else if (radio_ptr->cat_conn_type == GkConnType::GkGPIO) {
-                //
-                // GkGPIO
-                //
-            } else if (radio_ptr->cat_conn_type == GkConnType::GkCM108) {
-                //
-                // GkCM108
-                //
-            } else {
-                //
-                // Undetectable!
-                //
-                gkEventLogger->publishEvent(tr("Unable to detect connection type to radio rig!"), GkSeverity::Error, "", false, true);
-                throw std::invalid_argument(tr("Unable to detect connection type to radio rig!").toStdString());
-            }
-
-            if (radio_ptr->ptt_conn_type == GkConnType::GkRS232) {
-                // RS232
-            } else if (radio_ptr->ptt_conn_type == GkConnType::GkUSB) {
-                // USB
-            } else if (radio_ptr->ptt_conn_type == GkConnType::GkParallel) {
-                // Parallel
-            } else if (radio_ptr->ptt_conn_type == GkConnType::GkGPIO) {
-                // GkGPIO
-            } else if (radio_ptr->ptt_conn_type == GkConnType::GkCM108) {
-                // GkCM108
-            } else {
-                // Undetectable!
-                gkEventLogger->publishEvent(tr("Unable to detect connection type to radio rig!"), GkSeverity::Error, "", false, true);
-                throw std::invalid_argument(tr("Unable to detect connection type to radio rig!").toStdString());
             }
 
             #if __MINGW64__
@@ -873,6 +834,7 @@ void RadioLibs::gkInitRadioRig(const std::shared_ptr<GkRadio> &radio_ptr)
             if (!radio_ptr->cat_conn_port.isNull() && !radio_ptr->cat_conn_port.isEmpty()) {
                 radio_ptr->gkRig->setConf("ptt_pathname", radio_ptr->ptt_conn_port.toStdString().c_str());
                 radio_ptr->gkRig->setConf("rig_pathname", radio_ptr->cat_conn_port.toStdString().c_str());
+                radio_ptr->gkRig->setConf("timeout", std::to_string(GK_HAMLIB_DEFAULT_TIMEOUT).c_str());
             }
 
             if (radio_ptr->rig_model < 1) { // No amateur radio rig has been configured and/or adequately detected!

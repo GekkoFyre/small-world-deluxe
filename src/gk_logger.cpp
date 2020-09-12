@@ -88,7 +88,7 @@ GkEventLogger::~GkEventLogger()
 void GkEventLogger::publishEvent(const QString &event, const GkSeverity &severity, const QVariant &arguments, const bool &sys_notification,
                                  const bool &publishToConsole)
 {
-    const std::lock_guard<std::mutex> lock(dataBatchMutex);
+    std::lock_guard<std::mutex> lock(dataBatchMutex);
 
     GkEventLogging event_log;
     event_log.mesg.message = event;
@@ -130,7 +130,7 @@ void GkEventLogger::publishEvent(const QString &event, const GkSeverity &severit
  */
 qint64 GkEventLogger::setDate()
 {
-    const std::lock_guard<std::mutex> lock(setDateMutex);
+    std::lock_guard<std::mutex> lock(setDateMutex);
 
     qint64 curr_date = QDateTime::currentMSecsSinceEpoch();
     return curr_date;
@@ -144,7 +144,7 @@ qint64 GkEventLogger::setDate()
  */
 int GkEventLogger::setEventNo()
 {
-    const std::lock_guard<std::mutex> lock(setEventNoMutex);
+    std::lock_guard<std::mutex> lock(setEventNoMutex);
 
     int event_number = eventLogDb.back().event_no;
     event_number += 1;
