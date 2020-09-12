@@ -1083,31 +1083,37 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
             gk_radio_tmp->port_details.parm.serial.rts_state = serial_control_state_e::RIG_SIGNAL_UNSET;
         }
 
-        if (!ptt_method.isNull() || !ptt_method.isEmpty()) {
+        if (!ptt_method.isEmpty()) {
             int conv_ptt_method = ptt_method.toInt();
             switch (conv_ptt_method) {
-            case 0:
-                // VOX
-                gk_radio_tmp->port_details.type.ptt = ptt_type_t::RIG_PTT_RIG_MICDATA; // Legacy PTT (CAT PTT), supports RIG_PTT_ON_MIC/RIG_PTT_ON_DATA
-                break;
-            case 1:
-                // DTR
-                gk_radio_tmp->port_details.type.ptt = ptt_type_t::RIG_PTT_SERIAL_DTR; // PTT control through serial DTR signal
-                break;
-            case 2:
-                // CAT
-                gk_radio_tmp->port_details.type.ptt = ptt_type_t::RIG_PTT_RIG; // Legacy PTT (CAT PTT)
-                break;
-            case 3:
-                // RTS
-                gk_radio_tmp->port_details.type.ptt = ptt_type_t::RIG_PTT_SERIAL_RTS; // PTT control through serial RTS signal
-                break;
-            default:
-                // Nothing
-                gk_radio_tmp->port_details.type.ptt = ptt_type_t::RIG_PTT_NONE; // No PTT available
+                case 0:
+                    // VOX
+                    gk_radio_tmp->port_details.type.ptt = ptt_type_t::RIG_PTT_RIG_MICDATA; // Legacy PTT (CAT PTT), supports RIG_PTT_ON_MIC/RIG_PTT_ON_DATA
+                    gk_radio_tmp->ptt_type = ptt_type_t::RIG_PTT_RIG_MICDATA;
+                    break;
+                case 1:
+                    // DTR
+                    gk_radio_tmp->port_details.type.ptt = ptt_type_t::RIG_PTT_SERIAL_DTR; // PTT control through serial DTR signal
+                    gk_radio_tmp->ptt_type = ptt_type_t::RIG_PTT_SERIAL_DTR;
+                    break;
+                case 2:
+                    // CAT
+                    gk_radio_tmp->port_details.type.ptt = ptt_type_t::RIG_PTT_RIG; // Legacy PTT (CAT PTT)
+                    gk_radio_tmp->ptt_type = ptt_type_t::RIG_PTT_RIG;
+                    break;
+                case 3:
+                    // RTS
+                    gk_radio_tmp->port_details.type.ptt = ptt_type_t::RIG_PTT_SERIAL_RTS; // PTT control through serial RTS signal
+                    gk_radio_tmp->ptt_type = ptt_type_t::RIG_PTT_SERIAL_RTS;
+                    break;
+                default:
+                    // Nothing
+                    gk_radio_tmp->port_details.type.ptt = ptt_type_t::RIG_PTT_NONE; // No PTT available
+                    gk_radio_tmp->ptt_type = ptt_type_t::RIG_PTT_NONE;
             }
         } else {
             gk_radio_tmp->port_details.type.ptt = ptt_type_t::RIG_PTT_NONE; // Default option
+            gk_radio_tmp->ptt_type = ptt_type_t::RIG_PTT_NONE;
         }
 
         if (!tx_audio_src.isNull() || !tx_audio_src.isEmpty()) {

@@ -815,6 +815,50 @@ void RadioLibs::gkInitRadioRig(const std::shared_ptr<GkRadio> &radio_ptr)
                     break;
             }
 
+            if (radio_ptr->cat_conn_type == GkConnType::GkRS232) {
+                //
+                // RS232
+                //
+            } else if (radio_ptr->cat_conn_type == GkConnType::GkUSB) {
+                //
+                // USB
+                //
+            } else if (radio_ptr->cat_conn_type == GkConnType::GkParallel) {
+                //
+                // Parallel
+                //
+            } else if (radio_ptr->cat_conn_type == GkConnType::GkGPIO) {
+                //
+                // GkGPIO
+                //
+            } else if (radio_ptr->cat_conn_type == GkConnType::GkCM108) {
+                //
+                // GkCM108
+                //
+            } else {
+                //
+                // Undetectable!
+                //
+                gkEventLogger->publishEvent(tr("Unable to detect connection type to radio rig!"), GkSeverity::Error, "", false, true);
+                throw std::invalid_argument(tr("Unable to detect connection type to radio rig!").toStdString());
+            }
+
+            if (radio_ptr->ptt_conn_type == GkConnType::GkRS232) {
+                // RS232
+            } else if (radio_ptr->ptt_conn_type == GkConnType::GkUSB) {
+                // USB
+            } else if (radio_ptr->ptt_conn_type == GkConnType::GkParallel) {
+                // Parallel
+            } else if (radio_ptr->ptt_conn_type == GkConnType::GkGPIO) {
+                // GkGPIO
+            } else if (radio_ptr->ptt_conn_type == GkConnType::GkCM108) {
+                // GkCM108
+            } else {
+                // Undetectable!
+                gkEventLogger->publishEvent(tr("Unable to detect connection type to radio rig!"), GkSeverity::Error, "", false, true);
+                throw std::invalid_argument(tr("Unable to detect connection type to radio rig!").toStdString());
+            }
+
             #if __MINGW64__
             //
             // Modify the COM Port so that it's suitable for Hamlib!
