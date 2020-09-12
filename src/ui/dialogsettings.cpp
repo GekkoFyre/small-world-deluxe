@@ -871,11 +871,9 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
         //
         // Default values!
         //
-
-        bool unsupported_port = true;
         if (!com_ports.empty()) {
             quint16 counter = 0;
-            emit comPortsDisabled(true); // Enable all GUI widgets relating to COM/Serial Ports
+            emit comPortsDisabled(false); // Enable all GUI widgets relating to COM/Serial Ports
             for (const auto &port: com_ports) {
                 ++counter;
                 QString portName = port.port_info.portName();
@@ -908,34 +906,6 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
                             // NOTE: The recorded setting used to identify the chosen serial device is the COM Port name
                             ui->comboBox_com_port->setCurrentIndex(sel_port.second);
                             on_comboBox_com_port_currentIndexChanged(sel_port.second);
-                            unsupported_port = false;
-                        } else {
-                            //
-                            // Something else entirely!
-                            //
-                            unsupported_port = true;
-                        }
-                    }
-                }
-            }
-
-            if (!comDeviceCat.isEmpty() && !available_usb_ports.isEmpty()) {
-                for (const auto &sel_port: available_usb_ports.toStdMap()) {
-                    for (const auto &device: status_usb_devices) {
-                        if ((device.port == sel_port.first) && (comDeviceCat == device.name)) {
-                            //
-                            // USB Port
-                            //
-
-                            // NOTE: The recorded setting used to identify the chosen serial device is the COM Port name
-                            ui->comboBox_com_port->setCurrentIndex(device.port);
-                            on_comboBox_com_port_currentIndexChanged(device.port);
-                            unsupported_port = false;
-                        } else {
-                            //
-                            // Something else entirely!
-                            //
-                            unsupported_port = true;
                         }
                     }
                 }
@@ -957,11 +927,7 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
                 }
             }
         } else {
-            emit comPortsDisabled(false);
-        }
-
-        if (unsupported_port) {
-            throw std::invalid_argument(tr("An unsupported port-type has been chosen! Only USB, RS232 (i.e. COM/Serial/etc), and a few other related types are supported right now, sorry!").toStdString());
+            emit comPortsDisabled(true);
         }
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
@@ -983,7 +949,7 @@ void DialogSettings::prefill_avail_usb_ports(const QMap<quint16, GekkoFyre::Data
     try {
         if (!usb_devices.empty()) {
             // USB devices are not empty!
-            emit usbPortsDisabled(true);
+            emit usbPortsDisabled(false);
 
             available_usb_ports.clear();
             quint16 counter = 0;
@@ -1014,9 +980,42 @@ void DialogSettings::prefill_avail_usb_ports(const QMap<quint16, GekkoFyre::Data
 
                 ++counter;
             }
+
+            //
+            // USB Port (QCombobox Index)
+            //
+            QString usbDeviceCat = gkDekodeDb->read_rig_settings_comms(radio_cfg::ComDeviceCat);
+            QString usbDevicePtt = gkDekodeDb->read_rig_settings_comms(radio_cfg::ComDevicePtt);
+            if (!available_usb_ports.isEmpty() && (!usbDeviceCat.isEmpty() || !usbDevicePtt.isEmpty())) {
+                for (const auto &sel_port: available_usb_ports.toStdMap()) {
+                    for (const auto &device: status_usb_devices) {
+                        if (!usbDeviceCat.isEmpty()) {
+                            //
+                            // CAT Control
+                            //
+                            if ((device.port == sel_port.first) && (usbDeviceCat == device.name)) {
+                                // NOTE: The recorded setting used to identify the chosen serial device is the COM Port name
+                                ui->comboBox_com_port->setCurrentIndex(device.port);
+                                on_comboBox_com_port_currentIndexChanged(device.port);
+                            }
+                        }
+
+                        if (!usbDevicePtt.isEmpty()) {
+                            //
+                            // PTT Method
+                            //
+                            if ((device.port == sel_port.first) && (usbDevicePtt == device.name)) {
+                                // NOTE: The recorded setting used to identify the chosen serial device is the COM Port name
+                                ui->comboBox_ptt_method_port->setCurrentIndex(device.port);
+                                on_comboBox_ptt_method_port_currentIndexChanged(device.port);
+                            }
+                        }
+                    }
+                }
+            }
         } else {
             // There exists no USB devices...
-            emit usbPortsDisabled(false);
+            emit usbPortsDisabled(true);
         }
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
@@ -2009,18 +2008,26 @@ void DialogSettings::on_horizontalSlider_encoding_audio_quality_valueChanged(int
     return;
 }
 
-void DialogSettings::disableUsbPorts(const bool &active)
+void DialogSettings::disableUsbPorts(const bool &disable)
 {
-    usb_ports_active = active;
-    enable_device_port_options();
+    if (!disable) {
+        usb_ports_active = true;
+        enable_device_port_options();
+    } else {
+        usb_ports_active = false;
+    }
 
     return;
 }
 
-void DialogSettings::disableComPorts(const bool &active)
+void DialogSettings::disableComPorts(const bool &disable)
 {
-    com_ports_active = active;
-    enable_device_port_options();
+    if (!disable) {
+        com_ports_active = true;
+        enable_device_port_options();
+    } else {
+        com_ports_active = false;
+    }
 
     return;
 }
@@ -2463,17 +2470,17 @@ GkConnType DialogSettings::ascertConnType(const bool &is_ptt)
         const QString cat_str = ui->comboBox_com_port->currentText();
         for (const auto &port: status_com_ports) {
             if (cat_idx == port.port_info.portName()) {
-                return GkConnType::RS232;
+                return GkConnType::GkRS232;
             }
         }
 
         for (const auto &usb: status_usb_devices.toStdMap()) {
             if (cat_str == usb.second.name) {
-                return GkConnType::USB;
+                return GkConnType::GkUSB;
             }
         }
 
-        return GkConnType::None;
+        return GkConnType::GkNone;
     } else {
         //
         // PTT
@@ -2482,18 +2489,18 @@ GkConnType DialogSettings::ascertConnType(const bool &is_ptt)
         const QString ptt_str = ui->comboBox_ptt_method_port->currentText();
         for (const auto &port: status_com_ports) {
             if (ptt_idx == port.port_info.portName()) {
-                return GkConnType::RS232;
+                return GkConnType::GkRS232;
             }
         }
 
         for (const auto &usb: status_usb_devices.toStdMap()) {
             if (ptt_str == usb.second.name) {
-                return GkConnType::USB;
+                return GkConnType::GkUSB;
             }
         }
 
-        return GkConnType::None;
+        return GkConnType::GkNone;
     }
 
-    return USB;
+    return GkUSB;
 }

@@ -68,6 +68,7 @@ public:
     ~GkSystem() override;
 
     void addPolicyToWindowsFirewallApi();
+    QString renameCommsDevice(const qint32 &port, const GekkoFyre::AmateurRadio::GkConnType &conn_type);
 
 private:
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
