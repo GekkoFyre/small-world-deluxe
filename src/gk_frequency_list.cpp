@@ -305,7 +305,7 @@ GkFreqs GkFrequencies::at(const int &idx)
  * @param remove_freq Whether to remove the frequency in question from the global list or not.
  */
 void GkFrequencies::updateFreqsInMem(const quint64 &frequency, const GekkoFyre::AmateurRadio::DigitalModes &digital_mode,
-                                  const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq)
+                                     const GekkoFyre::AmateurRadio::IARURegions &iaru_region, const bool &remove_freq)
 {
     GkFreqs freq;
     freq.frequency = frequency;

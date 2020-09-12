@@ -103,8 +103,8 @@ private slots:
     void on_spinBox_spectro_render_thread_settings_valueChanged(int arg1);
     void on_horizontalSlider_encoding_audio_quality_valueChanged(int value);
 
-    void disableUsbPorts(const bool &active);
-    void disableComPorts(const bool &active);
+    void disableUsbPorts(const bool &disable);
+    void disableComPorts(const bool &disable);
 
     //
     // Rig selection

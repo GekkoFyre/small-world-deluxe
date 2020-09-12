@@ -42,6 +42,7 @@
 #include "src/gk_string_funcs.hpp"
 #include <QSettings>
 #include <algorithm>
+#include <sstream>
 
 #if _WIN32
 #include <windows.h>
@@ -66,6 +67,15 @@ extern "C"
 #endif
 
 using namespace GekkoFyre;
+using namespace Database;
+using namespace Settings;
+using namespace Audio;
+using namespace AmateurRadio;
+using namespace Control;
+using namespace Spectrograph;
+using namespace System;
+using namespace Events;
+using namespace Logging;
 
 StringFuncs::StringFuncs(QObject *parent) : QObject(parent)
 {}

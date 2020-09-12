@@ -570,12 +570,12 @@ namespace AmateurRadio {
     };
 
     enum GkConnType {
-        RS232,
-        USB,
-        Parallel,
-        CM108,
-        GPIO,
-        None
+        GkRS232,
+        GkUSB,
+        GkParallel,
+        GkCM108,
+        GkGPIO,
+        GkNone
     };
 
     enum GkConnMethod {

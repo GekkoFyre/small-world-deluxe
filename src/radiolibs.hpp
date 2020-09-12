@@ -44,6 +44,7 @@
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
+#include "src/gk_system.hpp"
 #include <boost/logic/tribool.hpp>
 #include <memory>
 #include <vector>
@@ -81,7 +82,8 @@ class RadioLibs : public QObject {
 public:
     explicit RadioLibs(QPointer<GekkoFyre::FileIo> filePtr, QPointer<GekkoFyre::StringFuncs> stringPtr,
                        QPointer<GkLevelDb> dkDb, std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> radioPtr,
-                       QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
+                       QPointer<GekkoFyre::GkEventLogger> eventLogger, QPointer<GekkoFyre::GkSystem> systemPtr,
+                       QObject *parent = nullptr);
     ~RadioLibs() override;
 
     static int convertBaudRateInt(const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate);
@@ -110,6 +112,7 @@ private:
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::FileIo> gkFileIo;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
+    QPointer<GekkoFyre::GkSystem> gkSystem;
 
     static void hamlibStatus(const int &retcode);
 

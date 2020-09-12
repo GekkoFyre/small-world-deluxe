@@ -1802,22 +1802,22 @@ GkConnType GkLevelDb::convConnTypeToEnum(const int &conn_type)
 {
     switch (conn_type) {
     case 0:
-        return GkConnType::None;
+        return GkConnType::GkNone;
     case 1:
-        return GkConnType::RS232;
+        return GkConnType::GkRS232;
     case 2:
-        return GkConnType::USB;
+        return GkConnType::GkUSB;
     case 3:
-        return GkConnType::Parallel;
+        return GkConnType::GkParallel;
     case 4:
-        return GkConnType::CM108;
+        return GkConnType::GkCM108;
     case 5:
-        return GkConnType::GPIO;
+        return GkConnType::GkGPIO;
     default:
-        return GkConnType::None;
+        return GkConnType::GkNone;
     }
 
-    return GkConnType::None;
+    return GkConnType::GkNone;
 }
 
 /**
@@ -1829,17 +1829,17 @@ GkConnType GkLevelDb::convConnTypeToEnum(const int &conn_type)
 int GkLevelDb::convConnTypeToInt(const GkConnType &conn_type)
 {
     switch (conn_type) {
-    case GkConnType::RS232:
+    case GkConnType::GkRS232:
         return 1;
-    case GkConnType::USB:
+    case GkConnType::GkUSB:
         return 2;
-    case GkConnType::Parallel:
+    case GkConnType::GkParallel:
         return 3;
-    case GkConnType::CM108:
+    case GkConnType::GkCM108:
         return 4;
-    case GkConnType::GPIO:
+    case GkConnType::GkGPIO:
         return 5;
-    case GkConnType::None:
+    case GkConnType::GkNone:
         return 0;
     default:
         return -1;
