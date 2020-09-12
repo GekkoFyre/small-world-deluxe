@@ -69,6 +69,9 @@ public:
 
     void addPolicyToWindowsFirewallApi();
 
+    qint32 getNumCpuCores();
+    QString renameCommsDevice(const qint32 &port, const GekkoFyre::AmateurRadio::GkConnType &conn_type);
+
 private:
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;

@@ -73,6 +73,104 @@ GkSystem::~GkSystem()
     return;
 }
 
+/**
+ * @brief GkSystem::getNumCpuCores will get the number of CPU cores on the host machine and return it as an integer, in a semi-multiplatform
+ * manner.
+ * @author Dirk-Jan Kroon <https://stackoverflow.com/a/3006416>.
+ * @return The number of CPU cores on the host machine.
+ */
+qint32 GkSystem::getNumCpuCores()
+{
+    #ifdef WIN32
+    SYSTEM_INFO sysinfo;
+    GetSystemInfo(&sysinfo);
+    return sysinfo.dwNumberOfProcessors;
+    #elif MACOS
+    int nm[2];
+    size_t len = 4;
+    uint32_t count;
+
+    nm[0] = CTL_HW; nm[1] = HW_AVAILCPU;
+    sysctl(nm, 2, &count, &len, NULL, 0);
+
+    if(count < 1) {
+        nm[1] = HW_NCPU;
+        sysctl(nm, 2, &count, &len, nullptr, 0);
+        if (count < 1) { count = 1; }
+    }
+
+    return count;
+    #else
+    return sysconf(_SC_NPROCESSORS_ONLN);
+    #endif
+}
+
+/**
+ * @brief GkSystem::renameCommsDevice adds the correct operating system path/port identifiers onto a given port number. So for
+ * example, under Linux, the first port for USB becomes, `/dev/ttyUSB1`. This aids with the user in identifying the correct port
+ * and also with Hamlib for making the right connection.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param port The port number that's to be transformed.
+ * @param conn_type The type of connection we are dealing with.
+ * @return The transmogrified port identifier.
+ */
+QString GkSystem::renameCommsDevice(const qint32 &port, const GkConnType &conn_type)
+{
+    std::stringstream ss;
+
+    #if defined(_WIN32) || defined(__MINGW64__)
+    ss.clear();
+    #elif __linux__
+    ss << "/dev/";
+    #endif
+
+    switch (conn_type) {
+        case GkRS232:
+        {
+            #if defined(_WIN32) || defined(__MINGW64__)
+            ss << "COM" << port;
+            #elif __linux__
+            ss << "ttyS" << port;
+            #endif
+            break;
+        }
+        case GkUSB:
+        {
+            #if defined(_WIN32) || defined(__MINGW64__)
+            ss << "USB" << port;
+            #elif __linux__
+            ss << "ttyUSB" << port;
+            #endif
+            break;
+        }
+        case GkParallel:
+        {
+            #if defined(_WIN32) || defined(__MINGW64__)
+            ss << "LPT" << port;
+            #elif __linux__
+            ss << "lp" << port;
+            #endif
+            break;
+        }
+        case GkGPIO:
+        {
+            #if defined(_WIN32) || defined(__MINGW64__)
+            ss << "DIO" << port;
+            #elif __linux__
+            ss.clear();
+            ss << "/sys/class/gpio/gpio" << port;
+            #endif
+            break;
+        }
+        case GkCM108:
+            throw std::invalid_argument(tr("CM108 is currently not supported by %1!").arg(General::productName).toStdString());
+        default:
+            ss << "ERROR" << port;
+    }
+
+    return QString::fromStdString(ss.str());
+}
+
 #if defined(_WIN32) || defined(__MINGW64__)
 /**
  * @brief GkSystem::addPolicyToWindowsFirewallApi adds an outbound rule to the Microsoft Windows firewall, provided it's activated, and it

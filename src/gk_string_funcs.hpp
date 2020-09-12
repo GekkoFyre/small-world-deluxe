@@ -1,15 +1,15 @@
 /**
- **     __                 _ _   __    __           _     _ 
+ **     __                 _ _   __    __           _     _
  **    / _\_ __ ___   __ _| | | / / /\ \ \___  _ __| | __| |
  **    \ \| '_ ` _ \ / _` | | | \ \/  \/ / _ \| '__| |/ _` |
  **    _\ \ | | | | | (_| | | |  \  /\  / (_) | |  | | (_| |
  **    \__/_| |_| |_|\__,_|_|_|   \/  \/ \___/|_|  |_|\__,_|
- **                                                         
- **                  ___     _                              
- **                 /   \___| |_   ___  _____               
- **                / /\ / _ \ | | | \ \/ / _ \              
- **               / /_//  __/ | |_| |>  <  __/              
- **              /___,' \___|_|\__,_/_/\_\___|              
+ **
+ **                  ___     _
+ **                 /   \___| |_   ___  _____
+ **                / /\ / _ \ | | | \ \/ / _ \
+ **               / /_//  __/ | |_| |>  <  __/
+ **              /___,' \___|_|\__,_/_/\_\___|
  **
  **
  **   If you have downloaded the source code for "Small World Deluxe" and are reading this,
@@ -55,6 +55,7 @@
 #include <oleauto.h>
 #endif
 
+
 namespace GekkoFyre {
 
 class StringFuncs : public QObject {
@@ -76,8 +77,6 @@ public:
     QString getStringFromUnsignedChar(unsigned char *str);
     std::vector<int> convStrToIntArray(const QString &str);
     QString addErrorMsg(const QString &orig_msg, const QString &err_msg);
-
-    qint32 getNumCpuCores();
 
     /**
      * @brief StringFuncs::splitVec will split a given std::vector<T> into many sub-vectors of a given size. This is
@@ -108,7 +107,7 @@ public:
         }
 
     /**
-     * @brief StringFuncs::splitVec will split a given std::vector<T> into many sub-vectors of a given size. This is
+     * @brief StringFuncs::chunker will split a given std::vector<T> into many sub-vectors of a given size. This is
      * particularly useful for multithreading, for example, if you need multiple std::vector's of a particular size
      * each.
      * @author marcinwol <https://gist.github.com/marcinwol/3283a92331ff64a8f531>.

@@ -404,7 +404,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 emit addRigInUse(gkRadioPtr->rig_model, gkRadioPtr);
 
                 // Initialize the other radio libraries!
-                gkRadioLibs = new GekkoFyre::RadioLibs(fileIo, gkStringFuncs, GkDb, gkRadioPtr, gkEventLogger, this);
+                gkRadioLibs = new GekkoFyre::RadioLibs(fileIo, gkStringFuncs, GkDb, gkRadioPtr, gkEventLogger, gkSystem, this);
 
                 //
                 // Setup the SIGNALS & SLOTS for `gkRadioLibs`...
@@ -475,7 +475,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         autoSys.initialize();
         gkPortAudioInit = new portaudio::System(portaudio::System::instance());
 
-        gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(GkDb, fileIo, gkFreqList, gkStringFuncs, gkEventLogger, this);
+        gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(GkDb, fileIo, gkFreqList, gkStringFuncs, gkEventLogger, gkSystem, this);
         auto pref_audio_devices = gkAudioDevices->initPortAudio(gkPortAudioInit);
 
         if (!pref_audio_devices.empty()) {
@@ -898,27 +898,27 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
         QString comDeviceCat = GkDb->read_rig_settings_comms(radio_cfg::ComDeviceCat);
         GkConnType catPortType = GkDb->convConnTypeToEnum(GkDb->read_rig_settings_comms(radio_cfg::ComDeviceCatPortType).toInt());
         if (!comDeviceCat.isEmpty()) {
-            if (catPortType == GkConnType::RS232) {
+            if (catPortType == GkConnType::GkRS232) {
                 if (!status_com_ports.empty()) {
                     // Verify that the port still exists!
                     for (const auto &port: status_com_ports) {
                         if (comDeviceCat == port.port_info.portName()) {
                             // The port does indeed continue to exist!
-                            gk_radio_tmp->cat_conn_port = comDeviceCat;
-                            gkEventLogger->publishEvent(tr("Successfully found a port for making a CAT connection with (%1)!").arg(comDeviceCat), GkSeverity::Info);
+                            gk_radio_tmp->cat_conn_port = port.port_info.systemLocation();
+                            gkEventLogger->publishEvent(tr("Successfully found a port for making a CAT connection with (%1)!").arg(gk_radio_tmp->cat_conn_port), GkSeverity::Info);
                             break;
                         }
                     }
                 }
-            } else if (catPortType == GkConnType::USB) {
+            } else if (catPortType == GkConnType::GkUSB) {
                 // USB is the connection of choice here!
                 if (!gkUsbPortMap.empty()) {
                     // Verify that the port still exists!
                     for (const auto &usb: gkUsbPortMap.toStdMap()) {
-                        if (comDeviceCat == usb.first) {
+                        if (comDeviceCat.toInt() == usb.first) {
                             // The port does indeed continue to exist!
-                            gk_radio_tmp->cat_conn_port = comDeviceCat;
-                            gkEventLogger->publishEvent(tr("Successfully found a port for making a CAT connection with (%1)!").arg(comDeviceCat), GkSeverity::Info);
+                            gk_radio_tmp->cat_conn_port = gkSystem->renameCommsDevice(comDeviceCat.toInt(), GkConnType::GkUSB);
+                            gkEventLogger->publishEvent(tr("Successfully found a port for making a CAT connection with (%1)!").arg(gk_radio_tmp->cat_conn_port), GkSeverity::Info);
                             break;
                         }
                     }
@@ -939,27 +939,27 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
         QString comDevicePtt = GkDb->read_rig_settings_comms(radio_cfg::ComDevicePtt);
         GkConnType pttPortType = GkDb->convConnTypeToEnum(GkDb->read_rig_settings_comms(radio_cfg::ComDevicePttPortType).toInt());
         if (!comDevicePtt.isEmpty()) {
-            if (pttPortType == GkConnType::RS232) {
+            if (pttPortType == GkConnType::GkRS232) {
                 if (!status_com_ports.empty()) {
                     // Verify that the port still exists!
                     for (const auto &port: status_com_ports) {
                         if (comDevicePtt == port.port_info.portName()) {
                             // The port does indeed continue to exist!
-                            gk_radio_tmp->ptt_conn_port = comDevicePtt;
-                            gkEventLogger->publishEvent(tr("Successfully found a port for making a PTT connection with (%1)!").arg(comDevicePtt), GkSeverity::Info);
+                            gk_radio_tmp->ptt_conn_port = port.port_info.systemLocation();
+                            gkEventLogger->publishEvent(tr("Successfully found a port for making a PTT connection with (%1)!").arg(gk_radio_tmp->ptt_conn_port), GkSeverity::Info);
                             break;
                         }
                     }
                 }
-            } else if (pttPortType == GkConnType::USB) {
+            } else if (pttPortType == GkConnType::GkUSB) {
                 // USB is the connection of choice here!
                 if (!gkUsbPortMap.empty()) {
                     // Verify that the port still exists!
                     for (const auto &usb: gkUsbPortMap.toStdMap()) {
-                        if (comDevicePtt == usb.first) {
+                        if (comDevicePtt.toInt() == usb.first) {
                             // The port does indeed continue to exist!
-                            gk_radio_tmp->ptt_conn_port = comDevicePtt;
-                            gkEventLogger->publishEvent(tr("Successfully found a port for making a PTT connection with (%1)!").arg(comDevicePtt), GkSeverity::Info);
+                            gk_radio_tmp->ptt_conn_port = gkSystem->renameCommsDevice(comDevicePtt.toInt(), GkConnType::GkUSB);
+                            gkEventLogger->publishEvent(tr("Successfully found a port for making a PTT connection with (%1)!").arg(gk_radio_tmp->ptt_conn_port), GkSeverity::Info);
                             break;
                         }
                     }
@@ -1291,20 +1291,16 @@ void MainWindow::updateVolumeDisplayWidgets()
         }
     } catch (const portaudio::PaException &e) {
         QString error_msg = tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText());
-        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
-        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
     } catch (const portaudio::PaCppException &e) {
         QString error_msg = tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what());
-        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
-        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
     } catch (const std::exception &e) {
         QString error_msg = tr("A generic exception has occurred:\n\n%1").arg(e.what());
-        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
-        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
     } catch (...) {
         QString error_msg = tr("An unknown exception has occurred. There are no further details.");
-        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
-        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
     }
 
     return;
@@ -1572,20 +1568,16 @@ void MainWindow::on_actionShow_Waterfall_toggled(bool arg1)
         // QWT is started!
     } catch (const portaudio::PaException &e) {
         QString error_msg = tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText());
-        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
-        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
     } catch (const portaudio::PaCppException &e) {
         QString error_msg = tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what());
-        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
-        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
     } catch (const std::exception &e) {
         QString error_msg = tr("A generic exception has occurred:\n\n%1").arg(e.what());
-        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
-        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
     } catch (...) {
         QString error_msg = tr("An unknown exception has occurred. There are no further details.");
-        QMessageBox::warning(nullptr, tr("Error!"), error_msg, QMessageBox::Ok);
-        gkEventLogger->publishEvent(error_msg, GkSeverity::Error);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
     }
     */
 

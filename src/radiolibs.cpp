@@ -98,13 +98,15 @@ std::mutex mtx_init_rig;
 
 RadioLibs::RadioLibs(QPointer<FileIo> filePtr, QPointer<StringFuncs> stringPtr,
                      QPointer<GkLevelDb> dkDb, std::shared_ptr<GkRadio> radioPtr,
-                     QPointer<GkEventLogger> eventLogger, QObject *parent) : QObject(parent)
+                     QPointer<GkEventLogger> eventLogger, QPointer<GekkoFyre::GkSystem> systemPtr,
+                     QObject *parent) : QObject(parent)
 {
     gkStringFuncs = std::move(stringPtr);
     gkDekodeDb = std::move(dkDb);
     gkFileIo = std::move(filePtr);
     gkRadioPtr = std::move(radioPtr);
     gkEventLogger = std::move(eventLogger);
+    gkSystem = std::move(systemPtr);
 }
 
 RadioLibs::~RadioLibs()
@@ -439,16 +441,9 @@ QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDevice
                                     break;
                                 }
                             } else {
-                                #ifdef _WIN32
-                                // TODO: URGENT - Finish this section!
-                                #elif __linux__
-                                std::stringstream ss;
-                                ss << "ttyUSB" << usb.port;
-                                #endif
-
-                                const QString str_name = QString::fromStdString(ss.str());
-                                if (!already_added.contains(str_name)) {
-                                    usb.name = str_name;
+                                QString usb_path = gkSystem->renameCommsDevice(usb.port, GkConnType::GkUSB);
+                                if (!already_added.contains(usb_path)) {
+                                    usb.name = usb_path;
                                     already_added.push_back(usb.name);
                                     break;
                                 }
@@ -975,24 +970,24 @@ GkConnType RadioLibs::convGkConnTypeToEnum(const QString &conn_type)
 {
     if (conn_type == "RS232") {
         // RS232
-        return GkConnType::RS232;
+        return GkConnType::GkRS232;
     } else if (conn_type == "USB") {
         // USB
-        return GkConnType::USB;
+        return GkConnType::GkUSB;
     } else if (conn_type == "Parallel") {
         // Parallel
-        return GkConnType::Parallel;
+        return GkConnType::GkParallel;
     } else if (conn_type == "CM108") {
         // CM108
-        return GkConnType::CM108;
+        return GkConnType::GkCM108;
     } else if (conn_type == "GPIO") {
         // GPIO
-        return GkConnType::GPIO;
+        return GkConnType::GkGPIO;
     } else {
-        return GkConnType::None;
+        return GkConnType::GkNone;
     }
 
-    return GkConnType::None;
+    return GkConnType::GkNone;
 }
 
 /**
@@ -1005,15 +1000,15 @@ GkConnType RadioLibs::convGkConnTypeToEnum(const QString &conn_type)
 rig_port_e RadioLibs::convGkConnTypeToHamlib(const GkConnType &conn_type)
 {
     switch (conn_type) {
-    case GkConnType::RS232:
+    case GkConnType::GkRS232:
         return rig_port_e::RIG_PORT_SERIAL;
-    case GkConnType::USB:
+    case GkConnType::GkUSB:
         return rig_port_e::RIG_PORT_USB;
-    case GkConnType::Parallel:
+    case GkConnType::GkParallel:
         return rig_port_e::RIG_PORT_PARALLEL;
-    case GkConnType::CM108:
+    case GkConnType::GkCM108:
         return rig_port_e::RIG_PORT_CM108;
-    case GkConnType::GPIO:
+    case GkConnType::GkGPIO:
         return rig_port_e::RIG_PORT_GPIO;
     default:
         return rig_port_e::RIG_PORT_NONE;
