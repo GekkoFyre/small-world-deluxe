@@ -918,6 +918,9 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
                         if (comDeviceCat.toInt() == usb.first) {
                             // The port does indeed continue to exist!
                             gk_radio_tmp->cat_conn_port = gkSystem->renameCommsDevice(comDeviceCat.toInt(), GkConnType::GkUSB);
+                            gk_radio_tmp->port_details.parm.usb.pid = usb.second.pid;
+                            gk_radio_tmp->port_details.parm.usb.vid = usb.second.vid;
+
                             gkEventLogger->publishEvent(tr("Successfully found a port for making a CAT connection with (%1)!").arg(gk_radio_tmp->cat_conn_port), GkSeverity::Info);
                             break;
                         }
@@ -959,6 +962,9 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
                         if (comDevicePtt.toInt() == usb.first) {
                             // The port does indeed continue to exist!
                             gk_radio_tmp->ptt_conn_port = gkSystem->renameCommsDevice(comDevicePtt.toInt(), GkConnType::GkUSB);
+                            gk_radio_tmp->port_details.parm.usb.pid = usb.second.pid;
+                            gk_radio_tmp->port_details.parm.usb.vid = usb.second.vid;
+
                             gkEventLogger->publishEvent(tr("Successfully found a port for making a PTT connection with (%1)!").arg(gk_radio_tmp->ptt_conn_port), GkSeverity::Info);
                             break;
                         }
@@ -1001,21 +1007,21 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
 
         gkEventLogger->publishEvent(tr("Using a serial baud rate of %1 bps.").arg(QString::number(gk_radio_tmp->port_details.parm.serial.rate)), GkSeverity::Info);
 
-        if (!stopBits.isNull() || !stopBits.isEmpty()) {
+        if (!stopBits.isEmpty()) {
             int conv_serial_stop_bits = stopBits.toInt();
             gk_radio_tmp->port_details.parm.serial.stop_bits = conv_serial_stop_bits;
         } else {
             gk_radio_tmp->port_details.parm.serial.stop_bits = 0;
         }
 
-        if (!data_bits.isNull() || !data_bits.isEmpty()) {
+        if (!data_bits.isEmpty()) {
             int conv_serial_data_bits = data_bits.toInt();
             gk_radio_tmp->port_details.parm.serial.data_bits = conv_serial_data_bits;
         } else {
             gk_radio_tmp->port_details.parm.serial.data_bits = 0;
         }
 
-        if (!handshake.isNull() || !handshake.isEmpty()) {
+        if (!handshake.isEmpty()) {
             int conv_serial_handshake = handshake.toInt();
             switch (conv_serial_handshake) {
             case 0:
@@ -1043,7 +1049,7 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
             gk_radio_tmp->port_details.parm.serial.handshake = serial_handshake_e::RIG_HANDSHAKE_NONE;
         }
 
-        if (!force_ctrl_lines_dtr.isNull() || !force_ctrl_lines_dtr.isEmpty()) {
+        if (!force_ctrl_lines_dtr.isEmpty()) {
             int conv_force_ctrl_lines_dtr = force_ctrl_lines_dtr.toInt();
             switch (conv_force_ctrl_lines_dtr) {
             case 0:
@@ -1063,7 +1069,7 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
             gk_radio_tmp->port_details.parm.serial.dtr_state = serial_control_state_e::RIG_SIGNAL_UNSET;
         }
 
-        if (!force_ctrl_lines_rts.isNull() || !force_ctrl_lines_rts.isEmpty()) {
+        if (!force_ctrl_lines_rts.isEmpty()) {
             int conv_force_ctrl_lines_rts = force_ctrl_lines_rts.toInt();
             switch (conv_force_ctrl_lines_rts) {
             case 0:
@@ -1083,31 +1089,37 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
             gk_radio_tmp->port_details.parm.serial.rts_state = serial_control_state_e::RIG_SIGNAL_UNSET;
         }
 
-        if (!ptt_method.isNull() || !ptt_method.isEmpty()) {
+        if (!ptt_method.isEmpty()) {
             int conv_ptt_method = ptt_method.toInt();
             switch (conv_ptt_method) {
-            case 0:
-                // VOX
-                gk_radio_tmp->port_details.type.ptt = ptt_type_t::RIG_PTT_RIG_MICDATA; // Legacy PTT (CAT PTT), supports RIG_PTT_ON_MIC/RIG_PTT_ON_DATA
-                break;
-            case 1:
-                // DTR
-                gk_radio_tmp->port_details.type.ptt = ptt_type_t::RIG_PTT_SERIAL_DTR; // PTT control through serial DTR signal
-                break;
-            case 2:
-                // CAT
-                gk_radio_tmp->port_details.type.ptt = ptt_type_t::RIG_PTT_RIG; // Legacy PTT (CAT PTT)
-                break;
-            case 3:
-                // RTS
-                gk_radio_tmp->port_details.type.ptt = ptt_type_t::RIG_PTT_SERIAL_RTS; // PTT control through serial RTS signal
-                break;
-            default:
-                // Nothing
-                gk_radio_tmp->port_details.type.ptt = ptt_type_t::RIG_PTT_NONE; // No PTT available
+                case 0:
+                    // VOX
+                    gk_radio_tmp->port_details.type.ptt = ptt_type_t::RIG_PTT_RIG_MICDATA; // Legacy PTT (CAT PTT), supports RIG_PTT_ON_MIC/RIG_PTT_ON_DATA
+                    gk_radio_tmp->ptt_type = ptt_type_t::RIG_PTT_RIG_MICDATA;
+                    break;
+                case 1:
+                    // DTR
+                    gk_radio_tmp->port_details.type.ptt = ptt_type_t::RIG_PTT_SERIAL_DTR; // PTT control through serial DTR signal
+                    gk_radio_tmp->ptt_type = ptt_type_t::RIG_PTT_SERIAL_DTR;
+                    break;
+                case 2:
+                    // CAT
+                    gk_radio_tmp->port_details.type.ptt = ptt_type_t::RIG_PTT_RIG; // Legacy PTT (CAT PTT)
+                    gk_radio_tmp->ptt_type = ptt_type_t::RIG_PTT_RIG;
+                    break;
+                case 3:
+                    // RTS
+                    gk_radio_tmp->port_details.type.ptt = ptt_type_t::RIG_PTT_SERIAL_RTS; // PTT control through serial RTS signal
+                    gk_radio_tmp->ptt_type = ptt_type_t::RIG_PTT_SERIAL_RTS;
+                    break;
+                default:
+                    // Nothing
+                    gk_radio_tmp->port_details.type.ptt = ptt_type_t::RIG_PTT_NONE; // No PTT available
+                    gk_radio_tmp->ptt_type = ptt_type_t::RIG_PTT_NONE;
             }
         } else {
             gk_radio_tmp->port_details.type.ptt = ptt_type_t::RIG_PTT_NONE; // Default option
+            gk_radio_tmp->ptt_type = ptt_type_t::RIG_PTT_NONE;
         }
 
         if (!tx_audio_src.isNull() || !tx_audio_src.isEmpty()) {
@@ -1130,7 +1142,7 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
             gk_radio_tmp->ptt_status = ptt_t::RIG_PTT_OFF; // Default option
         }
 
-        if (!ptt_mode.isNull() || !ptt_mode.isEmpty()) {
+        if (!ptt_mode.isEmpty()) {
             int conv_ptt_mode = ptt_mode.toInt();
             switch (conv_ptt_mode) {
             case 0:
@@ -1155,7 +1167,7 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
             gk_radio_tmp->mode = RIG_MODE_NONE;
         }
 
-        if (!split_operation.isNull() || !split_operation.isEmpty()) {
+        if (!split_operation.isEmpty()) {
             int conv_split_operation = split_operation.toInt();
             switch (conv_split_operation) {
             case 0:

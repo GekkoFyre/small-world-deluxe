@@ -190,6 +190,11 @@ namespace GekkoFyre {
 #define GK_EVENTLOG_TABLEVIEW_MODEL_TOTAL_IDX (4)       // The total amount of indexes (i.e. columns) for the QTableView model, `GkEventLoggerTableViewModel`. Be sure to keep this up-to-date!
 
 //
+// Hamlib related
+//
+#define GK_HAMLIB_DEFAULT_TIMEOUT (15000)               // The default timeout value for Hamlib, measured in milliseconds.
+
+//
 // SSTV related
 //
 #define GK_SSTV_FILE_DLG_LOAD_IMGS_MAX_FILES_WARN (32)  // The maximum amount of individual images/files to allow to be loaded through a QFileDialog before warning the user about any implications of loading too many into memory at once!

@@ -726,7 +726,7 @@ void RadioLibs::gkInitRadioRig(const std::shared_ptr<GkRadio> &radio_ptr)
 
         // https://github.com/Hamlib/Hamlib/blob/master/tests/example.c
         // Set verbosity level
-        rig_set_debug(radio_ptr->verbosity);
+        rig_set_debug(RIG_DEBUG_TRACE);
 
         radio_ptr->gkRig = std::make_shared<Rig>(radio_ptr->rig_model);
 
@@ -748,73 +748,6 @@ void RadioLibs::gkInitRadioRig(const std::shared_ptr<GkRadio> &radio_ptr)
             radio_ptr->gkRig->setConf("serial_speed", std::to_string(baud_rate).c_str());
             radio_ptr->port_details.type.rig = convGkConnTypeToHamlib(radio_ptr->cat_conn_type);
 
-            switch (radio_ptr->ptt_type) { // TODO: Add type for 'Parallel'!
-                case RIG_PTT_SERIAL_RTS:
-                    radio_ptr->gkRig->setConf("ptt_type", "RTS");
-                    radio_ptr->gkRig->setConf("rts_state", "ON");
-                    radio_ptr->gkRig->setConf("dtr_state", "OFF");
-                    break;
-                case RIG_PTT_SERIAL_DTR:
-                    radio_ptr->gkRig->setConf("ptt_type", "DTR");
-                    radio_ptr->gkRig->setConf("dtr_state", "ON");
-                    radio_ptr->gkRig->setConf("rts_state", "OFF");
-                    break;
-                case RIG_PTT_RIG:
-                    radio_ptr->gkRig->setConf("ptt_type", "RIG");
-                    radio_ptr->gkRig->setConf("dtr_state", "OFF");
-                    radio_ptr->gkRig->setConf("rts_state", "OFF");
-                    break;
-                case RIG_PTT_RIG_MICDATA:
-                    radio_ptr->gkRig->setConf("ptt_type", "RIGMICDATA");
-                    radio_ptr->gkRig->setConf("dtr_state", "OFF");
-                    radio_ptr->gkRig->setConf("rts_state", "OFF");
-                    break;
-                case RIG_PTT_NONE:
-                    radio_ptr->gkRig->setConf("ptt_type", "None");
-                    radio_ptr->gkRig->setConf("dtr_state", "OFF");
-                    radio_ptr->gkRig->setConf("rts_state", "OFF");
-                    break;
-                default:
-                    radio_ptr->gkRig->setConf("ptt_type", "None");
-                    radio_ptr->gkRig->setConf("dtr_state", "OFF");
-                    radio_ptr->gkRig->setConf("rts_state", "OFF");
-                    break;
-            }
-
-            switch (radio_ptr->port_details.parm.serial.dtr_state) {
-                case serial_control_state_e::RIG_SIGNAL_ON:
-                    // High
-                    radio_ptr->gkRig->setConf("dtr_state", "ON");
-                    break;
-                case serial_control_state_e::RIG_SIGNAL_OFF:
-                    // Low
-                    radio_ptr->gkRig->setConf("dtr_state", "OFF");
-                    break;
-                default:
-                    // Nothing
-                    radio_ptr->gkRig->setConf("dtr_state", "UNSET");
-                    break;
-            }
-
-            switch (radio_ptr->port_details.parm.serial.handshake) {
-                case serial_handshake_e::RIG_HANDSHAKE_NONE:
-                    // Default
-                    radio_ptr->gkRig->setConf("serial_handshake", "None");
-                    break;
-                case serial_handshake_e::RIG_HANDSHAKE_XONXOFF:
-                    // XON / XOFF
-                    radio_ptr->gkRig->setConf("serial_handshake", "XONXOFF");
-                    break;
-                case serial_handshake_e::RIG_HANDSHAKE_HARDWARE:
-                    // Hardware
-                    radio_ptr->gkRig->setConf("serial_handshake", "Hardware");
-                    break;
-                default:
-                    // Nothing
-                    radio_ptr->gkRig->setConf("serial_handshake", "None");
-                    break;
-            }
-
             #if __MINGW64__
             //
             // Modify the COM Port so that it's suitable for Hamlib!
@@ -829,6 +762,7 @@ void RadioLibs::gkInitRadioRig(const std::shared_ptr<GkRadio> &radio_ptr)
             if (!radio_ptr->cat_conn_port.isNull() && !radio_ptr->cat_conn_port.isEmpty()) {
                 radio_ptr->gkRig->setConf("ptt_pathname", radio_ptr->ptt_conn_port.toStdString().c_str());
                 radio_ptr->gkRig->setConf("rig_pathname", radio_ptr->cat_conn_port.toStdString().c_str());
+                radio_ptr->gkRig->setConf("timeout", std::to_string(GK_HAMLIB_DEFAULT_TIMEOUT).c_str());
             }
 
             if (radio_ptr->rig_model < 1) { // No amateur radio rig has been configured and/or adequately detected!
