@@ -47,6 +47,7 @@
 #include "src/pa_audio_buf.hpp"
 #include "src/gk_frequency_list.hpp"
 #include "src/gk_logger.hpp"
+#include "src/gk_system.hpp"
 #include <QObject>
 #include <vector>
 #include <string>
@@ -66,7 +67,8 @@ class AudioDevices : public QObject {
 public:
     explicit AudioDevices(QPointer<GekkoFyre::GkLevelDb> gkDb, QPointer<GekkoFyre::FileIo> filePtr,
                           QPointer<GekkoFyre::GkFrequencies> freqList, QPointer<GekkoFyre::StringFuncs> stringFuncs,
-                          QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
+                          QPointer<GekkoFyre::GkEventLogger> eventLogger, QPointer<GekkoFyre::GkSystem> systemPtr,
+                          QObject *parent = nullptr);
     ~AudioDevices() override;
 
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> initPortAudio(portaudio::System *portAudioSys);
@@ -105,6 +107,7 @@ private:
     QPointer<GekkoFyre::GkFrequencies> gkFreqList;
     QPointer<StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
+    QPointer<GekkoFyre::GkSystem> gkSystem;
 
     bool filterAudioEnumPreexisting(const std::vector<Database::Settings::Audio::GkDevice> &device_vec,
                                     const Database::Settings::Audio::GkDevice &device_compare);

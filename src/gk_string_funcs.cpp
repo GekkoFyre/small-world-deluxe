@@ -105,38 +105,6 @@ std::vector<int> StringFuncs::convStrToIntArray(const QString &str)
 }
 
 /**
- * @brief StringFuncs::getNumCpuCores will get the number of CPU cores on the host machine and return it as an integer, in a semi-multiplatform
- * manner.
- * @author Dirk-Jan Kroon <https://stackoverflow.com/a/3006416>.
- * @return The number of CPU cores on the host machine.
- */
-qint32 StringFuncs::getNumCpuCores()
-{
-    #ifdef WIN32
-    SYSTEM_INFO sysinfo;
-    GetSystemInfo(&sysinfo);
-    return sysinfo.dwNumberOfProcessors;
-    #elif MACOS
-    int nm[2];
-    size_t len = 4;
-    uint32_t count;
-
-    nm[0] = CTL_HW; nm[1] = HW_AVAILCPU;
-    sysctl(nm, 2, &count, &len, NULL, 0);
-
-    if(count < 1) {
-        nm[1] = HW_NCPU;
-        sysctl(nm, 2, &count, &len, nullptr, 0);
-        if (count < 1) { count = 1; }
-    }
-
-    return count;
-    #else
-    return sysconf(_SC_NPROCESSORS_ONLN);
-    #endif
-}
-
-/**
  * @brief StringFuncs::addErrorMsg
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param orig_msg
