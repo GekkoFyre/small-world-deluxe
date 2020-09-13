@@ -209,6 +209,8 @@ private slots:
     void on_comboBox_access_stt_language_currentIndexChanged(int index);
     void on_comboBox_access_stt_preset_voice_currentIndexChanged(int index);
 
+    void ttsLocaleChanged(const QLocale &locale);
+
 signals:
     void changeConnPort(const QString &conn_port, const GekkoFyre::AmateurRadio::GkConnMethod &conn_method);
     void usbPortsDisabled(const bool &active);

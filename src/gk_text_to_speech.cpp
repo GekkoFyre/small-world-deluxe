@@ -42,6 +42,7 @@
 #include "src/gk_text_to_speech.hpp"
 #include <utility>
 #include <QTextToSpeechEngine>
+#include <QLocale>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -129,6 +130,25 @@ void GkTextToSpeech::engineSelected(int index)
         m_speech = new QTextToSpeech(engineName, this);
     }
 
+    // Populate the languages combobox before connecting its signal.
+    const QVector<QLocale> locales = m_speech->availableLocales();
+    QLocale current = m_speech->locale();
+    for (const QLocale &locale : locales) {
+        QString name(QString("%1 (%2)")
+        .arg(QLocale::languageToString(locale.language()))
+        .arg(QLocale::countryToString(locale.country())));
+
+        QVariant localeVariant(locale);
+        emit addLangItem(name, localeVariant);
+        if (locale.name() == current.name()) {
+            current = locale;
+        }
+    }
+
+    QObject::connect(m_speech, SIGNAL(stateChanged(const State &)), this, SLOT(stateChanged(const State &)));
+    QObject::connect(m_speech, SIGNAL(localeChanged(const QLocale &)), this, SLOT(localeChanged(const QLocale &)));
+
+    localeChanged(current);
     return;
 }
 
@@ -158,6 +178,20 @@ void GkTextToSpeech::voiceSelected(const int &idx)
 void GkTextToSpeech::localeChanged(const QLocale &locale)
 {
     QVariant localeVariant(locale);
+
+    m_voices = m_speech->availableVoices();
+    QVoice currentVoice = m_speech->voice();
+    qint32 counter = 0;
+    for (const QVoice &voice : qAsConst(m_voices)) {
+        emit addVoiceItem(QString("%1 - %2 - %3").arg(voice.name())
+                                  .arg(QVoice::genderName(voice.gender()))
+                                  .arg(QVoice::ageName(voice.age())), "");
+        if (voice.name() == currentVoice.name()) {
+            emit setVoiceCurrentIndex(counter - 1);
+        }
+
+        ++counter;
+    }
 
     return;
 }

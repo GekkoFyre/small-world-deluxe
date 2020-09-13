@@ -49,6 +49,7 @@
 #include <QString>
 #include <QVector>
 #include <QPointer>
+#include <QVariant>
 #include <QTextToSpeech>
 
 namespace GekkoFyre {
@@ -80,6 +81,11 @@ public slots:
     void voiceSelected(const int &idx);
 
     void localeChanged(const QLocale &locale);
+
+signals:
+    void addLangItem(const QString &name, const QVariant &locale);
+    void addVoiceItem(const QString &name, const QVariant &locale);
+    void setVoiceCurrentIndex(int index);
 
 private:
     QPointer<GekkoFyre::GkLevelDb> GkDb;
