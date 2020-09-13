@@ -42,6 +42,7 @@
 #include "src/dek_db.hpp"
 #include "src/audio_devices.hpp"
 #include "src/gk_string_funcs.hpp"
+#include "src/gk_text_to_speech.hpp"
 #include "src/models/tableview/gk_frequency_model.hpp"
 #include <boost/logic/tribool.hpp>
 #include <list>
@@ -78,10 +79,11 @@ public:
                             portaudio::System *portAudioInit,
                             std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> radioPtr,
                             const std::list<GekkoFyre::Database::Settings::GkComPort> &com_ports,
-                            const QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> usbPortMap,
+                            const QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> &usbPortMap,
                             QPointer<GekkoFyre::GkFrequencies> gkFreqList,
                             QPointer<GekkoFyre::GkFreqTableViewModel> freqTableModel,
                             QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                            QPointer<GekkoFyre::GkTextToSpeech> textToSpeechPtr,
                             QWidget *parent = nullptr);
     ~DialogSettings() override;
 
@@ -192,12 +194,28 @@ private slots:
     void on_checkBox_new_msg_audio_notification_stateChanged(int arg1);
     void on_checkBox_failed_event_audio_notification_stateChanged(int arg1);
 
+    //
+    // Text-to-speech Settings
+    //
+    void on_pushButton_access_stt_speak_clicked();
+    void on_pushButton_access_stt_pause_clicked();
+    void on_pushButton_access_stt_enable_clicked();
+    void on_pushButton_access_stt_resume_clicked();
+    void on_pushButton_access_stt_stop_clicked();
+    void on_horizontalSlider_access_stt_volume_valueChanged(int value);
+    void on_horizontalSlider_access_stt_rate_valueChanged(int value);
+    void on_horizontalSlider_access_stt_pitch_valueChanged(int value);
+    void on_comboBox_access_stt_engine_currentIndexChanged(int index);
+    void on_comboBox_access_stt_language_currentIndexChanged(int index);
+    void on_comboBox_access_stt_preset_voice_currentIndexChanged(int index);
+
 signals:
     void changeConnPort(const QString &conn_port, const GekkoFyre::AmateurRadio::GkConnMethod &conn_method);
     void usbPortsDisabled(const bool &active);
     void comPortsDisabled(const bool &active);
     void recvRigCapabilities(const rig_model_t &, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void addRigInUse(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
+    void changeSelectedTTSEngine(const QString &name);
 
 private:
     Ui::DialogSettings *ui;
@@ -220,8 +238,10 @@ private:
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::FileIo> gkFileIo;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
+    QPointer<GekkoFyre::GkTextToSpeech> gkTextToSpeech;
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
     std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> gkRadioPtr;
+
     static QComboBox *rig_comboBox;
     static QComboBox *mfg_comboBox;
     static QMultiMap<rig_model_t, std::tuple<QString, QString, GekkoFyre::AmateurRadio::rig_type>> radio_model_names; // Values: MFG, Model, Rig Type.

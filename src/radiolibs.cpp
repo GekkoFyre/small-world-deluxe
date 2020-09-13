@@ -726,7 +726,7 @@ void RadioLibs::gkInitRadioRig(const std::shared_ptr<GkRadio> &radio_ptr)
 
         // https://github.com/Hamlib/Hamlib/blob/master/tests/example.c
         // Set verbosity level
-        rig_set_debug(RIG_DEBUG_TRACE);
+        rig_set_debug(radio_ptr->verbosity);
 
         radio_ptr->gkRig = std::make_shared<Rig>(radio_ptr->rig_model);
 
@@ -747,6 +747,46 @@ void RadioLibs::gkInitRadioRig(const std::shared_ptr<GkRadio> &radio_ptr)
             radio_ptr->gkRig->setConf("stop_bits", std::to_string(radio_ptr->port_details.parm.serial.stop_bits).c_str());
             radio_ptr->gkRig->setConf("serial_speed", std::to_string(baud_rate).c_str());
             radio_ptr->port_details.type.rig = convGkConnTypeToHamlib(radio_ptr->cat_conn_type);
+
+            switch (radio_ptr->port_details.parm.serial.dtr_state) {
+                case serial_control_state_e::RIG_SIGNAL_ON:
+                    // High
+                    radio_ptr->gkRig->setConf("dtr_state", "ON");
+                    break;
+                case serial_control_state_e::RIG_SIGNAL_OFF:
+                    // Low
+                    radio_ptr->gkRig->setConf("dtr_state", "OFF");
+                    break;
+                default:
+                    // Nothing
+                    radio_ptr->gkRig->setConf("dtr_state", "UNSET");
+                    break;
+            }
+
+            switch (radio_ptr->port_details.parm.serial.handshake) {
+                case serial_handshake_e::RIG_HANDSHAKE_NONE:
+                    // Default
+                    radio_ptr->gkRig->setConf("serial_handshake", "None");
+                    break;
+                case serial_handshake_e::RIG_HANDSHAKE_XONXOFF:
+                    // XON / XOFF
+                    radio_ptr->gkRig->setConf("serial_handshake", "XONXOFF");
+                    break;
+                case serial_handshake_e::RIG_HANDSHAKE_HARDWARE:
+                    // Hardware
+                    if (radio_ptr->port_details.parm.serial.rts_state == RIG_SIGNAL_UNSET) {
+                        radio_ptr->gkRig->setConf("serial_handshake", "Hardware");
+                    } else {
+                        radio_ptr->gkRig->setConf("serial_handshake", "None");
+                        std::cerr << tr("Cannot set RTS with Hardware Handshake. Ignoring...").toStdString() << std::endl;
+                    }
+
+                    break;
+                default:
+                    // Nothing
+                    radio_ptr->gkRig->setConf("serial_handshake", "None");
+                    break;
+            }
 
             #if __MINGW64__
             //
@@ -798,6 +838,7 @@ void RadioLibs::gkInitRadioRig(const std::shared_ptr<GkRadio> &radio_ptr)
 
                 // Current mode
                 radio_ptr->mode = radio_ptr->gkRig->getMode(radio_ptr->width, RIG_VFO_CURR);
+                radio_ptr->mode_hr = rig_strrmode(radio_ptr->mode);
 
                 // Determine the mode of modulation that's being currently used, and output as a textual value
                 radio_ptr->mm = hamlibModulEnumToStr(radio_ptr->mode).toStdString();
@@ -812,17 +853,21 @@ void RadioLibs::gkInitRadioRig(const std::shared_ptr<GkRadio> &radio_ptr)
 
                 // Raw and calibrated S-meter values
                 if (radio_ptr->gkRig->hasGetLevel(RIG_LEVEL_RAWSTR)) {
-                    radio_ptr->gkRig->getLevel(RIG_LEVEL_RAWSTR, radio_ptr->raw_strength, RIG_VFO_CURR);
+                    radio_ptr->raw_strength = radio_ptr->gkRig->getLevelI(RIG_LEVEL_RAWSTR, RIG_VFO_CURR);
                 }
 
+                // Raw and calibrated S-meter values
                 if (radio_ptr->gkRig->hasGetLevel(RIG_LEVEL_STRENGTH)) {
-                    radio_ptr->gkRig->getLevel(RIG_LEVEL_STRENGTH, radio_ptr->strength, RIG_VFO_CURR);
+                    radio_ptr->strength = radio_ptr->gkRig->getLevelI(RIG_LEVEL_STRENGTH, RIG_VFO_CURR);
                 }
             }
         }
     } catch (const RigException &e) {
         QMessageBox::warning(nullptr, tr("Error!"), tr("Unable to make a connection with your radio rig! Error:\n\n%1")
                              .arg(QString::fromStdString(e.message)), QMessageBox::Ok);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("Generic error encountered with making connection towards radio rig! Error:\n\n%1")
+                .arg(QString::fromStdString(e.what())), QMessageBox::Ok);
     }
 
     return;

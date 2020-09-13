@@ -558,7 +558,7 @@ set(GALAXY_UI_CPP
     src/gk_modem.cpp
     src/gk_frequency_list.cpp
     src/gk_string_funcs.cpp
-    src/gk_speech_to_text.cpp
+    src/gk_text_to_speech.cpp
     src/gk_logger.cpp
     src/gk_system.cpp
     src/ui/widgets/gk_vu_meter_widget.cpp
@@ -640,7 +640,7 @@ set(GALAXY_OBJ_HEADERS
     src/gk_modem.hpp
     src/gk_frequency_list.hpp
     src/gk_string_funcs.hpp
-    src/gk_speech_to_text.hpp
+    src/gk_text_to_speech.hpp
     src/gk_logger.hpp
     src/gk_system.hpp
     src/ui/widgets/gk_vu_meter_widget.hpp
