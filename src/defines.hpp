@@ -189,6 +189,23 @@ namespace GekkoFyre {
 #define GK_EVENTLOG_TABLEVIEW_MODEL_MESSAGE_IDX (3)     // The desired ordering for the 'Message' heading within the QTableView model for class, `GkEventLoggerTableViewModel`.
 #define GK_EVENTLOG_TABLEVIEW_MODEL_TOTAL_IDX (4)       // The total amount of indexes (i.e. columns) for the QTableView model, `GkEventLoggerTableViewModel`. Be sure to keep this up-to-date!
 
+#define GK_ACTIVE_MSGS_TABLEVIEW_MODEL_OFFSET_IDX (0)
+#define GK_ACTIVE_MSGS_TABLEVIEW_MODEL_DATETIME_IDX (1)
+#define GK_ACTIVE_MSGS_TABLEVIEW_MODEL_AGE_IDX (2)
+#define GK_ACTIVE_MSGS_TABLEVIEW_MODEL_SNR_IDX (3)
+#define GK_ACTIVE_MSGS_TABLEVIEW_MODEL_MSG_IDX (4)
+#define GK_ACTIVE_MSGS_TABLEVIEW_MODEL_TOTAL_IDX (5)    // The total amount of indexes (i.e. columns) for the QTableView model, `GkActiveMsgsTableViewModel`. Be sure to keep this up-to-date!
+
+#define GK_CSIGN_MSGS_TABLEVIEW_MODEL_CALLSIGN_IDX (0)
+#define GK_CSIGN_MSGS_TABLEVIEW_MODEL_DATETIME_IDX (1)
+#define GK_CSIGN_MSGS_TABLEVIEW_MODEL_AGE_IDX (2)
+#define GK_CSIGN_MSGS_TABLEVIEW_MODEL_SNR_IDX (3)
+#define GK_CSIGN_MSGS_TABLEVIEW_MODEL_OFFSET_IDX (4)
+#define GK_CSIGN_MSGS_TABLEVIEW_MODEL_CHECKMARK_IDX (5)
+#define GK_CSIGN_MSGS_TABLEVIEW_MODEL_NAME_IDX (6)
+#define GK_CSIGN_MSGS_TABLEVIEW_MODEL_COMMENT_IDX (7)
+#define GK_CSIGN_MSGS_TABLEVIEW_MODEL_TOTAL_IDX (8)     // The total amount of indexes (i.e. columns) for the QTableView model, `GkActiveMsgsTableViewModel`. Be sure to keep this up-to-date!
+
 //
 // Hamlib related
 //

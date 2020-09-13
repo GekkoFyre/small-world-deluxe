@@ -204,33 +204,13 @@ color: white;</string>
            <number>0</number>
           </property>
           <item>
-           <widget class="QTableWidget" name="tableWidget_mesg_active">
+           <widget class="QTableView" name="tableView_mesg_active">
             <property name="verticalScrollBarPolicy">
              <enum>Qt::ScrollBarAlwaysOn</enum>
             </property>
             <property name="alternatingRowColors">
              <bool>true</bool>
             </property>
-            <column>
-             <property name="text">
-              <string>Offset</string>
-             </property>
-            </column>
-            <column>
-             <property name="text">
-              <string>Age</string>
-             </property>
-            </column>
-            <column>
-             <property name="text">
-              <string>SNR</string>
-             </property>
-            </column>
-            <column>
-             <property name="text">
-              <string>Message(s)</string>
-             </property>
-            </column>
            </widget>
           </item>
          </layout>
@@ -310,48 +290,13 @@ color: white;</string>
            <number>0</number>
           </property>
           <item>
-           <widget class="QTableWidget" name="tableWidget_mesg_callsigns">
+           <widget class="QTableView" name="tableView_mesg_callsigns">
             <property name="verticalScrollBarPolicy">
              <enum>Qt::ScrollBarAlwaysOn</enum>
             </property>
             <property name="alternatingRowColors">
              <bool>true</bool>
             </property>
-            <column>
-             <property name="text">
-              <string>Callsigns</string>
-             </property>
-            </column>
-            <column>
-             <property name="text">
-              <string>Age</string>
-             </property>
-            </column>
-            <column>
-             <property name="text">
-              <string>SNR</string>
-             </property>
-            </column>
-            <column>
-             <property name="text">
-              <string>Offset</string>
-             </property>
-            </column>
-            <column>
-             <property name="text">
-              <string>✔</string>
-             </property>
-            </column>
-            <column>
-             <property name="text">
-              <string>Name</string>
-             </property>
-            </column>
-            <column>
-             <property name="text">
-              <string>Comment</string>
-             </property>
-            </column>
            </widget>
           </item>
          </layout>
@@ -895,8 +840,8 @@ color: white;</string>
                                <rect>
                                 <x>0</x>
                                 <y>0</y>
-                                <width>100</width>
-                                <height>30</height>
+                                <width>16</width>
+                                <height>16</height>
                                </rect>
                               </property>
                               <layout class="QVBoxLayout" name="verticalLayout_21">

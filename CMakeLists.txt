@@ -565,7 +565,9 @@ set(GALAXY_UI_CPP
     src/ui/widgets/gk_submit_msg.cpp
     src/ui/widgets/gk_display_image.cpp
     src/models/tableview/gk_frequency_model.cpp
-    src/models/tableview/gk_logger_model.cpp)
+    src/models/tableview/gk_logger_model.cpp
+    src/models/tableview/gk_active_msgs_model.cpp
+    src/models/tableview/gk_callsign_msgs_model.cpp)
 
 if(WIN32 OR MSYS OR MINGW)
     # Nothing here at the moment!
@@ -647,7 +649,9 @@ set(GALAXY_OBJ_HEADERS
     src/ui/widgets/gk_submit_msg.hpp
     src/ui/widgets/gk_display_image.hpp
     src/models/tableview/gk_frequency_model.hpp
-    src/models/tableview/gk_logger_model.hpp)
+    src/models/tableview/gk_logger_model.hpp
+    src/models/tableview/gk_active_msgs_model.hpp
+    src/models/tableview/gk_callsign_msgs_model.hpp)
 
 if(WIN32 OR MSYS OR MINGW)
     # Nothing here at the moment!
