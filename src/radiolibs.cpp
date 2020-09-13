@@ -293,7 +293,7 @@ QList<QSerialPortInfo> RadioLibs::status_com_ports() const
         return rs232_data;
     } catch (const std::exception &e) {
         QMessageBox::warning(nullptr, tr("Error!"), tr("An issue was encountered whilst enumerating RS232 ports!\n\n%1").arg(QString::fromStdString(e.what())),
-        QMessageBox::Ok, QMessageBox::Ok);
+        QMessageBox::Ok);
     }
 
     return QList<QSerialPortInfo>();
@@ -332,7 +332,7 @@ std::list<GkComPort> RadioLibs::filter_com_ports(const QList<QSerialPortInfo> &s
         }
     } catch (const std::exception &e) {
         QMessageBox::warning(nullptr, tr("Error!"), tr("An issue was encountered whilst enumerating RS232 ports!\n\n%1")
-                .arg(QString::fromStdString(e.what())), QMessageBox::Ok, QMessageBox::Ok);
+                .arg(QString::fromStdString(e.what())), QMessageBox::Ok);
     }
 
     return std::list<GkComPort>();
@@ -699,7 +699,7 @@ std::vector<Database::Settings::GkBosUsb> RadioLibs::printBosUsb(libusb_device_h
 void RadioLibs::print_exception(const std::exception &e, int level)
 {
     gkEventLogger->publishEvent(e.what(), GkSeverity::Warning, "", false);
-    QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok, QMessageBox::Ok);
+    QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
 
     try {
         std::rethrow_if_nested(e);

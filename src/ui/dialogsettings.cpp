@@ -209,8 +209,10 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         QObject::connect(ui->horizontalSlider_access_stt_volume, SIGNAL(valueChanged(int)), gkTextToSpeech, SLOT(setVolume(const int &)));
         QObject::connect(ui->comboBox_access_stt_engine, SIGNAL(currentIndexChanged(int)), gkTextToSpeech, SLOT(engineSelected(int)));
         QObject::connect(this, SIGNAL(changeSelectedTTSEngine(const QString &)), gkTextToSpeech, SLOT(engineSelected(const QString &)));
-        QObject::connect(gkTextToSpeech, SIGNAL(addLangItem(const QString &, const QVariant &)), ui->comboBox_access_stt_language, SLOT(addItem(const QString &, const QVariant &)));
-        QObject::connect(gkTextToSpeech, SIGNAL(addVoiceItem(const QString &, const QVariant &)), ui->comboBox_access_stt_preset_voice, SLOT(addItem(const QString &, const QVariant &)));
+        QObject::connect(gkTextToSpeech, SIGNAL(addLangItem(const QString &, const QVariant &)), this, SLOT(ttsAddLanguageItem(const QString &, const QVariant &)));
+        QObject::connect(gkTextToSpeech, SIGNAL(addVoiceItem(const QString &, const QVariant &)), this, SLOT(ttsAddPresetVoiceItem(const QString &, const QVariant &)));
+        QObject::connect(gkTextToSpeech, SIGNAL(clearLangItems()), ui->comboBox_access_stt_language, SLOT(clear()));
+        QObject::connect(gkTextToSpeech, SIGNAL(clearVoiceItems()), ui->comboBox_access_stt_preset_voice, SLOT(clear()));
         QObject::connect(gkTextToSpeech, SIGNAL(setVoiceCurrentIndex(int)), ui->comboBox_access_stt_preset_voice, SLOT(setCurrentIndex(int)));
         QObject::connect(gkTextToSpeech, SLOT(localeChanged(const QLocale &)), this, SLOT(ttsLocaleChanged(const QLocale &)));
         QObject::connect(ui->comboBox_access_stt_preset_voice, SIGNAL(currentIndexChanged(int)), gkTextToSpeech, SLOT(voiceSelected(int)));
@@ -2512,11 +2514,40 @@ void DialogSettings::on_comboBox_access_stt_preset_voice_currentIndexChanged(int
     return;
 }
 
+/**
+ * @brief DialogSettings::ttsLocaleChanged
+ * @param locale
+ */
 void DialogSettings::ttsLocaleChanged(const QLocale &locale)
 {
     QVariant localeVariant(locale);
     ui->comboBox_access_stt_language->setCurrentIndex(ui->comboBox_access_stt_language->findData(localeVariant));
     ui->comboBox_access_stt_preset_voice->clear();
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::ttsAddLanguageItem
+ * @param name
+ * @param locale
+ */
+void DialogSettings::ttsAddLanguageItem(const QString &name, const QVariant &locale)
+{
+    ui->comboBox_access_stt_language->addItem(name, locale);
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::ttsAddPresetVoiceItem
+ * @param name
+ * @param locale
+ */
+void DialogSettings::ttsAddPresetVoiceItem(const QString &name, const QVariant &locale)
+{
+    Q_UNUSED(locale);
+    ui->comboBox_access_stt_preset_voice->addItem(name);
 
     return;
 }

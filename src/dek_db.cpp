@@ -498,7 +498,7 @@ void GkLevelDb::write_frequencies_db(const GkFreqs &write_new_value)
 
         return;
     } catch (const std::exception &e) { // https://en.cppreference.com/w/cpp/error/nested_exception
-        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok, QMessageBox::Ok);
+        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
     }
 
     return;
@@ -567,7 +567,7 @@ void GkLevelDb::remove_frequencies_db(const GkFreqs &freq_to_remove)
             throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
         }
     } catch (const std::exception &e) { // https://en.cppreference.com/w/cpp/error/nested_exception
-        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok, QMessageBox::Ok);
+        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
     }
 
     return;
@@ -612,7 +612,7 @@ void GkLevelDb::remove_frequencies_db(const bool &del_all)
             }
         }
     } catch (const std::exception &e) { // https://en.cppreference.com/w/cpp/error/nested_exception
-        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok, QMessageBox::Ok);
+        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
     }
 
     return;
@@ -677,7 +677,7 @@ bool GkLevelDb::isFreqAlreadyInit()
 
         return freq_init_bool;
     } catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok, QMessageBox::Ok);
+        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
     }
 
     return false;
@@ -982,7 +982,7 @@ void GkLevelDb::capture_sys_info()
         sentry_capture_event(info_capture_event);
     } catch (const std::exception &e) {
         QMessageBox::warning(nullptr, tr("Error!"), tr("An issue was encountered with the crash-reporting subsystem; please report this to the developers. Error:\n\n%1")
-        .arg(QString::fromStdString(e.what())), QMessageBox::Ok, QMessageBox::Ok);
+        .arg(QString::fromStdString(e.what())), QMessageBox::Ok);
     }
 
     return;
@@ -1022,7 +1022,7 @@ void GkLevelDb::detect_operating_system(QString &build_cpu_arch, QString &curr_c
         prod_type = sys_info.productType();
         prod_vers = sys_info.productVersion();
     } catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok, QMessageBox::Ok);
+        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
     }
 
     return;

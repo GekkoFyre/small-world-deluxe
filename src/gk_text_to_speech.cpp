@@ -72,7 +72,7 @@ GkTextToSpeech::~GkTextToSpeech()
 
 void GkTextToSpeech::speak()
 {
-    m_speech->say(tr("Thank you for using version %1 of %2, we hope that you are liking this software application so far. Please expect text-to-speech to be more fully implemented in the near future.")
+    m_speech->say(tr("Thank you for using version %1 of %2, we hope that you are liking this software application so far. Please expect further updates in the near future.")
     .arg(General::appVersion).arg(General::productName));
 
     return;
@@ -130,6 +130,8 @@ void GkTextToSpeech::engineSelected(int index)
         m_speech = new QTextToSpeech(engineName, this);
     }
 
+    emit clearLangItems();
+
     // Populate the languages combobox before connecting its signal.
     const QVector<QLocale> locales = m_speech->availableLocales();
     QLocale current = m_speech->locale();
@@ -170,7 +172,9 @@ void GkTextToSpeech::languageSelected(const QLocale &language)
 
 void GkTextToSpeech::voiceSelected(const int &idx)
 {
-    m_speech->setVoice(m_voices.at(idx));
+    if (idx >= 0) {
+        m_speech->setVoice(m_voices.at(idx));
+    }
 
     return;
 }
@@ -178,6 +182,7 @@ void GkTextToSpeech::voiceSelected(const int &idx)
 void GkTextToSpeech::localeChanged(const QLocale &locale)
 {
     QVariant localeVariant(locale);
+    emit clearVoiceItems();
 
     m_voices = m_speech->availableVoices();
     QVoice currentVoice = m_speech->voice();

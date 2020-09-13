@@ -85,6 +85,8 @@ public slots:
 signals:
     void addLangItem(const QString &name, const QVariant &locale);
     void addVoiceItem(const QString &name, const QVariant &locale);
+    void clearLangItems();
+    void clearVoiceItems();
     void setVoiceCurrentIndex(int index);
 
 private:

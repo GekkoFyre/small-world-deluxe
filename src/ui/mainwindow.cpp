@@ -2189,7 +2189,7 @@ void MainWindow::procRigPort(const QString &conn_port, const GekkoFyre::AmateurR
             throw std::invalid_argument(tr("An error was encountered in determining the connection method used for your radio rig!").toStdString());
         }
     }  catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok, QMessageBox::Ok);
+        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
     }
 
     return;
@@ -2768,7 +2768,7 @@ void MainWindow::on_pushButton_sstv_tx_send_image_clicked()
         gkCodec2->transmitData(byte_array, true);
         #endif
     } else {
-        QMessageBox::information(this, tr("No image!"), tr("Please ensure to have an image loaded before attempting to make a transmission."), QMessageBox::Ok, QMessageBox::Ok);
+        QMessageBox::information(this, tr("No image!"), tr("Please ensure to have an image loaded before attempting to make a transmission."), QMessageBox::Ok);
     }
 
     return;

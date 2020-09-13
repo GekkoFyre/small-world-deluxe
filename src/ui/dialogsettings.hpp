@@ -210,6 +210,8 @@ private slots:
     void on_comboBox_access_stt_preset_voice_currentIndexChanged(int index);
 
     void ttsLocaleChanged(const QLocale &locale);
+    void ttsAddLanguageItem(const QString &name, const QVariant &locale);
+    void ttsAddPresetVoiceItem(const QString &name, const QVariant &locale);
 
 signals:
     void changeConnPort(const QString &conn_port, const GekkoFyre::AmateurRadio::GkConnMethod &conn_method);
