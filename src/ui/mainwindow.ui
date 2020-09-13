@@ -91,6 +91,13 @@ color: white;</string>
            </widget>
           </item>
           <item>
+           <widget class="QLabel" name="label_radio_rig_mode_large">
+            <property name="text">
+             <string>&lt;Radio Rig Mode&gt;</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QLabel" name="label_bandwidth_medium">
             <property name="text">
              <string>&lt;Radio Rig Bandwidth&gt;</string>

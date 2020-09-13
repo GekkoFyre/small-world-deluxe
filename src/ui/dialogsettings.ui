@@ -566,7 +566,7 @@
                       <x>0</x>
                       <y>0</y>
                       <width>732</width>
-                      <height>878</height>
+                      <height>911</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_23">
@@ -678,25 +678,56 @@
                                 </property>
                                </widget>
                               </item>
-                              <item row="3" column="0">
+                              <item row="4" column="0">
                                <widget class="QLabel" name="label_access_stt_language">
                                 <property name="text">
                                  <string>Language: </string>
                                 </property>
                                </widget>
                               </item>
-                              <item row="3" column="1">
-                               <widget class="QComboBox" name="comboBox_access_stt_language"/>
+                              <item row="4" column="1">
+                               <widget class="QComboBox" name="comboBox_access_stt_language">
+                                <property name="sizePolicy">
+                                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                                  <horstretch>0</horstretch>
+                                  <verstretch>0</verstretch>
+                                 </sizepolicy>
+                                </property>
+                               </widget>
                               </item>
-                              <item row="4" column="0">
+                              <item row="5" column="0">
                                <widget class="QLabel" name="label_access_stt_preset_voice">
                                 <property name="text">
                                  <string>Voice: </string>
                                 </property>
                                </widget>
                               </item>
-                              <item row="4" column="1">
-                               <widget class="QComboBox" name="comboBox_access_stt_preset_voice"/>
+                              <item row="5" column="1">
+                               <widget class="QComboBox" name="comboBox_access_stt_preset_voice">
+                                <property name="sizePolicy">
+                                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                                  <horstretch>0</horstretch>
+                                  <verstretch>0</verstretch>
+                                 </sizepolicy>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="3" column="0">
+                               <widget class="QLabel" name="label_3">
+                                <property name="text">
+                                 <string>Engine: </string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="3" column="1">
+                               <widget class="QComboBox" name="comboBox_access_stt_engine">
+                                <property name="sizePolicy">
+                                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                                  <horstretch>0</horstretch>
+                                  <verstretch>0</verstretch>
+                                 </sizepolicy>
+                                </property>
+                               </widget>
                               </item>
                              </layout>
                             </widget>
@@ -918,11 +949,17 @@ Thanks.</string>
                                 </property>
                                </widget>
                               </item>
+                              <item row="1" column="0">
+                               <layout class="QFormLayout" name="formLayout_29"/>
+                              </item>
                              </layout>
                             </widget>
                            </item>
                           </layout>
                          </widget>
+                        </item>
+                        <item>
+                         <layout class="QFormLayout" name="formLayout_28"/>
                         </item>
                        </layout>
                       </widget>
@@ -3786,8 +3823,8 @@ Thanks.</string>
                         <rect>
                          <x>0</x>
                          <y>0</y>
-                         <width>742</width>
-                         <height>621</height>
+                         <width>100</width>
+                         <height>30</height>
                         </rect>
                        </property>
                       </widget>

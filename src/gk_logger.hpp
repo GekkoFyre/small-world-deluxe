@@ -60,11 +60,13 @@ public:
     ~GkEventLogger() override;
 
     void publishEvent(const QString &event, const GekkoFyre::System::Events::Logging::GkSeverity &severity = GekkoFyre::System::Events::Logging::GkSeverity::Warning,
-                      const QVariant &arguments = "", const bool &sys_notification = false, const bool &publishToConsole = true);
+                      const QVariant &arguments = "", const bool &sys_notification = false, const bool &publishToConsole = true,
+                      const bool &publishToStatusBar = false);
 
 signals:
     void sendEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &event);
     void removeEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &event);
+    void sendToStatusBar(const QString &msg);
 
 private:
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;

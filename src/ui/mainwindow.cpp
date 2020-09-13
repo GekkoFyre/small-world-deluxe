@@ -634,7 +634,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                          this, SLOT(tuneActiveFreq(const quint64 &)));
 
         gkModem = new GkModem(gkAudioDevices, GkDb, gkEventLogger, gkStringFuncs, this);
-        gkSpeechToText = new GkSpeechToText(this);
+        gkTextToSpeech = new GkTextToSpeech(GkDb, gkEventLogger, this);
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
@@ -798,7 +798,7 @@ void MainWindow::launchSettingsWin()
     QPointer<DialogSettings> dlg_settings = new DialogSettings(GkDb, fileIo, gkAudioDevices,
                                                                gkRadioLibs, gkStringFuncs, gkPortAudioInit,
                                                                gkRadioPtr, status_com_ports, gkUsbPortMap, gkFreqList,
-                                                               gkFreqTableModel, gkEventLogger, this);
+                                                               gkFreqTableModel, gkEventLogger, gkTextToSpeech, this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
@@ -1686,8 +1686,16 @@ void MainWindow::infoBar()
         } else {
             ui->label_freq_large->setText(tr("N/A"));
         }
+
+        if (!gkRadioPtr->mode_hr.isNull() && !gkRadioPtr->mode_hr.isEmpty()) {
+            ui->label_radio_rig_mode_large->setText(gkRadioPtr->mode_hr);
+        }
+
+        QString signal_strength = tr("Signal: %1 dB").arg(QString::number(gkRadioPtr->strength));
+        ui->label_bandwidth_medium->setText(signal_strength);
     } catch (const std::exception &e) {
-        QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
+        gkEventLogger->publishEvent(tr("Error with providing radio rig statistics through the Main GUI!"),
+                                    GkSeverity::Fatal, "", false, true);
     }
 
     return;
@@ -2181,7 +2189,7 @@ void MainWindow::procRigPort(const QString &conn_port, const GekkoFyre::AmateurR
             throw std::invalid_argument(tr("An error was encountered in determining the connection method used for your radio rig!").toStdString());
         }
     }  catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok, QMessageBox::Ok);
+        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
     }
 
     return;
@@ -2760,7 +2768,7 @@ void MainWindow::on_pushButton_sstv_tx_send_image_clicked()
         gkCodec2->transmitData(byte_array, true);
         #endif
     } else {
-        QMessageBox::information(this, tr("No image!"), tr("Please ensure to have an image loaded before attempting to make a transmission."), QMessageBox::Ok, QMessageBox::Ok);
+        QMessageBox::information(this, tr("No image!"), tr("Please ensure to have an image loaded before attempting to make a transmission."), QMessageBox::Ok);
     }
 
     return;

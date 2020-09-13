@@ -85,10 +85,11 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
                                portaudio::System *portAudioInit,
                                std::shared_ptr<GkRadio> radioPtr,
                                const std::list<GekkoFyre::Database::Settings::GkComPort> &com_ports,
-                               const QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> usbPortMap,
+                               const QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> &usbPortMap,
                                QPointer<GkFrequencies> gkFreqList,
                                QPointer<GkFreqTableViewModel> freqTableModel,
                                QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                               QPointer<GekkoFyre::GkTextToSpeech> textToSpeechPtr,
                                QWidget *parent)
     : QDialog(parent), ui(new Ui::DialogSettings)
 {
@@ -108,6 +109,7 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         gkFreqs = std::move(gkFreqList);
         gkFreqTableModel = std::move(freqTableModel);
         gkEventLogger = std::move(eventLogger);
+        gkTextToSpeech = std::move(textToSpeechPtr);
         status_com_ports = com_ports;
 
         usb_ports_active = false;
@@ -186,6 +188,35 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         if (gkDekodeDb != nullptr) {
             read_settings();
         }
+
+        //
+        // Initialize Text-to-Speech GUI widgets
+        //
+        ui->comboBox_access_stt_engine->addItem(tr("Default"), tr("Default"));
+        const auto engines = QTextToSpeech::availableEngines();
+        for (const QString &engine: engines) {
+            ui->comboBox_access_stt_engine->addItem(engine, engine);
+        }
+
+        ui->comboBox_access_stt_engine->setCurrentIndex(0);
+
+        //
+        // Initialize Text-to-Speech signals/slots
+        //
+        QObject::connect(ui->pushButton_access_stt_speak, SIGNAL(clicked()), gkTextToSpeech, SLOT(speak()));
+        QObject::connect(ui->horizontalSlider_access_stt_pitch, SIGNAL(valueChanged(int)), gkTextToSpeech, SLOT(setPitch(const int &)));
+        QObject::connect(ui->horizontalSlider_access_stt_rate, SIGNAL(valueChanged(int)), gkTextToSpeech, SLOT(setRate(const int &)));
+        QObject::connect(ui->horizontalSlider_access_stt_volume, SIGNAL(valueChanged(int)), gkTextToSpeech, SLOT(setVolume(const int &)));
+        QObject::connect(ui->comboBox_access_stt_engine, SIGNAL(currentIndexChanged(int)), gkTextToSpeech, SLOT(engineSelected(int)));
+        QObject::connect(this, SIGNAL(changeSelectedTTSEngine(const QString &)), gkTextToSpeech, SLOT(engineSelected(const QString &)));
+        QObject::connect(gkTextToSpeech, SIGNAL(addLangItem(const QString &, const QVariant &)), this, SLOT(ttsAddLanguageItem(const QString &, const QVariant &)));
+        QObject::connect(gkTextToSpeech, SIGNAL(addVoiceItem(const QString &, const QVariant &)), this, SLOT(ttsAddPresetVoiceItem(const QString &, const QVariant &)));
+        QObject::connect(gkTextToSpeech, SIGNAL(clearLangItems()), ui->comboBox_access_stt_language, SLOT(clear()));
+        QObject::connect(gkTextToSpeech, SIGNAL(clearVoiceItems()), ui->comboBox_access_stt_preset_voice, SLOT(clear()));
+        QObject::connect(gkTextToSpeech, SIGNAL(setVoiceCurrentIndex(int)), ui->comboBox_access_stt_preset_voice, SLOT(setCurrentIndex(int)));
+        QObject::connect(gkTextToSpeech, SLOT(localeChanged(const QLocale &)), this, SLOT(ttsLocaleChanged(const QLocale &)));
+        QObject::connect(ui->comboBox_access_stt_preset_voice, SIGNAL(currentIndexChanged(int)), gkTextToSpeech, SLOT(voiceSelected(int)));
+        QObject::connect(ui->comboBox_access_stt_language, SIGNAL(currentIndexChanged(int)), gkTextToSpeech, SLOT(languageSelected(int)));
     } catch (const portaudio::PaException &e) {
         QString error_msg = tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText());
         gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
@@ -2421,6 +2452,102 @@ void DialogSettings::on_checkBox_new_msg_audio_notification_stateChanged(int arg
 void DialogSettings::on_checkBox_failed_event_audio_notification_stateChanged(int arg1)
 {
     gkDekodeDb->write_general_settings(QString::number(arg1), general_stat_cfg::FailAudioNotif);
+
+    return;
+}
+
+void DialogSettings::on_pushButton_access_stt_speak_clicked()
+{
+    return;
+}
+
+void DialogSettings::on_pushButton_access_stt_pause_clicked()
+{
+    return;
+}
+
+void DialogSettings::on_pushButton_access_stt_enable_clicked()
+{
+    return;
+}
+
+void DialogSettings::on_pushButton_access_stt_resume_clicked()
+{
+    return;
+}
+
+void DialogSettings::on_pushButton_access_stt_stop_clicked()
+{
+    return;
+}
+
+void DialogSettings::on_horizontalSlider_access_stt_volume_valueChanged(int value)
+{
+    return;
+}
+
+void DialogSettings::on_horizontalSlider_access_stt_rate_valueChanged(int value)
+{
+    return;
+}
+
+void DialogSettings::on_horizontalSlider_access_stt_pitch_valueChanged(int value)
+{
+    return;
+}
+
+void DialogSettings::on_comboBox_access_stt_engine_currentIndexChanged(int index)
+{
+    QString engineName = ui->comboBox_access_stt_engine->itemData(index).toString();
+    emit changeSelectedTTSEngine(engineName);
+
+    return;
+}
+
+void DialogSettings::on_comboBox_access_stt_language_currentIndexChanged(int index)
+{
+    return;
+}
+
+void DialogSettings::on_comboBox_access_stt_preset_voice_currentIndexChanged(int index)
+{
+    return;
+}
+
+/**
+ * @brief DialogSettings::ttsLocaleChanged
+ * @param locale
+ */
+void DialogSettings::ttsLocaleChanged(const QLocale &locale)
+{
+    QVariant localeVariant(locale);
+    ui->comboBox_access_stt_language->setCurrentIndex(ui->comboBox_access_stt_language->findData(localeVariant));
+    ui->comboBox_access_stt_preset_voice->clear();
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::ttsAddLanguageItem
+ * @param name
+ * @param locale
+ */
+void DialogSettings::ttsAddLanguageItem(const QString &name, const QVariant &locale)
+{
+    ui->comboBox_access_stt_language->addItem(name, locale);
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::ttsAddPresetVoiceItem
+ * @param name
+ * @param locale
+ */
+void DialogSettings::ttsAddPresetVoiceItem(const QString &name, const QVariant &locale)
+{
+    Q_UNUSED(locale);
+    ui->comboBox_access_stt_preset_voice->addItem(name);
 
     return;
 }
