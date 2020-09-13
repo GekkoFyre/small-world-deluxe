@@ -42,25 +42,29 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include "src/dek_db.hpp"
+#include "src/gk_logger.hpp"
 #include <QVoice>
 #include <QObject>
 #include <QString>
+#include <QVector>
 #include <QPointer>
+#include <QVariant>
 #include <QTextToSpeech>
 
 namespace GekkoFyre {
 
 /**
- * @class GkSpeechToText
+ * @class GkTextToSpeech
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @note <https://doc.qt.io/qt-5/qtspeech-hello-speak-example.html>.
  */
-class GkSpeechToText : public QObject {
+class GkTextToSpeech : public QTextToSpeech {
     Q_OBJECT
 
 public:
-    explicit GkSpeechToText(QObject *parent = nullptr);
-    ~GkSpeechToText() override;
+    explicit GkTextToSpeech(QPointer<GekkoFyre::GkLevelDb> dbPtr, QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
+    ~GkTextToSpeech() override;
 
 public slots:
     void speak();
@@ -71,15 +75,27 @@ public slots:
     void setVolume(const int &volume);
 
     void stateChanged(const QTextToSpeech::State &state);
-    void engineSelected(const int &index);
-    void languageSelected(const int &language);
+    void engineSelected(int index);
+    void engineSelected(const QString &name);
+    void languageSelected(const QLocale &language);
     void voiceSelected(const int &idx);
 
     void localeChanged(const QLocale &locale);
 
+signals:
+    void addLangItem(const QString &name, const QVariant &locale);
+    void addVoiceItem(const QString &name, const QVariant &locale);
+    void clearLangItems();
+    void clearVoiceItems();
+    void setVoiceCurrentIndex(int index);
+
 private:
+    QPointer<GekkoFyre::GkLevelDb> GkDb;
+    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
+
     QPointer<QTextToSpeech> m_speech;
     QVector<QVoice> m_voices;
+    QString engineName;
 
 };
 };

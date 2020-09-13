@@ -86,9 +86,9 @@ GkEventLogger::~GkEventLogger()
  * @param arguments Any arguments that are associated with the event message. This tends to be left blank.
  */
 void GkEventLogger::publishEvent(const QString &event, const GkSeverity &severity, const QVariant &arguments, const bool &sys_notification,
-                                 const bool &publishToConsole)
+                                 const bool &publishToConsole, const bool &publishToStatusBar)
 {
-    const std::lock_guard<std::mutex> lock(dataBatchMutex);
+    std::lock_guard<std::mutex> lock(dataBatchMutex);
 
     GkEventLogging event_log;
     event_log.mesg.message = event;
@@ -119,6 +119,13 @@ void GkEventLogger::publishEvent(const QString &event, const GkSeverity &severit
         sendToConsole(event_log, event_log.mesg.severity);
     }
 
+    if (publishToStatusBar) {
+        QDateTime timestamp;
+        timestamp.setMSecsSinceEpoch(event_log.mesg.date);
+
+        emit sendToStatusBar(QString("(%1) %2").arg(timestamp.toString(tr("hh:mm:ss"))).arg(event_log.mesg.message));
+    }
+
     return;
 }
 
@@ -130,7 +137,7 @@ void GkEventLogger::publishEvent(const QString &event, const GkSeverity &severit
  */
 qint64 GkEventLogger::setDate()
 {
-    const std::lock_guard<std::mutex> lock(setDateMutex);
+    std::lock_guard<std::mutex> lock(setDateMutex);
 
     qint64 curr_date = QDateTime::currentMSecsSinceEpoch();
     return curr_date;
@@ -144,7 +151,7 @@ qint64 GkEventLogger::setDate()
  */
 int GkEventLogger::setEventNo()
 {
-    const std::lock_guard<std::mutex> lock(setEventNoMutex);
+    std::lock_guard<std::mutex> lock(setEventNoMutex);
 
     int event_number = eventLogDb.back().event_no;
     event_number += 1;

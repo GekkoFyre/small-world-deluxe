@@ -51,7 +51,6 @@
 #include <sentry.h>
 #include <list>
 #include <vector>
-#include <exception>
 #include <string>
 #include <locale>
 #include <cstdio>
@@ -59,6 +58,7 @@
 #include <cstdlib>
 #include <utility>
 #include <iostream>
+#include <exception>
 #include <streambuf>
 #include <QString>
 #include <QVector>
@@ -188,6 +188,11 @@ namespace GekkoFyre {
 #define GK_EVENTLOG_TABLEVIEW_MODEL_SEVERITY_IDX (2)    // The desired ordering for the 'Severity' heading within the QTableView model for class, `GkEventLoggerTableViewModel`.
 #define GK_EVENTLOG_TABLEVIEW_MODEL_MESSAGE_IDX (3)     // The desired ordering for the 'Message' heading within the QTableView model for class, `GkEventLoggerTableViewModel`.
 #define GK_EVENTLOG_TABLEVIEW_MODEL_TOTAL_IDX (4)       // The total amount of indexes (i.e. columns) for the QTableView model, `GkEventLoggerTableViewModel`. Be sure to keep this up-to-date!
+
+//
+// Hamlib related
+//
+#define GK_HAMLIB_DEFAULT_TIMEOUT (15000)               // The default timeout value for Hamlib, measured in milliseconds.
 
 //
 // SSTV related
@@ -631,15 +636,15 @@ namespace AmateurRadio {
             com_baud_rates dev_baud_rate;                   // Communication device baud rate
             std::string adv_cmd;                            // The 'Advanced Command' parameters, if specified
             freq_t freq;                                    // Rig's primary frequency
-            float raw_strength;                             // Raw strength of the S-meter
-            float strength;                                 // Calculated strength of the S-meter
             float power;                                    // Rig's power output
             float s_meter;                                  // S-meter values
+            int raw_strength;                               // Raw strength of the S-meter
+            int strength;
             int status;                                     // Hamlib status code
             int retcode;                                    // Hamlib return code
-            int isz;                                        // No idea what this is for?
             unsigned int mwpower;                           // Converted power reading to watts
             rmode_t mode;                                   // The type of modulation that the transceiver is in, whether it be AM, FM, SSB, etc.
+            QString mode_hr;                                // The type of modulation that the transceiver is in, but human readable.
             pbwidth_t width;                                // Bandwidth
         };
     }
