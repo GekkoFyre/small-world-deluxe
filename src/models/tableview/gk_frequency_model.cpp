@@ -198,16 +198,9 @@ void GkFreqTableModel::populateData(const QList<GkFreqs> &frequencies, const boo
 void GkFreqTableModel::insertData(const GkFreqs &freq_val)
 {
     dataBatchMutex.lock();
-
-    beginInsertRows(QModelIndex(), m_data.count(), m_data.count());
     m_data.append(freq_val);
-    endInsertRows();
-
-    auto top = this->createIndex((m_data.count() - 1), 0, nullptr);
-    auto bottom = this->createIndex((m_data.count() - 1), GK_EVENTLOG_TABLEVIEW_MODEL_TOTAL_IDX, nullptr);
-    emit dataChanged(top, bottom);
-
     dataBatchMutex.unlock();
+
     return;
 }
 
@@ -231,53 +224,40 @@ void GkFreqTableModel::insertData(const GkFreqs &freq_val, const bool &populate_
 }
 
 /**
- * @brief GkFreqTableModel::removeData
+ * @brief GkFreqTableModel::insertRows
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param freq_val
+ * @param row
+ * @param count
+ * @return
  */
-void GkFreqTableModel::removeData(const GkFreqs &freq_val)
+bool GkFreqTableModel::insertRows(int row, int count, const QModelIndex &)
 {
-    dataBatchMutex.lock();
-    for (int i = 0; i < m_data.size(); ++i) {
-        if ((m_data[i].frequency == freq_val.frequency) && ((m_data[i].digital_mode == freq_val.digital_mode) ||
-                                                            (m_data[i].iaru_region == freq_val.iaru_region))) {
-            beginRemoveRows(QModelIndex(), (m_data.count() - 1), (m_data.count() - 1));
-            m_data.removeAt(i); // Remove any occurrence of this value, one at a time!
-            endRemoveRows();
-        }
+    beginInsertRows(QModelIndex(), row, row + count - 1);
+    for (int i = 0; i < count; ++i) {
+        m_data.insert(row, GkFreqs());
     }
 
-    auto top = this->createIndex((m_data.count() - 1), 0, nullptr);
-    auto bottom = this->createIndex((m_data.count() - 1), GK_EVENTLOG_TABLEVIEW_MODEL_TOTAL_IDX, nullptr);
-    emit dataChanged(top, bottom);
-
-    dataBatchMutex.unlock();
-    return;
+    endInsertRows();
+    return true;
 }
 
 /**
- * @brief GkFreqTableModel::removeData
+ * @brief GkFreqTableModel::removeRows
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param freq_val
- * @param remove_freq_db
+ * @param row
+ * @param count
+ * @return
  */
-void GkFreqTableModel::removeData(const GkFreqs &freq_val, const bool &remove_freq_db)
+bool GkFreqTableModel::removeRows(int row, int count, const QModelIndex &)
 {
-    if (remove_freq_db) {
-        dataBatchMutex.lock();
-        for (int i = 0; i < m_data.size(); ++i) {
-            if ((m_data[i].frequency == freq_val.frequency) && ((m_data[i].digital_mode == freq_val.digital_mode) ||
-                                                                (m_data[i].iaru_region == freq_val.iaru_region))) {
-                emit removeFreq(freq_val);
-            }
-        }
-
-        dataBatchMutex.unlock();
+    beginRemoveRows(QModelIndex(), row, row + count - 1);
+    for (int i = 0; i < count; ++i) {
+        emit removeFreq(m_data[row]);
+        m_data.removeAt(row);
     }
 
-    removeData(freq_val);
-
-    return;
+    endRemoveRows();
+    return true;
 }
 
 /**
@@ -291,6 +271,11 @@ int GkFreqTableModel::rowCount(const QModelIndex &parent) const
     Q_UNUSED(parent);
 
     return m_data.length();
+}
+
+Qt::ItemFlags GkFreqTableModel::flags(const QModelIndex &index) const
+{
+    return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
 }
 
 /**

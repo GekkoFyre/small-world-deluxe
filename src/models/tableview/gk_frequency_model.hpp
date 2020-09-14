@@ -81,9 +81,10 @@ public:
     void populateData(const QList<GekkoFyre::AmateurRadio::GkFreqs> &frequencies, const bool &populate_freq_db);
     void insertData(const GekkoFyre::AmateurRadio::GkFreqs &freq_val);
     void insertData(const GekkoFyre::AmateurRadio::GkFreqs &freq_val, const bool &populate_freq_db);
-    void removeData(const GekkoFyre::AmateurRadio::GkFreqs &freq_val);
-    void removeData(const GekkoFyre::AmateurRadio::GkFreqs &freq_val, const bool &remove_freq_db);
+    bool insertRows(int row, int count, const QModelIndex &) Q_DECL_OVERRIDE;
+    bool removeRows(int row, int count, const QModelIndex &) Q_DECL_OVERRIDE;
     int rowCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
+    Qt::ItemFlags flags(const QModelIndex &index) const Q_DECL_OVERRIDE;
     int columnCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
 
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
