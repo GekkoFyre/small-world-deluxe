@@ -177,10 +177,10 @@ namespace GekkoFyre {
 //
 // QTableView Models
 //
-#define GK_FREQ_TABLEVIEW_MODEL_FREQUENCY_IDX (0)       // The desired ordering for the 'Frequency' heading within the QTableView model for class, `GkFreqTableViewModel`.
-#define GK_FREQ_TABLEVIEW_MODEL_MODE_IDX (1)            // The desired ordering for the 'Mode' heading within the QTableView model for class, `GkFreqTableViewModel`.
-#define GK_FREQ_TABLEVIEW_MODEL_IARU_REGION_IDX (2)     // The desired ordering for the 'IARU Region' heading within the QTableView model for class, `GkFreqTableViewModel`.
-#define GK_FREQ_TABLEVIEW_MODEL_TOTAL_IDX (3)           // The total amount of indexes (i.e. columns) for the QTableView model, `GkFreqTableViewModel`. Be sure to keep this up-to-date!
+#define GK_FREQ_TABLEVIEW_MODEL_FREQUENCY_IDX (0)       // The desired ordering for the 'Frequency' heading within the QTableView model for class, `GkFreqTableModel`.
+#define GK_FREQ_TABLEVIEW_MODEL_MODE_IDX (1)            // The desired ordering for the 'Mode' heading within the QTableView model for class, `GkFreqTableModel`.
+#define GK_FREQ_TABLEVIEW_MODEL_IARU_REGION_IDX (2)     // The desired ordering for the 'IARU Region' heading within the QTableView model for class, `GkFreqTableModel`.
+#define GK_FREQ_TABLEVIEW_MODEL_TOTAL_IDX (3)           // The total amount of indexes (i.e. columns) for the QTableView model, `GkFreqTableModel`. Be sure to keep this up-to-date!
 #define GK_FREQ_TABLEVIEW_MODEL_NUM_PRECISION (15)      // The number of decimal places for which to display the frequencies as!
 
 #define GK_EVENTLOG_TABLEVIEW_MODEL_EVENT_NO_IDX (0)    // The desired ordering for the 'Event No.' heading within the QTableView model for class, `GkEventLoggerTableViewModel`.

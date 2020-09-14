@@ -47,6 +47,8 @@
 #include <QPoint>
 #include <QAction>
 #include <QVBoxLayout>
+#include <QClipboard>
+#include <QApplication>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -59,35 +61,8 @@ using namespace System;
 using namespace Events;
 using namespace Logging;
 
-GkFreqTableViewModel::GkFreqTableViewModel(QPointer<GekkoFyre::GkLevelDb> database, QWidget *parent)
-    : QAbstractTableModel(parent)
+GkFreqTableViewModel::GkFreqTableViewModel(QWidget *parent) : QTableView(parent)
 {
-    GkDb = std::move(database);
-
-    table = new QTableView(parent);
-    QPointer<QVBoxLayout> layout = new QVBoxLayout(parent);
-    proxyModel = new QSortFilterProxyModel(parent);
-
-    table->setModel(proxyModel);
-    table->setSelectionBehavior(QAbstractItemView::SelectRows);
-    table->setSelectionMode(QAbstractItemView::SingleSelection);
-    table->setContextMenuPolicy(Qt::CustomContextMenu);
-
-    QPointer<QAction> pAction1 = new QAction(tr("New"), this);
-    QPointer<QAction> pAction2 = new QAction(tr("Edit"), this);
-    QPointer<QAction> pAction3 = new QAction(tr("Remove"), this);
-
-    table->addAction(pAction1);
-    table->addAction(pAction2);
-    table->addAction(pAction3);
-
-    QPointer<GkFreqTableHorizHeader> horiz_header = new GkFreqTableHorizHeader(Qt::Horizontal);
-    table->setHorizontalHeader(horiz_header);
-    QObject::connect(horiz_header, SIGNAL(mouseRightPressed(int)), this, SLOT(customHeaderMenuRequested(int)));
-
-    layout->addWidget(table);
-    proxyModel->setSourceModel(this);
-
     return;
 }
 
@@ -97,11 +72,93 @@ GkFreqTableViewModel::~GkFreqTableViewModel()
 }
 
 /**
- * @brief GkFreqTableViewModel::populateData
+ * @brief GkFreqTableViewModel::keyPressEvent
+ * @author Walletfox.com <https://www.walletfox.com/course/qtableviewcopypaste.php>
+ * @param event
+ */
+void GkFreqTableViewModel::keyPressEvent(QKeyEvent *event)
+{
+    QModelIndexList selectedRows = selectionModel()->selectedRows();
+
+    // At least one entire row selected
+    if (!selectedRows.isEmpty()) {
+        if (event->key() == Qt::Key_Insert) {
+            model()->insertRows(selectedRows.at(0).row(), selectedRows.size());
+        } else if (event->key() == Qt::Key_Delete) {
+            model()->removeRows(selectedRows.at(0).row(), selectedRows.size());
+        }
+    }
+
+    // At least one entire cell selected
+    if (!selectedIndexes().isEmpty()) {
+        if (event->key() == Qt::Key_Delete) {
+            foreach (QModelIndex index, selectedIndexes()) {
+                model()->setData(index, QString());
+            }
+        } else if (event->matches(QKeySequence::Copy)) {
+            QString text;
+            QItemSelectionRange range = selectionModel()->selection().first();
+            for (auto i = range.top(); i <= range.bottom(); ++i) {
+                QStringList rowContents;
+                for (auto j = range.left(); j <= range.right(); ++j) {
+                    rowContents << model()->index(i, j).data().toString();
+                }
+
+                text += rowContents.join("\t");
+                text += "\n";
+            }
+
+            QApplication::clipboard()->setText(text);
+        } else if (event->matches(QKeySequence::Paste)) {
+            QString text = QApplication::clipboard()->text();
+            QStringList rowContents = text.split("\n", QString::SkipEmptyParts);
+
+            QModelIndex initIndex = selectedIndexes().at(0);
+            auto initRow = initIndex.row();
+            auto initCol = initIndex.column();
+
+            for (auto i = 0; i < rowContents.size(); ++i) {
+                QStringList columnContents = rowContents.at(i).split("\t");
+                for (auto j = 0; j < columnContents.size(); ++j) {
+                    model()->setData(model()->index(initRow + i, initCol + j), columnContents.at(j));
+                }
+            }
+        } else {
+            QTableView::keyPressEvent(event);
+        }
+    }
+
+    return;
+}
+
+GkFreqTableModel::GkFreqTableModel(QPointer<GekkoFyre::GkLevelDb> database, QWidget *parent)
+    : QAbstractTableModel(parent)
+{
+    GkDb = std::move(database);
+
+    QPointer<QVBoxLayout> layout = new QVBoxLayout(parent);
+    proxyModel = new QSortFilterProxyModel(parent);
+    proxyModel->setSourceModel(this);
+
+    view = new GkFreqTableViewModel();
+    view->setModel(this);
+    view->verticalHeader()->setDefaultAlignment(Qt::AlignCenter);
+    view->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+
+    return;
+}
+
+GkFreqTableModel::~GkFreqTableModel()
+{
+    return;
+}
+
+/**
+ * @brief GkFreqTableModel::populateData
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param frequencies
  */
-void GkFreqTableViewModel::populateData(const QList<GkFreqs> &frequencies)
+void GkFreqTableModel::populateData(const QList<GkFreqs> &frequencies)
 {
     dataBatchMutex.lock();
 
@@ -113,12 +170,12 @@ void GkFreqTableViewModel::populateData(const QList<GkFreqs> &frequencies)
 }
 
 /**
- * @brief GkFreqTableViewModel::populateData
+ * @brief GkFreqTableModel::populateData
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param frequencies
  * @param populate_freq_db
  */
-void GkFreqTableViewModel::populateData(const QList<GkFreqs> &frequencies, const bool &populate_freq_db)
+void GkFreqTableModel::populateData(const QList<GkFreqs> &frequencies, const bool &populate_freq_db)
 {
     populateData(frequencies);
 
@@ -134,11 +191,11 @@ void GkFreqTableViewModel::populateData(const QList<GkFreqs> &frequencies, const
 }
 
 /**
- * @brief GkFreqTableViewModel::insertData
+ * @brief GkFreqTableModel::insertData
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param freq_val
  */
-void GkFreqTableViewModel::insertData(const GkFreqs &freq_val)
+void GkFreqTableModel::insertData(const GkFreqs &freq_val)
 {
     dataBatchMutex.lock();
 
@@ -155,12 +212,12 @@ void GkFreqTableViewModel::insertData(const GkFreqs &freq_val)
 }
 
 /**
- * @brief GkFreqTableViewModel::insertData
+ * @brief GkFreqTableModel::insertData
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param freq_val
  * @param populate_freq_db
  */
-void GkFreqTableViewModel::insertData(const GkFreqs &freq_val, const bool &populate_freq_db)
+void GkFreqTableModel::insertData(const GkFreqs &freq_val, const bool &populate_freq_db)
 {
     insertData(freq_val);
 
@@ -174,11 +231,11 @@ void GkFreqTableViewModel::insertData(const GkFreqs &freq_val, const bool &popul
 }
 
 /**
- * @brief GkFreqTableViewModel::removeData
+ * @brief GkFreqTableModel::removeData
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param freq_val
  */
-void GkFreqTableViewModel::removeData(const GkFreqs &freq_val)
+void GkFreqTableModel::removeData(const GkFreqs &freq_val)
 {
     dataBatchMutex.lock();
     for (int i = 0; i < m_data.size(); ++i) {
@@ -199,12 +256,12 @@ void GkFreqTableViewModel::removeData(const GkFreqs &freq_val)
 }
 
 /**
- * @brief GkFreqTableViewModel::removeData
+ * @brief GkFreqTableModel::removeData
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param freq_val
  * @param remove_freq_db
  */
-void GkFreqTableViewModel::removeData(const GkFreqs &freq_val, const bool &remove_freq_db)
+void GkFreqTableModel::removeData(const GkFreqs &freq_val, const bool &remove_freq_db)
 {
     if (remove_freq_db) {
         dataBatchMutex.lock();
@@ -224,12 +281,12 @@ void GkFreqTableViewModel::removeData(const GkFreqs &freq_val, const bool &remov
 }
 
 /**
- * @brief GkFreqTableViewModel::rowCount
+ * @brief GkFreqTableModel::rowCount
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param parent
  * @return
  */
-int GkFreqTableViewModel::rowCount(const QModelIndex &parent) const
+int GkFreqTableModel::rowCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
 
@@ -237,28 +294,28 @@ int GkFreqTableViewModel::rowCount(const QModelIndex &parent) const
 }
 
 /**
- * @brief GkFreqTableViewModel::columnCount
+ * @brief GkFreqTableModel::columnCount
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param parent
  * @return
- * @note BE SURE TO GET THE TOTAL COUNT from the function, `GkFreqTableViewModel::headerData()`!
- * @see GkFreqTableViewModel::headerData()
+ * @note BE SURE TO GET THE TOTAL COUNT from the function, `GkFreqTableModel::headerData()`!
+ * @see GkFreqTableModel::headerData()
  */
-int GkFreqTableViewModel::columnCount(const QModelIndex &parent) const
+int GkFreqTableModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
 
-    return GK_FREQ_TABLEVIEW_MODEL_TOTAL_IDX; // Make sure to add the total of columns from within `GkFreqTableViewModel::headerData()`!
+    return GK_FREQ_TABLEVIEW_MODEL_TOTAL_IDX; // Make sure to add the total of columns from within `GkFreqTableModel::headerData()`!
 }
 
 /**
- * @brief GkFreqTableViewModel::data
+ * @brief GkFreqTableModel::data
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param index
  * @param role
  * @return
  */
-QVariant GkFreqTableViewModel::data(const QModelIndex &index, int role) const
+QVariant GkFreqTableModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid() || role != Qt::DisplayRole) {
         return QVariant();
@@ -296,16 +353,16 @@ QVariant GkFreqTableViewModel::data(const QModelIndex &index, int role) const
 }
 
 /**
- * @brief GkFreqTableViewModel::headerData
+ * @brief GkFreqTableModel::headerData
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param section
  * @param orientation
  * @param role
  * @return
- * @note When updating this function, BE SURE TO UPDATE `GkFreqTableViewModel::columnCount()` with the new total count as well!
- * @see GkFreqTableViewModel::columnCount()
+ * @note When updating this function, BE SURE TO UPDATE `GkFreqTableModel::columnCount()` with the new total count as well!
+ * @see GkFreqTableModel::columnCount()
  */
-QVariant GkFreqTableViewModel::headerData(int section, Qt::Orientation orientation, int role) const
+QVariant GkFreqTableModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
         switch (section) {
@@ -319,25 +376,4 @@ QVariant GkFreqTableViewModel::headerData(int section, Qt::Orientation orientati
     }
 
     return QVariant();
-}
-
-void GkFreqTableViewModel::customHeaderMenuRequested(int section)
-{
-    Q_UNUSED(section);
-
-    QMenu menu(table);
-    menu.addActions(table->actions());
-    menu.exec(QCursor::pos());
-
-    return;
-}
-
-void GkFreqTableHorizHeader::mouseReleaseEvent(QMouseEvent *e)
-{
-    if (e->button() == Qt::RightButton) {
-        emit mouseRightPressed(logicalIndexAt(e->pos()));
-    }
-
-    QHeaderView::mouseReleaseEvent(e);
-    return;
 }

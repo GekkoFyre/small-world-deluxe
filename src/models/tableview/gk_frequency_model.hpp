@@ -59,26 +59,23 @@
 
 namespace GekkoFyre {
 
-class GkFreqTableHorizHeader : public QHeaderView {
-    Q_OBJECT;
+class GkFreqTableViewModel : public QTableView {
 
 public:
-    using QHeaderView::QHeaderView;
+    explicit GkFreqTableViewModel(QWidget *parent = nullptr);
+    ~GkFreqTableViewModel() override;
 
 protected:
-    void mouseReleaseEvent(QMouseEvent *e) override;
-
-signals:
-    void mouseRightPressed(int section);
+    void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
 
 };
 
-class GkFreqTableViewModel : public QAbstractTableModel {
+class GkFreqTableModel : public QAbstractTableModel {
     Q_OBJECT
 
 public:
-    explicit GkFreqTableViewModel(QPointer<GekkoFyre::GkLevelDb> database, QWidget *parent = nullptr);
-    ~GkFreqTableViewModel() override;
+    explicit GkFreqTableModel(QPointer<GekkoFyre::GkLevelDb> database, QWidget *parent = nullptr);
+    ~GkFreqTableModel() override;
 
     void populateData(const QList<GekkoFyre::AmateurRadio::GkFreqs> &frequencies);
     void populateData(const QList<GekkoFyre::AmateurRadio::GkFreqs> &frequencies, const bool &populate_freq_db);
@@ -92,9 +89,6 @@ public:
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
 
-protected:
-    virtual void customHeaderMenuRequested(int section);
-
 signals:
     void removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_remove);
     void addFreq(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_add);
@@ -103,7 +97,7 @@ private:
     QPointer<GekkoFyre::GkLevelDb> GkDb;
     QList<GekkoFyre::AmateurRadio::GkFreqs> m_data;
 
-    QPointer<QTableView> table;
+    QPointer<GkFreqTableViewModel> view;
     QPointer<QSortFilterProxyModel> proxyModel;
 
     QMutex dataBatchMutex;

@@ -87,7 +87,7 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
                                const std::list<GekkoFyre::Database::Settings::GkComPort> &com_ports,
                                const QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> &usbPortMap,
                                QPointer<GkFrequencies> gkFreqList,
-                               QPointer<GkFreqTableViewModel> freqTableModel,
+                               QPointer<GkFreqTableModel> freqTableModel,
                                QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                QPointer<GekkoFyre::GkTextToSpeech> textToSpeechPtr,
                                QWidget *parent)
