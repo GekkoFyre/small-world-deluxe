@@ -69,7 +69,7 @@
 #include <QtUsb/QUsbDevice>
 #include <QSerialPortInfo>
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__MINGW64__)
 #ifdef PA_USE_ASIO
 #include <pa_asio.h>
 #include "contrib/portaudio/cpp/include/portaudiocpp/AsioDeviceAdapter.hxx"
@@ -78,10 +78,9 @@
 #include <winsdkver.h>
 #include <Windows.h>
 #include <tchar.h> // https://linuxgazette.net/147/pfeiffer.html
-#if defined(_WIN32) || defined(__MINGW64__)
+
 #include <atlbase.h>
 #include <atlstr.h>
-#endif
 #endif
 
 #ifdef __cplusplus
@@ -92,20 +91,8 @@ extern "C"
 #include <hamlib/rig.h>
 #include <hamlib/riglist.h>
 
-#ifdef _WIN32
-    typedef std::wstring gkwstring;
-#if defined(_MSC_VER) && (_MSC_VER > 1915)
-#endif
-#elif __linux__
-    typedef std::string gkwstring;
-#endif
-
 #ifdef __cplusplus
 } // extern "C"
-#endif
-
-#if defined(_WIN32) || defined(__MINGW64__)
-#define snprintf _snprintf
 #endif
 
 namespace GekkoFyre {
@@ -669,14 +656,6 @@ namespace AmateurRadio {
 }
 
 namespace Spectrograph {
-    enum GkColorMap
-    {
-        RGBMap,
-        IndexMap,
-        HueMap,
-        AlphaMap
-    };
-
     enum GkGraphType {
         GkWaterfall,
         GkSinewave
@@ -690,40 +669,15 @@ namespace Spectrograph {
         GkGraphTime10Sec
     };
 
-    struct Window {
-        int y;
-        int x;
-    };
-
     struct GkFFTSpectrum {
         double frequency;
         double magnitude;
-    };
-
-    struct GkAxisData {
-        QwtInterval z_interval;                                                 // Interval values for the z-axis.
-        QwtInterval x_interval;                                                 // Interval values for the x-axis.
-        QwtInterval y_interval;                                                 // Interval values for the y-axis.
     };
 
     struct GkTimingData {
         qint64 relative_start_time;                                             // The 'relative starting time' for when the spectrograph was initialized.
         qint64 relative_stop_time;                                              // The 'relative stopping time' for when the spectrograph was deinitialized.
         qint64 curr_time;                                                       // The more up-to-date time, as a UNIX epoch.
-    };
-
-    //
-    // Used for the raster/matrix data calculations within the spectrograph/waterfall of QMainWindow!
-    //
-    struct MatrixData {
-        QMap<qint64, std::pair<QVector<double>, GkAxisData>> z_data_calcs;      // STFT (i.e. Fast Fourier Transformation) calculations as processed by GekkoFyre::SpectroFFTW::stft().
-        std::vector<GkTimingData> timing;                                       // Information that pertains to timing as it relates to the spectrograph / waterfall.
-        GkAxisData curr_axis_info;                                              // Information that pertains to the axis' and their intervals as of the immediate moment.
-        qint64 actual_start_time;                                               // The actual starting time at which the spectrograph was initialized.
-        double min_z_axis_val;                                                  // Most minimum value as presented by the z-axis (the coloration portion).
-        double max_z_axis_val;                                                  // Most maximum value as presented by the z-axis (the coloration portion).
-        int window_size;                                                        // The value as passed towards GekkoFyre::SpectroFFTW::stft().
-        size_t hanning_win;                                                     // The 'window hanning' value.
     };
 }
 
@@ -733,6 +687,7 @@ namespace GkAudioFramework {
         OggVorbis,
         Opus,
         FLAC,
+        Unsupported,
         Unknown
     };
 
