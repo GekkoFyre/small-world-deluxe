@@ -30,19 +30,19 @@ Following is a short list of features, both planned and partially already implem
 
 ##### Screenshots
 
-Please note that what is displayed just below may/perhaps be awfully out-of-date. If you want to see how `Small World Deluxe` currently looks, then we advise you to [download the latest release](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/releases), or if a binary is not available, then to please wait and until a sufficient version *is* available. The *lack of a release* means that we're not stable enough yet.
+Please note that what is displayed just below may/perhaps be awfully out-of-date. If you want to see how `Small World Deluxe` currently looks, then we advise you to [download the latest release](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/releases), or if a binary is not available, then to please wait and until a sufficient version *is* available. The *lack of a release* means that we're not stable enough yet.
 
-![smallworld_mainwindow_1](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/raw/f72a0eb986abe8c94fb755b2457da0ace7ac281c/assets/images/screenshots/2020-07-15/Screenshot_20200715_001410.png)
+![smallworld_mainwindow_1](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/raw/f72a0eb986abe8c94fb755b2457da0ace7ac281c/assets/images/screenshots/2020-07-15/Screenshot_20200715_001410.png)
 
-![smallworld_settingsdialog_1](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/raw/f72a0eb986abe8c94fb755b2457da0ace7ac281c/assets/images/screenshots/2020-07-15/Screenshot_20200715_001457.png)
+![smallworld_settingsdialog_1](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/raw/f72a0eb986abe8c94fb755b2457da0ace7ac281c/assets/images/screenshots/2020-07-15/Screenshot_20200715_001457.png)
 
-![smallworld_settingsdialog_2](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/raw/f72a0eb986abe8c94fb755b2457da0ace7ac281c/assets/images/screenshots/2020-07-15/Screenshot_20200715_001532.png)
+![smallworld_settingsdialog_2](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/raw/f72a0eb986abe8c94fb755b2457da0ace7ac281c/assets/images/screenshots/2020-07-15/Screenshot_20200715_001532.png)
 
-![smallworld_settingsdialog_3](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/raw/f72a0eb986abe8c94fb755b2457da0ace7ac281c/assets/images/screenshots/2020-07-15/Screenshot_20200715_001557.png)
+![smallworld_settingsdialog_3](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/raw/f72a0eb986abe8c94fb755b2457da0ace7ac281c/assets/images/screenshots/2020-07-15/Screenshot_20200715_001557.png)
 
-![smallworld_settingsdialog_4](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/raw/f72a0eb986abe8c94fb755b2457da0ace7ac281c/assets/images/screenshots/2020-07-15/Screenshot_20200715_001645.png)
+![smallworld_settingsdialog_4](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/raw/f72a0eb986abe8c94fb755b2457da0ace7ac281c/assets/images/screenshots/2020-07-15/Screenshot_20200715_001645.png)
 
-![smallworld_aboutdialog_1](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/raw/f72a0eb986abe8c94fb755b2457da0ace7ac281c/assets/images/screenshots/2020-07-15/Screenshot_20200715_001707.png)
+![smallworld_aboutdialog_1](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/raw/f72a0eb986abe8c94fb755b2457da0ace7ac281c/assets/images/screenshots/2020-07-15/Screenshot_20200715_001707.png)
 
 ------
 
@@ -85,7 +85,7 @@ Some of the aforementioned dependencies need to be manually cloned via their res
 
 Hints on how to compile this software can be taken from the `.gitlab-ci.yml` file within the root of our Git repository, for where we are in deficient provisioning of such documentation for. We cannot stress enough that binaries will be provided soon, it's just that `Small World Deluxe` is not quite at that stage yet of being demonstrated on a larger scale.
 
-Once you have downloaded and/or compiled the aforementioned dependencies with the appropriate package manager or dev-tools, whether that be `apt-get`, `yum`, `dnf`, `pacman`, or something else entirely, you are ready to begin the compilation process of `Small World Deluxe` itself! You will firstly need to download the source repository though: `git clone https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe.git`
+Once you have downloaded and/or compiled the aforementioned dependencies with the appropriate package manager or dev-tools, whether that be `apt-get`, `yum`, `dnf`, `pacman`, or something else entirely, you are ready to begin the compilation process of `Small World Deluxe` itself! You will firstly need to download the source repository though: `git clone https://code.gekkofyre.io/amateur-radio/small-world-deluxe.git`
 
 Then `cd small-world-deluxe` before executing `mkdir build` and going into that directory too, where you'll finally perform a `cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..`
 
@@ -109,7 +109,7 @@ Because `Dependency Walker` is a third-party program, we do not provide any supp
 
 #### GitLab Runner & CI/CD
 
-In order to aid with Continuous Integration and the use of [GitLab Runner](https://docs.gitlab.com/runner/) with our weak-signal project for the greater [Amateur Radio](https://en.wikipedia.org/wiki/Amateur_radio) community, we will soon be [creating our own Docker image(s) that we'll be uploading to the code repository](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/container_registry) here at [GekkoFyre Networks](https://gekkofyre.io/). This is a newer feature that has been recently introduced to [GitLab](https://gitlab.com/) and we hope to make use of it as soon as possible!
+In order to aid with Continuous Integration and the use of [GitLab Runner](https://docs.gitlab.com/runner/) with our weak-signal project for the greater [Amateur Radio](https://en.wikipedia.org/wiki/Amateur_radio) community, we will soon be [creating our own Docker image(s) that we'll be uploading to the code repository](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/container_registry) here at [GekkoFyre Networks](https://gekkofyre.io/). This is a newer feature that has been recently introduced to [GitLab](https://gitlab.com/) and we hope to make use of it as soon as possible!
 
 You can be rest assured that we'll keep this Docker image updated as need be.
 
@@ -119,13 +119,13 @@ You can be rest assured that we'll keep this Docker image updated as need be.
 
 ##### Receiving error(s) that's related to something about a `locale`?
 
-If you receive an error that's similar to, `Setting the locale has failed!`, or even possibly, `locale::facet::_S_create_c_locale name not valid`, then the locale that has been configured for your system of choice may not be set correctly. [This particular article from Stack Overflow](https://stackoverflow.com/a/10236868/4293625) may help you in your endeavors but if not, you will have to [open an issue with the Small World Deluxe team over at their Git repository](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/issues), where we will be happy to help you and your particular system of choice.
+If you receive an error that's similar to, `Setting the locale has failed!`, or even possibly, `locale::facet::_S_create_c_locale name not valid`, then the locale that has been configured for your system of choice may not be set correctly. [This particular article from Stack Overflow](https://stackoverflow.com/a/10236868/4293625) may help you in your endeavors but if not, you will have to [open an issue with the Small World Deluxe team over at their Git repository](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/issues), where we will be happy to help you and your particular system of choice.
 
 ##### Help! I'm encountering issues with making a connection between `Small World Deluxe` and my radio transceiver rig!
 
 This could be due to the individual settings of your radio itself. For example, I had to modify the CAT TOT (timeout time) for my [Yaesu FT-450D](https://www.yaesu.com/indexVS.cfm?cmd=DisplayProducts&ProdCatID=102&encProdID=870B3CA7CFCB61E6A599B0EFEA2217E4&DivisionID=65&isArchived=0) before a connection could be reliably made between this application and the rig itself, so something similar might have to be done for your use-case, if encountering such problems. It's no fault of SWD at all, but simply down to the differences of each radio rig out there :)
 
-If you have a particularly stubborn problem regarding this, then we'd be glad to help you out to the best of our ability within the [Issues section of this code repository](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/issues). You might also benefit from reading [the Hamlib FAQ](https://github.com/Hamlib/Hamlib/wiki/FAQ) as well, since this software is powered by it in some respects.
+If you have a particularly stubborn problem regarding this, then we'd be glad to help you out to the best of our ability within the [Issues section of this code repository](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/issues). You might also benefit from reading [the Hamlib FAQ](https://github.com/Hamlib/Hamlib/wiki/FAQ) as well, since this software is powered by it in some respects.
 
 ##### I'm being asked to contribute 'crash reports'? What's this and why am I being asked?
 

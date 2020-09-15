@@ -11,7 +11,7 @@ Authored with my beloved partner always in mind. Much love to you, Norwaro! Alon
 
 #### Credits, Contributors & Libraries
 
-Please see [CREDITS](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/blob/develop/CREDITS) and [CONTRIBUTING.md](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/blob/develop/CONTRIBUTING.md) just in-case anything is missing below.
+Please see [CREDITS](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/blob/develop/CREDITS) and [CONTRIBUTING.md](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/blob/develop/CONTRIBUTING.md) just in-case anything is missing below.
 
 `Copyright © 2018 The Qt Company Ltd.`
 
@@ -27,5 +27,5 @@ Please see [CREDITS](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe
 
 #### Licensing & Legalese
 
-Please see the [LICENSE](https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe/-/blob/develop/LICENSE) file within our GitLab repository for all licensing and legal matters.
+Please see the [LICENSE](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/blob/develop/LICENSE) file within our GitLab repository for all licensing and legal matters.
 

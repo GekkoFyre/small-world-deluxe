@@ -31,7 +31,7 @@
  **   The latest source code updates can be obtained from [ 1 ] below at your
  **   discretion. A web-browser or the 'git' application may be required.
  **
- **   [ 1 ] - https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe
+ **   [ 1 ] - https://code.gekkofyre.io/amateur-radio/small-world-deluxe
  **
  ****************************************************************************************************/
 
@@ -81,7 +81,7 @@ public:
                             const std::list<GekkoFyre::Database::Settings::GkComPort> &com_ports,
                             const QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> &usbPortMap,
                             QPointer<GekkoFyre::GkFrequencies> gkFreqList,
-                            QPointer<GekkoFyre::GkFreqTableViewModel> freqTableModel,
+                            QPointer<GekkoFyre::GkFreqTableModel> freqTableModel,
                             QPointer<GekkoFyre::GkEventLogger> eventLogger,
                             QPointer<GekkoFyre::GkTextToSpeech> textToSpeechPtr,
                             QWidget *parent = nullptr);
@@ -279,7 +279,7 @@ private:
     static QMultiMap<rig_model_t, std::tuple<QString, QString, GekkoFyre::AmateurRadio::rig_type>> init_model_names();
 
     QPointer<GekkoFyre::GkFrequencies> gkFreqs;
-    QPointer<GekkoFyre::GkFreqTableViewModel> gkFreqTableModel;
+    QPointer<GekkoFyre::GkFreqTableModel> gkFreqTableModel;
 
     void prefill_audio_api_avail(const QVector<PaHostApiTypeId> &portaudio_api_vec);
     void prefill_audio_devices(const std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> &audio_devices_vec);

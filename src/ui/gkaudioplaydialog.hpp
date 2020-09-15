@@ -31,7 +31,7 @@
  **   The latest source code updates can be obtained from [ 1 ] below at your
  **   discretion. A web-browser or the 'git' application may be required.
  **
- **   [ 1 ] - https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe
+ **   [ 1 ] - https://code.gekkofyre.io/amateur-radio/small-world-deluxe
  **
  ****************************************************************************************************/
 
@@ -40,11 +40,14 @@
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
 #include "src/gk_audio_decoding.hpp"
+#include "src/gk_string_funcs.hpp"
 #include "src/audio_devices.hpp"
 #include "src/file_io.hpp"
+#include "src/contrib/AudioFile/AudioFile.h"
 #include <memory>
 #include <string>
 #include <vector>
+#include <QFile>
 #include <QObject>
 #include <QDialog>
 #include <QString>
@@ -62,7 +65,7 @@ public:
     explicit GkAudioPlayDialog(QPointer<GekkoFyre::GkLevelDb> database,
                                QPointer<GekkoFyre::GkAudioDecoding> audio_decoding,
                                std::shared_ptr<GekkoFyre::AudioDevices> audio_devices,
-                               QPointer<GekkoFyre::FileIo> file_io,
+                               QPointer<GekkoFyre::StringFuncs> stringFuncs,
                                QWidget *parent = nullptr);
     ~GkAudioPlayDialog() override;
 
@@ -73,6 +76,8 @@ private slots:
     void on_pushButton_playback_browse_file_loc_clicked();
     void on_pushButton_playback_play_clicked();
     void on_pushButton_playback_record_clicked();
+    void on_pushButton_playback_skip_back_clicked();
+    void on_pushButton_playback_skip_forward_clicked();
 
     void on_pushButton_playback_record_toggled(bool checked);
     void on_pushButton_playback_play_toggled(bool checked);
@@ -80,16 +85,23 @@ private slots:
     void on_pushButton_playback_skip_back_toggled(bool checked);
     void on_pushButton_playback_stop_toggled(bool checked);
 
+    void on_comboBox_playback_rec_codec_currentIndexChanged(int index);
+    void on_comboBox_playback_rec_bitrate_currentIndexChanged(int index);
+
+signals:
+    void beginRecording(const bool &recording_is_started);
+
 private:
     Ui::GkAudioPlayDialog *ui;
 
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::GkAudioDecoding> gkAudioDecode;
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevs;
-    QPointer<GekkoFyre::FileIo> gkFileIo;
+    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
+    std::unique_ptr<AudioFile<double>> audioFile;
 
-signals:
-    void beginRecording(const bool &recording_is_started);
+    QFile r_pback_audio_file;
+    GekkoFyre::GkAudioFramework::AudioFileInfo gkAudioFileInfo;
 
 };
 

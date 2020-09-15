@@ -35,13 +35,15 @@
  **   The latest source code updates can be obtained from [ 1 ] below at your
  **   discretion. A web-browser or the 'git' application may be required.
  **
- **   [ 1 ] - https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe
+ **   [ 1 ] - https://code.gekkofyre.io/amateur-radio/small-world-deluxe
  **
  ****************************************************************************************************/
 
 #include "src/gk_string_funcs.hpp"
+#include <QMessageBox>
 #include <QSettings>
 #include <algorithm>
+#include <iterator>
 #include <sstream>
 
 #if _WIN32
@@ -82,6 +84,19 @@ StringFuncs::StringFuncs(QObject *parent) : QObject(parent)
 
 StringFuncs::~StringFuncs()
 {}
+
+void StringFuncs::print_exception(const std::exception &e, int level)
+{
+    QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+
+    try {
+        std::rethrow_if_nested(e);
+    } catch (const std::exception &e) {
+        print_exception(e, level + 1);
+    } catch (...) {}
+
+    return;
+}
 
 /**
  * @brief StringFuncs::getStringFromUnsignedChar
@@ -124,6 +139,138 @@ QString StringFuncs::addErrorMsg(const QString &orig_msg, const QString &err_msg
     }
 
     return QString();
+}
+
+/**
+ * @brief StringFuncs::csvSplitter splits up a given string of CSV elements, using ',' as the delimiter, and outputs it
+ * as a std::vector<std::string> ready for use and modification by other functions.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param csv_vals
+ * @return
+ */
+std::vector<std::string> StringFuncs::csvSplitter(const std::string &csv_vals)
+{
+    try {
+        if (!csv_vals.empty()) {
+            std::stringstream ss(csv_vals);
+            std::vector<std::string> result;
+            while (ss.good()) {
+                std::string substr;
+                std::getline(ss, substr, ',');
+                if (!substr.empty()) {
+                    result.push_back(substr);
+                }
+            }
+
+            return result;
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(tr("An error has occurred whilst attempting to modify CSV data.\n\n%1").arg(QString::fromStdString(e.what())).toStdString()));
+    }
+
+    return std::vector<std::string>();
+}
+
+/**
+ * @brief StringFuncs::csvRemoveElement removes a given std::string element from a std::vector<std::string> list, which is
+ * particularly useful when combined with the function, StringFuncs::csvSplitter().
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param csv_elements
+ * @param val_to_remove
+ * @return
+ * @see StringFuncs::csvSplitter().
+ */
+std::vector<std::string> StringFuncs::csvRemoveElement(const std::vector<std::string> &csv_elements, const std::string &val_to_remove)
+{
+    try {
+        if (!csv_elements.empty()) {
+            std::vector<std::string> csv_elements_cpy(csv_elements.begin(), csv_elements.end());
+            for (auto it = csv_elements_cpy.begin(); it != csv_elements_cpy.end();) {
+                if (*it == val_to_remove) {
+                    it = csv_elements_cpy.erase(it);
+                    return csv_elements_cpy;
+                } else {
+                    ++it;
+                }
+            }
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(tr("An error has occurred whilst attempting to modify CSV data.\n\n%1").arg(QString::fromStdString(e.what())).toStdString()));
+    }
+
+    return std::vector<std::string>();
+}
+
+/**
+ * @brief StringFuncs::csvOutputString saves a given std::vector<std::string> list as an std::string in a CSV-like
+ * manner, which is particularly useful when combined with the StringFuncs::csvSplitter() function after having made
+ * modifications to the std::vector<std::string> elements themselves with other functions such as StringFuncs::csvRemoveElement().
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param csv_elements
+ * @return
+ * @see StringFuncs::csvSplitter(), StringFuncs::csvRemoveElement().
+ */
+std::string StringFuncs::csvOutputString(const std::vector<std::string> &csv_elements)
+{
+    try {
+        if (!csv_elements.empty()) {
+            std::stringstream ss;
+            if (csv_elements.size() > 1) {
+                // There exists multiple elements within this vector
+                for (const auto &csv: csv_elements) {
+                    if (&csv == &csv_elements.back()) {
+                        // We are at the last element
+                        ss << csv << std::endl;
+                    } else {
+                        ss << csv << ','  << std::endl;
+                    }
+                }
+            } else {
+                // There exists only one element within this vector
+                ss << csv_elements.at(0) << std::endl;
+            }
+
+            return ss.str();
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(tr("An error has occurred whilst attempting to modify CSV data.\n\n%1").arg(QString::fromStdString(e.what())).toStdString()));
+    }
+
+    return std::string();
+}
+
+/**
+ * @brief StringFuncs::convSecondsToMinutes is a helper function that converts seconds to minutes, provided that the given seconds
+ * are longer than a single minute in length, otherwise the value remains as seconds for ease-of-reading.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param seconds The seconds to be converted to minutes.
+ * @return A pretty-string is outputted of the converted seconds, along with the time value at the end (i.e. seconds, minutes,
+ * hours, etc.) so that the user knows the actual length of time in question.
+ */
+QString StringFuncs::convSecondsToMinutes(const double &seconds) {
+    double conv_val = seconds;
+    std::stringstream ss;
+    QString time_value;
+    if (seconds > 0.0f && seconds < 60.0f) {
+        conv_val = seconds;
+        time_value = tr("seconds");
+    } else if (seconds > 60.0f) {
+        conv_val /= 60.0f;
+        time_value = tr("minutes");
+    } else if (seconds > (60.0f * 60.0f)) {
+        conv_val /= (60.0f * 60.0f);
+        time_value = tr("hours");
+    } else if (seconds > (60.0f * 60.0f * 24.0f)) {
+        conv_val /= (60.0f * 60.0f * 24.0f);
+        time_value = tr("days");
+    } else {
+        conv_val /= (60.0f * 60.0f * 24.0f * 7.0f);
+        time_value = tr("weeks");
+    }
+
+    ss << conv_val << " " << time_value.toStdString();
+
+    return QString::fromStdString(ss.str());
 }
 
 #if defined(_WIN32) || defined(__MINGW64__)

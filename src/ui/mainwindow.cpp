@@ -31,7 +31,7 @@
  **   The latest source code updates can be obtained from [ 1 ] below at your
  **   discretion. A web-browser or the 'git' application may be required.
  **
- **   [ 1 ] - https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe
+ **   [ 1 ] - https://code.gekkofyre.io/amateur-radio/small-world-deluxe
  **
  ****************************************************************************************************/
 
@@ -43,6 +43,8 @@
 #include "src/ui/widgets/gk_submit_msg.hpp"
 #include "src/models/tableview/gk_frequency_model.hpp"
 #include "src/models/tableview/gk_logger_model.hpp"
+#include "src/models/tableview/gk_active_msgs_model.hpp"
+#include "src/models/tableview/gk_callsign_msgs_model.hpp"
 #include "src/gk_codec2.hpp"
 #include <boost/exception/all.hpp>
 #include <boost/chrono/chrono.hpp>
@@ -566,7 +568,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             //
             // Audio encoding signals and slots
             //
-            gkAudioPlayDlg = new GkAudioPlayDialog(GkDb, gkAudioDecoding, gkAudioDevices, fileIo, this);
+            gkAudioPlayDlg = new GkAudioPlayDialog(GkDb, gkAudioDecoding, gkAudioDevices, gkStringFuncs, this);
             // QObject::connect(gkAudioPlayDlg, SIGNAL(beginRecording(const bool &)), gkAudioEncoding, SLOT(startRecording(const bool &)));
         }
 
@@ -635,6 +637,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         gkModem = new GkModem(gkAudioDevices, GkDb, gkEventLogger, gkStringFuncs, this);
         gkTextToSpeech = new GkTextToSpeech(GkDb, gkEventLogger, this);
+
+        QPointer<GkActiveMsgsTableViewModel> gkActiveMsgsTableViewModel = new GkActiveMsgsTableViewModel(GkDb, this);
+        QPointer<GkCallsignMsgsTableViewModel> gkCallsignMsgsTableViewModel = new GkCallsignMsgsTableViewModel(GkDb, this);
+        ui->tableView_mesg_active->setModel(gkActiveMsgsTableViewModel);
+        ui->tableView_mesg_callsigns->setModel(gkCallsignMsgsTableViewModel);
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
@@ -789,7 +796,7 @@ bool MainWindow::prefillAmateurBands()
  */
 void MainWindow::launchSettingsWin()
 {
-    QPointer<GkFreqTableViewModel> gkFreqTableModel = new GkFreqTableViewModel(GkDb, this);
+    QPointer<GkFreqTableModel> gkFreqTableModel = new GkFreqTableModel(GkDb, this);
     QObject::connect(gkFreqTableModel, SIGNAL(addFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
                      gkFreqList, SIGNAL(addFreq(const GekkoFyre::AmateurRadio::GkFreqs &)));
     QObject::connect(gkFreqTableModel, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
