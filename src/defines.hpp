@@ -35,7 +35,7 @@
  **   The latest source code updates can be obtained from [ 1 ] below at your
  **   discretion. A web-browser or the 'git' application may be required.
  **
- **   [ 1 ] - https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe
+ **   [ 1 ] - https://code.gekkofyre.io/amateur-radio/small-world-deluxe
  **
  ****************************************************************************************************/
 
@@ -223,7 +223,7 @@ namespace General {
     constexpr char executableName[] = "smallworld";
     constexpr char appVersion[] = "0.0.1";
     constexpr char appRelease[] = "Pre-alpha";
-    constexpr char codeRepository[] = "https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe";
+    constexpr char codeRepository[] = "https://code.gekkofyre.io/amateur-radio/small-world-deluxe";
 
     constexpr char gk_sentry_uri[] = "https://5532275153ce4eb4865b89eb2441f356@sentry.gekkofyre.io/2";
     constexpr char gk_sentry_user_side_uri[] = "https://sentry.gekkofyre.io/";

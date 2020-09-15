@@ -35,7 +35,7 @@
 #   The latest source code updates can be obtained from [ 1 ] below at your
 #   discretion. A web-browser or the 'git' application may be required.
 #
-#   [ 1 ] - https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe
+#   [ 1 ] - https://code.gekkofyre.io/amateur-radio/small-world-deluxe
 #
 
 cmake_minimum_required(VERSION 3.5 FATAL_ERROR) # This version is needed to properly search for libpthreads
