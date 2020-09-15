@@ -42,41 +42,46 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/models/tableview/gk_logger_model.hpp"
-#include <mutex>
-#include <QVariant>
-#include <QPointer>
+#include "src/dek_db.hpp"
+#include <sentry.h>
+#include <memory>
+#include <QList>
+#include <QMutex>
 #include <QObject>
 #include <QString>
-#include <QList>
+#include <QVariant>
+#include <QTableView>
+#include <QModelIndex>
+#include <QAbstractTableModel>
+#include <QSortFilterProxyModel>
 
 namespace GekkoFyre {
 
-class GkEventLogger : public QObject {
+class GkCallsignMsgsTableViewModel : public QAbstractTableModel {
     Q_OBJECT
 
 public:
-    explicit GkEventLogger(QPointer<GekkoFyre::StringFuncs> stringFuncs, QObject *parent = nullptr);
-    ~GkEventLogger() override;
+    explicit GkCallsignMsgsTableViewModel(QPointer<GekkoFyre::GkLevelDb> database, QWidget *parent = nullptr);
+    ~GkCallsignMsgsTableViewModel() override;
 
-    void publishEvent(const QString &event, const GekkoFyre::System::Events::Logging::GkSeverity &severity = GekkoFyre::System::Events::Logging::GkSeverity::Warning,
-                      const QVariant &arguments = "", const bool &sys_notification = false, const bool &publishToConsole = true,
-                      const bool &publishToStatusBar = false);
+    void populateData(const QList<GekkoFyre::System::Events::Logging::GkEventLogging> &event_logs);
+    [[nodiscard]] int rowCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
+    [[nodiscard]] int columnCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
 
-signals:
-    void sendEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &event);
-    void removeEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &event);
-    void sendToStatusBar(const QString &msg);
+    [[nodiscard]] QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
+    [[nodiscard]] QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
+
+public slots:
+    void insertData(const GekkoFyre::System::Events::Logging::GkEventLogging &event);
+    void removeData(const GekkoFyre::System::Events::Logging::GkEventLogging &event);
 
 private:
-    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
-    QList<GekkoFyre::System::Events::Logging::GkEventLogging> eventLogDb;                       // Where the event log itself is stored in memory...
+    QPointer<GekkoFyre::GkLevelDb> GkDb;
+    QList<GekkoFyre::System::Events::Logging::GkEventLogging> m_data;
 
-    qint64 setDate();
-    int setEventNo();
-    void systemNotification(const QString &title, const GekkoFyre::System::Events::Logging::GkEventLogging &event_msg);
-    void sendToConsole(const GekkoFyre::System::Events::Logging::GkEventLogging &event_msg,
-                       const GekkoFyre::System::Events::Logging::GkSeverity &severity);
+    QPointer<QSortFilterProxyModel> proxyModel;
+    QPointer<QTableView> table;
 
+    QMutex dataBatchMutex;
 };
 };

@@ -35,7 +35,7 @@
 #   The latest source code updates can be obtained from [ 1 ] below at your
 #   discretion. A web-browser or the 'git' application may be required.
 #
-#   [ 1 ] - https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe
+#   [ 1 ] - https://code.gekkofyre.io/amateur-radio/small-world-deluxe
 #
 
 cmake_minimum_required(VERSION 3.5 FATAL_ERROR) # This version is needed to properly search for libpthreads
@@ -565,7 +565,9 @@ set(GALAXY_UI_CPP
     src/ui/widgets/gk_submit_msg.cpp
     src/ui/widgets/gk_display_image.cpp
     src/models/tableview/gk_frequency_model.cpp
-    src/models/tableview/gk_logger_model.cpp)
+    src/models/tableview/gk_logger_model.cpp
+    src/models/tableview/gk_active_msgs_model.cpp
+    src/models/tableview/gk_callsign_msgs_model.cpp)
 
 if(WIN32 OR MSYS OR MINGW)
     # Nothing here at the moment!
@@ -647,7 +649,9 @@ set(GALAXY_OBJ_HEADERS
     src/ui/widgets/gk_submit_msg.hpp
     src/ui/widgets/gk_display_image.hpp
     src/models/tableview/gk_frequency_model.hpp
-    src/models/tableview/gk_logger_model.hpp)
+    src/models/tableview/gk_logger_model.hpp
+    src/models/tableview/gk_active_msgs_model.hpp
+    src/models/tableview/gk_callsign_msgs_model.hpp)
 
 if(WIN32 OR MSYS OR MINGW)
     # Nothing here at the moment!

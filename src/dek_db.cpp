@@ -35,7 +35,7 @@
  **   The latest source code updates can be obtained from [ 1 ] below at your
  **   discretion. A web-browser or the 'git' application may be required.
  **
- **   [ 1 ] - https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe
+ **   [ 1 ] - https://code.gekkofyre.io/amateur-radio/small-world-deluxe
  **
  ****************************************************************************************************/
 
@@ -525,8 +525,9 @@ void GkLevelDb::remove_frequencies_db(const GkFreqs &freq_to_remove)
         // Frequency
         std::string gk_stored_freq_value = "";
         status = db->Get(read_options, "GkStoredFreq", &gk_stored_freq_value);
-        std::string csv_stored_freq;
-        csv_stored_freq = deleteCsvValForDb(gk_stored_freq_value, QString::number(freq_to_remove.frequency).toStdString()); // Frequency (CSV)
+        auto gk_freq_elements = gkStringFuncs->csvSplitter(gk_stored_freq_value);
+        auto gk_freq_elements_mod = gkStringFuncs->csvRemoveElement(gk_freq_elements, std::to_string(freq_to_remove.frequency));
+        std::string csv_stored_freq = gkStringFuncs->csvOutputString(gk_freq_elements_mod);
 
         batch.Delete("GkStoredFreq"); // Delete the key before rewriting the values again!
         batch.Put("GkStoredFreq", csv_stored_freq);
@@ -534,8 +535,9 @@ void GkLevelDb::remove_frequencies_db(const GkFreqs &freq_to_remove)
         // Closest matching frequency band
         std::string gk_closest_band_value = "";
         status = db->Get(read_options, "GkClosestBand", &gk_closest_band_value);
-        std::string csv_closest_band;
-        csv_closest_band = deleteCsvValForDb(gk_closest_band_value, convBandsToStr(freq_to_remove.closest_freq_band).toStdString()); // Closest matching frequency band (CSV)
+        auto gk_closed_band_elements = gkStringFuncs->csvSplitter(gk_closest_band_value);
+        auto gk_closed_band_elements_mod = gkStringFuncs->csvRemoveElement(gk_closed_band_elements, convBandsToStr(freq_to_remove.closest_freq_band).toStdString());
+        std::string csv_closest_band = gkStringFuncs->csvOutputString(gk_closed_band_elements_mod);
 
         batch.Delete("GkClosestBand"); // Delete the key before rewriting the values again!
         batch.Put("GkClosestBand", csv_closest_band);
@@ -543,8 +545,9 @@ void GkLevelDb::remove_frequencies_db(const GkFreqs &freq_to_remove)
         // Digital mode
         std::string gk_digital_mode_value = "";
         status = db->Get(read_options, "GkDigitalMode", &gk_digital_mode_value);
-        std::string csv_digital_mode;
-        csv_digital_mode = deleteCsvValForDb(gk_digital_mode_value, convDigitalModesToStr(freq_to_remove.digital_mode).toStdString()); // Digital mode (CSV)
+        auto gk_digital_mode_elements = gkStringFuncs->csvSplitter(gk_digital_mode_value);
+        auto gk_digital_mode_elements_mod = gkStringFuncs->csvRemoveElement(gk_digital_mode_elements, convDigitalModesToStr(freq_to_remove.digital_mode).toStdString());
+        std::string csv_digital_mode = gkStringFuncs->csvOutputString(gk_digital_mode_elements_mod);
 
         batch.Delete("GkDigitalMode"); // Delete the key before rewriting the values again!
         batch.Put("GkDigitalMode", csv_digital_mode);
@@ -552,8 +555,9 @@ void GkLevelDb::remove_frequencies_db(const GkFreqs &freq_to_remove)
         // IARU Region
         std::string gk_iaru_region_value = "";
         status = db->Get(read_options, "GkIARURegion", &gk_iaru_region_value);
-        std::string csv_iaru_region;
-        csv_iaru_region = deleteCsvValForDb(gk_iaru_region_value, convIARURegionToStr(freq_to_remove.iaru_region).toStdString()); // IARU Region (CSV)
+        auto gk_iaru_region_elements = gkStringFuncs->csvSplitter(gk_iaru_region_value);
+        auto gk_iaru_region_elements_mod = gkStringFuncs->csvRemoveElement(gk_iaru_region_elements, convIARURegionToStr(freq_to_remove.iaru_region).toStdString());
+        std::string csv_iaru_region = gkStringFuncs->csvOutputString(gk_iaru_region_elements_mod);
 
         batch.Delete("GkIARURegion"); // Delete the key before rewriting the values again!
         batch.Put("GkIARURegion", csv_iaru_region);
@@ -567,7 +571,7 @@ void GkLevelDb::remove_frequencies_db(const GkFreqs &freq_to_remove)
             throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
         }
     } catch (const std::exception &e) { // https://en.cppreference.com/w/cpp/error/nested_exception
-        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
+        gkStringFuncs->print_exception(e);
     }
 
     return;
@@ -1667,65 +1671,77 @@ audio_channels GkLevelDb::convertAudioChannelsEnum(const int &audio_channel_sel)
 {
     audio_channels ret = Mono;
     switch (audio_channel_sel) {
-    case 0:
-        ret = Mono;
-        break;
-    case 1:
-        ret = Left;
-        break;
-    case 2:
-        ret = Right;
-        break;
-    case 3:
-        ret = Both;
-        break;
-    default:
-        ret = Mono;
-        break;
+        case 0:
+            ret = audio_channels::Mono;
+            break;
+        case 1:
+            ret = audio_channels::Left;
+            break;
+        case 2:
+            ret = audio_channels::Right;
+            break;
+        case 3:
+            ret = audio_channels::Both;
+            break;
+        case 4:
+            ret = audio_channels::Surround;
+            break;
+        default:
+            ret = audio_channels::Unknown;
+            break;
     }
 
     return ret;
 }
 
 /**
- * @brief GkLevelDb::convertAudioChannelsInt converts from an enumerator to the
- * given amounts of *actual* audio channels, as an integer.
+ * @brief GkLevelDb::convertAudioChannelsStr converts the audio channel count enumerator to its related QString reference.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param channel_enum The channels as an enumerator, which itself is calculated by
- * a given QComboBox index.
- * @return The amount of channels, given as an integer.
+ * @param channel_enum The channel count enumerator.
+ * @return The related QString for the given channel count enumerator.
  */
-int GkLevelDb::convertAudioChannelsInt(const audio_channels &channel_enum) const
+QString GkLevelDb::convertAudioChannelsStr(const audio_channels &channel_enum)
 {
     switch (channel_enum) {
-    case Mono:
-        return 1;
-    case Left:
-        return 1;
-    case Right:
-        return 1;
-    case Both:
-        return 2;
-    default:
-        return 1;
+        case Mono:
+            return tr("Mono");
+        case Left:
+            return tr("Left");
+        case Right:
+            return tr("Right");
+        case Both:
+            return tr("Stereo");
+        case Surround:
+            return tr("Surround");
+        default:
+            return tr("Unknown");
     }
 
-    return -1;
+    return tr("Unknown");
 }
 
+/**
+ * @brief GkLevelDb::convertAudioEnumIsStereo determines whether the current audio channel count in question is capable of
+ * supporting Stereo output or not.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param channel_enum The channel count enumerator.
+ * @return Whether stereo sound output is supported or not.
+ */
 bool GkLevelDb::convertAudioEnumIsStereo(const audio_channels &channel_enum) const
 {
     switch (channel_enum) {
-    case Mono:
-        return false;
-    case Left:
-        return false;
-    case Right:
-        return false;
-    case Both:
-        return true;
-    default:
-        return false;
+        case Mono:
+            return false;
+        case Left:
+            return false;
+        case Right:
+            return false;
+        case Both:
+            return true;
+        case Surround:
+            return false;
+        default:
+            return false;
     }
 
     return false;
@@ -2083,7 +2099,8 @@ std::string GkLevelDb::deleteCsvValForDb(const std::string &comma_sep_values, co
             return output_stream.str();
         } // Otherwise return an empty std::string!
     } catch (const std::exception &e) {
-        std::throw_with_nested(std::invalid_argument(tr("An error has occurred whilst processing CSV for Google LevelDB!").toStdString()));
+        std::throw_with_nested(std::invalid_argument(tr("An error has occurred whilst processing CSV for Google LevelDB! Error:\n\n%1")
+        .arg(QString::fromStdString(e.what())).toStdString()));
     }
 
     return "";

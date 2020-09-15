@@ -35,7 +35,7 @@
  **   The latest source code updates can be obtained from [ 1 ] below at your
  **   discretion. A web-browser or the 'git' application may be required.
  **
- **   [ 1 ] - https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe
+ **   [ 1 ] - https://code.gekkofyre.io/amateur-radio/small-world-deluxe
  **
  ****************************************************************************************************/
 
@@ -50,6 +50,7 @@
 #include <QString>
 #include <QVariant>
 #include <QPointer>
+#include <QKeyEvent>
 #include <QTableView>
 #include <QModelIndex>
 #include <QMouseEvent>
@@ -59,41 +60,36 @@
 
 namespace GekkoFyre {
 
-class GkFreqTableHorizHeader : public QHeaderView {
-    Q_OBJECT;
+class GkFreqTableViewModel : public QTableView {
 
 public:
-    using QHeaderView::QHeaderView;
+    explicit GkFreqTableViewModel(QWidget *parent = nullptr);
+    ~GkFreqTableViewModel() override;
 
 protected:
-    void mouseReleaseEvent(QMouseEvent *e) override;
-
-signals:
-    void mouseRightPressed(int section);
+    void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
 
 };
 
-class GkFreqTableViewModel : public QAbstractTableModel {
+class GkFreqTableModel : public QAbstractTableModel {
     Q_OBJECT
 
 public:
-    explicit GkFreqTableViewModel(QPointer<GekkoFyre::GkLevelDb> database, QWidget *parent = nullptr);
-    ~GkFreqTableViewModel() override;
+    explicit GkFreqTableModel(QPointer<GekkoFyre::GkLevelDb> database, QWidget *parent = nullptr);
+    ~GkFreqTableModel() override;
 
     void populateData(const QList<GekkoFyre::AmateurRadio::GkFreqs> &frequencies);
     void populateData(const QList<GekkoFyre::AmateurRadio::GkFreqs> &frequencies, const bool &populate_freq_db);
     void insertData(const GekkoFyre::AmateurRadio::GkFreqs &freq_val);
     void insertData(const GekkoFyre::AmateurRadio::GkFreqs &freq_val, const bool &populate_freq_db);
-    void removeData(const GekkoFyre::AmateurRadio::GkFreqs &freq_val);
-    void removeData(const GekkoFyre::AmateurRadio::GkFreqs &freq_val, const bool &remove_freq_db);
+    bool insertRows(int row, int count, const QModelIndex &) Q_DECL_OVERRIDE;
+    bool removeRows(int row, int count, const QModelIndex &) Q_DECL_OVERRIDE;
     int rowCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
+    [[nodiscard]] Qt::ItemFlags flags(const QModelIndex &index) const Q_DECL_OVERRIDE;
     int columnCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
 
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
-
-protected:
-    virtual void customHeaderMenuRequested(int section);
 
 signals:
     void removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_remove);
@@ -103,7 +99,7 @@ private:
     QPointer<GekkoFyre::GkLevelDb> GkDb;
     QList<GekkoFyre::AmateurRadio::GkFreqs> m_data;
 
-    QPointer<QTableView> table;
+    QPointer<GkFreqTableViewModel> view;
     QPointer<QSortFilterProxyModel> proxyModel;
 
     QMutex dataBatchMutex;

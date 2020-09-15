@@ -31,7 +31,7 @@
 #   The latest source code updates can be obtained from [ 1 ] below at your
 #   discretion. A web-browser or the 'git' application may be required.
 #
-#   [ 1 ] - https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe
+#   [ 1 ] - https://code.gekkofyre.io/amateur-radio/small-world-deluxe
 #
 
 #
@@ -107,9 +107,9 @@ sworld_sentry_archlinux_x86_64:
         # Upload debugging information
         - sentry-cli --auth-token $GK_SENTRY_AUTH_KEY --url $GK_SENTRY_URL upload-dif -o gekkofyre-networks -p small-world-deluxe ./src_build/ --include-sources --log-level=error
         # Create a release
-        - sentry-cli releases new $MAJOR.$MINOR.$CI_COMMIT_SHA --project small-world-deluxe
+        - sentry-cli releases new $MAJOR.$MINOR.$PATCH-$CI_COMMIT_SHA --project small-world-deluxe
         # Associate commits with the release
-        - sentry-cli releases set-commits $MAJOR.$MINOR.$CI_COMMIT_SHA --auto
+        - sentry-cli releases set-commits $MAJOR.$MINOR.$PATCH-$CI_COMMIT_SHA --auto
         # TODO: When we are ready to do so, we require a command to finalize the releases!
     after_script:
         - echo "Finished uploading data to Sentry server!"

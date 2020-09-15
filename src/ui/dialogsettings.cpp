@@ -31,7 +31,7 @@
  **   The latest source code updates can be obtained from [ 1 ] below at your
  **   discretion. A web-browser or the 'git' application may be required.
  **
- **   [ 1 ] - https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe
+ **   [ 1 ] - https://code.gekkofyre.io/amateur-radio/small-world-deluxe
  **
  ****************************************************************************************************/
 
@@ -87,7 +87,7 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
                                const std::list<GekkoFyre::Database::Settings::GkComPort> &com_ports,
                                const QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> &usbPortMap,
                                QPointer<GkFrequencies> gkFreqList,
-                               QPointer<GkFreqTableViewModel> freqTableModel,
+                               QPointer<GkFreqTableModel> freqTableModel,
                                QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                QPointer<GekkoFyre::GkTextToSpeech> textToSpeechPtr,
                                QWidget *parent)
@@ -2420,6 +2420,11 @@ void DialogSettings::on_pushButton_freq_list_edit_clicked()
 
 void DialogSettings::on_pushButton_freq_list_delete_clicked()
 {
+    QPointer<QItemSelectionModel> select = ui->tableView_working_freqs->selectionModel();
+    if (select->hasSelection()) {
+        gkFreqTableModel->removeRows(select->currentIndex().row(), 1, QModelIndex());
+    }
+
     return;
 }
 

@@ -23,10 +23,10 @@
    <item>
     <widget class="QFrame" name="frame_container_audio">
      <property name="frameShape">
-      <enum>QFrame::StyledPanel</enum>
+      <enum>QFrame::NoFrame</enum>
      </property>
      <property name="frameShadow">
-      <enum>QFrame::Raised</enum>
+      <enum>QFrame::Plain</enum>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
@@ -41,6 +41,9 @@
          <layout class="QVBoxLayout" name="verticalLayout_3">
           <item>
            <widget class="QScrollArea" name="scrollArea">
+            <property name="frameShape">
+             <enum>QFrame::NoFrame</enum>
+            </property>
             <property name="frameShadow">
              <enum>QFrame::Plain</enum>
             </property>
@@ -50,13 +53,16 @@
             <property name="widgetResizable">
              <bool>true</bool>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
             <widget class="QWidget" name="scrollAreaWidgetContents">
              <property name="geometry">
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>576</width>
-               <height>511</height>
+               <width>600</width>
+               <height>549</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -76,10 +82,10 @@
                  <item row="0" column="1">
                   <widget class="QFrame" name="frame_playback_file_location">
                    <property name="frameShape">
-                    <enum>QFrame::StyledPanel</enum>
+                    <enum>QFrame::NoFrame</enum>
                    </property>
                    <property name="frameShadow">
-                    <enum>QFrame::Raised</enum>
+                    <enum>QFrame::Plain</enum>
                    </property>
                    <layout class="QHBoxLayout" name="horizontalLayout_2">
                     <property name="leftMargin">
@@ -142,7 +148,14 @@
                   </widget>
                  </item>
                  <item row="0" column="1">
-                  <widget class="QComboBox" name="comboBox_playback_rec_codec"/>
+                  <widget class="QComboBox" name="comboBox_playback_rec_codec">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                  </widget>
                  </item>
                  <item row="1" column="0">
                   <widget class="QLabel" name="label_playback_rec_bitrate">
@@ -152,7 +165,14 @@
                   </widget>
                  </item>
                  <item row="1" column="1">
-                  <widget class="QComboBox" name="comboBox_playback_rec_bitrate"/>
+                  <widget class="QComboBox" name="comboBox_playback_rec_bitrate">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                  </widget>
                  </item>
                 </layout>
                </widget>
@@ -160,23 +180,71 @@
               <item>
                <widget class="QGroupBox" name="groupBox_playback_controls">
                 <property name="title">
-                 <string>Controls</string>
+                 <string>Controls &amp;&amp; Playback</string>
                 </property>
-                <layout class="QHBoxLayout" name="horizontalLayout_3">
+                <layout class="QVBoxLayout" name="verticalLayout_7">
                  <item>
-                  <widget class="QPushButton" name="pushButton_playback_skip_forward">
-                   <property name="toolTip">
-                    <string>Move forward in playback by 10 seconds.</string>
+                  <widget class="QFrame" name="frame_playback_controls_top">
+                   <property name="frameShape">
+                    <enum>QFrame::NoFrame</enum>
                    </property>
-                   <property name="text">
-                    <string>&gt;&gt;</string>
+                   <property name="frameShadow">
+                    <enum>QFrame::Plain</enum>
                    </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_6">
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <item>
+                     <widget class="QProgressBar" name="progressBar_playback">
+                      <property name="value">
+                       <number>0</number>
+                      </property>
+                      <property name="textVisible">
+                       <bool>false</bool>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
                   </widget>
                  </item>
                  <item>
-                  <widget class="QPushButton" name="pushButton_playback_play">
-                   <property name="styleSheet">
-                    <string notr="true">QPushButton:pressed {
+                  <widget class="QFrame" name="frame_playback_controls_bottom">
+                   <property name="frameShape">
+                    <enum>QFrame::NoFrame</enum>
+                   </property>
+                   <property name="frameShadow">
+                    <enum>QFrame::Plain</enum>
+                   </property>
+                   <layout class="QHBoxLayout" name="horizontalLayout_4">
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <item>
+                     <widget class="QPushButton" name="pushButton_playback_skip_back">
+                      <property name="toolTip">
+                       <string>Move forward in playback by 10 seconds.</string>
+                      </property>
+                      <property name="styleSheet">
+                       <string notr="true">QPushButton:pressed {
     background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(60, 186, 162, 255), stop:1 rgba(98, 211, 162, 255))
 }
 
@@ -192,16 +260,16 @@ QPushButton {
 QPushButton:disabled {
     background-color: rgb(170, 170, 127)
 }</string>
-                   </property>
-                   <property name="text">
-                    <string>Play</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QPushButton" name="pushButton_playback_record">
-                   <property name="styleSheet">
-                    <string notr="true">QPushButton:pressed {
+                      </property>
+                      <property name="text">
+                       <string>&lt;&lt;</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QPushButton" name="pushButton_playback_play">
+                      <property name="styleSheet">
+                       <string notr="true">QPushButton:pressed {
     background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(60, 186, 162, 255), stop:1 rgba(98, 211, 162, 255))
 }
 
@@ -217,16 +285,16 @@ QPushButton {
 QPushButton:disabled {
     background-color: rgb(170, 170, 127)
 }</string>
-                   </property>
-                   <property name="text">
-                    <string>Record</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QPushButton" name="pushButton_playback_stop">
-                   <property name="styleSheet">
-                    <string notr="true">QPushButton:pressed {
+                      </property>
+                      <property name="text">
+                       <string>Play</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QPushButton" name="pushButton_playback_record">
+                      <property name="styleSheet">
+                       <string notr="true">QPushButton:pressed {
     background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(60, 186, 162, 255), stop:1 rgba(98, 211, 162, 255))
 }
 
@@ -242,20 +310,66 @@ QPushButton {
 QPushButton:disabled {
     background-color: rgb(170, 170, 127)
 }</string>
-                   </property>
-                   <property name="text">
-                    <string>Stop</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QPushButton" name="pushButton_playback_skip_back">
-                   <property name="toolTip">
-                    <string>Move backwards in playback by 10 seconds.</string>
-                   </property>
-                   <property name="text">
-                    <string>&lt;&lt;</string>
-                   </property>
+                      </property>
+                      <property name="text">
+                       <string>Record</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QPushButton" name="pushButton_playback_stop">
+                      <property name="styleSheet">
+                       <string notr="true">QPushButton:pressed {
+    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(60, 186, 162, 255), stop:1 rgba(98, 211, 162, 255))
+}
+
+QPushButton {
+     background-color: #B80000; border: 1px solid black;
+     border-radius: 5px;
+     border-width: 1px;
+     padding: 6px;
+     font: bold;
+     color: white;
+}
+
+QPushButton:disabled {
+    background-color: rgb(170, 170, 127)
+}</string>
+                      </property>
+                      <property name="text">
+                       <string>Stop</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QPushButton" name="pushButton_playback_skip_forward">
+                      <property name="toolTip">
+                       <string>Move backwards in playback by 10 seconds.</string>
+                      </property>
+                      <property name="styleSheet">
+                       <string notr="true">QPushButton:pressed {
+    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,   stop:0 rgba(60, 186, 162, 255), stop:1 rgba(98, 211, 162, 255))
+}
+
+QPushButton {
+     background-color: #B80000; border: 1px solid black;
+     border-radius: 5px;
+     border-width: 1px;
+     padding: 6px;
+     font: bold;
+     color: white;
+}
+
+QPushButton:disabled {
+    background-color: rgb(170, 170, 127)
+}</string>
+                      </property>
+                      <property name="text">
+                       <string>&gt;&gt;</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
                   </widget>
                  </item>
                 </layout>
@@ -267,6 +381,16 @@ QPushButton:disabled {
                  <string>Information</string>
                 </property>
                 <layout class="QFormLayout" name="formLayout_2">
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="label_playback_file_name">
+                   <property name="text">
+                    <string>Title: </string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QLineEdit" name="lineEdit_playback_file_name"/>
+                 </item>
                  <item row="1" column="0">
                   <widget class="QLabel" name="label_playback_audio_codec">
                    <property name="text">
@@ -296,41 +420,14 @@ QPushButton:disabled {
                   </widget>
                  </item>
                  <item row="3" column="0">
-                  <widget class="QLabel" name="label_playback_no_channels">
+                  <widget class="QLabel" name="label_playback_sample_rate">
                    <property name="text">
-                    <string>No. Channels: </string>
+                    <string>Sample rate: </string>
                    </property>
                   </widget>
                  </item>
                  <item row="3" column="1">
-                  <widget class="QLineEdit" name="lineEdit_playback_no_channels">
-                   <property name="readOnly">
-                    <bool>true</bool>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="0" column="1">
-                  <widget class="QProgressBar" name="progressBar_playback">
-                   <property name="value">
-                    <number>0</number>
-                   </property>
-                   <property name="textVisible">
-                    <bool>false</bool>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="0" column="0">
-                  <spacer name="horizontalSpacer_6">
-                   <property name="orientation">
-                    <enum>Qt::Horizontal</enum>
-                   </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>40</width>
-                     <height>20</height>
-                    </size>
-                   </property>
-                  </spacer>
+                  <widget class="QLineEdit" name="lineEdit_playback_sample_rate"/>
                  </item>
                 </layout>
                </widget>
@@ -605,10 +702,10 @@ QPushButton:disabled {
    <item>
     <widget class="QFrame" name="frame_buttons">
      <property name="frameShape">
-      <enum>QFrame::StyledPanel</enum>
+      <enum>QFrame::NoFrame</enum>
      </property>
      <property name="frameShadow">
-      <enum>QFrame::Raised</enum>
+      <enum>QFrame::Plain</enum>
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>

@@ -35,7 +35,7 @@
  **   The latest source code updates can be obtained from [ 1 ] below at your
  **   discretion. A web-browser or the 'git' application may be required.
  **
- **   [ 1 ] - https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe
+ **   [ 1 ] - https://code.gekkofyre.io/amateur-radio/small-world-deluxe
  **
  ****************************************************************************************************/
 
@@ -69,7 +69,7 @@
 #include <QtUsb/QUsbDevice>
 #include <QSerialPortInfo>
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__MINGW64__)
 #ifdef PA_USE_ASIO
 #include <pa_asio.h>
 #include "contrib/portaudio/cpp/include/portaudiocpp/AsioDeviceAdapter.hxx"
@@ -78,10 +78,9 @@
 #include <winsdkver.h>
 #include <Windows.h>
 #include <tchar.h> // https://linuxgazette.net/147/pfeiffer.html
-#if defined(_WIN32) || defined(__MINGW64__)
+
 #include <atlbase.h>
 #include <atlstr.h>
-#endif
 #endif
 
 #ifdef __cplusplus
@@ -92,20 +91,8 @@ extern "C"
 #include <hamlib/rig.h>
 #include <hamlib/riglist.h>
 
-#ifdef _WIN32
-    typedef std::wstring gkwstring;
-#if defined(_MSC_VER) && (_MSC_VER > 1915)
-#endif
-#elif __linux__
-    typedef std::string gkwstring;
-#endif
-
 #ifdef __cplusplus
 } // extern "C"
-#endif
-
-#if defined(_WIN32) || defined(__MINGW64__)
-#define snprintf _snprintf
 #endif
 
 namespace GekkoFyre {
@@ -177,10 +164,10 @@ namespace GekkoFyre {
 //
 // QTableView Models
 //
-#define GK_FREQ_TABLEVIEW_MODEL_FREQUENCY_IDX (0)       // The desired ordering for the 'Frequency' heading within the QTableView model for class, `GkFreqTableViewModel`.
-#define GK_FREQ_TABLEVIEW_MODEL_MODE_IDX (1)            // The desired ordering for the 'Mode' heading within the QTableView model for class, `GkFreqTableViewModel`.
-#define GK_FREQ_TABLEVIEW_MODEL_IARU_REGION_IDX (2)     // The desired ordering for the 'IARU Region' heading within the QTableView model for class, `GkFreqTableViewModel`.
-#define GK_FREQ_TABLEVIEW_MODEL_TOTAL_IDX (3)           // The total amount of indexes (i.e. columns) for the QTableView model, `GkFreqTableViewModel`. Be sure to keep this up-to-date!
+#define GK_FREQ_TABLEVIEW_MODEL_FREQUENCY_IDX (0)       // The desired ordering for the 'Frequency' heading within the QTableView model for class, `GkFreqTableModel`.
+#define GK_FREQ_TABLEVIEW_MODEL_MODE_IDX (1)            // The desired ordering for the 'Mode' heading within the QTableView model for class, `GkFreqTableModel`.
+#define GK_FREQ_TABLEVIEW_MODEL_IARU_REGION_IDX (2)     // The desired ordering for the 'IARU Region' heading within the QTableView model for class, `GkFreqTableModel`.
+#define GK_FREQ_TABLEVIEW_MODEL_TOTAL_IDX (3)           // The total amount of indexes (i.e. columns) for the QTableView model, `GkFreqTableModel`. Be sure to keep this up-to-date!
 #define GK_FREQ_TABLEVIEW_MODEL_NUM_PRECISION (15)      // The number of decimal places for which to display the frequencies as!
 
 #define GK_EVENTLOG_TABLEVIEW_MODEL_EVENT_NO_IDX (0)    // The desired ordering for the 'Event No.' heading within the QTableView model for class, `GkEventLoggerTableViewModel`.
@@ -189,10 +176,27 @@ namespace GekkoFyre {
 #define GK_EVENTLOG_TABLEVIEW_MODEL_MESSAGE_IDX (3)     // The desired ordering for the 'Message' heading within the QTableView model for class, `GkEventLoggerTableViewModel`.
 #define GK_EVENTLOG_TABLEVIEW_MODEL_TOTAL_IDX (4)       // The total amount of indexes (i.e. columns) for the QTableView model, `GkEventLoggerTableViewModel`. Be sure to keep this up-to-date!
 
+#define GK_ACTIVE_MSGS_TABLEVIEW_MODEL_OFFSET_IDX (0)
+#define GK_ACTIVE_MSGS_TABLEVIEW_MODEL_DATETIME_IDX (1)
+#define GK_ACTIVE_MSGS_TABLEVIEW_MODEL_AGE_IDX (2)
+#define GK_ACTIVE_MSGS_TABLEVIEW_MODEL_SNR_IDX (3)
+#define GK_ACTIVE_MSGS_TABLEVIEW_MODEL_MSG_IDX (4)
+#define GK_ACTIVE_MSGS_TABLEVIEW_MODEL_TOTAL_IDX (5)    // The total amount of indexes (i.e. columns) for the QTableView model, `GkActiveMsgsTableViewModel`. Be sure to keep this up-to-date!
+
+#define GK_CSIGN_MSGS_TABLEVIEW_MODEL_CALLSIGN_IDX (0)
+#define GK_CSIGN_MSGS_TABLEVIEW_MODEL_DATETIME_IDX (1)
+#define GK_CSIGN_MSGS_TABLEVIEW_MODEL_AGE_IDX (2)
+#define GK_CSIGN_MSGS_TABLEVIEW_MODEL_SNR_IDX (3)
+#define GK_CSIGN_MSGS_TABLEVIEW_MODEL_OFFSET_IDX (4)
+#define GK_CSIGN_MSGS_TABLEVIEW_MODEL_CHECKMARK_IDX (5)
+#define GK_CSIGN_MSGS_TABLEVIEW_MODEL_NAME_IDX (6)
+#define GK_CSIGN_MSGS_TABLEVIEW_MODEL_COMMENT_IDX (7)
+#define GK_CSIGN_MSGS_TABLEVIEW_MODEL_TOTAL_IDX (8)     // The total amount of indexes (i.e. columns) for the QTableView model, `GkActiveMsgsTableViewModel`. Be sure to keep this up-to-date!
+
 //
 // Hamlib related
 //
-#define GK_HAMLIB_DEFAULT_TIMEOUT (15000)               // The default timeout value for Hamlib, measured in milliseconds.
+#define GK_HAMLIB_DEFAULT_TIMEOUT (3000)                // The default timeout value for Hamlib, measured in milliseconds.
 
 //
 // SSTV related
@@ -219,7 +223,7 @@ namespace General {
     constexpr char executableName[] = "smallworld";
     constexpr char appVersion[] = "0.0.1";
     constexpr char appRelease[] = "Pre-alpha";
-    constexpr char codeRepository[] = "https://code.gekkofyre.io/phobos-dthorga/small-world-deluxe";
+    constexpr char codeRepository[] = "https://code.gekkofyre.io/amateur-radio/small-world-deluxe";
 
     constexpr char gk_sentry_uri[] = "https://5532275153ce4eb4865b89eb2441f356@sentry.gekkofyre.io/2";
     constexpr char gk_sentry_user_side_uri[] = "https://sentry.gekkofyre.io/";
@@ -369,6 +373,7 @@ namespace Database {
             Left,
             Right,
             Both,
+            Surround,
             Unknown
         };
 
@@ -651,14 +656,6 @@ namespace AmateurRadio {
 }
 
 namespace Spectrograph {
-    enum GkColorMap
-    {
-        RGBMap,
-        IndexMap,
-        HueMap,
-        AlphaMap
-    };
-
     enum GkGraphType {
         GkWaterfall,
         GkSinewave
@@ -672,40 +669,15 @@ namespace Spectrograph {
         GkGraphTime10Sec
     };
 
-    struct Window {
-        int y;
-        int x;
-    };
-
     struct GkFFTSpectrum {
         double frequency;
         double magnitude;
-    };
-
-    struct GkAxisData {
-        QwtInterval z_interval;                                                 // Interval values for the z-axis.
-        QwtInterval x_interval;                                                 // Interval values for the x-axis.
-        QwtInterval y_interval;                                                 // Interval values for the y-axis.
     };
 
     struct GkTimingData {
         qint64 relative_start_time;                                             // The 'relative starting time' for when the spectrograph was initialized.
         qint64 relative_stop_time;                                              // The 'relative stopping time' for when the spectrograph was deinitialized.
         qint64 curr_time;                                                       // The more up-to-date time, as a UNIX epoch.
-    };
-
-    //
-    // Used for the raster/matrix data calculations within the spectrograph/waterfall of QMainWindow!
-    //
-    struct MatrixData {
-        QMap<qint64, std::pair<QVector<double>, GkAxisData>> z_data_calcs;      // STFT (i.e. Fast Fourier Transformation) calculations as processed by GekkoFyre::SpectroFFTW::stft().
-        std::vector<GkTimingData> timing;                                       // Information that pertains to timing as it relates to the spectrograph / waterfall.
-        GkAxisData curr_axis_info;                                              // Information that pertains to the axis' and their intervals as of the immediate moment.
-        qint64 actual_start_time;                                               // The actual starting time at which the spectrograph was initialized.
-        double min_z_axis_val;                                                  // Most minimum value as presented by the z-axis (the coloration portion).
-        double max_z_axis_val;                                                  // Most maximum value as presented by the z-axis (the coloration portion).
-        int window_size;                                                        // The value as passed towards GekkoFyre::SpectroFFTW::stft().
-        size_t hanning_win;                                                     // The 'window hanning' value.
     };
 }
 
@@ -715,6 +687,7 @@ namespace GkAudioFramework {
         OggVorbis,
         Opus,
         FLAC,
+        Unsupported,
         Unknown
     };
 
@@ -733,12 +706,17 @@ namespace GkAudioFramework {
     struct AudioFileInfo {
         boost::filesystem::path audio_file_path;                                // The path to the audio file itself, if known.
         bool is_output;                                                         // Are we dealing with this as an input or output file?
+        QString track_title;                                                    // The title of the audio track (i.e. metadata) within the audio file itself, if there is such information present.
         double sample_rate;                                                     // The sample rate of the file.
+        double length_in_secs;                                                  // Length of the audio file within seconds as a time measurement.
         CodecSupport type_codec;                                                // The codec of the audio file, if known.
         Database::Settings::audio_channels num_audio_channels;                  // The number of audio channels (i.e. if stereo or mono).
-        long bitrate_lower;                                                     // The lower end of the bitrate scale for the specified file.
-        long bitrate_upper;                                                     // The upper end of the bitrate scale for the specified file.
-        long bitrate_nominal;                                                   // The nominal bitrate for the specified file.
+        qint64 file_size;                                                       // The storage size of the audio/media file itself.
+        qint64 bitrate_lower;                                                   // The lower end of the bitrate scale for the specified file.
+        qint64 bitrate_upper;                                                   // The upper end of the bitrate scale for the specified file.
+        qint64 bitrate_nominal;                                                 // The nominal bitrate for the specified file.
+        qint32 bit_depth;                                                       // Self-explanatory.
+        qint32 num_samples_per_channel;                                         // The number of samples per each channel.
     };
 }
 };
