@@ -98,7 +98,7 @@ public:
     QString read_misc_audio_settings(const GekkoFyre::Database::Settings::audio_cfg &key);
 
     GekkoFyre::Database::Settings::audio_channels convertAudioChannelsEnum(const int &audio_channel_sel);
-    [[nodiscard]] int convertAudioChannelsInt(const GekkoFyre::Database::Settings::audio_channels &channel_enum) const;
+    QString convertAudioChannelsStr(const GekkoFyre::Database::Settings::audio_channels &channel_enum);
     [[nodiscard]] bool convertAudioEnumIsStereo(const GekkoFyre::Database::Settings::audio_channels &channel_enum) const;
 
     ptt_type_t convPttTypeToEnum(const QString &ptt_type_str);

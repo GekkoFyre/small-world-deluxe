@@ -84,6 +84,8 @@ public:
     std::vector<std::string> csvRemoveElement(const std::vector<std::string> &csv_elements, const std::string &val_to_remove);
     std::string csvOutputString(const std::vector<std::string> &csv_elements);
 
+    QString convSecondsToMinutes(const double &seconds);
+
     /**
      * @brief StringFuncs::splitVec will split a given std::vector<T> into many sub-vectors of a given size. This is
      * particularly useful for multithreading, for example, as it could split the vector into a desired number of chunks

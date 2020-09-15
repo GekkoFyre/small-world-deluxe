@@ -1671,65 +1671,77 @@ audio_channels GkLevelDb::convertAudioChannelsEnum(const int &audio_channel_sel)
 {
     audio_channels ret = Mono;
     switch (audio_channel_sel) {
-    case 0:
-        ret = Mono;
-        break;
-    case 1:
-        ret = Left;
-        break;
-    case 2:
-        ret = Right;
-        break;
-    case 3:
-        ret = Both;
-        break;
-    default:
-        ret = Mono;
-        break;
+        case 0:
+            ret = audio_channels::Mono;
+            break;
+        case 1:
+            ret = audio_channels::Left;
+            break;
+        case 2:
+            ret = audio_channels::Right;
+            break;
+        case 3:
+            ret = audio_channels::Both;
+            break;
+        case 4:
+            ret = audio_channels::Surround;
+            break;
+        default:
+            ret = audio_channels::Unknown;
+            break;
     }
 
     return ret;
 }
 
 /**
- * @brief GkLevelDb::convertAudioChannelsInt converts from an enumerator to the
- * given amounts of *actual* audio channels, as an integer.
+ * @brief GkLevelDb::convertAudioChannelsStr converts the audio channel count enumerator to its related QString reference.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param channel_enum The channels as an enumerator, which itself is calculated by
- * a given QComboBox index.
- * @return The amount of channels, given as an integer.
+ * @param channel_enum The channel count enumerator.
+ * @return The related QString for the given channel count enumerator.
  */
-int GkLevelDb::convertAudioChannelsInt(const audio_channels &channel_enum) const
+QString GkLevelDb::convertAudioChannelsStr(const audio_channels &channel_enum)
 {
     switch (channel_enum) {
-    case Mono:
-        return 1;
-    case Left:
-        return 1;
-    case Right:
-        return 1;
-    case Both:
-        return 2;
-    default:
-        return 1;
+        case Mono:
+            return tr("Mono");
+        case Left:
+            return tr("Left");
+        case Right:
+            return tr("Right");
+        case Both:
+            return tr("Stereo");
+        case Surround:
+            return tr("Surround");
+        default:
+            return tr("Unknown");
     }
 
-    return -1;
+    return tr("Unknown");
 }
 
+/**
+ * @brief GkLevelDb::convertAudioEnumIsStereo determines whether the current audio channel count in question is capable of
+ * supporting Stereo output or not.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param channel_enum The channel count enumerator.
+ * @return Whether stereo sound output is supported or not.
+ */
 bool GkLevelDb::convertAudioEnumIsStereo(const audio_channels &channel_enum) const
 {
     switch (channel_enum) {
-    case Mono:
-        return false;
-    case Left:
-        return false;
-    case Right:
-        return false;
-    case Both:
-        return true;
-    default:
-        return false;
+        case Mono:
+            return false;
+        case Left:
+            return false;
+        case Right:
+            return false;
+        case Both:
+            return true;
+        case Surround:
+            return false;
+        default:
+            return false;
     }
 
     return false;

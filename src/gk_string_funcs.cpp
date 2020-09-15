@@ -239,6 +239,40 @@ std::string StringFuncs::csvOutputString(const std::vector<std::string> &csv_ele
     return std::string();
 }
 
+/**
+ * @brief StringFuncs::convSecondsToMinutes is a helper function that converts seconds to minutes, provided that the given seconds
+ * are longer than a single minute in length, otherwise the value remains as seconds for ease-of-reading.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param seconds The seconds to be converted to minutes.
+ * @return A pretty-string is outputted of the converted seconds, along with the time value at the end (i.e. seconds, minutes,
+ * hours, etc.) so that the user knows the actual length of time in question.
+ */
+QString StringFuncs::convSecondsToMinutes(const double &seconds) {
+    double conv_val = seconds;
+    std::stringstream ss;
+    QString time_value;
+    if (seconds > 0.0f && seconds < 60.0f) {
+        conv_val = seconds;
+        time_value = tr("seconds");
+    } else if (seconds > 60.0f) {
+        conv_val /= 60.0f;
+        time_value = tr("minutes");
+    } else if (seconds > (60.0f * 60.0f)) {
+        conv_val /= (60.0f * 60.0f);
+        time_value = tr("hours");
+    } else if (seconds > (60.0f * 60.0f * 24.0f)) {
+        conv_val /= (60.0f * 60.0f * 24.0f);
+        time_value = tr("days");
+    } else {
+        conv_val /= (60.0f * 60.0f * 24.0f * 7.0f);
+        time_value = tr("weeks");
+    }
+
+    ss << conv_val << " " << time_value.toStdString();
+
+    return QString::fromStdString(ss.str());
+}
+
 #if defined(_WIN32) || defined(__MINGW64__)
 /**
  * @brief StringFuncs::convQStringToWinBStr converts a given QString to a Microsoft Windows compatible Binary

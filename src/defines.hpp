@@ -209,7 +209,7 @@ namespace GekkoFyre {
 //
 // Hamlib related
 //
-#define GK_HAMLIB_DEFAULT_TIMEOUT (15000)               // The default timeout value for Hamlib, measured in milliseconds.
+#define GK_HAMLIB_DEFAULT_TIMEOUT (3000)                // The default timeout value for Hamlib, measured in milliseconds.
 
 //
 // SSTV related
@@ -386,6 +386,7 @@ namespace Database {
             Left,
             Right,
             Both,
+            Surround,
             Unknown
         };
 
@@ -750,12 +751,17 @@ namespace GkAudioFramework {
     struct AudioFileInfo {
         boost::filesystem::path audio_file_path;                                // The path to the audio file itself, if known.
         bool is_output;                                                         // Are we dealing with this as an input or output file?
+        QString track_title;                                                    // The title of the audio track (i.e. metadata) within the audio file itself, if there is such information present.
         double sample_rate;                                                     // The sample rate of the file.
+        double length_in_secs;                                                  // Length of the audio file within seconds as a time measurement.
         CodecSupport type_codec;                                                // The codec of the audio file, if known.
         Database::Settings::audio_channels num_audio_channels;                  // The number of audio channels (i.e. if stereo or mono).
-        long bitrate_lower;                                                     // The lower end of the bitrate scale for the specified file.
-        long bitrate_upper;                                                     // The upper end of the bitrate scale for the specified file.
-        long bitrate_nominal;                                                   // The nominal bitrate for the specified file.
+        qint64 file_size;                                                       // The storage size of the audio/media file itself.
+        qint64 bitrate_lower;                                                   // The lower end of the bitrate scale for the specified file.
+        qint64 bitrate_upper;                                                   // The upper end of the bitrate scale for the specified file.
+        qint64 bitrate_nominal;                                                 // The nominal bitrate for the specified file.
+        qint32 bit_depth;                                                       // Self-explanatory.
+        qint32 num_samples_per_channel;                                         // The number of samples per each channel.
     };
 }
 };

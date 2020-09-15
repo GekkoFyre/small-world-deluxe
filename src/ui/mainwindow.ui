@@ -422,6 +422,9 @@ color: white;</string>
                 <bool>true</bool>
                </property>
                <widget class="QWidget" name="tab_maingui_spectro_graphs">
+                <property name="toolTip">
+                 <string>The primary tab which displays your waterfall / spectrograph.</string>
+                </property>
                 <attribute name="title">
                  <string>Spectrograph / Waterfall</string>
                 </attribute>
@@ -459,6 +462,9 @@ color: white;</string>
                 </layout>
                </widget>
                <widget class="QWidget" name="tab_maingui_sstv">
+                <property name="toolTip">
+                 <string>Your SSTV controls for both RX (i.e. receive) and TX (i.e. transmission).</string>
+                </property>
                 <attribute name="title">
                  <string>SSTV</string>
                 </attribute>
@@ -472,6 +478,9 @@ color: white;</string>
                     <number>0</number>
                    </property>
                    <widget class="QWidget" name="tab_sstv_rx">
+                    <property name="toolTip">
+                     <string>Any received SSTV transmissions are displayed here.</string>
+                    </property>
                     <attribute name="title">
                      <string>Receive (RX)</string>
                     </attribute>
@@ -781,6 +790,9 @@ color: white;</string>
                     </layout>
                    </widget>
                    <widget class="QWidget" name="tab_sstv_tx">
+                    <property name="toolTip">
+                     <string>Transmission of SSTV information may be made in this tab.</string>
+                    </property>
                     <attribute name="title">
                      <string>Transmit (TX)</string>
                     </attribute>
@@ -840,8 +852,8 @@ color: white;</string>
                                <rect>
                                 <x>0</x>
                                 <y>0</y>
-                                <width>16</width>
-                                <height>16</height>
+                                <width>537</width>
+                                <height>200</height>
                                </rect>
                               </property>
                               <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -960,8 +972,8 @@ color: white;</string>
                          <rect>
                           <x>0</x>
                           <y>0</y>
-                          <width>180</width>
-                          <height>171</height>
+                          <width>368</width>
+                          <height>263</height>
                          </rect>
                         </property>
                         <layout class="QVBoxLayout" name="verticalLayout_22">
@@ -1074,6 +1086,9 @@ color: white;</string>
                 </layout>
                </widget>
                <widget class="QWidget" name="tab_maingui_logs">
+                <property name="toolTip">
+                 <string>View logs/events related to Small World Deluxe here.</string>
+                </property>
                 <attribute name="title">
                  <string>Logs</string>
                 </attribute>
@@ -1813,7 +1828,7 @@ QPushButton:disabled {
     <string>Play</string>
    </property>
    <property name="toolTip">
-    <string>Play a WAV file from your system disk</string>
+    <string>Record/play audio files to/from your system disk.</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+P</string>
@@ -1824,7 +1839,7 @@ QPushButton:disabled {
     <string>Settings</string>
    </property>
    <property name="toolTip">
-    <string>Configure your personal settings/preferences for Small World</string>
+    <string>Configure your personal preferences.</string>
    </property>
   </action>
   <action name="actionSave_Decoded_Ab">
@@ -1832,7 +1847,7 @@ QPushButton:disabled {
     <string>Save Decoded</string>
    </property>
    <property name="toolTip">
-    <string>Save the decoded transcripts of your radio conversations</string>
+    <string>Save the decoded transcripts of your radio conversations.</string>
    </property>
   </action>
   <action name="actionView_Spectrogram_Controller">
@@ -1840,7 +1855,7 @@ QPushButton:disabled {
     <string>View Spectrogram Controller</string>
    </property>
    <property name="toolTip">
-    <string>View the controller for your waterfall display / spectrogram.</string>
+    <string>Open the universal waterfall / spectrograph controller.</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+G</string>
@@ -1906,7 +1921,7 @@ QPushButton:disabled {
     <string>Print</string>
    </property>
    <property name="toolTip">
-    <string>Print out a transcript of your conversations</string>
+    <string>Print out a transcript of your conversations.</string>
    </property>
   </action>
   <action name="action_Q_codes">
