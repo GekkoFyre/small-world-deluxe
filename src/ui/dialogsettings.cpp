@@ -2420,6 +2420,11 @@ void DialogSettings::on_pushButton_freq_list_edit_clicked()
 
 void DialogSettings::on_pushButton_freq_list_delete_clicked()
 {
+    QPointer<QItemSelectionModel> select = ui->tableView_working_freqs->selectionModel();
+    if (select->hasSelection()) {
+        gkFreqTableModel->removeRows(select->currentIndex().row(), 1, QModelIndex());
+    }
+
     return;
 }
 

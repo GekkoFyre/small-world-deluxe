@@ -140,7 +140,7 @@ GkFreqTableModel::GkFreqTableModel(QPointer<GekkoFyre::GkLevelDb> database, QWid
     proxyModel = new QSortFilterProxyModel(parent);
     proxyModel->setSourceModel(this);
 
-    view = new GkFreqTableViewModel();
+    view = new GkFreqTableViewModel(parent);
     view->setModel(this);
     view->verticalHeader()->setDefaultAlignment(Qt::AlignCenter);
     view->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);

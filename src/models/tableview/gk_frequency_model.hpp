@@ -50,6 +50,7 @@
 #include <QString>
 #include <QVariant>
 #include <QPointer>
+#include <QKeyEvent>
 #include <QTableView>
 #include <QModelIndex>
 #include <QMouseEvent>
@@ -84,7 +85,7 @@ public:
     bool insertRows(int row, int count, const QModelIndex &) Q_DECL_OVERRIDE;
     bool removeRows(int row, int count, const QModelIndex &) Q_DECL_OVERRIDE;
     int rowCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
-    Qt::ItemFlags flags(const QModelIndex &index) const Q_DECL_OVERRIDE;
+    [[nodiscard]] Qt::ItemFlags flags(const QModelIndex &index) const Q_DECL_OVERRIDE;
     int columnCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
 
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;

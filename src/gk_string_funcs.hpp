@@ -44,6 +44,7 @@
 #include "src/defines.hpp"
 #include <QObject>
 #include <QMessageBox>
+#include <QPointer>
 #include <QString>
 #include <string>
 #include <memory>
@@ -54,7 +55,6 @@
 #include <Windows.h>
 #include <oleauto.h>
 #endif
-
 
 namespace GekkoFyre {
 
@@ -74,9 +74,15 @@ public:
     bool modalDlgBoxOk(const HWND &hwnd, const QString &title, const QString &msgTxt, const int &icon);
     #endif
 
+    void print_exception(const std::exception &e, int level = 0);
+
     QString getStringFromUnsignedChar(unsigned char *str);
     std::vector<int> convStrToIntArray(const QString &str);
     QString addErrorMsg(const QString &orig_msg, const QString &err_msg);
+
+    std::vector<std::string> csvSplitter(const std::string &csv_vals);
+    std::vector<std::string> csvRemoveElement(const std::vector<std::string> &csv_elements, const std::string &val_to_remove);
+    std::string csvOutputString(const std::vector<std::string> &csv_elements);
 
     /**
      * @brief StringFuncs::splitVec will split a given std::vector<T> into many sub-vectors of a given size. This is
@@ -138,6 +144,5 @@ public:
 
         return out_c;
     }
-
 };
 };
