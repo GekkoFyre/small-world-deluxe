@@ -40,6 +40,7 @@
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
 #include "src/gk_audio_decoding.hpp"
+#include "src/pa_audio_buf.hpp"
 #include "src/gk_string_funcs.hpp"
 #include "src/audio_devices.hpp"
 #include "src/file_io.hpp"
@@ -65,6 +66,7 @@ public:
     explicit GkAudioPlayDialog(QPointer<GekkoFyre::GkLevelDb> database,
                                QPointer<GekkoFyre::GkAudioDecoding> audio_decoding,
                                std::shared_ptr<GekkoFyre::AudioDevices> audio_devices,
+                               const std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> &output_audio_buf,
                                QPointer<GekkoFyre::StringFuncs> stringFuncs,
                                QWidget *parent = nullptr);
     ~GkAudioPlayDialog() override;
@@ -99,6 +101,11 @@ private:
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevs;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     std::unique_ptr<AudioFile<double>> audioFile;
+
+    //
+    // PortAudio initialization and buffers
+    //
+    std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> gkOutputAudioBuf;
 
     QFile r_pback_audio_file;
     GekkoFyre::GkAudioFramework::AudioFileInfo gkAudioFileInfo;

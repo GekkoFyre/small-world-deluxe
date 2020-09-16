@@ -58,6 +58,7 @@ namespace sys = boost::system;
 GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
                                      QPointer<GkAudioDecoding> audio_decoding,
                                      std::shared_ptr<AudioDevices> audio_devices,
+                                     const std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> &output_audio_buf,
                                      QPointer<GekkoFyre::StringFuncs> stringFuncs,
                                      QWidget *parent) :
     QDialog(parent),
@@ -68,6 +69,7 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
     gkDb = std::move(database);
     gkAudioDecode = std::move(audio_decoding);
     gkAudioDevs = std::move(audio_devices);
+    gkOutputAudioBuf = output_audio_buf;
     gkStringFuncs = std::move(stringFuncs);
 
     //
@@ -136,11 +138,13 @@ void GkAudioPlayDialog::on_pushButton_playback_browse_file_loc_clicked()
                 for (const auto &file: selectedFile) {
                     r_pback_audio_file.setFileName(file);
                     r_pback_audio_file.open(QIODevice::ReadOnly);
+                    gkAudioFileInfo.file_size = r_pback_audio_file.size();
+                    r_pback_audio_file.close();
 
                     gkAudioFileInfo.is_output = true;
                     gkAudioFileInfo.audio_file_path = file.toStdString();
                     audioFile->load(gkAudioFileInfo.audio_file_path.string());
-                    gkAudioFileInfo.file_size = r_pback_audio_file.size();
+                    audioFile->shouldLogErrorsToConsole(true);
                     gkAudioFileInfo.sample_rate = audioFile->getSampleRate();
                     gkAudioFileInfo.bit_depth = audioFile->getBitDepth();
                     gkAudioFileInfo.length_in_secs = audioFile->getLengthInSeconds();
@@ -161,8 +165,6 @@ void GkAudioPlayDialog::on_pushButton_playback_browse_file_loc_clicked()
                             gkAudioFileInfo.num_audio_channels = Database::Settings::audio_channels::Unknown;
                         }
                     }
-
-                    r_pback_audio_file.close();
                 }
 
                 QString lengthSecs = tr("0 seconds");
@@ -198,6 +200,13 @@ void GkAudioPlayDialog::on_pushButton_playback_record_toggled(bool checked)
 void GkAudioPlayDialog::on_pushButton_playback_play_toggled(bool checked)
 {
     ui->pushButton_playback_play->setChecked(checked);
+    while (checked) {
+        for (const auto &buffer: audioFile->samples) {
+            for (const auto &ch_1: buffer) {
+                gkOutputAudioBuf->append(ch_1);
+            }
+        }
+    }
 
     return;
 }
