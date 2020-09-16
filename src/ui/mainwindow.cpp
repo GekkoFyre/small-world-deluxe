@@ -587,7 +587,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         updateVolumeSliderLabel(real_vol_val);
 
         if (input_audio_buf != nullptr) {
-            if (pref_input_device.dev_number > 0 && pref_input_device.dev_input_channel_count > 0) {
+            if (!pref_input_device.dev_name_formatted.isEmpty() && pref_input_device.dev_input_channel_count > 0) {
                 on_pushButton_radio_receive_clicked();
             }
         }

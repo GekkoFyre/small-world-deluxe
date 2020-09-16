@@ -108,11 +108,11 @@ std::vector<GkDevice> AudioDevices::initPortAudio(portaudio::System *portAudioSy
         std::vector<GkDevice> device_export;
 
         // The number of this device; this was saved to the Google LevelDB database as the user's preference
-        int chosen_output_dev = 0;
-        int chosen_input_dev = 0;
+        PaDeviceIndex chosen_output_dev;
+        PaDeviceIndex chosen_input_dev;
 
-        chosen_output_dev = gkDekodeDb->read_audio_device_settings(true);
-        chosen_input_dev = gkDekodeDb->read_audio_device_settings(false);
+        chosen_output_dev = gkDekodeDb->read_audio_device_settings(true, true).toInt();
+        chosen_input_dev = gkDekodeDb->read_audio_device_settings(false, true).toInt();
 
         enum_devices = defaultAudioDevices(portAudioSys);
         if (chosen_output_dev < 0) {
@@ -128,8 +128,7 @@ std::vector<GkDevice> AudioDevices::initPortAudio(portaudio::System *portAudioSy
         } else {
             // Gather more details about the chosen audio device
             std::lock_guard<std::mutex> lck_guard(init_port_audio_mtx);
-            PaDeviceIndex output_dev = gkDekodeDb->read_audio_device_settings(true);
-            GkDevice output_dev_details = gatherAudioDeviceDetails(portAudioSys, output_dev);
+            GkDevice output_dev_details = gatherAudioDeviceDetails(portAudioSys, chosen_output_dev);
             device_export.push_back(output_dev_details);
         }
 
@@ -146,8 +145,7 @@ std::vector<GkDevice> AudioDevices::initPortAudio(portaudio::System *portAudioSy
         } else {
             // Gather more details about the chosen audio device
             std::lock_guard<std::mutex> lck_guard(init_port_audio_mtx);
-            PaDeviceIndex input_dev = gkDekodeDb->read_audio_device_settings(false);
-            GkDevice input_dev_details = gatherAudioDeviceDetails(portAudioSys, input_dev);
+            GkDevice input_dev_details = gatherAudioDeviceDetails(portAudioSys, chosen_input_dev);
             device_export.push_back(input_dev_details);
         }
 
@@ -480,7 +478,7 @@ std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp(portaudio::System *portA
             deviceInfo = Pa_GetDeviceInfo((*i).index());
             device.device_info = *const_cast<PaDeviceInfo*>(deviceInfo);
 
-            device.dev_name_formatted = audio_device_name.str();
+            device.dev_name_formatted = QString::fromStdString(audio_device_name.str());
             device.host_type_id = Pa_GetHostApiInfo(deviceInfo->hostApi)->type;
 
             if (Pa_GetHostApiInfo(deviceInfo->hostApi)->defaultInputDevice) {

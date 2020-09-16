@@ -92,7 +92,7 @@ public:
     QString read_rig_settings(const Database::Settings::radio_cfg &key);
     QString read_rig_settings_comms(const Database::Settings::radio_cfg &key);
     QString read_general_settings(const Database::Settings::general_stat_cfg &key);
-    int read_audio_device_settings(const bool &is_output_device);
+    QString read_audio_device_settings(const bool &is_output_device, const bool &index_only = true);
     GekkoFyre::Database::Settings::Audio::GkDevice read_audio_details_settings(const bool &is_output_device);
     QString read_mainwindow_settings(const Database::Settings::general_mainwindow_cfg &key);
     QString read_misc_audio_settings(const GekkoFyre::Database::Settings::audio_cfg &key);
