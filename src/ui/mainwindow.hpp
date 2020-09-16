@@ -318,10 +318,10 @@ private:
     QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> avail_output_audio_devs;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
-    std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> input_audio_buf;
-    std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> output_audio_buf;
-    std::shared_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<qint16>>> inputAudioStream;
-    std::shared_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<qint16>>> outputAudioStream;
+    std::shared_ptr<GekkoFyre::PaAudioBuf<float>> input_audio_buf;
+    std::shared_ptr<GekkoFyre::PaAudioBuf<float>> output_audio_buf;
+    std::shared_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<float>>> inputAudioStream;
+    std::shared_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<float>>> outputAudioStream;
 
     //
     // Audio sub-system
@@ -439,3 +439,4 @@ Q_DECLARE_METATYPE(rig_model_t);
 Q_DECLARE_METATYPE(PaHostApiTypeId);
 Q_DECLARE_METATYPE(std::vector<qint16>);
 Q_DECLARE_METATYPE(std::vector<double>);
+Q_DECLARE_METATYPE(std::vector<float>);

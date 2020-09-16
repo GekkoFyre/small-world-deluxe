@@ -739,11 +739,11 @@ void AudioDevices::systemVolumeSetting()
  * @note RobertT <https://stackoverflow.com/questions/2445756/how-can-i-calculate-audio-db-level>,
  * Vassilis <https://stackoverflow.com/questions/37963115/how-to-make-smooth-levelpeak-meter-with-qt>
  */
-float AudioDevices::vuMeter(const int &channels, const int &count, qint16 *buffer)
+float AudioDevices::vuMeter(const int &channels, const int &count, float *buffer)
 {
     float dB_val = 0.0f;
     if (buffer != nullptr) {
-        qint16 max_val = buffer[0];
+        float max_val = buffer[0];
 
         // Find maximum!
         // Traverse the array elements from second and compare every element with current maximum...
@@ -753,7 +753,7 @@ float AudioDevices::vuMeter(const int &channels, const int &count, qint16 *buffe
             }
         }
 
-        float amplitude = (static_cast<float>(max_val) / SHRT_MAX);
+        float amplitude = (static_cast<float>(max_val) / gkStringFuncs->getNumericMax<qint64>());
         dB_val = (20 * std::log10(amplitude));
 
         // Invert from a negative to a positive!
@@ -771,9 +771,9 @@ float AudioDevices::vuMeter(const int &channels, const int &count, qint16 *buffe
  * @param buffer The given audio data buffer.
  * @return The maximum, peak audio signal for a given lot of buffered data.
  */
-qint16 AudioDevices::vuMeterPeakAmplitude(const size_t &count, qint16 *buffer)
+float AudioDevices::vuMeterPeakAmplitude(const size_t &count, float *buffer)
 {
-    qint16 peak_signal = 0;
+    float peak_signal = 0;
     if (buffer != nullptr) {
         peak_signal = buffer[0];
 
@@ -798,9 +798,9 @@ qint16 AudioDevices::vuMeterPeakAmplitude(const size_t &count, qint16 *buffer)
  * @return The averaged RMS of a given data buffer of audio samples.
  * @note <https://stackoverflow.com/questions/8227030/how-to-find-highest-volume-level-of-a-wav-file-using-c>
  */
-float AudioDevices::vuMeterRMS(const size_t &count, qint16 *buffer)
+float AudioDevices::vuMeterRMS(const size_t &count, float *buffer)
 {
-    qint16 sample = 0;
+    float sample = 0;
     if (buffer != nullptr) {
         for (size_t i = 0; i < count; ++i) {
             sample += buffer[i] * buffer[i];

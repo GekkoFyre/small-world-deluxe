@@ -102,7 +102,7 @@ private:
 
 public:
     explicit GkAudioEncoding(QPointer<GekkoFyre::FileIo> fileIo,
-                             std::shared_ptr<PaAudioBuf<qint16>> input_audio_buf,
+                             std::shared_ptr<PaAudioBuf<float>> input_audio_buf,
                              QPointer<GekkoFyre::GkLevelDb> database,
                              QPointer<GkSpectroWaterfall> spectroGui,
                              QPointer<GekkoFyre::StringFuncs> stringFuncs,
@@ -145,7 +145,7 @@ private slots:
 private:
     QPointer<GekkoFyre::FileIo> gkFileIo;
     QPointer<GekkoFyre::GkSpectroWaterfall> gkSpectroGui;
-    std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> gkAudioBuf;
+    std::shared_ptr<GekkoFyre::PaAudioBuf<float>> gkAudioBuf;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GkLevelDb> gkDb;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;

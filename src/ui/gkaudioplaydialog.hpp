@@ -66,7 +66,7 @@ public:
     explicit GkAudioPlayDialog(QPointer<GekkoFyre::GkLevelDb> database,
                                QPointer<GekkoFyre::GkAudioDecoding> audio_decoding,
                                std::shared_ptr<GekkoFyre::AudioDevices> audio_devices,
-                               const std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> &output_audio_buf,
+                               const std::shared_ptr<GekkoFyre::PaAudioBuf<float>> &output_audio_buf,
                                QPointer<GekkoFyre::StringFuncs> stringFuncs,
                                QWidget *parent = nullptr);
     ~GkAudioPlayDialog() override;
@@ -105,7 +105,7 @@ private:
     //
     // PortAudio initialization and buffers
     //
-    std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> gkOutputAudioBuf;
+    std::shared_ptr<GekkoFyre::PaAudioBuf<float>> gkOutputAudioBuf;
 
     QFile r_pback_audio_file;
     GekkoFyre::GkAudioFramework::AudioFileInfo gkAudioFileInfo;

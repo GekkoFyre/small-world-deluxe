@@ -139,6 +139,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<PaHostApiTypeId>("PaHostApiTypeId");
     qRegisterMetaType<std::vector<qint16>>("std::vector<qint16>");
     qRegisterMetaType<std::vector<double>>("std::vector<double>");
+    qRegisterMetaType<std::vector<float>>("std::vector<float>");
 
     sys::error_code ec;
     fs::path slash = "/";
@@ -538,7 +539,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                          gkSpectroCurve, SLOT(processFrame(const std::vector<float> &)));
 
         if (!pref_audio_devices.empty()) {
-            input_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<qint16>>(AUDIO_FRAMES_PER_BUFFER, pref_output_device, pref_input_device);
+            input_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<float>>(AUDIO_FRAMES_PER_BUFFER, pref_output_device, pref_input_device);
         }
 
         //
@@ -558,7 +559,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             //
             // Setup the audio encoding/decoding libraries!
             //
-            output_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<qint16>>(AUDIO_FRAMES_PER_BUFFER, pref_output_device, pref_input_device);
+            output_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<float>>(AUDIO_FRAMES_PER_BUFFER, pref_output_device, pref_input_device);
 
             gkAudioEncoding = new GkAudioEncoding(fileIo, input_audio_buf, GkDb, gkSpectroWaterfall,
                                                   gkStringFuncs, pref_input_device, gkEventLogger, this);
@@ -1283,8 +1284,8 @@ void MainWindow::updateVolumeDisplayWidgets()
                 //
                 // Input audio stream is open and active!
                 //
-                auto audio_buf_tmp = std::make_shared<PaAudioBuf<qint16>>(*input_audio_buf);
-                std::vector<qint16> recv_buf;
+                auto audio_buf_tmp = std::make_shared<PaAudioBuf<float>>(*input_audio_buf);
+                std::vector<qint64> recv_buf;
                 while (!audio_buf_tmp->empty()) {
                     recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
                     recv_buf.push_back(audio_buf_tmp->grab());
@@ -1294,8 +1295,9 @@ void MainWindow::updateVolumeDisplayWidgets()
                     qreal peakLevel = 0;
                     qreal sum = 0.0;
 
-                    const qint16 value = *reinterpret_cast<const qint16*>(recv_buf.data());
-                    const qreal amplitudeToReal = (static_cast<qreal>(value) / SHRT_MAX);
+                    const auto randNum = gkStringFuncs->randomNumGen(1, recv_buf.size());
+                    const qint64 value = recv_buf.at(randNum - 1);
+                    const qreal amplitudeToReal = (static_cast<qreal>(value) / gkStringFuncs->getNumericMax<qint64>());
                     peakLevel = qMax(peakLevel, amplitudeToReal);
                     sum += amplitudeToReal * amplitudeToReal;
 
@@ -1785,8 +1787,8 @@ void MainWindow::updateSpectrograph()
                     //
                     // Input audio stream is open and active!
                     //
-                    auto audio_buf_tmp = std::make_shared<PaAudioBuf<qint16>>(*input_audio_buf);
-                    std::vector<qint16> recv_buf;
+                    auto audio_buf_tmp = std::make_shared<PaAudioBuf<float>>(*input_audio_buf);
+                    std::vector<float> recv_buf;
                     while (audio_buf_tmp->size() > 0) {
                         recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
                         recv_buf.push_back(audio_buf_tmp->get());
@@ -1859,7 +1861,7 @@ void MainWindow::updateSpectrograph()
             std::vector<float> fftData;
             fftData.reserve(GK_FFT_SIZE + 1);
             const qint64 measure_start_time = QDateTime::currentMSecsSinceEpoch();
-            auto audio_buf_tmp = std::make_shared<PaAudioBuf<qint16>>(*input_audio_buf); // Make a secondary copy of the audio buffer for FFT calculation usage...
+            auto audio_buf_tmp = std::make_shared<PaAudioBuf<float>>(*input_audio_buf); // Make a secondary copy of the audio buffer for FFT calculation usage...
 
             // TODO: Fully implement the below asynchronous tasks!
             std::vector<std::future<std::vector<GkFFTSpectrum>>> async_fft_waterfall;
@@ -1869,7 +1871,7 @@ void MainWindow::updateSpectrograph()
                 //
                 // Input audio stream is open and active!
                 //
-                std::vector<qint16> recv_buf;
+                std::vector<float> recv_buf;
                 while (!audio_buf_tmp->empty()) {
                     recv_buf.reserve(GK_FFT_SIZE + 1);
                     recv_buf.push_back(audio_buf_tmp->grab());
@@ -2244,8 +2246,8 @@ void MainWindow::startRecordingInput()
     auto pa_stream_param = portaudio::StreamParameters(pref_input_device.cpp_stream_param, portaudio::DirectionSpecificStreamParameters::null(),
                                                        pref_input_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
                                                        paPrimeOutputBuffersUsingStreamCallback);
-    inputAudioStream = std::make_shared<portaudio::MemFunCallbackStream<PaAudioBuf<qint16>>>(pa_stream_param, *input_audio_buf,
-                                                                                             &PaAudioBuf<qint16>::recordCallback);
+    inputAudioStream = std::make_shared<portaudio::MemFunCallbackStream<PaAudioBuf<float>>>(pa_stream_param, *input_audio_buf,
+                                                                                             &PaAudioBuf<float>::recordCallback);
     inputAudioStream->start();
 
     pref_input_device.is_dev_active = true; // State that this recording device is now active!
@@ -2284,8 +2286,8 @@ void MainWindow::startTransmitOutput()
     auto pa_stream_param = portaudio::StreamParameters(portaudio::DirectionSpecificStreamParameters::null(), pref_output_device.cpp_stream_param,
                                                        pref_output_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
                                                        paPrimeOutputBuffersUsingStreamCallback);
-    outputAudioStream = std::make_shared<portaudio::MemFunCallbackStream<PaAudioBuf<qint16>>>(pa_stream_param, *output_audio_buf,
-                                                                                              &PaAudioBuf<qint16>::playbackCallback);
+    outputAudioStream = std::make_shared<portaudio::MemFunCallbackStream<PaAudioBuf<float>>>(pa_stream_param, *output_audio_buf,
+                                                                                              &PaAudioBuf<float>::playbackCallback);
     outputAudioStream->start();
 
     return;

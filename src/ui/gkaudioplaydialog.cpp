@@ -58,7 +58,7 @@ namespace sys = boost::system;
 GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
                                      QPointer<GkAudioDecoding> audio_decoding,
                                      std::shared_ptr<AudioDevices> audio_devices,
-                                     const std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> &output_audio_buf,
+                                     const std::shared_ptr<GekkoFyre::PaAudioBuf<float>> &output_audio_buf,
                                      QPointer<GekkoFyre::StringFuncs> stringFuncs,
                                      QWidget *parent) :
     QDialog(parent),
@@ -203,7 +203,7 @@ void GkAudioPlayDialog::on_pushButton_playback_play_toggled(bool checked)
     while (checked) {
         for (const auto &buffer: audioFile->samples) {
             for (const auto &ch_1: buffer) {
-                gkOutputAudioBuf->append(ch_1);
+                // gkOutputAudioBuf->append(ch_1);
             }
         }
     }
