@@ -601,42 +601,67 @@ void DialogSettings::prefill_audio_api_avail(const QVector<PaHostApiTypeId> &por
                     PaHostApiTypeId api_identifier = gkDekodeDb->read_audio_api_settings();
                     if (api_identifier != PaHostApiTypeId::paInDevelopment) {
                         int actual_api_idx = to_underlying(api_identifier);
-                        for (const auto &pa_api_idx: avail_portaudio_api.toStdMap()) {
-                            if (pa_api_idx.first == actual_api_idx) {
-                                ui->comboBox_soundcard_api->setCurrentIndex(pa_api_idx.first);
-                                on_comboBox_soundcard_api_currentIndexChanged();
+                        qint32 idx = ui->comboBox_soundcard_api->findData(api_identifier);
+                        ui->comboBox_soundcard_api->setCurrentIndex(idx);
+                        on_comboBox_soundcard_api_currentIndexChanged();
 
-                                //
-                                // Input audio devices
-                                //
-                                auto soundcard_input_saved = gkDekodeDb->read_audio_device_settings(false, false);
-                                if (!soundcard_input_saved.isNull() && !soundcard_input_saved.isEmpty()) {
-                                    for (const auto &input_dev: avail_input_audio_devs.toStdMap()) {
-                                        if (soundcard_input_saved == input_dev.second.dev_name_formatted) {
-                                            qint32 idx = ui->comboBox_soundcard_input->findData(input_dev.second.dev_name_formatted);
-                                            if (idx >= 0) {
-                                                ui->comboBox_soundcard_input->setCurrentIndex(idx);
-                                            }
-                                        }
+                        //
+                        // Input audio devices
+                        //
+                        auto soundcard_input_saved = gkDekodeDb->read_audio_device_settings(false, false);
+                        if (!soundcard_input_saved.isNull() && !soundcard_input_saved.isEmpty()) {
+                            //
+                            // Find any new audio devices
+                            //
+                            std::vector<GkDevice> audio_devices = gkAudioDevices->filterPortAudioHostType(gkAudioDevices->enumAudioDevicesCpp(gkPortAudioInit));
+                            quint32 input_counter = 0;
+                            for (const auto &device: audio_devices) {
+                                if (to_underlying(device.host_type_id) == chosen_portaudio_underlying_api) {
+                                    if (device.is_output_dev) {
+                                        avail_input_audio_devs.insert(input_counter, device);
+                                        ++input_counter;
                                     }
                                 }
+                            }
 
-                                //
-                                // Output audio devices
-                                //
-                                auto soundcard_output_saved = gkDekodeDb->read_audio_device_settings(true, false);
-                                if (!soundcard_output_saved.isNull() && !soundcard_output_saved.isEmpty()) {
-                                    for (const auto &output_dev: avail_output_audio_devs.toStdMap()) {
-                                        if (soundcard_output_saved == output_dev.second.dev_name_formatted) {
-                                            qint32 idx = ui->comboBox_soundcard_output->findData(output_dev.second.dev_name_formatted);
-                                            if (idx >= 0) {
-                                                ui->comboBox_soundcard_output->setCurrentIndex(idx);
-                                            }
-                                        }
+                            for (const auto &input_dev: avail_input_audio_devs.toStdMap()) {
+                                if (soundcard_input_saved == input_dev.second.dev_name_formatted) {
+                                    qint32 idx = ui->comboBox_soundcard_input->findData(input_dev.second.dev_name_formatted);
+                                    if (idx >= 0) {
+                                        ui->comboBox_soundcard_input->setCurrentIndex(idx);
+                                        break;
                                     }
                                 }
+                            }
+                        }
 
-                                break;
+                        //
+                        // Output audio devices
+                        //
+                        auto soundcard_output_saved = gkDekodeDb->read_audio_device_settings(true, false);
+                        if (!soundcard_output_saved.isNull() && !soundcard_output_saved.isEmpty()) {
+                            //
+                            // Find any new audio devices
+                            //
+                            std::vector<GkDevice> audio_devices = gkAudioDevices->filterPortAudioHostType(gkAudioDevices->enumAudioDevicesCpp(gkPortAudioInit));
+                            quint32 output_counter = 0;
+                            for (const auto &device: audio_devices) {
+                                if (to_underlying(device.host_type_id) == chosen_portaudio_underlying_api) {
+                                    if (device.is_output_dev) {
+                                        avail_output_audio_devs.insert(output_counter, device);
+                                        ++output_counter;
+                                    }
+                                }
+                            }
+                            
+                            for (const auto &output_dev: avail_output_audio_devs.toStdMap()) {
+                                if (soundcard_output_saved == output_dev.second.dev_name_formatted) {
+                                    qint32 idx = ui->comboBox_soundcard_output->findData(output_dev.second.dev_name_formatted);
+                                    if (idx >= 0) {
+                                        ui->comboBox_soundcard_output->setCurrentIndex(idx);
+                                        break;
+                                    }
+                                }
                             }
                         }
                     } else {
@@ -1917,6 +1942,7 @@ void DialogSettings::on_comboBox_soundcard_api_currentIndexChanged(int index)
 {
     Q_UNUSED(index);
     try {
+        chosen_portaudio_underlying_api = ui->comboBox_soundcard_api->currentData().toInt();
         if (!avail_portaudio_api.isEmpty() || !avail_input_audio_devs.isEmpty()) {
             //
             // Input audio devices

@@ -408,6 +408,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
                 // Initialize the other radio libraries!
                 gkRadioLibs = new GekkoFyre::RadioLibs(fileIo, gkStringFuncs, GkDb, gkRadioPtr, gkEventLogger, gkSystem, this);
+                QObject::connect(gkRadioLibs, SIGNAL(publishEventMsg(const QString &, const GekkoFyre::System::Events::Logging::GkSeverity &, const QVariant &, const bool &, const bool &, const bool &, const bool &)),
+                                 gkEventLogger, SLOT(publishEvent(const QString &, const GekkoFyre::System::Events::Logging::GkSeverity &, const QVariant &, const bool &, const bool &, const bool &, const bool &)));
 
                 //
                 // Setup the SIGNALS & SLOTS for `gkRadioLibs`...
@@ -864,7 +866,7 @@ bool MainWindow::radioInitStart()
 
         return true;
     } catch (const std::exception &e) {
-        QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
+        gkStringFuncs->print_exception(e);
     }
 
     return false;
@@ -1480,23 +1482,6 @@ bool MainWindow::steadyTimer(const int &seconds)
     }
 
     return false;
-}
-
-/**
- * @brief MainWindow::print_exception
- * @param e
- * @param level
- */
-void MainWindow::print_exception(const std::exception &e, int level)
-{
-    QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
-    try {
-        std::rethrow_if_nested(e);
-    } catch(const std::exception &e) {
-        print_exception(e, level + 1);
-    } catch(...) {}
-
-    return;
 }
 
 /**

@@ -863,11 +863,9 @@ void RadioLibs::gkInitRadioRig(const std::shared_ptr<GkRadio> &radio_ptr)
             }
         }
     } catch (const RigException &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), tr("Unable to make a connection with your radio rig! Error:\n\n%1")
-                             .arg(QString::fromStdString(e.message)), QMessageBox::Ok);
+        std::cerr << tr("Unable to make a connection with your radio rig! Error:\n\n%1").arg(QString::fromStdString(e.message)).toStdString() << std::endl;
     } catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), tr("Generic error encountered with making connection towards radio rig! Error:\n\n%1")
-                .arg(QString::fromStdString(e.what())), QMessageBox::Ok);
+        std::cerr << tr("Generic error encountered with making connection towards radio rig! Error:\n\n%1").arg(QString::fromStdString(e.what())).toStdString() << std::endl;
     }
 
     return;
