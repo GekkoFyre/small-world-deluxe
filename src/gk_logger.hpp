@@ -59,9 +59,10 @@ public:
     explicit GkEventLogger(QPointer<GekkoFyre::StringFuncs> stringFuncs, QObject *parent = nullptr);
     ~GkEventLogger() override;
 
+public slots:
     void publishEvent(const QString &event, const GekkoFyre::System::Events::Logging::GkSeverity &severity = GekkoFyre::System::Events::Logging::GkSeverity::Warning,
                       const QVariant &arguments = "", const bool &sys_notification = false, const bool &publishToConsole = true,
-                      const bool &publishToStatusBar = false);
+                      const bool &publishToStatusBar = false, const bool &displayMsgBox = false);
 
 signals:
     void sendEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &event);

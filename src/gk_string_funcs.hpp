@@ -49,6 +49,7 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <limits>
 #include <mutex>
 
 #ifdef _WIN32
@@ -85,6 +86,17 @@ public:
     std::string csvOutputString(const std::vector<std::string> &csv_elements);
 
     QString convSecondsToMinutes(const double &seconds);
+    qint32 randomNumGen(qint32 lower_bound = std::numeric_limits<qint32>::min(), qint32 upper_bound = std::numeric_limits<qint32>::max());
+
+        template<typename T>
+        T getNumericMax() {
+            return std::numeric_limits<T>::max();
+        }
+
+        template<typename T>
+        T getNumericMin() {
+            return std::numeric_limits<T>::min();
+        }
 
     /**
      * @brief StringFuncs::splitVec will split a given std::vector<T> into many sub-vectors of a given size. This is

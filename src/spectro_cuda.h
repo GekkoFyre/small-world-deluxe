@@ -43,4 +43,4 @@
 
 typedef short qint16;
 
-void processCUDAFFT(qint16 *inputData, float *outputData, unsigned int numSamples);
+void processCUDAFFT(float *inputData, float *outputData, unsigned int numSamples);

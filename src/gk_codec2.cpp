@@ -62,7 +62,7 @@ using namespace Logging;
 GkCodec2::GkCodec2(const Codec2Mode &freedv_mode, const Codec2ModeCustom &custom_mode, const int &freedv_clip,
                    const int &freedv_txbpf, QPointer<GkLevelDb> levelDb, QPointer<GkEventLogger> eventLogger,
                    QPointer<GekkoFyre::StringFuncs> stringFuncs,
-                   std::shared_ptr<GekkoFyre::PaAudioBuf<qint16>> output_audio_buf, QObject *parent)
+                   std::shared_ptr<GekkoFyre::PaAudioBuf<float>> output_audio_buf, QObject *parent)
 {
     try {
         setParent(parent);
@@ -151,7 +151,7 @@ int GkCodec2::transmitData(const QByteArray &byte_array, const bool &play_output
                     freedv_rawdatatx(freedv, mod_out, audio_in);
 
                     if (play_output_sound) {
-                        std::vector<short> audio_conv(buffer.size());
+                        std::vector<float> audio_conv(buffer.size());
                         size_t out_len = std::strlen((char *)mod_out);
                         std::copy(mod_out, mod_out + out_len, audio_conv.begin());
                         outputAudioBuf->append(audio_conv);

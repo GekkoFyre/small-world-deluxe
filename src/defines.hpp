@@ -471,12 +471,12 @@ namespace Database {
             struct GkPaAudioData {
                 int frameIndex;                                                     // Frame index into sample array
                 int maxFrameIndex;                                                  // Maximum frame index given into sample array
-                qint16 *recordedSamples;                                            // Audio samples that have been recorded and saved to a buffer
+                float *recordedSamples;                                             // Audio samples that have been recorded and saved to a buffer
                 portaudio::SampleDataFormat sample_format;                          // Currently used sample format by given audio source, whether output or input
             };
 
             struct GkDevice {
-                std::string dev_name_formatted;                                     // The name of the device itself, formatted
+                QString chosen_audio_dev_str;                                       // The name of the device itself, formatted
                 bool default_dev;                                                   // Is this the default device for the system?
                 bool default_disp;                                                  // Used for filtering purposes
                 bool is_dev_active;                                                 // Is the audio device in question currently active and streaming data?
