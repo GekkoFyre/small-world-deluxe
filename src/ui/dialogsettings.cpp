@@ -573,18 +573,6 @@ void DialogSettings::prefill_audio_api_avail(const QVector<PaHostApiTypeId> &por
         // Garner the list of APIs!
         if (!portaudio_api_vec.isEmpty()) {
             //
-            // Prefill the QComboBoxes containing the Sample Frequencies that can be tested for each PortAudio detected audio/multimedia device!
-            //
-            int sample_rate_idx = 0;
-            for (const auto &sample_rate: standardSampleRates) {
-                if (sample_rate != -1) { // Insert all numbers but the terminating number of '1'!
-                    ui->comboBox_audio_input_sample_rate->insertItem(sample_rate_idx, QString::number(std::abs(sample_rate)), sample_rate_idx);
-                    ui->comboBox_audio_output_sample_rate->insertItem(sample_rate_idx, QString::number(std::abs(sample_rate)), sample_rate_idx);
-                    ++sample_rate_idx;
-                }
-            }
-
-            //
             // Prefill the QComboBox responsible for displaying the PortAudio detected multimedia APIs on the user's system!
             //
             for (const auto &pa_api: portaudio_api_vec) {
@@ -619,9 +607,12 @@ void DialogSettings::prefill_audio_api_avail(const QVector<PaHostApiTypeId> &por
                             for (const auto &input_dev: avail_input_audio_devs.toStdMap()) {
                                 if (soundcard_input_saved == input_dev.second.device_info.name) {
                                     qint32 idx = ui->comboBox_soundcard_input->findData(input_dev.second.device_info.name);
-                                    if (idx >= 0)
-                                    ui->comboBox_soundcard_input->setCurrentIndex(idx);
-                                    break;
+                                    if (idx >= 0) {
+                                        ui->comboBox_soundcard_input->setCurrentIndex(idx);
+                                        on_comboBox_soundcard_input_currentIndexChanged(idx);
+
+                                        break;
+                                    }
                                 }
                             }
                         }
@@ -636,6 +627,8 @@ void DialogSettings::prefill_audio_api_avail(const QVector<PaHostApiTypeId> &por
                                     qint32 idx = ui->comboBox_soundcard_output->findData(output_dev.second.device_info.name);
                                     if (idx >= 0) {
                                         ui->comboBox_soundcard_output->setCurrentIndex(idx);
+                                        on_comboBox_soundcard_output_currentIndexChanged(idx);
+
                                         break;
                                     }
                                 }
@@ -676,6 +669,8 @@ void DialogSettings::prefill_audio_devices(const std::vector<GkDevice> &audio_de
     try {
         if (!avail_portaudio_api.isEmpty()) {
             if (!audio_devices_vec.empty()) {
+                quint32 output_counter = 0;
+                quint32 input_counter = 0;
                 for (const auto &device: audio_devices_vec) {
                     if (device.is_output_dev) {
                         //
@@ -683,8 +678,8 @@ void DialogSettings::prefill_audio_devices(const std::vector<GkDevice> &audio_de
                         //
                         std::string audio_dev_name = device.device_info.name;
                         if (!audio_dev_name.empty()) {
-                            PaDeviceIndex dev_idx = device.stream_parameters.device;
-                            avail_output_audio_devs.insert(dev_idx, device);
+                            avail_output_audio_devs.insert(output_counter, device);
+                            ++output_counter;
                         }
                     } else {
                         //
@@ -692,8 +687,8 @@ void DialogSettings::prefill_audio_devices(const std::vector<GkDevice> &audio_de
                         //
                         std::string audio_dev_name = device.device_info.name;
                         if (!audio_dev_name.empty()) {
-                            PaDeviceIndex dev_idx = device.stream_parameters.device;
-                            avail_input_audio_devs.insert(dev_idx, device);
+                            avail_input_audio_devs.insert(input_counter, device);
+                            ++input_counter;
                         }
                     }
                 }
@@ -1785,15 +1780,12 @@ void DialogSettings::on_comboBox_soundcard_input_currentIndexChanged(int index)
         // Input audio devices
         //
         supportedInputSampleRates.clear();
-        const qint32 idx = ui->comboBox_soundcard_input->currentData().toInt();
+        const qint32 idx = ui->comboBox_soundcard_input->currentIndex();
         if (!avail_portaudio_api.isEmpty() || !avail_input_audio_devs.isEmpty()) {
             for (const auto &device: avail_input_audio_devs.toStdMap()) {
                 if (device.first == idx) {
-                    chosen_input_audio_dev = GkDevice(); // Blank any previous values firstly!
-                    chosen_input_audio_dev = gkAudioDevices->gatherAudioDeviceDetails(gkPortAudioInit, idx);
-
                     supportedInputSampleRates.clear();
-                    auto supported_rates = gkAudioDevices->enumSupportedStdSampleRates(&chosen_input_audio_dev.stream_parameters, standardSampleRates, false);
+                    auto supported_rates = gkAudioDevices->enumSupportedStdSampleRates(&device.second.stream_parameters, standardSampleRates, false);
                     if (!supported_rates.empty()) {
                         for (const auto &sampleRate: supported_rates) {
                             const PaError support = sampleRate.second;
@@ -1849,14 +1841,12 @@ void DialogSettings::on_comboBox_soundcard_output_currentIndexChanged(int index)
         // Output audio devices
         //
         supportedOutputSampleRates.clear();
-        const qint32 idx = ui->comboBox_soundcard_output->currentData().toInt();
+        const qint32 idx = ui->comboBox_soundcard_output->currentIndex();
         if (!avail_portaudio_api.isEmpty() || !avail_output_audio_devs.isEmpty()) {
             for (const auto &device: avail_output_audio_devs.toStdMap()) {
                 if (device.first == idx) {
-                    chosen_output_audio_dev = GkDevice(); // Blank any previous values firstly!
-                    chosen_output_audio_dev = gkAudioDevices->gatherAudioDeviceDetails(gkPortAudioInit, idx);
-
-                    auto supported_rates = gkAudioDevices->enumSupportedStdSampleRates(&chosen_input_audio_dev.stream_parameters, standardSampleRates, false);
+                    supportedOutputSampleRates.clear();
+                    auto supported_rates = gkAudioDevices->enumSupportedStdSampleRates(&device.second.stream_parameters, standardSampleRates, true);
                     if (!supported_rates.empty()) {
                         for (const auto &sampleRate: supported_rates) {
                             const PaError support = sampleRate.second;
