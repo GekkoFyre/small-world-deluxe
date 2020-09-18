@@ -306,7 +306,7 @@ void GkLevelDb::write_audio_device_settings(const GkDevice &value, const bool &i
         if (is_output_device) {
             // Unique identifier for the chosen output audio device
             batch.Put("AudioOutputSelChannels", std::to_string(value.sel_channels));
-            batch.Put("AudioOutputId", value.dev_name_formatted.toStdString());
+            batch.Put("AudioOutputId", value.chosen_audio_dev_str.toStdString());
             batch.Put("AudioOutputPaHostIndex", std::to_string(value.dev_number));
 
             // Determine if this is the default output device for the system and if so, convert
@@ -316,7 +316,7 @@ void GkLevelDb::write_audio_device_settings(const GkDevice &value, const bool &i
         } else {
             // Unique identifier for the chosen input audio device
             batch.Put("AudioInputSelChannels", std::to_string(value.sel_channels));
-            batch.Put("AudioInputId", value.dev_name_formatted.toStdString());
+            batch.Put("AudioInputId", value.chosen_audio_dev_str.toStdString());
             batch.Put("AudioInputPaHostIndex", std::to_string(value.dev_number));
 
             // Determine if this is the default input device for the system and if so, convert
@@ -1544,7 +1544,7 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
         //
         // Test to see if the following are empty or not
         //
-        audio_device.dev_name_formatted = QString::fromStdString(output_id);
+        audio_device.chosen_audio_dev_str = QString::fromStdString(output_id);
 
         if (!output_sel_channels.empty()) {
             audio_device.sel_channels = convertAudioChannelsEnum(std::stoi(output_sel_channels));
@@ -1572,7 +1572,7 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
         //
         // Test to see if the following are empty or not
         //
-        audio_device.dev_name_formatted = QString::fromStdString(input_id);
+        audio_device.chosen_audio_dev_str = QString::fromStdString(input_id);
 
         if (!input_sel_channels.empty()) {
             audio_device.sel_channels = convertAudioChannelsEnum(std::stoi(input_sel_channels));

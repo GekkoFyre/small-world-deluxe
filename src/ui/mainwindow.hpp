@@ -125,6 +125,7 @@ private slots:
     void on_actionPrint_triggered();
     void on_action_Documentation_triggered();
     void on_actionSend_Report_triggered();
+    void on_action_Battery_Calculator_triggered();
 
     void on_action_Connect_triggered();
     void on_action_Disconnect_triggered();

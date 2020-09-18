@@ -478,7 +478,7 @@ std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp(portaudio::System *portA
             deviceInfo = Pa_GetDeviceInfo((*i).index());
             device.device_info = *const_cast<PaDeviceInfo*>(deviceInfo);
 
-            device.dev_name_formatted = QString::fromStdString(audio_device_name.str());
+            device.chosen_audio_dev_str = QString::fromStdString(audio_device_name.str());
             device.host_type_id = Pa_GetHostApiInfo(deviceInfo->hostApi)->type;
 
             if (Pa_GetHostApiInfo(deviceInfo->hostApi)->defaultInputDevice) {

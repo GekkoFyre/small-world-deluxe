@@ -151,7 +151,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     try {
         // Print out the current date
-        std::cout << QDate::currentDate().toString().toStdString() << std::endl;
+        std::cout << QString("%1 v%2").arg(General::productName).arg(General::appVersion).toStdString() << std::endl;
+        std::cout << tr("Time & Date: %1").arg(QDate::currentDate().toString()).toStdString() << std::endl << std::endl;
 
         this->window()->showMaximized();; // Maximize the window!
 
@@ -589,7 +590,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         updateVolumeSliderLabel(real_vol_val);
 
         if (input_audio_buf != nullptr) {
-            if (!pref_input_device.dev_name_formatted.isEmpty() && pref_input_device.dev_input_channel_count > 0) {
+            if (!pref_input_device.chosen_audio_dev_str.isEmpty() && pref_input_device.dev_input_channel_count > 0) {
                 on_pushButton_radio_receive_clicked();
             }
         }
@@ -2580,6 +2581,7 @@ void MainWindow::on_pushButton_sstv_rx_navigate_left_clicked()
     //
     // Navigate to the next image!
     //
+    QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
 
     return;
 }
@@ -2589,17 +2591,22 @@ void MainWindow::on_pushButton_sstv_rx_navigate_right_clicked()
     //
     // Navigate to the previous image!
     //
+    QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
 
     return;
 }
 
 void MainWindow::on_pushButton_sstv_rx_save_image_clicked()
 {
+    QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+
     return;
 }
 
 void MainWindow::on_pushButton_sstv_rx_listen_rx_clicked()
 {
+    QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+
     return;
 }
 
@@ -2641,13 +2648,25 @@ void MainWindow::on_pushButton_sstv_rx_saved_image_nav_right_clicked()
     return;
 }
 
+/**
+ * @brief MainWindow::on_pushButton_sstv_rx_saved_image_load_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
 void MainWindow::on_pushButton_sstv_rx_saved_image_load_clicked()
 {
+    QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+
     return;
 }
 
+/**
+ * @brief MainWindow::on_pushButton_sstv_rx_saved_image_delete_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
 void MainWindow::on_pushButton_sstv_rx_saved_image_delete_clicked()
 {
+    QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+
     return;
 }
 
@@ -2774,6 +2793,8 @@ void MainWindow::on_pushButton_sstv_tx_send_image_clicked()
  */
 void MainWindow::on_pushButton_sstv_rx_remove_clicked()
 {
+    QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+
     return;
 }
 
@@ -2783,11 +2804,15 @@ void MainWindow::on_pushButton_sstv_rx_remove_clicked()
  */
 void MainWindow::on_pushButton_sstv_tx_remove_clicked()
 {
+    QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+
     return;
 }
 
 void MainWindow::on_action_Documentation_triggered()
 {
+    QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+
     return;
 }
 
@@ -2799,6 +2824,17 @@ void MainWindow::on_actionSend_Report_triggered()
     QObject::connect(gkSendReport, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
 
     gkSendReport->show();
+
+    return;
+}
+
+/**
+ * @brief MainWindow::on_action_Battery_Calculator_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::on_action_Battery_Calculator_triggered()
+{
+    QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
 
     return;
 }

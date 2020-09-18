@@ -476,7 +476,7 @@ namespace Database {
             };
 
             struct GkDevice {
-                QString dev_name_formatted;                                         // The name of the device itself, formatted
+                QString chosen_audio_dev_str;                                       // The name of the device itself, formatted
                 bool default_dev;                                                   // Is this the default device for the system?
                 bool default_disp;                                                  // Used for filtering purposes
                 bool is_dev_active;                                                 // Is the audio device in question currently active and streaming data?
