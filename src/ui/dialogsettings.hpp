@@ -274,6 +274,7 @@ private:
     QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> avail_output_audio_devs;
     GekkoFyre::Database::Settings::Audio::GkDevice chosen_input_audio_dev;
     GekkoFyre::Database::Settings::Audio::GkDevice chosen_output_audio_dev;
+    qint32 chosen_portaudio_underlying_api;
 
     static int prefill_rig_selection(const rig_caps *caps, void *data);
     static QMultiMap<rig_model_t, std::tuple<QString, QString, GekkoFyre::AmateurRadio::rig_type>> init_model_names();

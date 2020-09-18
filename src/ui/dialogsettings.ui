@@ -134,9 +134,6 @@
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_19">
                      <item>
-                      <layout class="QFormLayout" name="formLayout_17"/>
-                     </item>
-                     <item>
                       <widget class="QGroupBox" name="groupBox_general_rig_basic_details">
                        <property name="title">
                         <string>Basic Details</string>
@@ -218,14 +215,14 @@
                         <string>Logs Save Directory</string>
                        </property>
                        <layout class="QFormLayout" name="formLayout_5">
-                        <item row="1" column="0">
+                        <item row="0" column="0">
                          <widget class="QLabel" name="label_audio_logs_save_dir">
                           <property name="text">
                            <string>Location: </string>
                           </property>
                          </widget>
                         </item>
-                        <item row="1" column="1">
+                        <item row="0" column="1">
                          <widget class="QFrame" name="frame_audio_location_power">
                           <property name="sizePolicy">
                            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
@@ -280,9 +277,6 @@
                            </item>
                           </layout>
                          </widget>
-                        </item>
-                        <item row="0" column="1">
-                         <layout class="QFormLayout" name="formLayout_21"/>
                         </item>
                        </layout>
                       </widget>
@@ -566,7 +560,7 @@
                       <x>0</x>
                       <y>0</y>
                       <width>732</width>
-                      <height>911</height>
+                      <height>905</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_23">
@@ -805,6 +799,12 @@
                                <height>96</height>
                               </size>
                              </property>
+                             <property name="frameShape">
+                              <enum>QFrame::NoFrame</enum>
+                             </property>
+                             <property name="frameShadow">
+                              <enum>QFrame::Plain</enum>
+                             </property>
                              <property name="plainText">
                               <string>Speech recognition is a feature that is not available at this time, but is planned to be implemented in the near-future. Please check our main website for regular updates by going towards 'Help --&gt; About SWD' from within the main screen!
 
@@ -957,9 +957,6 @@ Thanks.</string>
                            </item>
                           </layout>
                          </widget>
-                        </item>
-                        <item>
-                         <layout class="QFormLayout" name="formLayout_28"/>
                         </item>
                        </layout>
                       </widget>
@@ -1798,6 +1795,144 @@ Thanks.</string>
                         </size>
                        </property>
                       </spacer>
+                     </item>
+                    </layout>
+                   </widget>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+               <widget class="QWidget" name="tab_general_event_logger">
+                <attribute name="title">
+                 <string>Event Logger</string>
+                </attribute>
+                <layout class="QVBoxLayout" name="verticalLayout_48">
+                 <item>
+                  <widget class="QScrollArea" name="scrollArea_4">
+                   <property name="frameShape">
+                    <enum>QFrame::NoFrame</enum>
+                   </property>
+                   <property name="frameShadow">
+                    <enum>QFrame::Plain</enum>
+                   </property>
+                   <property name="horizontalScrollBarPolicy">
+                    <enum>Qt::ScrollBarAlwaysOff</enum>
+                   </property>
+                   <property name="widgetResizable">
+                    <bool>true</bool>
+                   </property>
+                   <widget class="QWidget" name="scrollAreaWidgetContents_3">
+                    <property name="geometry">
+                     <rect>
+                      <x>0</x>
+                      <y>0</y>
+                      <width>744</width>
+                      <height>623</height>
+                     </rect>
+                    </property>
+                    <layout class="QVBoxLayout" name="verticalLayout_49">
+                     <item>
+                      <widget class="QGroupBox" name="groupBox_event_logger_general">
+                       <property name="title">
+                        <string>General</string>
+                       </property>
+                       <layout class="QHBoxLayout" name="horizontalLayout_20">
+                        <item>
+                         <widget class="QFrame" name="frame_event_logger_general_left">
+                          <property name="sizePolicy">
+                           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                            <horstretch>50</horstretch>
+                            <verstretch>0</verstretch>
+                           </sizepolicy>
+                          </property>
+                          <property name="frameShape">
+                           <enum>QFrame::NoFrame</enum>
+                          </property>
+                          <property name="frameShadow">
+                           <enum>QFrame::Plain</enum>
+                          </property>
+                          <layout class="QFormLayout" name="formLayout_17">
+                           <property name="horizontalSpacing">
+                            <number>0</number>
+                           </property>
+                           <property name="leftMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="topMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="bottomMargin">
+                            <number>0</number>
+                           </property>
+                           <item row="0" column="0">
+                            <widget class="QLabel" name="label_event_logger_general_verbosity">
+                             <property name="text">
+                              <string>Verbosity: </string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="0" column="1">
+                            <widget class="QComboBox" name="comboBox_event_logger_general_verbosity">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QFrame" name="frame_event_logger_general_right">
+                          <property name="sizePolicy">
+                           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                            <horstretch>50</horstretch>
+                            <verstretch>0</verstretch>
+                           </sizepolicy>
+                          </property>
+                          <property name="frameShape">
+                           <enum>QFrame::NoFrame</enum>
+                          </property>
+                          <property name="frameShadow">
+                           <enum>QFrame::Plain</enum>
+                          </property>
+                          <layout class="QFormLayout" name="formLayout_21">
+                           <property name="topMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="rightMargin">
+                            <number>0</number>
+                           </property>
+                           <property name="bottomMargin">
+                            <number>0</number>
+                           </property>
+                           <item row="0" column="0">
+                            <spacer name="horizontalSpacer_23">
+                             <property name="orientation">
+                              <enum>Qt::Horizontal</enum>
+                             </property>
+                             <property name="sizeHint" stdset="0">
+                              <size>
+                               <width>40</width>
+                               <height>20</height>
+                              </size>
+                             </property>
+                            </spacer>
+                           </item>
+                           <item row="0" column="1">
+                            <widget class="QCheckBox" name="checkBox_event_logger_general_save_history">
+                             <property name="text">
+                              <string>Save History to Database</string>
+                             </property>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                       </layout>
+                      </widget>
                      </item>
                     </layout>
                    </widget>

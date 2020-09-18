@@ -86,7 +86,7 @@ GkEventLogger::~GkEventLogger()
  * @param arguments Any arguments that are associated with the event message. This tends to be left blank.
  */
 void GkEventLogger::publishEvent(const QString &event, const GkSeverity &severity, const QVariant &arguments, const bool &sys_notification,
-                                 const bool &publishToConsole, const bool &publishToStatusBar)
+                                 const bool &publishToConsole, const bool &publishToStatusBar, const bool &displayMsgBox)
 {
     std::lock_guard<std::mutex> lock(dataBatchMutex);
 
@@ -124,6 +124,14 @@ void GkEventLogger::publishEvent(const QString &event, const GkSeverity &severit
         timestamp.setMSecsSinceEpoch(event_log.mesg.date);
 
         emit sendToStatusBar(QString("(%1) %2").arg(timestamp.toString(tr("hh:mm:ss"))).arg(event_log.mesg.message));
+    }
+
+    if (displayMsgBox) {
+        if (event_log.mesg.severity == GkSeverity::Warning || event_log.mesg.severity == GkSeverity::Fatal || event_log.mesg.severity == GkSeverity::Error) {
+            QMessageBox::warning(nullptr, tr("Error!"), event_log.mesg.message, QMessageBox::Ok);
+        } else {
+            QMessageBox::information(nullptr, tr("Status"), event_log.mesg.message, QMessageBox::Ok);
+        }
     }
 
     return;

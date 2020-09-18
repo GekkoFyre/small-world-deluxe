@@ -45,6 +45,7 @@
 #include <algorithm>
 #include <iterator>
 #include <sstream>
+#include <random>
 
 #if _WIN32
 #include <windows.h>
@@ -271,6 +272,24 @@ QString StringFuncs::convSecondsToMinutes(const double &seconds) {
     ss << conv_val << " " << time_value.toStdString();
 
     return QString::fromStdString(ss.str());
+}
+
+/**
+ * @brief StringFuncs::randomNumGen creates a randomly generated number from the given lower and upper bounds.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param lower_bound The lowest given input number to use.
+ * @param upper_bound The maximum given input number to use.
+ * @return The randomly generated number from the given upper and lower bounds.
+ */
+qint32 StringFuncs::randomNumGen(qint32 lower_bound, qint32 upper_bound)
+{
+    const qint32 lb = lower_bound;
+    const qint32 ub = upper_bound;
+
+    static std::random_device rand_dev;
+    std::mt19937 mt(rand_dev());
+    std::uniform_int_distribution<int> distrib(lb, ub);
+    return distrib(mt);
 }
 
 #if defined(_WIN32) || defined(__MINGW64__)

@@ -108,11 +108,11 @@ std::vector<GkDevice> AudioDevices::initPortAudio(portaudio::System *portAudioSy
         std::vector<GkDevice> device_export;
 
         // The number of this device; this was saved to the Google LevelDB database as the user's preference
-        int chosen_output_dev = 0;
-        int chosen_input_dev = 0;
+        PaDeviceIndex chosen_output_dev;
+        PaDeviceIndex chosen_input_dev;
 
-        chosen_output_dev = gkDekodeDb->read_audio_device_settings(true);
-        chosen_input_dev = gkDekodeDb->read_audio_device_settings(false);
+        chosen_output_dev = gkDekodeDb->read_audio_device_settings(true, true).toInt();
+        chosen_input_dev = gkDekodeDb->read_audio_device_settings(false, true).toInt();
 
         enum_devices = defaultAudioDevices(portAudioSys);
         if (chosen_output_dev < 0) {
@@ -128,8 +128,7 @@ std::vector<GkDevice> AudioDevices::initPortAudio(portaudio::System *portAudioSy
         } else {
             // Gather more details about the chosen audio device
             std::lock_guard<std::mutex> lck_guard(init_port_audio_mtx);
-            PaDeviceIndex output_dev = gkDekodeDb->read_audio_device_settings(true);
-            GkDevice output_dev_details = gatherAudioDeviceDetails(portAudioSys, output_dev);
+            GkDevice output_dev_details = gatherAudioDeviceDetails(portAudioSys, chosen_output_dev);
             device_export.push_back(output_dev_details);
         }
 
@@ -146,8 +145,7 @@ std::vector<GkDevice> AudioDevices::initPortAudio(portaudio::System *portAudioSy
         } else {
             // Gather more details about the chosen audio device
             std::lock_guard<std::mutex> lck_guard(init_port_audio_mtx);
-            PaDeviceIndex input_dev = gkDekodeDb->read_audio_device_settings(false);
-            GkDevice input_dev_details = gatherAudioDeviceDetails(portAudioSys, input_dev);
+            GkDevice input_dev_details = gatherAudioDeviceDetails(portAudioSys, chosen_input_dev);
             device_export.push_back(input_dev_details);
         }
 
@@ -480,7 +478,7 @@ std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp(portaudio::System *portA
             deviceInfo = Pa_GetDeviceInfo((*i).index());
             device.device_info = *const_cast<PaDeviceInfo*>(deviceInfo);
 
-            device.dev_name_formatted = audio_device_name.str();
+            device.chosen_audio_dev_str = QString::fromStdString(audio_device_name.str());
             device.host_type_id = Pa_GetHostApiInfo(deviceInfo->hostApi)->type;
 
             if (Pa_GetHostApiInfo(deviceInfo->hostApi)->defaultInputDevice) {
@@ -739,11 +737,11 @@ void AudioDevices::systemVolumeSetting()
  * @note RobertT <https://stackoverflow.com/questions/2445756/how-can-i-calculate-audio-db-level>,
  * Vassilis <https://stackoverflow.com/questions/37963115/how-to-make-smooth-levelpeak-meter-with-qt>
  */
-float AudioDevices::vuMeter(const int &channels, const int &count, qint16 *buffer)
+float AudioDevices::vuMeter(const int &channels, const int &count, float *buffer)
 {
     float dB_val = 0.0f;
     if (buffer != nullptr) {
-        qint16 max_val = buffer[0];
+        float max_val = buffer[0];
 
         // Find maximum!
         // Traverse the array elements from second and compare every element with current maximum...
@@ -753,7 +751,7 @@ float AudioDevices::vuMeter(const int &channels, const int &count, qint16 *buffe
             }
         }
 
-        float amplitude = (static_cast<float>(max_val) / SHRT_MAX);
+        float amplitude = (static_cast<float>(max_val) / gkStringFuncs->getNumericMax<qint64>());
         dB_val = (20 * std::log10(amplitude));
 
         // Invert from a negative to a positive!
@@ -771,9 +769,9 @@ float AudioDevices::vuMeter(const int &channels, const int &count, qint16 *buffe
  * @param buffer The given audio data buffer.
  * @return The maximum, peak audio signal for a given lot of buffered data.
  */
-qint16 AudioDevices::vuMeterPeakAmplitude(const size_t &count, qint16 *buffer)
+float AudioDevices::vuMeterPeakAmplitude(const size_t &count, float *buffer)
 {
-    qint16 peak_signal = 0;
+    float peak_signal = 0;
     if (buffer != nullptr) {
         peak_signal = buffer[0];
 
@@ -798,9 +796,9 @@ qint16 AudioDevices::vuMeterPeakAmplitude(const size_t &count, qint16 *buffer)
  * @return The averaged RMS of a given data buffer of audio samples.
  * @note <https://stackoverflow.com/questions/8227030/how-to-find-highest-volume-level-of-a-wav-file-using-c>
  */
-float AudioDevices::vuMeterRMS(const size_t &count, qint16 *buffer)
+float AudioDevices::vuMeterRMS(const size_t &count, float *buffer)
 {
-    qint16 sample = 0;
+    float sample = 0;
     if (buffer != nullptr) {
         for (size_t i = 0; i < count; ++i) {
             sample += buffer[i] * buffer[i];

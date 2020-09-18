@@ -852,8 +852,8 @@ color: white;</string>
                                <rect>
                                 <x>0</x>
                                 <y>0</y>
-                                <width>537</width>
-                                <height>200</height>
+                                <width>100</width>
+                                <height>30</height>
                                </rect>
                               </property>
                               <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -972,8 +972,8 @@ color: white;</string>
                          <rect>
                           <x>0</x>
                           <y>0</y>
-                          <width>368</width>
-                          <height>263</height>
+                          <width>180</width>
+                          <height>171</height>
                          </rect>
                         </property>
                         <layout class="QVBoxLayout" name="verticalLayout_22">
@@ -1660,9 +1660,16 @@ QPushButton:disabled {
     <addaction name="separator"/>
     <addaction name="menuSave_Spectrograph_as_Bitmap"/>
    </widget>
+   <widget class="QMenu" name="menu_Tools">
+    <property name="title">
+     <string>&amp;Tools</string>
+    </property>
+    <addaction name="action_Battery_Calculator"/>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Configure"/>
    <addaction name="menuC_ontrol"/>
+   <addaction name="menu_Tools"/>
    <addaction name="menuSa_ve"/>
    <addaction name="menu_View"/>
    <addaction name="menu_Help"/>
@@ -1965,6 +1972,11 @@ QPushButton:disabled {
   <action name="actionSend_Report">
    <property name="text">
     <string>Send &amp;Report</string>
+   </property>
+  </action>
+  <action name="action_Battery_Calculator">
+   <property name="text">
+    <string>&amp;Battery Calculator</string>
    </property>
   </action>
  </widget>

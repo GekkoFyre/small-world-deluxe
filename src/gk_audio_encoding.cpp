@@ -93,7 +93,7 @@ std::mutex record_ogg_vorbis_mtx;
 std::mutex record_audio_file_mtx;
 
 GkAudioEncoding::GkAudioEncoding(QPointer<FileIo> fileIo,
-                                 std::shared_ptr<PaAudioBuf<qint16>> input_audio_buf,
+                                 std::shared_ptr<PaAudioBuf<float>> input_audio_buf,
                                  QPointer<GkLevelDb> database,
                                  QPointer<GkSpectroWaterfall> spectroGui,
                                  QPointer<StringFuncs> stringFuncs,
@@ -169,7 +169,7 @@ void GkAudioEncoding::recordAudioFile(const CodecSupport &codec, const Bitrate &
             std::future<std::vector<signed char>> ogg_frame_future = ogg_frame_promise.get_future();
 
             while (recording_in_progress) {
-                // ogg_audio_frame_thread = std::thread(&PaAudioBuf<qint16>::prepOggVorbisBuf, gkAudioBuf, std::move(ogg_frame_promise));
+                // ogg_audio_frame_thread = std::thread(&PaAudioBuf<float>::prepOggVorbisBuf, gkAudioBuf, std::move(ogg_frame_promise));
                 std::vector<signed char> audio_frame_vec = ogg_frame_future.get();
 
                 if (audio_frame_vec.empty()) {

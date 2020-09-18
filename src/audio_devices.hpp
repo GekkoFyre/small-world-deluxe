@@ -82,9 +82,9 @@ public:
     void portAudioErr(const PaError &err);
 
     void systemVolumeSetting();
-    float vuMeter(const int &channels, const int &count, qint16 *buffer);
-    qint16 vuMeterPeakAmplitude(const size_t &count, qint16 *buffer);
-    float vuMeterRMS(const size_t &count, qint16 *buffer);
+    float vuMeter(const int &channels, const int &count, float *buffer);
+    float vuMeterPeakAmplitude(const size_t &count, float *buffer);
+    float vuMeterRMS(const size_t &count, float *buffer);
 
     portaudio::SampleDataFormat sampleFormatConvert(const unsigned long &sample_rate);
 
