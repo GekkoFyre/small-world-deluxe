@@ -295,6 +295,7 @@ private:
     void prefill_audio_api_avail(const QVector<PaHostApiTypeId> &portaudio_api_vec);
     void prefill_audio_devices(const std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> &audio_devices_vec);
     void prefill_audio_encode_comboboxes();
+    void prefill_event_logger();
     void init_station_info();
 
     void print_exception(const std::exception &e, int level = 0);

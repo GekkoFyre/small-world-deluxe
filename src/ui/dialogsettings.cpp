@@ -194,6 +194,11 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         }
 
         //
+        // Prefill information within the `General --> Event Logger` tab...
+        //
+        prefill_event_logger();
+
+        //
         // Initialize Text-to-Speech GUI widgets
         //
         ui->comboBox_access_stt_engine->addItem(tr("Default"), tr("Default"));
@@ -335,6 +340,15 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         // Audio --> Configuration
         //
         gkDekodeDb->write_rig_settings(QString::fromStdString(gkDekodeDb->boolEnum(rx_audio_init_start)), radio_cfg::RXAudioInitStart);
+
+        //
+        // General --> Event Logger
+        //
+        qint16 event_log_verb_idx = ui->comboBox_event_logger_general_verbosity->currentIndex();
+        if (event_log_verb_idx >= 0) {
+            // We have a valid result!
+            gkDekodeDb->write_event_log_settings(QString::number(event_log_verb_idx), GkEventLogCfg::GkLogVerbosity);
+        }
 
         //
         // Data Bits
@@ -762,6 +776,10 @@ void DialogSettings::prefill_audio_devices(const std::vector<GkDevice> &audio_de
     return;
 }
 
+/**
+ * @brief DialogSettings::prefill_audio_encode_comboboxes
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
 void DialogSettings::prefill_audio_encode_comboboxes()
 {
     // gkDekodeDb->convAudioBitrateToStr();
@@ -769,6 +787,27 @@ void DialogSettings::prefill_audio_encode_comboboxes()
     return;
 }
 
+/**
+ * @brief DialogSettings::prefill_event_logger
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void DialogSettings::prefill_event_logger()
+{
+    ui->comboBox_event_logger_general_verbosity->insertItem(GK_EVENTLOG_SEVERITY_NONE_IDX, gkDekodeDb->convSeverityToStr(GkSeverity::None));
+    ui->comboBox_event_logger_general_verbosity->insertItem(GK_EVENTLOG_SEVERITY_VERBOSE_IDX, gkDekodeDb->convSeverityToStr(GkSeverity::Verbose));
+    ui->comboBox_event_logger_general_verbosity->insertItem(GK_EVENTLOG_SEVERITY_DEBUG_IDX, gkDekodeDb->convSeverityToStr(GkSeverity::Debug));
+    ui->comboBox_event_logger_general_verbosity->insertItem(GK_EVENTLOG_SEVERITY_INFO_IDX, gkDekodeDb->convSeverityToStr(GkSeverity::Info));
+    ui->comboBox_event_logger_general_verbosity->insertItem(GK_EVENTLOG_SEVERITY_WARNING_IDX, gkDekodeDb->convSeverityToStr(GkSeverity::Warning));
+    ui->comboBox_event_logger_general_verbosity->insertItem(GK_EVENTLOG_SEVERITY_ERROR_IDX, gkDekodeDb->convSeverityToStr(GkSeverity::Error));
+    ui->comboBox_event_logger_general_verbosity->insertItem(GK_EVENTLOG_SEVERITY_FATAL_IDX, gkDekodeDb->convSeverityToStr(GkSeverity::Fatal));
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::init_station_info
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
 void DialogSettings::init_station_info()
 {
     try {
@@ -1248,6 +1287,8 @@ bool DialogSettings::read_settings()
         const QString outputSampleRateIdx = gkDekodeDb->read_misc_audio_settings(audio_cfg::AudioOutputSampleRate);
         const QString outputChannelsIdx = gkDekodeDb->read_misc_audio_settings(audio_cfg::AudioOutputChannels);
 
+        const QString eventLogVerbIdx = gkDekodeDb->read_event_log_settings(GkEventLogCfg::GkLogVerbosity);
+
         //
         // Audio --> Configuration
         //
@@ -1577,6 +1618,17 @@ bool DialogSettings::read_settings()
 
         if (!outputChannelsIdx.isEmpty()) {
             ui->comboBox_soundcard_output_channels->setCurrentIndex(outputChannelsIdx.toInt());
+        }
+
+        //
+        // General --> Event Logger
+        //
+        if (!eventLogVerbIdx.isEmpty()) {
+            const qint32 eventLogVerbIdxInt = eventLogVerbIdx.toInt();
+            if (eventLogVerbIdxInt >= 0) {
+                // We have a valid result!
+                ui->comboBox_event_logger_general_verbosity->setCurrentIndex(eventLogVerbIdxInt);
+            }
         }
 
         //
