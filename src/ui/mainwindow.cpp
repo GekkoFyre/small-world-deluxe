@@ -2328,13 +2328,7 @@ void MainWindow::restartInputAudioInterface(const GkDevice &input_device)
                                                            pref_input_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
                                                            paPrimeOutputBuffersUsingStreamCallback);
         inputAudioStream.reset(new portaudio::MemFunCallbackStream<PaAudioBuf<float>>(pa_stream_param, *input_audio_buf, &PaAudioBuf<float>::recordCallback));
-        if (!inputAudioStream->isOpen()) {
-            inputAudioStream->start();
-        } else {
-            gkEventLogger->publishEvent(tr("Input audio device is already open! Please restart Small World Deluxe."),
-                                        GkSeverity::Error, "", false, true, false, true);
-        }
-
+        inputAudioStream->start();
         pref_input_device.is_dev_active = true; // State that this recording device is now active!
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(tr("Problem encountered with restarting input audio device. Error:\n\n%1").arg(QString::fromStdString(e.what())),

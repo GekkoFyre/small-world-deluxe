@@ -315,8 +315,17 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         // Now make the sound-device selection official throughout the running Small World Deluxe application!
         // NOTE: The order of these functions is rather semi-important! Do not change without reason!
         //
-        emit changeInputAudioInterface(chosen_input_audio_dev);
-        emit changeOutputAudioInterface(chosen_output_audio_dev);
+        for (const auto &input_dev: avail_input_audio_devs.toStdMap()) {
+            if (chosen_input_audio_dev.chosen_audio_dev_str == input_dev.second.device_info.name) {
+                emit changeInputAudioInterface(input_dev.second);
+            }
+        }
+
+        for (const auto &output_dev: avail_output_audio_devs.toStdMap()) {
+            if (chosen_output_audio_dev.chosen_audio_dev_str == output_dev.second.device_info.name) {
+                emit changeOutputAudioInterface(output_dev.second);
+            }
+        }
 
         //
         // Audio --> Configuration
