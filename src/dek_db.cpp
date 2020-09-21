@@ -396,12 +396,6 @@ void GkLevelDb::write_misc_audio_settings(const QString &value, const audio_cfg 
         leveldb::Status status;
 
         switch (key) {
-        case audio_cfg::soundcardInput:
-            batch.Put("SoundcardInput", value.toStdString());
-            break;
-        case audio_cfg::soundcardOutput:
-            batch.Put("SoundcardOutput", value.toStdString());
-            break;
         case audio_cfg::settingsDbLoc:
             batch.Put("UserProfileDbLoc", value.toStdString());
             break;
@@ -1628,12 +1622,6 @@ QString GkLevelDb::read_misc_audio_settings(const audio_cfg &key)
     read_options.verify_checksums = true;
 
     switch (key) {
-    case audio_cfg::soundcardInput:
-        status = db->Get(read_options, "SoundcardInput", &value);
-        break;
-    case audio_cfg::soundcardOutput:
-        status = db->Get(read_options, "SoundcardOutput", &value);
-        break;
     case audio_cfg::settingsDbLoc:
         status = db->Get(read_options, "UserProfileDbLoc", &value);
         break;

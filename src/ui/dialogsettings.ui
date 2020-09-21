@@ -1950,7 +1950,7 @@ Thanks.</string>
             </attribute>
             <layout class="QVBoxLayout" name="verticalLayout_6">
              <item>
-              <widget class="QTabWidget" name="tabWidget">
+              <widget class="QTabWidget" name="tabWidget_audio">
                <property name="currentIndex">
                 <number>0</number>
                </property>
@@ -2775,7 +2775,10 @@ Thanks.</string>
                              <item>
                               <widget class="QLabel" name="label_version_holder">
                                <property name="text">
-                                <string>Version:</string>
+                                <string>Version: </string>
+                               </property>
+                               <property name="textInteractionFlags">
+                                <set>Qt::NoTextInteraction</set>
                                </property>
                               </widget>
                              </item>
@@ -2783,6 +2786,9 @@ Thanks.</string>
                               <widget class="QLabel" name="label_pa_version">
                                <property name="text">
                                 <string>&lt;version&gt;</string>
+                               </property>
+                               <property name="textInteractionFlags">
+                                <set>Qt::NoTextInteraction</set>
                                </property>
                               </widget>
                              </item>
@@ -2803,18 +2809,12 @@ Thanks.</string>
                            </widget>
                           </item>
                           <item>
-                           <widget class="QTextEdit" name="textEdit_pa_version_text">
-                            <property name="documentTitle">
-                             <string notr="true"/>
-                            </property>
-                            <property name="undoRedoEnabled">
-                             <bool>false</bool>
-                            </property>
+                           <widget class="QPlainTextEdit" name="plainTextEdit_pa_version_text">
                             <property name="readOnly">
                              <bool>true</bool>
                             </property>
-                            <property name="placeholderText">
-                             <string>&lt;PortAudio version information&gt;</string>
+                            <property name="plainText">
+                             <string>&lt;PortAudio version and API information&gt;.</string>
                             </property>
                            </widget>
                           </item>
@@ -2901,11 +2901,11 @@ Thanks.</string>
             </attribute>
             <layout class="QVBoxLayout" name="verticalLayout_12">
              <item>
-              <widget class="QTabWidget" name="tabWidget_2">
+              <widget class="QTabWidget" name="tabWidget_radio">
                <property name="currentIndex">
                 <number>0</number>
                </property>
-               <widget class="QWidget" name="tab">
+               <widget class="QWidget" name="tab_radio_rig">
                 <attribute name="title">
                  <string>Rig</string>
                 </attribute>
@@ -3913,59 +3913,217 @@ Thanks.</string>
                  </item>
                 </layout>
                </widget>
-               <widget class="QWidget" name="tab_2">
+               <widget class="QWidget" name="tab_radio_hamlib_api">
                 <attribute name="title">
                  <string>API Info</string>
                 </attribute>
                 <layout class="QVBoxLayout" name="verticalLayout_34">
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
                  <item>
-                  <widget class="QFrame" name="frame_3">
+                  <widget class="QScrollArea" name="scrollArea_hamlib_api">
                    <property name="frameShape">
-                    <enum>QFrame::StyledPanel</enum>
+                    <enum>QFrame::NoFrame</enum>
                    </property>
                    <property name="frameShadow">
-                    <enum>QFrame::Raised</enum>
+                    <enum>QFrame::Plain</enum>
                    </property>
-                   <layout class="QVBoxLayout" name="verticalLayout_35">
-                    <property name="leftMargin">
-                     <number>0</number>
+                   <property name="horizontalScrollBarPolicy">
+                    <enum>Qt::ScrollBarAlwaysOff</enum>
+                   </property>
+                   <property name="widgetResizable">
+                    <bool>true</bool>
+                   </property>
+                   <widget class="QWidget" name="scrollAreaWidgetContents_4">
+                    <property name="geometry">
+                     <rect>
+                      <x>0</x>
+                      <y>0</y>
+                      <width>756</width>
+                      <height>635</height>
+                     </rect>
                     </property>
-                    <property name="topMargin">
-                     <number>0</number>
-                    </property>
-                    <property name="rightMargin">
-                     <number>0</number>
-                    </property>
-                    <property name="bottomMargin">
-                     <number>0</number>
-                    </property>
-                    <item>
-                     <widget class="QScrollArea" name="scrollArea_3">
-                      <property name="frameShape">
-                       <enum>QFrame::NoFrame</enum>
-                      </property>
-                      <property name="frameShadow">
-                       <enum>QFrame::Plain</enum>
-                      </property>
-                      <property name="horizontalScrollBarPolicy">
-                       <enum>Qt::ScrollBarAlwaysOff</enum>
-                      </property>
-                      <property name="widgetResizable">
-                       <bool>true</bool>
-                      </property>
-                      <widget class="QWidget" name="scrollAreaWidgetContents_4">
-                       <property name="geometry">
-                        <rect>
-                         <x>0</x>
-                         <y>0</y>
-                         <width>100</width>
-                         <height>30</height>
-                        </rect>
+                    <layout class="QVBoxLayout" name="verticalLayout_35">
+                     <item>
+                      <widget class="QGroupBox" name="groupBox_hamlib_api">
+                       <property name="title">
+                        <string>Details</string>
                        </property>
+                       <layout class="QHBoxLayout" name="horizontalLayout_35">
+                        <item>
+                         <widget class="QFrame" name="frame_hamlib_api_left">
+                          <property name="frameShape">
+                           <enum>QFrame::NoFrame</enum>
+                          </property>
+                          <property name="frameShadow">
+                           <enum>QFrame::Plain</enum>
+                          </property>
+                          <layout class="QHBoxLayout" name="horizontalLayout_41">
+                           <item>
+                            <spacer name="horizontalSpacer_24">
+                             <property name="orientation">
+                              <enum>Qt::Horizontal</enum>
+                             </property>
+                             <property name="sizeHint" stdset="0">
+                              <size>
+                               <width>210</width>
+                               <height>20</height>
+                              </size>
+                             </property>
+                            </spacer>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QFrame" name="frame_hamlib_api_middle">
+                          <property name="frameShape">
+                           <enum>QFrame::NoFrame</enum>
+                          </property>
+                          <property name="frameShadow">
+                           <enum>QFrame::Plain</enum>
+                          </property>
+                          <layout class="QVBoxLayout" name="verticalLayout_52">
+                           <item>
+                            <spacer name="verticalSpacer_9">
+                             <property name="orientation">
+                              <enum>Qt::Vertical</enum>
+                             </property>
+                             <property name="sizeHint" stdset="0">
+                              <size>
+                               <width>20</width>
+                               <height>184</height>
+                              </size>
+                             </property>
+                            </spacer>
+                           </item>
+                           <item>
+                            <widget class="QFrame" name="frame_3">
+                             <property name="frameShape">
+                              <enum>QFrame::NoFrame</enum>
+                             </property>
+                             <property name="frameShadow">
+                              <enum>QFrame::Plain</enum>
+                             </property>
+                             <layout class="QHBoxLayout" name="horizontalLayout_43">
+                              <item>
+                               <spacer name="horizontalSpacer_26">
+                                <property name="orientation">
+                                 <enum>Qt::Horizontal</enum>
+                                </property>
+                                <property name="sizeHint" stdset="0">
+                                 <size>
+                                  <width>40</width>
+                                  <height>20</height>
+                                 </size>
+                                </property>
+                               </spacer>
+                              </item>
+                              <item>
+                               <widget class="QLabel" name="label_hamlib_api_header">
+                                <property name="text">
+                                 <string>Version: </string>
+                                </property>
+                                <property name="textInteractionFlags">
+                                 <set>Qt::NoTextInteraction</set>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QLabel" name="label_hamlib_api_version">
+                                <property name="text">
+                                 <string>&lt;version&gt;</string>
+                                </property>
+                                <property name="textInteractionFlags">
+                                 <set>Qt::NoTextInteraction</set>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
+                               <spacer name="horizontalSpacer_27">
+                                <property name="orientation">
+                                 <enum>Qt::Horizontal</enum>
+                                </property>
+                                <property name="sizeHint" stdset="0">
+                                 <size>
+                                  <width>40</width>
+                                  <height>20</height>
+                                 </size>
+                                </property>
+                               </spacer>
+                              </item>
+                             </layout>
+                            </widget>
+                           </item>
+                           <item>
+                            <widget class="QPlainTextEdit" name="plainTextEdit_hamlib_api_version_info">
+                             <property name="horizontalScrollBarPolicy">
+                              <enum>Qt::ScrollBarAlwaysOff</enum>
+                             </property>
+                             <property name="readOnly">
+                              <bool>true</bool>
+                             </property>
+                             <property name="plainText">
+                              <string>&lt;Hamlib version and API information&gt;.</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item>
+                            <spacer name="verticalSpacer_10">
+                             <property name="orientation">
+                              <enum>Qt::Vertical</enum>
+                             </property>
+                             <property name="sizeHint" stdset="0">
+                              <size>
+                               <width>20</width>
+                               <height>183</height>
+                              </size>
+                             </property>
+                            </spacer>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QFrame" name="frame_hamlib_api_right">
+                          <property name="frameShape">
+                           <enum>QFrame::NoFrame</enum>
+                          </property>
+                          <property name="frameShadow">
+                           <enum>QFrame::Plain</enum>
+                          </property>
+                          <layout class="QHBoxLayout" name="horizontalLayout_42">
+                           <item>
+                            <spacer name="horizontalSpacer_25">
+                             <property name="orientation">
+                              <enum>Qt::Horizontal</enum>
+                             </property>
+                             <property name="sizeHint" stdset="0">
+                              <size>
+                               <width>210</width>
+                               <height>20</height>
+                              </size>
+                             </property>
+                            </spacer>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                       </layout>
                       </widget>
-                     </widget>
-                    </item>
-                   </layout>
+                     </item>
+                    </layout>
+                   </widget>
                   </widget>
                  </item>
                 </layout>
