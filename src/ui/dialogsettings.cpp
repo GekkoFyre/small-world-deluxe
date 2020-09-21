@@ -424,8 +424,10 @@ void DialogSettings::on_pushButton_submit_config_clicked()
             enum_split_oper = 2;
         }
 
-        const int inputSampleRateIdx = ui->comboBox_audio_input_sample_rate->currentIndex();
-        const int outputSampleRateIdx = ui->comboBox_audio_output_sample_rate->currentIndex();
+        const qint32 inputSampleRateIdx = ui->comboBox_audio_input_sample_rate->currentIndex();
+        const qint32 inputChannelsIdx = ui->comboBox_soundcard_input_channels->currentIndex();
+        const qint32 outputSampleRateIdx = ui->comboBox_audio_output_sample_rate->currentIndex();
+        const qint32 outputChannelsIdx = ui->comboBox_soundcard_output_channels->currentIndex();
 
         qint16 enum_force_ctrl_lines_dtr = 0;
         qint16 enum_force_ctrl_lines_rts = 0;
@@ -460,6 +462,8 @@ void DialogSettings::on_pushButton_submit_config_clicked()
 
         gkDekodeDb->write_misc_audio_settings(QString::number(inputSampleRateIdx), audio_cfg::AudioInputSampleRate);
         gkDekodeDb->write_misc_audio_settings(QString::number(outputSampleRateIdx), audio_cfg::AudioOutputSampleRate);
+        gkDekodeDb->write_misc_audio_settings(QString::number(inputChannelsIdx), audio_cfg::AudioInputChannels);
+        gkDekodeDb->write_misc_audio_settings(QString::number(outputChannelsIdx), audio_cfg::AudioOutputChannels);
 
         emit addRigInUse(ui->comboBox_rig_selection->currentData().toInt(), gkRadioPtr);
 
@@ -605,13 +609,15 @@ void DialogSettings::prefill_audio_api_avail(const QVector<PaHostApiTypeId> &por
                         auto soundcard_input_saved = gkDekodeDb->read_audio_device_settings(false, false);
                         if (!soundcard_input_saved.isNull() && !soundcard_input_saved.isEmpty()) {
                             for (const auto &input_dev: avail_input_audio_devs.toStdMap()) {
-                                if (soundcard_input_saved == input_dev.second.device_info.name) {
-                                    qint32 idx = ui->comboBox_soundcard_input->findData(input_dev.second.device_info.name);
-                                    if (idx >= 0) {
-                                        ui->comboBox_soundcard_input->setCurrentIndex(idx);
-                                        on_comboBox_soundcard_input_currentIndexChanged(idx);
+                                if (input_dev.second.device_info.name) { // Test that `const char *` is not empty!
+                                    if (soundcard_input_saved == input_dev.second.device_info.name) {
+                                        qint32 idx = ui->comboBox_soundcard_input->findData(input_dev.second.device_info.name);
+                                        if (idx >= 0) {
+                                            ui->comboBox_soundcard_input->setCurrentIndex(idx);
+                                            on_comboBox_soundcard_input_currentIndexChanged(idx);
 
-                                        break;
+                                            break;
+                                        }
                                     }
                                 }
                             }
@@ -623,13 +629,15 @@ void DialogSettings::prefill_audio_api_avail(const QVector<PaHostApiTypeId> &por
                         auto soundcard_output_saved = gkDekodeDb->read_audio_device_settings(true, false);
                         if (!soundcard_output_saved.isNull() && !soundcard_output_saved.isEmpty()) {
                             for (const auto &output_dev: avail_output_audio_devs.toStdMap()) {
-                                if (soundcard_output_saved == output_dev.second.device_info.name) {
-                                    qint32 idx = ui->comboBox_soundcard_output->findData(output_dev.second.device_info.name);
-                                    if (idx >= 0) {
-                                        ui->comboBox_soundcard_output->setCurrentIndex(idx);
-                                        on_comboBox_soundcard_output_currentIndexChanged(idx);
+                                if (output_dev.second.device_info.name) { // Test that `const char *` is not empty!
+                                    if (soundcard_output_saved == output_dev.second.device_info.name) {
+                                        qint32 idx = ui->comboBox_soundcard_output->findData(output_dev.second.device_info.name);
+                                        if (idx >= 0) {
+                                            ui->comboBox_soundcard_output->setCurrentIndex(idx);
+                                            on_comboBox_soundcard_output_currentIndexChanged(idx);
 
-                                        break;
+                                            break;
+                                        }
                                     }
                                 }
                             }
@@ -1192,36 +1200,38 @@ bool DialogSettings::read_settings()
     try {
         using namespace Database::Settings;
 
-        QString rigBrand = gkDekodeDb->read_rig_settings(radio_cfg::RigBrand);
-        QString rigModel = gkDekodeDb->read_rig_settings(radio_cfg::RigModel);
-        QString rigModelIndex = gkDekodeDb->read_rig_settings(radio_cfg::RigModelIndex);
-        QString rigVers = gkDekodeDb->read_rig_settings(radio_cfg::RigVersion);
-        QString comBaudRate = gkDekodeDb->read_rig_settings_comms(radio_cfg::ComBaudRate);
-        QString stopBits = gkDekodeDb->read_rig_settings(radio_cfg::StopBits);
-        QString data_bits = gkDekodeDb->read_rig_settings(radio_cfg::DataBits);
-        QString handshake = gkDekodeDb->read_rig_settings(radio_cfg::Handshake);
-        QString force_ctrl_lines_dtr = gkDekodeDb->read_rig_settings(radio_cfg::ForceCtrlLinesDtr);
-        QString force_ctrl_lines_rts = gkDekodeDb->read_rig_settings(radio_cfg::ForceCtrlLinesRts);
-        QString ptt_method = gkDekodeDb->read_rig_settings(radio_cfg::PTTMethod);
-        QString tx_audio_src = gkDekodeDb->read_rig_settings(radio_cfg::TXAudioSrc);
-        QString ptt_mode = gkDekodeDb->read_rig_settings(radio_cfg::PTTMode);
-        QString split_operation = gkDekodeDb->read_rig_settings(radio_cfg::SplitOperation);
-        QString ptt_adv_cmd = gkDekodeDb->read_rig_settings(radio_cfg::PTTAdvCmd);
+        const QString rigBrand = gkDekodeDb->read_rig_settings(radio_cfg::RigBrand);
+        const QString rigModel = gkDekodeDb->read_rig_settings(radio_cfg::RigModel);
+        const QString rigModelIndex = gkDekodeDb->read_rig_settings(radio_cfg::RigModelIndex);
+        const QString rigVers = gkDekodeDb->read_rig_settings(radio_cfg::RigVersion);
+        const QString comBaudRate = gkDekodeDb->read_rig_settings_comms(radio_cfg::ComBaudRate);
+        const QString stopBits = gkDekodeDb->read_rig_settings(radio_cfg::StopBits);
+        const QString data_bits = gkDekodeDb->read_rig_settings(radio_cfg::DataBits);
+        const QString handshake = gkDekodeDb->read_rig_settings(radio_cfg::Handshake);
+        const QString force_ctrl_lines_dtr = gkDekodeDb->read_rig_settings(radio_cfg::ForceCtrlLinesDtr);
+        const QString force_ctrl_lines_rts = gkDekodeDb->read_rig_settings(radio_cfg::ForceCtrlLinesRts);
+        const QString ptt_method = gkDekodeDb->read_rig_settings(radio_cfg::PTTMethod);
+        const QString tx_audio_src = gkDekodeDb->read_rig_settings(radio_cfg::TXAudioSrc);
+        const QString ptt_mode = gkDekodeDb->read_rig_settings(radio_cfg::PTTMode);
+        const QString split_operation = gkDekodeDb->read_rig_settings(radio_cfg::SplitOperation);
+        const QString ptt_adv_cmd = gkDekodeDb->read_rig_settings(radio_cfg::PTTAdvCmd);
 
-        QString logsDirLoc = gkDekodeDb->read_misc_audio_settings(audio_cfg::LogsDirLoc);
-        QString audioRecLoc = gkDekodeDb->read_misc_audio_settings(audio_cfg::AudioRecLoc);
-        QString settingsDbLoc = gkDekodeDb->read_misc_audio_settings(audio_cfg::settingsDbLoc);
+        const QString logsDirLoc = gkDekodeDb->read_misc_audio_settings(audio_cfg::LogsDirLoc);
+        const QString audioRecLoc = gkDekodeDb->read_misc_audio_settings(audio_cfg::AudioRecLoc);
+        const QString settingsDbLoc = gkDekodeDb->read_misc_audio_settings(audio_cfg::settingsDbLoc);
 
         const QString msg_audio_notif = gkDekodeDb->read_general_settings(general_stat_cfg::MsgAudioNotif);
         const QString fail_event_notif = gkDekodeDb->read_general_settings(general_stat_cfg::FailAudioNotif);
 
-        QString inputSampleRateIdx = gkDekodeDb->read_misc_audio_settings(audio_cfg::AudioInputSampleRate);
-        QString outputSampleRateIdx = gkDekodeDb->read_misc_audio_settings(audio_cfg::AudioOutputSampleRate);
+        const QString inputSampleRateIdx = gkDekodeDb->read_misc_audio_settings(audio_cfg::AudioInputSampleRate);
+        const QString inputChannelsIdx = gkDekodeDb->read_misc_audio_settings(audio_cfg::AudioInputChannels);
+        const QString outputSampleRateIdx = gkDekodeDb->read_misc_audio_settings(audio_cfg::AudioOutputSampleRate);
+        const QString outputChannelsIdx = gkDekodeDb->read_misc_audio_settings(audio_cfg::AudioOutputChannels);
 
         //
         // Audio --> Configuration
         //
-        QString rx_audio_init_start = gkDekodeDb->read_rig_settings(radio_cfg::RXAudioInitStart);
+        const QString rx_audio_init_start = gkDekodeDb->read_rig_settings(radio_cfg::RXAudioInitStart);
 
         Q_UNUSED(rigModel);
 
@@ -1537,8 +1547,16 @@ bool DialogSettings::read_settings()
             ui->comboBox_audio_input_sample_rate->setCurrentIndex(inputSampleRateIdx.toInt());
         }
 
+        if (!inputChannelsIdx.isEmpty()) {
+            ui->comboBox_soundcard_input_channels->setCurrentIndex(inputChannelsIdx.toInt());
+        }
+
         if (!outputSampleRateIdx.isEmpty()) {
             ui->comboBox_audio_output_sample_rate->setCurrentIndex(outputSampleRateIdx.toInt());
+        }
+
+        if (!outputChannelsIdx.isEmpty()) {
+            ui->comboBox_soundcard_output_channels->setCurrentIndex(outputChannelsIdx.toInt());
         }
 
         //
