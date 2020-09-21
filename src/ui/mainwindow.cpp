@@ -821,6 +821,14 @@ void MainWindow::launchSettingsWin()
     QObject::connect(dlg_settings, SIGNAL(addRigInUse(const rig_model_t &, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
                      this, SLOT(addRigToMemory(const rig_model_t &, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
 
+    //
+    // PortAudio related
+    //
+    QObject::connect(dlg_settings, SIGNAL(changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)),
+                     this, SLOT(restartInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)));
+    QObject::connect(dlg_settings, SIGNAL(changeOutputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)),
+                     this, SLOT(restartOutputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)));
+
     dlg_settings->show();
 
     return;
@@ -2201,13 +2209,18 @@ void MainWindow::procRigPort(const QString &conn_port, const GekkoFyre::AmateurR
  */
 void MainWindow::stopRecordingInput()
 {
-    if (inputAudioStream != nullptr && pref_input_device.is_dev_active) {
-        if (inputAudioStream->isActive()) {
-            inputAudioStream->stop();
-            inputAudioStream->close();
+    try {
+        if (inputAudioStream != nullptr && pref_input_device.is_dev_active) {
+            if (inputAudioStream->isActive()) {
+                inputAudioStream->stop();
+                inputAudioStream->close();
 
-            pref_input_device.is_dev_active = false; // State that this recording device is now non-active!
+                pref_input_device.is_dev_active = false; // State that this recording device is now non-active!
+            }
         }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(tr("Problem encountered with stopping input audio device. Error:\n\n%1").arg(QString::fromStdString(e.what())),
+                                    GkSeverity::Error, "", false, true, false, true);
     }
 
     return;
@@ -2222,21 +2235,28 @@ void MainWindow::stopRecordingInput()
  */
 void MainWindow::startRecordingInput()
 {
-    emit stopRecording();
+    try {
+        emit stopRecording();
 
-    // To minimise startup latency for this use-case (i.e. expecting StartStream() to give minimum
-    // startup latency) you should use the paPrimeOutputBuffersUsingStreamCallback stream flag.
-    // Otherwise the initial buffers will be zero and the time it takes for the sound to hit the
-    // DACs will include playing out the buffer length of zeros (which would be around 80ms on
-    // Windows WMME or DirectSound with the default PA settings).
-    auto pa_stream_param = portaudio::StreamParameters(pref_input_device.cpp_stream_param, portaudio::DirectionSpecificStreamParameters::null(),
-                                                       pref_input_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
-                                                       paPrimeOutputBuffersUsingStreamCallback);
-    inputAudioStream = std::make_shared<portaudio::MemFunCallbackStream<PaAudioBuf<float>>>(pa_stream_param, *input_audio_buf,
-                                                                                             &PaAudioBuf<float>::recordCallback);
-    inputAudioStream->start();
+        // To minimise startup latency for this use-case (i.e. expecting StartStream() to give minimum
+        // startup latency) you should use the paPrimeOutputBuffersUsingStreamCallback stream flag.
+        // Otherwise the initial buffers will be zero and the time it takes for the sound to hit the
+        // DACs will include playing out the buffer length of zeros (which would be around 80ms on
+        // Windows WMME or DirectSound with the default PA settings).
+        auto pa_stream_param = portaudio::StreamParameters(pref_input_device.cpp_stream_param, portaudio::DirectionSpecificStreamParameters::null(),
+                                                           pref_input_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
+                                                           paPrimeOutputBuffersUsingStreamCallback);
+        inputAudioStream = std::make_shared<portaudio::MemFunCallbackStream<PaAudioBuf<float>>>(pa_stream_param, *input_audio_buf,
+                                                                                                &PaAudioBuf<float>::recordCallback);
+        inputAudioStream->start();
 
-    pref_input_device.is_dev_active = true; // State that this recording device is now active!
+        pref_input_device.is_dev_active = true; // State that this recording device is now active!
+        return;
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(tr("Problem encountered with initializing input audio device. Error:\n\n%1").arg(QString::fromStdString(e.what())),
+                                    GkSeverity::Error, "", false, true, false, true);
+    }
+
     return;
 }
 
@@ -2246,13 +2266,18 @@ void MainWindow::startRecordingInput()
  */
 void MainWindow::stopTransmitOutput()
 {
-    if (outputAudioStream != nullptr && pref_output_device.is_dev_active) {
-        if (outputAudioStream->isActive()) {
-            outputAudioStream->stop();
-            outputAudioStream->close();
+    try {
+        if (outputAudioStream != nullptr && pref_output_device.is_dev_active) {
+            if (outputAudioStream->isActive()) {
+                outputAudioStream->stop();
+                outputAudioStream->close();
 
-            pref_output_device.is_dev_active = false; // State that this recording device is now non-active!
+                pref_output_device.is_dev_active = false; // State that this recording device is now non-active!
+            }
         }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(tr("Problem encountered with stopping output audio device. Error:\n\n%1").arg(QString::fromStdString(e.what())),
+                                    GkSeverity::Error, "", false, true, false, true);
     }
 
     return;
@@ -2264,17 +2289,68 @@ void MainWindow::stopTransmitOutput()
  */
 void MainWindow::startTransmitOutput()
 {
-    // To minimise startup latency for this use-case (i.e. expecting StartStream() to give minimum
-    // startup latency) you should use the paPrimeOutputBuffersUsingStreamCallback stream flag.
-    // Otherwise the initial buffers will be zero and the time it takes for the sound to hit the
-    // DACs will include playing out the buffer length of zeros (which would be around 80ms on
-    // Windows WMME or DirectSound with the default PA settings).
-    auto pa_stream_param = portaudio::StreamParameters(portaudio::DirectionSpecificStreamParameters::null(), pref_output_device.cpp_stream_param,
-                                                       pref_output_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
-                                                       paPrimeOutputBuffersUsingStreamCallback);
-    outputAudioStream = std::make_shared<portaudio::MemFunCallbackStream<PaAudioBuf<float>>>(pa_stream_param, *output_audio_buf,
-                                                                                              &PaAudioBuf<float>::playbackCallback);
-    outputAudioStream->start();
+    try {
+        // To minimise startup latency for this use-case (i.e. expecting StartStream() to give minimum
+        // startup latency) you should use the paPrimeOutputBuffersUsingStreamCallback stream flag.
+        // Otherwise the initial buffers will be zero and the time it takes for the sound to hit the
+        // DACs will include playing out the buffer length of zeros (which would be around 80ms on
+        // Windows WMME or DirectSound with the default PA settings).
+        auto pa_stream_param = portaudio::StreamParameters(portaudio::DirectionSpecificStreamParameters::null(), pref_output_device.cpp_stream_param,
+                                                           pref_output_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
+                                                           paPrimeOutputBuffersUsingStreamCallback);
+        outputAudioStream = std::make_shared<portaudio::MemFunCallbackStream<PaAudioBuf<float>>>(pa_stream_param, *output_audio_buf,
+                                                                                                 &PaAudioBuf<float>::playbackCallback);
+        outputAudioStream->start();
+        return;
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(tr("Problem encountered with initializing output audio device. Error:\n\n%1").arg(QString::fromStdString(e.what())),
+                                    GkSeverity::Error, "", false, true, false, true);
+    }
+
+    return;
+}
+
+/**
+ * @brief MainWindow::restartInputAudioInterface restarts the input audio device interface with a newly chosen audio device.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param input_device The newly chosen input audio device to restart the interface with.
+ */
+void MainWindow::restartInputAudioInterface(const GkDevice &input_device)
+{
+    try {
+        emit stopRecording();
+        pref_input_device = {}; // Clear the structure ready for re-use!
+        pref_input_device = input_device;
+
+        input_audio_buf.reset(new GekkoFyre::PaAudioBuf<float>(AUDIO_FRAMES_PER_BUFFER, pref_output_device, pref_input_device));
+
+        auto pa_stream_param = portaudio::StreamParameters(pref_input_device.cpp_stream_param, portaudio::DirectionSpecificStreamParameters::null(),
+                                                           pref_input_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
+                                                           paPrimeOutputBuffersUsingStreamCallback);
+        inputAudioStream.reset(new portaudio::MemFunCallbackStream<PaAudioBuf<float>>(pa_stream_param, *input_audio_buf, &PaAudioBuf<float>::recordCallback));
+        inputAudioStream->start();
+        pref_input_device.is_dev_active = true; // State that this recording device is now active!
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(tr("Problem encountered with restarting input audio device. Error:\n\n%1").arg(QString::fromStdString(e.what())),
+                                    GkSeverity::Error, "", false, true, false, true);
+    }
+
+    return;
+}
+
+/**
+ * @brief MainWindow::restartOutputAudioInterface restarts the output audio device interface with a newly chosen audio device.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param output_device The newly chosen output audio device to restart the interface with.
+ */
+void MainWindow::restartOutputAudioInterface(const GkDevice &output_device)
+{
+    emit stopTxAudio();
+    pref_output_device = {};
+    pref_output_device = output_device;
+
+    output_audio_buf.reset(new GekkoFyre::PaAudioBuf<float>(AUDIO_FRAMES_PER_BUFFER, pref_output_device, pref_input_device));
+    emit startTxAudio();
 
     return;
 }
