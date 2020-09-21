@@ -1306,9 +1306,12 @@ void MainWindow::updateVolumeDisplayWidgets()
                     qreal peakLevel = 0;
                     qreal sum = 0.0;
 
-                    const auto randNum = gkStringFuncs->randomNumGen(1, recv_buf.size());
-                    const qint64 value = recv_buf.at(randNum - 1);
-                    const qreal amplitudeToReal = (static_cast<qreal>(value) / gkStringFuncs->getNumericMax<qint64>());
+                    qint64 highest = 0;
+                    for (const auto &data: recv_buf) {
+                        highest = std::max(highest, data);
+                    }
+
+                    const qreal amplitudeToReal = (static_cast<qreal>(highest) / gkStringFuncs->getNumericMax<qint64>());
                     peakLevel = qMax(peakLevel, amplitudeToReal);
                     sum += amplitudeToReal * amplitudeToReal;
 
