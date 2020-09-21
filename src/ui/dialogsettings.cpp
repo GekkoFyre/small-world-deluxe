@@ -37,6 +37,7 @@
 
 #include "dialogsettings.hpp"
 #include "ui_dialogsettings.h"
+#include <hamlib/rig.h>
 #include <boost/exception/all.hpp>
 #include <boost/filesystem.hpp>
 #include <QStringList>
@@ -172,7 +173,10 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         prefill_audio_devices(audio_devices);
 
         ui->label_pa_version->setText(gkAudioDevices->portAudioVersionNumber(*gkPortAudioInit));
-        ui->textEdit_pa_version_text->setText(gkAudioDevices->portAudioVersionText(*gkPortAudioInit));
+        ui->plainTextEdit_pa_version_text->setPlainText(gkAudioDevices->portAudioVersionText(*gkPortAudioInit));
+
+        ui->label_hamlib_api_version->setText(QString::fromStdString(hamlib_version2));
+        ui->plainTextEdit_hamlib_api_version_info->setPlainText(QString::fromStdString(hamlib_copyright2));
 
         prefill_com_baud_speed(com_baud_rates::BAUD1200);
         prefill_com_baud_speed(com_baud_rates::BAUD2400);
@@ -310,6 +314,22 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         chosen_output_audio_dev.chosen_audio_dev_str = ui->comboBox_soundcard_output->currentText();
         chosen_output_audio_dev.sel_channels = gkDekodeDb->convertAudioChannelsEnum(curr_output_device_channels);
         gkDekodeDb->write_audio_device_settings(chosen_output_audio_dev, true);
+
+        //
+        // Now make the sound-device selection official throughout the running Small World Deluxe application!
+        // NOTE: The order of these functions is rather semi-important! Do not change without reason!
+        //
+        for (const auto &input_dev: avail_input_audio_devs.toStdMap()) {
+            if (chosen_input_audio_dev.chosen_audio_dev_str == input_dev.second.device_info.name) {
+                emit changeInputAudioInterface(input_dev.second);
+            }
+        }
+
+        for (const auto &output_dev: avail_output_audio_devs.toStdMap()) {
+            if (chosen_output_audio_dev.chosen_audio_dev_str == output_dev.second.device_info.name) {
+                emit changeOutputAudioInterface(output_dev.second);
+            }
+        }
 
         //
         // Audio --> Configuration

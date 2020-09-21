@@ -227,6 +227,9 @@ public slots:
     void stopTransmitOutput();
     void startTransmitOutput();
 
+    void restartInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &input_device);
+    void restartOutputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &output_device);
+
     //
     // Radio and Hamlib specific functions
     //
@@ -262,6 +265,12 @@ signals:
     void startRecording();
     void stopTxAudio();
     void startTxAudio();
+
+    //
+    // PortAudio and related
+    //
+    void changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &input_device);
+    void changeOutputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &output_device);
 
     //
     // Spectrograph related
