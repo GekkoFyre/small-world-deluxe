@@ -2096,19 +2096,38 @@ int GkLevelDb::boolInt(const bool &is_true)
 std::string GkLevelDb::processCsvToDB(const std::string &comma_sep_values, const std::string &data_to_append)
 {
     try {
-        if (!data_to_append.empty()) {
-            std::stringstream sstream;
+        if (!comma_sep_values.empty()) {
+            // We are continuing with a pre-existing data set!
+            if (!data_to_append.empty()) {
+                auto old_csv_vals = gkStringFuncs->csvSplitter(comma_sep_values);
+                auto new_csv_vals = gkStringFuncs->csvSplitter(data_to_append);
+                std::stringstream ss;
 
-            if (!comma_sep_values.empty()) {
-                sstream << comma_sep_values << std::endl;
-            } else {
-                sstream << "FreqValues" << std::endl;
+                for (auto csv_old: old_csv_vals) {
+                    csv_old.erase(std::remove(csv_old.begin(), csv_old.end(), '\n'), csv_old.end());
+                    ss << csv_old << ',';
+                }
+
+                for (auto iter = new_csv_vals.begin(); iter != new_csv_vals.end(); ++iter) {
+                    if (std::next(iter) != new_csv_vals.end()) {
+                        // Perform this action for all but the last iteration!
+                        ss << *iter << ',';
+                    } else {
+                        // Perform this action for only the last iteration...
+                        ss << *iter;
+                    }
+                }
+
+                std::string ret_val = ss.str();
+                return ret_val;
             }
-
-            sstream << data_to_append;
-            return sstream.str();
         } else {
-            return "";
+            // We are beginning with a new data set!
+            auto csv_vals = gkStringFuncs->csvSplitter(data_to_append);
+            csv_vals.insert(csv_vals.begin(), "FreqValues");
+            auto ret_val = gkStringFuncs->csvOutputString(csv_vals);
+
+            return ret_val;
         }
     } catch (const std::exception &e) {
         std::throw_with_nested(std::invalid_argument(tr("An error has occurred whilst processing CSV for Google LevelDB!").toStdString()));

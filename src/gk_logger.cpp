@@ -42,6 +42,8 @@
 
 #include "src/gk_logger.hpp"
 #include <utility>
+#include <chrono>
+#include <thread>
 #include <QDateTime>
 
 using namespace GekkoFyre;
@@ -75,6 +77,10 @@ GkEventLogger::GkEventLogger(QPointer<GekkoFyre::StringFuncs> stringFuncs, QObje
 
 GkEventLogger::~GkEventLogger()
 {
+    // Clear any memory used by Sentry & Crashpad before making sure the process itself terminates!
+    sentry_shutdown();
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
     return;
 }
 

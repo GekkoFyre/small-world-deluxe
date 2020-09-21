@@ -662,7 +662,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
  */
 MainWindow::~MainWindow()
 {
-    emit stopRecording(); // TODO: Fix the SEGFAULT that occurs with this!
+    emit stopRecording();
     emit disconnectRigInUse(gkRadioPtr->gkRig, gkRadioPtr);
 
     if (vu_meter_thread.joinable()) {
@@ -679,10 +679,6 @@ MainWindow::~MainWindow()
     // Free the pointer for the PortAudio library!
     autoSys.terminate();
     gkPortAudioInit->terminate();
-
-    // Clear any memory used by Sentry & Crashpad before making sure the process itself terminates!
-    sentry_shutdown();
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
     delete ui;
 }
