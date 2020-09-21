@@ -1814,9 +1814,11 @@ void DialogSettings::on_comboBox_soundcard_input_currentIndexChanged(int index)
                         }
 
                         chosen_input_audio_dev.supp_sample_rates = supportedInputSampleRates;
-                        if (avail_input_audio_devs.contains(idx)) {
-                            avail_input_audio_devs.remove(idx);
-                            avail_input_audio_devs.insert(idx, chosen_input_audio_dev);
+                        for (auto &input_dev: avail_input_audio_devs.toStdMap()) {
+                            if (input_dev.first == idx) {
+                                input_dev.second.supp_sample_rates = chosen_input_audio_dev.supp_sample_rates;
+                                break;
+                            }
                         }
 
                         update_sample_rates(false);
@@ -1875,9 +1877,11 @@ void DialogSettings::on_comboBox_soundcard_output_currentIndexChanged(int index)
                         }
 
                         chosen_output_audio_dev.supp_sample_rates = supportedOutputSampleRates;
-                        if (avail_output_audio_devs.contains(idx)) {
-                            avail_output_audio_devs.remove(idx);
-                            avail_output_audio_devs.insert(idx, chosen_output_audio_dev);
+                        for (auto &output_dev: avail_output_audio_devs.toStdMap()) {
+                            if (output_dev.first == idx) {
+                                output_dev.second.supp_sample_rates = chosen_output_audio_dev.supp_sample_rates;
+                                break;
+                            }
                         }
 
                         update_sample_rates(true);
