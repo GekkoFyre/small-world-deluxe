@@ -312,6 +312,13 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         gkDekodeDb->write_audio_device_settings(chosen_output_audio_dev, true);
 
         //
+        // Now make the sound-device selection official throughout the running Small World Deluxe application!
+        // NOTE: The order of these functions is rather semi-important! Do not change without reason!
+        //
+        emit changeInputAudioInterface(chosen_input_audio_dev);
+        emit changeOutputAudioInterface(chosen_output_audio_dev);
+
+        //
         // Audio --> Configuration
         //
         gkDekodeDb->write_rig_settings(QString::fromStdString(gkDekodeDb->boolEnum(rx_audio_init_start)), radio_cfg::RXAudioInitStart);

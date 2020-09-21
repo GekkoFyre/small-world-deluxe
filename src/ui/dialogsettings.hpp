@@ -214,12 +214,22 @@ private slots:
     void ttsAddPresetVoiceItem(const QString &name, const QVariant &locale);
 
 signals:
+    void changeSelectedTTSEngine(const QString &name);
+
+    //
+    // Hamlib and transceiver related
+    //
     void changeConnPort(const QString &conn_port, const GekkoFyre::AmateurRadio::GkConnMethod &conn_method);
     void usbPortsDisabled(const bool &active);
     void comPortsDisabled(const bool &active);
     void recvRigCapabilities(const rig_model_t &, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void addRigInUse(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
-    void changeSelectedTTSEngine(const QString &name);
+
+    //
+    // PortAudio and related
+    //
+    void changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &input_device);
+    void changeOutputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &output_device);
 
 private:
     Ui::DialogSettings *ui;

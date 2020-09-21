@@ -227,6 +227,9 @@ public slots:
     void stopTransmitOutput();
     void startTransmitOutput();
 
+    void restartInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &input_device);
+    void restartOutputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &output_device);
+
     //
     // Radio and Hamlib specific functions
     //
