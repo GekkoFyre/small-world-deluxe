@@ -267,6 +267,12 @@ signals:
     void startTxAudio();
 
     //
+    // PortAudio and related
+    //
+    void changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &input_device);
+    void changeOutputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &output_device);
+
+    //
     // Spectrograph related
     //
     void changeGraphType(const GekkoFyre::Spectrograph::GkGraphType &graph_type);

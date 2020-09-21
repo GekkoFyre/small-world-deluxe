@@ -526,6 +526,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QObject::connect(this, SIGNAL(startTxAudio()), this, SLOT(startTransmitOutput()));
         QObject::connect(this, SIGNAL(refreshVuDisplay(const qreal &, const qreal &, const int &)),
                          gkVuMeter, SLOT(levelChanged(const qreal &, const qreal &, const int &)));
+        QObject::connect(this, SIGNAL(changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)),
+                         this, SLOT(restartInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)));
+        QObject::connect(this, SIGNAL(changeOutputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)),
+                         this, SLOT(restartOutputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)));
 
         //
         // QMainWindow widgets
@@ -893,29 +897,32 @@ bool MainWindow::radioInitStart()
 std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
 {
     try {
-        QString rigBrand = GkDb->read_rig_settings(radio_cfg::RigBrand);
-        QString rigModel = GkDb->read_rig_settings(radio_cfg::RigModel);
-        QString rigModelIndex = GkDb->read_rig_settings(radio_cfg::RigModelIndex);
-        QString rigVers = GkDb->read_rig_settings(radio_cfg::RigVersion);
-        QString comBaudRate = GkDb->read_rig_settings(radio_cfg::ComBaudRate);
-        QString stopBits = GkDb->read_rig_settings(radio_cfg::StopBits);
-        QString data_bits = GkDb->read_rig_settings(radio_cfg::DataBits);
-        QString handshake = GkDb->read_rig_settings(radio_cfg::Handshake);
-        QString force_ctrl_lines_dtr = GkDb->read_rig_settings(radio_cfg::ForceCtrlLinesDtr);
-        QString force_ctrl_lines_rts = GkDb->read_rig_settings(radio_cfg::ForceCtrlLinesRts);
-        QString ptt_method = GkDb->read_rig_settings(radio_cfg::PTTMethod);
-        QString tx_audio_src = GkDb->read_rig_settings(radio_cfg::TXAudioSrc);
-        QString ptt_mode = GkDb->read_rig_settings(radio_cfg::PTTMode);
-        QString split_operation = GkDb->read_rig_settings(radio_cfg::SplitOperation);
-        QString ptt_adv_cmd = GkDb->read_rig_settings(radio_cfg::PTTAdvCmd);
+        const QString audioInputIdStr = GkDb->read_audio_device_settings(false, false);
+        const QString audioOutputIdStr = GkDb->read_audio_device_settings(true, false);
+
+        const QString rigBrand = GkDb->read_rig_settings(radio_cfg::RigBrand);
+        const QString rigModel = GkDb->read_rig_settings(radio_cfg::RigModel);
+        const QString rigModelIndex = GkDb->read_rig_settings(radio_cfg::RigModelIndex);
+        const QString rigVers = GkDb->read_rig_settings(radio_cfg::RigVersion);
+        const QString comBaudRate = GkDb->read_rig_settings(radio_cfg::ComBaudRate);
+        const QString stopBits = GkDb->read_rig_settings(radio_cfg::StopBits);
+        const QString data_bits = GkDb->read_rig_settings(radio_cfg::DataBits);
+        const QString handshake = GkDb->read_rig_settings(radio_cfg::Handshake);
+        const QString force_ctrl_lines_dtr = GkDb->read_rig_settings(radio_cfg::ForceCtrlLinesDtr);
+        const QString force_ctrl_lines_rts = GkDb->read_rig_settings(radio_cfg::ForceCtrlLinesRts);
+        const QString ptt_method = GkDb->read_rig_settings(radio_cfg::PTTMethod);
+        const QString tx_audio_src = GkDb->read_rig_settings(radio_cfg::TXAudioSrc);
+        const QString ptt_mode = GkDb->read_rig_settings(radio_cfg::PTTMode);
+        const QString split_operation = GkDb->read_rig_settings(radio_cfg::SplitOperation);
+        const QString ptt_adv_cmd = GkDb->read_rig_settings(radio_cfg::PTTAdvCmd);
 
         std::shared_ptr<GkRadio> gk_radio_tmp = std::make_shared<GkRadio>();
 
         //
         // Setup the CAT Port
         //
-        QString comDeviceCat = GkDb->read_rig_settings_comms(radio_cfg::ComDeviceCat);
-        GkConnType catPortType = GkDb->convConnTypeToEnum(GkDb->read_rig_settings_comms(radio_cfg::ComDeviceCatPortType).toInt());
+        const QString comDeviceCat = GkDb->read_rig_settings_comms(radio_cfg::ComDeviceCat);
+        const GkConnType catPortType = GkDb->convConnTypeToEnum(GkDb->read_rig_settings_comms(radio_cfg::ComDeviceCatPortType).toInt());
         if (!comDeviceCat.isEmpty()) {
             if (catPortType == GkConnType::GkRS232) {
                 if (!status_com_ports.empty()) {
@@ -1215,6 +1222,34 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
             gk_radio_tmp->adv_cmd = ptt_adv_cmd.toStdString();
         } else {
             gk_radio_tmp->adv_cmd = "";
+        }
+
+        if (!audioInputIdStr.isEmpty()) {
+            //
+            // Audio Input
+            //
+            for (const auto &input_dev: avail_input_audio_devs.toStdMap()) {
+                if (input_dev.second.device_info.name == audioInputIdStr) {
+                    pref_input_device = input_dev.second;
+                }
+            }
+        } else {
+            gkEventLogger->publishEvent(tr("No default audio input device has been chosen yet. Please visit the Setting's Dialog!"),
+                                        GkSeverity::Info, "", true, true, false, false);
+        }
+
+        if (!audioOutputIdStr.isEmpty()) {
+            //
+            // Audio Output
+            //
+            for (const auto &output_dev: avail_output_audio_devs.toStdMap()) {
+                if (output_dev.second.device_info.name == audioOutputIdStr) {
+                    pref_output_device = output_dev.second;
+                }
+            }
+        } else {
+            gkEventLogger->publishEvent(tr("No default audio output device has been chosen yet. Please visit the Setting's Dialog!"),
+                                        GkSeverity::Info, "", false, true, false, false);
         }
 
         return gk_radio_tmp;
@@ -2044,6 +2079,7 @@ void MainWindow::on_pushButton_radio_receive_clicked()
                         if ((pref_input_device.device_info.name != nullptr)) {
                             // Set the QPushButton to 'Green'
                             changePushButtonColor(ui->pushButton_radio_receive, false);
+                            btn_radio_rx = true;
                             emit startRecording();
 
                             #ifndef GK_ENBL_VALGRIND_SUPPORT
@@ -2076,6 +2112,7 @@ void MainWindow::on_pushButton_radio_receive_clicked()
         } else {
             // Set the QPushButton to 'Red'
             changePushButtonColor(ui->pushButton_radio_receive, true);
+            btn_radio_rx = false;
             emit stopRecording();
 
             changeStatusBarMsg(tr("No longer receiving audio!"));
@@ -2239,21 +2276,29 @@ void MainWindow::stopRecordingInput()
 void MainWindow::startRecordingInput()
 {
     try {
-        emit stopRecording();
+        if (!pref_input_device.is_dev_active) {
+            emit stopRecording();
 
-        // To minimise startup latency for this use-case (i.e. expecting StartStream() to give minimum
-        // startup latency) you should use the paPrimeOutputBuffersUsingStreamCallback stream flag.
-        // Otherwise the initial buffers will be zero and the time it takes for the sound to hit the
-        // DACs will include playing out the buffer length of zeros (which would be around 80ms on
-        // Windows WMME or DirectSound with the default PA settings).
-        auto pa_stream_param = portaudio::StreamParameters(pref_input_device.cpp_stream_param, portaudio::DirectionSpecificStreamParameters::null(),
-                                                           pref_input_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
-                                                           paPrimeOutputBuffersUsingStreamCallback);
-        inputAudioStream = std::make_shared<portaudio::MemFunCallbackStream<PaAudioBuf<float>>>(pa_stream_param, *input_audio_buf,
-                                                                                                &PaAudioBuf<float>::recordCallback);
-        inputAudioStream->start();
+            // To minimise startup latency for this use-case (i.e. expecting StartStream() to give minimum
+            // startup latency) you should use the paPrimeOutputBuffersUsingStreamCallback stream flag.
+            // Otherwise the initial buffers will be zero and the time it takes for the sound to hit the
+            // DACs will include playing out the buffer length of zeros (which would be around 80ms on
+            // Windows WMME or DirectSound with the default PA settings).
+            auto pa_stream_param = portaudio::StreamParameters(pref_input_device.cpp_stream_param, portaudio::DirectionSpecificStreamParameters::null(),
+                                                               pref_input_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
+                                                               paPrimeOutputBuffersUsingStreamCallback);
+            inputAudioStream = std::make_shared<portaudio::MemFunCallbackStream<PaAudioBuf<float>>>(pa_stream_param, *input_audio_buf,
+                                                                                                    &PaAudioBuf<float>::recordCallback);
+            inputAudioStream->start();
 
-        pref_input_device.is_dev_active = true; // State that this recording device is now active!
+            pref_input_device.is_dev_active = true; // State that this recording device is now active!
+        } else {
+            //
+            // Otherwise restart the audio device with new parameters!
+            //
+            emit changeInputAudioInterface(pref_input_device);
+        }
+
         return;
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(tr("Problem encountered with initializing input audio device. Error:\n\n%1").arg(QString::fromStdString(e.what())),
@@ -2293,17 +2338,25 @@ void MainWindow::stopTransmitOutput()
 void MainWindow::startTransmitOutput()
 {
     try {
-        // To minimise startup latency for this use-case (i.e. expecting StartStream() to give minimum
-        // startup latency) you should use the paPrimeOutputBuffersUsingStreamCallback stream flag.
-        // Otherwise the initial buffers will be zero and the time it takes for the sound to hit the
-        // DACs will include playing out the buffer length of zeros (which would be around 80ms on
-        // Windows WMME or DirectSound with the default PA settings).
-        auto pa_stream_param = portaudio::StreamParameters(portaudio::DirectionSpecificStreamParameters::null(), pref_output_device.cpp_stream_param,
-                                                           pref_output_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
-                                                           paPrimeOutputBuffersUsingStreamCallback);
-        outputAudioStream = std::make_shared<portaudio::MemFunCallbackStream<PaAudioBuf<float>>>(pa_stream_param, *output_audio_buf,
-                                                                                                 &PaAudioBuf<float>::playbackCallback);
-        outputAudioStream->start();
+        if (!pref_output_device.is_dev_active) {
+            // To minimise startup latency for this use-case (i.e. expecting StartStream() to give minimum
+            // startup latency) you should use the paPrimeOutputBuffersUsingStreamCallback stream flag.
+            // Otherwise the initial buffers will be zero and the time it takes for the sound to hit the
+            // DACs will include playing out the buffer length of zeros (which would be around 80ms on
+            // Windows WMME or DirectSound with the default PA settings).
+            auto pa_stream_param = portaudio::StreamParameters(portaudio::DirectionSpecificStreamParameters::null(), pref_output_device.cpp_stream_param,
+                                                               pref_output_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
+                                                               paPrimeOutputBuffersUsingStreamCallback);
+            outputAudioStream = std::make_shared<portaudio::MemFunCallbackStream<PaAudioBuf<float>>>(pa_stream_param, *output_audio_buf,
+                                                                                                     &PaAudioBuf<float>::playbackCallback);
+            outputAudioStream->start();
+        } else {
+            //
+            // Otherwise restart the audio device with new parameters!
+            //
+            emit restartOutputAudioInterface(pref_output_device);
+        }
+
         return;
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(tr("Problem encountered with initializing output audio device. Error:\n\n%1").arg(QString::fromStdString(e.what())),

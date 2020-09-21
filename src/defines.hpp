@@ -357,8 +357,6 @@ namespace Database {
         };
 
         enum audio_cfg {
-            soundcardInput,
-            soundcardOutput,
             settingsDbLoc,
             LogsDirLoc,
             AudioRecLoc,
