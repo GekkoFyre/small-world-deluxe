@@ -440,6 +440,43 @@ void GkLevelDb::write_misc_audio_settings(const QString &value, const audio_cfg 
 }
 
 /**
+ * @brief GkLevelDb::write_event_log_settings writes out settings relevant to the custom Event Logger for Small World Deluxe, such
+ * as the verbosity level as desired by the end-user themselves.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value The value to the written.
+ * @param key The key that is to be written towards.
+ */
+void GkLevelDb::write_event_log_settings(const QString &value, const GkEventLogCfg &key)
+{
+    try {
+        // Put key-value
+        leveldb::WriteBatch batch;
+        leveldb::Status status;
+
+        switch (key) {
+            case GkEventLogCfg::GkLogVerbosity:
+                batch.Put("GkLogVerbosity", value.toStdString());
+                break;
+            default:
+                throw std::runtime_error(tr("Invalid key has been provided for writing Event Logger settings relating to Google LevelDB!").toStdString());
+        }
+
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
+
+        status = db->Write(write_options, &batch);
+
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
  * @brief GkLevelDb::write_frequencies_db manages the storage of frequency information within Small World Deluxe, such as
  * deletion, addition, and modification.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -1649,6 +1686,32 @@ QString GkLevelDb::read_misc_audio_settings(const audio_cfg &key)
 }
 
 /**
+ * @brief GkLevelDb::read_event_log_settings reads out settings relevant to the custom Event Logger for Small World Deluxe, such
+ * as the verbosity level as desired by the end-user themselves.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param key The key that is to be read from within Google LevelDB.
+ * @return The value itself, as related to the key.
+ */
+QString GkLevelDb::read_event_log_settings(const GkEventLogCfg &key)
+{
+    leveldb::Status status;
+    leveldb::ReadOptions read_options;
+    std::string value = "";
+
+    read_options.verify_checksums = true;
+
+    switch (key) {
+        case GkEventLogCfg::GkLogVerbosity:
+            status = db->Get(read_options, "UserProfileDbLoc", &value);
+            break;
+        default:
+            throw std::runtime_error(tr("Invalid key has been provided for reading Event Logger settings relating to Google LevelDB!").toStdString());
+    }
+
+    return QString::fromStdString(value);
+}
+
+/**
  * @brief DekodeDb::convertAudioChannelsEnum converts from an index given by
  * a QComboBox and not by a specific amount of channels.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -2033,19 +2096,38 @@ int GkLevelDb::boolInt(const bool &is_true)
 std::string GkLevelDb::processCsvToDB(const std::string &comma_sep_values, const std::string &data_to_append)
 {
     try {
-        if (!data_to_append.empty()) {
-            std::stringstream sstream;
+        if (!comma_sep_values.empty()) {
+            // We are continuing with a pre-existing data set!
+            if (!data_to_append.empty()) {
+                auto old_csv_vals = gkStringFuncs->csvSplitter(comma_sep_values);
+                auto new_csv_vals = gkStringFuncs->csvSplitter(data_to_append);
+                std::stringstream ss;
 
-            if (!comma_sep_values.empty()) {
-                sstream << comma_sep_values << std::endl;
-            } else {
-                sstream << "FreqValues" << std::endl;
+                for (auto csv_old: old_csv_vals) {
+                    csv_old.erase(std::remove(csv_old.begin(), csv_old.end(), '\n'), csv_old.end());
+                    ss << csv_old << ',';
+                }
+
+                for (auto iter = new_csv_vals.begin(); iter != new_csv_vals.end(); ++iter) {
+                    if (std::next(iter) != new_csv_vals.end()) {
+                        // Perform this action for all but the last iteration!
+                        ss << *iter << ',';
+                    } else {
+                        // Perform this action for only the last iteration...
+                        ss << *iter;
+                    }
+                }
+
+                std::string ret_val = ss.str();
+                return ret_val;
             }
-
-            sstream << data_to_append;
-            return sstream.str();
         } else {
-            return "";
+            // We are beginning with a new data set!
+            auto csv_vals = gkStringFuncs->csvSplitter(data_to_append);
+            csv_vals.insert(csv_vals.begin(), "FreqValues");
+            auto ret_val = gkStringFuncs->csvOutputString(csv_vals);
+
+            return ret_val;
         }
     } catch (const std::exception &e) {
         std::throw_with_nested(std::invalid_argument(tr("An error has occurred whilst processing CSV for Google LevelDB!").toStdString()));

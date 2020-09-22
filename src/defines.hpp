@@ -176,6 +176,14 @@ namespace GekkoFyre {
 #define GK_EVENTLOG_TABLEVIEW_MODEL_MESSAGE_IDX (3)     // The desired ordering for the 'Message' heading within the QTableView model for class, `GkEventLoggerTableViewModel`.
 #define GK_EVENTLOG_TABLEVIEW_MODEL_TOTAL_IDX (4)       // The total amount of indexes (i.e. columns) for the QTableView model, `GkEventLoggerTableViewModel`. Be sure to keep this up-to-date!
 
+#define GK_EVENTLOG_SEVERITY_NONE_IDX (0)
+#define GK_EVENTLOG_SEVERITY_VERBOSE_IDX (1)
+#define GK_EVENTLOG_SEVERITY_DEBUG_IDX (2)
+#define GK_EVENTLOG_SEVERITY_INFO_IDX (3)
+#define GK_EVENTLOG_SEVERITY_WARNING_IDX (4)
+#define GK_EVENTLOG_SEVERITY_ERROR_IDX (5)
+#define GK_EVENTLOG_SEVERITY_FATAL_IDX (6)
+
 #define GK_ACTIVE_MSGS_TABLEVIEW_MODEL_OFFSET_IDX (0)
 #define GK_ACTIVE_MSGS_TABLEVIEW_MODEL_DATETIME_IDX (1)
 #define GK_ACTIVE_MSGS_TABLEVIEW_MODEL_AGE_IDX (2)
@@ -329,6 +337,10 @@ namespace Database {
             DbName,                                     // The name of the initial, Google LevelDB database.
             DbExt,                                      // The file extension (if any) of the Google LevelDB database.
             DbLoc                                       // The location of the Google LevelDB database.
+        };
+
+        enum GkEventLogCfg {
+            GkLogVerbosity
         };
 
         enum radio_cfg {

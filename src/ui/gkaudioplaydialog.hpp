@@ -81,12 +81,6 @@ private slots:
     void on_pushButton_playback_skip_back_clicked();
     void on_pushButton_playback_skip_forward_clicked();
 
-    void on_pushButton_playback_record_toggled(bool checked);
-    void on_pushButton_playback_play_toggled(bool checked);
-    void on_pushButton_playback_skip_forward_toggled(bool checked);
-    void on_pushButton_playback_skip_back_toggled(bool checked);
-    void on_pushButton_playback_stop_toggled(bool checked);
-
     void on_comboBox_playback_rec_codec_currentIndexChanged(int index);
     void on_comboBox_playback_rec_bitrate_currentIndexChanged(int index);
 
@@ -101,6 +95,15 @@ private:
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevs;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     std::unique_ptr<AudioFile<double>> audioFile;
+
+    //
+    // QPushButtons, etc.
+    //
+    bool audio_out_play;
+    bool audio_out_stop;
+    bool audio_out_record;
+    bool audio_out_skip_fwd;
+    bool audio_out_skip_bck;
 
     //
     // PortAudio initialization and buffers

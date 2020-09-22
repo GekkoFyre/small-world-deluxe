@@ -292,6 +292,30 @@ qint32 StringFuncs::randomNumGen(qint32 lower_bound, qint32 upper_bound)
     return distrib(mt);
 }
 
+/**
+ * @brief StringFuncs::changePushButtonColor
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param push_button The QPushButton to be modified with the new QStyleSheet.
+ * @param red_result Whether to make the QPushButton in question Green or Red.
+ * @param color_blind_mode Not yet implemented!
+ */
+void StringFuncs::changePushButtonColor(const QPointer<QPushButton> &push_button, const bool &red_result,
+                                        const bool &color_blind_mode)
+{
+    Q_UNUSED(color_blind_mode);
+
+    if (red_result) {
+        // Change QPushButton to a shade of darkish 'Green'
+        push_button->setStyleSheet("QPushButton{\nbackground-color: #B80000; border: 1px solid black;\nborder-radius: 5px;\nborder-width: 1px;\npadding: 6px;\nfont: bold;\ncolor: white;\n}");
+    } else {
+        // Change QPushButton to a shade of darkish 'Red'
+        push_button->setStyleSheet("QPushButton{\nbackground-color: #3C8C2F; border: 1px solid black;\nborder-radius: 5px;\nborder-width: 1px;\npadding: 6px;\nfont: bold;\ncolor: white;\n}");
+    }
+
+    // TODO: Implement color-blind mode!
+    return;
+}
+
 #if defined(_WIN32) || defined(__MINGW64__)
 /**
  * @brief StringFuncs::convQStringToWinBStr converts a given QString to a Microsoft Windows compatible Binary
