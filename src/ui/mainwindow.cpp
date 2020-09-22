@@ -662,7 +662,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
  */
 MainWindow::~MainWindow()
 {
-    emit stopRecording(); // TODO: Fix the SEGFAULT that occurs with this!
+    emit stopRecording();
     emit disconnectRigInUse(gkRadioPtr->gkRig, gkRadioPtr);
 
     if (vu_meter_thread.joinable()) {
@@ -679,10 +679,6 @@ MainWindow::~MainWindow()
     // Free the pointer for the PortAudio library!
     autoSys.terminate();
     gkPortAudioInit->terminate();
-
-    // Clear any memory used by Sentry & Crashpad before making sure the process itself terminates!
-    sentry_shutdown();
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
     delete ui;
 }
@@ -721,30 +717,6 @@ void MainWindow::on_actionE_xit_triggered()
 void MainWindow::on_action_Open_triggered()
 {
     QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
-}
-
-/**
- * @brief MainWindow::changePushButtonColor
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param push_button The QPushButton to be modified with the new QStyleSheet.
- * @param green_result Whether to make the QPushButton in question Green or Red.
- * @param color_blind_mode Not yet implemented!
- */
-void MainWindow::changePushButtonColor(const QPointer<QPushButton> &push_button, const bool &green_result,
-                                       const bool &color_blind_mode)
-{
-    Q_UNUSED(color_blind_mode);
-
-    if (green_result) {
-        // Change QPushButton to a shade of darkish 'Green'
-        push_button->setStyleSheet("QPushButton{\nbackground-color: #B80000; border: 1px solid black;\nborder-radius: 5px;\nborder-width: 1px;\npadding: 6px;\nfont: bold;\ncolor: white;\n}");
-    } else {
-        // Change QPushButton to a shade of darkish 'Red'
-        push_button->setStyleSheet("QPushButton{\nbackground-color: #3C8C2F; border: 1px solid black;\nborder-radius: 5px;\nborder-width: 1px;\npadding: 6px;\nfont: bold;\ncolor: white;\n}");
-    }
-
-    // TODO: Implement color-blind mode!
-    return;
 }
 
 /**
@@ -2051,11 +2023,11 @@ void MainWindow::on_pushButton_bridge_input_audio_clicked()
 {
     if (!btn_bridge_input_audio) {
         // Set the QPushButton to 'Green'
-        changePushButtonColor(ui->pushButton_bridge_input_audio, false);
+        gkStringFuncs->changePushButtonColor(ui->pushButton_bridge_input_audio, false);
         btn_bridge_input_audio = true;
     } else {
         // Set the QPushButton to 'Red'
-        changePushButtonColor(ui->pushButton_bridge_input_audio, true);
+        gkStringFuncs->changePushButtonColor(ui->pushButton_bridge_input_audio, true);
         btn_bridge_input_audio = false;
     }
 
@@ -2078,7 +2050,7 @@ void MainWindow::on_pushButton_radio_receive_clicked()
                     if (pref_input_device.device_info.maxInputChannels > 0) {
                         if ((pref_input_device.device_info.name != nullptr)) {
                             // Set the QPushButton to 'Green'
-                            changePushButtonColor(ui->pushButton_radio_receive, false);
+                            gkStringFuncs->changePushButtonColor(ui->pushButton_radio_receive, false);
                             btn_radio_rx = true;
                             emit startRecording();
 
@@ -2111,7 +2083,7 @@ void MainWindow::on_pushButton_radio_receive_clicked()
             return;
         } else {
             // Set the QPushButton to 'Red'
-            changePushButtonColor(ui->pushButton_radio_receive, true);
+            gkStringFuncs->changePushButtonColor(ui->pushButton_radio_receive, true);
             btn_radio_rx = false;
             emit stopRecording();
 
@@ -2135,13 +2107,13 @@ void MainWindow::on_pushButton_radio_transmit_clicked()
 {
     if (!btn_radio_tx) {
         // Set the QPushButton to 'Green'
-        changePushButtonColor(ui->pushButton_radio_transmit, false);
+        gkStringFuncs->changePushButtonColor(ui->pushButton_radio_transmit, false);
         btn_radio_tx = true;
 
         emit startTxAudio();
     } else {
         // Set the QPushButton to 'Red'
-        changePushButtonColor(ui->pushButton_radio_transmit, true);
+        gkStringFuncs->changePushButtonColor(ui->pushButton_radio_transmit, true);
         btn_radio_tx = false;
 
         emit stopTxAudio();
@@ -2154,11 +2126,11 @@ void MainWindow::on_pushButton_radio_tx_halt_clicked()
 {
     if (!btn_radio_tx_halt) {
         // Set the QPushButton to 'Green'
-        changePushButtonColor(ui->pushButton_radio_tx_halt, false);
+        gkStringFuncs->changePushButtonColor(ui->pushButton_radio_tx_halt, false);
         btn_radio_tx_halt = true;
     } else {
         // Set the QPushButton to 'Red'
-        changePushButtonColor(ui->pushButton_radio_tx_halt, true);
+        gkStringFuncs->changePushButtonColor(ui->pushButton_radio_tx_halt, true);
         btn_radio_tx_halt = false;
     }
 
@@ -2169,11 +2141,11 @@ void MainWindow::on_pushButton_radio_monitor_clicked()
 {
     if (!btn_radio_monitor) {
         // Set the QPushButton to 'Green'
-        changePushButtonColor(ui->pushButton_radio_monitor, false);
+        gkStringFuncs->changePushButtonColor(ui->pushButton_radio_monitor, false);
         btn_radio_monitor = true;
     } else {
         // Set the QPushButton to 'Red'
-        changePushButtonColor(ui->pushButton_radio_monitor, true);
+        gkStringFuncs->changePushButtonColor(ui->pushButton_radio_monitor, true);
         btn_radio_monitor = false;
     }
 
@@ -2583,11 +2555,11 @@ void MainWindow::on_pushButton_radio_tune_clicked(bool checked)
 
     if (!btn_radio_tune) {
         // Set the QPushButton to 'Green'
-        changePushButtonColor(ui->pushButton_radio_tune, false);
+        gkStringFuncs->changePushButtonColor(ui->pushButton_radio_tune, false);
         btn_radio_tune = true;
     } else {
         // Set the QPushButton to 'Red'
-        changePushButtonColor(ui->pushButton_radio_tune, true);
+        gkStringFuncs->changePushButtonColor(ui->pushButton_radio_tune, true);
         btn_radio_tune = false;
     }
 

@@ -76,6 +76,15 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
     // Initialize variables
     //
     audioFile = std::make_unique<AudioFile<double>>();
+
+    //
+    // QPushButtons, etc.
+    //
+    audio_out_play = false;
+    audio_out_stop = false;
+    audio_out_record = false;
+    audio_out_skip_fwd = false;
+    audio_out_skip_bck = false;
 }
 
 GkAudioPlayDialog::~GkAudioPlayDialog()
@@ -99,6 +108,7 @@ void GkAudioPlayDialog::on_pushButton_reset_clicked()
     ui->lineEdit_playback_audio_codec->clear();
     ui->lineEdit_playback_bitrate->clear();
     ui->lineEdit_playback_sample_rate->clear();
+    ui->progressBar_playback->setValue(ui->progressBar_playback->minimum());
 
     if (r_pback_audio_file.isOpen()) {
         r_pback_audio_file.close();
@@ -120,6 +130,14 @@ void GkAudioPlayDialog::on_pushButton_close_clicked()
 
 void GkAudioPlayDialog::on_pushButton_playback_stop_clicked()
 {
+    if (!audio_out_stop) {
+        gkStringFuncs->changePushButtonColor(ui->pushButton_playback_stop, false);
+        audio_out_stop = true;
+    } else {
+        gkStringFuncs->changePushButtonColor(ui->pushButton_playback_stop, true);
+        audio_out_stop = false;
+    }
+
     return;
 }
 
@@ -189,42 +207,6 @@ void GkAudioPlayDialog::on_pushButton_playback_browse_file_loc_clicked()
     return;
 }
 
-void GkAudioPlayDialog::on_pushButton_playback_record_toggled(bool checked)
-{
-    // emit beginRecording(checked);
-    ui->pushButton_playback_record->setChecked(checked);
-
-    return;
-}
-
-void GkAudioPlayDialog::on_pushButton_playback_play_toggled(bool checked)
-{
-    ui->pushButton_playback_play->setChecked(checked);
-    while (checked) {
-        for (const auto &buffer: audioFile->samples) {
-            for (const auto &ch_1: buffer) {
-                // gkOutputAudioBuf->append(ch_1);
-            }
-        }
-    }
-
-    return;
-}
-
-void GkAudioPlayDialog::on_pushButton_playback_skip_forward_toggled(bool checked)
-{
-    ui->pushButton_playback_skip_forward->setChecked(checked);
-
-    return;
-}
-
-void GkAudioPlayDialog::on_pushButton_playback_skip_back_toggled(bool checked)
-{
-    ui->pushButton_playback_skip_back->setChecked(checked);
-
-    return;
-}
-
 /**
  * @brief GkAudioPlayDialog::on_pushButton_playback_play_clicked disable any recording in progress
  * upon being clicked.
@@ -232,6 +214,20 @@ void GkAudioPlayDialog::on_pushButton_playback_skip_back_toggled(bool checked)
  */
 void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
 {
+    if (!audio_out_play) {
+        gkStringFuncs->changePushButtonColor(ui->pushButton_playback_play, false);
+        audio_out_play = true;
+    } else {
+        gkStringFuncs->changePushButtonColor(ui->pushButton_playback_play, true);
+        audio_out_play = false;
+    }
+
+    for (const auto &buffer: audioFile->samples) {
+        for (const auto &ch_1: buffer) {
+            // gkOutputAudioBuf->append(ch_1);
+        }
+    }
+
     return;
 }
 
@@ -242,28 +238,39 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
  */
 void GkAudioPlayDialog::on_pushButton_playback_record_clicked()
 {
+    if (!audio_out_record) {
+        gkStringFuncs->changePushButtonColor(ui->pushButton_playback_record, false);
+        audio_out_record = true;
+    } else {
+        gkStringFuncs->changePushButtonColor(ui->pushButton_playback_record, true);
+        audio_out_record = false;
+    }
+
     return;
 }
 
 void GkAudioPlayDialog::on_pushButton_playback_skip_back_clicked()
 {
+    if (!audio_out_skip_bck) {
+        gkStringFuncs->changePushButtonColor(ui->pushButton_playback_skip_back, false);
+        audio_out_skip_bck = true;
+    } else {
+        gkStringFuncs->changePushButtonColor(ui->pushButton_playback_skip_back, true);
+        audio_out_skip_bck = false;
+    }
+
     return;
 }
 
 void GkAudioPlayDialog::on_pushButton_playback_skip_forward_clicked()
 {
-    return;
-}
-
-/**
- * @brief GkAudioPlayDialog::on_pushButton_playback_stop_toggled stop all playback and recording
- * at this moment.
- * @param checked
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkAudioPlayDialog::on_pushButton_playback_stop_toggled(bool checked)
-{
-    ui->pushButton_playback_stop->setChecked(checked);
+    if (!audio_out_skip_fwd) {
+        gkStringFuncs->changePushButtonColor(ui->pushButton_playback_skip_forward, false);
+        audio_out_skip_fwd = true;
+    } else {
+        gkStringFuncs->changePushButtonColor(ui->pushButton_playback_skip_forward, true);
+        audio_out_skip_fwd = false;
+    }
 
     return;
 }

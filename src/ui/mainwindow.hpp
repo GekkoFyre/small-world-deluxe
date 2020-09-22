@@ -397,8 +397,6 @@ private:
     bool btn_radio_tune;
     bool btn_radio_monitor;
 
-    void changePushButtonColor(const QPointer<QPushButton> &push_button, const bool &green_result = true,
-                               const bool &color_blind_mode = false);
     QStringList getAmateurBands();
     bool prefillAmateurBands();
 

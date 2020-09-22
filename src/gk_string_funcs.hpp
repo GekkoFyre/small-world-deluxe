@@ -44,6 +44,7 @@
 #include "src/defines.hpp"
 #include <QObject>
 #include <QMessageBox>
+#include <QPushButton>
 #include <QPointer>
 #include <QString>
 #include <string>
@@ -87,6 +88,8 @@ public:
 
     QString convSecondsToMinutes(const double &seconds);
     qint32 randomNumGen(qint32 lower_bound = std::numeric_limits<qint32>::min(), qint32 upper_bound = std::numeric_limits<qint32>::max());
+    void changePushButtonColor(const QPointer<QPushButton> &push_button, const bool &red_result = true,
+                               const bool &color_blind_mode = false);
 
         template<typename T>
         T getNumericMax() {
