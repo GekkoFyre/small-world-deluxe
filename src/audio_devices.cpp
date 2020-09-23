@@ -1065,26 +1065,26 @@ QVector<PaHostApiTypeId> AudioDevices::portAudioApiChooser(const std::vector<GkD
  * @param buf_size The total size of the buffer in question.
  * @return The amount of seconds you have in total before an update is next required from the circular buffer.
  */
-float AudioDevices::calcAudioBufferTimeNeeded(const audio_channels &num_channels, const size_t &fft_num_lines,
+float AudioDevices::calcAudioBufferTimeNeeded(const GkAudioChannels &num_channels, const size_t &fft_num_lines,
                                               const size_t &fft_samples_per_line, const size_t &audio_buf_sampling_length,
                                               const size_t &buf_size)
 {
     int audio_channels = 0;
 
     switch (num_channels) {
-    case audio_channels::Mono:
+    case GkAudioChannels::Mono:
         audio_channels = 1;
         break;
-    case audio_channels::Left:
+    case GkAudioChannels::Left:
         audio_channels = 1;
         break;
-    case audio_channels::Right:
+    case GkAudioChannels::Right:
         audio_channels = 1;
         break;
-    case audio_channels::Both:
+    case GkAudioChannels::Both:
         audio_channels = 2;
         break;
-    case audio_channels::Unknown:
+    case GkAudioChannels::Unknown:
         audio_channels = 0;
         break;
     default:

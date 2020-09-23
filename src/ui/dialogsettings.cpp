@@ -494,10 +494,10 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         gkDekodeDb->write_rig_settings(QString::number(enum_split_oper), radio_cfg::SplitOperation);
         gkDekodeDb->write_rig_settings(ptt_adv_cmd, radio_cfg::PTTAdvCmd);
 
-        gkDekodeDb->write_misc_audio_settings(QString::number(inputSampleRateIdx), audio_cfg::AudioInputSampleRate);
-        gkDekodeDb->write_misc_audio_settings(QString::number(outputSampleRateIdx), audio_cfg::AudioOutputSampleRate);
-        gkDekodeDb->write_misc_audio_settings(QString::number(inputChannelsIdx), audio_cfg::AudioInputChannels);
-        gkDekodeDb->write_misc_audio_settings(QString::number(outputChannelsIdx), audio_cfg::AudioOutputChannels);
+        gkDekodeDb->write_misc_audio_settings(QString::number(inputSampleRateIdx), GkAudioCfg::AudioInputSampleRate);
+        gkDekodeDb->write_misc_audio_settings(QString::number(outputSampleRateIdx), GkAudioCfg::AudioOutputSampleRate);
+        gkDekodeDb->write_misc_audio_settings(QString::number(inputChannelsIdx), GkAudioCfg::AudioInputChannels);
+        gkDekodeDb->write_misc_audio_settings(QString::number(outputChannelsIdx), GkAudioCfg::AudioOutputChannels);
 
         emit addRigInUse(ui->comboBox_rig_selection->currentData().toInt(), gkRadioPtr);
 
@@ -1289,17 +1289,17 @@ bool DialogSettings::read_settings()
         const QString split_operation = gkDekodeDb->read_rig_settings(radio_cfg::SplitOperation);
         const QString ptt_adv_cmd = gkDekodeDb->read_rig_settings(radio_cfg::PTTAdvCmd);
 
-        const QString logsDirLoc = gkDekodeDb->read_misc_audio_settings(audio_cfg::LogsDirLoc);
-        const QString audioRecLoc = gkDekodeDb->read_misc_audio_settings(audio_cfg::AudioRecLoc);
-        const QString settingsDbLoc = gkDekodeDb->read_misc_audio_settings(audio_cfg::settingsDbLoc);
+        const QString logsDirLoc = gkDekodeDb->read_misc_audio_settings(GkAudioCfg::LogsDirLoc);
+        const QString audioRecLoc = gkDekodeDb->read_misc_audio_settings(GkAudioCfg::AudioRecLoc);
+        const QString settingsDbLoc = gkDekodeDb->read_misc_audio_settings(GkAudioCfg::settingsDbLoc);
 
         const QString msg_audio_notif = gkDekodeDb->read_general_settings(general_stat_cfg::MsgAudioNotif);
         const QString fail_event_notif = gkDekodeDb->read_general_settings(general_stat_cfg::FailAudioNotif);
 
-        const QString inputSampleRateIdx = gkDekodeDb->read_misc_audio_settings(audio_cfg::AudioInputSampleRate);
-        const QString inputChannelsIdx = gkDekodeDb->read_misc_audio_settings(audio_cfg::AudioInputChannels);
-        const QString outputSampleRateIdx = gkDekodeDb->read_misc_audio_settings(audio_cfg::AudioOutputSampleRate);
-        const QString outputChannelsIdx = gkDekodeDb->read_misc_audio_settings(audio_cfg::AudioOutputChannels);
+        const QString inputSampleRateIdx = gkDekodeDb->read_misc_audio_settings(GkAudioCfg::AudioInputSampleRate);
+        const QString inputChannelsIdx = gkDekodeDb->read_misc_audio_settings(GkAudioCfg::AudioInputChannels);
+        const QString outputSampleRateIdx = gkDekodeDb->read_misc_audio_settings(GkAudioCfg::AudioOutputSampleRate);
+        const QString outputChannelsIdx = gkDekodeDb->read_misc_audio_settings(GkAudioCfg::AudioOutputChannels);
 
         const QString eventLogVerbIdx = gkDekodeDb->read_event_log_settings(GkEventLogCfg::GkLogVerbosity);
 
@@ -1769,7 +1769,7 @@ void DialogSettings::on_pushButton_db_save_loc_clicked()
 
     if (!dirName.isEmpty()) {
         ui->lineEdit_db_save_loc->setText(dirName);
-        gkDekodeDb->write_misc_audio_settings(ui->lineEdit_db_save_loc->text(), audio_cfg::settingsDbLoc);
+        gkDekodeDb->write_misc_audio_settings(ui->lineEdit_db_save_loc->text(), GkAudioCfg::settingsDbLoc);
     }
 
     return;
@@ -1787,7 +1787,7 @@ void DialogSettings::on_pushButton_audio_save_loc_clicked()
 
     if (!dirName.isEmpty()) {
         ui->lineEdit_audio_save_loc->setText(dirName);
-        gkDekodeDb->write_misc_audio_settings(ui->lineEdit_audio_save_loc->text(), audio_cfg::AudioRecLoc);
+        gkDekodeDb->write_misc_audio_settings(ui->lineEdit_audio_save_loc->text(), GkAudioCfg::AudioRecLoc);
     }
 
     return;
@@ -2079,7 +2079,7 @@ void DialogSettings::on_pushButton_audio_logs_save_dir_clicked()
 
     if (!dirName.isEmpty()) {
         ui->lineEdit_audio_logs_save_dir->setText(dirName);
-        gkDekodeDb->write_misc_audio_settings(ui->lineEdit_audio_logs_save_dir->text(), audio_cfg::AudioRecLoc);
+        gkDekodeDb->write_misc_audio_settings(ui->lineEdit_audio_logs_save_dir->text(), GkAudioCfg::AudioRecLoc);
     }
 
     return;

@@ -368,7 +368,7 @@ namespace Database {
             RXAudioInitStart
         };
 
-        enum audio_cfg {
+        enum GkAudioCfg {
             settingsDbLoc,
             LogsDirLoc,
             AudioRecLoc,
@@ -378,7 +378,7 @@ namespace Database {
             AudioOutputSampleRate
         };
 
-        enum audio_channels {
+        enum GkAudioChannels {
             Mono,
             Left,
             Right,
@@ -514,7 +514,7 @@ namespace Database {
                 long asio_pref_buffer_size;                                         // ASIO specific
                 int dev_input_channel_count;                                        // The number of channels this INPUT audio device supports
                 int dev_output_channel_count;                                       // The number of channels this OUTPUT audio device supports
-                audio_channels sel_channels;                                        // The selected audio channel configuration
+                GkAudioChannels sel_channels;                                        // The selected audio channel configuration
                 PaError asio_err;                                                   // ASIO specific error related information
                 PaDeviceInfo device_info;                                           // All information pertaining to this audio device
                 PaStreamParameters stream_parameters;                               // Device-specific information such as the sample format, etc.
@@ -730,7 +730,7 @@ namespace GkAudioFramework {
         double sample_rate;                                                     // The sample rate of the file.
         double length_in_secs;                                                  // Length of the audio file within seconds as a time measurement.
         CodecSupport type_codec;                                                // The codec of the audio file, if known.
-        Database::Settings::audio_channels num_audio_channels;                  // The number of audio channels (i.e. if stereo or mono).
+        Database::Settings::GkAudioChannels num_audio_channels;                  // The number of audio channels (i.e. if stereo or mono).
         qint64 file_size;                                                       // The storage size of the audio/media file itself.
         qint64 bitrate_lower;                                                   // The lower end of the bitrate scale for the specified file.
         qint64 bitrate_upper;                                                   // The upper end of the bitrate scale for the specified file.

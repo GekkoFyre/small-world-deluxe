@@ -94,7 +94,7 @@ public:
     std::vector<Database::Settings::Audio::GkDevice> filterPortAudioHostType(const std::vector<Database::Settings::Audio::GkDevice> &audio_devices_vec);
     QVector<PaHostApiTypeId> portAudioApiChooser(const std::vector<Database::Settings::Audio::GkDevice> &audio_devices_vec);
 
-    float calcAudioBufferTimeNeeded(const Database::Settings::audio_channels &num_channels, const size_t &fft_num_lines,
+    float calcAudioBufferTimeNeeded(const Database::Settings::GkAudioChannels &num_channels, const size_t &fft_num_lines,
                                     const size_t &fft_samples_per_line, const size_t &audio_buf_sampling_length,
                                     const size_t &buf_size);
 

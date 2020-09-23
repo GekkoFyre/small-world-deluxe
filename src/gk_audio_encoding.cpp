@@ -143,7 +143,7 @@ void GkAudioEncoding::recordAudioFile(const CodecSupport &codec, const Bitrate &
     try {
         fs::path default_path = fs::path(gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::MusicLocation), true).toStdString());
 
-        QString audioRecLoc = gkDb->read_misc_audio_settings(audio_cfg::AudioRecLoc);
+        QString audioRecLoc = gkDb->read_misc_audio_settings(GkAudioCfg::AudioRecLoc);
         fs::path audio_rec_path;
 
         if (!audioRecLoc.isEmpty()) {

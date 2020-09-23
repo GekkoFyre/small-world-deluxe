@@ -582,10 +582,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             //
             // Audio encoding signals and slots
             //
-            gkAudioPlayDlg = new GkAudioPlayDialog(GkDb, gkAudioDecoding, gkAudioDevices, output_audio_buf,
-                                                   outputAudioStream, gkStringFuncs, this);
+            gkAudioPlayDlg = new GkAudioPlayDialog(GkDb, gkAudioDecoding, gkAudioDevices, pref_output_device, output_audio_buf,
+                                                   gkStringFuncs, gkEventLogger, this);
             // QObject::connect(gkAudioPlayDlg, SIGNAL(beginRecording(const bool &)), gkAudioEncoding, SLOT(startRecording(const bool &)));
-            QObject::connect(gkAudioPlayDlg, SIGNAL(startAudioPlayback()), this, SLOT(startTransmitOutput()));
         }
 
         //
