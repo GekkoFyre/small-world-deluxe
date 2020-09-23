@@ -58,7 +58,8 @@ namespace sys = boost::system;
 GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
                                      QPointer<GkAudioDecoding> audio_decoding,
                                      std::shared_ptr<AudioDevices> audio_devices,
-                                     const std::shared_ptr<GekkoFyre::PaAudioBuf<float>> &output_audio_buf,
+                                     std::shared_ptr<GekkoFyre::PaAudioBuf<float>> output_audio_buf,
+                                     std::shared_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<float>>> outputAudioStream,
                                      QPointer<GekkoFyre::StringFuncs> stringFuncs,
                                      QWidget *parent) :
     QDialog(parent),
@@ -69,13 +70,14 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
     gkDb = std::move(database);
     gkAudioDecode = std::move(audio_decoding);
     gkAudioDevs = std::move(audio_devices);
-    gkOutputAudioBuf = output_audio_buf;
+    gkOutputAudioBuf = std::move(output_audio_buf);
+    gkOutputAudioStream = std::move(outputAudioStream);
     gkStringFuncs = std::move(stringFuncs);
 
     //
     // Initialize variables
     //
-    audioFile = std::make_unique<AudioFile<double>>();
+    audioFile = std::make_unique<AudioFile<float>>();
 
     //
     // QPushButtons, etc.
@@ -217,15 +219,21 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
     if (!audio_out_play) {
         gkStringFuncs->changePushButtonColor(ui->pushButton_playback_play, false);
         audio_out_play = true;
+
+        emit startAudioPlayback();
+        if (gkOutputAudioStream != nullptr && AUDIO_FRAMES_PER_BUFFER > 0) {
+            while (gkOutputAudioStream->isActive()) {
+                //
+                // Play the WAV file
+                //
+                for (const auto &buffer: audioFile->samples) {
+                    gkOutputAudioBuf->append(buffer);
+                }
+            }
+        }
     } else {
         gkStringFuncs->changePushButtonColor(ui->pushButton_playback_play, true);
         audio_out_play = false;
-    }
-
-    for (const auto &buffer: audioFile->samples) {
-        for (const auto &ch_1: buffer) {
-            // gkOutputAudioBuf->append(ch_1);
-        }
     }
 
     return;

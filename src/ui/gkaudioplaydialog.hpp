@@ -45,6 +45,7 @@
 #include "src/audio_devices.hpp"
 #include "src/file_io.hpp"
 #include "src/contrib/AudioFile/AudioFile.h"
+#include "src/contrib/portaudio/cpp/include/portaudiocpp/MemFunCallbackStream.hxx"
 #include <memory>
 #include <string>
 #include <vector>
@@ -66,7 +67,8 @@ public:
     explicit GkAudioPlayDialog(QPointer<GekkoFyre::GkLevelDb> database,
                                QPointer<GekkoFyre::GkAudioDecoding> audio_decoding,
                                std::shared_ptr<GekkoFyre::AudioDevices> audio_devices,
-                               const std::shared_ptr<GekkoFyre::PaAudioBuf<float>> &output_audio_buf,
+                               std::shared_ptr<GekkoFyre::PaAudioBuf<float>> output_audio_buf,
+                               std::shared_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<float>>> outputAudioStream,
                                QPointer<GekkoFyre::StringFuncs> stringFuncs,
                                QWidget *parent = nullptr);
     ~GkAudioPlayDialog() override;
@@ -86,6 +88,7 @@ private slots:
 
 signals:
     void beginRecording(const bool &recording_is_started);
+    void startAudioPlayback();
 
 private:
     Ui::GkAudioPlayDialog *ui;
@@ -94,7 +97,7 @@ private:
     QPointer<GekkoFyre::GkAudioDecoding> gkAudioDecode;
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevs;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
-    std::unique_ptr<AudioFile<double>> audioFile;
+    std::unique_ptr<AudioFile<float>> audioFile;
 
     //
     // QPushButtons, etc.
@@ -109,9 +112,16 @@ private:
     // PortAudio initialization and buffers
     //
     std::shared_ptr<GekkoFyre::PaAudioBuf<float>> gkOutputAudioBuf;
+    std::shared_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<float>>> gkOutputAudioStream;
 
     QFile r_pback_audio_file;
     GekkoFyre::GkAudioFramework::AudioFileInfo gkAudioFileInfo;
+
+    template <typename T>
+    struct gkConvertDoubleToFloat {
+        template <typename U>
+        T operator () (const U &x) const { return static_cast<T> (x); }
+    };
 
 };
 

@@ -477,6 +477,42 @@ void GkLevelDb::write_event_log_settings(const QString &value, const GkEventLogC
 }
 
 /**
+ * @brief GkLevelDb::write_audio_playback_dlg_settings
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value
+ * @param key
+ */
+void GkLevelDb::write_audio_playback_dlg_settings(const QString &value, const AudioPlaybackDlg &key)
+{
+    try {
+        // Put key-value
+        leveldb::WriteBatch batch;
+        leveldb::Status status;
+
+        switch (key) {
+            case AudioPlaybackDlg::GkAudioDlgLastFolderBrowsed:
+                batch.Put("GkAudioDlgLastFolderBrowsed", value.toStdString());
+                break;
+            default:
+                break;
+        }
+
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
+
+        status = db->Write(write_options, &batch);
+
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
  * @brief GkLevelDb::write_frequencies_db manages the storage of frequency information within Small World Deluxe, such as
  * deletion, addition, and modification.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -1706,6 +1742,31 @@ QString GkLevelDb::read_event_log_settings(const GkEventLogCfg &key)
             break;
         default:
             throw std::runtime_error(tr("Invalid key has been provided for reading Event Logger settings relating to Google LevelDB!").toStdString());
+    }
+
+    return QString::fromStdString(value);
+}
+
+/**
+ * @brief GkLevelDb::read_audio_playback_dlg_settings
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param key
+ * @return
+ */
+QString GkLevelDb::read_audio_playback_dlg_settings(const AudioPlaybackDlg &key)
+{
+    leveldb::Status status;
+    leveldb::ReadOptions read_options;
+    std::string value = "";
+
+    read_options.verify_checksums = true;
+
+    switch (key) {
+        case AudioPlaybackDlg::GkAudioDlgLastFolderBrowsed:
+            status = db->Get(read_options, "GkAudioDlgLastFolderBrowsed", &value);
+            break;
+        default:
+            throw std::runtime_error(tr("Invalid key has been provided for reading Audio Playback dialog settings relating to Google LevelDB!").toStdString());
     }
 
     return QString::fromStdString(value);

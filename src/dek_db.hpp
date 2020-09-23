@@ -72,6 +72,7 @@ public:
     void write_mainwindow_settings(const QString &value, const Database::Settings::general_mainwindow_cfg &key);
     void write_misc_audio_settings(const QString &value, const Database::Settings::audio_cfg &key);
     void write_event_log_settings(const QString &value, const Database::Settings::GkEventLogCfg &key);
+    void write_audio_playback_dlg_settings(const QString &value, const Database::Settings::AudioPlaybackDlg &key);
 
     void write_frequencies_db(const AmateurRadio::GkFreqs &write_new_value);
     void remove_frequencies_db(const AmateurRadio::GkFreqs &freq_to_remove);
@@ -98,6 +99,7 @@ public:
     QString read_mainwindow_settings(const Database::Settings::general_mainwindow_cfg &key);
     QString read_misc_audio_settings(const GekkoFyre::Database::Settings::audio_cfg &key);
     QString read_event_log_settings(const Database::Settings::GkEventLogCfg &key);
+    QString read_audio_playback_dlg_settings(const Database::Settings::AudioPlaybackDlg &key);
 
     GekkoFyre::Database::Settings::audio_channels convertAudioChannelsEnum(const int &audio_channel_sel);
     QString convertAudioChannelsStr(const GekkoFyre::Database::Settings::audio_channels &channel_enum);

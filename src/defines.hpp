@@ -387,6 +387,10 @@ namespace Database {
             Unknown
         };
 
+        enum AudioPlaybackDlg {
+            GkAudioDlgLastFolderBrowsed
+        };
+
         enum general_stat_cfg {
             myCallsign,
             myMaidenhead,

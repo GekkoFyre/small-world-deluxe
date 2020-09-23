@@ -646,6 +646,7 @@ void DialogSettings::prefill_audio_api_avail(const QVector<PaHostApiTypeId> &por
                                 if (input_dev.second.device_info.name) { // Test that `const char *` is not empty!
                                     if (soundcard_input_saved == input_dev.second.device_info.name) {
                                         qint32 idx = ui->comboBox_soundcard_input->findData(input_dev.second.device_info.name);
+                                        chosen_input_audio_dev = input_dev.second;
                                         if (idx >= 0) {
                                             ui->comboBox_soundcard_input->setCurrentIndex(idx);
                                             on_comboBox_soundcard_input_currentIndexChanged(idx);
@@ -666,6 +667,7 @@ void DialogSettings::prefill_audio_api_avail(const QVector<PaHostApiTypeId> &por
                                 if (output_dev.second.device_info.name) { // Test that `const char *` is not empty!
                                     if (soundcard_output_saved == output_dev.second.device_info.name) {
                                         qint32 idx = ui->comboBox_soundcard_output->findData(output_dev.second.device_info.name);
+                                        chosen_output_audio_dev = output_dev.second;
                                         if (idx >= 0) {
                                             ui->comboBox_soundcard_output->setCurrentIndex(idx);
                                             on_comboBox_soundcard_output_currentIndexChanged(idx);
@@ -1874,6 +1876,7 @@ void DialogSettings::on_comboBox_soundcard_input_currentIndexChanged(int index)
         if (!avail_portaudio_api.isEmpty() || !avail_input_audio_devs.isEmpty()) {
             for (const auto &device: avail_input_audio_devs.toStdMap()) {
                 if (device.first == idx) {
+                    chosen_input_audio_dev = device.second;
                     supportedInputSampleRates.clear();
                     auto supported_rates = gkAudioDevices->enumSupportedStdSampleRates(&device.second.stream_parameters, standardSampleRates, false);
                     if (!supported_rates.empty()) {
@@ -1937,6 +1940,7 @@ void DialogSettings::on_comboBox_soundcard_output_currentIndexChanged(int index)
         if (!avail_portaudio_api.isEmpty() || !avail_output_audio_devs.isEmpty()) {
             for (const auto &device: avail_output_audio_devs.toStdMap()) {
                 if (device.first == idx) {
+                    chosen_output_audio_dev = device.second;
                     supportedOutputSampleRates.clear();
                     auto supported_rates = gkAudioDevices->enumSupportedStdSampleRates(&device.second.stream_parameters, standardSampleRates, true);
                     if (!supported_rates.empty()) {
