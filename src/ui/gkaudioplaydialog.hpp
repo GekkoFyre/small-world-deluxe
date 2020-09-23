@@ -50,6 +50,8 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <thread>
+#include <mutex>
 #include <QFile>
 #include <QObject>
 #include <QDialog>
@@ -66,6 +68,7 @@ class GkAudioPlayDialog : public QDialog
 
 public:
     explicit GkAudioPlayDialog(QPointer<GekkoFyre::GkLevelDb> database,
+                               portaudio::System *portAudioSys,
                                QPointer<GekkoFyre::GkAudioDecoding> audio_decoding,
                                std::shared_ptr<GekkoFyre::AudioDevices> audio_devices,
                                const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
@@ -96,6 +99,7 @@ signals:
 private:
     Ui::GkAudioPlayDialog *ui;
 
+    portaudio::System *gkPortAudioSys;
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevs;
     std::unique_ptr<AudioFile<float>> audioFile;
     QPointer<GekkoFyre::GkLevelDb> gkDb;
@@ -117,10 +121,17 @@ private:
     //
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     std::shared_ptr<GekkoFyre::PaAudioBuf<float>> gkOutputAudioBuf;
-    std::shared_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<float>>> gkOutputAudioStream;
+    std::unique_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<float>>> gkOutputAudioStream;
+
+    //
+    // Multithreading
+    //
+    std::thread playback_wav_thread;
 
     QFile r_pback_audio_file;
     GekkoFyre::GkAudioFramework::AudioFileInfo gkAudioFileInfo;
+
+    void playbackWav();
 
     template <typename T>
     struct gkConvertDoubleToFloat {
