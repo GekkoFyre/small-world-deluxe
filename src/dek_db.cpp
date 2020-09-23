@@ -388,7 +388,7 @@ void GkLevelDb::write_mainwindow_settings(const QString &value, const general_ma
  * @param value
  * @param key
  */
-void GkLevelDb::write_misc_audio_settings(const QString &value, const audio_cfg &key)
+void GkLevelDb::write_misc_audio_settings(const QString &value, const GkAudioCfg &key)
 {
     try {
         // Put key-value
@@ -396,25 +396,25 @@ void GkLevelDb::write_misc_audio_settings(const QString &value, const audio_cfg 
         leveldb::Status status;
 
         switch (key) {
-        case audio_cfg::settingsDbLoc:
+        case GkAudioCfg::settingsDbLoc:
             batch.Put("UserProfileDbLoc", value.toStdString());
             break;
-        case audio_cfg::LogsDirLoc:
+        case GkAudioCfg::LogsDirLoc:
             batch.Put("UserLogsLoc", value.toStdString());
             break;
-        case audio_cfg::AudioRecLoc:
+        case GkAudioCfg::AudioRecLoc:
             batch.Put("AudioRecSaveLoc", value.toStdString());
             break;
-        case audio_cfg::AudioInputChannels:
+        case GkAudioCfg::AudioInputChannels:
             batch.Put("AudioInputChannels", value.toStdString());
             break;
-        case audio_cfg::AudioOutputChannels:
+        case GkAudioCfg::AudioOutputChannels:
             batch.Put("AudioOutputChannels", value.toStdString());
             break;
-        case audio_cfg::AudioInputSampleRate:
+        case GkAudioCfg::AudioInputSampleRate:
             batch.Put("AudioInputSampleRate", value.toStdString());
             break;
-        case audio_cfg::AudioOutputSampleRate:
+        case GkAudioCfg::AudioOutputSampleRate:
             batch.Put("AudioOutputSampleRate", value.toStdString());
             break;
         }
@@ -459,6 +459,42 @@ void GkLevelDb::write_event_log_settings(const QString &value, const GkEventLogC
                 break;
             default:
                 throw std::runtime_error(tr("Invalid key has been provided for writing Event Logger settings relating to Google LevelDB!").toStdString());
+        }
+
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
+
+        status = db->Write(write_options, &batch);
+
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkLevelDb::write_audio_playback_dlg_settings
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value
+ * @param key
+ */
+void GkLevelDb::write_audio_playback_dlg_settings(const QString &value, const AudioPlaybackDlg &key)
+{
+    try {
+        // Put key-value
+        leveldb::WriteBatch batch;
+        leveldb::Status status;
+
+        switch (key) {
+            case AudioPlaybackDlg::GkAudioDlgLastFolderBrowsed:
+                batch.Put("GkAudioDlgLastFolderBrowsed", value.toStdString());
+                break;
+            default:
+                break;
         }
 
         leveldb::WriteOptions write_options;
@@ -1580,7 +1616,7 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
         if (!output_sel_channels.empty()) {
             audio_device.sel_channels = convertAudioChannelsEnum(std::stoi(output_sel_channels));
         } else {
-            audio_device.sel_channels = audio_channels::Unknown;
+            audio_device.sel_channels = GkAudioChannels::Unknown;
         }
 
         audio_device.default_dev = def_sys_device;
@@ -1608,7 +1644,7 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
         if (!input_sel_channels.empty()) {
             audio_device.sel_channels = convertAudioChannelsEnum(std::stoi(input_sel_channels));
         } else {
-            audio_device.sel_channels = audio_channels::Unknown;
+            audio_device.sel_channels = GkAudioChannels::Unknown;
         }
 
         audio_device.default_dev = def_sys_device;
@@ -1650,7 +1686,7 @@ QString GkLevelDb::read_mainwindow_settings(const general_mainwindow_cfg &key)
     return QString::fromStdString(output);
 }
 
-QString GkLevelDb::read_misc_audio_settings(const audio_cfg &key)
+QString GkLevelDb::read_misc_audio_settings(const GkAudioCfg &key)
 {
     leveldb::Status status;
     leveldb::ReadOptions read_options;
@@ -1659,25 +1695,25 @@ QString GkLevelDb::read_misc_audio_settings(const audio_cfg &key)
     read_options.verify_checksums = true;
 
     switch (key) {
-    case audio_cfg::settingsDbLoc:
+    case GkAudioCfg::settingsDbLoc:
         status = db->Get(read_options, "UserProfileDbLoc", &value);
         break;
-    case audio_cfg::LogsDirLoc:
+    case GkAudioCfg::LogsDirLoc:
         status = db->Get(read_options, "UserLogsLoc", &value);
         break;
-    case audio_cfg::AudioRecLoc:
+    case GkAudioCfg::AudioRecLoc:
         status = db->Get(read_options, "AudioRecSaveLoc", &value);
         break;
-    case audio_cfg::AudioInputChannels:
+    case GkAudioCfg::AudioInputChannels:
         status = db->Get(read_options, "AudioInputChannels", &value);
         break;
-    case audio_cfg::AudioOutputChannels:
+    case GkAudioCfg::AudioOutputChannels:
         status = db->Get(read_options, "AudioOutputChannels", &value);
         break;
-    case audio_cfg::AudioInputSampleRate:
+    case GkAudioCfg::AudioInputSampleRate:
         status = db->Get(read_options, "AudioInputSampleRate", &value);
         break;
-    case audio_cfg::AudioOutputSampleRate:
+    case GkAudioCfg::AudioOutputSampleRate:
         status = db->Get(read_options, "AudioOutputSampleRate", &value);
         break;
     }
@@ -1712,33 +1748,58 @@ QString GkLevelDb::read_event_log_settings(const GkEventLogCfg &key)
 }
 
 /**
+ * @brief GkLevelDb::read_audio_playback_dlg_settings
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param key
+ * @return
+ */
+QString GkLevelDb::read_audio_playback_dlg_settings(const AudioPlaybackDlg &key)
+{
+    leveldb::Status status;
+    leveldb::ReadOptions read_options;
+    std::string value = "";
+
+    read_options.verify_checksums = true;
+
+    switch (key) {
+        case AudioPlaybackDlg::GkAudioDlgLastFolderBrowsed:
+            status = db->Get(read_options, "GkAudioDlgLastFolderBrowsed", &value);
+            break;
+        default:
+            throw std::runtime_error(tr("Invalid key has been provided for reading Audio Playback dialog settings relating to Google LevelDB!").toStdString());
+    }
+
+    return QString::fromStdString(value);
+}
+
+/**
  * @brief DekodeDb::convertAudioChannelsEnum converts from an index given by
  * a QComboBox and not by a specific amount of channels.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param audio_channel_sel The index as given by a QComboBox.
  * @return The relevant channel enumerator.
  */
-audio_channels GkLevelDb::convertAudioChannelsEnum(const int &audio_channel_sel)
+GkAudioChannels GkLevelDb::convertAudioChannelsEnum(const int &audio_channel_sel)
 {
-    audio_channels ret = Mono;
+    GkAudioChannels ret = Mono;
     switch (audio_channel_sel) {
         case 0:
-            ret = audio_channels::Mono;
+            ret = GkAudioChannels::Mono;
             break;
         case 1:
-            ret = audio_channels::Left;
+            ret = GkAudioChannels::Left;
             break;
         case 2:
-            ret = audio_channels::Right;
+            ret = GkAudioChannels::Right;
             break;
         case 3:
-            ret = audio_channels::Both;
+            ret = GkAudioChannels::Both;
             break;
         case 4:
-            ret = audio_channels::Surround;
+            ret = GkAudioChannels::Surround;
             break;
         default:
-            ret = audio_channels::Unknown;
+            ret = GkAudioChannels::Unknown;
             break;
     }
 
@@ -1751,7 +1812,7 @@ audio_channels GkLevelDb::convertAudioChannelsEnum(const int &audio_channel_sel)
  * @param channel_enum The channel count enumerator.
  * @return The related QString for the given channel count enumerator.
  */
-QString GkLevelDb::convertAudioChannelsStr(const audio_channels &channel_enum)
+QString GkLevelDb::convertAudioChannelsStr(const GkAudioChannels &channel_enum)
 {
     switch (channel_enum) {
         case Mono:
@@ -1778,7 +1839,7 @@ QString GkLevelDb::convertAudioChannelsStr(const audio_channels &channel_enum)
  * @param channel_enum The channel count enumerator.
  * @return Whether stereo sound output is supported or not.
  */
-bool GkLevelDb::convertAudioEnumIsStereo(const audio_channels &channel_enum) const
+bool GkLevelDb::convertAudioEnumIsStereo(const GkAudioChannels &channel_enum) const
 {
     switch (channel_enum) {
         case Mono:

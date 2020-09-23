@@ -70,8 +70,9 @@ public:
     void write_audio_device_settings(const GekkoFyre::Database::Settings::Audio::GkDevice &value,
                                      const bool &is_output_device);
     void write_mainwindow_settings(const QString &value, const Database::Settings::general_mainwindow_cfg &key);
-    void write_misc_audio_settings(const QString &value, const Database::Settings::audio_cfg &key);
+    void write_misc_audio_settings(const QString &value, const Database::Settings::GkAudioCfg &key);
     void write_event_log_settings(const QString &value, const Database::Settings::GkEventLogCfg &key);
+    void write_audio_playback_dlg_settings(const QString &value, const Database::Settings::AudioPlaybackDlg &key);
 
     void write_frequencies_db(const AmateurRadio::GkFreqs &write_new_value);
     void remove_frequencies_db(const AmateurRadio::GkFreqs &freq_to_remove);
@@ -96,12 +97,13 @@ public:
     QString read_audio_device_settings(const bool &is_output_device, const bool &index_only = true);
     GekkoFyre::Database::Settings::Audio::GkDevice read_audio_details_settings(const bool &is_output_device);
     QString read_mainwindow_settings(const Database::Settings::general_mainwindow_cfg &key);
-    QString read_misc_audio_settings(const GekkoFyre::Database::Settings::audio_cfg &key);
+    QString read_misc_audio_settings(const GekkoFyre::Database::Settings::GkAudioCfg &key);
     QString read_event_log_settings(const Database::Settings::GkEventLogCfg &key);
+    QString read_audio_playback_dlg_settings(const Database::Settings::AudioPlaybackDlg &key);
 
-    GekkoFyre::Database::Settings::audio_channels convertAudioChannelsEnum(const int &audio_channel_sel);
-    QString convertAudioChannelsStr(const GekkoFyre::Database::Settings::audio_channels &channel_enum);
-    [[nodiscard]] bool convertAudioEnumIsStereo(const GekkoFyre::Database::Settings::audio_channels &channel_enum) const;
+    GekkoFyre::Database::Settings::GkAudioChannels convertAudioChannelsEnum(const int &audio_channel_sel);
+    QString convertAudioChannelsStr(const GekkoFyre::Database::Settings::GkAudioChannels &channel_enum);
+    [[nodiscard]] bool convertAudioEnumIsStereo(const GekkoFyre::Database::Settings::GkAudioChannels &channel_enum) const;
 
     ptt_type_t convPttTypeToEnum(const QString &ptt_type_str);
     QString convPttTypeToStr(const ptt_type_t &ptt_type_enum);

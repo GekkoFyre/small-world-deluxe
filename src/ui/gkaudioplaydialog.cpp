@@ -51,6 +51,12 @@ using namespace GekkoFyre;
 using namespace Database;
 using namespace Settings;
 using namespace Audio;
+using namespace AmateurRadio;
+using namespace Control;
+using namespace Spectrograph;
+using namespace System;
+using namespace Events;
+using namespace Logging;
 
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
@@ -58,8 +64,10 @@ namespace sys = boost::system;
 GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
                                      QPointer<GkAudioDecoding> audio_decoding,
                                      std::shared_ptr<AudioDevices> audio_devices,
-                                     const std::shared_ptr<GekkoFyre::PaAudioBuf<float>> &output_audio_buf,
+                                     const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
+                                     std::shared_ptr<GekkoFyre::PaAudioBuf<float>> output_audio_buf,
                                      QPointer<GekkoFyre::StringFuncs> stringFuncs,
+                                     QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                      QWidget *parent) :
     QDialog(parent),
     ui(new Ui::GkAudioPlayDialog)
@@ -69,13 +77,15 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
     gkDb = std::move(database);
     gkAudioDecode = std::move(audio_decoding);
     gkAudioDevs = std::move(audio_devices);
-    gkOutputAudioBuf = output_audio_buf;
+    gkOutputAudioBuf = std::move(output_audio_buf);
     gkStringFuncs = std::move(stringFuncs);
+    gkEventLogger = std::move(eventLogger);
 
     //
     // Initialize variables
     //
-    audioFile = std::make_unique<AudioFile<double>>();
+    pref_output_device = output_device;
+    audioFile = std::make_unique<AudioFile<float>>();
 
     //
     // QPushButtons, etc.
@@ -90,6 +100,51 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
 GkAudioPlayDialog::~GkAudioPlayDialog()
 {
     delete ui;
+}
+
+/**
+ * @brief GkAudioPlayDialog::determineAudioChannels works out the number of audio channels to use when initializing the PortAudio
+ * data buffer for audio playback and possibly recording as well.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param audio_file_info The information we have on the audio playback file.
+ * @return The number or type of audio channel(s) we should be initializing the PortAudio buffer with.
+ */
+GkAudioChannels GkAudioPlayDialog::determineAudioChannels()
+{
+    if (!r_pback_audio_file.fileName().isEmpty()) {
+        // We currently have a file selected!
+        if (audioFile->isMono()) {
+            if (pref_output_device.dev_output_channel_count == 1) {
+                //
+                // Mono
+                //
+                pref_output_device.sel_channels = GkAudioChannels::Mono;
+                return GkAudioChannels::Mono;
+            }
+        } else if (audioFile->isStereo()) {
+            if (pref_output_device.dev_output_channel_count == 2) {
+                //
+                // Stereo
+                //
+                pref_output_device.sel_channels = GkAudioChannels::Both;
+                return GkAudioChannels::Both;
+            }
+        } else if (pref_output_device.dev_output_channel_count > 2) {
+            //
+            // Surround sound, possibly?
+            //
+            pref_output_device.sel_channels = GkAudioChannels::Surround;
+            return GkAudioChannels::Surround;
+        } else {
+            //
+            // Unknown
+            //
+            pref_output_device.sel_channels = GkAudioChannels::Unknown;
+            return GkAudioChannels::Unknown;
+        }
+    }
+
+    return GkAudioChannels::Unknown;
 }
 
 /**
@@ -172,15 +227,15 @@ void GkAudioPlayDialog::on_pushButton_playback_browse_file_loc_clicked()
                     // Determine whether the audio file is Mono, Stereo, or something else in nature...
                     //
                     if (audioFile->isMono()) {
-                        gkAudioFileInfo.num_audio_channels = Database::Settings::audio_channels::Mono;
+                        gkAudioFileInfo.num_audio_channels = Database::Settings::GkAudioChannels::Mono;
                     } else if (audioFile->isStereo()) {
-                        gkAudioFileInfo.num_audio_channels = Database::Settings::audio_channels::Both;
+                        gkAudioFileInfo.num_audio_channels = Database::Settings::GkAudioChannels::Both;
                     } else {
                         auto numChannels = audioFile->getNumChannels();
                         if (numChannels > 2) {
-                            gkAudioFileInfo.num_audio_channels = Database::Settings::audio_channels::Surround;
+                            gkAudioFileInfo.num_audio_channels = Database::Settings::GkAudioChannels::Surround;
                         } else {
-                            gkAudioFileInfo.num_audio_channels = Database::Settings::audio_channels::Unknown;
+                            gkAudioFileInfo.num_audio_channels = Database::Settings::GkAudioChannels::Unknown;
                         }
                     }
                 }
@@ -214,18 +269,37 @@ void GkAudioPlayDialog::on_pushButton_playback_browse_file_loc_clicked()
  */
 void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
 {
-    if (!audio_out_play) {
-        gkStringFuncs->changePushButtonColor(ui->pushButton_playback_play, false);
-        audio_out_play = true;
-    } else {
-        gkStringFuncs->changePushButtonColor(ui->pushButton_playback_play, true);
-        audio_out_play = false;
-    }
+    try {
+        if (!audio_out_play) {
+            gkStringFuncs->changePushButtonColor(ui->pushButton_playback_play, false);
+            audio_out_play = true;
 
-    for (const auto &buffer: audioFile->samples) {
-        for (const auto &ch_1: buffer) {
-            // gkOutputAudioBuf->append(ch_1);
+            auto pa_stream_param = portaudio::StreamParameters(portaudio::DirectionSpecificStreamParameters::null(), pref_output_device.cpp_stream_param,
+                                                               pref_output_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
+                                                               paPrimeOutputBuffersUsingStreamCallback);
+            gkOutputAudioStream = std::make_shared<portaudio::MemFunCallbackStream<PaAudioBuf<float>>>(pa_stream_param, *gkOutputAudioBuf,
+                                                                                                       &PaAudioBuf<float>::playbackCallback);
+
+            gkOutputAudioStream->start();
+            if (gkOutputAudioStream != nullptr && AUDIO_FRAMES_PER_BUFFER > 0) {
+                while (gkOutputAudioStream->isActive() && gkOutputAudioStream->isOpen()) {
+                    while (!audioFile->samples.empty()) {
+                        //
+                        // Play the WAV file
+                        //
+                        for (const auto &buffer: audioFile->samples) {
+                            gkOutputAudioBuf->append(buffer);
+                        }
+                    }
+                }
+            }
+        } else {
+            gkStringFuncs->changePushButtonColor(ui->pushButton_playback_play, true);
+            audio_out_play = false;
         }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(tr("Issue with playback of audio file, \"%1\". Error:\n\n%2").arg(r_pback_audio_file.fileName()).arg(QString::fromStdString(e.what())),
+                                    GkSeverity::Fatal, "", false, true, false, true);
     }
 
     return;

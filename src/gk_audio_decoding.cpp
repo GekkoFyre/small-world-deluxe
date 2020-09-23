@@ -178,7 +178,7 @@ AudioFileInfo GkAudioDecoding::initAudioFileInfoStruct()
     audio_file_info.is_output = false;
     audio_file_info.sample_rate = 0;
     audio_file_info.type_codec = CodecSupport::Unknown;
-    audio_file_info.num_audio_channels = Database::Settings::audio_channels::Unknown;
+    audio_file_info.num_audio_channels = Database::Settings::GkAudioChannels::Unknown;
 
     return audio_file_info;
 }
