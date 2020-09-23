@@ -387,6 +387,12 @@ namespace Database {
             Unknown
         };
 
+        enum GkAudioSource {
+            Input,
+            Output,
+            InputOutput
+        };
+
         enum AudioPlaybackDlg {
             GkAudioDlgLastFolderBrowsed
         };
@@ -495,7 +501,7 @@ namespace Database {
                 bool default_disp;                                                  // Used for filtering purposes
                 bool is_dev_active;                                                 // Is the audio device in question currently active and streaming data?
                 double def_sample_rate;                                             // Default sample rate
-                boost::tribool is_output_dev;                                       // Is the audio device in question an input? Output if FALSE, UNSURE if either
+                GkAudioSource audio_src;                                            // Is the audio device in question an input? Output if FALSE, UNSURE if either
                 int dev_number;                                                     // The number of this device; this is saved to the Google LevelDB database as the user's preference
                 PaError dev_err;                                                    // Any errors that belong to this audio device specifically
                 std::list<double> supp_sample_rates;                                // Supported sample rates by this audio device

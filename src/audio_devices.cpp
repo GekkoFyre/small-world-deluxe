@@ -121,7 +121,11 @@ std::vector<GkDevice> AudioDevices::initPortAudio(portaudio::System *portAudioSy
             //
             std::lock_guard<std::mutex> lck_guard(init_port_audio_mtx);
             for (const auto &device: enum_devices) {
-                if (device.default_dev && device.is_output_dev) { // Is an output device!
+                if (device.default_dev && device.audio_src == GkAudioSource::Output) { // Is an output device!
+                    device_export.push_back(device);
+                }
+
+                if (device.default_dev && device.audio_src == GkAudioSource::InputOutput) { // Is an output device!
                     device_export.push_back(device);
                 }
             }
@@ -138,7 +142,11 @@ std::vector<GkDevice> AudioDevices::initPortAudio(portaudio::System *portAudioSy
             //
             std::lock_guard<std::mutex> lck_guard(init_port_audio_mtx);
             for (const auto &device: enum_devices) {
-                if (device.default_dev && !device.is_output_dev) { // Is an input device!
+                if (device.default_dev && device.audio_src == GkAudioSource::Input) { // Is an input device!
+                    device_export.push_back(device);
+                }
+
+                if (device.default_dev && device.audio_src == GkAudioSource::InputOutput) { // Is an input device!
                     device_export.push_back(device);
                 }
             }
@@ -387,17 +395,17 @@ std::vector<GkDevice> AudioDevices::enumAudioDevices()
             device.dev_input_channel_count = inputParameters.channelCount;
 
             if (inputParameters.channelCount > 0) {
-                device.is_output_dev = false;
+                device.audio_src = GkAudioSource::Input;
                 device.stream_parameters = inputParameters;
 
                 audio_devices.push_back(device);
             } else if (outputParameters.channelCount > 0) {
-                device.is_output_dev = true;
+                device.audio_src = GkAudioSource::Output;
                 device.stream_parameters = outputParameters;
 
                 audio_devices.push_back(device);
             } else {
-                device.is_output_dev = boost::tribool::indeterminate_value;
+                device.audio_src = GkAudioSource::InputOutput;
                 audio_devices.push_back(device);
             }
         }
@@ -446,13 +454,14 @@ std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp(portaudio::System *portA
             GkDevice device;
             device.default_dev = false;
             device.default_disp = false;
-            device.is_output_dev = false;
+            device.audio_src = GkAudioSource::Input;
             device.dev_err = paNoError;
             device.dev_number = device_number;
 
             if ((*i).isSystemDefaultInputDevice()) {
                 audio_device_name << tr("[ Default Input").toStdString();
                 default_disp = true;
+                device.default_dev = true;
             } else if ((*i).isHostApiDefaultInputDevice()) {
                 audio_device_name << tr("[ Default ").toStdString() << (*i).hostApi().name() << tr(" Input").toStdString();
                 default_disp = true;
@@ -462,6 +471,7 @@ std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp(portaudio::System *portA
                 audio_device_name << (default_disp ? "," : "[");
                 audio_device_name << tr(" Default Output").toStdString();
                 default_disp = true;
+                device.default_dev = true;
             } else if ((*i).isHostApiDefaultOutputDevice()) {
                 audio_device_name << (default_disp ? "," : "[");
                 audio_device_name << tr(" Default ").toStdString() << (*i).hostApi().name() << tr(" Output").toStdString();
@@ -480,28 +490,6 @@ std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp(portaudio::System *portA
 
             device.chosen_audio_dev_str = QString::fromStdString(audio_device_name.str());
             device.host_type_id = Pa_GetHostApiInfo(deviceInfo->hostApi)->type;
-
-            if (Pa_GetHostApiInfo(deviceInfo->hostApi)->defaultInputDevice) {
-                //
-                // Input device
-                //
-                device.default_dev = true;
-            }
-
-            if (Pa_GetHostApiInfo(deviceInfo->hostApi)->defaultOutputDevice) {
-                //
-                // Output device
-                //
-                device.default_dev = true;
-            }
-
-            if (!Pa_GetHostApiInfo(deviceInfo->hostApi)->defaultInputDevice &&
-                    !Pa_GetHostApiInfo(deviceInfo->hostApi)->defaultOutputDevice) {
-                //
-                // Not the default audio device
-                //
-                device.default_dev = false;
-            }
 
             //
             // Default sample rate
@@ -534,22 +522,27 @@ std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp(portaudio::System *portA
                 //
                 // Input device
                 //
-                device.is_output_dev = false;
+                device.audio_src = GkAudioSource::Input;
                 device.stream_parameters = *inputParameters.paStreamParameters();
                 device.cpp_stream_param = inputParameters;
             } else if (device.dev_output_channel_count > 0) {
                 //
                 // Output device
                 //
-                device.is_output_dev = true;
+                device.audio_src = GkAudioSource::Output;
                 device.stream_parameters = *outputParameters.paStreamParameters();
                 device.cpp_stream_param = outputParameters;
             } else {
                 //
                 // Unable to determine whether just input or output device, so therefore assume it's both!
                 //
-                device.is_output_dev = boost::tribool::indeterminate_value;
+                device.audio_src = GkAudioSource::InputOutput;
                 device.stream_parameters = PaStreamParameters();
+            }
+
+            // TODO: Possibly optimize this section of code?
+            if (device.default_dev && audio_device_name.str() == "[ Default Input, Default Output ]") {
+                device.audio_src = GkAudioSource::InputOutput;
             }
 
             //
@@ -563,13 +556,13 @@ std::vector<GkDevice> AudioDevices::enumAudioDevicesCpp(portaudio::System *portA
                 device.asio_max_buffer_size = asio_device.maxBufferSize();
                 device.asio_pref_buffer_size = asio_device.preferredBufferSize();
 
-                if (device.is_output_dev) {
+                if (device.audio_src) {
                     //
                     // Output device
                     //
                     device.asio_min_latency = asio_device.device().defaultLowOutputLatency();
                     device.asio_max_latency = asio_device.device().defaultHighOutputLatency();
-                } else if (!device.is_output_dev) {
+                } else if (!device.audio_src) {
                     //
                     // Input device
                     //

@@ -487,13 +487,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         if (!pref_audio_devices.empty()) {
             for (const auto &device: pref_audio_devices) {
                 // Now filter out what is the input and output device selectively!
-                if (device.is_output_dev) {
+                if (device.audio_src == GkAudioSource::Output) {
                     // Output device
                     pref_output_device = device;
                     pref_output_device.is_dev_active = false;
-                } else {
+                } else if (device.audio_src == GkAudioSource::Input) {
                     // Input device
                     pref_input_device = device;
+                    pref_input_device.is_dev_active = false;
+                } else {
+                    // Input and Output device
+                    pref_output_device = device;
+                    pref_input_device = device;
+                    pref_output_device.is_dev_active = false;
                     pref_input_device.is_dev_active = false;
                 }
             }
@@ -2048,7 +2054,7 @@ void MainWindow::on_pushButton_radio_receive_clicked()
         if (!btn_radio_rx) {
             btn_record_lck.lock();
             if (pref_input_device.stream_parameters.device != paNoDevice) {
-                if (pref_input_device.is_output_dev == boost::tribool::false_value) {
+                if (pref_input_device.audio_src == GkAudioSource::Input || pref_input_device.audio_src == GkAudioSource::InputOutput) {
                     if (pref_input_device.device_info.maxInputChannels > 0) {
                         if ((pref_input_device.device_info.name != nullptr)) {
                             // Set the QPushButton to 'Green'

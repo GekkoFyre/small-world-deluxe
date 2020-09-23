@@ -716,7 +716,7 @@ void DialogSettings::prefill_audio_devices(const std::vector<GkDevice> &audio_de
                 quint32 output_counter = 0;
                 quint32 input_counter = 0;
                 for (const auto &device: audio_devices_vec) {
-                    if (device.is_output_dev) {
+                    if (device.audio_src == GkAudioSource::Output) {
                         //
                         // Audio device is an output
                         //
@@ -725,13 +725,25 @@ void DialogSettings::prefill_audio_devices(const std::vector<GkDevice> &audio_de
                             avail_output_audio_devs.insert(output_counter, device);
                             ++output_counter;
                         }
-                    } else {
+                    } else if (device.audio_src == GkAudioSource::Input) {
                         //
                         // Audio device is an input
                         //
                         std::string audio_dev_name = device.device_info.name;
                         if (!audio_dev_name.empty()) {
                             avail_input_audio_devs.insert(input_counter, device);
+                            ++input_counter;
+                        }
+                    } else {
+                        //
+                        // Audio device is both input and output
+                        //
+                        std::string audio_dev_name = device.device_info.name;
+                        if (!audio_dev_name.empty()) {
+                            avail_input_audio_devs.insert(input_counter, device);
+                            avail_output_audio_devs.insert(output_counter, device);
+
+                            ++output_counter;
                             ++input_counter;
                         }
                     }
