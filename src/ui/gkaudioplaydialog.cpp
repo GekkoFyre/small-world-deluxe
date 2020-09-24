@@ -389,18 +389,24 @@ void GkAudioPlayDialog::on_comboBox_playback_rec_bitrate_currentIndexChanged(int
 void GkAudioPlayDialog::playbackWav()
 {
     try {
-        gkOutputAudioStream->start();
         if (gkOutputAudioStream != nullptr) {
+            gkOutputAudioStream->start();
             while (gkOutputAudioStream->isActive() && gkOutputAudioStream->isOpen()) {
-                while (!audioFile->samples.empty()) {
-                    //
-                    // Play the WAV file
-                    //
+                qint32 samples_size = audioFile->getNumSamplesPerChannel();
+                qint32 frame_counter = 0;
+                while (frame_counter < samples_size) {
                     for (const auto &buffer: audioFile->samples) {
+                        if (frame_counter % samples_size != 0) {
+                            frame_counter += AUDIO_FRAMES_PER_BUFFER;
+                        }
+
+                        // Play the WAV file
                         gkOutputAudioBuf->append(buffer);
                     }
                 }
             }
+
+            gkOutputAudioStream->stop();
         }
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(tr("Issue with playback of audio file, \"%1\". Error:\n\n%2").arg(r_pback_audio_file.fileName()).arg(QString::fromStdString(e.what())),

@@ -254,6 +254,13 @@ namespace Filesystem {
     constexpr char linux_sys_tty[] = "/sys/class/tty/";                 // The location of the TTY-devices under most major Linux distributions
 }
 
+namespace GkAudio {
+    const std::vector<double> standardSampleRates = {
+            8000.0, 9600.0, 11025.0, 12000.0, 16000.0, 22050.0, 24000.0, 32000.0,
+            44100.0, 48000.0, 88200.0, 96000.0, 192000.0, -1 /* negative terminated list */
+    };
+}
+
 namespace System {
     /**
      * @brief The membuf struct

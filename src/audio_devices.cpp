@@ -665,7 +665,7 @@ PaStreamCallbackResult AudioDevices::testSinewave(portaudio::System &portAudioSy
             portaudio::DirectionSpecificStreamParameters outputParams(portAudioSys.deviceByIndex(device.stream_parameters.device),
                                                                    device.dev_output_channel_count, portaudio::FLOAT32, false, prefOutputLatency, nullptr);
             portaudio::StreamParameters playbackBeep(portaudio::DirectionSpecificStreamParameters::null(), outputParams, device.def_sample_rate,
-                                                     AUDIO_FRAMES_PER_BUFFER, paNoFlag);
+                                                     AUDIO_FRAMES_PER_BUFFER, paPrimeOutputBuffersUsingStreamCallback);
             portaudio::MemFunCallbackStream<PaSinewave> streamPlaybackSine(playbackBeep, gkPaSinewave, &PaSinewave::generate);
 
             streamPlaybackSine.start();
