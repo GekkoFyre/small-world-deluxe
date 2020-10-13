@@ -394,15 +394,8 @@ void GkAudioPlayDialog::playbackWav()
             while (gkOutputAudioStream->isActive() && gkOutputAudioStream->isOpen()) {
                 qint32 samples_size = audioFile->getNumSamplesPerChannel();
                 qint32 frame_counter = 0;
-                while (frame_counter < samples_size) {
-                    for (const auto &buffer: audioFile->samples) {
-                        if (frame_counter % samples_size != 0) {
-                            frame_counter += AUDIO_FRAMES_PER_BUFFER;
-                        }
-
-                        // Play the WAV file
-                        gkOutputAudioBuf->append(buffer);
-                    }
+                for (const auto &channel: audioFile->samples) {
+                    gkOutputAudioBuf->append(channel);
                 }
             }
 
