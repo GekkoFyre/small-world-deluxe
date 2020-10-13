@@ -121,7 +121,7 @@ private:
     //
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     std::shared_ptr<GekkoFyre::PaAudioBuf<float>> gkOutputAudioBuf;
-    std::unique_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<float>>> gkOutputAudioStream;
+    std::shared_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<float>>> gkOutputAudioStream;
 
     //
     // Multithreading

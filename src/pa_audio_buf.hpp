@@ -64,29 +64,6 @@ using namespace Audio;
 using namespace AmateurRadio;
 using namespace Control;
 
-typedef struct
-{
-  void          *codec2;
-  unsigned char *bits;
-}
-callbackData;
-
-typedef struct WireConfig_s
-{
-    int isInputInterleaved;
-    int isOutputInterleaved;
-    int numInputChannels;
-    int numOutputChannels;
-    int framesPerCallback;
-    /* count status flags */
-    int numInputUnderflows;
-    int numInputOverflows;
-    int numOutputUnderflows;
-    int numOutputOverflows;
-    int numPrimingOutputs;
-    int numCallbacks;
-} WireConfig_t;
-
 template <class T>
 class PaAudioBuf {
 
@@ -94,16 +71,11 @@ public:
     explicit PaAudioBuf(int buffer_size, const GekkoFyre::Database::Settings::Audio::GkDevice &pref_output_device,
                         const GekkoFyre::Database::Settings::Audio::GkDevice &pref_input_device);
     virtual ~PaAudioBuf();
-    bool is_rec_active;
 
     int playbackCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
                          const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags);
-    int wireCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
-                     const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags, void *userData);
     int recordCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
                        const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags);
-    int codec2LocalCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
-                            const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags, void *userData);
     void setVolume(const float &value);
 
     [[nodiscard]] virtual size_t size() const;
@@ -215,84 +187,8 @@ int PaAudioBuf<T>::playbackCallback(const void *inputBuffer, void *outputBuffer,
 }
 
 /**
- * @brief PaAudioBuf<T>::wireCallback allows complete audio passthrough without any modifications to the data itself!
- * @note <https://github.com/EddieRingle/portaudio/blob/master/test/patest_wire.c>
- * @return Whether to continue with the audio stream or not.
- */
-template<class T>
-int PaAudioBuf<T>::wireCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
-                                const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags, void *userData)
-{
-    std::mutex playback_loop_mtx;
-    std::lock_guard<std::mutex> lck_guard(playback_loop_mtx);
-
-    Q_UNUSED(timeInfo);
-
-    T *in;
-    T *out;
-    int inStride;
-    int outStride;
-    int inDone = 0;
-    int outDone = 0;
-    WireConfig_t *config = (WireConfig_t *)userData;
-    unsigned int i;
-    int inChannel, outChannel;
-
-    // This may get called with NULL inputBuffer during initial setup.
-    if (inputBuffer == nullptr) {
-        return 0;
-    }
-
-    // Count flags
-    if((statusFlags & paInputUnderflow) != 0) config->numInputUnderflows += 1;
-    if((statusFlags & paInputOverflow) != 0) config->numInputOverflows += 1;
-    if((statusFlags & paOutputUnderflow) != 0) config->numOutputUnderflows += 1;
-    if((statusFlags & paOutputOverflow) != 0) config->numOutputOverflows += 1;
-    if((statusFlags & paPrimingOutput) != 0) config->numPrimingOutputs += 1;
-    config->numCallbacks += 1;
-
-    inChannel = 0, outChannel = 0;
-    while (!(inDone && outDone)) {
-        if (config->isInputInterleaved) {
-            in = ((T*)inputBuffer) + inChannel;
-            inStride = config->numInputChannels;
-        } else {
-            in = ((T**)inputBuffer)[inChannel];
-            inStride = 1;
-        }
-
-        if (config->isOutputInterleaved) {
-            out = ((T*)outputBuffer) + outChannel;
-            outStride = config->numOutputChannels;
-        } else {
-            out = ((T**)outputBuffer)[outChannel];
-            outStride = 1;
-        }
-
-        for (i = 0; i < framesPerBuffer; ++i) {
-            *out = *in;
-            out += outStride;
-            in += inStride;
-        }
-
-        if(inChannel < (config->numInputChannels - 1)) {
-            inChannel++;
-        } else {
-            inDone = 1;
-        }
-
-        if(outChannel < (config->numOutputChannels - 1)) {
-            outChannel++;
-        } else {
-            outDone = 1;
-        }
-    }
-
-    return paContinue;
-}
-
-/**
- * @brief PaAudioBuf<T>::recordCallback
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @tparam T
  * @param inputBuffer
  * @param outputBuffer
  * @param framesPerBuffer
@@ -321,36 +217,6 @@ int PaAudioBuf<T>::recordCallback(const void *inputBuffer, void *outputBuffer, u
     }
 
     return finished;
-}
-
-/**
- * @note <https://github.com/keithmgould/tiptoe/blob/master/codec2/main.c>
- */
-template<class T>
-int PaAudioBuf<T>::codec2LocalCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
-                                       const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags,
-                                       void *userData)
-{
-    std::mutex record_loop_mtx;
-    std::lock_guard<std::mutex> lck_guard(record_loop_mtx);
-
-    Q_UNUSED(timeInfo);
-    Q_UNUSED(statusFlags);
-
-    callbackData *data = (callbackData*)userData;
-    T out = outputBuffer;
-    T in = inputBuffer;
-
-    if (inputBuffer == nullptr) {
-        for (size_t i = 0; i < framesPerBuffer; ++i) {
-            *out++ = 0;
-        }
-    } else {
-        codec2_encode(data->codec2, data->bits, in);
-        codec2_decode(data->codec2, out, data->bits);
-    }
-
-    return paContinue;
 }
 
 /**

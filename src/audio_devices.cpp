@@ -652,7 +652,7 @@ PaStreamCallbackResult AudioDevices::testSinewave(portaudio::System &portAudioSy
 
         PaTime prefOutputLatency = portAudioSys.deviceByIndex(device.stream_parameters.device).defaultLowOutputLatency();
         PaTime prefInputLatency = portAudioSys.deviceByIndex(device.stream_parameters.device).defaultLowInputLatency();
-        PaSinewave gkPaSinewave(AUDIO_TEST_SAMPLE_TABLE_SIZE);
+        std::unique_ptr<PaSinewave> gkPaSinewave = std::make_unique<PaSinewave>(AUDIO_TEST_SAMPLE_TABLE_SIZE);
 
         if (is_output_dev) {
             //
@@ -666,12 +666,13 @@ PaStreamCallbackResult AudioDevices::testSinewave(portaudio::System &portAudioSy
                                                                    device.dev_output_channel_count, portaudio::FLOAT32, false, prefOutputLatency, nullptr);
             portaudio::StreamParameters playbackBeep(portaudio::DirectionSpecificStreamParameters::null(), outputParams, device.def_sample_rate,
                                                      AUDIO_FRAMES_PER_BUFFER, paPrimeOutputBuffersUsingStreamCallback);
-            portaudio::MemFunCallbackStream<PaSinewave> streamPlaybackSine(playbackBeep, gkPaSinewave, &PaSinewave::generate);
+            portaudio::MemFunCallbackStream<PaSinewave> streamPlaybackSine(playbackBeep, *gkPaSinewave, &PaSinewave::generate);
 
             streamPlaybackSine.start();
             portAudioSys.sleep(AUDIO_SINE_WAVE_PLAYBACK_SECS * 1000); // Play the audio sample wave for the desired amount of seconds!
             streamPlaybackSine.stop();
             streamPlaybackSine.close();
+            gkPaSinewave.reset();
 
             return paContinue;
         } else {
@@ -690,7 +691,7 @@ PaStreamCallbackResult AudioDevices::testSinewave(portaudio::System &portAudioSy
                                                      device.def_sample_rate,
                                                      AUDIO_FRAMES_PER_BUFFER, paNoFlag);
 
-            portaudio::MemFunCallbackStream<PaSinewave> streamRecordSine(recordParams, gkPaSinewave, &PaSinewave::generate);
+            portaudio::MemFunCallbackStream<PaSinewave> streamRecordSine(recordParams, *gkPaSinewave, &PaSinewave::generate);
 
             streamRecordSine.start();
             portAudioSys.sleep(AUDIO_SINE_WAVE_PLAYBACK_SECS * 1000); // Play the audio sample wave for the desired amount of seconds!

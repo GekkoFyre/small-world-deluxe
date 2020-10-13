@@ -291,7 +291,7 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
 
                     auto pa_stream_param = portaudio::StreamParameters(portaudio::DirectionSpecificStreamParameters::null(), outParams, pref_output_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
                                                                        paPrimeOutputBuffersUsingStreamCallback);
-                    gkOutputAudioStream = std::make_unique<portaudio::MemFunCallbackStream<PaAudioBuf<float>>>(pa_stream_param, *gkOutputAudioBuf, &PaAudioBuf<float>::playbackCallback);
+                    gkOutputAudioStream = std::make_shared<portaudio::MemFunCallbackStream<PaAudioBuf<float>>>(pa_stream_param, *gkOutputAudioBuf, &PaAudioBuf<float>::playbackCallback);
                 } else {
                     throw std::invalid_argument(tr("Unable to determine the amount of channels required for audio playback!").toStdString());
                 }

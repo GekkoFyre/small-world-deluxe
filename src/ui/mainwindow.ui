@@ -1709,6 +1709,9 @@ QPushButton:disabled {
    <property name="text">
     <string>E&amp;xit</string>
    </property>
+   <property name="toolTip">
+    <string>Exit the application.</string>
+   </property>
    <property name="shortcut">
     <string>Esc</string>
    </property>
@@ -1717,10 +1720,16 @@ QPushButton:disabled {
    <property name="text">
     <string>Check for &amp;Updates</string>
    </property>
+   <property name="toolTip">
+    <string>Check for the latest updates towards SWD!</string>
+   </property>
   </action>
   <action name="action_About_Dekoder">
    <property name="text">
     <string>&amp;About SWD</string>
+   </property>
+   <property name="toolTip">
+    <string>About SWD, the authors and its contributors.</string>
    </property>
   </action>
   <action name="actionSet_Offset">
