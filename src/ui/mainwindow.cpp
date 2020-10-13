@@ -582,7 +582,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             //
             // Audio encoding signals and slots
             //
-            gkAudioPlayDlg = new GkAudioPlayDialog(GkDb, gkAudioDecoding, gkAudioDevices, pref_output_device, output_audio_buf,
+            gkAudioPlayDlg = new GkAudioPlayDialog(GkDb, gkPortAudioInit, gkAudioDecoding, gkAudioDevices, pref_output_device, output_audio_buf,
                                                    gkStringFuncs, gkEventLogger, this);
             // QObject::connect(gkAudioPlayDlg, SIGNAL(beginRecording(const bool &)), gkAudioEncoding, SLOT(startRecording(const bool &)));
         }
@@ -1304,7 +1304,7 @@ void MainWindow::updateVolumeDisplayWidgets()
     try {
         std::lock_guard<std::mutex> lck_guard(mtx_update_vol_widgets);
         std::this_thread::sleep_for(std::chrono::milliseconds(2500)); // TODO: This is a huge source of SEGFAULTS!
-        if (inputAudioStream != nullptr && AUDIO_FRAMES_PER_BUFFER > 0) {
+        if (inputAudioStream != nullptr) {
             while (inputAudioStream->isActive()) {
                 //
                 // Input audio stream is open and active!
@@ -1789,7 +1789,7 @@ void MainWindow::updateSpectrograph()
     // CUDA support is enabled!
     //
     try {
-        if ((inputAudioStream != nullptr) && (pref_input_device.is_dev_active == true) && (AUDIO_FRAMES_PER_BUFFER > 0)) {
+        if ((inputAudioStream != nullptr) && (pref_input_device.is_dev_active == true)) {
             while (inputAudioStream->isActive()) {
                 std::vector<float> fftData;
                 fftData.reserve(GK_FFT_SIZE + 1);

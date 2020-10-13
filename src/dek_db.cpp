@@ -1807,6 +1807,33 @@ GkAudioChannels GkLevelDb::convertAudioChannelsEnum(const int &audio_channel_sel
 }
 
 /**
+ * @brief GkLevelDb::convertAudioChannelsToCount converts an audio channel enumerator to how many audio channels there are as an
+ * actual integer, so for example, `GkAudioChannels::Both` is an integer of two channels.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param channel_enum The channel enumerator.
+ * @return How many channels there are as an integer.
+ */
+qint32 GkLevelDb::convertAudioChannelsToCount(const GkAudioChannels &channel_enum)
+{
+    switch (channel_enum) {
+        case Mono:
+            return 1;
+        case Left:
+            return 1;
+        case Right:
+            return 1;
+        case Both:
+            return 2;
+        case Surround:
+            return -2; // NOTE: This is such because it needs to be worked out via other means!
+        default:
+            return -1;
+    }
+
+    return -1;
+}
+
+/**
  * @brief GkLevelDb::convertAudioChannelsStr converts the audio channel count enumerator to its related QString reference.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param channel_enum The channel count enumerator.

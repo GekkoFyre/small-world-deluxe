@@ -92,13 +92,8 @@ private slots:
     void on_pushButton_cancel_config_clicked();
     void on_pushButton_db_save_loc_clicked();
     void on_pushButton_audio_save_loc_clicked();
-    void on_pushButton_input_sound_test_clicked();
-    void on_pushButton_output_sound_test_clicked();
     void on_pushButton_refresh_audio_devices_clicked();
     void on_pushButton_audio_logs_save_dir_clicked();
-    void on_comboBox_soundcard_input_currentIndexChanged(int index = -1);
-    void on_comboBox_soundcard_output_currentIndexChanged(int index = -1);
-    void on_comboBox_soundcard_api_currentIndexChanged(int index = -1);
     void on_comboBox_brand_selection_currentIndexChanged(const QString &arg1);
     void on_comboBox_com_port_currentIndexChanged(int index);
     void on_comboBox_ptt_method_port_currentIndexChanged(int index);
@@ -213,6 +208,17 @@ private slots:
     void ttsAddLanguageItem(const QString &name, const QVariant &locale);
     void ttsAddPresetVoiceItem(const QString &name, const QVariant &locale);
 
+    //
+    // PortAudio
+    //
+    void on_comboBox_soundcard_input_currentIndexChanged(int index = -1);
+    void on_comboBox_soundcard_output_currentIndexChanged(int index = -1);
+    void on_comboBox_soundcard_api_currentIndexChanged(int index = -1);
+    void on_pushButton_input_sound_test_clicked();
+    void on_pushButton_output_sound_test_clicked();
+    void on_comboBox_audio_input_sample_rate_currentIndexChanged(int index);
+    void on_comboBox_audio_output_sample_rate_currentIndexChanged(int index);
+
 signals:
     void changeSelectedTTSEngine(const QString &name);
 
@@ -244,8 +250,8 @@ private:
 
     portaudio::System *gkPortAudioInit;
     std::vector<double> standardSampleRates;
-    std::list<double> supportedInputSampleRates;            // The supported sample rates for the chosen input audio device!
-    std::list<double> supportedOutputSampleRates;           // The supported sample rates for the chosen output audio device!
+    QMap<qint32, double> supportedInputSampleRates; // The supported sample rates for the chosen input audio device! The key corresponds to the position within the QComboBoxes...
+    QMap<qint32, double> supportedOutputSampleRates; // The supported sample rates for the chosen output audio device! The key corresponds to the position within the QComboBoxes...
 
     QPointer<GekkoFyre::RadioLibs> gkRadioLibs;
     QPointer<GekkoFyre::GkLevelDb> gkDekodeDb;
@@ -279,9 +285,9 @@ private:
     QMap<quint16, QString> available_usb_ports; // For tracking the *available* USB device ports that the user can choose from...
 
     // The key corresponds to the position within the QComboBoxes
-    QMap<int, PaHostApiTypeId> avail_portaudio_api;
-    QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> avail_input_audio_devs;
-    QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> avail_output_audio_devs;
+    QMap<qint32, PaHostApiTypeId> avail_portaudio_api;
+    QMap<qint32, GekkoFyre::Database::Settings::Audio::GkDevice> avail_input_audio_devs;
+    QMap<qint32, GekkoFyre::Database::Settings::Audio::GkDevice> avail_output_audio_devs;
     GekkoFyre::Database::Settings::Audio::GkDevice chosen_input_audio_dev;
     GekkoFyre::Database::Settings::Audio::GkDevice chosen_output_audio_dev;
     qint32 chosen_portaudio_underlying_api;
