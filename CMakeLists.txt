@@ -595,6 +595,9 @@ endif()
 set(GALAXY_SRC_CPP
     ${GALAXY_SRC_CPP}
     src/pa_sinewave.cpp
+    src/pa_stream_handler.cpp
+    src/pa_audio_player.cpp
+    src/pa_audio_file.cpp
     src/contrib/udev/device.cpp
     src/contrib/udev/enumerate.cpp
     src/contrib/udev/monitor.cpp
@@ -679,6 +682,10 @@ endif()
 set(GALAXY_SRC_HEADERS
     ${GALAXY_SRC_HEADERS}
     src/pa_audio_buf.hpp
+    src/pa_stream_handler.hpp
+    src/pa_audio_player.hpp
+    src/pa_audio_file.hpp
+    src/pa_audio_struct.hpp
     src/pa_sinewave.hpp
     src/gk_timer.hpp
     src/gk_circ_buffer.hpp

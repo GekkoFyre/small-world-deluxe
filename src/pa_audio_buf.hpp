@@ -83,9 +83,6 @@ public:
                         const GekkoFyre::Database::Settings::Audio::GkDevice &pref_input_device, QPointer<GekkoFyre::GkLevelDb> gkDb);
     virtual ~PaAudioBuf();
 
-    static int playbackCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
-                         const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags,
-                         void *userData);
     int recordCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
                        const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags);
     void setVolume(const float &value);
@@ -145,41 +142,6 @@ template<class T>
 PaAudioBuf<T>::~PaAudioBuf()
 {
     return;
-}
-
-template<class T>
-int PaAudioBuf<T>::playbackCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
-                                    const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags,
-                                    void *userData)
-{
-    std::mutex playback_loop_mtx;
-    std::lock_guard<std::mutex> lck_guard(playback_loop_mtx);
-
-    Q_UNUSED(inputBuffer);
-    Q_UNUSED(timeInfo);
-    Q_UNUSED(statusFlags);
-
-    sf_count_t frameIndex;
-    GkAudioFramework::SndFileCallback *p_data = (GkAudioFramework::SndFileCallback *)userData;
-    T *wptr = (T *)outputBuffer;
-
-    sf_seek(p_data->file, p_data->readHead, SF_SEEK_SET);
-
-    auto data = std::make_unique<T[]>(framesPerBuffer * p_data->info.channels);
-    p_data->count = sf_read_float(p_data->file, data.get(), framesPerBuffer * p_data->info.channels);
-
-    for (int i = 0; i < framesPerBuffer * p_data->info.channels; i++) {
-        *wptr++ = data[i];
-    }
-
-    p_data->readHead += p_data->buffer_size;
-
-    if (p_data->count == 0) {
-        return paComplete;
-    }
-
-    // Return a completion or continue code depending on whether this was the final buffer or not respectively.
-    return paContinue;
 }
 
 /**

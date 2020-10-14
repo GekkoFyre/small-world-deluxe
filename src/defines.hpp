@@ -707,9 +707,6 @@ namespace GkAudioFramework {
     struct SndFileCallback {
         SNDFILE *file = nullptr;
         SF_INFO info = {};
-        qint32 buffer_size = AUDIO_FRAMES_PER_BUFFER;
-        qint32 readHead = 0;
-        sf_count_t count = 1;
     };
 
     enum CodecSupport {
