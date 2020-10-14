@@ -101,7 +101,7 @@ GkPaStreamHandler::~GkPaStreamHandler()
  * @param audioFile
  * @param loop
  */
-void GkPaStreamHandler::processEvent(AudioEventType audioEventType, GkAudioFile *audioFile, bool loop)
+void GkPaStreamHandler::processEvent(AudioEventType audioEventType, GkAudioFramework::SndFileCallback *audioFile, bool loop)
 {
     switch (audioEventType) {
         case start:
@@ -109,7 +109,7 @@ void GkPaStreamHandler::processEvent(AudioEventType audioEventType, GkAudioFile 
                 Pa_StartStream(stream);
             }
 
-            data.push_back(new Playback { audioFile,0, loop });
+            data.push_back(new Playback { audioFile, 0, loop });
             break;
         case stop:
             Pa_StopStream(stream);

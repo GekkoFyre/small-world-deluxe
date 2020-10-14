@@ -46,7 +46,6 @@
 #include "src/gk_string_funcs.hpp"
 #include "src/gk_logger.hpp"
 #include "src/pa_audio_file.hpp"
-#include "src/pa_audio_struct.hpp"
 #include <memory>
 #include <vector>
 #include <string>
@@ -68,7 +67,7 @@ extern "C"
 namespace GekkoFyre {
 
 struct Playback {
-    GkAudioFile *audioFile;
+    GkAudioFramework::SndFileCallback *audioFile;
     qint32 position;
     bool loop;
 };
@@ -87,7 +86,7 @@ public:
                                GekkoFyre::Database::Settings::GkAudioChannels audio_channels, QObject *parent = nullptr);
     ~GkPaStreamHandler() override;
 
-    void processEvent(AudioEventType audioEventType, GkAudioFile *audioFile = nullptr, bool loop = false);
+    void processEvent(AudioEventType audioEventType, GkAudioFramework::SndFileCallback *audioFile = nullptr, bool loop = false);
     static int portAudioCallback(const void *input, void *output, size_t frameCount, const PaStreamCallbackTimeInfo *paTimeInfo,
                                  PaStreamCallbackFlags statusFlags, void *userData);
 

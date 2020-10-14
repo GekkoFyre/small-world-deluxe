@@ -685,7 +685,6 @@ set(GALAXY_SRC_HEADERS
     src/pa_stream_handler.hpp
     src/pa_audio_player.hpp
     src/pa_audio_file.hpp
-    src/pa_audio_struct.hpp
     src/pa_sinewave.hpp
     src/gk_timer.hpp
     src/gk_circ_buffer.hpp
