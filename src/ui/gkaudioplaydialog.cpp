@@ -286,40 +286,37 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
             gkStringFuncs->changePushButtonColor(ui->pushButton_playback_play, false);
             audio_out_play = true;
 
-            if (gkPaStream == nullptr) {
-                GkAudioChannels channels_needed = determineAudioChannels();
+            GkAudioChannels channels_needed = determineAudioChannels();
+            if (channels_needed != GkAudioChannels::Unknown) {
+                error = Pa_Initialize();
+                gkEventLogger->handlePortAudioErrorCode(error, tr("Problem initializing PortAudio itself!"));
 
-                if (channels_needed != GkAudioChannels::Unknown) {
-                    error = Pa_Initialize();
-                    gkEventLogger->handlePortAudioErrorCode(error, tr("Problem initializing PortAudio itself!"));
+                PaStreamParameters out_param;
+                out_param.device = pref_output_device.stream_parameters.device;
+                out_param.channelCount = gkDb->convertAudioChannelsToCount(channels_needed);
+                out_param.hostApiSpecificStreamInfo = nullptr;
+                out_param.sampleFormat = paFloat32 | paNonInterleaved;
+                out_param.suggestedLatency = gkPortAudioSys->deviceByIndex(pref_output_device.stream_parameters.device).defaultLowOutputLatency();
 
-                    PaStreamParameters out_param;
-                    out_param.device = pref_output_device.stream_parameters.device;
-                    out_param.channelCount = gkDb->convertAudioChannelsToCount(channels_needed);
-                    out_param.hostApiSpecificStreamInfo = nullptr;
-                    out_param.sampleFormat = paFloat32 | paNonInterleaved;
-                    out_param.suggestedLatency = gkPortAudioSys->deviceByIndex(pref_output_device.stream_parameters.device).defaultLowOutputLatency();
+                error = Pa_OpenStream(&gkPaStream, nullptr, &out_param, sndFileCallback.info.samplerate, AUDIO_FRAMES_PER_BUFFER,
+                                      paNoFlag, &PaAudioBuf<float>::playbackCallback, &sndFileCallback);
+                gkEventLogger->handlePortAudioErrorCode(error, tr("Problem initializing an audio stream!"));
 
-                    error = Pa_OpenStream(&gkPaStream, nullptr, &out_param, pref_output_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
-                                          paNoFlag, &PaAudioBuf<float>::playbackCallback, &sndFileCallback.file);
-                    gkEventLogger->handlePortAudioErrorCode(error, tr("Problem initializing an audio stream!"));
-
-                    error = Pa_StartStream(gkPaStream);
-                    gkEventLogger->handlePortAudioErrorCode(error, tr("Problem opening an audio stream!"));
-                    while (Pa_IsStreamActive(gkPaStream)) { // Run until EOF is reached...
-                        Pa_Sleep(100); // Sleep for 100 milliseconds at a time!
-                    }
-
-                    sf_close(sndFileCallback.file);
-
-                    error = Pa_CloseStream(gkPaStream);
-                    gkEventLogger->handlePortAudioErrorCode(error, tr("Problem with closing audio stream!"));
-
-                    error = Pa_Terminate();
-                    gkEventLogger->handlePortAudioErrorCode(error, tr("Problem with terminating audio stream!"));
-                } else {
-                    throw std::invalid_argument(tr("Unable to determine the amount of channels required for audio playback!").toStdString());
+                error = Pa_StartStream(gkPaStream);
+                gkEventLogger->handlePortAudioErrorCode(error, tr("Problem opening an audio stream!"));
+                while (Pa_IsStreamActive(gkPaStream)) { // Run until EOF is reached...
+                    Pa_Sleep(100); // Sleep for 100 milliseconds at a time!
                 }
+
+                sf_close(sndFileCallback.file);
+
+                error = Pa_CloseStream(gkPaStream);
+                gkEventLogger->handlePortAudioErrorCode(error, tr("Problem with closing audio stream!"));
+
+                error = Pa_Terminate();
+                gkEventLogger->handlePortAudioErrorCode(error, tr("Problem with terminating audio stream!"));
+            } else {
+                throw std::invalid_argument(tr("Unable to determine the amount of channels required for audio playback!").toStdString());
             }
         } else {
             error = Pa_CloseStream(gkPaStream);

@@ -68,12 +68,6 @@ extern "C"
 
 namespace GekkoFyre {
 
-typedef struct
-{
-    SNDFILE *file;
-    SF_INFO info;
-} callback_data_s;
-
 using namespace GekkoFyre;
 using namespace Database;
 using namespace Settings;
@@ -166,11 +160,7 @@ int PaAudioBuf<T>::playbackCallback(const void *inputBuffer, void *outputBuffer,
     Q_UNUSED(statusFlags);
 
     sf_count_t frameIndex;
-    std::vector<T> recv_buf;
-    recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
-    recv_buf.push_back(gkCircBuffer->grab());
-
-    callback_data_s *p_data = (callback_data_s *)userData;
+    auto *p_data = (GkAudioFramework::SndFileCallback *)userData;
     auto *wptr = (T *)outputBuffer;
 
     // Clear the output buffer...
