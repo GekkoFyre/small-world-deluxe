@@ -288,7 +288,7 @@ private:
     //
     leveldb::DB *db;
     sentry_options_t *sen_opt;
-    QPointer<GekkoFyre::GkLevelDb> GkDb;
+    QPointer<GekkoFyre::GkLevelDb> gkDb;
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GekkoFyre::GkCli> gkCli;
@@ -332,7 +332,7 @@ private:
     std::shared_ptr<GekkoFyre::PaAudioBuf<float>> input_audio_buf;
     std::shared_ptr<GekkoFyre::PaAudioBuf<float>> output_audio_buf;
     std::shared_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<float>>> inputAudioStream;
-    std::shared_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<float>>> outputAudioStream;
+    // std::shared_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<float>>> outputAudioStream;
 
     //
     // Audio sub-system

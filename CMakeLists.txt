@@ -338,6 +338,18 @@ if (LINUX)
 endif(LINUX)
 
 #
+# libsndfile
+# http://www.mega-nerd.com/libsndfile/
+#
+find_package(Sndfile REQUIRED)
+if (SNDFILE_FOUND)
+    include_directories(${SNDFILE_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${SNDFILE_LIBRARIES})
+else()
+    message(FATAL_ERROR "The 'sndfile' multimedia library could not be found!")
+endif(SNDFILE_FOUND)
+
+#
 # https://xiph.org/vorbis/
 #
 find_package(Vorbis REQUIRED)
@@ -671,7 +683,6 @@ set(GALAXY_SRC_HEADERS
     src/gk_timer.hpp
     src/gk_circ_buffer.hpp
     src/contrib/rapidcsv/src/rapidcsv.h
-    src/contrib/AudioFile/AudioFile.h
     src/contrib/udev/device.hpp
     src/contrib/udev/enumerate.hpp
     src/contrib/udev/monitor.hpp

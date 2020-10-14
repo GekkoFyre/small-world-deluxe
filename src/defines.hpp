@@ -48,6 +48,7 @@
 #include <boost/filesystem.hpp>
 #include <hamlib/rigclass.h>
 #include <qwt/qwt_interval.h>
+#include <sndfile.h>
 #include <sentry.h>
 #include <list>
 #include <vector>
@@ -496,13 +497,6 @@ namespace Database {
         };
 
         namespace Audio {
-            struct GkPaAudioData {
-                int frameIndex;                                                     // Frame index into sample array
-                int maxFrameIndex;                                                  // Maximum frame index given into sample array
-                float *recordedSamples;                                             // Audio samples that have been recorded and saved to a buffer
-                portaudio::SampleDataFormat sample_format;                          // Currently used sample format by given audio source, whether output or input
-            };
-
             struct GkDevice {
                 QString chosen_audio_dev_str;                                       // The name of the device itself, formatted
                 bool default_dev;                                                   // Is this the default device for the system?
@@ -710,6 +704,11 @@ namespace Spectrograph {
 }
 
 namespace GkAudioFramework {
+    struct SndFileCallback {
+        SNDFILE *file;
+        SF_INFO info;
+    };
+
     enum CodecSupport {
         PCM,
         OggVorbis,

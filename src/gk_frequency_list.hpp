@@ -79,7 +79,7 @@ private slots:
 
 private:
     QList<GekkoFyre::AmateurRadio::GkFreqs> frequencyList;
-    QPointer<GekkoFyre::GkLevelDb> GkDb;
+    QPointer<GekkoFyre::GkLevelDb> gkDb;
 
 };
 };

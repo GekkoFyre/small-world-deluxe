@@ -45,8 +45,7 @@
 #include "src/audio_devices.hpp"
 #include "src/gk_logger.hpp"
 #include "src/file_io.hpp"
-#include "src/contrib/AudioFile/AudioFile.h"
-#include "src/contrib/portaudio/cpp/include/portaudiocpp/MemFunCallbackStream.hxx"
+#include <sndfile.hh>
 #include <memory>
 #include <string>
 #include <vector>
@@ -72,7 +71,6 @@ public:
                                QPointer<GekkoFyre::GkAudioDecoding> audio_decoding,
                                std::shared_ptr<GekkoFyre::AudioDevices> audio_devices,
                                const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
-                               std::shared_ptr<GekkoFyre::PaAudioBuf<float>> output_audio_buf,
                                QPointer<GekkoFyre::StringFuncs> stringFuncs,
                                QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                QWidget *parent = nullptr);
@@ -101,7 +99,6 @@ private:
 
     portaudio::System *gkPortAudioSys;
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevs;
-    std::unique_ptr<AudioFile<float>> audioFile;
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::GkAudioDecoding> gkAudioDecode;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
@@ -119,19 +116,16 @@ private:
     //
     // PortAudio initialization and buffers
     //
+    PaStream *gkPaStream;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
-    std::shared_ptr<GekkoFyre::PaAudioBuf<float>> gkOutputAudioBuf;
-    std::shared_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<float>>> gkOutputAudioStream;
 
     //
-    // Multithreading
+    // libsndfile objects and related
     //
-    std::thread playback_wav_thread;
+    GekkoFyre::GkAudioFramework::SndFileCallback sndFileCallback;
 
     QFile r_pback_audio_file;
     GekkoFyre::GkAudioFramework::AudioFileInfo gkAudioFileInfo;
-
-    void playbackWav();
 
     template <typename T>
     struct gkConvertDoubleToFloat {

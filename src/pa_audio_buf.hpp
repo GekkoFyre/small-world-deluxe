@@ -55,6 +55,17 @@
 #include <mutex>
 #include <list>
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#include <sndfile.h>
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
 namespace GekkoFyre {
 
 using namespace GekkoFyre;
@@ -68,12 +79,13 @@ template <class T>
 class PaAudioBuf {
 
 public:
-    explicit PaAudioBuf(int buffer_size, const GekkoFyre::Database::Settings::Audio::GkDevice &pref_output_device,
-                        const GekkoFyre::Database::Settings::Audio::GkDevice &pref_input_device);
+    explicit PaAudioBuf(qint32 buffer_size, qint64 num_samples_per_channel, const GekkoFyre::Database::Settings::Audio::GkDevice &pref_output_device,
+                        const GekkoFyre::Database::Settings::Audio::GkDevice &pref_input_device, QPointer<GekkoFyre::GkLevelDb> gkDb);
     virtual ~PaAudioBuf();
 
-    int playbackCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
-                         const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags);
+    static int playbackCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
+                         const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags,
+                         void *userData);
     int recordCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
                        const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags);
     void setVolume(const float &value);
@@ -86,13 +98,15 @@ public:
     [[nodiscard]] virtual bool full() const;
 
 private:
-    std::shared_ptr<GekkoFyre::GkCircBuffer<T>> gkCircBuffer;
+    QPointer<GekkoFyre::GkLevelDb> gkLevelDb;
+
+    static inline std::shared_ptr<GekkoFyre::GkCircBuffer<T>> gkCircBuffer;
     GekkoFyre::Database::Settings::Audio::GkDevice prefInputDevice;
     GekkoFyre::Database::Settings::Audio::GkDevice prefOutputDevice;
 
-    int circ_buffer_size;
-    int maxFrameIndex;
-    int frameIndex;
+    qint32 circ_buffer_size;
+    qint32 maxFrameIndex;
+    qint64 numSamplesPerChannel;
     float calcVolIdx; // A floating-point value between 0.0 - 1.0 that determines the amplitude of the audio signal (i.e. raw data buffer).
 
 };
@@ -105,10 +119,12 @@ private:
  * @param parent
  */
 template<class T>
-PaAudioBuf<T>::PaAudioBuf(int buffer_size, const GkDevice &pref_output_device, const GkDevice &pref_input_device)
+PaAudioBuf<T>::PaAudioBuf(qint32 buffer_size, qint64 num_samples_per_channel, const GkDevice &pref_output_device, const GkDevice &pref_input_device, QPointer<GekkoFyre::GkLevelDb> gkDb)
 {
     std::mutex pa_audio_buf_mtx;
     std::lock_guard<std::mutex> lck_guard(pa_audio_buf_mtx);
+
+    gkLevelDb = std::move(gkDb);
 
     // The preferred input and output audio devices
     prefInputDevice = pref_input_device;
@@ -116,7 +132,7 @@ PaAudioBuf<T>::PaAudioBuf(int buffer_size, const GkDevice &pref_output_device, c
 
     calcVolIdx = 1.f;
     maxFrameIndex = 0;
-    frameIndex = 0;
+    numSamplesPerChannel = num_samples_per_channel;
 
     //
     // Original author: https://embeddedartistry.com/blog/2017/05/17/creating-a-circular-buffer-in-c-and-c/
@@ -133,7 +149,8 @@ PaAudioBuf<T>::~PaAudioBuf()
 
 template<class T>
 int PaAudioBuf<T>::playbackCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
-                                    const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags)
+                                    const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags,
+                                    void *userData)
 {
     std::mutex playback_loop_mtx;
     std::lock_guard<std::mutex> lck_guard(playback_loop_mtx);
@@ -142,18 +159,23 @@ int PaAudioBuf<T>::playbackCallback(const void *inputBuffer, void *outputBuffer,
     Q_UNUSED(timeInfo);
     Q_UNUSED(statusFlags);
 
-    int finished = paContinue;
-    std::vector<float> recv_buf;
-    recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
-    recv_buf.push_back(gkCircBuffer->grab());
+    sf_count_t frameIndex;
+    auto *p_data = (GkAudioFramework::SndFileCallback *)userData;
+    auto *wptr = (T *)outputBuffer;
 
-    auto *buffer_ptr = (T *)outputBuffer;
-    for (size_t i = 0; i < framesPerBuffer; ++i) {
-        buffer_ptr[i] *= (T)(buffer_ptr[i] * calcVolIdx);
+    // Clear the output buffer...
+    memset(wptr, 0, sizeof(T) * framesPerBuffer * p_data->info.channels);
+
+    // Read audio information directly into output buffer!
+    frameIndex = sf_read_float(p_data->file, wptr, framesPerBuffer * p_data->info.channels);
+
+    // If a full 'frameCount' of samples could not be read then we've essentially reached EOF!
+    if (frameIndex < framesPerBuffer) {
+        return paComplete;
     }
 
-    recv_buf.clear();
-    return finished;
+    // Return a completion or continue code depending on whether this was the final buffer or not respectively.
+    return paContinue;
 }
 
 /**
@@ -182,7 +204,7 @@ int PaAudioBuf<T>::recordCallback(const void *inputBuffer, void *outputBuffer, u
     auto *buffer_ptr = (T *)inputBuffer;
 
     for (size_t i = 0; i < framesPerBuffer; ++i) {
-        buffer_ptr[i] *= (T)(buffer_ptr[i] * calcVolIdx);
+        buffer_ptr[i] *= (T)(buffer_ptr[i] * calcVolIdx); // The volume adjustment!
         gkCircBuffer->put(buffer_ptr[i] + i);
     }
 

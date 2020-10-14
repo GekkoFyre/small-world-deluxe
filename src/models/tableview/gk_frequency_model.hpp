@@ -96,7 +96,7 @@ signals:
     void addFreq(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_add);
 
 private:
-    QPointer<GekkoFyre::GkLevelDb> GkDb;
+    QPointer<GekkoFyre::GkLevelDb> gkDb;
     QList<GekkoFyre::AmateurRadio::GkFreqs> m_data;
 
     QPointer<GkFreqTableViewModel> view;

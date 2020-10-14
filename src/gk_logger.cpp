@@ -46,6 +46,17 @@
 #include <thread>
 #include <QDateTime>
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#include <portaudio.h>
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
 using namespace GekkoFyre;
 using namespace Database;
 using namespace Settings;
@@ -82,6 +93,28 @@ GkEventLogger::~GkEventLogger()
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
     return;
+}
+
+/**
+ * @brief GkEventLogger::handlePortAudioErrorCode An event handler for PortAudio error codes.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param pa_error The error code/return from a PortAudio function.
+ * @return Whether there was actually an error or not.
+ */
+bool GkEventLogger::handlePortAudioErrorCode(const PaError &pa_error, const QString &arguments)
+{
+    if (pa_error != paNoError) {
+        QString log_msg = tr("There has been an error with regard to PortAudio!");
+        if (!arguments.isEmpty()) {
+            log_msg += QString(" ");
+            log_msg += tr("Error:\n\n%1").arg(arguments);
+        }
+
+        publishEvent(log_msg, GkSeverity::Error, "", false, true, false, true);
+        return false;
+    }
+
+    return true;
 }
 
 /**

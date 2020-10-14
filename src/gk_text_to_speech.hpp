@@ -91,7 +91,7 @@ signals:
     void setVoiceCurrentIndex(int index);
 
 private:
-    QPointer<GekkoFyre::GkLevelDb> GkDb;
+    QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
     QPointer<QTextToSpeech> m_speech;

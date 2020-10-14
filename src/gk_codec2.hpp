@@ -72,7 +72,7 @@ public:
                      const float &squelch_thresh = -100.0f);
 
 private:
-    QPointer<GekkoFyre::GkLevelDb> GkDb;
+    QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     std::shared_ptr<GekkoFyre::PaAudioBuf<float>> outputAudioBuf;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
