@@ -111,6 +111,9 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
 
 GkAudioPlayDialog::~GkAudioPlayDialog()
 {
+    PaError error = Pa_Terminate();
+    gkEventLogger->handlePortAudioErrorCode(error, tr("Problem with cleanup of PortAudio!"));
+
     delete ui;
 }
 
@@ -299,7 +302,7 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
                 out_param.suggestedLatency = gkPortAudioSys->deviceByIndex(pref_output_device.stream_parameters.device).defaultLowOutputLatency();
 
                 error = Pa_OpenStream(&gkPaStream, nullptr, &out_param, sndFileCallback.info.samplerate, AUDIO_FRAMES_PER_BUFFER,
-                                      paNoFlag, &PaAudioBuf<float>::playbackCallback, &sndFileCallback);
+                                      paClipOff, &PaAudioBuf<float>::playbackCallback, &sndFileCallback);
                 gkEventLogger->handlePortAudioErrorCode(error, tr("Problem initializing an audio stream!"));
 
                 error = Pa_StartStream(gkPaStream);

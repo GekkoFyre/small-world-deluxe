@@ -19,3 +19,6 @@
 [submodule "src/contrib/kissfft"]
 	path = src/contrib/kissfft
 	url = https://github.com/mborgerding/kissfft.git
+[submodule "src/contrib/sound-example"]
+	path = src/contrib/sound-example
+	url = https://github.com/andystanton/sound-example.git

@@ -160,17 +160,21 @@ int PaAudioBuf<T>::playbackCallback(const void *inputBuffer, void *outputBuffer,
     Q_UNUSED(statusFlags);
 
     sf_count_t frameIndex;
-    auto *p_data = (GkAudioFramework::SndFileCallback *)userData;
-    auto *wptr = (T *)outputBuffer;
+    GkAudioFramework::SndFileCallback *p_data = (GkAudioFramework::SndFileCallback *)userData;
+    T *wptr = (T *)outputBuffer;
 
-    // Clear the output buffer...
-    memset(wptr, 0, sizeof(T) * framesPerBuffer * p_data->info.channels);
+    sf_seek(p_data->file, p_data->readHead, SF_SEEK_SET);
 
-    // Read audio information directly into output buffer!
-    frameIndex = sf_read_float(p_data->file, wptr, framesPerBuffer * p_data->info.channels);
+    auto data = std::make_unique<T[]>(framesPerBuffer * p_data->info.channels);
+    p_data->count = sf_read_float(p_data->file, data.get(), framesPerBuffer * p_data->info.channels);
 
-    // If a full 'frameCount' of samples could not be read then we've essentially reached EOF!
-    if (frameIndex < framesPerBuffer) {
+    for (int i = 0; i < framesPerBuffer * p_data->info.channels; i++) {
+        *wptr++ = data[i];
+    }
+
+    p_data->readHead += p_data->buffer_size;
+
+    if (p_data->count == 0) {
         return paComplete;
     }
 
