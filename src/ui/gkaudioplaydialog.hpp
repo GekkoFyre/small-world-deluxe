@@ -72,7 +72,6 @@ public:
                                QPointer<GekkoFyre::GkAudioDecoding> audio_decoding,
                                std::shared_ptr<GekkoFyre::AudioDevices> audio_devices,
                                const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
-                               std::shared_ptr<GekkoFyre::PaAudioBuf<float>> output_audio_buf,
                                QPointer<GekkoFyre::StringFuncs> stringFuncs,
                                QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                QWidget *parent = nullptr);
@@ -120,8 +119,8 @@ private:
     // PortAudio initialization and buffers
     //
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
-    std::shared_ptr<GekkoFyre::PaAudioBuf<float>> gkOutputAudioBuf;
-    std::shared_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<float>>> gkOutputAudioStream;
+    std::unique_ptr<GekkoFyre::PaAudioBuf<float>> gkOutputAudioBuf;
+    std::unique_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<float>>> gkOutputAudioStream;
 
     //
     // Multithreading

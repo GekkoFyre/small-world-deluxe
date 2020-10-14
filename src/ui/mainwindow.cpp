@@ -552,7 +552,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                          gkSpectroCurve, SLOT(processFrame(const std::vector<float> &)));
 
         if (!pref_audio_devices.empty()) {
-            input_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<float>>(AUDIO_FRAMES_PER_BUFFER, pref_output_device, pref_input_device);
+            input_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<float>>(AUDIO_FRAMES_PER_BUFFER, -1, pref_output_device, pref_input_device);
         }
 
         //
@@ -572,7 +572,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             //
             // Setup the audio encoding/decoding libraries!
             //
-            output_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<float>>(AUDIO_FRAMES_PER_BUFFER, pref_output_device, pref_input_device);
+            output_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<float>>(AUDIO_FRAMES_PER_BUFFER, -1, pref_output_device, pref_input_device);
 
             gkAudioEncoding = new GkAudioEncoding(fileIo, input_audio_buf, GkDb, gkSpectroWaterfall,
                                                   gkStringFuncs, pref_input_device, gkEventLogger, this);
@@ -582,7 +582,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             //
             // Audio encoding signals and slots
             //
-            gkAudioPlayDlg = new GkAudioPlayDialog(GkDb, gkPortAudioInit, gkAudioDecoding, gkAudioDevices, pref_output_device, output_audio_buf,
+            gkAudioPlayDlg = new GkAudioPlayDialog(GkDb, gkPortAudioInit, gkAudioDecoding, gkAudioDevices, pref_output_device,
                                                    gkStringFuncs, gkEventLogger, this);
             // QObject::connect(gkAudioPlayDlg, SIGNAL(beginRecording(const bool &)), gkAudioEncoding, SLOT(startRecording(const bool &)));
         }
@@ -2295,8 +2295,11 @@ void MainWindow::stopTransmitOutput()
 {
     try {
         if (outputAudioStream != nullptr && pref_output_device.is_dev_active) {
-            if (outputAudioStream->isActive()) {
-                outputAudioStream->stop();
+            if (outputAudioStream->isOpen()) {
+                if (outputAudioStream->isActive()) {
+                    outputAudioStream->stop();
+                }
+
                 outputAudioStream->close();
 
                 pref_output_device.is_dev_active = false; // State that this recording device is now non-active!
@@ -2328,7 +2331,7 @@ void MainWindow::startTransmitOutput()
                                                                paPrimeOutputBuffersUsingStreamCallback);
             outputAudioStream = std::make_shared<portaudio::MemFunCallbackStream<PaAudioBuf<float>>>(pa_stream_param, *output_audio_buf,
                                                                                                      &PaAudioBuf<float>::playbackCallback);
-            outputAudioStream->start();
+            // outputAudioStream->start();
         } else {
             //
             // Otherwise restart the audio device with new parameters!
@@ -2357,7 +2360,7 @@ void MainWindow::restartInputAudioInterface(const GkDevice &input_device)
         pref_input_device = {}; // Clear the structure ready for re-use!
         pref_input_device = input_device;
 
-        input_audio_buf.reset(new GekkoFyre::PaAudioBuf<float>(AUDIO_FRAMES_PER_BUFFER, pref_output_device, pref_input_device));
+        input_audio_buf.reset(new GekkoFyre::PaAudioBuf<float>(AUDIO_FRAMES_PER_BUFFER, -1, pref_output_device, pref_input_device));
 
         auto pa_stream_param = portaudio::StreamParameters(pref_input_device.cpp_stream_param, portaudio::DirectionSpecificStreamParameters::null(),
                                                            pref_input_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
@@ -2384,7 +2387,7 @@ void MainWindow::restartOutputAudioInterface(const GkDevice &output_device)
     pref_output_device = {};
     pref_output_device = output_device;
 
-    output_audio_buf.reset(new GekkoFyre::PaAudioBuf<float>(AUDIO_FRAMES_PER_BUFFER, pref_output_device, pref_input_device));
+    output_audio_buf.reset(new GekkoFyre::PaAudioBuf<float>(AUDIO_FRAMES_PER_BUFFER, -1, pref_output_device, pref_input_device));
     emit startTxAudio();
 
     return;

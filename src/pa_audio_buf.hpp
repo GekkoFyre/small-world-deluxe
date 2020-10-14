@@ -68,7 +68,7 @@ template <class T>
 class PaAudioBuf {
 
 public:
-    explicit PaAudioBuf(int buffer_size, const GekkoFyre::Database::Settings::Audio::GkDevice &pref_output_device,
+    explicit PaAudioBuf(qint32 buffer_size, qint64 num_samples_per_channel, const GekkoFyre::Database::Settings::Audio::GkDevice &pref_output_device,
                         const GekkoFyre::Database::Settings::Audio::GkDevice &pref_input_device);
     virtual ~PaAudioBuf();
 
@@ -90,9 +90,10 @@ private:
     GekkoFyre::Database::Settings::Audio::GkDevice prefInputDevice;
     GekkoFyre::Database::Settings::Audio::GkDevice prefOutputDevice;
 
-    int circ_buffer_size;
-    int maxFrameIndex;
-    int frameIndex;
+    qint32 circ_buffer_size;
+    qint32 maxFrameIndex;
+    qint32 frameIndex;
+    qint64 numSamplesPerChannel;
     float calcVolIdx; // A floating-point value between 0.0 - 1.0 that determines the amplitude of the audio signal (i.e. raw data buffer).
 
 };
@@ -105,7 +106,7 @@ private:
  * @param parent
  */
 template<class T>
-PaAudioBuf<T>::PaAudioBuf(int buffer_size, const GkDevice &pref_output_device, const GkDevice &pref_input_device)
+PaAudioBuf<T>::PaAudioBuf(qint32 buffer_size, qint64 num_samples_per_channel, const GkDevice &pref_output_device, const GkDevice &pref_input_device)
 {
     std::mutex pa_audio_buf_mtx;
     std::lock_guard<std::mutex> lck_guard(pa_audio_buf_mtx);
@@ -117,6 +118,7 @@ PaAudioBuf<T>::PaAudioBuf(int buffer_size, const GkDevice &pref_output_device, c
     calcVolIdx = 1.f;
     maxFrameIndex = 0;
     frameIndex = 0;
+    numSamplesPerChannel = num_samples_per_channel;
 
     //
     // Original author: https://embeddedartistry.com/blog/2017/05/17/creating-a-circular-buffer-in-c-and-c/
@@ -142,17 +144,47 @@ int PaAudioBuf<T>::playbackCallback(const void *inputBuffer, void *outputBuffer,
     Q_UNUSED(timeInfo);
     Q_UNUSED(statusFlags);
 
-    int finished = paContinue;
-    std::vector<float> recv_buf;
-    recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
-    recv_buf.push_back(gkCircBuffer->grab());
+    std::vector<float> data;
+    data.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
+    data.push_back(gkCircBuffer->grab());
 
-    auto *buffer_ptr = (T *)outputBuffer;
-    for (size_t i = 0; i < framesPerBuffer; ++i) {
-        buffer_ptr[i] *= (T)(buffer_ptr[i] * calcVolIdx);
+    int numChannels = prefOutputDevice.sel_channels;
+    maxFrameIndex = numSamplesPerChannel;
+    auto *rptr = (&data[frameIndex * numChannels]);
+    auto *wptr = (T *)outputBuffer;
+    size_t framesLeft = (maxFrameIndex - frameIndex);
+    int finished;
+
+    if (framesLeft < framesPerBuffer) {
+        // Final buffer!
+        for (size_t i = 0; i < framesLeft; ++i) {
+            *wptr++ = *rptr++;  // Left
+            if (numChannels == 2) {
+                *wptr++ = *rptr++; // Right
+            }
+        }
+        for (size_t i = 0; i < framesPerBuffer; ++i) {
+            *wptr++ = 0; // Left
+            if (numChannels == 2) {
+                *wptr++ = 0;  // Right
+            }
+        }
+
+        frameIndex += framesLeft;
+        finished = paComplete;
+    } else {
+        for (size_t i = 0; i < framesPerBuffer; ++i) {
+            *wptr++ = *rptr++;  // Left
+            if (numChannels == 2) {
+                *wptr++ = *rptr++;  // Right
+            }
+        }
+
+        frameIndex += framesPerBuffer;
+        finished = paContinue;
     }
 
-    recv_buf.clear();
+    data.clear();
     return finished;
 }
 
@@ -182,7 +214,7 @@ int PaAudioBuf<T>::recordCallback(const void *inputBuffer, void *outputBuffer, u
     auto *buffer_ptr = (T *)inputBuffer;
 
     for (size_t i = 0; i < framesPerBuffer; ++i) {
-        buffer_ptr[i] *= (T)(buffer_ptr[i] * calcVolIdx);
+        buffer_ptr[i] *= (T)(buffer_ptr[i] * calcVolIdx); // The volume adjustment!
         gkCircBuffer->put(buffer_ptr[i] + i);
     }
 
