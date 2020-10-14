@@ -59,6 +59,8 @@ public:
     explicit GkEventLogger(QPointer<GekkoFyre::StringFuncs> stringFuncs, QObject *parent = nullptr);
     ~GkEventLogger() override;
 
+    bool handlePortAudioErrorCode(const PaError &pa_errorm, const QString &arguments = "");
+
 public slots:
     void publishEvent(const QString &event, const GekkoFyre::System::Events::Logging::GkSeverity &severity = GekkoFyre::System::Events::Logging::GkSeverity::Warning,
                       const QVariant &arguments = "", const bool &sys_notification = false, const bool &publishToConsole = true,

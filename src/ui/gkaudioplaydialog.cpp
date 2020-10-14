@@ -48,6 +48,17 @@
 #include <QFileDialog>
 #include <QStandardPaths>
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#include <portaudio.h>
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
 using namespace GekkoFyre;
 using namespace Database;
 using namespace Settings;
@@ -100,10 +111,6 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
 
 GkAudioPlayDialog::~GkAudioPlayDialog()
 {
-    if (playback_wav_thread.joinable()) {
-        playback_wav_thread.join();
-    }
-
     delete ui;
 }
 
@@ -274,32 +281,52 @@ void GkAudioPlayDialog::on_pushButton_playback_browse_file_loc_clicked()
 void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
 {
     try {
+        PaError error;
         if (!audio_out_play) {
             gkStringFuncs->changePushButtonColor(ui->pushButton_playback_play, false);
             audio_out_play = true;
 
-            if (gkOutputAudioStream == nullptr) {
+            if (gkPaStream == nullptr) {
                 GkAudioChannels channels_needed = determineAudioChannels();
+
                 if (channels_needed != GkAudioChannels::Unknown) {
-                    portaudio::DirectionSpecificStreamParameters outParams(gkPortAudioSys->deviceByIndex(pref_output_device.stream_parameters.device), gkDb->convertAudioChannelsToCount(channels_needed), portaudio::FLOAT32, false,
-                                                                           gkPortAudioSys->deviceByIndex(pref_output_device.stream_parameters.device).defaultLowOutputLatency(), nullptr);
+                    error = Pa_Initialize();
+                    gkEventLogger->handlePortAudioErrorCode(error, tr("Problem initializing PortAudio itself!"));
 
-                    auto pa_stream_param = portaudio::StreamParameters(portaudio::DirectionSpecificStreamParameters::null(), outParams, pref_output_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
-                                                                       paPrimeOutputBuffersUsingStreamCallback);
+                    PaStreamParameters out_param;
+                    out_param.device = pref_output_device.stream_parameters.device;
+                    out_param.channelCount = gkDb->convertAudioChannelsToCount(channels_needed);
+                    out_param.hostApiSpecificStreamInfo = nullptr;
+                    out_param.sampleFormat = paFloat32 | paNonInterleaved;
+                    out_param.suggestedLatency = gkPortAudioSys->deviceByIndex(pref_output_device.stream_parameters.device).defaultLowOutputLatency();
 
-                    gkOutputAudioBuf = std::make_unique<GekkoFyre::PaAudioBuf<float>>(AUDIO_FRAMES_PER_BUFFER, gkAudioFileInfo.num_samples_per_channel, pref_output_device, pref_output_device, gkDb);
-                    gkOutputAudioStream = std::make_unique<portaudio::MemFunCallbackStream<PaAudioBuf<float>>>(pa_stream_param, *gkOutputAudioBuf, &PaAudioBuf<float>::playbackCallback);
+                    error = Pa_OpenStream(&gkPaStream, nullptr, &out_param, pref_output_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
+                                          paNoFlag, &PaAudioBuf<float>::playbackCallback, &sndFileCallback.file);
+                    gkEventLogger->handlePortAudioErrorCode(error, tr("Problem initializing an audio stream!"));
+
+                    error = Pa_StartStream(gkPaStream);
+                    gkEventLogger->handlePortAudioErrorCode(error, tr("Problem opening an audio stream!"));
+                    while (Pa_IsStreamActive(gkPaStream)) { // Run until EOF is reached...
+                        Pa_Sleep(100); // Sleep for 100 milliseconds at a time!
+                    }
+
+                    sf_close(sndFileCallback.file);
+
+                    error = Pa_CloseStream(gkPaStream);
+                    gkEventLogger->handlePortAudioErrorCode(error, tr("Problem with closing audio stream!"));
+
+                    error = Pa_Terminate();
+                    gkEventLogger->handlePortAudioErrorCode(error, tr("Problem with terminating audio stream!"));
                 } else {
                     throw std::invalid_argument(tr("Unable to determine the amount of channels required for audio playback!").toStdString());
                 }
             }
-
-            playback_wav_thread = std::thread(&GkAudioPlayDialog::playbackWav, this);
-            playback_wav_thread.detach();
         } else {
-            if (gkOutputAudioStream->isOpen()) {
-                gkOutputAudioStream->stop();
-            }
+            error = Pa_CloseStream(gkPaStream);
+            gkEventLogger->handlePortAudioErrorCode(error, tr("Problem with closing audio stream!"));
+
+            error = Pa_Terminate();
+            gkEventLogger->handlePortAudioErrorCode(error, tr("Problem with terminating audio stream!"));
 
             gkStringFuncs->changePushButtonColor(ui->pushButton_playback_play, true);
             audio_out_play = false;
@@ -373,35 +400,5 @@ void GkAudioPlayDialog::on_comboBox_playback_rec_codec_currentIndexChanged(int i
  */
 void GkAudioPlayDialog::on_comboBox_playback_rec_bitrate_currentIndexChanged(int index)
 {
-    return;
-}
-
-/**
- * @brief GkAudioPlayDialog::playbackWav will playback a WAV audio file through the PortAudio interface.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param audio_file The information and buffered data on the audio file (i.e. WAV) itself.
- * @param output_audio_stream The output audio stream.
- * @see PortAudio Documentation <http://portaudio.com/docs/v19-doxydocs/paex__record_8c_source.html>,
- * wavtools by Matthew H. <https://github.com/hosackm/wavplayer/blob/master/src/wavplay.c>.
- */
-void GkAudioPlayDialog::playbackWav()
-{
-    try {
-        if (gkOutputAudioStream != nullptr && fs::exists(gkAudioFileInfo.audio_file_path)) {
-            gkOutputAudioStream->start();
-            while (gkOutputAudioStream->isActive()) {
-                Pa_Sleep(100);
-            }
-
-            gkOutputAudioStream->close();
-        }
-    } catch (const sys::system_error &ec) {
-        gkEventLogger->publishEvent(tr("Issue with playback of audio file, \"%1\". Boost C++ error:\n\n%2").arg(r_pback_audio_file.fileName()).arg(QString::fromStdString(ec.code().category().name())),
-                                    GkSeverity::Fatal, "", true, true, false, false);
-    } catch (const std::exception &e) {
-        gkEventLogger->publishEvent(tr("Issue with playback of audio file, \"%1\". Error:\n\n%2").arg(r_pback_audio_file.fileName()).arg(QString::fromStdString(e.what())),
-                                    GkSeverity::Fatal, "", true, true, false, false);
-    }
-
     return;
 }

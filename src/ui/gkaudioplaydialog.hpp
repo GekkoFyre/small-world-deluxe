@@ -45,7 +45,6 @@
 #include "src/audio_devices.hpp"
 #include "src/gk_logger.hpp"
 #include "src/file_io.hpp"
-#include "src/contrib/portaudio/cpp/include/portaudiocpp/MemFunCallbackStream.hxx"
 #include <sndfile.hh>
 #include <memory>
 #include <string>
@@ -117,24 +116,16 @@ private:
     //
     // PortAudio initialization and buffers
     //
+    PaStream *gkPaStream;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
-    std::unique_ptr<GekkoFyre::PaAudioBuf<float>> gkOutputAudioBuf;
-    std::unique_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<float>>> gkOutputAudioStream;
 
     //
     // libsndfile objects and related
     //
     GekkoFyre::GkAudioFramework::SndFileCallback sndFileCallback;
 
-    //
-    // Multithreading
-    //
-    std::thread playback_wav_thread;
-
     QFile r_pback_audio_file;
     GekkoFyre::GkAudioFramework::AudioFileInfo gkAudioFileInfo;
-
-    void playbackWav();
 
     template <typename T>
     struct gkConvertDoubleToFloat {

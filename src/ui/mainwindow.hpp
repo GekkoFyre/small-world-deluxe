@@ -332,7 +332,7 @@ private:
     std::shared_ptr<GekkoFyre::PaAudioBuf<float>> input_audio_buf;
     std::shared_ptr<GekkoFyre::PaAudioBuf<float>> output_audio_buf;
     std::shared_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<float>>> inputAudioStream;
-    std::shared_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<float>>> outputAudioStream;
+    // std::shared_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<float>>> outputAudioStream;
 
     //
     // Audio sub-system

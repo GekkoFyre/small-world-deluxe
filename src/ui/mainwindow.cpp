@@ -2294,6 +2294,7 @@ void MainWindow::startRecordingInput()
 void MainWindow::stopTransmitOutput()
 {
     try {
+        /*
         if (outputAudioStream != nullptr && pref_output_device.is_dev_active) {
             if (outputAudioStream->isOpen()) {
                 if (outputAudioStream->isActive()) {
@@ -2305,6 +2306,7 @@ void MainWindow::stopTransmitOutput()
                 pref_output_device.is_dev_active = false; // State that this recording device is now non-active!
             }
         }
+        */
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(tr("Problem encountered with stopping output audio device. Error:\n\n%1").arg(QString::fromStdString(e.what())),
                                     GkSeverity::Error, "", false, true, false, true);
@@ -2329,8 +2331,6 @@ void MainWindow::startTransmitOutput()
             auto pa_stream_param = portaudio::StreamParameters(portaudio::DirectionSpecificStreamParameters::null(), pref_output_device.cpp_stream_param,
                                                                pref_output_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
                                                                paPrimeOutputBuffersUsingStreamCallback);
-            outputAudioStream = std::make_shared<portaudio::MemFunCallbackStream<PaAudioBuf<float>>>(pa_stream_param, *output_audio_buf,
-                                                                                                     &PaAudioBuf<float>::playbackCallback);
             // outputAudioStream->start();
         } else {
             //

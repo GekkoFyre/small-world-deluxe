@@ -89,7 +89,7 @@ public:
                         const GekkoFyre::Database::Settings::Audio::GkDevice &pref_input_device, QPointer<GekkoFyre::GkLevelDb> gkDb);
     virtual ~PaAudioBuf();
 
-    int playbackCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
+    static int playbackCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
                          const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags,
                          void *userData);
     int recordCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
@@ -106,13 +106,12 @@ public:
 private:
     QPointer<GekkoFyre::GkLevelDb> gkLevelDb;
 
-    std::shared_ptr<GekkoFyre::GkCircBuffer<T>> gkCircBuffer;
+    static inline std::shared_ptr<GekkoFyre::GkCircBuffer<T>> gkCircBuffer;
     GekkoFyre::Database::Settings::Audio::GkDevice prefInputDevice;
     GekkoFyre::Database::Settings::Audio::GkDevice prefOutputDevice;
 
     qint32 circ_buffer_size;
     qint32 maxFrameIndex;
-    sf_count_t frameIndex;
     qint64 numSamplesPerChannel;
     float calcVolIdx; // A floating-point value between 0.0 - 1.0 that determines the amplitude of the audio signal (i.e. raw data buffer).
 
@@ -139,7 +138,6 @@ PaAudioBuf<T>::PaAudioBuf(qint32 buffer_size, qint64 num_samples_per_channel, co
 
     calcVolIdx = 1.f;
     maxFrameIndex = 0;
-    frameIndex = 0;
     numSamplesPerChannel = num_samples_per_channel;
 
     //
@@ -167,6 +165,7 @@ int PaAudioBuf<T>::playbackCallback(const void *inputBuffer, void *outputBuffer,
     Q_UNUSED(timeInfo);
     Q_UNUSED(statusFlags);
 
+    sf_count_t frameIndex;
     std::vector<T> recv_buf;
     recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
     recv_buf.push_back(gkCircBuffer->grab());
