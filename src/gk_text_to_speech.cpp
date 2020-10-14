@@ -59,7 +59,7 @@ GkTextToSpeech::GkTextToSpeech(QPointer<GekkoFyre::GkLevelDb> dbPtr, QPointer<Ge
                                QObject *parent) : QTextToSpeech(parent)
 {
     setParent(parent);
-    GkDb = std::move(dbPtr);
+    gkDb = std::move(dbPtr);
     gkEventLogger = std::move(eventLogger);
 
     m_speech = new QTextToSpeech(this);

@@ -76,7 +76,7 @@ public slots:
     void removeData(const GekkoFyre::System::Events::Logging::GkEventLogging &event);
 
 private:
-    QPointer<GekkoFyre::GkLevelDb> GkDb;
+    QPointer<GekkoFyre::GkLevelDb> gkDb;
     QList<GekkoFyre::System::Events::Logging::GkEventLogging> m_data;
 
     QPointer<QSortFilterProxyModel> proxyModel;

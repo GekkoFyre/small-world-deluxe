@@ -61,7 +61,7 @@ using namespace Control;
  */
 GkFrequencies::GkFrequencies(QPointer<GekkoFyre::GkLevelDb> database, QObject *parent)
 {
-    GkDb = std::move(database);
+    gkDb = std::move(database);
 
     QObject::connect(this, SIGNAL(updateFrequencies(const quint64 &, const GekkoFyre::AmateurRadio::DigitalModes &, const GekkoFyre::AmateurRadio::IARURegions &, const bool &)),
                      this, SLOT(updateFreqsInMem(const quint64 &, const GekkoFyre::AmateurRadio::DigitalModes &, const GekkoFyre::AmateurRadio::IARURegions &, const bool &)));
@@ -219,7 +219,7 @@ void GkFrequencies::publishFreqList()
 
     emit updateFrequencies(5760065000, DigitalModes::JT65, IARURegions::ALL, false);
 
-    GkDb->writeFreqInit(); // Write to the database that we've initialized Google LevelDB with these aforementioned base values!
+    gkDb->writeFreqInit(); // Write to the database that we've initialized Google LevelDB with these aforementioned base values!
 
     return;
 }

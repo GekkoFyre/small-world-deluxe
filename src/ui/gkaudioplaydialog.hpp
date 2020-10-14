@@ -45,8 +45,8 @@
 #include "src/audio_devices.hpp"
 #include "src/gk_logger.hpp"
 #include "src/file_io.hpp"
-#include "src/contrib/AudioFile/AudioFile.h"
 #include "src/contrib/portaudio/cpp/include/portaudiocpp/MemFunCallbackStream.hxx"
+#include <sndfile.hh>
 #include <memory>
 #include <string>
 #include <vector>
@@ -100,7 +100,6 @@ private:
 
     portaudio::System *gkPortAudioSys;
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevs;
-    std::unique_ptr<AudioFile<float>> audioFile;
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::GkAudioDecoding> gkAudioDecode;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
@@ -121,6 +120,11 @@ private:
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     std::unique_ptr<GekkoFyre::PaAudioBuf<float>> gkOutputAudioBuf;
     std::unique_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<float>>> gkOutputAudioStream;
+
+    //
+    // libsndfile objects and related
+    //
+    GekkoFyre::GkAudioFramework::SndFileCallback sndFileCallback;
 
     //
     // Multithreading

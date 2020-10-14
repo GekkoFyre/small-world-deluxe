@@ -134,7 +134,7 @@ void GkFreqTableViewModel::keyPressEvent(QKeyEvent *event)
 GkFreqTableModel::GkFreqTableModel(QPointer<GekkoFyre::GkLevelDb> database, QWidget *parent)
     : QAbstractTableModel(parent)
 {
-    GkDb = std::move(database);
+    gkDb = std::move(database);
 
     QPointer<QVBoxLayout> layout = new QVBoxLayout(parent);
     proxyModel = new QSortFilterProxyModel(parent);
@@ -322,8 +322,8 @@ QVariant GkFreqTableModel::data(const QModelIndex &index, int role) const
         row_freq_str = tr("%1 MHz").arg(QString::fromStdString(sstream.str()));
     }
 
-    QString row_digital_mode = GkDb->convDigitalModesToStr(m_data[index.row()].digital_mode);
-    QString row_iaru_region = GkDb->convIARURegionToStr(m_data[index.row()].iaru_region);
+    QString row_digital_mode = gkDb->convDigitalModesToStr(m_data[index.row()].digital_mode);
+    QString row_iaru_region = gkDb->convIARURegionToStr(m_data[index.row()].iaru_region);
 
     switch (index.column()) {
     case GK_FREQ_TABLEVIEW_MODEL_FREQUENCY_IDX:

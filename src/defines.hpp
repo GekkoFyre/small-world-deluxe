@@ -48,6 +48,7 @@
 #include <boost/filesystem.hpp>
 #include <hamlib/rigclass.h>
 #include <qwt/qwt_interval.h>
+#include <sndfile.h>
 #include <sentry.h>
 #include <list>
 #include <vector>
@@ -703,6 +704,11 @@ namespace Spectrograph {
 }
 
 namespace GkAudioFramework {
+    struct SndFileCallback {
+        SNDFILE *file;
+        SF_INFO info;
+    };
+
     enum CodecSupport {
         PCM,
         OggVorbis,

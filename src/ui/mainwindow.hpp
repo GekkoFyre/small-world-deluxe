@@ -288,7 +288,7 @@ private:
     //
     leveldb::DB *db;
     sentry_options_t *sen_opt;
-    QPointer<GekkoFyre::GkLevelDb> GkDb;
+    QPointer<GekkoFyre::GkLevelDb> gkDb;
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GekkoFyre::GkCli> gkCli;

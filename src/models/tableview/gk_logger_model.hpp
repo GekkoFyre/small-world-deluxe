@@ -79,7 +79,7 @@ signals:
     void grabRowSeverity(const GekkoFyre::System::Events::Logging::GkSeverity &severity);
 
 private:
-    QPointer<GekkoFyre::GkLevelDb> GkDb;
+    QPointer<GekkoFyre::GkLevelDb> gkDb;
     QList<GekkoFyre::System::Events::Logging::GkEventLogging> m_data;
 
     QPointer<QSortFilterProxyModel> proxyModel;
