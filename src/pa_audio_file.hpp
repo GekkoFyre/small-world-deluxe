@@ -53,11 +53,11 @@
 
 namespace GekkoFyre {
 
-class GkPaAudioFile {
+class GkPaAudioFileHandler {
 
 public:
-    explicit GkPaAudioFile();
-    virtual ~GkPaAudioFile();
+    explicit GkPaAudioFileHandler();
+    virtual ~GkPaAudioFileHandler();
 
     bool containsSound(std::string filename);
     GkAudioFramework::SndFileCallback &getSound(std::string filename);

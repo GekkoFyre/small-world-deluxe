@@ -42,6 +42,8 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include "src/pa_audio_file.hpp"
+#include "src/pa_stream_handler.hpp"
 #include <memory>
 #include <vector>
 #include <string>
@@ -55,6 +57,14 @@ class GkPaAudioPlayer {
 public:
     explicit GkPaAudioPlayer();
     virtual ~GkPaAudioPlayer();
+
+    void play(QString audio_file);
+    void loop(QString audio_file);
+    void stop();
+
+private:
+    std::unique_ptr<GkPaAudioFileHandler> fileHandler;
+    std::unique_ptr<GkPaStreamHandler> streamHandler;
 
 };
 };

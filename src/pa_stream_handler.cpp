@@ -40,7 +40,7 @@
  ****************************************************************************************************/
 
 #include "src/pa_stream_handler.hpp"
-#include "src/pa_audio_struct.hpp"
+#include <utility>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -52,13 +52,75 @@ using namespace Control;
 /**
  * @author Copyright (c) 2015 Andy Stanton <https://github.com/andystanton/sound-example/blob/master/LICENSE>.
  */
-GkPaStreamHandler::GkPaStreamHandler()
+GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
+                                     QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                                     GkAudioChannels audio_channels, QObject *parent)
+                                     : data()
 {
+    setParent(parent);
+
+    gkDb = std::move(database);
+    gkStringFuncs = std::move(stringFuncs);
+    gkEventLogger = std::move(eventLogger);
+
+    //
+    // Initialize variables
+    //
+    pref_output_device = output_device;
+    gkAudioChannels = audio_channels;
+    PaError error;
+    
+    if (gkAudioChannels != GkAudioChannels::Unknown) {
+        error = Pa_Initialize();
+        gkEventLogger->handlePortAudioErrorCode(error, tr("Problem initializing PortAudio itself!"));
+
+        PaStreamParameters out_param;
+        out_param.device = pref_output_device.stream_parameters.device;
+        out_param.channelCount = gkDb->convertAudioChannelsToCount(gkAudioChannels);
+        out_param.hostApiSpecificStreamInfo = nullptr;
+        out_param.sampleFormat = paFloat32 | paNonInterleaved;
+        // out_param.suggestedLatency = gkPortAudioSys->deviceByIndex(pref_output_device.stream_parameters.device).defaultLowOutputLatency();
+
+        error = Pa_OpenStream(&gkPaStream, nullptr, &out_param, pref_output_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
+                              paNoFlag, &portAudioCallback, this);
+        gkEventLogger->handlePortAudioErrorCode(error, tr("Problem initializing an audio stream!"));
+    } else {
+        throw std::invalid_argument(tr("Unable to determine the amount of channels required for audio playback!").toStdString());
+    }
+
     return;
 }
 
 GkPaStreamHandler::~GkPaStreamHandler()
 {}
+
+/**
+ * @brief GkPaStreamHandler::processEvent
+ * @author Copyright (c) 2015 Andy Stanton <https://github.com/andystanton/sound-example/blob/master/LICENSE>.
+ * @param audioEventType
+ * @param audioFile
+ * @param loop
+ */
+void GkPaStreamHandler::processEvent(AudioEventType audioEventType, GkAudioFile *audioFile, bool loop)
+{
+    switch (audioEventType) {
+        case start:
+            if (Pa_IsStreamStopped(stream)) {
+                Pa_StartStream(stream);
+            }
+
+            data.push_back(new Playback { audioFile,0, loop });
+            break;
+        case stop:
+            Pa_StopStream(stream);
+            for (auto instance: data) {
+                delete instance;
+            }
+
+            data.clear();
+            break;
+    }
+}
 
 /**
  * @brief GkPaGkPaStreamHandler::portAudioCallback

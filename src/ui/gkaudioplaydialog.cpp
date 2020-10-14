@@ -146,6 +146,8 @@ GkAudioChannels GkAudioPlayDialog::determineAudioChannels()
                 gkEventLogger->publishEvent(tr("Unable to accurately determine the number of audio channels within multimedia file, \"%1\", for unknown reasons.")
                                                     .arg(QString::fromStdString(gkAudioFileInfo.audio_file_path.filename().string())), GkSeverity::Warning, "", true,
                                             true, false, false);
+
+                return GkAudioChannels::Unknown;
             }
         }
     }

@@ -51,12 +51,12 @@ using namespace Control;
 /**
  * @author Copyright (c) 2015 Andy Stanton <https://github.com/andystanton/sound-example/blob/master/LICENSE>.
  */
-GkPaAudioFile::GkPaAudioFile() : gkSounds()
+GkPaAudioFileHandler::GkPaAudioFileHandler() : gkSounds()
 {
     return;
 }
 
-GkPaAudioFile::~GkPaAudioFile()
+GkPaAudioFileHandler::~GkPaAudioFileHandler()
 {
     for (auto entry: gkSounds) {
         sf_close(entry.second.file);
@@ -64,24 +64,24 @@ GkPaAudioFile::~GkPaAudioFile()
 }
 
 /**
- * @brief GkPaAudioFile::containsSound
+ * @brief GkPaAudioFileHandler::containsSound
  * @author Copyright (c) 2015 Andy Stanton <https://github.com/andystanton/sound-example/blob/master/LICENSE>.
  * @param filename
  * @return
  */
-bool GkPaAudioFile::containsSound(std::string filename)
+bool GkPaAudioFileHandler::containsSound(std::string filename)
 {
     return gkSounds.find(filename) != gkSounds.end();
 }
 
 /**
- * @brief GkPaAudioFile::getSound
+ * @brief GkPaAudioFileHandler::getSound
  * @author Copyright (c) 2015 Andy Stanton <https://github.com/andystanton/sound-example/blob/master/LICENSE>,
  * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>.
  * @param filename The **FULL** filesystem path to the audio file in question!
  * @return
  */
-GkAudioFramework::SndFileCallback &GkPaAudioFile::getSound(std::string filename)
+GkAudioFramework::SndFileCallback &GkPaAudioFileHandler::getSound(std::string filename)
 {
     if (!containsSound(filename)) {
         GkAudioFramework::SndFileCallback sound;

@@ -58,3 +58,41 @@ GkPaAudioPlayer::GkPaAudioPlayer()
 
 GkPaAudioPlayer::~GkPaAudioPlayer()
 {}
+
+/**
+ * @brief GkPaAudioPlayer::play
+ * @author Copyright (c) 2015 Andy Stanton <https://github.com/andystanton/sound-example/blob/master/LICENSE>,
+ * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>.
+ * @param audio_file
+ */
+void GkPaAudioPlayer::play(QString audio_file)
+{
+    streamHandler->processEvent(AudioEventType::start, &fileHandler->getSound(audio_file.toStdString()), false);
+
+    return;
+}
+
+/**
+ * @brief  GkPaAudioPlayer::loop
+ * @author Copyright (c) 2015 Andy Stanton <https://github.com/andystanton/sound-example/blob/master/LICENSE>,
+ * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>.
+ * @param audio_file
+ */
+void GkPaAudioPlayer::loop(QString audio_file)
+{
+    streamHandler->processEvent(AudioEventType::start, &fileHandler->getSound(audio_file.toStdString()), true);
+
+    return;
+}
+
+/**
+ * @brief GkPaAudioPlayer::stop
+ * @author Copyright (c) 2015 Andy Stanton <https://github.com/andystanton/sound-example/blob/master/LICENSE>,
+ * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>.
+ */
+void GkPaAudioPlayer::stop()
+{
+    streamHandler->processEvent(AudioEventType::stop);
+
+    return;
+}

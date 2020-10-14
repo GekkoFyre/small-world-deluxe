@@ -42,13 +42,28 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include "src/dek_db.hpp"
+#include "src/gk_string_funcs.hpp"
+#include "src/gk_logger.hpp"
 #include "src/pa_audio_file.hpp"
 #include "src/pa_audio_struct.hpp"
 #include <memory>
 #include <vector>
 #include <string>
+#include <QObject>
 #include <QString>
 #include <QPointer>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#include <portaudio.h>
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 namespace GekkoFyre {
 
@@ -63,19 +78,34 @@ enum AudioEventType {
     stop
 };
 
-class GkPaStreamHandler {
+class GkPaStreamHandler : public QObject {
+    Q_OBJECT
 
 public:
-    explicit GkPaStreamHandler();
-    virtual ~GkPaStreamHandler();
+    explicit GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
+                               QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                               GekkoFyre::Database::Settings::GkAudioChannels audio_channels, QObject *parent = nullptr);
+    ~GkPaStreamHandler() override;
 
+    void processEvent(AudioEventType audioEventType, GkAudioFile *audioFile = nullptr, bool loop = false);
     static int portAudioCallback(const void *input, void *output, size_t frameCount, const PaStreamCallbackTimeInfo *paTimeInfo,
                                  PaStreamCallbackFlags statusFlags, void *userData);
 
 private:
+    QPointer<GekkoFyre::GkLevelDb> gkDb;
+    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
+    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
+
     const int CHANNEL_COUNT = 2;
     const int SAMPLE_RATE = 44000;
     const PaStreamParameters *NO_INPUT = nullptr;
+
+    //
+    // PortAudio initialization and buffers
+    //
+    PaStream *gkPaStream;
+    GekkoFyre::Database::Settings::GkAudioChannels gkAudioChannels;
+    GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
 
     PaStream *stream;
     std::vector<Playback *> data;
