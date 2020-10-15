@@ -41,6 +41,8 @@
 
 #pragma once
 
+//-V::1042
+
 #include "src/gk_string_funcs.hpp"
 #include <portaudiocpp/PortAudioCpp.hxx>
 #include <boost/exception/all.hpp>
@@ -115,7 +117,7 @@ namespace GekkoFyre {
 #define AUDIO_OUTPUT_CHANNEL_MIN_LIMIT (-1024)
 #define AUDIO_INPUT_CHANNEL_MAX_LIMIT (1024)
 #define AUDIO_INPUT_CHANNEL_MIN_LIMIT (-1024)
-#define AUDIO_FRAMES_PER_BUFFER (1024)                          // Frames per buffer, i.e. the number of sample frames that PortAudio will request from the callback. Many apps may want to use paFramesPerBufferUnspecified, which tells PortAudio to pick the best, possibly changing, buffer size
+#define AUDIO_FRAMES_PER_BUFFER (512)                          // Frames per buffer, i.e. the number of sample frames that PortAudio will request from the callback. Many apps may want to use paFramesPerBufferUnspecified, which tells PortAudio to pick the best, possibly changing, buffer size
 #define AUDIO_TEST_SAMPLE_TABLE_SIZE (200)
 #define AUDIO_CIRC_BUFF_SIZE (AUDIO_FRAMES_PER_BUFFER * 4)      // The size of the circular audio buffer, as a factor of the frames buffer itself!
 
@@ -705,8 +707,8 @@ namespace Spectrograph {
 
 namespace GkAudioFramework {
     struct SndFileCallback {
-        SNDFILE *file;
-        SF_INFO info;
+        SNDFILE *file = nullptr;
+        SF_INFO info = {};
     };
 
     enum CodecSupport {

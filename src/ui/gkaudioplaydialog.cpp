@@ -37,12 +37,10 @@
 
 #include "src/ui/gkaudioplaydialog.hpp"
 #include "ui_gkaudioplaydialog.h"
-#include "src/contrib/portaudio/cpp/include/portaudiocpp/DirectionSpecificStreamParameters.hxx"
-#include <boost/filesystem.hpp>
+#include "src/pa_audio_player.hpp"
 #include <boost/exception/all.hpp>
 #include <exception>
 #include <utility>
-#include <QSettings>
 #include <QIODevice>
 #include <QMessageBox>
 #include <QFileDialog>
@@ -69,9 +67,6 @@ using namespace Spectrograph;
 using namespace System;
 using namespace Events;
 using namespace Logging;
-
-namespace fs = boost::filesystem;
-namespace sys = boost::system;
 
 GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
                                      portaudio::System *portAudioSys,
@@ -111,6 +106,9 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
 
 GkAudioPlayDialog::~GkAudioPlayDialog()
 {
+    PaError error = Pa_Terminate();
+    gkEventLogger->handlePortAudioErrorCode(error, tr("Problem with cleanup of PortAudio!"));
+
     delete ui;
 }
 
@@ -143,6 +141,8 @@ GkAudioChannels GkAudioPlayDialog::determineAudioChannels()
                 gkEventLogger->publishEvent(tr("Unable to accurately determine the number of audio channels within multimedia file, \"%1\", for unknown reasons.")
                                                     .arg(QString::fromStdString(gkAudioFileInfo.audio_file_path.filename().string())), GkSeverity::Warning, "", true,
                                             true, false, false);
+
+                return GkAudioChannels::Unknown;
             }
         }
     }
@@ -223,6 +223,7 @@ void GkAudioPlayDialog::on_pushButton_playback_browse_file_loc_clicked()
             QStringList selectedFile = fileDialog.selectedFiles();
             if (!selectedFile.isEmpty()) {
                 for (const auto &file: selectedFile) {
+                    audio_file_path = file.toStdString();
                     r_pback_audio_file.setFileName(file);
                     r_pback_audio_file.open(QIODevice::ReadOnly);
                     gkAudioFileInfo.file_size = r_pback_audio_file.size();
@@ -286,45 +287,16 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
             gkStringFuncs->changePushButtonColor(ui->pushButton_playback_play, false);
             audio_out_play = true;
 
-            GkAudioChannels channels_needed = determineAudioChannels();
-            if (channels_needed != GkAudioChannels::Unknown) {
-                error = Pa_Initialize();
-                gkEventLogger->handlePortAudioErrorCode(error, tr("Problem initializing PortAudio itself!"));
-
-                PaStreamParameters out_param;
-                out_param.device = pref_output_device.stream_parameters.device;
-                out_param.channelCount = gkDb->convertAudioChannelsToCount(channels_needed);
-                out_param.hostApiSpecificStreamInfo = nullptr;
-                out_param.sampleFormat = paFloat32 | paNonInterleaved;
-                out_param.suggestedLatency = gkPortAudioSys->deviceByIndex(pref_output_device.stream_parameters.device).defaultLowOutputLatency();
-
-                error = Pa_OpenStream(&gkPaStream, nullptr, &out_param, sndFileCallback.info.samplerate, AUDIO_FRAMES_PER_BUFFER,
-                                      paNoFlag, &PaAudioBuf<float>::playbackCallback, &sndFileCallback);
-                gkEventLogger->handlePortAudioErrorCode(error, tr("Problem initializing an audio stream!"));
-
-                error = Pa_StartStream(gkPaStream);
-                gkEventLogger->handlePortAudioErrorCode(error, tr("Problem opening an audio stream!"));
-                while (Pa_IsStreamActive(gkPaStream)) { // Run until EOF is reached...
-                    Pa_Sleep(100); // Sleep for 100 milliseconds at a time!
-                }
-
-                sf_close(sndFileCallback.file);
-
-                error = Pa_CloseStream(gkPaStream);
-                gkEventLogger->handlePortAudioErrorCode(error, tr("Problem with closing audio stream!"));
-
-                error = Pa_Terminate();
-                gkEventLogger->handlePortAudioErrorCode(error, tr("Problem with terminating audio stream!"));
+            if (r_pback_audio_file.exists()) {
+                std::unique_ptr<GkPaAudioPlayer> gkPaAudioPlayer = std::make_unique<GkPaAudioPlayer>(gkDb, pref_output_device, gkEventLogger,
+                                                                                                     gkAudioFileInfo.num_audio_channels,
+                                                                                                     this);
+                gkPaAudioPlayer->play(QString::fromStdString(audio_file_path.string()));
             } else {
-                throw std::invalid_argument(tr("Unable to determine the amount of channels required for audio playback!").toStdString());
+                throw std::runtime_error(tr("Error with audio playback! Does the file, \"%1\", actually exist?")
+                .arg(r_pback_audio_file.fileName()).toStdString());
             }
         } else {
-            error = Pa_CloseStream(gkPaStream);
-            gkEventLogger->handlePortAudioErrorCode(error, tr("Problem with closing audio stream!"));
-
-            error = Pa_Terminate();
-            gkEventLogger->handlePortAudioErrorCode(error, tr("Problem with terminating audio stream!"));
-
             gkStringFuncs->changePushButtonColor(ui->pushButton_playback_play, true);
             audio_out_play = false;
         }

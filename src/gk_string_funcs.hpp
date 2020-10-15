@@ -42,6 +42,7 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include <boost/filesystem.hpp>
 #include <QObject>
 #include <QMessageBox>
 #include <QPushButton>

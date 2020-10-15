@@ -573,6 +573,8 @@ set(GALAXY_UI_CPP
     src/gk_text_to_speech.cpp
     src/gk_logger.cpp
     src/gk_system.cpp
+    src/pa_stream_handler.cpp
+    src/pa_audio_player.cpp
     src/ui/widgets/gk_vu_meter_widget.cpp
     src/ui/widgets/gk_submit_msg.cpp
     src/ui/widgets/gk_display_image.cpp
@@ -595,6 +597,7 @@ endif()
 set(GALAXY_SRC_CPP
     ${GALAXY_SRC_CPP}
     src/pa_sinewave.cpp
+    src/pa_audio_file.cpp
     src/contrib/udev/device.cpp
     src/contrib/udev/enumerate.cpp
     src/contrib/udev/monitor.cpp
@@ -657,6 +660,8 @@ set(GALAXY_OBJ_HEADERS
     src/gk_text_to_speech.hpp
     src/gk_logger.hpp
     src/gk_system.hpp
+    src/pa_stream_handler.hpp
+    src/pa_audio_player.hpp
     src/ui/widgets/gk_vu_meter_widget.hpp
     src/ui/widgets/gk_submit_msg.hpp
     src/ui/widgets/gk_display_image.hpp
@@ -679,6 +684,7 @@ endif()
 set(GALAXY_SRC_HEADERS
     ${GALAXY_SRC_HEADERS}
     src/pa_audio_buf.hpp
+    src/pa_audio_file.hpp
     src/pa_sinewave.hpp
     src/gk_timer.hpp
     src/gk_circ_buffer.hpp

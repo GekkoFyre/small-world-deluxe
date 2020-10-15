@@ -46,6 +46,7 @@
 #include "src/gk_logger.hpp"
 #include "src/file_io.hpp"
 #include <sndfile.hh>
+#include <boost/filesystem.hpp>
 #include <memory>
 #include <string>
 #include <vector>
@@ -56,6 +57,9 @@
 #include <QDialog>
 #include <QString>
 #include <QPointer>
+
+namespace fs = boost::filesystem;
+namespace sys = boost::system;
 
 namespace Ui {
 class GkAudioPlayDialog;
@@ -125,6 +129,7 @@ private:
     GekkoFyre::GkAudioFramework::SndFileCallback sndFileCallback;
 
     QFile r_pback_audio_file;
+    fs::path audio_file_path;
     GekkoFyre::GkAudioFramework::AudioFileInfo gkAudioFileInfo;
 
     template <typename T>

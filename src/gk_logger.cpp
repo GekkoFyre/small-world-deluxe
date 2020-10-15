@@ -107,7 +107,7 @@ bool GkEventLogger::handlePortAudioErrorCode(const PaError &pa_error, const QStr
         QString log_msg = tr("There has been an error with regard to PortAudio!");
         if (!arguments.isEmpty()) {
             log_msg += QString(" ");
-            log_msg += tr("Error:\n\n%1").arg(arguments);
+            log_msg += tr("Error:\n\n%1 [ %2 ]").arg(arguments).arg(QString::fromStdString(Pa_GetErrorText(pa_error)));
         }
 
         publishEvent(log_msg, GkSeverity::Error, "", false, true, false, true);

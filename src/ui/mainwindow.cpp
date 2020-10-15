@@ -40,6 +40,7 @@
 #include "src/ui/aboutdialog.hpp"
 #include "src/ui/spectrodialog.hpp"
 #include "src/ui/sendreportdialog.hpp"
+#include "src/ui/gkaudioplaydialog.hpp"
 #include "src/ui/widgets/gk_submit_msg.hpp"
 #include "src/models/tableview/gk_frequency_model.hpp"
 #include "src/models/tableview/gk_logger_model.hpp"
@@ -50,18 +51,13 @@
 #include <boost/chrono/chrono.hpp>
 #include <cmath>
 #include <chrono>
-#include <sstream>
 #include <ostream>
 #include <cstring>
-#include <utility>
 #include <iomanip>
 #include <iostream>
-#include <algorithm>
 #include <functional>
 #include <QDesktopServices>
-#include <QSerialPortInfo>
 #include <QStandardPaths>
-#include <QPrintDialog>
 #include <QSerialPort>
 #include <QMessageBox>
 #include <QFileDialog>
@@ -76,7 +72,6 @@
 #include <QTimer>
 #include <QDate>
 #include <QFile>
-#include <QDir>
 #include <QUrl>
 
 #ifdef _WIN32
@@ -528,14 +523,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         QObject::connect(this, SIGNAL(stopRecording()), this, SLOT(stopRecordingInput()));
         QObject::connect(this, SIGNAL(startRecording()), this, SLOT(startRecordingInput()));
-        QObject::connect(this, SIGNAL(stopTxAudio()), this, SLOT(stopTransmitOutput()));
-        QObject::connect(this, SIGNAL(startTxAudio()), this, SLOT(startTransmitOutput()));
         QObject::connect(this, SIGNAL(refreshVuDisplay(const qreal &, const qreal &, const int &)),
                          gkVuMeter, SLOT(levelChanged(const qreal &, const qreal &, const int &)));
         QObject::connect(this, SIGNAL(changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)),
                          this, SLOT(restartInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)));
-        QObject::connect(this, SIGNAL(changeOutputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)),
-                         this, SLOT(restartOutputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)));
 
         //
         // QMainWindow widgets
@@ -572,19 +563,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             //
             // Setup the audio encoding/decoding libraries!
             //
-            output_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<float>>(AUDIO_FRAMES_PER_BUFFER, -1, pref_output_device, pref_input_device, gkDb);
-
             gkAudioEncoding = new GkAudioEncoding(fileIo, input_audio_buf, gkDb, gkSpectroWaterfall,
                                                   gkStringFuncs, pref_input_device, gkEventLogger, this);
             gkAudioDecoding = new GkAudioDecoding(fileIo, gkDb, gkStringFuncs, pref_output_device,
                                                   gkEventLogger, this);
-
-            //
-            // Audio encoding signals and slots
-            //
-            gkAudioPlayDlg = new GkAudioPlayDialog(gkDb, gkPortAudioInit, gkAudioDecoding, gkAudioDevices, pref_output_device,
-                                                   gkStringFuncs, gkEventLogger, this);
-            // QObject::connect(gkAudioPlayDlg, SIGNAL(beginRecording(const bool &)), gkAudioEncoding, SLOT(startRecording(const bool &)));
         }
 
         //
@@ -809,8 +791,6 @@ void MainWindow::launchSettingsWin()
     //
     QObject::connect(dlg_settings, SIGNAL(changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)),
                      this, SLOT(restartInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)));
-    QObject::connect(dlg_settings, SIGNAL(changeOutputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)),
-                     this, SLOT(restartOutputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)));
 
     dlg_settings->show();
 
@@ -1664,6 +1644,8 @@ void MainWindow::on_actionDelete_all_wav_files_in_Save_Directory_triggered()
 
 void MainWindow::on_actionPlay_triggered()
 {
+    QPointer<GkAudioPlayDialog> gkAudioPlayDlg = new GkAudioPlayDialog(gkDb, gkPortAudioInit, gkAudioDecoding, gkAudioDevices, pref_output_device,
+                                           gkStringFuncs, gkEventLogger, this);
     gkAudioPlayDlg->setWindowFlags(Qt::Window);
     gkAudioPlayDlg->setAttribute(Qt::WA_DeleteOnClose, false);
     gkAudioPlayDlg->show();
@@ -1753,8 +1735,8 @@ void MainWindow::updateVolume(const float &value)
     } else {
         //
         // Output device!
+        // TODO: Finish this section for the volume controls!
         //
-        output_audio_buf->setVolume(value);
     }
 
     return;
@@ -2116,14 +2098,10 @@ void MainWindow::on_pushButton_radio_transmit_clicked()
         // Set the QPushButton to 'Green'
         gkStringFuncs->changePushButtonColor(ui->pushButton_radio_transmit, false);
         btn_radio_tx = true;
-
-        emit startTxAudio();
     } else {
         // Set the QPushButton to 'Red'
         gkStringFuncs->changePushButtonColor(ui->pushButton_radio_transmit, true);
         btn_radio_tx = false;
-
-        emit stopTxAudio();
     }
 
     return;
@@ -2288,67 +2266,6 @@ void MainWindow::startRecordingInput()
 }
 
 /**
- * @brief MainWindow::stopTransmitOutput
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void MainWindow::stopTransmitOutput()
-{
-    try {
-        /*
-        if (outputAudioStream != nullptr && pref_output_device.is_dev_active) {
-            if (outputAudioStream->isOpen()) {
-                if (outputAudioStream->isActive()) {
-                    outputAudioStream->stop();
-                }
-
-                outputAudioStream->close();
-
-                pref_output_device.is_dev_active = false; // State that this recording device is now non-active!
-            }
-        }
-        */
-    } catch (const std::exception &e) {
-        gkEventLogger->publishEvent(tr("Problem encountered with stopping output audio device. Error:\n\n%1").arg(QString::fromStdString(e.what())),
-                                    GkSeverity::Error, "", false, true, false, true);
-    }
-
-    return;
-}
-
-/**
- * @brief MainWindow::startTransmitOutput
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void MainWindow::startTransmitOutput()
-{
-    try {
-        if (!pref_output_device.is_dev_active) {
-            // To minimise startup latency for this use-case (i.e. expecting StartStream() to give minimum
-            // startup latency) you should use the paPrimeOutputBuffersUsingStreamCallback stream flag.
-            // Otherwise the initial buffers will be zero and the time it takes for the sound to hit the
-            // DACs will include playing out the buffer length of zeros (which would be around 80ms on
-            // Windows WMME or DirectSound with the default PA settings).
-            auto pa_stream_param = portaudio::StreamParameters(portaudio::DirectionSpecificStreamParameters::null(), pref_output_device.cpp_stream_param,
-                                                               pref_output_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
-                                                               paPrimeOutputBuffersUsingStreamCallback);
-            // outputAudioStream->start();
-        } else {
-            //
-            // Otherwise restart the audio device with new parameters!
-            //
-            emit restartOutputAudioInterface(pref_output_device);
-        }
-
-        return;
-    } catch (const std::exception &e) {
-        gkEventLogger->publishEvent(tr("Problem encountered with initializing output audio device. Error:\n\n%1").arg(QString::fromStdString(e.what())),
-                                    GkSeverity::Error, "", false, true, false, true);
-    }
-
-    return;
-}
-
-/**
  * @brief MainWindow::restartInputAudioInterface restarts the input audio device interface with a newly chosen audio device.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param input_device The newly chosen input audio device to restart the interface with.
@@ -2372,23 +2289,6 @@ void MainWindow::restartInputAudioInterface(const GkDevice &input_device)
         gkEventLogger->publishEvent(tr("Problem encountered with restarting input audio device. Error:\n\n%1").arg(QString::fromStdString(e.what())),
                                     GkSeverity::Error, "", false, true, false, true);
     }
-
-    return;
-}
-
-/**
- * @brief MainWindow::restartOutputAudioInterface restarts the output audio device interface with a newly chosen audio device.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param output_device The newly chosen output audio device to restart the interface with.
- */
-void MainWindow::restartOutputAudioInterface(const GkDevice &output_device)
-{
-    emit stopTxAudio();
-    pref_output_device = {};
-    pref_output_device = output_device;
-
-    output_audio_buf.reset(new GekkoFyre::PaAudioBuf<float>(AUDIO_FRAMES_PER_BUFFER, -1, pref_output_device, pref_input_device, gkDb));
-    emit startTxAudio();
 
     return;
 }
@@ -2891,7 +2791,7 @@ void MainWindow::on_pushButton_sstv_tx_send_image_clicked()
         //
         #ifdef CODEC2_LIBS_ENBLD
         QPointer<GkCodec2> gkCodec2 = new GkCodec2(Codec2Mode::freeDvMode2020, Codec2ModeCustom::GekkoFyreV1, 0, 0, gkDb,
-                                                   gkEventLogger, gkStringFuncs, output_audio_buf, this);
+                                                   gkEventLogger, gkStringFuncs, nullptr, this);
         gkCodec2->transmitData(byte_array, true);
         #endif
     } else {

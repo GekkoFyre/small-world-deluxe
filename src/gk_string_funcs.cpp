@@ -40,7 +40,9 @@
  ****************************************************************************************************/
 
 #include "src/gk_string_funcs.hpp"
+#include <boost/exception/all.hpp>
 #include <QMessageBox>
+#include <exception>
 #include <QSettings>
 #include <algorithm>
 #include <iterator>
@@ -79,6 +81,9 @@ using namespace Spectrograph;
 using namespace System;
 using namespace Events;
 using namespace Logging;
+
+namespace fs = boost::filesystem;
+namespace sys = boost::system;
 
 StringFuncs::StringFuncs(QObject *parent) : QObject(parent)
 {}
