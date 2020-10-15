@@ -290,7 +290,7 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
             if (r_pback_audio_file.exists()) {
                 std::unique_ptr<GkPaAudioPlayer> gkPaAudioPlayer = std::make_unique<GkPaAudioPlayer>(gkDb, pref_output_device, gkEventLogger,
                                                                                                      gkAudioFileInfo.num_audio_channels,
-                                                                                                     this);
+                                                                                                     gkStringFuncs, this);
                 gkPaAudioPlayer->play(QString::fromStdString(audio_file_path.string()));
             } else {
                 throw std::runtime_error(tr("Error with audio playback! Does the file, \"%1\", actually exist?")

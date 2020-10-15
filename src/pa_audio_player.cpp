@@ -53,9 +53,11 @@ using namespace Control;
  */
 GkPaAudioPlayer::GkPaAudioPlayer(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
                                  QPointer<GekkoFyre::GkEventLogger> eventLogger, GekkoFyre::Database::Settings::GkAudioChannels audio_channels,
-                                 QObject *parent)
+                                 QPointer<GekkoFyre::StringFuncs> stringFuncs, QObject *parent)
 {
-    fileHandler = std::make_unique<GkPaAudioFileHandler>();
+    gkStringFuncs = std::move(stringFuncs);
+
+    fileHandler = std::make_unique<GkPaAudioFileHandler>(eventLogger);
     streamHandler = std::make_unique<GkPaStreamHandler>(database, output_device, eventLogger, audio_channels, parent);;
 
     return;
@@ -72,7 +74,11 @@ GkPaAudioPlayer::~GkPaAudioPlayer()
  */
 void GkPaAudioPlayer::play(QString audio_file)
 {
-    streamHandler->processEvent(AudioEventType::start, &fileHandler->getSound(audio_file.toStdString()), false);
+    try {
+        streamHandler->processEvent(AudioEventType::start, &fileHandler->getSound(audio_file.toStdString()), false);
+    } catch (const std::exception &e) {
+        gkStringFuncs->print_exception(e);
+    }
 
     return;
 }
@@ -85,7 +91,11 @@ void GkPaAudioPlayer::play(QString audio_file)
  */
 void GkPaAudioPlayer::loop(QString audio_file)
 {
-    streamHandler->processEvent(AudioEventType::start, &fileHandler->getSound(audio_file.toStdString()), true);
+    try {
+        streamHandler->processEvent(AudioEventType::start, &fileHandler->getSound(audio_file.toStdString()), true);
+    } catch (const std::exception &e) {
+        gkStringFuncs->print_exception(e);
+    }
 
     return;
 }

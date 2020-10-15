@@ -40,6 +40,8 @@
  ****************************************************************************************************/
 
 #include "src/pa_audio_file.hpp"
+#include <utility>
+#include <exception>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -47,12 +49,18 @@ using namespace Settings;
 using namespace Audio;
 using namespace AmateurRadio;
 using namespace Control;
+using namespace Spectrograph;
+using namespace System;
+using namespace Events;
+using namespace Logging;
 
 /**
- * @author Copyright (c) 2015 Andy Stanton <https://github.com/andystanton/sound-example/blob/master/LICENSE>.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-GkPaAudioFileHandler::GkPaAudioFileHandler() : gkSounds()
+GkPaAudioFileHandler::GkPaAudioFileHandler(QPointer<GekkoFyre::GkEventLogger> eventLogger) : gkSounds()
 {
+    gkEventLogger = std::move(eventLogger);
+
     return;
 }
 
@@ -91,10 +99,9 @@ GkAudioFramework::SndFileCallback &GkPaAudioFileHandler::getSound(std::string fi
 
         if (!audioFile) {
             std::stringstream error;
-            error << "Unable to open audio file '"
-                  << filename << "' with full filename '"
-                  << filename << "'";
-            throw error.str();
+            gkEventLogger->publishEvent(QString("Unable to open audio file, \"%1\", due to filesystem error!").arg(QString::fromStdString(filename)),
+                                        GkSeverity::Error, "", true, true, false, false);
+            std::throw_with_nested(std::runtime_error(QString("Unable to open audio file, \"%1\", due to filesystem error!").arg(QString::fromStdString(filename)).toStdString()));
         }
 
         gkSounds[filename] = sound;

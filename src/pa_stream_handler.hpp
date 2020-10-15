@@ -57,6 +57,7 @@ extern "C"
 {
 #endif
 
+#include <sndfile.h>
 #include <portaudio.h>
 
 #ifdef __cplusplus
@@ -65,7 +66,7 @@ extern "C"
 
 namespace GekkoFyre {
 
-struct Playback {
+struct GkPlayback {
     GkAudioFramework::SndFileCallback *audioFile;
     qint32 position;
     bool loop;
@@ -86,16 +87,14 @@ public:
     ~GkPaStreamHandler() override;
 
     void processEvent(AudioEventType audioEventType, GkAudioFramework::SndFileCallback *audioFile = nullptr, bool loop = false);
-    static int portAudioCallback(const void *input, void *output, size_t frameCount, const PaStreamCallbackTimeInfo *paTimeInfo,
-                                 PaStreamCallbackFlags statusFlags, void *userData);
+    static qint32 portAudioCallback(const void *input, void *output, size_t frameCount, const PaStreamCallbackTimeInfo *paTimeInfo,
+                                    PaStreamCallbackFlags statusFlags, void *userData);
 
 private:
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
-    const int CHANNEL_COUNT = 2;
-    const int SAMPLE_RATE = 44000;
-    const PaStreamParameters *NO_INPUT = nullptr;
+    static inline qint32 channelCount;
 
     //
     // PortAudio initialization and buffers
@@ -105,7 +104,7 @@ private:
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
 
     PaStream *stream;
-    std::vector<Playback *> data;
+    std::vector<GkPlayback *> data;
 
 };
 };

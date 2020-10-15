@@ -46,8 +46,8 @@
 #include "src/pa_stream_handler.hpp"
 #include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
+#include "src/gk_string_funcs.hpp"
 #include <memory>
-#include <vector>
 #include <string>
 #include <QString>
 #include <QObject>
@@ -61,7 +61,7 @@ class GkPaAudioPlayer : public QObject {
 public:
     explicit GkPaAudioPlayer(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
                              QPointer<GekkoFyre::GkEventLogger> eventLogger, GekkoFyre::Database::Settings::GkAudioChannels audio_channels,
-                             QObject *parent = nullptr);
+                             QPointer<GekkoFyre::StringFuncs> stringFuncs, QObject *parent = nullptr);
     virtual ~GkPaAudioPlayer();
 
     void play(QString audio_file);
@@ -69,6 +69,8 @@ public:
     void stop();
 
 private:
+    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
+
     std::unique_ptr<GkPaAudioFileHandler> fileHandler;
     std::unique_ptr<GkPaStreamHandler> streamHandler;
 
