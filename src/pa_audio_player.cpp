@@ -51,8 +51,13 @@ using namespace Control;
 /**
  * @author Copyright (c) 2015 Andy Stanton <https://github.com/andystanton/sound-example/blob/master/LICENSE>.
  */
-GkPaAudioPlayer::GkPaAudioPlayer()
+GkPaAudioPlayer::GkPaAudioPlayer(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
+                                 QPointer<GekkoFyre::GkEventLogger> eventLogger, GekkoFyre::Database::Settings::GkAudioChannels audio_channels,
+                                 QObject *parent)
 {
+    fileHandler = std::make_unique<GkPaAudioFileHandler>();
+    streamHandler = std::make_unique<GkPaStreamHandler>(database, output_device, eventLogger, audio_channels, parent);;
+
     return;
 }
 

@@ -53,14 +53,11 @@ using namespace Control;
  * @author Copyright (c) 2015 Andy Stanton <https://github.com/andystanton/sound-example/blob/master/LICENSE>.
  */
 GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
-                                     QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                                     GkAudioChannels audio_channels, QObject *parent)
-                                     : data()
+                                     QPointer<GekkoFyre::GkEventLogger> eventLogger, GkAudioChannels audio_channels, QObject *parent) : data()
 {
     setParent(parent);
 
     gkDb = std::move(database);
-    gkStringFuncs = std::move(stringFuncs);
     gkEventLogger = std::move(eventLogger);
 
     //
@@ -68,7 +65,7 @@ GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, co
     //
     pref_output_device = output_device;
     gkAudioChannels = audio_channels;
-    PaError error;
+    PaError error = paNoError;
     
     if (gkAudioChannels != GkAudioChannels::Unknown) {
         error = Pa_Initialize();

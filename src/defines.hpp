@@ -41,6 +41,8 @@
 
 #pragma once
 
+//-V::1042
+
 #include "src/gk_string_funcs.hpp"
 #include <portaudiocpp/PortAudioCpp.hxx>
 #include <boost/exception/all.hpp>

@@ -43,7 +43,6 @@
 
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
-#include "src/gk_string_funcs.hpp"
 #include "src/gk_logger.hpp"
 #include "src/pa_audio_file.hpp"
 #include <memory>
@@ -82,8 +81,8 @@ class GkPaStreamHandler : public QObject {
 
 public:
     explicit GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
-                               QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                               GekkoFyre::Database::Settings::GkAudioChannels audio_channels, QObject *parent = nullptr);
+                               QPointer<GekkoFyre::GkEventLogger> eventLogger, GekkoFyre::Database::Settings::GkAudioChannels audio_channels,
+                               QObject *parent = nullptr);
     ~GkPaStreamHandler() override;
 
     void processEvent(AudioEventType audioEventType, GkAudioFramework::SndFileCallback *audioFile = nullptr, bool loop = false);
@@ -92,7 +91,6 @@ public:
 
 private:
     QPointer<GekkoFyre::GkLevelDb> gkDb;
-    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
     const int CHANNEL_COUNT = 2;
