@@ -58,13 +58,15 @@ using namespace Logging;
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
-                                     QPointer<GekkoFyre::GkEventLogger> eventLogger, GkAudioChannels audio_channels, QObject *parent) : data()
+                                     QPointer<GekkoFyre::GkEventLogger> eventLogger, QPointer<GekkoFyre::StringFuncs> stringFuncs,
+                                     GkAudioChannels audio_channels, QObject *parent) : gkData()
 {
     try {
         setParent(parent);
 
         gkDb = std::move(database);
         gkEventLogger = std::move(eventLogger);
+        gkStringFuncs = std::move(stringFuncs);
 
         //
         // Initialize variables
@@ -86,14 +88,13 @@ GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, co
             // out_param.suggestedLatency = gkPortAudioSys->deviceByIndex(pref_output_device.stream_parameters.device).defaultLowOutputLatency();
 
             error = Pa_OpenStream(&gkPaStream, nullptr, &out_param, pref_output_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
-                                  paNoFlag, &portAudioCallback, this);
+                                  paNoFlag, &portAudioCallback, gkData.data());
             gkEventLogger->handlePortAudioErrorCode(error, tr("Problem initializing an audio stream!"));
         } else {
-            std::throw_with_nested(std::invalid_argument(tr("Unable to determine the amount of channels required for audio playback!").toStdString()));
+            throw std::invalid_argument(tr("Unable to determine the amount of channels required for audio playback!").toStdString());
         }
     } catch (const std::exception &e) {
-        std::throw_with_nested(std::runtime_error(tr("An issue was encountered during the playback of audio. Error:\n\n%1")
-        .arg(QString::fromStdString(e.what())).toStdString()));
+        gkStringFuncs->print_exception(e);
     }
 
     return;
@@ -113,19 +114,19 @@ void GkPaStreamHandler::processEvent(AudioEventType audioEventType, GkAudioFrame
 {
     switch (audioEventType) {
         case start:
-            if (Pa_IsStreamStopped(stream)) {
-                Pa_StartStream(stream);
+            if (Pa_IsStreamStopped(gkPaStream)) {
+                Pa_StartStream(gkPaStream);
             }
 
-            data.push_back(new GkPlayback { audioFile, 0, loop });
+            gkData.push_back(new GkPlayback {audioFile, 0, loop });
             break;
         case stop:
-            Pa_StopStream(stream);
-            for (auto instance: data) {
+            Pa_StopStream(gkPaStream);
+            for (auto instance: gkData) {
                 delete instance;
             }
 
-            data.clear();
+            gkData.clear();
             break;
     }
 }
@@ -145,17 +146,19 @@ void GkPaStreamHandler::processEvent(AudioEventType audioEventType, GkAudioFrame
 qint32 GkPaStreamHandler::portAudioCallback(const void *input, void *output, size_t frameCount, const PaStreamCallbackTimeInfo *paTimeInfo,
                                             PaStreamCallbackFlags statusFlags, void *userData)
 {
-    GkPaStreamHandler *handler = (GkPaStreamHandler *)userData;
+    Q_UNUSED(input);
+    Q_UNUSED(paTimeInfo);
+    Q_UNUSED(statusFlags);
 
+    GkPaStreamHandler *handler = (GkPaStreamHandler *)userData;
     if (channelCount > 0) {
         size_t stereoFrameCount = frameCount * channelCount;
         std::memset((qint32 *)output, 0, stereoFrameCount * sizeof(qint32));
 
-        if (handler->data.size() > 0) {
-            auto it = handler->data.begin();
-            while (it != handler->data.end()) {
-                GkPlayback *data = (*it);
-                GkAudioFramework::SndFileCallback *audioFile = (GkAudioFramework::SndFileCallback *)data->audioFile;
+        if (handler->gkData.size() > 0) {
+            auto it = handler->gkData.begin();
+            while (it != handler->gkData.end()) {
+                GkPlayback *data_ptr = (*it);
 
                 qint32 *outputBuffer = new qint32[stereoFrameCount];
                 qint32 *bufferCursor = outputBuffer;
@@ -165,28 +168,27 @@ qint32 GkPaStreamHandler::portAudioCallback(const void *input, void *output, siz
 
                 bool playbackEnded = false;
                 while (framesLeft > 0) {
-                    sf_seek(audioFile->file, data->position, SEEK_SET);
-                    if (framesLeft > (audioFile->info.frames - data->position)) {
-                        framesRead = (quint32) (audioFile->info.frames - data->position);
-                        if (data->loop) {
-                            data->position = 0;
+                    sf_seek(data_ptr->audioFile->file, data_ptr->position, SEEK_SET);
+                    if (framesLeft > (data_ptr->audioFile->info.frames - data_ptr->position)) {
+                        framesRead = (quint32) (data_ptr->audioFile->info.frames - data_ptr->position);
+                        if (data_ptr->loop) {
+                            data_ptr->position = 0;
                         } else {
                             playbackEnded = true;
                             framesLeft = framesRead;
                         }
                     } else {
                         framesRead = framesLeft;
-                        data->position += framesRead;
+                        data_ptr->position += framesRead;
                     }
 
-                    sf_readf_int(audioFile->file, bufferCursor, framesRead);
+                    sf_readf_int(data_ptr->audioFile->file, bufferCursor, framesRead);
                     bufferCursor += framesRead;
                     framesLeft -= framesRead;
                 }
 
-
                 qint32 *outputCursor = (qint32 *)output;
-                if (audioFile->info.channels == 1) {
+                if (data_ptr->audioFile->info.channels == 1) {
                     for (size_t i = 0; i < stereoFrameCount; ++i) {
                         *outputCursor += (0.5 * outputBuffer[i]);
                         ++outputCursor;
@@ -200,10 +202,9 @@ qint32 GkPaStreamHandler::portAudioCallback(const void *input, void *output, siz
                     }
                 }
 
-
                 if (playbackEnded) {
-                    it = handler->data.erase(it);
-                    delete data;
+                    it = handler->gkData.erase(it);
+                    delete data_ptr;
                 } else {
                     ++it;
                 }

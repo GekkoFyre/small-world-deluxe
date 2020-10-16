@@ -99,9 +99,8 @@ GkEventLogger::~GkEventLogger()
  * @brief GkEventLogger::handlePortAudioErrorCode An event handler for PortAudio error codes.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param pa_error The error code/return from a PortAudio function.
- * @return Whether there was actually an error or not.
  */
-bool GkEventLogger::handlePortAudioErrorCode(const PaError &pa_error, const QString &arguments)
+void GkEventLogger::handlePortAudioErrorCode(const PaError &pa_error, const QString &arguments)
 {
     if (pa_error != paNoError) {
         QString log_msg = tr("There has been an error with regard to PortAudio!");
@@ -110,11 +109,11 @@ bool GkEventLogger::handlePortAudioErrorCode(const PaError &pa_error, const QStr
             log_msg += tr("Error:\n\n%1 [ %2 ]").arg(arguments).arg(QString::fromStdString(Pa_GetErrorText(pa_error)));
         }
 
-        publishEvent(log_msg, GkSeverity::Error, "", false, true, false, true);
-        return false;
+        publishEvent(log_msg, GkSeverity::Error, "", false, true, false, false);
+        std::throw_with_nested(std::runtime_error(log_msg.toStdString()));
     }
 
-    return true;
+    return;
 }
 
 /**

@@ -82,8 +82,8 @@ class GkPaStreamHandler : public QObject {
 
 public:
     explicit GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
-                               QPointer<GekkoFyre::GkEventLogger> eventLogger, GekkoFyre::Database::Settings::GkAudioChannels audio_channels,
-                               QObject *parent = nullptr);
+                               QPointer<GekkoFyre::GkEventLogger> eventLogger, QPointer<GekkoFyre::StringFuncs> stringFuncs,
+                               GekkoFyre::Database::Settings::GkAudioChannels audio_channels, QObject *parent = nullptr);
     ~GkPaStreamHandler() override;
 
     void processEvent(AudioEventType audioEventType, GkAudioFramework::SndFileCallback *audioFile = nullptr, bool loop = false);
@@ -93,6 +93,7 @@ public:
 private:
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
+    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
 
     static inline qint32 channelCount;
 
@@ -103,8 +104,7 @@ private:
     GekkoFyre::Database::Settings::GkAudioChannels gkAudioChannels;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
 
-    PaStream *stream;
-    std::vector<GkPlayback *> data;
+    std::vector<GkPlayback *> gkData;
 
 };
 };
