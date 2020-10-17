@@ -711,6 +711,12 @@ namespace GkAudioFramework {
         SF_INFO info = {};
     };
 
+    struct GkPlayback {
+        SndFileCallback audioFile;
+        qint32 position;
+        bool loop;
+    };
+
     enum CodecSupport {
         PCM,
         OggVorbis,

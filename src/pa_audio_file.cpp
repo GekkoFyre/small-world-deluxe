@@ -67,7 +67,7 @@ GkPaAudioFileHandler::GkPaAudioFileHandler(QPointer<GekkoFyre::GkEventLogger> ev
 GkPaAudioFileHandler::~GkPaAudioFileHandler()
 {
     for (auto entry: gkSounds) {
-        sf_close(entry.second.file);
+        sf_close(entry.second.audioFile.file);
     }
 }
 
@@ -77,34 +77,32 @@ GkPaAudioFileHandler::~GkPaAudioFileHandler()
  * @param filename
  * @return
  */
-bool GkPaAudioFileHandler::containsSound(std::string filename)
+bool GkPaAudioFileHandler::containsSound(const std::string &filename)
 {
     return gkSounds.find(filename) != gkSounds.end();
 }
 
 /**
  * @brief GkPaAudioFileHandler::getSound
- * @author Copyright (c) 2015 Andy Stanton <https://github.com/andystanton/sound-example/blob/master/LICENSE>,
- * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param filename The **FULL** filesystem path to the audio file in question!
  * @return
  */
-GkAudioFramework::SndFileCallback &GkPaAudioFileHandler::getSound(std::string filename)
+GkAudioFramework::GkPlayback GkPaAudioFileHandler::getSound(const std::string &filename)
 {
     if (!containsSound(filename)) {
-        GkAudioFramework::SndFileCallback sound;
-        SF_INFO info;
-        info.format = 0;
-        SNDFILE *audioFile = sf_open(filename.c_str(), SFM_READ, &info);
+        GkAudioFramework::GkPlayback play_struct {};
+        play_struct.loop = false;
+        play_struct.position = 0;
 
-        if (!audioFile) {
-            std::stringstream error;
+        play_struct.audioFile.file = sf_open(filename.c_str(), SFM_READ, &play_struct.audioFile.info);
+        if (!play_struct.audioFile.file) {
             gkEventLogger->publishEvent(QString("Unable to open audio file, \"%1\", due to filesystem error!").arg(QString::fromStdString(filename)),
                                         GkSeverity::Error, "", true, true, false, false);
             std::throw_with_nested(std::runtime_error(QString("Unable to open audio file, \"%1\", due to filesystem error!").arg(QString::fromStdString(filename)).toStdString()));
         }
 
-        gkSounds[filename] = sound;
+        gkSounds[filename] = play_struct;
     }
     
     return gkSounds[filename];

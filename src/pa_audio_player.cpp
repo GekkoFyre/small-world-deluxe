@@ -51,14 +51,17 @@ using namespace Control;
 /**
  * @author Copyright (c) 2015 Andy Stanton <https://github.com/andystanton/sound-example/blob/master/LICENSE>.
  */
-GkPaAudioPlayer::GkPaAudioPlayer(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
-                                 QPointer<GekkoFyre::GkEventLogger> eventLogger, GekkoFyre::Database::Settings::GkAudioChannels audio_channels,
+GkPaAudioPlayer::GkPaAudioPlayer(portaudio::System *portAudioSys, QPointer<GekkoFyre::GkLevelDb> database,
+                                 const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
+                                 const QPointer<GekkoFyre::GkEventLogger> &eventLogger,
+                                 GekkoFyre::Database::Settings::GkAudioChannels audio_channels,
                                  QPointer<GekkoFyre::StringFuncs> stringFuncs, QObject *parent)
 {
+    gkPortAudioSys = portAudioSys;
     gkStringFuncs = std::move(stringFuncs);
 
     fileHandler = std::make_unique<GkPaAudioFileHandler>(eventLogger);
-    streamHandler = std::make_unique<GkPaStreamHandler>(database, output_device, eventLogger, stringFuncs, audio_channels, parent);;
+    streamHandler = new GkPaStreamHandler(gkPortAudioSys, std::move(database), output_device, eventLogger, stringFuncs, audio_channels, parent);;
 
     return;
 }
@@ -72,10 +75,10 @@ GkPaAudioPlayer::~GkPaAudioPlayer()
  * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>.
  * @param audio_file
  */
-void GkPaAudioPlayer::play(QString audio_file)
+void GkPaAudioPlayer::play(const std::string &audio_file)
 {
     try {
-        streamHandler->processEvent(AudioEventType::start, &fileHandler->getSound(audio_file.toStdString()), false);
+        streamHandler->processEvent(AudioEventType::start, fileHandler->getSound(audio_file), false);
     } catch (const std::exception &e) {
         QMessageBox::warning(nullptr, tr("Error!"), tr("A stream processing error has occurred with regards to the PortAudio library handling functions. Error:\n\n%1")
         .arg(QString::fromStdString(e.what())), QMessageBox::Ok);
@@ -90,10 +93,10 @@ void GkPaAudioPlayer::play(QString audio_file)
  * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>.
  * @param audio_file
  */
-void GkPaAudioPlayer::loop(QString audio_file)
+void GkPaAudioPlayer::loop(const std::string &audio_file)
 {
     try {
-        streamHandler->processEvent(AudioEventType::start, &fileHandler->getSound(audio_file.toStdString()), true);
+        streamHandler->processEvent(AudioEventType::start, fileHandler->getSound(audio_file), true);
     } catch (const std::exception &e) {
         QMessageBox::warning(nullptr, tr("Error!"), tr("A stream processing error has occurred with regards to the PortAudio library handling functions. Error:\n\n%1")
         .arg(QString::fromStdString(e.what())), QMessageBox::Ok);
@@ -107,9 +110,14 @@ void GkPaAudioPlayer::loop(QString audio_file)
  * @author Copyright (c) 2015 Andy Stanton <https://github.com/andystanton/sound-example/blob/master/LICENSE>,
  * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>.
  */
-void GkPaAudioPlayer::stop()
+void GkPaAudioPlayer::stop(const std::string &audio_file)
 {
-    streamHandler->processEvent(AudioEventType::stop);
+    try {
+        streamHandler->processEvent(AudioEventType::stop, fileHandler->getSound(audio_file));
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("A stream processing error has occurred with regards to the PortAudio library handling functions. Error:\n\n%1")
+                .arg(QString::fromStdString(e.what())), QMessageBox::Ok);
+    }
 
     return;
 }

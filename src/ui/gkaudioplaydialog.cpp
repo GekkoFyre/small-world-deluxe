@@ -288,10 +288,10 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
             audio_out_play = true;
 
             if (r_pback_audio_file.exists()) {
-                std::unique_ptr<GkPaAudioPlayer> gkPaAudioPlayer = std::make_unique<GkPaAudioPlayer>(gkDb, pref_output_device, gkEventLogger,
-                                                                                                     gkAudioFileInfo.num_audio_channels,
+                std::unique_ptr<GkPaAudioPlayer> gkPaAudioPlayer = std::make_unique<GkPaAudioPlayer>(gkPortAudioSys, gkDb, pref_output_device,
+                                                                                                     gkEventLogger, gkAudioFileInfo.num_audio_channels,
                                                                                                      gkStringFuncs, this);
-                gkPaAudioPlayer->play(QString::fromStdString(audio_file_path.string()));
+                gkPaAudioPlayer->play(audio_file_path.string());
             } else {
                 throw std::runtime_error(tr("Error with audio playback! Does the file, \"%1\", actually exist?")
                 .arg(r_pback_audio_file.fileName()).toStdString());

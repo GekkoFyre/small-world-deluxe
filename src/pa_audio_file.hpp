@@ -43,11 +43,21 @@
 
 #include "src/defines.hpp"
 #include "src/gk_logger.hpp"
-#include <sndfile.h>
 #include <map>
 #include <string>
 #include <QString>
 #include <QPointer>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#include <sndfile.h>
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 namespace GekkoFyre {
 
@@ -57,13 +67,13 @@ public:
     explicit GkPaAudioFileHandler(QPointer<GekkoFyre::GkEventLogger> eventLogger);
     virtual ~GkPaAudioFileHandler();
 
-    bool containsSound(std::string filename);
-    GkAudioFramework::SndFileCallback &getSound(std::string filename);
+    bool containsSound(const std::string &filename);
+    GkAudioFramework::GkPlayback getSound(const std::string &filename);
 
 private:
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
-    std::map<std::string, GkAudioFramework::SndFileCallback> gkSounds;
+    std::map<std::string, GkAudioFramework::GkPlayback> gkSounds;
 
 };
 };
