@@ -44,7 +44,7 @@
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
-#include "src/pa_audio_file.hpp"
+#include <map>
 #include <memory>
 #include <vector>
 #include <string>
@@ -78,12 +78,13 @@ public:
     explicit GkPaStreamHandler(portaudio::System *portAudioSys, QPointer<GekkoFyre::GkLevelDb> database,
                                const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
                                QPointer<GekkoFyre::GkEventLogger> eventLogger, QPointer<GekkoFyre::StringFuncs> stringFuncs,
-                               GekkoFyre::Database::Settings::GkAudioChannels audio_channels, QObject *parent = nullptr);
+                               QObject *parent = nullptr);
     ~GkPaStreamHandler() override;
 
-    void processEvent(AudioEventType audioEventType, const GkAudioFramework::GkPlayback &audioFile, bool loop = false);
+    bool containsSound(const std::string &filename);
+    void processEvent(AudioEventType audioEventType, const std::string &mediaFilePath, bool loop = false);
     qint32 portAudioCallback(const void *input, void *output, size_t frameCount, const PaStreamCallbackTimeInfo *paTimeInfo,
-                                    PaStreamCallbackFlags statusFlags);
+                             PaStreamCallbackFlags statusFlags);
 
 private:
     portaudio::System *gkPortAudioSys;
@@ -91,15 +92,15 @@ private:
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
 
-    qint32 channelCount;
+    qint32 fileChannelCount;
 
     //
     // PortAudio initialization and buffers
     //
     std::shared_ptr<portaudio::MemFunCallbackStream<GkPaStreamHandler>> streamPlayback;
-    GekkoFyre::Database::Settings::GkAudioChannels gkAudioChannels;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
 
+    std::map<std::string, GkAudioFramework::GkPlayback> gkSounds;
     std::vector<GkAudioFramework::GkPlayback> gkData;
 
 };

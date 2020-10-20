@@ -714,6 +714,7 @@ namespace GkAudioFramework {
     struct GkPlayback {
         SndFileCallback audioFile;
         qint32 position;
+        sf_count_t count;
         bool loop;
     };
 

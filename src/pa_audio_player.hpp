@@ -42,7 +42,6 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/pa_audio_file.hpp"
 #include "src/pa_stream_handler.hpp"
 #include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
@@ -62,7 +61,6 @@ public:
     explicit GkPaAudioPlayer(portaudio::System *portAudioSys, QPointer<GekkoFyre::GkLevelDb> database,
                              const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
                              const QPointer<GekkoFyre::GkEventLogger> &eventLogger,
-                             GekkoFyre::Database::Settings::GkAudioChannels audio_channels,
                              QPointer<GekkoFyre::StringFuncs> stringFuncs, QObject *parent = nullptr);
     virtual ~GkPaAudioPlayer();
 
@@ -74,7 +72,6 @@ private:
     portaudio::System *gkPortAudioSys;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
 
-    std::unique_ptr<GkPaAudioFileHandler> fileHandler;
     QPointer<GkPaStreamHandler> streamHandler;
 
 };

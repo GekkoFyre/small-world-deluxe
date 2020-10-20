@@ -61,7 +61,7 @@ using namespace Logging;
 GkPaStreamHandler::GkPaStreamHandler(portaudio::System *portAudioSys, QPointer<GekkoFyre::GkLevelDb> database,
                                      const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
                                      QPointer<GekkoFyre::GkEventLogger> eventLogger, QPointer<GekkoFyre::StringFuncs> stringFuncs,
-                                     GkAudioChannels audio_channels, QObject *parent)
+                                     QObject *parent)
 {
     try {
         setParent(parent);
@@ -75,22 +75,10 @@ GkPaStreamHandler::GkPaStreamHandler(portaudio::System *portAudioSys, QPointer<G
         // Initialize variables
         //
         pref_output_device = output_device;
-        gkAudioChannels = audio_channels;
-        channelCount = gkDb->convertAudioChannelsToCount(gkAudioChannels);
         PaError error = paNoError;
-
-        if (gkAudioChannels != GkAudioChannels::Unknown) {
+        if (pref_output_device.dev_output_channel_count > 0) {
             error = Pa_Initialize();
             gkEventLogger->handlePortAudioErrorCode(error, tr("Problem initializing PortAudio itself!"));
-
-            PaTime prefOutputLatency = portAudioSys->deviceByIndex(pref_output_device.stream_parameters.device).defaultLowOutputLatency();
-            portaudio::DirectionSpecificStreamParameters outputParams(gkPortAudioSys->deviceByIndex(pref_output_device.stream_parameters.device),
-                                                                      pref_output_device.dev_output_channel_count, portaudio::FLOAT32, false, prefOutputLatency, nullptr);
-            portaudio::StreamParameters playback(portaudio::DirectionSpecificStreamParameters::null(), outputParams, pref_output_device.def_sample_rate,
-                                                 AUDIO_FRAMES_PER_BUFFER, paPrimeOutputBuffersUsingStreamCallback);
-            streamPlayback = std::make_shared<portaudio::MemFunCallbackStream<GkPaStreamHandler>>(playback, *this, &GkPaStreamHandler::portAudioCallback);
-
-            gkEventLogger->handlePortAudioErrorCode(error, tr("Problem initializing an audio stream!"));
         } else {
             throw std::invalid_argument(tr("Unable to determine the amount of channels required for audio playback!").toStdString());
         }
@@ -102,7 +90,22 @@ GkPaStreamHandler::GkPaStreamHandler(portaudio::System *portAudioSys, QPointer<G
 }
 
 GkPaStreamHandler::~GkPaStreamHandler()
-{}
+{
+    for (auto entry: gkSounds) {
+        sf_close(entry.second.audioFile.file);
+    }
+}
+
+/**
+ * @brief GkPaStreamHandler::containsSound
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param filename
+ * @return
+ */
+bool GkPaStreamHandler::containsSound(const std::string &filename)
+{
+    return gkSounds.find(filename) != gkSounds.end();
+}
 
 /**
  * @brief GkPaStreamHandler::processEvent
@@ -111,19 +114,46 @@ GkPaStreamHandler::~GkPaStreamHandler()
  * @param audioFile
  * @param loop
  */
-void GkPaStreamHandler::processEvent(AudioEventType audioEventType, const GkAudioFramework::GkPlayback &audioFile, bool loop)
+void GkPaStreamHandler::processEvent(AudioEventType audioEventType, const std::string &mediaFilePath, bool loop)
 {
     switch (audioEventType) {
         case start:
-            if (streamPlayback->isStopped()) {
-                streamPlayback->start();
-            }
+        {
+            for (const auto &mediaInfo: gkSounds) {
+                if (mediaInfo.first == mediaFilePath) {
+                    PaError error = paNoError;
+                    PaTime prefOutputLatency = gkPortAudioSys->deviceByIndex(pref_output_device.stream_parameters.device).defaultLowOutputLatency();
+                    portaudio::DirectionSpecificStreamParameters outputParams(gkPortAudioSys->deviceByIndex(pref_output_device.stream_parameters.device),
+                                                                              mediaInfo.second.audioFile.info.channels, portaudio::INT32, false, prefOutputLatency, nullptr);
+                    portaudio::StreamParameters playback(portaudio::DirectionSpecificStreamParameters::null(), outputParams, mediaInfo.second.audioFile.info.samplerate,
+                                                         AUDIO_FRAMES_PER_BUFFER, paPrimeOutputBuffersUsingStreamCallback);
+                    streamPlayback = std::make_shared<portaudio::MemFunCallbackStream<GkPaStreamHandler>>(playback, *this, &GkPaStreamHandler::portAudioCallback);
 
-            gkData.push_back(audioFile);
+                    gkEventLogger->handlePortAudioErrorCode(error, tr("Problem initializing an audio stream!"));
+
+                    if (streamPlayback->isStopped()) {
+                        streamPlayback->start();
+                    }
+
+                    gkData.push_back(mediaInfo.second);
+                    break;
+                }
+            }
+        }
+
             break;
         case stop:
+        {
             streamPlayback->stop();
-            // gkData.erase(std::remove(gkData.begin(), gkData.end(), audioFile), gkData.end());
+
+            /*
+            for (const auto &mediaInfo: gkSounds) {
+                if (mediaInfo.first == mediaFilePath) {
+                    gkData.erase(std::remove(gkData.begin(), gkData.end(), mediaInfo.second), gkData.end());
+                }
+            }
+            */
+        }
 
             break;
     }
@@ -131,8 +161,7 @@ void GkPaStreamHandler::processEvent(AudioEventType audioEventType, const GkAudi
 
 /**
  * @brief GkPaGkPaStreamHandler::portAudioCallback
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>,
- * Copyright (c) 2015 Andy Stanton <https://github.com/andystanton/sound-example/blob/master/LICENSE>
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param input
  * @param output
  * @param frameCount
@@ -148,67 +177,38 @@ qint32 GkPaStreamHandler::portAudioCallback(const void *input, void *output, siz
     Q_UNUSED(paTimeInfo);
     Q_UNUSED(statusFlags);
 
-    if (channelCount > 0) {
-        size_t stereoFrameCount = frameCount * channelCount;
-        std::memset((qint32 *)output, 0, stereoFrameCount * sizeof(qint32));
+    if (!gkData.empty()) {
+        auto it = gkData.begin();
+        while (it != gkData.end()) {
+            GkAudioFramework::GkPlayback data_ptr = (*it);
+            if (data_ptr.audioFile.info.channels > 0) {
+                size_t stereoFrameCount = frameCount * data_ptr.audioFile.info.channels;
 
-        if (!gkData.empty()) {
-            auto it = gkData.begin();
-            while (it != gkData.end()) {
-                GkAudioFramework::GkPlayback data_ptr = (*it);
+                qint32 *out = (qint32 *)output;
+                auto data_buf = std::make_unique<qint32[]>(stereoFrameCount);
+                sf_seek(data_ptr.audioFile.file, data_ptr.position, SEEK_SET);
 
-                qint32 *outputBuffer = new qint32[stereoFrameCount];
-                qint32 *bufferCursor = outputBuffer;
+                // https://stackoverflow.com/questions/22889766/difference-between-frames-and-items-in-libsndfile
+                data_ptr.count = sf_readf_int(data_ptr.audioFile.file, data_buf.get(), frameCount);
 
-                quint32 framesLeft = (quint32)frameCount;
-                quint32 framesRead;
-
-                bool playbackEnded = false;
-                while (framesLeft > 0) {
-                    sf_seek(data_ptr.audioFile.file, data_ptr.position, SEEK_SET);
-                    if (framesLeft > (data_ptr.audioFile.info.frames - data_ptr.position)) {
-                        framesRead = (quint32) (data_ptr.audioFile.info.frames - data_ptr.position);
-                        if (data_ptr.loop) {
-                            data_ptr.position = 0;
-                        } else {
-                            playbackEnded = true;
-                            framesLeft = framesRead;
-                        }
-                    } else {
-                        framesRead = framesLeft;
-                        data_ptr.position += framesRead;
-                    }
-
-                    sf_readf_int(data_ptr.audioFile.file, bufferCursor, framesRead);
-                    bufferCursor += framesRead;
-                    framesLeft -= framesRead;
+                Q_ASSERT(data_ptr.count == frameCount);
+                for (qint32 i = 0; i < stereoFrameCount; ++i) {
+                    *out++ = data_buf[i];
                 }
 
-                qint32 *outputCursor = (qint32 *)output;
-                if (data_ptr.audioFile.info.channels == 1) {
-                    for (size_t i = 0; i < stereoFrameCount; ++i) {
-                        *outputCursor += (0.5 * outputBuffer[i]);
-                        ++outputCursor;
-                        *outputCursor += (0.5 * outputBuffer[i]);
-                        ++outputCursor;
-                    }
+                data_ptr.position += AUDIO_FRAMES_PER_BUFFER;
+                if (data_ptr.count > 0) {
+                    return paContinue;
                 } else {
-                    for (size_t i = 0; i < stereoFrameCount; ++i) {
-                        *outputCursor += (0.5 * outputBuffer[i]);
-                        ++outputCursor;
-                    }
+                    return paComplete;
                 }
-
-                if (playbackEnded) {
-                    it = gkData.erase(it);
-                } else {
-                    ++it;
-                }
+            } else {
+                std::throw_with_nested(std::invalid_argument(tr("Invalid amount of audio channels given to PortAudio! Should be greater than zero, and not '%1'.")
+                .arg(QString::number(data_ptr.audioFile.info.channels)).toStdString()));
             }
         }
     } else {
-        std::throw_with_nested(std::invalid_argument(tr("Invalid amount of audio channels given to PortAudio! Should be greater than zero, and not '%1'.")
-        .arg(QString::number(channelCount)).toStdString()));
+        std::throw_with_nested(std::invalid_argument(tr("Empty data pointer given to PortAudio!").toStdString()));
     }
 
     return paContinue;
