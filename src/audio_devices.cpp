@@ -40,7 +40,6 @@
  ****************************************************************************************************/
 
 #include "src/audio_devices.hpp"
-#include "src/pa_sinewave.hpp"
 #include <map>
 #include <cmath>
 #include <chrono>
@@ -227,88 +226,86 @@ GkAudioApi AudioDevices::enumAudioDevicesCpp()
             std::cout << gkAudio.api_map[gkAudio.api_used[i]] << std::endl;
         }
 
-        RtAudio rt_audio;
+        for (const auto &api: gkAudio.api_used) { // Iterate over each API in the user's system, to garner all the Audio Devices!
+            std::unique_ptr<RtAudio> rt_audio = std::make_unique<RtAudio>(api);
+            quint32 device_count = rt_audio->getDeviceCount();
+            std::cout << tr("Found %1 device(s) for API: \"%2\"!")
+            .arg(QString::number(device_count))
+            .arg(QString::fromStdString(getApiDisplayName(api))).toStdString() << std::endl;
 
-        for (const auto &api: gkAudio.api_used) {
-            if (rt_audio.getCurrentApi() == api) {
-                gkAudio.curr_api == api;
-            }
-        }
+            gkAudio.gkDevice.reserve(device_count);
+            for (quint32 i = 0; i < device_count; ++i) {
+                GkDevice device;
+                device.device_info = rt_audio->getDeviceInfo(i);
+                device.device_id = i;
+                device.chosen_audio_dev_str = QString::fromStdString(device.device_info.name);
+                device.assoc_api = api;
 
-        quint32 device_count = rt_audio.getDeviceCount();
-        std::cout << tr("Found %1 device(s)!").arg(QString::number(device_count)).toStdString() << std::endl;
+                if (device.device_info.probed) {
+                    device.dev_input_channel_count = device.device_info.inputChannels;
+                    device.dev_output_channel_count = device.device_info.outputChannels;
+                    device.supp_native_formats = device.device_info.nativeFormats;
+                    device.default_output_dev = device.device_info.isDefaultOutput;
+                    device.default_input_dev = device.device_info.isDefaultInput;
 
-        gkAudio.gkDevice.reserve(device_count);
-        for (quint32 i = 0; i < device_count; ++i) {
-            GkDevice device;
-            device.device_info = rt_audio.getDeviceInfo(i);
-            device.device_id = i;
-            device.chosen_audio_dev_str = QString::fromStdString(device.device_info.name);
+                    if (device.default_output_dev) {
+                        std::cout << tr("This is the DEFAULT **output** audio device!").toStdString() << std::endl;
+                    }
 
-            if (device.device_info.probed) {
-                device.dev_input_channel_count = device.device_info.inputChannels;
-                device.dev_output_channel_count = device.device_info.outputChannels;
-                device.supp_native_formats = device.device_info.nativeFormats;
-                device.default_output_dev = device.device_info.isDefaultOutput;
-                device.default_input_dev = device.device_info.isDefaultInput;
+                    if (device.default_input_dev) {
+                        std::cout << tr("This is the DEFAULT **input** audio device!").toStdString() << std::endl;
+                    }
 
-                if (device.default_output_dev) {
-                    std::cout << tr("This is the DEFAULT **output** audio device!").toStdString() << std::endl;
-                }
+                    if (device.device_info.nativeFormats == 0) {
+                        std::cout << tr("No natively supported data formats(?)!").toStdString();
+                    } else {
+                        std::cout << tr("Natively supported data formats:").toStdString() << std::endl;
+                        if (device.device_info.nativeFormats & RTAUDIO_SINT8) {
+                            std::cout << tr("  8-bit int").toStdString() << std::endl;
+                        }
 
-                if (device.default_input_dev) {
-                    std::cout << tr("This is the DEFAULT **input** audio device!").toStdString() << std::endl;
-                }
+                        if (device.device_info.nativeFormats & RTAUDIO_SINT16) {
+                            std::cout << tr("  16-bit int").toStdString() << std::endl;
+                        }
 
-                if (device.device_info.nativeFormats == 0) {
-                    std::cout << tr("No natively supported data formats(?)!").toStdString();
+                        if (device.device_info.nativeFormats & RTAUDIO_SINT24) {
+                            std::cout << tr("  24-bit int").toStdString() << std::endl;
+                        }
+
+                        if (device.device_info.nativeFormats & RTAUDIO_SINT32) {
+                            std::cout << tr("  32-bit int").toStdString() << std::endl;
+                        }
+
+                        if (device.device_info.nativeFormats & RTAUDIO_FLOAT32) {
+                            std::cout << tr("  32-bit float").toStdString() << std::endl;
+                        }
+
+                        if (device.device_info.nativeFormats & RTAUDIO_FLOAT64) {
+                            std::cout << tr("  64-bit float").toStdString() << std::endl;
+                        }
+                    }
+
+                    if (device.device_info.sampleRates.size() < 1) {
+                        std::cout << tr("No supported sample rates found!").toStdString() << std::endl;
+                    } else {
+                        std::cout << tr("Supported sample rates = ").toStdString();
+                        for (quint32 j = 0; j < device.device_info.sampleRates.size(); ++j) {
+                            std::cout << device.device_info.sampleRates[j] << " ";
+                        }
+                    }
+
+                    std::cout << std::endl;
+                    if (device.device_info.preferredSampleRate == 0) {
+                        std::cout << tr("No preferred sample rate found!").toStdString() << std::endl;
+                    } else {
+                        std::cout << tr("Preferred sample rate = ").toStdString() << device.device_info.preferredSampleRate << std::endl;
+                    }
+
+                    std::cout << std::endl;
+                    gkAudio.gkDevice.push_back(device);
                 } else {
-                    std::cout << tr("Natively supported data formats:").toStdString() << std::endl;
-                    if (device.device_info.nativeFormats & RTAUDIO_SINT8) {
-                        std::cout << tr("  8-bit int").toStdString() << std::endl;
-                    }
-
-                    if (device.device_info.nativeFormats & RTAUDIO_SINT16) {
-                        std::cout << tr("  16-bit int").toStdString() << std::endl;
-                    }
-
-                    if (device.device_info.nativeFormats & RTAUDIO_SINT24) {
-                        std::cout << tr("  24-bit int").toStdString() << std::endl;
-                    }
-
-                    if (device.device_info.nativeFormats & RTAUDIO_SINT32) {
-                        std::cout << tr("  32-bit int").toStdString() << std::endl;
-                    }
-
-                    if (device.device_info.nativeFormats & RTAUDIO_FLOAT32) {
-                        std::cout << tr("  32-bit float").toStdString() << std::endl;
-                    }
-
-                    if (device.device_info.nativeFormats & RTAUDIO_FLOAT64) {
-                        std::cout << tr("  64-bit float").toStdString() << std::endl;
-                    }
+                    throw std::runtime_error(tr("Unable to probe given audio device for further details!").toStdString());
                 }
-
-                if (device.device_info.sampleRates.size() < 1) {
-                    std::cout << tr("No supported sample rates found!").toStdString() << std::endl;
-                } else {
-                    std::cout << tr("Supported sample rates = ").toStdString();
-                    for (quint32 j = 0; j < device.device_info.sampleRates.size(); ++j) {
-                        std::cout << device.device_info.sampleRates[j] << " ";
-                    }
-                }
-
-                std::cout << std::endl;
-                if (device.device_info.preferredSampleRate == 0) {
-                    std::cout << tr("No preferred sample rate found!").toStdString() << std::endl;
-                } else {
-                    std::cout << tr("Preferred sample rate = ").toStdString() << device.device_info.preferredSampleRate << std::endl;
-                }
-
-                std::cout << std::endl;
-                gkAudio.gkDevice.push_back(device);
-            } else {
-                throw std::runtime_error(tr("Unable to probe given audio device for further details!").toStdString());
             }
         }
 

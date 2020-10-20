@@ -502,6 +502,7 @@ namespace Database {
         namespace Audio {
             struct GkDevice {
                 QString audio_dev_str;                                              // The name of the device itself, formatted
+                RtAudio::Api assoc_api;                                             // The associated O/S API for this audio device.
                 RtAudio::DeviceInfo device_info;                                    // A great amount of information pertaining to the audio device itself.
                 quint32 device_id;                                                  // The Unique Identifier for this particular audio device.
                 bool pref_output_dev;                                               // Is this the preferred output device for the user's SWD configuration?

@@ -307,7 +307,7 @@ void GkLevelDb::write_audio_device_settings(const GkDevice &value, const bool &i
             // Unique identifier for the chosen output audio device
             batch.Put("AudioOutputSelChannels", std::to_string(value.sel_channels));
             batch.Put("AudioOutputId", value.chosen_audio_dev_str.toStdString());
-            batch.Put("AudioOutputPaHostIndex", std::to_string(value.dev_number));
+            batch.Put("AudioOutputDeviceName", std::to_string(value.dev_number));
 
             // Determine if this is the default output device for the system and if so, convert
             // the boolean value to a std::string suitable for database storage.
@@ -317,7 +317,7 @@ void GkLevelDb::write_audio_device_settings(const GkDevice &value, const bool &i
             // Unique identifier for the chosen input audio device
             batch.Put("AudioInputSelChannels", std::to_string(value.sel_channels));
             batch.Put("AudioInputId", value.chosen_audio_dev_str.toStdString());
-            batch.Put("AudioInputPaHostIndex", std::to_string(value.dev_number));
+            batch.Put("AudioInputDeviceName", std::to_string(value.dev_number));
 
             // Determine if this is the default input device for the system and if so, convert
             // the boolean value to a std::string suitable for database storage.
@@ -1387,7 +1387,7 @@ QString GkLevelDb::read_audio_device_settings(const bool &is_output_device, cons
     std::lock_guard<std::mutex> lck_guard(read_audio_dev_mtx);
     read_options.verify_checksums = true;
 
-    if (!index_only) {
+    if (index_only) {
         if (is_output_device) {
             // We are dealing with an audio output device
             status = db->Get(read_options, "AudioOutputId", &value);
@@ -1397,9 +1397,9 @@ QString GkLevelDb::read_audio_device_settings(const bool &is_output_device, cons
         }
     } else {
         if (is_output_device) {
-            status = db->Get(read_options, "AudioOutputPaHostIndex", &value);
+            status = db->Get(read_options, "AudioOutputDeviceName", &value);
         } else {
-            status = db->Get(read_options, "AudioInputPaHostIndex", &value);
+            status = db->Get(read_options, "AudioInputDeviceName", &value);
         }
     }
 
@@ -1408,17 +1408,17 @@ QString GkLevelDb::read_audio_device_settings(const bool &is_output_device, cons
 
 /**
  * @brief GkLevelDb::write_audio_api_settings Writes out the saved information concerning the user's choice of
- * decided upon PortAudio API settings.
+ * decided upon RtAudio API settings.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param interface The user's last chosen settings for the decided upon PortAudio API.
+ * @param interface The user's last chosen settings for the decided upon RtAudio API.
  */
-void GkLevelDb::write_audio_api_settings(const PaHostApiTypeId &interface)
+void GkLevelDb::write_audio_api_settings(const RtAudio::Api &interface)
 {
     try {
         leveldb::WriteBatch batch;
         leveldb::Status status;
 
-        batch.Put("AudioPortAudioAPISelection", portAudioApiToStr(interface).toStdString());
+        batch.Put("AudioPortAudioAPISelection", RtAudio::getApiName(interface));
 
         leveldb::WriteOptions write_options;
         write_options.sync = true;
@@ -1437,11 +1437,11 @@ void GkLevelDb::write_audio_api_settings(const PaHostApiTypeId &interface)
 
 /**
  * @brief GkLevelDb::read_audio_api_settings Reads the saved information concerning the user's choice of decided
- * upon PortAudio API settings.
+ * upon RtAudio API settings.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @return The user's last chosen settings for the decided upon PortAudio API.
+ * @return The user's last chosen settings for the decided upon RtAudio API.
  */
-PaHostApiTypeId GkLevelDb::read_audio_api_settings()
+RtAudio::Api GkLevelDb::read_audio_api_settings()
 {
     leveldb::Status status;
     leveldb::ReadOptions read_options;
@@ -1454,10 +1454,10 @@ PaHostApiTypeId GkLevelDb::read_audio_api_settings()
 
     if (!value.empty()) {
         // Convert from `std::string` to `enum`!
-        return portAudioApiToEnum(QString::fromStdString(value));
+        return RtAudio::getCompiledApiByName(value);
     }
 
-    return PaHostApiTypeId::paInDevelopment;
+    return RtAudio::UNSPECIFIED;
 }
 
 /**
@@ -1505,7 +1505,7 @@ QString GkLevelDb::portAudioApiToStr(const PaHostApiTypeId &interface)
 }
 
 /**
- * @brief GkLevelDb::portAudioApiToEnum converts the stored string value of the PortAudio API setting to the
+ * @brief GkLevelDb::portAudioApiToEnum converts the stored string value of the RtAudio API setting to the
  * relevant enum value, for easier computation.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param interface
@@ -1602,7 +1602,7 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
         std::string output_def_sys_device;
 
         status = db->Get(read_options, "AudioOutputId", &output_id);
-        status = db->Get(read_options, "AudioOutputPaHostIndex", &output_pa_host_idx);
+        status = db->Get(read_options, "AudioOutputDeviceName", &output_pa_host_idx);
         status = db->Get(read_options, "AudioOutputSelChannels", &output_sel_channels);
         status = db->Get(read_options, "AudioOutputDefSysDevice", &output_def_sys_device);
 
@@ -1630,7 +1630,7 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
         std::string input_def_sys_device;
 
         status = db->Get(read_options, "AudioInputId", &input_id);
-        status = db->Get(read_options, "AudioInputPaHostIndex", &input_pa_host_idx);
+        status = db->Get(read_options, "AudioInputDeviceName", &input_pa_host_idx);
         status = db->Get(read_options, "AudioInputSelChannels", &input_sel_channels);
         status = db->Get(read_options, "AudioInputDefSysDevice", &input_def_sys_device);
 

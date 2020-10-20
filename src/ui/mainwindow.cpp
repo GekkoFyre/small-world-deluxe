@@ -474,7 +474,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
 
         gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(gkDb, fileIo, gkFreqList, gkStringFuncs, gkEventLogger, gkSystem, this);
-        auto pref_audio_devices = gkAudioDevices->initPortAudio(gkPortAudioInit);
 
         if (!pref_audio_devices.empty()) {
             for (const auto &device: pref_audio_devices) {
@@ -661,10 +660,6 @@ MainWindow::~MainWindow()
 
     // Free the pointer for the Google LevelDB library!
     delete db;
-
-    // Free the pointer for the PortAudio library!
-    autoSys.terminate();
-    gkPortAudioInit->terminate();
 
     delete ui;
 }
