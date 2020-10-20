@@ -47,6 +47,10 @@ using namespace Settings;
 using namespace Audio;
 using namespace AmateurRadio;
 using namespace Control;
+using namespace Spectrograph;
+using namespace System;
+using namespace Events;
+using namespace Logging;
 
 /**
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -72,7 +76,7 @@ GkPaAudioPlayer::~GkPaAudioPlayer()
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param audio_file
  */
-void GkPaAudioPlayer::play(const std::string &audio_file)
+void GkPaAudioPlayer::play(const fs::path &audio_file)
 {
     try {
         streamHandler->processEvent(AudioEventType::start, audio_file, false);
@@ -89,7 +93,7 @@ void GkPaAudioPlayer::play(const std::string &audio_file)
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param audio_file
  */
-void GkPaAudioPlayer::loop(const std::string &audio_file)
+void GkPaAudioPlayer::loop(const fs::path &audio_file)
 {
     try {
         streamHandler->processEvent(AudioEventType::start, audio_file, true);
@@ -106,7 +110,7 @@ void GkPaAudioPlayer::loop(const std::string &audio_file)
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param audio_file
  */
-void GkPaAudioPlayer::stop(const std::string &audio_file)
+void GkPaAudioPlayer::stop(const fs::path &audio_file)
 {
     try {
         streamHandler->processEvent(AudioEventType::stop, audio_file);

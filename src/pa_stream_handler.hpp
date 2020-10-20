@@ -44,6 +44,9 @@
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
+#include "src/contrib/portaudio/cpp/include/portaudiocpp/MemFunCallbackStream.hxx"
+#include <boost/filesystem.hpp>
+#include <boost/exception/all.hpp>
 #include <map>
 #include <memory>
 #include <vector>
@@ -64,6 +67,9 @@ extern "C"
 } // extern "C"
 #endif
 
+namespace fs = boost::filesystem;
+namespace sys = boost::system;
+
 namespace GekkoFyre {
 
 enum AudioEventType {
@@ -81,8 +87,7 @@ public:
                                QObject *parent = nullptr);
     ~GkPaStreamHandler() override;
 
-    bool containsSound(const std::string &filename);
-    void processEvent(AudioEventType audioEventType, const std::string &mediaFilePath, bool loop = false);
+    void processEvent(AudioEventType audioEventType, const fs::path &mediaFilePath, bool loop = false);
     qint32 portAudioCallback(const void *input, void *output, size_t frameCount, const PaStreamCallbackTimeInfo *paTimeInfo,
                              PaStreamCallbackFlags statusFlags);
 
@@ -92,16 +97,13 @@ private:
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
 
-    qint32 fileChannelCount;
-
     //
     // PortAudio initialization and buffers
     //
     std::shared_ptr<portaudio::MemFunCallbackStream<GkPaStreamHandler>> streamPlayback;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
 
-    std::map<std::string, GkAudioFramework::GkPlayback> gkSounds;
-    std::vector<GkAudioFramework::GkPlayback> gkData;
+    GkAudioFramework::GkPlayback gkPlayback;
 
 };
 };

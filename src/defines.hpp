@@ -100,13 +100,13 @@ extern "C"
 
 namespace GekkoFyre {
 
-#define GK_EXIT_TIMEOUT (6)                             // The amount of time, in seconds, to leave 'Small World Deluxe' hanging upon exit before terminating forcefully!
+#define GK_EXIT_TIMEOUT (6)                                     // The amount of time, in seconds, to leave 'Small World Deluxe' hanging upon exit before terminating forcefully!
 #define MIN_MAIN_WINDOW_WIDTH (1024)
 #define MIN_MAIN_WINDOW_HEIGHT (768)
-#define MAX_TOLERATE_WINDOW_WIDTH (16384)               // This value is mostly for error correction purposes.
-#define DLG_BOX_WINDOW_WIDTH (480)                      // The width of non-Qt generated dialog boxes
-#define DLG_BOX_WINDOW_HEIGHT (120)                     // The height of non-Qt generated dialog boxes
-#define GK_ZLIB_BUFFER_SIZE (4096)                      // The size of the buffer, in kilobytes, as-used by Zlib throughout Small World Deluxe's code-base...
+#define MAX_TOLERATE_WINDOW_WIDTH (16384)                       // This value is mostly for error correction purposes.
+#define DLG_BOX_WINDOW_WIDTH (480)                              // The width of non-Qt generated dialog boxes
+#define DLG_BOX_WINDOW_HEIGHT (120)                             // The height of non-Qt generated dialog boxes
+#define GK_ZLIB_BUFFER_SIZE (4096)                              // The size of the buffer, in kilobytes, as-used by Zlib throughout Small World Deluxe's code-base...
 
 //
 // Amateur radio specific functions
@@ -117,9 +117,9 @@ namespace GekkoFyre {
 #define AUDIO_OUTPUT_CHANNEL_MIN_LIMIT (-1024)
 #define AUDIO_INPUT_CHANNEL_MAX_LIMIT (1024)
 #define AUDIO_INPUT_CHANNEL_MIN_LIMIT (-1024)
-#define AUDIO_FRAMES_PER_BUFFER (512)                          // Frames per buffer, i.e. the number of sample frames that PortAudio will request from the callback. Many apps may want to use paFramesPerBufferUnspecified, which tells PortAudio to pick the best, possibly changing, buffer size
+#define AUDIO_FRAMES_PER_BUFFER (8192)                          // Frames per buffer, i.e. the number of sample frames that PortAudio will request from the callback. Many apps may want to use paFramesPerBufferUnspecified, which tells PortAudio to pick the best, possibly changing, buffer size
 #define AUDIO_TEST_SAMPLE_TABLE_SIZE (200)
-#define AUDIO_CIRC_BUFF_SIZE (AUDIO_FRAMES_PER_BUFFER * 4)      // The size of the circular audio buffer, as a factor of the frames buffer itself!
+#define GK_AUDIO_MAX_CHANNELS (2)                               // The current maximum number of audio channels that Small World Deluxe is able to process for any given multimedia audio file!
 
 #define AUDIO_SINE_WAVE_PLAYBACK_SECS (3)                       // Play the sine wave test sample for three seconds!
 #define AUDIO_VU_METER_UPDATE_MILLISECS (125)                   // How often the volume meter should update, in milliseconds.
@@ -713,9 +713,9 @@ namespace GkAudioFramework {
 
     struct GkPlayback {
         SndFileCallback audioFile;
-        qint32 position;
-        sf_count_t count;
-        bool loop;
+        qint32 position = 0;
+        sf_count_t count = 0;
+        bool loop = false;
     };
 
     enum CodecSupport {
