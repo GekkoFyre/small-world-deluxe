@@ -248,9 +248,8 @@ private:
         return static_cast<typename std::underlying_type<E>::type>(e);
     }
 
-    std::vector<double> standardSampleRates;
-    QMap<qint32, double> supportedInputSampleRates; // The supported sample rates for the chosen input audio device! The key corresponds to the position within the QComboBoxes...
-    QMap<qint32, double> supportedOutputSampleRates; // The supported sample rates for the chosen output audio device! The key corresponds to the position within the QComboBoxes...
+    QMap<qint32, quint32> supportedInputSampleRates; // The supported sample rates for the chosen input audio device! The key corresponds to the position within the QComboBoxes...
+    QMap<qint32, quint32> supportedOutputSampleRates; // The supported sample rates for the chosen output audio device! The key corresponds to the position within the QComboBoxes...
 
     QPointer<GekkoFyre::RadioLibs> gkRadioLibs;
     QPointer<GekkoFyre::GkLevelDb> gkDekodeDb;
@@ -312,8 +311,6 @@ private:
     void prefill_com_baud_speed(const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate);
     void enable_device_port_options();
     GekkoFyre::AmateurRadio::GkConnType ascertConnType(const bool &is_ptt = false);
-
-    void update_sample_rates(const bool &is_output_device = false);
 
     bool read_settings();
 };

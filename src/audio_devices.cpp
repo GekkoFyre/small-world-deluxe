@@ -98,107 +98,11 @@ AudioDevices::~AudioDevices()
 {}
 
 /**
- * @brief AudioDevices::defaultAudioDevices This will automatically determine the default audio devices for a
- * user's system, which is especially useful if nothing has been saved to the Google LevelDB database yet.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @return The default audio devices for a user's system.
- * @see GekkoFyre::AudioDevices::initPortAudio()
- */
-std::vector<GkDevice> AudioDevices::defaultAudioDevices(portaudio::System *portAudioSys)
-{
-    std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> enum_devices;
-    std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> exported_devices;
-
-    enum_devices = filterPortAudioHostType(enumAudioDevicesCpp(portAudioSys));
-    for (const auto &device: enum_devices) {
-        if (device.default_dev == true) {
-            // We have a default device!
-            exported_devices.push_back(device);
-        }
-    }
-
-    return exported_devices;
-}
-
-/**
- * @brief AudioDevices::enumSupportedStdSampleRates will test the supported sample rates of the given audio device, whether it
- * be an input or output audio device.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param audioParameters The necessary parameters required to make a connection to the enumerated audio device itself.
- * @param sampleRatesToTest The sample rates to test for.
- * @param isOutputDevice Whether this device in question is an output or input audio device.
- * @return The successfully supported sample rates for the given audio device.
- */
-std::map<double, PaError> AudioDevices::enumSupportedStdSampleRates(const PaStreamParameters *audioParameters, const std::vector<double> &sampleRatesToTest,
-                                                                    const bool &isOutputDevice)
-{
-    try {
-        auto numCpuCores = gkSystem->getNumCpuCores();
-        const size_t sample_rate_vec_size = sampleRatesToTest.size();
-        size_t chunksToUse = 1;
-
-        while (chunksToUse < (numCpuCores % sample_rate_vec_size)) {
-            ++chunksToUse;
-        }
-
-        std::vector<double> vec_copy;
-        vec_copy.assign(sampleRatesToTest.begin(), sampleRatesToTest.end());
-        auto payload_tmp = gkStringFuncs->splitVec<double>(vec_copy, chunksToUse);
-        std::map<double, PaError> mapped_data;
-        std::map<double, std::future<PaError>> async_tasks;
-        if (isOutputDevice) {
-            //
-            // Output audio device!
-            //
-            for (const auto &payload: payload_tmp) {
-                for (const auto &sample_rate: payload) {
-                    async_tasks.insert(std::make_pair(sample_rate, std::async(std::launch::async, &Pa_IsFormatSupported, nullptr, std::ref(audioParameters), std::ref(sample_rate))));
-                }
-            }
-
-            for (auto &f: async_tasks) {
-                PaError err;
-                err = f.second.get();
-                if (err == paFormatIsSupported) {
-                    std::cout << tr("Sample rate of [ %1 ] is supported!").arg(QString::number(f.first)).toStdString() << std::endl;
-                    mapped_data.insert(std::make_pair(f.first, err));
-                }
-            }
-        } else {
-            //
-            // Input audio device!
-            //
-            for (const auto &payload: payload_tmp) {
-                for (const auto &sample_rate: payload) {
-                    async_tasks.insert(std::make_pair(sample_rate, std::async(std::launch::async, &Pa_IsFormatSupported, std::ref(audioParameters), nullptr, std::ref(sample_rate))));
-                }
-            }
-
-            for (auto &f: async_tasks) {
-                PaError err;
-                err = f.second.get();
-                if (err == paFormatIsSupported) {
-                    std::cout << tr("Sample rate of [ %1 ] is supported!").arg(QString::number(f.first)).toStdString() << std::endl;
-                    mapped_data.insert(std::make_pair(f.first, err));
-                }
-            }
-        }
-
-        return mapped_data;
-    } catch (const std::exception &e) {
-        std::throw_with_nested(std::runtime_error(tr("Error encountered while determining which audio device sample rates are supported! Error:\n\n%1")
-        .arg(QString::fromStdString(e.what())).toStdString()));
-    }
-
-    return std::map<double, PaError>();
-}
-
-/**
  * @brief AudioDevices::enumAudioDevicesCpp Enumerate out all the findable audio devices within the user's computer system.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return The found audio devices and their statistics.
  */
-GkAudioApi AudioDevices::enumAudioDevicesCpp()
+GkAudioApi AudioDevices::enumAudioDevicesCpp(std::shared_ptr<RtAudio> dac)
 {
     try {
         std::lock_guard<std::mutex> audio_guard(enum_audio_dev_mtx);
@@ -227,18 +131,17 @@ GkAudioApi AudioDevices::enumAudioDevicesCpp()
         }
 
         for (const auto &api: gkAudio.api_used) { // Iterate over each API in the user's system, to garner all the Audio Devices!
-            std::unique_ptr<RtAudio> rt_audio = std::make_unique<RtAudio>(api);
-            quint32 device_count = rt_audio->getDeviceCount();
+            dac.reset(new RtAudio(api));
+            quint32 device_count = dac->getDeviceCount();
             std::cout << tr("Found %1 device(s) for API: \"%2\"!")
             .arg(QString::number(device_count))
-            .arg(QString::fromStdString(getApiDisplayName(api))).toStdString() << std::endl;
+            .arg(QString::fromStdString(RtAudio::getApiDisplayName(api))).toStdString() << std::endl;
 
-            gkAudio.gkDevice.reserve(device_count);
             for (quint32 i = 0; i < device_count; ++i) {
                 GkDevice device;
-                device.device_info = rt_audio->getDeviceInfo(i);
+                device.device_info = dac->getDeviceInfo(i);
                 device.device_id = i;
-                device.chosen_audio_dev_str = QString::fromStdString(device.device_info.name);
+                device.audio_dev_str = QString::fromStdString(device.device_info.name);
                 device.assoc_api = api;
 
                 if (device.device_info.probed) {
@@ -329,7 +232,7 @@ GkAudioApi AudioDevices::enumAudioDevicesCpp()
  * @param stereo
  * @return
  */
-PaStreamCallbackResult AudioDevices::testSinewave(const GkAudioApi &audioApi, const bool &is_output_dev)
+void AudioDevices::testSinewave(const GkAudioApi &audioApi, const bool &is_output_dev)
 {
     try {
         std::lock_guard<std::mutex> lck_guard(test_sinewave_mtx);
@@ -375,6 +278,8 @@ PaStreamCallbackResult AudioDevices::testSinewave(const GkAudioApi &audioApi, co
                     std::this_thread::sleep_for(std::chrono::milliseconds(AUDIO_SINE_WAVE_PLAYBACK_SECS * 1000));
                     dac->stopStream();
                     dac->closeStream();
+
+                    return;
                 }
             }
         }
@@ -384,7 +289,7 @@ PaStreamCallbackResult AudioDevices::testSinewave(const GkAudioApi &audioApi, co
         QMessageBox::warning(nullptr, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), QMessageBox::Ok);
     }
 
-    return paAbort;
+    return;
 }
 
 /**
@@ -513,35 +418,6 @@ float AudioDevices::vuMeterRMS(const size_t &count, float *buffer)
 
     float calc_val = std::sqrt(sample / static_cast<double>(count));
     return calc_val;
-}
-
-/**
- * @brief AudioDevices::sampleFormatConvert converts the sample rate into a readable format
- * for PortAudio's C++ bindings.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param sample_rate The desired sample rate to be converted.
- * @return The converted sample rate that is now readable by PortAudio's C++ bindings.
- */
-portaudio::SampleDataFormat AudioDevices::sampleFormatConvert(const unsigned long &sample_rate)
-{
-    switch (sample_rate) {
-    case paFloat32:
-        return portaudio::FLOAT32;
-    case paInt32:
-        return portaudio::INT32;
-    case paInt24:
-        return portaudio::INT24;
-    case paInt16:
-        return portaudio::INT16;
-    case paInt8:
-        return portaudio::INT8;
-    case paUInt8:
-        return portaudio::UINT8;
-    default:
-        return portaudio::INT16;
-    }
-
-    return portaudio::INT16;
 }
 
 /**

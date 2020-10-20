@@ -465,18 +465,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QObject::connect(this, SIGNAL(gkExitApp()), this, SLOT(uponExit()));
 
         //
-        // Initialize our own PortAudio libraries and associated buffers!
+        // Initialize any RtAudio libraries and associated buffers!
         //
-        PaError err;
-        err = Pa_Initialize();
-        if (err != paNoError) {
-            throw std::runtime_error(tr("An error was encountered whilst initializing PortAudio!").toStdString());
-        }
+        dac = std::make_shared<RtAudio>();
 
         gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(gkDb, fileIo, gkFreqList, gkStringFuncs, gkEventLogger, gkSystem, this);
+        auto audio_devices_enum = gkAudioDevices->enumAudioDevicesCpp(dac);
 
-        if (!pref_audio_devices.empty()) {
-            for (const auto &device: pref_audio_devices) {
+        if (!audio_devices_enum.gkDevice.empty()) {
+            for (const auto &device: audio_devices_enum.gkDevice) {
                 // Now filter out what is the input and output device selectively!
                 if (device.audio_src == GkAudioSource::Output) {
                     // Output device
@@ -538,7 +535,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QObject::connect(this, SIGNAL(onProcessFrame(const std::vector<float> &)),
                          gkSpectroCurve, SLOT(processFrame(const std::vector<float> &)));
 
-        if (!pref_audio_devices.empty()) {
+        if (!audio_devices_enum.gkDevice.empty()) {
             input_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<float>>(AUDIO_FRAMES_PER_BUFFER, -1, pref_output_device, pref_input_device, gkDb);
         }
 

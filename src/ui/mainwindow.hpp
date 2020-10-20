@@ -58,7 +58,7 @@
 #include "src/gk_modem.hpp"
 #include "src/gk_system.hpp"
 #include "src/gk_text_to_speech.hpp"
-#include "src/contrib/portaudio/cpp/include/portaudiocpp/MemFunCallbackStream.hxx"
+#include <RtAudio.h>
 #include <sentry.h>
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
@@ -262,7 +262,7 @@ signals:
     void startRecording();
 
     //
-    // PortAudio and related
+    // RtAudio and related
     //
     void changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &input_device);
 
@@ -313,15 +313,15 @@ private:
     boost::filesystem::path native_slash;
 
     //
-    // PortAudio initialization and buffers
+    // RtAudio initialization and buffers
     //
     QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> avail_input_audio_devs;
     QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> avail_output_audio_devs;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
+    std::shared_ptr<RtAudio> dac;
     std::shared_ptr<GekkoFyre::PaAudioBuf<float>> input_audio_buf;
     std::shared_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<float>>> inputAudioStream;
-    // std::shared_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<float>>> outputAudioStream;
 
     //
     // Audio sub-system

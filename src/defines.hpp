@@ -44,7 +44,6 @@
 //-V::1042
 
 #include "src/gk_string_funcs.hpp"
-#include <portaudiocpp/PortAudioCpp.hxx>
 #include <boost/exception/all.hpp>
 #include <boost/logic/tribool.hpp>
 #include <boost/filesystem.hpp>
@@ -74,11 +73,6 @@
 #include <QSerialPortInfo>
 
 #if defined(_WIN32) || defined(__MINGW64__)
-#ifdef PA_USE_ASIO
-#include <pa_asio.h>
-#include "contrib/portaudio/cpp/include/portaudiocpp/AsioDeviceAdapter.hxx"
-#endif
-
 #include <winsdkver.h>
 #include <Windows.h>
 #include <tchar.h> // https://linuxgazette.net/147/pfeiffer.html
@@ -118,7 +112,7 @@ namespace GekkoFyre {
 #define AUDIO_OUTPUT_CHANNEL_MIN_LIMIT (-1024)
 #define AUDIO_INPUT_CHANNEL_MAX_LIMIT (1024)
 #define AUDIO_INPUT_CHANNEL_MIN_LIMIT (-1024)
-#define AUDIO_FRAMES_PER_BUFFER (512)                           // Frames per buffer, i.e. the number of sample frames that PortAudio will request from the callback. Many apps may want to use paFramesPerBufferUnspecified, which tells PortAudio to pick the best, possibly changing, buffer size
+#define AUDIO_FRAMES_PER_BUFFER (512)                           // Frames per buffer, i.e. the number of sample frames that RtAudio will request from the callback. Many apps may want to use paFramesPerBufferUnspecified, which tells RtAudio to pick the best, possibly changing, buffer size
 #define AUDIO_TEST_SAMPLE_TABLE_SIZE (200)
 #define GK_AUDIO_MAX_CHANNELS (2)                               // The current maximum number of audio channels that Small World Deluxe is able to process for any given multimedia audio file!
 
@@ -257,13 +251,6 @@ namespace Filesystem {
     constexpr char gk_crashpad_handler_linux[] = "crashpad_handler";    // The name of the Crashpad handler executable under Linux and possibly Unix-like operating systems.
 
     constexpr char linux_sys_tty[] = "/sys/class/tty/";                 // The location of the TTY-devices under most major Linux distributions
-}
-
-namespace GkAudio {
-    const std::vector<double> standardSampleRates = {
-            8000.0, 9600.0, 11025.0, 12000.0, 16000.0, 22050.0, 24000.0, 32000.0,
-            44100.0, 48000.0, 88200.0, 96000.0, 192000.0, -1 /* negative terminated list */
-    };
 }
 
 namespace System {
@@ -512,7 +499,6 @@ namespace Database {
                 bool is_dev_active;                                                 // Is the audio device in question currently active and streaming data?
                 GkAudioSource audio_src;                                            // Is the audio device in question an input? Output if FALSE, UNSURE if either
                 qint32 dev_number;                                                  // The number of this device; this is saved to the Google LevelDB database as the user's preference
-                PaError dev_err;                                                    // Any errors that belong to this audio device specifically
                 qint32 dev_input_channel_count;                                     // The number of channels this INPUT audio device supports
                 qint32 dev_output_channel_count;                                    // The number of channels this OUTPUT audio device supports
                 RtAudioFormat supp_native_formats;                                  // Supported native formats by this audio device, via RtAudio.
@@ -717,6 +703,14 @@ namespace GkAudioFramework {
         qint32 position = 0;
         sf_count_t count = 0;
         bool loop = false;
+    };
+
+    struct GkRecord {
+        float *buffer;
+        size_t bufferBytes;
+        size_t totalFrames;
+        size_t frameCounter;
+        quint32 channels;
     };
 
     struct GkRtCallback {

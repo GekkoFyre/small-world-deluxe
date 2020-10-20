@@ -43,6 +43,7 @@
 
 #include "src/defines.hpp"
 #include "src/gk_circ_buffer.hpp"
+#include <RtAudio.h>
 #include <codec2/codec2.h>
 #include <exception>
 #include <algorithm>
@@ -83,8 +84,7 @@ public:
                         const GekkoFyre::Database::Settings::Audio::GkDevice &pref_input_device, QPointer<GekkoFyre::GkLevelDb> gkDb);
     virtual ~PaAudioBuf();
 
-    int recordCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
-                       const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags);
+    qint32 recordCallback(void *outputBuffer, void *inputBuffer, quint32 nBufferFrames, double streamTime, RtAudioStreamStatus status, void *userData);
     void setVolume(const float &value);
 
     [[nodiscard]] virtual size_t size() const;
@@ -145,36 +145,39 @@ PaAudioBuf<T>::~PaAudioBuf()
 }
 
 /**
+ * @brief PaAudioBuf<T>::recordCallback Recording callback for RtAudio library, with interleaved buffers.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @tparam T
- * @param inputBuffer
  * @param outputBuffer
- * @param framesPerBuffer
- * @param timeInfo
- * @param statusFlags
+ * @param inputBuffer
+ * @param nBufferFrames
+ * @param streamTime
+ * @param status
+ * @param userData
  * @return
  */
 template<class T>
-int PaAudioBuf<T>::recordCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
-                                  const PaStreamCallbackTimeInfo* timeInfo, PaStreamCallbackFlags statusFlags)
+qint32 PaAudioBuf<T>::recordCallback(void *outputBuffer, void *inputBuffer, quint32 nBufferFrames, double streamTime, RtAudioStreamStatus status, void *userData)
 {
     std::mutex record_loop_mtx;
     std::lock_guard<std::mutex> lck_guard(record_loop_mtx);
 
-    // Prevent unused variable warnings!
-    Q_UNUSED(outputBuffer);
-    Q_UNUSED(timeInfo);
-    Q_UNUSED(statusFlags);
-
-    int finished = paContinue;
-    auto *buffer_ptr = (T *)inputBuffer;
-
-    for (size_t i = 0; i < framesPerBuffer; ++i) {
-        buffer_ptr[i] *= (T)(buffer_ptr[i] * calcVolIdx); // The volume adjustment!
-        gkCircBuffer->put(buffer_ptr[i] + i);
+    T *data_ptr = (GkAudioFramework::GkRecord *)userData;
+    quint32 frames = nBufferFrames;
+    if (data_ptr->frameCounter + nBufferFrames > data_ptr->totalFrames) {
+        frames = data_ptr->totalFrames - data_ptr->frameCounter;
+        data_ptr->bufferBytes = frames * data_ptr->channels * sizeof(T);
     }
 
-    return finished;
+    size_t offset = data_ptr->frameCounter * data_ptr->channels;
+    std::memcpy(data_ptr->buffer + offset, inputBuffer, data_ptr->bufferBytes);
+    data_ptr->frameCounter += frames;
+
+    if (data_ptr->frameCounter >= data_ptr->totalFrames) {
+        return 2;
+    }
+
+    return 0;
 }
 
 /**

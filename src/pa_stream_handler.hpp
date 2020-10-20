@@ -44,7 +44,6 @@
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
-#include "src/contrib/portaudio/cpp/include/portaudiocpp/MemFunCallbackStream.hxx"
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
 #include <map>
