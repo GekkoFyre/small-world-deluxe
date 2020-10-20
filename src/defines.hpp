@@ -51,6 +51,7 @@
 #include <hamlib/rigclass.h>
 #include <qwt/qwt_interval.h>
 #include <sndfile.h>
+#include <RtAudio.h>
 #include <sentry.h>
 #include <list>
 #include <vector>
@@ -117,7 +118,7 @@ namespace GekkoFyre {
 #define AUDIO_OUTPUT_CHANNEL_MIN_LIMIT (-1024)
 #define AUDIO_INPUT_CHANNEL_MAX_LIMIT (1024)
 #define AUDIO_INPUT_CHANNEL_MIN_LIMIT (-1024)
-#define AUDIO_FRAMES_PER_BUFFER (8192)                          // Frames per buffer, i.e. the number of sample frames that PortAudio will request from the callback. Many apps may want to use paFramesPerBufferUnspecified, which tells PortAudio to pick the best, possibly changing, buffer size
+#define AUDIO_FRAMES_PER_BUFFER (512)                           // Frames per buffer, i.e. the number of sample frames that PortAudio will request from the callback. Many apps may want to use paFramesPerBufferUnspecified, which tells PortAudio to pick the best, possibly changing, buffer size
 #define AUDIO_TEST_SAMPLE_TABLE_SIZE (200)
 #define GK_AUDIO_MAX_CHANNELS (2)                               // The current maximum number of audio channels that Small World Deluxe is able to process for any given multimedia audio file!
 
@@ -500,30 +501,29 @@ namespace Database {
 
         namespace Audio {
             struct GkDevice {
-                QString chosen_audio_dev_str;                                       // The name of the device itself, formatted
-                bool default_dev;                                                   // Is this the default device for the system?
-                bool default_disp;                                                  // Used for filtering purposes
+                QString audio_dev_str;                                              // The name of the device itself, formatted
+                RtAudio::DeviceInfo device_info;                                    // A great amount of information pertaining to the audio device itself.
+                quint32 device_id;                                                  // The Unique Identifier for this particular audio device.
+                bool pref_output_dev;                                               // Is this the preferred output device for the user's SWD configuration?
+                bool pref_input_dev;                                                // Is this the preferred input device for the user's SWD configuration?
+                bool default_output_dev;                                            // Is this the default device for the system?
+                bool default_input_dev;                                             // Is this the default device for the system?
                 bool is_dev_active;                                                 // Is the audio device in question currently active and streaming data?
-                double def_sample_rate;                                             // Default sample rate
                 GkAudioSource audio_src;                                            // Is the audio device in question an input? Output if FALSE, UNSURE if either
-                int dev_number;                                                     // The number of this device; this is saved to the Google LevelDB database as the user's preference
+                qint32 dev_number;                                                  // The number of this device; this is saved to the Google LevelDB database as the user's preference
                 PaError dev_err;                                                    // Any errors that belong to this audio device specifically
-                std::list<double> supp_sample_rates;                                // Supported sample rates by this audio device
-                long asio_min_latency;                                              // ASIO specific
-                long asio_max_latency;                                              // ASIO specific
-                long asio_granularity;                                              // ASIO specific
-                long asio_pref_latency;                                             // ASIO specific
-                long asio_min_buffer_size;                                          // ASIO specific
-                long asio_max_buffer_size;                                          // ASIO specific
-                long asio_pref_buffer_size;                                         // ASIO specific
-                int dev_input_channel_count;                                        // The number of channels this INPUT audio device supports
-                int dev_output_channel_count;                                       // The number of channels this OUTPUT audio device supports
-                GkAudioChannels sel_channels;                                        // The selected audio channel configuration
-                PaError asio_err;                                                   // ASIO specific error related information
-                PaDeviceInfo device_info;                                           // All information pertaining to this audio device
-                PaStreamParameters stream_parameters;                               // Device-specific information such as the sample format, etc.
-                portaudio::DirectionSpecificStreamParameters cpp_stream_param;      // Device-specific information such as the sample format, etc. but for the C++ bindings instead
-                PaHostApiTypeId host_type_id;
+                qint32 dev_input_channel_count;                                     // The number of channels this INPUT audio device supports
+                qint32 dev_output_channel_count;                                    // The number of channels this OUTPUT audio device supports
+                RtAudioFormat supp_native_formats;                                  // Supported native formats by this audio device, via RtAudio.
+                GkAudioChannels sel_channels;                                       // The selected audio channel configuration
+            };
+
+            struct GkAudioApi {
+                std::string api_version;                                            // The RtAudio API version we are making use of.
+                std::map<RtAudio::Api, std::string> api_map;                        // The API-string std::map, formatted
+                std::vector<RtAudio::Api> api_used;                                 // The APIs in use, as found on the user's system.
+                RtAudio::Api curr_api;                                              // The currently chosen API.
+                std::list<GkDevice> gkDevice;                                       // Information pertaining to the audio devices themselves.
             };
         }
     }
@@ -716,6 +716,14 @@ namespace GkAudioFramework {
         qint32 position = 0;
         sf_count_t count = 0;
         bool loop = false;
+    };
+
+    struct GkRtCallback {
+        quint32 nRate;                                                          // Sampling rate (i.e. sample/sec)
+        quint32 nChannel;                                                       // Channel number
+        quint32 nFrame;                                                         // Frame number of Wave Table
+        quint32 cur;                                                            // Current index of Wave Table (in Frame)
+        float *wfTable;                                                         // Wave Table (interleaved)
     };
 
     enum CodecSupport {

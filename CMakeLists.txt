@@ -411,7 +411,7 @@ endif()
 # RtAudio [ https://github.com/thestk/rtaudio ]
 #
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/rtaudio")
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/rtaudio/include")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/rtaudio")
 
 #
 # Sentry (native)

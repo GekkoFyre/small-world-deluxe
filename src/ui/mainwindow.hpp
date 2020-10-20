@@ -315,8 +315,6 @@ private:
     //
     // PortAudio initialization and buffers
     //
-    portaudio::AutoSystem autoSys;
-    portaudio::System *gkPortAudioInit;
     QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> avail_input_audio_devs;
     QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> avail_output_audio_devs;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;

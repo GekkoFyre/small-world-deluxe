@@ -164,8 +164,8 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         prefill_audio_api_avail(portaudio_api_avail);
         prefill_audio_devices(audio_devices);
 
-        ui->label_pa_version->setText(gkAudioDevices->portAudioVersionNumber(*gkPortAudioInit));
-        ui->plainTextEdit_pa_version_text->setPlainText(gkAudioDevices->portAudioVersionText(*gkPortAudioInit));
+        ui->label_pa_version->setText(gkAudioDevices->rtAudioVersionNumber(*gkPortAudioInit));
+        ui->plainTextEdit_pa_version_text->setPlainText(gkAudioDevices->rtAudioVersionText(*gkPortAudioInit));
 
         ui->label_hamlib_api_version->setText(QString::fromStdString(hamlib_version2));
         ui->plainTextEdit_hamlib_api_version_info->setPlainText(QString::fromStdString(hamlib_copyright2));

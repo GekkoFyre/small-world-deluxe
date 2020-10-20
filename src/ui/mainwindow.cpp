@@ -473,9 +473,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             throw std::runtime_error(tr("An error was encountered whilst initializing PortAudio!").toStdString());
         }
 
-        autoSys.initialize();
-        gkPortAudioInit = new portaudio::System(portaudio::System::instance());
-
         gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(gkDb, fileIo, gkFreqList, gkStringFuncs, gkEventLogger, gkSystem, this);
         auto pref_audio_devices = gkAudioDevices->initPortAudio(gkPortAudioInit);
 

@@ -48,13 +48,14 @@
 #include "src/gk_frequency_list.hpp"
 #include "src/gk_logger.hpp"
 #include "src/gk_system.hpp"
-#include <QObject>
+#include <RtAudio.h>
 #include <vector>
 #include <string>
 #include <memory>
 #include <mutex>
 #include <future>
 #include <thread>
+#include <QObject>
 #include <QString>
 #include <QVector>
 #include <QPointer>
@@ -71,15 +72,10 @@ public:
                           QObject *parent = nullptr);
     ~AudioDevices() override;
 
-    std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> initPortAudio(portaudio::System *portAudioSys);
     std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> defaultAudioDevices(portaudio::System *portAudioSys);
     std::map<double, PaError> enumSupportedStdSampleRates(const PaStreamParameters *audioParameters, const std::vector<double> &sampleRatesToTest,
                                                           const bool &isOutputDevice);
-    std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> enumAudioDevices();
-    std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> enumAudioDevicesCpp(portaudio::System *portAudioSys);
-    GekkoFyre::Database::Settings::Audio::GkDevice gatherAudioDeviceDetails(portaudio::System *portAudioSys,
-                                                                            const PaDeviceIndex &pa_index);
-    void portAudioErr(const PaError &err);
+    GekkoFyre::Database::Settings::Audio::GkAudioApi enumAudioDevicesCpp();
 
     void systemVolumeSetting();
     float vuMeter(const int &channels, const int &count, float *buffer);
@@ -88,18 +84,15 @@ public:
 
     portaudio::SampleDataFormat sampleFormatConvert(const unsigned long &sample_rate);
 
-    PaStreamCallbackResult testSinewave(portaudio::System &portAudioSys, const Database::Settings::Audio::GkDevice &device,
-                                        const bool &is_output_dev = true);
-
-    std::vector<Database::Settings::Audio::GkDevice> filterPortAudioHostType(const std::vector<Database::Settings::Audio::GkDevice> &audio_devices_vec);
-    QVector<PaHostApiTypeId> portAudioApiChooser(const std::vector<Database::Settings::Audio::GkDevice> &audio_devices_vec);
+    PaStreamCallbackResult testSinewave(const Database::Settings::Audio::GkAudioApi &audioApi, const bool &is_output_dev = true);
+    static inline qint32 playbackSaw(void *outputBuffer, void *inputBuffer, quint32 nBufferFrames, double streamTime, RtAudioStreamStatus status, void *userData);
 
     float calcAudioBufferTimeNeeded(const Database::Settings::GkAudioChannels &num_channels, const size_t &fft_num_lines,
                                     const size_t &fft_samples_per_line, const size_t &audio_buf_sampling_length,
                                     const size_t &buf_size);
 
-    QString portAudioVersionNumber(const portaudio::System &portAudioSys);
-    QString portAudioVersionText(const portaudio::System &portAudioSys);
+    QString rtAudioVersionNumber();
+    QString rtAudioVersionText();
 
 private:
     QPointer<GkLevelDb> gkDekodeDb;
@@ -108,9 +101,6 @@ private:
     QPointer<StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     QPointer<GekkoFyre::GkSystem> gkSystem;
-
-    bool filterAudioEnumPreexisting(const std::vector<Database::Settings::Audio::GkDevice> &device_vec,
-                                    const Database::Settings::Audio::GkDevice &device_compare);
 
 };
 };
