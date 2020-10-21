@@ -48,8 +48,6 @@
 #include "src/spectro_curve.hpp"
 #include "src/gk_circ_buffer.hpp"
 #include "src/gk_frequency_list.hpp"
-#include "src/gk_audio_encoding.hpp"
-#include "src/gk_audio_decoding.hpp"
 #include "src/ui/dialogsettings.hpp"
 #include "src/ui/widgets/gk_display_image.hpp"
 #include "src/ui/widgets/gk_vu_meter_widget.hpp"
@@ -289,8 +287,6 @@ private:
     QPointer<GekkoFyre::FileIo> fileIo;
     QPointer<GekkoFyre::GkFrequencies> gkFreqList;
     QPointer<GekkoFyre::RadioLibs> gkRadioLibs;
-    QPointer<GekkoFyre::GkAudioEncoding> gkAudioEncoding;
-    QPointer<GekkoFyre::GkAudioDecoding> gkAudioDecoding;
     QPointer<GekkoFyre::GkSpectroWaterfall> gkSpectroWaterfall;
     QPointer<GekkoFyre::GkSpectroCurve> gkSpectroCurve;
     QPointer<GekkoFyre::GkVuMeter> gkVuMeter;
@@ -319,9 +315,9 @@ private:
     QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> avail_output_audio_devs;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
-    std::shared_ptr<RtAudio> dac;
+    std::shared_ptr<RtAudio> audioSysOutput;
+    std::shared_ptr<RtAudio> audioSysInput;
     std::shared_ptr<GekkoFyre::PaAudioBuf<float>> input_audio_buf;
-    std::shared_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<float>>> inputAudioStream;
 
     //
     // Audio sub-system
@@ -433,7 +429,6 @@ Q_DECLARE_METATYPE(RIG);
 Q_DECLARE_METATYPE(size_t);
 Q_DECLARE_METATYPE(uint8_t);
 Q_DECLARE_METATYPE(rig_model_t);
-Q_DECLARE_METATYPE(PaHostApiTypeId);
 Q_DECLARE_METATYPE(std::vector<qint16>);
 Q_DECLARE_METATYPE(std::vector<double>);
 Q_DECLARE_METATYPE(std::vector<float>);

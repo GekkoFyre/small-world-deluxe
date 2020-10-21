@@ -85,6 +85,7 @@ public:
     virtual ~PaAudioBuf();
 
     qint32 recordCallback(void *outputBuffer, void *inputBuffer, quint32 nBufferFrames, double streamTime, RtAudioStreamStatus status, void *userData);
+    qint32 recordCallbackCircBuf(void *outputBuffer, void *inputBuffer, quint32 nBufferFrames, double streamTime, RtAudioStreamStatus status, void *userData);
     void setVolume(const float &value);
 
     [[nodiscard]] virtual size_t size() const;
@@ -147,20 +148,25 @@ PaAudioBuf<T>::~PaAudioBuf()
 /**
  * @brief PaAudioBuf<T>::recordCallback Recording callback for RtAudio library, with interleaved buffers.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @tparam T
- * @param outputBuffer
- * @param inputBuffer
+ * @tparam T is meant to be some kind of integer, such as qint64, float, double, etc.
+ * @param outputBuffer The output audio buffer.
+ * @param inputBuffer The input audio buffer.
  * @param nBufferFrames
  * @param streamTime
  * @param status
- * @param userData
- * @return
+ * @param userData Any miscellaneous, user-related data passes though here.
+ * @return Whether the operation was a success, or if we should continue, etc.
  */
 template<class T>
 qint32 PaAudioBuf<T>::recordCallback(void *outputBuffer, void *inputBuffer, quint32 nBufferFrames, double streamTime, RtAudioStreamStatus status, void *userData)
 {
     std::mutex record_loop_mtx;
     std::lock_guard<std::mutex> lck_guard(record_loop_mtx);
+
+    // Prevent unused variable warnings!
+    Q_UNUSED(outputBuffer);
+    Q_UNUSED(streamTime);
+    Q_UNUSED(status);
 
     T *data_ptr = (GkAudioFramework::GkRecord *)userData;
     quint32 frames = nBufferFrames;
@@ -172,6 +178,54 @@ qint32 PaAudioBuf<T>::recordCallback(void *outputBuffer, void *inputBuffer, quin
     size_t offset = data_ptr->frameCounter * data_ptr->channels;
     std::memcpy(data_ptr->buffer + offset, inputBuffer, data_ptr->bufferBytes);
     data_ptr->frameCounter += frames;
+
+    if (data_ptr->frameCounter >= data_ptr->totalFrames) {
+        return 2;
+    }
+
+    return 0;
+}
+
+/**
+ * @brief PaAudioBuf<T>::recordCallbackCircBuf is meant to make use of the circular buffer functionality over the more standard
+ * recorder callback (i.e. PaAudioBuf<T>::recordCallback()). Otherwise, this is a recording callback for the RtAudio library, with
+ * interleaved buffers.
+ * @tparam T is meant to be some kind of integer, such as qint64, float, double, etc.
+ * @param outputBuffer The output audio buffer.
+ * @param inputBuffer The input audio buffer.
+ * @param nBufferFrames
+ * @param streamTime
+ * @param status
+ * @param userData Any miscellaneous, user-related data passes though here.
+ * @return Whether the operation was a success, or if we should continue, etc.
+ */
+template<class T>
+qint32 PaAudioBuf<T>::recordCallbackCircBuf(void *outputBuffer, void *inputBuffer, quint32 nBufferFrames, double streamTime, RtAudioStreamStatus status, void *userData)
+{
+    std::mutex record_loop_mtx;
+    std::lock_guard<std::mutex> lck_guard(record_loop_mtx);
+
+    // Prevent unused variable warnings!
+    Q_UNUSED(outputBuffer);
+    Q_UNUSED(streamTime);
+    Q_UNUSED(status);
+
+    T *data_ptr = (GkAudioFramework::GkRecord *)userData;
+    quint32 frames = nBufferFrames;
+    if (data_ptr->frameCounter + nBufferFrames > data_ptr->totalFrames) {
+        frames = data_ptr->totalFrames - data_ptr->frameCounter;
+        data_ptr->bufferBytes = frames * data_ptr->channels * sizeof(T);
+    }
+
+    T *buffer_ptr[data_ptr->totalFrames + 1];
+    size_t offset = data_ptr->frameCounter * data_ptr->channels;
+    std::memcpy(data_ptr->buffer + offset, inputBuffer, data_ptr->bufferBytes);
+    data_ptr->frameCounter += frames;
+
+    for (size_t i = 0; i < data_ptr->totalFrames; ++i) {
+        buffer_ptr[i] *= (T)(buffer_ptr[i] * calcVolIdx); // The volume adjustment!
+        gkCircBuffer->put(buffer_ptr[i] + i);
+    }
 
     if (data_ptr->frameCounter >= data_ptr->totalFrames) {
         return 2;
