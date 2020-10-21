@@ -23,7 +23,7 @@
  **   the Free Software Foundation, either version 3 of the License, or
  **   (at your option) any later version.
  **
- **   Small world is distributed in the hope that it will be useful,
+ **   Small World is distributed in the hope that it will be useful,
  **   but WITHOUT ANY WARRANTY; without even the implied warranty of
  **   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  **   GNU General Public License for more details.
@@ -42,46 +42,28 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/dek_db.hpp"
-#include <sentry.h>
+#include <map>
 #include <memory>
-#include <QList>
-#include <QMutex>
-#include <QObject>
+#include <vector>
+#include <string>
+#include <string>
+#include <sstream>
 #include <QString>
-#include <QVariant>
-#include <QTableView>
-#include <QModelIndex>
-#include <QAbstractTableModel>
-#include <QSortFilterProxyModel>
+#include <QPointer>
 
 namespace GekkoFyre {
 
-class GkCallsignMsgsTableViewModel : public QAbstractTableModel {
-    Q_OBJECT
+class GkPaAudioFileHandler {
 
 public:
-    explicit GkCallsignMsgsTableViewModel(QPointer<GekkoFyre::GkLevelDb> database, QWidget *parent = nullptr);
-    ~GkCallsignMsgsTableViewModel() override;
+    explicit GkPaAudioFileHandler();
+    virtual ~GkPaAudioFileHandler();
 
-    void populateData(const QList<GekkoFyre::System::Events::Logging::GkEventLogging> &event_logs);
-    [[nodiscard]] int rowCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
-    [[nodiscard]] int columnCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
-
-    [[nodiscard]] QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
-    [[nodiscard]] QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
-
-public slots:
-    void insertData(const GekkoFyre::System::Events::Logging::GkEventLogging &event);
-    void removeData(const GekkoFyre::System::Events::Logging::GkEventLogging &event);
+    bool containsSound(std::string filename);
+    GkAudioFramework::SndFileCallback &getSound(std::string filename);
 
 private:
-    QPointer<GekkoFyre::GkLevelDb> gkDb;
-    QList<GekkoFyre::System::Events::Logging::GkEventLogging> m_data;
+    std::map<std::string, GkAudioFramework::SndFileCallback> gkSounds;
 
-    QPointer<QSortFilterProxyModel> proxyModel;
-    QPointer<QTableView> table;
-
-    QMutex dataBatchMutex;
 };
 };

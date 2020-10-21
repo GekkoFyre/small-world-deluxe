@@ -17,7 +17,7 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Audio Playback &amp; Record for Small World Deluxe</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>

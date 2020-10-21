@@ -7,9 +7,6 @@
 [submodule "src/contrib/rapidcsv"]
 	path = src/contrib/rapidcsv
 	url = https://github.com/d99kris/rapidcsv.git
-[submodule "src/contrib/AudioFile"]
-	path = src/contrib/AudioFile
-	url = https://github.com/adamstark/AudioFile
 [submodule "src/contrib/sentry-native"]
 	path = src/contrib/sentry-native
 	url = https://github.com/getsentry/sentry-native.git
@@ -22,3 +19,6 @@
 [submodule "src/contrib/kissfft"]
 	path = src/contrib/kissfft
 	url = https://github.com/mborgerding/kissfft.git
+[submodule "src/contrib/sound-example"]
+	path = src/contrib/sound-example
+	url = https://github.com/andystanton/sound-example.git

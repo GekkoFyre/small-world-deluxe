@@ -23,7 +23,7 @@
  **   the Free Software Foundation, either version 3 of the License, or
  **   (at your option) any later version.
  **
- **   Small world is distributed in the hope that it will be useful,
+ **   Small World is distributed in the hope that it will be useful,
  **   but WITHOUT ANY WARRANTY; without even the implied warranty of
  **   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  **   GNU General Public License for more details.
@@ -43,66 +43,69 @@
 
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
+#include "src/gk_logger.hpp"
+#include "src/pa_audio_file.hpp"
 #include <memory>
-#include <QList>
-#include <QMutex>
+#include <vector>
+#include <string>
 #include <QObject>
 #include <QString>
-#include <QVariant>
 #include <QPointer>
-#include <QKeyEvent>
-#include <QTableView>
-#include <QModelIndex>
-#include <QMouseEvent>
-#include <QHeaderView>
-#include <QAbstractTableModel>
-#include <QSortFilterProxyModel>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#include <portaudio.h>
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 namespace GekkoFyre {
 
-class GkFreqTableViewModel : public QTableView {
-
-public:
-    explicit GkFreqTableViewModel(QWidget *parent = nullptr);
-    ~GkFreqTableViewModel() override;
-
-protected:
-    void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
-
+struct Playback {
+    GkAudioFramework::SndFileCallback *audioFile;
+    qint32 position;
+    bool loop;
 };
 
-class GkFreqTableModel : public QAbstractTableModel {
+enum AudioEventType {
+    start,
+    stop
+};
+
+class GkPaStreamHandler : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkFreqTableModel(QPointer<GekkoFyre::GkLevelDb> database, QWidget *parent = nullptr);
-    ~GkFreqTableModel() override;
+    explicit GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
+                               QPointer<GekkoFyre::GkEventLogger> eventLogger, GekkoFyre::Database::Settings::GkAudioChannels audio_channels,
+                               QObject *parent = nullptr);
+    ~GkPaStreamHandler() override;
 
-    void populateData(const QList<GekkoFyre::AmateurRadio::GkFreqs> &frequencies);
-    void populateData(const QList<GekkoFyre::AmateurRadio::GkFreqs> &frequencies, const bool &populate_freq_db);
-    void insertData(const GekkoFyre::AmateurRadio::GkFreqs &freq_val);
-    void insertData(const GekkoFyre::AmateurRadio::GkFreqs &freq_val, const bool &populate_freq_db);
-    bool insertRows(int row, int count, const QModelIndex &) Q_DECL_OVERRIDE;
-    bool removeRows(int row, int count, const QModelIndex &) Q_DECL_OVERRIDE;
-    int rowCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
-    [[nodiscard]] Qt::ItemFlags flags(const QModelIndex &index) const Q_DECL_OVERRIDE;
-    int columnCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
-
-    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
-    QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
-
-signals:
-    void removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_remove);
-    void addFreq(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_add);
+    void processEvent(AudioEventType audioEventType, GkAudioFramework::SndFileCallback *audioFile = nullptr, bool loop = false);
+    static int portAudioCallback(const void *input, void *output, size_t frameCount, const PaStreamCallbackTimeInfo *paTimeInfo,
+                                 PaStreamCallbackFlags statusFlags, void *userData);
 
 private:
     QPointer<GekkoFyre::GkLevelDb> gkDb;
-    QList<GekkoFyre::AmateurRadio::GkFreqs> m_data;
+    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
-    QPointer<GkFreqTableViewModel> view;
-    QPointer<QSortFilterProxyModel> proxyModel;
+    const int CHANNEL_COUNT = 2;
+    const int SAMPLE_RATE = 44000;
+    const PaStreamParameters *NO_INPUT = nullptr;
 
-    QMutex dataBatchMutex;
+    //
+    // PortAudio initialization and buffers
+    //
+    PaStream *gkPaStream;
+    GekkoFyre::Database::Settings::GkAudioChannels gkAudioChannels;
+    GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
+
+    PaStream *stream;
+    std::vector<Playback *> data;
 
 };
 };

@@ -41,6 +41,8 @@
 
 #pragma once
 
+//-V::1042
+
 #include "src/gk_string_funcs.hpp"
 #include <portaudiocpp/PortAudioCpp.hxx>
 #include <boost/exception/all.hpp>
@@ -48,6 +50,7 @@
 #include <boost/filesystem.hpp>
 #include <hamlib/rigclass.h>
 #include <qwt/qwt_interval.h>
+#include <sndfile.h>
 #include <sentry.h>
 #include <list>
 #include <vector>
@@ -108,19 +111,20 @@ namespace GekkoFyre {
 //
 // Amateur radio specific functions
 //
-#define GK_RADIO_VFO_FLOAT_PNT_PREC (5)                 // The floating point precision, in terms of number of digits, to be used in making comparisons (i.e. the 'epsilon') of frequencies, etc.
+#define GK_RADIO_VFO_FLOAT_PNT_PREC (5)                         // The floating point precision, in terms of number of digits, to be used in making comparisons (i.e. the 'epsilon') of frequencies, etc.
 
 #define AUDIO_OUTPUT_CHANNEL_MAX_LIMIT (1024)
 #define AUDIO_OUTPUT_CHANNEL_MIN_LIMIT (-1024)
 #define AUDIO_INPUT_CHANNEL_MAX_LIMIT (1024)
 #define AUDIO_INPUT_CHANNEL_MIN_LIMIT (-1024)
-#define AUDIO_FRAMES_PER_BUFFER (512)                   // Frames per buffer, i.e. the number of sample frames that PortAudio will request from the callback. Many apps may want to use paFramesPerBufferUnspecified, which tells PortAudio to pick the best, possibly changing, buffer size
+#define AUDIO_FRAMES_PER_BUFFER (512)                          // Frames per buffer, i.e. the number of sample frames that PortAudio will request from the callback. Many apps may want to use paFramesPerBufferUnspecified, which tells PortAudio to pick the best, possibly changing, buffer size
 #define AUDIO_TEST_SAMPLE_TABLE_SIZE (200)
+#define AUDIO_CIRC_BUFF_SIZE (AUDIO_FRAMES_PER_BUFFER * 4)      // The size of the circular audio buffer, as a factor of the frames buffer itself!
 
-#define AUDIO_SINE_WAVE_PLAYBACK_SECS (3)               // Play the sine wave test sample for three seconds!
-#define AUDIO_VU_METER_UPDATE_MILLISECS (125)           // How often the volume meter should update, in milliseconds.
-#define AUDIO_VU_METER_PEAK_DECAY_RATE (0.001)          // Unknown
-#define AUDIO_VU_METER_PEAK_HOLD_LEVEL_DURATION (2000)  // Measured in milliseconds
+#define AUDIO_SINE_WAVE_PLAYBACK_SECS (3)                       // Play the sine wave test sample for three seconds!
+#define AUDIO_VU_METER_UPDATE_MILLISECS (125)                   // How often the volume meter should update, in milliseconds.
+#define AUDIO_VU_METER_PEAK_DECAY_RATE (0.001)                  // Unknown
+#define AUDIO_VU_METER_PEAK_HOLD_LEVEL_DURATION (2000)          // Measured in milliseconds
 
 //
 // Mostly regarding FFTW functions
@@ -252,6 +256,13 @@ namespace Filesystem {
     constexpr char gk_crashpad_handler_linux[] = "crashpad_handler";    // The name of the Crashpad handler executable under Linux and possibly Unix-like operating systems.
 
     constexpr char linux_sys_tty[] = "/sys/class/tty/";                 // The location of the TTY-devices under most major Linux distributions
+}
+
+namespace GkAudio {
+    const std::vector<double> standardSampleRates = {
+            8000.0, 9600.0, 11025.0, 12000.0, 16000.0, 22050.0, 24000.0, 32000.0,
+            44100.0, 48000.0, 88200.0, 96000.0, 192000.0, -1 /* negative terminated list */
+    };
 }
 
 namespace System {
@@ -488,13 +499,6 @@ namespace Database {
         };
 
         namespace Audio {
-            struct GkPaAudioData {
-                int frameIndex;                                                     // Frame index into sample array
-                int maxFrameIndex;                                                  // Maximum frame index given into sample array
-                float *recordedSamples;                                             // Audio samples that have been recorded and saved to a buffer
-                portaudio::SampleDataFormat sample_format;                          // Currently used sample format by given audio source, whether output or input
-            };
-
             struct GkDevice {
                 QString chosen_audio_dev_str;                                       // The name of the device itself, formatted
                 bool default_dev;                                                   // Is this the default device for the system?
@@ -702,6 +706,11 @@ namespace Spectrograph {
 }
 
 namespace GkAudioFramework {
+    struct SndFileCallback {
+        SNDFILE *file = nullptr;
+        SF_INFO info = {};
+    };
+
     enum CodecSupport {
         PCM,
         OggVorbis,

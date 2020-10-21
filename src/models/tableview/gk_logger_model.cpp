@@ -66,7 +66,7 @@ GkEventLoggerTableViewModel::GkEventLoggerTableViewModel(QPointer<GkLevelDb> dat
     : QAbstractTableModel(parent)
 {
     setParent(parent);
-    GkDb = std::move(database);
+    gkDb = std::move(database);
 
     table = new QTableView(parent);
     QPointer<QVBoxLayout> layout = new QVBoxLayout(parent);
@@ -92,7 +92,7 @@ GkEventLoggerTableViewModel::~GkEventLoggerTableViewModel()
     // https://docs.sentry.io/error-reporting/capturing/?platform=native
     //
     const QString severityStr = determineSeverity();
-    const GkSeverity gkSeverityEnum = GkDb->convSeverityToEnum(severityStr);
+    const GkSeverity gkSeverityEnum = gkDb->convSeverityToEnum(severityStr);
 
     switch (gkSeverityEnum) {
         case GkSeverity::Debug:
@@ -246,7 +246,7 @@ QVariant GkEventLoggerTableViewModel::data(const QModelIndex &index, int role) c
     timestamp.setMSecsSinceEpoch(row_date_time);
 
     const GkSeverity row_severity = m_data[index.row()].mesg.severity;
-    const QString row_severity_str = GkDb->convSeverityToStr(row_severity);
+    const QString row_severity_str = gkDb->convSeverityToStr(row_severity);
     const QString row_message = m_data[index.row()].mesg.message;
 
     sentry_value_t crumb = sentry_value_new_breadcrumb("default", "Events Logger");
@@ -302,7 +302,7 @@ QVariant GkEventLoggerTableViewModel::headerData(int section, Qt::Orientation or
  */
 QString GkEventLoggerTableViewModel::determineSeverity() const
 {
-    QPointer<GkEventLoggerTableViewModel> model = new GkEventLoggerTableViewModel(GkDb);
+    QPointer<GkEventLoggerTableViewModel> model = new GkEventLoggerTableViewModel(gkDb);
     QModelIndex idx = model->index(rowCount(), GK_EVENTLOG_TABLEVIEW_MODEL_SEVERITY_IDX);
     const QString gkSeverity = data(idx).toString();
 

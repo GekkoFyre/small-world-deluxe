@@ -78,6 +78,7 @@ public slots:
     void engineSelected(int index);
     void engineSelected(const QString &name);
     void languageSelected(const QLocale &language);
+    void languageSelected(const int &lang_idx);
     void voiceSelected(const int &idx);
 
     void localeChanged(const QLocale &locale);
@@ -90,7 +91,7 @@ signals:
     void setVoiceCurrentIndex(int index);
 
 private:
-    QPointer<GekkoFyre::GkLevelDb> GkDb;
+    QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
     QPointer<QTextToSpeech> m_speech;

@@ -71,6 +71,7 @@ sworld_debug_archlinux_x86_64:
         - pacman -Syyu --noconfirm
         - export CC=/usr/bin/clang
         - export CXX=/usr/bin/clang++
+        - strip --remove-section=.note.ABI-tag /usr/lib64/libQt5Core.so.5
         - git clone https://github.com/drowe67/codec2.git
         - cd codec2 && mkdir build && cd build
         - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=NO ..

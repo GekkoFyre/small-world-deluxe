@@ -23,7 +23,7 @@
  **   the Free Software Foundation, either version 3 of the License, or
  **   (at your option) any later version.
  **
- **   Small world is distributed in the hope that it will be useful,
+ **   Small World is distributed in the hope that it will be useful,
  **   but WITHOUT ANY WARRANTY; without even the implied warranty of
  **   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  **   GNU General Public License for more details.
@@ -39,49 +39,66 @@
  **
  ****************************************************************************************************/
 
-#pragma once
+#include "src/pa_audio_file.hpp"
 
-#include "src/defines.hpp"
-#include "src/dek_db.hpp"
-#include <sentry.h>
-#include <memory>
-#include <QList>
-#include <QMutex>
-#include <QObject>
-#include <QString>
-#include <QVariant>
-#include <QTableView>
-#include <QModelIndex>
-#include <QAbstractTableModel>
-#include <QSortFilterProxyModel>
+using namespace GekkoFyre;
+using namespace Database;
+using namespace Settings;
+using namespace Audio;
+using namespace AmateurRadio;
+using namespace Control;
 
-namespace GekkoFyre {
+/**
+ * @author Copyright (c) 2015 Andy Stanton <https://github.com/andystanton/sound-example/blob/master/LICENSE>.
+ */
+GkPaAudioFileHandler::GkPaAudioFileHandler() : gkSounds()
+{
+    return;
+}
 
-class GkCallsignMsgsTableViewModel : public QAbstractTableModel {
-    Q_OBJECT
+GkPaAudioFileHandler::~GkPaAudioFileHandler()
+{
+    for (auto entry: gkSounds) {
+        sf_close(entry.second.file);
+    }
+}
 
-public:
-    explicit GkCallsignMsgsTableViewModel(QPointer<GekkoFyre::GkLevelDb> database, QWidget *parent = nullptr);
-    ~GkCallsignMsgsTableViewModel() override;
+/**
+ * @brief GkPaAudioFileHandler::containsSound
+ * @author Copyright (c) 2015 Andy Stanton <https://github.com/andystanton/sound-example/blob/master/LICENSE>.
+ * @param filename
+ * @return
+ */
+bool GkPaAudioFileHandler::containsSound(std::string filename)
+{
+    return gkSounds.find(filename) != gkSounds.end();
+}
 
-    void populateData(const QList<GekkoFyre::System::Events::Logging::GkEventLogging> &event_logs);
-    [[nodiscard]] int rowCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
-    [[nodiscard]] int columnCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
+/**
+ * @brief GkPaAudioFileHandler::getSound
+ * @author Copyright (c) 2015 Andy Stanton <https://github.com/andystanton/sound-example/blob/master/LICENSE>,
+ * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>.
+ * @param filename The **FULL** filesystem path to the audio file in question!
+ * @return
+ */
+GkAudioFramework::SndFileCallback &GkPaAudioFileHandler::getSound(std::string filename)
+{
+    if (!containsSound(filename)) {
+        GkAudioFramework::SndFileCallback sound;
+        SF_INFO info;
+        info.format = 0;
+        SNDFILE *audioFile = sf_open(filename.c_str(), SFM_READ, &info);
 
-    [[nodiscard]] QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
-    [[nodiscard]] QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
+        if (!audioFile) {
+            std::stringstream error;
+            error << "Unable to open audio file '"
+                  << filename << "' with full filename '"
+                  << filename << "'";
+            throw error.str();
+        }
 
-public slots:
-    void insertData(const GekkoFyre::System::Events::Logging::GkEventLogging &event);
-    void removeData(const GekkoFyre::System::Events::Logging::GkEventLogging &event);
-
-private:
-    QPointer<GekkoFyre::GkLevelDb> gkDb;
-    QList<GekkoFyre::System::Events::Logging::GkEventLogging> m_data;
-
-    QPointer<QSortFilterProxyModel> proxyModel;
-    QPointer<QTableView> table;
-
-    QMutex dataBatchMutex;
-};
-};
+        gkSounds[filename] = sound;
+    }
+    
+    return gkSounds[filename];
+}

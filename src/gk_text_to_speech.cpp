@@ -59,7 +59,7 @@ GkTextToSpeech::GkTextToSpeech(QPointer<GekkoFyre::GkLevelDb> dbPtr, QPointer<Ge
                                QObject *parent) : QTextToSpeech(parent)
 {
     setParent(parent);
-    GkDb = std::move(dbPtr);
+    gkDb = std::move(dbPtr);
     gkEventLogger = std::move(eventLogger);
 
     m_speech = new QTextToSpeech(this);
@@ -147,7 +147,7 @@ void GkTextToSpeech::engineSelected(int index)
         }
     }
 
-    QObject::connect(m_speech, SIGNAL(stateChanged(const State &)), this, SLOT(stateChanged(const State &)));
+    // QObject::connect(m_speech, SIGNAL(stateChanged(const State &)), this, SLOT(stateChanged(const State &)));
     QObject::connect(m_speech, SIGNAL(localeChanged(const QLocale &)), this, SLOT(localeChanged(const QLocale &)));
 
     localeChanged(current);
@@ -163,9 +163,29 @@ void GkTextToSpeech::engineSelected(const QString &name)
     return;
 }
 
+/**
+ * @brief GkTextToSpeech::languageSelected
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param language
+ */
 void GkTextToSpeech::languageSelected(const QLocale &language)
 {
     m_speech->setLocale(language);
+
+    return;
+}
+
+/**
+ * @brief GkTextToSpeech::languageSelected
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param lang_idx
+ * @see `ui->comboBox_access_stt_language` under class, `DialogSettings`.
+ */
+void GkTextToSpeech::languageSelected(const int &lang_idx)
+{
+    //
+    // TODO: Finish this section ASAP!
+    //
 
     return;
 }

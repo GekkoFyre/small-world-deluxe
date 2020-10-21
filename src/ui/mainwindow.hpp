@@ -51,7 +51,6 @@
 #include "src/gk_audio_encoding.hpp"
 #include "src/gk_audio_decoding.hpp"
 #include "src/ui/dialogsettings.hpp"
-#include "src/ui/gkaudioplaydialog.hpp"
 #include "src/ui/widgets/gk_display_image.hpp"
 #include "src/ui/widgets/gk_vu_meter_widget.hpp"
 #include "src/gk_fft.hpp"
@@ -225,11 +224,8 @@ public slots:
     //
     void stopRecordingInput();
     void startRecordingInput();
-    void stopTransmitOutput();
-    void startTransmitOutput();
 
     void restartInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &input_device);
-    void restartOutputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &output_device);
 
     //
     // Radio and Hamlib specific functions
@@ -264,14 +260,11 @@ signals:
     void changeVolume(const float &value);
     void stopRecording();
     void startRecording();
-    void stopTxAudio();
-    void startTxAudio();
 
     //
     // PortAudio and related
     //
     void changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &input_device);
-    void changeOutputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &output_device);
 
     //
     // Spectrograph related
@@ -288,7 +281,7 @@ private:
     //
     leveldb::DB *db;
     sentry_options_t *sen_opt;
-    QPointer<GekkoFyre::GkLevelDb> GkDb;
+    QPointer<GekkoFyre::GkLevelDb> gkDb;
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GekkoFyre::GkCli> gkCli;
@@ -300,7 +293,6 @@ private:
     QPointer<GekkoFyre::GkAudioDecoding> gkAudioDecoding;
     QPointer<GekkoFyre::GkSpectroWaterfall> gkSpectroWaterfall;
     QPointer<GekkoFyre::GkSpectroCurve> gkSpectroCurve;
-    QPointer<GkAudioPlayDialog> gkAudioPlayDlg;
     QPointer<GekkoFyre::GkVuMeter> gkVuMeter;
     QPointer<GekkoFyre::GkModem> gkModem;
     QPointer<GekkoFyre::GkSystem> gkSystem;
@@ -330,9 +322,8 @@ private:
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
     std::shared_ptr<GekkoFyre::PaAudioBuf<float>> input_audio_buf;
-    std::shared_ptr<GekkoFyre::PaAudioBuf<float>> output_audio_buf;
     std::shared_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<float>>> inputAudioStream;
-    std::shared_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<float>>> outputAudioStream;
+    // std::shared_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<float>>> outputAudioStream;
 
     //
     // Audio sub-system

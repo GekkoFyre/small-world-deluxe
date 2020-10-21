@@ -66,7 +66,7 @@ GkCodec2::GkCodec2(const Codec2Mode &freedv_mode, const Codec2ModeCustom &custom
 {
     try {
         setParent(parent);
-        GkDb = std::move(levelDb);
+        gkDb = std::move(levelDb);
         outputAudioBuf = std::move(output_audio_buf);
         gkEventLogger = std::move(eventLogger);
         gkStringFuncs = std::move(stringFuncs);
@@ -119,16 +119,16 @@ int GkCodec2::transmitData(const QByteArray &byte_array, const bool &play_output
             freedv_set_data_header(freedv, header);
 
             freedv_set_snr_squelch_thresh(freedv, squelch_thresh);
-            freedv_set_squelch_en(freedv, GkDb->boolInt(squelch_enable));
+            freedv_set_squelch_en(freedv, gkDb->boolInt(squelch_enable));
             freedv_set_clip(freedv, gkFreeDvClip);
             freedv_set_tx_bpf(freedv, gkFreeDvTXBpf);
-            // freedv_set_dpsk(freedv, GkDb->boolInt(true));
-            freedv_set_ext_vco(freedv, GkDb->boolInt(false));
+            // freedv_set_dpsk(freedv, gkDb->boolInt(true));
+            freedv_set_ext_vco(freedv, gkDb->boolInt(false));
 
             #ifdef GFYRE_SWORLD_DBG_VERBOSITY
-            freedv_set_verbose(freedv, GkDb->boolInt(true));
+            freedv_set_verbose(freedv, gkDb->boolInt(true));
             #else
-            freedv_set_verbose(freedv, GkDb->boolInt(false));
+            freedv_set_verbose(freedv, gkDb->boolInt(false));
             #endif
 
             // For streaming bytes it is much easier to use modes that have a multiple of 8 payload bits/frame...

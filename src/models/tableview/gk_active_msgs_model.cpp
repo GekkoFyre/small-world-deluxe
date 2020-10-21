@@ -66,7 +66,7 @@ GkActiveMsgsTableViewModel::GkActiveMsgsTableViewModel(QPointer<GkLevelDb> datab
     : QAbstractTableModel(parent)
 {
     setParent(parent);
-    GkDb = std::move(database);
+    gkDb = std::move(database);
 
     table = new QTableView(parent);
     QPointer<QVBoxLayout> layout = new QVBoxLayout(parent);

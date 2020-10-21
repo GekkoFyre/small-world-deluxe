@@ -89,7 +89,7 @@ int PaSinewave::generate(const void *input_buffer, void *output_buffer, unsigned
     try {
         if (output_buffer != nullptr) {
             std::mutex sine_loop_mtx;
-            float **out = static_cast<float **>(output_buffer);
+            auto **out = static_cast<float **>(output_buffer);
 
             for (unsigned int i = 0; i < AUDIO_FRAMES_PER_BUFFER; ++i) {
                 std::lock_guard<std::mutex> lck_guard(sine_loop_mtx);

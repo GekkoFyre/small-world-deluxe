@@ -45,16 +45,21 @@
 #include "src/audio_devices.hpp"
 #include "src/gk_logger.hpp"
 #include "src/file_io.hpp"
-#include "src/contrib/AudioFile/AudioFile.h"
-#include "src/contrib/portaudio/cpp/include/portaudiocpp/MemFunCallbackStream.hxx"
+#include <sndfile.hh>
+#include <boost/filesystem.hpp>
 #include <memory>
 #include <string>
 #include <vector>
+#include <thread>
+#include <mutex>
 #include <QFile>
 #include <QObject>
 #include <QDialog>
 #include <QString>
 #include <QPointer>
+
+namespace fs = boost::filesystem;
+namespace sys = boost::system;
 
 namespace Ui {
 class GkAudioPlayDialog;
@@ -66,10 +71,10 @@ class GkAudioPlayDialog : public QDialog
 
 public:
     explicit GkAudioPlayDialog(QPointer<GekkoFyre::GkLevelDb> database,
+                               portaudio::System *portAudioSys,
                                QPointer<GekkoFyre::GkAudioDecoding> audio_decoding,
                                std::shared_ptr<GekkoFyre::AudioDevices> audio_devices,
                                const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
-                               std::shared_ptr<GekkoFyre::PaAudioBuf<float>> output_audio_buf,
                                QPointer<GekkoFyre::StringFuncs> stringFuncs,
                                QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                QWidget *parent = nullptr);
@@ -96,8 +101,8 @@ signals:
 private:
     Ui::GkAudioPlayDialog *ui;
 
+    portaudio::System *gkPortAudioSys;
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevs;
-    std::unique_ptr<AudioFile<float>> audioFile;
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::GkAudioDecoding> gkAudioDecode;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
@@ -115,11 +120,16 @@ private:
     //
     // PortAudio initialization and buffers
     //
+    PaStream *gkPaStream;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
-    std::shared_ptr<GekkoFyre::PaAudioBuf<float>> gkOutputAudioBuf;
-    std::shared_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<float>>> gkOutputAudioStream;
+
+    //
+    // libsndfile objects and related
+    //
+    GekkoFyre::GkAudioFramework::SndFileCallback sndFileCallback;
 
     QFile r_pback_audio_file;
+    fs::path audio_file_path;
     GekkoFyre::GkAudioFramework::AudioFileInfo gkAudioFileInfo;
 
     template <typename T>

@@ -102,6 +102,7 @@ public:
     QString read_audio_playback_dlg_settings(const Database::Settings::AudioPlaybackDlg &key);
 
     GekkoFyre::Database::Settings::GkAudioChannels convertAudioChannelsEnum(const int &audio_channel_sel);
+    qint32 convertAudioChannelsToCount(const GekkoFyre::Database::Settings::GkAudioChannels &channel_enum);
     QString convertAudioChannelsStr(const GekkoFyre::Database::Settings::GkAudioChannels &channel_enum);
     [[nodiscard]] bool convertAudioEnumIsStereo(const GekkoFyre::Database::Settings::GkAudioChannels &channel_enum) const;
 

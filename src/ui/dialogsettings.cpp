@@ -117,14 +117,6 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         com_ports_active = false;
         audio_quality_val = 0.0;
 
-        //
-        // The detectable and thusly, testable, PortAudio 'sample rates' for each found audio device on the user's system!
-        //
-        standardSampleRates = {
-            8000.0, 9600.0, 11025.0, 12000.0, 16000.0, 22050.0, 24000.0, 32000.0,
-            44100.0, 48000.0, 88200.0, 96000.0, 192000.0, -1 /* negative terminated list */
-        };
-
         gkFreqTableModel->populateData(gkFreqs->listOfFreqs());
         ui->tableView_working_freqs->setModel(gkFreqTableModel);
         ui->tableView_working_freqs->horizontalHeader()->setVisible(true);
@@ -1240,20 +1232,20 @@ void DialogSettings::update_sample_rates(const bool &is_output_device)
         //
         // Output device
         //
-        int idx = 0;
+        qint32 idx = 0;
         ui->comboBox_audio_output_sample_rate->clear();
-        for (const auto &sampleRate: supportedOutputSampleRates) {
-            ui->comboBox_audio_output_sample_rate->insertItem(idx, QString::number(sampleRate));
+        for (const auto &sampleRate: supportedOutputSampleRates.toStdMap()) {
+            ui->comboBox_audio_output_sample_rate->insertItem(idx, QString::number(sampleRate.second));
             ++idx;
         }
     } else {
         //
         // Input device
         //
-        int idx = 0;
+        qint32 idx = 0;
         ui->comboBox_audio_input_sample_rate->clear();
-        for (const auto &sampleRate: supportedInputSampleRates) {
-            ui->comboBox_audio_input_sample_rate->insertItem(idx, QString::number(sampleRate));
+        for (const auto &sampleRate: supportedInputSampleRates.toStdMap()) {
+            ui->comboBox_audio_input_sample_rate->insertItem(idx, QString::number(sampleRate.second));
             ++idx;
         }
     }
@@ -1886,21 +1878,26 @@ void DialogSettings::on_comboBox_soundcard_input_currentIndexChanged(int index)
         supportedInputSampleRates.clear();
         const qint32 idx = ui->comboBox_soundcard_input->currentIndex();
         if (!avail_portaudio_api.isEmpty() || !avail_input_audio_devs.isEmpty()) {
+            qint32 sample_counter = 0;
             for (const auto &device: avail_input_audio_devs.toStdMap()) {
                 if (device.first == idx) {
                     chosen_input_audio_dev = device.second;
                     supportedInputSampleRates.clear();
-                    auto supported_rates = gkAudioDevices->enumSupportedStdSampleRates(&device.second.stream_parameters, standardSampleRates, false);
+                    auto supported_rates = gkAudioDevices->enumSupportedStdSampleRates(&device.second.stream_parameters, GekkoFyre::GkAudio::standardSampleRates, false);
                     if (!supported_rates.empty()) {
                         for (const auto &sampleRate: supported_rates) {
                             const PaError support = sampleRate.second;
                             if (support == paFormatIsSupported) {
                                 // This sample rate is supported!
-                                supportedInputSampleRates.emplace_back(sampleRate.first);
+                                supportedInputSampleRates.insert(sample_counter, sampleRate.first);
+                                ++sample_counter;
                             }
                         }
 
-                        chosen_input_audio_dev.supp_sample_rates = supportedInputSampleRates;
+                        for (const auto &sample_rate: supportedInputSampleRates.toStdMap()) {
+                            chosen_input_audio_dev.supp_sample_rates.emplace_back(sample_rate.second);
+                        }
+
                         for (auto &input_dev: avail_input_audio_devs.toStdMap()) {
                             if (input_dev.first == idx) {
                                 input_dev.second.supp_sample_rates = chosen_input_audio_dev.supp_sample_rates;
@@ -1950,21 +1947,26 @@ void DialogSettings::on_comboBox_soundcard_output_currentIndexChanged(int index)
         supportedOutputSampleRates.clear();
         const qint32 idx = ui->comboBox_soundcard_output->currentIndex();
         if (!avail_portaudio_api.isEmpty() || !avail_output_audio_devs.isEmpty()) {
+            qint32 sample_counter = 0;
             for (const auto &device: avail_output_audio_devs.toStdMap()) {
                 if (device.first == idx) {
                     chosen_output_audio_dev = device.second;
                     supportedOutputSampleRates.clear();
-                    auto supported_rates = gkAudioDevices->enumSupportedStdSampleRates(&device.second.stream_parameters, standardSampleRates, true);
+                    auto supported_rates = gkAudioDevices->enumSupportedStdSampleRates(&device.second.stream_parameters, GekkoFyre::GkAudio::standardSampleRates, true);
                     if (!supported_rates.empty()) {
                         for (const auto &sampleRate: supported_rates) {
                             const PaError support = sampleRate.second;
                             if (support == paFormatIsSupported) {
                                 // This sample rate is supported!
-                                supportedOutputSampleRates.emplace_back(sampleRate.first);
+                                supportedOutputSampleRates.insert(sample_counter, sampleRate.first);
+                                ++sample_counter;
                             }
                         }
 
-                        chosen_output_audio_dev.supp_sample_rates = supportedOutputSampleRates;
+                        for (const auto &sample_rate: supportedOutputSampleRates.toStdMap()) {
+                            chosen_output_audio_dev.supp_sample_rates.emplace_back(sample_rate.second);
+                        }
+
                         for (auto &output_dev: avail_output_audio_devs.toStdMap()) {
                             if (output_dev.first == idx) {
                                 output_dev.second.supp_sample_rates = chosen_output_audio_dev.supp_sample_rates;
@@ -2691,4 +2693,40 @@ GkConnType DialogSettings::ascertConnType(const bool &is_ptt)
     }
 
     return GkUSB;
+}
+
+/**
+ * @brief DialogSettings::on_comboBox_audio_input_sample_rate_currentIndexChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ */
+void DialogSettings::on_comboBox_audio_input_sample_rate_currentIndexChanged(int index)
+{
+    for (const auto &sample_rate: supportedInputSampleRates.toStdMap()) {
+        if (index == sample_rate.first) {
+            // We now have our chosen sample rate!
+            chosen_input_audio_dev.def_sample_rate = sample_rate.second;
+            break;
+        }
+    }
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::on_comboBox_audio_output_sample_rate_currentIndexChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ */
+void DialogSettings::on_comboBox_audio_output_sample_rate_currentIndexChanged(int index)
+{
+    for (const auto &sample_rate: supportedOutputSampleRates.toStdMap()) {
+        if (index == sample_rate.first) {
+            // We now have our chosen sample rate!
+            chosen_output_audio_dev.def_sample_rate = sample_rate.second;
+            break;
+        }
+    }
+
+    return;
 }

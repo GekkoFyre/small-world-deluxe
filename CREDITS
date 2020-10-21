@@ -94,9 +94,13 @@ RapidCSV by Kristofer Berggren
     <https://github.com/d99kris/rapidcsv/>
         BSD 3-clause License
 
-AudioFile by Adam Stark
-    <https://github.com/adamstark/AudioFile>
-        GNU General Public License (GPL, version 3)
+libsndfile by Erik de Castro Lopo
+    <http://www.mega-nerd.com/libsndfile/>
+        GNU Lesser General Public License (LGPL, version 3)
+
+sound-example by Andy Stanton
+    <https://github.com/andystanton/sound-example>
+        The MIT License
 
 udev related C++ classes by Dimitry Ishenko
     <https://github.com/dimitry-ishenko/udev>

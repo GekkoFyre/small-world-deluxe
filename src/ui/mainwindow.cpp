@@ -40,6 +40,7 @@
 #include "src/ui/aboutdialog.hpp"
 #include "src/ui/spectrodialog.hpp"
 #include "src/ui/sendreportdialog.hpp"
+#include "src/ui/gkaudioplaydialog.hpp"
 #include "src/ui/widgets/gk_submit_msg.hpp"
 #include "src/models/tableview/gk_frequency_model.hpp"
 #include "src/models/tableview/gk_logger_model.hpp"
@@ -50,18 +51,13 @@
 #include <boost/chrono/chrono.hpp>
 #include <cmath>
 #include <chrono>
-#include <sstream>
 #include <ostream>
 #include <cstring>
-#include <utility>
 #include <iomanip>
 #include <iostream>
-#include <algorithm>
 #include <functional>
 #include <QDesktopServices>
-#include <QSerialPortInfo>
 #include <QStandardPaths>
-#include <QPrintDialog>
 #include <QSerialPort>
 #include <QMessageBox>
 #include <QFileDialog>
@@ -76,7 +72,6 @@
 #include <QTimer>
 #include <QDate>
 #include <QFile>
-#include <QDir>
 #include <QUrl>
 
 #ifdef _WIN32
@@ -260,10 +255,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         try {
             if (!save_db_path.empty()) {
                 status = leveldb::DB::Open(options, save_db_path.string(), &db);
-                GkDb = new GekkoFyre::GkLevelDb(db, fileIo, gkStringFuncs, this);
+                gkDb = new GekkoFyre::GkLevelDb(db, fileIo, gkStringFuncs, this);
 
                 bool enableSentry = false;
-                bool askSentry = GkDb->read_sentry_settings(GkSentry::AskedDialog);
+                bool askSentry = gkDb->read_sentry_settings(GkSentry::AskedDialog);
                 if (!askSentry) {
                     QMessageBox optInMsgBox;
                     optInMsgBox.setWindowTitle(tr("Help improve Small World!"));
@@ -277,22 +272,22 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                     switch (ret) {
                     case QMessageBox::Yes:
                         enableSentry = true;
-                        GkDb->write_sentry_settings(true, GkSentry::GivenConsent);
+                        gkDb->write_sentry_settings(true, GkSentry::GivenConsent);
                         break;
                     case QMessageBox::No:
                         enableSentry = false;
-                        GkDb->write_sentry_settings(false, GkSentry::GivenConsent);
+                        gkDb->write_sentry_settings(false, GkSentry::GivenConsent);
                         break;
                     default:
                         enableSentry = false;
-                        GkDb->write_sentry_settings(false, GkSentry::GivenConsent);
+                        gkDb->write_sentry_settings(false, GkSentry::GivenConsent);
                         break;
                     }
 
                     // We have now asked the user this question at least once!
-                    GkDb->write_sentry_settings(true, GkSentry::AskedDialog);
+                    gkDb->write_sentry_settings(true, GkSentry::AskedDialog);
                 } else {
-                    enableSentry = GkDb->read_sentry_settings(GkSentry::GivenConsent);
+                    enableSentry = gkDb->read_sentry_settings(GkSentry::GivenConsent);
                 }
 
                 if (enableSentry) {
@@ -356,7 +351,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
                     // Initialize a Unique ID for the given user on the local machine, which is much more anonymous and sanitized than
                     // dealing with IP Addresses!
-                    GkDb->capture_sys_info();
+                    gkDb->capture_sys_info();
 
                     //
                     // BUG: Workaround to fix the issue of data not uploading to Sentry server!
@@ -380,7 +375,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 //
                 // Initialize the Events logger
                 //
-                QPointer<GkEventLoggerTableViewModel> gkEventLoggerModel = new GkEventLoggerTableViewModel(GkDb, this);
+                QPointer<GkEventLoggerTableViewModel> gkEventLoggerModel = new GkEventLoggerTableViewModel(gkDb, this);
                 ui->tableView_maingui_logs->setModel(gkEventLoggerModel);
                 ui->tableView_maingui_logs->horizontalHeader()->setVisible(true);
                 ui->tableView_maingui_logs->horizontalHeader()->setStretchLastSection(true);
@@ -408,7 +403,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 emit addRigInUse(gkRadioPtr->rig_model, gkRadioPtr);
 
                 // Initialize the other radio libraries!
-                gkRadioLibs = new GekkoFyre::RadioLibs(fileIo, gkStringFuncs, GkDb, gkRadioPtr, gkEventLogger, gkSystem, this);
+                gkRadioLibs = new GekkoFyre::RadioLibs(fileIo, gkStringFuncs, gkDb, gkRadioPtr, gkEventLogger, gkSystem, this);
                 QObject::connect(gkRadioLibs, SIGNAL(publishEventMsg(const QString &, const GekkoFyre::System::Events::Logging::GkSeverity &, const QVariant &, const bool &, const bool &, const bool &, const bool &)),
                                  gkEventLogger, SLOT(publishEvent(const QString &, const GekkoFyre::System::Events::Logging::GkSeverity &, const QVariant &, const bool &, const bool &, const bool &, const bool &)));
 
@@ -435,7 +430,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // https://doc.qt.io/qt-5/qcommandlineparser.html
         //
         gkCliParser = std::make_shared<QCommandLineParser>();
-        gkCli = std::make_shared<GekkoFyre::GkCli>(gkCliParser, fileIo, GkDb, gkRadioLibs, this);
+        gkCli = std::make_shared<GekkoFyre::GkCli>(gkCliParser, fileIo, gkDb, gkRadioLibs, this);
 
         std::unique_ptr<QString> error_msg = std::make_unique<QString>("");
         gkCli->parseCommandLine(error_msg.get());
@@ -443,9 +438,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Load settings for QMainWindow
         //
-        int window_width = GkDb->read_mainwindow_settings(general_mainwindow_cfg::WindowHSize).toInt();
-        int window_height = GkDb->read_mainwindow_settings(general_mainwindow_cfg::WindowVSize).toInt();
-        bool window_minimized = GkDb->read_mainwindow_settings(general_mainwindow_cfg::WindowMaximized).toInt();
+        int window_width = gkDb->read_mainwindow_settings(general_mainwindow_cfg::WindowHSize).toInt();
+        int window_height = gkDb->read_mainwindow_settings(general_mainwindow_cfg::WindowVSize).toInt();
+        bool window_minimized = gkDb->read_mainwindow_settings(general_mainwindow_cfg::WindowMaximized).toInt();
 
         // Set the x-axis size of QMainWindow
         if (window_width >= MIN_MAIN_WINDOW_WIDTH) {
@@ -481,7 +476,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         autoSys.initialize();
         gkPortAudioInit = new portaudio::System(portaudio::System::instance());
 
-        gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(GkDb, fileIo, gkFreqList, gkStringFuncs, gkEventLogger, gkSystem, this);
+        gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(gkDb, fileIo, gkFreqList, gkStringFuncs, gkEventLogger, gkSystem, this);
         auto pref_audio_devices = gkAudioDevices->initPortAudio(gkPortAudioInit);
 
         if (!pref_audio_devices.empty()) {
@@ -528,14 +523,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         QObject::connect(this, SIGNAL(stopRecording()), this, SLOT(stopRecordingInput()));
         QObject::connect(this, SIGNAL(startRecording()), this, SLOT(startRecordingInput()));
-        QObject::connect(this, SIGNAL(stopTxAudio()), this, SLOT(stopTransmitOutput()));
-        QObject::connect(this, SIGNAL(startTxAudio()), this, SLOT(startTransmitOutput()));
         QObject::connect(this, SIGNAL(refreshVuDisplay(const qreal &, const qreal &, const int &)),
                          gkVuMeter, SLOT(levelChanged(const qreal &, const qreal &, const int &)));
         QObject::connect(this, SIGNAL(changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)),
                          this, SLOT(restartInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)));
-        QObject::connect(this, SIGNAL(changeOutputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)),
-                         this, SLOT(restartOutputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)));
 
         //
         // QMainWindow widgets
@@ -552,7 +543,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                          gkSpectroCurve, SLOT(processFrame(const std::vector<float> &)));
 
         if (!pref_audio_devices.empty()) {
-            input_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<float>>(AUDIO_FRAMES_PER_BUFFER, pref_output_device, pref_input_device);
+            input_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<float>>(AUDIO_FRAMES_PER_BUFFER, -1, pref_output_device, pref_input_device, gkDb);
         }
 
         //
@@ -572,19 +563,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             //
             // Setup the audio encoding/decoding libraries!
             //
-            output_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<float>>(AUDIO_FRAMES_PER_BUFFER, pref_output_device, pref_input_device);
-
-            gkAudioEncoding = new GkAudioEncoding(fileIo, input_audio_buf, GkDb, gkSpectroWaterfall,
+            gkAudioEncoding = new GkAudioEncoding(fileIo, input_audio_buf, gkDb, gkSpectroWaterfall,
                                                   gkStringFuncs, pref_input_device, gkEventLogger, this);
-            gkAudioDecoding = new GkAudioDecoding(fileIo, GkDb, gkStringFuncs, pref_output_device,
+            gkAudioDecoding = new GkAudioDecoding(fileIo, gkDb, gkStringFuncs, pref_output_device,
                                                   gkEventLogger, this);
-
-            //
-            // Audio encoding signals and slots
-            //
-            gkAudioPlayDlg = new GkAudioPlayDialog(GkDb, gkAudioDecoding, gkAudioDevices, pref_output_device, output_audio_buf,
-                                                   gkStringFuncs, gkEventLogger, this);
-            // QObject::connect(gkAudioPlayDlg, SIGNAL(beginRecording(const bool &)), gkAudioEncoding, SLOT(startRecording(const bool &)));
         }
 
         //
@@ -610,7 +592,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // Initialize the list of frequencies that Small World Deluxe needs to communicate with other users
         // throughout the globe/world!
         //
-        gkFreqList = new GkFrequencies(GkDb, this);
+        gkFreqList = new GkFrequencies(gkDb, this);
         QObject::connect(gkFreqList, SIGNAL(addFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
                          this, SLOT(addFreqToDb(const GekkoFyre::AmateurRadio::GkFreqs &)));
         QObject::connect(gkFreqList, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
@@ -650,11 +632,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QObject::connect(widget_change_freq, SIGNAL(execFuncAfterEvent(const quint64 &)),
                          this, SLOT(tuneActiveFreq(const quint64 &)));
 
-        gkModem = new GkModem(gkAudioDevices, GkDb, gkEventLogger, gkStringFuncs, this);
-        gkTextToSpeech = new GkTextToSpeech(GkDb, gkEventLogger, this);
+        gkModem = new GkModem(gkAudioDevices, gkDb, gkEventLogger, gkStringFuncs, this);
+        gkTextToSpeech = new GkTextToSpeech(gkDb, gkEventLogger, this);
 
-        QPointer<GkActiveMsgsTableViewModel> gkActiveMsgsTableViewModel = new GkActiveMsgsTableViewModel(GkDb, this);
-        QPointer<GkCallsignMsgsTableViewModel> gkCallsignMsgsTableViewModel = new GkCallsignMsgsTableViewModel(GkDb, this);
+        QPointer<GkActiveMsgsTableViewModel> gkActiveMsgsTableViewModel = new GkActiveMsgsTableViewModel(gkDb, this);
+        QPointer<GkCallsignMsgsTableViewModel> gkCallsignMsgsTableViewModel = new GkCallsignMsgsTableViewModel(gkDb, this);
         ui->tableView_mesg_active->setModel(gkActiveMsgsTableViewModel);
         ui->tableView_mesg_callsigns->setModel(gkCallsignMsgsTableViewModel);
     } catch (const std::exception &e) {
@@ -736,18 +718,18 @@ QStringList MainWindow::getAmateurBands()
 {
     try {
         QStringList bands;
-        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND160));
-        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND80));
-        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND60));
-        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND40));
-        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND30));
-        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND20));
-        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND17));
-        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND15));
-        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND12));
-        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND10));
-        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND6));
-        bands.push_back(GkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND2));
+        bands.push_back(gkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND160));
+        bands.push_back(gkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND80));
+        bands.push_back(gkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND60));
+        bands.push_back(gkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND40));
+        bands.push_back(gkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND30));
+        bands.push_back(gkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND20));
+        bands.push_back(gkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND17));
+        bands.push_back(gkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND15));
+        bands.push_back(gkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND12));
+        bands.push_back(gkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND10));
+        bands.push_back(gkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND6));
+        bands.push_back(gkDb->convBandsToStr(GekkoFyre::AmateurRadio::GkFreqBands::BAND2));
 
         return bands;
     } catch (const std::exception &e) {
@@ -783,13 +765,13 @@ bool MainWindow::prefillAmateurBands()
  */
 void MainWindow::launchSettingsWin()
 {
-    QPointer<GkFreqTableModel> gkFreqTableModel = new GkFreqTableModel(GkDb, this);
+    QPointer<GkFreqTableModel> gkFreqTableModel = new GkFreqTableModel(gkDb, this);
     QObject::connect(gkFreqTableModel, SIGNAL(addFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
                      gkFreqList, SIGNAL(addFreq(const GekkoFyre::AmateurRadio::GkFreqs &)));
     QObject::connect(gkFreqTableModel, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
                      gkFreqList, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)));
 
-    QPointer<DialogSettings> dlg_settings = new DialogSettings(GkDb, fileIo, gkAudioDevices,
+    QPointer<DialogSettings> dlg_settings = new DialogSettings(gkDb, fileIo, gkAudioDevices,
                                                                gkRadioLibs, gkStringFuncs, gkPortAudioInit,
                                                                gkRadioPtr, status_com_ports, gkUsbPortMap, gkFreqList,
                                                                gkFreqTableModel, gkEventLogger, gkTextToSpeech, this);
@@ -809,8 +791,6 @@ void MainWindow::launchSettingsWin()
     //
     QObject::connect(dlg_settings, SIGNAL(changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)),
                      this, SLOT(restartInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)));
-    QObject::connect(dlg_settings, SIGNAL(changeOutputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)),
-                     this, SLOT(restartOutputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)));
 
     dlg_settings->show();
 
@@ -824,7 +804,7 @@ void MainWindow::launchSettingsWin()
 bool MainWindow::radioInitStart()
 {
     try {
-        QString model = GkDb->read_rig_settings(radio_cfg::RigModel);
+        QString model = gkDb->read_rig_settings(radio_cfg::RigModel);
         if (!model.isEmpty() || !model.isNull()) {
             gkRadioPtr->rig_model = model.toInt();
         } else {
@@ -836,7 +816,7 @@ bool MainWindow::radioInitStart()
         }
 
         // TODO: Very important! Expand this section!
-        QString com_baud_rate = GkDb->read_rig_settings_comms(radio_cfg::ComBaudRate);
+        QString com_baud_rate = gkDb->read_rig_settings_comms(radio_cfg::ComBaudRate);
         if (!com_baud_rate.isEmpty() || !com_baud_rate.isNull()) {
             gkRadioPtr->dev_baud_rate = gkRadioLibs->convertBaudRateToEnum(com_baud_rate.toInt());
         } else {
@@ -876,32 +856,32 @@ bool MainWindow::radioInitStart()
 std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
 {
     try {
-        const QString audioInputIdStr = GkDb->read_audio_device_settings(false, false);
-        const QString audioOutputIdStr = GkDb->read_audio_device_settings(true, false);
+        const QString audioInputIdStr = gkDb->read_audio_device_settings(false, false);
+        const QString audioOutputIdStr = gkDb->read_audio_device_settings(true, false);
 
-        const QString rigBrand = GkDb->read_rig_settings(radio_cfg::RigBrand);
-        const QString rigModel = GkDb->read_rig_settings(radio_cfg::RigModel);
-        const QString rigModelIndex = GkDb->read_rig_settings(radio_cfg::RigModelIndex);
-        const QString rigVers = GkDb->read_rig_settings(radio_cfg::RigVersion);
-        const QString comBaudRate = GkDb->read_rig_settings(radio_cfg::ComBaudRate);
-        const QString stopBits = GkDb->read_rig_settings(radio_cfg::StopBits);
-        const QString data_bits = GkDb->read_rig_settings(radio_cfg::DataBits);
-        const QString handshake = GkDb->read_rig_settings(radio_cfg::Handshake);
-        const QString force_ctrl_lines_dtr = GkDb->read_rig_settings(radio_cfg::ForceCtrlLinesDtr);
-        const QString force_ctrl_lines_rts = GkDb->read_rig_settings(radio_cfg::ForceCtrlLinesRts);
-        const QString ptt_method = GkDb->read_rig_settings(radio_cfg::PTTMethod);
-        const QString tx_audio_src = GkDb->read_rig_settings(radio_cfg::TXAudioSrc);
-        const QString ptt_mode = GkDb->read_rig_settings(radio_cfg::PTTMode);
-        const QString split_operation = GkDb->read_rig_settings(radio_cfg::SplitOperation);
-        const QString ptt_adv_cmd = GkDb->read_rig_settings(radio_cfg::PTTAdvCmd);
+        const QString rigBrand = gkDb->read_rig_settings(radio_cfg::RigBrand);
+        const QString rigModel = gkDb->read_rig_settings(radio_cfg::RigModel);
+        const QString rigModelIndex = gkDb->read_rig_settings(radio_cfg::RigModelIndex);
+        const QString rigVers = gkDb->read_rig_settings(radio_cfg::RigVersion);
+        const QString comBaudRate = gkDb->read_rig_settings(radio_cfg::ComBaudRate);
+        const QString stopBits = gkDb->read_rig_settings(radio_cfg::StopBits);
+        const QString data_bits = gkDb->read_rig_settings(radio_cfg::DataBits);
+        const QString handshake = gkDb->read_rig_settings(radio_cfg::Handshake);
+        const QString force_ctrl_lines_dtr = gkDb->read_rig_settings(radio_cfg::ForceCtrlLinesDtr);
+        const QString force_ctrl_lines_rts = gkDb->read_rig_settings(radio_cfg::ForceCtrlLinesRts);
+        const QString ptt_method = gkDb->read_rig_settings(radio_cfg::PTTMethod);
+        const QString tx_audio_src = gkDb->read_rig_settings(radio_cfg::TXAudioSrc);
+        const QString ptt_mode = gkDb->read_rig_settings(radio_cfg::PTTMode);
+        const QString split_operation = gkDb->read_rig_settings(radio_cfg::SplitOperation);
+        const QString ptt_adv_cmd = gkDb->read_rig_settings(radio_cfg::PTTAdvCmd);
 
         std::shared_ptr<GkRadio> gk_radio_tmp = std::make_shared<GkRadio>();
 
         //
         // Setup the CAT Port
         //
-        const QString comDeviceCat = GkDb->read_rig_settings_comms(radio_cfg::ComDeviceCat);
-        const GkConnType catPortType = GkDb->convConnTypeToEnum(GkDb->read_rig_settings_comms(radio_cfg::ComDeviceCatPortType).toInt());
+        const QString comDeviceCat = gkDb->read_rig_settings_comms(radio_cfg::ComDeviceCat);
+        const GkConnType catPortType = gkDb->convConnTypeToEnum(gkDb->read_rig_settings_comms(radio_cfg::ComDeviceCatPortType).toInt());
         if (!comDeviceCat.isEmpty()) {
             if (catPortType == GkConnType::GkRS232) {
                 if (!status_com_ports.empty()) {
@@ -944,8 +924,8 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
         //
         // Setup the PTT Port
         //
-        QString comDevicePtt = GkDb->read_rig_settings_comms(radio_cfg::ComDevicePtt);
-        GkConnType pttPortType = GkDb->convConnTypeToEnum(GkDb->read_rig_settings_comms(radio_cfg::ComDevicePttPortType).toInt());
+        QString comDevicePtt = gkDb->read_rig_settings_comms(radio_cfg::ComDevicePtt);
+        GkConnType pttPortType = gkDb->convConnTypeToEnum(gkDb->read_rig_settings_comms(radio_cfg::ComDevicePttPortType).toInt());
         if (!comDevicePtt.isEmpty()) {
             if (pttPortType == GkConnType::GkRS232) {
                 if (!status_com_ports.empty()) {
@@ -1304,7 +1284,7 @@ void MainWindow::updateVolumeDisplayWidgets()
     try {
         std::lock_guard<std::mutex> lck_guard(mtx_update_vol_widgets);
         std::this_thread::sleep_for(std::chrono::milliseconds(2500)); // TODO: This is a huge source of SEGFAULTS!
-        if (inputAudioStream != nullptr && AUDIO_FRAMES_PER_BUFFER > 0) {
+        if (inputAudioStream != nullptr) {
             while (inputAudioStream->isActive()) {
                 //
                 // Input audio stream is open and active!
@@ -1416,7 +1396,7 @@ bool MainWindow::fileOverloadWarning(const int &file_count, const int &max_num_f
  */
 void MainWindow::removeFreqFromDb(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_remove)
 {
-    GkDb->remove_frequencies_db(freq_to_remove);
+    gkDb->remove_frequencies_db(freq_to_remove);
 
     return;
 }
@@ -1429,9 +1409,9 @@ void MainWindow::removeFreqFromDb(const GekkoFyre::AmateurRadio::GkFreqs &freq_t
  */
 void MainWindow::addFreqToDb(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_add)
 {
-    bool freq_already_init = GkDb->isFreqAlreadyInit();
+    bool freq_already_init = gkDb->isFreqAlreadyInit();
     if (!freq_already_init) {
-        GkDb->write_frequencies_db(freq_to_add);
+        gkDb->write_frequencies_db(freq_to_add);
     }
 
     return;
@@ -1664,6 +1644,8 @@ void MainWindow::on_actionDelete_all_wav_files_in_Save_Directory_triggered()
 
 void MainWindow::on_actionPlay_triggered()
 {
+    QPointer<GkAudioPlayDialog> gkAudioPlayDlg = new GkAudioPlayDialog(gkDb, gkPortAudioInit, gkAudioDecoding, gkAudioDevices, pref_output_device,
+                                           gkStringFuncs, gkEventLogger, this);
     gkAudioPlayDlg->setWindowFlags(Qt::Window);
     gkAudioPlayDlg->setAttribute(Qt::WA_DeleteOnClose, false);
     gkAudioPlayDlg->show();
@@ -1729,9 +1711,9 @@ void MainWindow::uponExit()
 {
     emit stopRecording();
 
-    GkDb->write_mainwindow_settings(QString::number(this->window()->size().width()), general_mainwindow_cfg::WindowHSize);
-    GkDb->write_mainwindow_settings(QString::number(this->window()->size().height()), general_mainwindow_cfg::WindowVSize);
-    GkDb->write_mainwindow_settings(QString::number(this->window()->isMaximized()), general_mainwindow_cfg::WindowMaximized);
+    gkDb->write_mainwindow_settings(QString::number(this->window()->size().width()), general_mainwindow_cfg::WindowHSize);
+    gkDb->write_mainwindow_settings(QString::number(this->window()->size().height()), general_mainwindow_cfg::WindowVSize);
+    gkDb->write_mainwindow_settings(QString::number(this->window()->isMaximized()), general_mainwindow_cfg::WindowMaximized);
 
     QApplication::exit(EXIT_SUCCESS);
 }
@@ -1753,8 +1735,8 @@ void MainWindow::updateVolume(const float &value)
     } else {
         //
         // Output device!
+        // TODO: Finish this section for the volume controls!
         //
-        output_audio_buf->setVolume(value);
     }
 
     return;
@@ -1789,7 +1771,7 @@ void MainWindow::updateSpectrograph()
     // CUDA support is enabled!
     //
     try {
-        if ((inputAudioStream != nullptr) && (pref_input_device.is_dev_active == true) && (AUDIO_FRAMES_PER_BUFFER > 0)) {
+        if ((inputAudioStream != nullptr) && (pref_input_device.is_dev_active == true)) {
             while (inputAudioStream->isActive()) {
                 std::vector<float> fftData;
                 fftData.reserve(GK_FFT_SIZE + 1);
@@ -2116,14 +2098,10 @@ void MainWindow::on_pushButton_radio_transmit_clicked()
         // Set the QPushButton to 'Green'
         gkStringFuncs->changePushButtonColor(ui->pushButton_radio_transmit, false);
         btn_radio_tx = true;
-
-        emit startTxAudio();
     } else {
         // Set the QPushButton to 'Red'
         gkStringFuncs->changePushButtonColor(ui->pushButton_radio_transmit, true);
         btn_radio_tx = false;
-
-        emit stopTxAudio();
     }
 
     return;
@@ -2288,64 +2266,6 @@ void MainWindow::startRecordingInput()
 }
 
 /**
- * @brief MainWindow::stopTransmitOutput
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void MainWindow::stopTransmitOutput()
-{
-    try {
-        if (outputAudioStream != nullptr && pref_output_device.is_dev_active) {
-            if (outputAudioStream->isActive()) {
-                outputAudioStream->stop();
-                outputAudioStream->close();
-
-                pref_output_device.is_dev_active = false; // State that this recording device is now non-active!
-            }
-        }
-    } catch (const std::exception &e) {
-        gkEventLogger->publishEvent(tr("Problem encountered with stopping output audio device. Error:\n\n%1").arg(QString::fromStdString(e.what())),
-                                    GkSeverity::Error, "", false, true, false, true);
-    }
-
-    return;
-}
-
-/**
- * @brief MainWindow::startTransmitOutput
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void MainWindow::startTransmitOutput()
-{
-    try {
-        if (!pref_output_device.is_dev_active) {
-            // To minimise startup latency for this use-case (i.e. expecting StartStream() to give minimum
-            // startup latency) you should use the paPrimeOutputBuffersUsingStreamCallback stream flag.
-            // Otherwise the initial buffers will be zero and the time it takes for the sound to hit the
-            // DACs will include playing out the buffer length of zeros (which would be around 80ms on
-            // Windows WMME or DirectSound with the default PA settings).
-            auto pa_stream_param = portaudio::StreamParameters(portaudio::DirectionSpecificStreamParameters::null(), pref_output_device.cpp_stream_param,
-                                                               pref_output_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
-                                                               paPrimeOutputBuffersUsingStreamCallback);
-            outputAudioStream = std::make_shared<portaudio::MemFunCallbackStream<PaAudioBuf<float>>>(pa_stream_param, *output_audio_buf,
-                                                                                                     &PaAudioBuf<float>::playbackCallback);
-            outputAudioStream->start();
-        } else {
-            //
-            // Otherwise restart the audio device with new parameters!
-            //
-            emit restartOutputAudioInterface(pref_output_device);
-        }
-
-        return;
-    } catch (const std::exception &e) {
-        gkEventLogger->publishEvent(tr("Problem encountered with initializing output audio device. Error:\n\n%1").arg(QString::fromStdString(e.what())),
-                                    GkSeverity::Error, "", false, true, false, true);
-    }
-
-    return;
-}
-
-/**
  * @brief MainWindow::restartInputAudioInterface restarts the input audio device interface with a newly chosen audio device.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param input_device The newly chosen input audio device to restart the interface with.
@@ -2357,7 +2277,7 @@ void MainWindow::restartInputAudioInterface(const GkDevice &input_device)
         pref_input_device = {}; // Clear the structure ready for re-use!
         pref_input_device = input_device;
 
-        input_audio_buf.reset(new GekkoFyre::PaAudioBuf<float>(AUDIO_FRAMES_PER_BUFFER, pref_output_device, pref_input_device));
+        input_audio_buf.reset(new GekkoFyre::PaAudioBuf<float>(AUDIO_FRAMES_PER_BUFFER, -1, pref_output_device, pref_input_device, gkDb));
 
         auto pa_stream_param = portaudio::StreamParameters(pref_input_device.cpp_stream_param, portaudio::DirectionSpecificStreamParameters::null(),
                                                            pref_input_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
@@ -2369,23 +2289,6 @@ void MainWindow::restartInputAudioInterface(const GkDevice &input_device)
         gkEventLogger->publishEvent(tr("Problem encountered with restarting input audio device. Error:\n\n%1").arg(QString::fromStdString(e.what())),
                                     GkSeverity::Error, "", false, true, false, true);
     }
-
-    return;
-}
-
-/**
- * @brief MainWindow::restartOutputAudioInterface restarts the output audio device interface with a newly chosen audio device.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param output_device The newly chosen output audio device to restart the interface with.
- */
-void MainWindow::restartOutputAudioInterface(const GkDevice &output_device)
-{
-    emit stopTxAudio();
-    pref_output_device = {};
-    pref_output_device = output_device;
-
-    output_audio_buf.reset(new GekkoFyre::PaAudioBuf<float>(AUDIO_FRAMES_PER_BUFFER, pref_output_device, pref_input_device));
-    emit startTxAudio();
 
     return;
 }
@@ -2887,8 +2790,8 @@ void MainWindow::on_pushButton_sstv_tx_send_image_clicked()
         // Initialize any amateur radio modems!
         //
         #ifdef CODEC2_LIBS_ENBLD
-        QPointer<GkCodec2> gkCodec2 = new GkCodec2(Codec2Mode::freeDvMode2020, Codec2ModeCustom::GekkoFyreV1, 0, 0, GkDb,
-                                                   gkEventLogger, gkStringFuncs, output_audio_buf, this);
+        QPointer<GkCodec2> gkCodec2 = new GkCodec2(Codec2Mode::freeDvMode2020, Codec2ModeCustom::GekkoFyreV1, 0, 0, gkDb,
+                                                   gkEventLogger, gkStringFuncs, nullptr, this);
         gkCodec2->transmitData(byte_array, true);
         #endif
     } else {

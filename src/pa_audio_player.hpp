@@ -23,7 +23,7 @@
  **   the Free Software Foundation, either version 3 of the License, or
  **   (at your option) any later version.
  **
- **   Small world is distributed in the hope that it will be useful,
+ **   Small World is distributed in the hope that it will be useful,
  **   but WITHOUT ANY WARRANTY; without even the implied warranty of
  **   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  **   GNU General Public License for more details.
@@ -42,67 +42,35 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include "src/pa_audio_file.hpp"
+#include "src/pa_stream_handler.hpp"
 #include "src/dek_db.hpp"
+#include "src/gk_logger.hpp"
 #include <memory>
-#include <QList>
-#include <QMutex>
-#include <QObject>
+#include <vector>
+#include <string>
 #include <QString>
-#include <QVariant>
+#include <QObject>
 #include <QPointer>
-#include <QKeyEvent>
-#include <QTableView>
-#include <QModelIndex>
-#include <QMouseEvent>
-#include <QHeaderView>
-#include <QAbstractTableModel>
-#include <QSortFilterProxyModel>
 
 namespace GekkoFyre {
 
-class GkFreqTableViewModel : public QTableView {
-
-public:
-    explicit GkFreqTableViewModel(QWidget *parent = nullptr);
-    ~GkFreqTableViewModel() override;
-
-protected:
-    void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
-
-};
-
-class GkFreqTableModel : public QAbstractTableModel {
+class GkPaAudioPlayer : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkFreqTableModel(QPointer<GekkoFyre::GkLevelDb> database, QWidget *parent = nullptr);
-    ~GkFreqTableModel() override;
+    explicit GkPaAudioPlayer(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
+                             QPointer<GekkoFyre::GkEventLogger> eventLogger, GekkoFyre::Database::Settings::GkAudioChannels audio_channels,
+                             QObject *parent = nullptr);
+    virtual ~GkPaAudioPlayer();
 
-    void populateData(const QList<GekkoFyre::AmateurRadio::GkFreqs> &frequencies);
-    void populateData(const QList<GekkoFyre::AmateurRadio::GkFreqs> &frequencies, const bool &populate_freq_db);
-    void insertData(const GekkoFyre::AmateurRadio::GkFreqs &freq_val);
-    void insertData(const GekkoFyre::AmateurRadio::GkFreqs &freq_val, const bool &populate_freq_db);
-    bool insertRows(int row, int count, const QModelIndex &) Q_DECL_OVERRIDE;
-    bool removeRows(int row, int count, const QModelIndex &) Q_DECL_OVERRIDE;
-    int rowCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
-    [[nodiscard]] Qt::ItemFlags flags(const QModelIndex &index) const Q_DECL_OVERRIDE;
-    int columnCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
-
-    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
-    QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
-
-signals:
-    void removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_remove);
-    void addFreq(const GekkoFyre::AmateurRadio::GkFreqs &freq_to_add);
+    void play(QString audio_file);
+    void loop(QString audio_file);
+    void stop();
 
 private:
-    QPointer<GekkoFyre::GkLevelDb> gkDb;
-    QList<GekkoFyre::AmateurRadio::GkFreqs> m_data;
-
-    QPointer<GkFreqTableViewModel> view;
-    QPointer<QSortFilterProxyModel> proxyModel;
-
-    QMutex dataBatchMutex;
+    std::unique_ptr<GkPaAudioFileHandler> fileHandler;
+    std::unique_ptr<GkPaStreamHandler> streamHandler;
 
 };
 };
