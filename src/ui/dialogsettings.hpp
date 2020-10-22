@@ -75,6 +75,8 @@ public:
     explicit DialogSettings(QPointer<GekkoFyre::GkLevelDb> dkDb,
                             QPointer<GekkoFyre::FileIo> filePtr,
                             std::shared_ptr<GekkoFyre::AudioDevices> audioDevices,
+                            std::shared_ptr<RtAudio> audioSysOutput,
+                            std::shared_ptr<RtAudio> audioSysInput,
                             QPointer<GekkoFyre::RadioLibs> radioLibs,
                             QPointer<GekkoFyre::StringFuncs> stringFuncs,
                             std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> radioPtr,
@@ -232,7 +234,7 @@ signals:
     void addRigInUse(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
 
     //
-    // PortAudio and related
+    // RtAudio and related
     //
     void changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &input_device);
     void changeOutputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &output_device);
@@ -282,10 +284,15 @@ private:
     // The key is the Port Number for the USB device in question, while the value is what's displayed in the QComboBox...
     QMap<quint16, QString> available_usb_ports; // For tracking the *available* USB device ports that the user can choose from...
 
+    //
+    // RtAudio and related
     // The key corresponds to the position within the QComboBoxes
+    //
     QMap<qint32, RtAudio::Api> avail_rtaudio_api;
     QMap<qint32, GekkoFyre::Database::Settings::Audio::GkDevice> avail_input_audio_devs;
     QMap<qint32, GekkoFyre::Database::Settings::Audio::GkDevice> avail_output_audio_devs;
+    std::shared_ptr<RtAudio> gkAudioSysOutput;
+    std::shared_ptr<RtAudio> gkAudioSysInput;
     GekkoFyre::Database::Settings::Audio::GkDevice chosen_input_audio_dev;
     GekkoFyre::Database::Settings::Audio::GkDevice chosen_output_audio_dev;
     RtAudio::Api chosen_rtaudio_api;

@@ -166,7 +166,7 @@ int GkCodec2::transmitData(const QByteArray &byte_array, const bool &play_output
                                .arg(QString::fromStdString(e.what())).toStdString());
     }
 
-    return paAbort;
+    return -1;
 }
 
 /**

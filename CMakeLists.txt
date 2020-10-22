@@ -413,6 +413,12 @@ endif()
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/rtaudio")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/rtaudio")
 
+if(WIN32 OR MSYS OR MINGW)
+    set(RTAUDIO_API_DS "Build DirectSound API" ON)
+    set(RTAUDIO_API_ASIO "Build ASIO API" ON)
+elseif(LINUX)
+endif()
+
 #
 # Sentry (native)
 #
@@ -725,7 +731,7 @@ if(GFYRE_BUILD_SHARED)
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
-target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::SerialPort Qt5::PrintSupport Qt5::TextToSpeech Qt5::Test Threads::Threads SingleApplication::SingleApplication sentry::sentry ${LIBS})
+target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::SerialPort Qt5::PrintSupport Qt5::TextToSpeech Qt5::Test Threads::Threads SingleApplication::SingleApplication sentry::sentry rtaudio ${LIBS})
 
 qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)
 add_dependencies(galaxy resources)

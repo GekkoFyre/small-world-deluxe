@@ -82,6 +82,8 @@ std::mutex index_loop_mtx;
 DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
                                QPointer<FileIo> filePtr,
                                std::shared_ptr<AudioDevices> audioDevices,
+                               std::shared_ptr<RtAudio> audioSysOutput,
+                               std::shared_ptr<RtAudio> audioSysInput,
                                QPointer<RadioLibs> radioLibs, QPointer<StringFuncs> stringFuncs,
                                std::shared_ptr<GkRadio> radioPtr,
                                const std::list<GekkoFyre::Database::Settings::GkComPort> &com_ports,
@@ -104,6 +106,8 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         gkDekodeDb = std::move(dkDb);
         gkFileIo = std::move(filePtr);
         gkAudioDevices = std::move(audioDevices);
+        gkAudioSysOutput = std::move(audioSysOutput);
+        gkAudioSysInput = std::move(audioSysInput);
         gkRadioPtr = std::move(radioPtr);
         gkFreqs = std::move(gkFreqList);
         gkFreqTableModel = std::move(freqTableModel);
@@ -1769,7 +1773,7 @@ void DialogSettings::on_pushButton_output_sound_test_clicked()
         int ret = msgBox.exec();
 
         if (ret == QMessageBox::Ok) {
-            gkAudioDevices->testSinewave();
+            gkAudioDevices->testSinewave(gkAudioSysOutput, chosen_output_audio_dev, false);
             QMessageBox::information(this, tr("Finished"), tr("The audio test has now finished."), QMessageBox::Ok);
         } else if (ret == QMessageBox::Abort) {
             QMessageBox::information(this, tr("Aborted"), tr("The operation has been terminated."), QMessageBox::Ok);

@@ -468,11 +468,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize any RtAudio libraries and associated buffers!
         //
-        audioSysOutput = std::make_shared<RtAudio>();
-        audioSysInput = std::make_shared<RtAudio>();
+        gkAudioSysOutput = std::make_shared<RtAudio>();
+        gkAudioSysInput = std::make_shared<RtAudio>();
 
         gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(gkDb, fileIo, gkFreqList, gkStringFuncs, gkEventLogger, gkSystem, this);
-        auto audio_devices_enum = gkAudioDevices->enumAudioDevicesCpp(audioSysOutput);
+        auto audio_devices_enum = gkAudioDevices->enumAudioDevicesCpp();
 
         if (!audio_devices_enum.gkDevice.empty()) {
             for (const auto &device: audio_devices_enum.gkDevice) {
@@ -752,8 +752,8 @@ void MainWindow::launchSettingsWin()
     QObject::connect(gkFreqTableModel, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
                      gkFreqList, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)));
 
-    QPointer<DialogSettings> dlg_settings = new DialogSettings(gkDb, fileIo, gkAudioDevices,
-                                                               gkRadioLibs, gkStringFuncs,
+    QPointer<DialogSettings> dlg_settings = new DialogSettings(gkDb, fileIo, gkAudioDevices, gkAudioSysOutput,
+                                                               gkAudioSysInput, gkRadioLibs, gkStringFuncs,
                                                                gkRadioPtr, status_com_ports, gkUsbPortMap, gkFreqList,
                                                                gkFreqTableModel, gkEventLogger, gkTextToSpeech, this);
     dlg_settings->setWindowFlags(Qt::Window);
@@ -1265,8 +1265,8 @@ void MainWindow::updateVolumeDisplayWidgets()
     try {
         std::lock_guard<std::mutex> lck_guard(mtx_update_vol_widgets);
         std::this_thread::sleep_for(std::chrono::milliseconds(2500)); // TODO: This is a huge source of SEGFAULTS!
-        if (audioSysInput != nullptr) {
-            while (audioSysInput->isStreamRunning()) {
+        if (gkAudioSysInput != nullptr) {
+            while (gkAudioSysInput->isStreamRunning()) {
                 //
                 // Input audio stream is open and active!
                 //
@@ -1821,7 +1821,7 @@ void MainWindow::updateSpectrograph()
     }
     #else
     try {
-        while (audioSysInput->isStreamRunning() && pref_input_device.is_dev_active) {
+        while (gkAudioSysInput->isStreamRunning() && pref_input_device.is_dev_active) {
             std::vector<float> fftData;
             fftData.reserve(GK_FFT_SIZE + 1);
             const qint64 measure_start_time = QDateTime::currentMSecsSinceEpoch();
@@ -1943,7 +1943,7 @@ void MainWindow::on_verticalSlider_vol_control_valueChanged(int value)
     const float real_val = (static_cast<float>(value) / static_cast<float>(vol_slider_max_val));
 
     if (rx_vol_control_selected) {
-        if (audioSysInput != nullptr) {
+        if (gkAudioSysInput != nullptr) {
             if (pref_input_device.is_dev_active) {
                 //
                 // Input audio stream is open and active!
@@ -2005,10 +2005,10 @@ void MainWindow::on_pushButton_radio_receive_clicked()
         std::unique_lock<std::timed_mutex> btn_record_lck(btn_record_mtx, std::defer_lock);
         if (!btn_radio_rx) {
             btn_record_lck.lock();
-            if (pref_input_device.stream_parameters.device != paNoDevice) {
+            if (pref_input_device.device_info.probed) {
                 if (pref_input_device.audio_src == GkAudioSource::Input || pref_input_device.audio_src == GkAudioSource::InputOutput) {
-                    if (pref_input_device.device_info.maxInputChannels > 0) {
-                        if ((pref_input_device.device_info.name != nullptr)) {
+                    if (pref_input_device.device_info.inputChannels > 0) {
+                        if ((pref_input_device.device_info.name.empty())) {
                             // Set the QPushButton to 'Green'
                             gkStringFuncs->changePushButtonColor(ui->pushButton_radio_receive, false);
                             btn_radio_rx = true;
@@ -2178,10 +2178,10 @@ void MainWindow::procRigPort(const QString &conn_port, const GekkoFyre::AmateurR
 void MainWindow::stopRecordingInput()
 {
     try {
-        if (audioSysInput != nullptr && pref_input_device.is_dev_active) {
-            if (audioSysInput->isStreamRunning()) {
-                audioSysInput->stopStream();
-                audioSysInput->closeStream();
+        if (gkAudioSysInput != nullptr && pref_input_device.is_dev_active) {
+            if (gkAudioSysInput->isStreamRunning()) {
+                gkAudioSysInput->stopStream();
+                gkAudioSysInput->closeStream();
 
                 pref_input_device.is_dev_active = false; // State that this recording device is now non-active!
             }

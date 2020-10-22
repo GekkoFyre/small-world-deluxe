@@ -315,8 +315,8 @@ private:
     QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> avail_output_audio_devs;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
-    std::shared_ptr<RtAudio> audioSysOutput;
-    std::shared_ptr<RtAudio> audioSysInput;
+    std::shared_ptr<RtAudio> gkAudioSysOutput;
+    std::shared_ptr<RtAudio> gkAudioSysInput;
     std::shared_ptr<GekkoFyre::PaAudioBuf<float>> input_audio_buf;
 
     //
