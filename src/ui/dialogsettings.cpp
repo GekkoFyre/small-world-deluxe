@@ -299,6 +299,12 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         //
         chosen_input_audio_dev.audio_dev_str = ui->comboBox_soundcard_input->currentText();
         chosen_input_audio_dev.sel_channels = gkDekodeDb->convertAudioChannelsEnum(curr_input_device_channels);
+
+        chosen_input_audio_dev.user_config_succ = false;
+        if (!ui->comboBox_soundcard_input->currentText().isEmpty()) {
+            chosen_input_audio_dev.user_config_succ = true;
+        }
+
         gkDekodeDb->write_audio_device_settings(chosen_input_audio_dev, false);
 
         //
@@ -306,6 +312,12 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         //
         chosen_output_audio_dev.audio_dev_str = ui->comboBox_soundcard_output->currentText();
         chosen_output_audio_dev.sel_channels = gkDekodeDb->convertAudioChannelsEnum(curr_output_device_channels);
+
+        chosen_output_audio_dev.user_config_succ = false;
+        if (!ui->comboBox_soundcard_output->currentText().isEmpty()) {
+            chosen_output_audio_dev.user_config_succ = true;
+        }
+
         gkDekodeDb->write_audio_device_settings(chosen_output_audio_dev, true);
 
         //
@@ -1925,7 +1937,7 @@ void DialogSettings::on_comboBox_soundcard_api_currentIndexChanged(int index)
                         std::string audio_dev_name = output_dev.device_info.name;
                         if (!audio_dev_name.empty()) {
                             ui->comboBox_soundcard_output->insertItem(output_counter, QString::fromStdString(audio_dev_name),
-                                                                      QString::fromStdString(output_dev.device_info.name));
+                                                                      QString::fromStdString(audio_dev_name));
                             ++output_counter;
                         }
                     }
@@ -2593,5 +2605,25 @@ void DialogSettings::on_comboBox_audio_output_sample_rate_currentIndexChanged(in
 {
     // TODO: Fill this out for sample rates to work!
 
+    return;
+}
+
+/**
+ * @brief DialogSettings::on_comboBox_audio_input_bit_rate_currentIndexChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ */
+void DialogSettings::on_comboBox_audio_input_bit_rate_currentIndexChanged(int index)
+{
+    return;
+}
+
+/**
+ * @brief DialogSettings::on_comboBox_audio_output_bit_rate_currentIndexChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ */
+void DialogSettings::on_comboBox_audio_output_bit_rate_currentIndexChanged(int index)
+{
     return;
 }

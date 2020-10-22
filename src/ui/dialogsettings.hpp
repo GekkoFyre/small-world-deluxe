@@ -220,6 +220,8 @@ private slots:
     void on_pushButton_output_sound_test_clicked();
     void on_comboBox_audio_input_sample_rate_currentIndexChanged(int index);
     void on_comboBox_audio_output_sample_rate_currentIndexChanged(int index);
+    void on_comboBox_audio_input_bit_rate_currentIndexChanged(int index);
+    void on_comboBox_audio_output_bit_rate_currentIndexChanged(int index);
 
 signals:
     void changeSelectedTTSEngine(const QString &name);

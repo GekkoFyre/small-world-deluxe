@@ -22,3 +22,6 @@
 [submodule "src/contrib/rtaudio"]
 	path = src/contrib/rtaudio
 	url = https://github.com/thestk/rtaudio.git
+[submodule "src/contrib/leveldb"]
+	path = src/contrib/leveldb
+	url = https://github.com/google/leveldb.git

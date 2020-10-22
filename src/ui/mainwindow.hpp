@@ -395,6 +395,8 @@ private:
 
     void updateVolumeDisplayWidgets();
     void updateVolumeSliderLabel(const float &vol_level);
+    bool findDefaultInputAudioDevice();
+    bool findDefaultOutputAudioDevice();
 
     //
     // QFileDialog related

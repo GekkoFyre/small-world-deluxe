@@ -210,6 +210,9 @@
                       </widget>
                      </item>
                      <item>
+                      <layout class="QFormLayout" name="formLayout_28"/>
+                     </item>
+                     <item>
                       <widget class="QGroupBox" name="groupBox_logs_save_dir">
                        <property name="title">
                         <string>Logs Save Directory</string>
@@ -321,8 +324,8 @@
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>742</width>
-                      <height>621</height>
+                      <width>299</width>
+                      <height>382</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_20">
@@ -559,7 +562,7 @@
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>732</width>
+                      <width>601</width>
                       <height>905</height>
                      </rect>
                     </property>
@@ -1826,8 +1829,8 @@ Thanks.</string>
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>744</width>
-                      <height>623</height>
+                      <width>378</width>
+                      <height>75</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_49">
@@ -2094,12 +2097,22 @@ Thanks.</string>
                                </widget>
                               </item>
                               <item>
+                               <widget class="QComboBox" name="comboBox_audio_input_bit_rate">
+                                <property name="toolTip">
+                                 <string>Choose the bit-rate of your selected, input audio device.</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
                                <widget class="QComboBox" name="comboBox_audio_input_sample_rate">
                                 <property name="sizePolicy">
                                  <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
                                   <horstretch>0</horstretch>
                                   <verstretch>0</verstretch>
                                  </sizepolicy>
+                                </property>
+                                <property name="toolTip">
+                                 <string>The desired sampling rate of your chosen, input audio device.</string>
                                 </property>
                                 <property name="maxVisibleItems">
                                  <number>12</number>
@@ -2115,7 +2128,7 @@ Thanks.</string>
                                  </sizepolicy>
                                 </property>
                                 <property name="toolTip">
-                                 <string>Is the audio channel mono, stereo, etc.?</string>
+                                 <string>Whether you wish for this input audio device to be Mono, Stereo, or something else in how it handles channels.</string>
                                 </property>
                                 <item>
                                  <property name="text">
@@ -2206,12 +2219,22 @@ Thanks.</string>
                                </widget>
                               </item>
                               <item>
+                               <widget class="QComboBox" name="comboBox_audio_output_bit_rate">
+                                <property name="toolTip">
+                                 <string>Choose the bit-rate of your selected, output audio device.</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item>
                                <widget class="QComboBox" name="comboBox_audio_output_sample_rate">
                                 <property name="sizePolicy">
                                  <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
                                   <horstretch>0</horstretch>
                                   <verstretch>0</verstretch>
                                  </sizepolicy>
+                                </property>
+                                <property name="toolTip">
+                                 <string>The desired sampling rate of your chosen, output audio device.</string>
                                 </property>
                                 <property name="maxVisibleItems">
                                  <number>12</number>
@@ -2227,7 +2250,7 @@ Thanks.</string>
                                  </sizepolicy>
                                 </property>
                                 <property name="toolTip">
-                                 <string>Is the audio channel mono, stereo, etc.?</string>
+                                 <string>Whether you wish for this output audio device to be Mono, Stereo, or something else in how it handles channels.</string>
                                 </property>
                                 <item>
                                  <property name="text">
@@ -3949,8 +3972,8 @@ Thanks.</string>
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>756</width>
-                      <height>635</height>
+                      <width>219</width>
+                      <height>156</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_35">

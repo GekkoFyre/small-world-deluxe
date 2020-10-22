@@ -492,6 +492,7 @@ namespace Database {
                 RtAudio::Api assoc_api;                                             // The associated O/S API for this audio device.
                 RtAudio::DeviceInfo device_info;                                    // A great amount of information pertaining to the audio device itself.
                 quint32 device_id;                                                  // The Unique Identifier for this particular audio device.
+                bool user_config_succ;                                              // Whether this audio device information has been gathered as the result of user activity or default action by Small World Deluxe.
                 bool pref_output_dev;                                               // Is this the preferred output device for the user's SWD configuration?
                 bool pref_input_dev;                                                // Is this the preferred input device for the user's SWD configuration?
                 bool default_output_dev;                                            // Is this the default device for the system?

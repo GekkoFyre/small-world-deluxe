@@ -465,14 +465,20 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         QObject::connect(this, SIGNAL(gkExitApp()), this, SLOT(uponExit()));
 
+        gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(gkDb, fileIo, gkFreqList, gkStringFuncs, gkEventLogger, gkSystem, this);
+        auto audio_devices_enum = gkAudioDevices->enumAudioDevicesCpp();
+
         //
         // Initialize any RtAudio libraries and associated buffers!
         //
-        gkAudioSysOutput = std::make_shared<RtAudio>();
-        gkAudioSysInput = std::make_shared<RtAudio>();
-
-        gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(gkDb, fileIo, gkFreqList, gkStringFuncs, gkEventLogger, gkSystem, this);
-        auto audio_devices_enum = gkAudioDevices->enumAudioDevicesCpp();
+        auto api_settings = gkDb->read_audio_api_settings();
+        if (api_settings != RtAudio::UNSPECIFIED) {
+            gkAudioSysOutput = std::make_shared<RtAudio>(api_settings);
+            gkAudioSysInput = std::make_shared<RtAudio>(api_settings);
+        } else {
+            gkAudioSysOutput = std::make_shared<RtAudio>(RtAudio::UNSPECIFIED);
+            gkAudioSysInput = std::make_shared<RtAudio>(RtAudio::UNSPECIFIED);
+        }
 
         if (!audio_devices_enum.gkDevice.empty()) {
             for (const auto &device: audio_devices_enum.gkDevice) {
@@ -1164,32 +1170,46 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
             gk_radio_tmp->adv_cmd = "";
         }
 
+        bool found_input_audio_dev = false;
         if (!audioInputIdStr.isEmpty()) {
             //
             // Audio Input
-            //
             for (const auto &input_dev: avail_input_audio_devs.toStdMap()) {
-                if (input_dev.second.device_info.name == audioInputIdStr.toStdString()) {
+                if (input_dev.second.device_info.name == audioInputIdStr.toStdString()) { // Find the audio device that matches the **saved data**!
                     pref_input_device = input_dev.second;
+                    found_input_audio_dev = true;
                 }
             }
         } else {
+            findDefaultInputAudioDevice();
             gkEventLogger->publishEvent(tr("No default audio input device has been chosen yet. Please visit the Setting's Dialog!"),
                                         GkSeverity::Info, "", true, true, false, false);
         }
 
+        if (!found_input_audio_dev) {
+            findDefaultInputAudioDevice();
+            found_input_audio_dev = true;
+        }
+
+        bool found_output_audio_dev = false;
         if (!audioOutputIdStr.isEmpty()) {
             //
             // Audio Output
-            //
             for (const auto &output_dev: avail_output_audio_devs.toStdMap()) {
-                if (output_dev.second.device_info.name == audioOutputIdStr.toStdString()) {
+                if (output_dev.second.device_info.name == audioOutputIdStr.toStdString()) { // Find the audio device that matches the **saved data**!
                     pref_output_device = output_dev.second;
+                    found_output_audio_dev = true;
                 }
             }
         } else {
+            findDefaultOutputAudioDevice();
             gkEventLogger->publishEvent(tr("No default audio output device has been chosen yet. Please visit the Setting's Dialog!"),
                                         GkSeverity::Info, "", false, true, false, false);
+        }
+
+        if (!found_output_audio_dev) {
+            findDefaultOutputAudioDevice();
+            found_output_audio_dev = true;
         }
 
         return gk_radio_tmp;
@@ -1326,6 +1346,38 @@ void MainWindow::updateVolumeSliderLabel(const float &vol_level)
     emit changeVolume(vol_multiplier);
 
     return;
+}
+
+/**
+ * @brief MainWindow::findDefaultInputAudioDevice
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return
+ */
+bool MainWindow::findDefaultInputAudioDevice()
+{
+    for (const auto &input_dev: avail_input_audio_devs.toStdMap()) {
+        if (input_dev.second.device_info.isDefaultInput) {
+            pref_input_device = input_dev.second; // Find the **default** input audio device for this user's system!
+        }
+    }
+
+    return false;
+}
+
+/**
+ * @brief MainWindow::findDefaultOutputAudioDevice
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return
+ */
+bool MainWindow::findDefaultOutputAudioDevice()
+{
+    for (const auto &output_dev: avail_output_audio_devs.toStdMap()) {
+        if (output_dev.second.device_info.isDefaultOutput) {
+            pref_output_device = output_dev.second; // Find the **default** output audio device for this user's system!
+        }
+    }
+
+    return false;
 }
 
 /**
@@ -2206,8 +2258,15 @@ void MainWindow::startRecordingInput()
     try {
         if (!pref_input_device.is_dev_active) {
             emit stopRecording();
-            // TODO: Create new Stream creation here for RtAudio!
 
+            if (gkAudioSysInput->getDeviceCount() < 1) {
+                throw std::invalid_argument(tr("No audio devices have been found!").toStdString());
+            }
+
+            RtAudio::StreamParameters input_param;
+            input_param.deviceId = ;
+
+            gkAudioSysInput->startStream();
             pref_input_device.is_dev_active = true; // State that this recording device is now active!
         } else {
             //
@@ -2217,6 +2276,9 @@ void MainWindow::startRecordingInput()
         }
 
         return;
+    } catch (const RtAudioError &e) {
+        gkEventLogger->publishEvent(tr("Problem encountered with initializing RtAudio via input audio device. Error:\n\n%1").arg(QString::fromStdString(e.what())),
+                                    GkSeverity::Error, "", false, true, false, true);
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(tr("Problem encountered with initializing input audio device. Error:\n\n%1").arg(QString::fromStdString(e.what())),
                                     GkSeverity::Error, "", false, true, false, true);

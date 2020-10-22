@@ -313,6 +313,11 @@ void GkLevelDb::write_audio_device_settings(const GkDevice &value, const bool &i
             // the boolean value to a std::string suitable for database storage.
             std::string is_default = boolEnum(value.default_output_dev);
             batch.Put("AudioOutputDefSysDevice", is_default);
+
+            // Modifier to let SWD know if this audio input device was configured as the result of
+            // user activity and not by the part of default activity/settings.
+            std::string user_activity = boolEnum(value.user_config_succ);
+            batch.Put("AudioOutputCfgUsrActivity", user_activity);
         } else {
             // Unique identifier for the chosen input audio device
             batch.Put("AudioInputSelChannels", std::to_string(value.sel_channels));
@@ -323,6 +328,11 @@ void GkLevelDb::write_audio_device_settings(const GkDevice &value, const bool &i
             // the boolean value to a std::string suitable for database storage.
             std::string is_default = boolEnum(value.default_input_dev);
             batch.Put("AudioInputDefSysDevice", is_default);
+
+            // Modifier to let SWD know if this audio input device was configured as the result of
+            // user activity and not by the part of default activity/settings.
+            std::string user_activity = boolEnum(value.user_config_succ);
+            batch.Put("AudioInputCfgUsrActivity", user_activity);
         }
 
         leveldb::WriteOptions write_options;
@@ -1512,13 +1522,16 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
         std::string output_pa_host_idx;
         std::string output_sel_channels;
         std::string output_def_sys_device;
+        std::string output_user_activity;
 
         status = db->Get(read_options, "AudioOutputId", &output_id);
         status = db->Get(read_options, "AudioOutputDeviceName", &output_pa_host_idx);
         status = db->Get(read_options, "AudioOutputSelChannels", &output_sel_channels);
         status = db->Get(read_options, "AudioOutputDefSysDevice", &output_def_sys_device);
+        status = db->Get(read_options, "AudioOutputCfgUsrActivity", &output_user_activity);
 
         bool def_sys_device = boolStr(output_def_sys_device);
+        bool user_activity = boolStr(output_user_activity);
 
         //
         // Test to see if the following are empty or not
@@ -1532,6 +1545,7 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
         }
 
         audio_device.default_output_dev = def_sys_device;
+        audio_device.user_config_succ = user_activity;
     } else {
         //
         // Input audio device
@@ -1540,13 +1554,16 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
         std::string input_pa_host_idx;
         std::string input_sel_channels;
         std::string input_def_sys_device;
+        std::string input_user_activity;
 
         status = db->Get(read_options, "AudioInputId", &input_id);
         status = db->Get(read_options, "AudioInputDeviceName", &input_pa_host_idx);
         status = db->Get(read_options, "AudioInputSelChannels", &input_sel_channels);
         status = db->Get(read_options, "AudioInputDefSysDevice", &input_def_sys_device);
+        status = db->Get(read_options, "AudioInputCfgUsrActivity", &input_user_activity);
 
         bool def_sys_device = boolStr(input_def_sys_device);
+        bool user_activity = boolStr(input_user_activity);
 
         //
         // Test to see if the following are empty or not
@@ -1560,6 +1577,7 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
         }
 
         audio_device.default_input_dev = def_sys_device;
+        audio_device.user_config_succ = user_activity;
     }
 
     return audio_device;
