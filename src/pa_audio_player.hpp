@@ -63,10 +63,9 @@ class GkPaAudioPlayer : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkPaAudioPlayer(portaudio::System *portAudioSys, QPointer<GekkoFyre::GkLevelDb> database,
-                             const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
-                             const QPointer<GekkoFyre::GkEventLogger> &eventLogger,
-                             QPointer<GekkoFyre::StringFuncs> stringFuncs, QObject *parent = nullptr);
+    explicit GkPaAudioPlayer(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
+                             const QPointer<GekkoFyre::GkEventLogger> &eventLogger, QPointer<GekkoFyre::StringFuncs> stringFuncs,
+                             QObject *parent = nullptr);
     virtual ~GkPaAudioPlayer();
 
     void play(const fs::path &audio_file);
@@ -74,7 +73,6 @@ public:
     void stop(const fs::path &audio_file);
 
 private:
-    portaudio::System *gkPortAudioSys;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
 
     QPointer<GkPaStreamHandler> streamHandler;

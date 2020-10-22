@@ -55,15 +55,13 @@ using namespace Logging;
 /**
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-GkPaAudioPlayer::GkPaAudioPlayer(portaudio::System *portAudioSys, QPointer<GekkoFyre::GkLevelDb> database,
-                                 const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
-                                 const QPointer<GekkoFyre::GkEventLogger> &eventLogger,
-                                 QPointer<GekkoFyre::StringFuncs> stringFuncs, QObject *parent)
+GkPaAudioPlayer::GkPaAudioPlayer(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
+                                 const QPointer<GekkoFyre::GkEventLogger> &eventLogger, QPointer<GekkoFyre::StringFuncs> stringFuncs,
+                                 QObject *parent)
 {
-    gkPortAudioSys = portAudioSys;
     gkStringFuncs = std::move(stringFuncs);
 
-    streamHandler = new GkPaStreamHandler(gkPortAudioSys, std::move(database), output_device, eventLogger, stringFuncs, parent);;
+    streamHandler = new GkPaStreamHandler(std::move(database), output_device, eventLogger, stringFuncs, parent);;
 
     return;
 }

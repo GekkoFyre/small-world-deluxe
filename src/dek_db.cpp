@@ -1461,94 +1461,6 @@ RtAudio::Api GkLevelDb::read_audio_api_settings()
 }
 
 /**
- * @brief GkLevelDb::portAudioApiToStr
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param interface
- * @return
- */
-QString GkLevelDb::portAudioApiToStr(const PaHostApiTypeId &interface)
-{
-    switch (interface) {
-    case PaHostApiTypeId::paDirectSound:
-        return tr("DirectSound");
-    case PaHostApiTypeId::paMME:
-        return tr("Microsoft Multimedia Environment (MME)");
-    case PaHostApiTypeId::paASIO:
-        return tr("ASIO");
-    case PaHostApiTypeId::paSoundManager:
-        return tr("Sound Manager");
-    case PaHostApiTypeId::paCoreAudio:
-        return tr("Core Audio");
-    case PaHostApiTypeId::paOSS:
-        return tr("OSS");
-    case PaHostApiTypeId::paALSA:
-        return tr("ALSA");
-    case PaHostApiTypeId::paAL:
-        return tr("AL");
-    case PaHostApiTypeId::paBeOS:
-        return tr("BeOS");
-    case PaHostApiTypeId::paWDMKS:
-        return tr("WDM/KS");
-    case PaHostApiTypeId::paJACK:
-        return tr("JACK");
-    case PaHostApiTypeId::paWASAPI:
-        return tr("Windows Audio Session API (WASAPI)");
-    case PaHostApiTypeId::paAudioScienceHPI:
-        return tr("AudioScience HPI");
-    case PaHostApiTypeId::paInDevelopment:
-        return tr("N/A");
-    default:
-        return tr("Unknown");
-    }
-
-    return tr("Unknown");
-}
-
-/**
- * @brief GkLevelDb::portAudioApiToEnum converts the stored string value of the RtAudio API setting to the
- * relevant enum value, for easier computation.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param interface
- * @return The more easily computable enum value.
- */
-PaHostApiTypeId GkLevelDb::portAudioApiToEnum(const QString &interface)
-{
-    if (!interface.isNull() && !interface.isEmpty()) {
-        if (interface == tr("DirectSound")) {
-            return PaHostApiTypeId::paDirectSound;
-        } else if (interface == tr("Microsoft Multimedia Environment (MME)")) {
-            return PaHostApiTypeId::paMME;
-        } else if (interface == tr("ASIO")) {
-            return PaHostApiTypeId::paASIO;
-        } else if (interface == tr("Sound Manager")) {
-            return PaHostApiTypeId::paSoundManager;
-        } else if (interface == tr("Core Audio")) {
-            return PaHostApiTypeId::paCoreAudio;
-        } else if (interface == tr("OSS")) {
-            return PaHostApiTypeId::paOSS;
-        } else if (interface == tr("ALSA")) {
-            return PaHostApiTypeId::paALSA;
-        } else if (interface == tr("AL")) {
-            return PaHostApiTypeId::paAL;
-        } else if (interface == tr("BeOS")) {
-            return PaHostApiTypeId::paBeOS;
-        } else if (interface == tr("WDM/KS")) {
-            return PaHostApiTypeId::paWDMKS;
-        } else if (interface == tr("JACK")) {
-            return PaHostApiTypeId::paJACK;
-        } else if (interface == tr("Windows Audio Session API (WASAPI)")) {
-            return PaHostApiTypeId::paWASAPI;
-        } else if (interface == tr("AudioScience HPI")) {
-            return PaHostApiTypeId::paAudioScienceHPI;
-        } else if (interface == tr("N/A")) {
-            return PaHostApiTypeId::paInDevelopment;
-        }
-    }
-
-    return PaHostApiTypeId::paInDevelopment;
-}
-
-/**
  * @brief GkLevelDb::removeInvalidChars removes invalid/illegal characters from a given std::string, making it all clean!
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param string_to_modify The given std::string to modify.
@@ -1619,7 +1531,7 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
             audio_device.sel_channels = GkAudioChannels::Unknown;
         }
 
-        audio_device.default_dev = def_sys_device;
+        audio_device.default_output_dev = def_sys_device;
     } else {
         //
         // Input audio device
@@ -1647,7 +1559,7 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
             audio_device.sel_channels = GkAudioChannels::Unknown;
         }
 
-        audio_device.default_dev = def_sys_device;
+        audio_device.default_input_dev = def_sys_device;
     }
 
     return audio_device;

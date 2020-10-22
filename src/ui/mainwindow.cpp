@@ -122,6 +122,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<GekkoFyre::System::Events::Logging::GkEventLogging>("GekkoFyre::System::Events::Logging::GkEventLogging");
     qRegisterMetaType<GekkoFyre::System::Events::Logging::GkSeverity>("GekkoFyre::System::Events::Logging::GkSeverity");
     qRegisterMetaType<GekkoFyre::Database::Settings::Audio::GkDevice>("GekkoFyre::Database::Settings::Audio::GkDevice");
+    qRegisterMetaType<GekkoFyre::Database::Settings::Audio::GkAudioApi>("GekkoFyre::Database::Settings::Audio::GkAudioApi");
     qRegisterMetaType<GekkoFyre::AmateurRadio::GkConnType>("GekkoFyre::AmateurRadio::GkConnType");
     qRegisterMetaType<GekkoFyre::AmateurRadio::DigitalModes>("GekkoFyre::AmateurRadio::DigitalModes");
     qRegisterMetaType<GekkoFyre::AmateurRadio::IARURegions>("GekkoFyre::AmateurRadio::IARURegions");
@@ -131,6 +132,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<size_t>("size_t");
     qRegisterMetaType<uint8_t>("uint8_t");
     qRegisterMetaType<rig_model_t>("rig_model_t");
+    qRegisterMetaType<RtAudio::Api>("RtAudio::Api");
     qRegisterMetaType<std::vector<qint16>>("std::vector<qint16>");
     qRegisterMetaType<std::vector<double>>("std::vector<double>");
     qRegisterMetaType<std::vector<float>>("std::vector<float>");
@@ -751,7 +753,7 @@ void MainWindow::launchSettingsWin()
                      gkFreqList, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)));
 
     QPointer<DialogSettings> dlg_settings = new DialogSettings(gkDb, fileIo, gkAudioDevices,
-                                                               gkRadioLibs, gkStringFuncs, gkPortAudioInit,
+                                                               gkRadioLibs, gkStringFuncs,
                                                                gkRadioPtr, status_com_ports, gkUsbPortMap, gkFreqList,
                                                                gkFreqTableModel, gkEventLogger, gkTextToSpeech, this);
     dlg_settings->setWindowFlags(Qt::Window);

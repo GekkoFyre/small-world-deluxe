@@ -80,18 +80,14 @@ class GkPaStreamHandler : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkPaStreamHandler(portaudio::System *portAudioSys, QPointer<GekkoFyre::GkLevelDb> database,
-                               const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
+    explicit GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
                                QPointer<GekkoFyre::GkEventLogger> eventLogger, QPointer<GekkoFyre::StringFuncs> stringFuncs,
                                QObject *parent = nullptr);
     ~GkPaStreamHandler() override;
 
     void processEvent(AudioEventType audioEventType, const fs::path &mediaFilePath, bool loop = false);
-    qint32 portAudioCallback(const void *input, void *output, size_t frameCount, const PaStreamCallbackTimeInfo *paTimeInfo,
-                             PaStreamCallbackFlags statusFlags);
 
 private:
-    portaudio::System *gkPortAudioSys;
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
@@ -99,7 +95,6 @@ private:
     //
     // PortAudio initialization and buffers
     //
-    std::shared_ptr<portaudio::MemFunCallbackStream<GkPaStreamHandler>> streamPlayback;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
 
     GkAudioFramework::GkPlayback gkPlayback;

@@ -216,12 +216,6 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         QObject::connect(gkTextToSpeech, SLOT(localeChanged(const QLocale &)), this, SLOT(ttsLocaleChanged(const QLocale &)));
         QObject::connect(ui->comboBox_access_stt_preset_voice, SIGNAL(currentIndexChanged(int)), gkTextToSpeech, SLOT(voiceSelected(int)));
         QObject::connect(ui->comboBox_access_stt_language, SIGNAL(currentIndexChanged(int)), gkTextToSpeech, SLOT(languageSelected(int)));
-    } catch (const portaudio::PaException &e) {
-        QString error_msg = tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText());
-        gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
-    } catch (const portaudio::PaCppException &e) {
-        QString error_msg = tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what());
-        gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
     } catch (const std::exception &e) {
         QString error_msg = tr("A generic exception has occurred:\n\n%1").arg(e.what());
         gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
@@ -753,12 +747,6 @@ void DialogSettings::prefill_audio_devices(const std::list<GkDevice> &audio_devi
 
             return;
         }
-    } catch (const portaudio::PaException &e) {
-        QString error_msg = tr("A PortAudio error has occurred:\n\n%1").arg(e.paErrorText());
-        gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
-    } catch (const portaudio::PaCppException &e) {
-        QString error_msg = tr("A PortAudioCpp error has occurred:\n\n%1").arg(e.what());
-        gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
     } catch (const std::exception &e) {
         QString error_msg = tr("A generic exception has occurred:\n\n%1").arg(e.what());
         gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
@@ -1888,6 +1876,17 @@ void DialogSettings::on_comboBox_soundcard_api_currentIndexChanged(int index)
 {
     Q_UNUSED(index);
     try {
+        if (!avail_rtaudio_api.isEmpty()) {
+            //
+            // API
+            //
+            for (const auto &rt_api: avail_rtaudio_api.toStdMap()) {
+                if (rt_api.first == ui->comboBox_soundcard_api->currentData().toInt()) {
+                    chosen_rtaudio_api = rt_api.second;
+                }
+            }
+        }
+
         if (!avail_rtaudio_api.isEmpty() || !avail_input_audio_devs.isEmpty()) {
             //
             // Input audio devices

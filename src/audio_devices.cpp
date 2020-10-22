@@ -102,7 +102,7 @@ AudioDevices::~AudioDevices()
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return The found audio devices and their statistics.
  */
-GkAudioApi AudioDevices::enumAudioDevicesCpp(std::shared_ptr<RtAudio> dac)
+GkAudioApi AudioDevices::enumAudioDevicesCpp()
 {
     try {
         std::lock_guard<std::mutex> audio_guard(enum_audio_dev_mtx);
@@ -131,7 +131,7 @@ GkAudioApi AudioDevices::enumAudioDevicesCpp(std::shared_ptr<RtAudio> dac)
         }
 
         for (const auto &api: gkAudio.api_used) { // Iterate over each API in the user's system, to garner all the Audio Devices!
-            dac.reset(new RtAudio(api));
+            std::unique_ptr<RtAudio> dac = std::make_unique<RtAudio>(api);
             quint32 device_count = dac->getDeviceCount();
             std::cout << tr("Found %1 device(s) for API: \"%2\"!")
             .arg(QString::number(device_count))
@@ -232,55 +232,50 @@ GkAudioApi AudioDevices::enumAudioDevicesCpp(std::shared_ptr<RtAudio> dac)
  * @param stereo
  * @return
  */
-void AudioDevices::testSinewave(const GkAudioApi &audioApi, const bool &is_output_dev)
+void AudioDevices::testSinewave(std::shared_ptr<RtAudio> dac, const GkDevice &audio_dev, const bool &is_output_dev)
 {
     try {
         std::lock_guard<std::mutex> lck_guard(test_sinewave_mtx);
 
         if (is_output_dev) {
-            for (const auto &dev: audioApi.gkDevice) {
-                if (dev.pref_output_dev) {
-                    std::unique_ptr<RtAudio> dac;
-                    dac = std::make_unique<RtAudio>(audioApi.curr_api);
+            if (audio_dev.pref_output_dev) {
+                RtAudio::StreamParameters oParams;
+                oParams.deviceId = audio_dev.device_id;
+                oParams.nChannels = audio_dev.dev_output_channel_count;
+                oParams.firstChannel = 0;
 
-                    RtAudio::StreamParameters oParams;
-                    oParams.deviceId = dev.device_id;
-                    oParams.nChannels = dev.dev_output_channel_count;
-                    oParams.firstChannel = 0;
+                RtAudio::StreamOptions options;
+                options.flags = RTAUDIO_HOG_DEVICE;
+                options.flags |= RTAUDIO_SCHEDULE_REALTIME;
 
-                    RtAudio::StreamOptions options;
-                    options.flags = RTAUDIO_HOG_DEVICE;
-                    options.flags |= RTAUDIO_SCHEDULE_REALTIME;
+                GkAudioFramework::GkRtCallback sawData {};
+                quint32 bufsize = audio_dev.device_info.preferredSampleRate * 10;
+                dac->openStream(&oParams, nullptr, audio_dev.supp_native_formats, audio_dev.device_info.preferredSampleRate, &bufsize, &AudioDevices::playbackSaw,
+                                &sawData, &options);
 
-                    GkAudioFramework::GkRtCallback sawData {};
-                    quint32 bufsize = dev.device_info.preferredSampleRate * 10;
-                    dac->openStream(&oParams, nullptr, dev.supp_native_formats, dev.device_info.preferredSampleRate, &bufsize, &AudioDevices::playbackSaw,
-                                   &sawData, &options);
+                sawData.nRate = audio_dev.device_info.preferredSampleRate;
+                sawData.nFrame = audio_dev.device_info.preferredSampleRate;
+                sawData.nChannel = audio_dev.dev_output_channel_count;
+                sawData.cur = 0;
+                sawData.wfTable = (float *)std::calloc(sawData.nChannel * sawData.nFrame, sizeof(float));
 
-                    sawData.nRate = dev.device_info.preferredSampleRate;
-                    sawData.nFrame = dev.device_info.preferredSampleRate;
-                    sawData.nChannel = dev.dev_output_channel_count;
-                    sawData.cur = 0;
-                    sawData.wfTable = (float *)std::calloc(sawData.nChannel * sawData.nFrame, sizeof(float));
-
-                    if (!sawData.wfTable) {
-                        dac.reset();
-                    }
-
-                    for (quint32 i = 0; i < sawData.nFrame; ++i) {
-                        float v = std::sin(i * M_PI * 2 * 440 / sawData.nRate);
-                        for (quint32 j = 0; j < sawData.nChannel; ++j) {
-                            sawData.wfTable[i * sawData.nChannel + j] = v;
-                        }
-                    }
-
-                    dac->startStream();
-                    std::this_thread::sleep_for(std::chrono::milliseconds(AUDIO_SINE_WAVE_PLAYBACK_SECS * 1000));
-                    dac->stopStream();
-                    dac->closeStream();
-
-                    return;
+                if (!sawData.wfTable) {
+                    dac.reset();
                 }
+
+                for (quint32 i = 0; i < sawData.nFrame; ++i) {
+                    float v = std::sin(i * M_PI * 2 * 440 / sawData.nRate);
+                    for (quint32 j = 0; j < sawData.nChannel; ++j) {
+                        sawData.wfTable[i * sawData.nChannel + j] = v;
+                    }
+                }
+
+                dac->startStream();
+                std::this_thread::sleep_for(std::chrono::milliseconds(AUDIO_SINE_WAVE_PLAYBACK_SECS * 1000));
+                dac->stopStream();
+                dac->closeStream();
+
+                return;
             }
         }
     } catch (const std::exception &e) {

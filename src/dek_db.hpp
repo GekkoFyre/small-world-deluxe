@@ -120,8 +120,6 @@ public:
 
     void write_audio_api_settings(const RtAudio::Api &interface);
     RtAudio::Api read_audio_api_settings();
-    QString portAudioApiToStr(const PaHostApiTypeId &interface);
-    PaHostApiTypeId portAudioApiToEnum(const QString &interface);
 
     std::string removeInvalidChars(const std::string &string_to_modify);
     std::string boolEnum(const bool &is_true);

@@ -72,14 +72,14 @@ public:
                           QObject *parent = nullptr);
     ~AudioDevices() override;
 
-    GekkoFyre::Database::Settings::Audio::GkAudioApi enumAudioDevicesCpp(std::shared_ptr<RtAudio> dac);
+    GekkoFyre::Database::Settings::Audio::GkAudioApi enumAudioDevicesCpp();
 
     void systemVolumeSetting();
     float vuMeter(const int &channels, const int &count, float *buffer);
     float vuMeterPeakAmplitude(const size_t &count, float *buffer);
     float vuMeterRMS(const size_t &count, float *buffer);
 
-    void testSinewave(const Database::Settings::Audio::GkAudioApi &audioApi, const bool &is_output_dev = true);
+    void testSinewave(std::shared_ptr<RtAudio> dac, const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev, const bool &is_output_dev = true);
     static inline qint32 playbackSaw(void *outputBuffer, void *inputBuffer, quint32 nBufferFrames, double streamTime, RtAudioStreamStatus status, void *userData);
 
     float calcAudioBufferTimeNeeded(const Database::Settings::GkAudioChannels &num_channels, const size_t &fft_num_lines,
