@@ -43,6 +43,7 @@
 
 #include "src/defines.hpp"
 #include "src/models/tableview/gk_logger_model.hpp"
+#include <RtAudio.h>
 #include <mutex>
 #include <QVariant>
 #include <QPointer>
@@ -58,8 +59,6 @@ class GkEventLogger : public QObject {
 public:
     explicit GkEventLogger(QPointer<GekkoFyre::StringFuncs> stringFuncs, QObject *parent = nullptr);
     ~GkEventLogger() override;
-
-    bool handlePortAudioErrorCode(const PaError &pa_errorm, const QString &arguments = "");
 
 public slots:
     void publishEvent(const QString &event, const GekkoFyre::System::Events::Logging::GkSeverity &severity = GekkoFyre::System::Events::Logging::GkSeverity::Warning,

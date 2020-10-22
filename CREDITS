@@ -28,7 +28,7 @@ LevelDB by Google
 
 Snappy by Google
     <https://github.com/google/snappy>
-        Public License
+        Public License w/ Copyright
 
 Sentry (Native SDK for C/C++) by Armin Ronacher & Arpad Borsos et al.
     <https://github.com/getsentry/sentry-native>
@@ -40,7 +40,7 @@ Crashpad by Mark Mentovai <mark@chromium.org>
 
 Breakpad by Google
     <https://chromium.googlesource.com/breakpad/breakpad/>
-        Public License
+        Public License w/ Copyright
 
 Hamlib by The Hamlib Group
     <https://github.com/Hamlib/Hamlib>
@@ -50,9 +50,9 @@ WSJT-X by Joe Taylor (K1JT) <k1jt@arrl.net> et al.
     <https://physics.princeton.edu/pulsar/K1JT/wsjtx.html>
         GNU General Public License (GPL, version 3)
 
-PortAudio by the PortAudio community
-    <http://www.portaudio.com/>
-        The MIT License
+RtAudio by Gary P. Scavone et al. 
+    <https://www.music.mcgill.ca/~gary/rtaudio/>
+        Public License w/ Copyright
 
 KissFFT by Mark Borgerding <Mark@Borgerding.net>
     <https://github.com/mborgerding/kissfft>
@@ -97,10 +97,6 @@ RapidCSV by Kristofer Berggren
 libsndfile by Erik de Castro Lopo
     <http://www.mega-nerd.com/libsndfile/>
         GNU Lesser General Public License (LGPL, version 3)
-
-sound-example by Andy Stanton
-    <https://github.com/andystanton/sound-example>
-        The MIT License
 
 udev related C++ classes by Dimitry Ishenko
     <https://github.com/dimitry-ishenko/udev>

@@ -69,7 +69,6 @@ using namespace Events;
 using namespace Logging;
 
 GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
-                                     portaudio::System *portAudioSys,
                                      QPointer<GkAudioDecoding> audio_decoding,
                                      std::shared_ptr<AudioDevices> audio_devices,
                                      const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
@@ -82,7 +81,6 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
     ui->setupUi(this);
 
     gkDb = std::move(database);
-    gkPortAudioSys = portAudioSys;
     gkAudioDecode = std::move(audio_decoding);
     gkAudioDevs = std::move(audio_devices);
     gkStringFuncs = std::move(stringFuncs);
@@ -106,9 +104,6 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
 
 GkAudioPlayDialog::~GkAudioPlayDialog()
 {
-    PaError error = Pa_Terminate();
-    gkEventLogger->handlePortAudioErrorCode(error, tr("Problem with cleanup of PortAudio!"));
-
     delete ui;
 }
 
@@ -289,9 +284,8 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
 
             if (r_pback_audio_file.exists()) {
                 std::unique_ptr<GkPaAudioPlayer> gkPaAudioPlayer = std::make_unique<GkPaAudioPlayer>(gkDb, pref_output_device, gkEventLogger,
-                                                                                                     gkAudioFileInfo.num_audio_channels,
-                                                                                                     this);
-                gkPaAudioPlayer->play(QString::fromStdString(audio_file_path.string()));
+                                                                                                     gkStringFuncs, this);
+                gkPaAudioPlayer->play(audio_file_path.string());
             } else {
                 throw std::runtime_error(tr("Error with audio playback! Does the file, \"%1\", actually exist?")
                 .arg(r_pback_audio_file.fileName()).toStdString());

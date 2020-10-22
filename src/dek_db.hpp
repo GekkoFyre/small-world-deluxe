@@ -44,6 +44,7 @@
 #include "src/defines.hpp"
 #include "src/gk_string_funcs.hpp"
 #include "src/file_io.hpp"
+#include <RtAudio.h>
 #include <sentry.h>
 #include <leveldb/db.h>
 #include <leveldb/status.h>
@@ -117,10 +118,8 @@ public:
     QString convDigitalModesToStr(const GekkoFyre::AmateurRadio::DigitalModes &digital_mode);
     QString convIARURegionToStr(const GekkoFyre::AmateurRadio::IARURegions &iaru_region);
 
-    void write_audio_api_settings(const PaHostApiTypeId &interface);
-    PaHostApiTypeId read_audio_api_settings();
-    QString portAudioApiToStr(const PaHostApiTypeId &interface);
-    PaHostApiTypeId portAudioApiToEnum(const QString &interface);
+    void write_audio_api_settings(const RtAudio::Api &interface);
+    RtAudio::Api read_audio_api_settings();
 
     std::string removeInvalidChars(const std::string &string_to_modify);
     std::string boolEnum(const bool &is_true);

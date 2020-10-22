@@ -44,7 +44,9 @@
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
-#include "src/pa_audio_file.hpp"
+#include <boost/filesystem.hpp>
+#include <boost/exception/all.hpp>
+#include <map>
 #include <memory>
 #include <vector>
 #include <string>
@@ -57,19 +59,17 @@ extern "C"
 {
 #endif
 
+#include <sndfile.h>
 #include <portaudio.h>
 
 #ifdef __cplusplus
 } // extern "C"
 #endif
 
-namespace GekkoFyre {
+namespace fs = boost::filesystem;
+namespace sys = boost::system;
 
-struct Playback {
-    GkAudioFramework::SndFileCallback *audioFile;
-    qint32 position;
-    bool loop;
-};
+namespace GekkoFyre {
 
 enum AudioEventType {
     start,
@@ -81,31 +81,23 @@ class GkPaStreamHandler : public QObject {
 
 public:
     explicit GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
-                               QPointer<GekkoFyre::GkEventLogger> eventLogger, GekkoFyre::Database::Settings::GkAudioChannels audio_channels,
+                               QPointer<GekkoFyre::GkEventLogger> eventLogger, QPointer<GekkoFyre::StringFuncs> stringFuncs,
                                QObject *parent = nullptr);
     ~GkPaStreamHandler() override;
 
-    void processEvent(AudioEventType audioEventType, GkAudioFramework::SndFileCallback *audioFile = nullptr, bool loop = false);
-    static int portAudioCallback(const void *input, void *output, size_t frameCount, const PaStreamCallbackTimeInfo *paTimeInfo,
-                                 PaStreamCallbackFlags statusFlags, void *userData);
+    void processEvent(AudioEventType audioEventType, const fs::path &mediaFilePath, bool loop = false);
 
 private:
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
-
-    const int CHANNEL_COUNT = 2;
-    const int SAMPLE_RATE = 44000;
-    const PaStreamParameters *NO_INPUT = nullptr;
+    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
 
     //
     // PortAudio initialization and buffers
     //
-    PaStream *gkPaStream;
-    GekkoFyre::Database::Settings::GkAudioChannels gkAudioChannels;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
 
-    PaStream *stream;
-    std::vector<Playback *> data;
+    GkAudioFramework::GkPlayback gkPlayback;
 
 };
 };

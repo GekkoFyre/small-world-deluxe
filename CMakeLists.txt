@@ -94,7 +94,6 @@ option(GFYRE_PACKAGE_MAINTAINER "Are you a package maintainer? If so, set this o
 option(GFYRE_BUILD_STATIC "Build Small World Deluxe as a static library/package. This will result in a larger executable at the benefit of requiring less DLL dependencies." ON)
 option(GFYRE_BUILD_SHARED "Build Small World Deluxe as a shared library/package. This will result in a smaller executable at the cost of requiring further DLL dependencies." OFF)
 option(GFYRE_SWORLD_DBG_VERBOSITY "Enable DEBUG verbosity for Small World Deluxe and its use of third-party libraries throughout the program itself." OFF)
-option(GFYRE_PORTAUDIO_DBG_VERBOSITY "Enable DEBUG verbosity for the PortAudio library and its use throughout Small World Deluxe." OFF)
 
 option(ENBL_VALGRIND_SUPPORT "Allows for the use of Valgrind memory analysis on the application, thereby disabling certain, otherwise needed features that enhance the user-experience." OFF)
 
@@ -217,30 +216,6 @@ if (LEVELDB_FOUND)
 else()
     message(FATAL_ERROR "The 'LevelDB' key-value database library could not be found!")
 endif(LEVELDB_FOUND)
-
-find_package(PortAudio REQUIRED)
-if (PortAudio_FOUND)
-    if(LINUX OR MSYS OR MINGW)
-        # Disable `PA_USE_ASIO` because we are dealing with a system other than Microsoft Windows, where ASIO is unsupported...
-        option(PA_USE_ASIO "Disable support for ASIO. This is recommended for operating systems other than Microsoft Windows." OFF)
-    elseif(WIN32)
-        # Enable `PA_USE_ASIO` by default, since this allows for the lowest latency possible with the audio pathways!
-        option(PA_USE_ASIO "Enable support for ASIO. This is recommended for Microsoft Windows operating systems." ON)
-    elseif(APPLE)
-        message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
-    endif()
-
-    if (PA_USE_ASIO)
-        add_definitions(-DPA_USE_ASIO=ON)
-    else()
-        add_definitions(-DPA_USE_ASIO=OFF)
-    endif()
-
-    include_directories(${PortAudio_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${PortAudio_LIBRARIES})
-else()
-    message(FATAL_ERROR "The 'PortAudio' sound library could not be found!")
-endif(PortAudio_FOUND)
 
 find_package(Hamlib REQUIRED)
 if (HAMLIB_FOUND)
@@ -432,6 +407,21 @@ else()
     set(SENTRY_TRANSPORT "curl" CACHE STRING "Please do not modify this." FORCE)
 endif()
 
+#
+# RtAudio [ https://github.com/thestk/rtaudio ]
+#
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/rtaudio")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/rtaudio")
+
+if(WIN32 OR MSYS OR MINGW)
+    set(RTAUDIO_API_DS "Build DirectSound API" ON)
+    set(RTAUDIO_API_ASIO "Build ASIO API" ON)
+elseif(LINUX)
+endif()
+
+#
+# Sentry (native)
+#
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/sentry-native")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/sentry-native/include")
 
@@ -441,39 +431,6 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/sentry-native/inclu
 #
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/kissfft")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/kissfft")
-
-#
-# PortAudio's C++ bindings
-#
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/portaudio/cpp/include")
-set(GALAXY_PORTAUDIO_CPP
-    ${GALAXY_PORTAUDIO_CPP}
-    src/contrib/portaudio/cpp/src/BlockingStream.cxx
-    src/contrib/portaudio/cpp/src/CallbackInterface.cxx
-    src/contrib/portaudio/cpp/src/CallbackStream.cxx
-    src/contrib/portaudio/cpp/src/CFunCallbackStream.cxx
-    src/contrib/portaudio/cpp/src/CppFunCallbackStream.cxx
-    src/contrib/portaudio/cpp/src/Device.cxx
-    src/contrib/portaudio/cpp/src/DirectionSpecificStreamParameters.cxx
-    src/contrib/portaudio/cpp/src/Exception.cxx
-    src/contrib/portaudio/cpp/src/HostApi.cxx
-    src/contrib/portaudio/cpp/src/InterfaceCallbackStream.cxx
-    src/contrib/portaudio/cpp/src/MemFunCallbackStream.cxx
-    src/contrib/portaudio/cpp/src/Stream.cxx
-    src/contrib/portaudio/cpp/src/StreamParameters.cxx
-    src/contrib/portaudio/cpp/src/System.cxx
-    src/contrib/portaudio/cpp/src/SystemDeviceIterator.cxx
-    src/contrib/portaudio/cpp/src/SystemHostApiIterator.cxx)
-
-if(WIN32 OR MSYS OR MINGW)
-    if(PA_USE_ASIO)
-        set(GALAXY_PORTAUDIO_CPP
-            ${GALAXY_PORTAUDIO_CPP}
-            src/contrib/portaudio/cpp/src/AsioDeviceAdapter.cxx)
-    endif()
-endif()
-
-set_property(SOURCE ${GALAXY_PORTAUDIO_CPP} PROPERTY SKIP_AUTOUIC ON)
 
 set(GALAXY_WSJTX_QRA64_C
     ${GALAXY_WSJTX_QRA64_C}
@@ -596,8 +553,6 @@ endif()
 #
 set(GALAXY_SRC_CPP
     ${GALAXY_SRC_CPP}
-    src/pa_sinewave.cpp
-    src/pa_audio_file.cpp
     src/contrib/udev/device.cpp
     src/contrib/udev/enumerate.cpp
     src/contrib/udev/monitor.cpp
@@ -684,8 +639,6 @@ endif()
 set(GALAXY_SRC_HEADERS
     ${GALAXY_SRC_HEADERS}
     src/pa_audio_buf.hpp
-    src/pa_audio_file.hpp
-    src/pa_sinewave.hpp
     src/gk_timer.hpp
     src/gk_circ_buffer.hpp
     src/contrib/rapidcsv/src/rapidcsv.h
@@ -745,11 +698,6 @@ if (GFYRE_SWORLD_DBG_VERBOSITY)
     add_definitions(-DGFYRE_SWORLD_DBG_VERBOSITY)
 endif()
 
-if (GFYRE_PORTAUDIO_DBG_VERBOSITY)
-    message(STATUS "Enabled maximum verbosity with the PortAudio library throughout Small World Deluxe; debug mode now activated!")
-    add_definitions(-DGFYRE_PORTAUDIO_DBG_VERBOSITY_ENBL)
-endif()
-
 if (ENBL_VALGRIND_SUPPORT)
     if (LINUX)
         add_definitions(-DGK_ENBL_VALGRIND_SUPPORT)
@@ -760,7 +708,7 @@ endif()
 # Build Small World Deluxe as a static package!
 #
 if(GFYRE_BUILD_STATIC)
-    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_QRA64_C} ${GALAXY_WSJTX_WSPR_C})
+    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_QRA64_C} ${GALAXY_WSJTX_WSPR_C})
     if(GK_CUDA_FFT)
         add_library(galaxy_cuda STATIC ${GALAXY_CUDA})
     endif()
@@ -774,7 +722,7 @@ endif(GFYRE_BUILD_STATIC)
 # Build Small World Deluxe as a shared package!
 #
 if(GFYRE_BUILD_SHARED)
-    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_PORTAUDIO_CPP} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_QRA64_C} ${GALAXY_WSJTX_WSPR_C})
+    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_QRA64_C} ${GALAXY_WSJTX_WSPR_C})
     if(GK_CUDA_FFT)
         add_library(galaxy_cuda STATIC ${GALAXY_CUDA})
     endif()
@@ -783,7 +731,7 @@ if(GFYRE_BUILD_SHARED)
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
-target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::SerialPort Qt5::PrintSupport Qt5::TextToSpeech Qt5::Test Threads::Threads SingleApplication::SingleApplication sentry::sentry ${LIBS})
+target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::SerialPort Qt5::PrintSupport Qt5::TextToSpeech Qt5::Test Threads::Threads SingleApplication::SingleApplication sentry::sentry rtaudio ${LIBS})
 
 qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)
 add_dependencies(galaxy resources)

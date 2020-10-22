@@ -47,7 +47,6 @@
 #include "src/pa_audio_buf.hpp"
 #include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
-#include "contrib/portaudio/cpp/include/portaudiocpp/PortAudioCpp.hxx"
 #include <ogg/os_types.h>
 #include <boost/filesystem.hpp>
 #include <memory>

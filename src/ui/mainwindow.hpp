@@ -48,8 +48,6 @@
 #include "src/spectro_curve.hpp"
 #include "src/gk_circ_buffer.hpp"
 #include "src/gk_frequency_list.hpp"
-#include "src/gk_audio_encoding.hpp"
-#include "src/gk_audio_decoding.hpp"
 #include "src/ui/dialogsettings.hpp"
 #include "src/ui/widgets/gk_display_image.hpp"
 #include "src/ui/widgets/gk_vu_meter_widget.hpp"
@@ -58,7 +56,7 @@
 #include "src/gk_modem.hpp"
 #include "src/gk_system.hpp"
 #include "src/gk_text_to_speech.hpp"
-#include "src/contrib/portaudio/cpp/include/portaudiocpp/MemFunCallbackStream.hxx"
+#include <RtAudio.h>
 #include <sentry.h>
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
@@ -262,7 +260,7 @@ signals:
     void startRecording();
 
     //
-    // PortAudio and related
+    // RtAudio and related
     //
     void changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &input_device);
 
@@ -289,8 +287,6 @@ private:
     QPointer<GekkoFyre::FileIo> fileIo;
     QPointer<GekkoFyre::GkFrequencies> gkFreqList;
     QPointer<GekkoFyre::RadioLibs> gkRadioLibs;
-    QPointer<GekkoFyre::GkAudioEncoding> gkAudioEncoding;
-    QPointer<GekkoFyre::GkAudioDecoding> gkAudioDecoding;
     QPointer<GekkoFyre::GkSpectroWaterfall> gkSpectroWaterfall;
     QPointer<GekkoFyre::GkSpectroCurve> gkSpectroCurve;
     QPointer<GekkoFyre::GkVuMeter> gkVuMeter;
@@ -313,17 +309,15 @@ private:
     boost::filesystem::path native_slash;
 
     //
-    // PortAudio initialization and buffers
+    // RtAudio initialization and buffers
     //
-    portaudio::AutoSystem autoSys;
-    portaudio::System *gkPortAudioInit;
     QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> avail_input_audio_devs;
     QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> avail_output_audio_devs;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
+    std::shared_ptr<RtAudio> gkAudioSysOutput;
+    std::shared_ptr<RtAudio> gkAudioSysInput;
     std::shared_ptr<GekkoFyre::PaAudioBuf<float>> input_audio_buf;
-    std::shared_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<float>>> inputAudioStream;
-    // std::shared_ptr<portaudio::MemFunCallbackStream<GekkoFyre::PaAudioBuf<float>>> outputAudioStream;
 
     //
     // Audio sub-system
@@ -426,6 +420,7 @@ Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkConnMethod);
 Q_DECLARE_METATYPE(GekkoFyre::System::Events::Logging::GkEventLogging);
 Q_DECLARE_METATYPE(GekkoFyre::System::Events::Logging::GkSeverity);
 Q_DECLARE_METATYPE(GekkoFyre::Database::Settings::Audio::GkDevice);
+Q_DECLARE_METATYPE(GekkoFyre::Database::Settings::Audio::GkAudioApi);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkConnType);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::DigitalModes);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::IARURegions);
@@ -435,7 +430,7 @@ Q_DECLARE_METATYPE(RIG);
 Q_DECLARE_METATYPE(size_t);
 Q_DECLARE_METATYPE(uint8_t);
 Q_DECLARE_METATYPE(rig_model_t);
-Q_DECLARE_METATYPE(PaHostApiTypeId);
+Q_DECLARE_METATYPE(RtAudio::Api);
 Q_DECLARE_METATYPE(std::vector<qint16>);
 Q_DECLARE_METATYPE(std::vector<double>);
 Q_DECLARE_METATYPE(std::vector<float>);

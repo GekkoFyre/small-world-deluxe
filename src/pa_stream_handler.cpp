@@ -41,6 +41,8 @@
 
 #include "src/pa_stream_handler.hpp"
 #include <utility>
+#include <algorithm>
+#include <exception>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -48,41 +50,31 @@ using namespace Settings;
 using namespace Audio;
 using namespace AmateurRadio;
 using namespace Control;
+using namespace Spectrograph;
+using namespace System;
+using namespace Events;
+using namespace Logging;
 
 /**
- * @author Copyright (c) 2015 Andy Stanton <https://github.com/andystanton/sound-example/blob/master/LICENSE>.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
-                                     QPointer<GekkoFyre::GkEventLogger> eventLogger, GkAudioChannels audio_channels, QObject *parent) : data()
+                                     QPointer<GekkoFyre::GkEventLogger> eventLogger, QPointer<GekkoFyre::StringFuncs> stringFuncs,
+                                     QObject *parent)
 {
-    setParent(parent);
+    try {
+        setParent(parent);
 
-    gkDb = std::move(database);
-    gkEventLogger = std::move(eventLogger);
+        gkDb = std::move(database);
+        gkEventLogger = std::move(eventLogger);
+        gkStringFuncs = std::move(stringFuncs);
 
-    //
-    // Initialize variables
-    //
-    pref_output_device = output_device;
-    gkAudioChannels = audio_channels;
-    PaError error = paNoError;
-    
-    if (gkAudioChannels != GkAudioChannels::Unknown) {
-        error = Pa_Initialize();
-        gkEventLogger->handlePortAudioErrorCode(error, tr("Problem initializing PortAudio itself!"));
-
-        PaStreamParameters out_param;
-        out_param.device = pref_output_device.stream_parameters.device;
-        out_param.channelCount = gkDb->convertAudioChannelsToCount(gkAudioChannels);
-        out_param.hostApiSpecificStreamInfo = nullptr;
-        out_param.sampleFormat = paFloat32 | paNonInterleaved;
-        // out_param.suggestedLatency = gkPortAudioSys->deviceByIndex(pref_output_device.stream_parameters.device).defaultLowOutputLatency();
-
-        error = Pa_OpenStream(&gkPaStream, nullptr, &out_param, pref_output_device.def_sample_rate, AUDIO_FRAMES_PER_BUFFER,
-                              paNoFlag, &portAudioCallback, this);
-        gkEventLogger->handlePortAudioErrorCode(error, tr("Problem initializing an audio stream!"));
-    } else {
-        throw std::invalid_argument(tr("Unable to determine the amount of channels required for audio playback!").toStdString());
+        //
+        // Initialize variables
+        //
+        pref_output_device = output_device;
+    } catch (const std::exception &e) {
+        gkStringFuncs->print_exception(e);
     }
 
     return;
@@ -93,109 +85,13 @@ GkPaStreamHandler::~GkPaStreamHandler()
 
 /**
  * @brief GkPaStreamHandler::processEvent
- * @author Copyright (c) 2015 Andy Stanton <https://github.com/andystanton/sound-example/blob/master/LICENSE>.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param audioEventType
  * @param audioFile
  * @param loop
+ * @see Ben Key <https://stackoverflow.com/questions/29249657/playing-wav-file-with-portaudio-and-sndfile>.
  */
-void GkPaStreamHandler::processEvent(AudioEventType audioEventType, GkAudioFramework::SndFileCallback *audioFile, bool loop)
+void GkPaStreamHandler::processEvent(AudioEventType audioEventType, const fs::path &mediaFilePath, bool loop)
 {
-    switch (audioEventType) {
-        case start:
-            if (Pa_IsStreamStopped(stream)) {
-                Pa_StartStream(stream);
-            }
-
-            data.push_back(new Playback { audioFile, 0, loop });
-            break;
-        case stop:
-            Pa_StopStream(stream);
-            for (auto instance: data) {
-                delete instance;
-            }
-
-            data.clear();
-            break;
-    }
-}
-
-/**
- * @brief GkPaGkPaStreamHandler::portAudioCallback
- * @author Copyright (c) 2015 Andy Stanton <https://github.com/andystanton/sound-example/blob/master/LICENSE>.
- * @param input
- * @param output
- * @param frameCount
- * @param paTimeInfo
- * @param statusFlags
- * @param userData
- * @return
- */
-int GkPaStreamHandler::portAudioCallback(const void *input, void *output, size_t frameCount, const PaStreamCallbackTimeInfo *paTimeInfo,
-                                         PaStreamCallbackFlags statusFlags, void *userData)
-{
-    GkPaStreamHandler *handler = (GkPaStreamHandler *)userData;
-
-    size_t stereoFrameCount = frameCount * handler->CHANNEL_COUNT;
-    std::memset((int *) output, 0, stereoFrameCount * sizeof(int));
-
-    if (handler->data.size() > 0) {
-        auto it = handler->data.begin();
-        while (it != handler->data.end()) {
-            Playback *data = (*it);
-            GkAudioFramework::SndFileCallback *audioFile = (GkAudioFramework::SndFileCallback *)data->audioFile;
-
-            int *outputBuffer = new int[stereoFrameCount];
-            int *bufferCursor = outputBuffer;
-
-            quint32 framesLeft = (quint32)frameCount;
-            quint32 framesRead;
-
-            bool playbackEnded = false;
-            while (framesLeft > 0) {
-                sf_seek(audioFile->file, data->position, SEEK_SET);
-                if (framesLeft > (audioFile->info.frames - data->position)) {
-                    framesRead = (quint32) (audioFile->info.frames - data->position);
-                    if (data->loop) {
-                        data->position = 0;
-                    } else {
-                        playbackEnded = true;
-                        framesLeft = framesRead;
-                    }
-                } else {
-                    framesRead = framesLeft;
-                    data->position += framesRead;
-                }
-
-                sf_readf_int(audioFile->file, bufferCursor, framesRead);
-                bufferCursor += framesRead;
-                framesLeft -= framesRead;
-            }
-
-
-            int *outputCursor = (int *)output;
-            if (audioFile->info.channels == 1) {
-                for (size_t i = 0; i < stereoFrameCount; ++i) {
-                    *outputCursor += (0.5 * outputBuffer[i]);
-                    ++outputCursor;
-                    *outputCursor += (0.5 * outputBuffer[i]);
-                    ++outputCursor;
-                }
-            } else {
-                for (size_t i = 0; i < stereoFrameCount; ++i) {
-                    *outputCursor += (0.5 * outputBuffer[i]);
-                    ++outputCursor;
-                }
-            }
-
-
-            if (playbackEnded) {
-                it = handler->data.erase(it);
-                delete data;
-            } else {
-                ++it;
-            }
-        }
-    }
-
-    return paContinue;
+    return;
 }

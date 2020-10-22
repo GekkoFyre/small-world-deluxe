@@ -44,6 +44,7 @@
 #include "src/gk_string_funcs.hpp"
 #include "src/gk_text_to_speech.hpp"
 #include "src/models/tableview/gk_frequency_model.hpp"
+#include <RtAudio.h>
 #include <boost/logic/tribool.hpp>
 #include <list>
 #include <tuple>
@@ -74,9 +75,10 @@ public:
     explicit DialogSettings(QPointer<GekkoFyre::GkLevelDb> dkDb,
                             QPointer<GekkoFyre::FileIo> filePtr,
                             std::shared_ptr<GekkoFyre::AudioDevices> audioDevices,
+                            std::shared_ptr<RtAudio> audioSysOutput,
+                            std::shared_ptr<RtAudio> audioSysInput,
                             QPointer<GekkoFyre::RadioLibs> radioLibs,
                             QPointer<GekkoFyre::StringFuncs> stringFuncs,
-                            portaudio::System *portAudioInit,
                             std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> radioPtr,
                             const std::list<GekkoFyre::Database::Settings::GkComPort> &com_ports,
                             const QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> &usbPortMap,
@@ -209,7 +211,7 @@ private slots:
     void ttsAddPresetVoiceItem(const QString &name, const QVariant &locale);
 
     //
-    // PortAudio
+    // RtAudio & Multimedia related
     //
     void on_comboBox_soundcard_input_currentIndexChanged(int index = -1);
     void on_comboBox_soundcard_output_currentIndexChanged(int index = -1);
@@ -232,7 +234,7 @@ signals:
     void addRigInUse(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
 
     //
-    // PortAudio and related
+    // RtAudio and related
     //
     void changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &input_device);
     void changeOutputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &output_device);
@@ -248,10 +250,8 @@ private:
         return static_cast<typename std::underlying_type<E>::type>(e);
     }
 
-    portaudio::System *gkPortAudioInit;
-    std::vector<double> standardSampleRates;
-    QMap<qint32, double> supportedInputSampleRates; // The supported sample rates for the chosen input audio device! The key corresponds to the position within the QComboBoxes...
-    QMap<qint32, double> supportedOutputSampleRates; // The supported sample rates for the chosen output audio device! The key corresponds to the position within the QComboBoxes...
+    QMap<qint32, quint32> supportedInputSampleRates; // The supported sample rates for the chosen input audio device! The key corresponds to the position within the QComboBoxes...
+    QMap<qint32, quint32> supportedOutputSampleRates; // The supported sample rates for the chosen output audio device! The key corresponds to the position within the QComboBoxes...
 
     QPointer<GekkoFyre::RadioLibs> gkRadioLibs;
     QPointer<GekkoFyre::GkLevelDb> gkDekodeDb;
@@ -284,13 +284,18 @@ private:
     // The key is the Port Number for the USB device in question, while the value is what's displayed in the QComboBox...
     QMap<quint16, QString> available_usb_ports; // For tracking the *available* USB device ports that the user can choose from...
 
+    //
+    // RtAudio and related
     // The key corresponds to the position within the QComboBoxes
-    QMap<qint32, PaHostApiTypeId> avail_portaudio_api;
+    //
+    QMap<qint32, RtAudio::Api> avail_rtaudio_api;
     QMap<qint32, GekkoFyre::Database::Settings::Audio::GkDevice> avail_input_audio_devs;
     QMap<qint32, GekkoFyre::Database::Settings::Audio::GkDevice> avail_output_audio_devs;
+    std::shared_ptr<RtAudio> gkAudioSysOutput;
+    std::shared_ptr<RtAudio> gkAudioSysInput;
     GekkoFyre::Database::Settings::Audio::GkDevice chosen_input_audio_dev;
     GekkoFyre::Database::Settings::Audio::GkDevice chosen_output_audio_dev;
-    qint32 chosen_portaudio_underlying_api;
+    RtAudio::Api chosen_rtaudio_api;
 
     static int prefill_rig_selection(const rig_caps *caps, void *data);
     static QMultiMap<rig_model_t, std::tuple<QString, QString, GekkoFyre::AmateurRadio::rig_type>> init_model_names();
@@ -298,8 +303,8 @@ private:
     QPointer<GekkoFyre::GkFrequencies> gkFreqs;
     QPointer<GekkoFyre::GkFreqTableModel> gkFreqTableModel;
 
-    void prefill_audio_api_avail(const QVector<PaHostApiTypeId> &portaudio_api_vec);
-    void prefill_audio_devices(const std::vector<GekkoFyre::Database::Settings::Audio::GkDevice> &audio_devices_vec);
+    void prefill_audio_api_avail(const std::vector<RtAudio::Api> &rt_api_vec);
+    void prefill_audio_devices(const std::list<GekkoFyre::Database::Settings::Audio::GkDevice> &audio_devices);
     void prefill_audio_encode_comboboxes();
     void prefill_event_logger();
     void init_station_info();
@@ -314,8 +319,6 @@ private:
     void prefill_com_baud_speed(const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate);
     void enable_device_port_options();
     GekkoFyre::AmateurRadio::GkConnType ascertConnType(const bool &is_ptt = false);
-
-    void update_sample_rates(const bool &is_output_device = false);
 
     bool read_settings();
 };
