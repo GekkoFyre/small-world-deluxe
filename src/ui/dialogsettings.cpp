@@ -1826,11 +1826,25 @@ void DialogSettings::on_comboBox_soundcard_input_currentIndexChanged(int index)
     try {
         //
         // Input audio devices
+        quint32 input_sample_rate_counter = 0;
         const qint32 idx = ui->comboBox_soundcard_input->currentIndex();
+
+        ui->comboBox_audio_input_sample_rate->clear(); // Clear the QComboBox which contains the sample rates!
+        supportedInputSampleRates.clear();
         if (!avail_rtaudio_api.isEmpty() || !avail_input_audio_devs.isEmpty()) {
             for (const auto &device: avail_input_audio_devs.toStdMap()) {
                 if (device.first == idx) {
-                    chosen_input_audio_dev = device.second;
+                    GkDevice gkDevice = device.second;
+                    chosen_input_audio_dev = gkDevice;
+
+                    for (const auto &sample: gkDevice.device_info.sampleRates) {
+                        ui->comboBox_audio_input_sample_rate->insertItem(input_sample_rate_counter, tr("%1 kHz").arg(QString::number(sample)), input_sample_rate_counter);
+                        supportedInputSampleRates.insert(input_sample_rate_counter, sample);
+
+                        ++input_sample_rate_counter;
+                    }
+
+                    break;
                 }
             }
 
@@ -1861,11 +1875,25 @@ void DialogSettings::on_comboBox_soundcard_output_currentIndexChanged(int index)
     try {
         //
         // Output audio devices
+        quint32 output_sample_rate_counter = 0;
         const qint32 idx = ui->comboBox_soundcard_output->currentIndex();
+
+        ui->comboBox_audio_output_sample_rate->clear(); // Clear the QComboBox which contains the sample rates!
+        supportedOutputSampleRates.clear();
         if (!avail_rtaudio_api.isEmpty() || !avail_output_audio_devs.isEmpty()) {
             for (const auto &device: avail_output_audio_devs.toStdMap()) {
                 if (device.first == idx) {
-                    chosen_output_audio_dev = device.second;
+                    GkDevice gkDevice = device.second;
+                    chosen_output_audio_dev = gkDevice;
+
+                    for (const auto &sample: gkDevice.device_info.sampleRates) {
+                        ui->comboBox_audio_output_sample_rate->insertItem(output_sample_rate_counter, tr("%1 kHz").arg(QString::number(sample)), output_sample_rate_counter);
+                        supportedOutputSampleRates.insert(output_sample_rate_counter, sample);
+
+                        ++output_sample_rate_counter;
+                    }
+
+                    break;
                 }
             }
 
@@ -1898,6 +1926,8 @@ void DialogSettings::on_comboBox_soundcard_api_currentIndexChanged(int index)
             for (const auto &rt_api: avail_rtaudio_api.toStdMap()) {
                 if (rt_api.first == ui->comboBox_soundcard_api->currentData().toInt()) {
                     chosen_rtaudio_api = rt_api.second;
+                    gkAudioSysInput.reset(new RtAudio(chosen_rtaudio_api));
+                    gkAudioSysOutput.reset(new RtAudio(chosen_rtaudio_api));
                 }
             }
         }
@@ -1943,6 +1973,9 @@ void DialogSettings::on_comboBox_soundcard_api_currentIndexChanged(int index)
                 }
             }
         }
+    } catch (const RtAudioError &e) {
+        gkEventLogger->publishEvent(tr("An exception has been encountered with the RtAudio library. Error:\n\n%1").arg(QString::fromStdString(e.what())),
+                                    GkSeverity::Error, "", false, true, false, true);
     } catch (const std::exception &e) {
         QString error_msg = tr("A generic exception has occurred:\n\n%1").arg(e.what());
         gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
@@ -2590,7 +2623,11 @@ GkConnType DialogSettings::ascertConnType(const bool &is_ptt)
  */
 void DialogSettings::on_comboBox_audio_input_sample_rate_currentIndexChanged(int index)
 {
-    // TODO: Fill this out for sample rates to work!
+    for (const auto &sample: supportedInputSampleRates.toStdMap()) {
+        if (sample.first == index) {
+            chosen_input_audio_dev.chosen_sample_rate = sample.second;
+        }
+    }
 
     return;
 }
@@ -2602,7 +2639,11 @@ void DialogSettings::on_comboBox_audio_input_sample_rate_currentIndexChanged(int
  */
 void DialogSettings::on_comboBox_audio_output_sample_rate_currentIndexChanged(int index)
 {
-    // TODO: Fill this out for sample rates to work!
+    for (const auto &sample: supportedOutputSampleRates.toStdMap()) {
+        if (sample.first == index) {
+            chosen_output_audio_dev.chosen_sample_rate = sample.second;
+        }
+    }
 
     return;
 }

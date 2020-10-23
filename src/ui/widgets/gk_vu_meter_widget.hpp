@@ -44,6 +44,7 @@
 #include "src/defines.hpp"
 #include <QObject>
 #include <QWidget>
+#include <QElapsedTimer>
 
 namespace GekkoFyre {
 class GkVuMeter : public QWidget {
@@ -77,7 +78,7 @@ private:
     qreal m_decayedPeakLevel;
 
     // Time at which m_peakLevel was last changed.
-    QTime m_peakLevelChanged;
+    QElapsedTimer m_peakLevelChanged;
 
     // Rate at which peak level bar decays.
     // Expressed in level units / millisecond.
@@ -88,7 +89,7 @@ private:
     qreal m_peakHoldLevel;
 
     // Time at which m_peakHoldLevel was last changed.
-    QTime m_peakHoldLevelChanged;
+    QElapsedTimer m_peakHoldLevelChanged;
 
     QTimer *m_redrawTimer;
 

@@ -494,8 +494,6 @@ namespace Database {
                 RtAudio::DeviceInfo device_info;                                    // A great amount of information pertaining to the audio device itself.
                 quint32 device_id;                                                  // The Unique Identifier for this particular audio device.
                 bool user_config_succ;                                              // Whether this audio device information has been gathered as the result of user activity or default action by Small World Deluxe.
-                bool pref_output_dev;                                               // Is this the preferred output device for the user's SWD configuration?
-                bool pref_input_dev;                                                // Is this the preferred input device for the user's SWD configuration?
                 bool default_output_dev;                                            // Is this the default device for the system?
                 bool default_input_dev;                                             // Is this the default device for the system?
                 bool is_dev_active;                                                 // Is the audio device in question currently active and streaming data?
@@ -503,6 +501,7 @@ namespace Database {
                 qint32 dev_number;                                                  // The number of this device; this is saved to the Google LevelDB database as the user's preference
                 qint32 dev_input_channel_count;                                     // The number of channels this INPUT audio device supports
                 qint32 dev_output_channel_count;                                    // The number of channels this OUTPUT audio device supports
+                quint32 chosen_sample_rate;                                         // The chosen sample rate, as configured by the end-user.
                 RtAudioFormat supp_native_formats;                                  // Supported native formats by this audio device, via RtAudio.
                 GkAudioChannels sel_channels;                                       // The selected audio channel configuration
             };

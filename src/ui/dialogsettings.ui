@@ -324,8 +324,8 @@
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>299</width>
-                      <height>382</height>
+                      <width>742</width>
+                      <height>621</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_20">
@@ -562,7 +562,7 @@
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>601</width>
+                      <width>732</width>
                       <height>905</height>
                      </rect>
                     </property>
@@ -1829,8 +1829,8 @@ Thanks.</string>
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>378</width>
-                      <height>75</height>
+                      <width>744</width>
+                      <height>623</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_49">
@@ -2067,8 +2067,8 @@ Thanks.</string>
                               <item>
                                <widget class="QComboBox" name="comboBox_soundcard_input">
                                 <property name="sizePolicy">
-                                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                                  <horstretch>0</horstretch>
+                                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                  <horstretch>40</horstretch>
                                   <verstretch>0</verstretch>
                                  </sizepolicy>
                                 </property>
@@ -2080,8 +2080,8 @@ Thanks.</string>
                               <item>
                                <widget class="QPushButton" name="pushButton_input_sound_test">
                                 <property name="sizePolicy">
-                                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                                  <horstretch>0</horstretch>
+                                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                  <horstretch>13</horstretch>
                                   <verstretch>0</verstretch>
                                  </sizepolicy>
                                 </property>
@@ -2098,6 +2098,12 @@ Thanks.</string>
                               </item>
                               <item>
                                <widget class="QComboBox" name="comboBox_audio_input_bit_rate">
+                                <property name="sizePolicy">
+                                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                  <horstretch>15</horstretch>
+                                  <verstretch>0</verstretch>
+                                 </sizepolicy>
+                                </property>
                                 <property name="toolTip">
                                  <string>Choose the bit-rate of your selected, input audio device.</string>
                                 </property>
@@ -2106,8 +2112,8 @@ Thanks.</string>
                               <item>
                                <widget class="QComboBox" name="comboBox_audio_input_sample_rate">
                                 <property name="sizePolicy">
-                                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                                  <horstretch>0</horstretch>
+                                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                  <horstretch>20</horstretch>
                                   <verstretch>0</verstretch>
                                  </sizepolicy>
                                 </property>
@@ -2122,8 +2128,8 @@ Thanks.</string>
                               <item>
                                <widget class="QComboBox" name="comboBox_soundcard_input_channels">
                                 <property name="sizePolicy">
-                                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                                  <horstretch>0</horstretch>
+                                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                  <horstretch>12</horstretch>
                                   <verstretch>0</verstretch>
                                  </sizepolicy>
                                 </property>
@@ -2192,8 +2198,8 @@ Thanks.</string>
                               <item>
                                <widget class="QComboBox" name="comboBox_soundcard_output">
                                 <property name="sizePolicy">
-                                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                                  <horstretch>0</horstretch>
+                                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                  <horstretch>40</horstretch>
                                   <verstretch>0</verstretch>
                                  </sizepolicy>
                                 </property>
@@ -2205,8 +2211,8 @@ Thanks.</string>
                               <item>
                                <widget class="QPushButton" name="pushButton_output_sound_test">
                                 <property name="sizePolicy">
-                                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                                  <horstretch>0</horstretch>
+                                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                  <horstretch>13</horstretch>
                                   <verstretch>0</verstretch>
                                  </sizepolicy>
                                 </property>
@@ -2220,6 +2226,12 @@ Thanks.</string>
                               </item>
                               <item>
                                <widget class="QComboBox" name="comboBox_audio_output_bit_rate">
+                                <property name="sizePolicy">
+                                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                  <horstretch>15</horstretch>
+                                  <verstretch>0</verstretch>
+                                 </sizepolicy>
+                                </property>
                                 <property name="toolTip">
                                  <string>Choose the bit-rate of your selected, output audio device.</string>
                                 </property>
@@ -2228,8 +2240,8 @@ Thanks.</string>
                               <item>
                                <widget class="QComboBox" name="comboBox_audio_output_sample_rate">
                                 <property name="sizePolicy">
-                                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                                  <horstretch>0</horstretch>
+                                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                  <horstretch>20</horstretch>
                                   <verstretch>0</verstretch>
                                  </sizepolicy>
                                 </property>
@@ -2244,8 +2256,8 @@ Thanks.</string>
                               <item>
                                <widget class="QComboBox" name="comboBox_soundcard_output_channels">
                                 <property name="sizePolicy">
-                                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                                  <horstretch>0</horstretch>
+                                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                  <horstretch>12</horstretch>
                                   <verstretch>0</verstretch>
                                  </sizepolicy>
                                 </property>

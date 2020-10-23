@@ -907,7 +907,7 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
             }
         } else {
             // No ports could be found!
-            gkEventLogger->publishEvent(tr("Error with enumerating out ports for CAT connections. Please check that your settings are valid."), GkSeverity::Warning);
+            gkEventLogger->publishEvent(tr("Error with enumerating out ports for CAT connections. Please check that your settings are valid."), GkSeverity::Error);
         }
 
         //
@@ -951,7 +951,7 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
             }
         } else {
             // No ports could be found!
-            gkEventLogger->publishEvent(tr("Error with enumerating out ports for PTT connections. Please check that your settings are valid."), GkSeverity::Warning);
+            gkEventLogger->publishEvent(tr("Error with enumerating out ports for PTT connections. Please check that your settings are valid."), GkSeverity::Error);
         }
 
         if (!rigBrand.isNull() || !rigBrand.isEmpty()) { // The manufacturer!
