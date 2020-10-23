@@ -85,11 +85,12 @@ std::mutex read_audio_api_mtx;
 std::mutex mtx_freq_already_init;
 
 GkLevelDb::GkLevelDb(leveldb::DB *db_ptr, QPointer<FileIo> filePtr, QPointer<GekkoFyre::StringFuncs> stringFuncs,
-                     QObject *parent) : QObject(parent)
+                     const QRect &main_win_geometry, QObject *parent) : QObject(parent)
 {
     db = db_ptr;
     fileIo = std::move(filePtr);
     gkStringFuncs = std::move(stringFuncs);
+    gkMainWinGeometry = main_win_geometry;
 }
 
 GkLevelDb::~GkLevelDb()
@@ -1045,9 +1046,8 @@ void GkLevelDb::capture_sys_info()
         //
         // Grab the screen resolution of the user's desktop and create a new object for such!
         //
-        const QRect screen_res = detect_desktop_resolution();
-        const qreal width = screen_res.width();
-        const qreal height = screen_res.height();
+        const qreal width = gkMainWinGeometry.width();
+        const qreal height = gkMainWinGeometry.height();
 
         sentry_value_t screen_res_obj = sentry_value_new_object();
         sentry_value_set_by_key(screen_res_obj, "width", sentry_value_new_double(width));
@@ -1109,19 +1109,6 @@ void GkLevelDb::detect_operating_system(QString &build_cpu_arch, QString &curr_c
     }
 
     return;
-}
-
-/**
- * @brief GkLevelDb::detect_desktop_resolution will detect the currently used screen resolution of the user's desktop, mostly
- * for the purposes needed by Sentry.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param horizontal
- * @param vertical
- */
-QRect GkLevelDb::detect_desktop_resolution()
-{
-    QRect rec = QApplication::desktop()->screenGeometry();
-    return rec;
 }
 
 /**

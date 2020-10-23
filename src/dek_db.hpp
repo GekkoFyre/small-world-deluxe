@@ -50,10 +50,10 @@
 #include <leveldb/status.h>
 #include <memory>
 #include <string>
+#include <QRect>
 #include <QObject>
 #include <QString>
 #include <QPointer>
-#include <QRect>
 
 namespace GekkoFyre {
 
@@ -62,7 +62,8 @@ class GkLevelDb : public QObject {
 
 public:
     explicit GkLevelDb(leveldb::DB *db_ptr, QPointer<GekkoFyre::FileIo> filePtr,
-                       QPointer<GekkoFyre::StringFuncs> stringFuncs, QObject *parent = nullptr);
+                       QPointer<GekkoFyre::StringFuncs> stringFuncs, const QRect &main_win_geometry,
+                       QObject *parent = nullptr);
     ~GkLevelDb() override;
 
     void write_rig_settings(const QString &value, const Database::Settings::radio_cfg &key);
@@ -130,6 +131,7 @@ private:
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::FileIo> fileIo;
     leveldb::DB *db;
+    QRect gkMainWinGeometry;
 
     std::string processCsvToDB(const std::string &comma_sep_values, const std::string &data_to_append);
     std::string deleteCsvValForDb(const std::string &comma_sep_values, const std::string &data_to_remove);
@@ -137,7 +139,6 @@ private:
     void detect_operating_system(QString &build_cpu_arch, QString &curr_cpu_arch, QString &kernel_type, QString &kernel_vers,
                                  QString &machine_host_name, QString &machine_unique_id, QString &pretty_prod_name,
                                  QString &prod_type, QString &prod_vers);
-    QRect detect_desktop_resolution();
 
     std::string randomString(const size_t &length);
 

@@ -256,7 +256,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         try {
             if (!save_db_path.empty()) {
                 status = leveldb::DB::Open(options, save_db_path.string(), &db);
-                gkDb = new GekkoFyre::GkLevelDb(db, fileIo, gkStringFuncs, this);
+                const QRect main_win_coord = findActiveScreen();
+                gkDb = new GekkoFyre::GkLevelDb(db, fileIo, gkStringFuncs, main_win_coord, this);
 
                 bool enableSentry = false;
                 bool askSentry = gkDb->read_sentry_settings(GkSentry::AskedDialog);
@@ -544,7 +545,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                          gkSpectroCurve, SLOT(processFrame(const std::vector<float> &)));
 
         if (!audio_devices_enum.gkDevice.empty()) {
-            input_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<float>>(AUDIO_FRAMES_PER_BUFFER, -1, pref_output_device, pref_input_device, gkDb);
+            input_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<float>>(AUDIO_FRAMES_PER_BUFFER, -1, pref_input_device, gkDb);
         }
 
         //
@@ -1181,12 +1182,17 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
                 }
             }
         } else {
+            // If there's no saved data, then find the default audio device as (should be!) configured by the user's operating system...
             findDefaultInputAudioDevice();
+            found_input_audio_dev = true;
             gkEventLogger->publishEvent(tr("No default audio input device has been chosen yet. Please visit the Setting's Dialog!"),
                                         GkSeverity::Info, "", true, true, false, false);
         }
 
         if (!found_input_audio_dev) {
+            // There has been saved data but the manually configured audio device (via Small World Deluxe) must've been disconnected from
+            // the host system in the meantime, or changed properties, or something! Therefore, find the default audio device as (should be!)
+            // configured by the user's operating system...
             findDefaultInputAudioDevice();
             found_input_audio_dev = true;
         }
@@ -1202,12 +1208,17 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
                 }
             }
         } else {
+            // If there's no saved data, then find the default audio device as (should be!) configured by the user's operating system...
             findDefaultOutputAudioDevice();
+            found_output_audio_dev = true;
             gkEventLogger->publishEvent(tr("No default audio output device has been chosen yet. Please visit the Setting's Dialog!"),
                                         GkSeverity::Info, "", false, true, false, false);
         }
 
         if (!found_output_audio_dev) {
+            // There has been saved data but the manually configured audio device (via Small World Deluxe) must've been disconnected from
+            // the host system in the meantime, or changed properties, or something! Therefore, find the default audio device as (should be!)
+            // configured by the user's operating system...
             findDefaultOutputAudioDevice();
             found_output_audio_dev = true;
         }
@@ -1515,6 +1526,19 @@ bool MainWindow::steadyTimer(const int &seconds)
     }
 
     return false;
+}
+
+/**
+ * @brief MainWindow::findActiveScreen() finds the size and coordinates of the **active** screen as-is used/present by the Small
+ * World Deluxe application.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return The size and coordinates of the active screen that the Small World Deluxe application is presently on; this is quite
+ * useful for end-user's with multi-monitor applications and we need to collect statistics for such cases.
+ */
+QRect MainWindow::findActiveScreen()
+{
+    QPointer<QScreen> screen = this->window()->windowHandle()->screen();
+    return screen->availableGeometry();
 }
 
 /**
@@ -2264,7 +2288,9 @@ void MainWindow::startRecordingInput()
             }
 
             RtAudio::StreamParameters input_param;
-            // input_param.deviceId = ;
+            input_param.deviceId = pref_input_device.device_id;
+            input_param.firstChannel = 0;
+            input_param.nChannels = pref_input_device.device_info.inputChannels;
 
             gkAudioSysInput->startStream();
             pref_input_device.is_dev_active = true; // State that this recording device is now active!
@@ -2299,7 +2325,7 @@ void MainWindow::restartInputAudioInterface(const GkDevice &input_device)
         pref_input_device = {}; // Clear the structure ready for re-use!
         pref_input_device = input_device;
 
-        input_audio_buf.reset(new GekkoFyre::PaAudioBuf<float>(AUDIO_FRAMES_PER_BUFFER, -1, pref_output_device, pref_input_device, gkDb));
+        input_audio_buf.reset(new GekkoFyre::PaAudioBuf<float>(AUDIO_FRAMES_PER_BUFFER, -1, pref_input_device, gkDb));
 
         // TODO: Insert new Stream recreation here for RtAudio, regarding the Input Audio!
         pref_input_device.is_dev_active = true; // State that this recording device is now active!

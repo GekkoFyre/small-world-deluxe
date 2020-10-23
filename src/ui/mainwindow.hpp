@@ -75,13 +75,16 @@
 #include <mutex>
 #include <ctime>
 #include <list>
+#include <QRect>
 #include <QList>
+#include <QScreen>
 #include <QString>
 #include <QObject>
 #include <QPointer>
 #include <QPrinter>
 #include <QMetaType>
 #include <QDateTime>
+#include <QWindow>
 #include <QByteArray>
 #include <QStringList>
 #include <QMainWindow>
@@ -413,6 +416,7 @@ private:
     void createStatusBar(const QString &statusMsg = "");
     bool changeStatusBarMsg(const QString &statusMsg = "");
     bool steadyTimer(const int &seconds);
+    QRect findActiveScreen();
 };
 
 Q_DECLARE_METATYPE(std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>);

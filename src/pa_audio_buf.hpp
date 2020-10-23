@@ -80,8 +80,7 @@ template <class T>
 class PaAudioBuf {
 
 public:
-    explicit PaAudioBuf(qint32 buffer_size, qint64 num_samples_per_channel, const GekkoFyre::Database::Settings::Audio::GkDevice &pref_output_device,
-                        const GekkoFyre::Database::Settings::Audio::GkDevice &pref_input_device, QPointer<GekkoFyre::GkLevelDb> gkDb);
+    explicit PaAudioBuf(qint32 buffer_size, qint64 num_samples_per_channel, const GekkoFyre::Database::Settings::Audio::GkDevice &pref_audio_device, QPointer<GekkoFyre::GkLevelDb> gkDb);
     virtual ~PaAudioBuf();
 
     qint32 recordCallback(void *outputBuffer, void *inputBuffer, quint32 nBufferFrames, double streamTime, RtAudioStreamStatus status, void *userData);
@@ -99,8 +98,7 @@ private:
     QPointer<GekkoFyre::GkLevelDb> gkLevelDb;
 
     static inline std::shared_ptr<GekkoFyre::GkCircBuffer<T>> gkCircBuffer;
-    GekkoFyre::Database::Settings::Audio::GkDevice prefInputDevice;
-    GekkoFyre::Database::Settings::Audio::GkDevice prefOutputDevice;
+    GekkoFyre::Database::Settings::Audio::GkDevice gkPrefAudioDevice;
 
     qint32 circ_buffer_size;
     qint32 maxFrameIndex;
@@ -117,7 +115,7 @@ private:
  * @param parent
  */
 template<class T>
-PaAudioBuf<T>::PaAudioBuf(qint32 buffer_size, qint64 num_samples_per_channel, const GkDevice &pref_output_device, const GkDevice &pref_input_device, QPointer<GekkoFyre::GkLevelDb> gkDb)
+PaAudioBuf<T>::PaAudioBuf(qint32 buffer_size, qint64 num_samples_per_channel, const GkDevice &pref_audio_device, QPointer<GekkoFyre::GkLevelDb> gkDb)
 {
     std::mutex pa_audio_buf_mtx;
     std::lock_guard<std::mutex> lck_guard(pa_audio_buf_mtx);
@@ -125,8 +123,7 @@ PaAudioBuf<T>::PaAudioBuf(qint32 buffer_size, qint64 num_samples_per_channel, co
     gkLevelDb = std::move(gkDb);
 
     // The preferred input and output audio devices
-    prefInputDevice = pref_input_device;
-    prefOutputDevice = pref_output_device;
+    gkPrefAudioDevice = pref_audio_device;
 
     calcVolIdx = 1.f;
     maxFrameIndex = 0;
@@ -168,7 +165,7 @@ qint32 PaAudioBuf<T>::recordCallback(void *outputBuffer, void *inputBuffer, quin
     Q_UNUSED(streamTime);
     Q_UNUSED(status);
 
-    T *data_ptr = (GkAudioFramework::GkRecord *)userData;
+    GkAudioFramework::GkRecord *data_ptr = (GkAudioFramework::GkRecord *)userData;
     quint32 frames = nBufferFrames;
     if (data_ptr->frameCounter + nBufferFrames > data_ptr->totalFrames) {
         frames = data_ptr->totalFrames - data_ptr->frameCounter;
@@ -178,6 +175,7 @@ qint32 PaAudioBuf<T>::recordCallback(void *outputBuffer, void *inputBuffer, quin
     size_t offset = data_ptr->frameCounter * data_ptr->channels;
     std::memcpy(data_ptr->buffer + offset, inputBuffer, data_ptr->bufferBytes);
     data_ptr->frameCounter += frames;
+    gkCircBuffer->put(data_ptr->buffer + data_ptr->bufferBytes);
 
     if (data_ptr->frameCounter >= data_ptr->totalFrames) {
         return 2;
