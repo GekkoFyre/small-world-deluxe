@@ -47,7 +47,6 @@
 #include "src/pa_audio_buf.hpp"
 #include "src/gk_logger.hpp"
 #include "src/gk_string_funcs.hpp"
-#include "src/contrib/wsjtx/lib/qra/qra64/qra64.h"
 #include <QObject>
 #include <QPointer>
 #include <memory>
@@ -110,8 +109,8 @@ private:
     float *rx;
     int *xdec;
 
-    qra64codec *codec_iv3nwv;
-    qra64codec *code_k1jt;
+    // qra64codec *codec_iv3nwv;
+    // qra64codec *code_k1jt;
 
 };
 

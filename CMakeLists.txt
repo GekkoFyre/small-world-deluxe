@@ -209,14 +209,6 @@ else()
     message(FATAL_ERROR "The 'ZLIB' compression library could not be found!")
 endif(ZLIB_FOUND)
 
-find_package(LevelDB REQUIRED)
-if (LEVELDB_FOUND)
-    include_directories(${LEVELDB_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${LEVELDB_LIBRARIES})
-else()
-    message(FATAL_ERROR "The 'LevelDB' key-value database library could not be found!")
-endif(LEVELDB_FOUND)
-
 find_package(Hamlib REQUIRED)
 if (HAMLIB_FOUND)
     include_directories(${HAMLIB_INCLUDE_DIRS})
@@ -406,6 +398,12 @@ if(WIN32 OR MSYS OR MINGW)
 else()
     set(SENTRY_TRANSPORT "curl" CACHE STRING "Please do not modify this." FORCE)
 endif()
+
+#
+# Google LevelDB [ https://github.com/google/leveldb ]
+#
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/leveldb")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/leveldb/include")
 
 #
 # RtAudio [ https://github.com/thestk/rtaudio ]
@@ -708,7 +706,7 @@ endif()
 # Build Small World Deluxe as a static package!
 #
 if(GFYRE_BUILD_STATIC)
-    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_QRA64_C} ${GALAXY_WSJTX_WSPR_C})
+    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C})
     if(GK_CUDA_FFT)
         add_library(galaxy_cuda STATIC ${GALAXY_CUDA})
     endif()
@@ -722,7 +720,7 @@ endif(GFYRE_BUILD_STATIC)
 # Build Small World Deluxe as a shared package!
 #
 if(GFYRE_BUILD_SHARED)
-    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_QRA64_C} ${GALAXY_WSJTX_WSPR_C})
+    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C})
     if(GK_CUDA_FFT)
         add_library(galaxy_cuda STATIC ${GALAXY_CUDA})
     endif()
@@ -731,7 +729,7 @@ if(GFYRE_BUILD_SHARED)
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
-target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::SerialPort Qt5::PrintSupport Qt5::TextToSpeech Qt5::Test Threads::Threads SingleApplication::SingleApplication sentry::sentry rtaudio ${LIBS})
+target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::SerialPort Qt5::PrintSupport Qt5::TextToSpeech Qt5::Test Threads::Threads SingleApplication::SingleApplication sentry::sentry rtaudio leveldb ${LIBS})
 
 qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)
 add_dependencies(galaxy resources)

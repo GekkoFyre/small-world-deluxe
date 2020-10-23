@@ -103,13 +103,13 @@ GkModemQRA64::GkModemQRA64(std::shared_ptr<AudioDevices> gkAudio, QPointer<GkEve
     gkStringFuncs = std::move(stringFuncs);
     gkEventLogger = std::move(eventLogger);
 
-    x = new int[QRA64_K];
-    y = new int[QRA64_N];
-    xdec = new int[QRA64_K];
-    rc = 0;
+    // x = new int[QRA64_K];
+    // y = new int[QRA64_N];
+    // xdec = new int[QRA64_K];
+    // rc = 0;
 
-    codec_iv3nwv = qra64_init(mode); // codec for IV3NWV
-    code_k1jt = qra64_init(mode); // codec for K1JT
+    // codec_iv3nwv = qra64_init(mode); // codec for IV3NWV
+    // code_k1jt = qra64_init(mode); // codec for K1JT
 
     return;
 }

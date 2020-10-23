@@ -2264,7 +2264,7 @@ void MainWindow::startRecordingInput()
             }
 
             RtAudio::StreamParameters input_param;
-            input_param.deviceId = ;
+            // input_param.deviceId = ;
 
             gkAudioSysInput->startStream();
             pref_input_device.is_dev_active = true; // State that this recording device is now active!
