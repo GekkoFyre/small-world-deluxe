@@ -467,7 +467,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QObject::connect(this, SIGNAL(gkExitApp()), this, SLOT(uponExit()));
 
         gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(gkDb, fileIo, gkFreqList, gkStringFuncs, gkEventLogger, gkSystem, this);
-        auto audio_devices_enum = gkAudioDevices->enumAudioDevicesCpp();
+        gkAudioApi = gkAudioDevices->enumAudioDevicesCpp();
 
         //
         // Initialize any RtAudio libraries and associated buffers!
@@ -481,8 +481,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             gkAudioSysInput = std::make_shared<RtAudio>(RtAudio::UNSPECIFIED);
         }
 
-        if (!audio_devices_enum.gkDevice.empty()) {
-            for (const auto &device: audio_devices_enum.gkDevice) {
+        if (!gkAudioApi.gkDevice.empty()) {
+            for (const auto &device: gkAudioApi.gkDevice) {
                 // Now filter out what is the input and output device selectively!
                 if (device.audio_src == GkAudioSource::Output) {
                     // Output device
@@ -544,7 +544,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QObject::connect(this, SIGNAL(onProcessFrame(const std::vector<float> &)),
                          gkSpectroCurve, SLOT(processFrame(const std::vector<float> &)));
 
-        if (!audio_devices_enum.gkDevice.empty()) {
+        if (!gkAudioApi.gkDevice.empty()) {
             input_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<float>>(AUDIO_FRAMES_PER_BUFFER, -1, pref_input_device, gkDb);
         }
 
@@ -759,10 +759,11 @@ void MainWindow::launchSettingsWin()
     QObject::connect(gkFreqTableModel, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
                      gkFreqList, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)));
 
-    QPointer<DialogSettings> dlg_settings = new DialogSettings(gkDb, fileIo, gkAudioDevices, gkAudioSysOutput,
-                                                               gkAudioSysInput, gkRadioLibs, gkStringFuncs,
-                                                               gkRadioPtr, status_com_ports, gkUsbPortMap, gkFreqList,
-                                                               gkFreqTableModel, gkEventLogger, gkTextToSpeech, this);
+    QPointer<DialogSettings> dlg_settings = new DialogSettings(gkDb, fileIo, gkAudioDevices, gkAudioApi,
+                                                               gkAudioSysOutput, gkAudioSysInput, gkRadioLibs,
+                                                               gkStringFuncs, gkRadioPtr, status_com_ports, gkUsbPortMap,
+                                                               gkFreqList, gkFreqTableModel, gkEventLogger,
+                                                               gkTextToSpeech, this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
@@ -1766,6 +1767,38 @@ void MainWindow::uponExit()
 }
 
 /**
+ * @brief MainWindow::configInputAudioDevice if no input audio device has been configured, then this function will display a QMessageBox to
+ * the end-user, asking if one should be configured at the current point-in-time.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::configInputAudioDevice()
+{
+    QMessageBox msgBoxSettings;
+    // msgBoxSettings.setParent(this);
+    msgBoxSettings.setWindowTitle(tr("Unavailable device!"));
+    msgBoxSettings.setText(tr("You must firstly configure an appropriate **input** sound device. Please select one from the settings."));
+    msgBoxSettings.setStandardButtons(QMessageBox::Ok | QMessageBox::Close | QMessageBox::Cancel);
+    msgBoxSettings.setDefaultButton(QMessageBox::Ok);
+    msgBoxSettings.setIcon(QMessageBox::Question);
+    int ret = msgBoxSettings.exec();
+
+    switch (ret) {
+        case QMessageBox::Ok:
+            launchSettingsWin();
+            break;
+        case QMessageBox::Close:
+            QApplication::exit(EXIT_FAILURE);
+            break;
+        case QMessageBox::Cancel:
+            break;
+        default:
+            break;
+    }
+
+    return;
+}
+
+/**
  * @brief MainWindow::updateVolume will update the data within the circular buffer to the volume level as set
  * by the user themselves, usually from within QMainWindow.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -2114,8 +2147,9 @@ void MainWindow::on_pushButton_radio_receive_clicked()
                 return;
             }
 
-            QMessageBox::warning(this, tr("Unavailable device!"), tr("You must firstly configure an appropriate **input** sound device. Please select one from the settings."),
-                                 QMessageBox::Ok);
+            QPointer<QTimer> msgBoxSettingsTimer = new QTimer(this);
+            msgBoxSettingsTimer->singleShot(GK_MSG_BOX_SETTINGS_DLG_TIMER, this, SLOT(configInputAudioDevice()));
+
             return;
         } else {
             // Set the QPushButton to 'Red'
@@ -2255,8 +2289,7 @@ void MainWindow::stopRecordingInput()
 {
     try {
         if (gkAudioSysInput != nullptr && pref_input_device.is_dev_active) {
-            if (gkAudioSysInput->isStreamRunning()) {
-                gkAudioSysInput->stopStream();
+            if (gkAudioSysInput->isStreamOpen()) {
                 gkAudioSysInput->closeStream();
 
                 pref_input_device.is_dev_active = false; // State that this recording device is now non-active!
@@ -2292,8 +2325,28 @@ void MainWindow::startRecordingInput()
             input_param.firstChannel = 0;
             input_param.nChannels = pref_input_device.device_info.inputChannels;
 
+            GkAudioFramework::GkRecord gkData {};
+            gkData.buffer = 0;
+            quint32 bufferFrames = AUDIO_FRAMES_PER_BUFFER;
+
+            gkAudioSysInput->showWarnings(true);
+            gkAudioSysInput->openStream(nullptr, &input_param, RTAUDIO_FLOAT32, pref_input_device.device_info.preferredSampleRate, &bufferFrames, &PaAudioBuf<float>::recordCallback, (void *)&gkData);
+
+            gkData.bufferBytes = bufferFrames * pref_input_device.device_info.inputChannels * sizeof(float);
+            gkData.totalFrames = (size_t)(pref_input_device.device_info.preferredSampleRate * 2.0);
+            gkData.frameCounter = 0;
+            gkData.channels = pref_input_device.device_info.inputChannels;
+            size_t totalBytes = gkData.totalFrames * pref_input_device.device_info.inputChannels * sizeof(float);
+
+            // Allocate the entire data buffer before starting stream.
+            gkData.buffer = static_cast<float *>(std::malloc(totalBytes));
+
             gkAudioSysInput->startStream();
             pref_input_device.is_dev_active = true; // State that this recording device is now active!
+
+            while (gkAudioSysInput->isStreamRunning()) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
         } else {
             //
             // Otherwise restart the audio device with new parameters!

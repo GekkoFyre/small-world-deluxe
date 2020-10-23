@@ -75,6 +75,7 @@ public:
     explicit DialogSettings(QPointer<GekkoFyre::GkLevelDb> dkDb,
                             QPointer<GekkoFyre::FileIo> filePtr,
                             std::shared_ptr<GekkoFyre::AudioDevices> audioDevices,
+                            const GekkoFyre::Database::Settings::Audio::GkAudioApi &audioApi,
                             std::shared_ptr<RtAudio> audioSysOutput,
                             std::shared_ptr<RtAudio> audioSysInput,
                             QPointer<GekkoFyre::RadioLibs> radioLibs,
@@ -290,6 +291,7 @@ private:
     // RtAudio and related
     // The key corresponds to the position within the QComboBoxes
     //
+    GekkoFyre::Database::Settings::Audio::GkAudioApi gkAudioApi;
     QMap<qint32, RtAudio::Api> avail_rtaudio_api;
     QMap<qint32, GekkoFyre::Database::Settings::Audio::GkDevice> avail_input_audio_devs;
     QMap<qint32, GekkoFyre::Database::Settings::Audio::GkDevice> avail_output_audio_devs;

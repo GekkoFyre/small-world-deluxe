@@ -116,9 +116,9 @@ GkModemQRA64::GkModemQRA64(std::shared_ptr<AudioDevices> gkAudio, QPointer<GkEve
 
 GkModemQRA64::~GkModemQRA64()
 {
-    delete[] x;
-    delete[] y;
-    delete[] xdec;
+    // delete[] x;
+    // delete[] y;
+    // delete[] xdec;
 
     return;
 }

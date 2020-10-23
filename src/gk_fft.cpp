@@ -43,6 +43,7 @@
 #include <QtMath>
 #include <algorithm>
 #include <iostream>
+#include <iterator>
 #include <utility>
 #include <cmath>
 
@@ -102,7 +103,7 @@ std::vector<GkFFTSpectrum> GkFFT::FFTCompute(const std::vector<float> &data, con
                 m_window[i] = window;
             }
 
-            m_spectrum_buffer = QVector<float>::fromStdVector(data);
+            std::copy(data.begin(), data.end(), std::back_inserter(m_spectrum_buffer));
             while (m_spectrum_buffer.size() >= int(numSamples)) {
                 QVector<float> middle = m_spectrum_buffer.mid(0, numSamples * sizeof(float));
                 int len = middle.size();

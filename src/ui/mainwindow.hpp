@@ -171,6 +171,11 @@ private slots:
     void uponExit();
 
     //
+    // QMessageBox's
+    //
+    void configInputAudioDevice();
+
+    //
     // Audio related
     //
     void updateVolume(const float &value);
@@ -314,6 +319,7 @@ private:
     //
     // RtAudio initialization and buffers
     //
+    GekkoFyre::Database::Settings::Audio::GkAudioApi gkAudioApi;
     QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> avail_input_audio_devs;
     QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> avail_output_audio_devs;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;

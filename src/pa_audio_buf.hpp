@@ -83,8 +83,8 @@ public:
     explicit PaAudioBuf(qint32 buffer_size, qint64 num_samples_per_channel, const GekkoFyre::Database::Settings::Audio::GkDevice &pref_audio_device, QPointer<GekkoFyre::GkLevelDb> gkDb);
     virtual ~PaAudioBuf();
 
-    qint32 recordCallback(void *outputBuffer, void *inputBuffer, quint32 nBufferFrames, double streamTime, RtAudioStreamStatus status, void *userData);
-    qint32 recordCallbackCircBuf(void *outputBuffer, void *inputBuffer, quint32 nBufferFrames, double streamTime, RtAudioStreamStatus status, void *userData);
+    static qint32 recordCallback(void *outputBuffer, void *inputBuffer, quint32 nBufferFrames, double streamTime, RtAudioStreamStatus status, void *userData);
+    static qint32 recordCallbackCircBuf(void *outputBuffer, void *inputBuffer, quint32 nBufferFrames, double streamTime, RtAudioStreamStatus status, void *userData);
     void setVolume(const float &value);
 
     [[nodiscard]] virtual size_t size() const;
@@ -103,7 +103,7 @@ private:
     qint32 circ_buffer_size;
     qint32 maxFrameIndex;
     qint64 numSamplesPerChannel;
-    float calcVolIdx; // A floating-point value between 0.0 - 1.0 that determines the amplitude of the audio signal (i.e. raw data buffer).
+    static inline float calcVolIdx; // A floating-point value between 0.0 - 1.0 that determines the amplitude of the audio signal (i.e. raw data buffer).
 
 };
 
@@ -175,7 +175,7 @@ qint32 PaAudioBuf<T>::recordCallback(void *outputBuffer, void *inputBuffer, quin
     size_t offset = data_ptr->frameCounter * data_ptr->channels;
     std::memcpy(data_ptr->buffer + offset, inputBuffer, data_ptr->bufferBytes);
     data_ptr->frameCounter += frames;
-    gkCircBuffer->put(data_ptr->buffer + data_ptr->bufferBytes);
+    gkCircBuffer->put(*data_ptr->buffer + data_ptr->bufferBytes);
 
     if (data_ptr->frameCounter >= data_ptr->totalFrames) {
         return 2;

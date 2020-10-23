@@ -82,6 +82,7 @@ std::mutex index_loop_mtx;
 DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
                                QPointer<FileIo> filePtr,
                                std::shared_ptr<AudioDevices> audioDevices,
+                               const GekkoFyre::Database::Settings::Audio::GkAudioApi &audioApi,
                                std::shared_ptr<RtAudio> audioSysOutput,
                                std::shared_ptr<RtAudio> audioSysInput,
                                QPointer<RadioLibs> radioLibs, QPointer<StringFuncs> stringFuncs,
@@ -115,6 +116,7 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         gkTextToSpeech = std::move(textToSpeechPtr);
         status_com_ports = com_ports;
 
+        gkAudioApi = audioApi;
         usb_ports_active = false;
         com_ports_active = false;
         audio_quality_val = 0.0;
@@ -161,10 +163,8 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         //
         // Initialize PortAudio libraries!
         //
-        auto audio_devices = gkAudioDevices->enumAudioDevicesCpp();
-
-        prefill_audio_api_avail(audio_devices.api_used);
-        prefill_audio_devices(audio_devices.gkDevice);
+        prefill_audio_api_avail(gkAudioApi.api_used);
+        prefill_audio_devices(gkAudioApi.gkDevice);
 
         ui->label_pa_version->setText(gkAudioDevices->rtAudioVersionNumber());
         ui->plainTextEdit_pa_version_text->setPlainText(gkAudioDevices->rtAudioVersionText());
@@ -633,8 +633,7 @@ void DialogSettings::prefill_audio_api_avail(const std::vector<RtAudio::Api> &rt
                         //
                         // Find any new audio devices
                         //
-                        auto audio_devices = gkAudioDevices->enumAudioDevicesCpp();
-                        prefill_audio_devices(audio_devices.gkDevice);
+                        prefill_audio_devices(gkAudioApi.gkDevice);
                         on_comboBox_soundcard_api_currentIndexChanged();
 
                         //
