@@ -19,9 +19,6 @@
 [submodule "src/contrib/kissfft"]
 	path = src/contrib/kissfft
 	url = https://github.com/mborgerding/kissfft.git
-[submodule "src/contrib/rtaudio"]
-	path = src/contrib/rtaudio
-	url = https://github.com/thestk/rtaudio.git
 [submodule "src/contrib/leveldb"]
 	path = src/contrib/leveldb
 	url = https://github.com/google/leveldb.git
