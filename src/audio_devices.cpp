@@ -249,7 +249,7 @@ GkAudioApi AudioDevices::enumAudioDevicesCpp()
  * @param stereo
  * @return
  */
-void AudioDevices::testSinewave(std::shared_ptr<RtAudio> dac, const GkDevice &audio_dev, const bool &is_output_dev)
+void AudioDevices::testSinewave(std::shared_ptr<RtAudio> &dac, const GkDevice &audio_dev, const bool &is_output_dev)
 {
     try {
         // std::lock_guard<std::mutex> lck_guard(test_sinewave_mtx);
@@ -272,11 +272,20 @@ void AudioDevices::testSinewave(std::shared_ptr<RtAudio> dac, const GkDevice &au
             RtAudio::StreamOptions options;
             options.flags = RTAUDIO_HOG_DEVICE;
             options.flags |= RTAUDIO_SCHEDULE_REALTIME;
+            options.flags |= RTAUDIO_NONINTERLEAVED;
 
             float *sawData = (float *)std::calloc(oParams.nChannels, sizeof(float));
             quint32 bufsize = audio_dev.chosen_sample_rate * 10;
+
+            if (dac->isStreamOpen()) {
+                dac->closeStream();
+            }
+
             dac->openStream(&oParams, nullptr, RTAUDIO_FLOAT32, audio_dev.chosen_sample_rate, &bufsize, &AudioDevices::playbackSaw,
                             (void *)sawData, &options);
+            if (!dac->isStreamOpen()) {
+                throw std::runtime_error(tr("Unable to open RtAudio stream!").toStdString());
+            }
 
             dac->startStream();
             if (checkCount) {
@@ -285,13 +294,13 @@ void AudioDevices::testSinewave(std::shared_ptr<RtAudio> dac, const GkDevice &au
                 }
             }
 
-            dac->stopStream();
+            if (dac->isStreamRunning()) {
+                dac->stopStream();
+            }
+
             free(sawData);
             return;
         }
-    } catch (const RtAudioError &e) {
-        gkEventLogger->publishEvent(tr("An exception has been encountered with the RtAudio library. Error:\n\n%1").arg(QString::fromStdString(e.what())),
-                                    GkSeverity::Error, "", false, true, false, true);
     } catch (const std::exception &e) {
         QString error_msg = tr("A generic exception has occurred:\n\n%1").arg(e.what());
         gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true, false, false);

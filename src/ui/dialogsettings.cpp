@@ -1981,9 +1981,6 @@ void DialogSettings::on_comboBox_soundcard_api_currentIndexChanged(int index)
                 }
             }
         }
-    } catch (const RtAudioError &e) {
-        gkEventLogger->publishEvent(tr("An exception has been encountered with the RtAudio library. Error:\n\n%1").arg(QString::fromStdString(e.what())),
-                                    GkSeverity::Error, "", false, true, false, true);
     } catch (const std::exception &e) {
         QString error_msg = tr("A generic exception has occurred:\n\n%1").arg(e.what());
         gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);

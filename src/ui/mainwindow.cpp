@@ -503,9 +503,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                     }
                 }
             }
-        } catch (const RtAudioError &e) {
-            gkEventLogger->publishEvent(tr("An exception has been encountered while initializing the RtAudio library. Error:\n\n%1").arg(QString::fromStdString(e.what())),
-                                        GkSeverity::Fatal, "", false, true, false, true);
         } catch (const std::exception &e) {
             QString except_msg = tr("A generic exception has occurred while initializing the RtAudio library:\n\n%1").arg(e.what());
             gkEventLogger->publishEvent(except_msg, GkSeverity::Fatal, "", true, true, false, false);
@@ -2368,9 +2365,6 @@ void MainWindow::startRecordingInput()
         }
 
         return;
-    } catch (const RtAudioError &e) {
-        gkEventLogger->publishEvent(tr("Problem encountered with initializing RtAudio via input audio device. Error:\n\n%1").arg(QString::fromStdString(e.what())),
-                                    GkSeverity::Error, "", false, true, false, true);
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(tr("Problem encountered with initializing input audio device. Error:\n\n%1").arg(QString::fromStdString(e.what())),
                                     GkSeverity::Error, "", false, true, false, true);
