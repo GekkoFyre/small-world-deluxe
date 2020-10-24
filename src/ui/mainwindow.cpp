@@ -466,41 +466,54 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         QObject::connect(this, SIGNAL(gkExitApp()), this, SLOT(uponExit()));
 
-        gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(gkDb, fileIo, gkFreqList, gkStringFuncs, gkEventLogger, gkSystem, this);
-        gkAudioApi = gkAudioDevices->enumAudioDevicesCpp();
+        try {
+            gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(gkDb, fileIo, gkFreqList, gkStringFuncs,
+                                                                       gkEventLogger, gkSystem, this);
+            gkAudioApi = gkAudioDevices->enumAudioDevicesCpp();
 
-        //
-        // Initialize any RtAudio libraries and associated buffers!
-        //
-        auto api_settings = gkDb->read_audio_api_settings();
-        if (api_settings != RtAudio::UNSPECIFIED) {
-            gkAudioSysOutput = std::make_shared<RtAudio>(api_settings);
-            gkAudioSysInput = std::make_shared<RtAudio>(api_settings);
-        } else {
-            gkAudioSysOutput = std::make_shared<RtAudio>(RtAudio::UNSPECIFIED);
-            gkAudioSysInput = std::make_shared<RtAudio>(RtAudio::UNSPECIFIED);
-        }
+            //
+            // Initialize any RtAudio libraries and associated buffers!
+            //
+            auto api_settings = gkDb->read_audio_api_settings();
+            if (api_settings != RtAudio::UNSPECIFIED) {
+                gkAudioSysOutput = std::make_shared<RtAudio>(api_settings);
+                gkAudioSysInput = std::make_shared<RtAudio>(api_settings);
+            } else {
+                gkAudioSysOutput = std::make_shared<RtAudio>(RtAudio::UNSPECIFIED);
+                gkAudioSysInput = std::make_shared<RtAudio>(RtAudio::UNSPECIFIED);
+            }
 
-        if (!gkAudioApi.gkDevice.empty()) {
-            for (const auto &device: gkAudioApi.gkDevice) {
-                // Now filter out what is the input and output device selectively!
-                if (device.audio_src == GkAudioSource::Output) {
-                    // Output device
-                    pref_output_device = device;
-                    pref_output_device.is_dev_active = false;
-                } else if (device.audio_src == GkAudioSource::Input) {
-                    // Input device
-                    pref_input_device = device;
-                    pref_input_device.is_dev_active = false;
-                } else {
-                    // Input and Output device
-                    pref_output_device = device;
-                    pref_input_device = device;
-                    pref_output_device.is_dev_active = false;
-                    pref_input_device.is_dev_active = false;
+            if (!gkAudioApi.gkDevice.empty()) {
+                for (const auto &device: gkAudioApi.gkDevice) {
+                    // Now filter out what is the input and output device selectively!
+                    if (device.audio_src == GkAudioSource::Output) {
+                        // Output device
+                        pref_output_device = device;
+                        pref_output_device.is_dev_active = false;
+                    } else if (device.audio_src == GkAudioSource::Input) {
+                        // Input device
+                        pref_input_device = device;
+                        pref_input_device.is_dev_active = false;
+                    } else {
+                        // Input and Output device
+                        pref_output_device = device;
+                        pref_input_device = device;
+                        pref_output_device.is_dev_active = false;
+                        pref_input_device.is_dev_active = false;
+                    }
                 }
             }
+        } catch (const RtAudioError &e) {
+            gkEventLogger->publishEvent(tr("An exception has been encountered while initializing the RtAudio library. Error:\n\n%1").arg(QString::fromStdString(e.what())),
+                                        GkSeverity::Fatal, "", false, true, false, true);
+        } catch (const std::exception &e) {
+            QString except_msg = tr("A generic exception has occurred while initializing the RtAudio library:\n\n%1").arg(e.what());
+            gkEventLogger->publishEvent(except_msg, GkSeverity::Fatal, "", true, true, false, false);
+        } catch (...) {
+            QString except_msg = tr("An unknown exception has occurred whilst initializing the RtAudio library. There are no further details.");
+            gkEventLogger->publishEvent(except_msg, GkSeverity::Fatal, "", true, true, false, false);
         }
+
 
         //
         // Initialize any FFT libraries/resources

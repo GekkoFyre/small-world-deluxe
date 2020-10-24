@@ -423,6 +423,7 @@ private:
     bool changeStatusBarMsg(const QString &statusMsg = "");
     bool steadyTimer(const int &seconds);
     QRect findActiveScreen();
+
 };
 
 Q_DECLARE_METATYPE(std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>);

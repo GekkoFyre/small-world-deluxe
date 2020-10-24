@@ -56,7 +56,7 @@
 #include <QMessageBox>
 #include <QApplication>
 
-#define SCALE (32767.0)
+#define SCALE (1.0)
 
 #define BASE_RATE 0.005
 #define TIME 1.0
@@ -92,6 +92,12 @@ AudioDevices::AudioDevices(QPointer<GkLevelDb> gkDb, QPointer<FileIo> filePtr,
     gkStringFuncs = std::move(stringFuncs);
     gkEventLogger = std::move(eventLogger);
     gkSystem = std::move(systemPtr);
+
+    callbackReturnValue = 1;
+    frameCounter = 0;
+    nFrames = 0;
+    channels = 0;
+    checkCount = false;
 }
 
 AudioDevices::~AudioDevices()
@@ -147,7 +153,6 @@ GkAudioApi AudioDevices::enumAudioDevicesCpp()
                 if (device.device_info.probed) {
                     device.dev_input_channel_count = device.device_info.inputChannels;
                     device.dev_output_channel_count = device.device_info.outputChannels;
-                    device.supp_native_formats = device.device_info.nativeFormats;
                     device.default_output_dev = device.device_info.isDefaultOutput;
                     device.default_input_dev = device.device_info.isDefaultInput;
 
@@ -247,51 +252,52 @@ GkAudioApi AudioDevices::enumAudioDevicesCpp()
 void AudioDevices::testSinewave(std::shared_ptr<RtAudio> dac, const GkDevice &audio_dev, const bool &is_output_dev)
 {
     try {
-        std::lock_guard<std::mutex> lck_guard(test_sinewave_mtx);
+        // std::lock_guard<std::mutex> lck_guard(test_sinewave_mtx);
 
         if (is_output_dev) {
+            if (nFrames > 0) {
+                checkCount = true;
+            }
+
             RtAudio::StreamParameters oParams;
             oParams.deviceId = audio_dev.device_id;
             oParams.nChannels = audio_dev.dev_output_channel_count;
+            channels = oParams.nChannels;
             oParams.firstChannel = 0;
+
+            if (audio_dev.device_id == 0) {
+                oParams.deviceId = dac->getDefaultOutputDevice();
+            }
 
             RtAudio::StreamOptions options;
             options.flags = RTAUDIO_HOG_DEVICE;
             options.flags |= RTAUDIO_SCHEDULE_REALTIME;
 
-            GkAudioFramework::GkRtCallback sawData {};
+            float *sawData = (float *)std::calloc(oParams.nChannels, sizeof(float));
             quint32 bufsize = audio_dev.chosen_sample_rate * 10;
-            dac->openStream(&oParams, nullptr, audio_dev.supp_native_formats, audio_dev.chosen_sample_rate, &bufsize, &AudioDevices::playbackSaw,
-                            &sawData, &options);
+            dac->openStream(&oParams, nullptr, RTAUDIO_FLOAT32, audio_dev.chosen_sample_rate, &bufsize, &AudioDevices::playbackSaw,
+                            (void *)sawData, &options);
 
-            sawData.nRate = audio_dev.chosen_sample_rate;
-            sawData.nFrame = audio_dev.chosen_sample_rate;
-            sawData.nChannel = audio_dev.dev_output_channel_count;
-            sawData.cur = 0;
-            sawData.wfTable = (float *)std::calloc(sawData.nChannel * sawData.nFrame, sizeof(float));
-
-            if (!sawData.wfTable) {
-                dac.reset();
-            }
-
-            for (quint32 i = 0; i < sawData.nFrame; ++i) {
-                float v = std::sin(i * M_PI * 2 * 440 / sawData.nRate);
-                for (quint32 j = 0; j < sawData.nChannel; ++j) {
-                    sawData.wfTable[i * sawData.nChannel + j] = v;
+            dac->startStream();
+            if (checkCount) {
+                while (dac->isStreamRunning()) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(AUDIO_SINE_WAVE_PLAYBACK_SECS * 1000));
                 }
             }
 
-            dac->startStream();
-            std::this_thread::sleep_for(std::chrono::milliseconds(AUDIO_SINE_WAVE_PLAYBACK_SECS * 1000));
             dac->stopStream();
-            dac->closeStream();
-
+            free(sawData);
             return;
         }
+    } catch (const RtAudioError &e) {
+        gkEventLogger->publishEvent(tr("An exception has been encountered with the RtAudio library. Error:\n\n%1").arg(QString::fromStdString(e.what())),
+                                    GkSeverity::Error, "", false, true, false, true);
     } catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), tr("A generic exception has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
+        QString error_msg = tr("A generic exception has occurred:\n\n%1").arg(e.what());
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true, false, false);
     } catch (...) {
-        QMessageBox::warning(nullptr, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), QMessageBox::Ok);
+        QString error_msg = tr("An unknown exception has occurred. There are no further details.");
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true, false, false);
     }
 
     return;
@@ -316,20 +322,27 @@ qint32 AudioDevices::playbackSaw(void *outputBuffer, void *inputBuffer, quint32 
     Q_UNUSED(status);
 
     auto *buf = (float *)outputBuffer;
-    quint32 remainFrames;
-    auto *data = (GkAudioFramework::GkRtCallback *)userData;
+    float *lastValues = (float *)userData;
 
-    remainFrames = nBufferFrames;
-    while (remainFrames > 0) {
-        unsigned int sz = data->nFrame - data->cur;
-        if (sz > remainFrames) {
-            sz = remainFrames;
+    if (status) {
+        std::cerr << tr("Stream underflow detected!").toStdString() << std::endl;
+    }
+
+    float increment;
+    for (quint32 j = 0; j < channels; ++j) {
+        increment = BASE_RATE * (j + 1 + (j * 0.1));
+        for (quint32 i = 0; i < nBufferFrames; ++i) {
+            *buf++ = (float) (lastValues[j] * SCALE * 0.5);
+            lastValues[j] += increment;
+            if (lastValues[j] >= 1.0) {
+                lastValues[j] -= 2.0;
+            }
         }
+    }
 
-        std::memcpy(buf, data->wfTable + (data->cur * data->nChannel), sz * data->nChannel * sizeof(float));
-        data->cur = (data->cur + sz) % data->nFrame;
-        buf += sz * data->nChannel;
-        remainFrames -= sz;
+    frameCounter += nBufferFrames;
+    if (checkCount && (frameCounter >= nFrames)) {
+        return callbackReturnValue;
     }
 
     return 0;

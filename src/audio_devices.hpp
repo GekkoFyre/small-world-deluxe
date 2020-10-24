@@ -80,7 +80,6 @@ public:
     float vuMeterRMS(const size_t &count, float *buffer);
 
     void testSinewave(std::shared_ptr<RtAudio> dac, const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev, const bool &is_output_dev = true);
-    static inline qint32 playbackSaw(void *outputBuffer, void *inputBuffer, quint32 nBufferFrames, double streamTime, RtAudioStreamStatus status, void *userData);
 
     float calcAudioBufferTimeNeeded(const Database::Settings::GkAudioChannels &num_channels, const size_t &fft_num_lines,
                                     const size_t &fft_samples_per_line, const size_t &audio_buf_sampling_length,
@@ -96,6 +95,14 @@ private:
     QPointer<StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     QPointer<GekkoFyre::GkSystem> gkSystem;
+
+    static inline qint32 playbackSaw(void *outputBuffer, void *inputBuffer, quint32 nBufferFrames, double streamTime, RtAudioStreamStatus status, void *userData);
+
+    static inline quint32 frameCounter;
+    static inline quint32 nFrames;
+    static inline quint32 callbackReturnValue;
+    static inline qint32 channels;
+    static inline bool checkCount;
 
 };
 };

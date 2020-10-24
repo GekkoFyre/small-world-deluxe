@@ -502,7 +502,6 @@ namespace Database {
                 qint32 dev_input_channel_count;                                     // The number of channels this INPUT audio device supports
                 qint32 dev_output_channel_count;                                    // The number of channels this OUTPUT audio device supports
                 quint32 chosen_sample_rate;                                         // The chosen sample rate, as configured by the end-user.
-                RtAudioFormat supp_native_formats;                                  // Supported native formats by this audio device, via RtAudio.
                 GkAudioChannels sel_channels;                                       // The selected audio channel configuration
             };
 

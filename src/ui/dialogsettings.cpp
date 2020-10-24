@@ -270,7 +270,7 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         //
         // Chosen PortAudio API
         //
-        int chosen_pa_api = ui->comboBox_soundcard_api->currentData().toInt();
+        int chosen_rt_api = ui->comboBox_soundcard_api->currentData().toInt();
 
         //
         // Audio Device Channels (i.e. Mono/Stereo/etc)
@@ -285,12 +285,22 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         // gkFileIo->write_initial_settings(ui->lineEdit_db_save_loc->text(), init_cfg::DbLoc);
 
         //
-        // PortAudio API
+        // RtAudio API
         //
-        for (const auto &pa_api_idx: avail_rtaudio_api.toStdMap()) {
-            if (pa_api_idx.first == chosen_pa_api) {
-                gkDekodeDb->write_audio_api_settings(pa_api_idx.second);
-                break;
+        if (!avail_rtaudio_api.isEmpty()) {
+            for (const auto &rt_api: avail_rtaudio_api.toStdMap()) {
+                if (rt_api.first == chosen_rt_api) {
+                    gkDekodeDb->write_audio_api_settings(rt_api.second);
+
+                    // Update the RtAudio pointers as well while we're at it!
+                    gkAudioSysInput.reset(new RtAudio(chosen_rtaudio_api));
+                    gkAudioSysOutput.reset(new RtAudio(chosen_rtaudio_api));
+                    gkEventLogger->publishEvent(tr("Now using the audio device API, \"%1\".")
+                    .arg(QString::fromStdString(RtAudio::getApiName(chosen_rtaudio_api))),
+                    GkSeverity::Info, "", true, true, false, false);
+
+                    break;
+                }
             }
         }
 
@@ -1768,7 +1778,7 @@ void DialogSettings::on_pushButton_input_sound_test_clicked()
 void DialogSettings::on_pushButton_output_sound_test_clicked()
 {
     try {
-        if (ui->comboBox_soundcard_output->currentIndex() == 0) {
+        if (ui->comboBox_soundcard_output->currentIndex() < 0) {
             QMessageBox::information(this, tr("Information"), tr("You may not perform an audio test on this dialog choice!"), QMessageBox::Ok);
             return;
         }
@@ -1784,7 +1794,7 @@ void DialogSettings::on_pushButton_output_sound_test_clicked()
         int ret = msgBox.exec();
 
         if (ret == QMessageBox::Ok) {
-            gkAudioDevices->testSinewave(gkAudioSysOutput, chosen_output_audio_dev, false);
+            gkAudioDevices->testSinewave(gkAudioSysOutput, chosen_output_audio_dev, true);
             QMessageBox::information(this, tr("Finished"), tr("The audio test has now finished."), QMessageBox::Ok);
         } else if (ret == QMessageBox::Abort) {
             QMessageBox::information(this, tr("Aborted"), tr("The operation has been terminated."), QMessageBox::Ok);
@@ -1926,8 +1936,6 @@ void DialogSettings::on_comboBox_soundcard_api_currentIndexChanged(int index)
             for (const auto &rt_api: avail_rtaudio_api.toStdMap()) {
                 if (rt_api.first == ui->comboBox_soundcard_api->currentData().toInt()) {
                     chosen_rtaudio_api = rt_api.second;
-                    gkAudioSysInput.reset(new RtAudio(chosen_rtaudio_api));
-                    gkAudioSysOutput.reset(new RtAudio(chosen_rtaudio_api));
                 }
             }
         }
