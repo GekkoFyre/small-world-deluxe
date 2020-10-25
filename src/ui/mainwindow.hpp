@@ -56,7 +56,6 @@
 #include "src/gk_modem.hpp"
 #include "src/gk_system.hpp"
 #include "src/gk_text_to_speech.hpp"
-#include <RtAudio.h>
 #include <sentry.h>
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
@@ -89,7 +88,11 @@
 #include <QStringList>
 #include <QMainWindow>
 #include <QPushButton>
+#include <QAudioInput>
+#include <QAudioOutput>
+#include <QAudioFormat>
 #include <QSharedPointer>
+#include <QAudioDeviceInfo>
 #include <QCommandLineParser>
 
 namespace Ui {
@@ -268,7 +271,7 @@ signals:
     void startRecording();
 
     //
-    // RtAudio and related
+    // QAudioSystem and related
     //
     void changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &input_device);
 
@@ -317,15 +320,14 @@ private:
     boost::filesystem::path native_slash;
 
     //
-    // RtAudio initialization and buffers
+    // QAudioSystem initialization and buffers
     //
-    GekkoFyre::Database::Settings::Audio::GkAudioApi gkAudioApi;
-    QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> avail_input_audio_devs;
-    QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> avail_output_audio_devs;
+    QPointer<QAudioInput> gkAudioInput;
+    QPointer<QAudioOutput> gkAudioOutput;
+    QMap<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice> avail_input_audio_devs;
+    QMap<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice> avail_output_audio_devs;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
-    std::shared_ptr<RtAudio> gkAudioSysOutput;
-    std::shared_ptr<RtAudio> gkAudioSysInput;
     std::shared_ptr<GekkoFyre::PaAudioBuf<float>> input_audio_buf;
 
     //
@@ -443,7 +445,6 @@ Q_DECLARE_METATYPE(RIG);
 Q_DECLARE_METATYPE(size_t);
 Q_DECLARE_METATYPE(uint8_t);
 Q_DECLARE_METATYPE(rig_model_t);
-Q_DECLARE_METATYPE(RtAudio::Api);
 Q_DECLARE_METATYPE(std::vector<qint16>);
 Q_DECLARE_METATYPE(std::vector<double>);
 Q_DECLARE_METATYPE(std::vector<float>);

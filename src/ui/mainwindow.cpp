@@ -132,7 +132,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<size_t>("size_t");
     qRegisterMetaType<uint8_t>("uint8_t");
     qRegisterMetaType<rig_model_t>("rig_model_t");
-    qRegisterMetaType<RtAudio::Api>("RtAudio::Api");
     qRegisterMetaType<std::vector<qint16>>("std::vector<qint16>");
     qRegisterMetaType<std::vector<double>>("std::vector<double>");
     qRegisterMetaType<std::vector<float>>("std::vector<float>");
@@ -469,39 +468,66 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         try {
             gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(gkDb, fileIo, gkFreqList, gkStringFuncs,
                                                                        gkEventLogger, gkSystem, this);
-            gkAudioApi = gkAudioDevices->enumAudioDevicesCpp();
+
+            const auto outputDeviceInfos = QAudioDeviceInfo::availableDevices(QAudio::AudioOutput);
+            const auto inputDeviceInfos = QAudioDeviceInfo::availableDevices(QAudio::AudioInput);
+            avail_input_audio_devs = gkAudioDevices->enumAudioDevicesCpp(inputDeviceInfos);
+            avail_output_audio_devs = gkAudioDevices->enumAudioDevicesCpp(outputDeviceInfos);
 
             //
-            // Initialize any RtAudio libraries and associated buffers!
+            // Initialize any QAudioSystem libraries and associated buffers!
             //
-            auto api_settings = gkDb->read_audio_api_settings();
-            if (api_settings != RtAudio::UNSPECIFIED) {
-                gkAudioSysOutput = std::make_shared<RtAudio>(api_settings);
-                gkAudioSysInput = std::make_shared<RtAudio>(api_settings);
-            } else {
-                gkAudioSysOutput = std::make_shared<RtAudio>(RtAudio::UNSPECIFIED);
-                gkAudioSysInput = std::make_shared<RtAudio>(RtAudio::UNSPECIFIED);
-            }
+            const QString input_audio_device_settings = gkDb->read_audio_device_settings(false, false);
+            const QString output_audio_device_settings = gkDb->read_audio_device_settings(true, false);
 
-            if (!gkAudioApi.gkDevice.empty()) {
-                for (const auto &device: gkAudioApi.gkDevice) {
-                    // Now filter out what is the input and output device selectively!
-                    if (device.audio_src == GkAudioSource::Output) {
-                        // Output device
-                        pref_output_device = device;
-                        pref_output_device.is_dev_active = false;
-                    } else if (device.audio_src == GkAudioSource::Input) {
-                        // Input device
-                        pref_input_device = device;
-                        pref_input_device.is_dev_active = false;
-                    } else {
-                        // Input and Output device
-                        pref_output_device = device;
-                        pref_input_device = device;
-                        pref_output_device.is_dev_active = false;
-                        pref_input_device.is_dev_active = false;
+            //
+            // Input audio devices
+            //
+            if (!input_audio_device_settings.isEmpty()) {
+                if (!input_audio_device_settings.isEmpty() && !input_audio_device_settings.isNull()) {
+                    for (const auto &input_dev: avail_input_audio_devs.toStdMap()) {
+                        if (input_dev.second.audio_dev_str == input_audio_device_settings) {
+                            // Preferred input audio device
+                            pref_input_device = input_dev.second;
+                            gkAudioInput = new QAudioInput(input_dev.first, input_dev.second.user_settings, this);
+                        }
+                    }
+                } else {
+                    for (const auto &input_dev: avail_input_audio_devs.toStdMap()) {
+                        if (input_dev.second.default_input_dev) {
+                            // Use the default input audio device!
+                            pref_input_device = input_dev.second;
+                            gkAudioInput = new QAudioInput(input_dev.first, input_dev.second.user_settings, this);
+                        }
                     }
                 }
+            } else {
+                throw std::runtime_error(tr("Could not find any input audio devices!").toStdString());
+            }
+
+            //
+            // Output audio devices
+            //
+            if (!avail_output_audio_devs.isEmpty()) {
+                if (!output_audio_device_settings.isEmpty() && !output_audio_device_settings.isNull()) {
+                    for (const auto &output_dev: avail_output_audio_devs.toStdMap()) {
+                        if (output_dev.second.audio_dev_str == output_audio_device_settings) {
+                            // Preferred output audio device
+                            pref_output_device = output_dev.second;
+                            gkAudioOutput = new QAudioOutput(output_dev.first, output_dev.second.user_settings, this);
+                        }
+                    }
+                } else {
+                    for (const auto &output_dev: avail_output_audio_devs.toStdMap()) {
+                        if (output_dev.second.default_output_dev) {
+                            // Use the default output audio device!
+                            pref_output_device = output_dev.second;
+                            gkAudioOutput = new QAudioOutput(output_dev.first, output_dev.second.user_settings, this);
+                        }
+                    }
+                }
+            } else {
+                throw std::runtime_error(tr("Could not find any output audio devices!").toStdString());
             }
         } catch (const std::exception &e) {
             QString except_msg = tr("A generic exception has occurred while initializing the RtAudio library:\n\n%1").arg(e.what());
@@ -769,8 +795,9 @@ void MainWindow::launchSettingsWin()
     QObject::connect(gkFreqTableModel, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
                      gkFreqList, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)));
 
-    QPointer<DialogSettings> dlg_settings = new DialogSettings(gkDb, fileIo, gkAudioDevices, gkAudioApi,
-                                                               gkAudioSysOutput, gkAudioSysInput, gkRadioLibs,
+    QPointer<DialogSettings> dlg_settings = new DialogSettings(gkDb, fileIo, gkAudioDevices, gkAudioInput,
+                                                               gkAudioOutput, avail_input_audio_devs, avail_output_audio_devs,
+                                                               pref_input_device, pref_output_device, gkRadioLibs,
                                                                gkStringFuncs, gkRadioPtr, status_com_ports, gkUsbPortMap,
                                                                gkFreqList, gkFreqTableModel, gkEventLogger,
                                                                gkTextToSpeech, this);

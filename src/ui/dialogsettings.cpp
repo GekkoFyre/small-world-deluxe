@@ -82,9 +82,11 @@ std::mutex index_loop_mtx;
 DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
                                QPointer<FileIo> filePtr,
                                std::shared_ptr<AudioDevices> audioDevices,
-                               const GekkoFyre::Database::Settings::Audio::GkAudioApi &audioApi,
-                               std::shared_ptr<RtAudio> audioSysOutput,
-                               std::shared_ptr<RtAudio> audioSysInput,
+                               const QPointer<QAudioInput> &audioSysInput,
+                               const QPointer<QAudioOutput> &audioSysOutput,
+                               const QMap<QAudioDeviceInfo, GkDevice> &gkAvailInputDevs,
+                               const QMap<QAudioDeviceInfo, GkDevice> &gkAvailOutputDevs,
+                               const GkDevice &gkPrefInputDev, const GkDevice &gkPrefOutputDev,
                                QPointer<RadioLibs> radioLibs, QPointer<StringFuncs> stringFuncs,
                                std::shared_ptr<GkRadio> radioPtr,
                                const std::list<GekkoFyre::Database::Settings::GkComPort> &com_ports,
@@ -107,8 +109,6 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         gkDekodeDb = std::move(dkDb);
         gkFileIo = std::move(filePtr);
         gkAudioDevices = std::move(audioDevices);
-        gkAudioSysOutput = std::move(audioSysOutput);
-        gkAudioSysInput = std::move(audioSysInput);
         gkRadioPtr = std::move(radioPtr);
         gkFreqs = std::move(gkFreqList);
         gkFreqTableModel = std::move(freqTableModel);
@@ -116,7 +116,13 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         gkTextToSpeech = std::move(textToSpeechPtr);
         status_com_ports = com_ports;
 
-        gkAudioApi = audioApi;
+        gkAudioInput = audioSysInput;
+        gkAudioOutput = audioSysOutput;
+        avail_input_audio_devs = gkAvailInputDevs;
+        avail_output_audio_devs = gkAvailOutputDevs;
+        chosen_input_audio_dev = gkPrefInputDev;
+        chosen_output_audio_dev = gkPrefOutputDev;
+
         usb_ports_active = false;
         com_ports_active = false;
         audio_quality_val = 0.0;

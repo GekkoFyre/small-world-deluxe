@@ -1404,60 +1404,6 @@ QString GkLevelDb::read_audio_device_settings(const bool &is_output_device, cons
 }
 
 /**
- * @brief GkLevelDb::write_audio_api_settings Writes out the saved information concerning the user's choice of
- * decided upon RtAudio API settings.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param interface The user's last chosen settings for the decided upon RtAudio API.
- */
-void GkLevelDb::write_audio_api_settings(const RtAudio::Api &interface)
-{
-    try {
-        leveldb::WriteBatch batch;
-        leveldb::Status status;
-
-        batch.Put("AudioPortAudioAPISelection", RtAudio::getApiName(interface));
-
-        leveldb::WriteOptions write_options;
-        write_options.sync = true;
-
-        status = db->Write(write_options, &batch);
-
-        if (!status.ok()) { // Abort because of error!
-            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
-        }
-    } catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
-    }
-
-    return;
-}
-
-/**
- * @brief GkLevelDb::read_audio_api_settings Reads the saved information concerning the user's choice of decided
- * upon RtAudio API settings.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @return The user's last chosen settings for the decided upon RtAudio API.
- */
-RtAudio::Api GkLevelDb::read_audio_api_settings()
-{
-    leveldb::Status status;
-    leveldb::ReadOptions read_options;
-    std::string value;
-
-    std::lock_guard<std::mutex> lck_guard(read_audio_api_mtx);
-    read_options.verify_checksums = true;
-
-    status = db->Get(read_options, "AudioPortAudioAPISelection", &value);
-
-    if (!value.empty()) {
-        // Convert from `std::string` to `enum`!
-        return RtAudio::getCompiledApiByName(value);
-    }
-
-    return RtAudio::UNSPECIFIED;
-}
-
-/**
  * @brief GkLevelDb::removeInvalidChars removes invalid/illegal characters from a given std::string, making it all clean!
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param string_to_modify The given std::string to modify.

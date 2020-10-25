@@ -48,17 +48,19 @@
 #include "src/gk_frequency_list.hpp"
 #include "src/gk_logger.hpp"
 #include "src/gk_system.hpp"
-#include <RtAudio.h>
 #include <vector>
 #include <string>
 #include <memory>
 #include <mutex>
 #include <future>
 #include <thread>
+#include <QList>
 #include <QObject>
 #include <QString>
 #include <QVector>
 #include <QPointer>
+#include <QAudioFormat>
+#include <QAudioDeviceInfo>
 
 namespace GekkoFyre {
 
@@ -72,7 +74,7 @@ public:
                           QObject *parent = nullptr);
     ~AudioDevices() override;
 
-    GekkoFyre::Database::Settings::Audio::GkAudioApi enumAudioDevicesCpp();
+    QMap<QAudioDeviceInfo, Database::Settings::Audio::GkDevice> enumAudioDevicesCpp(const QList<QAudioDeviceInfo> &audioDeviceInfo);
 
     void systemVolumeSetting();
     float vuMeter(const int &channels, const int &count, float *buffer);
@@ -95,14 +97,6 @@ private:
     QPointer<StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     QPointer<GekkoFyre::GkSystem> gkSystem;
-
-    static inline qint32 playbackSaw(void *outputBuffer, void *inputBuffer, quint32 nBufferFrames, double streamTime, RtAudioStreamStatus status, void *userData);
-
-    static inline quint32 frameCounter;
-    static inline quint32 nFrames;
-    static inline quint32 callbackReturnValue;
-    static inline qint32 channels;
-    static inline bool checkCount;
 
 };
 };

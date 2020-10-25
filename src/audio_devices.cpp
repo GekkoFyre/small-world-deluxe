@@ -86,18 +86,14 @@ AudioDevices::AudioDevices(QPointer<GkLevelDb> gkDb, QPointer<FileIo> filePtr,
                            QPointer<GekkoFyre::GkEventLogger> eventLogger, QPointer<GekkoFyre::GkSystem> systemPtr,
                            QObject *parent)
 {
+    setParent(parent);
+
     gkDekodeDb = std::move(gkDb);
     gkFileIo = std::move(filePtr);
     gkFreqList = std::move(freqList);
     gkStringFuncs = std::move(stringFuncs);
     gkEventLogger = std::move(eventLogger);
     gkSystem = std::move(systemPtr);
-
-    callbackReturnValue = 1;
-    frameCounter = 0;
-    nFrames = 0;
-    channels = 0;
-    checkCount = false;
 }
 
 AudioDevices::~AudioDevices()
@@ -107,129 +103,37 @@ AudioDevices::~AudioDevices()
  * @brief AudioDevices::enumAudioDevicesCpp Enumerate out all the findable audio devices within the user's computer system.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return The found audio devices and their statistics.
+ * @note <https://doc.qt.io/qt-5/audiooverview.html>.
  */
-GkAudioApi AudioDevices::enumAudioDevicesCpp()
+QMap<QAudioDeviceInfo, GkDevice> AudioDevices::enumAudioDevicesCpp(const QList<QAudioDeviceInfo> &audioDeviceInfo)
 {
     try {
         std::lock_guard<std::mutex> audio_guard(enum_audio_dev_mtx);
-        std::vector<GkDevice> audio_devices_vec;                        // The vector responsible for storage all audio device sessions
+        QMap<QAudioDeviceInfo, GkDevice> audio_devices_map;
 
-        // Create an api map.
-        std::map<RtAudio::Api, std::string> apiMap;
-        apiMap[RtAudio::MACOSX_CORE] = tr("Apple Mac OS/X (Core Audio)").toStdString();
-        apiMap[RtAudio::WINDOWS_ASIO] = tr("Microsoft Windows ASIO").toStdString();
-        apiMap[RtAudio::WINDOWS_DS] = tr("Microsoft Windows DirectSound").toStdString();
-        apiMap[RtAudio::WINDOWS_WASAPI] = tr("Microsoft Windows WASAPI").toStdString();
-        apiMap[RtAudio::UNIX_JACK] = tr("Jack Client").toStdString();
-        apiMap[RtAudio::LINUX_ALSA] = tr("Linux ALSA").toStdString();
-        apiMap[RtAudio::LINUX_PULSE] = tr("Linux PulseAudio").toStdString();
-        apiMap[RtAudio::LINUX_OSS] = tr("Linux OSS").toStdString();
-        apiMap[RtAudio::RTAUDIO_DUMMY] = tr("RtAudio Dummy").toStdString();
+        qint32 counter = 0;
+        for (const auto &device: audioDeviceInfo) {
+            if (!device.isNull()) {
+                GkDevice gkDevice;
+                gkDevice.audio_dev_str = device.deviceName();
+                gkDevice.default_input_dev = false;
+                gkDevice.default_output_dev = false;
+                gkDevice.audio_device_info = new QAudioDeviceInfo(device);
 
-        GkAudioApi gkAudio;
-
-        gkAudio.api_map = apiMap;
-        RtAudio::getCompiledApi(gkAudio.api_used);
-        gkAudio.api_version = RtAudio::getVersion();
-
-        for (quint32 i = 0; i < gkAudio.api_used.size(); ++i) {
-            std::cout << gkAudio.api_map[gkAudio.api_used[i]] << std::endl;
-        }
-
-        for (const auto &api: gkAudio.api_used) { // Iterate over each API in the user's system, to garner all the Audio Devices!
-            std::unique_ptr<RtAudio> dac = std::make_unique<RtAudio>(api);
-            quint32 device_count = dac->getDeviceCount();
-            std::cout << tr("Found %1 device(s) for API: \"%2\"!")
-            .arg(QString::number(device_count))
-            .arg(QString::fromStdString(RtAudio::getApiDisplayName(api))).toStdString() << std::endl;
-
-            for (quint32 i = 0; i < device_count; ++i) {
-                GkDevice device;
-                device.device_info = dac->getDeviceInfo(i);
-                device.device_id = i;
-                device.audio_dev_str = QString::fromStdString(device.device_info.name);
-                device.assoc_api = api;
-
-                if (device.device_info.probed) {
-                    device.dev_input_channel_count = device.device_info.inputChannels;
-                    device.dev_output_channel_count = device.device_info.outputChannels;
-                    device.default_output_dev = device.device_info.isDefaultOutput;
-                    device.default_input_dev = device.device_info.isDefaultInput;
-
-                    if (device.dev_input_channel_count > 0 && device.dev_output_channel_count <= 0) {
-                        device.audio_src = GkAudioSource::Input;
-                    }
-
-                    if (device.dev_output_channel_count > 0 && device.dev_input_channel_count <= 0) {
-                        device.audio_src = GkAudioSource::Output;
-                    }
-
-                    if (device.dev_output_channel_count > 0 && device.dev_input_channel_count > 0) {
-                        device.audio_src = GkAudioSource::InputOutput;
-                    }
-
-                    if (device.default_output_dev) {
-                        std::cout << tr("This is the DEFAULT **output** audio device!").toStdString() << std::endl;
-                    }
-
-                    if (device.default_input_dev) {
-                        std::cout << tr("This is the DEFAULT **input** audio device!").toStdString() << std::endl;
-                    }
-
-                    if (device.device_info.nativeFormats == 0) {
-                        std::cout << tr("No natively supported data formats(?)!").toStdString();
-                    } else {
-                        std::cout << tr("Natively supported data formats:").toStdString() << std::endl;
-                        if (device.device_info.nativeFormats & RTAUDIO_SINT8) {
-                            std::cout << tr("  8-bit int").toStdString() << std::endl;
-                        }
-
-                        if (device.device_info.nativeFormats & RTAUDIO_SINT16) {
-                            std::cout << tr("  16-bit int").toStdString() << std::endl;
-                        }
-
-                        if (device.device_info.nativeFormats & RTAUDIO_SINT24) {
-                            std::cout << tr("  24-bit int").toStdString() << std::endl;
-                        }
-
-                        if (device.device_info.nativeFormats & RTAUDIO_SINT32) {
-                            std::cout << tr("  32-bit int").toStdString() << std::endl;
-                        }
-
-                        if (device.device_info.nativeFormats & RTAUDIO_FLOAT32) {
-                            std::cout << tr("  32-bit float").toStdString() << std::endl;
-                        }
-
-                        if (device.device_info.nativeFormats & RTAUDIO_FLOAT64) {
-                            std::cout << tr("  64-bit float").toStdString() << std::endl;
-                        }
-                    }
-
-                    if (device.device_info.sampleRates.size() < 1) {
-                        std::cout << tr("No supported sample rates found!").toStdString() << std::endl;
-                    } else {
-                        std::cout << tr("Supported sample rates = ").toStdString();
-                        for (quint32 j = 0; j < device.device_info.sampleRates.size(); ++j) {
-                            std::cout << device.device_info.sampleRates[j] << " ";
-                        }
-                    }
-
-                    std::cout << std::endl;
-                    if (device.device_info.preferredSampleRate == 0) {
-                        std::cout << tr("No preferred sample rate found!").toStdString() << std::endl;
-                    } else {
-                        std::cout << tr("Preferred sample rate = ").toStdString() << device.device_info.preferredSampleRate << std::endl;
-                    }
-
-                    std::cout << std::endl;
-                    gkAudio.gkDevice.push_back(device);
-                } else {
-                    gkEventLogger->publishEvent(tr("Unable to probe given audio device, \"%1\".").arg(QString::fromStdString(device.device_info.name)), Events::Logging::GkSeverity::Warning, "", false, true, false, false);
+                if (gkDevice.audio_dev_str == QAudioDeviceInfo::defaultInputDevice().deviceName()) {
+                    gkDevice.default_input_dev = true;
                 }
+
+                if (gkDevice.audio_dev_str == QAudioDeviceInfo::defaultOutputDevice().deviceName()) {
+                    gkDevice.default_output_dev = true;
+                }
+
+                audio_devices_map.insert(device, gkDevice);
+                ++counter;
             }
         }
 
-        return gkAudio;
+        return audio_devices_map;
     } catch (const std::exception &e) {
         QString error_msg = tr("A generic exception has occurred:\n\n%1").arg(e.what());
         gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
@@ -238,7 +142,7 @@ GkAudioApi AudioDevices::enumAudioDevicesCpp()
         gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
     }
 
-    return GkAudioApi();
+    return QMap<QAudioDeviceInfo, GkDevice>();
 }
 
 /**
@@ -310,51 +214,6 @@ void AudioDevices::testSinewave(std::shared_ptr<RtAudio> &dac, const GkDevice &a
     }
 
     return;
-}
-
-/**
- * @brief AudioDevices::playbackSaw
- * @author nagachika <https://gist.github.com/nagachika/165241/604224f8ec3110ecae2490efbf41681d2e4deb54>,
- * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>.
- * @param outputBuffer
- * @param inputBuffer
- * @param nBufferFrames
- * @param streamTime
- * @param status
- * @param userData
- * @return
- */
-qint32 AudioDevices::playbackSaw(void *outputBuffer, void *inputBuffer, quint32 nBufferFrames, double streamTime, RtAudioStreamStatus status, void *userData)
-{
-    Q_UNUSED(inputBuffer);
-    Q_UNUSED(streamTime);
-    Q_UNUSED(status);
-
-    auto *buf = (float *)outputBuffer;
-    float *lastValues = (float *)userData;
-
-    if (status) {
-        std::cerr << tr("Stream underflow detected!").toStdString() << std::endl;
-    }
-
-    float increment;
-    for (quint32 j = 0; j < channels; ++j) {
-        increment = BASE_RATE * (j + 1 + (j * 0.1));
-        for (quint32 i = 0; i < nBufferFrames; ++i) {
-            *buf++ = (float) (lastValues[j] * SCALE * 0.5);
-            lastValues[j] += increment;
-            if (lastValues[j] >= 1.0) {
-                lastValues[j] -= 2.0;
-            }
-        }
-    }
-
-    frameCounter += nBufferFrames;
-    if (checkCount && (frameCounter >= nFrames)) {
-        return callbackReturnValue;
-    }
-
-    return 0;
 }
 
 /**

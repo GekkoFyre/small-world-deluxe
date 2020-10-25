@@ -163,7 +163,7 @@ else()
     message(FATAL_ERROR "Could not find the Threads library!")
 endif(Threads_FOUND)
 
-find_package(Qt5 COMPONENTS Core Gui Widgets Network SerialPort PrintSupport TextToSpeech Test REQUIRED)
+find_package(Qt5 COMPONENTS Core Gui Widgets Network Multimedia SerialPort PrintSupport TextToSpeech Test REQUIRED)
 
 if (MSYS OR MINGW OR LINUX)
     set(Boost_USE_STATIC_LIBS OFF CACHE BOOL "Use static libraries when linking Boost C++.")
@@ -404,18 +404,6 @@ endif()
 #
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/leveldb")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/leveldb/include")
-
-#
-# RtAudio [ https://github.com/thestk/rtaudio ]
-#
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/rtaudio")
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/rtaudio")
-
-if(WIN32 OR MSYS OR MINGW)
-    set(RTAUDIO_API_DS "Build DirectSound API" ON)
-    set(RTAUDIO_API_ASIO "Build ASIO API" ON)
-elseif(LINUX)
-endif()
 
 #
 # Sentry (native)
@@ -729,7 +717,7 @@ if(GFYRE_BUILD_SHARED)
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
-target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::SerialPort Qt5::PrintSupport Qt5::TextToSpeech Qt5::Test Threads::Threads SingleApplication::SingleApplication sentry::sentry rtaudio leveldb ${LIBS})
+target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::Multimedia Qt5::SerialPort Qt5::PrintSupport Qt5::TextToSpeech Qt5::Test Threads::Threads SingleApplication::SingleApplication sentry::sentry leveldb ${LIBS})
 
 qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)
 add_dependencies(galaxy resources)
