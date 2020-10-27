@@ -42,16 +42,20 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/pa_audio_file.hpp"
 #include "src/pa_stream_handler.hpp"
 #include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
+#include "src/gk_string_funcs.hpp"
+#include <boost/filesystem.hpp>
+#include <boost/exception/all.hpp>
 #include <memory>
-#include <vector>
 #include <string>
 #include <QString>
 #include <QObject>
 #include <QPointer>
+
+namespace fs = boost::filesystem;
+namespace sys = boost::system;
 
 namespace GekkoFyre {
 
@@ -60,17 +64,18 @@ class GkPaAudioPlayer : public QObject {
 
 public:
     explicit GkPaAudioPlayer(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
-                             QPointer<GekkoFyre::GkEventLogger> eventLogger, GekkoFyre::Database::Settings::GkAudioChannels audio_channels,
+                             const QPointer<GekkoFyre::GkEventLogger> &eventLogger, QPointer<GekkoFyre::StringFuncs> stringFuncs,
                              QObject *parent = nullptr);
     virtual ~GkPaAudioPlayer();
 
-    void play(QString audio_file);
-    void loop(QString audio_file);
-    void stop();
+    void play(const fs::path &audio_file);
+    void loop(const fs::path &audio_file);
+    void stop(const fs::path &audio_file);
 
 private:
-    std::unique_ptr<GkPaAudioFileHandler> fileHandler;
-    std::unique_ptr<GkPaStreamHandler> streamHandler;
+    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
+
+    QPointer<GkPaStreamHandler> streamHandler;
 
 };
 };

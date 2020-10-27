@@ -79,12 +79,9 @@ template <class T>
 class PaAudioBuf {
 
 public:
-    explicit PaAudioBuf(qint32 buffer_size, qint64 num_samples_per_channel, const GekkoFyre::Database::Settings::Audio::GkDevice &pref_output_device,
-                        const GekkoFyre::Database::Settings::Audio::GkDevice &pref_input_device, QPointer<GekkoFyre::GkLevelDb> gkDb);
+    explicit PaAudioBuf(qint32 buffer_size, qint64 num_samples_per_channel, const GekkoFyre::Database::Settings::Audio::GkDevice &pref_audio_device, QPointer<GekkoFyre::GkLevelDb> gkDb);
     virtual ~PaAudioBuf();
 
-    int recordCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
-                       const PaStreamCallbackTimeInfo *timeInfo, PaStreamCallbackFlags statusFlags);
     void setVolume(const float &value);
 
     [[nodiscard]] virtual size_t size() const;
@@ -98,13 +95,12 @@ private:
     QPointer<GekkoFyre::GkLevelDb> gkLevelDb;
 
     static inline std::shared_ptr<GekkoFyre::GkCircBuffer<T>> gkCircBuffer;
-    GekkoFyre::Database::Settings::Audio::GkDevice prefInputDevice;
-    GekkoFyre::Database::Settings::Audio::GkDevice prefOutputDevice;
+    GekkoFyre::Database::Settings::Audio::GkDevice gkPrefAudioDevice;
 
     qint32 circ_buffer_size;
     qint32 maxFrameIndex;
     qint64 numSamplesPerChannel;
-    float calcVolIdx; // A floating-point value between 0.0 - 1.0 that determines the amplitude of the audio signal (i.e. raw data buffer).
+    static inline float calcVolIdx; // A floating-point value between 0.0 - 1.0 that determines the amplitude of the audio signal (i.e. raw data buffer).
 
 };
 
@@ -116,7 +112,7 @@ private:
  * @param parent
  */
 template<class T>
-PaAudioBuf<T>::PaAudioBuf(qint32 buffer_size, qint64 num_samples_per_channel, const GkDevice &pref_output_device, const GkDevice &pref_input_device, QPointer<GekkoFyre::GkLevelDb> gkDb)
+PaAudioBuf<T>::PaAudioBuf(qint32 buffer_size, qint64 num_samples_per_channel, const GkDevice &pref_audio_device, QPointer<GekkoFyre::GkLevelDb> gkDb)
 {
     std::mutex pa_audio_buf_mtx;
     std::lock_guard<std::mutex> lck_guard(pa_audio_buf_mtx);
@@ -124,8 +120,7 @@ PaAudioBuf<T>::PaAudioBuf(qint32 buffer_size, qint64 num_samples_per_channel, co
     gkLevelDb = std::move(gkDb);
 
     // The preferred input and output audio devices
-    prefInputDevice = pref_input_device;
-    prefOutputDevice = pref_output_device;
+    gkPrefAudioDevice = pref_audio_device;
 
     calcVolIdx = 1.f;
     maxFrameIndex = 0;
@@ -142,39 +137,6 @@ template<class T>
 PaAudioBuf<T>::~PaAudioBuf()
 {
     return;
-}
-
-/**
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @tparam T
- * @param inputBuffer
- * @param outputBuffer
- * @param framesPerBuffer
- * @param timeInfo
- * @param statusFlags
- * @return
- */
-template<class T>
-int PaAudioBuf<T>::recordCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
-                                  const PaStreamCallbackTimeInfo* timeInfo, PaStreamCallbackFlags statusFlags)
-{
-    std::mutex record_loop_mtx;
-    std::lock_guard<std::mutex> lck_guard(record_loop_mtx);
-
-    // Prevent unused variable warnings!
-    Q_UNUSED(outputBuffer);
-    Q_UNUSED(timeInfo);
-    Q_UNUSED(statusFlags);
-
-    int finished = paContinue;
-    auto *buffer_ptr = (T *)inputBuffer;
-
-    for (size_t i = 0; i < framesPerBuffer; ++i) {
-        buffer_ptr[i] *= (T)(buffer_ptr[i] * calcVolIdx); // The volume adjustment!
-        gkCircBuffer->put(buffer_ptr[i] + i);
-    }
-
-    return finished;
 }
 
 /**

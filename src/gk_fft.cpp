@@ -43,6 +43,7 @@
 #include <QtMath>
 #include <algorithm>
 #include <iostream>
+#include <iterator>
 #include <utility>
 #include <cmath>
 
@@ -102,7 +103,7 @@ std::vector<GkFFTSpectrum> GkFFT::FFTCompute(const std::vector<float> &data, con
                 m_window[i] = window;
             }
 
-            m_spectrum_buffer = QVector<float>::fromStdVector(data);
+            std::copy(data.begin(), data.end(), std::back_inserter(m_spectrum_buffer));
             while (m_spectrum_buffer.size() >= int(numSamples)) {
                 QVector<float> middle = m_spectrum_buffer.mid(0, numSamples * sizeof(float));
                 int len = middle.size();
@@ -128,7 +129,7 @@ std::vector<GkFFTSpectrum> GkFFT::FFTCompute(const std::vector<float> &data, con
                 // Analyze output to obtain amplitude and phase for each frequency
                 for (int i = 2; i <= numSamples / 2; ++i) {
                     // Calculate frequency of this complex sample
-                    m_spectrum[i].frequency = std::round(i * std::round(audioDevice.def_sample_rate) / numSamples);
+                    m_spectrum[i].frequency = std::round(i * std::round(audioDevice.chosen_sample_rate) / numSamples);
 
                     kiss_fft_cpx cpx = outbuf[i];
 

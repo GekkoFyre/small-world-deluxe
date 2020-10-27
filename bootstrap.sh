@@ -1,3 +1,5 @@
+ #!/bin/bash
+
 #
 #     __                 _ _   __    __           _     _ 
 #    / _\_ __ ___   __ _| | | / / /\ \ \___  _ __| | __| |
@@ -38,21 +40,19 @@
 #   [ 1 ] - https://code.gekkofyre.io/amateur-radio/small-world-deluxe
 #
 
-find_package(PkgConfig)
-pkg_check_modules(PC_PortAudio QUIET portaudio)
-set(PortAudio_DEFINITIONS ${PC_PortAudio_CFLAGS_OTHER})
+cd src/contrib
+git submodule update --init --recursive
 
-find_path(PortAudio_INCLUDE_DIR NAMES "portaudio.h"
-            HINTS ${PC_PortAudio_INCLUDE_DIR} ${PC_PortAudio_INCLUDE_DIRS}
-            PATH_SUFFIXES portaudio)
+cd leveldb/third_party
+git submodule update --init --recursive
 
-find_library(PortAudio_LIBRARY NAMES "portaudio" "libportaudio" "portaudio_static_x64" "portaudio_x64" "portaudio_x86" "portaudio_static_x86"
-            HINTS ${PC_PortAudio_LIBDIR} ${PC_PortAudio_LIBRARY_DIRS})
+cd ./../../../..
+mkdir swd-build
+cd swd-build
 
-include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(PortAudio DEFAULT_MSG PortAudio_LIBRARY PortAudio_INCLUDE_DIR)
+cmake -G "Unix Makefiles" -DENBL_VALGRIND_SUPPORT=ON ..
+make -j$(nproc)
 
-mark_as_advanced(PortAudio_INCLUDE_DIR PortAudio_LIBRARY)
-
-set(PortAudio_LIBRARIES ${PortAudio_LIBRARY})
-set(PortAudio_INCLUDE_DIRS ${PortAudio_INCLUDE_DIR})
+echo "Build of Small World Deluxe has been completed successfully!"
+echo "Check directory:"
+pwd

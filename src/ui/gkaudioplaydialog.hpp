@@ -71,7 +71,6 @@ class GkAudioPlayDialog : public QDialog
 
 public:
     explicit GkAudioPlayDialog(QPointer<GekkoFyre::GkLevelDb> database,
-                               portaudio::System *portAudioSys,
                                QPointer<GekkoFyre::GkAudioDecoding> audio_decoding,
                                std::shared_ptr<GekkoFyre::AudioDevices> audio_devices,
                                const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
@@ -101,7 +100,6 @@ signals:
 private:
     Ui::GkAudioPlayDialog *ui;
 
-    portaudio::System *gkPortAudioSys;
     std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevs;
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::GkAudioDecoding> gkAudioDecode;
@@ -120,7 +118,6 @@ private:
     //
     // PortAudio initialization and buffers
     //
-    PaStream *gkPaStream;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
 
     //

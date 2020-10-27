@@ -14,23 +14,29 @@ We are presently implementing support for [Codec2](https://github.com/drowe67/co
 
 If you wish to contribute your own work and effort to the project then by all means, please do so! This is 100% a group effort where everyone interested takes part, which is why we made this project free and open-source in nature. We want the entire amateur radio community to benefit from the fruits of our labor and then some.
 
+#### Multimedia re-implementation
+
+[ 2020 10 23 ] Work is now being actively undertaken to implement [RtAudio](https://www.music.mcgill.ca/~gary/rtaudio/) throughout the application in places where [PortAudio](http://www.portaudio.com/) was used originally, because we feel the former is a better fit for `Small World Deluxe` overall. It offers features in areas that `PortAudio` doesn't and best of all, has native C++ bindings! These are only an afterthought with `PortAudio` and are barely updated, if at all (last update as of writing this for those bindings is somewhere between 5 and 13 years ago). We recommend that you check back on `Small World Deluxe` often to see how we are doing with regards to `RtAudio` and whether it might be a suitable fit for your own, OSS project.
+
 #### Current / Planned Features
 
-Following is a short list of features, both planned and partially already implemented in some fashion, that we have for this project. We are always taking on new ideas, paradigms, and/or perspectives so please, we invite you to contribute towards `Small World Deluxe` in any manner that you are able towards.
+Following is a short list of features, both planned and partially already implemented in some fashion, that we have for this project. We are always taking on new ideas, paradigms, and/or perspectives so please, we invite you to contribute towards `Small World Deluxe` in any manner that you are able towards. Should you wish to suggest something, we recommend that you [make a post on our Issues board](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/issues)!
 
-- The ability to send textual messages to others around the globe over the HF bands, thanks to support with the aforementioned `Codec2` modem. Basic support for this is already present to a certain degree, and the user may choose to compile `Small World Deluxe` with or without the `Codec2` library.
-  - This will allow digital communication primarily on the shortwave frequencies over great distances to far away places in the world from your own location, with excellent error correction features and so on.
-- A functioning spectrograph / waterfall that will give you a highly detailed view of current signaling conditions, both outgoing (TX) and incoming (RX). There is already a basic operating version of this present, we just need to amp up the resolution along with performance and we'll have an excellent spectrogram feature to boot!
+- The ability to send textual messages to others around the globe over the HF bands, thanks to support with the aforementioned `Codec2` modem, as well as others. Basic support for `Codec2` is already present to a certain degree, and the user may choose to compile `Small World Deluxe` with or without this library as according to their choosing.
+  - This will allow digital communication primarily on the shortwave frequencies over great distances to far away places in the world from your own location, with excellent [ECC features](https://en.wikipedia.org/wiki/Error_correction_code) and so on.
+- A functioning spectrograph / waterfall that will give you a highly detailed view of current signalling conditions, for both outgoing (TX) and incoming (RX) signals. There is already a basic operating version of this present, we just need to amp up the resolution along with performance and we'll have an excellent spectrogram feature to boot!
+  - At present, we recommend that you compile `Small World Deluxe` without the spectrograph / waterfall if testing functionality. Therefore you should use the CMake flag, `-DENBL_VALGRIND_SUPPORT=ON`, which among other things, allows better support for Valgrind debugging as the name suggests.
+    - Due to the nature of the spectrograph / waterfall and its performance requirements, disabling it when debugging with Valgrind will drastically improve performance, even when using a high-end CPU. I speak from experience despite using an `AMD Ryzen 9 3900XT`.
 - The ability to record/playback [WAV](https://en.wikipedia.org/wiki/WAV)/[OGG](https://xiph.org/vorbis/)/[Opus](https://opus-codec.org/)/etc files. These are not meant for real-time communications due to the inherent latency issues therein of these codecs and the requirement for a high-performance computer to keep up.
-- A settings dialog rich with customisation options that you can configure to your heart's desire. Reasonably decent support for this is already present.
-- Easily send messages to others throughout the world and efficiently make sense of the information you receive in-turn.
-- As hinted at just above, this software application is cross-platform with excellent support for both [Linux](https://ubuntu.com/) and [Microsoft Windows 7 through to 10](https://www.microsoft.com/). Although for `Microsoft Windows`, you must compile the program with [MinGW](http://www.mingw.org/) or [Cygwin](https://www.cygwin.com/) due to `Codec2` having no support with [Microsoft Visual Studio](https://visualstudio.microsoft.com/).
+- A settings dialog rich with customisation options that you can configure to your heart's desire (reasonably decent support for this is already present).
+- As hinted at just above, this software application is cross-platform with excellent support for both [Linux](https://ubuntu.com/) and [Microsoft Windows 7 through to 10](https://www.microsoft.com/). Although for `Microsoft Windows`, you must compile the program with [MinGW](http://www.mingw.org/) or [Cygwin](https://www.cygwin.com/) due to `Codec2` possessing no support with [Microsoft Visual Studio](https://visualstudio.microsoft.com/).
   - There is planned support for legacy operating systems such as [Microsoft Windows XP](https://www.microsoft.com/) and perhaps earlier, along with other such systems like [Macintosh OS/X](https://www.apple.com/macos) where there is no current implemented support, so stay tuned!
-- Make extensive use of the [PortAudio project](http://www.portaudio.com/) for easy cross-compatibility with audio/multimedia devices between `Linux`, `Macintosh OS/X`, and `Microsoft Windows` systems. The support for this within `Small World Deluxe` is largely established already.
+- Make extensive use of the [RtAudio](https://www.music.mcgill.ca/~gary/rtaudio/) for easy cross-compatibility with audio/multimedia devices between `Linux`, `Macintosh OS/X`, and `Microsoft Windows` systems.
+  - We are [currently rewriting the multimedia code](#Multimedia-re-implementation) to replace existing PortAudio functionality with RtAudio code instead!
 
 ##### Screenshots
 
-Please note that what is displayed just below may/perhaps be awfully out-of-date. If you want to see how `Small World Deluxe` currently looks, then we advise you to [download the latest release](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/releases), or if a binary is not available, then to please wait and until a sufficient version *is* available. The *lack of a release* means that we're not stable enough yet.
+Please note that what is displayed just below may perhaps be awfully out-of-date. If you want to see how `Small World Deluxe` currently looks, then we advise you to [download the latest release](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/releases), or if a binary is not available, then to please wait and until a sufficient version *is* available. The *lack of a release* means that we're not stable enough yet.
 
 ![smallworld_mainwindow_1](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/raw/f72a0eb986abe8c94fb755b2457da0ace7ac281c/assets/images/screenshots/2020-07-15/Screenshot_20200715_001410.png)
 
@@ -48,7 +54,7 @@ Please note that what is displayed just below may/perhaps be awfully out-of-date
 
 #### Binaries
 
-At the time of writing this (17th August, 2020), we expect to be providing binaries for `Small World Deluxe` within the coming weeks/months as the project slowly becomes further realized. It is not worth providing such currently since the project has only just recently been commissioned and there's very little to see, other than a proof-of-concept.
+At the time of writing this (23rd October, 2020), we expect to be providing binaries for `Small World Deluxe` within the coming weeks/months as the project slowly becomes further realised. It is not worth providing such currently since the project has only just semi-recently been commissioned and there's very little to see, other than a mostly proof-of-concept. It takes quite a bit more time to code an application in C++ than to do the equivalent in another, similar language such as [Python](https://www.python.org/), which is much higher-level!
 
 Be sure to check back often for further updates!
 
@@ -56,32 +62,33 @@ Be sure to check back often for further updates!
 
 ##### General Requirements
 
-This is to come soon! Check back often for updates :)
+Please [see this page within our Wiki](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/wikis/Installation/Compilation) for the generalised requirements. [Instructions for Linux are available right now](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/wikis/Installation/Compilation#linux) whilst a guide for Microsoft Windows and then sometime later than that, Apple Macintosh OS/X, will slowly become available to the general public as well when we begin more widespread testing on these platforms.
 
 ##### Linux and similar
 
-To begin with, you will need to install the following dependencies along with the [GCC Toolchain](https://gcc.gnu.org/) or [LLVM/Clang](https://clang.llvm.org/):
+Whilst not all of these libraries are required, since some already come within this Git repository to begin with as a submodule (check the `src/contrib` directory), you will need to [check this page for which additional dependencies to install](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/wikis/Installation/Compilation) along with either the [GCC Toolchain](https://gcc.gnu.org/) or [LLVM/Clang](https://clang.llvm.org/). The following is mostly an exhaustive list as a thank you to everyone for making `Small World Deluxe` possible:
 
 - `CMake` [ [build process managerial software](https://cmake.org/) ]
 - `Boost C++` [ [development libraries](https://www.boost.org/) that must be *static* **and also** *multithreaded* libraries, unless you modify CMake's instructions ]
-- `NVIDIA CUDA Toolkit` [ [parallel computing platform](https://developer.nvidia.com/cuda-zone) for general computing on GPUs (optional) ]
-- `PortAudio` [ [multimedia libraries](http://portaudio.com/) ]
+- `NVIDIA CUDA Toolkit` [ [parallel computing platform](https://developer.nvidia.com/cuda-zone) for general computing on GPUs (completely optional) ]
+- `RtAudio` [ [multimedia libraries](https://www.music.mcgill.ca/~gary/rtaudio/) ]
 - `Codec2` [ [next generation low bit-rate speech codec for amateur radio use](https://github.com/drowe67/codec2) ]
 - `libusb-devel` [ [development libraries](https://github.com/libusb/libusb) ]
 - `leveldb-devel` [ [development libraries](https://github.com/google/leveldb) for NoSQL information storage [by Google](https://www.google.com/) ]
 - `HamLib` C++ [ [development libraries](https://hamlib.github.io/) for communicating with amateur radio transceiver rigs ]
 - `Qt5` [ [development libraries](https://www.qt.io/) ]
 - `Ogg Vorbis`  [audio codec libraries](https://xiph.org/vorbis/) along with the related `Opus` libraries
+- `libsndfile` [ [libraries for the reading/writing of sampled sound](http://www.mega-nerd.com/libsndfile/) ]
 - `Qwt` [ [graphing libraries](https://qwt.sourceforge.io/) for the instrumental display of information ]
 - `Zlib` [ [data compression library](https://zlib.net/) ]
 - `zstd` [ [real-time compresion algorithm](https://facebook.github.io/zstd/) ]
 - `iconv` [ [converts between different character encodings](https://www.gnu.org/software/libiconv/) ]
 
-Some of the aforementioned dependencies need to be manually cloned via their respective Git repositories (links provided above) and compiled by hand, due to the fact that we are working with bleeding edge technology and code. The dependencies we are aware of which fall into this camp are the following:
+Some of the aforementioned dependencies need to be manually cloned via their respective Git repositories (links provided above) and compiled by hand, due to the fact that we are working with bleeding edge technology and code. As such, they are not usually provided by most Linux binary repositories. The dependencies we are aware of which usually fall into this camp are the following:
 
 - `Codec2`
-- `PortAudio`
 - `Hamlib` (and the `C++ bindings`)
+- `NVIDIA Cuda Toolkit` (entirely optional)
 
 Hints on how to compile this software can be taken from the `.gitlab-ci.yml` file within the root of our Git repository, for where we are in deficient provisioning of such documentation for. We cannot stress enough that binaries will be provided soon, it's just that `Small World Deluxe` is not quite at that stage yet of being demonstrated on a larger scale.
 

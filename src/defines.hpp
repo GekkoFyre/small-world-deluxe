@@ -44,7 +44,6 @@
 //-V::1042
 
 #include "src/gk_string_funcs.hpp"
-#include <portaudiocpp/PortAudioCpp.hxx>
 #include <boost/exception/all.hpp>
 #include <boost/logic/tribool.hpp>
 #include <boost/filesystem.hpp>
@@ -63,21 +62,19 @@
 #include <iostream>
 #include <exception>
 #include <streambuf>
+#include <QList>
 #include <QString>
 #include <QVector>
 #include <QVariant>
 #include <QPointer>
 #include <QDateTime>
 #include <QStringList>
+#include <QAudioFormat>
 #include <QtUsb/QUsbDevice>
 #include <QSerialPortInfo>
+#include <QAudioDeviceInfo>
 
 #if defined(_WIN32) || defined(__MINGW64__)
-#ifdef PA_USE_ASIO
-#include <pa_asio.h>
-#include "contrib/portaudio/cpp/include/portaudiocpp/AsioDeviceAdapter.hxx"
-#endif
-
 #include <winsdkver.h>
 #include <Windows.h>
 #include <tchar.h> // https://linuxgazette.net/147/pfeiffer.html
@@ -100,13 +97,14 @@ extern "C"
 
 namespace GekkoFyre {
 
-#define GK_EXIT_TIMEOUT (6)                             // The amount of time, in seconds, to leave 'Small World Deluxe' hanging upon exit before terminating forcefully!
+#define GK_EXIT_TIMEOUT (6)                                     // The amount of time, in seconds, to leave 'Small World Deluxe' hanging upon exit before terminating forcefully!
 #define MIN_MAIN_WINDOW_WIDTH (1024)
 #define MIN_MAIN_WINDOW_HEIGHT (768)
-#define MAX_TOLERATE_WINDOW_WIDTH (16384)               // This value is mostly for error correction purposes.
-#define DLG_BOX_WINDOW_WIDTH (480)                      // The width of non-Qt generated dialog boxes
-#define DLG_BOX_WINDOW_HEIGHT (120)                     // The height of non-Qt generated dialog boxes
-#define GK_ZLIB_BUFFER_SIZE (4096)                      // The size of the buffer, in kilobytes, as-used by Zlib throughout Small World Deluxe's code-base...
+#define MAX_TOLERATE_WINDOW_WIDTH (16384)                       // This value is mostly for error correction purposes.
+#define DLG_BOX_WINDOW_WIDTH (480)                              // The width of non-Qt generated dialog boxes
+#define DLG_BOX_WINDOW_HEIGHT (120)                             // The height of non-Qt generated dialog boxes
+#define GK_ZLIB_BUFFER_SIZE (4096)                              // The size of the buffer, in kilobytes, as-used by Zlib throughout Small World Deluxe's code-base...
+#define GK_MSG_BOX_SETTINGS_DLG_TIMER (10000)                    // The amount of time, in milliseconds, before displaying any potential QMessageBox's to the user at startup about configuring settings. This is needed to allow SWD to initialize everything firstly.
 
 //
 // Amateur radio specific functions
@@ -117,9 +115,9 @@ namespace GekkoFyre {
 #define AUDIO_OUTPUT_CHANNEL_MIN_LIMIT (-1024)
 #define AUDIO_INPUT_CHANNEL_MAX_LIMIT (1024)
 #define AUDIO_INPUT_CHANNEL_MIN_LIMIT (-1024)
-#define AUDIO_FRAMES_PER_BUFFER (512)                          // Frames per buffer, i.e. the number of sample frames that PortAudio will request from the callback. Many apps may want to use paFramesPerBufferUnspecified, which tells PortAudio to pick the best, possibly changing, buffer size
+#define AUDIO_FRAMES_PER_BUFFER (512)                           // Frames per buffer, i.e. the number of sample frames that RtAudio will request from the callback. Many apps may want to use paFramesPerBufferUnspecified, which tells RtAudio to pick the best, possibly changing, buffer size
 #define AUDIO_TEST_SAMPLE_TABLE_SIZE (200)
-#define AUDIO_CIRC_BUFF_SIZE (AUDIO_FRAMES_PER_BUFFER * 4)      // The size of the circular audio buffer, as a factor of the frames buffer itself!
+#define GK_AUDIO_MAX_CHANNELS (2)                               // The current maximum number of audio channels that Small World Deluxe is able to process for any given multimedia audio file!
 
 #define AUDIO_SINE_WAVE_PLAYBACK_SECS (3)                       // Play the sine wave test sample for three seconds!
 #define AUDIO_VU_METER_UPDATE_MILLISECS (125)                   // How often the volume meter should update, in milliseconds.
@@ -256,13 +254,6 @@ namespace Filesystem {
     constexpr char gk_crashpad_handler_linux[] = "crashpad_handler";    // The name of the Crashpad handler executable under Linux and possibly Unix-like operating systems.
 
     constexpr char linux_sys_tty[] = "/sys/class/tty/";                 // The location of the TTY-devices under most major Linux distributions
-}
-
-namespace GkAudio {
-    const std::vector<double> standardSampleRates = {
-            8000.0, 9600.0, 11025.0, 12000.0, 16000.0, 22050.0, 24000.0, 32000.0,
-            44100.0, 48000.0, 88200.0, 96000.0, 192000.0, -1 /* negative terminated list */
-    };
 }
 
 namespace System {
@@ -500,30 +491,19 @@ namespace Database {
 
         namespace Audio {
             struct GkDevice {
-                QString chosen_audio_dev_str;                                       // The name of the device itself, formatted
-                bool default_dev;                                                   // Is this the default device for the system?
-                bool default_disp;                                                  // Used for filtering purposes
+                QString audio_dev_str;                                              // The name of the device itself, as a formatted string.
+                QString realm_str;                                                  // The API that this particular audio device belongs towards.
+                QAudioDeviceInfo audio_device_info;                                 // Pointer to the actual audio device in question.
+                bool user_config_succ;                                              // Whether this audio device information has been gathered as the result of user activity or default action by Small World Deluxe.
+                bool default_output_dev;                                            // Is this the default device for the system?
+                bool default_input_dev;                                             // Is this the default device for the system?
                 bool is_dev_active;                                                 // Is the audio device in question currently active and streaming data?
-                double def_sample_rate;                                             // Default sample rate
-                GkAudioSource audio_src;                                            // Is the audio device in question an input? Output if FALSE, UNSURE if either
-                int dev_number;                                                     // The number of this device; this is saved to the Google LevelDB database as the user's preference
-                PaError dev_err;                                                    // Any errors that belong to this audio device specifically
-                std::list<double> supp_sample_rates;                                // Supported sample rates by this audio device
-                long asio_min_latency;                                              // ASIO specific
-                long asio_max_latency;                                              // ASIO specific
-                long asio_granularity;                                              // ASIO specific
-                long asio_pref_latency;                                             // ASIO specific
-                long asio_min_buffer_size;                                          // ASIO specific
-                long asio_max_buffer_size;                                          // ASIO specific
-                long asio_pref_buffer_size;                                         // ASIO specific
-                int dev_input_channel_count;                                        // The number of channels this INPUT audio device supports
-                int dev_output_channel_count;                                       // The number of channels this OUTPUT audio device supports
-                GkAudioChannels sel_channels;                                        // The selected audio channel configuration
-                PaError asio_err;                                                   // ASIO specific error related information
-                PaDeviceInfo device_info;                                           // All information pertaining to this audio device
-                PaStreamParameters stream_parameters;                               // Device-specific information such as the sample format, etc.
-                portaudio::DirectionSpecificStreamParameters cpp_stream_param;      // Device-specific information such as the sample format, etc. but for the C++ bindings instead
-                PaHostApiTypeId host_type_id;
+                GkAudioSource audio_src;                                            // Is the audio device in question an input? Output if FALSE, UNSURE if either.
+                qint32 dev_number;                                                  // The number of this device; this is saved to the Google LevelDB database as the user's preference.
+                QAudioFormat nearest_format;                                        // The nearest 'format' to the preferred 'format' for this particular audio device. This makes use of the user's configured settings.
+                QAudioFormat user_settings;                                         // The user defined settings for this particular audio device.
+                quint32 chosen_sample_rate;                                         // The chosen sample rate, as configured by the end-user.
+                GkAudioChannels sel_channels;                                       // The selected audio channel configuration.
             };
         }
     }
@@ -709,6 +689,29 @@ namespace GkAudioFramework {
     struct SndFileCallback {
         SNDFILE *file = nullptr;
         SF_INFO info = {};
+    };
+
+    struct GkPlayback {
+        SndFileCallback audioFile;
+        qint32 position = 0;
+        sf_count_t count = 0;
+        bool loop = false;
+    };
+
+    struct GkRecord {
+        float *buffer;
+        size_t bufferBytes;
+        size_t totalFrames;
+        size_t frameCounter;
+        quint32 channels;
+    };
+
+    struct GkRtCallback {
+        quint32 nRate;                                                          // Sampling rate (i.e. sample/sec)
+        quint32 nChannel;                                                       // Channel number
+        quint32 nFrame;                                                         // Frame number of Wave Table
+        quint32 cur;                                                            // Current index of Wave Table (in Frame)
+        float *wfTable;                                                         // Wave Table (interleaved)
     };
 
     enum CodecSupport {
