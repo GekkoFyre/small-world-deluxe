@@ -65,6 +65,7 @@
 #include <leveldb/options.h>
 #include <stdexcept>
 #include <exception>
+#include <utility>
 #include <complex>
 #include <memory>
 #include <thread>
@@ -324,8 +325,8 @@ private:
     //
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
-    QMap<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice> avail_input_audio_devs;
-    QMap<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice> avail_output_audio_devs;
+    std::list<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_input_audio_devs;
+    std::list<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_output_audio_devs;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
     std::shared_ptr<GekkoFyre::PaAudioBuf<float>> input_audio_buf;
@@ -435,7 +436,6 @@ Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkConnMethod);
 Q_DECLARE_METATYPE(GekkoFyre::System::Events::Logging::GkEventLogging);
 Q_DECLARE_METATYPE(GekkoFyre::System::Events::Logging::GkSeverity);
 Q_DECLARE_METATYPE(GekkoFyre::Database::Settings::Audio::GkDevice);
-Q_DECLARE_METATYPE(GekkoFyre::Database::Settings::Audio::GkAudioApi);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkConnType);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::DigitalModes);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::IARURegions);

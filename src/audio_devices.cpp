@@ -44,7 +44,6 @@
 #include <cmath>
 #include <chrono>
 #include <thread>
-#include <utility>
 #include <cstring>
 #include <ostream>
 #include <cstdlib>
@@ -105,20 +104,19 @@ AudioDevices::~AudioDevices()
  * @return The found audio devices and their statistics.
  * @note <https://doc.qt.io/qt-5/audiooverview.html>.
  */
-QMap<QAudioDeviceInfo, GkDevice> AudioDevices::enumAudioDevicesCpp(const QList<QAudioDeviceInfo> &audioDeviceInfo)
+std::list<std::pair<QAudioDeviceInfo, GkDevice>> AudioDevices::enumAudioDevicesCpp(const QList<QAudioDeviceInfo> &audioDeviceInfo)
 {
     try {
         std::lock_guard<std::mutex> audio_guard(enum_audio_dev_mtx);
-        QMap<QAudioDeviceInfo, GkDevice> audio_devices_map;
+        std::list<std::pair<QAudioDeviceInfo, GkDevice>> audio_devices_vec;
 
-        qint32 counter = 0;
         for (const auto &device: audioDeviceInfo) {
             if (!device.isNull()) {
                 GkDevice gkDevice;
                 gkDevice.audio_dev_str = device.deviceName();
                 gkDevice.default_input_dev = false;
                 gkDevice.default_output_dev = false;
-                gkDevice.audio_device_info = new QAudioDeviceInfo(device);
+                gkDevice.audio_device_info = QAudioDeviceInfo(device);
 
                 if (gkDevice.audio_dev_str == QAudioDeviceInfo::defaultInputDevice().deviceName()) {
                     gkDevice.default_input_dev = true;
@@ -128,12 +126,11 @@ QMap<QAudioDeviceInfo, GkDevice> AudioDevices::enumAudioDevicesCpp(const QList<Q
                     gkDevice.default_output_dev = true;
                 }
 
-                audio_devices_map.insert(device, gkDevice);
-                ++counter;
+                audio_devices_vec.emplace_back(std::make_pair(device, gkDevice));
             }
         }
 
-        return audio_devices_map;
+        return audio_devices_vec;
     } catch (const std::exception &e) {
         QString error_msg = tr("A generic exception has occurred:\n\n%1").arg(e.what());
         gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
@@ -142,7 +139,7 @@ QMap<QAudioDeviceInfo, GkDevice> AudioDevices::enumAudioDevicesCpp(const QList<Q
         gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
     }
 
-    return QMap<QAudioDeviceInfo, GkDevice>();
+    return std::list<std::pair<QAudioDeviceInfo, GkDevice>>();
 }
 
 /**
@@ -153,66 +150,8 @@ QMap<QAudioDeviceInfo, GkDevice> AudioDevices::enumAudioDevicesCpp(const QList<Q
  * @param stereo
  * @return
  */
-void AudioDevices::testSinewave(std::shared_ptr<RtAudio> &dac, const GkDevice &audio_dev, const bool &is_output_dev)
+void AudioDevices::testSinewave(const GkDevice &audio_dev, const bool &is_output_dev)
 {
-    try {
-        // std::lock_guard<std::mutex> lck_guard(test_sinewave_mtx);
-
-        if (is_output_dev) {
-            if (nFrames > 0) {
-                checkCount = true;
-            }
-
-            RtAudio::StreamParameters oParams;
-            oParams.deviceId = audio_dev.device_id;
-            oParams.nChannels = audio_dev.dev_output_channel_count;
-            channels = oParams.nChannels;
-            oParams.firstChannel = 0;
-
-            if (audio_dev.device_id == 0) {
-                oParams.deviceId = dac->getDefaultOutputDevice();
-            }
-
-            RtAudio::StreamOptions options;
-            options.flags = RTAUDIO_HOG_DEVICE;
-            options.flags |= RTAUDIO_SCHEDULE_REALTIME;
-            options.flags |= RTAUDIO_NONINTERLEAVED;
-
-            float *sawData = (float *)std::calloc(oParams.nChannels, sizeof(float));
-            quint32 bufsize = audio_dev.chosen_sample_rate * 10;
-
-            if (dac->isStreamOpen()) {
-                dac->closeStream();
-            }
-
-            dac->openStream(&oParams, nullptr, RTAUDIO_FLOAT32, audio_dev.chosen_sample_rate, &bufsize, &AudioDevices::playbackSaw,
-                            (void *)sawData, &options);
-            if (!dac->isStreamOpen()) {
-                throw std::runtime_error(tr("Unable to open RtAudio stream!").toStdString());
-            }
-
-            dac->startStream();
-            if (checkCount) {
-                while (dac->isStreamRunning()) {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(AUDIO_SINE_WAVE_PLAYBACK_SECS * 1000));
-                }
-            }
-
-            if (dac->isStreamRunning()) {
-                dac->stopStream();
-            }
-
-            free(sawData);
-            return;
-        }
-    } catch (const std::exception &e) {
-        QString error_msg = tr("A generic exception has occurred:\n\n%1").arg(e.what());
-        gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true, false, false);
-    } catch (...) {
-        QString error_msg = tr("An unknown exception has occurred. There are no further details.");
-        gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true, false, false);
-    }
-
     return;
 }
 
@@ -365,8 +304,8 @@ float AudioDevices::calcAudioBufferTimeNeeded(const GkAudioChannels &num_channel
  */
 QString AudioDevices::rtAudioVersionNumber()
 {
-    std::string version_no = RtAudio::getVersion();
-    return QString::fromStdString(version_no);
+    // TODO: Update this so that it mentions the audio backend!
+    return QCoreApplication::applicationVersion();
 }
 
 /**
@@ -377,6 +316,6 @@ QString AudioDevices::rtAudioVersionNumber()
  */
 QString AudioDevices::rtAudioVersionText()
 {
-    std::string version_no = RtAudio::getVersion();
-    return QString::fromStdString(version_no);
+    // TODO: Update this so that it mentions the audio backend!
+    return QCoreApplication::applicationVersion();
 }

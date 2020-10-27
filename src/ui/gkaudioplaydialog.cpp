@@ -46,17 +46,6 @@
 #include <QFileDialog>
 #include <QStandardPaths>
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#include <portaudio.h>
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
-
 using namespace GekkoFyre;
 using namespace Database;
 using namespace Settings;
@@ -108,11 +97,11 @@ GkAudioPlayDialog::~GkAudioPlayDialog()
 }
 
 /**
- * @brief GkAudioPlayDialog::determineAudioChannels works out the number of audio channels to use when initializing the PortAudio
+ * @brief GkAudioPlayDialog::determineAudioChannels works out the number of audio channels to use when initializing the QAudioSystem
  * data buffer for audio playback and possibly recording as well.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param audio_file_info The information we have on the audio playback file.
- * @return The number or type of audio channel(s) we should be initializing the PortAudio buffer with.
+ * @return The number or type of audio channel(s) we should be initializing the QAudioSystem buffer with.
  */
 GkAudioChannels GkAudioPlayDialog::determineAudioChannels()
 {
@@ -277,7 +266,6 @@ void GkAudioPlayDialog::on_pushButton_playback_browse_file_loc_clicked()
 void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
 {
     try {
-        PaError error;
         if (!audio_out_play) {
             gkStringFuncs->changePushButtonColor(ui->pushButton_playback_play, false);
             audio_out_play = true;

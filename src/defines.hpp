@@ -493,7 +493,7 @@ namespace Database {
             struct GkDevice {
                 QString audio_dev_str;                                              // The name of the device itself, as a formatted string.
                 QString realm_str;                                                  // The API that this particular audio device belongs towards.
-                QPointer<QAudioDeviceInfo> audio_device_info;                       // Pointer to the actual audio device in question.
+                QAudioDeviceInfo audio_device_info;                                 // Pointer to the actual audio device in question.
                 bool user_config_succ;                                              // Whether this audio device information has been gathered as the result of user activity or default action by Small World Deluxe.
                 bool default_output_dev;                                            // Is this the default device for the system?
                 bool default_input_dev;                                             // Is this the default device for the system?

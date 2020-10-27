@@ -129,7 +129,7 @@ std::vector<GkFFTSpectrum> GkFFT::FFTCompute(const std::vector<float> &data, con
                 // Analyze output to obtain amplitude and phase for each frequency
                 for (int i = 2; i <= numSamples / 2; ++i) {
                     // Calculate frequency of this complex sample
-                    m_spectrum[i].frequency = std::round(i * std::round(audioDevice.device_info.preferredSampleRate) / numSamples);
+                    m_spectrum[i].frequency = std::round(i * std::round(audioDevice.chosen_sample_rate) / numSamples);
 
                     kiss_fft_cpx cpx = outbuf[i];
 
