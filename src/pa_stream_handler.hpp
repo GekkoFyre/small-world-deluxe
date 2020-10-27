@@ -60,7 +60,6 @@ extern "C"
 #endif
 
 #include <sndfile.h>
-#include <portaudio.h>
 
 #ifdef __cplusplus
 } // extern "C"

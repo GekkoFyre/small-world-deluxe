@@ -46,17 +46,6 @@
 #include <thread>
 #include <QDateTime>
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#include <portaudio.h>
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
-
 using namespace GekkoFyre;
 using namespace Database;
 using namespace Settings;

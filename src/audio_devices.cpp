@@ -44,7 +44,6 @@
 #include <cmath>
 #include <chrono>
 #include <thread>
-#include <utility>
 #include <cstring>
 #include <ostream>
 #include <cstdlib>
@@ -56,7 +55,7 @@
 #include <QMessageBox>
 #include <QApplication>
 
-#define SCALE (32767.0)
+#define SCALE (1.0)
 
 #define BASE_RATE 0.005
 #define TIME 1.0
@@ -86,6 +85,8 @@ AudioDevices::AudioDevices(QPointer<GkLevelDb> gkDb, QPointer<FileIo> filePtr,
                            QPointer<GekkoFyre::GkEventLogger> eventLogger, QPointer<GekkoFyre::GkSystem> systemPtr,
                            QObject *parent)
 {
+    setParent(parent);
+
     gkDekodeDb = std::move(gkDb);
     gkFileIo = std::move(filePtr);
     gkFreqList = std::move(freqList);
@@ -101,118 +102,35 @@ AudioDevices::~AudioDevices()
  * @brief AudioDevices::enumAudioDevicesCpp Enumerate out all the findable audio devices within the user's computer system.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return The found audio devices and their statistics.
+ * @note <https://doc.qt.io/qt-5/audiooverview.html>.
  */
-GkAudioApi AudioDevices::enumAudioDevicesCpp()
+std::list<std::pair<QAudioDeviceInfo, GkDevice>> AudioDevices::enumAudioDevicesCpp(const QList<QAudioDeviceInfo> &audioDeviceInfo)
 {
     try {
         std::lock_guard<std::mutex> audio_guard(enum_audio_dev_mtx);
-        std::vector<GkDevice> audio_devices_vec;                        // The vector responsible for storage all audio device sessions
+        std::list<std::pair<QAudioDeviceInfo, GkDevice>> audio_devices_vec;
 
-        // Create an api map.
-        std::map<RtAudio::Api, std::string> apiMap;
-        apiMap[RtAudio::MACOSX_CORE] = tr("Apple Mac OS/X (Core Audio)").toStdString();
-        apiMap[RtAudio::WINDOWS_ASIO] = tr("Microsoft Windows ASIO").toStdString();
-        apiMap[RtAudio::WINDOWS_DS] = tr("Microsoft Windows DirectSound").toStdString();
-        apiMap[RtAudio::WINDOWS_WASAPI] = tr("Microsoft Windows WASAPI").toStdString();
-        apiMap[RtAudio::UNIX_JACK] = tr("Jack Client").toStdString();
-        apiMap[RtAudio::LINUX_ALSA] = tr("Linux ALSA").toStdString();
-        apiMap[RtAudio::LINUX_PULSE] = tr("Linux PulseAudio").toStdString();
-        apiMap[RtAudio::LINUX_OSS] = tr("Linux OSS").toStdString();
-        apiMap[RtAudio::RTAUDIO_DUMMY] = tr("RtAudio Dummy").toStdString();
+        for (const auto &device: audioDeviceInfo) {
+            if (!device.isNull()) {
+                GkDevice gkDevice;
+                gkDevice.audio_dev_str = device.deviceName();
+                gkDevice.default_input_dev = false;
+                gkDevice.default_output_dev = false;
+                gkDevice.audio_device_info = QAudioDeviceInfo(device);
 
-        GkAudioApi gkAudio;
-
-        gkAudio.api_map = apiMap;
-        RtAudio::getCompiledApi(gkAudio.api_used);
-        gkAudio.api_version = RtAudio::getVersion();
-
-        for (quint32 i = 0; i < gkAudio.api_used.size(); ++i) {
-            std::cout << gkAudio.api_map[gkAudio.api_used[i]] << std::endl;
-        }
-
-        for (const auto &api: gkAudio.api_used) { // Iterate over each API in the user's system, to garner all the Audio Devices!
-            std::unique_ptr<RtAudio> dac = std::make_unique<RtAudio>(api);
-            quint32 device_count = dac->getDeviceCount();
-            std::cout << tr("Found %1 device(s) for API: \"%2\"!")
-            .arg(QString::number(device_count))
-            .arg(QString::fromStdString(RtAudio::getApiDisplayName(api))).toStdString() << std::endl;
-
-            for (quint32 i = 0; i < device_count; ++i) {
-                GkDevice device;
-                device.device_info = dac->getDeviceInfo(i);
-                device.device_id = i;
-                device.audio_dev_str = QString::fromStdString(device.device_info.name);
-                device.assoc_api = api;
-
-                if (device.device_info.probed) {
-                    device.dev_input_channel_count = device.device_info.inputChannels;
-                    device.dev_output_channel_count = device.device_info.outputChannels;
-                    device.supp_native_formats = device.device_info.nativeFormats;
-                    device.default_output_dev = device.device_info.isDefaultOutput;
-                    device.default_input_dev = device.device_info.isDefaultInput;
-
-                    if (device.default_output_dev) {
-                        std::cout << tr("This is the DEFAULT **output** audio device!").toStdString() << std::endl;
-                    }
-
-                    if (device.default_input_dev) {
-                        std::cout << tr("This is the DEFAULT **input** audio device!").toStdString() << std::endl;
-                    }
-
-                    if (device.device_info.nativeFormats == 0) {
-                        std::cout << tr("No natively supported data formats(?)!").toStdString();
-                    } else {
-                        std::cout << tr("Natively supported data formats:").toStdString() << std::endl;
-                        if (device.device_info.nativeFormats & RTAUDIO_SINT8) {
-                            std::cout << tr("  8-bit int").toStdString() << std::endl;
-                        }
-
-                        if (device.device_info.nativeFormats & RTAUDIO_SINT16) {
-                            std::cout << tr("  16-bit int").toStdString() << std::endl;
-                        }
-
-                        if (device.device_info.nativeFormats & RTAUDIO_SINT24) {
-                            std::cout << tr("  24-bit int").toStdString() << std::endl;
-                        }
-
-                        if (device.device_info.nativeFormats & RTAUDIO_SINT32) {
-                            std::cout << tr("  32-bit int").toStdString() << std::endl;
-                        }
-
-                        if (device.device_info.nativeFormats & RTAUDIO_FLOAT32) {
-                            std::cout << tr("  32-bit float").toStdString() << std::endl;
-                        }
-
-                        if (device.device_info.nativeFormats & RTAUDIO_FLOAT64) {
-                            std::cout << tr("  64-bit float").toStdString() << std::endl;
-                        }
-                    }
-
-                    if (device.device_info.sampleRates.size() < 1) {
-                        std::cout << tr("No supported sample rates found!").toStdString() << std::endl;
-                    } else {
-                        std::cout << tr("Supported sample rates = ").toStdString();
-                        for (quint32 j = 0; j < device.device_info.sampleRates.size(); ++j) {
-                            std::cout << device.device_info.sampleRates[j] << " ";
-                        }
-                    }
-
-                    std::cout << std::endl;
-                    if (device.device_info.preferredSampleRate == 0) {
-                        std::cout << tr("No preferred sample rate found!").toStdString() << std::endl;
-                    } else {
-                        std::cout << tr("Preferred sample rate = ").toStdString() << device.device_info.preferredSampleRate << std::endl;
-                    }
-
-                    std::cout << std::endl;
-                    gkAudio.gkDevice.push_back(device);
-                } else {
-                    throw std::runtime_error(tr("Unable to probe given audio device for further details!").toStdString());
+                if (gkDevice.audio_dev_str == QAudioDeviceInfo::defaultInputDevice().deviceName()) {
+                    gkDevice.default_input_dev = true;
                 }
+
+                if (gkDevice.audio_dev_str == QAudioDeviceInfo::defaultOutputDevice().deviceName()) {
+                    gkDevice.default_output_dev = true;
+                }
+
+                audio_devices_vec.emplace_back(std::make_pair(device, gkDevice));
             }
         }
 
-        return gkAudio;
+        return audio_devices_vec;
     } catch (const std::exception &e) {
         QString error_msg = tr("A generic exception has occurred:\n\n%1").arg(e.what());
         gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
@@ -221,7 +139,7 @@ GkAudioApi AudioDevices::enumAudioDevicesCpp()
         gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
     }
 
-    return GkAudioApi();
+    return std::list<std::pair<QAudioDeviceInfo, GkDevice>>();
 }
 
 /**
@@ -232,97 +150,9 @@ GkAudioApi AudioDevices::enumAudioDevicesCpp()
  * @param stereo
  * @return
  */
-void AudioDevices::testSinewave(std::shared_ptr<RtAudio> dac, const GkDevice &audio_dev, const bool &is_output_dev)
+void AudioDevices::testSinewave(const GkDevice &audio_dev, const bool &is_output_dev)
 {
-    try {
-        std::lock_guard<std::mutex> lck_guard(test_sinewave_mtx);
-
-        if (is_output_dev) {
-            if (audio_dev.pref_output_dev) {
-                RtAudio::StreamParameters oParams;
-                oParams.deviceId = audio_dev.device_id;
-                oParams.nChannels = audio_dev.dev_output_channel_count;
-                oParams.firstChannel = 0;
-
-                RtAudio::StreamOptions options;
-                options.flags = RTAUDIO_HOG_DEVICE;
-                options.flags |= RTAUDIO_SCHEDULE_REALTIME;
-
-                GkAudioFramework::GkRtCallback sawData {};
-                quint32 bufsize = audio_dev.device_info.preferredSampleRate * 10;
-                dac->openStream(&oParams, nullptr, audio_dev.supp_native_formats, audio_dev.device_info.preferredSampleRate, &bufsize, &AudioDevices::playbackSaw,
-                                &sawData, &options);
-
-                sawData.nRate = audio_dev.device_info.preferredSampleRate;
-                sawData.nFrame = audio_dev.device_info.preferredSampleRate;
-                sawData.nChannel = audio_dev.dev_output_channel_count;
-                sawData.cur = 0;
-                sawData.wfTable = (float *)std::calloc(sawData.nChannel * sawData.nFrame, sizeof(float));
-
-                if (!sawData.wfTable) {
-                    dac.reset();
-                }
-
-                for (quint32 i = 0; i < sawData.nFrame; ++i) {
-                    float v = std::sin(i * M_PI * 2 * 440 / sawData.nRate);
-                    for (quint32 j = 0; j < sawData.nChannel; ++j) {
-                        sawData.wfTable[i * sawData.nChannel + j] = v;
-                    }
-                }
-
-                dac->startStream();
-                std::this_thread::sleep_for(std::chrono::milliseconds(AUDIO_SINE_WAVE_PLAYBACK_SECS * 1000));
-                dac->stopStream();
-                dac->closeStream();
-
-                return;
-            }
-        }
-    } catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), tr("A generic exception has occurred:\n\n%1").arg(e.what()), QMessageBox::Ok);
-    } catch (...) {
-        QMessageBox::warning(nullptr, tr("Error!"), tr("An unknown exception has occurred. There are no further details."), QMessageBox::Ok);
-    }
-
     return;
-}
-
-/**
- * @brief AudioDevices::playbackSaw
- * @author nagachika <https://gist.github.com/nagachika/165241/604224f8ec3110ecae2490efbf41681d2e4deb54>,
- * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>.
- * @param outputBuffer
- * @param inputBuffer
- * @param nBufferFrames
- * @param streamTime
- * @param status
- * @param userData
- * @return
- */
-qint32 AudioDevices::playbackSaw(void *outputBuffer, void *inputBuffer, quint32 nBufferFrames, double streamTime, RtAudioStreamStatus status, void *userData)
-{
-    Q_UNUSED(inputBuffer);
-    Q_UNUSED(streamTime);
-    Q_UNUSED(status);
-
-    auto *buf = (float *)outputBuffer;
-    quint32 remainFrames;
-    auto *data = (GkAudioFramework::GkRtCallback *)userData;
-
-    remainFrames = nBufferFrames;
-    while (remainFrames > 0) {
-        unsigned int sz = data->nFrame - data->cur;
-        if (sz > remainFrames) {
-            sz = remainFrames;
-        }
-
-        std::memcpy(buf, data->wfTable + (data->cur * data->nChannel), sz * data->nChannel * sizeof(float));
-        data->cur = (data->cur + sz) % data->nFrame;
-        buf += sz * data->nChannel;
-        remainFrames -= sz;
-    }
-
-    return 0;
 }
 
 /**
@@ -474,8 +304,8 @@ float AudioDevices::calcAudioBufferTimeNeeded(const GkAudioChannels &num_channel
  */
 QString AudioDevices::rtAudioVersionNumber()
 {
-    std::string version_no = RtAudio::getVersion();
-    return QString::fromStdString(version_no);
+    // TODO: Update this so that it mentions the audio backend!
+    return QCoreApplication::applicationVersion();
 }
 
 /**
@@ -486,6 +316,6 @@ QString AudioDevices::rtAudioVersionNumber()
  */
 QString AudioDevices::rtAudioVersionText()
 {
-    std::string version_no = RtAudio::getVersion();
-    return QString::fromStdString(version_no);
+    // TODO: Update this so that it mentions the audio backend!
+    return QCoreApplication::applicationVersion();
 }

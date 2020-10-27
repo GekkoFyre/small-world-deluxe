@@ -58,6 +58,7 @@
 #include <QSysInfo>
 #include <QDebug>
 #include <algorithm>
+#include <exception>
 #include <iterator>
 #include <sstream>
 #include <utility>
@@ -85,11 +86,12 @@ std::mutex read_audio_api_mtx;
 std::mutex mtx_freq_already_init;
 
 GkLevelDb::GkLevelDb(leveldb::DB *db_ptr, QPointer<FileIo> filePtr, QPointer<GekkoFyre::StringFuncs> stringFuncs,
-                     QObject *parent) : QObject(parent)
+                     const QRect &main_win_geometry, QObject *parent) : QObject(parent)
 {
     db = db_ptr;
     fileIo = std::move(filePtr);
     gkStringFuncs = std::move(stringFuncs);
+    gkMainWinGeometry = main_win_geometry;
 }
 
 GkLevelDb::~GkLevelDb()
@@ -313,6 +315,11 @@ void GkLevelDb::write_audio_device_settings(const GkDevice &value, const bool &i
             // the boolean value to a std::string suitable for database storage.
             std::string is_default = boolEnum(value.default_output_dev);
             batch.Put("AudioOutputDefSysDevice", is_default);
+
+            // Modifier to let SWD know if this audio input device was configured as the result of
+            // user activity and not by the part of default activity/settings.
+            std::string user_activity = boolEnum(value.user_config_succ);
+            batch.Put("AudioOutputCfgUsrActivity", user_activity);
         } else {
             // Unique identifier for the chosen input audio device
             batch.Put("AudioInputSelChannels", std::to_string(value.sel_channels));
@@ -323,6 +330,11 @@ void GkLevelDb::write_audio_device_settings(const GkDevice &value, const bool &i
             // the boolean value to a std::string suitable for database storage.
             std::string is_default = boolEnum(value.default_input_dev);
             batch.Put("AudioInputDefSysDevice", is_default);
+
+            // Modifier to let SWD know if this audio input device was configured as the result of
+            // user activity and not by the part of default activity/settings.
+            std::string user_activity = boolEnum(value.user_config_succ);
+            batch.Put("AudioInputCfgUsrActivity", user_activity);
         }
 
         leveldb::WriteOptions write_options;
@@ -1035,9 +1047,8 @@ void GkLevelDb::capture_sys_info()
         //
         // Grab the screen resolution of the user's desktop and create a new object for such!
         //
-        const QRect screen_res = detect_desktop_resolution();
-        const qreal width = screen_res.width();
-        const qreal height = screen_res.height();
+        const qreal width = gkMainWinGeometry.width();
+        const qreal height = gkMainWinGeometry.height();
 
         sentry_value_t screen_res_obj = sentry_value_new_object();
         sentry_value_set_by_key(screen_res_obj, "width", sentry_value_new_double(width));
@@ -1099,19 +1110,6 @@ void GkLevelDb::detect_operating_system(QString &build_cpu_arch, QString &curr_c
     }
 
     return;
-}
-
-/**
- * @brief GkLevelDb::detect_desktop_resolution will detect the currently used screen resolution of the user's desktop, mostly
- * for the purposes needed by Sentry.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param horizontal
- * @param vertical
- */
-QRect GkLevelDb::detect_desktop_resolution()
-{
-    QRect rec = QApplication::desktop()->screenGeometry();
-    return rec;
 }
 
 /**
@@ -1407,60 +1405,6 @@ QString GkLevelDb::read_audio_device_settings(const bool &is_output_device, cons
 }
 
 /**
- * @brief GkLevelDb::write_audio_api_settings Writes out the saved information concerning the user's choice of
- * decided upon RtAudio API settings.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param interface The user's last chosen settings for the decided upon RtAudio API.
- */
-void GkLevelDb::write_audio_api_settings(const RtAudio::Api &interface)
-{
-    try {
-        leveldb::WriteBatch batch;
-        leveldb::Status status;
-
-        batch.Put("AudioPortAudioAPISelection", RtAudio::getApiName(interface));
-
-        leveldb::WriteOptions write_options;
-        write_options.sync = true;
-
-        status = db->Write(write_options, &batch);
-
-        if (!status.ok()) { // Abort because of error!
-            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
-        }
-    } catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
-    }
-
-    return;
-}
-
-/**
- * @brief GkLevelDb::read_audio_api_settings Reads the saved information concerning the user's choice of decided
- * upon RtAudio API settings.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @return The user's last chosen settings for the decided upon RtAudio API.
- */
-RtAudio::Api GkLevelDb::read_audio_api_settings()
-{
-    leveldb::Status status;
-    leveldb::ReadOptions read_options;
-    std::string value;
-
-    std::lock_guard<std::mutex> lck_guard(read_audio_api_mtx);
-    read_options.verify_checksums = true;
-
-    status = db->Get(read_options, "AudioPortAudioAPISelection", &value);
-
-    if (!value.empty()) {
-        // Convert from `std::string` to `enum`!
-        return RtAudio::getCompiledApiByName(value);
-    }
-
-    return RtAudio::UNSPECIFIED;
-}
-
-/**
  * @brief GkLevelDb::removeInvalidChars removes invalid/illegal characters from a given std::string, making it all clean!
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param string_to_modify The given std::string to modify.
@@ -1512,13 +1456,16 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
         std::string output_pa_host_idx;
         std::string output_sel_channels;
         std::string output_def_sys_device;
+        std::string output_user_activity;
 
         status = db->Get(read_options, "AudioOutputId", &output_id);
         status = db->Get(read_options, "AudioOutputDeviceName", &output_pa_host_idx);
         status = db->Get(read_options, "AudioOutputSelChannels", &output_sel_channels);
         status = db->Get(read_options, "AudioOutputDefSysDevice", &output_def_sys_device);
+        status = db->Get(read_options, "AudioOutputCfgUsrActivity", &output_user_activity);
 
         bool def_sys_device = boolStr(output_def_sys_device);
+        bool user_activity = boolStr(output_user_activity);
 
         //
         // Test to see if the following are empty or not
@@ -1532,6 +1479,7 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
         }
 
         audio_device.default_output_dev = def_sys_device;
+        audio_device.user_config_succ = user_activity;
     } else {
         //
         // Input audio device
@@ -1540,13 +1488,16 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
         std::string input_pa_host_idx;
         std::string input_sel_channels;
         std::string input_def_sys_device;
+        std::string input_user_activity;
 
         status = db->Get(read_options, "AudioInputId", &input_id);
         status = db->Get(read_options, "AudioInputDeviceName", &input_pa_host_idx);
         status = db->Get(read_options, "AudioInputSelChannels", &input_sel_channels);
         status = db->Get(read_options, "AudioInputDefSysDevice", &input_def_sys_device);
+        status = db->Get(read_options, "AudioInputCfgUsrActivity", &input_user_activity);
 
         bool def_sys_device = boolStr(input_def_sys_device);
+        bool user_activity = boolStr(input_user_activity);
 
         //
         // Test to see if the following are empty or not
@@ -1560,6 +1511,7 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
         }
 
         audio_device.default_input_dev = def_sys_device;
+        audio_device.user_config_succ = user_activity;
     }
 
     return audio_device;
@@ -2029,6 +1981,60 @@ QString GkLevelDb::convIARURegionToStr(const IARURegions &iaru_region)
     }
 
     return tr("Error!");
+}
+
+/**
+ * @brief GkLevelDb::write_audio_api_settings() Writes out the saved information concerning the user's choice of
+ * decided upon QAudioSystem API settings.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param interface
+ */
+void GkLevelDb::write_audio_api_settings(const QString &interface)
+{
+    try {
+        leveldb::WriteBatch batch;
+        leveldb::Status status;
+
+        batch.Put("AudioQAudioSystemAPISelection", interface.toStdString());
+
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
+
+        status = db->Write(write_options, &batch);
+
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return;
+}
+
+/**
+ * @brief GkLevelDb::read_audio_api_settings() Reads the saved information concerning the user's choice of decided
+ * upon QAudioSystem API settings.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return
+ */
+QString GkLevelDb::read_audio_api_settings()
+{
+    leveldb::Status status;
+    leveldb::ReadOptions read_options;
+    std::string value;
+
+    std::lock_guard<std::mutex> lck_guard(read_audio_api_mtx);
+    read_options.verify_checksums = true;
+
+    status = db->Get(read_options, "AudioQAudioSystemAPISelection", &value);
+
+    if (!value.empty()) {
+        return QString::fromStdString(value);
+    }
+
+    // TODO: Fill this section out where it shouldn't be a nullptr!
+    return QString();
 }
 
 /**

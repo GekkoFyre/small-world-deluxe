@@ -50,7 +50,6 @@
 #include <hamlib/rigclass.h>
 #include <qwt/qwt_interval.h>
 #include <sndfile.h>
-#include <RtAudio.h>
 #include <sentry.h>
 #include <list>
 #include <vector>
@@ -63,14 +62,17 @@
 #include <iostream>
 #include <exception>
 #include <streambuf>
+#include <QList>
 #include <QString>
 #include <QVector>
 #include <QVariant>
 #include <QPointer>
 #include <QDateTime>
 #include <QStringList>
+#include <QAudioFormat>
 #include <QtUsb/QUsbDevice>
 #include <QSerialPortInfo>
+#include <QAudioDeviceInfo>
 
 #if defined(_WIN32) || defined(__MINGW64__)
 #include <winsdkver.h>
@@ -102,6 +104,7 @@ namespace GekkoFyre {
 #define DLG_BOX_WINDOW_WIDTH (480)                              // The width of non-Qt generated dialog boxes
 #define DLG_BOX_WINDOW_HEIGHT (120)                             // The height of non-Qt generated dialog boxes
 #define GK_ZLIB_BUFFER_SIZE (4096)                              // The size of the buffer, in kilobytes, as-used by Zlib throughout Small World Deluxe's code-base...
+#define GK_MSG_BOX_SETTINGS_DLG_TIMER (10000)                    // The amount of time, in milliseconds, before displaying any potential QMessageBox's to the user at startup about configuring settings. This is needed to allow SWD to initialize everything firstly.
 
 //
 // Amateur radio specific functions
@@ -488,29 +491,19 @@ namespace Database {
 
         namespace Audio {
             struct GkDevice {
-                QString audio_dev_str;                                              // The name of the device itself, formatted
-                RtAudio::Api assoc_api;                                             // The associated O/S API for this audio device.
-                RtAudio::DeviceInfo device_info;                                    // A great amount of information pertaining to the audio device itself.
-                quint32 device_id;                                                  // The Unique Identifier for this particular audio device.
-                bool pref_output_dev;                                               // Is this the preferred output device for the user's SWD configuration?
-                bool pref_input_dev;                                                // Is this the preferred input device for the user's SWD configuration?
+                QString audio_dev_str;                                              // The name of the device itself, as a formatted string.
+                QString realm_str;                                                  // The API that this particular audio device belongs towards.
+                QAudioDeviceInfo audio_device_info;                                 // Pointer to the actual audio device in question.
+                bool user_config_succ;                                              // Whether this audio device information has been gathered as the result of user activity or default action by Small World Deluxe.
                 bool default_output_dev;                                            // Is this the default device for the system?
                 bool default_input_dev;                                             // Is this the default device for the system?
                 bool is_dev_active;                                                 // Is the audio device in question currently active and streaming data?
-                GkAudioSource audio_src;                                            // Is the audio device in question an input? Output if FALSE, UNSURE if either
-                qint32 dev_number;                                                  // The number of this device; this is saved to the Google LevelDB database as the user's preference
-                qint32 dev_input_channel_count;                                     // The number of channels this INPUT audio device supports
-                qint32 dev_output_channel_count;                                    // The number of channels this OUTPUT audio device supports
-                RtAudioFormat supp_native_formats;                                  // Supported native formats by this audio device, via RtAudio.
-                GkAudioChannels sel_channels;                                       // The selected audio channel configuration
-            };
-
-            struct GkAudioApi {
-                std::string api_version;                                            // The RtAudio API version we are making use of.
-                std::map<RtAudio::Api, std::string> api_map;                        // The API-string std::map, formatted
-                std::vector<RtAudio::Api> api_used;                                 // The APIs in use, as found on the user's system.
-                RtAudio::Api curr_api;                                              // The currently chosen API.
-                std::list<GkDevice> gkDevice;                                       // Information pertaining to the audio devices themselves.
+                GkAudioSource audio_src;                                            // Is the audio device in question an input? Output if FALSE, UNSURE if either.
+                qint32 dev_number;                                                  // The number of this device; this is saved to the Google LevelDB database as the user's preference.
+                QAudioFormat nearest_format;                                        // The nearest 'format' to the preferred 'format' for this particular audio device. This makes use of the user's configured settings.
+                QAudioFormat user_settings;                                         // The user defined settings for this particular audio device.
+                quint32 chosen_sample_rate;                                         // The chosen sample rate, as configured by the end-user.
+                GkAudioChannels sel_channels;                                       // The selected audio channel configuration.
             };
         }
     }

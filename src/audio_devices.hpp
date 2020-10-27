@@ -48,17 +48,20 @@
 #include "src/gk_frequency_list.hpp"
 #include "src/gk_logger.hpp"
 #include "src/gk_system.hpp"
-#include <RtAudio.h>
+#include <mutex>
 #include <vector>
 #include <string>
 #include <memory>
-#include <mutex>
 #include <future>
 #include <thread>
+#include <utility>
+#include <QList>
 #include <QObject>
 #include <QString>
 #include <QVector>
 #include <QPointer>
+#include <QAudioFormat>
+#include <QAudioDeviceInfo>
 
 namespace GekkoFyre {
 
@@ -72,15 +75,14 @@ public:
                           QObject *parent = nullptr);
     ~AudioDevices() override;
 
-    GekkoFyre::Database::Settings::Audio::GkAudioApi enumAudioDevicesCpp();
+    std::list<std::pair<QAudioDeviceInfo, Database::Settings::Audio::GkDevice>> enumAudioDevicesCpp(const QList<QAudioDeviceInfo> &audioDeviceInfo);
 
     void systemVolumeSetting();
     float vuMeter(const int &channels, const int &count, float *buffer);
     float vuMeterPeakAmplitude(const size_t &count, float *buffer);
     float vuMeterRMS(const size_t &count, float *buffer);
 
-    void testSinewave(std::shared_ptr<RtAudio> dac, const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev, const bool &is_output_dev = true);
-    static inline qint32 playbackSaw(void *outputBuffer, void *inputBuffer, quint32 nBufferFrames, double streamTime, RtAudioStreamStatus status, void *userData);
+    void testSinewave(const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev, const bool &is_output_dev = true);
 
     float calcAudioBufferTimeNeeded(const Database::Settings::GkAudioChannels &num_channels, const size_t &fft_num_lines,
                                     const size_t &fft_samples_per_line, const size_t &audio_buf_sampling_length,

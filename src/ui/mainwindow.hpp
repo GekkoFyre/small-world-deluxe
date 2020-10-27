@@ -56,7 +56,6 @@
 #include "src/gk_modem.hpp"
 #include "src/gk_system.hpp"
 #include "src/gk_text_to_speech.hpp"
-#include <RtAudio.h>
 #include <sentry.h>
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
@@ -66,6 +65,7 @@
 #include <leveldb/options.h>
 #include <stdexcept>
 #include <exception>
+#include <utility>
 #include <complex>
 #include <memory>
 #include <thread>
@@ -75,18 +75,25 @@
 #include <mutex>
 #include <ctime>
 #include <list>
+#include <QRect>
 #include <QList>
+#include <QScreen>
 #include <QString>
 #include <QObject>
 #include <QPointer>
 #include <QPrinter>
 #include <QMetaType>
 #include <QDateTime>
+#include <QWindow>
 #include <QByteArray>
 #include <QStringList>
 #include <QMainWindow>
 #include <QPushButton>
+#include <QAudioInput>
+#include <QAudioOutput>
+#include <QAudioFormat>
 #include <QSharedPointer>
+#include <QAudioDeviceInfo>
 #include <QCommandLineParser>
 
 namespace Ui {
@@ -166,6 +173,11 @@ private slots:
 
     void infoBar();
     void uponExit();
+
+    //
+    // QMessageBox's
+    //
+    void configInputAudioDevice();
 
     //
     // Audio related
@@ -260,7 +272,7 @@ signals:
     void startRecording();
 
     //
-    // RtAudio and related
+    // QAudioSystem and related
     //
     void changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &input_device);
 
@@ -309,14 +321,14 @@ private:
     boost::filesystem::path native_slash;
 
     //
-    // RtAudio initialization and buffers
+    // QAudioSystem initialization and buffers
     //
-    QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> avail_input_audio_devs;
-    QMap<int, GekkoFyre::Database::Settings::Audio::GkDevice> avail_output_audio_devs;
+    QPointer<QAudioInput> gkAudioInput;
+    QPointer<QAudioOutput> gkAudioOutput;
+    std::list<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_input_audio_devs;
+    std::list<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_output_audio_devs;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
-    std::shared_ptr<RtAudio> gkAudioSysOutput;
-    std::shared_ptr<RtAudio> gkAudioSysInput;
     std::shared_ptr<GekkoFyre::PaAudioBuf<float>> input_audio_buf;
 
     //
@@ -395,6 +407,8 @@ private:
 
     void updateVolumeDisplayWidgets();
     void updateVolumeSliderLabel(const float &vol_level);
+    bool findDefaultInputAudioDevice();
+    bool findDefaultOutputAudioDevice();
 
     //
     // QFileDialog related
@@ -411,6 +425,8 @@ private:
     void createStatusBar(const QString &statusMsg = "");
     bool changeStatusBarMsg(const QString &statusMsg = "");
     bool steadyTimer(const int &seconds);
+    QRect findActiveScreen();
+
 };
 
 Q_DECLARE_METATYPE(std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>);
@@ -420,7 +436,6 @@ Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkConnMethod);
 Q_DECLARE_METATYPE(GekkoFyre::System::Events::Logging::GkEventLogging);
 Q_DECLARE_METATYPE(GekkoFyre::System::Events::Logging::GkSeverity);
 Q_DECLARE_METATYPE(GekkoFyre::Database::Settings::Audio::GkDevice);
-Q_DECLARE_METATYPE(GekkoFyre::Database::Settings::Audio::GkAudioApi);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkConnType);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::DigitalModes);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::IARURegions);
@@ -430,7 +445,6 @@ Q_DECLARE_METATYPE(RIG);
 Q_DECLARE_METATYPE(size_t);
 Q_DECLARE_METATYPE(uint8_t);
 Q_DECLARE_METATYPE(rig_model_t);
-Q_DECLARE_METATYPE(RtAudio::Api);
 Q_DECLARE_METATYPE(std::vector<qint16>);
 Q_DECLARE_METATYPE(std::vector<double>);
 Q_DECLARE_METATYPE(std::vector<float>);

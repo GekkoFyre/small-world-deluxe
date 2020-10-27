@@ -44,13 +44,13 @@
 #include "src/gk_string_funcs.hpp"
 #include "src/gk_text_to_speech.hpp"
 #include "src/models/tableview/gk_frequency_model.hpp"
-#include <RtAudio.h>
 #include <boost/logic/tribool.hpp>
 #include <list>
 #include <tuple>
 #include <memory>
 #include <vector>
 #include <string>
+#include <utility>
 #include <stdexcept>
 #include <exception>
 #include <type_traits>
@@ -61,6 +61,8 @@
 #include <QPointer>
 #include <QMultiMap>
 #include <QComboBox>
+#include <QAudioInput>
+#include <QAudioOutput>
 #include <QSharedPointer>
 
 namespace Ui {
@@ -75,8 +77,12 @@ public:
     explicit DialogSettings(QPointer<GekkoFyre::GkLevelDb> dkDb,
                             QPointer<GekkoFyre::FileIo> filePtr,
                             std::shared_ptr<GekkoFyre::AudioDevices> audioDevices,
-                            std::shared_ptr<RtAudio> audioSysOutput,
-                            std::shared_ptr<RtAudio> audioSysInput,
+                            const QPointer<QAudioInput> &audioSysInput,
+                            const QPointer<QAudioOutput> &audioSysOutput,
+                            const std::list<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> &gkAvailInputDevs,
+                            const std::list<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> &gkAvailOutputDevs,
+                            const GekkoFyre::Database::Settings::Audio::GkDevice &gkPrefInputDev,
+                            const GekkoFyre::Database::Settings::Audio::GkDevice &gkPrefOutputDev,
                             QPointer<GekkoFyre::RadioLibs> radioLibs,
                             QPointer<GekkoFyre::StringFuncs> stringFuncs,
                             std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> radioPtr,
@@ -211,7 +217,7 @@ private slots:
     void ttsAddPresetVoiceItem(const QString &name, const QVariant &locale);
 
     //
-    // RtAudio & Multimedia related
+    // QAudioSystem & Multimedia related
     //
     void on_comboBox_soundcard_input_currentIndexChanged(int index = -1);
     void on_comboBox_soundcard_output_currentIndexChanged(int index = -1);
@@ -220,6 +226,8 @@ private slots:
     void on_pushButton_output_sound_test_clicked();
     void on_comboBox_audio_input_sample_rate_currentIndexChanged(int index);
     void on_comboBox_audio_output_sample_rate_currentIndexChanged(int index);
+    void on_comboBox_audio_input_bit_rate_currentIndexChanged(int index);
+    void on_comboBox_audio_output_bit_rate_currentIndexChanged(int index);
 
 signals:
     void changeSelectedTTSEngine(const QString &name);
@@ -234,7 +242,7 @@ signals:
     void addRigInUse(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
 
     //
-    // RtAudio and related
+    // QAudioSystem and related
     //
     void changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &input_device);
     void changeOutputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &output_device);
@@ -250,8 +258,8 @@ private:
         return static_cast<typename std::underlying_type<E>::type>(e);
     }
 
-    QMap<qint32, quint32> supportedInputSampleRates; // The supported sample rates for the chosen input audio device! The key corresponds to the position within the QComboBoxes...
-    QMap<qint32, quint32> supportedOutputSampleRates; // The supported sample rates for the chosen output audio device! The key corresponds to the position within the QComboBoxes...
+    QMap<quint32, qint32> supportedInputSampleRates; // The supported sample rates for the chosen input audio device! The key corresponds to the position within the QComboBoxes...
+    QMap<quint32, qint32> supportedOutputSampleRates; // The supported sample rates for the chosen output audio device! The key corresponds to the position within the QComboBoxes...
 
     QPointer<GekkoFyre::RadioLibs> gkRadioLibs;
     QPointer<GekkoFyre::GkLevelDb> gkDekodeDb;
@@ -285,17 +293,17 @@ private:
     QMap<quint16, QString> available_usb_ports; // For tracking the *available* USB device ports that the user can choose from...
 
     //
-    // RtAudio and related
+    // QAudioSystem and related
     // The key corresponds to the position within the QComboBoxes
     //
-    QMap<qint32, RtAudio::Api> avail_rtaudio_api;
-    QMap<qint32, GekkoFyre::Database::Settings::Audio::GkDevice> avail_input_audio_devs;
-    QMap<qint32, GekkoFyre::Database::Settings::Audio::GkDevice> avail_output_audio_devs;
-    std::shared_ptr<RtAudio> gkAudioSysOutput;
-    std::shared_ptr<RtAudio> gkAudioSysInput;
+    QPointer<QAudioInput> gkAudioInput;
+    QPointer<QAudioOutput> gkAudioOutput;
+    QMap<QString, qint32> avail_audio_dev_apis; // The realm name is the key whilst the value is the QComboBox integer identifier...
+    std::list<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_input_audio_devs;
+    std::list<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_output_audio_devs;
     GekkoFyre::Database::Settings::Audio::GkDevice chosen_input_audio_dev;
     GekkoFyre::Database::Settings::Audio::GkDevice chosen_output_audio_dev;
-    RtAudio::Api chosen_rtaudio_api;
+    QString chosen_audio_api;
 
     static int prefill_rig_selection(const rig_caps *caps, void *data);
     static QMultiMap<rig_model_t, std::tuple<QString, QString, GekkoFyre::AmateurRadio::rig_type>> init_model_names();
@@ -303,8 +311,8 @@ private:
     QPointer<GekkoFyre::GkFrequencies> gkFreqs;
     QPointer<GekkoFyre::GkFreqTableModel> gkFreqTableModel;
 
-    void prefill_audio_api_avail(const std::vector<RtAudio::Api> &rt_api_vec);
-    void prefill_audio_devices(const std::list<GekkoFyre::Database::Settings::Audio::GkDevice> &audio_devices);
+    void prefill_audio_api_avail();
+    void prefill_audio_devices();
     void prefill_audio_encode_comboboxes();
     void prefill_event_logger();
     void init_station_info();
