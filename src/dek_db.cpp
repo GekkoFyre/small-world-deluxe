@@ -1984,60 +1984,6 @@ QString GkLevelDb::convIARURegionToStr(const IARURegions &iaru_region)
 }
 
 /**
- * @brief GkLevelDb::write_audio_api_settings() Writes out the saved information concerning the user's choice of
- * decided upon QAudioSystem API settings.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param interface
- */
-void GkLevelDb::write_audio_api_settings(const QString &interface)
-{
-    try {
-        leveldb::WriteBatch batch;
-        leveldb::Status status;
-
-        batch.Put("AudioQAudioSystemAPISelection", interface.toStdString());
-
-        leveldb::WriteOptions write_options;
-        write_options.sync = true;
-
-        status = db->Write(write_options, &batch);
-
-        if (!status.ok()) { // Abort because of error!
-            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
-        }
-    } catch (const std::exception &e) {
-        std::throw_with_nested(std::runtime_error(e.what()));
-    }
-
-    return;
-}
-
-/**
- * @brief GkLevelDb::read_audio_api_settings() Reads the saved information concerning the user's choice of decided
- * upon QAudioSystem API settings.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @return
- */
-QString GkLevelDb::read_audio_api_settings()
-{
-    leveldb::Status status;
-    leveldb::ReadOptions read_options;
-    std::string value;
-
-    std::lock_guard<std::mutex> lck_guard(read_audio_api_mtx);
-    read_options.verify_checksums = true;
-
-    status = db->Get(read_options, "AudioQAudioSystemAPISelection", &value);
-
-    if (!value.empty()) {
-        return QString::fromStdString(value);
-    }
-
-    // TODO: Fill this section out where it shouldn't be a nullptr!
-    return QString();
-}
-
-/**
  * @brief DekodeDb::boolEnum Will enumerate a boolean value to an std::string, ready for use within a database.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param is_true Whether we are dealing with a true or false situation.

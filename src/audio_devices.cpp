@@ -111,22 +111,31 @@ std::list<std::pair<QAudioDeviceInfo, GkDevice>> AudioDevices::enumAudioDevicesC
         std::list<std::pair<QAudioDeviceInfo, GkDevice>> audio_devices_vec;
 
         for (const auto &device: audioDeviceInfo) {
-            if (!device.isNull()) {
-                GkDevice gkDevice;
-                gkDevice.audio_dev_str = device.deviceName();
-                gkDevice.default_input_dev = false;
-                gkDevice.default_output_dev = false;
-                gkDevice.audio_device_info = QAudioDeviceInfo(device);
-
-                if (gkDevice.audio_dev_str == QAudioDeviceInfo::defaultInputDevice().deviceName()) {
-                    gkDevice.default_input_dev = true;
+            if (!device.isNull() && !device.supportedSampleRates().empty() && !device.supportedSampleSizes().empty() && !device.supportedChannelCounts().empty()) {
+                bool at_least_mono = false; // Do we have at least a Mono channel?
+                for (const auto &channel: device.supportedChannelCounts()) {
+                    if (channel > 0) {
+                        at_least_mono = true;
+                    }
                 }
 
-                if (gkDevice.audio_dev_str == QAudioDeviceInfo::defaultOutputDevice().deviceName()) {
-                    gkDevice.default_output_dev = true;
-                }
+                if (at_least_mono) {
+                    GkDevice gkDevice;
+                    gkDevice.audio_dev_str = device.deviceName();
+                    gkDevice.default_input_dev = false;
+                    gkDevice.default_output_dev = false;
+                    gkDevice.audio_device_info = QAudioDeviceInfo(device);
 
-                audio_devices_vec.emplace_back(std::make_pair(device, gkDevice));
+                    if (gkDevice.audio_dev_str == QAudioDeviceInfo::defaultInputDevice().deviceName()) {
+                        gkDevice.default_input_dev = true;
+                    }
+
+                    if (gkDevice.audio_dev_str == QAudioDeviceInfo::defaultOutputDevice().deviceName()) {
+                        gkDevice.default_output_dev = true;
+                    }
+
+                    audio_devices_vec.emplace_back(std::make_pair(device, gkDevice));
+                }
             }
         }
 
