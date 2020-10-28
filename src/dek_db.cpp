@@ -42,7 +42,6 @@
 #include "dek_db.hpp"
 #include "src/audio_devices.hpp"
 #include "src/contrib/rapidcsv/src/rapidcsv.h"
-#include <sentry.h>
 #include <leveldb/cache.h>
 #include <leveldb/options.h>
 #include <leveldb/slice.h>

@@ -44,7 +44,6 @@
 #include "src/defines.hpp"
 #include "src/gk_string_funcs.hpp"
 #include "src/file_io.hpp"
-#include <sentry.h>
 #include <leveldb/db.h>
 #include <leveldb/status.h>
 #include <memory>
@@ -53,6 +52,17 @@
 #include <QObject>
 #include <QString>
 #include <QPointer>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#include <sentry.h>
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 namespace GekkoFyre {
 

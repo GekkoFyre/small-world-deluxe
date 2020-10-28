@@ -43,8 +43,6 @@
 
 #include "src/defines.hpp"
 #include "src/gk_logger.hpp"
-#include <tools/kiss_fftr.h>
-#include <kiss_fft.h>
 #include <list>
 #include <mutex>
 #include <vector>
@@ -53,6 +51,18 @@
 #include <QVector>
 #include <QPointer>
 #include <QByteArray>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#include <kiss_fft.h>
+#include <tools/kiss_fftr.h>
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 namespace GekkoFyre {
 class GkFFT : public QObject {
