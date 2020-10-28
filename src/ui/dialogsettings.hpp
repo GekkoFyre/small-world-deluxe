@@ -221,7 +221,6 @@ private slots:
     //
     void on_comboBox_soundcard_input_currentIndexChanged(int index = -1);
     void on_comboBox_soundcard_output_currentIndexChanged(int index = -1);
-    void on_comboBox_soundcard_api_currentIndexChanged(int index = -1);
     void on_pushButton_input_sound_test_clicked();
     void on_pushButton_output_sound_test_clicked();
     void on_comboBox_audio_input_sample_rate_currentIndexChanged(int index);
@@ -298,12 +297,10 @@ private:
     //
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
-    QMap<QString, qint32> avail_audio_dev_apis; // The realm name is the key whilst the value is the QComboBox integer identifier...
     std::list<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_input_audio_devs;
     std::list<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_output_audio_devs;
     GekkoFyre::Database::Settings::Audio::GkDevice chosen_input_audio_dev;
     GekkoFyre::Database::Settings::Audio::GkDevice chosen_output_audio_dev;
-    QString chosen_audio_api;
 
     static int prefill_rig_selection(const rig_caps *caps, void *data);
     static QMultiMap<rig_model_t, std::tuple<QString, QString, GekkoFyre::AmateurRadio::rig_type>> init_model_names();
@@ -311,7 +308,6 @@ private:
     QPointer<GekkoFyre::GkFrequencies> gkFreqs;
     QPointer<GekkoFyre::GkFreqTableModel> gkFreqTableModel;
 
-    void prefill_audio_api_avail();
     void prefill_audio_devices();
     void prefill_audio_encode_comboboxes();
     void prefill_event_logger();

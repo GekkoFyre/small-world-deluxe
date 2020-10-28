@@ -82,8 +82,6 @@ public:
     float vuMeterPeakAmplitude(const size_t &count, float *buffer);
     float vuMeterRMS(const size_t &count, float *buffer);
 
-    void testSinewave(const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev, const bool &is_output_dev = true);
-
     float calcAudioBufferTimeNeeded(const Database::Settings::GkAudioChannels &num_channels, const size_t &fft_num_lines,
                                     const size_t &fft_samples_per_line, const size_t &audio_buf_sampling_length,
                                     const size_t &buf_size);

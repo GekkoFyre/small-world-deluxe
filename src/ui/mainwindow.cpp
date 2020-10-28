@@ -476,17 +476,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             //
             // Initialize any QAudioSystem libraries and associated buffers!
             //
-            const QString input_audio_device_settings = gkDb->read_audio_device_settings(false, false);
-            const QString output_audio_device_settings = gkDb->read_audio_device_settings(true, false);
+            const QString input_audio_device_settings = gkDb->read_audio_device_settings(false);
+            const QString output_audio_device_settings = gkDb->read_audio_device_settings(true);
 
             //
             // Input audio devices
             //
-            if (!input_audio_device_settings.isEmpty()) {
+            if (!avail_input_audio_devs.empty()) {
                 if (!input_audio_device_settings.isEmpty() && !input_audio_device_settings.isNull()) {
                     for (const auto &input_dev: avail_input_audio_devs) {
                         if (input_dev.second.audio_dev_str == input_audio_device_settings) {
-                            // Preferred input audio device
+                            //
+                            // Preferred input audio device as set by the user previously!
+                            //
                             pref_input_device = input_dev.second;
                             gkAudioInput = new QAudioInput(input_dev.first, input_dev.second.user_settings, this);
                         }
@@ -494,9 +496,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 } else {
                     for (const auto &input_dev: avail_input_audio_devs) {
                         if (input_dev.second.default_input_dev) {
+                            //
                             // Use the default input audio device!
-                            pref_input_device = input_dev.second;
-                            gkAudioInput = new QAudioInput(input_dev.first, input_dev.second.user_settings, this);
+                            //
+                            QAudioDeviceInfo default_input_dev(QAudioDeviceInfo::defaultInputDevice());
+                            QAudioFormat default_input_format;
+                            default_input_format.setChannelCount(default_input_format.channelCount());
+                            default_input_format.setByteOrder(default_input_format.byteOrder());
+                            default_input_format.setCodec(default_input_format.codec());
+                            default_input_format.setSampleRate(default_input_format.sampleRate());
+                            default_input_format.setSampleType(default_input_format.sampleType());
+                            default_input_format.setSampleSize(default_input_format.sampleSize());
+
+                            gkAudioInput = new QAudioInput(default_input_dev, default_input_format, this);
                         }
                     }
                 }
@@ -511,7 +523,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 if (!output_audio_device_settings.isEmpty() && !output_audio_device_settings.isNull()) {
                     for (const auto &output_dev: avail_output_audio_devs) {
                         if (output_dev.second.audio_dev_str == output_audio_device_settings) {
-                            // Preferred output audio device
+                            //
+                            // Preferred output audio device as set by the user previously!
+                            //
                             pref_output_device = output_dev.second;
                             gkAudioOutput = new QAudioOutput(output_dev.first, output_dev.second.user_settings, this);
                         }
@@ -519,9 +533,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 } else {
                     for (const auto &output_dev: avail_output_audio_devs) {
                         if (output_dev.second.default_output_dev) {
+                            //
                             // Use the default output audio device!
-                            pref_output_device = output_dev.second;
-                            gkAudioOutput = new QAudioOutput(output_dev.first, output_dev.second.user_settings, this);
+                            //
+                            QAudioDeviceInfo default_output_dev(QAudioDeviceInfo::defaultOutputDevice());
+                            QAudioFormat default_output_format;
+                            default_output_format.setChannelCount(default_output_format.channelCount());
+                            default_output_format.setByteOrder(default_output_format.byteOrder());
+                            default_output_format.setCodec(default_output_format.codec());
+                            default_output_format.setSampleRate(default_output_format.sampleRate());
+                            default_output_format.setSampleType(default_output_format.sampleType());
+                            default_output_format.setSampleSize(default_output_format.sampleSize());
+
+                            gkAudioOutput = new QAudioOutput(default_output_dev, default_output_format, this);
                         }
                     }
                 }
@@ -881,8 +905,8 @@ bool MainWindow::radioInitStart()
 std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
 {
     try {
-        const QString audioInputIdStr = gkDb->read_audio_device_settings(false, false); // Gather the actual std::string name for the audio device in question!
-        const QString audioOutputIdStr = gkDb->read_audio_device_settings(true, false); // Gather the actual std::string name for the audio device in question!
+        const QString audioInputIdStr = gkDb->read_audio_device_settings(false); // Gather the actual std::string name for the audio device in question!
+        const QString audioOutputIdStr = gkDb->read_audio_device_settings(true); // Gather the actual std::string name for the audio device in question!
 
         const QString rigBrand = gkDb->read_rig_settings(radio_cfg::RigBrand);
         const QString rigModel = gkDb->read_rig_settings(radio_cfg::RigModel);

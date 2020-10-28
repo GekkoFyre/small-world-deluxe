@@ -43,7 +43,6 @@
 
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
-#include <sentry.h>
 #include <memory>
 #include <QList>
 #include <QMutex>
@@ -54,6 +53,17 @@
 #include <QModelIndex>
 #include <QAbstractTableModel>
 #include <QSortFilterProxyModel>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#include <sentry.h>
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 namespace GekkoFyre {
 

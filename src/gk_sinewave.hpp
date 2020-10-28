@@ -23,7 +23,7 @@
  **   the Free Software Foundation, either version 3 of the License, or
  **   (at your option) any later version.
  **
- **   Small world is distributed in the hope that it will be useful,
+ **   Small World is distributed in the hope that it will be useful,
  **   but WITHOUT ANY WARRANTY; without even the implied warranty of
  **   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  **   GNU General Public License for more details.
@@ -43,55 +43,43 @@
 
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
+#include "src/gk_logger.hpp"
 #include <memory>
-#include <QList>
-#include <QMutex>
+#include <vector>
+#include <string>
+#include <QTimer>
 #include <QObject>
 #include <QString>
-#include <QVariant>
-#include <QTableView>
-#include <QModelIndex>
-#include <QAbstractTableModel>
-#include <QSortFilterProxyModel>
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#include <sentry.h>
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
+#include <QPointer>
+#include <QIODevice>
+#include <QAudioOutput>
+#include <QAudioDeviceInfo>
 
 namespace GekkoFyre {
 
-class GkCallsignMsgsTableViewModel : public QAbstractTableModel {
+class GkSinewaveTest : public QIODevice {
     Q_OBJECT
 
 public:
-    explicit GkCallsignMsgsTableViewModel(QPointer<GekkoFyre::GkLevelDb> database, QWidget *parent = nullptr);
-    ~GkCallsignMsgsTableViewModel() override;
+    explicit GkSinewaveTest(const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                            qint32 freq, QObject *parent = nullptr);
+    ~GkSinewaveTest() override;
 
-    void populateData(const QList<GekkoFyre::System::Events::Logging::GkEventLogging> &event_logs);
-    [[nodiscard]] int rowCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
-    [[nodiscard]] int columnCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
+    void setFreq(qint32 freq);
+    void setDuration(qint32 ms);
 
-    [[nodiscard]] QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
-    [[nodiscard]] QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
-
-public slots:
-    void insertData(const GekkoFyre::System::Events::Logging::GkEventLogging &event);
-    void removeData(const GekkoFyre::System::Events::Logging::GkEventLogging &event);
+    qint64 readData(char *data, qint64 max_length) Q_DECL_OVERRIDE;
+    qint64 writeData(const char *data, qint64 length) Q_DECL_OVERRIDE;
 
 private:
-    QPointer<GekkoFyre::GkLevelDb> gkDb;
-    QList<GekkoFyre::System::Events::Logging::GkEventLogging> m_data;
+    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
+    GekkoFyre::Database::Settings::Audio::GkDevice gkAudioDevice;
 
-    QPointer<QSortFilterProxyModel> proxyModel;
-    QPointer<QTableView> table;
+    qint32 frequency;
+    qint32 samples;             // Samples to play for desired duration
+    qint32 *end;                // The last position within the circular buffer, for faster comparisons
+    qint32 *buffer;             // Sinewave buffer itself
+    qint32 *send_pos;           // The current position within the circular buffer
 
-    QMutex dataBatchMutex;
 };
 };

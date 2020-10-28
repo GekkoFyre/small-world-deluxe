@@ -50,7 +50,6 @@
 #include <hamlib/rigclass.h>
 #include <qwt/qwt_interval.h>
 #include <sndfile.h>
-#include <sentry.h>
 #include <list>
 #include <vector>
 #include <string>
@@ -88,6 +87,7 @@ extern "C"
 {
 #endif
 
+#include <sentry.h>
 #include <hamlib/rig.h>
 #include <hamlib/riglist.h>
 
@@ -499,8 +499,6 @@ namespace Database {
                 bool default_input_dev;                                             // Is this the default device for the system?
                 bool is_dev_active;                                                 // Is the audio device in question currently active and streaming data?
                 GkAudioSource audio_src;                                            // Is the audio device in question an input? Output if FALSE, UNSURE if either.
-                qint32 dev_number;                                                  // The number of this device; this is saved to the Google LevelDB database as the user's preference.
-                QAudioFormat nearest_format;                                        // The nearest 'format' to the preferred 'format' for this particular audio device. This makes use of the user's configured settings.
                 QAudioFormat user_settings;                                         // The user defined settings for this particular audio device.
                 quint32 chosen_sample_rate;                                         // The chosen sample rate, as configured by the end-user.
                 GkAudioChannels sel_channels;                                       // The selected audio channel configuration.
