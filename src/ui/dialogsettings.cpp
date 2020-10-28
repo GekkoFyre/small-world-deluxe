@@ -37,6 +37,7 @@
 
 #include "dialogsettings.hpp"
 #include "ui_dialogsettings.h"
+#include "src/gk_sinewave.hpp"
 #include <hamlib/rig.h>
 #include <boost/exception/all.hpp>
 #include <boost/filesystem.hpp>
@@ -1673,7 +1674,9 @@ void DialogSettings::on_pushButton_output_sound_test_clicked()
         int ret = msgBox.exec();
 
         if (ret == QMessageBox::Ok) {
-            gkAudioDevices->testSinewave(chosen_output_audio_dev, true);
+            QPointer<GkSinewaveTest> gkSinewaveTest = new GkSinewaveTest(chosen_output_audio_dev, gkEventLogger, 800, this);
+            // gkAudioOutput;
+
             QMessageBox::information(this, tr("Finished"), tr("The audio test has now finished."), QMessageBox::Ok);
         } else if (ret == QMessageBox::Abort) {
             QMessageBox::information(this, tr("Aborted"), tr("The operation has been terminated."), QMessageBox::Ok);

@@ -517,6 +517,7 @@ set(GALAXY_UI_CPP
     src/gk_logger.cpp
     src/gk_system.cpp
     src/pa_stream_handler.cpp
+    src/gk_sinewave.cpp
     src/pa_audio_player.cpp
     src/ui/widgets/gk_vu_meter_widget.cpp
     src/ui/widgets/gk_submit_msg.cpp
@@ -602,6 +603,7 @@ set(GALAXY_OBJ_HEADERS
     src/gk_logger.hpp
     src/gk_system.hpp
     src/pa_stream_handler.hpp
+    src/gk_sinewave.hpp
     src/pa_audio_player.hpp
     src/ui/widgets/gk_vu_meter_widget.hpp
     src/ui/widgets/gk_submit_msg.hpp

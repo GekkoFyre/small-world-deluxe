@@ -152,19 +152,6 @@ std::list<std::pair<QAudioDeviceInfo, GkDevice>> AudioDevices::enumAudioDevicesC
 }
 
 /**
- * @brief AudioDevices::testSinewave Performs a sinewave test on the given input/output audio device.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param device
- * @param is_output_dev
- * @param stereo
- * @return
- */
-void AudioDevices::testSinewave(const GkDevice &audio_dev, const bool &is_output_dev)
-{
-    return;
-}
-
-/**
  * @brief AudioDevices::volumeSetting
  * @note Michael Satran & Mike Jacobs <https://docs.microsoft.com/en-us/windows/win32/coreaudio/endpoint-volume-controls>
  */
