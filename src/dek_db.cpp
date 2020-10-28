@@ -308,8 +308,7 @@ void GkLevelDb::write_audio_device_settings(const GkDevice &value, const bool &i
         if (is_output_device) {
             // Unique identifier for the chosen output audio device
             batch.Put("AudioOutputSelChannels", std::to_string(value.sel_channels));
-            batch.Put("AudioOutputId", value.audio_dev_str.toStdString());
-            batch.Put("AudioOutputDeviceName", std::to_string(value.dev_number));
+            batch.Put("AudioOutputDeviceName", value.audio_dev_str.toStdString());
 
             // Determine if this is the default output device for the system and if so, convert
             // the boolean value to a std::string suitable for database storage.
@@ -323,8 +322,7 @@ void GkLevelDb::write_audio_device_settings(const GkDevice &value, const bool &i
         } else {
             // Unique identifier for the chosen input audio device
             batch.Put("AudioInputSelChannels", std::to_string(value.sel_channels));
-            batch.Put("AudioInputId", value.audio_dev_str.toStdString());
-            batch.Put("AudioInputDeviceName", std::to_string(value.dev_number));
+            batch.Put("AudioInputDeviceName", value.audio_dev_str.toStdString());
 
             // Determine if this is the default input device for the system and if so, convert
             // the boolean value to a std::string suitable for database storage.
@@ -1376,7 +1374,7 @@ QString GkLevelDb::read_general_settings(const general_stat_cfg &key)
  * @return Outputs an int that is internally referred to as the `dev_number`, regarding the
  * `GekkoFyre::Database::Settings::Audio::Device` structure in `define.hpp`.
  */
-QString GkLevelDb::read_audio_device_settings(const bool &is_output_device, const bool &index_only)
+QString GkLevelDb::read_audio_device_settings(const bool &is_output_device)
 {
     leveldb::Status status;
     leveldb::ReadOptions read_options;
@@ -1385,20 +1383,10 @@ QString GkLevelDb::read_audio_device_settings(const bool &is_output_device, cons
     std::lock_guard<std::mutex> lck_guard(read_audio_dev_mtx);
     read_options.verify_checksums = true;
 
-    if (index_only) {
-        if (is_output_device) {
-            // We are dealing with an audio output device
-            status = db->Get(read_options, "AudioOutputId", &value);
-        } else {
-            // We are dealing with an audio input device
-            status = db->Get(read_options, "AudioInputId", &value);
-        }
+    if (is_output_device) {
+        status = db->Get(read_options, "AudioOutputDeviceName", &value);
     } else {
-        if (is_output_device) {
-            status = db->Get(read_options, "AudioOutputDeviceName", &value);
-        } else {
-            status = db->Get(read_options, "AudioInputDeviceName", &value);
-        }
+        status = db->Get(read_options, "AudioInputDeviceName", &value);
     }
 
     return QString::fromStdString(value);
@@ -1458,8 +1446,7 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
         std::string output_def_sys_device;
         std::string output_user_activity;
 
-        status = db->Get(read_options, "AudioOutputId", &output_id);
-        status = db->Get(read_options, "AudioOutputDeviceName", &output_pa_host_idx);
+        status = db->Get(read_options, "AudioOutputDeviceName", &output_id);
         status = db->Get(read_options, "AudioOutputSelChannels", &output_sel_channels);
         status = db->Get(read_options, "AudioOutputDefSysDevice", &output_def_sys_device);
         status = db->Get(read_options, "AudioOutputCfgUsrActivity", &output_user_activity);
@@ -1490,8 +1477,7 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
         std::string input_def_sys_device;
         std::string input_user_activity;
 
-        status = db->Get(read_options, "AudioInputId", &input_id);
-        status = db->Get(read_options, "AudioInputDeviceName", &input_pa_host_idx);
+        status = db->Get(read_options, "AudioInputDeviceName", &input_id);
         status = db->Get(read_options, "AudioInputSelChannels", &input_sel_channels);
         status = db->Get(read_options, "AudioInputDefSysDevice", &input_def_sys_device);
         status = db->Get(read_options, "AudioInputCfgUsrActivity", &input_user_activity);
@@ -1981,60 +1967,6 @@ QString GkLevelDb::convIARURegionToStr(const IARURegions &iaru_region)
     }
 
     return tr("Error!");
-}
-
-/**
- * @brief GkLevelDb::write_audio_api_settings() Writes out the saved information concerning the user's choice of
- * decided upon QAudioSystem API settings.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param interface
- */
-void GkLevelDb::write_audio_api_settings(const QString &interface)
-{
-    try {
-        leveldb::WriteBatch batch;
-        leveldb::Status status;
-
-        batch.Put("AudioQAudioSystemAPISelection", interface.toStdString());
-
-        leveldb::WriteOptions write_options;
-        write_options.sync = true;
-
-        status = db->Write(write_options, &batch);
-
-        if (!status.ok()) { // Abort because of error!
-            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
-        }
-    } catch (const std::exception &e) {
-        std::throw_with_nested(std::runtime_error(e.what()));
-    }
-
-    return;
-}
-
-/**
- * @brief GkLevelDb::read_audio_api_settings() Reads the saved information concerning the user's choice of decided
- * upon QAudioSystem API settings.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @return
- */
-QString GkLevelDb::read_audio_api_settings()
-{
-    leveldb::Status status;
-    leveldb::ReadOptions read_options;
-    std::string value;
-
-    std::lock_guard<std::mutex> lck_guard(read_audio_api_mtx);
-    read_options.verify_checksums = true;
-
-    status = db->Get(read_options, "AudioQAudioSystemAPISelection", &value);
-
-    if (!value.empty()) {
-        return QString::fromStdString(value);
-    }
-
-    // TODO: Fill this section out where it shouldn't be a nullptr!
-    return QString();
 }
 
 /**

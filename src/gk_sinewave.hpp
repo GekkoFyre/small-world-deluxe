@@ -43,59 +43,43 @@
 
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
-#include "src/file_io.hpp"
-#include "src/pa_audio_buf.hpp"
-#include "src/gk_frequency_list.hpp"
 #include "src/gk_logger.hpp"
-#include "src/gk_system.hpp"
-#include <mutex>
+#include <memory>
 #include <vector>
 #include <string>
-#include <memory>
-#include <future>
-#include <thread>
-#include <utility>
-#include <QList>
+#include <QTimer>
 #include <QObject>
 #include <QString>
-#include <QVector>
 #include <QPointer>
-#include <QAudioFormat>
+#include <QIODevice>
+#include <QAudioOutput>
 #include <QAudioDeviceInfo>
 
 namespace GekkoFyre {
 
-class AudioDevices : public QObject {
+class GkSinewaveTest : public QIODevice {
     Q_OBJECT
 
 public:
-    explicit AudioDevices(QPointer<GekkoFyre::GkLevelDb> gkDb, QPointer<GekkoFyre::FileIo> filePtr,
-                          QPointer<GekkoFyre::GkFrequencies> freqList, QPointer<GekkoFyre::StringFuncs> stringFuncs,
-                          QPointer<GekkoFyre::GkEventLogger> eventLogger, QPointer<GekkoFyre::GkSystem> systemPtr,
-                          QObject *parent = nullptr);
-    ~AudioDevices() override;
+    explicit GkSinewaveTest(const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                            qint32 freq, QObject *parent = nullptr);
+    ~GkSinewaveTest() override;
 
-    std::list<std::pair<QAudioDeviceInfo, Database::Settings::Audio::GkDevice>> enumAudioDevicesCpp(const QList<QAudioDeviceInfo> &audioDeviceInfo);
+    void setFreq(qint32 freq);
+    void setDuration(qint32 ms);
 
-    void systemVolumeSetting();
-    float vuMeter(const int &channels, const int &count, float *buffer);
-    float vuMeterPeakAmplitude(const size_t &count, float *buffer);
-    float vuMeterRMS(const size_t &count, float *buffer);
-
-    float calcAudioBufferTimeNeeded(const Database::Settings::GkAudioChannels &num_channels, const size_t &fft_num_lines,
-                                    const size_t &fft_samples_per_line, const size_t &audio_buf_sampling_length,
-                                    const size_t &buf_size);
-
-    QString rtAudioVersionNumber();
-    QString rtAudioVersionText();
+    qint64 readData(char *data, qint64 max_length) Q_DECL_OVERRIDE;
+    qint64 writeData(const char *data, qint64 length) Q_DECL_OVERRIDE;
 
 private:
-    QPointer<GkLevelDb> gkDekodeDb;
-    QPointer<GekkoFyre::FileIo> gkFileIo;
-    QPointer<GekkoFyre::GkFrequencies> gkFreqList;
-    QPointer<StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
-    QPointer<GekkoFyre::GkSystem> gkSystem;
+    GekkoFyre::Database::Settings::Audio::GkDevice gkAudioDevice;
+
+    qint32 frequency;
+    qint32 samples;             // Samples to play for desired duration
+    qint32 *end;                // The last position within the circular buffer, for faster comparisons
+    qint32 *buffer;             // Sinewave buffer itself
+    qint32 *send_pos;           // The current position within the circular buffer
 
 };
 };
