@@ -111,7 +111,7 @@ void GkFreqTableViewModel::keyPressEvent(QKeyEvent *event)
             QApplication::clipboard()->setText(text);
         } else if (event->matches(QKeySequence::Paste)) {
             QString text = QApplication::clipboard()->text();
-            QStringList rowContents = text.split("\n", QString::SplitBehavior::SkipEmptyParts);
+            QStringList rowContents = text.split("\n", QString::SkipEmptyParts);
 
             QModelIndex initIndex = selectedIndexes().at(0);
             auto initRow = initIndex.row();

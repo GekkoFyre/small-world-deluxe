@@ -634,11 +634,9 @@ void DialogSettings::prefill_audio_devices()
         } else {
             qint32 input_dev_counter = 0;
             for (const auto &input_dev: avail_input_audio_devs) {
-                if (!input_dev.second.audio_device_info.isNull()) {
-                    ui->comboBox_soundcard_input->insertItem(input_dev_counter, input_dev.second.audio_dev_str,
-                                                             input_dev.second.audio_dev_str);
-                    ++input_dev_counter;
-                }
+                ui->comboBox_soundcard_input->insertItem(input_dev_counter, input_dev.second.audio_dev_str,
+                                                         input_dev.second.audio_dev_str);
+                ++input_dev_counter;
             }
         }
 
@@ -650,11 +648,9 @@ void DialogSettings::prefill_audio_devices()
         } else {
             qint32 output_dev_counter = 0;
             for (const auto &output_dev: avail_output_audio_devs) {
-                if (!output_dev.second.audio_device_info.isNull()) {
-                    ui->comboBox_soundcard_output->insertItem(output_dev_counter, output_dev.second.audio_dev_str,
-                                                              output_dev.second.audio_dev_str);
-                    ++output_dev_counter;
-                }
+                ui->comboBox_soundcard_output->insertItem(output_dev_counter, output_dev.second.audio_dev_str,
+                                                          output_dev.second.audio_dev_str);
+                ++output_dev_counter;
             }
         }
     } catch (const std::exception &e) {
@@ -1719,8 +1715,10 @@ void DialogSettings::on_comboBox_soundcard_input_currentIndexChanged(int index)
     try {
         //
         // Input audio devices
-        quint32 input_sample_rate_counter = 0;
+        qint32 input_sample_rate_counter = 0;
+        qint32 input_sample_sizes_counter = 0;
         ui->comboBox_audio_input_sample_rate->clear(); // Clear the QComboBox which contains the sample rates!
+        ui->comboBox_audio_input_bit_rate->clear(); // Clear the QComboBox which contains the bit-rates!
         supportedInputSampleRates.clear();
         if (!avail_input_audio_devs.empty()) {
             for (const auto &device: avail_input_audio_devs) {
@@ -1731,6 +1729,12 @@ void DialogSettings::on_comboBox_soundcard_input_currentIndexChanged(int index)
                         ui->comboBox_audio_input_sample_rate->insertItem(input_sample_rate_counter, tr("%1 kHz").arg(QString::number(sample)), input_sample_rate_counter);
                         supportedInputSampleRates.insert(input_sample_rate_counter, sample);
                         ++input_sample_rate_counter;
+                    }
+
+                    for (const auto &input_bit_rate: gkDevice.audio_device_info.supportedSampleSizes()) {
+                        ui->comboBox_audio_input_bit_rate->insertItem(input_sample_sizes_counter, tr("%1-bit").arg(QString::number(input_bit_rate)),
+                                                                      QString::number(input_bit_rate));
+                        ++input_sample_sizes_counter;
                     }
 
                     break;
@@ -1764,8 +1768,10 @@ void DialogSettings::on_comboBox_soundcard_output_currentIndexChanged(int index)
     try {
         //
         // Output audio devices
-        quint32 output_sample_rate_counter = 0;
+        qint32 output_sample_rate_counter = 0;
+        qint32 output_sample_sizes_counter = 0;
         ui->comboBox_audio_output_sample_rate->clear(); // Clear the QComboBox which contains the sample rates!
+        ui->comboBox_audio_output_bit_rate->clear(); // Clear the QComboBox which contains the bit-rates!
         supportedOutputSampleRates.clear();
         if (!avail_output_audio_devs.empty()) {
             for (const auto &device: avail_output_audio_devs) {
@@ -1776,6 +1782,12 @@ void DialogSettings::on_comboBox_soundcard_output_currentIndexChanged(int index)
                         ui->comboBox_audio_output_sample_rate->insertItem(output_sample_rate_counter, tr("%1 kHz").arg(QString::number(sample)), output_sample_rate_counter);
                         supportedOutputSampleRates.insert(output_sample_rate_counter, sample);
                         ++output_sample_rate_counter;
+                    }
+
+                    for (const auto &output_bit_rate: gkDevice.audio_device_info.supportedSampleSizes()) {
+                        ui->comboBox_audio_output_bit_rate->insertItem(output_sample_sizes_counter, tr("%1-bit").arg(QString::number(output_bit_rate)),
+                                                                       QString::number(output_bit_rate));
+                        ++output_sample_sizes_counter;
                     }
 
                     break;
