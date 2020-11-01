@@ -50,7 +50,6 @@
 #include <hamlib/rigclass.h>
 #include <qwt/qwt_interval.h>
 #include <sndfile.h>
-#include <sentry.h>
 #include <list>
 #include <vector>
 #include <string>
@@ -88,6 +87,7 @@ extern "C"
 {
 #endif
 
+#include <sentry.h>
 #include <hamlib/rig.h>
 #include <hamlib/riglist.h>
 
@@ -377,7 +377,9 @@ namespace Database {
             AudioInputChannels,
             AudioOutputChannels,
             AudioInputSampleRate,
-            AudioOutputSampleRate
+            AudioOutputSampleRate,
+            AudioInputBitrate,
+            AudioOutputBitrate
         };
 
         enum GkAudioChannels {

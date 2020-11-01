@@ -44,7 +44,6 @@
 #include "src/defines.hpp"
 #include "src/gk_string_funcs.hpp"
 #include "src/file_io.hpp"
-#include <sentry.h>
 #include <leveldb/db.h>
 #include <leveldb/status.h>
 #include <memory>
@@ -53,6 +52,18 @@
 #include <QObject>
 #include <QString>
 #include <QPointer>
+#include <QAudioFormat>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#include <sentry.h>
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 namespace GekkoFyre {
 
@@ -106,6 +117,7 @@ public:
     qint32 convertAudioChannelsToCount(const GekkoFyre::Database::Settings::GkAudioChannels &channel_enum);
     QString convertAudioChannelsStr(const GekkoFyre::Database::Settings::GkAudioChannels &channel_enum);
     [[nodiscard]] bool convertAudioEnumIsStereo(const GekkoFyre::Database::Settings::GkAudioChannels &channel_enum) const;
+    QAudioFormat::SampleType convAudioSampleRateToEnum(const qint32 &sample_rate);
 
     ptt_type_t convPttTypeToEnum(const QString &ptt_type_str);
     QString convPttTypeToStr(const ptt_type_t &ptt_type_enum);

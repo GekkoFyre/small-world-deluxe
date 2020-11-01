@@ -111,7 +111,13 @@ std::list<std::pair<QAudioDeviceInfo, GkDevice>> AudioDevices::enumAudioDevicesC
         std::list<std::pair<QAudioDeviceInfo, GkDevice>> audio_devices_vec;
 
         for (const auto &device: audioDeviceInfo) {
+            #if defined(_WIN32) || defined(__MINGW64__)
             if (!device.isNull() && !device.supportedSampleRates().empty() && !device.supportedSampleSizes().empty() && !device.supportedChannelCounts().empty()) {
+            #elif __linux__
+            if ((!device.isNull() && !device.supportedSampleRates().empty() && !device.supportedSampleSizes().empty() && !device.supportedChannelCounts().empty())
+            && (device.deviceName().contains("default") || device.deviceName().contains("pulse") || device.deviceName().contains("alsa") ||
+            device.deviceName().contains("qnx"))) {
+            #endif
                 bool at_least_mono = false; // Do we have at least a Mono channel?
                 for (const auto &channel: device.supportedChannelCounts()) {
                     if (channel > 0) {

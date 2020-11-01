@@ -56,7 +56,6 @@
 #include "src/gk_modem.hpp"
 #include "src/gk_system.hpp"
 #include "src/gk_text_to_speech.hpp"
-#include <sentry.h>
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
@@ -95,6 +94,17 @@
 #include <QSharedPointer>
 #include <QAudioDeviceInfo>
 #include <QCommandLineParser>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#include <sentry.h>
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 namespace Ui {
 class MainWindow;
