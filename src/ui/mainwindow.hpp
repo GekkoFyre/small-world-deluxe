@@ -417,6 +417,8 @@ private:
 
     void updateVolumeDisplayWidgets();
     void updateVolumeSliderLabel(const float &vol_level);
+    void defaultInputAudioDev(const std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice> &input_dev);
+    void defaultOutputAudioDev(const std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice> &output_dev);
     bool findDefaultInputAudioDevice();
     bool findDefaultOutputAudioDevice();
 
@@ -436,6 +438,8 @@ private:
     bool changeStatusBarMsg(const QString &statusMsg = "");
     bool steadyTimer(const int &seconds);
     QRect findActiveScreen();
+
+    void print_exception(const std::exception &e, int level = 0);
 
 };
 

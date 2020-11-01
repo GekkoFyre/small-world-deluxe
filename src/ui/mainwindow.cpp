@@ -525,13 +525,28 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                             user_input_settings.setSampleRate(inputDevSampleRateVal);
 
                             // See: https://doc.qt.io/qt-5/qaudioformat.html#SampleType-enum
-                            user_input_settings.setSampleType(gkDb->convAudioSampleRateToEnum(inputDevSampleRateVal));
+                            auto sample_type_val = gkDb->convAudioSampleRateToEnum(inputDevSampleRateVal);
+                            if (sample_type_val != QAudioFormat::Unknown) {
+                                user_input_settings.setSampleType(sample_type_val);
+                            } else {
+                                throw std::invalid_argument(tr("Unable to determine sample-type for given input audio device!").toStdString());
+                            }
 
                             // This is typically 8 or 16, but some systems may support higher sample sizes
                             user_input_settings.setSampleSize(inputDevSampleSizeVal);
 
-                            pref_input_device = input_dev.second;
-                            gkAudioInput = new QAudioInput(input_dev.first, input_dev.second.user_settings, this);
+                            if (input_dev.second.audio_device_info.isFormatSupported(user_input_settings)) {
+                                // Given audio parameters are supported, as defined by the user previously!
+                                pref_input_device = input_dev.second;
+                                gkAudioInput = new QAudioInput(input_dev.first, user_input_settings, this);
+                                gkEventLogger->publishEvent(tr("Now using the input audio device, \"%1\".").arg(pref_input_device.audio_device_info.deviceName()),
+                                                            GkSeverity::Info, "", true, true, false, false);
+                            } else {
+                                // Given audio parameters are NOT supported, therefore use defaults for now and let the user know!
+                                defaultInputAudioDev(input_dev);
+                                gkEventLogger->publishEvent(tr("Previously set audio parameters for the input device are not supported! Please visit the Settings Dialog and reconfigure."),
+                                                            GkSeverity::Warning, "", false, true, false, true);
+                            }
                         }
                     }
                 } else {
@@ -540,23 +555,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                             //
                             // Use the default input audio device!
                             //
-                            QAudioDeviceInfo default_input_dev(QAudioDeviceInfo::defaultInputDevice());
-                            QAudioFormat default_input_format;
-                            default_input_format.setChannelCount(default_input_format.channelCount());
-                            default_input_format.setByteOrder(default_input_format.byteOrder());
-                            default_input_format.setCodec(default_input_format.codec());
-                            default_input_format.setSampleRate(default_input_format.sampleRate());
-                            default_input_format.setSampleType(default_input_format.sampleType());
-                            default_input_format.setSampleSize(default_input_format.sampleSize());
-
-                            pref_input_device = input_dev.second;
-                            gkAudioInput = new QAudioInput(default_input_dev, default_input_format, this);
+                            defaultInputAudioDev(input_dev);
+                            gkEventLogger->publishEvent(tr("Now using the input audio device, \"%1\".").arg(pref_input_device.audio_device_info.deviceName()),
+                                                        GkSeverity::Info, "", true, true, false, false);
                         }
                     }
                 }
-
-                gkEventLogger->publishEvent(tr("Now using the input audio device, \"%1\".")
-                                                    .arg(pref_input_device.audio_device_info.deviceName()), GkSeverity::Info, "", true, true, false, false);
             } else {
                 throw std::runtime_error(tr("Could not find any input audio devices!").toStdString());
             }
@@ -607,13 +611,28 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                             user_output_settings.setSampleRate(outputDevSampleRateVal);
 
                             // See: https://doc.qt.io/qt-5/qaudioformat.html#SampleType-enum
-                            user_output_settings.setSampleType(gkDb->convAudioSampleRateToEnum(outputDevSampleRateVal));
+                            auto sample_type_val = gkDb->convAudioSampleRateToEnum(outputDevSampleRateVal);
+                            if (sample_type_val != QAudioFormat::Unknown) {
+                                user_output_settings.setSampleType(sample_type_val);
+                            } else {
+                                throw std::invalid_argument(tr("Unable to determine sample-type for given output audio device!").toStdString());
+                            }
 
                             // This is typically 8 or 16, but some systems may support higher sample sizes
                             user_output_settings.setSampleSize(outputDevSampleSizeVal);
 
-                            pref_output_device = output_dev.second;
-                            gkAudioOutput = new QAudioOutput(output_dev.first, output_dev.second.user_settings, this);
+                            if (output_dev.second.audio_device_info.isFormatSupported(user_output_settings)) {
+                                // Given audio parameters are supported, as defined by the user previously!
+                                pref_output_device = output_dev.second;
+                                gkAudioOutput = new QAudioOutput(output_dev.first, user_output_settings, this);
+                                gkEventLogger->publishEvent(tr("Now using the output audio device, \"%1\".").arg(pref_output_device.audio_device_info.deviceName()),
+                                                            GkSeverity::Info, "", true, true, false, false);
+                            } else {
+                                // Given audio parameters are NOT supported, therefore use defaults for now and let the user know!
+                                defaultOutputAudioDev(output_dev);
+                                gkEventLogger->publishEvent(tr("Previously set audio parameters for the output device are not supported! Please visit the Settings Dialog and reconfigure."),
+                                                            GkSeverity::Warning, "", false, true, false, true);
+                            }
                         }
                     }
                 } else {
@@ -622,34 +641,18 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                             //
                             // Use the default output audio device!
                             //
-                            QAudioDeviceInfo default_output_dev(QAudioDeviceInfo::defaultOutputDevice());
-                            QAudioFormat default_output_format;
-                            default_output_format.setChannelCount(default_output_format.channelCount());
-                            default_output_format.setByteOrder(default_output_format.byteOrder());
-                            default_output_format.setCodec(default_output_format.codec());
-                            default_output_format.setSampleRate(default_output_format.sampleRate());
-                            default_output_format.setSampleType(default_output_format.sampleType());
-                            default_output_format.setSampleSize(default_output_format.sampleSize());
-
-                            pref_output_device = output_dev.second;
-                            gkAudioOutput = new QAudioOutput(default_output_dev, default_output_format, this);
+                            defaultOutputAudioDev(output_dev);
+                            gkEventLogger->publishEvent(tr("Now using the output audio device, \"%1\".").arg(pref_output_device.audio_device_info.deviceName()),
+                                                        GkSeverity::Info, "", true, true, false, false);
                         }
                     }
                 }
-
-                gkEventLogger->publishEvent(tr("Now using the output audio device, \"%1\".")
-                                                    .arg(pref_output_device.audio_device_info.deviceName()), GkSeverity::Info, "", true, true, false, false);
             } else {
                 throw std::runtime_error(tr("Could not find any output audio devices!").toStdString());
             }
         } catch (const std::exception &e) {
-            QString except_msg = tr("A generic exception has occurred while initializing the RtAudio library:\n\n%1").arg(e.what());
-            gkEventLogger->publishEvent(except_msg, GkSeverity::Fatal, "", true, true, false, false);
-        } catch (...) {
-            QString except_msg = tr("An unknown exception has occurred whilst initializing the RtAudio library. There are no further details.");
-            gkEventLogger->publishEvent(except_msg, GkSeverity::Fatal, "", true, true, false, false);
+            gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);
         }
-
 
         //
         // Initialize any FFT libraries/resources
@@ -977,7 +980,7 @@ bool MainWindow::radioInitStart()
 
         return true;
     } catch (const std::exception &e) {
-        gkStringFuncs->print_exception(e);
+        print_exception(e);
     }
 
     return false;
@@ -1506,6 +1509,34 @@ void MainWindow::updateVolumeSliderLabel(const float &vol_level)
 
     const float vol_multiplier = (1.0f * std::pow(10, (vol_level_decibel / 20.0f)));
     emit changeVolume(vol_multiplier);
+
+    return;
+}
+
+/**
+ * @brief MainWindow::defaultInputAudioDev
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param input_dev
+ */
+void MainWindow::defaultInputAudioDev(const std::pair<QAudioDeviceInfo, GkDevice> &input_dev)
+{
+    QAudioDeviceInfo default_input_dev(QAudioDeviceInfo::defaultInputDevice());
+    pref_input_device = input_dev.second;
+    gkAudioInput = new QAudioInput(default_input_dev, default_input_dev.preferredFormat(), this);
+
+    return;
+}
+
+/**
+ * @brief MainWindow::defaultOutputAudioDev
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param output_dev
+ */
+void MainWindow::defaultOutputAudioDev(const std::pair<QAudioDeviceInfo, GkDevice> &output_dev)
+{
+    QAudioDeviceInfo default_output_dev(QAudioDeviceInfo::defaultOutputDevice());
+    pref_output_device = output_dev.second;
+    gkAudioOutput = new QAudioOutput(default_output_dev, default_output_dev.preferredFormat(), this);
 
     return;
 }
@@ -3042,6 +3073,25 @@ void MainWindow::on_actionSend_Report_triggered()
 void MainWindow::on_action_Battery_Calculator_triggered()
 {
     QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+
+    return;
+}
+
+/**
+ * @brief MainWindow::print_exception
+ * @param e
+ * @param level
+ */
+void MainWindow::print_exception(const std::exception &e, int level)
+{
+    gkEventLogger->publishEvent(e.what(), GkSeverity::Warning, "", false);
+    QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+
+    try {
+        std::rethrow_if_nested(e);
+    } catch (const std::exception &e) {
+        print_exception(e, level + 1);
+    } catch (...) {}
 
     return;
 }
