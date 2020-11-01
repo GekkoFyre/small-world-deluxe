@@ -1744,6 +1744,24 @@ bool GkLevelDb::convertAudioEnumIsStereo(const GkAudioChannels &channel_enum) co
 }
 
 /**
+ * @brief GkLevelDb::convAudioSampleRateToEnum converts a given sample-rate to the nearest, or rather, the most
+ * appropriate Sample Type as per under QAudioSystem.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param sample_rate
+ * @return
+ */
+QAudioFormat::SampleType GkLevelDb::convAudioSampleRateToEnum(const qint32 &sample_rate)
+{
+    if (sample_rate <= 48000 && sample_rate > 0) {
+        return QAudioFormat::SignedInt;
+    } else {
+        return QAudioFormat::Float;
+    }
+
+    return QAudioFormat::UnSignedInt;
+}
+
+/**
  * @brief GkLevelDb::convPttTypeToEnum
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param ptt_type_str
