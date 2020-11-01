@@ -703,9 +703,9 @@ void RadioLibs::print_exception(const std::exception &e, int level)
 
     try {
         std::rethrow_if_nested(e);
-    } catch(const std::exception& e) {
-        print_exception(e, level+1);
-    } catch(...) {}
+    } catch (const std::exception &e) {
+        print_exception(e, level + 1);
+    } catch (...) {}
 
     return;
 }
