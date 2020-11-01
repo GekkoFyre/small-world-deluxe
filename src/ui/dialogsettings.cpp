@@ -1710,8 +1710,8 @@ void DialogSettings::on_pushButton_output_sound_test_clicked()
         int ret = msgBox.exec();
 
         if (ret == QMessageBox::Ok) {
-            QPointer<GkSinewaveTest> gkSinewaveTest = new GkSinewaveTest(chosen_output_audio_dev, gkEventLogger, 800, this);
-            // gkAudioOutput;
+            QPointer<GkSinewaveOutput> gkSinewaveTest = new GkSinewaveOutput(chosen_output_audio_dev, gkEventLogger, gkAudioInput, gkAudioOutput, this);
+            gkSinewaveTest->playSound(AUDIO_SINE_WAVE_PLAYBACK_SECS * 1000);
 
             QMessageBox::information(this, tr("Finished"), tr("The audio test has now finished."), QMessageBox::Ok);
         } else if (ret == QMessageBox::Abort) {

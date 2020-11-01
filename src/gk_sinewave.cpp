@@ -186,3 +186,73 @@ qint64 GkSinewaveTest::writeData(const char *data, qint64 length)
 
     return 0;
 }
+
+/**
+ * @brief GkSinewaveOutput::GkSinewaveOutput
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param parent
+ */
+GkSinewaveOutput::GkSinewaveOutput(const GkDevice &audio_dev, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                                   QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> audioOutput,
+                                   QObject *parent) : QObject(parent)
+{
+    setParent(this);
+
+    gkEventLogger = std::move(eventLogger);
+    gkAudioDevice = audio_dev;
+    gkAudioInput = std::move(audioInput);
+    gkAudioOutput = std::move(audioOutput);
+
+    buffer = new char[50000];
+    gkSinewaveTest = new GkSinewaveTest(gkAudioDevice, gkEventLogger, 800, this);
+
+    output = gkAudioOutput->start();
+    timer = new QTimer(this);
+    QObject::connect(timer, SIGNAL(timeout()), this, SLOT(writeMore()));
+    timer->setSingleShot(true);
+}
+
+GkSinewaveOutput::~GkSinewaveOutput()
+{
+    delete[] buffer;
+}
+
+/**
+ * @brief GkSinewaveOutput::playSound
+ * @param milliseconds
+ */
+void GkSinewaveOutput::playSound(quint32 milliseconds)
+{
+    gkSinewaveTest->setDuration(milliseconds);
+    gkAudioOutput->resume();
+    writeMore();
+
+    return;
+}
+
+/**
+ * @brief GkSinewaveOutput::writeMore
+ */
+void GkSinewaveOutput::writeMore()
+{
+    if (!gkAudioOutput) {
+        return;
+    }
+
+    if (gkAudioOutput->state() == QAudio::StoppedState) {
+        return;
+    }
+
+    int chunks = gkAudioOutput->bytesFree() / gkAudioOutput->periodSize();
+    while (chunks) {
+        int len = gkSinewaveTest->read(buffer, gkAudioOutput->periodSize());
+        if (len > 0) {
+            output->write(buffer, len);
+        }
+
+        --chunks;
+    }
+
+    timer->start(100);
+    return;
+}
