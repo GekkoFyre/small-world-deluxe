@@ -45,7 +45,6 @@
 #include "src/pa_stream_handler.hpp"
 #include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
-#include "src/gk_string_funcs.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
 #include <memory>
@@ -53,6 +52,7 @@
 #include <QString>
 #include <QObject>
 #include <QPointer>
+#include <QAudioOutput>
 
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
@@ -64,8 +64,7 @@ class GkPaAudioPlayer : public QObject {
 
 public:
     explicit GkPaAudioPlayer(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
-                             const QPointer<GekkoFyre::GkEventLogger> &eventLogger, QPointer<GekkoFyre::StringFuncs> stringFuncs,
-                             QObject *parent = nullptr);
+                             QPointer<QAudioOutput> audioOutput, const QPointer<GekkoFyre::GkEventLogger> &eventLogger, QObject *parent = nullptr);
     virtual ~GkPaAudioPlayer();
 
     void play(const fs::path &audio_file);
@@ -73,8 +72,7 @@ public:
     void stop(const fs::path &audio_file);
 
 private:
-    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
-
+    QPointer<QAudioOutput> gkAudioOutput;
     QPointer<GkPaStreamHandler> streamHandler;
 
 };

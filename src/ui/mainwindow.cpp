@@ -127,6 +127,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<GekkoFyre::AmateurRadio::IARURegions>("GekkoFyre::AmateurRadio::IARURegions");
     qRegisterMetaType<GekkoFyre::Spectrograph::GkGraphType>("GekkoFyre::Spectrograph::GkGraphType");
     qRegisterMetaType<GekkoFyre::AmateurRadio::GkFreqs>("GekkoFyre::AmateurRadio::GkFreqs");
+    qRegisterMetaType<boost::filesystem::path>("boost::filesystem::path");
     qRegisterMetaType<RIG>("RIG");
     qRegisterMetaType<size_t>("size_t");
     qRegisterMetaType<uint8_t>("uint8_t");
@@ -937,6 +938,19 @@ void MainWindow::launchSettingsWin()
     dlg_settings->show();
 
     return;
+}
+
+/**
+ * @brief MainWindow::launchAudioPlayerWin
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::launchAudioPlayerWin()
+{
+    QPointer<GkAudioPlayDialog> gkAudioPlayDlg = new GkAudioPlayDialog(gkDb, pref_input_device, pref_output_device, gkAudioInput, gkAudioOutput,
+                                                                       gkStringFuncs, gkEventLogger, this);
+    gkAudioPlayDlg->setWindowFlags(Qt::Window);
+    gkAudioPlayDlg->setAttribute(Qt::WA_DeleteOnClose, true);
+    gkAudioPlayDlg->show();
 }
 
 /**
@@ -1772,7 +1786,8 @@ void MainWindow::on_actionDelete_all_wav_files_in_Save_Directory_triggered()
 
 void MainWindow::on_actionPlay_triggered()
 {
-    QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+    launchAudioPlayerWin();
+    return;
 }
 
 /**
@@ -1782,6 +1797,7 @@ void MainWindow::on_actionPlay_triggered()
 void MainWindow::on_actionSettings_triggered()
 {
     launchSettingsWin();
+    return;
 }
 
 /**

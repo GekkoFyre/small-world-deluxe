@@ -53,6 +53,9 @@
 #include <QObject>
 #include <QString>
 #include <QPointer>
+#include <QAudioOutput>
+#include <QAudioFormat>
+#include <QAudioDeviceInfo>
 
 #ifdef __cplusplus
 extern "C"
@@ -80,23 +83,29 @@ class GkPaStreamHandler : public QObject {
 
 public:
     explicit GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
-                               QPointer<GekkoFyre::GkEventLogger> eventLogger, QPointer<GekkoFyre::StringFuncs> stringFuncs,
-                               QObject *parent = nullptr);
+                               QPointer<QAudioOutput> audioOutput, QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkPaStreamHandler() override;
 
     void processEvent(AudioEventType audioEventType, const fs::path &mediaFilePath, bool loop = false);
 
+private slots:
+    void playMediaFile(const boost::filesystem::path &media_path);
+    void stopMediaFile(const boost::filesystem::path &media_path);
+
+signals:
+    void playMedia(const boost::filesystem::path &media_path);
+    void stopMedia(const boost::filesystem::path &media_path);
+
 private:
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
-    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
 
     //
-    // PortAudio initialization and buffers
+    // QAudioSystem initialization and buffers
     //
+    QPointer<QAudioOutput> gkAudioOutput;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
-
-    GkAudioFramework::GkPlayback gkPlayback;
+    std::map<boost::filesystem::path, GekkoFyre::GkAudioFramework::GkPlayback> gkSounds;
 
 };
 };

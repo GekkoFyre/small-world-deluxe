@@ -203,8 +203,8 @@ GkSinewaveOutput::GkSinewaveOutput(const GkDevice &audio_dev, QPointer<GekkoFyre
     gkAudioInput = std::move(audioInput);
     gkAudioOutput = std::move(audioOutput);
 
-    buffer = new char[50000];
-    gkSinewaveTest = new GkSinewaveTest(gkAudioDevice, gkEventLogger, 800, this);
+    buffer = new char[(audio_dev.audio_device_info.preferredFormat().sampleRate() * AUDIO_SINE_WAVE_PLAYBACK_SECS) + 1];
+    gkSinewaveTest = new GkSinewaveTest(gkAudioDevice, gkEventLogger, 300, this);
 
     output = gkAudioOutput->start();
     timer = new QTimer(this);

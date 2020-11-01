@@ -43,6 +43,9 @@
 #include <utility>
 #include <algorithm>
 #include <exception>
+#include <QByteArray>
+#include <QIODevice>
+#include <QBuffer>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -59,23 +62,21 @@ using namespace Logging;
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
-                                     QPointer<GekkoFyre::GkEventLogger> eventLogger, QPointer<GekkoFyre::StringFuncs> stringFuncs,
-                                     QObject *parent)
+                                     QPointer<QAudioOutput> audioOutput, QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QObject(parent)
 {
-    try {
-        setParent(parent);
+    setParent(parent);
 
-        gkDb = std::move(database);
-        gkEventLogger = std::move(eventLogger);
-        gkStringFuncs = std::move(stringFuncs);
+    gkDb = std::move(database);
+    gkEventLogger = std::move(eventLogger);
+    gkAudioOutput = std::move(audioOutput);
 
-        //
-        // Initialize variables
-        //
-        pref_output_device = output_device;
-    } catch (const std::exception &e) {
-        gkStringFuncs->print_exception(e);
-    }
+    //
+    // Initialize variables
+    //
+    pref_output_device = output_device;
+
+    QObject::connect(this, SIGNAL(playMedia(const boost::filesystem::path &)), this, SLOT(playMediaFile(const boost::filesystem::path &)));
+    QObject::connect(this, SIGNAL(stopMedia(const boost::filesystem::path &)), this, SLOT(stopMediaFile(const boost::filesystem::path &)));
 
     return;
 }
@@ -93,5 +94,68 @@ GkPaStreamHandler::~GkPaStreamHandler()
  */
 void GkPaStreamHandler::processEvent(AudioEventType audioEventType, const fs::path &mediaFilePath, bool loop)
 {
+    try {
+        switch (audioEventType) {
+            case AudioEventType::start:
+                {
+                    GkAudioFramework::GkPlayback callback;
+                    callback.audioFile.file = sf_open(mediaFilePath.c_str(), SFM_READ, &callback.audioFile.info);
+                    if (!callback.audioFile.file) {
+                        std::throw_with_nested(std::runtime_error(tr("Unable to open audio file, \"%1\", due to filesystem or other error!").arg(QString::fromStdString(mediaFilePath.string())).toStdString()));
+                    }
+
+                    gkSounds.insert(std::make_pair(mediaFilePath, callback));
+                    emit playMedia(mediaFilePath);
+                }
+
+                break;
+            case AudioEventType::stop:
+                {
+                    for (const auto &media: gkSounds) {
+                        sf_close(media.second.audioFile.file);
+                        emit stopMedia(mediaFilePath);
+                        gkSounds.erase(mediaFilePath);
+                    }
+                }
+
+                break;
+            default:
+                break;
+        }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Error, true, true, false, false);
+    }
+
     return;
 }
+
+/**
+ * @brief GkPaStreamHandler::playMediaFile
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param media_path
+ */
+void GkPaStreamHandler::playMediaFile(const boost::filesystem::path &media_path)
+{
+    for (const auto &media: gkSounds) {
+        if (media.first == media_path) {
+            qint32 size = sf_seek(media.second.audioFile.file, 0, SEEK_END);
+            sf_seek(media.second.audioFile.file, 0, SEEK_SET);
+            QByteArray array(size * 2, 0);
+            sf_read_short(media.second.audioFile.file, (short *)array.data(), size);
+
+            QBuffer buffer(&array);
+            buffer.open(QIODevice::ReadOnly);
+
+            gkAudioOutput->start(&buffer);
+            break;
+        }
+    }
+}
+
+/**
+ * @brief GkPaStreamHandler::stopMediaFile
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param media_path
+ */
+void GkPaStreamHandler::stopMediaFile(const boost::filesystem::path &media_path)
+{}
