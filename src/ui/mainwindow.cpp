@@ -536,6 +536,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                             // This is typically 8 or 16, but some systems may support higher sample sizes
                             user_input_settings.setSampleSize(inputDevSampleSizeVal);
 
+                            // You'll typically want Little Endian for this value
+                            user_input_settings.setByteOrder(QAudioFormat::LittleEndian);
+
+                            // Unless there's good reason, you will wish to leave this alone...
+                            user_input_settings.setCodec("audio/pcm");
+
                             if (input_dev.second.audio_device_info.isFormatSupported(user_input_settings)) {
                                 // Given audio parameters are supported, as defined by the user previously!
                                 pref_input_device = input_dev.second;
@@ -621,6 +627,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
                             // This is typically 8 or 16, but some systems may support higher sample sizes
                             user_output_settings.setSampleSize(outputDevSampleSizeVal);
+
+                            // You'll typically want Little Endian for this value
+                            user_output_settings.setByteOrder(QAudioFormat::LittleEndian);
+
+                            // Unless there's good reason, you will wish to leave this alone...
+                            user_output_settings.setCodec("audio/pcm");
 
                             if (output_dev.second.audio_device_info.isFormatSupported(user_output_settings)) {
                                 // Given audio parameters are supported, as defined by the user previously!

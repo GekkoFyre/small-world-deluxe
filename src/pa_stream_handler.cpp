@@ -43,6 +43,7 @@
 #include <utility>
 #include <algorithm>
 #include <exception>
+#include <QEventLoop>
 #include <QByteArray>
 #include <QIODevice>
 #include <QBuffer>
@@ -133,22 +134,38 @@ void GkPaStreamHandler::processEvent(AudioEventType audioEventType, const fs::pa
  * @brief GkPaStreamHandler::playMediaFile
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param media_path
+ * @note alexisdm <https://stackoverflow.com/questions/10044211/how-to-use-qtmultimedia-to-play-a-wav-file>.
  */
 void GkPaStreamHandler::playMediaFile(const boost::filesystem::path &media_path)
 {
-    for (const auto &media: gkSounds) {
-        if (media.first == media_path) {
-            qint32 size = sf_seek(media.second.audioFile.file, 0, SEEK_END);
-            sf_seek(media.second.audioFile.file, 0, SEEK_SET);
-            QByteArray array(size * 2, 0);
-            sf_read_short(media.second.audioFile.file, (short *)array.data(), size);
-
-            QBuffer buffer(&array);
-            buffer.open(QIODevice::ReadOnly);
-
-            gkAudioOutput->start(&buffer);
-            break;
+    try {
+        if (!gkAudioOutput) {
+            throw std::runtime_error(tr("A memory error has been encountered whilst trying to playback audio file!").toStdString());
         }
+
+        for (const auto &media: gkSounds) {
+            if (media.first == media_path) {
+                qint32 size = sf_seek(media.second.audioFile.file, 0, SEEK_END);
+                sf_seek(media.second.audioFile.file, 0, SEEK_SET);
+                QByteArray array(size * 2, 0);
+                sf_read_short(media.second.audioFile.file, (short *)array.data(), size);
+
+                QBuffer buffer(&array);
+                buffer.open(QIODevice::ReadWrite);
+
+                gkAudioOutput->start(&buffer);
+
+                QEventLoop loop;
+                QObject::connect(gkAudioOutput, SIGNAL(stateChanged(QAudio::State)), &loop, SLOT(quit()));
+                do {
+                    loop.exec();
+                } while (gkAudioOutput->state() == QAudio::ActiveState);
+
+                break;
+            }
+        }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Error, true, true, false, false);
     }
 }
 

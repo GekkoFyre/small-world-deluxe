@@ -1753,7 +1753,7 @@ bool GkLevelDb::convertAudioEnumIsStereo(const GkAudioChannels &channel_enum) co
 QAudioFormat::SampleType GkLevelDb::convAudioSampleRateToEnum(const qint32 &sample_rate)
 {
     if (sample_rate <= 48000 && sample_rate > 0) {
-        return QAudioFormat::SignedInt;
+        return QAudioFormat::UnSignedInt;
     } else {
         return QAudioFormat::Float;
     }
