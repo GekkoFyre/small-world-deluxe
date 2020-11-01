@@ -526,7 +526,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                             user_input_settings.setSampleRate(inputDevSampleRateVal);
 
                             // See: https://doc.qt.io/qt-5/qaudioformat.html#SampleType-enum
-                            auto sample_type_val = gkDb->convAudioSampleRateToEnum(inputDevSampleRateVal);
+                            auto sample_type_val = gkDb->convAudioBitRateToEnum(inputDevSampleSizeVal);
                             if (sample_type_val != QAudioFormat::Unknown) {
                                 user_input_settings.setSampleType(sample_type_val);
                             } else {
@@ -618,7 +618,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                             user_output_settings.setSampleRate(outputDevSampleRateVal);
 
                             // See: https://doc.qt.io/qt-5/qaudioformat.html#SampleType-enum
-                            auto sample_type_val = gkDb->convAudioSampleRateToEnum(outputDevSampleRateVal);
+                            auto sample_type_val = gkDb->convAudioBitRateToEnum(outputDevSampleSizeVal);
                             if (sample_type_val != QAudioFormat::Unknown) {
                                 user_output_settings.setSampleType(sample_type_val);
                             } else {

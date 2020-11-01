@@ -1744,18 +1744,26 @@ bool GkLevelDb::convertAudioEnumIsStereo(const GkAudioChannels &channel_enum) co
 }
 
 /**
- * @brief GkLevelDb::convAudioSampleRateToEnum converts a given sample-rate to the nearest, or rather, the most
+ * @brief GkLevelDb::convAudioBitRateToEnum converts a given bit-rate to the nearest, or rather, the most
  * appropriate Sample Type as per under QAudioSystem.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param sample_rate
- * @return
+ * @param bit_rate Whether we are using 8-bits, 16-bits, etc.
+ * @return For 8-bit samples, you would use QAudioFormat::UnsignedInt, whilst for 16-bit samples, QAudioFormat:SignedInt is
+ * the modus operandi. Anything higher then you must use QAudioFormat::Float.
  */
-QAudioFormat::SampleType GkLevelDb::convAudioSampleRateToEnum(const qint32 &sample_rate)
+QAudioFormat::SampleType GkLevelDb::convAudioBitRateToEnum(const qint32 &bit_rate)
 {
-    if (sample_rate <= 48000 && sample_rate > 0) {
-        return QAudioFormat::UnSignedInt;
-    } else {
-        return QAudioFormat::Float;
+    switch (bit_rate) {
+        case 8:
+            return QAudioFormat::UnSignedInt;
+        case 16:
+            return QAudioFormat::SignedInt;
+        case 24:
+            return QAudioFormat::Float;
+        case 32:
+            return QAudioFormat::Float;
+        default:
+            return QAudioFormat::Float;
     }
 
     return QAudioFormat::Unknown;
