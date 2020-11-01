@@ -480,8 +480,10 @@ void DialogSettings::on_pushButton_submit_config_clicked()
 
         const qint32 inputSampleRateIdx = ui->comboBox_audio_input_sample_rate->currentIndex();
         const qint32 inputChannelsIdx = ui->comboBox_soundcard_input_channels->currentIndex();
+        const qint32 inputBitrateIdx = ui->comboBox_audio_input_bit_rate->currentIndex();
         const qint32 outputSampleRateIdx = ui->comboBox_audio_output_sample_rate->currentIndex();
         const qint32 outputChannelsIdx = ui->comboBox_soundcard_output_channels->currentIndex();
+        const qint32 outputBitrateIdx = ui->comboBox_audio_output_bit_rate->currentIndex();
 
         qint16 enum_force_ctrl_lines_dtr = 0;
         qint16 enum_force_ctrl_lines_rts = 0;
@@ -518,6 +520,8 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         gkDekodeDb->write_misc_audio_settings(QString::number(outputSampleRateIdx), GkAudioCfg::AudioOutputSampleRate);
         gkDekodeDb->write_misc_audio_settings(QString::number(inputChannelsIdx), GkAudioCfg::AudioInputChannels);
         gkDekodeDb->write_misc_audio_settings(QString::number(outputChannelsIdx), GkAudioCfg::AudioOutputChannels);
+        gkDekodeDb->write_misc_audio_settings(QString::number(inputBitrateIdx), GkAudioCfg::AudioInputBitrate);
+        gkDekodeDb->write_misc_audio_settings(QString::number(outputBitrateIdx), GkAudioCfg::AudioOutputBitrate);
 
         emit addRigInUse(ui->comboBox_rig_selection->currentData().toInt(), gkRadioPtr);
 

@@ -306,7 +306,6 @@ void GkLevelDb::write_audio_device_settings(const GkDevice &value, const bool &i
 
         if (is_output_device) {
             // Unique identifier for the chosen output audio device
-            batch.Put("AudioOutputSelChannels", std::to_string(value.sel_channels));
             batch.Put("AudioOutputDeviceName", value.audio_dev_str.toStdString());
 
             // Determine if this is the default output device for the system and if so, convert
@@ -320,7 +319,6 @@ void GkLevelDb::write_audio_device_settings(const GkDevice &value, const bool &i
             batch.Put("AudioOutputCfgUsrActivity", user_activity);
         } else {
             // Unique identifier for the chosen input audio device
-            batch.Put("AudioInputSelChannels", std::to_string(value.sel_channels));
             batch.Put("AudioInputDeviceName", value.audio_dev_str.toStdString());
 
             // Determine if this is the default input device for the system and if so, convert
@@ -405,27 +403,33 @@ void GkLevelDb::write_misc_audio_settings(const QString &value, const GkAudioCfg
         leveldb::Status status;
 
         switch (key) {
-        case GkAudioCfg::settingsDbLoc:
-            batch.Put("UserProfileDbLoc", value.toStdString());
-            break;
-        case GkAudioCfg::LogsDirLoc:
-            batch.Put("UserLogsLoc", value.toStdString());
-            break;
-        case GkAudioCfg::AudioRecLoc:
-            batch.Put("AudioRecSaveLoc", value.toStdString());
-            break;
-        case GkAudioCfg::AudioInputChannels:
-            batch.Put("AudioInputChannels", value.toStdString());
-            break;
-        case GkAudioCfg::AudioOutputChannels:
-            batch.Put("AudioOutputChannels", value.toStdString());
-            break;
-        case GkAudioCfg::AudioInputSampleRate:
-            batch.Put("AudioInputSampleRate", value.toStdString());
-            break;
-        case GkAudioCfg::AudioOutputSampleRate:
-            batch.Put("AudioOutputSampleRate", value.toStdString());
-            break;
+            case GkAudioCfg::settingsDbLoc:
+                batch.Put("UserProfileDbLoc", value.toStdString());
+                break;
+            case GkAudioCfg::LogsDirLoc:
+                batch.Put("UserLogsLoc", value.toStdString());
+                break;
+            case GkAudioCfg::AudioRecLoc:
+                batch.Put("AudioRecSaveLoc", value.toStdString());
+                break;
+            case GkAudioCfg::AudioInputChannels:
+                batch.Put("AudioInputChannels", value.toStdString());
+                break;
+            case GkAudioCfg::AudioOutputChannels:
+                batch.Put("AudioOutputChannels", value.toStdString());
+                break;
+            case GkAudioCfg::AudioInputSampleRate:
+                batch.Put("AudioInputSampleRate", value.toStdString());
+                break;
+            case GkAudioCfg::AudioOutputSampleRate:
+                batch.Put("AudioOutputSampleRate", value.toStdString());
+                break;
+            case GkAudioCfg::AudioInputBitrate:
+                batch.Put("AudioInputBitrate", value.toStdString());
+                break;
+            case GkAudioCfg::AudioOutputBitrate:
+                batch.Put("AudioOutputBitrate", value.toStdString());
+                break;
         }
 
         std::time_t curr_time = std::time(nullptr);
@@ -1446,7 +1450,6 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
         std::string output_user_activity;
 
         status = db->Get(read_options, "AudioOutputDeviceName", &output_id);
-        status = db->Get(read_options, "AudioOutputSelChannels", &output_sel_channels);
         status = db->Get(read_options, "AudioOutputDefSysDevice", &output_def_sys_device);
         status = db->Get(read_options, "AudioOutputCfgUsrActivity", &output_user_activity);
 
@@ -1477,7 +1480,6 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
         std::string input_user_activity;
 
         status = db->Get(read_options, "AudioInputDeviceName", &input_id);
-        status = db->Get(read_options, "AudioInputSelChannels", &input_sel_channels);
         status = db->Get(read_options, "AudioInputDefSysDevice", &input_def_sys_device);
         status = db->Get(read_options, "AudioInputCfgUsrActivity", &input_user_activity);
 
@@ -1544,27 +1546,33 @@ QString GkLevelDb::read_misc_audio_settings(const GkAudioCfg &key)
     read_options.verify_checksums = true;
 
     switch (key) {
-    case GkAudioCfg::settingsDbLoc:
-        status = db->Get(read_options, "UserProfileDbLoc", &value);
-        break;
-    case GkAudioCfg::LogsDirLoc:
-        status = db->Get(read_options, "UserLogsLoc", &value);
-        break;
-    case GkAudioCfg::AudioRecLoc:
-        status = db->Get(read_options, "AudioRecSaveLoc", &value);
-        break;
-    case GkAudioCfg::AudioInputChannels:
-        status = db->Get(read_options, "AudioInputChannels", &value);
-        break;
-    case GkAudioCfg::AudioOutputChannels:
-        status = db->Get(read_options, "AudioOutputChannels", &value);
-        break;
-    case GkAudioCfg::AudioInputSampleRate:
-        status = db->Get(read_options, "AudioInputSampleRate", &value);
-        break;
-    case GkAudioCfg::AudioOutputSampleRate:
-        status = db->Get(read_options, "AudioOutputSampleRate", &value);
-        break;
+        case GkAudioCfg::settingsDbLoc:
+            status = db->Get(read_options, "UserProfileDbLoc", &value);
+            break;
+        case GkAudioCfg::LogsDirLoc:
+            status = db->Get(read_options, "UserLogsLoc", &value);
+            break;
+        case GkAudioCfg::AudioRecLoc:
+            status = db->Get(read_options, "AudioRecSaveLoc", &value);
+            break;
+        case GkAudioCfg::AudioInputChannels:
+            status = db->Get(read_options, "AudioInputChannels", &value);
+            break;
+        case GkAudioCfg::AudioOutputChannels:
+            status = db->Get(read_options, "AudioOutputChannels", &value);
+            break;
+        case GkAudioCfg::AudioInputSampleRate:
+            status = db->Get(read_options, "AudioInputSampleRate", &value);
+            break;
+        case GkAudioCfg::AudioOutputSampleRate:
+            status = db->Get(read_options, "AudioOutputSampleRate", &value);
+            break;
+        case GkAudioCfg::AudioInputBitrate:
+            status = db->Get(read_options, "AudioInputBitrate", &value);
+            break;
+        case GkAudioCfg::AudioOutputBitrate:
+            status = db->Get(read_options, "AudioOutputBitrate", &value);
+            break;
     }
 
     return QString::fromStdString(value);

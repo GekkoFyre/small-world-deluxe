@@ -377,7 +377,9 @@ namespace Database {
             AudioInputChannels,
             AudioOutputChannels,
             AudioInputSampleRate,
-            AudioOutputSampleRate
+            AudioOutputSampleRate,
+            AudioInputBitrate,
+            AudioOutputBitrate
         };
 
         enum GkAudioChannels {
