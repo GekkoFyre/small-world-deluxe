@@ -998,9 +998,6 @@ bool MainWindow::radioInitStart()
 std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
 {
     try {
-        const QString audioInputIdStr = gkDb->read_audio_device_settings(false); // Gather the actual std::string name for the audio device in question!
-        const QString audioOutputIdStr = gkDb->read_audio_device_settings(true); // Gather the actual std::string name for the audio device in question!
-
         const QString rigBrand = gkDb->read_rig_settings(radio_cfg::RigBrand);
         const QString rigModel = gkDb->read_rig_settings(radio_cfg::RigModel);
         const QString rigModelIndex = gkDb->read_rig_settings(radio_cfg::RigModelIndex);
@@ -1325,58 +1322,6 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
             gk_radio_tmp->adv_cmd = "";
         }
 
-        bool found_input_audio_dev = false;
-        if (!audioInputIdStr.isEmpty()) {
-            //
-            // Audio Input
-            for (const auto &input_dev: avail_input_audio_devs) {
-                if (input_dev.second.audio_dev_str == audioInputIdStr) { // Find the audio device that matches the **saved data**!
-                    pref_input_device = input_dev.second;
-                    found_input_audio_dev = true;
-                }
-            }
-        } else {
-            // If there's no saved data, then find the default audio device as (should be!) configured by the user's operating system...
-            findDefaultInputAudioDevice();
-            found_input_audio_dev = true;
-            gkEventLogger->publishEvent(tr("No default audio input device has been chosen yet. Please visit the Setting's Dialog!"),
-                                        GkSeverity::Info, "", true, true, false, false);
-        }
-
-        if (!found_input_audio_dev) {
-            // There has been saved data but the manually configured audio device (via Small World Deluxe) must've been disconnected from
-            // the host system in the meantime, or changed properties, or something! Therefore, find the default audio device as (should be!)
-            // configured by the user's operating system...
-            findDefaultInputAudioDevice();
-            found_input_audio_dev = true;
-        }
-
-        bool found_output_audio_dev = false;
-        if (!audioOutputIdStr.isEmpty()) {
-            //
-            // Audio Output
-            for (const auto &output_dev: avail_output_audio_devs) {
-                if (output_dev.second.audio_dev_str == audioOutputIdStr) { // Find the audio device that matches the **saved data**!
-                    pref_output_device = output_dev.second;
-                    found_output_audio_dev = true;
-                }
-            }
-        } else {
-            // If there's no saved data, then find the default audio device as (should be!) configured by the user's operating system...
-            findDefaultOutputAudioDevice();
-            found_output_audio_dev = true;
-            gkEventLogger->publishEvent(tr("No default audio output device has been chosen yet. Please visit the Setting's Dialog!"),
-                                        GkSeverity::Info, "", false, true, false, false);
-        }
-
-        if (!found_output_audio_dev) {
-            // There has been saved data but the manually configured audio device (via Small World Deluxe) must've been disconnected from
-            // the host system in the meantime, or changed properties, or something! Therefore, find the default audio device as (should be!)
-            // configured by the user's operating system...
-            findDefaultOutputAudioDevice();
-            found_output_audio_dev = true;
-        }
-
         return gk_radio_tmp;
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
@@ -1539,38 +1484,6 @@ void MainWindow::defaultOutputAudioDev(const std::pair<QAudioDeviceInfo, GkDevic
     gkAudioOutput = new QAudioOutput(default_output_dev, default_output_dev.preferredFormat(), this);
 
     return;
-}
-
-/**
- * @brief MainWindow::findDefaultInputAudioDevice
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @return
- */
-bool MainWindow::findDefaultInputAudioDevice()
-{
-    for (const auto &input_dev: avail_input_audio_devs) {
-        if (input_dev.second.default_input_dev) {
-            pref_input_device = input_dev.second; // Find the **default** input audio device for this user's system!
-        }
-    }
-
-    return false;
-}
-
-/**
- * @brief MainWindow::findDefaultOutputAudioDevice
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @return
- */
-bool MainWindow::findDefaultOutputAudioDevice()
-{
-    for (const auto &output_dev: avail_output_audio_devs) {
-        if (output_dev.second.default_output_dev) {
-            pref_output_device = output_dev.second; // Find the **default** output audio device for this user's system!
-        }
-    }
-
-    return false;
 }
 
 /**

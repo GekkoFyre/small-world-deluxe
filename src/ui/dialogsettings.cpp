@@ -329,14 +329,14 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         //
         // Input Device
         //
-        chosen_input_audio_dev.audio_dev_str = ui->comboBox_soundcard_input->currentText();
+        chosen_input_audio_dev.audio_dev_str = ui->comboBox_soundcard_input->currentData().toString();
         chosen_input_audio_dev.sel_channels = gkDekodeDb->convertAudioChannelsEnum(curr_input_device_channels);
         gkDekodeDb->write_audio_device_settings(chosen_input_audio_dev, false);
 
         //
         // Output Device
         //
-        chosen_output_audio_dev.audio_dev_str = ui->comboBox_soundcard_output->currentText();
+        chosen_output_audio_dev.audio_dev_str = ui->comboBox_soundcard_output->currentData().toString();
         chosen_output_audio_dev.sel_channels = gkDekodeDb->convertAudioChannelsEnum(curr_output_device_channels);
         gkDekodeDb->write_audio_device_settings(chosen_output_audio_dev, true);
 
@@ -644,6 +644,15 @@ void DialogSettings::prefill_audio_devices()
                 ++input_dev_counter;
             }
 
+            qint32 input_dev_idx = 0;
+            for (const auto &input_dev: avail_input_audio_devs) {
+                if (chosen_input_audio_dev.audio_device_info.deviceName() == input_dev.second.audio_device_info.deviceName()) {
+                    ui->comboBox_soundcard_input->setCurrentIndex(input_dev_idx);
+                }
+
+                ++input_dev_idx;
+            }
+
             on_comboBox_soundcard_input_currentIndexChanged();
         }
 
@@ -658,6 +667,15 @@ void DialogSettings::prefill_audio_devices()
                 ui->comboBox_soundcard_output->insertItem(output_dev_counter, output_dev.second.audio_dev_str,
                                                           output_dev.second.audio_dev_str);
                 ++output_dev_counter;
+            }
+
+            qint32 output_dev_idx = 0;
+            for (const auto &output_dev: avail_output_audio_devs) {
+                if (chosen_output_audio_dev.audio_device_info.deviceName() == output_dev.second.audio_device_info.deviceName()) {
+                    ui->comboBox_soundcard_output->setCurrentIndex(output_dev_idx);
+                }
+
+                ++output_dev_idx;
             }
 
             on_comboBox_soundcard_output_currentIndexChanged();
@@ -1745,7 +1763,6 @@ void DialogSettings::on_comboBox_soundcard_input_currentIndexChanged(int index)
             for (const auto &device: avail_input_audio_devs) {
                 GkDevice gkDevice = device.second;
                 if (gkDevice.audio_dev_str == ui->comboBox_soundcard_input->currentData().toString()) {
-                    chosen_input_audio_dev = gkDevice;
                     for (const auto &sample: gkDevice.audio_device_info.supportedSampleRates()) {
                         ui->comboBox_audio_input_sample_rate->insertItem(input_sample_rate_counter, tr("%1 kHz").arg(QString::number(sample)), input_sample_rate_counter);
                         supportedInputSampleRates.insert(input_sample_rate_counter, sample);
@@ -1798,7 +1815,6 @@ void DialogSettings::on_comboBox_soundcard_output_currentIndexChanged(int index)
             for (const auto &device: avail_output_audio_devs) {
                 GkDevice gkDevice = device.second;
                 if (gkDevice.audio_dev_str == ui->comboBox_soundcard_output->currentData().toString()) {
-                    chosen_output_audio_dev = gkDevice;
                     for (const auto &sample: gkDevice.audio_device_info.supportedSampleRates()) {
                         ui->comboBox_audio_output_sample_rate->insertItem(output_sample_rate_counter, tr("%1 kHz").arg(QString::number(sample)), output_sample_rate_counter);
                         supportedOutputSampleRates.insert(output_sample_rate_counter, sample);
