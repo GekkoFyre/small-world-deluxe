@@ -1758,7 +1758,7 @@ QAudioFormat::SampleType GkLevelDb::convAudioSampleRateToEnum(const qint32 &samp
         return QAudioFormat::Float;
     }
 
-    return QAudioFormat::UnSignedInt;
+    return QAudioFormat::Unknown;
 }
 
 /**
