@@ -43,6 +43,7 @@
 #include "src/gk_string_funcs.hpp"
 #include "src/gk_logger.hpp"
 #include "src/file_io.hpp"
+#include "src/pa_audio_player.hpp"
 #include <sndfile.hh>
 #include <boost/filesystem.hpp>
 #include <memory>
@@ -105,6 +106,7 @@ private:
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
+    QPointer<GekkoFyre::GkPaAudioPlayer> gkPaAudioPlayer;
 
     //
     // QPushButtons, etc.
