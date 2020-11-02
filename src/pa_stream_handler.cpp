@@ -43,6 +43,10 @@
 #include <utility>
 #include <algorithm>
 #include <exception>
+#include <QEventLoop>
+#include <QByteArray>
+#include <QIODevice>
+#include <QBuffer>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -57,31 +61,38 @@ using namespace Logging;
 
 /**
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @note <https://qtsource.wordpress.com/2011/09/12/multithreaded-audio-using-qaudiooutput/>.
  */
 GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
-                                     QPointer<GekkoFyre::GkEventLogger> eventLogger, QPointer<GekkoFyre::StringFuncs> stringFuncs,
-                                     QObject *parent)
+                                     QPointer<QAudioOutput> audioOutput, QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QThread(parent)
 {
-    try {
-        setParent(parent);
+    setParent(parent);
 
-        gkDb = std::move(database);
-        gkEventLogger = std::move(eventLogger);
-        gkStringFuncs = std::move(stringFuncs);
+    gkDb = std::move(database);
+    gkEventLogger = std::move(eventLogger);
+    gkAudioOutput = std::move(audioOutput);
 
-        //
-        // Initialize variables
-        //
-        pref_output_device = output_device;
-    } catch (const std::exception &e) {
-        gkStringFuncs->print_exception(e);
-    }
+    //
+    // Initialize variables
+    //
+    pref_output_device = output_device;
+
+    QObject::connect(this, SIGNAL(playMedia(const boost::filesystem::path &)), this, SLOT(playMediaFile(const boost::filesystem::path &)));
+    QObject::connect(this, SIGNAL(stopMedia(const boost::filesystem::path &)), this, SLOT(stopMediaFile(const boost::filesystem::path &)));
+
+    start();
+
+    // Move event processing of GkPaStreamHandler to this thread
+    QObject::moveToThread(this);
 
     return;
 }
 
 GkPaStreamHandler::~GkPaStreamHandler()
-{}
+{
+    quit();
+    wait();
+}
 
 /**
  * @brief GkPaStreamHandler::processEvent
@@ -93,5 +104,122 @@ GkPaStreamHandler::~GkPaStreamHandler()
  */
 void GkPaStreamHandler::processEvent(AudioEventType audioEventType, const fs::path &mediaFilePath, bool loop)
 {
+    try {
+        switch (audioEventType) {
+            case AudioEventType::start:
+                {
+                    GkAudioFramework::GkPlayback callback;
+                    callback.audioFile.file = sf_open(mediaFilePath.c_str(), SFM_READ, &callback.audioFile.info);
+                    if (!callback.audioFile.file) {
+                        std::throw_with_nested(std::runtime_error(tr("Unable to open audio file, \"%1\", due to filesystem or other error!").arg(QString::fromStdString(mediaFilePath.string())).toStdString()));
+                    }
+
+                    gkSounds.insert(std::make_pair(mediaFilePath, callback));
+                    emit playMedia(mediaFilePath);
+                }
+
+                break;
+            case AudioEventType::stop:
+                emit stopMedia(mediaFilePath);
+                break;
+            default:
+                break;
+        }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Error, true, true, false, false);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkPaStreamHandler::run
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkPaStreamHandler::run()
+{
+    QObject::connect(gkAudioOutput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
+    exec();
+}
+
+/**
+ * @brief GkPaStreamHandler::playMediaFile
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param media_path
+ * @note alexisdm <https://stackoverflow.com/questions/10044211/how-to-use-qtmultimedia-to-play-a-wav-file>.
+ */
+void GkPaStreamHandler::playMediaFile(const boost::filesystem::path &media_path)
+{
+    try {
+        if (!gkAudioOutput) {
+            throw std::runtime_error(tr("A memory error has been encountered whilst trying to playback audio file!").toStdString());
+        }
+
+        for (const auto &media: gkSounds) {
+            if (media.first == media_path) {
+                qint32 size = sf_seek(media.second.audioFile.file, 0, SEEK_END);
+                sf_seek(media.second.audioFile.file, 0, SEEK_SET);
+                QByteArray array(size * 2, 0);
+                sf_read_short(media.second.audioFile.file, (short *)array.data(), size);
+
+                QBuffer buffer(&array);
+                buffer.open(QIODevice::ReadWrite);
+
+                gkAudioOutput->start(&buffer);
+
+                QEventLoop loop;
+                QObject::connect(gkAudioOutput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
+                do {
+                    loop.exec();
+                } while (gkAudioOutput->state() == QAudio::ActiveState);
+
+                emit stopMedia(media_path);
+                break;
+            }
+        }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Error, true, true, false, false);
+    }
+}
+
+/**
+ * @brief GkPaStreamHandler::stopMediaFile
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param media_path
+ */
+void GkPaStreamHandler::stopMediaFile(const boost::filesystem::path &media_path)
+{
+    for (const auto &media: gkSounds) {
+        if (media.first == media_path) {
+            sf_close(media.second.audioFile.file);
+            gkSounds.erase(media_path);
+
+            break;
+        }
+    }
+}
+
+/*
+ * @brief GkPaStreamHandler::handleStateChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkPaStreamHandler::handleStateChanged(const QAudio::State changed_state)
+{
+    switch (changed_state) {
+        case QAudio::IdleState:
+            gkAudioOutput->stop();
+
+            break;
+        case QAudio::StoppedState:
+            if (gkAudioOutput->error() != QAudio::NoError) { // TODO: Improve the error reporting functionality of this statement!
+                gkEventLogger->publishEvent(tr("An error has been encountered during audio playback."), GkSeverity::Error, "",
+                                            true, true, false, false);
+            }
+
+            break;
+        default:
+            break;
+    }
+
     return;
 }

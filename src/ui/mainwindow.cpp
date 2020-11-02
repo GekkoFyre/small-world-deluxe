@@ -127,6 +127,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<GekkoFyre::AmateurRadio::IARURegions>("GekkoFyre::AmateurRadio::IARURegions");
     qRegisterMetaType<GekkoFyre::Spectrograph::GkGraphType>("GekkoFyre::Spectrograph::GkGraphType");
     qRegisterMetaType<GekkoFyre::AmateurRadio::GkFreqs>("GekkoFyre::AmateurRadio::GkFreqs");
+    qRegisterMetaType<boost::filesystem::path>("boost::filesystem::path");
     qRegisterMetaType<RIG>("RIG");
     qRegisterMetaType<size_t>("size_t");
     qRegisterMetaType<uint8_t>("uint8_t");
@@ -525,7 +526,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                             user_input_settings.setSampleRate(inputDevSampleRateVal);
 
                             // See: https://doc.qt.io/qt-5/qaudioformat.html#SampleType-enum
-                            auto sample_type_val = gkDb->convAudioSampleRateToEnum(inputDevSampleRateVal);
+                            auto sample_type_val = gkDb->convAudioBitRateToEnum(inputDevSampleSizeVal);
                             if (sample_type_val != QAudioFormat::Unknown) {
                                 user_input_settings.setSampleType(sample_type_val);
                             } else {
@@ -534,6 +535,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
                             // This is typically 8 or 16, but some systems may support higher sample sizes
                             user_input_settings.setSampleSize(inputDevSampleSizeVal);
+
+                            // You'll typically want Little Endian for this value
+                            user_input_settings.setByteOrder(QAudioFormat::LittleEndian);
+
+                            // Unless there's good reason, you will wish to leave this alone...
+                            user_input_settings.setCodec("audio/pcm");
 
                             if (input_dev.second.audio_device_info.isFormatSupported(user_input_settings)) {
                                 // Given audio parameters are supported, as defined by the user previously!
@@ -611,7 +618,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                             user_output_settings.setSampleRate(outputDevSampleRateVal);
 
                             // See: https://doc.qt.io/qt-5/qaudioformat.html#SampleType-enum
-                            auto sample_type_val = gkDb->convAudioSampleRateToEnum(outputDevSampleRateVal);
+                            auto sample_type_val = gkDb->convAudioBitRateToEnum(outputDevSampleSizeVal);
                             if (sample_type_val != QAudioFormat::Unknown) {
                                 user_output_settings.setSampleType(sample_type_val);
                             } else {
@@ -620,6 +627,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
                             // This is typically 8 or 16, but some systems may support higher sample sizes
                             user_output_settings.setSampleSize(outputDevSampleSizeVal);
+
+                            // You'll typically want Little Endian for this value
+                            user_output_settings.setByteOrder(QAudioFormat::LittleEndian);
+
+                            // Unless there's good reason, you will wish to leave this alone...
+                            user_output_settings.setCodec("audio/pcm");
 
                             if (output_dev.second.audio_device_info.isFormatSupported(user_output_settings)) {
                                 // Given audio parameters are supported, as defined by the user previously!
@@ -806,9 +819,7 @@ MainWindow::~MainWindow()
         spectro_timing_thread.join();
     }
 
-    // Free the pointer for the Google LevelDB library!
-    delete db;
-
+    delete db; // Free the pointer for the Google LevelDB library!
     delete ui;
 }
 
@@ -937,6 +948,19 @@ void MainWindow::launchSettingsWin()
     dlg_settings->show();
 
     return;
+}
+
+/**
+ * @brief MainWindow::launchAudioPlayerWin
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::launchAudioPlayerWin()
+{
+    QPointer<GkAudioPlayDialog> gkAudioPlayDlg = new GkAudioPlayDialog(gkDb, pref_input_device, pref_output_device, gkAudioInput, gkAudioOutput,
+                                                                       gkStringFuncs, gkEventLogger, this);
+    gkAudioPlayDlg->setWindowFlags(Qt::Window);
+    gkAudioPlayDlg->setAttribute(Qt::WA_DeleteOnClose, true);
+    gkAudioPlayDlg->show();
 }
 
 /**
@@ -1772,7 +1796,8 @@ void MainWindow::on_actionDelete_all_wav_files_in_Save_Directory_triggered()
 
 void MainWindow::on_actionPlay_triggered()
 {
-    QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+    launchAudioPlayerWin();
+    return;
 }
 
 /**
@@ -1782,6 +1807,7 @@ void MainWindow::on_actionPlay_triggered()
 void MainWindow::on_actionSettings_triggered()
 {
     launchSettingsWin();
+    return;
 }
 
 /**

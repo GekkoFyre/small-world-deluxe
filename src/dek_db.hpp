@@ -117,7 +117,7 @@ public:
     qint32 convertAudioChannelsToCount(const GekkoFyre::Database::Settings::GkAudioChannels &channel_enum);
     QString convertAudioChannelsStr(const GekkoFyre::Database::Settings::GkAudioChannels &channel_enum);
     [[nodiscard]] bool convertAudioEnumIsStereo(const GekkoFyre::Database::Settings::GkAudioChannels &channel_enum) const;
-    QAudioFormat::SampleType convAudioSampleRateToEnum(const qint32 &sample_rate);
+    QAudioFormat::SampleType convAudioBitRateToEnum(const qint32 &bit_rate);
 
     ptt_type_t convPttTypeToEnum(const QString &ptt_type_str);
     QString convPttTypeToStr(const ptt_type_t &ptt_type_enum);

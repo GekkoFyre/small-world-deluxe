@@ -72,8 +72,6 @@ using namespace Events;
 using namespace Logging;
 
 std::mutex enum_audio_dev_mtx;
-std::mutex test_sinewave_mtx;
-std::mutex init_port_audio_mtx;
 
 /**
  * @brief AudioDevices::AudioDevices

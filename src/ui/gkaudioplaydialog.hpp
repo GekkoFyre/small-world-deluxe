@@ -39,10 +39,8 @@
 
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
-#include "src/gk_audio_decoding.hpp"
 #include "src/pa_audio_buf.hpp"
 #include "src/gk_string_funcs.hpp"
-#include "src/audio_devices.hpp"
 #include "src/gk_logger.hpp"
 #include "src/file_io.hpp"
 #include <sndfile.hh>
@@ -57,6 +55,10 @@
 #include <QDialog>
 #include <QString>
 #include <QPointer>
+#include <QAudioInput>
+#include <QAudioOutput>
+#include <QAudioFormat>
+#include <QAudioDeviceInfo>
 
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
@@ -71,9 +73,9 @@ class GkAudioPlayDialog : public QDialog
 
 public:
     explicit GkAudioPlayDialog(QPointer<GekkoFyre::GkLevelDb> database,
-                               QPointer<GekkoFyre::GkAudioDecoding> audio_decoding,
-                               std::shared_ptr<GekkoFyre::AudioDevices> audio_devices,
+                               const GekkoFyre::Database::Settings::Audio::GkDevice &input_device,
                                const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
+                               QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> audioOutput,
                                QPointer<GekkoFyre::StringFuncs> stringFuncs,
                                QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                QWidget *parent = nullptr);
@@ -100,9 +102,7 @@ signals:
 private:
     Ui::GkAudioPlayDialog *ui;
 
-    std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevs;
     QPointer<GekkoFyre::GkLevelDb> gkDb;
-    QPointer<GekkoFyre::GkAudioDecoding> gkAudioDecode;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
@@ -116,8 +116,11 @@ private:
     bool audio_out_skip_bck;
 
     //
-    // PortAudio initialization and buffers
+    // QAudioSystem initialization and buffers
     //
+    QPointer<QAudioInput> gkAudioInput;
+    QPointer<QAudioOutput> gkAudioOutput;
+    GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
 
     //
