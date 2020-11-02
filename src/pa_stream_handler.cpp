@@ -61,9 +61,10 @@ using namespace Logging;
 
 /**
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @note <https://qtsource.wordpress.com/2011/09/12/multithreaded-audio-using-qaudiooutput/>.
  */
 GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
-                                     QPointer<QAudioOutput> audioOutput, QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QObject(parent)
+                                     QPointer<QAudioOutput> audioOutput, QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QThread(parent)
 {
     setParent(parent);
 
@@ -79,11 +80,19 @@ GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, co
     QObject::connect(this, SIGNAL(playMedia(const boost::filesystem::path &)), this, SLOT(playMediaFile(const boost::filesystem::path &)));
     QObject::connect(this, SIGNAL(stopMedia(const boost::filesystem::path &)), this, SLOT(stopMediaFile(const boost::filesystem::path &)));
 
+    start();
+
+    // Move event processing of GkPaStreamHandler to this thread
+    QObject::moveToThread(this);
+
     return;
 }
 
 GkPaStreamHandler::~GkPaStreamHandler()
-{}
+{
+    quit();
+    wait();
+}
 
 /**
  * @brief GkPaStreamHandler::processEvent
@@ -121,6 +130,16 @@ void GkPaStreamHandler::processEvent(AudioEventType audioEventType, const fs::pa
     }
 
     return;
+}
+
+/**
+ * @brief GkPaStreamHandler::run
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkPaStreamHandler::run()
+{
+    QObject::connect(gkAudioOutput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
+    exec();
 }
 
 /**

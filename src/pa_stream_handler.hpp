@@ -52,6 +52,7 @@
 #include <string>
 #include <QObject>
 #include <QString>
+#include <QThread>
 #include <QPointer>
 #include <QAudioOutput>
 #include <QAudioFormat>
@@ -78,7 +79,7 @@ enum AudioEventType {
     stop
 };
 
-class GkPaStreamHandler : public QObject {
+class GkPaStreamHandler : public QThread {
     Q_OBJECT
 
 public:
@@ -87,6 +88,7 @@ public:
     ~GkPaStreamHandler() override;
 
     void processEvent(AudioEventType audioEventType, const fs::path &mediaFilePath, bool loop = false);
+    void run() Q_DECL_OVERRIDE;
 
 private slots:
     void playMediaFile(const boost::filesystem::path &media_path);
