@@ -63,8 +63,8 @@ using namespace Logging;
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @note <https://qtsource.wordpress.com/2011/09/12/multithreaded-audio-using-qaudiooutput/>.
  */
-GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
-                                     QPointer<QAudioOutput> audioOutput, QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QThread(parent)
+GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, const GkDevice &output_device, QPointer<QAudioOutput> audioOutput,
+                                     QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QThread(parent)
 {
     setParent(parent);
 
@@ -160,7 +160,7 @@ void GkPaStreamHandler::playMediaFile(const boost::filesystem::path &media_path)
                 qint32 size = sf_seek(media.second.audioFile.file, 0, SEEK_END);
                 sf_seek(media.second.audioFile.file, 0, SEEK_SET);
                 QByteArray array(size * 2, 0);
-                sf_read_short(media.second.audioFile.file, (short *)array.data(), size);
+                sf_read_short(media.second.audioFile.file, (qint16 *)array.data(), size);
 
                 QBuffer buffer(&array);
                 buffer.open(QIODevice::ReadWrite);
@@ -169,6 +169,7 @@ void GkPaStreamHandler::playMediaFile(const boost::filesystem::path &media_path)
 
                 QEventLoop loop;
                 QObject::connect(gkAudioOutput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
+
                 do {
                     loop.exec();
                 } while (gkAudioOutput->state() == QAudio::ActiveState);

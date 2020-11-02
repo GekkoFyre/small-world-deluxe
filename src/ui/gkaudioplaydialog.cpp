@@ -37,7 +37,6 @@
 
 #include "src/ui/gkaudioplaydialog.hpp"
 #include "ui_gkaudioplaydialog.h"
-#include "src/pa_audio_player.hpp"
 #include <boost/exception/all.hpp>
 #include <exception>
 #include <utility>
@@ -78,6 +77,7 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
     sndFileCallback = {};
     pref_input_device = input_device;
     pref_output_device = output_device;
+    gkPaAudioPlayer = new GkPaAudioPlayer(gkDb, pref_output_device, gkAudioOutput, gkEventLogger, this);
 
     //
     // QPushButtons, etc.
@@ -91,6 +91,10 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
 
 GkAudioPlayDialog::~GkAudioPlayDialog()
 {
+    if (audio_out_play) {
+        gkPaAudioPlayer->stop(audio_file_path);
+    }
+
     delete ui;
 }
 
@@ -269,14 +273,14 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
             audio_out_play = true;
 
             if (r_pback_audio_file.exists()) {
-                std::unique_ptr<GkPaAudioPlayer> gkPaAudioPlayer = std::make_unique<GkPaAudioPlayer>(gkDb, pref_output_device, gkAudioOutput,
-                                                                                                     gkEventLogger, this);
                 gkPaAudioPlayer->play(audio_file_path);
             } else {
                 throw std::runtime_error(tr("Error with audio playback! Does the file, \"%1\", actually exist?")
                 .arg(r_pback_audio_file.fileName()).toStdString());
             }
         } else {
+            gkPaAudioPlayer->stop(audio_file_path);
+
             gkStringFuncs->changePushButtonColor(ui->pushButton_playback_play, true);
             audio_out_play = false;
         }
