@@ -146,7 +146,8 @@ void GkPaStreamHandler::run()
  * @brief GkPaStreamHandler::playMediaFile
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param media_path
- * @note alexisdm <https://stackoverflow.com/questions/10044211/how-to-use-qtmultimedia-to-play-a-wav-file>.
+ * @note alexisdm <https://stackoverflow.com/questions/10044211/how-to-use-qtmultimedia-to-play-a-wav-file>,
+ * <https://github.com/sgpinkus/audio-trap/blob/master/docs/qt-audio.md>.
  */
 void GkPaStreamHandler::playMediaFile(const boost::filesystem::path &media_path)
 {
@@ -157,15 +158,19 @@ void GkPaStreamHandler::playMediaFile(const boost::filesystem::path &media_path)
 
         for (const auto &media: gkSounds) {
             if (media.first == media_path) {
-                qint32 size = sf_seek(media.second.audioFile.file, 0, SEEK_END);
+                qint32 sample_bytes = sf_seek(media.second.audioFile.file, 0, SEEK_END);
                 sf_seek(media.second.audioFile.file, 0, SEEK_SET);
-                QByteArray array(size * 2, 0);
-                sf_read_short(media.second.audioFile.file, (qint16 *)array.data(), size);
+                qint64 buf_size = sample_bytes * media.second.audioFile.info.channels;
+                QVector<char> vec;
+                vec.resize(buf_size);
+                sf_read_short(media.second.audioFile.file, (qint16 *)&vec[0], sample_bytes); // 16-bit audio
 
-                QBuffer buffer(&array);
-                buffer.open(QIODevice::ReadWrite);
+                QBuffer *buffer = new QBuffer();
+                buffer->open(QIODevice::ReadWrite);
+                buffer->write(vec.data(), vec.size());
+                buffer->seek(0);
 
-                gkAudioOutput->start(&buffer);
+                gkAudioOutput->start(buffer);
 
                 QEventLoop loop;
                 QObject::connect(gkAudioOutput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));

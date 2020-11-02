@@ -85,7 +85,6 @@ protected:
 private:
     SNDFILE *m_sndfile;
     SF_INFO m_info;
-    QString m_fileName;
 
 };
 };
