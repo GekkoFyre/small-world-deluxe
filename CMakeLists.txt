@@ -516,7 +516,7 @@ set(GALAXY_UI_CPP
     src/gk_text_to_speech.cpp
     src/gk_logger.cpp
     src/gk_system.cpp
-    src/gk_sndfile_wrapper.cpp
+    src/gk_pcm_file_stream.cpp
     src/pa_stream_handler.cpp
     src/gk_sinewave.cpp
     src/pa_audio_player.cpp
@@ -603,7 +603,7 @@ set(GALAXY_OBJ_HEADERS
     src/gk_text_to_speech.hpp
     src/gk_logger.hpp
     src/gk_system.hpp
-    src/gk_sndfile_wrapper.hpp
+    src/gk_pcm_file_stream.hpp
     src/pa_stream_handler.hpp
     src/gk_sinewave.hpp
     src/pa_audio_player.hpp

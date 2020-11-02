@@ -44,7 +44,7 @@
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
-#include "src/gk_sndfile_wrapper.hpp"
+#include "src/gk_pcm_file_stream.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
 #include <map>
