@@ -63,8 +63,8 @@ using namespace Logging;
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @note <https://qtsource.wordpress.com/2011/09/12/multithreaded-audio-using-qaudiooutput/>.
  */
-GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
-                                     QPointer<QAudioOutput> audioOutput, QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QThread(parent)
+GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, const GkDevice &output_device, QPointer<QAudioOutput> audioOutput,
+                                     QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QThread(parent)
 {
     setParent(parent);
 
@@ -76,6 +76,7 @@ GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, co
     // Initialize variables
     //
     pref_output_device = output_device;
+    gkPcmFileStream = std::make_unique<GkPcmFileStream>();
 
     QObject::connect(this, SIGNAL(playMedia(const boost::filesystem::path &)), this, SLOT(playMediaFile(const boost::filesystem::path &)));
     QObject::connect(this, SIGNAL(stopMedia(const boost::filesystem::path &)), this, SLOT(stopMediaFile(const boost::filesystem::path &)));
@@ -146,7 +147,8 @@ void GkPaStreamHandler::run()
  * @brief GkPaStreamHandler::playMediaFile
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param media_path
- * @note alexisdm <https://stackoverflow.com/questions/10044211/how-to-use-qtmultimedia-to-play-a-wav-file>.
+ * @note alexisdm <https://stackoverflow.com/questions/10044211/how-to-use-qtmultimedia-to-play-a-wav-file>,
+ * <https://github.com/sgpinkus/audio-trap/blob/master/docs/qt-audio.md>.
  */
 void GkPaStreamHandler::playMediaFile(const boost::filesystem::path &media_path)
 {
@@ -157,18 +159,16 @@ void GkPaStreamHandler::playMediaFile(const boost::filesystem::path &media_path)
 
         for (const auto &media: gkSounds) {
             if (media.first == media_path) {
-                qint32 size = sf_seek(media.second.audioFile.file, 0, SEEK_END);
-                sf_seek(media.second.audioFile.file, 0, SEEK_SET);
-                QByteArray array(size * 2, 0);
-                sf_read_short(media.second.audioFile.file, (short *)array.data(), size);
+                if (!gkPcmFileStream->init(pref_output_device.audio_device_info.preferredFormat())) {
+                    throw std::runtime_error(tr("Error whilst initializing output audio stream!").toStdString());
+                }
 
-                QBuffer buffer(&array);
-                buffer.open(QIODevice::ReadWrite);
-
-                gkAudioOutput->start(&buffer);
+                gkPcmFileStream->play(QString::fromStdString(media_path.string()));
+                gkAudioOutput->start(gkPcmFileStream.get());
 
                 QEventLoop loop;
                 QObject::connect(gkAudioOutput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
+
                 do {
                     loop.exec();
                 } while (gkAudioOutput->state() == QAudio::ActiveState);
