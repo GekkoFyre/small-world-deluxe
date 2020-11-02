@@ -54,180 +54,165 @@ using namespace Events;
 using namespace Logging;
 
 /**
- * @brief
+ * @brief GkPcmFileStream::GkPcmFileStream
+ * @note Jarikus <https://stackoverflow.com/questions/41197576/how-to-play-mp3-file-using-qaudiooutput-and-qaudiodecoder>.
  */
-GkSndfileCpp::GkSndfileCpp()
-{}
+GkPcmFileStream::GkPcmFileStream() : m_input(&m_data), m_output(&m_data), m_state(State::Stopped)
+{
+    setOpenMode(QIODevice::ReadOnly);
 
-GkSndfileCpp::~GkSndfileCpp()
+    isInited = false;
+    isDecodingFinished = false;
+}
+
+GkPcmFileStream::~GkPcmFileStream()
 {}
 
 /**
  * @brief
- * @param fileName
- * @param mode
- * @param format
  * @return
  */
-bool GkSndfileCpp::open(QString fileName, QIODevice::OpenMode mode, QAudioFormat format)
+bool GkPcmFileStream::atEnd() const
 {
-    qint32 snd_mode;
-    switch (mode) {
-        case QIODevice::ReadOnly:
-            snd_mode = SFM_READ;
-            m_info.channels = 0;
-            m_info.format = 0;
-            m_info.frames = 0;
-            m_info.samplerate = 0;
-
-            break;
-        case QIODevice::WriteOnly:
-            snd_mode = SFM_WRITE;
-            m_info.channels = format.channelCount();
-            m_info.format = SF_FORMAT_WAV;
-            m_info.frames = 0;
-            m_info.samplerate = format.sampleRate();
-
-            break;
-        case QIODevice::ReadWrite:
-            snd_mode = SFM_RDWR;
-            break;
-        default:
-            return false;
-    }
-
-    m_sndfile = sf_open(fileName.toLocal8Bit(), snd_mode, &m_info);
-    QIODevice::open(mode);
-    return m_sndfile;
+    return m_output.size() && m_output.atEnd() && isDecodingFinished;
 }
 
 /**
  * @brief
+ * @return
  */
-void GkSndfileCpp::close()
+QAudioFormat GkPcmFileStream::format()
 {
-    sf_close(m_sndfile);
+    return QAudioFormat();
+}
+
+/**
+ * @brief
+ * @param data
+ * @param maxSize
+ * @return
+ */
+qint64 GkPcmFileStream::readData(char *data, qint64 maxlen)
+{
+    std::memset(data, 0, maxlen);
+
+    if (m_state == State::Playing) {
+        m_output.read(data, maxlen);
+
+        // There is we send readed audio data via signal, for ability get audio signal for the who listen this signal.
+        // Other word this emulate QAudioProbe behaviour for retrieve audio data which of sent to output device (speaker).
+        if (maxlen > 0) {
+            QByteArray buff(data, maxlen);
+        }
+
+        // Is finish of file
+        if (atEnd()) {
+            stop();
+        }
+    }
+
+    return maxlen;
+}
+
+/**
+ * @brief
+ * @param data
+ * @param maxSize
+ * @return
+ */
+qint64 GkPcmFileStream::writeData(const char *data, qint64 maxSize)
+{
+    Q_UNUSED(data);
+    Q_UNUSED(maxSize);
+
+    return 0;
+}
+
+/**
+ * @brief
+ * @param format
+ * @return
+ */
+bool GkPcmFileStream::init(const QAudioFormat &format)
+{
+    m_format = format;
+    m_decoder.setAudioFormat(m_format);
+
+    QObject::connect(&m_decoder, SIGNAL(bufferReady()), this, SLOT(bufferReady()));
+    QObject::connect(&m_decoder, SIGNAL(finished()), this, SLOT(finished()));
+
+    // Initialize buffers
+    if (!m_output.open(QIODevice::ReadOnly) || !m_input.open(QIODevice::WriteOnly)) {
+        return false;
+    }
+
+    isInited = true;
+    return true;
+}
+
+/**
+ * @brief
+ * @param filePath
+ */
+void GkPcmFileStream::play(const QString &filePath)
+{
+    clear();
+    m_file.setFileName(filePath);
+
+    if (!m_file.open(QIODevice::ReadOnly)) {
+        return;
+    }
+
+    m_decoder.setSourceDevice(&m_file);
+    m_decoder.start();
+
+    m_state = State::Playing;
+
     return;
 }
 
 /**
  * @brief
- * @return
  */
-qint64 GkSndfileCpp::pos() const
+void GkPcmFileStream::stop()
 {
-    sf_count_t p = sf_seek(m_sndfile, 0, SEEK_CUR);
-    return p;
+    clear();
+    m_state = State::Stopped;
+
+    return;
 }
 
 /**
  * @brief
- * @return
  */
-qint64 GkSndfileCpp::size() const
+void GkPcmFileStream::clear()
 {
-    sf_count_t p = sf_seek(m_sndfile, 0, SEEK_END);
-    return p;
+    m_decoder.stop();
+    m_data.clear();
+    isDecodingFinished = false;
+
+    return;
 }
 
 /**
  * @brief
- * @param pos
- * @return
  */
-bool GkSndfileCpp::seek(qint64 pos)
+void GkPcmFileStream::bufferReady()
 {
-    sf_seek(m_sndfile, pos, SEEK_SET);
-    return true;
+    const QAudioBuffer &buffer = m_decoder.read();
+
+    const int length = buffer.byteCount();
+    const char *data = buffer.constData<char>();
+
+    m_input.write(data, length);
+    return;
 }
 
 /**
  * @brief
- * @return
  */
-bool GkSndfileCpp::atEnd() const
+void GkPcmFileStream::finished()
 {
-    if (pos() == size()) {
-        return true;
-    }
-
-    return false;
-}
-
-/**
- * @brief
- * @return
- */
-bool GkSndfileCpp::reset()
-{
-    sf_count_t p = sf_seek(m_sndfile, 0, SEEK_SET);
-    if (p == -1) {
-        return false;
-    }
-
-    return true;
-}
-
-/**
- * @brief
- * @return
- */
-QAudioFormat GkSndfileCpp::format()
-{
-    QAudioFormat audioFormat;
-    audioFormat.setCodec("audio/pcm");
-    audioFormat.setByteOrder(QAudioFormat::LittleEndian);
-    audioFormat.setSampleRate(m_info.samplerate);
-    audioFormat.setChannelCount(m_info.channels);
-    switch(m_info.format & 0x0f)
-    {
-        case SF_FORMAT_PCM_U8:
-            audioFormat.setSampleSize(8);
-            audioFormat.setSampleType(QAudioFormat::UnSignedInt);
-            break;
-        case SF_FORMAT_PCM_S8:
-            audioFormat.setSampleSize(8);
-            audioFormat.setSampleType(QAudioFormat::SignedInt);
-            break;
-        case SF_FORMAT_PCM_16:
-            audioFormat.setSampleSize(16);
-            audioFormat.setSampleType(QAudioFormat::SignedInt);
-            break;
-        case SF_FORMAT_PCM_24:
-            audioFormat.setSampleSize(24);
-            audioFormat.setSampleType(QAudioFormat::SignedInt);
-            break;
-        case SF_FORMAT_PCM_32:
-            audioFormat.setSampleSize(32);
-            audioFormat.setSampleType(QAudioFormat::SignedInt);
-            break;
-        default:
-            audioFormat.setSampleSize(8);
-            audioFormat.setSampleType(QAudioFormat::UnSignedInt);
-            break;
-    }
-
-    return audioFormat;
-}
-
-/**
- * @brief
- * @param data
- * @param maxSize
- * @return
- */
-qint64 GkSndfileCpp::readData(char *data, qint64 maxSize)
-{
-    return sf_read_raw(m_sndfile, data, maxSize);
-}
-
-/**
- * @brief
- * @param data
- * @param maxSize
- * @return
- */
-qint64 GkSndfileCpp::writeData(const char *data, qint64 maxSize)
-{
-    return sf_write_raw(m_sndfile, data, maxSize);
+    isDecodingFinished = true;
+    return;
 }

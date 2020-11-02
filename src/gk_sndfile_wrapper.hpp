@@ -44,47 +44,59 @@
 #include "src/defines.hpp"
 #include <memory>
 #include <string>
+#include <QFile>
 #include <QString>
+#include <QBuffer>
 #include <QIODevice>
+#include <QByteArray>
 #include <QAudioFormat>
+#include <QAudioDecoder>
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#include <sndfile.h>
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
+enum State { Playing, Stopped };
 
 namespace GekkoFyre {
 
-class GkSndfileCpp : public QIODevice {
+class GkPcmFileStream : public QIODevice {
+    Q_OBJECT
 
 public:
-    explicit GkSndfileCpp();
-    virtual ~GkSndfileCpp();
+    explicit GkPcmFileStream();
+    virtual ~GkPcmFileStream();
 
-    bool isSequential() const { return false; }
-    bool open(QString fileName, OpenMode mode, QAudioFormat format = QAudioFormat());
-    void close();
-    bool canReadLine() const { return false; }
-    qint64 pos() const;
-    qint64 size() const;
-    bool seek(qint64 pos);
-    bool atEnd() const;
-    bool reset();
+    bool init(const QAudioFormat &format);
+
+    void play(const QString &filePath);
+    void stop();
+
+    bool atEnd() const Q_DECL_OVERRIDE;
     QAudioFormat format();
 
 protected:
-    qint64 readData(char * data, qint64 maxSize) ;
-    qint64 writeData(const char * data, qint64 maxSize);
+    qint64 readData(char *data, qint64 maxlen) Q_DECL_OVERRIDE;
+    qint64 writeData(const char * data, qint64 maxSize) Q_DECL_OVERRIDE;
+
+private slots:
+    void bufferReady();
+    void finished();
+
+signals:
+    void stateChanged(State state);
+    void newData(const QByteArray& data);
 
 private:
-    SNDFILE *m_sndfile;
-    SF_INFO m_info;
+    QFile m_file;
+    QBuffer m_input;
+    QBuffer m_output;
+    QByteArray m_data;
+    QAudioDecoder m_decoder;
+    QAudioFormat m_format;
+
+    State m_state;
+
+    bool isInited;
+    bool isDecodingFinished;
+
+    void clear();
 
 };
 };

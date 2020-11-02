@@ -76,6 +76,7 @@ GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, co
     // Initialize variables
     //
     pref_output_device = output_device;
+    gkPcmFileStream = std::make_unique<GkPcmFileStream>();
 
     QObject::connect(this, SIGNAL(playMedia(const boost::filesystem::path &)), this, SLOT(playMediaFile(const boost::filesystem::path &)));
     QObject::connect(this, SIGNAL(stopMedia(const boost::filesystem::path &)), this, SLOT(stopMediaFile(const boost::filesystem::path &)));
@@ -158,19 +159,12 @@ void GkPaStreamHandler::playMediaFile(const boost::filesystem::path &media_path)
 
         for (const auto &media: gkSounds) {
             if (media.first == media_path) {
-                qint32 sample_bytes = sf_seek(media.second.audioFile.file, 0, SEEK_END);
-                sf_seek(media.second.audioFile.file, 0, SEEK_SET);
-                qint64 buf_size = sample_bytes * media.second.audioFile.info.channels;
-                QVector<char> vec;
-                vec.resize(buf_size);
-                sf_read_short(media.second.audioFile.file, (qint16 *)&vec[0], sample_bytes); // 16-bit audio
+                if (!gkPcmFileStream->init(pref_output_device.audio_device_info.preferredFormat())) {
+                    throw std::runtime_error(tr("Error whilst initializing output audio stream!").toStdString());
+                }
 
-                QBuffer *buffer = new QBuffer();
-                buffer->open(QIODevice::ReadWrite);
-                buffer->write(vec.data(), vec.size());
-                buffer->seek(0);
-
-                gkAudioOutput->start(buffer);
+                gkPcmFileStream->play(QString::fromStdString(media_path.string()));
+                gkAudioOutput->start(gkPcmFileStream.get());
 
                 QEventLoop loop;
                 QObject::connect(gkAudioOutput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));

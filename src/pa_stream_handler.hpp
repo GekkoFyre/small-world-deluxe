@@ -44,6 +44,7 @@
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
+#include "src/gk_sndfile_wrapper.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
 #include <map>
@@ -102,6 +103,7 @@ signals:
 private:
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
+    std::unique_ptr<GkPcmFileStream> gkPcmFileStream;
 
     //
     // QAudioSystem initialization and buffers
