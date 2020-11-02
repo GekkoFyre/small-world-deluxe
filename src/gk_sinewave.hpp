@@ -52,6 +52,7 @@
 #include <QString>
 #include <QPointer>
 #include <QIODevice>
+#include <QAudioInput>
 #include <QAudioOutput>
 #include <QAudioDeviceInfo>
 
@@ -80,6 +81,33 @@ private:
     qint32 *end;                // The last position within the circular buffer, for faster comparisons
     qint32 *buffer;             // Sinewave buffer itself
     qint32 *send_pos;           // The current position within the circular buffer
+
+};
+
+class GkSinewaveOutput : public QObject {
+    Q_OBJECT
+
+public:
+    explicit GkSinewaveOutput(const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                              QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> audioOutput, QObject *parent = nullptr);
+    ~GkSinewaveOutput() override;
+
+public slots:
+    void playSound(quint32 milliseconds);
+
+private slots:
+    void writeMore();
+
+private:
+    GekkoFyre::Database::Settings::Audio::GkDevice gkAudioDevice;
+    QPointer<GkSinewaveTest> gkSinewaveTest;
+    QPointer<QAudioInput> gkAudioInput;
+    QPointer<QAudioOutput> gkAudioOutput;
+
+    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
+    QIODevice *output;
+    QTimer *timer;
+    char *buffer;
 
 };
 };

@@ -40,6 +40,8 @@
  ****************************************************************************************************/
 
 #include "src/pa_audio_player.hpp"
+#include <exception>
+#include <QMessageBox>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -55,13 +57,11 @@ using namespace Logging;
 /**
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-GkPaAudioPlayer::GkPaAudioPlayer(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
-                                 const QPointer<GekkoFyre::GkEventLogger> &eventLogger, QPointer<GekkoFyre::StringFuncs> stringFuncs,
-                                 QObject *parent)
+GkPaAudioPlayer::GkPaAudioPlayer(QPointer<GekkoFyre::GkLevelDb> database, const GkDevice &output_device, QPointer<QAudioOutput> audioOutput,
+                                 const QPointer<GekkoFyre::GkEventLogger> &eventLogger, QObject *parent)
 {
-    gkStringFuncs = std::move(stringFuncs);
-
-    streamHandler = new GkPaStreamHandler(std::move(database), output_device, eventLogger, stringFuncs, parent);;
+    gkAudioOutput = std::move(audioOutput);
+    streamHandler = new GkPaStreamHandler(std::move(database), output_device, gkAudioOutput, eventLogger, parent);;
 
     return;
 }

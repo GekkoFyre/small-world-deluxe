@@ -409,6 +409,7 @@ private:
     bool prefillAmateurBands();
 
     void launchSettingsWin();
+    void launchAudioPlayerWin();
     bool radioInitStart();
 
     std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> readRadioSettings();
@@ -453,6 +454,7 @@ Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::DigitalModes);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::IARURegions);
 Q_DECLARE_METATYPE(GekkoFyre::Spectrograph::GkGraphType);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkFreqs);
+Q_DECLARE_METATYPE(boost::filesystem::path);
 Q_DECLARE_METATYPE(RIG);
 Q_DECLARE_METATYPE(size_t);
 Q_DECLARE_METATYPE(uint8_t);
