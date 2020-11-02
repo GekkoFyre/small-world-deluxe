@@ -819,9 +819,7 @@ MainWindow::~MainWindow()
         spectro_timing_thread.join();
     }
 
-    // Free the pointer for the Google LevelDB library!
-    delete db;
-
+    delete db; // Free the pointer for the Google LevelDB library!
     delete ui;
 }
 

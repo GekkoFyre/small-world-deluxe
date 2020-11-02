@@ -111,14 +111,7 @@ void GkPaStreamHandler::processEvent(AudioEventType audioEventType, const fs::pa
 
                 break;
             case AudioEventType::stop:
-                {
-                    for (const auto &media: gkSounds) {
-                        sf_close(media.second.audioFile.file);
-                        emit stopMedia(mediaFilePath);
-                        gkSounds.erase(mediaFilePath);
-                    }
-                }
-
+                emit stopMedia(mediaFilePath);
                 break;
             default:
                 break;
@@ -156,11 +149,12 @@ void GkPaStreamHandler::playMediaFile(const boost::filesystem::path &media_path)
                 gkAudioOutput->start(&buffer);
 
                 QEventLoop loop;
-                QObject::connect(gkAudioOutput, SIGNAL(stateChanged(QAudio::State)), &loop, SLOT(quit()));
+                QObject::connect(gkAudioOutput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
                 do {
                     loop.exec();
                 } while (gkAudioOutput->state() == QAudio::ActiveState);
 
+                emit stopMedia(media_path);
                 break;
             }
         }
@@ -175,4 +169,38 @@ void GkPaStreamHandler::playMediaFile(const boost::filesystem::path &media_path)
  * @param media_path
  */
 void GkPaStreamHandler::stopMediaFile(const boost::filesystem::path &media_path)
-{}
+{
+    for (const auto &media: gkSounds) {
+        if (media.first == media_path) {
+            sf_close(media.second.audioFile.file);
+            gkSounds.erase(media_path);
+
+            break;
+        }
+    }
+}
+
+/*
+ * @brief GkPaStreamHandler::handleStateChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkPaStreamHandler::handleStateChanged(const QAudio::State changed_state)
+{
+    switch (changed_state) {
+        case QAudio::IdleState:
+            gkAudioOutput->stop();
+
+            break;
+        case QAudio::StoppedState:
+            if (gkAudioOutput->error() != QAudio::NoError) { // TODO: Improve the error reporting functionality of this statement!
+                gkEventLogger->publishEvent(tr("An error has been encountered during audio playback."), GkSeverity::Error, "",
+                                            true, true, false, false);
+            }
+
+            break;
+        default:
+            break;
+    }
+
+    return;
+}

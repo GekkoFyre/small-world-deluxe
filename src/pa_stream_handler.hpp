@@ -91,6 +91,7 @@ public:
 private slots:
     void playMediaFile(const boost::filesystem::path &media_path);
     void stopMediaFile(const boost::filesystem::path &media_path);
+    void handleStateChanged(const QAudio::State changed_state);
 
 signals:
     void playMedia(const boost::filesystem::path &media_path);
