@@ -64,19 +64,21 @@ using namespace Logging;
  * @note <https://qtsource.wordpress.com/2011/09/12/multithreaded-audio-using-qaudiooutput/>.
  */
 GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, const GkDevice &output_device, QPointer<QAudioOutput> audioOutput,
-                                     QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QThread(parent)
+                                     QPointer<GekkoFyre::GkEventLogger> eventLogger, std::shared_ptr<AudioFile<double>> audioFileLib,
+                                     QObject *parent) : QThread(parent)
 {
     setParent(parent);
 
     gkDb = std::move(database);
     gkEventLogger = std::move(eventLogger);
     gkAudioOutput = std::move(audioOutput);
+    gkAudioFile = std::move(audioFileLib);
 
     //
     // Initialize variables
     //
     pref_output_device = output_device;
-    gkPcmFileStream = std::make_unique<GkPcmFileStream>();
+    gkPcmFileStream = std::make_unique<GkPcmFileStream>(this);
 
     QObject::connect(this, SIGNAL(playMedia(const boost::filesystem::path &)), this, SLOT(playMediaFile(const boost::filesystem::path &)));
     QObject::connect(this, SIGNAL(stopMedia(const boost::filesystem::path &)), this, SLOT(stopMediaFile(const boost::filesystem::path &)));
@@ -109,13 +111,7 @@ void GkPaStreamHandler::processEvent(AudioEventType audioEventType, const fs::pa
         switch (audioEventType) {
             case AudioEventType::start:
                 {
-                    GkAudioFramework::GkPlayback callback;
-                    callback.audioFile.file = sf_open(mediaFilePath.c_str(), SFM_READ, &callback.audioFile.info);
-                    if (!callback.audioFile.file) {
-                        std::throw_with_nested(std::runtime_error(tr("Unable to open audio file, \"%1\", due to filesystem or other error!").arg(QString::fromStdString(mediaFilePath.string())).toStdString()));
-                    }
-
-                    gkSounds.insert(std::make_pair(mediaFilePath, callback));
+                    gkSounds.insert(std::make_pair(mediaFilePath, *gkAudioFile));
                     emit playMedia(mediaFilePath);
                 }
 
@@ -191,7 +187,6 @@ void GkPaStreamHandler::stopMediaFile(const boost::filesystem::path &media_path)
 {
     for (const auto &media: gkSounds) {
         if (media.first == media_path) {
-            sf_close(media.second.audioFile.file);
             gkSounds.erase(media_path);
 
             break;

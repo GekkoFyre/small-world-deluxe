@@ -74,10 +74,10 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
     //
     // Initialize variables
     //
-    sndFileCallback = {};
     pref_input_device = input_device;
     pref_output_device = output_device;
-    gkPaAudioPlayer = new GkPaAudioPlayer(gkDb, pref_output_device, gkAudioOutput, gkEventLogger, this);
+    gkAudioFile = std::make_shared<AudioFile<double>>();
+    gkPaAudioPlayer = new GkPaAudioPlayer(gkDb, pref_output_device, gkAudioOutput, gkEventLogger, gkAudioFile, this);
 
     //
     // QPushButtons, etc.
@@ -109,18 +109,18 @@ GkAudioChannels GkAudioPlayDialog::determineAudioChannels()
 {
     if (!r_pback_audio_file.fileName().isEmpty()) {
         // We currently have a file selected!
-        if (sndFileCallback.info.channels == 1) {
+        if (gkAudioFile->getNumChannels() == 1) {
             //
             // Mono
             //
             return Database::Settings::GkAudioChannels::Mono;
-        } else if (sndFileCallback.info.channels == 2) {
+        } else if (gkAudioFile->getNumChannels() == 2) {
             //
             // Stereo
             //
             return GkAudioChannels::Both;
         } else {
-            if (sndFileCallback.info.channels > 2) {
+            if (gkAudioFile->getNumChannels() > 2) {
                 gkAudioFileInfo.num_audio_channels = Database::Settings::GkAudioChannels::Surround;
             } else {
                 gkAudioFileInfo.num_audio_channels = Database::Settings::GkAudioChannels::Unknown;
@@ -217,17 +217,17 @@ void GkAudioPlayDialog::on_pushButton_playback_browse_file_loc_clicked()
                     
                     gkAudioFileInfo.is_output = true;
                     gkAudioFileInfo.audio_file_path = file.toStdString();
-                    sndFileCallback.file = sf_open(gkAudioFileInfo.audio_file_path.c_str(), SFM_READ, &sndFileCallback.info);
-                    if (sf_error(sndFileCallback.file) != SF_ERR_NO_ERROR) {
-                        gkEventLogger->publishEvent(tr("An error has been encountered whilst attempting to initialize the multimedia interface regarding file, \"%1\", with the exact error being:\n\n%2")
-                        .arg(QString::fromStdString(gkAudioFileInfo.audio_file_path.filename().string())).arg(QString::fromStdString(sf_strerror(sndFileCallback.file))), GkSeverity::Warning, "", true,
+                    bool loadedOk = gkAudioFile->load(gkAudioFileInfo.audio_file_path.string());
+                    if (!loadedOk) {
+                        gkEventLogger->publishEvent(tr("An error has been encountered whilst attempting to initialize the multimedia interface regarding file, \"%1\".")
+                        .arg(QString::fromStdString(gkAudioFileInfo.audio_file_path.filename().string())), GkSeverity::Warning, "", true,
                         true, false, false);
                     }
 
-                    gkAudioFileInfo.sample_rate = sndFileCallback.info.samplerate;
-                    gkAudioFileInfo.bit_depth = sndFileCallback.info.format;
-                    gkAudioFileInfo.length_in_secs = (sndFileCallback.info.frames / (gkAudioFileInfo.sample_rate));
-                    gkAudioFileInfo.num_samples_per_channel = sndFileCallback.info.frames;
+                    gkAudioFileInfo.sample_rate = gkAudioFile->getSampleRate();
+                    gkAudioFileInfo.bit_depth = gkAudioFile->getBitDepth();
+                    gkAudioFileInfo.length_in_secs = gkAudioFile->getLengthInSeconds();
+                    gkAudioFileInfo.num_samples_per_channel = gkAudioFile->getNumSamplesPerChannel();
 
                     gkDb->write_audio_playback_dlg_settings(QString::fromStdString(gkAudioFileInfo.audio_file_path.parent_path().string()), AudioPlaybackDlg::GkAudioDlgLastFolderBrowsed);
 

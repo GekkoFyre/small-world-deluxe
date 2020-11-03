@@ -57,9 +57,12 @@ using namespace Logging;
  * @brief GkPcmFileStream::GkPcmFileStream
  * @note Jarikus <https://stackoverflow.com/questions/41197576/how-to-play-mp3-file-using-qaudiooutput-and-qaudiodecoder>.
  */
-GkPcmFileStream::GkPcmFileStream() : m_input(&m_data), m_output(&m_data), m_state(State::Stopped)
+GkPcmFileStream::GkPcmFileStream(QObject *parent) : m_input(&m_data), m_output(&m_data), m_state(State::Stopped), QIODevice(parent)
 {
+    setParent(parent);
     setOpenMode(QIODevice::ReadOnly);
+
+    m_decoder = new QAudioDecoder();
 
     isInited = false;
     isDecodingFinished = false;
@@ -136,10 +139,10 @@ qint64 GkPcmFileStream::writeData(const char *data, qint64 maxSize)
 bool GkPcmFileStream::init(const QAudioFormat &format)
 {
     m_format = format;
-    m_decoder.setAudioFormat(m_format);
+    m_decoder->setAudioFormat(m_format);
 
-    QObject::connect(&m_decoder, SIGNAL(bufferReady()), this, SLOT(bufferReady()));
-    QObject::connect(&m_decoder, SIGNAL(finished()), this, SLOT(finished()));
+    QObject::connect(m_decoder, SIGNAL(bufferReady()), this, SLOT(bufferReady()));
+    QObject::connect(m_decoder, SIGNAL(finished()), this, SLOT(finished()));
 
     // Initialize buffers
     if (!m_output.open(QIODevice::ReadOnly) || !m_input.open(QIODevice::WriteOnly)) {
@@ -163,8 +166,8 @@ void GkPcmFileStream::play(const QString &filePath)
         return;
     }
 
-    m_decoder.setSourceDevice(&m_file);
-    m_decoder.start();
+    m_decoder->setSourceDevice(&m_file);
+    m_decoder->start();
 
     m_state = State::Playing;
 
@@ -187,7 +190,7 @@ void GkPcmFileStream::stop()
  */
 void GkPcmFileStream::clear()
 {
-    m_decoder.stop();
+    m_decoder->stop();
     m_data.clear();
     isDecodingFinished = false;
 
@@ -199,7 +202,7 @@ void GkPcmFileStream::clear()
  */
 void GkPcmFileStream::bufferReady()
 {
-    const QAudioBuffer &buffer = m_decoder.read();
+    const QAudioBuffer &buffer = m_decoder->read();
 
     const int length = buffer.byteCount();
     const char *data = buffer.constData<char>();

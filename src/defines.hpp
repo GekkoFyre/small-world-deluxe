@@ -49,7 +49,6 @@
 #include <boost/filesystem.hpp>
 #include <hamlib/rigclass.h>
 #include <qwt/qwt_interval.h>
-#include <sndfile.h>
 #include <list>
 #include <vector>
 #include <string>
@@ -686,18 +685,6 @@ namespace Spectrograph {
 }
 
 namespace GkAudioFramework {
-    struct SndFileCallback {
-        SNDFILE *file = nullptr;
-        SF_INFO info = {};
-    };
-
-    struct GkPlayback {
-        SndFileCallback audioFile;
-        qint32 position = 0;
-        sf_count_t count = 0;
-        bool loop = false;
-    };
-
     struct GkRecord {
         float *buffer;
         size_t bufferBytes;

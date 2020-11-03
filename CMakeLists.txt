@@ -305,18 +305,6 @@ if (LINUX)
 endif(LINUX)
 
 #
-# libsndfile
-# http://www.mega-nerd.com/libsndfile/
-#
-find_package(Sndfile REQUIRED)
-if (SNDFILE_FOUND)
-    include_directories(${SNDFILE_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${SNDFILE_LIBRARIES})
-else()
-    message(FATAL_ERROR "The 'sndfile' multimedia library could not be found!")
-endif(SNDFILE_FOUND)
-
-#
 # https://xiph.org/vorbis/
 #
 find_package(Vorbis REQUIRED)
@@ -417,6 +405,13 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/sentry-native/inclu
 #
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/kissfft")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/kissfft")
+
+#
+# AudioFile by Adam Stark
+# https://github.com/adamstark/AudioFile
+#
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/AudioFile")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/AudioFile")
 
 set(GALAXY_WSJTX_QRA64_C
     ${GALAXY_WSJTX_QRA64_C}

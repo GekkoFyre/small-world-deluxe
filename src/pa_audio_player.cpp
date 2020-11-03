@@ -58,10 +58,12 @@ using namespace Logging;
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 GkPaAudioPlayer::GkPaAudioPlayer(QPointer<GekkoFyre::GkLevelDb> database, const GkDevice &output_device, QPointer<QAudioOutput> audioOutput,
-                                 const QPointer<GekkoFyre::GkEventLogger> &eventLogger, QObject *parent)
+                                 const QPointer<GekkoFyre::GkEventLogger> &eventLogger, std::shared_ptr<AudioFile<double>> audioFileLib,
+                                 QObject *parent)
 {
     gkAudioOutput = std::move(audioOutput);
-    streamHandler = new GkPaStreamHandler(std::move(database), output_device, gkAudioOutput, eventLogger, parent);;
+    gkAudioFile = std::move(audioFileLib);
+    streamHandler = new GkPaStreamHandler(std::move(database), output_device, gkAudioOutput, eventLogger, gkAudioFile, parent);;
 
     return;
 }

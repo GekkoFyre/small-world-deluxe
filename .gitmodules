@@ -22,3 +22,6 @@
 [submodule "src/contrib/leveldb"]
 	path = src/contrib/leveldb
 	url = https://github.com/google/leveldb.git
+[submodule "src/contrib/AudioFile"]
+	path = src/contrib/AudioFile
+	url = https://github.com/adamstark/AudioFile.git

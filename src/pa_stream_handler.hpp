@@ -45,6 +45,7 @@
 #include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
 #include "src/gk_pcm_file_stream.hpp"
+#include <AudioFile.h>
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
 #include <map>
@@ -58,17 +59,6 @@
 #include <QAudioOutput>
 #include <QAudioFormat>
 #include <QAudioDeviceInfo>
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#include <sndfile.h>
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
 
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
@@ -85,7 +75,8 @@ class GkPaStreamHandler : public QThread {
 
 public:
     explicit GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
-                               QPointer<QAudioOutput> audioOutput, QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
+                               QPointer<QAudioOutput> audioOutput, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                               std::shared_ptr<AudioFile<double>> audioFileLib, QObject *parent = nullptr);
     ~GkPaStreamHandler() override;
 
     void processEvent(AudioEventType audioEventType, const fs::path &mediaFilePath, bool loop = false);
@@ -106,11 +97,16 @@ private:
     std::unique_ptr<GkPcmFileStream> gkPcmFileStream;
 
     //
+    // AudioFile objects and related
+    //
+    std::shared_ptr<AudioFile<double>> gkAudioFile;
+
+    //
     // QAudioSystem initialization and buffers
     //
     QPointer<QAudioOutput> gkAudioOutput;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
-    std::map<boost::filesystem::path, GekkoFyre::GkAudioFramework::GkPlayback> gkSounds;
+    std::map<boost::filesystem::path, AudioFile<double>> gkSounds;
 
 };
 };
