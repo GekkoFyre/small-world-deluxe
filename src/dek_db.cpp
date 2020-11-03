@@ -2003,6 +2003,32 @@ QString GkLevelDb::convIARURegionToStr(const IARURegions &iaru_region)
 }
 
 /**
+ * @brief GkLevelDb::convCodecSupportFromIdxToEnum
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param codec_support_idx
+ * @return
+ */
+GekkoFyre::GkAudioFramework::CodecSupport GkLevelDb::convCodecSupportFromIdxToEnum(const qint32 &codec_support_idx)
+{
+    switch (codec_support_idx) {
+        case AUDIO_PLAYBACK_CODEC_PCM_IDX:
+            return GekkoFyre::GkAudioFramework::CodecSupport::PCM;
+        case AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX:
+            return GekkoFyre::GkAudioFramework::CodecSupport::Loopback;
+        case AUDIO_PLAYBACK_CODEC_VORBIS_IDX:
+            return GekkoFyre::GkAudioFramework::CodecSupport::OggVorbis;
+        case AUDIO_PLAYBACK_CODEC_OPUS_IDX:
+            return GekkoFyre::GkAudioFramework::CodecSupport::Opus;
+        case AUDIO_PLAYBACK_CODEC_FLAC_IDX:
+            return GekkoFyre::GkAudioFramework::CodecSupport::FLAC;
+        default:
+            return GekkoFyre::GkAudioFramework::CodecSupport::Unsupported;
+    }
+
+    return GekkoFyre::GkAudioFramework::CodecSupport::Unknown;
+}
+
+/**
  * @brief DekodeDb::boolEnum Will enumerate a boolean value to an std::string, ready for use within a database.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param is_true Whether we are dealing with a true or false situation.

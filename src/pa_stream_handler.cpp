@@ -81,8 +81,9 @@ GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, co
     gkPcmFileStream = std::make_unique<GkPcmFileStream>(this);
 
     QObject::connect(this, SIGNAL(playMedia(const boost::filesystem::path &)), this, SLOT(playMediaFile(const boost::filesystem::path &)));
-    QObject::connect(this, SIGNAL(startLoopback()), this, SLOT(startMediaLoopback()));
     QObject::connect(this, SIGNAL(stopMedia(const boost::filesystem::path &)), this, SLOT(stopMediaFile(const boost::filesystem::path &)));
+    QObject::connect(this, SIGNAL(recordMedia(const boost::filesystem::path &)), this, SLOT(recordMediaFile(const boost::filesystem::path &)));
+    QObject::connect(this, SIGNAL(startLoopback()), this, SLOT(startMediaLoopback()));
     QObject::connect(this, SIGNAL(changeState(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
 
     start();
@@ -103,11 +104,12 @@ GkPaStreamHandler::~GkPaStreamHandler()
  * @brief GkPaStreamHandler::processEvent
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param audioEventType
- * @param audioFile
- * @param loop
- * @see Ben Key <https://stackoverflow.com/questions/29249657/playing-wav-file-with-portaudio-and-sndfile>.
+ * @param supported_codec
+ * @param mediaFilePath
+ * @param loop_media
  */
-void GkPaStreamHandler::processEvent(GkAudioFramework::AudioEventType audioEventType, const fs::path &mediaFilePath, bool loop_media)
+void GkPaStreamHandler::processEvent(GkAudioFramework::AudioEventType audioEventType, const fs::path &mediaFilePath,
+                                     const GkAudioFramework::CodecSupport &supported_codec, bool loop_media)
 {
     Q_UNUSED(loop_media);
     try {
@@ -116,8 +118,14 @@ void GkPaStreamHandler::processEvent(GkAudioFramework::AudioEventType audioEvent
                 {
                     if (!mediaFilePath.empty()) {
                         gkSounds.insert(std::make_pair(mediaFilePath, *gkAudioFile));
-                        emit playMedia(mediaFilePath);
+                        emit playMedia(mediaFilePath, supported_codec);
                     }
+                }
+
+                break;
+            case GkAudioFramework::AudioEventType::record:
+                if (!mediaFilePath.empty()) {
+                    emit recordMedia(mediaFilePath, supported_codec);
                 }
 
                 break;
@@ -157,7 +165,7 @@ void GkPaStreamHandler::run()
  * @note alexisdm <https://stackoverflow.com/questions/10044211/how-to-use-qtmultimedia-to-play-a-wav-file>,
  * <https://github.com/sgpinkus/audio-trap/blob/master/docs/qt-audio.md>.
  */
-void GkPaStreamHandler::playMediaFile(const boost::filesystem::path &media_path)
+void GkPaStreamHandler::playMediaFile(const boost::filesystem::path &media_path, const GkAudioFramework::CodecSupport &supported_codec)
 {
     try {
         if (!gkAudioOutput) {
@@ -188,6 +196,34 @@ void GkPaStreamHandler::playMediaFile(const boost::filesystem::path &media_path)
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Error, true, true, false, false);
     }
+}
+
+/**
+ * @brief GkPaStreamHandler::recordMediaFile record data to a multimedia file on the end-user's storage media of choice.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param media_path The multimedia file to make the recording towards.
+ * @param supported_codec The codec you would like to make the recording with.
+ */
+void GkPaStreamHandler::recordMediaFile(const boost::filesystem::path &media_path, const GkAudioFramework::CodecSupport &supported_codec)
+{
+    switch (supported_codec) {
+        case GkAudioFramework::CodecSupport::PCM:
+            break;
+        case GkAudioFramework::CodecSupport::Loopback:
+            break;
+        case GkAudioFramework::CodecSupport::OggVorbis:
+            break;
+        case GkAudioFramework::CodecSupport::Opus:
+            break;
+        case GkAudioFramework::CodecSupport::FLAC:
+            break;
+        case GkAudioFramework::CodecSupport::Unsupported:
+            break;
+        default:
+            break;
+    }
+
+    return;
 }
 
 /**

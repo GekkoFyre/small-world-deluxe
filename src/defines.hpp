@@ -123,6 +123,12 @@ namespace GekkoFyre {
 #define AUDIO_VU_METER_PEAK_DECAY_RATE (0.001)                  // Unknown
 #define AUDIO_VU_METER_PEAK_HOLD_LEVEL_DURATION (2000)          // Measured in milliseconds
 
+#define AUDIO_PLAYBACK_CODEC_PCM_IDX (0)
+#define AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX (1)
+#define AUDIO_PLAYBACK_CODEC_VORBIS_IDX (2)
+#define AUDIO_PLAYBACK_CODEC_OPUS_IDX (3)
+#define AUDIO_PLAYBACK_CODEC_FLAC_IDX (4)
+
 //
 // Mostly regarding FFTW functions
 //
@@ -703,6 +709,7 @@ namespace GkAudioFramework {
 
     enum CodecSupport {
         PCM,
+        Loopback,
         OggVorbis,
         Opus,
         FLAC,
@@ -713,6 +720,7 @@ namespace GkAudioFramework {
     enum AudioEventType {
         start,
         stop,
+        record,
         loopback
     };
 

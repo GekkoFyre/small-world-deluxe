@@ -88,6 +88,9 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
     audio_out_record = false;
     audio_out_skip_fwd = false;
     audio_out_skip_bck = false;
+
+    prefillCodecComboBoxes(GkAudioFramework::CodecSupport::PCM);
+    prefillCodecComboBoxes(GkAudioFramework::CodecSupport::Loopback);
 }
 
 GkAudioPlayDialog::~GkAudioPlayDialog()
@@ -280,7 +283,8 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
             audio_out_play = true;
 
             if (r_pback_audio_file.exists()) {
-                gkPaAudioPlayer->play(audio_file_path);
+                GkAudioFramework::CodecSupport codec_used = gkDb->convCodecSupportFromIdxToEnum(ui->comboBox_playback_rec_codec->currentData().toInt());
+                gkPaAudioPlayer->play(audio_file_path, codec_used);
                 gkEventLogger->publishEvent(tr("Started playing audio file, \"%1\"").arg(QString::fromStdString(audio_file_path.string())), GkSeverity::Info, "", true, true, true, false);
             } else {
                 throw std::runtime_error(tr("Error with audio playback! Does the file, \"%1\", actually exist?")
@@ -365,6 +369,10 @@ void GkAudioPlayDialog::on_comboBox_playback_rec_bitrate_currentIndexChanged(int
     return;
 }
 
+/**
+ * @brief GkAudioPlayDialog::resetStopButtonColor
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
 void GkAudioPlayDialog::resetStopButtonColor()
 {
     gkStringFuncs->changePushButtonColor(ui->pushButton_playback_stop, true);
@@ -372,6 +380,38 @@ void GkAudioPlayDialog::resetStopButtonColor()
 
     gkStringFuncs->changePushButtonColor(ui->pushButton_playback_play, true);
     audio_out_play = false;
+
+    return;
+}
+
+/**
+ * @brief GkAudioPlayDialog::prefillCodecComboBoxes
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkAudioPlayDialog::prefillCodecComboBoxes(const GkAudioFramework::CodecSupport &supported_codec)
+{
+    try {
+        switch (supported_codec) {
+            case GkAudioFramework::CodecSupport::PCM:
+                ui->comboBox_playback_rec_codec->insertItem(AUDIO_PLAYBACK_CODEC_PCM_IDX, tr("PCM"), AUDIO_PLAYBACK_CODEC_PCM_IDX);
+                break;
+            case GkAudioFramework::CodecSupport::Loopback:
+                ui->comboBox_playback_rec_codec->insertItem(AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX, tr("Input/Output Loopback"), AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX);
+                break;
+            case GkAudioFramework::CodecSupport::OggVorbis:
+                throw std::invalid_argument(tr("This particular codec is not yet supported!").toStdString());
+            case GkAudioFramework::CodecSupport::Opus:
+                throw std::invalid_argument(tr("This particular codec is not yet supported!").toStdString());
+            case GkAudioFramework::CodecSupport::FLAC:
+                throw std::invalid_argument(tr("This particular codec is not yet supported!").toStdString());
+            case GkAudioFramework::CodecSupport::Unsupported:
+                throw std::invalid_argument(tr("This particular codec is not yet supported!").toStdString());
+            default:
+                throw std::invalid_argument(tr("Unable to determine the desired codec!").toStdString());
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
+    }
 
     return;
 }

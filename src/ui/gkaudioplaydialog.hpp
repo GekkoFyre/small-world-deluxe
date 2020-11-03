@@ -142,5 +142,7 @@ private:
         T operator () (const U &x) const { return static_cast<T> (x); }
     };
 
+    void prefillCodecComboBoxes(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
+
 };
 
