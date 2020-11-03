@@ -415,37 +415,37 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/AudioFile")
 
 set(GALAXY_WSJTX_QRA64_C
     ${GALAXY_WSJTX_QRA64_C}
-    src/contrib/wsjtx/lib/ftrsd/int.h
-    src/contrib/wsjtx/lib/qra/qra64/main.c
-    src/contrib/wsjtx/lib/qra/qra64/fadengauss.c
-    src/contrib/wsjtx/lib/qra/qra64/fadenlorentz.c
-    src/contrib/wsjtx/lib/qra/qra64/qra64_subs.c
-    src/contrib/wsjtx/lib/qra/qra64/qra64.c
-    src/contrib/wsjtx/lib/qra/qra64/qra64.h
-    src/contrib/wsjtx/lib/qra/qracodes/normrnd.c
-    src/contrib/wsjtx/lib/qra/qracodes/normrnd.h
-    src/contrib/wsjtx/lib/qra/qracodes/npfwht.c
-    src/contrib/wsjtx/lib/qra/qracodes/npfwht.h
-    src/contrib/wsjtx/lib/qra/qracodes/pdmath.c
-    src/contrib/wsjtx/lib/qra/qracodes/pdmath.h
-    src/contrib/wsjtx/lib/qra/qracodes/qra12_63_64_irr_b.c
-    src/contrib/wsjtx/lib/qra/qracodes/qra12_63_64_irr_b.h
-    src/contrib/wsjtx/lib/qra/qracodes/qra13_64_64_irr_e.c
-    src/contrib/wsjtx/lib/qra/qracodes/qra13_64_64_irr_e.h
-    src/contrib/wsjtx/lib/qra/qracodes/qracodes.c
-    src/contrib/wsjtx/lib/qra/qracodes/qracodes.h)
+    src/contrib/wsjt-x/lib/ftrsd/int.h
+    src/contrib/wsjt-x/lib/qra/qra64/main.c
+    src/contrib/wsjt-x/lib/qra/qra64/fadengauss.c
+    src/contrib/wsjt-x/lib/qra/qra64/fadenlorentz.c
+    src/contrib/wsjt-x/lib/qra/qra64/qra64_subs.c
+    src/contrib/wsjt-x/lib/qra/qra64/qra64.c
+    src/contrib/wsjt-x/lib/qra/qra64/qra64.h
+    src/contrib/wsjt-x/lib/qra/qracodes/normrnd.c
+    src/contrib/wsjt-x/lib/qra/qracodes/normrnd.h
+    src/contrib/wsjt-x/lib/qra/qracodes/npfwht.c
+    src/contrib/wsjt-x/lib/qra/qracodes/npfwht.h
+    src/contrib/wsjt-x/lib/qra/qracodes/pdmath.c
+    src/contrib/wsjt-x/lib/qra/qracodes/pdmath.h
+    src/contrib/wsjt-x/lib/qra/qracodes/qra12_63_64_irr_b.c
+    src/contrib/wsjt-x/lib/qra/qracodes/qra12_63_64_irr_b.h
+    src/contrib/wsjt-x/lib/qra/qracodes/qra13_64_64_irr_e.c
+    src/contrib/wsjt-x/lib/qra/qracodes/qra13_64_64_irr_e.h
+    src/contrib/wsjt-x/lib/qra/qracodes/qracodes.c
+    src/contrib/wsjt-x/lib/qra/qracodes/qracodes.h)
 
 set_property(SOURCE ${GALAXY_WSJTX_QRA64_C} PROPERTY SKIP_AUTOUIC ON)
 
 set(GALAXY_WSJTX_WSPR_C
     ${GALAXY_WSJTX_WSPR_C}
-    src/contrib/wsjtx/lib/wsprd/nhash.c
-    src/contrib/wsjtx/lib/wsprd/wsprd_utils.c
-    src/contrib/wsjtx/lib/wsprd/wsprd_utils.h
-    src/contrib/wsjtx/lib/wsprd/fano.c
-    src/contrib/wsjtx/lib/wsprd/fano.h
-    src/contrib/wsjtx/lib/wsprd/jelinek.c
-    src/contrib/wsjtx/lib/wsprd/jelinek.h)
+    src/contrib/wsjt-x/lib/wsprd/nhash.c
+    src/contrib/wsjt-x/lib/wsprd/wsprd_utils.c
+    src/contrib/wsjt-x/lib/wsprd/wsprd_utils.h
+    src/contrib/wsjt-x/lib/wsprd/fano.c
+    src/contrib/wsjt-x/lib/wsprd/fano.h
+    src/contrib/wsjt-x/lib/wsprd/jelinek.c
+    src/contrib/wsjt-x/lib/wsprd/jelinek.h)
 
 set_property(SOURCE ${GALAXY_WSJTX_WSPR_C} PROPERTY SKIP_AUTOUIC ON)
 
