@@ -79,10 +79,6 @@ private slots:
     void bufferReady();
     void finished();
 
-signals:
-    void stateChanged(State state);
-    void newData(const QByteArray& data);
-
 private:
     QFile m_file;
     QBuffer m_input;

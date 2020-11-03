@@ -246,6 +246,43 @@ std::string StringFuncs::csvOutputString(const std::vector<std::string> &csv_ele
 }
 
 /**
+ * @brief StringFuncs::fileSizeHumanReadable will 'prettify' a given file-size, converting it to kilobytes, megabytes,
+ * gigabytes, etc. as needed, thusly making it more human readable.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param file_size The size of the file under review, as measured in bytes.
+ * @return The cleaned up file-size, outputted as a double.
+ */
+QString StringFuncs::fileSizeHumanReadable(const qint64 &file_size)
+{
+    qint64 conv_size = 0.0f;
+    QString formatted_val;
+
+    if (file_size >= 0 && file_size <= 1024L) {
+        // Output as bytes!
+        conv_size = file_size;
+        formatted_val = tr("%1 bytes").arg(QString::number(conv_size));
+    } else if (file_size >= 1025 && file_size <= (1024L * 1024L)) {
+        // Output as kilobytes!
+        conv_size = (file_size / (1024L));
+        formatted_val = tr("%1 kB").arg(QString::number(conv_size));
+    } else if (file_size >= ((1024L * 1024L) + 1) && file_size <= (1024L * 1024L * 1024L)) {
+        // Output as megabytes!
+        conv_size = (file_size / (1024L * 1024L));
+        formatted_val = tr("%1 MiB").arg(QString::number(conv_size));
+    } else if (file_size >= ((1024L * 1024L * 1024L) + 1) && file_size <= (1024L * 1024L * 1024L * 1024L)) {
+        // Output as gigabytes!
+        conv_size = (file_size / (1024L * 1024L * 1024L));
+        formatted_val = tr("%1 GiB").arg(QString::number(conv_size));
+    } else {
+        // Output as terabytes!
+        conv_size = (file_size / (1024L * 1024L * 1024L * 1024L));
+        formatted_val = tr("%1 TiB").arg(QString::number(conv_size));
+    }
+
+    return formatted_val;
+}
+
+/**
  * @brief StringFuncs::convSecondsToMinutes is a helper function that converts seconds to minutes, provided that the given seconds
  * are longer than a single minute in length, otherwise the value remains as seconds for ease-of-reading.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>

@@ -43,7 +43,6 @@
 #include <utility>
 #include <algorithm>
 #include <exception>
-#include <QEventLoop>
 #include <QByteArray>
 #include <QIODevice>
 #include <QBuffer>
@@ -64,13 +63,14 @@ using namespace Logging;
  * @note <https://qtsource.wordpress.com/2011/09/12/multithreaded-audio-using-qaudiooutput/>.
  */
 GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, const GkDevice &output_device, QPointer<QAudioOutput> audioOutput,
-                                     QPointer<GekkoFyre::GkEventLogger> eventLogger, std::shared_ptr<AudioFile<double>> audioFileLib,
-                                     QObject *parent) : QThread(parent)
+                                     QPointer<QAudioInput> audioInput, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                                     std::shared_ptr<AudioFile<double>> audioFileLib, QObject *parent) : QThread(parent)
 {
     setParent(parent);
 
     gkDb = std::move(database);
     gkEventLogger = std::move(eventLogger);
+    gkAudioInput = std::move(audioInput);
     gkAudioOutput = std::move(audioOutput);
     gkAudioFile = std::move(audioFileLib);
 
@@ -81,7 +81,9 @@ GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, co
     gkPcmFileStream = std::make_unique<GkPcmFileStream>(this);
 
     QObject::connect(this, SIGNAL(playMedia(const boost::filesystem::path &)), this, SLOT(playMediaFile(const boost::filesystem::path &)));
+    QObject::connect(this, SIGNAL(startLoopback()), this, SLOT(startMediaLoopback()));
     QObject::connect(this, SIGNAL(stopMedia(const boost::filesystem::path &)), this, SLOT(stopMediaFile(const boost::filesystem::path &)));
+    QObject::connect(this, SIGNAL(changeState(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
 
     start();
 
@@ -105,19 +107,28 @@ GkPaStreamHandler::~GkPaStreamHandler()
  * @param loop
  * @see Ben Key <https://stackoverflow.com/questions/29249657/playing-wav-file-with-portaudio-and-sndfile>.
  */
-void GkPaStreamHandler::processEvent(AudioEventType audioEventType, const fs::path &mediaFilePath, bool loop)
+void GkPaStreamHandler::processEvent(GkAudioFramework::AudioEventType audioEventType, const fs::path &mediaFilePath, bool loop_media)
 {
+    Q_UNUSED(loop_media);
     try {
         switch (audioEventType) {
-            case AudioEventType::start:
+            case GkAudioFramework::AudioEventType::start:
                 {
-                    gkSounds.insert(std::make_pair(mediaFilePath, *gkAudioFile));
-                    emit playMedia(mediaFilePath);
+                    if (!mediaFilePath.empty()) {
+                        gkSounds.insert(std::make_pair(mediaFilePath, *gkAudioFile));
+                        emit playMedia(mediaFilePath);
+                    }
                 }
 
                 break;
-            case AudioEventType::stop:
-                emit stopMedia(mediaFilePath);
+            case GkAudioFramework::AudioEventType::loopback:
+                emit startLoopback();
+                break;
+            case GkAudioFramework::AudioEventType::stop:
+                if (!mediaFilePath.empty()) {
+                    emit stopMedia(mediaFilePath);
+                }
+
                 break;
             default:
                 break;
@@ -162,12 +173,13 @@ void GkPaStreamHandler::playMediaFile(const boost::filesystem::path &media_path)
                 gkPcmFileStream->play(QString::fromStdString(media_path.string()));
                 gkAudioOutput->start(gkPcmFileStream.get());
 
-                QEventLoop loop;
                 QObject::connect(gkAudioOutput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
 
+                loop = new QEventLoop(this);
                 do {
-                    loop.exec();
+                    loop->exec(QEventLoop::WaitForMoreEvents);
                 } while (gkAudioOutput->state() == QAudio::ActiveState);
+                delete loop;
 
                 emit stopMedia(media_path);
                 break;
@@ -179,6 +191,40 @@ void GkPaStreamHandler::playMediaFile(const boost::filesystem::path &media_path)
 }
 
 /**
+ * @brief GkPaStreamHandler::startMediaLoopback
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkPaStreamHandler::startMediaLoopback()
+{
+    QPointer<QBuffer> read_buf = new QBuffer();
+    QPointer<QBuffer> write_buf = new QBuffer();
+
+    read_buf->open(QBuffer::ReadOnly);
+    write_buf->open(QBuffer::WriteOnly);
+
+    QObject::connect(write_buf, &QIODevice::bytesWritten, [write_buf, read_buf](qint64) {
+        // Remove all data that was already read
+        read_buf->buffer().remove(0, read_buf->pos());
+
+        // Set the pointer towards the beginning of the unread data
+        const auto res = read_buf->seek(0);
+        assert(res);
+
+        // Write out any new data
+        read_buf->buffer().append(write_buf->buffer());
+
+        // Remove all data that has already been written
+        write_buf->buffer().clear();
+        write_buf->seek(0);
+    });
+
+    gkAudioInput->start(write_buf);
+    gkAudioOutput->start(read_buf);
+
+    return;
+}
+
+/**
  * @brief GkPaStreamHandler::stopMediaFile
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param media_path
@@ -187,7 +233,12 @@ void GkPaStreamHandler::stopMediaFile(const boost::filesystem::path &media_path)
 {
     for (const auto &media: gkSounds) {
         if (media.first == media_path) {
+            gkPcmFileStream->stop();
             gkSounds.erase(media_path);
+
+            if (gkAudioOutput->state() == QAudio::ActiveState) {
+                gkAudioOutput->stop();
+            }
 
             break;
         }
@@ -198,22 +249,26 @@ void GkPaStreamHandler::stopMediaFile(const boost::filesystem::path &media_path)
  * @brief GkPaStreamHandler::handleStateChanged
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void GkPaStreamHandler::handleStateChanged(const QAudio::State changed_state)
+void GkPaStreamHandler::handleStateChanged(QAudio::State changed_state)
 {
-    switch (changed_state) {
-        case QAudio::IdleState:
-            gkAudioOutput->stop();
+    try {
+        switch (changed_state) {
+            case QAudio::IdleState:
+                gkPcmFileStream->stop();
 
-            break;
-        case QAudio::StoppedState:
-            if (gkAudioOutput->error() != QAudio::NoError) { // TODO: Improve the error reporting functionality of this statement!
-                gkEventLogger->publishEvent(tr("An error has been encountered during audio playback."), GkSeverity::Error, "",
-                                            true, true, false, false);
-            }
+                break;
+            case QAudio::StoppedState:
+                if (gkAudioOutput->error() != QAudio::NoError) { // TODO: Improve the error reporting functionality of this statement!
+                    throw std::runtime_error(tr("Issue with 'QAudio::StoppedState' during media playback!").toStdString());
+                }
 
-            break;
-        default:
-            break;
+                break;
+            default:
+                break;
+        }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(tr("An issue has been encountered during audio playback. Error:\n\n%1").arg(QString::fromStdString(e.what())),
+                                    GkSeverity::Error, "", true, true, false, false);
     }
 
     return;

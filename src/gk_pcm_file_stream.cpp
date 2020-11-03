@@ -180,6 +180,7 @@ void GkPcmFileStream::play(const QString &filePath)
 void GkPcmFileStream::stop()
 {
     clear();
+    m_file.close();
     m_state = State::Stopped;
 
     return;

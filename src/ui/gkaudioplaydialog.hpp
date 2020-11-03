@@ -97,6 +97,8 @@ private slots:
     void on_comboBox_playback_rec_codec_currentIndexChanged(int index);
     void on_comboBox_playback_rec_bitrate_currentIndexChanged(int index);
 
+    void resetStopButtonColor();
+
 signals:
     void beginRecording(const bool &recording_is_started);
 

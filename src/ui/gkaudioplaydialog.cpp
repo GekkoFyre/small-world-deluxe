@@ -40,6 +40,7 @@
 #include <boost/exception/all.hpp>
 #include <exception>
 #include <utility>
+#include <QTimer>
 #include <QIODevice>
 #include <QMessageBox>
 #include <QFileDialog>
@@ -77,7 +78,7 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
     pref_input_device = input_device;
     pref_output_device = output_device;
     gkAudioFile = std::make_shared<AudioFile<double>>();
-    gkPaAudioPlayer = new GkPaAudioPlayer(gkDb, pref_output_device, gkAudioOutput, gkEventLogger, gkAudioFile, this);
+    gkPaAudioPlayer = new GkPaAudioPlayer(gkDb, pref_output_device, gkAudioOutput, gkAudioInput, gkEventLogger, gkAudioFile, this);
 
     //
     // QPushButtons, etc.
@@ -93,6 +94,7 @@ GkAudioPlayDialog::~GkAudioPlayDialog()
 {
     if (audio_out_play) {
         gkPaAudioPlayer->stop(audio_file_path);
+        gkEventLogger->publishEvent(tr("Stopped playing audio file, \"%1\"").arg(QString::fromStdString(audio_file_path.string())), GkSeverity::Info, "", true, true, true, false);
     }
 
     delete ui;
@@ -175,7 +177,11 @@ void GkAudioPlayDialog::on_pushButton_playback_stop_clicked()
 {
     if (!audio_out_stop) {
         gkStringFuncs->changePushButtonColor(ui->pushButton_playback_stop, false);
+        gkPaAudioPlayer->stop(audio_file_path);
+        gkEventLogger->publishEvent(tr("Stopped playing audio file, \"%1\"").arg(QString::fromStdString(audio_file_path.string())), GkSeverity::Info, "", true, true, true, false);
+
         audio_out_stop = true;
+        QTimer::singleShot(1000, this, SLOT(resetStopButtonColor()));
     } else {
         gkStringFuncs->changePushButtonColor(ui->pushButton_playback_stop, true);
         audio_out_stop = false;
@@ -213,6 +219,7 @@ void GkAudioPlayDialog::on_pushButton_playback_browse_file_loc_clicked()
                     r_pback_audio_file.setFileName(file);
                     r_pback_audio_file.open(QIODevice::ReadOnly);
                     gkAudioFileInfo.file_size = r_pback_audio_file.size();
+                    gkAudioFileInfo.file_size_hr = gkStringFuncs->fileSizeHumanReadable(gkAudioFileInfo.file_size);
                     r_pback_audio_file.close();
                     
                     gkAudioFileInfo.is_output = true;
@@ -244,7 +251,7 @@ void GkAudioPlayDialog::on_pushButton_playback_browse_file_loc_clicked()
                 }
 
                 ui->lineEdit_playback_file_location->setText(QString::fromStdString(gkAudioFileInfo.audio_file_path.string()));
-                ui->lineEdit_playback_file_size->setText(QString::number(gkAudioFileInfo.file_size));
+                ui->lineEdit_playback_file_size->setText(gkAudioFileInfo.file_size_hr);
                 ui->lineEdit_playback_file_name->setText(tr("%1 (%2) -- %3")
                                                                  .arg(QString::fromStdString(gkAudioFileInfo.audio_file_path.filename().string()))
                                                                  .arg(lengthSecs)
@@ -274,12 +281,14 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
 
             if (r_pback_audio_file.exists()) {
                 gkPaAudioPlayer->play(audio_file_path);
+                gkEventLogger->publishEvent(tr("Started playing audio file, \"%1\"").arg(QString::fromStdString(audio_file_path.string())), GkSeverity::Info, "", true, true, true, false);
             } else {
                 throw std::runtime_error(tr("Error with audio playback! Does the file, \"%1\", actually exist?")
                 .arg(r_pback_audio_file.fileName()).toStdString());
             }
         } else {
             gkPaAudioPlayer->stop(audio_file_path);
+            gkEventLogger->publishEvent(tr("Stopped playing audio file, \"%1\"").arg(QString::fromStdString(audio_file_path.string())), GkSeverity::Info, "", true, true, true, false);
 
             gkStringFuncs->changePushButtonColor(ui->pushButton_playback_play, true);
             audio_out_play = false;
@@ -353,5 +362,16 @@ void GkAudioPlayDialog::on_comboBox_playback_rec_codec_currentIndexChanged(int i
  */
 void GkAudioPlayDialog::on_comboBox_playback_rec_bitrate_currentIndexChanged(int index)
 {
+    return;
+}
+
+void GkAudioPlayDialog::resetStopButtonColor()
+{
+    gkStringFuncs->changePushButtonColor(ui->pushButton_playback_stop, true);
+    audio_out_stop = false;
+
+    gkStringFuncs->changePushButtonColor(ui->pushButton_playback_play, true);
+    audio_out_play = false;
+
     return;
 }

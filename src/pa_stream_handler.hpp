@@ -56,6 +56,8 @@
 #include <QString>
 #include <QThread>
 #include <QPointer>
+#include <QEventLoop>
+#include <QAudioInput>
 #include <QAudioOutput>
 #include <QAudioFormat>
 #include <QAudioDeviceInfo>
@@ -65,31 +67,29 @@ namespace sys = boost::system;
 
 namespace GekkoFyre {
 
-enum AudioEventType {
-    start,
-    stop
-};
-
 class GkPaStreamHandler : public QThread {
     Q_OBJECT
 
 public:
     explicit GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
-                               QPointer<QAudioOutput> audioOutput, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                               QPointer<QAudioOutput> audioOutput, QPointer<QAudioInput> audioInput, QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                std::shared_ptr<AudioFile<double>> audioFileLib, QObject *parent = nullptr);
     ~GkPaStreamHandler() override;
 
-    void processEvent(AudioEventType audioEventType, const fs::path &mediaFilePath, bool loop = false);
+    void processEvent(GkAudioFramework::AudioEventType audioEventType, const fs::path &mediaFilePath = fs::path(), bool loop_media = false);
     void run() Q_DECL_OVERRIDE;
 
 private slots:
     void playMediaFile(const boost::filesystem::path &media_path);
+    void startMediaLoopback();
     void stopMediaFile(const boost::filesystem::path &media_path);
-    void handleStateChanged(const QAudio::State changed_state);
+    void handleStateChanged(QAudio::State changed_state);
 
 signals:
     void playMedia(const boost::filesystem::path &media_path);
+    void startLoopback();
     void stopMedia(const boost::filesystem::path &media_path);
+    void changeState(QAudio::State changed_state);
 
 private:
     QPointer<GekkoFyre::GkLevelDb> gkDb;
@@ -104,6 +104,8 @@ private:
     //
     // QAudioSystem initialization and buffers
     //
+    QPointer<QEventLoop> loop;
+    QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     std::map<boost::filesystem::path, AudioFile<double>> gkSounds;
