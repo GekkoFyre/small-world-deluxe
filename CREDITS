@@ -50,10 +50,6 @@ WSJT-X by Joe Taylor (K1JT) <k1jt@arrl.net> et al.
     <https://physics.princeton.edu/pulsar/K1JT/wsjtx.html>
         GNU General Public License (GPL, version 3)
 
-RtAudio by Gary P. Scavone et al. 
-    <https://www.music.mcgill.ca/~gary/rtaudio/>
-        Public License w/ Copyright
-
 KissFFT by Mark Borgerding <Mark@Borgerding.net>
     <https://github.com/mborgerding/kissfft>
         BSD 3-clause License
@@ -65,6 +61,10 @@ FFTW3 by Matteo Frigo & Steven G. Johnson et al.
 QtUSB by Fabien Poussin
     <https://github.com/fpoussin/QtUsb>
         GNU Lesser General Public License (LGPL, version 3.0)
+
+AudioFile by Adam Stark
+    <https://github.com/adamstark/AudioFile>
+        GNU General Public License (GPL, version 3)
 
 libvorbis by Xiph.org
     <https://www.xiph.org/vorbis/>

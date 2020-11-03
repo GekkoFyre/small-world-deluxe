@@ -55,17 +55,6 @@
 #include <mutex>
 #include <list>
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#include <sndfile.h>
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
-
 namespace GekkoFyre {
 
 using namespace GekkoFyre;

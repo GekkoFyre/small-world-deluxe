@@ -87,6 +87,8 @@ public:
     std::vector<std::string> csvRemoveElement(const std::vector<std::string> &csv_elements, const std::string &val_to_remove);
     std::string csvOutputString(const std::vector<std::string> &csv_elements);
 
+    QString fileSizeHumanReadable(const qint64 &file_size);
+
     QString convSecondsToMinutes(const double &seconds);
     qint32 randomNumGen(qint32 lower_bound = std::numeric_limits<qint32>::min(), qint32 upper_bound = std::numeric_limits<qint32>::max());
     void changePushButtonColor(const QPointer<QPushButton> &push_button, const bool &red_result = true,

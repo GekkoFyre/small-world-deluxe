@@ -44,7 +44,7 @@
 #include "src/gk_logger.hpp"
 #include "src/file_io.hpp"
 #include "src/pa_audio_player.hpp"
-#include <sndfile.hh>
+#include <AudioFile.h>
 #include <boost/filesystem.hpp>
 #include <memory>
 #include <string>
@@ -97,6 +97,8 @@ private slots:
     void on_comboBox_playback_rec_codec_currentIndexChanged(int index);
     void on_comboBox_playback_rec_bitrate_currentIndexChanged(int index);
 
+    void resetStopButtonColor();
+
 signals:
     void beginRecording(const bool &recording_is_started);
 
@@ -126,9 +128,9 @@ private:
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
 
     //
-    // libsndfile objects and related
+    // AudioFile objects and related
     //
-    GekkoFyre::GkAudioFramework::SndFileCallback sndFileCallback;
+    std::shared_ptr<AudioFile<double>> gkAudioFile;
 
     QFile r_pback_audio_file;
     fs::path audio_file_path;
@@ -139,6 +141,8 @@ private:
         template <typename U>
         T operator () (const U &x) const { return static_cast<T> (x); }
     };
+
+    void prefillCodecComboBoxes(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
 
 };
 

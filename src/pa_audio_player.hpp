@@ -45,6 +45,7 @@
 #include "src/pa_stream_handler.hpp"
 #include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
+#include <AudioFile.h>
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
 #include <memory>
@@ -52,6 +53,7 @@
 #include <QString>
 #include <QObject>
 #include <QPointer>
+#include <QAudioInput>
 #include <QAudioOutput>
 
 namespace fs = boost::filesystem;
@@ -64,16 +66,24 @@ class GkPaAudioPlayer : public QObject {
 
 public:
     explicit GkPaAudioPlayer(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
-                             QPointer<QAudioOutput> audioOutput, const QPointer<GekkoFyre::GkEventLogger> &eventLogger, QObject *parent = nullptr);
+                             QPointer<QAudioOutput> audioOutput, QPointer<QAudioInput> audioInput, const QPointer<GekkoFyre::GkEventLogger> &eventLogger,
+                             std::shared_ptr<AudioFile<double>> audioFileLib, QObject *parent = nullptr);
     virtual ~GkPaAudioPlayer();
 
-    void play(const fs::path &audio_file);
-    void loop(const fs::path &audio_file);
+    void play(const fs::path &audio_file, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
+    void loop(const fs::path &audio_file, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
     void stop(const fs::path &audio_file);
+    void loopback();
 
 private:
+    QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
     QPointer<GkPaStreamHandler> streamHandler;
+
+    //
+    // AudioFile objects and related
+    //
+    std::shared_ptr<AudioFile<double>> gkAudioFile;
 
 };
 };

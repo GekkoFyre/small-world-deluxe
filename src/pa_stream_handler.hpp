@@ -45,6 +45,7 @@
 #include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
 #include "src/gk_pcm_file_stream.hpp"
+#include <AudioFile.h>
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
 #include <map>
@@ -55,50 +56,44 @@
 #include <QString>
 #include <QThread>
 #include <QPointer>
+#include <QEventLoop>
+#include <QAudioInput>
 #include <QAudioOutput>
 #include <QAudioFormat>
 #include <QAudioDeviceInfo>
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#include <sndfile.h>
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
 
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
 namespace GekkoFyre {
 
-enum AudioEventType {
-    start,
-    stop
-};
-
 class GkPaStreamHandler : public QThread {
     Q_OBJECT
 
 public:
     explicit GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
-                               QPointer<QAudioOutput> audioOutput, QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
+                               QPointer<QAudioOutput> audioOutput, QPointer<QAudioInput> audioInput, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                               std::shared_ptr<AudioFile<double>> audioFileLib, QObject *parent = nullptr);
     ~GkPaStreamHandler() override;
 
-    void processEvent(AudioEventType audioEventType, const fs::path &mediaFilePath, bool loop = false);
+    void processEvent(GkAudioFramework::AudioEventType audioEventType, const fs::path &mediaFilePath = fs::path(),
+                      const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec = GekkoFyre::GkAudioFramework::CodecSupport::Unknown,
+                      bool loop_media = false);
     void run() Q_DECL_OVERRIDE;
 
 private slots:
-    void playMediaFile(const boost::filesystem::path &media_path);
+    void playMediaFile(const boost::filesystem::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
+    void recordMediaFile(const boost::filesystem::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
     void stopMediaFile(const boost::filesystem::path &media_path);
-    void handleStateChanged(const QAudio::State changed_state);
+    void startMediaLoopback();
+    void handleStateChanged(QAudio::State changed_state);
 
 signals:
-    void playMedia(const boost::filesystem::path &media_path);
+    void playMedia(const boost::filesystem::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
+    void recordMedia(const boost::filesystem::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
     void stopMedia(const boost::filesystem::path &media_path);
+    void startLoopback();
+    void changeState(QAudio::State changed_state);
 
 private:
     QPointer<GekkoFyre::GkLevelDb> gkDb;
@@ -106,11 +101,18 @@ private:
     std::unique_ptr<GkPcmFileStream> gkPcmFileStream;
 
     //
+    // AudioFile objects and related
+    //
+    std::shared_ptr<AudioFile<double>> gkAudioFile;
+
+    //
     // QAudioSystem initialization and buffers
     //
+    QPointer<QEventLoop> loop;
+    QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
-    std::map<boost::filesystem::path, GekkoFyre::GkAudioFramework::GkPlayback> gkSounds;
+    std::map<boost::filesystem::path, AudioFile<double>> gkSounds;
 
 };
 };
