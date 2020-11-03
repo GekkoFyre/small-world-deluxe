@@ -42,11 +42,11 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include <memory>
 #include <string>
 #include <QFile>
 #include <QString>
 #include <QBuffer>
+#include <QPointer>
 #include <QIODevice>
 #include <QByteArray>
 #include <QAudioFormat>
@@ -60,7 +60,7 @@ class GkPcmFileStream : public QIODevice {
     Q_OBJECT
 
 public:
-    explicit GkPcmFileStream();
+    explicit GkPcmFileStream(QObject *parent = nullptr);
     virtual ~GkPcmFileStream();
 
     bool init(const QAudioFormat &format);
@@ -79,16 +79,12 @@ private slots:
     void bufferReady();
     void finished();
 
-signals:
-    void stateChanged(State state);
-    void newData(const QByteArray& data);
-
 private:
     QFile m_file;
     QBuffer m_input;
     QBuffer m_output;
     QByteArray m_data;
-    QAudioDecoder m_decoder;
+    QPointer<QAudioDecoder> m_decoder;
     QAudioFormat m_format;
 
     State m_state;

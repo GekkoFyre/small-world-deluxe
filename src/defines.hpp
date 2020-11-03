@@ -49,7 +49,6 @@
 #include <boost/filesystem.hpp>
 #include <hamlib/rigclass.h>
 #include <qwt/qwt_interval.h>
-#include <sndfile.h>
 #include <list>
 #include <vector>
 #include <string>
@@ -123,6 +122,12 @@ namespace GekkoFyre {
 #define AUDIO_VU_METER_UPDATE_MILLISECS (125)                   // How often the volume meter should update, in milliseconds.
 #define AUDIO_VU_METER_PEAK_DECAY_RATE (0.001)                  // Unknown
 #define AUDIO_VU_METER_PEAK_HOLD_LEVEL_DURATION (2000)          // Measured in milliseconds
+
+#define AUDIO_PLAYBACK_CODEC_PCM_IDX (0)
+#define AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX (1)
+#define AUDIO_PLAYBACK_CODEC_VORBIS_IDX (2)
+#define AUDIO_PLAYBACK_CODEC_OPUS_IDX (3)
+#define AUDIO_PLAYBACK_CODEC_FLAC_IDX (4)
 
 //
 // Mostly regarding FFTW functions
@@ -686,18 +691,6 @@ namespace Spectrograph {
 }
 
 namespace GkAudioFramework {
-    struct SndFileCallback {
-        SNDFILE *file = nullptr;
-        SF_INFO info = {};
-    };
-
-    struct GkPlayback {
-        SndFileCallback audioFile;
-        qint32 position = 0;
-        sf_count_t count = 0;
-        bool loop = false;
-    };
-
     struct GkRecord {
         float *buffer;
         size_t bufferBytes;
@@ -716,11 +709,19 @@ namespace GkAudioFramework {
 
     enum CodecSupport {
         PCM,
+        Loopback,
         OggVorbis,
         Opus,
         FLAC,
         Unsupported,
         Unknown
+    };
+
+    enum AudioEventType {
+        start,
+        stop,
+        record,
+        loopback
     };
 
     enum Bitrate {
@@ -739,10 +740,11 @@ namespace GkAudioFramework {
         boost::filesystem::path audio_file_path;                                // The path to the audio file itself, if known.
         bool is_output;                                                         // Are we dealing with this as an input or output file?
         QString track_title;                                                    // The title of the audio track (i.e. metadata) within the audio file itself, if there is such information present.
+        QString file_size_hr;                                                   // The human-readable form of the file-size parameter.
         double sample_rate;                                                     // The sample rate of the file.
         double length_in_secs;                                                  // Length of the audio file within seconds as a time measurement.
         CodecSupport type_codec;                                                // The codec of the audio file, if known.
-        Database::Settings::GkAudioChannels num_audio_channels;                  // The number of audio channels (i.e. if stereo or mono).
+        Database::Settings::GkAudioChannels num_audio_channels;                 // The number of audio channels (i.e. if stereo or mono).
         qint64 file_size;                                                       // The storage size of the audio/media file itself.
         qint64 bitrate_lower;                                                   // The lower end of the bitrate scale for the specified file.
         qint64 bitrate_upper;                                                   // The upper end of the bitrate scale for the specified file.
