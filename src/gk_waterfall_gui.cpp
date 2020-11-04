@@ -40,15 +40,16 @@
  ****************************************************************************************************/
 
 #include "src/gk_waterfall_gui.hpp"
-#include <qwt/qwt_plot_renderer.h>
+#include <qwt/qwt_picker_machine.h>
 #include <qwt/qwt_plot_layout.h>
+#include <qwt/qwt_plot_grid.h>
 #include <qwt/qwt_panner.h>
 #include <algorithm>
 #include <stdexcept>
 #include <exception>
 #include <utility>
 #include <QColormap>
-#include <QTimer>
+#include <QGridLayout>
 #include <QApplication>
 
 using namespace GekkoFyre;
@@ -121,6 +122,166 @@ GkSpectroWaterfall::GkSpectroWaterfall(QPointer<StringFuncs> stringFuncs, QPoint
         setParent(parent);
         gkStringFuncs = std::move(stringFuncs);
         gkEventLogger = std::move(eventLogger);
+
+        m_plotHorCurve->setAutoReplot(false);
+        m_plotVertCurve->setAutoReplot(false);
+        m_plotSpectrogram->setAutoReplot(false);
+
+        m_spectrogram->setRenderThreadCount(0); // use system specific thread count
+        m_spectrogram->setCachePolicy(QwtPlotRasterItem::PaintCache);
+        m_spectrogram->attach(m_plotSpectrogram);
+
+        // Setup color map
+        setColorMap(m_ctrlPts);
+
+        // We need to enable yRight axis in order to align it with the spectrogram's one
+        m_plotHorCurve->enableAxis(QwtPlot::yRight);
+        m_plotHorCurve->axisWidget(QwtPlot::yRight)->scaleDraw()->enableComponent(QwtScaleDraw::Ticks, false);
+        m_plotHorCurve->axisWidget(QwtPlot::yRight)->scaleDraw()->enableComponent(QwtScaleDraw::Labels, false);
+        QPalette palette = m_plotHorCurve->axisWidget(QwtPlot::yRight)->palette();
+        palette.setColor(QPalette::WindowText, Qt::white);
+        palette.setColor(QPalette::Text, Qt::white);
+        m_plotHorCurve->axisWidget(QwtPlot::yRight)->setPalette(palette);
+
+        // Auto rescale
+        m_plotHorCurve->setAxisAutoScale(QwtPlot::xBottom,    true);
+        m_plotHorCurve->setAxisAutoScale(QwtPlot::yLeft,      false);
+        m_plotHorCurve->setAxisAutoScale(QwtPlot::yRight,     true);
+        m_plotVertCurve->setAxisAutoScale(QwtPlot::xBottom,   false);
+        m_plotVertCurve->setAxisAutoScale(QwtPlot::yLeft,     true);
+        m_plotVertCurve->setAxisAutoScale(QwtPlot::yRight,    true);
+        m_plotSpectrogram->setAxisAutoScale(QwtPlot::xBottom, true);
+        m_plotSpectrogram->setAxisAutoScale(QwtPlot::yLeft,   true);
+
+        // the canvas should be perfectly aligned to the boundaries of your curve.
+        m_plotSpectrogram->axisScaleEngine(QwtPlot::xBottom)->setAttribute(QwtScaleEngine::Floating, true);
+        m_plotSpectrogram->axisScaleEngine(QwtPlot::yLeft)->setAttribute(QwtScaleEngine::Floating, true);
+        m_plotSpectrogram->plotLayout()->setAlignCanvasToScales(true);
+
+        m_plotHorCurve->axisScaleEngine(QwtPlot::xBottom)->setAttribute(QwtScaleEngine::Floating, true);
+        m_plotHorCurve->axisScaleEngine(QwtPlot::yLeft)->setAttribute(QwtScaleEngine::Floating, true);
+        m_plotHorCurve->axisScaleEngine(QwtPlot::yRight)->setAttribute(QwtScaleEngine::Floating, true);
+        m_plotHorCurve->plotLayout()->setAlignCanvasToScales(true);
+
+        m_plotVertCurve->axisScaleEngine(QwtPlot::xBottom)->setAttribute(QwtScaleEngine::Floating, true);
+        m_plotVertCurve->axisScaleEngine(QwtPlot::yLeft)->setAttribute(QwtScaleEngine::Floating, true);
+        m_plotVertCurve->axisScaleEngine(QwtPlot::yRight)->setAttribute(QwtScaleEngine::Floating, true);
+        m_plotVertCurve->plotLayout()->setAlignCanvasToScales(true);
+
+        m_plotSpectrogram->setAutoFillBackground(true);
+        m_plotSpectrogram->setPalette(Qt::white);
+        m_plotSpectrogram->setCanvasBackground(Qt::white);
+
+        m_plotHorCurve->setAutoFillBackground(true);
+        m_plotHorCurve->setPalette(Qt::white);
+        m_plotHorCurve->setCanvasBackground(Qt::white);
+        
+        m_plotVertCurve->setAutoFillBackground(true);
+        m_plotVertCurve->setPalette(Qt::white);
+        m_plotVertCurve->setCanvasBackground(Qt::white);
+
+        QwtPlotCanvas* const spectroCanvas = dynamic_cast<QwtPlotCanvas*>(m_plotSpectrogram->canvas());
+        spectroCanvas->setFrameStyle(QFrame::NoFrame);
+
+        QwtPlotCanvas* const horCurveCanvas = dynamic_cast<QwtPlotCanvas*>(m_plotHorCurve->canvas());
+        horCurveCanvas->setFrameStyle(QFrame::NoFrame);
+
+        QwtPlotCanvas* const vertCurveCanvas = dynamic_cast<QwtPlotCanvas*>(m_plotVertCurve->canvas());
+        vertCurveCanvas->setFrameStyle(QFrame::NoFrame);
+
+        // Y axis labels should represent the insert time of a layer (fft)
+        m_plotSpectrogram->setAxisScaleDraw(QwtPlot::yLeft, new GkWaterfallTimeScaleDraw(*this));
+        //m_plot->setAxisLabelRotation(QwtPlot::yLeft, -50.0);
+        //m_plot->setAxisLabelAlignment(QwtPlot::yLeft, Qt::AlignLeft | Qt::AlignBottom);
+
+        // test color bar...
+        m_plotSpectrogram->enableAxis(QwtPlot::yRight);
+        QwtScaleWidget* axis = m_plotSpectrogram->axisWidget(QwtPlot::yRight);
+        axis->setColorBarEnabled(true);
+        axis->setColorBarWidth(20);
+
+        QGridLayout* const gridLayout = new QGridLayout(this);
+        gridLayout->addWidget(m_plotHorCurve, 0, 1);
+        gridLayout->addWidget(m_plotSpectrogram, 1, 1);
+        gridLayout->addWidget(m_plotVertCurve, 1, 0);
+        gridLayout->setContentsMargins(0, 0, 0, 0);
+        gridLayout->setSpacing(5);
+
+        gridLayout->setRowStretch(0, 1);
+        gridLayout->setRowStretch(1, 3);
+
+        gridLayout->setColumnStretch(0, 1);
+        gridLayout->setColumnStretch(1, 4);
+
+        QSizePolicy policy;
+        policy.setVerticalPolicy(QSizePolicy::Ignored);
+        policy.setHorizontalPolicy(QSizePolicy::Ignored);
+        m_plotHorCurve->setSizePolicy(policy);
+        m_plotVertCurve->setSizePolicy(policy);
+        m_plotSpectrogram->setSizePolicy(policy);
+        setSizePolicy(policy);
+
+        // TODO : add align stuff (plotmatrix)
+
+        // Zoomer - brought to you from the experimentations with G1X Brillouin plot !
+        m_zoomer->setMousePattern(QwtEventPattern::MouseSelect2, Qt::RightButton, Qt::ControlModifier);
+        m_zoomer->setMousePattern(QwtEventPattern::MouseSelect3, Qt::RightButton);
+        const QColor c( Qt::darkBlue );
+        //const QColor c(Qt::lightGray);
+        m_zoomer->setRubberBandPen(c);
+        m_zoomer->setTrackerPen(c);
+
+        QObject::QObject::connect(m_zoomer, &QwtPlotZoomer::zoomed, this, &GkSpectroWaterfall::autoRescale);
+
+        /*m_plotCurve->canvas()->setToolTip(
+        "Zooming:\n"
+        "- Mouse left button: zoom in an area by drawing a rectangle.\n"
+        "- Mouse right button: previous zoomed in area.\n"
+        "- Ctrl + mouse right button : zoom out to spectrogram full size.");*/
+
+        m_picker->setStateMachine( new QwtPickerDragPointMachine() );
+        m_picker->setRubberBandPen( QColor( Qt::green ) );
+        m_picker->setRubberBand( QwtPicker::CrossRubberBand );
+        //m_picker->setTrackerPen( QColor( Qt::white ) );
+        m_picker->setTrackerMode(QwtPicker::AlwaysOff);
+        m_picker->setEnabled(false);
+        QObject::connect(m_picker, static_cast<void(QwtPlotPicker::*)(const QPointF&)>(&QwtPlotPicker::selected), this, &GkSpectroWaterfall::selectedPoint);
+        QObject::connect(m_picker, static_cast<void(QwtPlotPicker::*)(const QPointF&)>(&QwtPlotPicker::moved), this, &GkSpectroWaterfall::selectedPoint);
+
+        m_panner->setMouseButton(Qt::MidButton);
+
+        QObject::connect(m_plotHorCurve->axisWidget(QwtPlot::xBottom), &QwtScaleWidget::scaleDivChanged, this, &GkSpectroWaterfall::scaleDivChanged, Qt::QueuedConnection);
+        QObject::connect(m_plotSpectrogram->axisWidget(QwtPlot::xBottom), &QwtScaleWidget::scaleDivChanged, this, &GkSpectroWaterfall::scaleDivChanged, Qt::QueuedConnection);
+        QObject::connect(m_plotSpectrogram->axisWidget(QwtPlot::yLeft), &QwtScaleWidget::scaleDivChanged, this, &GkSpectroWaterfall::scaleDivChanged, Qt::QueuedConnection);
+
+        //m_plotHorCurve->setTitle("Some plot");
+        /* you shouldn't put a title as when the window shrinks in size, m_plotVertCurve and m_plotSpectrogram Y axis
+         * will misalign, currently, in Qwt there's no way to avoid titles to misalign axis */
+        m_plotVertCurve->setTitle(" ");
+
+        {
+            QwtPlotGrid* horCurveGrid = new QwtPlotGrid;
+            horCurveGrid->enableXMin( true );
+            horCurveGrid->setMinorPen( QPen( Qt::gray, 0 , Qt::DotLine ) );
+            horCurveGrid->setMajorPen( QPen( Qt::gray, 0 , Qt::DotLine ) );
+            horCurveGrid->attach(m_plotHorCurve);
+
+            QwtPlotGrid* vertCurveGrid = new QwtPlotGrid;
+            vertCurveGrid->enableXMin( true );
+            vertCurveGrid->setMinorPen( QPen( Qt::gray, 0 , Qt::DotLine ) );
+            vertCurveGrid->setMajorPen( QPen( Qt::gray, 0 , Qt::DotLine ) );
+            vertCurveGrid->attach(m_plotVertCurve);
+        }
+
+        {
+            m_horCurveMarker->setLineStyle(QwtPlotMarker::VLine);
+            m_horCurveMarker->setLinePen(Qt::red, 0, Qt::SolidLine);
+            m_horCurveMarker->attach(m_plotHorCurve);
+
+            m_vertCurveMarker->setLineStyle( QwtPlotMarker::HLine );
+            m_vertCurveMarker->setLinePen(Qt::red, 0, Qt::SolidLine );
+            m_vertCurveMarker->attach(m_plotVertCurve);
+        }
     } catch (const std::exception &e) {
         #if defined(_WIN32) || defined(__MINGW64__)
         HWND hwnd_spectro_gui_main = nullptr;
@@ -136,19 +297,6 @@ GkSpectroWaterfall::GkSpectroWaterfall(QPointer<StringFuncs> stringFuncs, QPoint
 
 GkSpectroWaterfall::~GkSpectroWaterfall()
 {}
-
-/**
- * @brief GkSpectroWaterfall::insertData
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param values
- * @param numCols
- */
-void GkSpectroWaterfall::insertData(const QVector<double> &values, const int &numCols)
-{
-    Q_UNUSED(numCols);
-
-    return;
-}
 
 /**
  * @brief GkSpectroWaterfall::setDataDimensions
@@ -529,6 +677,15 @@ time_t GkSpectroWaterfall::getLayerDate(const double y) const
  */
 void GkSpectroWaterfall::updateLayout()
 {
+    // 1. Align Vertical Axis (only left or right)
+    alignAxis(QwtPlot::yLeft);
+    alignAxisForColorBar();
+
+    // 2. Replot
+    m_plotHorCurve->replot();
+    m_plotVertCurve->replot();
+    m_plotSpectrogram->replot();
+
     return;
 }
 
@@ -764,6 +921,72 @@ bool GkSpectroWaterfall::setColorMap(const ColorMaps::ControlPoints &colorMap) {
 ColorMaps::ControlPoints GkSpectroWaterfall::getColorMap() const
 {
     return m_ctrlPts;
+}
+
+/**
+ * @brief GkSpectroWaterfall::alignAxis
+ * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>.
+ * @param axisId
+ */
+void GkSpectroWaterfall::alignAxis(int axisId)
+{
+    // 1. Align Vertical Axis (only left or right)
+    double maxExtent = 0;
+
+    {
+        QwtScaleWidget* scaleWidget = m_plotHorCurve->axisWidget(axisId);
+
+        QwtScaleDraw* sd = scaleWidget->scaleDraw();
+        sd->setMinimumExtent(0.0);
+
+        const double extent = sd->extent(scaleWidget->font());
+        if (extent > maxExtent) {
+            maxExtent = extent;
+        }
+    }
+
+    {
+        QwtScaleWidget* scaleWidget = m_plotSpectrogram->axisWidget(axisId);
+
+        QwtScaleDraw* sd = scaleWidget->scaleDraw();
+        sd->setMinimumExtent(0.0);
+
+        const double extent = sd->extent(scaleWidget->font());
+        if (extent > maxExtent) {
+            maxExtent = extent;
+        }
+    }
+
+    {
+        QwtScaleWidget* scaleWidget = m_plotHorCurve->axisWidget(axisId);
+        scaleWidget->scaleDraw()->setMinimumExtent(maxExtent);
+    }
+
+    {
+        QwtScaleWidget* scaleWidget = m_plotSpectrogram->axisWidget(axisId);
+        scaleWidget->scaleDraw()->setMinimumExtent(maxExtent);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkSpectroWaterfall::alignAxisForColorBar
+ * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>.
+ */
+void GkSpectroWaterfall::alignAxisForColorBar()
+{
+    auto s1 = m_plotSpectrogram->axisWidget(QwtPlot::yRight);
+    auto s2 = m_plotHorCurve->axisWidget(QwtPlot::yRight);
+
+    s2->scaleDraw()->setMinimumExtent(0.0);
+
+    qreal extent = s1->scaleDraw()->extent(s1->font());
+    extent -= s2->scaleDraw()->extent(s2->font());
+    extent += s1->colorBarWidth() + s1->spacing();
+
+    s2->scaleDraw()->setMinimumExtent(extent);
+    return;
 }
 
 /**

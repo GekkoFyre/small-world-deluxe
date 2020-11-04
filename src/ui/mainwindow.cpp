@@ -2114,7 +2114,7 @@ void MainWindow::updateSpectrograph()
                                 fft_spectro_vals.push_back(fftWaterfallData[i].magnitude);
                             }
 
-                            gkSpectroWaterfall->insertData(fft_spectro_vals, 1); // This is the data for the spectrograph / waterfall itself!
+                            // gkSpectroWaterfall->insertData(fft_spectro_vals, 1); // This is the data for the spectrograph / waterfall itself!
                             emit refreshSpectrograph(gk_spectro_latest_time, gk_spectro_start_time);
                             emit onProcessFrame(fftCurveData);
 

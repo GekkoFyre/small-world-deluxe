@@ -103,7 +103,6 @@ public:
                                 const bool &enableZoomer = false, QWidget *parent = nullptr);
     ~GkSpectroWaterfall() override;
 
-    void insertData(const QVector<double> &values, const int &numCols);
     void setDataDimensions(double dXMin, double dXMax, const size_t &historyExtent, const size_t &layerPoints);
     void getDataDimensions(double &dXMin, double &dXMax, size_t &historyExtent, size_t &layerPoints) const;
 
@@ -202,6 +201,9 @@ private:
     // Threads
     //
     std::mutex mtx_raster_data;
+
+    void alignAxis(int axisId);
+    void alignAxisForColorBar();
 
     template<class in_it, class out_it>
     out_it copy_every_nth(in_it b, in_it e, out_it r, size_t n) {
