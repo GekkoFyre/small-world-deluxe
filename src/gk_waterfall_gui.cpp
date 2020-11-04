@@ -39,7 +39,7 @@
  **
  ****************************************************************************************************/
 
-#include "src/spectro_gui.hpp"
+#include "src/gk_waterfall_gui.hpp"
 #include <qwt/qwt_plot_renderer.h>
 #include <qwt/qwt_plot_layout.h>
 #include <qwt/qwt_panner.h>

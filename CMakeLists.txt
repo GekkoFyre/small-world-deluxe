@@ -478,8 +478,8 @@ include_directories(${PROJECT_BINARY_DIR})
 if(GK_CUDA_FFT)
     set(GALAXY_CUDA
         ${GALAXY_CUDA}
-        src/spectro_cuda.cu
-        src/spectro_cuda.h)
+        src/gk_spectro_cuda.cu
+        src/gk_spectro_cuda.h)
 
     set_property(SOURCE ${GALAXY_CUDA} PROPERTY SKIP_AUTOUIC ON)
 endif()
@@ -500,8 +500,8 @@ set(GALAXY_UI_CPP
     src/file_io.cpp
     src/audio_devices.cpp
     src/gk_fft.cpp
-    src/spectro_gui.cpp
-    src/spectro_curve.cpp
+    src/gk_waterfall_gui.cpp
+    src/gk_curve_gui.cpp
     src/gk_audio_encoding.cpp
     src/gk_audio_decoding.cpp
     src/gk_cli.cpp
@@ -587,8 +587,8 @@ set(GALAXY_OBJ_HEADERS
     src/file_io.hpp
     src/audio_devices.hpp
     src/gk_fft.hpp
-    src/spectro_gui.hpp
-    src/spectro_curve.hpp
+    src/gk_waterfall_gui.hpp
+    src/gk_curve_gui.hpp
     src/gk_audio_encoding.hpp
     src/gk_audio_decoding.hpp
     src/gk_cli.hpp
@@ -601,6 +601,7 @@ set(GALAXY_OBJ_HEADERS
     src/gk_pcm_file_stream.hpp
     src/pa_stream_handler.hpp
     src/gk_sinewave.hpp
+    src/gk_waterfall_data.hpp
     src/pa_audio_player.hpp
     src/ui/widgets/gk_vu_meter_widget.hpp
     src/ui/widgets/gk_submit_msg.hpp

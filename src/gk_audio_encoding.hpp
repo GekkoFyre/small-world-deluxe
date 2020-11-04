@@ -43,7 +43,7 @@
 
 #include "src/defines.hpp"
 #include "src/file_io.hpp"
-#include "src/spectro_gui.hpp"
+#include "src/gk_waterfall_gui.hpp"
 #include "src/pa_audio_buf.hpp"
 #include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"

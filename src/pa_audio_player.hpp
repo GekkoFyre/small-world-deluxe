@@ -70,8 +70,9 @@ public:
                              std::shared_ptr<AudioFile<double>> audioFileLib, QObject *parent = nullptr);
     virtual ~GkPaAudioPlayer();
 
-    void play(const fs::path &audio_file, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
-    void loop(const fs::path &audio_file, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
+    void play(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const fs::path &audio_file);
+    void play(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
+    void loop(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const fs::path &audio_file);
     void stop(const fs::path &audio_file);
     void loopback();
 

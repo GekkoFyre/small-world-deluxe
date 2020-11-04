@@ -39,7 +39,7 @@
  **
  ****************************************************************************************************/
 
-#include "spectro_cuda.h"
+#include "src/gk_spectro_cuda.h"
 #include <cufft.h>
 #include <cuda_runtime_api.h>
 

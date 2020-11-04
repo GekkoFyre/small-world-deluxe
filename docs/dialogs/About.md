@@ -19,11 +19,15 @@ Please see [CREDITS](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/
 
 `Hamlib (Ham Radio Control Libraries) -- Copyright © 2000 - 2001 Frank Singleton and Stephane Fillod. Copyright © 2000 - 2012 The Hamlib Group.`
 
-`PortAudio Portable Real-Time Audio Library -- Copyright © 1999 - 2011 Ross Bencina and Phil Burk.`
+`Sentry -- Copyright © 2019 Functional Software, Inc.`
 
 `CMake - Cross Platform Makefile Generator -- Copyright © 2000 - 2020 Kitware, Inc. and Contributors.`
 
 `SingleApplication -- Copyright © 2015 - 2020 Itay Grudev.`
+
+`KissFFT -- Copyright © 2003 - 2010 Mark Borgerding . All rights reserved.`
+
+`QwtWaterfallplot -- Copyright © 2019 Amine Mzoughi.`
 
 #### Licensing & Legalese
 
