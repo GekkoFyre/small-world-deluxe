@@ -49,6 +49,7 @@
 #include <utility>
 #include <QColormap>
 #include <QTimer>
+#include <QApplication>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -74,7 +75,33 @@ std::mutex mtx_spectro_refresh_date_time;
  */
 QwtColorMap *GkQwtColorMap::controlPointsToQwtColorMap(const ColorMaps::ControlPoints &ctrlPts)
 {
-    return nullptr;
+    using namespace ColorMaps;
+
+    if (ctrlPts.size() < 2 ||
+        std::get<0>(ctrlPts.front()) != 0. ||
+        std::get<0>(ctrlPts.back())  != 1. ||
+        !std::is_sorted(ctrlPts.cbegin(), ctrlPts.cend(),
+                        [](const ControlPoint& x, const ControlPoint& y)
+                        {
+                            // Strict weak ordering
+                            return std::get<0>(x) < std::get<0>(y);
+                        })) {
+        return nullptr;
+    }
+
+    QColor from, to;
+    from.setRgbF(std::get<1>(ctrlPts.front()), std::get<2>(ctrlPts.front()), std::get<3>(ctrlPts.front()));
+    to.setRgbF(std::get<1>(ctrlPts.back()), std::get<2>(ctrlPts.back()), std::get<3>(ctrlPts.back()));
+
+    QwtLinearColorMap *lcm = new QwtLinearColorMap(from, to, QwtColorMap::RGB);
+
+    for (size_t i = 1; i < ctrlPts.size() - 1; ++i) {
+        QColor cs;
+        cs.setRgbF(std::get<1>(ctrlPts[i]), std::get<2>(ctrlPts[i]), std::get<3>(ctrlPts[i]));
+        lcm->addColorStop(std::get<0>(ctrlPts[i]), cs);
+    }
+
+    return lcm;
 }
 
 /**
@@ -85,8 +112,8 @@ QwtColorMap *GkQwtColorMap::controlPointsToQwtColorMap(const ColorMaps::ControlP
  * <https://github.com/medvedvvs/QwtWaterfall>
  */
 GkSpectroWaterfall::GkSpectroWaterfall(QPointer<StringFuncs> stringFuncs, QPointer<GkEventLogger> eventLogger, const bool &enablePanner,
-                                       const bool &enableZoomer, QWidget *parent) : m_spectrogram(new QwtPlotSpectrogram), gkAlpha(255),
-                                       QWidget(parent)
+                                       const bool &enableZoomer, QWidget *parent) : m_spectrogram(new QwtPlotSpectrogram),
+                                       gkAlpha(255), QWidget(parent)
 {
     std::lock_guard<std::mutex> lck_guard(spectro_main_mtx);
 
@@ -184,6 +211,305 @@ void GkSpectroWaterfall::getDataDimensions(double &dXMin, double &dXMax, size_t 
 }
 
 /**
+ * @brief GkSpectroWaterfall::setMarker
+ * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>.
+ * @param x
+ * @param y
+ * @return
+ */
+bool GkSpectroWaterfall::setMarker(const double x, const double y)
+{
+    if (!gkWaterfallData) {
+        return false;
+    }
+
+    const QwtInterval xInterval = gkWaterfallData->interval(Qt::XAxis);
+    const QwtInterval yInterval = gkWaterfallData->interval(Qt::YAxis);
+    if (!(xInterval.contains(x) && yInterval.contains(y))) {
+        return false;
+    }
+
+    m_markerX = x;
+
+    const double offset = gkWaterfallData->getOffset();
+    m_markerY = y - offset;
+
+    // Update curves' markers positions
+    m_horCurveMarker->setValue(m_markerX, 0.0);
+    m_vertCurveMarker->setValue(0.0, y);
+
+    updateCurvesData();
+
+    m_plotHorCurve->replot();
+    m_plotVertCurve->replot();
+
+    return true;
+}
+
+/**
+ * @brief GkSpectroWaterfall::replot
+ * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>.
+ * @param forceRepaint
+ */
+void GkSpectroWaterfall::replot(bool forceRepaint)
+{
+    if (!m_plotSpectrogram->isVisible()) {
+        // Temporary solution for older Qwt versions
+        QApplication::postEvent(m_plotHorCurve, new QEvent(QEvent::LayoutRequest));
+        QApplication::postEvent(m_plotVertCurve, new QEvent(QEvent::LayoutRequest));
+        QApplication::postEvent(m_plotSpectrogram, new QEvent(QEvent::LayoutRequest));
+    }
+
+    updateLayout();
+    if (forceRepaint) {
+        m_plotHorCurve->repaint();
+        m_plotVertCurve->repaint();
+        m_plotSpectrogram->repaint();
+    }
+
+    return;
+}
+
+/**
+ * @brief GkSpectroWaterfall::setWaterfallVisibility
+ * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>.
+ * @param bVisible
+ */
+void GkSpectroWaterfall::setWaterfallVisibility(const bool bVisible)
+{
+    m_spectrogram->setVisible(bVisible);
+    return;
+}
+
+/**
+ * @brief GkSpectroWaterfall::setTitle
+ * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>.
+ * @param qstrNewTitle
+ */
+void GkSpectroWaterfall::setTitle(const QString &qstrNewTitle)
+{
+    m_plotSpectrogram->setTitle(qstrNewTitle);
+    return;
+}
+
+/**
+ * @brief GkSpectroWaterfall::setXLabel
+ * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>.
+ * @param qstrTitle
+ * @param fontPointSize
+ */
+void GkSpectroWaterfall::setXLabel(const QString &qstrTitle, const int fontPointSize)
+{
+    QFont font;
+    font.setPointSize(fontPointSize);
+
+    QwtText title;
+    title.setText(qstrTitle);
+    title.setFont(font);
+
+    m_plotSpectrogram->setAxisTitle(QwtPlot::xBottom, title);
+    return;
+}
+
+/**
+ * @brief GkSpectroWaterfall::setYLabel
+ * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>.
+ * @param qstrTitle
+ * @param fontPointSize
+ */
+void GkSpectroWaterfall::setYLabel(const QString &qstrTitle, const int fontPointSize)
+{
+    QFont font;
+    font.setPointSize(fontPointSize);
+
+    QwtText title;
+    title.setText(qstrTitle);
+    title.setFont(font);
+
+    m_plotSpectrogram->setAxisTitle(QwtPlot::yLeft, title);
+    return;
+}
+
+/**
+ * @brief GkSpectroWaterfall::setZLabel
+ * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>.
+ * @param qstrTitle
+ * @param fontPointSize
+ */
+void GkSpectroWaterfall::setZLabel(const QString &qstrTitle, const int fontPointSize)
+{
+    QFont font;
+    font.setPointSize(fontPointSize);
+
+    QwtText title;
+    title.setText(qstrTitle);
+    title.setFont(font);
+
+    m_plotSpectrogram->setAxisTitle(QwtPlot::yRight, title);
+    m_plotHorCurve->setAxisTitle(QwtPlot::yLeft, title);
+    m_plotHorCurve->setAxisTitle(QwtPlot::yRight, title);
+    m_plotVertCurve->setAxisTitle(QwtPlot::xBottom, title);
+    return;
+}
+
+/**
+ * @brief GkSpectroWaterfall::setXTooltipUnit
+ * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>.
+ * @param xUnit
+ */
+void GkSpectroWaterfall::setXTooltipUnit(const QString &xUnit)
+{
+    m_xUnit = xUnit;
+    return;
+}
+
+/**
+ * @brief GkSpectroWaterfall::setZTooltipUnit
+ * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>.
+ * @param zUnit
+ */
+void GkSpectroWaterfall::setZTooltipUnit(const QString &zUnit)
+{
+    m_zUnit = zUnit;
+    return;
+}
+
+/**
+ * @brief GkSpectroWaterfall::addData
+ * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>.
+ * @param dataPtr
+ * @param dataLen
+ * @param timestamp
+ * @return
+ */
+bool GkSpectroWaterfall::addData(const double *const dataPtr, const size_t dataLen, const time_t timestamp)
+{
+    if (!gkWaterfallData) {
+        return false;
+    }
+
+    const bool bRet = gkWaterfallData->addData(dataPtr, dataLen, timestamp);
+    if (bRet) {
+        updateCurvesData();
+
+        // refresh spectrogram content and Y axis labels
+        //m_spectrogram->invalidateCache();
+
+        auto const ySpectroLeftAxis = static_cast<GkWaterfallTimeScaleDraw *>(m_plotSpectrogram->axisScaleDraw(QwtPlot::yLeft));
+        // ySpectroLeftAxis->invalidateCache();
+
+        auto const yHistoLeftAxis = static_cast<GkWaterfallTimeScaleDraw *>(m_plotVertCurve->axisScaleDraw(QwtPlot::yLeft));
+        // yHistoLeftAxis->invalidateCache();
+
+        const double currentOffset = getOffset();
+        const size_t maxHistory = gkWaterfallData->getMaxHistoryLength();
+
+        const QwtScaleDiv& yDiv = m_plotSpectrogram->axisScaleDiv(QwtPlot::yLeft);
+        const double yMin = (m_zoomActive) ? yDiv.lowerBound() + 1 : currentOffset;
+        const double yMax = (m_zoomActive) ? yDiv.upperBound() + 1 : maxHistory + currentOffset;
+
+        m_plotSpectrogram->setAxisScale(QwtPlot::yLeft, yMin, yMax);
+        m_plotVertCurve->setAxisScale(QwtPlot::yLeft, yMin, yMax);
+
+        m_vertCurveMarker->setValue(0.0, m_markerY + currentOffset);
+    }
+
+    return bRet;
+}
+
+/**
+ * @brief GkSpectroWaterfall::setRange
+ * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>.
+ * @param dLower
+ * @param dUpper
+ */
+void GkSpectroWaterfall::setRange(double dLower, double dUpper)
+{
+    if (dLower > dUpper) {
+        std::swap(dLower, dUpper);
+    }
+
+    if (m_plotSpectrogram->axisEnabled(QwtPlot::yRight)) {
+        m_plotSpectrogram->setAxisScale(QwtPlot::yRight, dLower, dUpper);
+
+        QwtScaleWidget* axis = m_plotSpectrogram->axisWidget(QwtPlot::yRight);
+        if (axis->isColorBarEnabled()) {
+            // Waiting a proper method to get a reference to the QwtInterval
+            // instead of resetting a new color map to the axis !
+            QwtColorMap *colorMap;
+            if (m_bColorBarInitialized) {
+                colorMap = const_cast<QwtColorMap*>(axis->colorMap());
+            } else {
+                colorMap = GkQwtColorMap::controlPointsToQwtColorMap(m_ctrlPts);
+                m_bColorBarInitialized = true;
+            }
+            axis->setColorMap(QwtInterval(dLower, dUpper), colorMap);
+        }
+    }
+
+    // set vertical plot's X axis and horizontal plot's Y axis scales to the color bar min/max
+    m_plotHorCurve->setAxisScale(QwtPlot::yLeft, dLower, dUpper);
+    m_plotVertCurve->setAxisScale(QwtPlot::xBottom, dLower, dUpper);
+
+    if (gkWaterfallData) {
+        gkWaterfallData->setRange(dLower, dUpper);
+    }
+
+    m_spectrogram->invalidateCache();
+    return;
+}
+
+/**
+ * @brief GkSpectroWaterfall::getRange
+ * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>.
+ * @param rangeMin
+ * @param rangeMax
+ */
+void GkSpectroWaterfall::getRange(double &rangeMin, double &rangeMax) const
+{
+    return;
+}
+
+/**
+ * @brief GkSpectroWaterfall::getDataRange
+ * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>.
+ * @param rangeMin
+ * @param rangeMax
+ */
+void GkSpectroWaterfall::getDataRange(double &rangeMin, double &rangeMax) const
+{
+    return;
+}
+
+/**
+ * @brief GkSpectroWaterfall::clear
+ * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>.
+ */
+void GkSpectroWaterfall::clear()
+{
+    if (gkWaterfallData) {
+        gkWaterfallData->clear();
+    }
+
+    setupCurves();
+    freeCurvesData();
+    allocateCurvesData();
+
+    return;
+}
+
+/**
+ * @brief GkSpectroWaterfall::getLayerDate
+ * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>.
+ * @param y
+ * @return
+ */
+time_t GkSpectroWaterfall::getLayerDate(const double y) const
+{
+    return gkWaterfallData ? gkWaterfallData->getLayerDate(y) : 0;
+}
+
+/**
  * @brief GkSpectroWaterfall::refreshDateTime refreshes any date/time objects within the spectrograph class.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
@@ -235,4 +561,90 @@ void GkSpectroWaterfall::setupCurves()
 void GkSpectroWaterfall::updateCurvesData()
 {
     return;
+}
+
+bool GkSpectroWaterfall::setColorMap(const ColorMaps::ControlPoints &colorMap) {
+    return false;
+}
+
+ColorMaps::ControlPoints GkSpectroWaterfall::getColorMap() const {
+    return ColorMaps::ControlPoints();
+}
+
+/**
+ * @brief GkWaterfallTimeScaleDraw::GkWaterfallTimeScaleDraw
+ * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>.
+ * @param waterfall
+ */
+GkWaterfallTimeScaleDraw::GkWaterfallTimeScaleDraw(const GkSpectroWaterfall &waterfall) : m_waterfallPlot(waterfall)
+{
+    return;
+}
+
+/**
+ * @brief GkWaterfallTimeScaleDraw::~GkWaterfallTimeScaleDraw
+ * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>.
+ */
+GkWaterfallTimeScaleDraw::~GkWaterfallTimeScaleDraw()
+{
+    return;
+}
+
+/**
+ * @brief GkWaterfallTimeScaleDraw::label
+ * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>.
+ * @param v
+ * @return
+ */
+QwtText GkWaterfallTimeScaleDraw::label(double v) const
+{
+    time_t ret = m_waterfallPlot.getLayerDate(v - m_waterfallPlot.getOffset());
+    if (ret > 0) {
+        m_dateTime.setTime_t(ret);
+        // need something else other than time_t to have 'zzz'
+        //return m_dateTime.toString("hh:mm:ss:zzz");
+        return m_dateTime.toString("dd.MM.yy\nhh:mm:ss");
+    }
+
+    return QwtText();
+}
+
+/**
+ * @brief GkZoomer::trackerTextF
+ * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>.
+ * @param pos
+ * @return
+ */
+QwtText GkZoomer::trackerTextF(const QPointF &pos) const
+{
+    QColor bg(Qt::white);
+    bg.setAlpha(200);
+
+    const double distVal = pos.x();
+    QwtText text;
+    if (m_spectro->data()) {
+        QString date;
+        const double histVal = pos.y();
+        time_t timeVal = m_waterfallPlot.getLayerDate(histVal - m_waterfallPlot.getOffset());
+        if (timeVal > 0) {
+            m_dateTime.setTime_t(timeVal);
+            date = m_dateTime.toString("dd.MM.yy - hh:mm:ss");
+        }
+
+        const double tempVal = m_spectro->data()->value(pos.x(), pos.y());
+        text = QString("%1%2, %3: %4%5")
+                .arg(distVal)
+                .arg(m_waterfallPlot.m_xUnit)
+                .arg(date)
+                .arg(tempVal)
+                .arg(m_waterfallPlot.m_zUnit);
+    } else {
+        text = QString("%1%2: -%3")
+                .arg(distVal)
+                .arg(m_waterfallPlot.m_xUnit)
+                .arg(m_waterfallPlot.m_zUnit);
+    }
+
+    text.setBackgroundBrush( QBrush( bg ) );
+    return text;
 }
