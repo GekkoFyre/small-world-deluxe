@@ -282,10 +282,16 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
             gkStringFuncs->changePushButtonColor(ui->pushButton_playback_play, false);
             audio_out_play = true;
 
-            if (r_pback_audio_file.exists()) {
-                GkAudioFramework::CodecSupport codec_used = gkDb->convCodecSupportFromIdxToEnum(ui->comboBox_playback_rec_codec->currentData().toInt());
-                gkPaAudioPlayer->play(audio_file_path, codec_used);
-                gkEventLogger->publishEvent(tr("Started playing audio file, \"%1\"").arg(QString::fromStdString(audio_file_path.string())), GkSeverity::Info, "", true, true, true, false);
+            GkAudioFramework::CodecSupport codec_used = gkDb->convCodecSupportFromIdxToEnum(ui->comboBox_playback_rec_codec->currentData().toInt());
+            if (r_pback_audio_file.exists() && codec_used != GkAudioFramework::CodecSupport::Loopback) {
+                gkPaAudioPlayer->play(codec_used, audio_file_path);
+                gkEventLogger->publishEvent(
+                        tr("Started playing audio file, \"%1\"").arg(QString::fromStdString(audio_file_path.string())),
+                        GkSeverity::Info, "", true, true, true, false);
+            } else if (codec_used == GkAudioFramework::CodecSupport::Loopback) {
+                gkPaAudioPlayer->play(codec_used);
+                gkEventLogger->publishEvent(
+                        tr("Started audio device loopback!"), GkSeverity::Info, "", true, true, true, false);
             } else {
                 throw std::runtime_error(tr("Error with audio playback! Does the file, \"%1\", actually exist?")
                 .arg(r_pback_audio_file.fileName()).toStdString());

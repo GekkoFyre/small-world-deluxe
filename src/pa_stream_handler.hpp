@@ -86,14 +86,16 @@ private slots:
     void recordMediaFile(const boost::filesystem::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
     void stopMediaFile(const boost::filesystem::path &media_path);
     void startMediaLoopback();
-    void handleStateChanged(QAudio::State changed_state);
+    void playbackHandleStateChanged(QAudio::State changed_state);
+    void recordingHandleStateChanged(QAudio::State changed_state);
 
 signals:
     void playMedia(const boost::filesystem::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
     void recordMedia(const boost::filesystem::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
     void stopMedia(const boost::filesystem::path &media_path);
     void startLoopback();
-    void changeState(QAudio::State changed_state);
+    void changePlaybackState(QAudio::State changed_state);
+    void changeRecorderState(QAudio::State changed_state);
 
 private:
     QPointer<GekkoFyre::GkLevelDb> gkDb;
@@ -111,6 +113,7 @@ private:
     QPointer<QEventLoop> loop;
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
+    QPointer<QBuffer> record_input_buf;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     std::map<boost::filesystem::path, AudioFile<double>> gkSounds;
 

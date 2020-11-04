@@ -46,6 +46,7 @@
 #include <QByteArray>
 #include <QIODevice>
 #include <QBuffer>
+#include <QDataStream>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -80,11 +81,14 @@ GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, co
     pref_output_device = output_device;
     gkPcmFileStream = std::make_unique<GkPcmFileStream>(this);
 
-    QObject::connect(this, SIGNAL(playMedia(const boost::filesystem::path &)), this, SLOT(playMediaFile(const boost::filesystem::path &)));
+    QObject::connect(this, SIGNAL(playMedia(const boost::filesystem::path &, const GekkoFyre::GkAudioFramework::CodecSupport &)),
+                     this, SLOT(playMediaFile(const boost::filesystem::path &, const GekkoFyre::GkAudioFramework::CodecSupport &)));
     QObject::connect(this, SIGNAL(stopMedia(const boost::filesystem::path &)), this, SLOT(stopMediaFile(const boost::filesystem::path &)));
-    QObject::connect(this, SIGNAL(recordMedia(const boost::filesystem::path &)), this, SLOT(recordMediaFile(const boost::filesystem::path &)));
+    QObject::connect(this, SIGNAL(recordMedia(const boost::filesystem::path &, const GekkoFyre::GkAudioFramework::CodecSupport &)),
+                     this, SLOT(recordMediaFile(const boost::filesystem::path &, const GekkoFyre::GkAudioFramework::CodecSupport &)));
     QObject::connect(this, SIGNAL(startLoopback()), this, SLOT(startMediaLoopback()));
-    QObject::connect(this, SIGNAL(changeState(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
+    QObject::connect(this, SIGNAL(changePlaybackState(QAudio::State)), this, SLOT(playbackHandleStateChanged(QAudio::State)));
+    QObject::connect(this, SIGNAL(changeRecorderState(QAudio::State)), this, SLOT(recordingHandleStateChanged(QAudio::State)));
 
     start();
 
@@ -154,8 +158,11 @@ void GkPaStreamHandler::processEvent(GkAudioFramework::AudioEventType audioEvent
  */
 void GkPaStreamHandler::run()
 {
-    QObject::connect(gkAudioOutput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
+    QObject::connect(gkAudioOutput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(playbackHandleStateChanged(QAudio::State)));
+    QObject::connect(gkAudioInput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(recordingHandleStateChanged(QAudio::State)));
+
     exec();
+    return;
 }
 
 /**
@@ -178,10 +185,25 @@ void GkPaStreamHandler::playMediaFile(const boost::filesystem::path &media_path,
                     throw std::runtime_error(tr("Error whilst initializing output audio stream!").toStdString());
                 }
 
-                gkPcmFileStream->play(QString::fromStdString(media_path.string()));
-                gkAudioOutput->start(gkPcmFileStream.get());
+                switch (supported_codec) {
+                    case GkAudioFramework::CodecSupport::PCM:
+                        gkPcmFileStream->play(QString::fromStdString(media_path.string()));
+                        gkAudioOutput->start(gkPcmFileStream.get());
 
-                QObject::connect(gkAudioOutput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
+                        break;
+                    case GkAudioFramework::CodecSupport::Loopback:
+                        return;
+                    case GkAudioFramework::CodecSupport::OggVorbis:
+                        break;
+                    case GkAudioFramework::CodecSupport::Opus:
+                        break;
+                    case GkAudioFramework::CodecSupport::FLAC:
+                        break;
+                    case GkAudioFramework::CodecSupport::Unsupported:
+                        return;
+                    default:
+                        return;
+                }
 
                 loop = new QEventLoop(this);
                 do {
@@ -189,6 +211,7 @@ void GkPaStreamHandler::playMediaFile(const boost::filesystem::path &media_path,
                 } while (gkAudioOutput->state() == QAudio::ActiveState);
                 delete loop;
 
+                QObject::connect(gkAudioOutput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(playbackHandleStateChanged(QAudio::State)));
                 emit stopMedia(media_path);
                 break;
             }
@@ -206,10 +229,21 @@ void GkPaStreamHandler::playMediaFile(const boost::filesystem::path &media_path,
  */
 void GkPaStreamHandler::recordMediaFile(const boost::filesystem::path &media_path, const GkAudioFramework::CodecSupport &supported_codec)
 {
+    record_input_buf.clear(); // Clear the pointer just in-case it has been used previously!
+    record_input_buf = new QBuffer(this);
+    gkAudioInput->start(record_input_buf);
+    QFile write_file(QString::fromStdString(media_path.string()));
+
     switch (supported_codec) {
         case GkAudioFramework::CodecSupport::PCM:
+            write_file.write(record_input_buf->buffer(), QIODevice::WriteOnly);
+            write_file.flush();
+
             break;
         case GkAudioFramework::CodecSupport::Loopback:
+            write_file.write(record_input_buf->buffer(), QIODevice::WriteOnly);
+            write_file.flush();
+
             break;
         case GkAudioFramework::CodecSupport::OggVorbis:
             break;
@@ -218,10 +252,16 @@ void GkPaStreamHandler::recordMediaFile(const boost::filesystem::path &media_pat
         case GkAudioFramework::CodecSupport::FLAC:
             break;
         case GkAudioFramework::CodecSupport::Unsupported:
-            break;
+            return;
         default:
-            break;
+            return;
     }
+
+    loop = new QEventLoop(this);
+    do {
+        loop->exec(QEventLoop::WaitForMoreEvents);
+    } while (gkAudioInput->state() == QAudio::ActiveState);
+    delete loop;
 
     return;
 }
@@ -232,8 +272,8 @@ void GkPaStreamHandler::recordMediaFile(const boost::filesystem::path &media_pat
  */
 void GkPaStreamHandler::startMediaLoopback()
 {
-    QPointer<QBuffer> read_buf = new QBuffer();
-    QPointer<QBuffer> write_buf = new QBuffer();
+    QPointer<QBuffer> read_buf = new QBuffer(this);
+    QPointer<QBuffer> write_buf = new QBuffer(this);
 
     read_buf->open(QBuffer::ReadOnly);
     write_buf->open(QBuffer::WriteOnly);
@@ -282,10 +322,10 @@ void GkPaStreamHandler::stopMediaFile(const boost::filesystem::path &media_path)
 }
 
 /*
- * @brief GkPaStreamHandler::handleStateChanged
+ * @brief GkPaStreamHandler::playbackHandleStateChanged
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void GkPaStreamHandler::handleStateChanged(QAudio::State changed_state)
+void GkPaStreamHandler::playbackHandleStateChanged(QAudio::State changed_state)
 {
     try {
         switch (changed_state) {
@@ -304,6 +344,31 @@ void GkPaStreamHandler::handleStateChanged(QAudio::State changed_state)
         }
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(tr("An issue has been encountered during audio playback. Error:\n\n%1").arg(QString::fromStdString(e.what())),
+                                    GkSeverity::Error, "", true, true, false, false);
+    }
+
+    return;
+}
+
+void GkPaStreamHandler::recordingHandleStateChanged(QAudio::State changed_state)
+{
+    try {
+        switch (changed_state) {
+            case QAudio::IdleState:
+                gkAudioInput->stop();
+
+                break;
+            case QAudio::StoppedState:
+                if (gkAudioOutput->error() != QAudio::NoError) { // TODO: Improve the error reporting functionality of this statement!
+                    throw std::runtime_error(tr("Issue with 'QAudio::StoppedState' during media recording!").toStdString());
+                }
+
+                break;
+            default:
+                break;
+        }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(tr("An issue has been encountered during audio recording. Error:\n\n%1").arg(QString::fromStdString(e.what())),
                                     GkSeverity::Error, "", true, true, false, false);
     }
 

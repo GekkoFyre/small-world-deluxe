@@ -38,7 +38,7 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/spectro_gui.hpp"
+#include "src/gk_waterfall_gui.hpp"
 #include <QEvent>
 #include <QObject>
 #include <QDialog>
