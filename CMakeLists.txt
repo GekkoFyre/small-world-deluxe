@@ -501,6 +501,7 @@ set(GALAXY_UI_CPP
     src/audio_devices.cpp
     src/gk_fft.cpp
     src/gk_waterfall_gui.cpp
+    src/gk_spectro_color_maps.cpp
     src/gk_curve_gui.cpp
     src/gk_audio_encoding.cpp
     src/gk_audio_decoding.cpp
@@ -588,6 +589,7 @@ set(GALAXY_OBJ_HEADERS
     src/audio_devices.hpp
     src/gk_fft.hpp
     src/gk_waterfall_gui.hpp
+    src/gk_spectro_color_maps.hpp
     src/gk_curve_gui.hpp
     src/gk_audio_encoding.hpp
     src/gk_audio_decoding.hpp
