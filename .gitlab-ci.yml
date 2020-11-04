@@ -43,7 +43,7 @@
 
 ### --------------------------------------------------------------------------------------------------- ###
 
-image: code.gekkofyre.io:5050/amateur-radio/small-world-deluxe/swd-arch-latest
+image: gekkofyre/swd-arch-linux-latest
 
 stages:
     - sworld_debug_archlinux_x86_64
@@ -65,7 +65,7 @@ variables:
 #
 sworld_debug_archlinux_x86_64:
     stage: sworld_debug_archlinux_x86_64
-    image: code.gekkofyre.io:5050/amateur-radio/small-world-deluxe/swd-arch-latest
+    image: gekkofyre/swd-arch-linux-latest
     before_script:
         - pacman -Sy --noconfirm
         - pacman -Syyu --noconfirm

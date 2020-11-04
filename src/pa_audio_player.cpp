@@ -77,7 +77,7 @@ GkPaAudioPlayer::~GkPaAudioPlayer()
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param audio_file
  */
-void GkPaAudioPlayer::play(const fs::path &audio_file, const GkAudioFramework::CodecSupport &supported_codec)
+void GkPaAudioPlayer::play(const GkAudioFramework::CodecSupport &supported_codec, const fs::path &audio_file)
 {
     try {
         streamHandler->processEvent(GkAudioFramework::AudioEventType::start, audio_file, supported_codec, false);
@@ -90,11 +90,28 @@ void GkPaAudioPlayer::play(const fs::path &audio_file, const GkAudioFramework::C
 }
 
 /**
+ * @brief GkPaAudioPlayer::play
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param supported_codec
+ */
+void GkPaAudioPlayer::play(const GkAudioFramework::CodecSupport &supported_codec)
+{
+    try {
+        streamHandler->processEvent(GkAudioFramework::AudioEventType::start, fs::path(), supported_codec, false);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("A stream processing error has occurred with regards to the PortAudio library handling functions. Error:\n\n%1")
+                .arg(QString::fromStdString(e.what())), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
  * @brief  GkPaAudioPlayer::loop
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param audio_file
  */
-void GkPaAudioPlayer::loop(const fs::path &audio_file, const GkAudioFramework::CodecSupport &supported_codec)
+void GkPaAudioPlayer::loop(const GkAudioFramework::CodecSupport &supported_codec, const fs::path &audio_file)
 {
     try {
         streamHandler->processEvent(GkAudioFramework::AudioEventType::start, audio_file, supported_codec, true);
