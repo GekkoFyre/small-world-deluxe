@@ -39,7 +39,7 @@
  **
  ****************************************************************************************************/
 
-#include "src/spectro_curve.hpp"
+#include "src/gk_curve_gui.hpp"
 #include <qwt/qwt_series_data.h>
 #include <cmath>
 

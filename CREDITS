@@ -54,10 +54,6 @@ KissFFT by Mark Borgerding <Mark@Borgerding.net>
     <https://github.com/mborgerding/kissfft>
         BSD 3-clause License
 
-FFTW3 by Matteo Frigo & Steven G. Johnson et al.
-    <https://github.com/FFTW/fftw3>
-        GNU General Public License (GPL, version 2)
-
 QtUSB by Fabien Poussin
     <https://github.com/fpoussin/QtUsb>
         GNU Lesser General Public License (LGPL, version 3.0)
@@ -65,6 +61,14 @@ QtUSB by Fabien Poussin
 AudioFile by Adam Stark
     <https://github.com/adamstark/AudioFile>
         GNU General Public License (GPL, version 3)
+
+Qwt by Uwe Rathmann & Josef Wilgen et al.
+    <https://qwt.sourceforge.io/>
+        GNU Lesser General Public License (LGPL, version 2.1)
+
+QwtWaterfallplot by Amine Mzoughi
+    <https://github.com/embeddedmz/QwtWaterfallplot>
+        The MIT License
 
 libvorbis by Xiph.org
     <https://www.xiph.org/vorbis/>
@@ -81,10 +85,6 @@ libopus by Xiph.org et al.
 libiconv-win-build by Bruno Haible
     <https://github.com/kiyolee/libiconv-win-build/>
         GNU General Public License (GPL, version 3)
-
-Qwt by Uwe Rathmann & Josef Wilgen et al.
-    <https://qwt.sourceforge.io/>
-        GNU Lesser General Public License (LGPL, version 2.1)
 
 SingleApplication by Itay Grudev
     <https://github.com/itay-grudev/SingleApplication>
