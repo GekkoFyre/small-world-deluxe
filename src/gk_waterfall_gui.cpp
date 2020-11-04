@@ -392,7 +392,7 @@ bool GkSpectroWaterfall::addData(const double *const dataPtr, const size_t dataL
     if (bRet) {
         updateCurvesData();
 
-        // refresh spectrogram content and Y axis labels
+        // refresh spectrogram content and Y-axis labels
         //m_spectrogram->invalidateCache();
 
         auto const ySpectroLeftAxis = static_cast<GkWaterfallTimeScaleDraw *>(m_plotSpectrogram->axisScaleDraw(QwtPlot::yLeft));
@@ -447,7 +447,7 @@ void GkSpectroWaterfall::setRange(double dLower, double dUpper)
         }
     }
 
-    // set vertical plot's X axis and horizontal plot's Y axis scales to the color bar min/max
+    // set vertical plot's X-axis and horizontal plot's Y-axis scales to the color bar min/max
     m_plotHorCurve->setAxisScale(QwtPlot::yLeft, dLower, dUpper);
     m_plotVertCurve->setAxisScale(QwtPlot::xBottom, dLower, dUpper);
 
@@ -467,6 +467,13 @@ void GkSpectroWaterfall::setRange(double dLower, double dUpper)
  */
 void GkSpectroWaterfall::getRange(double &rangeMin, double &rangeMax) const
 {
+    if (gkWaterfallData) {
+        gkWaterfallData->getRange(rangeMin, rangeMax);
+    } else {
+        rangeMin = 0;
+        rangeMax = 1;
+    }
+
     return;
 }
 
@@ -478,6 +485,13 @@ void GkSpectroWaterfall::getRange(double &rangeMin, double &rangeMax) const
  */
 void GkSpectroWaterfall::getDataRange(double &rangeMin, double &rangeMax) const
 {
+    if (gkWaterfallData) {
+        gkWaterfallData->getDataRange(rangeMin, rangeMax);
+    } else {
+        rangeMin = 0;
+        rangeMax = 1;
+    }
+
     return;
 }
 
@@ -510,15 +524,6 @@ time_t GkSpectroWaterfall::getLayerDate(const double y) const
 }
 
 /**
- * @brief GkSpectroWaterfall::refreshDateTime refreshes any date/time objects within the spectrograph class.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkSpectroWaterfall::refreshDateTime(const qint64 &latest_time_update, const qint64 &time_since)
-{
-    return;
-}
-
-/**
  * @brief GkSpectroWaterfall::updateLayout
  * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>.
  */
@@ -533,6 +538,32 @@ void GkSpectroWaterfall::updateLayout()
  */
 void GkSpectroWaterfall::allocateCurvesData()
 {
+    if (m_horCurveXAxisData || m_horCurveYAxisData || m_vertCurveXAxisData ||
+        m_vertCurveYAxisData || !gkWaterfallData) {
+        return;
+    }
+
+    const size_t layerPoints = gkWaterfallData->getLayerPoints();
+    const double dXMin = gkWaterfallData->getXMin();
+    const double dXMax = gkWaterfallData->getXMax();
+    const size_t historyExtent = gkWaterfallData->getMaxHistoryLength();
+
+    m_horCurveXAxisData = new double[layerPoints];
+    m_horCurveYAxisData = new double[layerPoints];
+    m_vertCurveXAxisData = new double[historyExtent];
+    m_vertCurveYAxisData = new double[historyExtent];
+
+    // Generate curve X-axis data
+    const double dx = (dXMax - dXMin) / layerPoints; // x spacing
+    m_horCurveXAxisData[0] = dXMin;
+    for (size_t x = 1u; x < layerPoints; ++x) {
+        m_horCurveXAxisData[x] = m_horCurveXAxisData[x - 1] + dx;
+    }
+
+    // Reset marker to the default position
+    m_markerX = (dXMax - dXMin) / 2;
+    m_markerY = historyExtent - 1;
+
     return;
 }
 
@@ -542,6 +573,26 @@ void GkSpectroWaterfall::allocateCurvesData()
  */
 void GkSpectroWaterfall::freeCurvesData()
 {
+    if (m_horCurveXAxisData) {
+        delete [] m_horCurveXAxisData;
+        m_horCurveXAxisData = nullptr;
+    }
+
+    if (m_horCurveYAxisData) {
+        delete [] m_horCurveYAxisData;
+        m_horCurveYAxisData = nullptr;
+    }
+
+    if (m_vertCurveXAxisData) {
+        delete [] m_vertCurveXAxisData;
+        m_vertCurveXAxisData = nullptr;
+    }
+
+    if (m_vertCurveYAxisData) {
+        delete [] m_vertCurveYAxisData;
+        m_vertCurveYAxisData = nullptr;
+    }
+
     return;
 }
 
@@ -551,6 +602,23 @@ void GkSpectroWaterfall::freeCurvesData()
  */
 void GkSpectroWaterfall::setupCurves()
 {
+    m_plotHorCurve->detachItems(QwtPlotItem::Rtti_PlotCurve, true);
+    m_plotVertCurve->detachItems(QwtPlotItem::Rtti_PlotCurve, true);
+
+    m_horCurve = new QwtPlotCurve;
+    m_vertCurve = new QwtPlotCurve;
+
+    // Horizontal Curve
+    m_horCurve->attach(m_plotHorCurve);
+    m_horCurve->setRenderHint(QwtPlotItem::RenderAntialiased, true);
+    m_horCurve->setStyle(QwtPlotCurve::Lines);
+
+    // Vertical Curve
+    m_vertCurve->attach(m_plotVertCurve);
+    m_vertCurve->setRenderHint(QwtPlotItem::RenderAntialiased, true);
+    m_vertCurve->setStyle(QwtPlotCurve::Lines);
+
+    m_plotVertCurve->setAxisScaleDraw(QwtPlot::yLeft, new GkWaterfallTimeScaleDraw(*this));
     return;
 }
 
@@ -560,6 +628,132 @@ void GkSpectroWaterfall::setupCurves()
  */
 void GkSpectroWaterfall::updateCurvesData()
 {
+    // refresh curve's data
+    const size_t currentHistory = gkWaterfallData->getHistoryLength();
+    const size_t layerPts = gkWaterfallData->getLayerPoints();
+    const size_t maxHistory = gkWaterfallData->getMaxHistoryLength();
+    const double *wfData = gkWaterfallData->getData();
+
+    const size_t markerY = m_markerY;
+    if (markerY >= maxHistory) {
+        return;
+    }
+
+    if (m_horCurveXAxisData && m_horCurveYAxisData) {
+        std::copy(wfData + layerPts * markerY,
+                  wfData + layerPts * (markerY + 1),
+                  m_horCurveYAxisData);
+        m_horCurve->setRawSamples(m_horCurveXAxisData, m_horCurveYAxisData, layerPts);
+    }
+
+    const double offset = gkWaterfallData->getOffset();
+
+    if (currentHistory > 0 && m_vertCurveXAxisData && m_vertCurveYAxisData) {
+        size_t dataIndex = 0;
+        for (size_t layer = maxHistory - currentHistory; layer < maxHistory; ++layer, ++dataIndex) {
+            const double z = gkWaterfallData->value(m_markerX, layer + size_t(offset));
+            const double t = double(layer) + offset;
+            m_vertCurveXAxisData[dataIndex] = z;
+            m_vertCurveYAxisData[dataIndex] = t;
+        }
+
+        m_vertCurve->setRawSamples(m_vertCurveXAxisData, m_vertCurveYAxisData, currentHistory);
+    }
+    
+    return;
+}
+
+/**
+ * @brief GkSpectroWaterfall::setPickerEnabled
+ * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>.
+ * @param enabled
+ */
+void GkSpectroWaterfall::setPickerEnabled(const bool enabled)
+{
+    m_panner->setEnabled(!enabled);
+    m_picker->setEnabled(enabled);
+    m_zoomer->setEnabled(!enabled);
+    // m_zoomer->zoom(0);
+
+    // Clear plots?
+    return;
+}
+
+/**
+ * @brief GkSpectroWaterfall::autoRescale
+ * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>.
+ * @param rect
+ */
+void GkSpectroWaterfall::autoRescale(const QRectF &rect)
+{
+    Q_UNUSED(rect)
+    if (m_zoomer->zoomRectIndex() == 0) {
+        // Rescale axis to data range
+        m_plotSpectrogram->setAxisAutoScale(QwtPlot::xBottom, true);
+        m_plotSpectrogram->setAxisAutoScale(QwtPlot::yLeft, true);
+        m_zoomer->setZoomBase();
+        m_zoomActive = false;
+    } else {
+        m_zoomActive = true;
+    }
+
+    return;
+}
+
+/**
+ * @brief GkSpectroWaterfall::selectedPoint
+ * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>.
+ * @param pt
+ */
+void GkSpectroWaterfall::selectedPoint(const QPointF &pt)
+{
+    setMarker(pt.x(), pt.y());
+    return;
+}
+
+/**
+ * @brief GkSpectroWaterfall::scaleDivChanged
+ * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>.
+ */
+void GkSpectroWaterfall::scaleDivChanged()
+{
+    // apparently, m_inScaleSync is a hack that can be replaced by
+    // blocking signals on a widget but that could be cumbersome
+    // or not possible as the Qwt API doesn't provide any mean to do that
+    if (m_inScaleSync) {
+        return;
+    }
+
+    m_inScaleSync = true;
+
+    QwtPlot* updatedPlot;
+    int axisId;
+    if (m_plotHorCurve->axisWidget(QwtPlot::xBottom) == sender()) {
+        updatedPlot = m_plotHorCurve;
+        axisId = QwtPlot::xBottom;
+    } else if (m_plotSpectrogram->axisWidget(QwtPlot::xBottom) == sender()) {
+        updatedPlot = m_plotSpectrogram;
+        axisId = QwtPlot::xBottom;
+    } else if (m_plotSpectrogram->axisWidget(QwtPlot::yLeft) == sender()) {
+        updatedPlot = m_plotSpectrogram;
+        axisId = QwtPlot::yLeft;
+    } else {
+        updatedPlot = nullptr;
+    }
+
+    if (updatedPlot) {
+        QwtPlot* plotToUpdate;
+        if (axisId == QwtPlot::xBottom) {
+            plotToUpdate = (updatedPlot == m_plotHorCurve) ? m_plotSpectrogram : m_plotHorCurve;
+        } else {
+            plotToUpdate = m_plotVertCurve;
+        }
+
+        plotToUpdate->setAxisScaleDiv(axisId, updatedPlot->axisScaleDiv(axisId));
+        updateLayout();
+    }
+
+    m_inScaleSync = false;
     return;
 }
 
@@ -567,8 +761,9 @@ bool GkSpectroWaterfall::setColorMap(const ColorMaps::ControlPoints &colorMap) {
     return false;
 }
 
-ColorMaps::ControlPoints GkSpectroWaterfall::getColorMap() const {
-    return ColorMaps::ControlPoints();
+ColorMaps::ControlPoints GkSpectroWaterfall::getColorMap() const
+{
+    return m_ctrlPts;
 }
 
 /**

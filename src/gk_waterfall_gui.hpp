@@ -157,6 +157,14 @@ protected:
 
     bool m_bColorBarInitialized = false;
 
+    double* m_horCurveXAxisData = nullptr;
+    double* m_horCurveYAxisData = nullptr;
+
+    double* m_vertCurveXAxisData = nullptr;
+    double* m_vertCurveYAxisData = nullptr;
+
+    mutable bool m_inScaleSync = false;
+
     double m_markerX = 0;
     double m_markerY = 0;
 
@@ -172,7 +180,12 @@ protected:
     bool m_zoomActive = false;
 
 public slots:
-    void refreshDateTime(const qint64 &latest_time_update, const qint64 &time_since);
+    void setPickerEnabled(const bool enabled);
+
+protected slots:
+    void autoRescale(const QRectF &rect);
+    void selectedPoint(const QPointF &pt);
+    void scaleDivChanged();
 
 private:
     QPointer<QwtPlotCanvas> canvas;
