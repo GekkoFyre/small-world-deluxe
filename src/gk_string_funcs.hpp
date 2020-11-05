@@ -43,10 +43,11 @@
 
 #include "src/defines.hpp"
 #include <boost/filesystem.hpp>
-#include <QObject>
+#include <QAudioFormat>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QPointer>
+#include <QObject>
 #include <QString>
 #include <string>
 #include <memory>
@@ -88,6 +89,7 @@ public:
     std::string csvOutputString(const std::vector<std::string> &csv_elements);
 
     QString fileSizeHumanReadable(const qint64 &file_size);
+    qreal getPeakValue(const QAudioFormat &format);
 
     QString convSecondsToMinutes(const double &seconds);
     qint32 randomNumGen(qint32 lower_bound = std::numeric_limits<qint32>::min(), qint32 upper_bound = std::numeric_limits<qint32>::max());

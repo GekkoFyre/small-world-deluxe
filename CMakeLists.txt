@@ -626,7 +626,6 @@ endif()
 #
 set(GALAXY_SRC_HEADERS
     ${GALAXY_SRC_HEADERS}
-    src/pa_audio_buf.hpp
     src/gk_timer.hpp
     src/gk_circ_buffer.hpp
     src/contrib/rapidcsv/src/rapidcsv.h

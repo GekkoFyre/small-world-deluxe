@@ -44,7 +44,6 @@
 #include "src/defines.hpp"
 #include "src/file_io.hpp"
 #include "src/audio_devices.hpp"
-#include "src/pa_audio_buf.hpp"
 #include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
 #include <ogg/os_types.h>

@@ -43,7 +43,6 @@
 #include "src/gk_cli.hpp"
 #include "src/dek_db.hpp"
 #include "src/radiolibs.hpp"
-#include "src/pa_audio_buf.hpp"
 #include "src/gk_waterfall_gui.hpp"
 #include "src/gk_curve_gui.hpp"
 #include "src/gk_circ_buffer.hpp"
@@ -79,6 +78,7 @@
 #include <QScreen>
 #include <QString>
 #include <QObject>
+#include <QBuffer>
 #include <QPointer>
 #include <QPrinter>
 #include <QMetaType>
@@ -91,6 +91,7 @@
 #include <QAudioInput>
 #include <QAudioOutput>
 #include <QAudioFormat>
+#include <QAudioBuffer>
 #include <QSharedPointer>
 #include <QAudioDeviceInfo>
 #include <QCommandLineParser>
@@ -236,6 +237,11 @@ protected slots:
     //
     void procRigPort(const QString &conn_port, const GekkoFyre::AmateurRadio::GkConnMethod &conn_method);
 
+    //
+    // QAudioProbe's and related
+    //
+    void processInputAudioFFTBuffer(const QAudioBuffer &input_buf);
+
 public slots:
     void updateProgressBar(const bool &enable, const size_t &min, const size_t &max);
 
@@ -309,8 +315,6 @@ private:
     QPointer<GekkoFyre::FileIo> fileIo;
     QPointer<GekkoFyre::GkFrequencies> gkFreqList;
     QPointer<GekkoFyre::RadioLibs> gkRadioLibs;
-    QPointer<GekkoFyre::GkSpectroWaterfall> gkSpectroWaterfall;
-    QPointer<GekkoFyre::GkSpectroCurve> gkSpectroCurve;
     QPointer<GekkoFyre::GkVuMeter> gkVuMeter;
     QPointer<GekkoFyre::GkModem> gkModem;
     QPointer<GekkoFyre::GkSystem> gkSystem;
@@ -339,7 +343,6 @@ private:
     std::list<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_output_audio_devs;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
-    std::shared_ptr<GekkoFyre::PaAudioBuf<float>> input_audio_buf;
 
     //
     // Audio sub-system
@@ -356,7 +359,6 @@ private:
     std::future<std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>> rig_future;
     std::thread rig_thread;
     std::thread vu_meter_thread;
-    std::thread spectro_timing_thread;
 
     //
     // USB & RS232
@@ -429,7 +431,12 @@ private:
     //
     // Spectrograph related
     //
-    GekkoFyre::Spectrograph::GkGraphType graph_in_use;                  // The type of graph in use and therefore displayed to the end-user as of the moment...
+    QPointer<GekkoFyre::GkSpectroWaterfall> gkSpectroWaterfall;
+    QPointer<GekkoFyre::GkSpectroCurve> gkSpectroCurve;
+    std::unique_ptr<QAudioBuffer> waterfall_spectrum_audio_ba;
+    std::unique_ptr<QBuffer> waterfall_input_audio_buf;
+    qint32 waterfall_spectrum_buf_size;
+    GekkoFyre::Spectrograph::GkGraphType graph_in_use;
 
     void updateSpectrograph();
 

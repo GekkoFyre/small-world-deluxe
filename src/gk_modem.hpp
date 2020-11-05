@@ -44,7 +44,6 @@
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
 #include "src/audio_devices.hpp"
-#include "src/pa_audio_buf.hpp"
 #include "src/gk_logger.hpp"
 #include "src/gk_string_funcs.hpp"
 #include <QObject>
