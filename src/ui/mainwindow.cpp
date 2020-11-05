@@ -465,8 +465,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QObject::connect(this, SIGNAL(gkExitApp()), this, SLOT(uponExit()));
 
         try {
-            gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(gkDb, fileIo, gkFreqList, gkStringFuncs,
-                                                                       gkEventLogger, gkSystem, this);
+            gkAudioDevices = new GekkoFyre::AudioDevices(gkDb, fileIo, gkFreqList, gkStringFuncs, gkEventLogger, gkSystem, this);
 
             const auto outputDeviceInfos = QAudioDeviceInfo::availableDevices(QAudio::AudioOutput);
             const auto inputDeviceInfos = QAudioDeviceInfo::availableDevices(QAudio::AudioInput);
@@ -545,6 +544,18 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                 // Given audio parameters are supported, as defined by the user previously!
                                 pref_input_device = input_dev.second;
                                 gkAudioInput = new QAudioInput(input_dev.first, user_input_settings, this);
+
+                                QObject::connect(gkAudioInput, SIGNAL(notify()), this, SLOT(processInputAudioFFTBuffer()));
+                                QObject::connect(gkAudioInput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(audioInputStateChange(QAudio::State)));
+
+                                waterfall_input_audio_buf->open(QBuffer::ReadWrite);
+                                gkAudioInput->start(waterfall_input_audio_buf.get());
+
+                                gkAudioInputEventLoop = new QEventLoop(this);
+                                do {
+                                    gkAudioInputEventLoop->exec(QEventLoop::WaitForMoreEvents);
+                                } while (gkAudioOutput->state() == QAudio::ActiveState);
+
                                 gkEventLogger->publishEvent(tr("Now using the input audio device, \"%1\".").arg(pref_input_device.audio_device_info.deviceName()),
                                                             GkSeverity::Info, "", true, true, false, false);
                             } else {
@@ -716,11 +727,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         connect(info_timer, SIGNAL(timeout()), this, SLOT(infoBar()));
         info_timer->start(1000);
 
-        QObject::connect(this, SIGNAL(refreshSpectrograph(const qint64 &, const qint64 &)),
-                         gkSpectroWaterfall, SLOT(refreshDateTime(const qint64 &, const qint64 &)));
-        QObject::connect(this, SIGNAL(onProcessFrame(const std::vector<float> &)),
-                         gkSpectroCurve, SLOT(processFrame(const std::vector<float> &)));
-
         //
         // QPrinter-specific options!
         // https://doc.qt.io/qt-5/qprinter.html
@@ -819,6 +825,10 @@ MainWindow::~MainWindow()
 
     if (vu_meter_thread.joinable()) {
         vu_meter_thread.join();
+    }
+
+    if (!gkAudioInputEventLoop.isNull()) {
+        delete gkAudioInputEventLoop;
     }
 
     delete db; // Free the pointer for the Google LevelDB library!
@@ -1589,6 +1599,20 @@ void MainWindow::tuneActiveFreq(const quint64 &freq_tune)
 }
 
 /**
+ * @brief
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::spectroSamplesUpdated()
+{
+    const qint32 n = waterfall_samples_vec.length();
+    if (n > 96000) {
+        waterfall_samples_vec.mid(n - pref_input_device.audio_device_info.preferredFormat().sampleRate(), -1);
+    }
+
+    return;
+}
+
+/**
  * @brief MainWindow::createStatusBar creates a status bar at the bottom of the window.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @note <https://doc.qt.io/qt-5/qstatusbar.html>
@@ -2178,19 +2202,47 @@ void MainWindow::procRigPort(const QString &conn_port, const GekkoFyre::AmateurR
 }
 
 /**
+ * @brief MainWindow::audioInputStateChange
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param state
+ */
+void MainWindow::audioInputStateChange(QAudio::State state)
+{
+    try {
+        switch (state) {
+            case QAudio::IdleState:
+                gkAudioInput->stop();
+
+                break;
+            case QAudio::StoppedState:
+                if (gkAudioInput->error() != QAudio::NoError) { // TODO: Improve the error reporting functionality of this statement!
+                    throw std::runtime_error(tr("Issue with 'QAudio::StoppedState' during media playback!").toStdString());
+                }
+
+                break;
+            default:
+                break;
+        }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(tr("An issue has been encountered during audio playback. Error:\n\n%1").arg(QString::fromStdString(e.what())),
+                                    GkSeverity::Error, "", true, true, false, false);
+    }
+
+    return;
+}
+
+/**
  * @brief MainWindow::processInputAudioFFTBuffer
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param input_buf The incoming, buffered data from the QAudioInput pointer.
  * @note Oleksandr Tymoshenko <https://github.com/gonzoua/qt-demo-player/blob/master/playerwidget.cpp>,
- * thibsc <https://stackoverflow.com/questions/50277132/qt-audio-file-to-wave-like-audacity>.
+ * thibsc Joel Svensson <https://stackoverflow.com/questions/50277132/qt-audio-file-to-wave-like-audacity>,
+ * Joel Svensson <http://svenssonjoel.github.io/pages/qt-audio-fft/index.html>.
  */
-void MainWindow::processInputAudioFFTBuffer(const QAudioBuffer &input_buf)
+void MainWindow::processInputAudioFFTBuffer()
 {
-    gkAudioInput->start(waterfall_input_audio_buf.get());
-
     try {
         while (gkAudioInput->state() == QAudio::ActiveState) {
-            waterfall_input_audio_buf->write(waterfall_input_audio_buf->data());
             auto peak_val = gkStringFuncs->getPeakValue(pref_input_device.audio_device_info.preferredFormat());
 
             std::vector<qint16> recv_buf;
@@ -2201,12 +2253,45 @@ void MainWindow::processInputAudioFFTBuffer(const QAudioBuffer &input_buf)
                 recv_samples.append(val);
             }
 
+            auto fft_data = gkFFT->FFTCompute(recv_samples.toStdVector(), pref_input_device, recv_samples.size());
             gkSpectroWaterfall->addData(recv_samples.data(), recv_samples.size(), std::time(nullptr));
         }
     } catch (const std::exception &e) {
-        // Error!
+        std::throw_with_nested(std::runtime_error(tr("Issue encountered whilst performing FFT calculations! Error:\n\n%1")
+        .arg(QString::fromStdString(e.what())).toStdString()));
     }
 
+    return;
+}
+
+/**
+ * @brief MainWindow::processAudioIn
+ * @author <http://svenssonjoel.github.io/pages/qt-audio-fft/index.html>,
+ * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::processAudioIn()
+{
+    waterfall_input_audio_buf->seek(0);
+    QByteArray ba = waterfall_input_audio_buf->readAll();
+
+    qint32 num_samples = ba.length() / 2;
+    qint32 b_pos = 0;
+    for (qint32 i = 0; i < num_samples; ++i) {
+        int16_t s;
+        s = ba.at(++b_pos);
+        s |= ba.at(++b_pos) << 8;
+
+        if (s != 0) {
+            waterfall_samples_vec.append((double)s / 32768.0);
+        } else {
+            waterfall_samples_vec.append(0);
+        }
+    };
+
+    waterfall_input_audio_buf->buffer().clear();
+    waterfall_input_audio_buf->seek(0);
+
+    spectroSamplesUpdated();
     return;
 }
 

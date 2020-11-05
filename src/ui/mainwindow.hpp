@@ -240,7 +240,9 @@ protected slots:
     //
     // QAudioProbe's and related
     //
-    void processInputAudioFFTBuffer(const QAudioBuffer &input_buf);
+    void audioInputStateChange(QAudio::State state);
+    void processInputAudioFFTBuffer();
+    void processAudioIn();
 
 public slots:
     void updateProgressBar(const bool &enable, const size_t &min, const size_t &max);
@@ -296,8 +298,6 @@ signals:
     // Spectrograph related
     //
     void changeGraphType(const GekkoFyre::Spectrograph::GkGraphType &graph_type);
-    void refreshSpectrograph(const qint64 &latest_time_update, const qint64 &time_since);
-    void onProcessFrame(const std::vector<float> &fftMagnitude);
 
 private:
     Ui::MainWindow *ui;
@@ -308,7 +308,7 @@ private:
     leveldb::DB *db;
     sentry_options_t *sen_opt;
     QPointer<GekkoFyre::GkLevelDb> gkDb;
-    std::shared_ptr<GekkoFyre::AudioDevices> gkAudioDevices;
+    QPointer<GekkoFyre::AudioDevices> gkAudioDevices;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GekkoFyre::GkCli> gkCli;
     std::unique_ptr<GekkoFyre::GkFFT> gkFFT;
@@ -339,6 +339,7 @@ private:
     //
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
+    QPointer<QEventLoop> gkAudioInputEventLoop;
     std::list<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_input_audio_devs;
     std::list<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_output_audio_devs;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
@@ -436,9 +437,10 @@ private:
     std::unique_ptr<QAudioBuffer> waterfall_spectrum_audio_ba;
     std::unique_ptr<QBuffer> waterfall_input_audio_buf;
     qint32 waterfall_spectrum_buf_size;
+    QVector<double> waterfall_samples_vec;
     GekkoFyre::Spectrograph::GkGraphType graph_in_use;
 
-    void updateSpectrograph();
+    void spectroSamplesUpdated();
 
     void createStatusBar(const QString &statusMsg = "");
     bool changeStatusBarMsg(const QString &statusMsg = "");

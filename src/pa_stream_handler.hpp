@@ -110,7 +110,7 @@ private:
     //
     // QAudioSystem initialization and buffers
     //
-    QPointer<QEventLoop> loop;
+    QPointer<QEventLoop> procMediaEventLoop;
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
     QPointer<QBuffer> record_input_buf;

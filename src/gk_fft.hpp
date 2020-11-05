@@ -72,7 +72,7 @@ public:
     explicit GkFFT(QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkFFT();
 
-    std::vector<GekkoFyre::Spectrograph::GkFFTSpectrum> FFTCompute(const std::vector<float> &data, const GekkoFyre::Database::Settings::Audio::GkDevice &audioDevice,
+    std::vector<GekkoFyre::Spectrograph::GkFFTSpectrum> FFTCompute(const std::vector<double> &data, const GekkoFyre::Database::Settings::Audio::GkDevice &audioDevice,
                                                                    const qint32 &numSamples);
     std::vector<float> FFTCurvePlot(const std::vector<float> &data, const GekkoFyre::Database::Settings::Audio::GkDevice &audioDevice,
                                     const qint32 &numSamples);

@@ -114,7 +114,12 @@ QwtColorMap *GkQwtColorMap::controlPointsToQwtColorMap(const ColorMaps::ControlP
  */
 GkSpectroWaterfall::GkSpectroWaterfall(QPointer<StringFuncs> stringFuncs, QPointer<GkEventLogger> eventLogger, const bool &enablePanner,
                                        const bool &enableZoomer, QWidget *parent) : m_spectrogram(new QwtPlotSpectrogram),
-                                       gkAlpha(255), QWidget(parent)
+                                       gkAlpha(255), m_plotHorCurve(new QwtPlot), m_plotVertCurve(new QwtPlot), m_plotSpectrogram(new QwtPlot),
+                                       m_picker(new QwtPlotPicker(QwtPlot::xBottom, QwtPlot::yLeft, QwtPlotPicker::CrossRubberBand,
+                                                                  QwtPicker::AlwaysOn, m_plotSpectrogram->canvas())),
+                                       m_panner(new QwtPlotPanner(m_plotSpectrogram->canvas())), m_zoomer(new GkZoomer(m_plotSpectrogram->canvas(),
+                                       m_spectrogram, *this)), m_horCurveMarker(new QwtPlotMarker), m_vertCurveMarker(new QwtPlotMarker),
+                                       m_ctrlPts(), QWidget(parent)
 {
     std::lock_guard<std::mutex> lck_guard(spectro_main_mtx);
 
@@ -144,14 +149,14 @@ GkSpectroWaterfall::GkSpectroWaterfall(QPointer<StringFuncs> stringFuncs, QPoint
         m_plotHorCurve->axisWidget(QwtPlot::yRight)->setPalette(palette);
 
         // Auto rescale
-        m_plotHorCurve->setAxisAutoScale(QwtPlot::xBottom,    true);
-        m_plotHorCurve->setAxisAutoScale(QwtPlot::yLeft,      false);
-        m_plotHorCurve->setAxisAutoScale(QwtPlot::yRight,     true);
-        m_plotVertCurve->setAxisAutoScale(QwtPlot::xBottom,   false);
-        m_plotVertCurve->setAxisAutoScale(QwtPlot::yLeft,     true);
-        m_plotVertCurve->setAxisAutoScale(QwtPlot::yRight,    true);
+        m_plotHorCurve->setAxisAutoScale(QwtPlot::xBottom, true);
+        m_plotHorCurve->setAxisAutoScale(QwtPlot::yLeft, false);
+        m_plotHorCurve->setAxisAutoScale(QwtPlot::yRight, true);
+        m_plotVertCurve->setAxisAutoScale(QwtPlot::xBottom, false);
+        m_plotVertCurve->setAxisAutoScale(QwtPlot::yLeft, true);
+        m_plotVertCurve->setAxisAutoScale(QwtPlot::yRight, true);
         m_plotSpectrogram->setAxisAutoScale(QwtPlot::xBottom, true);
-        m_plotSpectrogram->setAxisAutoScale(QwtPlot::yLeft,   true);
+        m_plotSpectrogram->setAxisAutoScale(QwtPlot::yLeft, true);
 
         // the canvas should be perfectly aligned to the boundaries of your curve.
         m_plotSpectrogram->axisScaleEngine(QwtPlot::xBottom)->setAttribute(QwtScaleEngine::Floating, true);
