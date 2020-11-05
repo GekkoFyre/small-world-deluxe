@@ -88,7 +88,7 @@ GkFFT::~GkFFT()
  * @param numSamples The number of audio samples.
  * @return The FFT calculations in question.
  */
-std::vector<GkFFTSpectrum> GkFFT::FFTCompute(const std::vector<float> &data, const GkDevice &audioDevice, const qint32 &numSamples)
+std::vector<GkFFTSpectrum> GkFFT::FFTCompute(const std::vector<double> &data, const GkDevice &audioDevice, const qint32 &numSamples)
 {
     try {
         std::lock_guard<std::mutex> lck_guard(fft_compute_mtx);
@@ -99,26 +99,26 @@ std::vector<GkFFTSpectrum> GkFFT::FFTCompute(const std::vector<float> &data, con
 
             // Initialize the window
             for (int i = 0; i < numSamples; ++i) {
-                float window = 0.5f * float(1 - qCos((2 * M_PI * i) / (numSamples - 1)));
+                double window = 0.5f * double(1 - qCos((2 * M_PI * i) / (numSamples - 1)));
                 m_window[i] = window;
             }
 
             std::copy(data.begin(), data.end(), std::back_inserter(m_spectrum_buffer));
             while (m_spectrum_buffer.size() >= int(numSamples)) {
-                QVector<float> middle = m_spectrum_buffer.mid(0, numSamples * sizeof(float));
+                QVector<float> middle = m_spectrum_buffer.mid(0, numSamples * sizeof(double));
                 int len = middle.size();
                 m_spectrum_buffer.remove(0, len);
 
-                auto *samples = reinterpret_cast<const float *>(middle.constData());
+                auto *samples = reinterpret_cast<const double *>(middle.constData());
 
                 kiss_fft_cpx inbuf[numSamples];
                 kiss_fft_cpx outbuf[numSamples];
 
                 // Initialize data array
                 for (int i = 0; i < numSamples; ++i) {
-                    float realSample = samples[i];
-                    float window = m_window[i];
-                    float windowedSample = realSample * window;
+                    double realSample = samples[i];
+                    double window = m_window[i];
+                    double windowedSample = realSample * window;
                     inbuf[i].r = windowedSample;
                     inbuf[i].i = 0;
                 }
@@ -129,19 +129,19 @@ std::vector<GkFFTSpectrum> GkFFT::FFTCompute(const std::vector<float> &data, con
                 // Analyze output to obtain amplitude and phase for each frequency
                 for (int i = 2; i <= numSamples / 2; ++i) {
                     // Calculate frequency of this complex sample
-                    m_spectrum[i].frequency = std::round(i * std::round(audioDevice.chosen_sample_rate) / numSamples);
+                    m_spectrum[i].frequency = std::round(i * std::round(audioDevice.audio_device_info.preferredFormat().sampleRate()) / numSamples);
 
                     kiss_fft_cpx cpx = outbuf[i];
 
-                    float real = cpx.r;
-                    float imag = 0;
+                    double real = cpx.r;
+                    double imag = 0;
 
                     if (i > 0 && i < numSamples / 2) {
                         kiss_fft_cpx cpx = outbuf[numSamples / 2 + i];
                         imag = cpx.r;
                     }
 
-                    m_spectrum[i].magnitude = float(qSqrt(qreal(real * real + imag * imag)));
+                    m_spectrum[i].magnitude = double(qSqrt(qreal(real * real + imag * imag)));
                 }
             }
 

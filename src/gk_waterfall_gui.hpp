@@ -43,6 +43,8 @@
 
 #include "src/defines.hpp"
 #include "src/gk_logger.hpp"
+#include "src/gk_spectro_color_maps.hpp"
+#include "src/gk_waterfall_data.hpp"
 #include <qwt/qwt.h>
 #include <qwt/qwt_plot.h>
 #include <qwt/qwt_plot_spectrogram.h>
@@ -59,6 +61,8 @@
 #include <qwt/qwt_scale_engine.h>
 #include <qwt/qwt_date_scale_engine.h>
 #include <qwt/qwt_date_scale_draw.h>
+#include <qwt/qwt_plot_marker.h>
+#include <qwt/qwt_text.h>
 #include <mutex>
 #include <cmath>
 #include <vector>
@@ -77,47 +81,21 @@
 
 namespace GekkoFyre {
 
-class GkZoomer: public QwtPlotZoomer {
-
-public:
-    explicit GkZoomer(QWidget *canvas): QwtPlotZoomer(QwtPlot::xTop, QwtPlot::yLeft, canvas) {
-        setTrackerMode(AlwaysOn);
-    }
-
-    [[nodiscard]] QwtText trackerTextF(const QPointF &pos) const override {
-        QColor bg(Qt::white);
-        bg.setAlpha(200);
-
-        QwtText text = QwtPlotZoomer::trackerTextF(pos);
-        text.setBackgroundBrush(QBrush(bg));
-        return text;
-    }
-};
-
-class GkSpectroRasterData: public QwtPlotSpectrogram {
-
-public:
-    void draw(QPainter *painter, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRectF &canvasRect) const override;
-
-};
-
 /**
  * @brief The LinearColorMapRGB class
  * @note <https://www.qtcentre.org/threads/60248-Any-examples-of-different-color-tables-with-Qwt>
  */
-class LinearColorMapRGB: public QwtLinearColorMap {
+class GkQwtColorMap {
 
 public:
-    LinearColorMapRGB(): QwtLinearColorMap(Qt::darkCyan, Qt::red, QwtColorMap::RGB) {
-        setColorInterval(QColor(0, 0, 30), QColor(0.5 * 255, 0, 0));
-        addColorStop(1.00, Qt::cyan);
-        addColorStop(0.75, Qt::blue);
-        addColorStop(0.50, Qt::darkCyan);
-        addColorStop(0.25, Qt::darkBlue);
-    }
+    explicit GkQwtColorMap();
+    ~GkQwtColorMap();
+
+    static inline QwtColorMap *controlPointsToQwtColorMap(const ColorMaps::ControlPoints& ctrlPts);
+
 };
 
-class GkSpectroWaterfall: public QwtPlot {
+class GkSpectroWaterfall: public QWidget {
     Q_OBJECT
 
 public:
@@ -125,45 +103,107 @@ public:
                                 const bool &enableZoomer = false, QWidget *parent = nullptr);
     ~GkSpectroWaterfall() override;
 
-    void insertData(const QVector<double> &values, const int &numCols);
+    void setDataDimensions(double dXMin, double dXMax, const size_t &historyExtent, const size_t &layerPoints);
+    void getDataDimensions(double &dXMin, double &dXMax, size_t &historyExtent, size_t &layerPoints) const;
+
+    bool setMarker(const double x, const double y);
+
+    //
+    // View
+    //
+    void replot(bool forceRepaint = false);
+    void setWaterfallVisibility(const bool bVisible);
+    void setTitle(const QString& qstrNewTitle);
+    void setXLabel(const QString& qstrTitle, const int fontPointSize = 12);
+    void setYLabel(const QString& qstrTitle, const int fontPointSize = 12);
+    void setZLabel(const QString& qstrTitle, const int fontPointSize = 12);
+    void setXTooltipUnit(const QString& xUnit);
+    void setZTooltipUnit(const QString& zUnit);
+    bool setColorMap(const ColorMaps::ControlPoints& colorMap);
+    ColorMaps::ControlPoints getColorMap() const;
+    QwtPlot* getHorizontalCurvePlot() const { return m_plotHorCurve; }
+    QwtPlot* getVerticalCurvePlot() const { return m_plotVertCurve; }
+    QwtPlot* getSpectrogramPlot() const { return m_plotSpectrogram; }
+
+    //
+    // Data
+    //
+    bool addData(const double* const dataPtr, const size_t dataLen, const time_t timestamp);
+    void setRange(double dLower, double dUpper);
+    void getRange(double &rangeMin, double &rangeMax) const;
+    void getDataRange(double &rangeMin, double &rangeMax) const;
+    void clear();
+    time_t getLayerDate(const double y) const;
+
+    double getOffset() const { return (gkWaterfallData) ? gkWaterfallData->getOffset() : 0; }
+
+    QString m_xUnit;
+    QString m_zUnit;
 
 protected:
-    void alignScales();
+    std::unique_ptr<WaterfallData<double>> gkWaterfallData;
+    QwtPlot* const m_plotHorCurve = nullptr;
+    QwtPlot* const m_plotVertCurve = nullptr;
+    QwtPlot* const m_plotSpectrogram = nullptr;
+    QwtPlotCurve* m_horCurve = nullptr;
+    QwtPlotCurve* m_vertCurve = nullptr;
+    QwtPlotPicker* const m_picker = nullptr;
+    QwtPlotPanner* const m_panner = nullptr;
+    QwtPlotSpectrogram* const m_spectrogram = nullptr;
+    QwtPlotZoomer* const m_zoomer = nullptr;
+    QwtPlotMarker* const m_horCurveMarker = nullptr;
+    QwtPlotMarker* const m_vertCurveMarker = nullptr;
+
+    bool m_bColorBarInitialized = false;
+
+    double* m_horCurveXAxisData = nullptr;
+    double* m_horCurveYAxisData = nullptr;
+
+    double* m_vertCurveXAxisData = nullptr;
+    double* m_vertCurveYAxisData = nullptr;
+
+    mutable bool m_inScaleSync = false;
+
+    double m_markerX = 0;
+    double m_markerY = 0;
+
+    void updateLayout();
+
+    void allocateCurvesData();
+    void freeCurvesData();
+    void setupCurves();
+    void updateCurvesData();
+
+    ColorMaps::ControlPoints m_ctrlPts;
+
+    bool m_zoomActive = false;
 
 public slots:
-    void refreshDateTime(const qint64 &latest_time_update, const qint64 &time_since);
+    void setPickerEnabled(const bool enabled);
+
+protected slots:
+    void autoRescale(const QRectF &rect);
+    void selectedPoint(const QPointF &pt);
+    void scaleDivChanged();
 
 private:
-    QPointer<QwtPlotZoomer> zoomer;
     QPointer<QwtPlotCanvas> canvas;
     std::unique_ptr<QwtPlotCurve> curve;
     QPointer<QwtPlotPanner> panner;
     QwtScaleWidget *top_x_axis;         // This makes use of RAII!
     QwtScaleWidget *right_y_axis;       // This makes use of RAII!
 
-    int buf_overall_size;
-    int buf_total_size;
-
-    QList<double> gkRasterBuf;
-    GkSpectroRasterData *gkRasterData;
-    QwtMatrixRasterData *gkMatrixData;
-
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     int gkAlpha;                                                // Controls the alpha value of the waterfall chart.
-    qint64 spectro_begin_time;                                  // The time at which the spectrograph was initialized.
-    qint64 spectro_latest_update;                               // The latest time for when the spectrograph was updated with new data/information.
-
-    //
-    // Date & Timing
-    //
-    QwtDateScaleDraw *date_scale_draw;
-    QwtDateScaleEngine *date_scale_engine;
 
     //
     // Threads
     //
     std::mutex mtx_raster_data;
+
+    void alignAxis(int axisId);
+    void alignAxisForColorBar();
 
     template<class in_it, class out_it>
     out_it copy_every_nth(in_it b, in_it e, out_it r, size_t n) {
@@ -173,5 +213,33 @@ private:
 
         return r;
     }
+};
+
+class GkWaterfallTimeScaleDraw: public QwtScaleDraw {
+    const GkSpectroWaterfall &m_waterfallPlot;
+    mutable QDateTime m_dateTime;
+
+public:
+    explicit GkWaterfallTimeScaleDraw(const GkSpectroWaterfall &waterfall);
+    ~GkWaterfallTimeScaleDraw() override;
+
+    virtual QwtText label(double v) const Q_DECL_OVERRIDE;
+};
+
+class GkZoomer: public QwtPlotZoomer {
+
+    QwtPlotSpectrogram* m_spectro;
+    const GkSpectroWaterfall &m_waterfallPlot; // In order to retrieve the time...
+    mutable QDateTime m_dateTime;
+
+public:
+    explicit GkZoomer(QWidget *canvas, QwtPlotSpectrogram *spectro, const GkSpectroWaterfall &waterfall) : QwtPlotZoomer(canvas),
+                                                                                                           m_spectro(spectro),
+                                                                                                           m_waterfallPlot(waterfall) {
+        Q_ASSERT(m_spectro);
+        setTrackerMode(AlwaysOn);
+    }
+
+    virtual QwtText trackerTextF(const QPointF &pos) const;
 };
 };

@@ -37,12 +37,28 @@
 
 #include "aboutdialog.hpp"
 #include "ui_aboutdialog.h"
+#include <QSize>
+#include <QIcon>
+#include <QPixmap>
+
+using namespace GekkoFyre;
+using namespace Database;
+using namespace Settings;
+using namespace Audio;
+using namespace AmateurRadio;
+using namespace Control;
+using namespace Spectrograph;
+using namespace System;
+using namespace Events;
+using namespace Logging;
 
 AboutDialog::AboutDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::AboutDialog)
 {
     ui->setupUi(this);
+
+    button_counter = 0;
     ui->pushButton_icon->setIcon(QIcon(":/resources/contrib/images/vector/purchased/2020-03/iconfinder_293_Frequency_News_Radio_5711690.svg"));
     ui->pushButton_icon->setIconSize(QSize(96, 96));
 }
@@ -63,5 +79,24 @@ void AboutDialog::on_buttonBox_close_rejected()
  */
 void AboutDialog::on_pushButton_icon_clicked()
 {
+    ++button_counter;
+    switch (button_counter) {
+        case GK_ABOUT_SCREEN_BTN_PIXMAP_RADIO_IDX:
+            ui->pushButton_icon->setIcon(QIcon(":/resources/contrib/images/vector/purchased/2020-03/iconfinder_293_Frequency_News_Radio_5711690.svg"));
+            ui->pushButton_icon->setIconSize(QSize(96, 96));
+            break;
+        case GK_ABOUT_SCREEN_BTN_PIXMAP_ARCTIC_COMM_ONE_IDX:
+            ui->pushButton_icon->setIcon(QIcon(":/resources/contrib/images/raster/gekkofyre-networks/RaptorVonSqueaker/2019_RaptorVonSqueaker_artwork_commission_arctic_phobos_resized.png"));
+            ui->pushButton_icon->setIconSize(QSize(96, 96));
+            break;
+        case GK_ABOUT_SCREEN_BTN_PIXMAP_ARCTIC_COMM_TWO_IDX:
+            ui->pushButton_icon->setIcon(QIcon(":/resources/contrib/images/raster/gekkofyre-networks/Silberry/2020_silberry_artwork_commission_arctic_phobos_resized.png"));
+            ui->pushButton_icon->setIconSize(QSize(96, 96));
+            button_counter = 0;
+            break;
+        default:
+            break;
+    }
+
     return;
 }

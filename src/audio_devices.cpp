@@ -81,7 +81,7 @@ std::mutex enum_audio_dev_mtx;
 AudioDevices::AudioDevices(QPointer<GkLevelDb> gkDb, QPointer<FileIo> filePtr,
                            QPointer<GekkoFyre::GkFrequencies> freqList, QPointer<StringFuncs> stringFuncs,
                            QPointer<GekkoFyre::GkEventLogger> eventLogger, QPointer<GekkoFyre::GkSystem> systemPtr,
-                           QObject *parent)
+                           QObject *parent) : QObject(parent)
 {
     setParent(parent);
 

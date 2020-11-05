@@ -68,7 +68,6 @@
 #include <QWidget>
 #include <QVector>
 #include <QPixmap>
-#include <QBuffer>
 #include <QTimer>
 #include <QDate>
 #include <QFile>
@@ -466,8 +465,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QObject::connect(this, SIGNAL(gkExitApp()), this, SLOT(uponExit()));
 
         try {
-            gkAudioDevices = std::make_shared<GekkoFyre::AudioDevices>(gkDb, fileIo, gkFreqList, gkStringFuncs,
-                                                                       gkEventLogger, gkSystem, this);
+            gkAudioDevices = new GekkoFyre::AudioDevices(gkDb, fileIo, gkFreqList, gkStringFuncs, gkEventLogger, gkSystem, this);
 
             const auto outputDeviceInfos = QAudioDeviceInfo::availableDevices(QAudio::AudioOutput);
             const auto inputDeviceInfos = QAudioDeviceInfo::availableDevices(QAudio::AudioInput);
@@ -546,6 +544,18 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                 // Given audio parameters are supported, as defined by the user previously!
                                 pref_input_device = input_dev.second;
                                 gkAudioInput = new QAudioInput(input_dev.first, user_input_settings, this);
+
+                                QObject::connect(gkAudioInput, SIGNAL(notify()), this, SLOT(processInputAudioFFTBuffer()));
+                                QObject::connect(gkAudioInput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(audioInputStateChange(QAudio::State)));
+
+                                waterfall_input_audio_buf->open(QBuffer::ReadWrite);
+                                gkAudioInput->start(waterfall_input_audio_buf.get());
+
+                                gkAudioInputEventLoop = new QEventLoop(this);
+                                do {
+                                    gkAudioInputEventLoop->exec(QEventLoop::WaitForMoreEvents);
+                                } while (gkAudioOutput->state() == QAudio::ActiveState);
+
                                 gkEventLogger->publishEvent(tr("Now using the input audio device, \"%1\".").arg(pref_input_device.audio_device_info.deviceName()),
                                                             GkSeverity::Info, "", true, true, false, false);
                             } else {
@@ -673,12 +683,25 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         gkFFT = std::make_unique<GkFFT>(gkEventLogger, this);
 
         //
+        // QAudioSystem and the spectrograph / waterfall
+        //
+        waterfall_spectrum_audio_ba = std::make_unique<QAudioBuffer>();
+        waterfall_input_audio_buf = std::make_unique<QBuffer>(this);
+
+        //
         // Initialize the Waterfall / Spectrograph
         //
         gkSpectroWaterfall = new GekkoFyre::GkSpectroWaterfall(gkStringFuncs, gkEventLogger, true, true, this);
         gkSpectroCurve = new GekkoFyre::GkSpectroCurve(gkStringFuncs, gkEventLogger, pref_output_device.chosen_sample_rate, GK_FFT_SIZE, true, true, this);
 
+        gkSpectroWaterfall->setTitle(tr("Frequency Waterfall"));
+        gkSpectroWaterfall->setXLabel(tr("Frequency (kHz)"));
+        gkSpectroWaterfall->setXTooltipUnit(tr("kHz"));
+        gkSpectroWaterfall->setZTooltipUnit(tr("dB"));
+        gkSpectroWaterfall->setYLabel(tr("Time (minutes)"), 10);
+        gkSpectroWaterfall->setZLabel(tr("Signal strength (dB)"));
         ui->stackedWidget_maingui_spectro_graphs->addWidget(gkSpectroWaterfall);
+        
         ui->stackedWidget_maingui_spectro_graphs->addWidget(gkSpectroCurve);
 
         QObject::connect(this, SIGNAL(changeGraphType(const GekkoFyre::Spectrograph::GkGraphType &)),
@@ -703,15 +726,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         info_timer = new QTimer(this);
         connect(info_timer, SIGNAL(timeout()), this, SLOT(infoBar()));
         info_timer->start(1000);
-
-        QObject::connect(this, SIGNAL(refreshSpectrograph(const qint64 &, const qint64 &)),
-                         gkSpectroWaterfall, SLOT(refreshDateTime(const qint64 &, const qint64 &)));
-        QObject::connect(this, SIGNAL(onProcessFrame(const std::vector<float> &)),
-                         gkSpectroCurve, SLOT(processFrame(const std::vector<float> &)));
-
-        if (!pref_input_device.audio_device_info.isNull()) {
-            input_audio_buf = std::make_shared<GekkoFyre::PaAudioBuf<float>>(AUDIO_FRAMES_PER_BUFFER, -1, pref_input_device, gkDb);
-        }
 
         //
         // QPrinter-specific options!
@@ -739,10 +753,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         const float real_vol_val = (static_cast<float>(ui->verticalSlider_vol_control->value()) / static_cast<float>(vol_slider_max_val));
         updateVolumeSliderLabel(real_vol_val);
 
-        if (input_audio_buf != nullptr) {
-            if (!pref_input_device.audio_dev_str.isEmpty() && pref_input_device.sel_channels > 0) {
-                on_pushButton_radio_receive_clicked();
-            }
+        if (!pref_input_device.audio_dev_str.isEmpty() && pref_input_device.sel_channels > 0) {
+            on_pushButton_radio_receive_clicked();
         }
 
         //
@@ -815,8 +827,8 @@ MainWindow::~MainWindow()
         vu_meter_thread.join();
     }
 
-    if (spectro_timing_thread.joinable()) {
-        spectro_timing_thread.join();
+    if (!gkAudioInputEventLoop.isNull()) {
+        delete gkAudioInputEventLoop;
     }
 
     delete db; // Free the pointer for the Google LevelDB library!
@@ -1424,20 +1436,19 @@ void MainWindow::updateVolumeDisplayWidgets()
                 //
                 // Input audio stream is open and active!
                 //
-                auto audio_buf_tmp = std::make_shared<PaAudioBuf<float>>(*input_audio_buf);
-                std::vector<qint64> recv_buf;
-                while (!audio_buf_tmp->empty()) {
-                    recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
-                    recv_buf.push_back(audio_buf_tmp->grab());
+                QVector<double> recv_samples;
+                while (waterfall_input_audio_buf->isOpen() && waterfall_spectrum_audio_ba->isValid()) {
+                    recv_samples.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
+                    recv_samples.push_back(*const_cast<qint16 *>(waterfall_spectrum_audio_ba->constData<qint16>()));
                 }
 
-                if (!recv_buf.empty()) {
+                if (!recv_samples.empty()) {
                     qreal peakLevel = 0;
                     qreal sum = 0.0;
 
-                    qint64 highest = 0;
-                    for (const auto &data: recv_buf) {
-                        highest = std::max(highest, data);
+                    qint16 highest = 0;
+                    for (const auto &data: recv_samples) {
+                        highest = std::max<qint16>(highest, data);
                     }
 
                     const qreal amplitudeToReal = (static_cast<qreal>(highest) / gkStringFuncs->getNumericMax<qint64>());
@@ -1448,8 +1459,8 @@ void MainWindow::updateVolumeDisplayWidgets()
                     qreal rmsLevel = std::sqrt(sum / static_cast<qreal>(numSamples));
 
                     emit refreshVuDisplay(rmsLevel, peakLevel, numSamples);
-                    recv_buf.clear();
-                    recv_buf.shrink_to_fit();
+                    recv_samples.clear();
+                    recv_samples.shrink_to_fit();
                 }
             }
         }
@@ -1583,6 +1594,20 @@ void MainWindow::tuneActiveFreq(const quint64 &freq_tune)
 {
     Q_UNUSED(freq_tune);
     QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+
+    return;
+}
+
+/**
+ * @brief
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::spectroSamplesUpdated()
+{
+    const qint32 n = waterfall_samples_vec.length();
+    if (n > 96000) {
+        waterfall_samples_vec.mid(n - pref_input_device.audio_device_info.preferredFormat().sampleRate(), -1);
+    }
 
     return;
 }
@@ -1913,12 +1938,12 @@ void MainWindow::updateVolume(const float &value)
         //
         // Input device!
         //
-        input_audio_buf->setVolume(value);
+        gkAudioInput->setVolume(value);
     } else {
         //
         // Output device!
-        // TODO: Finish this section for the volume controls!
         //
+        gkAudioOutput->setVolume(value);
     }
 
     return;
@@ -1933,203 +1958,6 @@ void MainWindow::msgOutgoingProcess(const QString &curr_text)
 {
     Q_UNUSED(curr_text);
     QMessageBox::warning(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
-
-    return;
-}
-
-/**
- * @brief MainWindow::updateSpectrograph continuously updates the embedded spectrograph(s) over a regular amount of time with
- * the latest information, in order to keep the data relevant.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void MainWindow::updateSpectrograph()
-{
-    const qint64 start_time = QDateTime::currentMSecsSinceEpoch();
-    gk_spectro_start_time = start_time;
-    gk_spectro_latest_time = start_time;
-
-    #ifdef GK_CUDA_FFT_ENBL
-    //
-    // CUDA support is enabled!
-    //
-    try {
-        if ((inputAudioStream != nullptr) && (pref_input_device.is_dev_active == true)) {
-            while (inputAudioStream->isActive()) {
-                std::vector<float> fftData;
-                fftData.reserve(GK_FFT_SIZE + 1);
-                const qint64 measure_start_time = QDateTime::currentMSecsSinceEpoch();
-                while (fftData.size() < GK_FFT_SIZE) {
-                    //
-                    // Input audio stream is open and active!
-                    //
-                    auto audio_buf_tmp = std::make_shared<PaAudioBuf<float>>(*input_audio_buf);
-                    std::vector<float> recv_buf;
-                    while (audio_buf_tmp->size() > 0) {
-                        recv_buf.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
-                        recv_buf.push_back(audio_buf_tmp->get());
-                    }
-
-                    if (!recv_buf.empty()) {
-
-                        if (fftData.size() == GK_FFT_SIZE) {
-                            processCUDAFFT(recv_buf.data(), fftData.data(), GK_FFT_SIZE);
-
-                            //
-                            // Perform the timing and date calculations!
-                            //
-                            const qint64 measure_end_time = QDateTime::currentMSecsSinceEpoch(); // The end time at the finalization of all calculations
-                            const qint64 total_calc_time = measure_end_time - measure_start_time; // The total time it took to calculate everything
-                            gk_spectro_latest_time = measure_end_time;
-
-                            const qint64 spectro_time_diff = total_calc_time;
-                            if (spectro_time_diff > SPECTRO_Y_AXIS_SIZE) {
-                                // Stop the y-axis from growing more than `SPECTRO_Y_AXIS_SIZE` in size!
-                                gk_spectro_start_time = gk_spectro_latest_time - SPECTRO_Y_AXIS_SIZE;
-                            }
-
-                            //
-                            // In order to get the frequency information for each audio sample, you must:
-                            // 1) Use a real-to-complex FFT of size N to generate frequency domain data.
-                            // 2) Calculate the magnitude of your complex frequency domain data (i.e., `magnitude = std::sqrt(re^2 + im^2)`).
-                            // 3) Optionally convert magnitude to a log scale (dB) (i.e., `magnitude_dB = 20 * std::log10(magnitude)`).
-                            //
-
-                            std::vector<double> magnitude_buf;
-                            magnitude_buf.reserve(fftData.size() + 1);
-                            for (const auto &calc: fftData) {
-                                const double magnitude = std::sqrt(std::pow(calc, 2) + std::pow(calc, 2));
-                                magnitude_buf.push_back(magnitude);
-                            }
-
-                            std::vector<float> freq_list;
-
-                            std::vector<double> magnitude_db_buf;
-                            magnitude_buf.reserve(magnitude_buf.size() + 1);
-                            for (const auto &calc: magnitude_buf) {
-                                const double magnitude_db = 20 * std::log10(calc);
-                                magnitude_db_buf.push_back(magnitude_db);
-                            }
-
-                            QVector<double> fft_spectro_vals;
-                            fft_spectro_vals.reserve(GK_FFT_SIZE + 1);
-                            for (size_t i = 0; i < GK_FFT_SIZE; ++i) {
-                                auto abs_val = std::abs(fftData[i]) / ((double)GK_FFT_SIZE);
-                                fft_spectro_vals.push_back(abs_val);
-                            }
-
-                            gkSpectroWaterfall->insertData(fft_spectro_vals, 1); // This is the data for the spectrograph / waterfall itself!
-
-                            magnitude_buf.clear();
-                            magnitude_db_buf.clear();
-                            fftData.clear();
-                        }
-                    }
-                }
-            }
-        }
-    } catch (const std::exception &e) {
-        print_exception(e);
-    }
-    #else
-    try {
-        while (gkAudioInput->state() == QAudio::ActiveState && pref_input_device.is_dev_active) {
-            std::vector<float> fftData;
-            fftData.reserve(GK_FFT_SIZE + 1);
-            const qint64 measure_start_time = QDateTime::currentMSecsSinceEpoch();
-            auto audio_buf_tmp = std::make_shared<PaAudioBuf<float>>(*input_audio_buf); // Make a secondary copy of the audio buffer for FFT calculation usage...
-
-            // TODO: Fully implement the below asynchronous tasks!
-            std::vector<std::future<std::vector<GkFFTSpectrum>>> async_fft_waterfall;
-            std::vector<std::future<std::vector<float>>> async_fft_curve_plot;
-            std::vector<std::vector<float>> fftPayload;
-            while (fftData.size() < GK_FFT_SIZE) {
-                //
-                // Input audio stream is open and active!
-                //
-                std::vector<float> recv_buf;
-                while (!audio_buf_tmp->empty()) {
-                    recv_buf.reserve(GK_FFT_SIZE + 1);
-                    recv_buf.push_back(audio_buf_tmp->grab());
-                    if (!recv_buf.empty()) {
-                        std::copy(recv_buf.begin(), recv_buf.end(), std::back_inserter(fftData));
-                        recv_buf.clear();
-                        recv_buf.shrink_to_fit();
-                        if (fftData.size() == GK_FFT_SIZE) {
-                            fftPayload = gkStringFuncs->chunker<float>(fftData, AUDIO_FRAMES_PER_BUFFER);
-                            fftData.clear();
-                            fftData.shrink_to_fit();
-
-                            for (const auto &payload: fftPayload) {
-                                async_fft_waterfall.emplace_back(std::async(std::launch::async, &GkFFT::FFTCompute, gkFFT.get(), std::ref(payload), std::ref(pref_input_device), payload.size()));
-                                async_fft_curve_plot.emplace_back(std::async(std::launch::async, &GkFFT::FFTCurvePlot, gkFFT.get(), std::ref(payload), std::ref(pref_input_device), payload.size()));
-                            }
-
-                            //
-                            // Perform the timing and date calculations!
-                            //
-                            const qint64 measure_end_time = QDateTime::currentMSecsSinceEpoch(); // The end time at the finalization of all calculations
-                            const qint64 total_calc_time = measure_end_time - measure_start_time; // The total time it took to calculate everything
-                            gk_spectro_latest_time = measure_end_time;
-
-                            const qint64 spectro_time_diff = total_calc_time;
-                            if (spectro_time_diff > SPECTRO_Y_AXIS_SIZE) {
-                                // Stop the y-axis from growing more than `SPECTRO_Y_AXIS_SIZE` in size!
-                                gk_spectro_start_time = gk_spectro_latest_time - SPECTRO_Y_AXIS_SIZE;
-                            }
-
-                            //
-                            // The input data are sound intensity values taken over time, equally spaced. They are
-                            // said to be, appropriately enough, in the time domain. The output of the FT is said
-                            // to be in the frequency domain because the horizontal axis is frequency. The vertical
-                            // scale remains intensity. Although it isn't obvious from the input data, there is phase
-                            // information in the input as well. Although all of the sound is sinusoidal, there is
-                            // nothing that fixes the phases of the sine waves. This phase information appears in
-                            // the frequency domain as the phases of the individual complex numbers, but often we
-                            // don't care about it (and often we do too!). It just depends upon what you are doing!
-                            //
-                            // https://stackoverflow.com/questions/1679974/converting-an-fft-to-a-spectogram/10643179
-                            //
-
-                            std::vector<GkFFTSpectrum> fftWaterfallData;
-                            for (auto &f: async_fft_waterfall) {
-                                if (f.valid()) {
-                                    f.wait(); // Wait and until the calculations are finished!
-                                    auto data = f.get();
-                                    std::copy(data.begin(), data.end(), std::back_inserter(fftWaterfallData));
-                                }
-                            }
-
-                            std::vector<float> fftCurveData;
-                            for (auto &f: async_fft_curve_plot) {
-                                if (f.valid()) {
-                                    f.wait(); // Wait and until the calculations are finished!
-                                    auto data = f.get();
-                                    std::copy(data.begin(), data.end(), std::back_inserter(fftCurveData));
-                                }
-                            }
-
-                            QVector<double> fft_spectro_vals;
-                            fft_spectro_vals.reserve(fftWaterfallData.size());
-                            for (size_t i = 0; i < fftWaterfallData.size(); ++i) {
-                                fft_spectro_vals.push_back(fftWaterfallData[i].magnitude);
-                            }
-
-                            gkSpectroWaterfall->insertData(fft_spectro_vals, 1); // This is the data for the spectrograph / waterfall itself!
-                            emit refreshSpectrograph(gk_spectro_latest_time, gk_spectro_start_time);
-                            emit onProcessFrame(fftCurveData);
-
-                            fftWaterfallData.clear();
-                        }
-                    }
-                }
-            }
-        }
-    } catch (const std::exception &e) {
-        gkEventLogger->publishEvent(tr("An error has occurred whilst undertaking calculations for the spectrograph / waterfall! Error:\n\n%1").arg(QString::fromStdString(e.what())),
-                                    GkSeverity::Fatal, "", false, true);
-    }
-
-    #endif
 
     return;
 }
@@ -2155,7 +1983,7 @@ void MainWindow::on_verticalSlider_vol_control_valueChanged(int value)
 
     if (rx_vol_control_selected) {
         if (!gkAudioInput.isNull()) {
-            if (pref_input_device.is_dev_active) {
+            if (gkAudioInput->state() == QAudio::ActiveState) {
                 //
                 // Input audio stream is open and active!
                 //
@@ -2163,7 +1991,7 @@ void MainWindow::on_verticalSlider_vol_control_valueChanged(int value)
             }
         }
     } else {
-        if (pref_output_device.is_dev_active) {
+        if (gkAudioInput->state() == QAudio::ActiveState) {
             //
             // Output audio buffer
             //
@@ -2224,11 +2052,6 @@ void MainWindow::on_pushButton_radio_receive_clicked()
                             gkStringFuncs->changePushButtonColor(ui->pushButton_radio_receive, false);
                             btn_radio_rx = true;
                             emit startRecording();
-
-                            #ifndef GK_ENBL_VALGRIND_SUPPORT
-                            spectro_timing_thread = std::thread(&MainWindow::updateSpectrograph, this);
-                            spectro_timing_thread.detach();
-                            #endif
 
                             vu_meter_thread = std::thread(&MainWindow::updateVolumeDisplayWidgets, this);
                             vu_meter_thread.detach();
@@ -2379,6 +2202,100 @@ void MainWindow::procRigPort(const QString &conn_port, const GekkoFyre::AmateurR
 }
 
 /**
+ * @brief MainWindow::audioInputStateChange
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param state
+ */
+void MainWindow::audioInputStateChange(QAudio::State state)
+{
+    try {
+        switch (state) {
+            case QAudio::IdleState:
+                gkAudioInput->stop();
+
+                break;
+            case QAudio::StoppedState:
+                if (gkAudioInput->error() != QAudio::NoError) { // TODO: Improve the error reporting functionality of this statement!
+                    throw std::runtime_error(tr("Issue with 'QAudio::StoppedState' during media playback!").toStdString());
+                }
+
+                break;
+            default:
+                break;
+        }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(tr("An issue has been encountered during audio playback. Error:\n\n%1").arg(QString::fromStdString(e.what())),
+                                    GkSeverity::Error, "", true, true, false, false);
+    }
+
+    return;
+}
+
+/**
+ * @brief MainWindow::processInputAudioFFTBuffer
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param input_buf The incoming, buffered data from the QAudioInput pointer.
+ * @note Oleksandr Tymoshenko <https://github.com/gonzoua/qt-demo-player/blob/master/playerwidget.cpp>,
+ * thibsc Joel Svensson <https://stackoverflow.com/questions/50277132/qt-audio-file-to-wave-like-audacity>,
+ * Joel Svensson <http://svenssonjoel.github.io/pages/qt-audio-fft/index.html>.
+ */
+void MainWindow::processInputAudioFFTBuffer()
+{
+    try {
+        while (gkAudioInput->state() == QAudio::ActiveState) {
+            auto peak_val = gkStringFuncs->getPeakValue(pref_input_device.audio_device_info.preferredFormat());
+
+            std::vector<qint16> recv_buf;
+            QVector<double> recv_samples;
+            recv_buf.push_back(*const_cast<qint16 *>(waterfall_spectrum_audio_ba->constData<qint16>()));
+            for (const auto &buf_data: recv_buf) {
+                double val = buf_data / peak_val;
+                recv_samples.append(val);
+            }
+
+            auto fft_data = gkFFT->FFTCompute(recv_samples.toStdVector(), pref_input_device, recv_samples.size());
+            gkSpectroWaterfall->addData(recv_samples.data(), recv_samples.size(), std::time(nullptr));
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(tr("Issue encountered whilst performing FFT calculations! Error:\n\n%1")
+        .arg(QString::fromStdString(e.what())).toStdString()));
+    }
+
+    return;
+}
+
+/**
+ * @brief MainWindow::processAudioIn
+ * @author <http://svenssonjoel.github.io/pages/qt-audio-fft/index.html>,
+ * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::processAudioIn()
+{
+    waterfall_input_audio_buf->seek(0);
+    QByteArray ba = waterfall_input_audio_buf->readAll();
+
+    qint32 num_samples = ba.length() / 2;
+    qint32 b_pos = 0;
+    for (qint32 i = 0; i < num_samples; ++i) {
+        int16_t s;
+        s = ba.at(++b_pos);
+        s |= ba.at(++b_pos) << 8;
+
+        if (s != 0) {
+            waterfall_samples_vec.append((double)s / 32768.0);
+        } else {
+            waterfall_samples_vec.append(0);
+        }
+    };
+
+    waterfall_input_audio_buf->buffer().clear();
+    waterfall_input_audio_buf->seek(0);
+
+    spectroSamplesUpdated();
+    return;
+}
+
+/**
  * @brief MainWindow::stopRecordingInput The idea of this function is to stop recording of
  * all input audio devices related to the spectrograph / waterfall upon activation,
  * globally, across all threads.
@@ -2390,12 +2307,10 @@ void MainWindow::procRigPort(const QString &conn_port, const GekkoFyre::AmateurR
 void MainWindow::stopRecordingInput()
 {
     try {
-        if (!gkAudioInput.isNull() && pref_input_device.is_dev_active) {
+        if (!gkAudioInput.isNull() && gkAudioInput->state() == QAudio::ActiveState) {
             if (gkAudioInput->state() == QAudio::ActiveState) {
                 // TODO: Implement a close-stream state!
-                // gkAudioSysInput->closeStream();
-
-                pref_input_device.is_dev_active = false; // State that this recording device is now non-active!
+                gkAudioInput->stop();
             }
         }
     } catch (const std::exception &e) {
@@ -2415,7 +2330,7 @@ void MainWindow::stopRecordingInput()
 void MainWindow::startRecordingInput()
 {
     try {
-        if (!pref_input_device.is_dev_active) {
+        if (gkAudioInput->state() == QAudio::StoppedState) {
             emit stopRecording();
 
             if (avail_input_audio_devs.empty()) {
@@ -2443,11 +2358,6 @@ void MainWindow::restartInputAudioInterface(const GkDevice &input_device)
         emit stopRecording();
         pref_input_device = {}; // Clear the structure ready for re-use!
         pref_input_device = input_device;
-
-        input_audio_buf.reset(new GekkoFyre::PaAudioBuf<float>(AUDIO_FRAMES_PER_BUFFER, -1, pref_input_device, gkDb));
-
-        // TODO: Insert new Stream recreation here for RtAudio, regarding the Input Audio!
-        pref_input_device.is_dev_active = true; // State that this recording device is now active!
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(tr("Problem encountered with restarting input audio device. Error:\n\n%1").arg(QString::fromStdString(e.what())),
                                     GkSeverity::Error, "", false, true, false, true);
@@ -2954,7 +2864,7 @@ void MainWindow::on_pushButton_sstv_tx_send_image_clicked()
         //
         #ifdef CODEC2_LIBS_ENBLD
         QPointer<GkCodec2> gkCodec2 = new GkCodec2(Codec2Mode::freeDvMode2020, Codec2ModeCustom::GekkoFyreV1, 0, 0, gkDb,
-                                                   gkEventLogger, gkStringFuncs, nullptr, this);
+                                                   gkEventLogger, gkStringFuncs, this);
         gkCodec2->transmitData(byte_array, true);
         #endif
     } else {

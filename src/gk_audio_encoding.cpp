@@ -93,7 +93,6 @@ std::mutex record_ogg_vorbis_mtx;
 std::mutex record_audio_file_mtx;
 
 GkAudioEncoding::GkAudioEncoding(QPointer<FileIo> fileIo,
-                                 std::shared_ptr<PaAudioBuf<float>> input_audio_buf,
                                  QPointer<GkLevelDb> database,
                                  QPointer<GkSpectroWaterfall> spectroGui,
                                  QPointer<StringFuncs> stringFuncs,
@@ -105,7 +104,6 @@ GkAudioEncoding::GkAudioEncoding(QPointer<FileIo> fileIo,
     qRegisterMetaType<GekkoFyre::GkAudioFramework::CodecSupport>("GekkoFyre::GkAudioFramework::CodecSupport");
 
     gkFileIo = std::move(fileIo);
-    gkAudioBuf = std::move(input_audio_buf);
     gkStringFuncs = std::move(stringFuncs);
     gkDb = std::move(database);
     gkInputDev = std::move(input_device);

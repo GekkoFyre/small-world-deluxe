@@ -169,6 +169,13 @@ namespace GekkoFyre {
 #define RS232_DEFAULT_TIMEOUT (5000)                    // The default timeout value for any RS232 connections, mostly made for testing purposes.
 
 //
+// About screen
+//
+#define GK_ABOUT_SCREEN_BTN_PIXMAP_RADIO_IDX (1)
+#define GK_ABOUT_SCREEN_BTN_PIXMAP_ARCTIC_COMM_ONE_IDX (2)
+#define GK_ABOUT_SCREEN_BTN_PIXMAP_ARCTIC_COMM_TWO_IDX (3)
+
+//
 // QTableView Models
 //
 #define GK_FREQ_TABLEVIEW_MODEL_FREQUENCY_IDX (0)       // The desired ordering for the 'Frequency' heading within the QTableView model for class, `GkFreqTableModel`.
@@ -504,7 +511,6 @@ namespace Database {
                 bool user_config_succ;                                              // Whether this audio device information has been gathered as the result of user activity or default action by Small World Deluxe.
                 bool default_output_dev;                                            // Is this the default device for the system?
                 bool default_input_dev;                                             // Is this the default device for the system?
-                bool is_dev_active;                                                 // Is the audio device in question currently active and streaming data?
                 GkAudioSource audio_src;                                            // Is the audio device in question an input? Output if FALSE, UNSURE if either.
                 QAudioFormat user_settings;                                         // The user defined settings for this particular audio device.
                 quint32 chosen_sample_rate;                                         // The chosen sample rate, as configured by the end-user.
