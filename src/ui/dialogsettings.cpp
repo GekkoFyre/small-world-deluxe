@@ -81,7 +81,7 @@ std::mutex index_loop_mtx;
  */
 DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
                                QPointer<FileIo> filePtr,
-                               std::shared_ptr<AudioDevices> audioDevices,
+                               QPointer<AudioDevices> audioDevices,
                                const QPointer<QAudioInput> &audioSysInput,
                                const QPointer<QAudioOutput> &audioSysOutput,
                                const std::list<std::pair<QAudioDeviceInfo, GkDevice>> &gkAvailInputDevs,

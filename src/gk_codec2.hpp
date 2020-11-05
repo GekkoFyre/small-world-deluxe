@@ -43,7 +43,6 @@
 
 #include "src/defines.hpp"
 #include "src/gk_logger.hpp"
-#include "src/pa_audio_buf.hpp"
 #include "src/gk_string_funcs.hpp"
 #include <codec2/codec2.h>
 #include <iterator>
@@ -65,7 +64,7 @@ public:
     explicit GkCodec2(const Database::Settings::Codec2Mode &freedv_mode, const Database::Settings::Codec2ModeCustom &custom_mode,
                       const int &freedv_clip, const int &freedv_txbpf, QPointer<GekkoFyre::GkLevelDb> levelDb,
                       QPointer<GekkoFyre::GkEventLogger> eventLogger, QPointer<GekkoFyre::StringFuncs> stringFuncs,
-                      std::shared_ptr<GekkoFyre::PaAudioBuf<float>> output_audio_buf, QObject *parent = nullptr);
+                      QObject *parent = nullptr);
     ~GkCodec2() override;
 
     int transmitData(const QByteArray &byte_array, const bool &play_output_sound = false, const bool &squelch_enable = false,
@@ -74,7 +73,6 @@ public:
 private:
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
-    std::shared_ptr<GekkoFyre::PaAudioBuf<float>> outputAudioBuf;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
 
     Database::Settings::Codec2Mode gkFreeDvMode;

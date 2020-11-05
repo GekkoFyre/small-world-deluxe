@@ -37,7 +37,10 @@
 
 #pragma once
 
+#include "src/defines.hpp"
+#include <QObject>
 #include <QDialog>
+#include <QString>
 
 namespace Ui {
 class AboutDialog;
@@ -58,5 +61,7 @@ private slots:
 
 private:
     Ui::AboutDialog *ui;
+
+    qint32 button_counter;
 };
 

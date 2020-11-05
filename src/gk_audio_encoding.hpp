@@ -44,7 +44,6 @@
 #include "src/defines.hpp"
 #include "src/file_io.hpp"
 #include "src/gk_waterfall_gui.hpp"
-#include "src/pa_audio_buf.hpp"
 #include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
 #include <boost/filesystem.hpp>
@@ -101,7 +100,6 @@ private:
 
 public:
     explicit GkAudioEncoding(QPointer<GekkoFyre::FileIo> fileIo,
-                             std::shared_ptr<PaAudioBuf<float>> input_audio_buf,
                              QPointer<GekkoFyre::GkLevelDb> database,
                              QPointer<GkSpectroWaterfall> spectroGui,
                              QPointer<GekkoFyre::StringFuncs> stringFuncs,
@@ -144,7 +142,6 @@ private slots:
 private:
     QPointer<GekkoFyre::FileIo> gkFileIo;
     QPointer<GekkoFyre::GkSpectroWaterfall> gkSpectroGui;
-    std::shared_ptr<GekkoFyre::PaAudioBuf<float>> gkAudioBuf;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GkLevelDb> gkDb;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;

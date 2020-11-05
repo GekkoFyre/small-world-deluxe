@@ -205,13 +205,12 @@ void GkPaStreamHandler::playMediaFile(const boost::filesystem::path &media_path,
                         return;
                 }
 
-                loop = new QEventLoop(this);
+                procMediaEventLoop = new QEventLoop(this);
                 do {
-                    loop->exec(QEventLoop::WaitForMoreEvents);
+                    procMediaEventLoop->exec(QEventLoop::WaitForMoreEvents);
                 } while (gkAudioOutput->state() == QAudio::ActiveState);
-                delete loop;
+                delete procMediaEventLoop;
 
-                QObject::connect(gkAudioOutput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(playbackHandleStateChanged(QAudio::State)));
                 emit stopMedia(media_path);
                 break;
             }
@@ -257,11 +256,11 @@ void GkPaStreamHandler::recordMediaFile(const boost::filesystem::path &media_pat
             return;
     }
 
-    loop = new QEventLoop(this);
+    procMediaEventLoop = new QEventLoop(this);
     do {
-        loop->exec(QEventLoop::WaitForMoreEvents);
+        procMediaEventLoop->exec(QEventLoop::WaitForMoreEvents);
     } while (gkAudioInput->state() == QAudio::ActiveState);
-    delete loop;
+    delete procMediaEventLoop;
 
     return;
 }
