@@ -46,7 +46,6 @@
 #include <QByteArray>
 #include <QIODevice>
 #include <QBuffer>
-#include <QDataStream>
 
 using namespace GekkoFyre;
 using namespace Database;
