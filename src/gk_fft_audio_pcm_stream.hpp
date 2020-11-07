@@ -54,11 +54,9 @@
 #include <QAudioFormat>
 #include <QAudioDecoder>
 
-enum State { Recording, Stopped };
-
 namespace GekkoFyre {
 
-class GkFFTAudioPcmStream : public QIODevice, public QPointer {
+class GkFFTAudioPcmStream : public QIODevice {
     Q_OBJECT
 
 public:
@@ -90,7 +88,7 @@ private:
     QPointer<QEventLoop> gkAudioInputEventLoop;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_audio_device;
 
-    State m_state;
+    Spectrograph::GkFftState m_state;
 
     bool isInited;
     bool isDecodingFinished;

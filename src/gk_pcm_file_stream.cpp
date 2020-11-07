@@ -57,7 +57,7 @@ using namespace Logging;
  * @brief GkPcmFileStream::GkPcmFileStream
  * @note Jarikus <https://stackoverflow.com/questions/41197576/how-to-play-mp3-file-using-qaudiooutput-and-qaudiodecoder>.
  */
-GkPcmFileStream::GkPcmFileStream(QObject *parent) : m_input(&m_data), m_output(&m_data), m_state(State::Stopped), QIODevice(parent)
+GkPcmFileStream::GkPcmFileStream(QObject *parent) : m_input(&m_data), m_output(&m_data), m_state(GkAudioFramework::GkAudioState::Stopped), QIODevice(parent)
 {
     setParent(parent);
     setOpenMode(QIODevice::ReadOnly);
@@ -99,7 +99,7 @@ qint64 GkPcmFileStream::readData(char *data, qint64 maxlen)
 {
     std::memset(data, 0, maxlen);
 
-    if (m_state == State::Playing) {
+    if (m_state == GkAudioFramework::GkAudioState::Playing) {
         m_output.read(data, maxlen);
 
         // There is we send readed audio data via signal, for ability get audio signal for the who listen this signal.
@@ -169,7 +169,7 @@ void GkPcmFileStream::play(const QString &filePath)
     m_decoder->setSourceDevice(&m_file);
     m_decoder->start();
 
-    m_state = State::Playing;
+    m_state = GkAudioFramework::GkAudioState::Playing;
 
     return;
 }
@@ -181,7 +181,7 @@ void GkPcmFileStream::stop()
 {
     clear();
     m_file.close();
-    m_state = State::Stopped;
+    m_state = GkAudioFramework::GkAudioState::Stopped;
 
     return;
 }

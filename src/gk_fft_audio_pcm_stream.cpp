@@ -59,7 +59,7 @@ using namespace Logging;
  * @note Jarikus <https://stackoverflow.com/questions/41197576/how-to-play-mp3-file-using-qaudiooutput-and-qaudiodecoder>.
  */
 GkFFTAudioPcmStream::GkFFTAudioPcmStream(QPointer<QAudioInput> audioInput, const GkDevice &audio_device_details,
-                                         QObject *parent) : m_input(&m_data), m_output(&m_data), m_state(State::Stopped),
+                                         QObject *parent) : m_input(&m_data), m_output(&m_data), m_state(Spectrograph::GkFftState::Stopped),
                                          QIODevice(parent)
 {
     setParent(parent);
@@ -108,7 +108,7 @@ qint64 GkFFTAudioPcmStream::readData(char *data, qint64 maxlen)
 {
     std::memset(data, 0, maxlen);
 
-    if (m_state == State::Recording) {
+    if (m_state == Spectrograph::GkFftState::Recording) {
         m_output.read(data, maxlen);
 
         // There is we send readed audio data via signal, for ability get audio signal for the who listen this signal.
@@ -153,7 +153,7 @@ void GkFFTAudioPcmStream::play(const QString &filePath)
     clear();
 
     gkAudioInput->start(&m_input);
-    m_state = State::Recording;
+    m_state = Spectrograph::GkFftState::Recording;
     gkAudioInputEventLoop = new QEventLoop(this);
 
     do {
@@ -171,7 +171,7 @@ void GkFFTAudioPcmStream::play(const QString &filePath)
 void GkFFTAudioPcmStream::stop()
 {
     clear();
-    m_state = State::Stopped;
+    m_state = Spectrograph::GkFftState::Stopped;
 
     return;
 }

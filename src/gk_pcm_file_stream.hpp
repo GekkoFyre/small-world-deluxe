@@ -52,8 +52,6 @@
 #include <QAudioFormat>
 #include <QAudioDecoder>
 
-enum State { Playing, Stopped };
-
 namespace GekkoFyre {
 
 class GkPcmFileStream : public QIODevice {
@@ -87,7 +85,7 @@ private:
     QPointer<QAudioDecoder> m_decoder;
     QAudioFormat m_format;
 
-    State m_state;
+    GkAudioFramework::GkAudioState m_state;
 
     bool isInited;
     bool isDecodingFinished;
