@@ -405,6 +405,7 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/sentry-native/inclu
 #
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/kissfft")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/kissfft")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/kissfft/tools")
 
 #
 # AudioFile by Adam Stark

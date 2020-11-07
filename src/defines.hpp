@@ -671,6 +671,12 @@ namespace AmateurRadio {
 }
 
 namespace Spectrograph {
+    enum GkFftEventType {
+        record,
+        stop,
+        loopback
+    };
+
     enum GkGraphType {
         GkWaterfall,
         GkSinewave

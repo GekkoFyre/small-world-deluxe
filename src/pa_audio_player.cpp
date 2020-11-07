@@ -107,7 +107,7 @@ void GkPaAudioPlayer::play(const GkAudioFramework::CodecSupport &supported_codec
 }
 
 /**
- * @brief  GkPaAudioPlayer::loop
+ * @brief GkPaAudioPlayer::loop
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param audio_file
  */

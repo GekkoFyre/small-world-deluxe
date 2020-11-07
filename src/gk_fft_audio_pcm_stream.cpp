@@ -81,10 +81,15 @@ GkFFTAudioPcmStream::GkFFTAudioPcmStream(QPointer<QAudioInput> audioInput, const
 }
 
 GkFFTAudioPcmStream::~GkFFTAudioPcmStream()
-{}
+{
+    if (!gkAudioInputEventLoop.isNull()) {
+        delete gkAudioInputEventLoop;
+    }
+}
 
 /**
- * @brief
+ * @brief GkFFTAudioPcmStream::atEnd
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return
  */
 bool GkFFTAudioPcmStream::atEnd() const
@@ -93,7 +98,8 @@ bool GkFFTAudioPcmStream::atEnd() const
 }
 
 /**
- * @brief
+ * @brief GkFFTAudioPcmStream::readData
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param data
  * @param maxSize
  * @return
@@ -102,7 +108,7 @@ qint64 GkFFTAudioPcmStream::readData(char *data, qint64 maxlen)
 {
     std::memset(data, 0, maxlen);
 
-    if (m_state == State::Playing) {
+    if (m_state == State::Recording) {
         m_output.read(data, maxlen);
 
         // There is we send readed audio data via signal, for ability get audio signal for the who listen this signal.
@@ -122,7 +128,8 @@ qint64 GkFFTAudioPcmStream::readData(char *data, qint64 maxlen)
 }
 
 /**
- * @brief
+ * @brief GkFFTAudioPcmStream::writeData
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param data
  * @param maxSize
  * @return
@@ -136,7 +143,8 @@ qint64 GkFFTAudioPcmStream::writeData(const char *data, qint64 maxSize)
 }
 
 /**
- * @brief
+ * @brief GkFFTAudioPcmStream::play
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param filePath
  */
 void GkFFTAudioPcmStream::play(const QString &filePath)
@@ -145,13 +153,20 @@ void GkFFTAudioPcmStream::play(const QString &filePath)
     clear();
 
     gkAudioInput->start(&m_input);
-    m_state = State::Playing;
+    m_state = State::Recording;
+    gkAudioInputEventLoop = new QEventLoop(this);
 
+    do {
+        gkAudioInputEventLoop->exec(QEventLoop::WaitForMoreEvents);
+    } while (gkAudioInput->state() == QAudio::ActiveState);
+
+    delete gkAudioInputEventLoop;
     return;
 }
 
 /**
- * @brief
+ * @brief GkFFTAudioPcmStream::stop
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void GkFFTAudioPcmStream::stop()
 {
@@ -162,7 +177,8 @@ void GkFFTAudioPcmStream::stop()
 }
 
 /**
- * @brief
+ * @brief GkFFTAudioPcmStream::clear
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void GkFFTAudioPcmStream::clear()
 {
@@ -174,7 +190,8 @@ void GkFFTAudioPcmStream::clear()
 }
 
 /**
- * @brief
+ * @brief GkFFTAudioPcmStream::bufferReady
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void GkFFTAudioPcmStream::bufferReady()
 {
@@ -182,7 +199,8 @@ void GkFFTAudioPcmStream::bufferReady()
 }
 
 /**
- * @brief
+ * @brief GkFFTAudioPcmStream::finished
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void GkFFTAudioPcmStream::finished()
 {

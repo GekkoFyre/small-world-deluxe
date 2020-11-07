@@ -82,17 +82,17 @@ public:
     void run() Q_DECL_OVERRIDE;
 
 private slots:
-    void playMediaFile(const boost::filesystem::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
-    void recordMediaFile(const boost::filesystem::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
-    void stopMediaFile(const boost::filesystem::path &media_path);
+    void playMediaFile(const fs::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
+    void recordMediaFile(const fs::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
+    void stopMediaFile(const fs::path &media_path);
     void startMediaLoopback();
     void playbackHandleStateChanged(QAudio::State changed_state);
     void recordingHandleStateChanged(QAudio::State changed_state);
 
 signals:
-    void playMedia(const boost::filesystem::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
-    void recordMedia(const boost::filesystem::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
-    void stopMedia(const boost::filesystem::path &media_path);
+    void playMedia(const fs::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
+    void recordMedia(const fs::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
+    void stopMedia(const fs::path &media_path);
     void startLoopback();
     void changePlaybackState(QAudio::State changed_state);
     void changeRecorderState(QAudio::State changed_state);
@@ -115,7 +115,7 @@ private:
     QPointer<QAudioOutput> gkAudioOutput;
     QPointer<QBuffer> record_input_buf;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
-    std::map<boost::filesystem::path, AudioFile<double>> gkSounds;
+    std::map<fs::path, AudioFile<double>> gkSounds;
 
 };
 };

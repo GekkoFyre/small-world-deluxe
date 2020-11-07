@@ -49,15 +49,16 @@
 #include <QPointer>
 #include <QIODevice>
 #include <QByteArray>
+#include <QEventLoop>
 #include <QAudioInput>
 #include <QAudioFormat>
 #include <QAudioDecoder>
 
-enum State { Playing, Stopped };
+enum State { Recording, Stopped };
 
 namespace GekkoFyre {
 
-class GkFFTAudioPcmStream : public QIODevice {
+class GkFFTAudioPcmStream : public QIODevice, public QPointer {
     Q_OBJECT
 
 public:
@@ -86,6 +87,7 @@ private:
     QBuffer m_output;
     QByteArray m_data;
     QPointer<QAudioInput> gkAudioInput;
+    QPointer<QEventLoop> gkAudioInputEventLoop;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_audio_device;
 
     State m_state;

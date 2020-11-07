@@ -43,6 +43,9 @@
 
 #include "src/defines.hpp"
 #include "src/gk_logger.hpp"
+#include "src/gk_fft_audio_pcm_stream.hpp"
+#include <boost/filesystem.hpp>
+#include <boost/exception/all.hpp>
 #include <string>
 #include <vector>
 #include <QString>
@@ -50,7 +53,11 @@
 #include <QObject>
 #include <QPointer>
 #include <QAudioInput>
+#include <QAudioFormat>
 #include <QAudioOutput>
+
+namespace fs = boost::filesystem;
+namespace sys = boost::system;
 
 namespace GekkoFyre {
 class GkFFTAudio : public QThread {
@@ -58,13 +65,26 @@ class GkFFTAudio : public QThread {
 
 public:
     explicit GkFFTAudio(QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> audioOutput,
+                        const GekkoFyre::Database::Settings::Audio::GkDevice &input_audio_device_details,
+                        const GekkoFyre::Database::Settings::Audio::GkDevice &output_audio_device_details,
                         QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkFFTAudio() override;
 
     void run() Q_DECL_OVERRIDE;
 
+    void processEvent(Spectrograph::GkFftEventType audioEventType, const fs::path &mediaFilePath = fs::path(),
+                      const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec = GekkoFyre::GkAudioFramework::CodecSupport::Unknown);
+
 private slots:
+    void recordAudioStream(const fs::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
+    void stopRecordStream(const fs::path &media_path);
+
     void audioInHandleStateChanged(QAudio::State changed_state);
+    void audioOutHandleStateChanged(QAudio::State changed_state);
+
+signals:
+    void recordStream(const fs::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
+    void stopRecording(const fs::path &media_path);
 
 private:
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
@@ -74,6 +94,11 @@ private:
     //
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
+    QPointer<GkFFTAudioPcmStream> gkFftPcmStream;
+    GekkoFyre::Database::Settings::Audio::GkDevice pref_input_audio_device;
+    GekkoFyre::Database::Settings::Audio::GkDevice pref_output_audio_device;
+
+    std::map<fs::path, GkFFTAudioPcmStream> gkProcMedia;
 
 };
 };
