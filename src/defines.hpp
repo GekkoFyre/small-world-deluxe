@@ -671,6 +671,14 @@ namespace AmateurRadio {
 }
 
 namespace Spectrograph {
+    enum GkFftState { Recording, Stopped };
+
+    enum GkFftEventType {
+        record,
+        stop,
+        loopback
+    };
+
     enum GkGraphType {
         GkWaterfall,
         GkSinewave
@@ -712,6 +720,8 @@ namespace GkAudioFramework {
         quint32 cur;                                                            // Current index of Wave Table (in Frame)
         float *wfTable;                                                         // Wave Table (interleaved)
     };
+
+    enum GkAudioState { Playing, Stopped };
 
     enum CodecSupport {
         PCM,

@@ -44,6 +44,7 @@
 #include "src/dek_db.hpp"
 #include "src/radiolibs.hpp"
 #include "src/gk_waterfall_gui.hpp"
+#include "src/gk_fft_audio.hpp"
 #include "src/gk_curve_gui.hpp"
 #include "src/gk_circ_buffer.hpp"
 #include "src/gk_frequency_list.hpp"
@@ -91,8 +92,6 @@
 #include <QAudioInput>
 #include <QAudioOutput>
 #include <QAudioFormat>
-#include <QAudioBuffer>
-#include <QSharedPointer>
 #include <QAudioDeviceInfo>
 #include <QCommandLineParser>
 
@@ -339,11 +338,11 @@ private:
     //
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
-    QPointer<QEventLoop> gkAudioInputEventLoop;
     std::list<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_input_audio_devs;
     std::list<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_output_audio_devs;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
+    QPointer<GekkoFyre::GkFFTAudio> gkFftAudio;
 
     //
     // Audio sub-system
