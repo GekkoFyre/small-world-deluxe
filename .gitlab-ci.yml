@@ -1,154 +1,90 @@
-#
-#  ______  ______  ___   ___  ______  ______  ______  ______       
-# /_____/\/_____/\/___/\/__/\/_____/\/_____/\/_____/\/_____/\      
-# \:::_ \ \::::_\/\::.\ \\ \ \:::_ \ \:::_ \ \::::_\/\:::_ \ \     
-#  \:\ \ \ \:\/___/\:: \/_) \ \:\ \ \ \:\ \ \ \:\/___/\:(_) ) )_   
-#   \:\ \ \ \::___\/\:. __  ( (\:\ \ \ \:\ \ \ \::___\/\: __ `\ \  
-#    \:\/.:| \:\____/\: \ )  \ \\:\_\ \ \:\/.:| \:\____/\ \ `\ \ \ 
-#     \____/_/\_____\/\__\/\__\/ \_____\/\____/_/\_____\/\_\/ \_\/ 
-#                                                                 
-#
-#   If you have downloaded the source code for "Small World Deluxe" and are reading this,
-#   then thank you from the bottom of our hearts for making use of our hard work, sweat
-#   and tears in whatever you are implementing this into!
-#
-#   Copyright (C) 2020. GekkoFyre.
-#
-#   Small World Deluxe is free software: you can redistribute it and/or modify
-#   it under the terms of the GNU General Public License as published by
-#   the Free Software Foundation, either version 3 of the License, or
-#   (at your option) any later version.
-#
-#   Small World is distributed in the hope that it will be useful,
-#   but WITHOUT ANY WARRANTY; without even the implied warranty of
-#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#   GNU General Public License for more details.
-#
-#   You should have received a copy of the GNU General Public License
-#   along with Small World Deluxe.  If not, see <http://www.gnu.org/licenses/>.
-#
-#
-#   The latest source code updates can be obtained from [ 1 ] below at your
-#   discretion. A web-browser or the 'git' application may be required.
-#
-#   [ 1 ] - https://code.gekkofyre.io/amateur-radio/small-world-deluxe
-#
-
-#
-# https://gitlab.com/gitlab-org/gitlab-foss/issues/27436
-# https://docs.gitlab.com/ee/user/packages/container_registry/
-# https://hub.docker.com/r/burningdaylight/docker-mingw-qt5
-# https://www.archlinux.org/packages/
-#
-
-### --------------------------------------------------------------------------------------------------- ###
-
+# You can override the included template(s) by including variable overrides
+# See https://docs.gitlab.com/ee/user/application_security/sast/#customizing-the-sast-settings
+# Note that environment variables can be set in several places
+# See https://docs.gitlab.com/ee/ci/variables/#priority-of-environment-variables
 image: gekkofyre/swd-arch-linux-latest
-
 stages:
-    - sworld_debug_archlinux_x86_64
-    - sworld_sentry_archlinux_x86_64
-    - test
-
+- sworld_debug_archlinux_x86_64
+- sworld_sentry_archlinux_x86_64
+- test
 include:
-    - template: SAST.gitlab-ci.yml
-    - template: Secret-Detection.gitlab-ci.yml
-
+- template: SAST.gitlab-ci.yml
+- template: Secret-Detection.gitlab-ci.yml
+- template: Security/SAST.gitlab-ci.yml
 variables:
-    SAST_DISABLE_DIND: "true"
-    GIT_SUBMODULE_STRATEGY: recursive
-
-### --------------------------------------------------------------------------------------------------- ###
-
-#
-# https://code.gekkofyre.io/help/user/application_security/sast/index
-#
+  SAST_DISABLE_DIND: 'true'
+  GIT_SUBMODULE_STRATEGY: recursive
 sworld_debug_archlinux_x86_64:
-    stage: sworld_debug_archlinux_x86_64
-    image: gekkofyre/swd-arch-linux-latest
-    before_script:
-        - pacman -Sy --noconfirm
-        - pacman -Syyu --noconfirm
-        - export CC=/usr/bin/clang
-        - export CXX=/usr/bin/clang++
-        - strip --remove-section=.note.ABI-tag /usr/lib64/libQt5Core.so.5
-        - git clone https://github.com/drowe67/codec2.git
-        - cd codec2 && mkdir build && cd build
-        - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=NO ..
-        - make -j 8 && make install
-        - cd ./../..
-        - cd src/contrib/QtUsb && mkdir build && cd build
-        - qmake -makefile .. && make -j 8 && make install
-        - cd ./../../../..
-    script:
-        - export CC=/usr/bin/clang
-        - export CXX=/usr/bin/clang++
-        - mkdir -p src_build && cd src_build
-        - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DGFYRE_BUILD_STATIC=ON -DBUILD_CODEC2_SUPPORT=OFF -DBUILD_OPUS_SUPPORT=OFF -DENBL_VALGRIND_SUPPORT=ON ..
-        - make -j 8
-        - cd ./..
-    after_script:
-        - echo "Finished execution of Preparatory Build and secondary, lesser stage!"
-    artifacts:
-        expire_in: 2 weeks
-        paths:
-            - src_build/
-    when: always
-
-### --------------------------------------------------------------------------------------------------- ###
-
+  stage: sworld_debug_archlinux_x86_64
+  image: gekkofyre/swd-arch-linux-latest
+  before_script:
+  - pacman -Sy --noconfirm
+  - pacman -Syyu --noconfirm
+  - export CC=/usr/bin/clang
+  - export CXX=/usr/bin/clang++
+  - strip --remove-section=.note.ABI-tag /usr/lib64/libQt5Core.so.5
+  - git clone https://github.com/drowe67/codec2.git
+  - cd codec2 && mkdir build && cd build
+  - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=NO ..
+  - make -j 8 && make install
+  - cd ./../..
+  - cd src/contrib/QtUsb && mkdir build && cd build
+  - qmake -makefile .. && make -j 8 && make install
+  - cd ./../../../..
+  script:
+  - export CC=/usr/bin/clang
+  - export CXX=/usr/bin/clang++
+  - mkdir -p src_build && cd src_build
+  - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DGFYRE_BUILD_STATIC=ON -DBUILD_CODEC2_SUPPORT=OFF
+    -DBUILD_OPUS_SUPPORT=OFF -DENBL_VALGRIND_SUPPORT=ON ..
+  - make -j 8
+  - cd ./..
+  after_script:
+  - echo "Finished execution of Preparatory Build and secondary, lesser stage!"
+  artifacts:
+    expire_in: 2 weeks
+    paths:
+    - src_build/
+  when: always
 sworld_sentry_archlinux_x86_64:
-    stage: sworld_sentry_archlinux_x86_64
-    dependencies:
-        - sworld_debug_archlinux_x86_64
-    before_script:
-        - curl -sL https://sentry.io/get-cli/ | bash
-    script:
-        # https://docs.sentry.io/product/releases/#create-release
-        # Upload debugging information
-        - sentry-cli --auth-token $GK_SENTRY_AUTH_KEY --url $GK_SENTRY_URL upload-dif -o gekkofyre-networks -p small-world-deluxe ./src_build/ --include-sources --log-level=error
-        # Create a release
-        - sentry-cli releases new $MAJOR.$MINOR.$PATCH-$CI_COMMIT_SHA --project small-world-deluxe
-        # Associate commits with the release
-        - sentry-cli releases set-commits $MAJOR.$MINOR.$PATCH-$CI_COMMIT_SHA --auto
-        # TODO: When we are ready to do so, we require a command to finalize the releases!
-    after_script:
-        - echo "Finished uploading data to Sentry server!"
-    artifacts:
-        expire_in: 1 week
-        paths:
-            - src_build/
-    allow_failure: true
-
-### --------------------------------------------------------------------------------------------------- ###
-
-#
-# https://docs.gitlab.com/ee/user/application_security/sast/
-# https://github.com/antiagainst/codeclimate-cppcheck
-#
+  stage: sworld_sentry_archlinux_x86_64
+  dependencies:
+  - sworld_debug_archlinux_x86_64
+  before_script:
+  - curl -sL https://sentry.io/get-cli/ | bash
+  script:
+  - sentry-cli --auth-token $GK_SENTRY_AUTH_KEY --url $GK_SENTRY_URL upload-dif -o
+    gekkofyre-networks -p small-world-deluxe ./src_build/ --include-sources --log-level=error
+  - sentry-cli releases new $MAJOR.$MINOR.$PATCH-$CI_COMMIT_SHA --project small-world-deluxe
+  - sentry-cli releases set-commits $MAJOR.$MINOR.$PATCH-$CI_COMMIT_SHA --auto
+  after_script:
+  - echo "Finished uploading data to Sentry server!"
+  artifacts:
+    expire_in: 1 week
+    paths:
+    - src_build/
+  allow_failure: true
 spotbugs-sast:
-    stage: test
-    dependencies:
-        - sworld_debug_archlinux_x86_64
-    script:
-        - /analyzer run -compile=false
-    variables:
-        SAST_DEFAULT_ANALYZERS: "flawfinder, gitleaks, trufflehog, secrets"
-        SAST_EXCLUDED_PATHS: "assets/**, cmake/**, docker/**, docs/**, po/**, toolchains/**, src/contrib/**"
-        SAST_GOSEC_LEVEL: 2
-        SAST_FLAWFINDER_LEVEL: 2
-        SECRET_DETECTION_HISTORIC_SCAN: "true"
-    # https://docs.gitlab.com/ee/ci/yaml/README.html#artifacts
-    artifacts:
-        expire_in: 1 week
-        paths:
-            - src_build/
-        reports:
-            sast: gl-sast-report.json
-    allow_failure: true
-
-### --------------------------------------------------------------------------------------------------- ###
-
-#
-# https://docs.gitlab.com/ee/ci/yaml/#complete-example-for-release
-#
+  stage: test
+  dependencies:
+  - sworld_debug_archlinux_x86_64
+  script:
+  - "/analyzer run -compile=false"
+  variables:
+    SAST_DEFAULT_ANALYZERS: flawfinder, gitleaks, trufflehog, secrets
+    SAST_EXCLUDED_PATHS: assets/**, cmake/**, docker/**, docs/**, po/**, toolchains/**,
+      src/contrib/**
+    SAST_GOSEC_LEVEL: 2
+    SAST_FLAWFINDER_LEVEL: 2
+    SECRET_DETECTION_HISTORIC_SCAN: 'true'
+  artifacts:
+    expire_in: 1 week
+    paths:
+    - src_build/
+    reports:
+      sast: gl-sast-report.json
+  allow_failure: true
+sast:
+  variables:
+    SAST_DEFAULT_ANALYZERS: bandit, eslint, flawfinder, kubesec, gosec
+  stage: test
