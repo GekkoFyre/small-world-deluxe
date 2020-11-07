@@ -49,25 +49,25 @@
 #include <QPointer>
 #include <QIODevice>
 #include <QByteArray>
+#include <QEventLoop>
+#include <QAudioInput>
 #include <QAudioFormat>
 #include <QAudioDecoder>
 
 namespace GekkoFyre {
 
-class GkPcmFileStream : public QIODevice {
+class GkFFTAudioPcmStream : public QIODevice {
     Q_OBJECT
 
 public:
-    explicit GkPcmFileStream(QObject *parent = nullptr);
-    virtual ~GkPcmFileStream();
-
-    bool init(const QAudioFormat &format);
+    explicit GkFFTAudioPcmStream(QPointer<QAudioInput> audioInput, const GekkoFyre::Database::Settings::Audio::GkDevice &audio_device_details,
+                                 QObject *parent = nullptr);
+    virtual ~GkFFTAudioPcmStream();
 
     void play(const QString &filePath);
     void stop();
 
     bool atEnd() const Q_DECL_OVERRIDE;
-    QAudioFormat format();
 
 protected:
     qint64 readData(char *data, qint64 maxlen) Q_DECL_OVERRIDE;
@@ -78,14 +78,17 @@ private slots:
     void finished();
 
 private:
-    QFile m_file;
+    //
+    // QAudioSystem initialization and buffers
+    //
     QBuffer m_input;
     QBuffer m_output;
     QByteArray m_data;
-    QPointer<QAudioDecoder> m_decoder;
-    QAudioFormat m_format;
+    QPointer<QAudioInput> gkAudioInput;
+    QPointer<QEventLoop> gkAudioInputEventLoop;
+    GekkoFyre::Database::Settings::Audio::GkDevice pref_audio_device;
 
-    GkAudioFramework::GkAudioState m_state;
+    Spectrograph::GkFftState m_state;
 
     bool isInited;
     bool isDecodingFinished;

@@ -551,11 +551,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                 waterfall_input_audio_buf->open(QBuffer::ReadWrite);
                                 gkAudioInput->start(waterfall_input_audio_buf.get());
 
-                                gkAudioInputEventLoop = new QEventLoop(this);
-                                do {
-                                    gkAudioInputEventLoop->exec(QEventLoop::WaitForMoreEvents);
-                                } while (gkAudioOutput->state() == QAudio::ActiveState);
-
                                 gkEventLogger->publishEvent(tr("Now using the input audio device, \"%1\".").arg(pref_input_device.audio_device_info.deviceName()),
                                                             GkSeverity::Info, "", true, true, false, false);
                             } else {
@@ -691,6 +686,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the Waterfall / Spectrograph
         //
+        gkFftAudio = new GekkoFyre::GkFFTAudio(gkAudioInput, gkAudioOutput, pref_input_device, pref_output_device, gkEventLogger, this);
         gkSpectroWaterfall = new GekkoFyre::GkSpectroWaterfall(gkStringFuncs, gkEventLogger, true, true, this);
         gkSpectroCurve = new GekkoFyre::GkSpectroCurve(gkStringFuncs, gkEventLogger, pref_output_device.chosen_sample_rate, GK_FFT_SIZE, true, true, this);
 
@@ -825,10 +821,6 @@ MainWindow::~MainWindow()
 
     if (vu_meter_thread.joinable()) {
         vu_meter_thread.join();
-    }
-
-    if (!gkAudioInputEventLoop.isNull()) {
-        delete gkAudioInputEventLoop;
     }
 
     delete db; // Free the pointer for the Google LevelDB library!
@@ -2253,7 +2245,7 @@ void MainWindow::processInputAudioFFTBuffer()
                 recv_samples.append(val);
             }
 
-            auto fft_data = gkFFT->FFTCompute(recv_samples.toStdVector(), pref_input_device, recv_samples.size());
+            auto fft_data = gkFFT->FFTCompute(std::vector<double>(recv_samples.begin(), recv_samples.end()), pref_input_device, recv_samples.size());
             gkSpectroWaterfall->addData(recv_samples.data(), recv_samples.size(), std::time(nullptr));
         }
     } catch (const std::exception &e) {

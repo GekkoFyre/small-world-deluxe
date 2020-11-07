@@ -39,8 +39,9 @@
  **
  ****************************************************************************************************/
 
-#include "src/gk_pcm_file_stream.hpp"
+#include "src/gk_fft_audio_pcm_stream.hpp"
 #include <exception>
+#include <utility>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -54,52 +55,60 @@ using namespace Events;
 using namespace Logging;
 
 /**
- * @brief GkPcmFileStream::GkPcmFileStream
+ * @brief GkFFTAudioPcmStream::GkFFTAudioPcmStream
  * @note Jarikus <https://stackoverflow.com/questions/41197576/how-to-play-mp3-file-using-qaudiooutput-and-qaudiodecoder>.
  */
-GkPcmFileStream::GkPcmFileStream(QObject *parent) : m_input(&m_data), m_output(&m_data), m_state(GkAudioFramework::GkAudioState::Stopped), QIODevice(parent)
+GkFFTAudioPcmStream::GkFFTAudioPcmStream(QPointer<QAudioInput> audioInput, const GkDevice &audio_device_details,
+                                         QObject *parent) : m_input(&m_data), m_output(&m_data), m_state(Spectrograph::GkFftState::Stopped),
+                                         QIODevice(parent)
 {
     setParent(parent);
     setOpenMode(QIODevice::ReadOnly);
 
-    m_decoder = new QAudioDecoder();
+    pref_audio_device = audio_device_details;
+    gkAudioInput = std::move(audioInput);
 
-    isInited = false;
+    QObject::connect(gkAudioInput, SIGNAL(bufferReady()), this, SLOT(bufferReady()));
+    QObject::connect(gkAudioInput, SIGNAL(finished()), this, SLOT(finished()));
+
+    // Initialize buffers
+    if (!m_output.open(QIODevice::ReadOnly) || !m_input.open(QIODevice::WriteOnly)) {
+        throw std::runtime_error(tr("Error with initializing audio PCM stream for FFT calculations!").toStdString());
+    }
+
+    isInited = true;
     isDecodingFinished = false;
 }
 
-GkPcmFileStream::~GkPcmFileStream()
-{}
+GkFFTAudioPcmStream::~GkFFTAudioPcmStream()
+{
+    if (!gkAudioInputEventLoop.isNull()) {
+        delete gkAudioInputEventLoop;
+    }
+}
 
 /**
- * @brief
+ * @brief GkFFTAudioPcmStream::atEnd
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return
  */
-bool GkPcmFileStream::atEnd() const
+bool GkFFTAudioPcmStream::atEnd() const
 {
     return m_output.size() && m_output.atEnd() && isDecodingFinished;
 }
 
 /**
- * @brief
- * @return
- */
-QAudioFormat GkPcmFileStream::format()
-{
-    return QAudioFormat();
-}
-
-/**
- * @brief
+ * @brief GkFFTAudioPcmStream::readData
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param data
  * @param maxSize
  * @return
  */
-qint64 GkPcmFileStream::readData(char *data, qint64 maxlen)
+qint64 GkFFTAudioPcmStream::readData(char *data, qint64 maxlen)
 {
     std::memset(data, 0, maxlen);
 
-    if (m_state == GkAudioFramework::GkAudioState::Playing) {
+    if (m_state == Spectrograph::GkFftState::Recording) {
         m_output.read(data, maxlen);
 
         // There is we send readed audio data via signal, for ability get audio signal for the who listen this signal.
@@ -110,7 +119,8 @@ qint64 GkPcmFileStream::readData(char *data, qint64 maxlen)
 
         // Is finish of file
         if (atEnd()) {
-            stop();
+            // stop();
+            clear();
         }
     }
 
@@ -118,12 +128,13 @@ qint64 GkPcmFileStream::readData(char *data, qint64 maxlen)
 }
 
 /**
- * @brief
+ * @brief GkFFTAudioPcmStream::writeData
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param data
  * @param maxSize
  * @return
  */
-qint64 GkPcmFileStream::writeData(const char *data, qint64 maxSize)
+qint64 GkFFTAudioPcmStream::writeData(const char *data, qint64 maxSize)
 {
     Q_UNUSED(data);
     Q_UNUSED(maxSize);
@@ -132,66 +143,46 @@ qint64 GkPcmFileStream::writeData(const char *data, qint64 maxSize)
 }
 
 /**
- * @brief
- * @param format
- * @return
- */
-bool GkPcmFileStream::init(const QAudioFormat &format)
-{
-    m_format = format;
-    m_decoder->setAudioFormat(m_format);
-
-    QObject::connect(m_decoder, SIGNAL(bufferReady()), this, SLOT(bufferReady()));
-    QObject::connect(m_decoder, SIGNAL(finished()), this, SLOT(finished()));
-
-    // Initialize buffers
-    if (!m_output.open(QIODevice::ReadOnly) || !m_input.open(QIODevice::WriteOnly)) {
-        return false;
-    }
-
-    isInited = true;
-    return true;
-}
-
-/**
- * @brief
+ * @brief GkFFTAudioPcmStream::play
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param filePath
  */
-void GkPcmFileStream::play(const QString &filePath)
+void GkFFTAudioPcmStream::play(const QString &filePath)
+{
+    Q_UNUSED(filePath);
+    clear();
+
+    gkAudioInput->start(&m_input);
+    m_state = Spectrograph::GkFftState::Recording;
+    gkAudioInputEventLoop = new QEventLoop(this);
+
+    do {
+        gkAudioInputEventLoop->exec(QEventLoop::WaitForMoreEvents);
+    } while (gkAudioInput->state() == QAudio::ActiveState);
+
+    delete gkAudioInputEventLoop;
+    return;
+}
+
+/**
+ * @brief GkFFTAudioPcmStream::stop
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkFFTAudioPcmStream::stop()
 {
     clear();
-    m_file.setFileName(filePath);
-
-    if (!m_file.open(QIODevice::ReadOnly)) {
-        return;
-    }
-
-    m_decoder->setSourceDevice(&m_file);
-    m_decoder->start();
-
-    m_state = GkAudioFramework::GkAudioState::Playing;
+    m_state = Spectrograph::GkFftState::Stopped;
 
     return;
 }
 
 /**
- * @brief
+ * @brief GkFFTAudioPcmStream::clear
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void GkPcmFileStream::stop()
+void GkFFTAudioPcmStream::clear()
 {
-    clear();
-    m_file.close();
-    m_state = GkAudioFramework::GkAudioState::Stopped;
-
-    return;
-}
-
-/**
- * @brief
- */
-void GkPcmFileStream::clear()
-{
-    m_decoder->stop();
+    gkAudioInput->stop();
     m_data.clear();
     isDecodingFinished = false;
 
@@ -199,23 +190,19 @@ void GkPcmFileStream::clear()
 }
 
 /**
- * @brief
+ * @brief GkFFTAudioPcmStream::bufferReady
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void GkPcmFileStream::bufferReady()
+void GkFFTAudioPcmStream::bufferReady()
 {
-    const QAudioBuffer &buffer = m_decoder->read();
-
-    const int length = buffer.byteCount();
-    const char *data = buffer.constData<char>();
-
-    m_input.write(data, length);
     return;
 }
 
 /**
- * @brief
+ * @brief GkFFTAudioPcmStream::finished
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void GkPcmFileStream::finished()
+void GkFFTAudioPcmStream::finished()
 {
     isDecodingFinished = true;
     return;
