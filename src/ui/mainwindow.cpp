@@ -669,7 +669,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the Waterfall / Spectrograph
         //
-        gkFftAudio = new GekkoFyre::GkFFTAudio(gkAudioInput, gkAudioOutput, pref_input_device, pref_output_device, gkEventLogger, this);
+        gkFftAudio = new GekkoFyre::GkFFTAudio(gkAudioInput, gkAudioOutput, pref_input_device, pref_output_device, gkSpectroWaterfall, gkEventLogger, this);
         gkSpectroWaterfall = new GekkoFyre::GkSpectroWaterfall(gkStringFuncs, gkEventLogger, true, true, this);
         gkSpectroCurve = new GekkoFyre::GkSpectroCurve(gkStringFuncs, gkEventLogger, pref_output_device.chosen_sample_rate, GK_FFT_SIZE, true, true, this);
 

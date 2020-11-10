@@ -44,6 +44,7 @@
 #include "src/defines.hpp"
 #include "src/gk_fft.hpp"
 #include "src/gk_logger.hpp"
+#include "src/gk_waterfall_gui.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
 #include <string>
@@ -68,6 +69,7 @@ public:
     explicit GkFFTAudio(QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> audioOutput,
                         const GekkoFyre::Database::Settings::Audio::GkDevice &input_audio_device_details,
                         const GekkoFyre::Database::Settings::Audio::GkDevice &output_audio_device_details,
+                        QPointer<GekkoFyre::GkSpectroWaterfall> spectroWaterfall,
                         QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkFFTAudio() override;
 
@@ -98,6 +100,7 @@ signals:
 
 private:
     std::unique_ptr<GekkoFyre::GkFFT> gkFFT;
+    QPointer<GekkoFyre::GkSpectroWaterfall> gkSpectroWaterfall;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
     //
@@ -108,6 +111,11 @@ private:
     QPointer<QAudioOutput> gkAudioOutput;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_audio_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_audio_device;
+
+    qint32 gkAudioInNumSamples = 0;
+    QVector<double> mSamples;
+
+    void samplesUpdated();
 
 };
 };
