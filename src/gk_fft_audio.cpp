@@ -56,6 +56,7 @@ using namespace Logging;
 /**
  * @brief GkFFTAudio::GkFFTAudio
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @note Joel Svensson <http://svenssonjoel.github.io/pages/qt-audio-fft/index.html>.
  */
 GkFFTAudio::GkFFTAudio(QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> audioOutput, const GkDevice &input_audio_device_details,
                        const GkDevice &output_audio_device_details, QPointer<GekkoFyre::GkEventLogger> eventLogger,
@@ -75,7 +76,8 @@ GkFFTAudio::GkFFTAudio(QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> 
     gkAudioOutput = std::move(audioOutput);
     eventLogger = std::move(gkEventLogger);
 
-    gkFftPcmStream = new GkFFTAudioPcmStream(gkAudioInput, pref_input_audio_device, this);
+    gkFFT = std::make_unique<GekkoFyre::GkFFT>(gkEventLogger, this);
+    gkInputBuffer = new QBuffer(this);
     start();
 
     // Move event processing of GkPaStreamHandler to this thread
@@ -98,9 +100,16 @@ void GkFFTAudio::run()
 {
     QObject::connect(gkAudioInput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(audioInHandleStateChanged(QAudio::State)));
     QObject::connect(gkAudioOutput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(audioOutHandleStateChanged(QAudio::State)));
-    QObject::connect(this, SIGNAL(recordStream(const fs::path &, const GekkoFyre::GkAudioFramework::CodecSupport &)),
-                     this, SLOT(recordAudioStream(const fs::path &, const GekkoFyre::GkAudioFramework::CodecSupport &)));
-    QObject::connect(this, SIGNAL(stopRecording(const fs::path &)), this, SLOT(stopRecordStream(const fs::path &)));
+
+    QObject::connect(this, SIGNAL(recordStream(const GekkoFyre::GkAudioFramework::CodecSupport &)),
+                     this, SLOT(recordAudioStream(const GekkoFyre::GkAudioFramework::CodecSupport &)));
+    QObject::connect(this, SIGNAL(stopRecording()), this, SLOT(stopRecordStream()));
+
+    QObject::connect(this, SIGNAL(recordFileStream(const fs::path &, const GekkoFyre::GkAudioFramework::CodecSupport &)),
+                     this, SLOT(recordAudioFileStream(const fs::path &, const GekkoFyre::GkAudioFramework::CodecSupport &)));
+    QObject::connect(this, SIGNAL(stopRecordingFileStream(const fs::path &)), this, SLOT(stopRecordFileStream(const fs::path &)));
+
+    QObject::connect(gkAudioInput, SIGNAL(notify()), this, SLOT(processAudioIn()));
 
     exec();
     return;
@@ -115,10 +124,6 @@ void GkFFTAudio::audioInHandleStateChanged(QAudio::State changed_state)
 {
     try {
         switch (changed_state) {
-            case QAudio::IdleState:
-                gkFftPcmStream->stop();
-
-                break;
             case QAudio::StoppedState:
                 if (gkAudioInput->error() != QAudio::NoError) { // TODO: Improve the error reporting functionality of this statement!
                     throw std::runtime_error(tr("Issue with 'QAudio::StoppedState' during media playback!").toStdString());
@@ -167,26 +172,61 @@ void GkFFTAudio::audioOutHandleStateChanged(QAudio::State changed_state)
 }
 
 /**
+ * @brief GkFFTAudio::processAudioIn
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkFFTAudio::processAudioIn()
+{
+    return;
+}
+
+/**
+ * @brief GkFFTAudio::processEvent
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param audioEventType
+ * @param supported_codec
+ */
+void GkFFTAudio::processEvent(Spectrograph::GkFftEventType audioEventType, const GkAudioFramework::CodecSupport &supported_codec)
+{
+    try {
+        switch (audioEventType) {
+            case Spectrograph::GkFftEventType::record:
+                emit recordStream(supported_codec);
+                break;
+            case Spectrograph::GkFftEventType::stop:
+                emit stopRecording();
+                break;
+            default:
+                break;
+        }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Error, true, true, false, false);
+    }
+
+    return;
+}
+
+/**
  * @brief GkFFTAudio::processEvent
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param audioEventType
  * @param mediaFilePath
  * @param supported_codec
  */
-void GkFFTAudio::processEvent(Spectrograph::GkFftEventType audioEventType, const fs::path &mediaFilePath,
-                              const GkAudioFramework::CodecSupport &supported_codec)
+void GkFFTAudio::processEvent(Spectrograph::GkFftEventType audioEventType, const GkAudioFramework::CodecSupport &supported_codec,
+                              const fs::path &mediaFilePath)
 {
     try {
         switch (audioEventType) {
             case Spectrograph::GkFftEventType::record:
                 if (!mediaFilePath.empty()) {
-                    emit recordStream(mediaFilePath, supported_codec);
+                    emit recordFileStream(mediaFilePath, supported_codec);
                 }
 
                 break;
             case Spectrograph::GkFftEventType::stop:
                 if (!mediaFilePath.empty()) {
-                    emit stopRecording(mediaFilePath);
+                    emit stopRecordingFileStream(mediaFilePath);
                 }
 
                 break;
@@ -203,24 +243,17 @@ void GkFFTAudio::processEvent(Spectrograph::GkFftEventType audioEventType, const
 /**
  * @brief GkFFTAudio::recordAudioStream
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param media_path
  * @param supported_codec
  */
-void GkFFTAudio::recordAudioStream(const fs::path &media_path, const GkAudioFramework::CodecSupport &supported_codec)
+void GkFFTAudio::recordAudioStream(const GkAudioFramework::CodecSupport &supported_codec)
 {
     try {
         if (gkAudioInput.isNull()) {
             throw std::runtime_error(tr("A memory error has been encountered whilst trying to process audio for FFT calculations!").toStdString());
         }
 
-        for (const auto &media: gkProcMedia) {
-            if (media.first == media_path) {
-                QPointer<GkFFTAudioPcmStream> fft_ptr = const_cast<GkFFTAudioPcmStream*>(&media.second);
-                fft_ptr->play(QString::fromStdString(media_path.string()));
-
-                break;
-            }
-        }
+        gkInputBuffer->open(QBuffer::ReadWrite);
+        gkAudioInput->start(gkInputBuffer);
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, true, true, false, false);
     }
@@ -231,18 +264,39 @@ void GkFFTAudio::recordAudioStream(const fs::path &media_path, const GkAudioFram
 /**
  * @brief GkFFTAudio::stopRecordStream
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param media_path
  */
-void GkFFTAudio::stopRecordStream(const fs::path &media_path)
+void GkFFTAudio::stopRecordStream()
 {
-    for (const auto &media: gkProcMedia) {
-        if (media.first == media_path) {
-            QPointer<GkFFTAudioPcmStream> fft_ptr = const_cast<GkFFTAudioPcmStream*>(&media.second);
-            fft_ptr->stop();
-            break;
+    try {
+        if (gkAudioInput.isNull()) {
+            throw std::runtime_error(tr("A memory error has been encountered whilst trying to process audio for FFT calculations!").toStdString());
         }
+
+        gkAudioInput->stop();
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, true, true, false, false);
     }
 
-    gkProcMedia.erase(media_path); // Must be deleted outside of the loop!
+    return;
+}
+
+/**
+ * @brief GkFFTAudio::recordAudioFileStream
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param media_path
+ * @param supported_codec
+ */
+void GkFFTAudio::recordAudioFileStream(const fs::path &media_path, const GkAudioFramework::CodecSupport &supported_codec)
+{
+    return;
+}
+
+/**
+ * @brief GkFFTAudio::stopRecordFileStream
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param media_path
+ */
+void GkFFTAudio::stopRecordFileStream(const fs::path &media_path)
+{
     return;
 }

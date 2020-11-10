@@ -545,12 +545,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                 pref_input_device = input_dev.second;
                                 gkAudioInput = new QAudioInput(input_dev.first, user_input_settings, this);
 
-                                QObject::connect(gkAudioInput, SIGNAL(notify()), this, SLOT(processInputAudioFFTBuffer()));
-                                QObject::connect(gkAudioInput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(audioInputStateChange(QAudio::State)));
-
-                                waterfall_input_audio_buf->open(QBuffer::ReadWrite);
-                                gkAudioInput->start(waterfall_input_audio_buf.get());
-
                                 gkEventLogger->publishEvent(tr("Now using the input audio device, \"%1\".").arg(pref_input_device.audio_device_info.deviceName()),
                                                             GkSeverity::Info, "", true, true, false, false);
                             } else {
@@ -671,17 +665,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         } catch (const std::exception &e) {
             gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);
         }
-
-        //
-        // Initialize any FFT libraries/resources
-        //
-        gkFFT = std::make_unique<GkFFT>(gkEventLogger, this);
-
-        //
-        // QAudioSystem and the spectrograph / waterfall
-        //
-        waterfall_spectrum_audio_ba = std::make_unique<QAudioBuffer>();
-        waterfall_input_audio_buf = std::make_unique<QBuffer>(this);
 
         //
         // Initialize the Waterfall / Spectrograph
@@ -1429,11 +1412,6 @@ void MainWindow::updateVolumeDisplayWidgets()
                 // Input audio stream is open and active!
                 //
                 QVector<double> recv_samples;
-                while (waterfall_input_audio_buf->isOpen() && waterfall_spectrum_audio_ba->isValid()) {
-                    recv_samples.reserve(AUDIO_FRAMES_PER_BUFFER + 1);
-                    recv_samples.push_back(*const_cast<qint16 *>(waterfall_spectrum_audio_ba->constData<qint16>()));
-                }
-
                 if (!recv_samples.empty()) {
                     qreal peakLevel = 0;
                     qreal sum = 0.0;
@@ -2037,37 +2015,26 @@ void MainWindow::on_pushButton_radio_receive_clicked()
         if (!btn_radio_rx) {
             btn_record_lck.lock();
             if (!pref_input_device.audio_device_info.isNull()) {
-                if (pref_input_device.audio_src == GkAudioSource::Input || pref_input_device.audio_src == GkAudioSource::InputOutput) {
-                    if (pref_input_device.sel_channels > 0) {
-                        if ((pref_input_device.audio_dev_str.isEmpty())) {
-                            // Set the QPushButton to 'Green'
-                            gkStringFuncs->changePushButtonColor(ui->pushButton_radio_receive, false);
-                            btn_radio_rx = true;
-                            emit startRecording();
+                if (pref_input_device.audio_device_info.preferredFormat().channelCount() > 0) {
+                    // Set the QPushButton to 'Green'
+                    gkStringFuncs->changePushButtonColor(ui->pushButton_radio_receive, false);
+                    btn_radio_rx = true;
+                    emit startRecording();
 
-                            vu_meter_thread = std::thread(&MainWindow::updateVolumeDisplayWidgets, this);
-                            vu_meter_thread.detach();
+                    vu_meter_thread = std::thread(&MainWindow::updateVolumeDisplayWidgets, this);
+                    vu_meter_thread.detach();
 
-                            changeStatusBarMsg(tr("Please wait! Beginning to receive audio..."));
+                    changeStatusBarMsg(tr("Please wait! Beginning to receive audio..."));
 
-                            return;
-                        } else {
-                            throw std::runtime_error(tr("The QAudioSystem library has not been properly initialized!").toStdString());
-                        }
-                    } else {
-                        QMessageBox::warning(this, tr("Invalid device!"), tr("An invalid audio device has been provided. Please select another."), QMessageBox::Ok);
-                        return;
-                    }
+                    return;
+                } else {
+                    QMessageBox::warning(this, tr("Invalid device!"), tr("An invalid audio device has been provided. Please select another."), QMessageBox::Ok);
+                    return;
                 }
             } else {
                 QMessageBox::warning(this, tr("Unavailable device!"), tr("No default input device! Please select one from the settings."), QMessageBox::Ok);
                 return;
             }
-
-            QPointer<QTimer> msgBoxSettingsTimer = new QTimer(this);
-            msgBoxSettingsTimer->singleShot(GK_MSG_BOX_SETTINGS_DLG_TIMER, this, SLOT(configInputAudioDevice()));
-
-            return;
         } else {
             // Set the QPushButton to 'Red'
             gkStringFuncs->changePushButtonColor(ui->pushButton_radio_receive, true);
@@ -2194,100 +2161,6 @@ void MainWindow::procRigPort(const QString &conn_port, const GekkoFyre::AmateurR
 }
 
 /**
- * @brief MainWindow::audioInputStateChange
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param state
- */
-void MainWindow::audioInputStateChange(QAudio::State state)
-{
-    try {
-        switch (state) {
-            case QAudio::IdleState:
-                gkAudioInput->stop();
-
-                break;
-            case QAudio::StoppedState:
-                if (gkAudioInput->error() != QAudio::NoError) { // TODO: Improve the error reporting functionality of this statement!
-                    throw std::runtime_error(tr("Issue with 'QAudio::StoppedState' during media playback!").toStdString());
-                }
-
-                break;
-            default:
-                break;
-        }
-    } catch (const std::exception &e) {
-        gkEventLogger->publishEvent(tr("An issue has been encountered during audio playback. Error:\n\n%1").arg(QString::fromStdString(e.what())),
-                                    GkSeverity::Error, "", true, true, false, false);
-    }
-
-    return;
-}
-
-/**
- * @brief MainWindow::processInputAudioFFTBuffer
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param input_buf The incoming, buffered data from the QAudioInput pointer.
- * @note Oleksandr Tymoshenko <https://github.com/gonzoua/qt-demo-player/blob/master/playerwidget.cpp>,
- * thibsc Joel Svensson <https://stackoverflow.com/questions/50277132/qt-audio-file-to-wave-like-audacity>,
- * Joel Svensson <http://svenssonjoel.github.io/pages/qt-audio-fft/index.html>.
- */
-void MainWindow::processInputAudioFFTBuffer()
-{
-    try {
-        while (gkAudioInput->state() == QAudio::ActiveState) {
-            auto peak_val = gkStringFuncs->getPeakValue(pref_input_device.audio_device_info.preferredFormat());
-
-            std::vector<qint16> recv_buf;
-            QVector<double> recv_samples;
-            recv_buf.push_back(*const_cast<qint16 *>(waterfall_spectrum_audio_ba->constData<qint16>()));
-            for (const auto &buf_data: recv_buf) {
-                double val = buf_data / peak_val;
-                recv_samples.append(val);
-            }
-
-            auto fft_data = gkFFT->FFTCompute(std::vector<double>(recv_samples.begin(), recv_samples.end()), pref_input_device, recv_samples.size());
-            gkSpectroWaterfall->addData(recv_samples.data(), recv_samples.size(), std::time(nullptr));
-        }
-    } catch (const std::exception &e) {
-        std::throw_with_nested(std::runtime_error(tr("Issue encountered whilst performing FFT calculations! Error:\n\n%1")
-        .arg(QString::fromStdString(e.what())).toStdString()));
-    }
-
-    return;
-}
-
-/**
- * @brief MainWindow::processAudioIn
- * @author <http://svenssonjoel.github.io/pages/qt-audio-fft/index.html>,
- * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void MainWindow::processAudioIn()
-{
-    waterfall_input_audio_buf->seek(0);
-    QByteArray ba = waterfall_input_audio_buf->readAll();
-
-    qint32 num_samples = ba.length() / 2;
-    qint32 b_pos = 0;
-    for (qint32 i = 0; i < num_samples; ++i) {
-        int16_t s;
-        s = ba.at(++b_pos);
-        s |= ba.at(++b_pos) << 8;
-
-        if (s != 0) {
-            waterfall_samples_vec.append((double)s / 32768.0);
-        } else {
-            waterfall_samples_vec.append(0);
-        }
-    };
-
-    waterfall_input_audio_buf->buffer().clear();
-    waterfall_input_audio_buf->seek(0);
-
-    spectroSamplesUpdated();
-    return;
-}
-
-/**
  * @brief MainWindow::stopRecordingInput The idea of this function is to stop recording of
  * all input audio devices related to the spectrograph / waterfall upon activation,
  * globally, across all threads.
@@ -2300,10 +2173,8 @@ void MainWindow::stopRecordingInput()
 {
     try {
         if (!gkAudioInput.isNull() && gkAudioInput->state() == QAudio::ActiveState) {
-            if (gkAudioInput->state() == QAudio::ActiveState) {
-                // TODO: Implement a close-stream state!
-                gkAudioInput->stop();
-            }
+            // TODO: Implement a close-stream state!
+            gkAudioInput->stop();
         }
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(tr("Problem encountered with stopping input audio device. Error:\n\n%1").arg(QString::fromStdString(e.what())),
@@ -2329,6 +2200,7 @@ void MainWindow::startRecordingInput()
                 throw std::invalid_argument(tr("No audio devices have been found!").toStdString());
             }
 
+            gkFftAudio->processEvent(Spectrograph::GkFftEventType::record, GkAudioFramework::CodecSupport::PCM);
             return;
         }
     } catch (const std::exception &e) {

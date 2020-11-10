@@ -51,7 +51,6 @@
 #include "src/ui/dialogsettings.hpp"
 #include "src/ui/widgets/gk_display_image.hpp"
 #include "src/ui/widgets/gk_vu_meter_widget.hpp"
-#include "src/gk_fft.hpp"
 #include "src/gk_logger.hpp"
 #include "src/gk_modem.hpp"
 #include "src/gk_system.hpp"
@@ -236,13 +235,6 @@ protected slots:
     //
     void procRigPort(const QString &conn_port, const GekkoFyre::AmateurRadio::GkConnMethod &conn_method);
 
-    //
-    // QAudioProbe's and related
-    //
-    void audioInputStateChange(QAudio::State state);
-    void processInputAudioFFTBuffer();
-    void processAudioIn();
-
 public slots:
     void updateProgressBar(const bool &enable, const size_t &min, const size_t &max);
 
@@ -310,7 +302,6 @@ private:
     QPointer<GekkoFyre::AudioDevices> gkAudioDevices;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GekkoFyre::GkCli> gkCli;
-    std::unique_ptr<GekkoFyre::GkFFT> gkFFT;
     QPointer<GekkoFyre::FileIo> fileIo;
     QPointer<GekkoFyre::GkFrequencies> gkFreqList;
     QPointer<GekkoFyre::RadioLibs> gkRadioLibs;
@@ -433,9 +424,6 @@ private:
     //
     QPointer<GekkoFyre::GkSpectroWaterfall> gkSpectroWaterfall;
     QPointer<GekkoFyre::GkSpectroCurve> gkSpectroCurve;
-    std::unique_ptr<QAudioBuffer> waterfall_spectrum_audio_ba;
-    std::unique_ptr<QBuffer> waterfall_input_audio_buf;
-    qint32 waterfall_spectrum_buf_size;
     QVector<double> waterfall_samples_vec;
     GekkoFyre::Spectrograph::GkGraphType graph_in_use;
 
