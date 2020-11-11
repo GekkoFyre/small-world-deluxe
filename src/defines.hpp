@@ -140,8 +140,8 @@ namespace GekkoFyre {
 #define SPECTRO_REFRESH_CYCLE_MILLISECS (1000)          // How often the spectrograph / waterfall should update, in milliseconds.
 #define SPECTRO_TIME_UPDATE_MILLISECS (15000)           // How often, in milliseconds, the spectrograph updates the timing information on the y-axis.
 #define SPECTRO_MAX_BUFFER_SIZE (10)                    // The maximum number of items to store within the buffers associated with the spectrograph.
-#define SPECTRO_X_MIN_AXIS_SIZE (0.0f)                  // The default, lower-limit of the x-axis on the spectrograph / waterfall, in hertz.
-#define SPECTRO_X_MAX_AXIS_SIZE (2500.0f)               // The default, upper-limit of the x-axis on the spectrograph / waterfall, in hertz.
+#define SPECTRO_X_MIN_AXIS_SIZE (0)                  // The default, lower-limit of the x-axis on the spectrograph / waterfall, in hertz.
+#define SPECTRO_X_MAX_AXIS_SIZE (2500)               // The default, upper-limit of the x-axis on the spectrograph / waterfall, in hertz.
 #define SPECTRO_Y_AXIS_SIZE (60000)                     // The maximum size of the y-axis, in milliseconds, given that it is based on a timescale.
 #define SPECTRO_Y_AXIS_MINOR (15)
 #define SPECTRO_Y_AXIS_MAJOR (8)

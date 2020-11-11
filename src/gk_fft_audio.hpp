@@ -42,11 +42,13 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/gk_fft.hpp"
 #include "src/gk_logger.hpp"
 #include "src/gk_waterfall_gui.hpp"
+#include <fftw3.h>
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
+#include <thread>
+#include <future>
 #include <string>
 #include <vector>
 #include <QString>
@@ -99,7 +101,6 @@ signals:
     void stopRecordingFileStream(const fs::path &media_path);
 
 private:
-    std::unique_ptr<GekkoFyre::GkFFT> gkFFT;
     QPointer<GekkoFyre::GkSpectroWaterfall> gkSpectroWaterfall;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
@@ -114,6 +115,12 @@ private:
 
     qint32 gkAudioInNumSamples = 0;
     QVector<double> mSamples;
+    QVector<double> mIndices;
+    QVector<double> mFftIndices;
+
+    fftw_plan mFftPlan;
+    double *mFftIn;
+    double *mFftOut;
 
     void samplesUpdated();
 
