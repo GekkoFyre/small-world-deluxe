@@ -54,6 +54,7 @@
 #include <QObject>
 #include <QBuffer>
 #include <QPointer>
+#include <QEventLoop>
 #include <QAudioInput>
 #include <QAudioFormat>
 #include <QAudioOutput>
@@ -62,7 +63,7 @@ namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
 namespace GekkoFyre {
-class GkFFTAudio : public QThread {
+class GkFFTAudio : public QObject {
     Q_OBJECT
 
 public:
@@ -72,8 +73,6 @@ public:
                         QPointer<GekkoFyre::GkSpectroWaterfall> spectroWaterfall,
                         QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkFFTAudio() override;
-
-    void run() Q_DECL_OVERRIDE;
 
     void processEvent(Spectrograph::GkFftEventType audioEventType, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
     void processEvent(Spectrograph::GkFftEventType audioEventType, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,

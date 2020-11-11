@@ -61,7 +61,7 @@ using namespace Logging;
  */
 GkFFTAudio::GkFFTAudio(QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> audioOutput, const GkDevice &input_audio_device_details,
                        const GkDevice &output_audio_device_details, QPointer<GekkoFyre::GkSpectroWaterfall> spectroWaterfall,
-                       QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QThread(parent)
+                       QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QObject(parent)
 {
     setParent(parent);
 
@@ -82,6 +82,20 @@ GkFFTAudio::GkFFTAudio(QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> 
     gkAudioInNumSamples = (gkAudioInSampleRate * (SPECTRO_Y_AXIS_SIZE / 1000));
     gkInputBuffer = new QBuffer(this);
 
+    QObject::connect(gkAudioInput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(audioInHandleStateChanged(QAudio::State)));
+    QObject::connect(gkAudioOutput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(audioOutHandleStateChanged(QAudio::State)));
+
+    QObject::connect(this, SIGNAL(recordStream(const GekkoFyre::GkAudioFramework::CodecSupport &)),
+                     this, SLOT(recordAudioStream(const GekkoFyre::GkAudioFramework::CodecSupport &)));
+    QObject::connect(this, SIGNAL(stopRecording()), this, SLOT(stopRecordStream()));
+
+    QObject::connect(this, SIGNAL(recordFileStream(const fs::path &, const GekkoFyre::GkAudioFramework::CodecSupport &)),
+                     this, SLOT(recordAudioFileStream(const fs::path &, const GekkoFyre::GkAudioFramework::CodecSupport &)));
+    QObject::connect(this, SIGNAL(stopRecordingFileStream(const fs::path &)), this, SLOT(stopRecordFileStream(const fs::path &)));
+
+    QObject::connect(gkAudioInput, SIGNAL(notify()), this, SLOT(processAudioIn()));
+
+    fftSamplesUpdated = new QThread(this);
     for (qint32 i = 0; i < gkAudioInNumSamples; ++i) {
         mIndices.append((double)i);
         mSamples.append(0);
@@ -99,12 +113,6 @@ GkFFTAudio::GkFFTAudio(QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> 
     mFftOut = fftw_alloc_real(gkAudioInNumSamples);
     mFftPlan = fftw_plan_r2r_1d(gkAudioInNumSamples, mFftIn, mFftOut, FFTW_R2HC,FFTW_ESTIMATE);
 
-    // Move event processing of GkPaStreamHandler to this thread
-    QObject::moveToThread(this);
-    gkAudioInput->moveToThread(this);
-
-    start();
-
     return;
 }
 
@@ -114,31 +122,8 @@ GkFFTAudio::~GkFFTAudio()
     fftw_free(mFftOut);
     fftw_destroy_plan(mFftPlan);
 
-    quit();
-    wait();
-}
-
-/**
- * @brief GkFFTAudio::run
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkFFTAudio::run()
-{
-    QObject::connect(gkAudioInput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(audioInHandleStateChanged(QAudio::State)));
-    QObject::connect(gkAudioOutput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(audioOutHandleStateChanged(QAudio::State)));
-
-    QObject::connect(this, SIGNAL(recordStream(const GekkoFyre::GkAudioFramework::CodecSupport &)),
-                     this, SLOT(recordAudioStream(const GekkoFyre::GkAudioFramework::CodecSupport &)));
-    QObject::connect(this, SIGNAL(stopRecording()), this, SLOT(stopRecordStream()));
-
-    QObject::connect(this, SIGNAL(recordFileStream(const fs::path &, const GekkoFyre::GkAudioFramework::CodecSupport &)),
-                     this, SLOT(recordAudioFileStream(const fs::path &, const GekkoFyre::GkAudioFramework::CodecSupport &)));
-    QObject::connect(this, SIGNAL(stopRecordingFileStream(const fs::path &)), this, SLOT(stopRecordFileStream(const fs::path &)));
-
-    QObject::connect(gkAudioInput, SIGNAL(notify()), this, SLOT(processAudioIn()));
-
-    exec();
-    return;
+    fftSamplesUpdated->quit();
+    fftSamplesUpdated->wait();
 }
 
 /**
@@ -299,7 +284,16 @@ void GkFFTAudio::recordAudioStream(const GkAudioFramework::CodecSupport &support
         }
 
         gkInputBuffer->open(QBuffer::ReadWrite);
+
+        gkAudioInput->setVolume(0.1);
+        gkAudioInput->setNotifyInterval(100);
         gkAudioInput->start(gkInputBuffer);
+
+        fftSamplesUpdated->start();
+
+        // Move event processing of GkPaStreamHandler to this thread
+        QObject::moveToThread(fftSamplesUpdated);
+        gkAudioInput->moveToThread(fftSamplesUpdated);
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, true, true, false, false);
     }

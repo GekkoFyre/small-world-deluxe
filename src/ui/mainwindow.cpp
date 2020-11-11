@@ -2201,8 +2201,6 @@ void MainWindow::startRecordingInput()
                 throw std::invalid_argument(tr("No audio devices have been found!").toStdString());
             }
 
-            gkAudioInput->setVolume(0.1);
-            gkAudioInput->setNotifyInterval(1000);
             gkFftAudio->processEvent(Spectrograph::GkFftEventType::record, GkAudioFramework::CodecSupport::PCM);
 
             return;
