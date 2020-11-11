@@ -64,9 +64,7 @@ using namespace Events;
 using namespace Logging;
 
 std::mutex spectro_main_mtx;
-std::mutex mtx_spectro_raster_draw;
 std::mutex mtx_spectro_align_scales;
-std::mutex mtx_spectro_refresh_date_time;
 
 /**
  * @brief GkQwtColorMap::controlPointsToQwtColorMap
