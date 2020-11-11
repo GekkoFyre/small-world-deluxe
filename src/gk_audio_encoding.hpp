@@ -165,4 +165,3 @@ private:
 };
 
 Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::Bitrate);
-Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::CodecSupport);
