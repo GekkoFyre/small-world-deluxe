@@ -56,7 +56,8 @@ using namespace Logging;
 /**
  * @brief GkFFTAudio::GkFFTAudio
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @note Joel Svensson <http://svenssonjoel.github.io/pages/qt-audio-fft/index.html>.
+ * @note Joel Svensson <http://svenssonjoel.github.io/pages/qt-audio-fft/index.html>,
+ * Paul R <https://stackoverflow.com/questions/4675457/how-to-generate-the-audio-spectrum-using-fft-in-c>.
  */
 GkFFTAudio::GkFFTAudio(QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> audioOutput, const GkDevice &input_audio_device_details,
                        const GkDevice &output_audio_device_details, QPointer<GekkoFyre::GkSpectroWaterfall> spectroWaterfall,
@@ -77,7 +78,8 @@ GkFFTAudio::GkFFTAudio(QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> 
     gkSpectroWaterfall = std::move(spectroWaterfall);
     eventLogger = std::move(gkEventLogger);
 
-    gkAudioInNumSamples = (pref_input_audio_device.audio_device_info.preferredFormat().sampleRate() * (SPECTRO_Y_AXIS_SIZE / 1000));
+    gkAudioInSampleRate = pref_input_audio_device.audio_device_info.preferredFormat().sampleRate();
+    gkAudioInNumSamples = (gkAudioInSampleRate * (SPECTRO_Y_AXIS_SIZE / 1000));
     gkInputBuffer = new QBuffer(this);
 
     for (qint32 i = 0; i < gkAudioInNumSamples; ++i) {
@@ -85,7 +87,7 @@ GkFFTAudio::GkFFTAudio(QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> 
         mSamples.append(0);
     }
 
-    double freqStep = (double)pref_input_audio_device.audio_device_info.preferredFormat().sampleRate() / (double)gkAudioInNumSamples;
+    double freqStep = (double)gkAudioInSampleRate / (double)gkAudioInNumSamples;
     double f = SPECTRO_X_MIN_AXIS_SIZE;
     while (f < SPECTRO_X_MAX_AXIS_SIZE) {
         mFftIndices.append(f);
@@ -97,10 +99,11 @@ GkFFTAudio::GkFFTAudio(QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> 
     mFftOut = fftw_alloc_real(gkAudioInNumSamples);
     mFftPlan = fftw_plan_r2r_1d(gkAudioInNumSamples, mFftIn, mFftOut, FFTW_R2HC,FFTW_ESTIMATE);
 
-    start();
-
     // Move event processing of GkPaStreamHandler to this thread
     QObject::moveToThread(this);
+    gkAudioInput->moveToThread(this);
+
+    start();
 
     return;
 }
@@ -359,8 +362,8 @@ void GkFFTAudio::samplesUpdated()
         fftw_execute(mFftPlan);
 
         QVector<double> fftVec;
-        for (int i = (gkAudioInNumSamples / pref_input_audio_device.audio_device_info.preferredFormat().sampleRate()) * SPECTRO_X_MIN_AXIS_SIZE;
-             i < (gkAudioInNumSamples / pref_input_audio_device.audio_device_info.preferredFormat().sampleRate()) * SPECTRO_X_MAX_AXIS_SIZE;
+        for (int i = (gkAudioInNumSamples / gkAudioInSampleRate) * SPECTRO_X_MIN_AXIS_SIZE;
+             i < (gkAudioInNumSamples / gkAudioInSampleRate) * SPECTRO_X_MAX_AXIS_SIZE;
              i ++) {
             fftVec.append(abs(mFftOut[i]));
         }

@@ -47,8 +47,6 @@
 #include <fftw3.h>
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
-#include <thread>
-#include <future>
 #include <string>
 #include <vector>
 #include <QString>
@@ -114,6 +112,7 @@ private:
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_audio_device;
 
     qint32 gkAudioInNumSamples = 0;
+    qint32 gkAudioInSampleRate = 0;
     QVector<double> mSamples;
     QVector<double> mIndices;
     QVector<double> mFftIndices;
@@ -121,6 +120,11 @@ private:
     fftw_plan mFftPlan;
     double *mFftIn;
     double *mFftOut;
+
+    //
+    // Multithreading
+    //
+    QThread *fftSamplesUpdated;
 
     void samplesUpdated();
 

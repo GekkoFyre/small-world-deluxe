@@ -125,6 +125,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<GekkoFyre::AmateurRadio::DigitalModes>("GekkoFyre::AmateurRadio::DigitalModes");
     qRegisterMetaType<GekkoFyre::AmateurRadio::IARURegions>("GekkoFyre::AmateurRadio::IARURegions");
     qRegisterMetaType<GekkoFyre::Spectrograph::GkGraphType>("GekkoFyre::Spectrograph::GkGraphType");
+    qRegisterMetaType<GekkoFyre::GkAudioFramework::CodecSupport>("GekkoFyre::GkAudioFramework::CodecSupport");
     qRegisterMetaType<GekkoFyre::AmateurRadio::GkFreqs>("GekkoFyre::AmateurRadio::GkFreqs");
     qRegisterMetaType<boost::filesystem::path>("boost::filesystem::path");
     qRegisterMetaType<RIG>("RIG");
@@ -543,7 +544,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                             if (input_dev.second.audio_device_info.isFormatSupported(user_input_settings)) {
                                 // Given audio parameters are supported, as defined by the user previously!
                                 pref_input_device = input_dev.second;
-                                gkAudioInput = new QAudioInput(input_dev.first, user_input_settings, this);
+                                gkAudioInput = new QAudioInput(input_dev.first, user_input_settings, nullptr);
 
                                 gkEventLogger->publishEvent(tr("Now using the input audio device, \"%1\".").arg(pref_input_device.audio_device_info.deviceName()),
                                                             GkSeverity::Info, "", true, true, false, false);
@@ -669,9 +670,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the Waterfall / Spectrograph
         //
-        gkFftAudio = new GekkoFyre::GkFFTAudio(gkAudioInput, gkAudioOutput, pref_input_device, pref_output_device, gkSpectroWaterfall, gkEventLogger, this);
         gkSpectroWaterfall = new GekkoFyre::GkSpectroWaterfall(gkStringFuncs, gkEventLogger, true, true, this);
         gkSpectroCurve = new GekkoFyre::GkSpectroCurve(gkStringFuncs, gkEventLogger, pref_output_device.chosen_sample_rate, GK_FFT_SIZE, true, true, this);
+        gkFftAudio = new GekkoFyre::GkFFTAudio(gkAudioInput, gkAudioOutput, pref_input_device, pref_output_device, gkSpectroWaterfall, gkEventLogger, nullptr);
 
         gkSpectroWaterfall->setTitle(tr("Frequency Waterfall"));
         gkSpectroWaterfall->setXLabel(tr("Frequency (kHz)"));
@@ -1472,7 +1473,7 @@ void MainWindow::defaultInputAudioDev(const std::pair<QAudioDeviceInfo, GkDevice
 {
     QAudioDeviceInfo default_input_dev(QAudioDeviceInfo::defaultInputDevice());
     pref_input_device = input_dev.second;
-    gkAudioInput = new QAudioInput(default_input_dev, default_input_dev.preferredFormat(), this);
+    gkAudioInput = new QAudioInput(default_input_dev, default_input_dev.preferredFormat(), nullptr);
 
     return;
 }
