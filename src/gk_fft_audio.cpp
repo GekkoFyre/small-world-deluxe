@@ -63,7 +63,8 @@ using namespace Logging;
  */
 GkFFTAudio::GkFFTAudio(QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> audioOutput, const GkDevice &input_audio_device_details,
                        const GkDevice &output_audio_device_details, QPointer<GekkoFyre::GkSpectroWaterfall> spectroWaterfall,
-                       QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QObject(parent)
+                       QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                       QObject *parent) : QObject(parent)
 {
     setParent(parent);
 
@@ -78,6 +79,7 @@ GkFFTAudio::GkFFTAudio(QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> 
     gkAudioInput = std::move(audioInput);
     gkAudioOutput = std::move(audioOutput);
     gkSpectroWaterfall = std::move(spectroWaterfall);
+    gkStringFuncs = std::move(stringFuncs);
     eventLogger = std::move(gkEventLogger);
 
     gkAudioInSampleRate = pref_input_audio_device.audio_device_info.preferredFormat().sampleRate();
@@ -96,6 +98,7 @@ GkFFTAudio::GkFFTAudio(QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> 
     QObject::connect(this, SIGNAL(stopRecordingFileStream(const fs::path &)), this, SLOT(stopRecordFileStream(const fs::path &)));
 
     QObject::connect(gkAudioInput, SIGNAL(notify()), this, SLOT(processAudioIn()));
+    QObject::connect(this, SIGNAL(refreshGraph(bool)), gkSpectroWaterfall, SLOT(replot(bool)));
 
     fftSamplesUpdated = new QThread(this);
     return;
@@ -330,23 +333,20 @@ void GkFFTAudio::stopRecordFileStream(const fs::path &media_path)
 void GkFFTAudio::samplesUpdated()
 {
     try {
-        Gist<double> fft(audioSamples.size(), gkAudioInSampleRate, WindowType::RectangularWindow);
-        fft.processAudioFrame(audioSamples);
-        const std::vector<double> &magSpec = fft.getMagnitudeSpectrum();
+        auto splitAudioSamples = gkStringFuncs->chunker(audioSamples, (AUDIO_FRAMES_PER_BUFFER * 2));
+        for (const auto &samples_vec: splitAudioSamples) {
+            Gist<double> fft(samples_vec.size(), gkAudioInSampleRate, WindowType::RectangularWindow);
+            fft.processAudioFrame(samples_vec);
+            const std::vector<double> magSpec = fft.getMagnitudeSpectrum();
 
-        double xMin, xMax;
-        size_t historyLength, layerPoints;
-        gkSpectroWaterfall->getDataDimensions(xMin, xMax, historyLength, layerPoints);
-        if (xMin != SPECTRO_X_MIN_AXIS_SIZE || xMax != SPECTRO_X_MAX_AXIS_SIZE || 126 != layerPoints || 64 != historyLength) {
-            gkSpectroWaterfall->setDataDimensions(SPECTRO_X_MIN_AXIS_SIZE, SPECTRO_X_MAX_AXIS_SIZE, 64, magSpec.size());
+            const bool bRet = gkSpectroWaterfall->addData(magSpec.data(), magSpec.size(), std::time(nullptr));
+            if (!bRet) {
+                throw std::runtime_error(tr("There has been an error with the spectrograph / waterfall.").toStdString());
+            }
         }
 
-        const bool bRet = gkSpectroWaterfall->addData(magSpec.data(), magSpec.size(), std::time(nullptr));
-        if (!bRet) {
-            throw std::runtime_error(tr("There has been an error with the spectrograph / waterfall.").toStdString());
-        }
-
-        gkSpectroWaterfall->replot(true);
+        emit refreshGraph(true);
+        audioSamples.clear();
     } catch (const std::exception &e) {
         std::cerr << e.what() << std::endl;
     }

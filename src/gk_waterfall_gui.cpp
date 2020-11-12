@@ -110,8 +110,7 @@ QwtColorMap *GkQwtColorMap::controlPointsToQwtColorMap(const ColorMaps::ControlP
  * @note <http://dronin.org/doxygen/ground/html/plotdata_8h_source.html>
  * <https://github.com/medvedvvs/QwtWaterfall>
  */
-GkSpectroWaterfall::GkSpectroWaterfall(QPointer<StringFuncs> stringFuncs, QPointer<GkEventLogger> eventLogger, const bool &enablePanner,
-                                       const bool &enableZoomer, QWidget *parent) : m_spectrogram(new QwtPlotSpectrogram),
+GkSpectroWaterfall::GkSpectroWaterfall(QPointer<GkEventLogger> eventLogger, QWidget *parent) : m_spectrogram(new QwtPlotSpectrogram),
                                        gkAlpha(255), m_plotHorCurve(new QwtPlot), m_plotVertCurve(new QwtPlot), m_plotSpectrogram(new QwtPlot),
                                        m_picker(new QwtPlotPicker(QwtPlot::xBottom, QwtPlot::yLeft, QwtPlotPicker::CrossRubberBand,
                                                                   QwtPicker::AlwaysOn, m_plotSpectrogram->canvas())),
@@ -123,7 +122,6 @@ GkSpectroWaterfall::GkSpectroWaterfall(QPointer<StringFuncs> stringFuncs, QPoint
 
     try {
         setParent(parent);
-        gkStringFuncs = std::move(stringFuncs);
         gkEventLogger = std::move(eventLogger);
 
         m_plotHorCurve->setAutoReplot(false);
@@ -286,13 +284,7 @@ GkSpectroWaterfall::GkSpectroWaterfall(QPointer<StringFuncs> stringFuncs, QPoint
             m_vertCurveMarker->attach(m_plotVertCurve);
         }
     } catch (const std::exception &e) {
-        #if defined(_WIN32) || defined(__MINGW64__)
-        HWND hwnd_spectro_gui_main = nullptr;
-        gkStringFuncs->modalDlgBoxOk(hwnd_spectro_gui_main, tr("Error!"), tr("An error occurred during the handling of waterfall / spectrograph data!\n\n%1").arg(e.what()), MB_ICONERROR);
-        DestroyWindow(hwnd_spectro_gui_main);
-        #else
-        gkEventLogger->publishEvent(tr("An error occurred during the handling of waterfall / spectrograph data!"), GkSeverity::Error, e.what(), true);
-        #endif
+        gkEventLogger->publishEvent(tr("An error occurred during the handling of waterfall / spectrograph data!"), GkSeverity::Fatal, e.what(), true);
     }
 
     return;
@@ -312,7 +304,7 @@ GkSpectroWaterfall::~GkSpectroWaterfall()
  * @param historyExtent
  * @param layerPoints
  */
-void GkSpectroWaterfall::setDataDimensions(double dXMin, double dXMax, const size_t &historyExtent, const size_t &layerPoints)
+void GkSpectroWaterfall::setDataDimensions(double dXMin, double dXMax, const size_t historyExtent, const size_t layerPoints)
 {
     gkWaterfallData = new WaterfallData<double>(dXMin, dXMax, historyExtent, layerPoints);
     m_spectrogram->setData(gkWaterfallData);

@@ -671,9 +671,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the Waterfall / Spectrograph
         //
-        gkSpectroWaterfall = new GekkoFyre::GkSpectroWaterfall(gkStringFuncs, gkEventLogger, true, true, this);
+        gkSpectroWaterfall = new GekkoFyre::GkSpectroWaterfall(gkEventLogger, this);
         gkSpectroCurve = new GekkoFyre::GkSpectroCurve(gkStringFuncs, gkEventLogger, pref_output_device.chosen_sample_rate, GK_FFT_SIZE, true, true, this);
-        gkFftAudio = new GekkoFyre::GkFFTAudio(gkAudioInput, gkAudioOutput, pref_input_device, pref_output_device, gkSpectroWaterfall, gkEventLogger, nullptr);
+        gkFftAudio = new GekkoFyre::GkFFTAudio(gkAudioInput, gkAudioOutput, pref_input_device, pref_output_device, gkSpectroWaterfall,
+                                               gkStringFuncs, gkEventLogger, nullptr);
 
         gkSpectroWaterfall->setTitle(tr("Frequency Waterfall"));
         gkSpectroWaterfall->setXLabel(tr("Frequency (kHz)"));
@@ -682,6 +683,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         gkSpectroWaterfall->setYLabel(tr("Time (minutes)"), 10);
         gkSpectroWaterfall->setZLabel(tr("Signal strength (dB)"));
         gkSpectroWaterfall->setColorMap(ColorMaps::BlackBodyRadiation());
+
+        double xMin, xMax;
+        size_t historyLength, layerPoints;
+        gkSpectroWaterfall->getDataDimensions(xMin, xMax, historyLength, layerPoints);
+        if (xMin != SPECTRO_X_MIN_AXIS_SIZE || xMax != SPECTRO_X_MAX_AXIS_SIZE || AUDIO_FRAMES_PER_BUFFER != layerPoints || 64 != historyLength) {
+            gkSpectroWaterfall->setDataDimensions(SPECTRO_X_MIN_AXIS_SIZE, SPECTRO_X_MAX_AXIS_SIZE, 64, AUDIO_FRAMES_PER_BUFFER);
+        }
+
         ui->stackedWidget_maingui_spectro_graphs->addWidget(gkSpectroWaterfall);
         
         ui->stackedWidget_maingui_spectro_graphs->addWidget(gkSpectroCurve);
