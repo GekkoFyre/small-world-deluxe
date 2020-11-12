@@ -42,6 +42,7 @@
 #include "src/gk_fft_audio.hpp"
 #include <Gist.h>
 #include <utility>
+#include <iostream>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -324,25 +325,30 @@ void GkFFTAudio::stopRecordFileStream(const fs::path &media_path)
 /**
  * @brief GkFFTAudio::samplesUpdated
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @note ixSci <https://stackoverflow.com/questions/57719723/cannot-send-events-to-objects-owned-by-a-different-thread-while-runing-a-member>.
  */
 void GkFFTAudio::samplesUpdated()
 {
     try {
-        Gist<double> fft(AUDIO_FRAMES_PER_BUFFER, gkAudioInSampleRate, WindowType::RectangularWindow);
+        Gist<double> fft(audioSamples.size(), gkAudioInSampleRate, WindowType::RectangularWindow);
         fft.processAudioFrame(audioSamples);
-        const std::vector<double> &melSpec = fft.getMelFrequencySpectrum();
+        const std::vector<double> &magSpec = fft.getMagnitudeSpectrum();
 
         double xMin, xMax;
         size_t historyLength, layerPoints;
         gkSpectroWaterfall->getDataDimensions(xMin, xMax, historyLength, layerPoints);
         if (xMin != SPECTRO_X_MIN_AXIS_SIZE || xMax != SPECTRO_X_MAX_AXIS_SIZE || 126 != layerPoints || 64 != historyLength) {
-            gkSpectroWaterfall->setDataDimensions(SPECTRO_X_MIN_AXIS_SIZE, SPECTRO_X_MAX_AXIS_SIZE, 64, melSpec.size());
+            gkSpectroWaterfall->setDataDimensions(SPECTRO_X_MIN_AXIS_SIZE, SPECTRO_X_MAX_AXIS_SIZE, 64, magSpec.size());
         }
 
-        gkSpectroWaterfall->addData(melSpec.data(), melSpec.size(), std::time(nullptr));
+        const bool bRet = gkSpectroWaterfall->addData(magSpec.data(), magSpec.size(), std::time(nullptr));
+        if (!bRet) {
+            throw std::runtime_error(tr("There has been an error with the spectrograph / waterfall.").toStdString());
+        }
+
         gkSpectroWaterfall->replot(true);
     } catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
+        std::cerr << e.what() << std::endl;
     }
 
     return;

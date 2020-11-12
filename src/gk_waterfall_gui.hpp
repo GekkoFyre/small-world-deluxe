@@ -141,7 +141,7 @@ public:
     QString m_zUnit;
 
 protected:
-    std::unique_ptr<WaterfallData<double>> gkWaterfallData;
+    WaterfallData<double> *gkWaterfallData = nullptr;
     QwtPlot* const m_plotHorCurve = nullptr;
     QwtPlot* const m_plotVertCurve = nullptr;
     QwtPlot* const m_plotSpectrogram = nullptr;
@@ -188,7 +188,7 @@ protected slots:
 
 private:
     QPointer<QwtPlotCanvas> canvas;
-    std::unique_ptr<QwtPlotCurve> curve;
+    QPointer<QwtPlotCurve> curve;
     QPointer<QwtPlotPanner> panner;
     QwtScaleWidget *top_x_axis;         // This makes use of RAII!
     QwtScaleWidget *right_y_axis;       // This makes use of RAII!

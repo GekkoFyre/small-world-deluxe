@@ -224,7 +224,7 @@ GkSpectroWaterfall::GkSpectroWaterfall(QPointer<StringFuncs> stringFuncs, QPoint
         m_plotSpectrogram->setSizePolicy(policy);
         setSizePolicy(policy);
 
-        // TODO : add align stuff (plotmatrix)
+        // TODO: Add align stuff (i.e. plotmatrix)
 
         // Zoomer - brought to you from the experimentations with G1X Brillouin plot !
         m_zoomer->setMousePattern(QwtEventPattern::MouseSelect2, Qt::RightButton, Qt::ControlModifier);
@@ -299,7 +299,9 @@ GkSpectroWaterfall::GkSpectroWaterfall(QPointer<StringFuncs> stringFuncs, QPoint
 }
 
 GkSpectroWaterfall::~GkSpectroWaterfall()
-{}
+{
+    freeCurvesData();
+}
 
 /**
  * @brief GkSpectroWaterfall::setDataDimensions
@@ -312,8 +314,8 @@ GkSpectroWaterfall::~GkSpectroWaterfall()
  */
 void GkSpectroWaterfall::setDataDimensions(double dXMin, double dXMax, const size_t &historyExtent, const size_t &layerPoints)
 {
-    gkWaterfallData = std::make_unique<WaterfallData<double>>(dXMin, dXMax, historyExtent, layerPoints);
-    m_spectrogram->setData(gkWaterfallData.get());
+    gkWaterfallData = new WaterfallData<double>(dXMin, dXMax, historyExtent, layerPoints);
+    m_spectrogram->setData(gkWaterfallData);
 
     setupCurves();
     freeCurvesData();
@@ -412,11 +414,14 @@ void GkSpectroWaterfall::replot(bool forceRepaint)
     }
 
     updateLayout();
+
+    /*
     if (forceRepaint) {
         m_plotHorCurve->repaint();
         m_plotVertCurve->repaint();
         m_plotSpectrogram->repaint();
     }
+    */
 
     return;
 }
@@ -527,7 +532,8 @@ void GkSpectroWaterfall::setZTooltipUnit(const QString &zUnit)
 
 /**
  * @brief GkSpectroWaterfall::addData
- * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>.
+ * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>,
+ * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>.
  * @param dataPtr
  * @param dataLen
  * @param timestamp
@@ -546,16 +552,16 @@ bool GkSpectroWaterfall::addData(const double *const dataPtr, const size_t dataL
         // refresh spectrogram content and Y-axis labels
         //m_spectrogram->invalidateCache();
 
-        auto const ySpectroLeftAxis = static_cast<GkWaterfallTimeScaleDraw *>(m_plotSpectrogram->axisScaleDraw(QwtPlot::yLeft));
+        // auto const ySpectroLeftAxis = static_cast<GkWaterfallTimeScaleDraw *>(m_plotSpectrogram->axisScaleDraw(QwtPlot::yLeft));
         // ySpectroLeftAxis->invalidateCache();
 
-        auto const yHistoLeftAxis = static_cast<GkWaterfallTimeScaleDraw *>(m_plotVertCurve->axisScaleDraw(QwtPlot::yLeft));
+        // auto const yHistoLeftAxis = static_cast<GkWaterfallTimeScaleDraw *>(m_plotVertCurve->axisScaleDraw(QwtPlot::yLeft));
         // yHistoLeftAxis->invalidateCache();
 
         const double currentOffset = getOffset();
         const size_t maxHistory = gkWaterfallData->getMaxHistoryLength();
 
-        const QwtScaleDiv& yDiv = m_plotSpectrogram->axisScaleDiv(QwtPlot::yLeft);
+        const QwtScaleDiv &yDiv = m_plotSpectrogram->axisScaleDiv(QwtPlot::yLeft);
         const double yMin = (m_zoomActive) ? yDiv.lowerBound() + 1 : currentOffset;
         const double yMax = (m_zoomActive) ? yDiv.upperBound() + 1 : maxHistory + currentOffset;
 
@@ -836,6 +842,7 @@ void GkSpectroWaterfall::setPickerEnabled(const bool enabled)
     // m_zoomer->zoom(0);
 
     // Clear plots?
+
     return;
 }
 
@@ -917,8 +924,34 @@ void GkSpectroWaterfall::scaleDivChanged()
     return;
 }
 
+/**
+ * @brief GkSpectroWaterfall::setColorMap
+ * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>.
+ * @param colorMap
+ * @return
+ */
 bool GkSpectroWaterfall::setColorMap(const ColorMaps::ControlPoints &colorMap) {
-    return false;
+    QwtColorMap *spectrogramColorMap = GkQwtColorMap::controlPointsToQwtColorMap(colorMap);
+    if (!spectrogramColorMap) {
+        return false;
+    }
+
+    m_ctrlPts = colorMap;
+    m_spectrogram->setColorMap(spectrogramColorMap);
+
+    if (m_plotSpectrogram->axisEnabled(QwtPlot::yRight)) {
+        QwtScaleWidget *axis = m_plotSpectrogram->axisWidget(QwtPlot::yRight);
+        if (axis->isColorBarEnabled()) {
+            double dLower;
+            double dUpper;
+            getRange(dLower, dUpper);
+
+            axis->setColorMap(QwtInterval(dLower, dUpper), GkQwtColorMap::controlPointsToQwtColorMap(m_ctrlPts));
+        }
+    }
+
+    m_spectrogram->invalidateCache();
+    return true;
 }
 
 ColorMaps::ControlPoints GkSpectroWaterfall::getColorMap() const

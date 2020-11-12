@@ -132,6 +132,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<size_t>("size_t");
     qRegisterMetaType<uint8_t>("uint8_t");
     qRegisterMetaType<rig_model_t>("rig_model_t");
+    qRegisterMetaType<QList<QwtLegendData>>("QList<QwtLegendData>");
     qRegisterMetaType<std::vector<qint16>>("std::vector<qint16>");
     qRegisterMetaType<std::vector<double>>("std::vector<double>");
     qRegisterMetaType<std::vector<float>>("std::vector<float>");
@@ -680,6 +681,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         gkSpectroWaterfall->setZTooltipUnit(tr("dB"));
         gkSpectroWaterfall->setYLabel(tr("Time (minutes)"), 10);
         gkSpectroWaterfall->setZLabel(tr("Signal strength (dB)"));
+        gkSpectroWaterfall->setColorMap(ColorMaps::BlackBodyRadiation());
         ui->stackedWidget_maingui_spectro_graphs->addWidget(gkSpectroWaterfall);
         
         ui->stackedWidget_maingui_spectro_graphs->addWidget(gkSpectroCurve);
