@@ -44,7 +44,6 @@
 #include "src/defines.hpp"
 #include "src/gk_logger.hpp"
 #include "src/gk_waterfall_gui.hpp"
-#include <fftw3.h>
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
 #include <string>
@@ -112,13 +111,7 @@ private:
 
     qint32 gkAudioInNumSamples = 0;
     qint32 gkAudioInSampleRate = 0;
-    QVector<double> mSamples;
-    QVector<double> mIndices;
-    QVector<double> mFftIndices;
-
-    fftw_plan mFftPlan;
-    double *mFftIn;
-    double *mFftOut;
+    std::vector<double> audioSamples;
 
     //
     // Multithreading

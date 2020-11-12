@@ -40,6 +40,7 @@
  ****************************************************************************************************/
 
 #include "src/gk_fft_audio.hpp"
+#include <Gist.h>
 #include <utility>
 
 using namespace GekkoFyre;
@@ -96,32 +97,11 @@ GkFFTAudio::GkFFTAudio(QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> 
     QObject::connect(gkAudioInput, SIGNAL(notify()), this, SLOT(processAudioIn()));
 
     fftSamplesUpdated = new QThread(this);
-    for (qint32 i = 0; i < gkAudioInNumSamples; ++i) {
-        mIndices.append((double)i);
-        mSamples.append(0);
-    }
-
-    double freqStep = (double)gkAudioInSampleRate / (double)gkAudioInNumSamples;
-    double f = SPECTRO_X_MIN_AXIS_SIZE;
-    while (f < SPECTRO_X_MAX_AXIS_SIZE) {
-        mFftIndices.append(f);
-        f += freqStep;
-    }
-
-    // Setup the FFT plan
-    mFftIn  = fftw_alloc_real(gkAudioInNumSamples);
-    mFftOut = fftw_alloc_real(gkAudioInNumSamples);
-    mFftPlan = fftw_plan_r2r_1d(gkAudioInNumSamples, mFftIn, mFftOut, FFTW_R2HC,FFTW_ESTIMATE);
-
     return;
 }
 
 GkFFTAudio::~GkFFTAudio()
 {
-    fftw_free(mFftIn);
-    fftw_free(mFftOut);
-    fftw_destroy_plan(mFftPlan);
-
     fftSamplesUpdated->quit();
     fftSamplesUpdated->wait();
 }
@@ -198,9 +178,9 @@ void GkFFTAudio::processAudioIn()
         s = ba.at(b_pos++);
         s |= ba.at(b_pos++) << 8;
         if (s != 0) {
-            mSamples.append((double)s / 32768.0);
+            audioSamples.push_back((double)s / 32768.0); // TODO: Replace with a function that gets the peak-value instead!
         } else {
-            mSamples.append(0);
+            audioSamples.push_back(0);
         }
     }
 
@@ -343,26 +323,24 @@ void GkFFTAudio::stopRecordFileStream(const fs::path &media_path)
 
 /**
  * @brief GkFFTAudio::samplesUpdated
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>,
- * Joel Svensson <http://svenssonjoel.github.io/pages/qt-audio-fft/index.html>.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void GkFFTAudio::samplesUpdated()
 {
     try {
-        int n = mSamples.length();
-        if (n > 96000) mSamples = mSamples.mid(n - gkAudioInNumSamples,-1);
-        std::memcpy(mFftIn, mSamples.data(), (gkAudioInNumSamples * sizeof(double)));
+        Gist<double> fft(AUDIO_FRAMES_PER_BUFFER, gkAudioInSampleRate, WindowType::RectangularWindow);
+        fft.processAudioFrame(audioSamples);
+        const std::vector<double> &melSpec = fft.getMelFrequencySpectrum();
 
-        fftw_execute(mFftPlan);
-
-        QVector<double> fftVec;
-        for (int i = (gkAudioInNumSamples / gkAudioInSampleRate) * SPECTRO_X_MIN_AXIS_SIZE;
-             i < (gkAudioInNumSamples / gkAudioInSampleRate) * SPECTRO_X_MAX_AXIS_SIZE;
-             i ++) {
-            fftVec.append(abs(mFftOut[i]));
+        double xMin, xMax;
+        size_t historyLength, layerPoints;
+        gkSpectroWaterfall->getDataDimensions(xMin, xMax, historyLength, layerPoints);
+        if (xMin != SPECTRO_X_MIN_AXIS_SIZE || xMax != SPECTRO_X_MAX_AXIS_SIZE || 126 != layerPoints || 64 != historyLength) {
+            gkSpectroWaterfall->setDataDimensions(SPECTRO_X_MIN_AXIS_SIZE, SPECTRO_X_MAX_AXIS_SIZE, 64, melSpec.size());
         }
 
-        gkSpectroWaterfall->addData(mFftIndices.mid(0, fftVec.length()).data(), fftVec.length(), time(nullptr));
+        gkSpectroWaterfall->addData(melSpec.data(), melSpec.size(), std::time(nullptr));
+        gkSpectroWaterfall->replot(true);
     } catch (const std::exception &e) {
         QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
     }
