@@ -690,6 +690,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             gkSpectroWaterfall->setDataDimensions(SPECTRO_X_MIN_AXIS_SIZE, SPECTRO_X_MAX_AXIS_SIZE, 64, AUDIO_FRAMES_PER_BUFFER);
         }
 
+        // Set the range only once (data range)...
+        static bool gkSetRangeOnlyOnce = true;
+        if (gkSetRangeOnlyOnce) {
+            double dataRng[2];
+            gkSpectroWaterfall->getDataRange(dataRng[0], dataRng[1]);
+            gkSpectroWaterfall->setRange(dataRng[0], dataRng[1]);
+            gkSetRangeOnlyOnce = false;
+        }
+
         ui->stackedWidget_maingui_spectro_graphs->addWidget(gkSpectroWaterfall);
 
         //
