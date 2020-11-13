@@ -413,7 +413,7 @@ void StringFuncs::changePushButtonColor(const QPointer<QPushButton> &push_button
     return;
 }
 
-#if defined(_WIN32) || defined(__MINGW64__)
+#if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
 /**
  * @brief StringFuncs::convQStringToWinBStr converts a given QString to a Microsoft Windows compatible Binary
  * String (i.e. `BSTR` variable).

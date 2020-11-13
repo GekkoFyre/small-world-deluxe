@@ -72,7 +72,7 @@
 #include <QSerialPortInfo>
 #include <QAudioDeviceInfo>
 
-#if defined(_WIN32) || defined(__MINGW64__)
+#if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
 #include <winsdkver.h>
 #include <Windows.h>
 #include <tchar.h> // https://linuxgazette.net/147/pfeiffer.html
@@ -133,16 +133,9 @@ namespace GekkoFyre {
 // Concerns spectrograph / waterfall calculations and settings
 //
 #define SPECTRO_REFRESH_CYCLE_MILLISECS (1000)          // How often the spectrograph / waterfall should update, in milliseconds.
-#define SPECTRO_TIME_UPDATE_MILLISECS (15000)           // How often, in milliseconds, the spectrograph updates the timing information on the y-axis.
-#define SPECTRO_MAX_BUFFER_SIZE (10)                    // The maximum number of items to store within the buffers associated with the spectrograph.
-#define SPECTRO_X_MIN_AXIS_SIZE (0)                  // The default, lower-limit of the x-axis on the spectrograph / waterfall, in hertz.
-#define SPECTRO_X_MAX_AXIS_SIZE (2500)               // The default, upper-limit of the x-axis on the spectrograph / waterfall, in hertz.
+#define SPECTRO_X_MIN_AXIS_SIZE (0)                     // The default, lower-limit of the x-axis on the spectrograph / waterfall, in hertz.
+#define SPECTRO_X_MAX_AXIS_SIZE (2500)                  // The default, upper-limit of the x-axis on the spectrograph / waterfall, in hertz.
 #define SPECTRO_Y_AXIS_SIZE (60000)                     // The maximum size of the y-axis, in milliseconds, given that it is based on a timescale.
-#define SPECTRO_Y_AXIS_MINOR (15)
-#define SPECTRO_Y_AXIS_MAJOR (8)
-
-#define GRAPH_DISPLAY_WATERFALL_STD_IDX (0)             // Display the standard waterfall!
-#define GRAPH_DISPLAY_2D_SINEWAVE_IDX (1)               // Display the 2D Sinewave graph!
 
 #define GRAPH_DISPLAY_500_MILLISECS_IDX (0)             // Display '500 milliseconds' within the QComboBox!
 #define GRAPH_DISPLAY_1_SECONDS_IDX (1)                 // Display '1 seconds' within the QComboBox!

@@ -49,7 +49,7 @@
 #include <QString>
 #include <QPointer>
 
-#if defined(_WIN32) || defined(__MINGW64__)
+#if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
 #include <windows.h>
 #include <crtdbg.h>
 #include <netfw.h>
@@ -76,7 +76,7 @@ private:
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
-    #if defined(_WIN32) || defined(__MINGW64__)
+    #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
     HRESULT isWindowsFirewallEnabled(IN INetFwProfile *fwProfile, OUT BOOL *fwOn);
     #endif
 
