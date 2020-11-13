@@ -65,14 +65,10 @@ private slots:
     void on_comboBox_timing_currentIndexChanged(int index);
     void on_horizontalSlider_freq_zoom_valueChanged(int value);
 
-signals:
-    void changeGraphType(const GekkoFyre::Spectrograph::GkGraphType &graph_type);
-
 private:
     Ui::SpectroDialog *ui;
     QPointer<GekkoFyre::GkSpectroWaterfall> gkSpectroGui;
 
-    void prefillGraphTypes(const GekkoFyre::Spectrograph::GkGraphType &graph_type);
     void prefillGraphTiming(const GekkoFyre::Spectrograph::GkGraphTiming &graph_timing);
 };
 

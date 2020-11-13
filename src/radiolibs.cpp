@@ -482,7 +482,7 @@ std::vector<GkBosUsb> RadioLibs::printLibUsb(libusb_device **devs)
     try {
         std::vector<GkBosUsb> usb_vec;
 
-        #if defined(_WIN32) || defined(__MINGW64__)
+        #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
         libusb_device *dev;
         int i = 0;
         while ((dev = devs[i++]) != nullptr) {

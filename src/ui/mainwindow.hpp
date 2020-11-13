@@ -45,7 +45,6 @@
 #include "src/radiolibs.hpp"
 #include "src/gk_waterfall_gui.hpp"
 #include "src/gk_fft_audio.hpp"
-#include "src/gk_curve_gui.hpp"
 #include "src/gk_circ_buffer.hpp"
 #include "src/gk_frequency_list.hpp"
 #include "src/ui/dialogsettings.hpp"
@@ -254,11 +253,6 @@ public slots:
     void addRigToMemory(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void disconnectRigInMemory(std::shared_ptr<Rig> rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
 
-    //
-    // Spectrograph related
-    //
-    void changeGraphInUse(const GekkoFyre::Spectrograph::GkGraphType &graph_type);
-
 signals:
     void updatePaVol(const int &percentage);
     void updatePlot();
@@ -284,11 +278,6 @@ signals:
     // QAudioSystem and related
     //
     void changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &input_device);
-
-    //
-    // Spectrograph related
-    //
-    void changeGraphType(const GekkoFyre::Spectrograph::GkGraphType &graph_type);
 
 private:
     Ui::MainWindow *ui;
@@ -423,7 +412,6 @@ private:
     // Spectrograph related
     //
     QPointer<GekkoFyre::GkSpectroWaterfall> gkSpectroWaterfall;
-    QPointer<GekkoFyre::GkSpectroCurve> gkSpectroCurve;
     QVector<double> waterfall_samples_vec;
     GekkoFyre::Spectrograph::GkGraphType graph_in_use;
 

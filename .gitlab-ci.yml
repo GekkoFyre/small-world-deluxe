@@ -88,8 +88,7 @@ sworld_debug_archlinux_x86_64:
   - export CC=/usr/bin/clang
   - export CXX=/usr/bin/clang++
   - mkdir -p src_build && cd src_build
-  - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DGFYRE_BUILD_STATIC=ON -DBUILD_CODEC2_SUPPORT=OFF
-    -DBUILD_OPUS_SUPPORT=OFF -DENBL_VALGRIND_SUPPORT=ON ..
+  - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DGFYRE_BUILD_STATIC=ON -DBUILD_CODEC2_SUPPORT=OFF -DBUILD_OPUS_SUPPORT=OFF ..
   - make -j 8
   - cd ./..
   after_script:
