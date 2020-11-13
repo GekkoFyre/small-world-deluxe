@@ -392,12 +392,11 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/sentry-native")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/sentry-native/include")
 
 #
-# Gist by Adam Stark
-# https://github.com/adamstark/Gist
+# KissFFT by Mark Borgerding
+# https://github.com/mborgerding/kissfft
 #
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/Gist")
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/Gist/src")
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/Gist/libs/kiss_fft130")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/kissfft")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/kissfft")
 
 #
 # AudioFile by Adam Stark
@@ -441,6 +440,32 @@ set(GALAXY_WSJTX_WSPR_C
     src/contrib/wsjt-x/lib/wsprd/jelinek.h)
 
 set_property(SOURCE ${GALAXY_WSJTX_WSPR_C} PROPERTY SKIP_AUTOUIC ON)
+
+set(GALAXY_GIST_CPP
+    ${GALAXY_GIST_CPP}
+    src/contrib/Gist/src/AccelerateFFT.cpp
+    src/contrib/Gist/src/CoreFrequencyDomainFeatures.cpp
+    src/contrib/Gist/src/CoreTimeDomainFeatures.cpp
+    src/contrib/Gist/src/Gist.cpp
+    src/contrib/Gist/src/MFCC.cpp
+    src/contrib/Gist/src/OnsetDetectionFunction.cpp
+    src/contrib/Gist/src/WindowFunctions.cpp
+    src/contrib/Gist/src/Yin.cpp)
+
+set_property(SOURCE ${GALAXY_GIST_CPP} PROPERTY SKIP_AUTOUIC ON)
+
+set(GALAXY_GIST_HPP
+    ${GALAXY_GIST_HPP}
+    src/contrib/Gist/src/Yin.h
+    src/contrib/Gist/src/WindowFunctions.h
+    src/contrib/Gist/src/OnsetDetectionFunction.h
+    src/contrib/Gist/src/MFCC.h
+    src/contrib/Gist/src/Gist.h
+    src/contrib/Gist/src/CoreTimeDomainFeatures.h
+    src/contrib/Gist/src/CoreFrequencyDomainFeatures.h
+    src/contrib/Gist/src/AccelerateFFT.h)
+
+set_property(SOURCE ${GALAXY_GIST_HPP} PROPERTY SKIP_AUTOUIC ON)
 
 #
 # SingleApplication
@@ -486,7 +511,6 @@ set(GALAXY_UI_CPP
     src/gk_fft_audio.cpp
     src/gk_waterfall_gui.cpp
     src/gk_spectro_color_maps.cpp
-    src/gk_curve_gui.cpp
     src/gk_audio_encoding.cpp
     src/gk_audio_decoding.cpp
     src/gk_cli.cpp
@@ -574,7 +598,6 @@ set(GALAXY_OBJ_HEADERS
     src/gk_fft_audio.hpp
     src/gk_waterfall_gui.hpp
     src/gk_spectro_color_maps.hpp
-    src/gk_curve_gui.hpp
     src/gk_audio_encoding.hpp
     src/gk_audio_decoding.hpp
     src/gk_cli.hpp
@@ -679,7 +702,7 @@ endif()
 # Build Small World Deluxe as a static package!
 #
 if(GFYRE_BUILD_STATIC)
-    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C})
+    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP})
     
     # add_library(galaxy_fort STATIC ${GALAXY_WSJTX_QRA64_FORT})
 else()
@@ -690,13 +713,13 @@ endif(GFYRE_BUILD_STATIC)
 # Build Small World Deluxe as a shared package!
 #
 if(GFYRE_BUILD_SHARED)
-    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C})
+    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP})
     
     # add_library(galaxy_fort STATIC ${GALAXY_WSJTX_QRA64_FORT})
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
-target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::Multimedia Qt5::SerialPort Qt5::PrintSupport Qt5::TextToSpeech Qt5::Test Threads::Threads SingleApplication::SingleApplication sentry::sentry Gist leveldb ${LIBS})
+target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::Multimedia Qt5::SerialPort Qt5::PrintSupport Qt5::TextToSpeech Qt5::Test Threads::Threads SingleApplication::SingleApplication sentry::sentry leveldb kissfft ${LIBS})
 
 qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)
 add_dependencies(galaxy resources)
@@ -706,6 +729,7 @@ set(SWRLD_EXEC ${SWRLD_EXEC}
 
 add_executable(smallworld WIN32 ${SWRLD_EXEC})
 target_compile_options(smallworld PRIVATE -fPIC)
+target_compile_definitions(galaxy PRIVATE -DUSE_KISS_FFT)
 target_link_libraries(smallworld PRIVATE galaxy)
 
 include(CMakePackageConfigHelpers)

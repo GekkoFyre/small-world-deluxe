@@ -28,7 +28,7 @@ public:
     {
         if (m_layerPoints == 0 || m_maxHistoryLength == 0)
         {
-            throw "Bad usage of WaterfallData !"; // better: call abort();
+            throw std::runtime_error("Bad usage of WaterfallData!"); // better: call abort();
         }
 
         // initialize data with zeroes or the minimal value of T type

@@ -60,9 +60,6 @@ SpectroDialog::SpectroDialog(QPointer<GekkoFyre::GkSpectroWaterfall> spectroGui,
     ui->setupUi(this);
     this->adjustSize(); // Resize to contents
 
-    prefillGraphTypes(GkGraphType::GkWaterfall);
-    prefillGraphTypes(GkGraphType::GkSinewave);
-
     prefillGraphTiming(GkGraphTiming::GkGraphTime500Millisec);
     prefillGraphTiming(GkGraphTiming::GkGraphTime1Sec);
     prefillGraphTiming(GkGraphTiming::GkGraphTime2Sec);
@@ -89,17 +86,6 @@ SpectroDialog::~SpectroDialog()
  */
 void SpectroDialog::on_pushButton_apply_clicked()
 {
-    switch (ui->comboBox_graph_to_display->currentIndex()) {
-        case GRAPH_DISPLAY_WATERFALL_STD_IDX:
-            emit changeGraphType(GkGraphType::GkWaterfall);
-            break;
-        case GRAPH_DISPLAY_2D_SINEWAVE_IDX:
-            emit changeGraphType(GkGraphType::GkSinewave);
-            break;
-        default:
-            break;
-    }
-
     return;
 }
 
@@ -129,27 +115,6 @@ void SpectroDialog::on_pushButton_export_graph_clicked()
  */
 void SpectroDialog::on_pushButton_print_graph_clicked()
 {
-    return;
-}
-
-/**
- * @brief SpectroDialog::prefillGraphTypes
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param graph_type
- */
-void SpectroDialog::prefillGraphTypes(const GkGraphType &graph_type)
-{
-    switch (graph_type) {
-    case GkGraphType::GkWaterfall:
-        ui->comboBox_graph_to_display->insertItem(GRAPH_DISPLAY_WATERFALL_STD_IDX, tr("Waterfall"));
-        break;
-    case GkGraphType::GkSinewave:
-        ui->comboBox_graph_to_display->insertItem(GRAPH_DISPLAY_2D_SINEWAVE_IDX, tr("2D Curve / Sinewave"));
-        break;
-    default:
-        break;
-    }
-
     return;
 }
 

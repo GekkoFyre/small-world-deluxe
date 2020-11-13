@@ -45,7 +45,7 @@
 #include <QMessageBox>
 #include <QtGlobal>
 
-#if defined(_WIN32) || defined(__MINGW64__)
+#if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
 // Forward declarations
 HRESULT WFCOMInitialize(INetFwPolicy2** ppNetFwPolicy2);
 #endif
@@ -118,7 +118,7 @@ QString GkSystem::renameCommsDevice(const qint32 &port, const GkConnType &conn_t
 {
     std::stringstream ss;
 
-    #if defined(_WIN32) || defined(__MINGW64__)
+    #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
     ss.clear();
     #elif __linux__
     ss << "/dev/";
@@ -127,7 +127,7 @@ QString GkSystem::renameCommsDevice(const qint32 &port, const GkConnType &conn_t
     switch (conn_type) {
         case GkRS232:
         {
-            #if defined(_WIN32) || defined(__MINGW64__)
+            #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
             ss << "COM" << port;
             #elif __linux__
             ss << "ttyS" << port;
@@ -136,7 +136,7 @@ QString GkSystem::renameCommsDevice(const qint32 &port, const GkConnType &conn_t
         }
         case GkUSB:
         {
-            #if defined(_WIN32) || defined(__MINGW64__)
+            #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
             ss << "USB" << port;
             #elif __linux__
             ss << "ttyUSB" << port;
@@ -145,7 +145,7 @@ QString GkSystem::renameCommsDevice(const qint32 &port, const GkConnType &conn_t
         }
         case GkParallel:
         {
-            #if defined(_WIN32) || defined(__MINGW64__)
+            #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
             ss << "LPT" << port;
             #elif __linux__
             ss << "lp" << port;
@@ -154,7 +154,7 @@ QString GkSystem::renameCommsDevice(const qint32 &port, const GkConnType &conn_t
         }
         case GkGPIO:
         {
-            #if defined(_WIN32) || defined(__MINGW64__)
+            #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
             ss << "DIO" << port;
             #elif __linux__
             ss.clear();
@@ -171,7 +171,7 @@ QString GkSystem::renameCommsDevice(const qint32 &port, const GkConnType &conn_t
     return QString::fromStdString(ss.str());
 }
 
-#if defined(_WIN32) || defined(__MINGW64__)
+#if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
 /**
  * @brief GkSystem::addPolicyToWindowsFirewallApi adds an outbound rule to the Microsoft Windows firewall, provided it's activated, and it
  * does this via the official C++ API.
@@ -297,7 +297,7 @@ void GkSystem::addPolicyToWindowsFirewallApi()
 }
 #endif
 
-#if defined(_WIN32) || defined(__MINGW64__)
+#if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
 /**
  * @brief GkSystem::isWindowsFirewallEnabled will detect whether the Microsoft Windows firewall is enabled or
  * not, programmatically, via the Microsoft Windows C++ API.
