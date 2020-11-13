@@ -47,6 +47,7 @@
 #include "src/gk_waterfall_gui.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
+#include <kiss_fft.h>
 #include <string>
 #include <vector>
 #include <QString>

@@ -39,8 +39,10 @@
  **
  ****************************************************************************************************/
 
+#define USE_KISS_FFT 1
+
 #include "src/gk_fft_audio.hpp"
-#include <Gist.h>
+#include "src/contrib/Gist/src/Gist.h"
 #include <utility>
 #include <iterator>
 #include <iostream>
