@@ -43,6 +43,7 @@
 
 #include "src/gk_fft_audio.hpp"
 #include "src/contrib/Gist/src/Gist.h"
+#include <chrono>
 #include <utility>
 #include <iterator>
 #include <iostream>
@@ -68,7 +69,7 @@ using namespace Logging;
 GkFFTAudio::GkFFTAudio(QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> audioOutput, const GkDevice &input_audio_device_details,
                        const GkDevice &output_audio_device_details, QPointer<GekkoFyre::GkSpectroWaterfall> spectroWaterfall,
                        QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                       QObject *parent) : QObject(parent)
+                       QObject *parent) : spectroRefreshTimer(new QTimer(nullptr)), QObject(parent)
 {
     setParent(parent);
 
@@ -199,6 +200,12 @@ void GkFFTAudio::processAudioIn()
     return;
 }
 
+void GkFFTAudio::refreshGraphTrue()
+{
+    emit refreshGraph(true);
+    return;
+}
+
 /**
  * @brief GkFFTAudio::processEvent
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -282,6 +289,11 @@ void GkFFTAudio::recordAudioStream(const GkAudioFramework::CodecSupport &support
         // Move event processing of GkPaStreamHandler to this thread
         QObject::moveToThread(fftSamplesUpdated);
         gkAudioInput->moveToThread(fftSamplesUpdated);
+
+        // TODO: There might be a fatal bug with this timer and slower computers; we'll have to do some testing...
+        QObject::connect(spectroRefreshTimer, SIGNAL(timeout()), this, SLOT(refreshGraphTrue()));
+        spectroRefreshTimer->setInterval(std::chrono::milliseconds(1000));
+        spectroRefreshTimer->start();
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, true, true, false, false);
     }
@@ -362,10 +374,6 @@ void GkFFTAudio::samplesUpdated()
                     updateGraph = true;
                 }
             }
-        }
-
-        if (updateGraph) {
-            emit refreshGraph(true);
         }
 
         audioSamples.clear();

@@ -50,6 +50,7 @@
 #include <kiss_fft.h>
 #include <string>
 #include <vector>
+#include <QTimer>
 #include <QString>
 #include <QThread>
 #include <QObject>
@@ -90,6 +91,7 @@ private slots:
     void audioOutHandleStateChanged(QAudio::State changed_state);
 
     void processAudioIn();
+    void refreshGraphTrue();
 
 signals:
     void recordStream(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
@@ -121,7 +123,8 @@ private:
     //
     // Multithreading
     //
-    QThread *fftSamplesUpdated;
+    QPointer<QThread> fftSamplesUpdated;
+    QPointer<QTimer> spectroRefreshTimer;
     bool updateGraph = false;
 
     void samplesUpdated();
