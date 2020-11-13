@@ -43,8 +43,8 @@
 
 #include "src/defines.hpp"
 #include "src/gk_logger.hpp"
+#include "src/gk_string_funcs.hpp"
 #include "src/gk_waterfall_gui.hpp"
-#include <fftw3.h>
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
 #include <string>
@@ -70,7 +70,7 @@ public:
     explicit GkFFTAudio(QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> audioOutput,
                         const GekkoFyre::Database::Settings::Audio::GkDevice &input_audio_device_details,
                         const GekkoFyre::Database::Settings::Audio::GkDevice &output_audio_device_details,
-                        QPointer<GekkoFyre::GkSpectroWaterfall> spectroWaterfall,
+                        QPointer<GekkoFyre::GkSpectroWaterfall> spectroWaterfall, QPointer<GekkoFyre::StringFuncs> stringFuncs,
                         QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkFFTAudio() override;
 
@@ -97,8 +97,11 @@ signals:
     void recordFileStream(const fs::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
     void stopRecordingFileStream(const fs::path &media_path);
 
+    void refreshGraph(bool forceRepaint = false);
+
 private:
     QPointer<GekkoFyre::GkSpectroWaterfall> gkSpectroWaterfall;
+    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
     //
@@ -112,18 +115,13 @@ private:
 
     qint32 gkAudioInNumSamples = 0;
     qint32 gkAudioInSampleRate = 0;
-    QVector<double> mSamples;
-    QVector<double> mIndices;
-    QVector<double> mFftIndices;
-
-    fftw_plan mFftPlan;
-    double *mFftIn;
-    double *mFftOut;
+    std::vector<double> audioSamples;
 
     //
     // Multithreading
     //
     QThread *fftSamplesUpdated;
+    bool updateGraph = false;
 
     void samplesUpdated();
 

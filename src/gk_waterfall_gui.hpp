@@ -99,11 +99,10 @@ class GkSpectroWaterfall: public QWidget {
     Q_OBJECT
 
 public:
-    explicit GkSpectroWaterfall(QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger, const bool &enablePanner = false,
-                                const bool &enableZoomer = false, QWidget *parent = nullptr);
+    explicit GkSpectroWaterfall(QPointer<GekkoFyre::GkEventLogger> eventLogger, QWidget *parent = nullptr);
     ~GkSpectroWaterfall() override;
 
-    void setDataDimensions(double dXMin, double dXMax, const size_t &historyExtent, const size_t &layerPoints);
+    void setDataDimensions(double dXMin, double dXMax, const size_t historyExtent, const size_t layerPoints);
     void getDataDimensions(double &dXMin, double &dXMax, size_t &historyExtent, size_t &layerPoints) const;
 
     bool setMarker(const double x, const double y);
@@ -111,7 +110,6 @@ public:
     //
     // View
     //
-    void replot(bool forceRepaint = false);
     void setWaterfallVisibility(const bool bVisible);
     void setTitle(const QString& qstrNewTitle);
     void setXLabel(const QString& qstrTitle, const int fontPointSize = 12);
@@ -141,7 +139,7 @@ public:
     QString m_zUnit;
 
 protected:
-    std::unique_ptr<WaterfallData<double>> gkWaterfallData;
+    WaterfallData<double> *gkWaterfallData = nullptr;
     QwtPlot* const m_plotHorCurve = nullptr;
     QwtPlot* const m_plotVertCurve = nullptr;
     QwtPlot* const m_plotSpectrogram = nullptr;
@@ -181,6 +179,11 @@ protected:
 public slots:
     void setPickerEnabled(const bool enabled);
 
+    //
+    // View
+    //
+    void replot(bool forceRepaint = false);
+
 protected slots:
     void autoRescale(const QRectF &rect);
     void selectedPoint(const QPointF &pt);
@@ -188,12 +191,11 @@ protected slots:
 
 private:
     QPointer<QwtPlotCanvas> canvas;
-    std::unique_ptr<QwtPlotCurve> curve;
+    QPointer<QwtPlotCurve> curve;
     QPointer<QwtPlotPanner> panner;
     QwtScaleWidget *top_x_axis;         // This makes use of RAII!
     QwtScaleWidget *right_y_axis;       // This makes use of RAII!
 
-    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     int gkAlpha;                                                // Controls the alpha value of the waterfall chart.
 
