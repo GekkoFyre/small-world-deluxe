@@ -121,6 +121,7 @@ private:
     // Multithreading
     //
     QThread *fftSamplesUpdated;
+    bool updateGraph = false;
 
     void samplesUpdated();
 

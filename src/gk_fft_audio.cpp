@@ -42,7 +42,9 @@
 #include "src/gk_fft_audio.hpp"
 #include <Gist.h>
 #include <utility>
+#include <iterator>
 #include <iostream>
+#include <algorithm>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -333,20 +335,41 @@ void GkFFTAudio::stopRecordFileStream(const fs::path &media_path)
 void GkFFTAudio::samplesUpdated()
 {
     try {
+        updateGraph = false;
+        std::vector<double> remainder;
         auto splitAudioSamples = gkStringFuncs->chunker(audioSamples, (AUDIO_FRAMES_PER_BUFFER * 2));
         for (const auto &samples_vec: splitAudioSamples) {
-            Gist<double> fft(samples_vec.size(), gkAudioInSampleRate, WindowType::RectangularWindow);
-            fft.processAudioFrame(samples_vec);
-            const std::vector<double> magSpec = fft.getMagnitudeSpectrum();
+            if (!samples_vec.empty()) {
+                if (samples_vec.size() == (AUDIO_FRAMES_PER_BUFFER * 2)) {
+                    Gist<double> fft(samples_vec.size(), gkAudioInSampleRate, WindowType::RectangularWindow);
+                    fft.processAudioFrame(samples_vec);
+                    const std::vector<double> magSpec = fft.getMagnitudeSpectrum();
 
-            const bool bRet = gkSpectroWaterfall->addData(magSpec.data(), magSpec.size(), std::time(nullptr));
-            if (!bRet) {
-                throw std::runtime_error(tr("There has been an error with the spectrograph / waterfall.").toStdString());
+                    const bool bRet = gkSpectroWaterfall->addData(magSpec.data(), magSpec.size(), std::time(nullptr));
+                    if (!bRet) {
+                        throw std::runtime_error(tr("There has been an error with the spectrograph / waterfall.").toStdString());
+                    }
+
+                    updateGraph = true;
+                }
+            } else {
+                // Do processing on the remainder...
+                remainder.clear();
+                if (!samples_vec.empty()) {
+                    std::copy(samples_vec.begin(), samples_vec.end(), std::back_inserter(remainder));
+                    updateGraph = true;
+                }
             }
         }
 
-        emit refreshGraph(true);
+        if (updateGraph) {
+            emit refreshGraph(true);
+        }
+
         audioSamples.clear();
+        if (!remainder.empty()) {
+            std::copy(remainder.begin(), remainder.end(), std::back_inserter(audioSamples));
+        }
     } catch (const std::exception &e) {
         std::cerr << e.what() << std::endl;
     }
