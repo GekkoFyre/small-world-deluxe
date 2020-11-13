@@ -110,7 +110,7 @@ private:
     //
     // QAudioSystem initialization and buffers
     //
-    QPointer<QBuffer> gkInputBuffer;
+    QPointer<QBuffer> gkAudioBuffer;
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_audio_device;
@@ -121,11 +121,15 @@ private:
     std::vector<double> audioSamples;
 
     //
+    // Spectrograph
+    //
+    bool updateGraph = false;
+    QPointer<QTimer> spectroRefreshTimer;
+
+    //
     // Multithreading
     //
     QPointer<QThread> fftSamplesUpdated;
-    QPointer<QTimer> spectroRefreshTimer;
-    bool updateGraph = false;
 
     void samplesUpdated();
 
