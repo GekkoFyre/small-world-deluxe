@@ -110,12 +110,7 @@ namespace GekkoFyre {
 //
 #define GK_RADIO_VFO_FLOAT_PNT_PREC (5)                         // The floating point precision, in terms of number of digits, to be used in making comparisons (i.e. the 'epsilon') of frequencies, etc.
 
-#define AUDIO_OUTPUT_CHANNEL_MAX_LIMIT (1024)
-#define AUDIO_OUTPUT_CHANNEL_MIN_LIMIT (-1024)
-#define AUDIO_INPUT_CHANNEL_MAX_LIMIT (1024)
-#define AUDIO_INPUT_CHANNEL_MIN_LIMIT (-1024)
 #define AUDIO_FRAMES_PER_BUFFER (512)                           // Frames per buffer, i.e. the number of sample frames that RtAudio will request from the callback. Many apps may want to use paFramesPerBufferUnspecified, which tells RtAudio to pick the best, possibly changing, buffer size
-#define AUDIO_TEST_SAMPLE_TABLE_SIZE (200)
 #define GK_AUDIO_MAX_CHANNELS (2)                               // The current maximum number of audio channels that Small World Deluxe is able to process for any given multimedia audio file!
 
 #define AUDIO_SINE_WAVE_PLAYBACK_SECS (3)                       // Play the sine wave test sample for three seconds!

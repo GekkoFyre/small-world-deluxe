@@ -51,21 +51,13 @@ cmake_policy(SET CMP0087 NEW)
 
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 
-option(GK_CUDA_FFT "Enable NVIDIA CUDA support within Small World Deluxe and allow your GPU to do heavy calculations instead of your CPU!" OFF)
-
 #
 # RPATH is aimed at Linux installations primarily
 #
 set(CMAKE_INSTALL_RPATH $ORIGIN $ORIGIN/lib) # Relative path to lib-dir...
 set(INSTALL_RPATH_USE_LINK_PATH true)
 
-if(GK_CUDA_FFT)
-    message(STATUS "Enable NVIDIA CUDA support within Small World Deluxe and allow your GPU to do heavy calculations instead of your CPU!")
-    add_definitions(-DGK_CUDA_FFT_ENBL)
-    project(smallworld C CXX Fortran CUDA)
-else()
-    project(smallworld C CXX Fortran)
-endif()
+project(smallworld C CXX Fortran)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CXX_STANDARD 17)
@@ -270,14 +262,6 @@ else()
     message(FATAL_ERROR "The 'Snappy' compression libraries could not be found!")
 endif(SNAPPY_FOUND)
 
-find_package(FFTW REQUIRED)
-if (FFTW_FOUND)
-    include_directories(${FFTW_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${FFTW_LIBRARIES})
-else()
-    message(FATAL_ERROR "The 'FFTW' mathematical libraries could not be found!")
-endif(FFTW_FOUND)
-
 find_package(USB REQUIRED)
 if (USB_FOUND)
     include_directories(${LIBUSB_INCLUDE_DIRS})
@@ -408,12 +392,12 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/sentry-native")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/sentry-native/include")
 
 #
-# KissFFT
-# https://github.com/mborgerding/kissfft
+# Gist by Adam Stark
+# https://github.com/adamstark/Gist
 #
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/kissfft")
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/kissfft")
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/kissfft/tools")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/Gist")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/Gist/src")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/Gist/libs/kiss_fft130")
 
 #
 # AudioFile by Adam Stark
@@ -484,15 +468,6 @@ qt5_add_resources(UI_RESOURCES src/sworld_res.qrc OPTIONS -compress-algo zstd -c
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_BINARY_DIR})
 
-if(GK_CUDA_FFT)
-    set(GALAXY_CUDA
-        ${GALAXY_CUDA}
-        src/gk_spectro_cuda.cu
-        src/gk_spectro_cuda.h)
-
-    set_property(SOURCE ${GALAXY_CUDA} PROPERTY SKIP_AUTOUIC ON)
-endif()
-
 #
 # Compile UIC!
 #
@@ -508,7 +483,6 @@ set(GALAXY_UI_CPP
     src/dek_db.cpp
     src/file_io.cpp
     src/audio_devices.cpp
-    src/gk_fft.cpp
     src/gk_fft_audio.cpp
     src/gk_waterfall_gui.cpp
     src/gk_spectro_color_maps.cpp
@@ -597,7 +571,6 @@ set(GALAXY_OBJ_HEADERS
     src/dek_db.hpp
     src/file_io.hpp
     src/audio_devices.hpp
-    src/gk_fft.hpp
     src/gk_fft_audio.hpp
     src/gk_waterfall_gui.hpp
     src/gk_spectro_color_maps.hpp
@@ -707,9 +680,6 @@ endif()
 #
 if(GFYRE_BUILD_STATIC)
     add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C})
-    if(GK_CUDA_FFT)
-        add_library(galaxy_cuda STATIC ${GALAXY_CUDA})
-    endif()
     
     # add_library(galaxy_fort STATIC ${GALAXY_WSJTX_QRA64_FORT})
 else()
@@ -721,15 +691,12 @@ endif(GFYRE_BUILD_STATIC)
 #
 if(GFYRE_BUILD_SHARED)
     add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C})
-    if(GK_CUDA_FFT)
-        add_library(galaxy_cuda STATIC ${GALAXY_CUDA})
-    endif()
     
     # add_library(galaxy_fort STATIC ${GALAXY_WSJTX_QRA64_FORT})
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
-target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::Multimedia Qt5::SerialPort Qt5::PrintSupport Qt5::TextToSpeech Qt5::Test Threads::Threads SingleApplication::SingleApplication sentry::sentry leveldb ${LIBS})
+target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::Multimedia Qt5::SerialPort Qt5::PrintSupport Qt5::TextToSpeech Qt5::Test Threads::Threads SingleApplication::SingleApplication sentry::sentry Gist leveldb ${LIBS})
 
 qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)
 add_dependencies(galaxy resources)
@@ -740,10 +707,6 @@ set(SWRLD_EXEC ${SWRLD_EXEC}
 add_executable(smallworld WIN32 ${SWRLD_EXEC})
 target_compile_options(smallworld PRIVATE -fPIC)
 target_link_libraries(smallworld PRIVATE galaxy)
-
-if(GK_CUDA_FFT)
-    target_link_libraries(smallworld PRIVATE galaxy_cuda)
-endif()
 
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)

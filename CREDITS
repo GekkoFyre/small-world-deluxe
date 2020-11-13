@@ -50,13 +50,13 @@ WSJT-X by Joe Taylor (K1JT) <k1jt@arrl.net> et al.
     <https://physics.princeton.edu/pulsar/K1JT/wsjtx.html>
         GNU General Public License (GPL, version 3)
 
+Gist by Adam Stark
+    <https://github.com/adamstark/Gist>
+        GNU General Public License (GPL, version 3)
+
 KissFFT by Mark Borgerding <Mark@Borgerding.net>
     <https://github.com/mborgerding/kissfft>
         BSD 3-clause License
-
-FFTW3 by Matteo Frigo & Steven G. Johnson et al.
-    <https://github.com/FFTW/fftw3>
-        GNU General Public License (GPL, version 2)
 
 QtUSB by Fabien Poussin
     <https://github.com/fpoussin/QtUsb>
