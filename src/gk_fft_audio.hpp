@@ -76,12 +76,12 @@ public:
                         QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkFFTAudio() override;
 
-    void processEvent(Spectrograph::GkFftEventType audioEventType, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
+    void processEvent(Spectrograph::GkFftEventType audioEventType);
     void processEvent(Spectrograph::GkFftEventType audioEventType, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
                       const fs::path &mediaFilePath);
 
 private slots:
-    void recordAudioStream(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
+    void recordAudioStream();
     void stopRecordStream();
 
     void recordAudioFileStream(const fs::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
@@ -93,8 +93,11 @@ private slots:
     void processAudioIn();
     void refreshGraphTrue();
 
+public slots:
+    void setAudioIo(const bool &use_input_audio); // True by default!
+
 signals:
-    void recordStream(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
+    void recordStream();
     void stopRecording();
 
     void recordFileStream(const fs::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
@@ -115,6 +118,10 @@ private:
     QPointer<QAudioOutput> gkAudioOutput;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_audio_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_audio_device;
+    bool audioStreamProc = false;  // Whether an audio stream recording into memory is active or not
+    bool audioFileStreamProc = false; // Whether an audio stream recording into a file is active or not
+    bool enableAudioStreamProc = false; // Should we re-enable audio stream recording into memory?
+    bool enableAudioFileStreamProc = false; // Should we re-enable audio stream recording into a file?
 
     qint32 gkAudioInNumSamples = 0;
     qint32 gkAudioInSampleRate = 0;
@@ -132,6 +139,7 @@ private:
     QPointer<QThread> fftSamplesUpdated;
 
     void samplesUpdated();
+    void terminateThread();
 
 };
 };

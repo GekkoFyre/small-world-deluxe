@@ -681,6 +681,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         gkFftAudio = new GekkoFyre::GkFFTAudio(gkAudioInput, gkAudioOutput, pref_input_device, pref_output_device, gkSpectroWaterfall,
                                                gkStringFuncs, gkEventLogger, nullptr);
 
+        //
+        // Allow the changing of Audio I/O with regard to recording audio streams
+        QObject::connect(this, SIGNAL(changeAudioIo(const bool &)), gkFftAudio, SLOT(setAudioIo(const bool &)));
+
         gkSpectroWaterfall->setTitle(tr("Frequency Waterfall"));
         gkSpectroWaterfall->setXLabel(tr("Frequency (kHz)"));
         gkSpectroWaterfall->setXTooltipUnit(tr("kHz"));
@@ -2234,7 +2238,7 @@ void MainWindow::startRecordingInput()
                 throw std::invalid_argument(tr("No audio devices have been found!").toStdString());
             }
 
-            gkFftAudio->processEvent(Spectrograph::GkFftEventType::record, GkAudioFramework::CodecSupport::PCM);
+            gkFftAudio->processEvent(Spectrograph::GkFftEventType::record);
 
             return;
         }
