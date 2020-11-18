@@ -69,7 +69,7 @@ using namespace Logging;
 GkFFTAudio::GkFFTAudio(QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> audioOutput, const GkDevice &input_audio_device_details,
                        const GkDevice &output_audio_device_details, QPointer<GekkoFyre::GkSpectroWaterfall> spectroWaterfall,
                        QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                       QObject *parent) : fftSamplesUpdated(new QThread(parent)), QObject(parent)
+                       QObject *parent) : QThread(parent)
 {
     setParent(parent);
 
@@ -109,15 +109,24 @@ GkFFTAudio::GkFFTAudio(QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> 
     QObject::connect(gkAudioInput, SIGNAL(notify()), this, SLOT(processAudioIn()));
     QObject::connect(this, SIGNAL(refreshGraph(bool)), gkSpectroWaterfall, SLOT(replot(bool)));
 
-    spectroRefreshTimer = new QTimer(fftSamplesUpdated);
+    spectroRefreshTimer = new QTimer(this);
+    spectroRefreshTimer->setInterval(std::chrono::milliseconds(1000));
     QObject::connect(spectroRefreshTimer, SIGNAL(timeout()), this, SLOT(refreshGraphTrue()));
     QObject::connect(this, SIGNAL(stopRecording()), spectroRefreshTimer, SLOT(stop()));
+    QObject::connect(this, SIGNAL(recordStream()), spectroRefreshTimer, SLOT(start()));
+
+    start();
+
+    // Move event processing of GkPaStreamHandler to this thread
+    QObject::moveToThread(this);
+
     return;
 }
 
 GkFFTAudio::~GkFFTAudio()
 {
-    terminateThread();
+    quit();
+    wait();
 }
 
 /**
@@ -267,6 +276,16 @@ void GkFFTAudio::setAudioIo(const bool &use_input_audio)
 }
 
 /**
+ * @brief GkFFTAudio::run
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkFFTAudio::run()
+{
+    exec();
+    return;
+}
+
+/**
  * @brief GkFFTAudio::processEvent
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param audioEventType
@@ -345,12 +364,8 @@ void GkFFTAudio::recordAudioStream()
             gkAudioInput->start(gkAudioBuffer);
             audioStreamProc = true;
 
-            if (!fftSamplesUpdated->isRunning()) {
-                fftSamplesUpdated->start();
-            }
-
             // Move event processing of GkPaStreamHandler to this thread
-            gkAudioInput->moveToThread(fftSamplesUpdated);
+            gkAudioInput->moveToThread(this);
         } else if (pref_output_audio_device.is_enabled) {
             //
             // Output device
@@ -364,22 +379,10 @@ void GkFFTAudio::recordAudioStream()
             gkAudioOutput->start(gkAudioBuffer);
             audioStreamProc = true;
 
-            if (!fftSamplesUpdated->isRunning()) {
-                fftSamplesUpdated->start();
-            }
-
             // Move event processing of GkPaStreamHandler to this thread
-            gkAudioOutput->moveToThread(fftSamplesUpdated);
+            gkAudioOutput->moveToThread(this);
         } else {
             throw std::invalid_argument(tr("Unable to determine the desired Audio I/O in order to start recording an audio stream to memory!").toStdString());
-        }
-
-        QObject::moveToThread(fftSamplesUpdated);
-
-        // TODO: There might be a fatal bug with this timer and slower computers; we'll have to do some testing...
-        if (!spectroRefreshTimer->isActive()) {
-            spectroRefreshTimer->setInterval(std::chrono::milliseconds(1000));
-            spectroRefreshTimer->start();
         }
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, true, true, false, false);
@@ -406,7 +409,7 @@ void GkFFTAudio::stopRecordStream()
 
         if (gkAudioInput->state() == QAudio::ActiveState) { // Stop any active Audio Inputs!
             gkAudioInput->stop();
-            terminateThread();
+            // terminateThread();
         }
 
         //
@@ -418,7 +421,7 @@ void GkFFTAudio::stopRecordStream()
 
         if (gkAudioOutput->state() == QAudio::ActiveState) { // Stop any active Audio Outputs!
             gkAudioOutput->stop();
-            terminateThread();
+            // terminateThread();
         }
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);
@@ -489,20 +492,6 @@ void GkFFTAudio::samplesUpdated()
         }
     } catch (const std::exception &e) {
         std::cerr << e.what() << std::endl;
-    }
-
-    return;
-}
-
-/**
- * @brief GkFFTAudio::terminateThread terminates the running thread, `fftSamplesUpdated`, if active.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkFFTAudio::terminateThread()
-{
-    if (fftSamplesUpdated->isRunning()) {
-        fftSamplesUpdated->quit();
-        fftSamplesUpdated->wait();
     }
 
     return;

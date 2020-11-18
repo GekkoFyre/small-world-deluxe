@@ -679,7 +679,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         gkSpectroWaterfall = new GekkoFyre::GkSpectroWaterfall(gkEventLogger, this);
         gkFftAudio = new GekkoFyre::GkFFTAudio(gkAudioInput, gkAudioOutput, pref_input_device, pref_output_device, gkSpectroWaterfall,
-                                               gkStringFuncs, gkEventLogger, nullptr);
+                                               gkStringFuncs, gkEventLogger, this);
 
         //
         // Allow the changing of Audio I/O with regard to recording audio streams

@@ -65,7 +65,7 @@ namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
 namespace GekkoFyre {
-class GkFFTAudio : public QObject {
+class GkFFTAudio : public QThread {
     Q_OBJECT
 
 public:
@@ -76,6 +76,7 @@ public:
                         QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkFFTAudio() override;
 
+    void run() Q_DECL_OVERRIDE;
     void processEvent(Spectrograph::GkFftEventType audioEventType);
     void processEvent(Spectrograph::GkFftEventType audioEventType, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
                       const fs::path &mediaFilePath);
@@ -133,13 +134,7 @@ private:
     bool updateGraph = false;
     QPointer<QTimer> spectroRefreshTimer;
 
-    //
-    // Multithreading
-    //
-    QPointer<QThread> fftSamplesUpdated;
-
     void samplesUpdated();
-    void terminateThread();
 
 };
 };
