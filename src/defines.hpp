@@ -499,6 +499,7 @@ namespace Database {
                 bool user_config_succ;                                              // Whether this audio device information has been gathered as the result of user activity or default action by Small World Deluxe.
                 bool default_output_dev;                                            // Is this the default device for the system?
                 bool default_input_dev;                                             // Is this the default device for the system?
+                bool is_enabled;                                                    // Whether this device (as the `QAudioInput` or `QAudioOutput`) is enabled as the primary choice by the end-user, for example, with regards to the spectrograph / waterfall.
                 GkAudioSource audio_src;                                            // Is the audio device in question an input? Output if FALSE, UNSURE if either.
                 QAudioFormat user_settings;                                         // The user defined settings for this particular audio device.
                 quint32 chosen_sample_rate;                                         // The chosen sample rate, as configured by the end-user.

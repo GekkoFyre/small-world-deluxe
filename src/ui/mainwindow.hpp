@@ -191,6 +191,7 @@ private slots:
     // Audio related
     //
     void updateVolume(const float &value);
+    void setAudioIo(const bool &use_input_audio); // True by default!
 
     //
     // Transmission & Digital Signalling
@@ -278,6 +279,7 @@ signals:
     // QAudioSystem and related
     //
     void changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &input_device);
+    void changeAudioIo(const bool &use_input_audio); // True by default!
 
 private:
     Ui::MainWindow *ui;
@@ -327,7 +329,6 @@ private:
     //
     // Audio sub-system
     //
-    bool rx_vol_control_selected;
     double global_rx_audio_volume;
     double global_tx_audio_volume;
 
