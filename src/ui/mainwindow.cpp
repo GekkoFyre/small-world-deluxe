@@ -187,7 +187,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         btn_radio_tune = false;
         btn_radio_monitor = false;
 
-        rx_vol_control_selected = true; // By default it is ticked!
         global_rx_audio_volume = 0.0;
         global_tx_audio_volume = 0.0;
 
@@ -669,11 +668,22 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
 
         //
+        // Setup the ability to change Audio I/O via signals and slots
+        //
+        pref_input_device.is_enabled = true;
+        pref_output_device.is_enabled = false;
+        QObject::connect(this, SIGNAL(changeAudioIo(const bool &)), this, SLOT(setAudioIo(const bool &)));
+
+        //
         // Initialize the Waterfall / Spectrograph
         //
         gkSpectroWaterfall = new GekkoFyre::GkSpectroWaterfall(gkEventLogger, this);
         gkFftAudio = new GekkoFyre::GkFFTAudio(gkAudioInput, gkAudioOutput, pref_input_device, pref_output_device, gkSpectroWaterfall,
-                                               gkStringFuncs, gkEventLogger, nullptr);
+                                               gkStringFuncs, gkEventLogger, this);
+
+        //
+        // Allow the changing of Audio I/O with regard to recording audio streams
+        QObject::connect(this, SIGNAL(changeAudioIo(const bool &)), gkFftAudio, SLOT(setAudioIo(const bool &)));
 
         gkSpectroWaterfall->setTitle(tr("Frequency Waterfall"));
         gkSpectroWaterfall->setXLabel(tr("Frequency (kHz)"));
@@ -736,7 +746,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initiate at startup to set any default values and/or signals/slots!
         //
-        on_checkBox_rx_tx_vol_toggle_stateChanged(rx_vol_control_selected);
         QObject::connect(this, SIGNAL(changeVolume(const float &)), this, SLOT(updateVolume(const float &)));
 
         //
@@ -1471,8 +1480,8 @@ void MainWindow::updateVolumeSliderLabel(const float &vol_level)
     ss << std::setprecision(3) << vol_level_decibel;
     ui->label_vol_control_disp->setText(tr("%1 dB").arg(QString::fromStdString(ss.str())));
 
-    const float vol_multiplier = (1.0f * std::pow(10, (vol_level_decibel / 20.0f)));
-    emit changeVolume(vol_multiplier);
+    float vol_level_multiplier = vol_level / 100.0f; // Since QAudioInput and QAudioOutput only read volume between the range of 0.1 - 1.0...
+    emit changeVolume(vol_level_multiplier);
 
     return;
 }
@@ -1918,16 +1927,38 @@ void MainWindow::configInputAudioDevice()
  */
 void MainWindow::updateVolume(const float &value)
 {
-    if (rx_vol_control_selected) {
+    if (pref_input_device.is_enabled) {
         //
         // Input device!
         //
         gkAudioInput->setVolume(value);
-    } else {
+    } else if (pref_output_device.is_enabled) {
         //
         // Output device!
         //
         gkAudioOutput->setVolume(value);
+    } else {
+        std::cerr << tr("Unable to determine Audio I/O for making volume changes!").toStdString() << std::endl;
+    }
+
+    return;
+}
+
+/**
+ * @brief MainWindow::setAudioIo
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param use_input_audio
+ */
+void MainWindow::setAudioIo(const bool &use_input_audio)
+{
+    if (use_input_audio) {
+        // Use QAudioInput!
+        pref_input_device.is_enabled = true;
+        pref_output_device.is_enabled = false;
+    } else {
+        // Use QAudioOutput!
+        pref_output_device.is_enabled = true;
+        pref_input_device.is_enabled = false;
     }
 
     return;
@@ -1965,22 +1996,17 @@ void MainWindow::on_verticalSlider_vol_control_valueChanged(int value)
     const int vol_slider_max_val = ui->verticalSlider_vol_control->maximum();
     const float real_val = (static_cast<float>(value) / static_cast<float>(vol_slider_max_val));
 
-    if (rx_vol_control_selected) {
+    if (pref_input_device.is_enabled) {
         if (!gkAudioInput.isNull()) {
-            if (gkAudioInput->state() == QAudio::ActiveState) {
-                //
-                // Input audio stream is open and active!
-                //
-                updateVolumeSliderLabel(real_val);
-            }
-        }
-    } else {
-        if (gkAudioInput->state() == QAudio::ActiveState) {
-            //
-            // Output audio buffer
-            //
             updateVolumeSliderLabel(real_val);
         }
+    } else if (pref_output_device.is_enabled) {
+        if (!gkAudioOutput.isNull()) {
+            updateVolumeSliderLabel(real_val);
+        }
+    } else {
+        gkEventLogger->publishEvent(tr("Unable to determine Audio I/O for changing audio state!"), GkSeverity::Error,
+                                    "", false, true, false, true);
     }
 
     return;
@@ -2212,7 +2238,7 @@ void MainWindow::startRecordingInput()
                 throw std::invalid_argument(tr("No audio devices have been found!").toStdString());
             }
 
-            gkFftAudio->processEvent(Spectrograph::GkFftEventType::record, GkAudioFramework::CodecSupport::PCM);
+            gkFftAudio->processEvent(Spectrograph::GkFftEventType::record);
 
             return;
         }
@@ -2405,7 +2431,8 @@ void MainWindow::on_action_Print_triggered()
  */
 void MainWindow::on_checkBox_rx_tx_vol_toggle_stateChanged(int arg1)
 {
-    rx_vol_control_selected = arg1;
+    emit changeAudioIo(arg1);
+
     return;
 }
 
