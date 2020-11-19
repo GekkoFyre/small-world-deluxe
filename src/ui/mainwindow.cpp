@@ -690,7 +690,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         gkSpectroWaterfall->setXTooltipUnit(tr("kHz"));
         gkSpectroWaterfall->setZTooltipUnit(tr("dB"));
         gkSpectroWaterfall->setYLabel(tr("Time (minutes)"), 10);
-        gkSpectroWaterfall->setZLabel(tr("Signal strength (dB)"));
+        gkSpectroWaterfall->setZLabel(tr("Signal (dB)"));
         gkSpectroWaterfall->setColorMap(ColorMaps::BlackBodyRadiation());
 
         double xMin, xMax;

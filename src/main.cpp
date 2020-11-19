@@ -104,9 +104,7 @@ int main(int argc, char *argv[])
     QCoreApplication::setApplicationName(GekkoFyre::General::productName);
     QCoreApplication::setApplicationVersion(GekkoFyre::General::appVersion);
 
-    fs::path slash = "/";
-    fs::path native_slash = slash.make_preferred().native();
-    fs::path resource_path = fs::path(QCoreApplication::applicationDirPath().toStdString() + native_slash.string()  + GekkoFyre::Filesystem::resourceFile);
+    fs::path resource_path = fs::path(QCoreApplication::applicationDirPath().toStdString() + "/"  + GekkoFyre::Filesystem::resourceFile);
     QResource::registerResource(QString::fromStdString(resource_path.string())); // https://doc.qt.io/qt-5/resources.html
 
     //
