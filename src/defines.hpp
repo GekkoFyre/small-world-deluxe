@@ -68,7 +68,6 @@
 #include <QDateTime>
 #include <QStringList>
 #include <QAudioFormat>
-#include <QtUsb/QUsbDevice>
 #include <QSerialPortInfo>
 #include <QAudioDeviceInfo>
 
@@ -76,9 +75,6 @@
 #include <winsdkver.h>
 #include <Windows.h>
 #include <tchar.h> // https://linuxgazette.net/147/pfeiffer.html
-
-#include <atlbase.h>
-#include <atlstr.h>
 #endif
 
 #ifdef __cplusplus
@@ -465,7 +461,8 @@ namespace Database {
             quint16 b_u2_dev_exit_lat;                                              // U2 Device Exit Latency.
         };
 
-        struct GkBosUsb {                                                           // USB Binary Object Store structure.
+        struct GkUsbPort {
+            QString name;                                                           // The actual name of the USB port as displayed by the operating system itself
             GkUsb2Exts usb_2;                                                       // Extensions for USB >2.0+ devices.
             GkUsb3Exts usb_3;                                                       // Extensions for USB >3.0+ devices.
             GkLibUsb lib_usb;                                                       // Additional information pertaining to USB devices, both old and new.
@@ -473,17 +470,7 @@ namespace Database {
             quint16 vid;
             quint8 addr;
             quint8 bus;
-        };
-
-        struct GkUsbPort {
-            GkBosUsb bos_usb;                                                       // USB Binary Object Store structure.
-            QString name;                                                           // The actual name of the USB port as displayed by the operating system itself
-            quint16 port;                                                           // The USB port number as determined by `QtUsb`
-            quint16 bus;                                                            // The USB BUS number as determined by `QtUsb`
-            quint16 pid;                                                            // The USB port's own Product ID as determined by 'QtUsb'
-            quint16 vid;                                                            // The USB port's own Vendor ID as determined by 'QtUsb'
-            quint16 d_class;                                                        // Unknown
-            quint16 d_sub_class;                                                    // Unknown
+            quint8 port;                                                            // The list of all port numbers from root for the specified device.
         };
 
         struct GkComPort {

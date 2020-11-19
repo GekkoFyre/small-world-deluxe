@@ -194,7 +194,7 @@ void GkSystem::addPolicyToWindowsFirewallApi()
     BSTR bstrRuleName = SysAllocString(L"OUTBOUND_RULE");
     BSTR bstrRuleDescription = gkStringFuncs->convQStringToWinBStr(tr("Allow outbound network traffic from %1 over TCP port 443 towards destination, [ %2 ].")
             .arg(General::productName).arg(General::gk_sentry_user_side_uri));
-    BSTR bstrRuleGroup = SysAllocString(L(General::companyName));
+    BSTR bstrRuleGroup = SysAllocString(L"GekkoFyre Networks");
     BSTR bstrRuleApplication = gkStringFuncs->convQStringToWinBStr(tr("%1\\%2\\%3.exe")
             .arg(programFilesPath).arg(General::productName).arg(General::executableName));
     BSTR bstrRuleLPorts = SysAllocString(L"443");
@@ -213,20 +213,20 @@ void GkSystem::addPolicyToWindowsFirewallApi()
     }
 
     // Retrieve INetFwPolicy2
-    hr = WFCOMInitialize(&amp;pNetFwPolicy2);
+    hr = WFCOMInitialize(&pNetFwPolicy2);
     if (FAILED(hr)) {
         goto Cleanup;
     }
 
     // Retrieve INetFwRules
-    hr = pNetFwPolicy2->get_Rules(&amp;pFwRules);
+    hr = pNetFwPolicy2->get_Rules(&pFwRules);
     if (FAILED(hr)) {
         gkEventLogger->publishEvent(tr("get_Rules failed: 0x%08lx").arg(QString::number(hr)), GkSeverity::Error, "", false, true);
         goto Cleanup;
     }
 
     // Retrieve Current Profiles bitmask
-    hr = pNetFwPolicy2->get_CurrentProfileTypes(&amp;CurrentProfilesBitMask);
+    hr = pNetFwPolicy2->get_CurrentProfileTypes(&CurrentProfilesBitMask);
     if (FAILED(hr)) {
         gkEventLogger->publishEvent(tr("get_CurrentProfileTypes failed: 0x%08lx").arg(QString::number(hr)), GkSeverity::Error, "", false, true);
         goto Cleanup;
@@ -239,7 +239,7 @@ void GkSystem::addPolicyToWindowsFirewallApi()
     }
 
     // Create a new Firewall Rule object.
-    hr = CoCreateInstance(__uuidof(NetFwRule), NULL, CLSCTX_INPROC_SERVER, __uuidof(INetFwRule), (void**)&amp;pFwRule);
+    hr = CoCreateInstance(__uuidof(NetFwRule), NULL, CLSCTX_INPROC_SERVER, __uuidof(INetFwRule), (void**)pFwRule);
     if (FAILED(hr)) {
         gkEventLogger->publishEvent(tr("CoCreateInstance for Firewall Rule failed: 0x%08lx").arg(QString::number(hr)), GkSeverity::Error, "", true, true);
         goto Cleanup;
@@ -308,8 +308,8 @@ void GkSystem::addPolicyToWindowsFirewallApi()
  * @note <https://docs.microsoft.com/en-us/previous-versions//aa364726(v=vs.85)>
  * <https://docs.microsoft.com/en-us/previous-versions/windows/desktop/ics/c-adding-an-outbound-rule>
  */
-GkSystem::isWindowsFirewallEnabled(IN INetFwProfile *fwProfile, OUT BOOL *fwOn)
+HRESULT GkSystem::isWindowsFirewallEnabled(IN INetFwProfile *fwProfile, OUT BOOL *fwOn)
 {
-    return;
+    return false;
 }
 #endif

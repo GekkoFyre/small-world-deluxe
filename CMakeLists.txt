@@ -167,7 +167,7 @@ endif()
 
 set(Boost_USE_MULTITHREADED ON CACHE BOOL "Use multithreaded libraries when linking Boost C++.")
 set(Boost_USE_STATIC_RUNTIME OFF CACHE BOOL "Use static runtime when linking Boost C++.")
-find_package(Boost 1.54.0 REQUIRED COMPONENTS "filesystem"
+find_package(Boost 1.64.0 REQUIRED COMPONENTS "filesystem"
                                               "system"
                                               "exception"
                                               "chrono"
@@ -266,14 +266,6 @@ find_package(USB REQUIRED)
 if (USB_FOUND)
     include_directories(${LIBUSB_INCLUDE_DIRS})
     set(LIBS ${LIBS} ${LIBUSB_LIBRARIES})
-    
-    find_package(QtUsb REQUIRED)
-    if (QtUsb_FOUND)
-        include_directories(${QtUsb_INCLUDE_DIRS})
-        set(LIBS ${LIBS} ${QtUsb_LIBRARIES})
-    else()
-        message(FATAL_ERROR "The 'QtUSB' system device and enumeration library could not be found!")
-    endif(QtUsb_FOUND)
 else()
     message(FATAL_ERROR "Either `libusb.h` and/or `usb.h` could not be found for the 'libusb' system device and enumeration libraries!")
 endif(USB_FOUND)
@@ -544,17 +536,17 @@ endif()
 # Do not compile UIC for these!
 #
 set(GALAXY_SRC_CPP
-    ${GALAXY_SRC_CPP}
-    src/contrib/udev/device.cpp
-    src/contrib/udev/enumerate.cpp
-    src/contrib/udev/monitor.cpp
-    src/contrib/udev/udev.cpp
-    src/contrib/udev/posix/error.cpp
-    src/contrib/udev/posix/resource.cpp)
+    ${GALAXY_SRC_CPP})
 
 if(LINUX)
     set(GALAXY_SRC_CPP
-        ${GALAXY_SRC_CPP})
+        ${GALAXY_SRC_CPP}
+        src/contrib/udev/device.cpp
+        src/contrib/udev/enumerate.cpp
+        src/contrib/udev/monitor.cpp
+        src/contrib/udev/udev.cpp
+        src/contrib/udev/posix/error.cpp
+        src/contrib/udev/posix/resource.cpp)
 elseif(WIN32 OR MSYS OR MINGW)
     set(GALAXY_SRC_CPP
         ${GALAXY_SRC_CPP})
@@ -635,17 +627,17 @@ set(GALAXY_SRC_HEADERS
     ${GALAXY_SRC_HEADERS}
     src/gk_timer.hpp
     src/gk_circ_buffer.hpp
-    src/contrib/rapidcsv/src/rapidcsv.h
-    src/contrib/udev/device.hpp
-    src/contrib/udev/enumerate.hpp
-    src/contrib/udev/monitor.hpp
-    src/contrib/udev/udev.hpp
-    src/contrib/udev/posix/error.hpp
-    src/contrib/udev/posix/resource.hpp)
+    src/contrib/rapidcsv/src/rapidcsv.h)
 
 if(LINUX)
     set(GALAXY_SRC_HEADERS
-        ${GALAXY_SRC_HEADERS})
+        ${GALAXY_SRC_HEADERS}
+        src/contrib/udev/device.hpp
+        src/contrib/udev/enumerate.hpp
+        src/contrib/udev/monitor.hpp
+        src/contrib/udev/udev.hpp
+        src/contrib/udev/posix/error.hpp
+        src/contrib/udev/posix/resource.hpp)
 elseif(WIN32 OR MSYS OR MINGW)
     set(GALAXY_SRC_HEADERS
         ${GALAXY_SRC_HEADERS})
