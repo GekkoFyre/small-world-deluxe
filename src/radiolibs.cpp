@@ -401,6 +401,7 @@ QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDevice
     QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> usb_hash;
     try {
         // Enumerate USB devices!
+        QStringList already_added;
         GekkoFyre::Database::Settings::GkUsbPort usb;
         libusb_device **devs;
         int r = libusb_init(nullptr);
@@ -419,15 +420,6 @@ QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDevice
             for (const auto &bos_dev: usb_bos_info) {
                 if (bos_dev.lib_usb.dev_num == usb.port) {
                     // We have a match!
-                    usb.bos_usb = bos_dev;
-
-                    usb.port = (quint16)device.port;
-                    usb.bus = (quint16)device.bus;
-                    usb.pid = device.pid;
-                    usb.vid = device.vid;
-                    usb.d_class = (quint16)device.dClass;
-                    usb.d_sub_class = (quint16)device.dSubClass;
-
                     if (!bos_dev.lib_usb.path.isEmpty()) {
                         if (!already_added.contains(bos_dev.lib_usb.path)) {
                             usb.name = bos_dev.lib_usb.path;
@@ -788,8 +780,8 @@ void RadioLibs::gkInitRadioRig(const std::shared_ptr<GkRadio> &radio_ptr)
             //
             // Modify the COM Port so that it's suitable for Hamlib!
             //
-            boost::replace_all(radio_ptr->cat_conn_port, "COM", "/dev/ttyS");
-            boost::replace_all(radio_ptr->ptt_conn_port, "COM", "/dev/ttyS");
+            radio_ptr->cat_conn_port.replace("COM", "/dev/ttyS");
+            radio_ptr->ptt_conn_port.replace("COM", "/dev/ttyS");
             #endif
 
             //

@@ -316,7 +316,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                     }
 
                     // The handler is a Crashpad-specific background process
-                    sentry_options_set_handler_path(sen_opt, handler_to_use.c_str());
+                    sentry_options_set_handler_path(sen_opt, handler_to_use.string().c_str());
                     #endif
 
                     const fs::path sentry_crash_dir = fs::path(Filesystem::defaultDirAppend + native_slash.string() + Filesystem::gk_sentry_dump_dir);
@@ -332,8 +332,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                     }
 
                     // This is where Minidumps and attachments live before upload
-                    sentry_options_set_database_path(sen_opt, gk_minidump.c_str());
-                    sentry_options_add_attachment(sen_opt, gk_sentry_attachments.c_str());
+                    sentry_options_set_database_path(sen_opt, gk_minidump.string().c_str());
+                    sentry_options_add_attachment(sen_opt, gk_sentry_attachments.string().c_str());
 
                     // Miscellaneous settings pertaining to Sentry
                     sentry_options_set_auto_session_tracking(sen_opt, true);

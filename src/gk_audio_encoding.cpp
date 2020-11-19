@@ -232,8 +232,7 @@ void GkAudioEncoding::recordOggVorbis(const std::vector<signed char> &audio_fram
             vorbis_info_init(&vi);
             int ret = 0;
             #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
-            ret = vorbis_encode_init_vbr(&vi, gkInputDev.dev_input_channel_count, gkInputDev.def_sample_rate,
-                                             AUDIO_CODECS_OGG_VORBIS_ENCODE_QUALITY);
+            // ret = vorbis_encode_init_vbr(&vi, gkInputDev.dev_input_channel_count, gkInputDev.def_sample_rate, AUDIO_CODECS_OGG_VORBIS_ENCODE_QUALITY);
 
             if (ret) {
                 throw std::runtime_error(tr("There has been an error in initializing an Ogg Vorbis audio encode!").toStdString());

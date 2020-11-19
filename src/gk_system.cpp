@@ -234,7 +234,7 @@ void GkSystem::addPolicyToWindowsFirewallApi()
 
     // When possible we avoid adding firewall rules to the Public profile.
     // If Public is currently active and it is not the only active profile, we remove it from the bitmask
-    if ((CurrentProfilesBitMask & NET_FW_PROFILE2_PUBLIC) (CurrentProfilesBitMask != NET_FW_PROFILE2_PUBLIC)) {
+    if ((CurrentProfilesBitMask & NET_FW_PROFILE2_PUBLIC) || (CurrentProfilesBitMask != NET_FW_PROFILE2_PUBLIC)) {
         CurrentProfilesBitMask ^= NET_FW_PROFILE2_PUBLIC;
     }
 

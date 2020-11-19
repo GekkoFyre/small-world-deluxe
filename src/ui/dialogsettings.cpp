@@ -976,7 +976,7 @@ void DialogSettings::prefill_avail_usb_ports(const QMap<quint16, GekkoFyre::Data
                 //
                 ui->comboBox_com_port->insertItem(counter, device.name, dev_port);
                 if (ui->comboBox_com_port->currentData().toInt() == device.port) {
-                    ui->lineEdit_device_port_name->setText(device.bos_usb.lib_usb.product);
+                    ui->lineEdit_device_port_name->setText(device.lib_usb.product);
                 }
 
                 //
@@ -984,7 +984,7 @@ void DialogSettings::prefill_avail_usb_ports(const QMap<quint16, GekkoFyre::Data
                 //
                 ui->comboBox_ptt_method_port->insertItem(counter, device.name, dev_port);
                 if (ui->comboBox_ptt_method_port->currentData().toInt() == device.port) {
-                    ui->lineEdit_ptt_method_dev_path->setText(device.bos_usb.lib_usb.product);
+                    ui->lineEdit_ptt_method_dev_path->setText(device.lib_usb.product);
                 }
 
                 ++counter;

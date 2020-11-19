@@ -57,6 +57,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
+#include <sentry.h>
 #include <leveldb/db.h>
 #include <leveldb/status.h>
 #include <leveldb/options.h>
@@ -92,17 +93,6 @@
 #include <QAudioFormat>
 #include <QAudioDeviceInfo>
 #include <QCommandLineParser>
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#include <sentry.h>
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
 
 namespace Ui {
 class MainWindow;
