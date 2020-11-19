@@ -28,3 +28,6 @@
 [submodule "src/contrib/Gist"]
 	path = src/contrib/Gist
 	url = https://github.com/adamstark/Gist.git
+[submodule "src/contrib/Hamlib"]
+	path = src/contrib/Hamlib
+	url = https://github.com/Hamlib/Hamlib.git

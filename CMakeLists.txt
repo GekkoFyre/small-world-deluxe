@@ -201,19 +201,21 @@ else()
     message(FATAL_ERROR "The 'ZLIB' compression library could not be found!")
 endif(ZLIB_FOUND)
 
+set(GALAXY_HAMLIB_CPP
+    ${GALAXY_HAMLIB_CPP})
+
 find_package(Hamlib REQUIRED)
 if (HAMLIB_FOUND)
     include_directories(${HAMLIB_INCLUDE_DIRS})
     set(LIBS ${LIBS} ${HAMLIB_LIBRARIES})
     ADD_DEFINITIONS(-DUSE_HAMLIB=1)
-
-    find_package(HamlibCpp REQUIRED)
-    if (HAMLIBCPP_FOUND)
-        include_directories(${HAMLIBCPP_INCLUDE_DIRS})
-        set(LIBS ${LIBS} ${HAMLIBCPP_LIBRARIES})
-    else()
-        message(FATAL_ERROR "The 'Hamlib' amateur radio C++ library bindings could not be found!")
-    endif(HAMLIBCPP_FOUND)
+    set(GALAXY_HAMLIB_CPP
+        ${GALAXY_HAMLIB_CPP}
+        src/contrib/hamlib++/rigclass.cc
+        src/contrib/hamlib++/rotclass.cc
+        src/contrib/hamlib++/include/hamlib/rigclass.h
+        src/contrib/hamlib++/include/hamlib/rotclass.h)
+    set_property(SOURCE ${GALAXY_HAMLIB_CPP} PROPERTY SKIP_AUTOUIC ON)
 else()
     message(FATAL_ERROR "The 'Hamlib' amateur radio library could not be found!")
 endif(HAMLIB_FOUND)
@@ -694,7 +696,7 @@ endif()
 # Build Small World Deluxe as a static package!
 #
 if(GFYRE_BUILD_STATIC)
-    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP})
+    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP} ${GALAXY_HAMLIB_CPP})
     
     # add_library(galaxy_fort STATIC ${GALAXY_WSJTX_QRA64_FORT})
 else()
@@ -705,7 +707,7 @@ endif(GFYRE_BUILD_STATIC)
 # Build Small World Deluxe as a shared package!
 #
 if(GFYRE_BUILD_SHARED)
-    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP})
+    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP} ${GALAXY_HAMLIB_CPP})
     
     # add_library(galaxy_fort STATIC ${GALAXY_WSJTX_QRA64_FORT})
 endif(GFYRE_BUILD_SHARED)

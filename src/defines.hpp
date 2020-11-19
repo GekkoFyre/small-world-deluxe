@@ -44,10 +44,10 @@
 //-V::1042
 
 #include "src/gk_string_funcs.hpp"
+#include "src/contrib/hamlib++/include/hamlib/rigclass.h"
 #include <boost/exception/all.hpp>
 #include <boost/logic/tribool.hpp>
 #include <boost/filesystem.hpp>
-#include <hamlib/rigclass.h>
 #include <qwt/qwt_interval.h>
 #include <list>
 #include <vector>

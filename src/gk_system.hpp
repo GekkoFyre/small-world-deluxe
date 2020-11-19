@@ -67,18 +67,12 @@ public:
                       QObject *parent = nullptr);
     ~GkSystem() override;
 
-    void addPolicyToWindowsFirewallApi();
-
     qint32 getNumCpuCores();
     QString renameCommsDevice(const qint32 &port, const GekkoFyre::AmateurRadio::GkConnType &conn_type);
 
 private:
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
-
-    #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
-    HRESULT isWindowsFirewallEnabled(IN INetFwProfile *fwProfile, OUT BOOL *fwOn);
-    #endif
 
 };
 };
