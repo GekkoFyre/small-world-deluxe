@@ -167,7 +167,7 @@ endif()
 
 set(Boost_USE_MULTITHREADED ON CACHE BOOL "Use multithreaded libraries when linking Boost C++.")
 set(Boost_USE_STATIC_RUNTIME OFF CACHE BOOL "Use static runtime when linking Boost C++.")
-find_package(Boost 1.54.0 REQUIRED COMPONENTS "filesystem"
+find_package(Boost 1.64.0 REQUIRED COMPONENTS "filesystem"
                                               "system"
                                               "exception"
                                               "chrono"
@@ -201,19 +201,21 @@ else()
     message(FATAL_ERROR "The 'ZLIB' compression library could not be found!")
 endif(ZLIB_FOUND)
 
+set(GALAXY_HAMLIB_CPP
+    ${GALAXY_HAMLIB_CPP})
+
 find_package(Hamlib REQUIRED)
 if (HAMLIB_FOUND)
     include_directories(${HAMLIB_INCLUDE_DIRS})
     set(LIBS ${LIBS} ${HAMLIB_LIBRARIES})
     ADD_DEFINITIONS(-DUSE_HAMLIB=1)
-
-    find_package(HamlibCpp REQUIRED)
-    if (HAMLIBCPP_FOUND)
-        include_directories(${HAMLIBCPP_INCLUDE_DIRS})
-        set(LIBS ${LIBS} ${HAMLIBCPP_LIBRARIES})
-    else()
-        message(FATAL_ERROR "The 'Hamlib' amateur radio C++ library bindings could not be found!")
-    endif(HAMLIBCPP_FOUND)
+    set(GALAXY_HAMLIB_CPP
+        ${GALAXY_HAMLIB_CPP}
+        src/contrib/hamlib++/rigclass.cc
+        src/contrib/hamlib++/rotclass.cc
+        src/contrib/hamlib++/include/hamlib/rigclass.h
+        src/contrib/hamlib++/include/hamlib/rotclass.h)
+    set_property(SOURCE ${GALAXY_HAMLIB_CPP} PROPERTY SKIP_AUTOUIC ON)
 else()
     message(FATAL_ERROR "The 'Hamlib' amateur radio library could not be found!")
 endif(HAMLIB_FOUND)
@@ -266,14 +268,6 @@ find_package(USB REQUIRED)
 if (USB_FOUND)
     include_directories(${LIBUSB_INCLUDE_DIRS})
     set(LIBS ${LIBS} ${LIBUSB_LIBRARIES})
-    
-    find_package(QtUsb REQUIRED)
-    if (QtUsb_FOUND)
-        include_directories(${QtUsb_INCLUDE_DIRS})
-        set(LIBS ${LIBS} ${QtUsb_LIBRARIES})
-    else()
-        message(FATAL_ERROR "The 'QtUSB' system device and enumeration library could not be found!")
-    endif(QtUsb_FOUND)
 else()
     message(FATAL_ERROR "Either `libusb.h` and/or `usb.h` could not be found for the 'libusb' system device and enumeration libraries!")
 endif(USB_FOUND)
@@ -544,17 +538,17 @@ endif()
 # Do not compile UIC for these!
 #
 set(GALAXY_SRC_CPP
-    ${GALAXY_SRC_CPP}
-    src/contrib/udev/device.cpp
-    src/contrib/udev/enumerate.cpp
-    src/contrib/udev/monitor.cpp
-    src/contrib/udev/udev.cpp
-    src/contrib/udev/posix/error.cpp
-    src/contrib/udev/posix/resource.cpp)
+    ${GALAXY_SRC_CPP})
 
 if(LINUX)
     set(GALAXY_SRC_CPP
-        ${GALAXY_SRC_CPP})
+        ${GALAXY_SRC_CPP}
+        src/contrib/udev/device.cpp
+        src/contrib/udev/enumerate.cpp
+        src/contrib/udev/monitor.cpp
+        src/contrib/udev/udev.cpp
+        src/contrib/udev/posix/error.cpp
+        src/contrib/udev/posix/resource.cpp)
 elseif(WIN32 OR MSYS OR MINGW)
     set(GALAXY_SRC_CPP
         ${GALAXY_SRC_CPP})
@@ -635,17 +629,17 @@ set(GALAXY_SRC_HEADERS
     ${GALAXY_SRC_HEADERS}
     src/gk_timer.hpp
     src/gk_circ_buffer.hpp
-    src/contrib/rapidcsv/src/rapidcsv.h
-    src/contrib/udev/device.hpp
-    src/contrib/udev/enumerate.hpp
-    src/contrib/udev/monitor.hpp
-    src/contrib/udev/udev.hpp
-    src/contrib/udev/posix/error.hpp
-    src/contrib/udev/posix/resource.hpp)
+    src/contrib/rapidcsv/src/rapidcsv.h)
 
 if(LINUX)
     set(GALAXY_SRC_HEADERS
-        ${GALAXY_SRC_HEADERS})
+        ${GALAXY_SRC_HEADERS}
+        src/contrib/udev/device.hpp
+        src/contrib/udev/enumerate.hpp
+        src/contrib/udev/monitor.hpp
+        src/contrib/udev/udev.hpp
+        src/contrib/udev/posix/error.hpp
+        src/contrib/udev/posix/resource.hpp)
 elseif(WIN32 OR MSYS OR MINGW)
     set(GALAXY_SRC_HEADERS
         ${GALAXY_SRC_HEADERS})
@@ -702,7 +696,7 @@ endif()
 # Build Small World Deluxe as a static package!
 #
 if(GFYRE_BUILD_STATIC)
-    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP})
+    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP} ${GALAXY_HAMLIB_CPP})
     
     # add_library(galaxy_fort STATIC ${GALAXY_WSJTX_QRA64_FORT})
 else()
@@ -713,7 +707,7 @@ endif(GFYRE_BUILD_STATIC)
 # Build Small World Deluxe as a shared package!
 #
 if(GFYRE_BUILD_SHARED)
-    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP})
+    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP} ${GALAXY_HAMLIB_CPP})
     
     # add_library(galaxy_fort STATIC ${GALAXY_WSJTX_QRA64_FORT})
 endif(GFYRE_BUILD_SHARED)

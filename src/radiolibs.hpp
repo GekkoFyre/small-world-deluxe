@@ -100,8 +100,8 @@ public:
     void gkInitRadioRig(const std::shared_ptr<AmateurRadio::Control::GkRadio> &radio_ptr);
 
     QMap<quint16, Database::Settings::GkUsbPort> enumUsbDevices();
-    std::vector<Database::Settings::GkBosUsb> printLibUsb(libusb_device **devs);
-    std::vector<Database::Settings::GkBosUsb> printBosUsb(libusb_device_handle *handle);
+    std::vector<Database::Settings::GkUsbPort> printLibUsb(libusb_device **devs);
+    std::vector<Database::Settings::GkUsbPort> printBosUsb(libusb_device_handle *handle);
 
 signals:
     void disconnectRigInUse(std::shared_ptr<Rig> rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
