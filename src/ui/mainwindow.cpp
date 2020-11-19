@@ -1931,12 +1931,16 @@ void MainWindow::updateVolume(const float &value)
         //
         // Input device!
         //
-        gkAudioInput->setVolume(value);
+        if (!gkAudioInput.isNull()) {
+            gkAudioInput->setVolume(value);
+        }
     } else if (pref_output_device.is_enabled) {
         //
         // Output device!
         //
-        gkAudioOutput->setVolume(value);
+        if (!gkAudioOutput.isNull()) {
+            gkAudioOutput->setVolume(value);
+        }
     } else {
         std::cerr << tr("Unable to determine Audio I/O for making volume changes!").toStdString() << std::endl;
     }
