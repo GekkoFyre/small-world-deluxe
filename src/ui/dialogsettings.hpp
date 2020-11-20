@@ -103,8 +103,8 @@ private slots:
     void on_pushButton_refresh_audio_devices_clicked();
     void on_pushButton_audio_logs_save_dir_clicked();
     void on_comboBox_brand_selection_currentIndexChanged(const QString &arg1);
-    void on_comboBox_com_port_currentIndexChanged(int index);
-    void on_comboBox_ptt_method_port_currentIndexChanged(int index);
+    void on_comboBox_com_port_currentIndexChanged(int index = -1);
+    void on_comboBox_ptt_method_port_currentIndexChanged(int index = -1);
     void on_spinBox_spectro_render_thread_settings_valueChanged(int arg1);
     void on_horizontalSlider_encoding_audio_quality_valueChanged(int value);
 
@@ -277,16 +277,16 @@ private:
     double audio_quality_val;
 
     // This variable is responsible for managing the COM/RS232/Serial ports of the system!
-    std::list<GekkoFyre::Database::Settings::GkComPort> status_com_ports;
+    std::list<GekkoFyre::Database::Settings::GkComPort> gkSerialPortMap;
 
     // The key is the USB devices' port number and the value is the associated struct
-    QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> status_usb_devices;
+    QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> gkUsbPortMap;
 
     bool com_ports_active;
     bool usb_ports_active;
 
-    // The key is the Hardware ID for the COM/RS232 port in question, while the value is the currentIndex within the QComboBox...
-    QMap<QString, int> available_com_ports; // For tracking the *available* RS232, etc. device ports that the user can choose from...
+    // The key is the Product Identifier for the RS232 device in question, while the value is what's displayed in the QComboBox...
+    QMap<quint16, QString> available_com_ports; // For tracking the *available* RS232, etc. device ports that the user can choose from...
 
     // The key is the Port Number for the USB device in question, while the value is what's displayed in the QComboBox...
     QMap<quint16, QString> available_usb_ports; // For tracking the *available* USB device ports that the user can choose from...
@@ -322,7 +322,7 @@ private:
     void prefill_avail_usb_ports(const QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> &usb_devices);
     void prefill_com_baud_speed(const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate);
     void enable_device_port_options();
-    GekkoFyre::AmateurRadio::GkConnType ascertConnType(const bool &is_ptt = false);
+    GekkoFyre::AmateurRadio::GkConnType assertConnType(const bool &is_ptt = false);
 
     bool read_settings();
 };
