@@ -898,7 +898,7 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
                     //
                     ui->comboBox_ptt_method_port->addItem(portName, portName);
 
-                    available_com_ports.insert(port.port_info.description(), counter);
+                    available_com_ports.insert(port.port_info.productIdentifier(), portName);
                 }
             }
 
@@ -909,14 +909,15 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
             if (!comDeviceCat.isEmpty() && !available_com_ports.isEmpty()) {
                 for (const auto &sel_port: available_com_ports.toStdMap()) {
                     for (const auto &device: gkSerialPortMap) {
-                        if ((device.port_info.description() == sel_port.first) && (comDeviceCat == device.port_info.portName())) {
+                        if ((device.port_info.productIdentifier() == sel_port.first) && (comDeviceCat == device.port_info.portName())) {
                             //
                             // COM/RS232/Serial Port
                             //
 
                             // NOTE: The recorded setting used to identify the chosen serial device is the COM Port name
-                            ui->comboBox_com_port->setCurrentIndex(sel_port.second);
-                            on_comboBox_com_port_currentIndexChanged(sel_port.second);
+                            qint32 serial_idx = ui->comboBox_com_port->findData(sel_port.second);
+                            ui->comboBox_com_port->setCurrentIndex(serial_idx);
+                            on_comboBox_com_port_currentIndexChanged(serial_idx);
                         }
                     }
                 }
@@ -929,10 +930,11 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
             if (!comDevicePtt.isEmpty() && !available_com_ports.isEmpty()) {
                 for (const auto &sel_port: available_com_ports.toStdMap()) {
                     for (const auto &device: gkSerialPortMap) {
-                        if ((device.port_info.description() == sel_port.first) && (comDevicePtt == device.port_info.portName())) {
+                        if ((device.port_info.productIdentifier() == sel_port.first) && (comDevicePtt == device.port_info.portName())) {
                             // NOTE: The recorded setting used to identify the chosen serial device is the COM Port name
-                            ui->comboBox_ptt_method_port->setCurrentIndex(sel_port.second);
-                            on_comboBox_ptt_method_port_currentIndexChanged(sel_port.second);
+                            qint32 serial_idx = ui->comboBox_ptt_method_port->findData(sel_port.second);
+                            ui->comboBox_ptt_method_port->setCurrentIndex(serial_idx);
+                            on_comboBox_ptt_method_port_currentIndexChanged(serial_idx);
                         }
                     }
                 }
@@ -1005,8 +1007,9 @@ void DialogSettings::prefill_avail_usb_ports(const QMap<quint16, GekkoFyre::Data
                             //
                             if ((device.port == sel_port.first) && (usbDeviceCat == device.name)) {
                                 // NOTE: The recorded setting used to identify the chosen serial device is the COM Port name
-                                ui->comboBox_com_port->setCurrentIndex(device.port);
-                                on_comboBox_com_port_currentIndexChanged(device.port);
+                                qint32 dev_idx = ui->comboBox_com_port->findData(sel_port.second);
+                                ui->comboBox_com_port->setCurrentIndex(dev_idx);
+                                on_comboBox_com_port_currentIndexChanged(dev_idx);
                             }
                         }
 
@@ -1016,8 +1019,9 @@ void DialogSettings::prefill_avail_usb_ports(const QMap<quint16, GekkoFyre::Data
                             //
                             if ((device.port == sel_port.first) && (usbDevicePtt == device.name)) {
                                 // NOTE: The recorded setting used to identify the chosen serial device is the COM Port name
-                                ui->comboBox_ptt_method_port->setCurrentIndex(device.port);
-                                on_comboBox_ptt_method_port_currentIndexChanged(device.port);
+                                qint32 serial_idx = ui->comboBox_ptt_method_port->findData(sel_port.second);
+                                ui->comboBox_ptt_method_port->setCurrentIndex(serial_idx);
+                                on_comboBox_ptt_method_port_currentIndexChanged(serial_idx);
                             }
                         }
                     }
@@ -1579,8 +1583,10 @@ void DialogSettings::on_comboBox_brand_selection_currentIndexChanged(const QStri
  */
 void DialogSettings::on_comboBox_com_port_currentIndexChanged(int index)
 {
+    Q_UNUSED(index);
     try {
-        if (index > 0) { // Make sure that we haven't selected the dummy retainer item, "N/A"!
+        // TODO: This function urgently needs a cleanup...
+        if (!gkSerialPortMap.empty()) { // Make sure that we haven't selected the dummy retainer item, "N/A"!
             for (const auto &com_port_list: gkSerialPortMap) {
                 for (const auto &usb_port_list: available_usb_ports.toStdMap()) {
                     if (usb_port_list.second == ui->comboBox_com_port->currentData().toString()) {
@@ -1589,7 +1595,7 @@ void DialogSettings::on_comboBox_com_port_currentIndexChanged(int index)
                     } else if (com_port_list.port_info.portName() == ui->comboBox_com_port->currentData().toString()) {
                         // An RS232/Serial port has been found!
                         QString combined_str = QString("%1 [ PID: #%2 ]")
-                                .arg(com_port_list.port_info.description())
+                                .arg(com_port_list.port_info.productIdentifier())
                                 .arg(QString::number(com_port_list.port_info.productIdentifier()));
                         ui->lineEdit_device_port_name->setText(combined_str);
                         emit changeConnPort(com_port_list.port_info.portName(), GkConnMethod::CAT);
@@ -1611,8 +1617,10 @@ void DialogSettings::on_comboBox_com_port_currentIndexChanged(int index)
  */
 void DialogSettings::on_comboBox_ptt_method_port_currentIndexChanged(int index)
 {
+    Q_UNUSED(index);
     try {
-        if (index > 0) { // Make sure that we haven't selected the dummy retainer item, "N/A"!
+        // TODO: This function urgently needs a cleanup...
+        if (!gkSerialPortMap.empty()) { // Make sure that we haven't selected the dummy retainer item, "N/A"!
             for (const auto &ptt_port_list: gkSerialPortMap) {
                 for (const auto &usb_port_list: available_usb_ports.toStdMap()) {
                     if (usb_port_list.second == ui->comboBox_ptt_method_port->currentData().toString()) {
@@ -1621,7 +1629,7 @@ void DialogSettings::on_comboBox_ptt_method_port_currentIndexChanged(int index)
                     } else if (ptt_port_list.port_info.portName() == ui->comboBox_ptt_method_port->currentData().toString()) {
                         // An RS232/Serial port has been found!
                         QString combined_str = QString("%1 [ PID: #%2 ]")
-                                .arg(ptt_port_list.port_info.description())
+                                .arg(ptt_port_list.port_info.productIdentifier())
                                 .arg(QString::number(ptt_port_list.port_info.productIdentifier()));
                         ui->lineEdit_device_port_name->setText(combined_str);
                         emit changeConnPort(ptt_port_list.port_info.portName(), GkConnMethod::PTT);
@@ -2435,16 +2443,15 @@ GkConnType DialogSettings::assertConnType(const bool &is_ptt)
         //
         // CAT
         //
-        const qint32 cat_idx = ui->comboBox_com_port->currentIndex();
-        const QString cat_str = ui->comboBox_com_port->currentText();
-        for (const auto &port: gkSerialPortMap) {
-            if (cat_idx == port.port_info.portName()) {
+        const QString cat_name = ui->comboBox_com_port->currentData().toString();
+        for (const auto &serial: available_com_ports.toStdMap()) {
+            if (cat_name == serial.second) {
                 return GkConnType::GkRS232;
             }
         }
 
-        for (const auto &usb: gkUsbPortMap.toStdMap()) {
-            if (cat_str == usb.second.name) {
+        for (const auto &usb: available_usb_ports.toStdMap()) {
+            if (cat_name == usb.second) {
                 return GkConnType::GkUSB;
             }
         }
@@ -2454,16 +2461,15 @@ GkConnType DialogSettings::assertConnType(const bool &is_ptt)
         //
         // PTT
         //
-        const qint32 ptt_idx = ui->comboBox_ptt_method_port->currentIndex();
-        const QString ptt_str = ui->comboBox_ptt_method_port->currentText();
-        for (const auto &port: gkSerialPortMap) {
-            if (ptt_idx == port.port_info.portName()) {
+        const QString ptt_name = ui->comboBox_ptt_method_port->currentData().toString();
+        for (const auto &serial: available_com_ports.toStdMap()) {
+            if (ptt_name == serial.second) {
                 return GkConnType::GkRS232;
             }
         }
 
-        for (const auto &usb: gkUsbPortMap.toStdMap()) {
-            if (ptt_str == usb.second.name) {
+        for (const auto &usb: available_usb_ports.toStdMap()) {
+            if (ptt_name == usb.second) {
                 return GkConnType::GkUSB;
             }
         }
