@@ -45,11 +45,13 @@ set(HAMLIB_DEFINITIONS ${PC_HAMLIB_CFLAGS_OTHER})
 find_path(HAMLIB_INCLUDE_DIR
     NAMES "hamlib/rig.h"
     HINTS ${PC_HAMLIB_INCLUDE_DIR} ${PC_HAMLIB_INCLUDE_DIRS}
+    PATHS "/usr/local/include" "/usr/local/include64" "/usr/include" "/usr/include64" "/usr/include/x86_64-linux-gnu" "/opt/local/include"
     PATH_SUFFIXES hamlib)
 
 find_library(HAMLIB_LIBRARY
-    NAMES  "hamlib" "libhamlib" "hamlib-2" "libhamlib-2"
-    HINTS ${PC_HAMLIB_LIBDIR} ${PC_HAMLIB_LIBRARY_DIRS})
+    NAMES "hamlib" "libhamlib" "hamlib-2" "libhamlib-2"
+    HINTS ${PC_HAMLIB_LIBDIR} ${PC_HAMLIB_LIBRARY_DIRS}
+    PATHS "/usr/local/lib" "/usr/local/lib64" "/usr/lib" "/usr/lib64" "/usr/lib/x86_64-linux-gnu" "/opt/local/lib")
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(Hamlib DEFAULT_MSG HAMLIB_LIBRARY HAMLIB_INCLUDE_DIR)

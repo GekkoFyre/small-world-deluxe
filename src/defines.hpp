@@ -44,10 +44,10 @@
 //-V::1042
 
 #include "src/gk_string_funcs.hpp"
+#include "src/contrib/hamlib++/include/hamlib/rigclass.h"
 #include <boost/exception/all.hpp>
 #include <boost/logic/tribool.hpp>
 #include <boost/filesystem.hpp>
-#include <hamlib/rigclass.h>
 #include <qwt/qwt_interval.h>
 #include <list>
 #include <vector>
@@ -68,7 +68,6 @@
 #include <QDateTime>
 #include <QStringList>
 #include <QAudioFormat>
-#include <QtUsb/QUsbDevice>
 #include <QSerialPortInfo>
 #include <QAudioDeviceInfo>
 
@@ -76,9 +75,6 @@
 #include <winsdkver.h>
 #include <Windows.h>
 #include <tchar.h> // https://linuxgazette.net/147/pfeiffer.html
-
-#include <atlbase.h>
-#include <atlstr.h>
 #endif
 
 #ifdef __cplusplus
@@ -432,15 +428,6 @@ namespace Database {
             Disabled
         };
 
-        struct UsbVers3 {
-            int interface_number;                                                   // Number of this interface!
-            int alternate_setting;                                                  // Value used to select this alternate setting for this interface
-            int max_packet_size;                                                    // Maximum packet size this endpoint is capable of sending/receiving
-            int interval;                                                           // Interval for polling endpoint for data transfers
-            int refresh;                                                            // For audio devices only: the rate at which synchronization feedback is provided
-            int sync_address;                                                       // For audio devices only: the address if the synch endpoint
-        };
-
         struct GkLibUsb {
             QString mfg;                                                            // The manufacturer of this USB device, as determined by 'libusb'.
             QString product;                                                        // The product name/identity of this USB device, as determined by 'libusb'.
@@ -465,7 +452,8 @@ namespace Database {
             quint16 b_u2_dev_exit_lat;                                              // U2 Device Exit Latency.
         };
 
-        struct GkBosUsb {                                                           // USB Binary Object Store structure.
+        struct GkUsbPort {
+            QString name;                                                           // The actual name of the USB port as displayed by the operating system itself
             GkUsb2Exts usb_2;                                                       // Extensions for USB >2.0+ devices.
             GkUsb3Exts usb_3;                                                       // Extensions for USB >3.0+ devices.
             GkLibUsb lib_usb;                                                       // Additional information pertaining to USB devices, both old and new.
@@ -473,17 +461,7 @@ namespace Database {
             quint16 vid;
             quint8 addr;
             quint8 bus;
-        };
-
-        struct GkUsbPort {
-            GkBosUsb bos_usb;                                                       // USB Binary Object Store structure.
-            QString name;                                                           // The actual name of the USB port as displayed by the operating system itself
-            quint16 port;                                                           // The USB port number as determined by `QtUsb`
-            quint16 bus;                                                            // The USB BUS number as determined by `QtUsb`
-            quint16 pid;                                                            // The USB port's own Product ID as determined by 'QtUsb'
-            quint16 vid;                                                            // The USB port's own Vendor ID as determined by 'QtUsb'
-            quint16 d_class;                                                        // Unknown
-            quint16 d_sub_class;                                                    // Unknown
+            quint8 port;                                                            // The list of all port numbers from root for the specified device.
         };
 
         struct GkComPort {

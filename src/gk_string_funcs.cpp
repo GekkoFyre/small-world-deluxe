@@ -257,25 +257,25 @@ QString StringFuncs::fileSizeHumanReadable(const qint64 &file_size)
     qint64 conv_size = 0.0f;
     QString formatted_val;
 
-    if (file_size >= 0 && file_size <= 1024L) {
+    if (file_size >= 0 && file_size <= 1024LL) {
         // Output as bytes!
         conv_size = file_size;
         formatted_val = tr("%1 bytes").arg(QString::number(conv_size));
-    } else if (file_size >= 1025 && file_size <= (1024L * 1024L)) {
+    } else if (file_size >= 1025 && file_size <= (1024LL * 1024LL)) {
         // Output as kilobytes!
-        conv_size = (file_size / (1024L));
+        conv_size = (file_size / (1024LL));
         formatted_val = tr("%1 kB").arg(QString::number(conv_size));
-    } else if (file_size >= ((1024L * 1024L) + 1) && file_size <= (1024L * 1024L * 1024L)) {
+    } else if (file_size >= ((1024LL * 1024LL) + 1) && file_size <= (1024LL * 1024LL * 1024LL)) {
         // Output as megabytes!
-        conv_size = (file_size / (1024L * 1024L));
+        conv_size = (file_size / (1024LL * 1024LL));
         formatted_val = tr("%1 MiB").arg(QString::number(conv_size));
-    } else if (file_size >= ((1024L * 1024L * 1024L) + 1) && file_size <= (1024L * 1024L * 1024L * 1024L)) {
+    } else if (file_size >= ((1024LL * 1024LL * 1024LL) + 1) && file_size <= (1024LL * 1024LL * 1024LL * 1024LL)) {
         // Output as gigabytes!
-        conv_size = (file_size / (1024L * 1024L * 1024L));
+        conv_size = (file_size / (1024LL * 1024LL * 1024LL));
         formatted_val = tr("%1 GiB").arg(QString::number(conv_size));
     } else {
         // Output as terabytes!
-        conv_size = (file_size / (1024L * 1024L * 1024L * 1024L));
+        conv_size = (file_size / (1024LL * 1024LL * 1024LL * 1024LL));
         formatted_val = tr("%1 TiB").arg(QString::number(conv_size));
     }
 
