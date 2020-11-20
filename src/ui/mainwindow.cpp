@@ -404,7 +404,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                  gkEventLogger, SLOT(publishEvent(const QString &, const GekkoFyre::System::Events::Logging::GkSeverity &, const QVariant &, const bool &, const bool &, const bool &, const bool &)));
 
                 // Initialize the other radio libraries!
-                status_com_ports = gkRadioLibs->filter_com_ports(gkRadioLibs->status_com_ports());
+                gkSerialPortMap = gkRadioLibs->filter_com_ports(gkRadioLibs->status_com_ports());
                 gkUsbPortMap = gkRadioLibs->enumUsbDevices();
                 gkRadioPtr = readRadioSettings();
                 emit addRigInUse(gkRadioPtr->rig_model, gkRadioPtr);
@@ -696,16 +696,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             gkSpectroWaterfall->setDataDimensions(SPECTRO_X_MIN_AXIS_SIZE, SPECTRO_X_MAX_AXIS_SIZE, 64, AUDIO_FRAMES_PER_BUFFER);
         }
 
-        // Set the range only once (data range)...
-        static bool gkSetRangeOnlyOnce = true;
-        if (gkSetRangeOnlyOnce) {
-            double dataRng[2];
-            gkSpectroWaterfall->getDataRange(dataRng[0], dataRng[1]);
-            gkSpectroWaterfall->setRange(dataRng[0], dataRng[1]);
-            gkSetRangeOnlyOnce = false;
-        }
-
-        ui->stackedWidget_maingui_spectro_graphs->addWidget(gkSpectroWaterfall);
+        //
+        // Add the spectrograph / waterfall to the QMainWindow!
+        ui->horizontalLayout_12->addWidget(gkSpectroWaterfall);
 
         //
         // Sound & Audio Devices
@@ -931,7 +924,7 @@ void MainWindow::launchSettingsWin()
     QPointer<DialogSettings> dlg_settings = new DialogSettings(gkDb, fileIo, gkAudioDevices, gkAudioInput,
                                                                gkAudioOutput, avail_input_audio_devs, avail_output_audio_devs,
                                                                pref_input_device, pref_output_device, gkRadioLibs,
-                                                               gkStringFuncs, gkRadioPtr, status_com_ports, gkUsbPortMap,
+                                                               gkStringFuncs, gkRadioPtr, gkSerialPortMap, gkUsbPortMap,
                                                                gkFreqList, gkFreqTableModel, gkEventLogger,
                                                                gkTextToSpeech, this);
     dlg_settings->setWindowFlags(Qt::Window);
@@ -1053,9 +1046,9 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
         const GkConnType catPortType = gkDb->convConnTypeToEnum(gkDb->read_rig_settings_comms(radio_cfg::ComDeviceCatPortType).toInt());
         if (!comDeviceCat.isEmpty()) {
             if (catPortType == GkConnType::GkRS232) {
-                if (!status_com_ports.empty()) {
+                if (!gkSerialPortMap.empty()) {
                     // Verify that the port still exists!
-                    for (const auto &port: status_com_ports) {
+                    for (const auto &port: gkSerialPortMap) {
                         if (comDeviceCat == port.port_info.portName()) {
                             // The port does indeed continue to exist!
                             gk_radio_tmp->cat_conn_port = port.port_info.systemLocation();
@@ -1097,9 +1090,9 @@ std::shared_ptr<GkRadio> MainWindow::readRadioSettings()
         GkConnType pttPortType = gkDb->convConnTypeToEnum(gkDb->read_rig_settings_comms(radio_cfg::ComDevicePttPortType).toInt());
         if (!comDevicePtt.isEmpty()) {
             if (pttPortType == GkConnType::GkRS232) {
-                if (!status_com_ports.empty()) {
+                if (!gkSerialPortMap.empty()) {
                     // Verify that the port still exists!
-                    for (const auto &port: status_com_ports) {
+                    for (const auto &port: gkSerialPortMap) {
                         if (comDevicePtt == port.port_info.portName()) {
                             // The port does indeed continue to exist!
                             gk_radio_tmp->ptt_conn_port = port.port_info.systemLocation();
@@ -2363,7 +2356,7 @@ void MainWindow::disconnectRigInMemory(std::shared_ptr<Rig> rig_to_disconnect, c
                 rig_to_disconnect->close(); // Close port
                 gkRadioPtr->is_open = false;
 
-                for (const auto &port: status_com_ports) {
+                for (const auto &port: gkSerialPortMap) {
                     //
                     // CAT Port
                     //

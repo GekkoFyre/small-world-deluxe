@@ -478,6 +478,15 @@ void GkFFTAudio::samplesUpdated()
                         throw std::runtime_error(tr("There has been an error with the spectrograph / waterfall.").toStdString());
                     }
 
+                    // Set the range only once (data range)...
+                    static bool gkSetRangeOnlyOnce = true;
+                    if (gkSetRangeOnlyOnce) {
+                        double dataRng[2];
+                        gkSpectroWaterfall->getDataRange(dataRng[0], dataRng[1]);
+                        gkSpectroWaterfall->setRange(dataRng[0], dataRng[1]);
+                        gkSetRangeOnlyOnce = false;
+                    }
+
                     updateGraph = true;
                 }
             } else {

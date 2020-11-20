@@ -41,6 +41,7 @@
 
 #include "src/gk_string_funcs.hpp"
 #include <boost/exception/all.hpp>
+#include <QRegularExpression>
 #include <QMessageBox>
 #include <exception>
 #include <QSettings>
@@ -243,6 +244,32 @@ std::string StringFuncs::csvOutputString(const std::vector<std::string> &csv_ele
     }
 
     return std::string();
+}
+
+/**
+ * @brief StringFuncs::extractNumbersFromStr will extract any identifiable integers from a given QString.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param str
+ * @return
+ */
+QList<int> StringFuncs::extractNumbersFromStr(const QString &str)
+{
+    try {
+        QList<int> ret_val;
+        QRegularExpression rx("d(\\d+)");
+        QRegularExpressionMatchIterator i = rx.globalMatch(str);
+        while (i.hasNext()) {
+            QRegularExpressionMatch match = i.next();
+            QString integer = match.captured(1);
+            ret_val << integer.toInt();
+        }
+
+        return ret_val;
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return QList<int>();
 }
 
 /**
@@ -517,4 +544,5 @@ bool StringFuncs::modalDlgBoxOk(const HWND &hwnd, const QString &title, const QS
 
     return false;
 }
+
 #endif

@@ -49,6 +49,7 @@
 #include <QPointer>
 #include <QObject>
 #include <QString>
+#include <QList>
 #include <string>
 #include <memory>
 #include <vector>
@@ -87,6 +88,8 @@ public:
     std::vector<std::string> csvSplitter(const std::string &csv_vals);
     std::vector<std::string> csvRemoveElement(const std::vector<std::string> &csv_elements, const std::string &val_to_remove);
     std::string csvOutputString(const std::vector<std::string> &csv_elements);
+
+    QList<int> extractNumbersFromStr(const QString &str);
 
     QString fileSizeHumanReadable(const qint64 &file_size);
     qreal getPeakValue(const QAudioFormat &format);
