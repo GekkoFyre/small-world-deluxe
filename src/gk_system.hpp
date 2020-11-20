@@ -42,8 +42,6 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/gk_string_funcs.hpp"
-#include "src/gk_logger.hpp"
 #include <string>
 #include <QObject>
 #include <QString>
@@ -63,16 +61,11 @@ class GkSystem : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkSystem(QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                      QObject *parent = nullptr);
+    explicit GkSystem(QObject *parent = nullptr);
     ~GkSystem() override;
 
     qint32 getNumCpuCores();
     QString renameCommsDevice(const qint32 &port, const GekkoFyre::AmateurRadio::GkConnType &conn_type);
-
-private:
-    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
-    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
 };
 };

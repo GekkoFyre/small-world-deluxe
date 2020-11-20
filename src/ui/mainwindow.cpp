@@ -209,6 +209,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // Create class pointers
         fileIo = new GekkoFyre::FileIo(this);
         gkStringFuncs = new GekkoFyre::StringFuncs(this);
+        gkSystem = new GkSystem(this);
 
         //
         // Settings database-related logic
@@ -398,15 +399,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 //
                 // Initialize the all-important `GkRadioPtr`!
                 //
+                gkRadioLibs = new GekkoFyre::RadioLibs(fileIo, gkStringFuncs, gkDb, gkRadioPtr, gkEventLogger, gkSystem, this);
+                QObject::connect(gkRadioLibs, SIGNAL(publishEventMsg(const QString &, const GekkoFyre::System::Events::Logging::GkSeverity &, const QVariant &, const bool &, const bool &, const bool &, const bool &)),
+                                 gkEventLogger, SLOT(publishEvent(const QString &, const GekkoFyre::System::Events::Logging::GkSeverity &, const QVariant &, const bool &, const bool &, const bool &, const bool &)));
+
+                // Initialize the other radio libraries!
                 status_com_ports = gkRadioLibs->filter_com_ports(gkRadioLibs->status_com_ports());
                 gkUsbPortMap = gkRadioLibs->enumUsbDevices();
                 gkRadioPtr = readRadioSettings();
                 emit addRigInUse(gkRadioPtr->rig_model, gkRadioPtr);
-
-                // Initialize the other radio libraries!
-                gkRadioLibs = new GekkoFyre::RadioLibs(fileIo, gkStringFuncs, gkDb, gkRadioPtr, gkEventLogger, gkSystem, this);
-                QObject::connect(gkRadioLibs, SIGNAL(publishEventMsg(const QString &, const GekkoFyre::System::Events::Logging::GkSeverity &, const QVariant &, const bool &, const bool &, const bool &, const bool &)),
-                                 gkEventLogger, SLOT(publishEvent(const QString &, const GekkoFyre::System::Events::Logging::GkSeverity &, const QVariant &, const bool &, const bool &, const bool &, const bool &)));
 
                 //
                 // Setup the SIGNALS & SLOTS for `gkRadioLibs`...
@@ -420,11 +421,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             QMessageBox::warning(this, tr("Error!"), tr("%1\n\nAborting...").arg(e.what()), QMessageBox::Ok);
             QApplication::exit(EXIT_FAILURE);
         }
-
-        //
-        // Initialize the GkSystem library!
-        //
-        gkSystem = new GkSystem(gkStringFuncs, gkEventLogger, this);
 
         //
         // Setup the CLI parser and its settings!

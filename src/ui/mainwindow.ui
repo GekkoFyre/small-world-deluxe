@@ -540,8 +540,8 @@ color: white;</string>
                                <rect>
                                 <x>0</x>
                                 <y>0</y>
-                                <width>445</width>
-                                <height>200</height>
+                                <width>393</width>
+                                <height>136</height>
                                </rect>
                               </property>
                               <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -686,8 +686,8 @@ color: white;</string>
                                <rect>
                                 <x>0</x>
                                 <y>0</y>
-                                <width>444</width>
-                                <height>200</height>
+                                <width>433</width>
+                                <height>136</height>
                                </rect>
                               </property>
                               <layout class="QVBoxLayout" name="verticalLayout_20">
@@ -972,8 +972,8 @@ color: white;</string>
                          <rect>
                           <x>0</x>
                           <y>0</y>
-                          <width>180</width>
-                          <height>171</height>
+                          <width>177</width>
+                          <height>183</height>
                          </rect>
                         </property>
                         <layout class="QVBoxLayout" name="verticalLayout_22">
@@ -1218,14 +1218,18 @@ QPushButton:disabled {
                      <bool>true</bool>
                     </property>
                     <property name="duplicatesEnabled">
-                     <bool>true</bool>
+                     <bool>false</bool>
                     </property>
                    </widget>
                   </item>
                  </layout>
                 </item>
                 <item>
-                 <layout class="QHBoxLayout" name="horizontalLayout_10"/>
+                 <layout class="QHBoxLayout" name="horizontalLayout_10">
+                  <item>
+                   <widget class="QComboBox" name="comboBox_select_digital_mode"/>
+                  </item>
+                 </layout>
                 </item>
                 <item>
                  <layout class="QHBoxLayout" name="horizontalLayout_15">
@@ -1320,7 +1324,7 @@ QPushButton:disabled {
                   <item>
                    <widget class="QPushButton" name="pushButton_radio_receive">
                     <property name="toolTip">
-                     <string>Enable receiving of audio.</string>
+                     <string>Enable receiving and processing of audio.</string>
                     </property>
                     <property name="styleSheet">
                      <string notr="true">QPushButton:pressed {
@@ -1496,7 +1500,7 @@ QPushButton:disabled {
           <item>
            <widget class="QCheckBox" name="checkBox_rx_tx_vol_toggle">
             <property name="toolTip">
-             <string>Change the volume for either the RX or TX audio stream!</string>
+             <string>Change the volume and spectrograph for either the RX or TX audio stream!</string>
             </property>
             <property name="text">
              <string>RX</string>
@@ -1530,7 +1534,7 @@ QPushButton:disabled {
      <x>0</x>
      <y>0</y>
      <width>1024</width>
-     <height>20</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">

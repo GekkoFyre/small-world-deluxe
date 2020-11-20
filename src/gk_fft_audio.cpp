@@ -230,43 +230,47 @@ void GkFFTAudio::setAudioIo(const bool &use_input_audio)
 {
     try {
         if (use_input_audio) {
-            //
-            // Input Audio
-            //
-            if (audioStreamProc) {
-                enableAudioStreamProc = true;
-            }
+            if (!gkAudioInput.isNull()) {
+                //
+                // Input Audio
+                //
+                if (audioStreamProc) {
+                    enableAudioStreamProc = true;
+                }
 
-            if (audioFileStreamProc) {
-                enableAudioFileStreamProc = true;
-            }
+                if (audioFileStreamProc) {
+                    enableAudioFileStreamProc = true;
+                }
 
-            emit stopRecording();
-            if (enableAudioStreamProc) {
-                emit recordStream();
-                enableAudioStreamProc = false;
-            }
+                emit stopRecording();
+                if (enableAudioStreamProc) {
+                    emit recordStream();
+                    enableAudioStreamProc = false;
+                }
 
-            // TODO: Setup an 'emit signal' for `enableAudioFileStreamProc`...
+                // TODO: Setup an 'emit signal' for `enableAudioFileStreamProc`...
+            }
         } else {
-            //
-            // Output Audio
-            //
-            if (audioStreamProc) {
-                enableAudioStreamProc = true;
-            }
+            if (!gkAudioOutput.isNull()) {
+                //
+                // Output Audio
+                //
+                if (audioStreamProc) {
+                    enableAudioStreamProc = true;
+                }
 
-            if (audioFileStreamProc) {
-                enableAudioFileStreamProc = true;
-            }
+                if (audioFileStreamProc) {
+                    enableAudioFileStreamProc = true;
+                }
 
-            emit stopRecording();
-            if (enableAudioStreamProc) {
-                emit recordStream();
-                enableAudioStreamProc = false;
-            }
+                emit stopRecording();
+                if (enableAudioStreamProc) {
+                    emit recordStream();
+                    enableAudioStreamProc = false;
+                }
 
-            // TODO: Setup an 'emit signal' for `enableAudioFileStreamProc`...
+                // TODO: Setup an 'emit signal' for `enableAudioFileStreamProc`...
+            }
         }
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);
@@ -404,7 +408,7 @@ void GkFFTAudio::stopRecordStream()
         // Input Audio
         //
         if (gkAudioInput.isNull()) {
-            throw std::runtime_error(tr("A memory error has been encountered with the input audio whilst trying to process audio for FFT calculations!").toStdString());
+            throw std::runtime_error(tr("A memory error has been encountered with the input audio! Have you configured the audio devices yet?").toStdString());
         }
 
         if (gkAudioInput->state() == QAudio::ActiveState) { // Stop any active Audio Inputs!
@@ -416,7 +420,7 @@ void GkFFTAudio::stopRecordStream()
         // Output Audio
         //
         if (gkAudioOutput.isNull()) {
-            throw std::runtime_error(tr("A memory error has been encountered with the output audio whilst trying to process audio for FFT calculations!").toStdString());
+            throw std::runtime_error(tr("A memory error has been encountered with the output audio! Have you configured the audio devices yet?").toStdString());
         }
 
         if (gkAudioOutput->state() == QAudio::ActiveState) { // Stop any active Audio Outputs!

@@ -98,6 +98,8 @@ RadioLibs::RadioLibs(QPointer<FileIo> filePtr, QPointer<StringFuncs> stringPtr,
                      QPointer<GkEventLogger> eventLogger, QPointer<GekkoFyre::GkSystem> systemPtr,
                      QObject *parent) : QObject(parent)
 {
+    setParent(parent);
+
     gkStringFuncs = std::move(stringPtr);
     gkDekodeDb = std::move(dkDb);
     gkFileIo = std::move(filePtr);
@@ -418,21 +420,21 @@ QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDevice
         auto usb_bos_info = printLibUsb(devs);
         if (!usb_bos_info.empty()) {
             for (const auto &bos_dev: usb_bos_info) {
-                if (bos_dev.lib_usb.dev_num == usb.port) {
-                    // We have a match!
-                    if (!bos_dev.lib_usb.path.isEmpty()) {
-                        if (!already_added.contains(bos_dev.lib_usb.path)) {
-                            usb.name = bos_dev.lib_usb.path;
-                            already_added.push_back(usb.name);
-                            break;
-                        }
-                    } else {
-                        QString usb_path = gkSystem->renameCommsDevice(usb.port, GkConnType::GkUSB);
-                        if (!already_added.contains(usb_path)) {
-                            usb.name = usb_path;
-                            already_added.push_back(usb.name);
-                            break;
-                        }
+                if (!bos_dev.lib_usb.path.isEmpty()) {
+                    if (!already_added.contains(bos_dev.lib_usb.path)) {
+                        already_added.push_back(usb.name);
+                        usb_hash.insert(static_cast<qint32>(bos_dev.port), bos_dev);
+
+                        break;
+                    }
+                } else {
+                    QString usb_path = gkSystem->renameCommsDevice(usb.port, GkConnType::GkUSB);
+                    if (!already_added.contains(usb_path)) {
+                        usb.name = usb_path;
+                        already_added.push_back(usb.name);
+                        usb_hash.insert(static_cast<qint32>(bos_dev.port), bos_dev);
+
+                        break;
                     }
                 }
             }
@@ -440,10 +442,6 @@ QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDevice
 
         libusb_free_device_list(devs, 1);
         libusb_exit(nullptr);
-
-        if (!usb.name.isEmpty()) {
-            usb_hash.insert(usb.port, usb);
-        }
 
         return usb_hash;
     }  catch (const std::exception &e) {
