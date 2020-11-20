@@ -57,7 +57,7 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 set(CMAKE_INSTALL_RPATH $ORIGIN $ORIGIN/lib) # Relative path to lib-dir...
 set(INSTALL_RPATH_USE_LINK_PATH true)
 
-project(smallworld C CXX Fortran)
+project(smallworld C CXX)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CXX_STANDARD 17)
@@ -201,24 +201,23 @@ else()
     message(FATAL_ERROR "The 'ZLIB' compression library could not be found!")
 endif(ZLIB_FOUND)
 
-set(GALAXY_HAMLIB_CPP
-    ${GALAXY_HAMLIB_CPP})
-
 find_package(Hamlib REQUIRED)
 if (HAMLIB_FOUND)
     include_directories(${HAMLIB_INCLUDE_DIRS})
     set(LIBS ${LIBS} ${HAMLIB_LIBRARIES})
     ADD_DEFINITIONS(-DUSE_HAMLIB=1)
-    set(GALAXY_HAMLIB_CPP
-        ${GALAXY_HAMLIB_CPP}
-        src/contrib/hamlib++/rigclass.cc
-        src/contrib/hamlib++/rotclass.cc
-        src/contrib/hamlib++/include/hamlib/rigclass.h
-        src/contrib/hamlib++/include/hamlib/rotclass.h)
-    set_property(SOURCE ${GALAXY_HAMLIB_CPP} PROPERTY SKIP_AUTOUIC ON)
 else()
     message(FATAL_ERROR "The 'Hamlib' amateur radio library could not be found!")
 endif(HAMLIB_FOUND)
+
+set(GALAXY_HAMLIB_CPP
+    ${GALAXY_HAMLIB_CPP}
+    src/contrib/hamlib++/rigclass.cc
+    src/contrib/hamlib++/rotclass.cc
+    src/contrib/hamlib++/include/hamlib/rigclass.h
+    src/contrib/hamlib++/include/hamlib/rotclass.h)
+
+set_property(SOURCE ${GALAXY_HAMLIB_CPP} PROPERTY SKIP_AUTOUIC ON)
 
 #
 # Left blank intentionally!

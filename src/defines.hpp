@@ -428,15 +428,6 @@ namespace Database {
             Disabled
         };
 
-        struct UsbVers3 {
-            int interface_number;                                                   // Number of this interface!
-            int alternate_setting;                                                  // Value used to select this alternate setting for this interface
-            int max_packet_size;                                                    // Maximum packet size this endpoint is capable of sending/receiving
-            int interval;                                                           // Interval for polling endpoint for data transfers
-            int refresh;                                                            // For audio devices only: the rate at which synchronization feedback is provided
-            int sync_address;                                                       // For audio devices only: the address if the synch endpoint
-        };
-
         struct GkLibUsb {
             QString mfg;                                                            // The manufacturer of this USB device, as determined by 'libusb'.
             QString product;                                                        // The product name/identity of this USB device, as determined by 'libusb'.

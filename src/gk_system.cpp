@@ -56,11 +56,10 @@ using namespace System;
 using namespace Events;
 using namespace Logging;
 
-GkSystem::GkSystem(QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger, 
-                   QObject *parent) : QObject(parent)
+GkSystem::GkSystem(QObject *parent) : QObject(parent)
 {
-    gkStringFuncs = std::move(stringFuncs);
-    gkEventLogger = std::move(eventLogger);
+    setParent(parent);
+    return;
 }
 
 GkSystem::~GkSystem()
