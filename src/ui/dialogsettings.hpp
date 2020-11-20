@@ -277,10 +277,10 @@ private:
     double audio_quality_val;
 
     // This variable is responsible for managing the COM/RS232/Serial ports of the system!
-    std::list<GekkoFyre::Database::Settings::GkComPort> status_com_ports;
+    std::list<GekkoFyre::Database::Settings::GkComPort> gkSerialPortMap;
 
     // The key is the USB devices' port number and the value is the associated struct
-    QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> status_usb_devices;
+    QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> gkUsbPortMap;
 
     bool com_ports_active;
     bool usb_ports_active;
@@ -322,7 +322,7 @@ private:
     void prefill_avail_usb_ports(const QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> &usb_devices);
     void prefill_com_baud_speed(const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate);
     void enable_device_port_options();
-    GekkoFyre::AmateurRadio::GkConnType ascertConnType(const bool &is_ptt = false);
+    GekkoFyre::AmateurRadio::GkConnType assertConnType(const bool &is_ptt = false);
 
     bool read_settings();
 };

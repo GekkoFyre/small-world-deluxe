@@ -310,25 +310,21 @@ std::list<GkComPort> RadioLibs::filter_com_ports(const QList<QSerialPortInfo> &s
 
     try {
         std::list<GkComPort> com_map;
-        for (const auto &info: serial_port_info) {
-            if (!info.isNull()) {
-                bool is_usb = false; // Are we dealing with a USB device or not? Since we have a separate library for handling such connections...
-                for (const auto &port: info.availablePorts()) {
-                    if (!port.isNull() && port.hasProductIdentifier()) {
-                        GkComPort com_struct;
-                        if (port.portName().contains(QString("USB"), Qt::CaseSensitive)) {
-                            is_usb = true;
-                        }
-
-                        if (!is_usb) {
-                            com_struct.port_info = info;
-                            com_map.push_back(com_struct);
-                            is_usb = false;
-                        }
-                    }
+        for (const auto &port: serial_port_info) {
+            if (!port.isNull() && port.hasProductIdentifier()) {
+                GkComPort com_struct;
+                if (port.portName().contains(QString("USB"), Qt::CaseSensitive)) {
+                    com_struct.is_usb = true; // Are we dealing with a USB device or not? Since we have a separate library for handling such connections...
+                } else {
+                    com_struct.is_usb = false;
                 }
+
+                com_struct.port_info = port;
+                com_map.push_back(com_struct);
             }
         }
+
+        return com_map;
     } catch (const std::exception &e) {
         QMessageBox::warning(nullptr, tr("Error!"), tr("An issue was encountered whilst enumerating RS232 ports!\n\n%1")
                 .arg(QString::fromStdString(e.what())), QMessageBox::Ok);
@@ -422,17 +418,19 @@ QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> RadioLibs::enumUsbDevice
             for (const auto &bos_dev: usb_bos_info) {
                 if (!bos_dev.lib_usb.path.isEmpty()) {
                     if (!already_added.contains(bos_dev.lib_usb.path)) {
+                        usb = bos_dev;
                         already_added.push_back(usb.name);
-                        usb_hash.insert(static_cast<qint32>(bos_dev.port), bos_dev);
+                        usb_hash.insert(static_cast<qint32>(usb.port), usb);
 
                         break;
                     }
                 } else {
-                    QString usb_path = gkSystem->renameCommsDevice(usb.port, GkConnType::GkUSB);
+                    QString usb_path = gkSystem->renameCommsDevice(bos_dev.port, GkConnType::GkUSB);
                     if (!already_added.contains(usb_path)) {
+                        usb = bos_dev;
                         usb.name = usb_path;
                         already_added.push_back(usb.name);
-                        usb_hash.insert(static_cast<qint32>(bos_dev.port), bos_dev);
+                        usb_hash.insert(static_cast<qint32>(usb.port), usb);
 
                         break;
                     }
@@ -650,11 +648,6 @@ void RadioLibs::gkInitRadioRig(const std::shared_ptr<GkRadio> &radio_ptr)
         }
 
         if (radio_ptr) {
-            //
-            // Check the most up-to-date information on RS232 ports
-            //
-            auto recent_serial_port_info = filter_com_ports(status_com_ports());
-
             radio_ptr->gkRig->setConf("data_bits", std::to_string(radio_ptr->port_details.parm.serial.data_bits).c_str());
             radio_ptr->gkRig->setConf("stop_bits", std::to_string(radio_ptr->port_details.parm.serial.stop_bits).c_str());
             radio_ptr->gkRig->setConf("serial_speed", std::to_string(baud_rate).c_str());

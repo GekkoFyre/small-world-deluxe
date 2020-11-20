@@ -114,7 +114,7 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         gkFreqTableModel = std::move(freqTableModel);
         gkEventLogger = std::move(eventLogger);
         gkTextToSpeech = std::move(textToSpeechPtr);
-        status_com_ports = com_ports;
+        gkSerialPortMap = com_ports;
 
         gkAudioInput = audioSysInput;
         gkAudioOutput = audioSysOutput;
@@ -158,9 +158,9 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         // also two separate functions for enumerating out these ports!
         prefill_rig_force_ctrl_lines(ptt_type_t::RIG_PTT_SERIAL_DTR);
         prefill_rig_force_ctrl_lines(ptt_type_t::RIG_PTT_SERIAL_RTS);
-        status_usb_devices = usbPortMap;
-        prefill_avail_com_ports(status_com_ports);
-        prefill_avail_usb_ports(status_usb_devices);
+        gkUsbPortMap = usbPortMap;
+        prefill_avail_com_ports(gkSerialPortMap);
+        prefill_avail_usb_ports(gkUsbPortMap);
 
         // Select the initial COM port and load it into memory
         on_comboBox_com_port_currentIndexChanged(ui->comboBox_com_port->currentIndex());
@@ -490,8 +490,8 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         enum_force_ctrl_lines_dtr = ui->comboBox_force_ctrl_lines_dtr->currentIndex();
         enum_force_ctrl_lines_rts = ui->comboBox_force_ctrl_lines_rts->currentIndex();
 
-        GkConnType conn_type_cat = ascertConnType(false);
-        GkConnType conn_type_ptt = ascertConnType(true);
+        GkConnType conn_type_cat = assertConnType(false);
+        GkConnType conn_type_ptt = assertConnType(true);
 
         gkDekodeDb->write_rig_settings_comms(com_device_cat, radio_cfg::ComDeviceCat);
         gkDekodeDb->write_rig_settings_comms(com_device_ptt, radio_cfg::ComDevicePtt);
@@ -884,20 +884,22 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
             quint16 counter = 0;
             emit comPortsDisabled(false); // Enable all GUI widgets relating to COM/Serial Ports
             for (const auto &port: com_ports) {
-                ++counter;
-                QString portName = port.port_info.portName();
+                if (!port.is_usb) {
+                    ++counter;
+                    QString portName = port.port_info.portName();
 
-                //
-                // CAT Control
-                //
-                ui->comboBox_com_port->insertItem(counter, portName, portName);
+                    //
+                    // CAT Control
+                    //
+                    ui->comboBox_com_port->addItem(portName, portName);
 
-                //
-                // PTT Method
-                //
-                ui->comboBox_ptt_method_port->insertItem(counter, portName, portName);
+                    //
+                    // PTT Method
+                    //
+                    ui->comboBox_ptt_method_port->addItem(portName, portName);
 
-                available_com_ports.insert(port.port_info.description(), counter);
+                    available_com_ports.insert(port.port_info.description(), counter);
+                }
             }
 
             //
@@ -906,7 +908,7 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
             QString comDeviceCat = gkDekodeDb->read_rig_settings_comms(radio_cfg::ComDeviceCat);
             if (!comDeviceCat.isEmpty() && !available_com_ports.isEmpty()) {
                 for (const auto &sel_port: available_com_ports.toStdMap()) {
-                    for (const auto &device: status_com_ports) {
+                    for (const auto &device: gkSerialPortMap) {
                         if ((device.port_info.description() == sel_port.first) && (comDeviceCat == device.port_info.portName())) {
                             //
                             // COM/RS232/Serial Port
@@ -926,7 +928,7 @@ void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_por
             QString comDevicePtt = gkDekodeDb->read_rig_settings_comms(radio_cfg::ComDevicePtt);
             if (!comDevicePtt.isEmpty() && !available_com_ports.isEmpty()) {
                 for (const auto &sel_port: available_com_ports.toStdMap()) {
-                    for (const auto &device: status_com_ports) {
+                    for (const auto &device: gkSerialPortMap) {
                         if ((device.port_info.description() == sel_port.first) && (comDevicePtt == device.port_info.portName())) {
                             // NOTE: The recorded setting used to identify the chosen serial device is the COM Port name
                             ui->comboBox_ptt_method_port->setCurrentIndex(sel_port.second);
@@ -963,27 +965,26 @@ void DialogSettings::prefill_avail_usb_ports(const QMap<quint16, GekkoFyre::Data
             available_usb_ports.clear();
             quint16 counter = 0;
             for (const auto &device: usb_devices) {
-                quint16 dev_port = device.port;
                 #ifdef _UNICODE
                 QString combined_str = QString("[ #%1 ] %2").arg(QString::fromStdWString(device.port)).arg(device.bos_usb.lib_usb.product);
                 available_usb_ports.insert(dev_port, combined_str.toStdWString());
                 #else
-                available_usb_ports.insert(dev_port, device.name);
+                available_usb_ports.insert(device.port, device.name);
                 #endif
 
                 //
                 // CAT Control (via USB)
                 //
-                ui->comboBox_com_port->insertItem(counter, device.name, dev_port);
-                if (ui->comboBox_com_port->currentData().toInt() == device.port) {
+                ui->comboBox_com_port->addItem(device.name, device.name);
+                if (ui->comboBox_com_port->currentData().toString() == device.name) {
                     ui->lineEdit_device_port_name->setText(device.lib_usb.product);
                 }
 
                 //
                 // PTT Method (via USB)
                 //
-                ui->comboBox_ptt_method_port->insertItem(counter, device.name, dev_port);
-                if (ui->comboBox_ptt_method_port->currentData().toInt() == device.port) {
+                ui->comboBox_ptt_method_port->addItem(device.name, device.name);
+                if (ui->comboBox_ptt_method_port->currentData().toString() == device.name) {
                     ui->lineEdit_ptt_method_dev_path->setText(device.lib_usb.product);
                 }
 
@@ -997,7 +998,7 @@ void DialogSettings::prefill_avail_usb_ports(const QMap<quint16, GekkoFyre::Data
             QString usbDevicePtt = gkDekodeDb->read_rig_settings_comms(radio_cfg::ComDevicePtt);
             if (!available_usb_ports.isEmpty() && (!usbDeviceCat.isEmpty() || !usbDevicePtt.isEmpty())) {
                 for (const auto &sel_port: available_usb_ports.toStdMap()) {
-                    for (const auto &device: status_usb_devices) {
+                    for (const auto &device: gkUsbPortMap) {
                         if (!usbDeviceCat.isEmpty()) {
                             //
                             // CAT Control
@@ -1580,9 +1581,9 @@ void DialogSettings::on_comboBox_com_port_currentIndexChanged(int index)
 {
     try {
         if (index > 0) { // Make sure that we haven't selected the dummy retainer item, "N/A"!
-            for (const auto &com_port_list: status_com_ports) {
+            for (const auto &com_port_list: gkSerialPortMap) {
                 for (const auto &usb_port_list: available_usb_ports.toStdMap()) {
-                    if (usb_port_list.first == ui->comboBox_com_port->currentData().toInt()) {
+                    if (usb_port_list.second == ui->comboBox_com_port->currentData().toString()) {
                         // A USB port has been found!
                         emit changeConnPort(usb_port_list.second, GkConnMethod::CAT);
                     } else if (com_port_list.port_info.portName() == ui->comboBox_com_port->currentData().toString()) {
@@ -1612,9 +1613,9 @@ void DialogSettings::on_comboBox_ptt_method_port_currentIndexChanged(int index)
 {
     try {
         if (index > 0) { // Make sure that we haven't selected the dummy retainer item, "N/A"!
-            for (const auto &ptt_port_list: status_com_ports) {
+            for (const auto &ptt_port_list: gkSerialPortMap) {
                 for (const auto &usb_port_list: available_usb_ports.toStdMap()) {
-                    if (usb_port_list.first == ui->comboBox_ptt_method_port->currentData().toInt()) {
+                    if (usb_port_list.second == ui->comboBox_ptt_method_port->currentData().toString()) {
                         // A USB port has been found!
                         emit changeConnPort(usb_port_list.second, GkConnMethod::PTT);
                     } else if (ptt_port_list.port_info.portName() == ui->comboBox_ptt_method_port->currentData().toString()) {
@@ -2422,13 +2423,13 @@ void DialogSettings::ttsAddPresetVoiceItem(const QString &name, const QVariant &
 }
 
 /**
- * @brief DialogSettings::ascertConnType ascertains the connection type used whether it be USB, RS232, Serial, Parallel,
+ * @brief DialogSettings::assertConnType ascertains the connection type used whether it be USB, RS232, Serial, Parallel,
  * or something more exotic.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param is_ptt Is this a PTT connection type or not?
  * @return The ascertained connection type in question.
  */
-GkConnType DialogSettings::ascertConnType(const bool &is_ptt)
+GkConnType DialogSettings::assertConnType(const bool &is_ptt)
 {
     if (!is_ptt) {
         //
@@ -2436,13 +2437,13 @@ GkConnType DialogSettings::ascertConnType(const bool &is_ptt)
         //
         const qint32 cat_idx = ui->comboBox_com_port->currentIndex();
         const QString cat_str = ui->comboBox_com_port->currentText();
-        for (const auto &port: status_com_ports) {
+        for (const auto &port: gkSerialPortMap) {
             if (cat_idx == port.port_info.portName()) {
                 return GkConnType::GkRS232;
             }
         }
 
-        for (const auto &usb: status_usb_devices.toStdMap()) {
+        for (const auto &usb: gkUsbPortMap.toStdMap()) {
             if (cat_str == usb.second.name) {
                 return GkConnType::GkUSB;
             }
@@ -2455,13 +2456,13 @@ GkConnType DialogSettings::ascertConnType(const bool &is_ptt)
         //
         const qint32 ptt_idx = ui->comboBox_ptt_method_port->currentIndex();
         const QString ptt_str = ui->comboBox_ptt_method_port->currentText();
-        for (const auto &port: status_com_ports) {
+        for (const auto &port: gkSerialPortMap) {
             if (ptt_idx == port.port_info.portName()) {
                 return GkConnType::GkRS232;
             }
         }
 
-        for (const auto &usb: status_usb_devices.toStdMap()) {
+        for (const auto &usb: gkUsbPortMap.toStdMap()) {
             if (ptt_str == usb.second.name) {
                 return GkConnType::GkUSB;
             }

@@ -467,6 +467,7 @@ namespace Database {
         struct GkComPort {
             QSerialPortInfo port_info;                                              // Details on the COM/RS232/Serial ports themselves
             uint32_t def_baudrate;                                                  // The defined baudrate for this serial port in question
+            bool is_usb;
         };
 
         namespace Audio {
