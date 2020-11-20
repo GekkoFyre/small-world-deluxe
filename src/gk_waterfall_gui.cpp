@@ -186,21 +186,21 @@ GkSpectroWaterfall::GkSpectroWaterfall(QPointer<GkEventLogger> eventLogger, QWid
 
         //
         // Change the default color-scheme for the Qwt spectrograph!
-        spectroCanvas->setStyleSheet("border-radius: 8px; background-color: #000080");
+        spectroCanvas->setStyleSheet("border-radius: 8px; background-color: #F0F0F0");
 
         QwtPlotCanvas* const horCurveCanvas = dynamic_cast<QwtPlotCanvas*>(m_plotHorCurve->canvas());
         horCurveCanvas->setFrameStyle(QFrame::NoFrame);
 
         //
         // Change the default color-scheme for the Qwt spectrograph!
-        horCurveCanvas->setStyleSheet("border-radius: 8px; background-color: #000080");
+        horCurveCanvas->setStyleSheet("border-radius: 8px; background-color: #F0F0F0");
 
         QwtPlotCanvas* const vertCurveCanvas = dynamic_cast<QwtPlotCanvas*>(m_plotVertCurve->canvas());
         vertCurveCanvas->setFrameStyle(QFrame::NoFrame);
 
         //
         // Change the default color-scheme for the Qwt spectrograph!
-        vertCurveCanvas->setStyleSheet("border-radius: 8px; background-color: #000080");
+        vertCurveCanvas->setStyleSheet("border-radius: 8px; background-color: #F0F0F0");
 
         // Y axis labels should represent the insert time of a layer (fft)
         m_plotSpectrogram->setAxisScaleDraw(QwtPlot::yLeft, new GkWaterfallTimeScaleDraw(*this));

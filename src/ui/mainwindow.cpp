@@ -705,7 +705,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             gkSetRangeOnlyOnce = false;
         }
 
-        ui->stackedWidget_maingui_spectro_graphs->addWidget(gkSpectroWaterfall);
+        //
+        // Add the spectrograph / waterfall to the QMainWindow!
+        ui->horizontalLayout_12->addWidget(gkSpectroWaterfall);
 
         //
         // Sound & Audio Devices
