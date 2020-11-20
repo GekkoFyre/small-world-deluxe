@@ -479,6 +479,7 @@ void GkFFTAudio::samplesUpdated()
                     }
 
                     // Set the range only once (data range)...
+                    // TODO: Maybe update the data-range once every <interval> as a suggestion?
                     static bool gkSetRangeOnlyOnce = true;
                     if (gkSetRangeOnlyOnce) {
                         double dataRng[2];

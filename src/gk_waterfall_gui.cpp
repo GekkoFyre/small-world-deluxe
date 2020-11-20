@@ -171,7 +171,7 @@ GkSpectroWaterfall::GkSpectroWaterfall(QPointer<GkEventLogger> eventLogger, QWid
 
         m_plotSpectrogram->setAutoFillBackground(true);
         m_plotSpectrogram->setPalette(Qt::white);
-        m_plotSpectrogram->setCanvasBackground(Qt::white);
+        m_plotSpectrogram->setCanvasBackground(Qt::gray);
 
         m_plotHorCurve->setAutoFillBackground(true);
         m_plotHorCurve->setPalette(Qt::white);
@@ -186,21 +186,21 @@ GkSpectroWaterfall::GkSpectroWaterfall(QPointer<GkEventLogger> eventLogger, QWid
 
         //
         // Change the default color-scheme for the Qwt spectrograph!
-        spectroCanvas->setStyleSheet("border-radius: 8px; background-color: #F0F0F0");
+        spectroCanvas->setStyleSheet("border-radius: 8px; background-color: #264073");
 
         QwtPlotCanvas* const horCurveCanvas = dynamic_cast<QwtPlotCanvas*>(m_plotHorCurve->canvas());
         horCurveCanvas->setFrameStyle(QFrame::NoFrame);
 
         //
         // Change the default color-scheme for the Qwt spectrograph!
-        horCurveCanvas->setStyleSheet("border-radius: 8px; background-color: #F0F0F0");
+        horCurveCanvas->setStyleSheet("border-radius: 8px; background-color: #264073");
 
         QwtPlotCanvas* const vertCurveCanvas = dynamic_cast<QwtPlotCanvas*>(m_plotVertCurve->canvas());
         vertCurveCanvas->setFrameStyle(QFrame::NoFrame);
 
         //
         // Change the default color-scheme for the Qwt spectrograph!
-        vertCurveCanvas->setStyleSheet("border-radius: 8px; background-color: #F0F0F0");
+        vertCurveCanvas->setStyleSheet("border-radius: 8px; background-color: #264073");
 
         // Y axis labels should represent the insert time of a layer (fft)
         m_plotSpectrogram->setAxisScaleDraw(QwtPlot::yLeft, new GkWaterfallTimeScaleDraw(*this));
@@ -274,15 +274,15 @@ GkSpectroWaterfall::GkSpectroWaterfall(QPointer<GkEventLogger> eventLogger, QWid
 
         {
             QwtPlotGrid* horCurveGrid = new QwtPlotGrid;
-            horCurveGrid->enableXMin( true );
-            horCurveGrid->setMinorPen( QPen( Qt::gray, 0 , Qt::DotLine ) );
-            horCurveGrid->setMajorPen( QPen( Qt::gray, 0 , Qt::DotLine ) );
+            horCurveGrid->enableXMin(true);
+            horCurveGrid->setMinorPen(QPen(Qt::lightGray, 0 , Qt::DotLine));
+            horCurveGrid->setMajorPen(QPen(Qt::lightGray, 0 , Qt::DotLine));
             horCurveGrid->attach(m_plotHorCurve);
 
             QwtPlotGrid* vertCurveGrid = new QwtPlotGrid;
-            vertCurveGrid->enableXMin( true );
-            vertCurveGrid->setMinorPen( QPen( Qt::gray, 0 , Qt::DotLine ) );
-            vertCurveGrid->setMajorPen( QPen( Qt::gray, 0 , Qt::DotLine ) );
+            vertCurveGrid->enableXMin(true);
+            vertCurveGrid->setMinorPen(QPen(Qt::lightGray, 0, Qt::DotLine));
+            vertCurveGrid->setMajorPen(QPen(Qt::lightGray, 0, Qt::DotLine));
             vertCurveGrid->attach(m_plotVertCurve);
         }
 
@@ -782,11 +782,13 @@ void GkSpectroWaterfall::setupCurves()
     m_horCurve->attach(m_plotHorCurve);
     m_horCurve->setRenderHint(QwtPlotItem::RenderAntialiased, true);
     m_horCurve->setStyle(QwtPlotCurve::Lines);
+    m_horCurve->setPen(QColor(Qt::GlobalColor(Qt::yellow)));
 
     // Vertical Curve
     m_vertCurve->attach(m_plotVertCurve);
     m_vertCurve->setRenderHint(QwtPlotItem::RenderAntialiased, true);
     m_vertCurve->setStyle(QwtPlotCurve::Lines);
+    m_vertCurve->setPen(QColor(Qt::GlobalColor(Qt::yellow)));
 
     m_plotVertCurve->setAxisScaleDraw(QwtPlot::yLeft, new GkWaterfallTimeScaleDraw(*this));
     return;
