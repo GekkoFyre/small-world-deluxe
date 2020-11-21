@@ -348,48 +348,6 @@ void GkLevelDb::write_audio_device_settings(const GkDevice &value, const bool &i
 }
 
 /**
- * @brief DekodeDb::write_mainwindow_settings
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param value
- * @param key
- */
-void GkLevelDb::write_mainwindow_settings(const QString &value, const general_mainwindow_cfg &key)
-{
-    try {
-        leveldb::WriteBatch batch;
-        leveldb::Status status;
-
-        using namespace Database::Settings;
-        switch (key) {
-        case general_mainwindow_cfg::WindowMaximized:
-            batch.Put("WindowMaximized", value.toStdString());
-            break;
-        case general_mainwindow_cfg::WindowHSize:
-            batch.Put("WindowHSize", value.toStdString());
-            break;
-        case general_mainwindow_cfg::WindowVSize:
-            batch.Put("WindowVSize", value.toStdString());
-            break;
-        default:
-            return;
-        }
-
-        leveldb::WriteOptions write_options;
-        write_options.sync = true;
-
-        status = db->Write(write_options, &batch);
-
-        if (!status.ok()) { // Abort because of error!
-            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
-        }
-    } catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
-    }
-
-    return;
-}
-
-/**
  * @brief GkLevelDb::write_audio_cfg_settings
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param value
@@ -1502,39 +1460,6 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
     }
 
     return audio_device;
-}
-
-/**
- * @brief DekodeDb::read_mainwindow_settings
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param key
- * @return
- */
-QString GkLevelDb::read_mainwindow_settings(const general_mainwindow_cfg &key)
-{
-    GkDevice audio_device;
-    leveldb::Status status;
-    leveldb::ReadOptions read_options;
-
-    read_options.verify_checksums = true;
-    std::string output = "";
-
-    using namespace Database::Settings;
-    switch (key) {
-    case general_mainwindow_cfg::WindowMaximized:
-        status = db->Get(read_options, "WindowMaximized", &output);
-        return QString::fromStdString(output);
-    case general_mainwindow_cfg::WindowHSize:
-        status = db->Get(read_options, "WindowHSize", &output);
-        return QString::fromStdString(output);
-    case general_mainwindow_cfg::WindowVSize:
-        status = db->Get(read_options, "WindowVSize", &output);
-        return QString::fromStdString(output);
-    default:
-        return QString::fromStdString(output);
-    }
-
-    return QString::fromStdString(output);
 }
 
 QString GkLevelDb::read_misc_audio_settings(const GkAudioCfg &key)

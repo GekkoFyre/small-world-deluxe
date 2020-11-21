@@ -535,13 +535,14 @@ void GkSpectroWaterfall::setZTooltipUnit(const QString &zUnit)
 }
 
 /**
- * @brief GkSpectroWaterfall::addData
+ * @brief GkSpectroWaterfall::addData This is the main method by which data can be added to the spectrograph.
  * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>,
  * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>.
  * @param dataPtr
  * @param dataLen
- * @param timestamp
- * @return
+ * @param timestamp This drives the data/plot refresh mechanisms and is therefore a very important variable.
+ * @param formattedDateTime A formatted QDateTime string that can be displayed on the graph itself to the end-user.
+ * @return Whether the operation was a success or not.
  */
 bool GkSpectroWaterfall::addData(const double *const dataPtr, const size_t dataLen, const time_t timestamp)
 {

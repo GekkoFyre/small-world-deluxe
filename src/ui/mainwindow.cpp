@@ -433,30 +433,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         gkCli->parseCommandLine(error_msg.get());
 
         //
-        // Load settings for QMainWindow
-        //
-        int window_width = gkDb->read_mainwindow_settings(general_mainwindow_cfg::WindowHSize).toInt();
-        int window_height = gkDb->read_mainwindow_settings(general_mainwindow_cfg::WindowVSize).toInt();
-        bool window_minimized = gkDb->read_mainwindow_settings(general_mainwindow_cfg::WindowMaximized).toInt();
-
-        // Set the x-axis size of QMainWindow
-        if (window_width >= MIN_MAIN_WINDOW_WIDTH) {
-            this->window()->size().setWidth(window_width);
-        }
-
-        // Set the y-axis size of QMainWindow
-        if (window_height >= MIN_MAIN_WINDOW_HEIGHT) {
-            this->window()->size().setHeight(window_height);
-        }
-
-        // Whether to maximize the QMainWindow or not
-        if (window_minimized == 0) {
-            this->window()->showMaximized();
-        } else {
-            this->window()->showNormal();
-        }
-
-        //
         // Collect settings from QMainWindow, among other miscellaneous settings, upon termination of Small World Deluxe!
         //
         QObject::connect(this, SIGNAL(gkExitApp()), this, SLOT(uponExit()));
@@ -688,13 +664,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         gkSpectroWaterfall->setYLabel(tr("Time (minutes)"), 10);
         gkSpectroWaterfall->setZLabel(tr("Signal (dB)"));
         gkSpectroWaterfall->setColorMap(ColorMaps::BlackBodyRadiation());
-
-        double xMin, xMax;
-        size_t historyLength, layerPoints;
-        gkSpectroWaterfall->getDataDimensions(xMin, xMax, historyLength, layerPoints);
-        if (xMin != SPECTRO_X_MIN_AXIS_SIZE || xMax != SPECTRO_X_MAX_AXIS_SIZE || AUDIO_FRAMES_PER_BUFFER != layerPoints || 64 != historyLength) {
-            gkSpectroWaterfall->setDataDimensions(SPECTRO_X_MIN_AXIS_SIZE, SPECTRO_X_MAX_AXIS_SIZE, 64, AUDIO_FRAMES_PER_BUFFER);
-        }
 
         //
         // Add the spectrograph / waterfall to the QMainWindow!
@@ -1867,11 +1836,6 @@ void MainWindow::infoBar()
 void MainWindow::uponExit()
 {
     emit stopRecording();
-
-    gkDb->write_mainwindow_settings(QString::number(this->window()->size().width()), general_mainwindow_cfg::WindowHSize);
-    gkDb->write_mainwindow_settings(QString::number(this->window()->size().height()), general_mainwindow_cfg::WindowVSize);
-    gkDb->write_mainwindow_settings(QString::number(this->window()->isMaximized()), general_mainwindow_cfg::WindowMaximized);
-
     QApplication::exit(EXIT_SUCCESS);
 }
 
