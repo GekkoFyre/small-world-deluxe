@@ -38,11 +38,371 @@
 #   [ 1 ] - https://code.gekkofyre.io/amateur-radio/small-world-deluxe
 #
 
-# name the installer
-OutFile "small-world-deluxe-x86_64.exe"
+# Include Modern UI
+# -------------------------------
+  !include "${NSISDIR}\Contrib\Modern UI 2\MUI2.nsh"
+  !include "${NSISDIR}\Include\Sections.nsh"
+
+# Start
+# -------------------------------
+
+  !define MUI_PRODUCT "Small World Deluxe"
+  !define MUI_File "smallworld"
+  !define MUI_VERSION "0.0.1"
+  !define MUI_BRANDINGTEXT "GekkoFyre Networks"
+  
+  !define GK_ROOT_PATH ".\..\..\.."
+  !define GK_VERSION_LONG "0.0.0.1"
+  !define GK_VERSION_TAG "-pre-alpha"
+  !define COPYRIGHT "Copyright © 2019 - 2020 Christopher D. McGill and GekkoFyre Networks"
+  !define DESCRIPTION "Small World Deluxe is an ultra-modern weak-signal digital communicator powered by low bit rate, digital voice codecs originally adapted via telephony. Typical usage requires a SSB radio transceiver and a personal computer with a capable sound-card."
+  
+  CRCCheck On
+
+# General
+# -------------------------------
+
+  # Name and file
+  Name "${MUI_PRODUCT} v${MUI_VERSION}${GK_VERSION_TAG}"
+  OutFile "setup-smallworld-${MUI_VERSION}${GK_VERSION_TAG}.exe"
+  Unicode True
+  
+  ShowInstDetails show
+  ShowUninstDetails nevershow
+  SetCompressor /FINAL lzma
  
-# default section start; every NSIS script has at least one section.
-Section
+  # Get installation folder from registry if available
+  InstallDirRegKey HKCU "Software\${MUI_BRANDINGTEXT}\${MUI_PRODUCT}" ""
+  
+  # Request application privileges for Windows Vista
+  RequestExecutionLevel user
  
-# default section end
+  !define MUI_ICON "${GK_ROOT_PATH}\src\contrib\images\vector\purchased\2020-03\iconfinder_293_Frequency_News_Radio_5711690.ico"
+  !define MUI_UNICON "${GK_ROOT_PATH}\src\contrib\images\vector\purchased\2020-03\iconfinder_293_Frequency_News_Radio_5711690.ico"
+  !define MUI_SPECIALBITMAP "${GK_ROOT_PATH}\src\contrib\images\vector\gekkofyre-networks\rionquosue\logo_blank_border_text_square_rionquosue.bmp"
+
+  VIProductVersion "${GK_VERSION_LONG}"
+  VIAddVersionKey "ProductName" "${MUI_PRODUCT}"
+  VIAddVersionKey "CompanyName" "${MUI_BRANDINGTEXT}"
+  VIAddVersionKey "LegalCopyright" "${COPYRIGHT}"
+  VIAddVersionKey "FileDescription" "${DESCRIPTION}"
+  VIAddVersionKey "FileVersion" "${MUI_VERSION}"
+
+# Folder selection page
+# -------------------------------
+
+  # Default installation folder
+  InstallDir "$PROGRAMFILES\${MUI_BRANDINGTEXT}\${MUI_PRODUCT}"
+
+# Interface Configuration
+# -------------------------------
+
+  !define MUI_WELCOMEPAGE
+  !define MUI_LICENSEPAGE
+  !define MUI_DIRECTORYPAGE
+  !define MUI_HEADERIMAGE
+  !define MUI_HEADERIMAGE_BITMAP "${NSISDIR}\Contrib\Graphics\Header\nsis.bmp" # This is optional...
+  !define MUI_ABORTWARNING
+  !define MUI_UNINSTALLER
+  !define MUI_UNCONFIRMPAGE
+  !define MUI_FINISHPAGE
+  
+  # Show all languages, despite user's codepage
+  !define MUI_LANGDLL_ALLLANGUAGES
+
+# Language Selection Dialog Settings
+# -------------------------------
+
+  # Remember the installer language
+  !define MUI_LANGDLL_REGISTRY_ROOT "HKCU" 
+  !define MUI_LANGDLL_REGISTRY_KEY "Software\${MUI_BRANDINGTEXT}\${MUI_PRODUCT}" 
+  !define MUI_LANGDLL_REGISTRY_VALUENAME "Nullsoft NSIS Setup Language"
+
+# Pages
+# -------------------------------
+
+  !insertmacro MUI_PAGE_LICENSE "${GK_ROOT_PATH}\LICENSE"
+  !insertmacro MUI_PAGE_COMPONENTS
+  !insertmacro MUI_PAGE_DIRECTORY
+  !insertmacro MUI_PAGE_INSTFILES
+
+  !insertmacro MUI_UNPAGE_CONFIRM
+  !insertmacro MUI_UNPAGE_INSTFILES
+
+# Languages
+# -------------------------------
+
+  !insertmacro MUI_LANGUAGE "English" # The first language is the default language...
+  !insertmacro MUI_LANGUAGE "French"
+  !insertmacro MUI_LANGUAGE "German"
+  !insertmacro MUI_LANGUAGE "Spanish"
+  !insertmacro MUI_LANGUAGE "SpanishInternational"
+  !insertmacro MUI_LANGUAGE "SimpChinese"
+  !insertmacro MUI_LANGUAGE "TradChinese"
+  !insertmacro MUI_LANGUAGE "Japanese"
+  !insertmacro MUI_LANGUAGE "Korean"
+  !insertmacro MUI_LANGUAGE "Italian"
+  !insertmacro MUI_LANGUAGE "Dutch"
+  !insertmacro MUI_LANGUAGE "Danish"
+  !insertmacro MUI_LANGUAGE "Swedish"
+  !insertmacro MUI_LANGUAGE "Norwegian"
+  !insertmacro MUI_LANGUAGE "NorwegianNynorsk"
+  !insertmacro MUI_LANGUAGE "Finnish"
+  !insertmacro MUI_LANGUAGE "Greek"
+  !insertmacro MUI_LANGUAGE "Russian"
+  !insertmacro MUI_LANGUAGE "Portuguese"
+  !insertmacro MUI_LANGUAGE "PortugueseBR"
+  !insertmacro MUI_LANGUAGE "Polish"
+  !insertmacro MUI_LANGUAGE "Ukrainian"
+  !insertmacro MUI_LANGUAGE "Czech"
+  !insertmacro MUI_LANGUAGE "Slovak"
+  !insertmacro MUI_LANGUAGE "Croatian"
+  !insertmacro MUI_LANGUAGE "Bulgarian"
+  !insertmacro MUI_LANGUAGE "Hungarian"
+  !insertmacro MUI_LANGUAGE "Thai"
+  !insertmacro MUI_LANGUAGE "Romanian"
+  !insertmacro MUI_LANGUAGE "Latvian"
+  !insertmacro MUI_LANGUAGE "Macedonian"
+  !insertmacro MUI_LANGUAGE "Estonian"
+  !insertmacro MUI_LANGUAGE "Turkish"
+  !insertmacro MUI_LANGUAGE "Lithuanian"
+  !insertmacro MUI_LANGUAGE "Slovenian"
+  !insertmacro MUI_LANGUAGE "Serbian"
+  !insertmacro MUI_LANGUAGE "SerbianLatin"
+  !insertmacro MUI_LANGUAGE "Arabic"
+  !insertmacro MUI_LANGUAGE "Farsi"
+  !insertmacro MUI_LANGUAGE "Hebrew"
+  !insertmacro MUI_LANGUAGE "Indonesian"
+  !insertmacro MUI_LANGUAGE "Mongolian"
+  !insertmacro MUI_LANGUAGE "Luxembourgish"
+  !insertmacro MUI_LANGUAGE "Albanian"
+  !insertmacro MUI_LANGUAGE "Breton"
+  !insertmacro MUI_LANGUAGE "Belarusian"
+  !insertmacro MUI_LANGUAGE "Icelandic"
+  !insertmacro MUI_LANGUAGE "Malay"
+  !insertmacro MUI_LANGUAGE "Bosnian"
+  !insertmacro MUI_LANGUAGE "Kurdish"
+  !insertmacro MUI_LANGUAGE "Irish"
+  !insertmacro MUI_LANGUAGE "Uzbek"
+  !insertmacro MUI_LANGUAGE "Galician"
+  !insertmacro MUI_LANGUAGE "Afrikaans"
+  !insertmacro MUI_LANGUAGE "Catalan"
+  !insertmacro MUI_LANGUAGE "Esperanto"
+  !insertmacro MUI_LANGUAGE "Asturian"
+  !insertmacro MUI_LANGUAGE "Basque"
+  !insertmacro MUI_LANGUAGE "Pashto"
+  !insertmacro MUI_LANGUAGE "ScotsGaelic"
+  !insertmacro MUI_LANGUAGE "Georgian"
+  !insertmacro MUI_LANGUAGE "Vietnamese"
+  !insertmacro MUI_LANGUAGE "Welsh"
+  !insertmacro MUI_LANGUAGE "Armenian"
+  !insertmacro MUI_LANGUAGE "Corsican"
+  !insertmacro MUI_LANGUAGE "Tatar"
+  !insertmacro MUI_LANGUAGE "Hindi"
+
+# Reserve Files
+# -------------------------------
+
+  # If you are using solid compression, files that are required before
+  # the actual installation should be stored first in the data block,
+  # because this will make your installer start faster.
+  
+  !insertmacro MUI_RESERVEFILE_LANGDLL
+  ReserveFile "${GK_ROOT_PATH}\LICENSE"
+  ReserveFile "${GK_ROOT_PATH}\src\contrib\images\vector\purchased\2020-03\iconfinder_293_Frequency_News_Radio_5711690.ico"
+  ReserveFile "${GK_ROOT_PATH}\src\contrib\images\vector\gekkofyre-networks\rionquosue\logo_blank_border_text_square_rionquosue.bmp"
+
+# Installer Functions
+# -------------------------------
+
+Function .onInit
+
+  !insertmacro MUI_LANGDLL_DISPLAY
+  
+  # The plugins dir is automatically deleted when the installer exits
+  InitPluginsDir
+  
+  MessageBox MB_OK "Transparency/Fading"
+  File /oname=$PLUGINSDIR\splash.bmp "${GK_ROOT_PATH}\src\contrib\images\vector\gekkofyre-networks\rionquosue\logo_blank_border_text_square_rionquosue.bmp"
+  advsplash::show 1000 600 400 0x000000 $PLUGINSDIR\splash
+  Pop $0          # $0 has '1' if the user closed the splash screen early,
+                  # '0' if everything closed normally, and '-1' if some error occurred...
+  
+  Delete $PLUGINSDIR\splash.bmp
+
+FunctionEnd 
+
+# Descriptions
+# -------------------------------
+
+  # USE A LANGUAGE STRING IF YOU WANT YOUR DESCRIPTIONS TO BE LANGAUGE SPECIFIC
+ 
+  # Assign descriptions to sections
+  !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
+    !insertmacro MUI_DESCRIPTION_TEXT ${SWDsection} "Small World Deluxe executable and data."
+  !insertmacro MUI_FUNCTION_DESCRIPTION_END
+
+# Order of pages
+# -------------------------------
+
+Page instfiles
+
+# Installer Sections
+# -------------------------------
+
+SectionGroup "Small World Deluxe" SWDsection
+  SectionGroup "Common Files (Required)"
+    Section "Core Files"
+      SectionIn RO
+        # Add files
+        SetOutPath "$INSTDIR"
+          File "${GK_ROOT_PATH}\cmake-build-debug\libgcc_s_seh-1.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\libglib-2.0-0.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\libwinpthread-1.dll"
+
+          File "${GK_ROOT_PATH}\cmake-build-debug\${MUI_FILE}.exe"
+          File "${GK_ROOT_PATH}\cmake-build-debug\libgalaxy.a"
+          
+          # Store installation folder
+          WriteRegStr HKCU "Software\${MUI_BRANDINGTEXT}\${MUI_PRODUCT}" "" $INSTDIR
+          
+          # Write uninstall information to the registry
+          WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_BRANDINGTEXT}\${MUI_PRODUCT}" "DisplayName" "${MUI_PRODUCT} (remove only)"
+          WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_BRANDINGTEXT}\${MUI_PRODUCT}" "UninstallString" "$INSTDIR\Uninstall.exe"
+ 
+          WriteUninstaller "$INSTDIR\Uninstall.exe"
+    SectionEnd
+    
+    SectionGroup "Shortcuts"
+      Section "Desktop"
+        SectionIn 1
+          # Create desktop shortcut
+          CreateShortCut "$DESKTOP\${MUI_PRODUCT}.lnk" "$INSTDIR\${MUI_FILE}.exe" ""
+      SectionEnd
+
+      Section "Start Menu"
+        SectionIn 2
+          # Create start-menu items
+          CreateDirectory "$SMPROGRAMS\${MUI_PRODUCT}"
+          CreateShortCut "$SMPROGRAMS\${MUI_PRODUCT}\Uninstall.lnk" "$INSTDIR\Uninstall.exe" "" "$INSTDIR\Uninstall.exe" 0
+          CreateShortCut "$SMPROGRAMS\${MUI_PRODUCT}\${MUI_PRODUCT}.lnk" "$INSTDIR\${MUI_FILE}.exe" "" "$INSTDIR\${MUI_FILE}.exe" 0
+      SectionEnd
+    SectionGroupEnd
+
+    SectionGroup "Shared Libraries"
+      Section "Qt5"
+        SectionIn RO
+          SetOutPath "$INSTDIR"
+            File "${GK_ROOT_PATH}\cmake-build-debug\Qt5Core.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\Qt5Gui.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\Qt5Multimedia.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\Qt5Network.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\Qt5OpenGL.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\Qt5SerialPort.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\Qt5Svg.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\Qt5TextToSpeech.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\Qt5Widgets.dll"
+
+          SetOutPath "$INSTDIR\mediaservice"
+            File "${GK_ROOT_PATH}\cmake-build-debug\mediaservice\dsengine.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\mediaservice\qtmedia_audioengine.dll"
+
+          SetOutPath "$INSTDIR\imageformats"
+            File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qgif.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qicns.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qico.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qjp2.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qjpeg.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qsvg.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qtga.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qtiff.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qwbmp.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qwebp.dll"
+
+          SetOutPath "$INSTDIR\platforms"
+            File "${GK_ROOT_PATH}\cmake-build-debug\platforms\qdirect2d.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\platforms\qminimal.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\platforms\qoffscreen.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\platforms\qwebgl.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\platforms\qwindows.dll"
+
+          SetOutPath "$INSTDIR\audio"
+            File "${GK_ROOT_PATH}\cmake-build-debug\audio\qtaudio_windows.dll"
+      SectionEnd
+
+      Section "Hamlib"
+        SectionIn RO
+          SetOutPath "$INSTDIR"
+            File "${GK_ROOT_PATH}\cmake-build-debug\libhamlib-2.dll"
+      SectionEnd
+
+      Section "libusb-1.0"
+        SectionIn RO
+          SetOutPath "$INSTDIR"
+            File "${GK_ROOT_PATH}\cmake-build-debug\libusb-1.0.dll"
+      SectionEnd
+    SectionGroupEnd
+
+    SectionGroup "Audio API"
+      Section "DirectSound support"
+        SectionIn RO
+          SetOutPath "$INSTDIR\mediaservice"
+            File "${GK_ROOT_PATH}\cmake-build-debug\mediaservice\dsengine.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\mediaservice\qtmedia_audioengine.dll"
+      SectionEnd
+    SectionGroupEnd
+
+    SectionGroup "Default/Base Theme"
+      Section "Microsoft Windows Vista styling"
+        SectionIn RO
+          SetOutPath "$INSTDIR\styles"
+            File "${GK_ROOT_PATH}\cmake-build-debug\styles\qwindowsvistastyle.dll"
+      SectionEnd
+    SectionGroupEnd
+  SectionGroupEnd 
+SectionGroupEnd
+
+# Uninstaller Section
+# -------------------------------
+
+Section "Uninstall"
+ 
+  # Delete Files 
+  RMDir /r "$INSTDIR\*.*"    
+ 
+  # Remove the installation directory
+  RMDir "$INSTDIR"
+ 
+  # Delete Start Menu Shortcuts
+  Delete "$DESKTOP\${MUI_PRODUCT}.lnk"
+  Delete "$SMPROGRAMS\${MUI_PRODUCT}\*.*"
+  RmDir  "$SMPROGRAMS\${MUI_PRODUCT}"
+ 
+  # Delete Uninstaller And Unistall Registry Entries
+  DeleteRegKey /ifempty HKCU "Software\${MUI_BRANDINGTEXT}\${MUI_PRODUCT}"
+  DeleteRegKey /ifempty HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_BRANDINGTEXT}\${MUI_PRODUCT}"  
+ 
 SectionEnd
+
+# MessageBox Section
+# -------------------------------
+
+# Function that calls a messagebox when installation finished correctly
+Function .onInstSuccess
+  MessageBox MB_OK "You have successfully installed ${MUI_PRODUCT} by ${MUI_BRANDINGTEXT}. Use the Desktop or Start Menu shortcut to quickly and easily start the application."
+FunctionEnd
+ 
+Function un.onUninstSuccess
+  MessageBox MB_OK "You have successfully uninstalled ${MUI_PRODUCT} by ${MUI_BRANDINGTEXT}."
+FunctionEnd
+
+# Uninstaller Functions
+# -------------------------------
+
+Function un.onInit
+
+  !insertmacro MUI_UNGETLANGUAGE
+  
+FunctionEnd
+
+;eof
