@@ -41,15 +41,19 @@
 # Include Modern UI
 # -------------------------------
   !include "${NSISDIR}\Contrib\Modern UI 2\MUI2.nsh"
+  !include "${NSISDIR}\Include\Sections.nsh"
 
 # Start
 # -------------------------------
 
   !define MUI_PRODUCT "Small World Deluxe"
-  !define MUI_FILE "smallworld"
+  !define MUI_File "smallworld"
   !define MUI_VERSION "0.0.1-pre-alpha"
   !define MUI_BRANDINGTEXT "GekkoFyre Networks"
+  
   !define GK_ROOT_PATH ".\..\..\.."
+  !define COPYRIGHT "Copyright © 2019 - 2020 Christopher D. McGill and GekkoFyre Networks"
+  !define DESCRIPTION "Small World Deluxe is an ultra-modern weak-signal digital communicator powered by low bit rate, digital voice codecs originally adapted via telephony. Typical usage requires a SSB radio transceiver and a personal computer with a capable sound-card."
   
   CRCCheck On
 
@@ -61,9 +65,9 @@
   OutFile "setup-smallworld-${MUI_VERSION}.exe"
   Unicode True
   
-  ShowInstDetails "nevershow"
-  ShowUninstDetails "nevershow"
-  SetCompressor "/FINAL lzma"
+  ShowInstDetails show
+  ShowUninstDetails nevershow
+  SetCompressor /FINAL lzma
  
   # Get installation folder from registry if available
   InstallDirRegKey HKCU "Software\${MUI_BRANDINGTEXT}\${MUI_PRODUCT}" ""
@@ -71,9 +75,16 @@
   # Request application privileges for Windows Vista
   RequestExecutionLevel user
  
-  !define MUI_ICON "icon.ico"
-  !define MUI_UNICON "icon.ico"
+  !define MUI_ICON "${GK_ROOT_PATH}\src\contrib\images\vector\purchased\2020-03\iconfinder_293_Frequency_News_Radio_5711690.ico"
+  !define MUI_UNICON "${GK_ROOT_PATH}\src\contrib\images\vector\purchased\2020-03\iconfinder_293_Frequency_News_Radio_5711690.ico"
   !define MUI_SPECIALBITMAP "${GK_ROOT_PATH}\src\contrib\images\vector\gekkofyre-networks\rionquosue\logo_blank_border_text_square_rionquosue.bmp"
+
+  VIProductVersion  "${VERSION}"
+  VIAddVersionKey "ProductName"  "${MUI_PRODUCT}"
+  VIAddVersionKey "CompanyName"  "${MUI_BRANDINGTEXT}"
+  VIAddVersionKey "LegalCopyright"  "${COPYRIGHT}"
+  VIAddVersionKey "FileDescription"  "${DESCRIPTION}"
+  VIAddVersionKey "FileVersion"  "${MUI_VERSION}"
 
 # Folder selection page
 # -------------------------------
@@ -93,6 +104,17 @@
   !define MUI_UNINSTALLER
   !define MUI_UNCONFIRMPAGE
   !define MUI_FINISHPAGE
+  
+  # Show all languages, despite user's codepage
+  !define MUI_LANGDLL_ALLLANGUAGES
+
+# Language Selection Dialog Settings
+# -------------------------------
+
+  # Remember the installer language
+  !define MUI_LANGDLL_REGISTRY_ROOT "HKCU" 
+  !define MUI_LANGDLL_REGISTRY_KEY "Software\${MUI_BRANDINGTEXT}\${MUI_PRODUCT}" 
+  !define MUI_LANGDLL_REGISTRY_VALUENAME "Nullsoft NSIS Setup Language"
 
 # Pages
 # -------------------------------
@@ -184,70 +206,110 @@
   # because this will make your installer start faster.
   
   !insertmacro MUI_RESERVEFILE_LANGDLL
+  ReserveFile "${GK_ROOT_PATH}\LICENSE"
+  ReserveFile "${GK_ROOT_PATH}\src\contrib\images\vector\purchased\2020-03\iconfinder_293_Frequency_News_Radio_5711690.ico"
+  ReserveFile "${GK_ROOT_PATH}\src\contrib\images\vector\gekkofyre-networks\rionquosue\logo_blank_border_text_square_rionquosue.bmp"
 
 # Installer Functions
 # -------------------------------
 
-  !insertmacro MUI_LANGDLL_DISPLAY
+Function .onInit
 
-# Modern UI System
+  !insertmacro MUI_LANGDLL_DISPLAY
+  
+  # The plugins dir is automatically deleted when the installer exits
+  InitPluginsDir
+  
+  MessageBox MB_OK ""
+  File /oname=$PLUGINSDIR\splash.bmp "${GK_ROOT_PATH}\src\contrib\images\vector\gekkofyre-networks\rionquosue\logo_blank_border_text_square_rionquosue.bmp"
+  advsplash::show 1000 600 400 0x000000 $PLUGINSDIR\splash
+  Pop $0          # $0 has '1' if the user closed the splash screen early,
+                  # '0' if everything closed normally, and '-1' if some error occurred...
+  
+  Delete $PLUGINSDIR\splash.bmp
+
+FunctionEnd 
+
+# Descriptions
 # -------------------------------
 
-  !insertmacro MUI_SYSTEM 
+  # USE A LANGUAGE STRING IF YOU WANT YOUR DESCRIPTIONS TO BE LANGAUGE SPECIFIC
+ 
+  # Assign descriptions to sections
+  !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
+    !insertmacro MUI_DESCRIPTION_TEXT ${SWDsection} "Small World Deluxe executable and data."
+  !insertmacro MUI_FUNCTION_DESCRIPTION_END
+
+# Order of pages
+# -------------------------------
+
+Page instfiles
 
 # Installer Sections
 # -------------------------------
 
-Section "install" Installation info
- 
-  # Add files
-  SetOutPath "$INSTDIR"
-  File "${GK_ROOT_PATH}\cmake-build-debug\libgcc_s_seh-1.dll"
-  File "${GK_ROOT_PATH}\cmake-build-debug\libglib-2.0-0.dll"
-  File "${GK_ROOT_PATH}\cmake-build-debug\libhamlib-2.dll"
-  File "${GK_ROOT_PATH}\cmake-build-debug\libusb-1.0.dll"
-  File "${GK_ROOT_PATH}\cmake-build-debug\libwinpthread-1.dll"
-  File "${GK_ROOT_PATH}\cmake-build-debug\Qt5Core.dll"
-  File "${GK_ROOT_PATH}\cmake-build-debug\Qt5Gui.dll"
-  File "${GK_ROOT_PATH}\cmake-build-debug\Qt5Multimedia.dll"
-  File "${GK_ROOT_PATH}\cmake-build-debug\Qt5Network.dll"
-  File "${GK_ROOT_PATH}\cmake-build-debug\Qt5OpenGL.dll"
-  File "${GK_ROOT_PATH}\cmake-build-debug\Qt5SerialPort.dll"
-  File "${GK_ROOT_PATH}\cmake-build-debug\Qt5Svg.dll"
-  File "${GK_ROOT_PATH}\cmake-build-debug\Qt5TextToSpeech.dll"
-  File "${GK_ROOT_PATH}\cmake-build-debug\Qt5Widgets.dll"
- 
-  File "${GK_ROOT_PATH}\cmake-build-debug\${MUI_FILE}.exe"
-  File "${GK_ROOT_PATH}\cmake-build-debug\libgalaxy.a"
-  
-  SetOutPath "$INSTDIR\audio"
-  File "${GK_ROOT_PATH}\cmake-build-debug\audio\qtaudio_windows.dll"
-  
-  SetOutPath "$INSTDIR\imageformats"
-  File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qgif.dll"
-  File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qicns.dll"
-  File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qico.dll"
-  File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qjp2.dll"
-  File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qjpeg.dll"
-  File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qsvg.dll"
-  File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qtga.dll"
-  File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qtiff.dll"
-  File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qwbmp.dll"
-  File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qwebp.dll"
-  
-  SetOutPath "$INSTDIR\mediaservice"
-  File "${GK_ROOT_PATH}\cmake-build-debug\mediaservice\dsengine.dll"
-  File "${GK_ROOT_PATH}\cmake-build-debug\mediaservice\qtmedia_audioengine.dll"
-  
-  SetOutPath "$INSTDIR\platforms"
-  File "${GK_ROOT_PATH}\cmake-build-debug\platforms\qdirect2d.dll"
-  File "${GK_ROOT_PATH}\cmake-build-debug\platforms\qminimal.dll"
-  File "${GK_ROOT_PATH}\cmake-build-debug\platforms\qoffscreen.dll"
-  File "${GK_ROOT_PATH}\cmake-build-debug\platforms\qwebgl.dll"
-  File "${GK_ROOT_PATH}\cmake-build-debug\platforms\qwindows.dll"
-  
-  SetOutPath "$INSTDIR\styles"
-  File "${GK_ROOT_PATH}\cmake-build-debug\styles\qwindowsvistastyle.dll"
+SectionGroup "Small World Deluxe" SWDsection
+  SectionGroup "Common Files (Required)"
+    Section "Core Files"
+      SectionIn RO
+        # Add files
+        SetOutPath "$INSTDIR"
+          File "${GK_ROOT_PATH}\cmake-build-debug\libgcc_s_seh-1.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\libglib-2.0-0.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\libhamlib-2.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\libusb-1.0.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\libwinpthread-1.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\Qt5Core.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\Qt5Gui.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\Qt5Multimedia.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\Qt5Network.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\Qt5OpenGL.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\Qt5SerialPort.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\Qt5Svg.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\Qt5TextToSpeech.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\Qt5Widgets.dll"
+
+          File "${GK_ROOT_PATH}\cmake-build-debug\${MUI_FILE}.exe"
+          File "${GK_ROOT_PATH}\cmake-build-debug\libgalaxy.a"
+
+        SetOutPath "$INSTDIR\audio"
+          File "${GK_ROOT_PATH}\cmake-build-debug\audio\qtaudio_windows.dll"
+
+        SetOutPath "$INSTDIR\imageformats"
+          File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qgif.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qicns.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qico.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qjp2.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qjpeg.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qsvg.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qtga.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qtiff.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qwbmp.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qwebp.dll"
+
+        SectionGroup "Audio API"
+          Section "DirectSound support"
+            SectionIn 1
+              SetOutPath "$INSTDIR\mediaservice"
+                File "${GK_ROOT_PATH}\cmake-build-debug\mediaservice\dsengine.dll"
+                File "${GK_ROOT_PATH}\cmake-build-debug\mediaservice\qtmedia_audioengine.dll"
+          SectionEnd
+        SectionGroupEnd
+
+        SetOutPath "$INSTDIR\platforms"
+          File "${GK_ROOT_PATH}\cmake-build-debug\platforms\qdirect2d.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\platforms\qminimal.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\platforms\qoffscreen.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\platforms\qwebgl.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\platforms\qwindows.dll"
+
+        SectionGroup "Default/Base Theme"
+          Section "Microsoft Windows Vista styling"
+            SectionIn 2
+              SetOutPath "$INSTDIR\styles"
+                File "${GK_ROOT_PATH}\cmake-build-debug\styles\qwindowsvistastyle.dll"
+          SectionEnd
+        SectionGroupEnd
 
   # Store installation folder
   WriteRegStr HKCU "Software\${MUI_BRANDINGTEXT}\${MUI_PRODUCT}" "" $INSTDIR
@@ -265,8 +327,9 @@ Section "install" Installation info
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_BRANDINGTEXT}\${MUI_PRODUCT}" "UninstallString" "$INSTDIR\Uninstall.exe"
  
   WriteUninstaller "$INSTDIR\Uninstall.exe"
- 
-SectionEnd
+
+  SectionGroupEnd 
+SectionGroupEnd
 
 # Uninstaller Section
 # -------------------------------
