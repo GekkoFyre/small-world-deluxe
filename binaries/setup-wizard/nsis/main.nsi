@@ -38,60 +38,162 @@
 #   [ 1 ] - https://code.gekkofyre.io/amateur-radio/small-world-deluxe
 #
 
+# Include Modern UI
+# -------------------------------
+  !include "${NSISDIR}\Contrib\Modern UI 2\MUI2.nsh"
+
 # Start
 # -------------------------------
 
   !define MUI_PRODUCT "Small World Deluxe"
-  !define MUI_FILE "savefile"
+  !define MUI_FILE "smallworld"
   !define MUI_VERSION "0.0.1-pre-alpha"
   !define MUI_BRANDINGTEXT "GekkoFyre Networks"
+  !define GK_ROOT_PATH ".\..\..\.."
+  
   CRCCheck On
- 
-  # We should test if we must use an absolute path 
-  !include "${NSISDIR}\Contrib\Modern UI\System.nsh
 
 # General
 # -------------------------------
 
-  OutFile "setup-smallworld-0.0.1-pre-alpha.exe"
+  # Name and file
+  Name "${MUI_PRODUCT} v${MUI_VERSION}"
+  OutFile "setup-smallworld-${MUI_VERSION}.exe"
+  Unicode True
+  
   ShowInstDetails "nevershow"
   ShowUninstDetails "nevershow"
   SetCompressor "/FINAL lzma"
  
+  # Get installation folder from registry if available
+  InstallDirRegKey HKCU "Software\${MUI_BRANDINGTEXT}\${MUI_PRODUCT}" ""
+  
+  # Request application privileges for Windows Vista
+  RequestExecutionLevel user
+ 
   !define MUI_ICON "icon.ico"
   !define MUI_UNICON "icon.ico"
-  !define MUI_SPECIALBITMAP "src/contrib/images/vector/gekkofyre-networks/rionquosue/logo_blank_border_text_square_rionquosue.bmp"
+  !define MUI_SPECIALBITMAP "${GK_ROOT_PATH}\src\contrib\images\vector\gekkofyre-networks\rionquosue\logo_blank_border_text_square_rionquosue.bmp"
 
 # Folder selection page
 # -------------------------------
 
+  # Default installation folder
   InstallDir "$PROGRAMFILES\${MUI_BRANDINGTEXT}\${MUI_PRODUCT}"
 
-# Modern UI Configuration
+# Interface Configuration
 # -------------------------------
 
   !define MUI_WELCOMEPAGE
   !define MUI_LICENSEPAGE
   !define MUI_DIRECTORYPAGE
+  !define MUI_HEADERIMAGE
+  !define MUI_HEADERIMAGE_BITMAP "${NSISDIR}\Contrib\Graphics\Header\nsis.bmp" # This is optional...
   !define MUI_ABORTWARNING
   !define MUI_UNINSTALLER
   !define MUI_UNCONFIRMPAGE
   !define MUI_FINISHPAGE
 
-# Language
+# Pages
 # -------------------------------
 
-  !insertmacro MUI_LANGUAGE "English"
+  !insertmacro MUI_PAGE_LICENSE "${GK_ROOT_PATH}\LICENSE"
+  !insertmacro MUI_PAGE_COMPONENTS
+  !insertmacro MUI_PAGE_DIRECTORY
+  !insertmacro MUI_PAGE_INSTFILES
+
+  !insertmacro MUI_UNPAGE_CONFIRM
+  !insertmacro MUI_UNPAGE_INSTFILES
+
+# Languages
+# -------------------------------
+
+  !insertmacro MUI_LANGUAGE "English" # The first language is the default language...
+  !insertmacro MUI_LANGUAGE "French"
+  !insertmacro MUI_LANGUAGE "German"
+  !insertmacro MUI_LANGUAGE "Spanish"
+  !insertmacro MUI_LANGUAGE "SpanishInternational"
+  !insertmacro MUI_LANGUAGE "SimpChinese"
+  !insertmacro MUI_LANGUAGE "TradChinese"
+  !insertmacro MUI_LANGUAGE "Japanese"
+  !insertmacro MUI_LANGUAGE "Korean"
+  !insertmacro MUI_LANGUAGE "Italian"
+  !insertmacro MUI_LANGUAGE "Dutch"
+  !insertmacro MUI_LANGUAGE "Danish"
+  !insertmacro MUI_LANGUAGE "Swedish"
+  !insertmacro MUI_LANGUAGE "Norwegian"
+  !insertmacro MUI_LANGUAGE "NorwegianNynorsk"
+  !insertmacro MUI_LANGUAGE "Finnish"
+  !insertmacro MUI_LANGUAGE "Greek"
+  !insertmacro MUI_LANGUAGE "Russian"
+  !insertmacro MUI_LANGUAGE "Portuguese"
+  !insertmacro MUI_LANGUAGE "PortugueseBR"
+  !insertmacro MUI_LANGUAGE "Polish"
+  !insertmacro MUI_LANGUAGE "Ukrainian"
+  !insertmacro MUI_LANGUAGE "Czech"
+  !insertmacro MUI_LANGUAGE "Slovak"
+  !insertmacro MUI_LANGUAGE "Croatian"
+  !insertmacro MUI_LANGUAGE "Bulgarian"
+  !insertmacro MUI_LANGUAGE "Hungarian"
+  !insertmacro MUI_LANGUAGE "Thai"
+  !insertmacro MUI_LANGUAGE "Romanian"
+  !insertmacro MUI_LANGUAGE "Latvian"
+  !insertmacro MUI_LANGUAGE "Macedonian"
+  !insertmacro MUI_LANGUAGE "Estonian"
+  !insertmacro MUI_LANGUAGE "Turkish"
+  !insertmacro MUI_LANGUAGE "Lithuanian"
+  !insertmacro MUI_LANGUAGE "Slovenian"
+  !insertmacro MUI_LANGUAGE "Serbian"
+  !insertmacro MUI_LANGUAGE "SerbianLatin"
+  !insertmacro MUI_LANGUAGE "Arabic"
+  !insertmacro MUI_LANGUAGE "Farsi"
+  !insertmacro MUI_LANGUAGE "Hebrew"
+  !insertmacro MUI_LANGUAGE "Indonesian"
+  !insertmacro MUI_LANGUAGE "Mongolian"
+  !insertmacro MUI_LANGUAGE "Luxembourgish"
+  !insertmacro MUI_LANGUAGE "Albanian"
+  !insertmacro MUI_LANGUAGE "Breton"
+  !insertmacro MUI_LANGUAGE "Belarusian"
+  !insertmacro MUI_LANGUAGE "Icelandic"
+  !insertmacro MUI_LANGUAGE "Malay"
+  !insertmacro MUI_LANGUAGE "Bosnian"
+  !insertmacro MUI_LANGUAGE "Kurdish"
+  !insertmacro MUI_LANGUAGE "Irish"
+  !insertmacro MUI_LANGUAGE "Uzbek"
+  !insertmacro MUI_LANGUAGE "Galician"
+  !insertmacro MUI_LANGUAGE "Afrikaans"
+  !insertmacro MUI_LANGUAGE "Catalan"
+  !insertmacro MUI_LANGUAGE "Esperanto"
+  !insertmacro MUI_LANGUAGE "Asturian"
+  !insertmacro MUI_LANGUAGE "Basque"
+  !insertmacro MUI_LANGUAGE "Pashto"
+  !insertmacro MUI_LANGUAGE "ScotsGaelic"
+  !insertmacro MUI_LANGUAGE "Georgian"
+  !insertmacro MUI_LANGUAGE "Vietnamese"
+  !insertmacro MUI_LANGUAGE "Welsh"
+  !insertmacro MUI_LANGUAGE "Armenian"
+  !insertmacro MUI_LANGUAGE "Corsican"
+  !insertmacro MUI_LANGUAGE "Tatar"
+  !insertmacro MUI_LANGUAGE "Hindi"
+
+# Reserve Files
+# -------------------------------
+
+  # If you are using solid compression, files that are required before
+  # the actual installation should be stored first in the data block,
+  # because this will make your installer start faster.
+  
+  !insertmacro MUI_RESERVEFILE_LANGDLL
+
+# Installer Functions
+# -------------------------------
+
+  !insertmacro MUI_LANGDLL_DISPLAY
 
 # Modern UI System
 # -------------------------------
 
   !insertmacro MUI_SYSTEM 
-
-# Data
-# -------------------------------
-
-  LicenseData "Data.txt"
 
 # Installer Sections
 # -------------------------------
@@ -100,21 +202,56 @@ Section "install" Installation info
  
   # Add files
   SetOutPath "$INSTDIR"
+  File "${GK_ROOT_PATH}\cmake-build-debug\libgcc_s_seh-1.dll"
+  File "${GK_ROOT_PATH}\cmake-build-debug\libglib-2.0-0.dll"
+  File "${GK_ROOT_PATH}\cmake-build-debug\libhamlib-2.dll"
+  File "${GK_ROOT_PATH}\cmake-build-debug\libusb-1.0.dll"
+  File "${GK_ROOT_PATH}\cmake-build-debug\libwinpthread-1.dll"
+  File "${GK_ROOT_PATH}\cmake-build-debug\Qt5Core.dll"
+  File "${GK_ROOT_PATH}\cmake-build-debug\Qt5Gui.dll"
+  File "${GK_ROOT_PATH}\cmake-build-debug\Qt5Multimedia.dll"
+  File "${GK_ROOT_PATH}\cmake-build-debug\Qt5Network.dll"
+  File "${GK_ROOT_PATH}\cmake-build-debug\Qt5OpenGL.dll"
+  File "${GK_ROOT_PATH}\cmake-build-debug\Qt5SerialPort.dll"
+  File "${GK_ROOT_PATH}\cmake-build-debug\Qt5Svg.dll"
+  File "${GK_ROOT_PATH}\cmake-build-debug\Qt5TextToSpeech.dll"
+  File "${GK_ROOT_PATH}\cmake-build-debug\Qt5Widgets.dll"
  
-  File "${MUI_FILE}.exe"
-  File "${MUI_FILE}.ini"
-  File "Data.txt"
-  SetOutPath "$INSTDIR\playlists"
-  file "playlists\${MUI_FILE}.epp"
-  SetOutPath "$INSTDIR\data"
-  file "data\*.cst"
-  file "data\errorlog.txt"
-  # Here follow the files that will be in the playlist
-  SetOutPath "$INSTDIR"  
-  file /r mpg
-  SetOutPath "$INSTDIR"  
-  file /r xtras  
- 
+  File "${GK_ROOT_PATH}\cmake-build-debug\${MUI_FILE}.exe"
+  File "${GK_ROOT_PATH}\cmake-build-debug\libgalaxy.a"
+  
+  SetOutPath "$INSTDIR\audio"
+  File "${GK_ROOT_PATH}\cmake-build-debug\audio\qtaudio_windows.dll"
+  
+  SetOutPath "$INSTDIR\imageformats"
+  File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qgif.dll"
+  File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qicns.dll"
+  File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qico.dll"
+  File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qjp2.dll"
+  File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qjpeg.dll"
+  File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qsvg.dll"
+  File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qtga.dll"
+  File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qtiff.dll"
+  File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qwbmp.dll"
+  File "${GK_ROOT_PATH}\cmake-build-debug\imageformats\qwebp.dll"
+  
+  SetOutPath "$INSTDIR\mediaservice"
+  File "${GK_ROOT_PATH}\cmake-build-debug\mediaservice\dsengine.dll"
+  File "${GK_ROOT_PATH}\cmake-build-debug\mediaservice\qtmedia_audioengine.dll"
+  
+  SetOutPath "$INSTDIR\platforms"
+  File "${GK_ROOT_PATH}\cmake-build-debug\platforms\qdirect2d.dll"
+  File "${GK_ROOT_PATH}\cmake-build-debug\platforms\qminimal.dll"
+  File "${GK_ROOT_PATH}\cmake-build-debug\platforms\qoffscreen.dll"
+  File "${GK_ROOT_PATH}\cmake-build-debug\platforms\qwebgl.dll"
+  File "${GK_ROOT_PATH}\cmake-build-debug\platforms\qwindows.dll"
+  
+  SetOutPath "$INSTDIR\styles"
+  File "${GK_ROOT_PATH}\cmake-build-debug\styles\qwindowsvistastyle.dll"
+
+  # Store installation folder
+  WriteRegStr HKCU "Software\${MUI_BRANDINGTEXT}\${MUI_PRODUCT}" "" $INSTDIR
+
   # Create desktop shortcut
   CreateShortCut "$DESKTOP\${MUI_PRODUCT}.lnk" "$INSTDIR\${MUI_FILE}.exe" ""
  
@@ -148,8 +285,8 @@ Section "Uninstall"
   RmDir  "$SMPROGRAMS\${MUI_PRODUCT}"
  
   # Delete Uninstaller And Unistall Registry Entries
-  DeleteRegKey HKEY_LOCAL_MACHINE "SOFTWARE\${MUI_BRANDINGTEXT}\${MUI_PRODUCT}"
-  DeleteRegKey HKEY_LOCAL_MACHINE "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_BRANDINGTEXT}\${MUI_PRODUCT}"  
+  DeleteRegKey /ifempty HKCU "Software\${MUI_BRANDINGTEXT}\${MUI_PRODUCT}"
+  DeleteRegKey /ifempty HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_BRANDINGTEXT}\${MUI_PRODUCT}"  
  
 SectionEnd
 
@@ -165,5 +302,13 @@ Function un.onUninstSuccess
   MessageBox MB_OK "You have successfully uninstalled ${MUI_PRODUCT} by ${MUI_BRANDINGTEXT}."
 FunctionEnd
 
+# Uninstaller Functions
+# -------------------------------
+
+Function un.onInit
+
+  !insertmacro MUI_UNGETLANGUAGE
+  
+FunctionEnd
 
 ;eof
