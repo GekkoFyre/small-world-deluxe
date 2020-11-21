@@ -154,6 +154,7 @@ int main(int argc, char *argv[])
     QApplication::setPalette(darkPalette);
 
     MainWindow w;
+    w.setWindowState(Qt::WindowMaximized);
     w.show();
 
     return app.exec();

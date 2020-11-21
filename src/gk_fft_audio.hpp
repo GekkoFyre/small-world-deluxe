@@ -131,8 +131,8 @@ private:
     //
     // Spectrograph
     //
-    bool updateGraph = false;
     QPointer<QTimer> spectroRefreshTimer;
+    std::vector<double> magSpec;
 
     void samplesUpdated();
 

@@ -202,7 +202,7 @@ void GkFFTAudio::processAudioIn()
             s = ba.at(b_pos++);
             s |= ba.at(b_pos++) << 8;
             if (s != 0) {
-                audioSamples.push_back((double)s / 32768.0); // TODO: Replace with a function that gets the peak-value instead!
+                audioSamples.push_back((double)s / gkStringFuncs->getPeakValue(pref_input_audio_device.audio_device_info.preferredFormat()));
             } else {
                 audioSamples.push_back(0);
             }
@@ -463,7 +463,6 @@ void GkFFTAudio::stopRecordFileStream(const fs::path &media_path)
 void GkFFTAudio::samplesUpdated()
 {
     try {
-        updateGraph = false;
         std::vector<double> remainder;
         auto splitAudioSamples = gkStringFuncs->chunker(audioSamples, (AUDIO_FRAMES_PER_BUFFER * 2));
         for (const auto &samples_vec: splitAudioSamples) {
@@ -471,14 +470,24 @@ void GkFFTAudio::samplesUpdated()
                 if (samples_vec.size() == (AUDIO_FRAMES_PER_BUFFER * 2)) {
                     Gist<double> fft(samples_vec.size(), gkAudioInSampleRate, WindowType::RectangularWindow);
                     fft.processAudioFrame(samples_vec);
-                    const std::vector<double> magSpec = fft.getMagnitudeSpectrum();
+                    magSpec = fft.getMagnitudeSpectrum();
+
+                    double xMin, xMax;
+                    size_t historyLength, layerPoints;
+                    gkSpectroWaterfall->getDataDimensions(xMin, xMax, historyLength, layerPoints);
+                    if (xMin != SPECTRO_X_MIN_AXIS_SIZE || xMax != SPECTRO_X_MAX_AXIS_SIZE || magSpec.size() != layerPoints || 64 != historyLength) {
+                        gkSpectroWaterfall->setDataDimensions(SPECTRO_X_MIN_AXIS_SIZE, SPECTRO_X_MAX_AXIS_SIZE, 64, magSpec.size());
+                    }
 
                     const bool bRet = gkSpectroWaterfall->addData(magSpec.data(), magSpec.size(), std::time(nullptr));
                     if (!bRet) {
                         throw std::runtime_error(tr("There has been an error with the spectrograph / waterfall.").toStdString());
                     }
 
+                    magSpec.clear();
+
                     // Set the range only once (data range)...
+                    // TODO: Maybe update the data-range once every <interval> as a suggestion?
                     static bool gkSetRangeOnlyOnce = true;
                     if (gkSetRangeOnlyOnce) {
                         double dataRng[2];
@@ -486,15 +495,12 @@ void GkFFTAudio::samplesUpdated()
                         gkSpectroWaterfall->setRange(dataRng[0], dataRng[1]);
                         gkSetRangeOnlyOnce = false;
                     }
-
-                    updateGraph = true;
                 }
             } else {
                 // Do processing on the remainder...
                 remainder.clear();
                 if (!samples_vec.empty()) {
                     std::copy(samples_vec.begin(), samples_vec.end(), std::back_inserter(remainder));
-                    updateGraph = true;
                 }
             }
         }
