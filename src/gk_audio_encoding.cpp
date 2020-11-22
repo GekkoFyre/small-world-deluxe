@@ -80,17 +80,16 @@ namespace sys = boost::system;
 
 #define OGG_VORBIS_READ (1024)
 
-GkAudioEncoding::GkAudioEncoding(QPointer<FileIo> fileIo, QPointer<StringFuncs> stringFuncs,
-                                 QPointer<QAudioOutput> audioOutput, QPointer<QAudioInput> audioInput,
-                                 const GkDevice &output_device, const GkDevice &input_device,
-                                 QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QThread(parent)
+GkAudioEncoding::GkAudioEncoding(QPointer<StringFuncs> stringFuncs, QPointer<QAudioOutput> audioOutput,
+                                 QPointer<QAudioInput> audioInput, const GkDevice &output_device,
+                                 const GkDevice &input_device, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                                 QObject *parent) : QThread(parent)
 {
     setParent(parent);
 
     qRegisterMetaType<GekkoFyre::GkAudioFramework::Bitrate>("GekkoFyre::GkAudioFramework::Bitrate");
     qRegisterMetaType<GekkoFyre::GkAudioFramework::CodecSupport>("GekkoFyre::GkAudioFramework::CodecSupport");
 
-    gkFileIo = std::move(fileIo);
     gkStringFuncs = std::move(stringFuncs);
     gkEventLogger = std::move(eventLogger);
 
@@ -98,6 +97,12 @@ GkAudioEncoding::GkAudioEncoding(QPointer<FileIo> fileIo, QPointer<StringFuncs> 
     gkAudioOutput = std::move(audioOutput);
     gkInputDev = input_device;
     gkOutputDev = output_device;
+
+    QObject::connect(this, SIGNAL(startEncode(const GkDevice &, const qint32 &, const qint32 &, const qint32 &)),
+                     this, SLOT(startCaller(const GkDevice &, const qint32 &, const qint32 &, const qint32 &)));
+    QObject::connect(this, SIGNAL(error(const QString &, const GkSeverity &)),
+                     this, SLOT(handleError(const QString &, const GkSeverity &)));
+    QObject::connect(this, SIGNAL(encoded(QByteArray)), this, SLOT(processInput(const QByteArray &)));
 
     start();
 
@@ -131,6 +136,32 @@ void GkAudioEncoding::run()
  */
 void GkAudioEncoding::initEncode(const Settings::Audio::GkDevice &audio_dev_info, const qint32 &bitrate, const qint32 &frame_size,
                                  const qint32 &application)
+{
+    emit startEncode(audio_dev_info, bitrate, frame_size, application);
+    return;
+}
+
+/**
+ * @brief GkAudioEncoding::writeEncode
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param data
+ */
+void GkAudioEncoding::writeEncode(const QByteArray &data)
+{
+    QMetaObject::invokeMethod(this, "writeCaller", Qt::QueuedConnection, Q_ARG(QByteArray, data));
+    return;
+}
+
+/**
+ * @brief GkAudioEncoding::startCaller
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param audio_dev_info
+ * @param bitrate
+ * @param frame_size
+ * @param application
+ */
+void GkAudioEncoding::startCaller(const Settings::Audio::GkDevice &audio_dev_info, const qint32 &bitrate,
+                                  const qint32 &frame_size, const qint32 &application)
 {
     if (m_initialized) {
         return;
@@ -166,18 +197,23 @@ void GkAudioEncoding::initEncode(const Settings::Audio::GkDevice &audio_dev_info
 }
 
 /**
- * @brief GkAudioEncoding::char_to_int
- * @author sehe <https://stackoverflow.com/questions/16496288/decoding-opus-audio-data>
- * @param ch
- * @return
- * @note The author suggests reading with `boost::spirit::big_dword` or similar instead.
+ * @brief GkAudioEncoding::writeCaller
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param data
  */
-uint32_t GkAudioEncoding::char_to_int(char ch[])
+void GkAudioEncoding::writeCaller(const QByteArray &data)
 {
-    return static_cast<uint32_t>(static_cast<unsigned char>(ch[0])<<24) |
-               static_cast<uint32_t>(static_cast<unsigned char>(ch[1])<<16) |
-               static_cast<uint32_t>(static_cast<unsigned char>(ch[2])<< 8) |
-            static_cast<uint32_t>(static_cast<unsigned char>(ch[3])<< 0);
+    m_buffer.append(data);
+    forever {
+        QByteArray result = opusEncode();
+        if (result.isEmpty()) {
+            break;
+        }
+
+        emit encoded(result);
+    };
+
+    return;
 }
 
 /**
@@ -214,9 +250,24 @@ QByteArray GkAudioEncoding::opusEncode()
     return output;
 }
 
-#ifdef OPUS_LIBS_ENBLD
-const char *GkAudioEncoding::OpusErrorException::what() const noexcept
+/**
+ * @brief GkAudioEncoding::processInput
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param data
+ */
+void GkAudioEncoding::processInput(const QByteArray &data)
 {
-    return opus_strerror(code);
+    return;
 }
-#endif
+
+/**
+ * @brief GkAudioEncoding::handleError
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param msg
+ * @param severity
+ */
+void GkAudioEncoding::handleError(const QString &msg, const GkSeverity &severity)
+{
+    gkEventLogger->publishEvent(msg, severity, "", true, true, false, false);
+    return;
+}

@@ -42,7 +42,6 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/file_io.hpp"
 #include "src/gk_logger.hpp"
 #include <boost/filesystem.hpp>
 #include <memory>
@@ -97,8 +96,7 @@ private:
     #endif
 
 public:
-    explicit GkAudioEncoding(QPointer<GekkoFyre::FileIo> fileIo,
-                             QPointer<GekkoFyre::StringFuncs> stringFuncs,
+    explicit GkAudioEncoding(QPointer<GekkoFyre::StringFuncs> stringFuncs,
                              QPointer<QAudioOutput> audioOutput, QPointer<QAudioInput> audioInput,
                              const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
                              const GekkoFyre::Database::Settings::Audio::GkDevice &input_device,
@@ -111,12 +109,26 @@ public:
 public slots:
     void initEncode(const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev_info, const qint32 &bitrate,
                     const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER, const qint32 &application = OPUS_APPLICATION_AUDIO);
+    void writeEncode(const QByteArray &data);
+
+private slots:
+    void startCaller(const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev_info, const qint32 &bitrate,
+                     const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER, const qint32 &application = OPUS_APPLICATION_AUDIO);
+    void writeCaller(const QByteArray &data);
+
+    QByteArray opusEncode();
+    void processInput(const QByteArray &data);
+
+    void handleError(const QString &msg, const GekkoFyre::System::Events::Logging::GkSeverity &severity);
 
 signals:
-    void error(const QString &msg);
+    void startEncode(const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev_info, const qint32 &bitrate,
+                     const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER, const qint32 &application = OPUS_APPLICATION_AUDIO);
+
+    void encoded(QByteArray data);
+    void error(const QString &msg, const GekkoFyre::System::Events::Logging::GkSeverity &severity);
 
 private:
-    QPointer<GekkoFyre::FileIo> gkFileIo;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
@@ -136,10 +148,6 @@ private:
     qint32 m_frame_size = -1;
     QByteArray m_buffer;
     OpusEncoder *m_encoder = nullptr;
-
-    QByteArray opusEncode();
-
-    static uint32_t char_to_int(char ch[4]);
 
 };
 };

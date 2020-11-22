@@ -90,7 +90,10 @@ GkFFTAudio::GkFFTAudio(QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> 
     gkAudioOutput = std::move(audioOutput);
     gkSpectroWaterfall = std::move(spectroWaterfall);
     gkStringFuncs = std::move(stringFuncs);
-    eventLogger = std::move(gkEventLogger);
+    gkEventLogger = std::move(eventLogger);
+
+    gkAudioEncoding = new GkAudioEncoding(gkStringFuncs, gkAudioOutput, gkAudioInput, pref_output_audio_device,
+                                          pref_input_audio_device, gkEventLogger, parent);
 
     gkAudioInSampleRate = pref_input_audio_device.audio_device_info.preferredFormat().sampleRate();
     gkAudioInNumSamples = (gkAudioInSampleRate * (SPECTRO_Y_AXIS_SIZE / 1000));
@@ -114,6 +117,11 @@ GkFFTAudio::GkFFTAudio(QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> 
     QObject::connect(spectroRefreshTimer, SIGNAL(timeout()), this, SLOT(refreshGraphTrue()));
     QObject::connect(this, SIGNAL(stopRecording()), spectroRefreshTimer, SLOT(stop()));
     QObject::connect(this, SIGNAL(recordStream()), spectroRefreshTimer, SLOT(start()));
+
+    QObject::connect(this, SIGNAL(initAudioEncode(const GkDevice &, const qint32 &, const qint32 &, const qint32 &)),
+                     gkAudioEncoding, SLOT(initEncode(const GkDevice &, const qint32 &, const qint32 &, const qint32 &)));
+    QObject::connect(this, SIGNAL(writeAudioEncode(const QByteArray &)),
+                     gkAudioEncoding, SLOT(writeEncode(const QByteArray &)));
 
     start();
 
