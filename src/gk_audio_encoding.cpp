@@ -44,15 +44,13 @@
 #include <fstream>
 #include <iterator>
 #include <algorithm>
+#include <QtGui>
+#include <QByteArray>
 #include <QMessageBox>
 
 #ifdef __cplusplus
 extern "C"
 {
-#endif
-
-#ifdef OPUS_LIBS_ENBLD
-#include <opus_multistream.h>
 #endif
 
 #include <vorbis/codec.h>
@@ -124,6 +122,50 @@ void GkAudioEncoding::run()
 }
 
 /**
+ * @brief GkAudioEncoding::start
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param audio_dev_info
+ * @param bitrate
+ * @param frame_size
+ * @param application
+ */
+void GkAudioEncoding::initEncode(const Settings::Audio::GkDevice &audio_dev_info, const qint32 &bitrate, const qint32 &frame_size,
+                                 const qint32 &application)
+{
+    if (m_initialized) {
+        return;
+    }
+
+    qint32 err;
+    m_encoder = opus_encoder_create(audio_dev_info.audio_device_info.preferredFormat().sampleRate(),
+                                    audio_dev_info.audio_device_info.preferredFormat().channelCount(),
+                                    application, &err);
+
+    if (err < 0) {
+        emit error(tr("Memory error encountered with Opus libraries. Do you have enough free memory?"));
+        return;
+    }
+
+    m_initialized = true;
+
+    //
+    // Set the desired bitrate, while other parameters can be set if needed as well. The Opus library is designed such to
+    // have good defaults, so only set parameters you know that are truly needed. Doing otherwise is likely to result not in
+    // worse audio quality, but actually better.
+    //
+    err = opus_encoder_ctl(m_encoder, OPUS_SET_BITRATE(bitrate));
+    if (err < 0) {
+        emit error(tr("Failed to set the bitrate for the Opus codec."));
+        return;
+    }
+
+    m_channels = audio_dev_info.audio_device_info.preferredFormat().channelCount();
+    m_frame_size = frame_size;
+
+    return;
+}
+
+/**
  * @brief GkAudioEncoding::char_to_int
  * @author sehe <https://stackoverflow.com/questions/16496288/decoding-opus-audio-data>
  * @param ch
@@ -136,6 +178,40 @@ uint32_t GkAudioEncoding::char_to_int(char ch[])
                static_cast<uint32_t>(static_cast<unsigned char>(ch[1])<<16) |
                static_cast<uint32_t>(static_cast<unsigned char>(ch[2])<< 8) |
             static_cast<uint32_t>(static_cast<unsigned char>(ch[3])<< 0);
+}
+
+/**
+ * @brief GkAudioEncoding::opusEncode
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return
+ */
+QByteArray GkAudioEncoding::opusEncode()
+{
+    if (!m_initialized) {
+        return QByteArray();
+    }
+
+    qint32 size = int(sizeof(float)) * m_channels * m_frame_size;
+    if (m_buffer.size() < size) {
+        return QByteArray();
+    }
+
+    qint32 nbBytes;
+    QByteArray input = m_buffer.mid(0, size);
+    m_buffer.remove(0, size);
+
+    QByteArray output = QByteArray(AUDIO_OPUS_MAX_FRAME_SIZE, char(0));
+
+    // Encode the frame...
+    nbBytes = opus_encode_float(m_encoder, reinterpret_cast<const float *>(input.constData()), m_frame_size, reinterpret_cast<uchar *>(output.data()), AUDIO_OPUS_MAX_FRAME_SIZE);
+
+    if (nbBytes < 0) {
+        emit error(tr("Opus encode failed: %0").arg(opus_strerror(nbBytes)));
+        return QByteArray();
+    }
+
+    output.resize(nbBytes);
+    return output;
 }
 
 #ifdef OPUS_LIBS_ENBLD

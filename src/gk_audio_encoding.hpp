@@ -54,6 +54,7 @@
 #include <QBuffer>
 #include <QThread>
 #include <QPointer>
+#include <QIODevice>
 #include <QAudioInput>
 #include <QAudioOutput>
 #include <QAudioFormat>
@@ -63,10 +64,7 @@ extern "C"
 {
 #endif
 
-#ifdef OPUS_LIBS_ENBLD
 #include <opus.h>
-#endif
-
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -110,6 +108,13 @@ public:
 
     void run() Q_DECL_OVERRIDE;
 
+public slots:
+    void initEncode(const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev_info, const qint32 &bitrate,
+                    const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER, const qint32 &application = OPUS_APPLICATION_AUDIO);
+
+signals:
+    void error(const QString &msg);
+
 private:
     QPointer<GekkoFyre::FileIo> gkFileIo;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
@@ -123,7 +128,16 @@ private:
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
 
-    // void opusEncode();
+    //
+    // Encoder variables
+    //
+    bool m_initialized = false;
+    qint32 m_channels = -1;
+    qint32 m_frame_size = -1;
+    QByteArray m_buffer;
+    OpusEncoder *m_encoder = nullptr;
+
+    QByteArray opusEncode();
 
     static uint32_t char_to_int(char ch[4]);
 
