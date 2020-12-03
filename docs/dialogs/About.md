@@ -23,6 +23,8 @@ Please see [CREDITS](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/
 
 `CMake - Cross Platform Makefile Generator -- Copyright © 2000 - 2020 Kitware, Inc. and Contributors.`
 
+`QXmpp - Copyright © 2008 - 2020 The QXmpp Developers.`
+
 `SingleApplication -- Copyright © 2015 - 2020 Itay Grudev.`
 
 `KissFFT -- Copyright © 2003 - 2010 Mark Borgerding . All rights reserved.`

@@ -173,7 +173,7 @@ void GkAudioEncoding::startCaller(const Settings::Audio::GkDevice &audio_dev_inf
                                     application, &err);
 
     if (err < 0) {
-        emit error(tr("Memory error encountered with Opus libraries. Do you have enough free memory?"));
+        emit error(tr("Memory error encountered with Opus libraries. Do you have enough free memory?"), GkSeverity::Fatal);
         return;
     }
 
@@ -186,7 +186,7 @@ void GkAudioEncoding::startCaller(const Settings::Audio::GkDevice &audio_dev_inf
     //
     err = opus_encoder_ctl(m_encoder, OPUS_SET_BITRATE(bitrate));
     if (err < 0) {
-        emit error(tr("Failed to set the bitrate for the Opus codec."));
+        emit error(tr("Failed to set the bitrate for the Opus codec."), GkSeverity::Warning);
         return;
     }
 
@@ -242,7 +242,7 @@ QByteArray GkAudioEncoding::opusEncode()
     nbBytes = opus_encode_float(m_encoder, reinterpret_cast<const float *>(input.constData()), m_frame_size, reinterpret_cast<uchar *>(output.data()), AUDIO_OPUS_MAX_FRAME_SIZE);
 
     if (nbBytes < 0) {
-        emit error(tr("Opus encode failed: %0").arg(opus_strerror(nbBytes)));
+        emit error(tr("Opus encode failed: %0").arg(opus_strerror(nbBytes)), GkSeverity::Warning);
         return QByteArray();
     }
 

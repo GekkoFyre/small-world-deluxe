@@ -34,3 +34,6 @@
 [submodule "src/contrib/opus"]
 	path = src/contrib/opus
 	url = https://gitlab.xiph.org/xiph/opus.git
+[submodule "src/contrib/qxmpp"]
+	path = src/contrib/qxmpp
+	url = https://github.com/qxmpp-project/qxmpp.git

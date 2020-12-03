@@ -183,6 +183,10 @@ if(WIN32 OR MSYS OR MINGW)
     endif()
 endif()
 
+if(GFYRE_BUILD_STATIC)
+    add_definitions(-DBUILD_SHARED=0)
+endif()
+
 if (Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
     set(LIBS ${LIBS} ${Boost_LIBRARIES})
@@ -237,7 +241,7 @@ if (BUILD_CODEC2_SUPPORT)
         if (CODEC2_FOUND)
             include_directories(${CODEC2_INCLUDE_DIRS})
             set(LIBS ${LIBS} ${CODEC2_LIBRARIES})
-            add_definitions("-DCODEC2_LIBS_ENBLD")
+            add_definitions(-DCODEC2_LIBS_ENBLD)
             
             set(GALAXY_CODEC2_CPP
                 ${GALAXY_CODEC2_CPP}
@@ -287,6 +291,19 @@ if (LINUX)
         message(FATAL_ERROR "The 'udev' SystemD libraries could not be found!")
     endif(udev_FOUND)
 endif(LINUX)
+
+#
+# QXmpp
+# https://github.com/qxmpp-project/qxmpp
+#
+find_package(QXMPP REQUIRED)
+if (QXMPP_FOUND)
+    include_directories(${QXMPP_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${QXMPP_LIBRARIES})
+    message(STATUS "The 'QXmpp' Extensible Messaging and Presence Protocol (XMPP) libraries have been configured!")
+else()
+    message(FATAL_ERROR "The 'QXmpp' Extensible Messaging and Presence Protocol (XMPP) libraries could not be found!")
+endif(QXMPP_FOUND)
 
 #
 # https://xiph.org/vorbis/
@@ -502,6 +519,8 @@ set(GALAXY_UI_CPP
     src/gk_spectro_color_maps.cpp
     src/gk_audio_encoding.cpp
     src/gk_audio_decoding.cpp
+    src/gk_xmpp_client.cpp
+    src/gk_xmpp_server.cpp
     src/gk_cli.cpp
     src/gk_modem.cpp
     src/gk_frequency_list.cpp
@@ -589,6 +608,8 @@ set(GALAXY_OBJ_HEADERS
     src/gk_spectro_color_maps.hpp
     src/gk_audio_encoding.hpp
     src/gk_audio_decoding.hpp
+    src/gk_xmpp_client.hpp
+    src/gk_xmpp_server.hpp
     src/gk_cli.hpp
     src/gk_modem.hpp
     src/gk_frequency_list.hpp
@@ -674,7 +695,7 @@ else()
         ${GK_EXTRA_LIBS})
 endif()
 
-add_definitions("-DQWT_DLL")
+add_definitions(-DQWT_DLL)
 
 if (GFYRE_SWORLD_DBG_VERBOSITY)
     message(STATUS "Enabled maximum verbosity with Small World Deluxe and its use of third-party libraries throughout the application itself; debug mode now activated!")
