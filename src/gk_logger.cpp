@@ -144,6 +144,46 @@ void GkEventLogger::publishEvent(const QString &event, const GkSeverity &severit
 }
 
 /**
+ * @brief GkEventLogger::recvXmppLog
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param msg_type
+ * @param msg
+ */
+void GkEventLogger::recvXmppLog(QXmppLogger::MessageType msg_type, QString msg)
+{
+    GkSeverity severity;
+    switch (msg_type) {
+        case QXmppLogger::MessageType::NoMessage:
+            severity = GkSeverity::None;
+            break;
+        case QXmppLogger::MessageType::DebugMessage:
+            severity = GkSeverity::Debug;
+            break;
+        case QXmppLogger::MessageType::InformationMessage:
+            severity = GkSeverity::Info;
+            break;
+        case QXmppLogger::MessageType::WarningMessage:
+            severity = GkSeverity::Warning;
+            break;
+        case QXmppLogger::MessageType::ReceivedMessage:
+            severity = GkSeverity::Info;
+            break;
+        case QXmppLogger::MessageType::SentMessage:
+            severity = GkSeverity::Info;
+            break;
+        case QXmppLogger::MessageType::AnyMessage:
+            severity = GkSeverity::Info;
+            break;
+        default:
+            severity = GkSeverity::Verbose;
+            break;
+    }
+
+    publishEvent(msg, severity, "", true, false, true, false);
+    return;
+}
+
+/**
  * @brief GkEventLogger::setDate will set the date as according to the milliseconds from UNIX epoch. There is no need to format
  * beforehand, as this will be done accordingly by the QTableView model.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>

@@ -41,6 +41,7 @@
 #include "src/ui/spectrodialog.hpp"
 #include "src/ui/sendreportdialog.hpp"
 #include "src/ui/gkaudioplaydialog.hpp"
+#include "src/ui/gkxmpprosterdialog.hpp"
 #include "src/ui/widgets/gk_submit_msg.hpp"
 #include "src/models/tableview/gk_frequency_model.hpp"
 #include "src/models/tableview/gk_logger_model.hpp"
@@ -164,6 +165,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         ui->actionE_xit->setIcon(QIcon(":/resources/contrib/images/vector/purchased/iconfinder_turn_off_on_power_181492.svg"));
         ui->action_Settings->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/settings-flat.svg"));
         ui->actionCheck_for_Updates->setIcon(QIcon(":/resources/contrib/images/vector/purchased/iconfinder_chemistry_226643.svg"));
+        ui->actionXMPP->setIcon(QIcon(":/resources/contrib/images/vector/Freepik/xmpp.svg"));
 
         //
         // Create a status bar at the bottom of the window with a default message
@@ -789,6 +791,21 @@ MainWindow::~MainWindow()
 
     delete db; // Free the pointer for the Google LevelDB library!
     delete ui;
+}
+
+/**
+ * @brief MainWindow::on_actionXMPP_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::on_actionXMPP_triggered()
+{
+    QPointer<GkXmppRosterDialog> gkXmppRosterDlg = new GkXmppRosterDialog(tr("test_user"), tr("test_pass"),
+                                                                          gkEventLogger, this);
+    gkXmppRosterDlg->setWindowFlags(Qt::Window);
+    gkXmppRosterDlg->setAttribute(Qt::WA_DeleteOnClose, true);
+    gkXmppRosterDlg->show();
+
+    return;
 }
 
 /**

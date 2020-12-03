@@ -62,12 +62,22 @@ namespace sys = boost::system;
 
 #define OGG_VORBIS_READ (1024)
 
-GkXmppClient::GkXmppClient(QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QXmppClient(parent)
+GkXmppClient::GkXmppClient(const QString &username, const QString &password, const bool &join_server,
+                           QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QXmppClient(parent)
 {
     setParent(parent);
-
     gkEventLogger = std::move(eventLogger);
-    client.connectToServer("qxmpp.test1@qxmpp.org", "qxmpp123");
+
+    //
+    // Setup logging...
+    QXmppLogger *logger = QXmppLogger::getLogger();
+    logger->setLoggingType(QXmppLogger::SignalLogging);
+    QObject::connect(logger, SIGNAL(message(QXmppLogger::MessageType, QString)),
+                     gkEventLogger, SLOT(recvXmppLog(QXmppLogger::MessageType, QString)));
+
+    if (join_server) {
+        client.connectToServer(username, password);
+    }
 }
 
 GkXmppClient::~GkXmppClient()

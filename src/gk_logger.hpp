@@ -43,6 +43,7 @@
 
 #include "src/defines.hpp"
 #include "src/models/tableview/gk_logger_model.hpp"
+#include <qxmpp/QXmppLogger.h>
 #include <mutex>
 #include <QVariant>
 #include <QPointer>
@@ -63,6 +64,7 @@ public slots:
     void publishEvent(const QString &event, const GekkoFyre::System::Events::Logging::GkSeverity &severity = GekkoFyre::System::Events::Logging::GkSeverity::Warning,
                       const QVariant &arguments = "", const bool &sys_notification = false, const bool &publishToConsole = true,
                       const bool &publishToStatusBar = false, const bool &displayMsgBox = false);
+    void recvXmppLog(QXmppLogger::MessageType msg_type, QString msg);
 
 signals:
     void sendEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &event);

@@ -107,6 +107,7 @@ public:
     ~MainWindow() override;
 
 private slots:
+    void on_actionXMPP_triggered();
     void on_actionE_xit_triggered();
     void on_action_Open_triggered();
     void on_actionCheck_for_Updates_triggered();

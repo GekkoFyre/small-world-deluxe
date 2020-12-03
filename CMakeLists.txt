@@ -490,6 +490,7 @@ qt5_wrap_ui(UI_HEADERS
     src/ui/aboutdialog.ui
     src/ui/spectrodialog.ui
     src/ui/gkaudioplaydialog.ui
+    src/ui/gkxmpprosterdialog.ui
     src/ui/sendreportdialog.ui)
 
 # https://doc.qt.io/qt-5/cmake-command-reference.html
@@ -508,6 +509,7 @@ set(GALAXY_UI_CPP
     src/ui/dialogsettings.cpp
     src/ui/aboutdialog.cpp
     src/ui/gkaudioplaydialog.cpp
+    src/ui/gkxmpprosterdialog.cpp
     src/ui/spectrodialog.cpp
     src/ui/sendreportdialog.cpp
     src/radiolibs.cpp
@@ -597,6 +599,7 @@ set(GALAXY_OBJ_HEADERS
     src/ui/dialogsettings.hpp
     src/ui/aboutdialog.hpp
     src/ui/gkaudioplaydialog.hpp
+    src/ui/gkxmpprosterdialog.hpp
     src/ui/spectrodialog.hpp
     src/ui/sendreportdialog.hpp
     src/radiolibs.hpp

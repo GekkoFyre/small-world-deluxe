@@ -525,8 +525,8 @@ color: white;</string>
                                <rect>
                                 <x>0</x>
                                 <y>0</y>
-                                <width>100</width>
-                                <height>30</height>
+                                <width>393</width>
+                                <height>136</height>
                                </rect>
                               </property>
                               <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -671,8 +671,8 @@ color: white;</string>
                                <rect>
                                 <x>0</x>
                                 <y>0</y>
-                                <width>100</width>
-                                <height>30</height>
+                                <width>433</width>
+                                <height>136</height>
                                </rect>
                               </property>
                               <layout class="QVBoxLayout" name="verticalLayout_20">
@@ -1673,6 +1673,8 @@ QPushButton:disabled {
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionXMPP"/>
+   <addaction name="separator"/>
    <addaction name="actionPlay"/>
    <addaction name="separator"/>
    <addaction name="actionSave_Decoded_Ab"/>
@@ -1971,6 +1973,11 @@ QPushButton:disabled {
   <action name="action_Battery_Calculator">
    <property name="text">
     <string>&amp;Battery Calculator</string>
+   </property>
+  </action>
+  <action name="actionXMPP">
+   <property name="text">
+    <string>XMPP</string>
    </property>
   </action>
  </widget>

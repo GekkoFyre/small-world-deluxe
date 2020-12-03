@@ -1,15 +1,15 @@
 /**
- **     __                 _ _   __    __           _     _ 
+ **     __                 _ _   __    __           _     _
  **    / _\_ __ ___   __ _| | | / / /\ \ \___  _ __| | __| |
  **    \ \| '_ ` _ \ / _` | | | \ \/  \/ / _ \| '__| |/ _` |
  **    _\ \ | | | | | (_| | | |  \  /\  / (_) | |  | | (_| |
  **    \__/_| |_| |_|\__,_|_|_|   \/  \/ \___/|_|  |_|\__,_|
- **                                                         
- **                  ___     _                              
- **                 /   \___| |_   ___  _____               
- **                / /\ / _ \ | | | \ \/ / _ \              
- **               / /_//  __/ | |_| |>  <  __/              
- **              /___,' \___|_|\__,_/_/\_\___|              
+ **
+ **                  ___     _
+ **                 /   \___| |_   ___  _____
+ **                / /\ / _ \ | | | \ \/ / _ \
+ **               / /_//  __/ | |_| |>  <  __/
+ **              /___,' \___|_|\__,_/_/\_\___|
  **
  **
  **   If you have downloaded the source code for "Small World Deluxe" and are reading this,
@@ -42,32 +42,29 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include "src/gk_xmpp_client.hpp"
 #include "src/gk_logger.hpp"
-#include <qxmpp/QXmppClient.h>
-#include <string>
-#include <vector>
-#include <QObject>
-#include <QThread>
+#include <QDialog>
+#include <QString>
 #include <QPointer>
-#include <QCoreApplication>
 
-namespace GekkoFyre {
+namespace Ui {
+class GkXmppRosterDialog;
+}
 
-class GkXmppClient : public QXmppClient {
+class GkXmppRosterDialog : public QDialog
+{
     Q_OBJECT
 
 public:
-    explicit GkXmppClient(const QString &username, const QString &password, const bool &join_server,
-                          QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
-    ~GkXmppClient() override;
+    explicit GkXmppRosterDialog(const QString &jid, const QString &password, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                                QWidget *parent = nullptr);
+    ~GkXmppRosterDialog();
 
 private:
+    Ui::GkXmppRosterDialog *ui;
+
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
-
-    //
-    // QXmpp and XMPP related
-    //
-    QXmppClient client;
-
+    QPointer<GekkoFyre::GkXmppClient> gkXmppClient;
 };
-};
+
