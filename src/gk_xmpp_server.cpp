@@ -39,23 +39,10 @@
  **
  ****************************************************************************************************/
 
-#include "src/gk_audio_decoding.hpp"
+#include "src/gk_xmpp_server.hpp"
 #include <boost/exception/all.hpp>
-#include <ios>
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#include <ogg/ogg.h>
-#include <vorbis/codec.h>
-#include <vorbis/vorbisenc.h>
-#include <vorbis/vorbisfile.h>
-
-#ifdef __cplusplus
-}
-#endif
+#include <exception>
+#include <QMessageBox>
 
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
@@ -72,19 +59,12 @@ using namespace Logging;
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
-GkAudioDecoding::GkAudioDecoding(QPointer<FileIo> fileIo,
-                                 QPointer<StringFuncs> stringFuncs,
-                                 const GkDevice &output_device,
-                                 QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                                 QObject *parent) : QThread(parent)
+#define OGG_VORBIS_READ (1024)
+
+GkXmppServer::GkXmppServer(QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QThread(parent)
 {
     setParent(parent);
-
-    gkFileIo = std::move(fileIo);
-    gkStringFuncs = std::move(stringFuncs);
     gkEventLogger = std::move(eventLogger);
-
-    gkOutputDev = output_device;
 
     start();
 
@@ -92,32 +72,18 @@ GkAudioDecoding::GkAudioDecoding(QPointer<FileIo> fileIo,
     QObject::moveToThread(this);
 }
 
-GkAudioDecoding::~GkAudioDecoding()
+GkXmppServer::~GkXmppServer()
 {
     quit();
     wait();
 }
 
 /**
- * @brief GkAudioDecoding::run
+ * @brief GkXmppClient::run
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void GkAudioDecoding::run()
+void GkXmppServer::run()
 {
     exec();
     return;
-}
-
-/**
- * @brief GkAudioDecoding::char_to_int
- * @author sehe <https://stackoverflow.com/questions/16496288/decoding-opus-audio-data>
- * @param ch
- * @return
- */
-uint32_t GkAudioDecoding::char_to_int(char ch[])
-{
-    return static_cast<uint32_t>(static_cast<unsigned char>(ch[0])<<24) |
-               static_cast<uint32_t>(static_cast<unsigned char>(ch[1])<<16) |
-               static_cast<uint32_t>(static_cast<unsigned char>(ch[2])<< 8) |
-            static_cast<uint32_t>(static_cast<unsigned char>(ch[3])<< 0);
 }

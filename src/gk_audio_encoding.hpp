@@ -42,31 +42,28 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/file_io.hpp"
-#include "src/gk_waterfall_gui.hpp"
-#include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
 #include <boost/filesystem.hpp>
 #include <memory>
 #include <string>
 #include <vector>
-#include <future>
-#include <thread>
 #include <exception>
 #include <iostream>
-#include <ostream>
 #include <QObject>
+#include <QBuffer>
+#include <QThread>
 #include <QPointer>
+#include <QIODevice>
+#include <QAudioInput>
+#include <QAudioOutput>
+#include <QAudioFormat>
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-#ifdef OPUS_LIBS_ENBLD
 #include <opus.h>
-#endif
-
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -75,7 +72,7 @@ extern "C"
 
 namespace GekkoFyre {
 
-class GkAudioEncoding : public QObject {
+class GkAudioEncoding : public QThread {
     Q_OBJECT
 
 private:
@@ -99,67 +96,58 @@ private:
     #endif
 
 public:
-    explicit GkAudioEncoding(QPointer<GekkoFyre::FileIo> fileIo,
-                             QPointer<GekkoFyre::GkLevelDb> database,
-                             QPointer<GkSpectroWaterfall> spectroGui,
-                             QPointer<GekkoFyre::StringFuncs> stringFuncs,
-                             GekkoFyre::Database::Settings::Audio::GkDevice input_device,
+    explicit GkAudioEncoding(QPointer<GekkoFyre::StringFuncs> stringFuncs,
+                             QPointer<QAudioOutput> audioOutput, QPointer<QAudioInput> audioInput,
+                             const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
+                             const GekkoFyre::Database::Settings::Audio::GkDevice &input_device,
                              QPointer<GekkoFyre::GkEventLogger> eventLogger,
                              QObject *parent = nullptr);
     ~GkAudioEncoding() override;
 
-    void recordAudioFile(const GkAudioFramework::CodecSupport &codec, const GkAudioFramework::Bitrate &bitrate);
-
-signals:
-    void recAudioFrameOgg(std::vector<signed char> &audio_rec, const int &buf_size,
-                          const GkAudioFramework::Bitrate &bitrate,
-                          const boost::filesystem::path &filePath);
-    void recAudioFramePcm(const std::vector<qint16> &audio_rec, const int &buf_size,
-                          const boost::filesystem::path &filePath);
-    void recAudioFrameFlac(const std::vector<qint16> &audio_rec, const int &buf_size,
-                           const boost::filesystem::path &filePath);
-
-    void submitOggVorbisBuf(const std::vector<signed char> &audio_frame_buf,
-                            const GkAudioFramework::Bitrate &bitrate,
-                            const boost::filesystem::path &filePath);
-    void submitPcmBuf(const std::vector<qint16> &audio_rec, const boost::filesystem::path &filePath);
-    void submitFlacBuf(const std::vector<qint16> &audio_rec, const boost::filesystem::path &filePath);
+    void run() Q_DECL_OVERRIDE;
 
 public slots:
-    void startRecording(const bool &recording_is_started);
+    void initEncode(const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev_info, const qint32 &bitrate,
+                    const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER, const qint32 &application = OPUS_APPLICATION_AUDIO);
+    void writeEncode(const QByteArray &data);
 
 private slots:
-    void oggVorbisBuf(std::vector<signed char> &audio_rec, const int &buf_size,
-                      const GkAudioFramework::Bitrate &bitrate,
-                      const boost::filesystem::path &filePath);
+    void startCaller(const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev_info, const qint32 &bitrate,
+                     const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER, const qint32 &application = OPUS_APPLICATION_AUDIO);
+    void writeCaller(const QByteArray &data);
 
-    void recordOggVorbis(const std::vector<signed char> &audio_frame_buf,
-                         const GkAudioFramework::Bitrate &bitrate,
-                         const boost::filesystem::path &filePath);
-    void recordPcm(const std::vector<qint16> &audio_rec, const boost::filesystem::path &filePath);
-    void recordFlac(const std::vector<qint16> &audio_rec, const boost::filesystem::path &filePath);
+    QByteArray opusEncode();
+    void processInput(const QByteArray &data);
+
+    void handleError(const QString &msg, const GekkoFyre::System::Events::Logging::GkSeverity &severity);
+
+signals:
+    void startEncode(const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev_info, const qint32 &bitrate,
+                     const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER, const qint32 &application = OPUS_APPLICATION_AUDIO);
+
+    void encoded(QByteArray data);
+    void error(const QString &msg, const GekkoFyre::System::Events::Logging::GkSeverity &severity);
 
 private:
-    QPointer<GekkoFyre::FileIo> gkFileIo;
-    QPointer<GekkoFyre::GkSpectroWaterfall> gkSpectroGui;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
-    QPointer<GkLevelDb> gkDb;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
+
+    //
+    // QAudioSystem initialization and buffers
+    //
     GekkoFyre::Database::Settings::Audio::GkDevice gkInputDev;
-
-    bool recording_in_progress;
-    static size_t ogg_buf_counter;
-
-    #ifdef OPUS_LIBS_ENBLD
-    std::unique_ptr<OpusState> opus_state;
-    #endif
+    GekkoFyre::Database::Settings::Audio::GkDevice gkOutputDev;
+    QPointer<QAudioInput> gkAudioInput;
+    QPointer<QAudioOutput> gkAudioOutput;
 
     //
-    // Threads
+    // Encoder variables
     //
-    std::thread ogg_audio_frame_thread;
-
-    static uint32_t char_to_int(char ch[4]);
+    bool m_initialized = false;
+    qint32 m_channels = -1;
+    qint32 m_frame_size = -1;
+    QByteArray m_buffer;
+    OpusEncoder *m_encoder = nullptr;
 
 };
 };
