@@ -70,6 +70,10 @@ QwtWaterfallplot by Amine Mzoughi
     <https://github.com/embeddedmz/QwtWaterfallplot>
         The MIT License
 
+QXmpp by Manjeet Dahiya and Jeremy Lainé et al.
+    <https://github.com/qxmpp-project/qxmpp>
+        GNU Lesser General Public License (LGPL, version 2.1)
+
 libvorbis by Xiph.org
     <https://www.xiph.org/vorbis/>
         BSD 3-clause License

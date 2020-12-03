@@ -39,85 +39,29 @@
  **
  ****************************************************************************************************/
 
-#include "src/gk_audio_decoding.hpp"
-#include <boost/exception/all.hpp>
-#include <ios>
+#pragma once
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+#include "src/defines.hpp"
+#include "src/gk_logger.hpp"
+#include <string>
+#include <vector>
+#include <QObject>
+#include <QThread>
+#include <QPointer>
 
-#include <ogg/ogg.h>
-#include <vorbis/codec.h>
-#include <vorbis/vorbisenc.h>
-#include <vorbis/vorbisfile.h>
+namespace GekkoFyre {
 
-#ifdef __cplusplus
-}
-#endif
+class GkXmppServer : public QThread {
+    Q_OBJECT
 
-using namespace GekkoFyre;
-using namespace GkAudioFramework;
-using namespace Database;
-using namespace Settings;
-using namespace Audio;
-using namespace AmateurRadio;
-using namespace Control;
-using namespace Spectrograph;
-using namespace System;
-using namespace Events;
-using namespace Logging;
+public:
+    explicit GkXmppServer(QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
+    ~GkXmppServer() override;
 
-namespace fs = boost::filesystem;
-namespace sys = boost::system;
+    void run() Q_DECL_OVERRIDE;
 
-GkAudioDecoding::GkAudioDecoding(QPointer<FileIo> fileIo,
-                                 QPointer<StringFuncs> stringFuncs,
-                                 const GkDevice &output_device,
-                                 QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                                 QObject *parent) : QThread(parent)
-{
-    setParent(parent);
+private:
+    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
-    gkFileIo = std::move(fileIo);
-    gkStringFuncs = std::move(stringFuncs);
-    gkEventLogger = std::move(eventLogger);
-
-    gkOutputDev = output_device;
-
-    start();
-
-    // Move event processing of GkPaStreamHandler to this thread
-    QObject::moveToThread(this);
-}
-
-GkAudioDecoding::~GkAudioDecoding()
-{
-    quit();
-    wait();
-}
-
-/**
- * @brief GkAudioDecoding::run
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkAudioDecoding::run()
-{
-    exec();
-    return;
-}
-
-/**
- * @brief GkAudioDecoding::char_to_int
- * @author sehe <https://stackoverflow.com/questions/16496288/decoding-opus-audio-data>
- * @param ch
- * @return
- */
-uint32_t GkAudioDecoding::char_to_int(char ch[])
-{
-    return static_cast<uint32_t>(static_cast<unsigned char>(ch[0])<<24) |
-               static_cast<uint32_t>(static_cast<unsigned char>(ch[1])<<16) |
-               static_cast<uint32_t>(static_cast<unsigned char>(ch[2])<< 8) |
-            static_cast<uint32_t>(static_cast<unsigned char>(ch[3])<< 0);
-}
+};
+};

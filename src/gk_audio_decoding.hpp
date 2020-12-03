@@ -44,16 +44,14 @@
 #include "src/defines.hpp"
 #include "src/file_io.hpp"
 #include "src/audio_devices.hpp"
-#include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
 #include <ogg/os_types.h>
 #include <boost/filesystem.hpp>
 #include <memory>
 #include <string>
-#include <future>
-#include <thread>
 #include <vector>
 #include <exception>
+#include <QThread>
 #include <QObject>
 #include <QString>
 #include <QPointer>
@@ -63,11 +61,7 @@ extern "C"
 {
 #endif
 
-#ifdef OPUS_LIBS_ENBLD
 #include <opus.h>
-#endif
-
-#include <stdint.h>
 
 #ifdef __cplusplus
 } // extern "C"
@@ -75,68 +69,26 @@ extern "C"
 
 namespace GekkoFyre {
 
-class GkAudioDecoding : public QObject {
+class GkAudioDecoding : public QThread {
     Q_OBJECT
-
-#ifdef OPUS_LIBS_ENBLD
-private:
-    struct OpusErrorException: public virtual std::exception {
-        OpusErrorException(int code) : code(code) {}
-        const char *what() const noexcept;
-
-    private:
-        const int code;
-    };
-
-    struct OpusState {
-        OpusState(int max_frame_size, int max_payload_bytes, int channels): out(max_frame_size * channels),
-            fbytes(max_frame_size * channels * sizeof(decltype(out)::value_type)), data(max_payload_bytes) {}
-        std::vector<qint16> out;
-        std::vector<unsigned char> fbytes, data;
-        int32_t frameno = 0;
-        bool lost_prev = true;
-    };
-#endif
 
 public:
     explicit GkAudioDecoding(QPointer<GekkoFyre::FileIo> fileIo,
-                             QPointer<GekkoFyre::GkLevelDb> database,
                              QPointer<GekkoFyre::StringFuncs> stringFuncs,
-                             GekkoFyre::Database::Settings::Audio::GkDevice output_device,
+                             const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
                              QPointer<GekkoFyre::GkEventLogger> eventLogger,
                              QObject *parent = nullptr);
     ~GkAudioDecoding() override;
 
-    GekkoFyre::GkAudioFramework::AudioFileInfo gatherOggInfo(const boost::filesystem::path &filePath,
-                                                             boost::system::error_code &ec);
-    GekkoFyre::GkAudioFramework::AudioFileInfo initAudioFileInfoStruct();
+    void run() Q_DECL_OVERRIDE;
 
 private:
-    QPointer<GkLevelDb> gkDb;
     QPointer<GekkoFyre::FileIo> gkFileIo;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     GekkoFyre::Database::Settings::Audio::GkDevice gkOutputDev;
 
-    #ifdef OPUS_LIBS_ENBLD
-    struct OpusDecoderDeleter {
-        void operator()(OpusDecoder *opusDecoder) const {
-            opus_decoder_destroy(opusDecoder);
-        }
-    };
-
-    std::unique_ptr<OpusDecoder, OpusDecoderDeleter> _decoder;
-    std::unique_ptr<OpusState> opus_state;
-    const int opus_max_frame_size = AUDIO_FRAMES_PER_BUFFER;
-
-    bool decodeOpusFrame(std::istream &file_in, std::ostream &file_out);
-    #endif
-
     static uint32_t char_to_int(char ch[4]);
-
-    static size_t readOgg(void *buffer, size_t element_size, size_t element_count, void *data_source);
-    static int seekOgg(void *data_source, ogg_int64_t offset, int origin);
-    static long tellOgg(void *data_source);
 
 };
 };

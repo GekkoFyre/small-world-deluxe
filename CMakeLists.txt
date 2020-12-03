@@ -90,7 +90,6 @@ option(GFYRE_SWORLD_DBG_VERBOSITY "Enable DEBUG verbosity for Small World Deluxe
 option(ENBL_VALGRIND_SUPPORT "Allows for the use of Valgrind memory analysis on the application, thereby disabling certain, otherwise needed features that enhance the user-experience." OFF)
 
 option(BUILD_CODEC2_SUPPORT "Enable support for the 'Codec2' open source speech codec library." ON)
-option(BUILD_OPUS_SUPPORT "Enable support for the 'Opus' codec library." OFF)
 
 #
 # Detect if we are dealing with the Linux operating system and not Apple OS/X
@@ -184,6 +183,10 @@ if(WIN32 OR MSYS OR MINGW)
     endif()
 endif()
 
+if(GFYRE_BUILD_STATIC)
+    add_definitions(-DBUILD_SHARED=0)
+endif()
+
 if (Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
     set(LIBS ${LIBS} ${Boost_LIBRARIES})
@@ -238,7 +241,7 @@ if (BUILD_CODEC2_SUPPORT)
         if (CODEC2_FOUND)
             include_directories(${CODEC2_INCLUDE_DIRS})
             set(LIBS ${LIBS} ${CODEC2_LIBRARIES})
-            add_definitions("-DCODEC2_LIBS_ENBLD")
+            add_definitions(-DCODEC2_LIBS_ENBLD)
             
             set(GALAXY_CODEC2_CPP
                 ${GALAXY_CODEC2_CPP}
@@ -290,6 +293,19 @@ if (LINUX)
 endif(LINUX)
 
 #
+# QXmpp
+# https://github.com/qxmpp-project/qxmpp
+#
+find_package(QXMPP REQUIRED)
+if (QXMPP_FOUND)
+    include_directories(${QXMPP_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${QXMPP_LIBRARIES})
+    message(STATUS "The 'QXmpp' Extensible Messaging and Presence Protocol (XMPP) libraries have been configured!")
+else()
+    message(FATAL_ERROR "The 'QXmpp' Extensible Messaging and Presence Protocol (XMPP) libraries could not be found!")
+endif(QXMPP_FOUND)
+
+#
 # https://xiph.org/vorbis/
 #
 find_package(Vorbis REQUIRED)
@@ -310,21 +326,6 @@ if (Ogg_FOUND)
 else()
     message(FATAL_ERROR "The 'Ogg' audio (de-/en-)coding library could not be found!")
 endif(Ogg_FOUND)
-
-#
-# http://opus-codec.org/
-#
-if (BUILD_OPUS_SUPPORT)
-    message(STATUS "Support for 'Opus' has been enabled! Finding package...")
-    find_package(Opus REQUIRED)
-    if (Opus_FOUND)
-        include_directories(${Opus_INCLUDE_DIRS})
-        set(LIBS ${LIBS} ${Opus_LIBRARIES})
-        add_definitions("-DOPUS_LIBS_ENBLD")
-    else()
-        message(FATAL_ERROR "The 'Opus' audio (de-/en-)coding library could not be found!")
-    endif(Opus_FOUND)
-endif(BUILD_OPUS_SUPPORT)
 
 find_package(Iconv REQUIRED)
 if (Iconv_FOUND)
@@ -377,12 +378,22 @@ endif()
 #
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/leveldb")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/leveldb/include")
+message(STATUS "The 'Google LevelDB' database libraries have been configured!")
 
 #
 # Sentry (native)
 #
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/sentry-native")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/sentry-native/include")
+message(STATUS "The 'Sentry' error reporting libraries have been configured!")
+
+#
+# Opus
+# https://opus-codec.org/development/
+#
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/opus")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/opus/include")
+message(STATUS "The 'Opus' audio (de-/en-)coding libraries have been configured!")
 
 #
 # KissFFT by Mark Borgerding
@@ -390,6 +401,7 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/sentry-native/inclu
 #
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/kissfft")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/kissfft")
+message(STATUS "The 'KissFFT' mathematical libraries have been configured!")
 
 #
 # AudioFile by Adam Stark
@@ -397,6 +409,7 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/kissfft")
 #
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/AudioFile")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/AudioFile")
+message(STATUS "The 'AudioFile' libraries have been configured!")
 
 set(GALAXY_WSJTX_QRA64_C
     ${GALAXY_WSJTX_QRA64_C}
@@ -506,6 +519,8 @@ set(GALAXY_UI_CPP
     src/gk_spectro_color_maps.cpp
     src/gk_audio_encoding.cpp
     src/gk_audio_decoding.cpp
+    src/gk_xmpp_client.cpp
+    src/gk_xmpp_server.cpp
     src/gk_cli.cpp
     src/gk_modem.cpp
     src/gk_frequency_list.cpp
@@ -593,6 +608,8 @@ set(GALAXY_OBJ_HEADERS
     src/gk_spectro_color_maps.hpp
     src/gk_audio_encoding.hpp
     src/gk_audio_decoding.hpp
+    src/gk_xmpp_client.hpp
+    src/gk_xmpp_server.hpp
     src/gk_cli.hpp
     src/gk_modem.hpp
     src/gk_frequency_list.hpp
@@ -678,7 +695,7 @@ else()
         ${GK_EXTRA_LIBS})
 endif()
 
-add_definitions("-DQWT_DLL")
+add_definitions(-DQWT_DLL)
 
 if (GFYRE_SWORLD_DBG_VERBOSITY)
     message(STATUS "Enabled maximum verbosity with Small World Deluxe and its use of third-party libraries throughout the application itself; debug mode now activated!")
@@ -712,7 +729,7 @@ if(GFYRE_BUILD_SHARED)
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
-target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::Multimedia Qt5::SerialPort Qt5::PrintSupport Qt5::TextToSpeech Qt5::Test Threads::Threads SingleApplication::SingleApplication sentry::sentry leveldb kissfft ${LIBS})
+target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::Multimedia Qt5::SerialPort Qt5::PrintSupport Qt5::TextToSpeech Qt5::Test Threads::Threads SingleApplication::SingleApplication sentry::sentry Opus::opus leveldb kissfft ${LIBS})
 
 qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)
 add_dependencies(galaxy resources)
