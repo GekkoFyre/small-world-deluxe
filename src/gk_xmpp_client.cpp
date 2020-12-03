@@ -43,7 +43,9 @@
 #include <boost/exception/all.hpp>
 #include <qxmpp/QXmppLogger.h>
 #include <exception>
+#include <QEventLoop>
 #include <QMessageBox>
+#include <QStringList>
 
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
@@ -56,17 +58,30 @@ using namespace Spectrograph;
 using namespace System;
 using namespace Events;
 using namespace Logging;
+using namespace Network;
+using namespace GkXmpp;
 
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
 #define OGG_VORBIS_READ (1024)
 
-GkXmppClient::GkXmppClient(const QString &username, const QString &password, const bool &join_server,
-                           QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QXmppClient(parent)
+GkXmppClient::GkXmppClient(const GkConnection &connection_details, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                           QObject *parent) : QXmppClient(parent), m_rosterManager(findExtension<QXmppRosterManager>())
 {
     setParent(parent);
     gkEventLogger = std::move(eventLogger);
+
+    QObject::connect(this, SIGNAL(connected()), this, SLOT(clientConnected()));
+    QObject::connect(m_rosterManager.get(), SIGNAL(rosterReceived()), this, SLOT(rosterReceived()));
+
+    // Then QXmppRoster::presenceChanged() is emitted whenever presence of
+    // someone in roster changes...
+    QObject::connect(m_rosterManager.get(), SIGNAL(presenceChanged(const QString &, const QString &)),
+                     this, SLOT(presenceChanged(const QString &, const QString &)));
+
+    client = new QXmppClient(parent);
+    m_presence = std::make_unique<QXmppPresence>();
 
     //
     // Setup logging...
@@ -75,10 +90,78 @@ GkXmppClient::GkXmppClient(const QString &username, const QString &password, con
     QObject::connect(logger, SIGNAL(message(QXmppLogger::MessageType, QString)),
                      gkEventLogger, SLOT(recvXmppLog(QXmppLogger::MessageType, QString)));
 
-    if (join_server) {
-        client.connectToServer(username, password);
+    QEventLoop loop;
+    QObject::connect(client, SIGNAL(connected()), &loop, SLOT(quit()));
+    QObject::connect(client, SIGNAL(disconnected()), &loop, SLOT(quit()));
+
+    QXmppConfiguration config;
+    config.setDomain(connection_details.server.domain);
+    config.setHost(connection_details.server.host.toString());
+    config.setPort(connection_details.server.port);
+    config.setUser(connection_details.jid);
+    config.setPassword(connection_details.password);
+    config.setSaslAuthMechanism(""); // TODO: Configure this value properly!
+
+    if (!connection_details.server.joined) {
+        client->connectToServer(config, *m_presence);
     }
 }
 
 GkXmppClient::~GkXmppClient()
 {}
+
+/**
+ * @brief GkXmppClient::clientConnected
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppClient::clientConnected()
+{
+    return;
+}
+
+/**
+ * @brief GkXmppClient::rosterReceived
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppClient::rosterReceived()
+{
+    const QStringList jids = m_rosterManager->getRosterBareJids();
+    for (const QString &bareJid: jids) {
+        QString name = m_rosterManager->getRosterEntry(bareJid).name();
+        if (name.isEmpty()) {
+            name = "-";
+        }
+
+        qDebug("Roster received: %s [%s]", qPrintable(bareJid), qPrintable(name));
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppClient::presenceChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid
+ * @param resource
+ */
+void GkXmppClient::presenceChanged(const QString &bareJid, const QString &resource)
+{
+    gkEventLogger->publishEvent(tr("Presence changed for %1 towards %2.")
+    .arg(qPrintable(bareJid)).arg(qPrintable(resource)));
+
+    return;
+}
+
+/**
+ * @brief GkXmppClient::modifyPresence
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param pres
+ */
+void GkXmppClient::modifyPresence(const QXmppPresence::Type &pres)
+{
+    m_presence->setType(pres);
+    gkEventLogger->publishEvent(tr("User has changed their XMPP status towards %1."), GkSeverity::Info, "",
+                                true, true, false, false); // TODO: Make this complete!
+
+    return;
+}

@@ -68,6 +68,7 @@
 #include <QDateTime>
 #include <QStringList>
 #include <QAudioFormat>
+#include <QHostAddress>
 #include <QSerialPortInfo>
 #include <QAudioDeviceInfo>
 
@@ -638,6 +639,23 @@ namespace AmateurRadio {
             rmode_t mode;                                   // The type of modulation that the transceiver is in, whether it be AM, FM, SSB, etc.
             QString mode_hr;                                // The type of modulation that the transceiver is in, but human readable.
             pbwidth_t width;                                // Bandwidth
+        };
+    }
+}
+
+namespace Network {
+    namespace GkXmpp {
+        struct GkHost {
+            QHostAddress host;
+            QString domain;
+            quint16 port;
+            bool joined;
+        };
+
+        struct GkConnection {
+            GkHost server;
+            QString jid;
+            QString password;
         };
     }
 }

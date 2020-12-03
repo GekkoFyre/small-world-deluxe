@@ -53,15 +53,18 @@ using namespace Spectrograph;
 using namespace System;
 using namespace Events;
 using namespace Logging;
+using namespace Network;
+using namespace GkXmpp;
 
 GkXmppRosterDialog::GkXmppRosterDialog(const QString &jid, const QString &password,
                                        QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                        QWidget *parent) : QDialog(parent), ui(new Ui::GkXmppRosterDialog)
 {
     ui->setupUi(this);
-
     gkEventLogger = std::move(eventLogger);
-    gkXmppClient = new GkXmppClient(jid, password, false, gkEventLogger, parent);
+
+    GkConnection conn_details; // TODO: Finish this off!
+    gkXmppClient = new GkXmppClient(conn_details, gkEventLogger, parent);
 }
 
 GkXmppRosterDialog::~GkXmppRosterDialog()

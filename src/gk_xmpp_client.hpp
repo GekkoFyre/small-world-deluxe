@@ -44,10 +44,9 @@
 #include "src/defines.hpp"
 #include "src/gk_logger.hpp"
 #include <qxmpp/QXmppClient.h>
-#include <string>
-#include <vector>
+#include <qxmpp/QXmppRosterManager.h>
+#include <QString>
 #include <QObject>
-#include <QThread>
 #include <QPointer>
 #include <QCoreApplication>
 
@@ -57,9 +56,19 @@ class GkXmppClient : public QXmppClient {
     Q_OBJECT
 
 public:
-    explicit GkXmppClient(const QString &username, const QString &password, const bool &join_server,
+    explicit GkXmppClient(const Network::GkXmpp::GkConnection &connection_details,
                           QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkXmppClient() override;
+
+public slots:
+    void clientConnected();
+    void rosterReceived();
+    void presenceChanged(const QString &bareJid, const QString &resource);
+
+    void modifyPresence(const QXmppPresence::Type &pres);
+
+signals:
+    void setPresence(const QXmppPresence::Type &pres);
 
 private:
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
@@ -67,7 +76,9 @@ private:
     //
     // QXmpp and XMPP related
     //
-    QXmppClient client;
+    QPointer<QXmppClient> client;
+    std::unique_ptr<QXmppRosterManager> m_rosterManager;
+    std::unique_ptr<QXmppPresence> m_presence;
 
 };
 };
