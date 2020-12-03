@@ -41,8 +41,10 @@
 
 #include "src/gk_xmpp_client.hpp"
 #include <boost/exception/all.hpp>
+#include <qxmpp/QXmppDataForm.h>
 #include <qxmpp/QXmppLogger.h>
 #include <exception>
+#include <QList>
 #include <QEventLoop>
 #include <QMessageBox>
 #include <QStringList>
@@ -70,6 +72,7 @@ GkXmppClient::GkXmppClient(const GkConnection &connection_details, QPointer<Gekk
                            QObject *parent) : QXmppClient(parent), m_rosterManager(findExtension<QXmppRosterManager>())
 {
     setParent(parent);
+    gkConnDetails = connection_details;
     gkEventLogger = std::move(eventLogger);
 
     QObject::connect(this, SIGNAL(connected()), this, SLOT(clientConnected()));
@@ -82,6 +85,7 @@ GkXmppClient::GkXmppClient(const GkConnection &connection_details, QPointer<Gekk
 
     client = new QXmppClient(parent);
     m_presence = std::make_unique<QXmppPresence>();
+    m_mucManager = std::make_unique<QXmppMucManager>();
 
     //
     // Setup logging...
@@ -95,20 +99,94 @@ GkXmppClient::GkXmppClient(const GkConnection &connection_details, QPointer<Gekk
     QObject::connect(client, SIGNAL(disconnected()), &loop, SLOT(quit()));
 
     QXmppConfiguration config;
-    config.setDomain(connection_details.server.domain);
-    config.setHost(connection_details.server.host.toString());
-    config.setPort(connection_details.server.port);
-    config.setUser(connection_details.jid);
-    config.setPassword(connection_details.password);
+    config.setDomain(gkConnDetails.server.domain);
+    config.setHost(gkConnDetails.server.host.toString());
+    config.setPort(gkConnDetails.server.port);
+    config.setUser(gkConnDetails.jid);
+    config.setPassword(gkConnDetails.password);
     config.setSaslAuthMechanism(""); // TODO: Configure this value properly!
 
-    if (!connection_details.server.joined) {
+    if (!gkConnDetails.server.joined) {
         client->connectToServer(config, *m_presence);
     }
 }
 
 GkXmppClient::~GkXmppClient()
 {}
+
+/**
+ * @brief GkXmppClient::createMuc
+ * @author musimbate <https://stackoverflow.com/questions/29056790/qxmpp-creating-a-muc-room-xep-0045-on-the-server>,
+ * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param room_name
+ * @param room_subject
+ * @param room_desc
+ * @return
+ */
+bool GkXmppClient::createMuc(const QString &room_name, const QString &room_subject, const QString &room_desc)
+{
+    try {
+        if (!room_name.isEmpty() && !gkConnDetails.server.domain.isEmpty()) {
+            QString room_jid = QString("%1@conference.%2").arg(room_name).arg(gkConnDetails.server.domain);
+            QList<QXmppMucRoom *> rooms = m_mucManager->rooms();
+            QXmppMucRoom *r;
+            foreach(r, rooms) {
+                if (r->jid() == room_jid) {
+                    gkEventLogger->publishEvent(tr("%1 has joined the MUC, \"%2\".")
+                    .arg(tr("<unknown>")).arg(room_jid), GkSeverity::Info, "",
+                    true, true, false, false);
+                }
+            }
+
+            m_pRoom.reset(m_mucManager->addRoom(room_jid));
+            if (m_pRoom) {
+                // Nickname...
+                m_pRoom->setNickName(gkConnDetails.nickname);
+                // Join the room itself...
+                m_pRoom->join();
+            }
+
+            QXmppDataForm form(QXmppDataForm::Submit);
+            QList<QXmppDataForm::Field> fields;
+
+            {
+                QXmppDataForm::Field field(QXmppDataForm::Field::HiddenField);
+                field.setKey("FORM_TYPE");
+                field.setValue("http://jabber.org/protocol/muc#roomconfig");
+                fields.append(field);
+            }
+
+            QXmppDataForm::Field field;
+            field.setKey("muc#roomconfig_roomname");
+            field.setValue(room_name);
+            fields.append(field);
+
+            field.setKey("muc#roomconfig_subject");
+            field.setValue(room_subject);
+            fields.append(field);
+
+            field.setKey("muc#roomconfig_roomdesc");
+            field.setValue(room_desc);
+            fields.append(field);
+
+            {
+                QXmppDataForm::Field field(QXmppDataForm::Field::BooleanField);
+                field.setKey("muc#roomconfig_persistentroom");
+                field.setValue(true);
+                fields.append(field);
+            }
+
+            form.setFields(fields);
+            m_pRoom->setConfiguration(form);
+
+            return true;
+        }
+    } catch (const std::exception &e) {
+        //
+    }
+
+    return false;
+}
 
 /**
  * @brief GkXmppClient::clientConnected

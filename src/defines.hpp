@@ -103,6 +103,12 @@ namespace GekkoFyre {
 #define GK_MSG_BOX_SETTINGS_DLG_TIMER (10000)                    // The amount of time, in milliseconds, before displaying any potential QMessageBox's to the user at startup about configuring settings. This is needed to allow SWD to initialize everything firstly.
 
 //
+// XMPP specific constants
+//
+#define GK_XMPP_AVAIL_COMBO_AVAILABLE_IDX (0)
+#define GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX (1)
+
+//
 // Amateur radio specific functions
 //
 #define GK_RADIO_VFO_FLOAT_PNT_PREC (5)                         // The floating point precision, in terms of number of digits, to be used in making comparisons (i.e. the 'epsilon') of frequencies, etc.
@@ -656,6 +662,7 @@ namespace Network {
             GkHost server;
             QString jid;
             QString password;
+            QString nickname;
         };
     }
 }

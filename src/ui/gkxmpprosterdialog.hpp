@@ -66,5 +66,7 @@ private:
 
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     QPointer<GekkoFyre::GkXmppClient> gkXmppClient;
+
+    void prefillAvailComboBox();
 };
 

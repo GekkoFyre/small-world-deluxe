@@ -44,6 +44,7 @@
 #include "src/defines.hpp"
 #include "src/gk_logger.hpp"
 #include <qxmpp/QXmppClient.h>
+#include <qxmpp/QXmppMucManager.h>
 #include <qxmpp/QXmppRosterManager.h>
 #include <QString>
 #include <QObject>
@@ -59,6 +60,8 @@ public:
     explicit GkXmppClient(const Network::GkXmpp::GkConnection &connection_details,
                           QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkXmppClient() override;
+
+    bool createMuc(const QString &room_name, const QString &room_subject, const QString &room_desc);
 
 public slots:
     void clientConnected();
@@ -76,9 +79,12 @@ private:
     //
     // QXmpp and XMPP related
     //
+    Network::GkXmpp::GkConnection gkConnDetails;
     QPointer<QXmppClient> client;
     std::unique_ptr<QXmppRosterManager> m_rosterManager;
     std::unique_ptr<QXmppPresence> m_presence;
+    std::unique_ptr<QXmppMucManager> m_mucManager;
+    std::unique_ptr<QXmppMucRoom> m_pRoom;
 
 };
 };

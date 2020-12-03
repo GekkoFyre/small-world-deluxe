@@ -71,3 +71,15 @@ GkXmppRosterDialog::~GkXmppRosterDialog()
 {
     delete ui;
 }
+
+/**
+ * @brief GkXmppRosterDialog::prefillAvailComboBox
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRosterDialog::prefillAvailComboBox()
+{
+    ui->comboBox_current_status->insertItem(GK_XMPP_AVAIL_COMBO_AVAILABLE_IDX, tr("Available"));
+    ui->comboBox_current_status->insertItem(GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX, tr("Unavailable"));
+
+    return;
+}
