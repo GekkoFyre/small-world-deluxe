@@ -66,6 +66,7 @@
 #include <QVariant>
 #include <QPointer>
 #include <QDateTime>
+#include <QHostInfo>
 #include <QStringList>
 #include <QAudioFormat>
 #include <QHostAddress>
@@ -100,13 +101,19 @@ namespace GekkoFyre {
 #define DLG_BOX_WINDOW_WIDTH (480)                              // The width of non-Qt generated dialog boxes
 #define DLG_BOX_WINDOW_HEIGHT (120)                             // The height of non-Qt generated dialog boxes
 #define GK_ZLIB_BUFFER_SIZE (4096)                              // The size of the buffer, in kilobytes, as-used by Zlib throughout Small World Deluxe's code-base...
-#define GK_MSG_BOX_SETTINGS_DLG_TIMER (10000)                    // The amount of time, in milliseconds, before displaying any potential QMessageBox's to the user at startup about configuring settings. This is needed to allow SWD to initialize everything firstly.
+#define GK_MSG_BOX_SETTINGS_DLG_TIMER (10000)                   // The amount of time, in milliseconds, before displaying any potential QMessageBox's to the user at startup about configuring settings. This is needed to allow SWD to initialize everything firstly.
 
 //
 // XMPP specific constants
 //
 #define GK_XMPP_AVAIL_COMBO_AVAILABLE_IDX (0)
 #define GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX (1)
+
+//
+// Networking settings (also sometimes related to XMPP!)
+//
+#define GK_NETWORK_PING_TIMEOUT_MILLISECS (3000)                // The amount of time, in milliseconds, until a network ping attempt should timeout within.
+#define GK_NETWORK_PING_COUNT (3)                               // The amount of times to attempt a network ping until either giving up or ending altogether.
 
 //
 // Amateur radio specific functions
@@ -651,9 +658,17 @@ namespace AmateurRadio {
 
 namespace Network {
     namespace GkXmpp {
+        enum GkDnsLookup {
+            GekkoFyre,
+            Google,
+            Custom,
+            Unknown
+        };
+
         struct GkHost {
+            GkDnsLookup dns;
             QHostAddress host;
-            QString domain;
+            QHostInfo info;
             quint16 port;
             bool joined;
         };

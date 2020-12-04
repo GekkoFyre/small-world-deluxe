@@ -23,7 +23,7 @@
  **   the Free Software Foundation, either version 3 of the License, or
  **   (at your option) any later version.
  **
- **   Small World is distributed in the hope that it will be useful,
+ **   Small world is distributed in the hope that it will be useful,
  **   but WITHOUT ANY WARRANTY; without even the implied warranty of
  **   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  **   GNU General Public License for more details.
@@ -43,55 +43,39 @@
 
 #include "src/defines.hpp"
 #include "src/gk_logger.hpp"
-#include "src/models/system/gk_network_ping_model.hpp"
-#include <qxmpp/QXmppClient.h>
-#include <qxmpp/QXmppMucManager.h>
-#include <qxmpp/QXmppRosterManager.h>
-#include <QString>
+#include <QMutex>
+#include <QThread>
 #include <QObject>
+#include <QString>
 #include <QPointer>
-#include <QDnsLookup>
-#include <QCoreApplication>
+#include <QProcess>
+#include <QHostInfo>
+#include <QHostAddress>
 
 namespace GekkoFyre {
 
-class GkXmppClient : public QXmppClient {
+class GkNetworkPingModel : public QThread {
     Q_OBJECT
 
 public:
-    explicit GkXmppClient(const Network::GkXmpp::GkConnection &connection_details,
-                          QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
-    ~GkXmppClient() override;
+    explicit GkNetworkPingModel(QPointer<GekkoFyre::GkEventLogger> &eventLogger, QObject *parent = nullptr);
+    ~GkNetworkPingModel() override;
 
-    bool createMuc(const QString &room_name, const QString &room_subject, const QString &room_desc);
+    void run() Q_DECL_OVERRIDE;
+    void ping(const QHostAddress &host);
+
+    bool isRunning();
+    bool isFinished();
 
 public slots:
-    void clientConnected();
-    void rosterReceived();
-    void presenceChanged(const QString &bareJid, const QString &resource);
-
-    void modifyPresence(const QXmppPresence::Type &pres);
-
-private slots:
-    void handleServers();
-
-signals:
-    void setPresence(const QXmppPresence::Type &pres);
+    void verifyStatus();
+    void readResult();
 
 private:
-    QPointer<GkEventLogger> gkEventLogger;
-    QPointer<GkNetworkPingModel> gkNetworkPing;
+    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
-    //
-    // QXmpp and XMPP related
-    //
-    Network::GkXmpp::GkConnection gkConnDetails;
-    QPointer<QDnsLookup> m_dns;
-    QPointer<QXmppClient> client;
-    std::unique_ptr<QXmppRosterManager> m_rosterManager;
-    std::unique_ptr<QXmppPresence> m_presence;
-    std::unique_ptr<QXmppMucManager> m_mucManager;
-    std::unique_ptr<QXmppMucRoom> m_pRoom;
+    QPointer<QProcess> pingProc;
+    bool running;
 
 };
 };

@@ -48,6 +48,7 @@
 #include <QEventLoop>
 #include <QMessageBox>
 #include <QStringList>
+#include <QDnsServiceRecord>
 
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
@@ -71,44 +72,75 @@ namespace sys = boost::system;
 GkXmppClient::GkXmppClient(const GkConnection &connection_details, QPointer<GekkoFyre::GkEventLogger> eventLogger,
                            QObject *parent) : QXmppClient(parent), m_rosterManager(findExtension<QXmppRosterManager>())
 {
-    setParent(parent);
-    gkConnDetails = connection_details;
-    gkEventLogger = std::move(eventLogger);
+    try {
+        setParent(parent);
+        gkConnDetails = connection_details;
+        gkEventLogger = std::move(eventLogger);
 
-    QObject::connect(this, SIGNAL(connected()), this, SLOT(clientConnected()));
-    QObject::connect(m_rosterManager.get(), SIGNAL(rosterReceived()), this, SLOT(rosterReceived()));
+        QObject::connect(this, SIGNAL(connected()), this, SLOT(clientConnected()));
+        QObject::connect(m_rosterManager.get(), SIGNAL(rosterReceived()), this, SLOT(rosterReceived()));
 
-    // Then QXmppRoster::presenceChanged() is emitted whenever presence of
-    // someone in roster changes...
-    QObject::connect(m_rosterManager.get(), SIGNAL(presenceChanged(const QString &, const QString &)),
-                     this, SLOT(presenceChanged(const QString &, const QString &)));
+        // Then QXmppRoster::presenceChanged() is emitted whenever presence of
+        // someone in roster changes...
+        QObject::connect(m_rosterManager.get(), SIGNAL(presenceChanged(const QString &, const QString &)),
+                         this, SLOT(presenceChanged(const QString &, const QString &)));
 
-    client = new QXmppClient(parent);
-    m_presence = std::make_unique<QXmppPresence>();
-    m_mucManager = std::make_unique<QXmppMucManager>();
+        m_dns = new QDnsLookup(this);
+        client = new QXmppClient(parent);
+        m_presence = std::make_unique<QXmppPresence>();
+        m_mucManager = std::make_unique<QXmppMucManager>();
 
-    //
-    // Setup logging...
-    QXmppLogger *logger = QXmppLogger::getLogger();
-    logger->setLoggingType(QXmppLogger::SignalLogging);
-    QObject::connect(logger, SIGNAL(message(QXmppLogger::MessageType, QString)),
-                     gkEventLogger, SLOT(recvXmppLog(QXmppLogger::MessageType, QString)));
+        //
+        // Setup the signals for the DNS object
+        QObject::connect(m_dns, SIGNAL(finished()), this, SLOT(handleServers()));
 
-    QEventLoop loop;
-    QObject::connect(client, SIGNAL(connected()), &loop, SLOT(quit()));
-    QObject::connect(client, SIGNAL(disconnected()), &loop, SLOT(quit()));
+        //
+        // Find the XMPP servers as defined by either the user themselves or GekkoFyre Networks...
+        m_dns->setType(QDnsLookup::SRV);
+        QString dns_lookup_str;
+        switch (gkConnDetails.server.dns) {
+            case GkDnsLookup::Google:
+                dns_lookup_str = "_xmpp-client._tcp.gmail.com";
+                break;
+            case GkDnsLookup::Unknown:
+                throw std::invalid_argument(tr("Unable to perform DNS lookup for XMPP; has a server been specified?").toStdString());
+            default:
+                dns_lookup_str = gkConnDetails.server.host.toString();
+                break;
+        }
 
-    QXmppConfiguration config;
-    config.setDomain(gkConnDetails.server.domain);
-    config.setHost(gkConnDetails.server.host.toString());
-    config.setPort(gkConnDetails.server.port);
-    config.setUser(gkConnDetails.jid);
-    config.setPassword(gkConnDetails.password);
-    config.setSaslAuthMechanism(""); // TODO: Configure this value properly!
+        m_dns->setName(dns_lookup_str);
+        m_dns->lookup();
 
-    if (!gkConnDetails.server.joined) {
-        client->connectToServer(config, *m_presence);
+        //
+        // Setup logging...
+        QXmppLogger *logger = QXmppLogger::getLogger();
+        logger->setLoggingType(QXmppLogger::SignalLogging);
+        QObject::connect(logger, SIGNAL(message(QXmppLogger::MessageType, QString)),
+                         gkEventLogger, SLOT(recvXmppLog(QXmppLogger::MessageType, QString)));
+
+        QEventLoop loop;
+        QObject::connect(client, SIGNAL(connected()), &loop, SLOT(quit()));
+        QObject::connect(client, SIGNAL(disconnected()), &loop, SLOT(quit()));
+
+        QXmppConfiguration config;
+        config.setDomain(gkConnDetails.server.host.toString());
+        config.setHost(gkConnDetails.server.host.toString());
+        config.setPort(gkConnDetails.server.port);
+        config.setUser(gkConnDetails.jid);
+        config.setPassword(gkConnDetails.password);
+        config.setSaslAuthMechanism(""); // TODO: Configure this value properly!
+
+        if (!gkConnDetails.server.joined) {
+            client->connectToServer(config, *m_presence);
+        }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(tr("An issue has occurred within the XMPP subsystem. Error:\n\n%1")
+        .arg(QString::fromStdString(e.what())), GkSeverity::Fatal, "", false,
+        true, false, true);
     }
+
+    return;
 }
 
 GkXmppClient::~GkXmppClient()
@@ -126,8 +158,8 @@ GkXmppClient::~GkXmppClient()
 bool GkXmppClient::createMuc(const QString &room_name, const QString &room_subject, const QString &room_desc)
 {
     try {
-        if (!room_name.isEmpty() && !gkConnDetails.server.domain.isEmpty()) {
-            QString room_jid = QString("%1@conference.%2").arg(room_name).arg(gkConnDetails.server.domain);
+        if (!room_name.isEmpty() && !m_dns.isNull()) {
+            QString room_jid = QString("%1@conference.%2").arg(room_name).arg(gkConnDetails.server.host.toString());
             QList<QXmppMucRoom *> rooms = m_mucManager->rooms();
             QXmppMucRoom *r;
             foreach(r, rooms) {
@@ -225,7 +257,7 @@ void GkXmppClient::rosterReceived()
 void GkXmppClient::presenceChanged(const QString &bareJid, const QString &resource)
 {
     gkEventLogger->publishEvent(tr("Presence changed for %1 towards %2.")
-    .arg(qPrintable(bareJid)).arg(qPrintable(resource)));
+    .arg(bareJid).arg(resource));
 
     return;
 }
@@ -241,5 +273,28 @@ void GkXmppClient::modifyPresence(const QXmppPresence::Type &pres)
     gkEventLogger->publishEvent(tr("User has changed their XMPP status towards %1."), GkSeverity::Info, "",
                                 true, true, false, false); // TODO: Make this complete!
 
+    return;
+}
+
+/**
+ * @brief GkXmppClient::handleServers
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppClient::handleServers()
+{
+    // Check that the lookup has succeeded
+    if (m_dns->error() != QDnsLookup::NoError) {
+        gkEventLogger->publishEvent(tr("DNS lookup failed for, \"%1\".").arg(gkConnDetails.server.host.toString()), GkSeverity::Error, "",
+                                    true, true, false, false);
+        m_dns->deleteLater();
+
+        return;
+    }
+
+    // Handle the results of the DNS lookup
+    const auto records = m_dns->serviceRecords();
+    for (const QDnsServiceRecord &record: records) {}
+
+    m_dns->deleteLater();
     return;
 }

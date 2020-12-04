@@ -296,7 +296,7 @@ endif(LINUX)
 # QXmpp
 # https://github.com/qxmpp-project/qxmpp
 #
-find_package(QXMPP REQUIRED)
+find_package(QXmpp REQUIRED)
 if (QXMPP_FOUND)
     include_directories(${QXMPP_INCLUDE_DIRS})
     set(LIBS ${LIBS} ${QXMPP_LIBRARIES})
@@ -490,8 +490,9 @@ qt5_wrap_ui(UI_HEADERS
     src/ui/aboutdialog.ui
     src/ui/spectrodialog.ui
     src/ui/gkaudioplaydialog.ui
-    src/ui/gkxmpprosterdialog.ui
-    src/ui/sendreportdialog.ui)
+    src/ui/sendreportdialog.ui
+    src/ui/xmpp/gkxmpprosterdialog.ui
+    src/ui/xmpp/gkxmppmessagedialog.ui)
 
 # https://doc.qt.io/qt-5/cmake-command-reference.html
 # rcc -no-compress -binary smallworld_res.qrc -o smallworld_res.rcc
@@ -509,9 +510,10 @@ set(GALAXY_UI_CPP
     src/ui/dialogsettings.cpp
     src/ui/aboutdialog.cpp
     src/ui/gkaudioplaydialog.cpp
-    src/ui/gkxmpprosterdialog.cpp
     src/ui/spectrodialog.cpp
     src/ui/sendreportdialog.cpp
+    src/ui/xmpp/gkxmpprosterdialog.cpp
+    src/ui/xmpp/gkxmppmessagedialog.cpp
     src/radiolibs.cpp
     src/dek_db.cpp
     src/file_io.cpp
@@ -537,6 +539,7 @@ set(GALAXY_UI_CPP
     src/ui/widgets/gk_vu_meter_widget.cpp
     src/ui/widgets/gk_submit_msg.cpp
     src/ui/widgets/gk_display_image.cpp
+    src/models/system/gk_network_ping_model.cpp
     src/models/tableview/gk_frequency_model.cpp
     src/models/tableview/gk_logger_model.cpp
     src/models/tableview/gk_active_msgs_model.cpp
@@ -599,9 +602,10 @@ set(GALAXY_OBJ_HEADERS
     src/ui/dialogsettings.hpp
     src/ui/aboutdialog.hpp
     src/ui/gkaudioplaydialog.hpp
-    src/ui/gkxmpprosterdialog.hpp
     src/ui/spectrodialog.hpp
     src/ui/sendreportdialog.hpp
+    src/ui/xmpp/gkxmpprosterdialog.hpp
+    src/ui/xmpp/gkxmppmessagedialog.hpp
     src/radiolibs.hpp
     src/dek_db.hpp
     src/file_io.hpp
@@ -628,6 +632,7 @@ set(GALAXY_OBJ_HEADERS
     src/ui/widgets/gk_vu_meter_widget.hpp
     src/ui/widgets/gk_submit_msg.hpp
     src/ui/widgets/gk_display_image.hpp
+    src/models/system/gk_network_ping_model.hpp
     src/models/tableview/gk_frequency_model.hpp
     src/models/tableview/gk_logger_model.hpp
     src/models/tableview/gk_active_msgs_model.hpp
