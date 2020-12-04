@@ -41,12 +41,19 @@
 
 #include "gkxmppmessagedialog.hpp"
 #include "ui_gkxmppmessagedialog.h"
+#include <QIcon>
 
 GkXmppMessageDialog::GkXmppMessageDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::GkXmppMessageDialog)
 {
     ui->setupUi(this);
+
+    ui->label_callsign_2_icon->setPixmap(QPixmap(":/resources/contrib/images/vector/no-attrib/walkie-talkies.svg"));
+    ui->toolButton_font->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/font.svg"));
+    ui->toolButton_font_reset->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/eraser.svg"));
+    ui->toolButton_insert->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/moustache-cream.svg"));
+    ui->toolButton_attach_file->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/attached-file.svg"));
 }
 
 GkXmppMessageDialog::~GkXmppMessageDialog()
