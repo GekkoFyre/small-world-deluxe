@@ -44,24 +44,24 @@
 #include <QDialog>
 
 namespace Ui {
-class GkXmppMessageDialog;
+class GkXmppRegistrationDialog;
 }
 
-class GkXmppMessageDialog : public QDialog
+class GkXmppRegistrationDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit GkXmppMessageDialog(QWidget *parent = nullptr);
-    ~GkXmppMessageDialog();
+    explicit GkXmppRegistrationDialog(QWidget *parent = nullptr);
+    ~GkXmppRegistrationDialog();
 
 private slots:
-    void on_toolButton_font_clicked();
-    void on_toolButton_font_reset_clicked();
-    void on_toolButton_insert_clicked();
-    void on_toolButton_attach_file_clicked();
+    void on_pushButton_submit_clicked();
+    void on_pushButton_reset_clicked();
+    void on_pushButton_cancel_clicked();
+    void on_toolButton_xmpp_captcha_refresh_clicked();
 
 private:
-    Ui::GkXmppMessageDialog *ui;
+    Ui::GkXmppRegistrationDialog *ui;
 };
 

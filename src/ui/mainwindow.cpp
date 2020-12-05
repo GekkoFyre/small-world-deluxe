@@ -165,7 +165,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         ui->actionE_xit->setIcon(QIcon(":/resources/contrib/images/vector/purchased/iconfinder_turn_off_on_power_181492.svg"));
         ui->action_Settings->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/settings-flat.svg"));
         ui->actionCheck_for_Updates->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/update.svg"));
-        ui->actionXMPP->setIcon(QIcon(":/resources/contrib/images/vector/Freepik/xmpp.svg"));
+        ui->actionXMPP->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/xmpp.svg"));
 
         //
         // Create a status bar at the bottom of the window with a default message

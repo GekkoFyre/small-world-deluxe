@@ -39,29 +39,37 @@
  **
  ****************************************************************************************************/
 
-#pragma once
+#include "gkxmppregistrationdialog.hpp"
+#include "ui_gkxmppregistrationdialog.h"
 
-#include <QDialog>
-
-namespace Ui {
-class GkXmppMessageDialog;
+GkXmppRegistrationDialog::GkXmppRegistrationDialog(QWidget *parent) :
+    QDialog(parent),
+    ui(new Ui::GkXmppRegistrationDialog)
+{
+    ui->setupUi(this);
 }
 
-class GkXmppMessageDialog : public QDialog
+GkXmppRegistrationDialog::~GkXmppRegistrationDialog()
 {
-    Q_OBJECT
+    delete ui;
+}
 
-public:
-    explicit GkXmppMessageDialog(QWidget *parent = nullptr);
-    ~GkXmppMessageDialog();
+void GkXmppRegistrationDialog::on_pushButton_submit_clicked()
+{
+    return;
+}
 
-private slots:
-    void on_toolButton_font_clicked();
-    void on_toolButton_font_reset_clicked();
-    void on_toolButton_insert_clicked();
-    void on_toolButton_attach_file_clicked();
+void GkXmppRegistrationDialog::on_pushButton_reset_clicked()
+{
+    return;
+}
 
-private:
-    Ui::GkXmppMessageDialog *ui;
-};
+void GkXmppRegistrationDialog::on_pushButton_cancel_clicked()
+{
+    return;
+}
 
+void GkXmppRegistrationDialog::on_toolButton_xmpp_captcha_refresh_clicked()
+{
+    return;
+}

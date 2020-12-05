@@ -60,3 +60,23 @@ GkXmppMessageDialog::~GkXmppMessageDialog()
 {
     delete ui;
 }
+
+void GkXmppMessageDialog::on_toolButton_font_clicked()
+{
+    return;
+}
+
+void GkXmppMessageDialog::on_toolButton_font_reset_clicked()
+{
+    return;
+}
+
+void GkXmppMessageDialog::on_toolButton_insert_clicked()
+{
+    return;
+}
+
+void GkXmppMessageDialog::on_toolButton_attach_file_clicked()
+{
+    return;
+}
