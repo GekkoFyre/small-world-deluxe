@@ -61,6 +61,9 @@ public:
                                 QWidget *parent = nullptr);
     ~GkXmppRosterDialog();
 
+private slots:
+    void on_comboBox_current_status_currentIndexChanged(int index);
+
 private:
     Ui::GkXmppRosterDialog *ui;
 

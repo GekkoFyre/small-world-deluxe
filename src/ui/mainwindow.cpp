@@ -799,12 +799,7 @@ MainWindow::~MainWindow()
  */
 void MainWindow::on_actionXMPP_triggered()
 {
-    QPointer<GkXmppRosterDialog> gkXmppRosterDlg = new GkXmppRosterDialog(tr("test_user"), tr("test_pass"),
-                                                                          gkEventLogger, this);
-    gkXmppRosterDlg->setWindowFlags(Qt::Window);
-    gkXmppRosterDlg->setAttribute(Qt::WA_DeleteOnClose, true);
-    gkXmppRosterDlg->show();
-
+    launchXmppRosterDlg();
     return;
 }
 
@@ -1654,6 +1649,22 @@ QRect MainWindow::findActiveScreen()
 }
 
 /**
+ * @brief MainWindow::launchXmppRosterDlg launches the Roster Dialog for the XMPP side of Small World Deluxe, where end-users
+ * may interact with others or even signup to the given, configured server if it's their first time connecting.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::launchXmppRosterDlg()
+{
+    QPointer<GkXmppRosterDialog> gkXmppRosterDlg = new GkXmppRosterDialog(tr("test_user"), tr("test_pass"),
+                                                                          gkEventLogger, this);
+    gkXmppRosterDlg->setWindowFlags(Qt::Window);
+    gkXmppRosterDlg->setAttribute(Qt::WA_DeleteOnClose, true);
+    gkXmppRosterDlg->show();
+
+    return;
+}
+
+/**
  * @brief MainWindow::on_actionCheck_for_Updates_triggered
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
@@ -2464,6 +2475,12 @@ void MainWindow::on_actionCW_toggled(bool arg1)
 {
     Q_UNUSED(arg1);
 
+    return;
+}
+
+void MainWindow::on_actionView_Roster_triggered()
+{
+    launchXmppRosterDlg();
     return;
 }
 

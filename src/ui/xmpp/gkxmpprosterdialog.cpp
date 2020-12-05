@@ -83,3 +83,8 @@ void GkXmppRosterDialog::prefillAvailComboBox()
 
     return;
 }
+
+void GkXmppRosterDialog::on_comboBox_current_status_currentIndexChanged(int index)
+{
+    return;
+}

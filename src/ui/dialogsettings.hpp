@@ -228,6 +228,13 @@ private slots:
     void on_comboBox_audio_input_bit_rate_currentIndexChanged(int index);
     void on_comboBox_audio_output_bit_rate_currentIndexChanged(int index);
 
+    //
+    // XMPP Settings
+    //
+    void on_toolButton_xmpp_upload_avatar_browse_file_clicked();
+    void on_toolButton_xmpp_delete_avatar_from_server_clicked();
+    void on_toolButton_xmpp_upload_avatar_to_server_clicked();
+
 signals:
     void changeSelectedTTSEngine(const QString &name);
 

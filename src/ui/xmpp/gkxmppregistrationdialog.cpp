@@ -73,3 +73,18 @@ void GkXmppRegistrationDialog::on_toolButton_xmpp_captcha_refresh_clicked()
 {
     return;
 }
+
+void GkXmppRegistrationDialog::on_pushButton_continue_clicked()
+{
+    return;
+}
+
+void GkXmppRegistrationDialog::on_pushButton_retry_clicked()
+{
+    return;
+}
+
+void GkXmppRegistrationDialog::on_pushButton_exit_clicked()
+{
+    return;
+}

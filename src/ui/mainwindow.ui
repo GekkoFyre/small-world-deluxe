@@ -1651,9 +1651,25 @@ QPushButton:disabled {
     </property>
     <addaction name="action_Battery_Calculator"/>
    </widget>
+   <widget class="QMenu" name="menuChat_XMPP">
+    <property name="title">
+     <string>Chat / &amp;XMPP</string>
+    </property>
+    <widget class="QMenu" name="menu_Availability">
+     <property name="title">
+      <string>&amp;Availability</string>
+     </property>
+     <addaction name="actionOnline"/>
+     <addaction name="actionInvisible"/>
+     <addaction name="actionOffline"/>
+    </widget>
+    <addaction name="menu_Availability"/>
+    <addaction name="actionView_Roster"/>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Configure"/>
    <addaction name="menuC_ontrol"/>
+   <addaction name="menuChat_XMPP"/>
    <addaction name="menu_Tools"/>
    <addaction name="menuSa_ve"/>
    <addaction name="menu_View"/>
@@ -1978,6 +1994,26 @@ QPushButton:disabled {
   <action name="actionXMPP">
    <property name="text">
     <string>XMPP</string>
+   </property>
+  </action>
+  <action name="actionView_Roster">
+   <property name="text">
+    <string>View &amp;Roster</string>
+   </property>
+  </action>
+  <action name="actionOnline">
+   <property name="text">
+    <string>Online</string>
+   </property>
+  </action>
+  <action name="actionInvisible">
+   <property name="text">
+    <string>Invisible</string>
+   </property>
+  </action>
+  <action name="actionOffline">
+   <property name="text">
+    <string>Offline</string>
    </property>
   </action>
  </widget>

@@ -141,6 +141,8 @@ private slots:
     void on_actionSSB_toggled(bool arg1);
     void on_actionCW_toggled(bool arg1);
 
+    void on_actionView_Roster_triggered();
+
     //
     // Documentation
     //
@@ -413,6 +415,8 @@ private:
     bool changeStatusBarMsg(const QString &statusMsg = "");
     bool steadyTimer(const int &seconds);
     QRect findActiveScreen();
+
+    void launchXmppRosterDlg();
 
     void print_exception(const std::exception &e, int level = 0);
 
