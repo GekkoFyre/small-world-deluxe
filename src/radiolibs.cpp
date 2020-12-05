@@ -500,7 +500,7 @@ std::vector<GkUsbPort> RadioLibs::printLibUsb(libusb_device **devs)
 
         for (auto const &udev: devices) {
             if(udev.property("ID_BUS") == tr("usb").toStdString()) {
-                GkBosUsb usb;
+                GkUsbPort usb;
                 usb.lib_usb.path = QString::fromStdString(udev.node());
                 usb.lib_usb.mfg = QString::fromStdString(udev.property(tr("ID_VENDOR_FROM_DATABASE").toStdString()));
                 usb.lib_usb.product = QString::fromStdString(udev.property(tr("ID_MODEL_FROM_DATABASE").toStdString()));

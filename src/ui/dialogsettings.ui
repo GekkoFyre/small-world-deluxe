@@ -550,7 +550,7 @@
                 </attribute>
                 <layout class="QVBoxLayout" name="verticalLayout_22">
                  <item>
-                  <widget class="QScrollArea" name="scrollArea">
+                  <widget class="QScrollArea" name="scrollArea_ui_user_interface">
                    <property name="frameShadow">
                     <enum>QFrame::Plain</enum>
                    </property>
@@ -566,7 +566,7 @@
                       <x>0</x>
                       <y>0</y>
                       <width>677</width>
-                      <height>1015</height>
+                      <height>998</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_23">
@@ -595,9 +595,12 @@
                                <number>0</number>
                               </property>
                               <property name="topMargin">
-                               <number>6</number>
+                               <number>0</number>
                               </property>
                               <property name="rightMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="bottomMargin">
                                <number>0</number>
                               </property>
                               <item row="0" column="0">
@@ -1801,6 +1804,435 @@ Thanks.</string>
                         </size>
                        </property>
                       </spacer>
+                     </item>
+                    </layout>
+                   </widget>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+               <widget class="QWidget" name="tab_general_xmpp">
+                <attribute name="title">
+                 <string>XMPP</string>
+                </attribute>
+                <layout class="QVBoxLayout" name="verticalLayout_58">
+                 <item>
+                  <widget class="QScrollArea" name="scrollArea_ui_xmpp_cfg">
+                   <property name="horizontalScrollBarPolicy">
+                    <enum>Qt::ScrollBarAlwaysOff</enum>
+                   </property>
+                   <property name="widgetResizable">
+                    <bool>true</bool>
+                   </property>
+                   <widget class="QWidget" name="scrollAreaWidgetContents_6">
+                    <property name="geometry">
+                     <rect>
+                      <x>0</x>
+                      <y>0</y>
+                      <width>698</width>
+                      <height>577</height>
+                     </rect>
+                    </property>
+                    <layout class="QVBoxLayout" name="verticalLayout_60">
+                     <item>
+                      <widget class="QGroupBox" name="groupBox_xmpp_cfg">
+                       <property name="title">
+                        <string>XMPP</string>
+                       </property>
+                       <layout class="QVBoxLayout" name="verticalLayout_59">
+                        <item>
+                         <widget class="QGroupBox" name="groupBox_xmpp_cfg_client">
+                          <property name="title">
+                           <string>Client</string>
+                          </property>
+                          <layout class="QHBoxLayout" name="horizontalLayout_44">
+                           <item>
+                            <widget class="QFrame" name="frame_xmpp_cfg_client">
+                             <property name="frameShape">
+                              <enum>QFrame::NoFrame</enum>
+                             </property>
+                             <property name="frameShadow">
+                              <enum>QFrame::Raised</enum>
+                             </property>
+                             <layout class="QVBoxLayout" name="verticalLayout_62">
+                              <property name="leftMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="topMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="rightMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="bottomMargin">
+                               <number>0</number>
+                              </property>
+                              <item>
+                               <widget class="QFrame" name="frame_xmpp_cfg_client_upper">
+                                <property name="frameShape">
+                                 <enum>QFrame::NoFrame</enum>
+                                </property>
+                                <property name="frameShadow">
+                                 <enum>QFrame::Raised</enum>
+                                </property>
+                                <layout class="QHBoxLayout" name="horizontalLayout_49">
+                                 <property name="leftMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="topMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="rightMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="bottomMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <item>
+                                  <widget class="QFrame" name="frame_xmpp_cfg_client_left_frame">
+                                   <property name="sizePolicy">
+                                    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                                     <horstretch>50</horstretch>
+                                     <verstretch>0</verstretch>
+                                    </sizepolicy>
+                                   </property>
+                                   <property name="frameShape">
+                                    <enum>QFrame::NoFrame</enum>
+                                   </property>
+                                   <property name="frameShadow">
+                                    <enum>QFrame::Raised</enum>
+                                   </property>
+                                   <layout class="QFormLayout" name="formLayout_31">
+                                    <property name="leftMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="topMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="rightMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="bottomMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <item row="0" column="0">
+                                     <widget class="QLabel" name="label_allow_msg_history">
+                                      <property name="text">
+                                       <string>Allow Message History: </string>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="0" column="1">
+                                     <widget class="QCheckBox" name="checkBox_allow_msg_history">
+                                      <property name="text">
+                                       <string/>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="1" column="0">
+                                     <widget class="QLabel" name="label_allow_file_transfers">
+                                      <property name="text">
+                                       <string>Allow File Transfers: </string>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="1" column="1">
+                                     <widget class="QCheckBox" name="checkBox_allow_file_transfers">
+                                      <property name="text">
+                                       <string/>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                   </layout>
+                                  </widget>
+                                 </item>
+                                 <item>
+                                  <widget class="QFrame" name="frame_xmpp_cfg_client_right_frame">
+                                   <property name="sizePolicy">
+                                    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                                     <horstretch>50</horstretch>
+                                     <verstretch>0</verstretch>
+                                    </sizepolicy>
+                                   </property>
+                                   <property name="frameShape">
+                                    <enum>QFrame::NoFrame</enum>
+                                   </property>
+                                   <property name="frameShadow">
+                                    <enum>QFrame::Raised</enum>
+                                   </property>
+                                   <layout class="QFormLayout" name="formLayout_32">
+                                    <property name="leftMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="topMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="rightMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="bottomMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <item row="0" column="0">
+                                     <widget class="QLabel" name="label_allow_muc_creation">
+                                      <property name="text">
+                                       <string>Allow MUCs</string>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="0" column="1">
+                                     <widget class="QCheckBox" name="checkBox_allow_muc_creation">
+                                      <property name="text">
+                                       <string/>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="1" column="0">
+                                     <widget class="QLabel" name="label_connect_automatically">
+                                      <property name="text">
+                                       <string>Connect Automatically: </string>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="1" column="1">
+                                     <widget class="QCheckBox" name="checkBox_connect_automatically">
+                                      <property name="text">
+                                       <string/>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                   </layout>
+                                  </widget>
+                                 </item>
+                                </layout>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QFrame" name="frame_xmpp_cfg_client_bottom">
+                                <property name="frameShape">
+                                 <enum>QFrame::NoFrame</enum>
+                                </property>
+                                <property name="frameShadow">
+                                 <enum>QFrame::Raised</enum>
+                                </property>
+                                <layout class="QFormLayout" name="formLayout_35">
+                                 <property name="leftMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="topMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="rightMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="bottomMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <item row="0" column="0">
+                                  <widget class="QLabel" name="label_upload_avatar">
+                                   <property name="text">
+                                    <string>Upload Avatar: </string>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                 <item row="0" column="1">
+                                  <widget class="QFrame" name="frame_upload_avatar">
+                                   <property name="frameShape">
+                                    <enum>QFrame::NoFrame</enum>
+                                   </property>
+                                   <property name="frameShadow">
+                                    <enum>QFrame::Raised</enum>
+                                   </property>
+                                   <layout class="QHBoxLayout" name="horizontalLayout_48">
+                                    <property name="leftMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="topMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="rightMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="bottomMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <item>
+                                     <widget class="QLineEdit" name="lineEdit_xmpp_upload_avatar_file_browser"/>
+                                    </item>
+                                    <item>
+                                     <widget class="QToolButton" name="toolButton_xmpp_upload_avatar_browse_file">
+                                      <property name="text">
+                                       <string>Browse</string>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item>
+                                     <widget class="QToolButton" name="toolButton_xmpp_delete_avatar_from_server">
+                                      <property name="text">
+                                       <string>Delete</string>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item>
+                                     <widget class="QToolButton" name="toolButton_xmpp_upload_avatar_to_server">
+                                      <property name="text">
+                                       <string>Upload</string>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                   </layout>
+                                  </widget>
+                                 </item>
+                                </layout>
+                               </widget>
+                              </item>
+                             </layout>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QGroupBox" name="groupBox_xmpp_cfg_server">
+                          <property name="title">
+                           <string>Server</string>
+                          </property>
+                          <layout class="QHBoxLayout" name="horizontalLayout_45">
+                           <item>
+                            <widget class="QFrame" name="frame_xmpp_cfg_server_left_frame">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                               <horstretch>50</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                             <property name="frameShape">
+                              <enum>QFrame::NoFrame</enum>
+                             </property>
+                             <property name="frameShadow">
+                              <enum>QFrame::Raised</enum>
+                             </property>
+                             <layout class="QFormLayout" name="formLayout_33">
+                              <property name="leftMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="topMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="rightMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="bottomMargin">
+                               <number>0</number>
+                              </property>
+                              <item row="1" column="0">
+                               <widget class="QLabel" name="label_xmpp_server_url">
+                                <property name="text">
+                                 <string>Host URL: </string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="1" column="1">
+                               <widget class="QLineEdit" name="lineEdit_xmpp_server_url"/>
+                              </item>
+                              <item row="0" column="0">
+                               <widget class="QLabel" name="label_xmpp_server_type">
+                                <property name="text">
+                                 <string>Type: </string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="0" column="1">
+                               <widget class="QComboBox" name="comboBox_xmpp_server_type"/>
+                              </item>
+                             </layout>
+                            </widget>
+                           </item>
+                           <item>
+                            <widget class="QFrame" name="frame_xmpp_cfg_server_right_frame">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                               <horstretch>50</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                             <property name="frameShape">
+                              <enum>QFrame::NoFrame</enum>
+                             </property>
+                             <property name="frameShadow">
+                              <enum>QFrame::Raised</enum>
+                             </property>
+                             <layout class="QFormLayout" name="formLayout_34">
+                              <property name="leftMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="topMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="rightMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="bottomMargin">
+                               <number>0</number>
+                              </property>
+                              <item row="0" column="0">
+                               <widget class="QLabel" name="label_xmpp_server_port">
+                                <property name="text">
+                                 <string>Port: </string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="0" column="1">
+                               <widget class="QSpinBox" name="spinBox_xmpp_server_port">
+                                <property name="suffix">
+                                 <string/>
+                                </property>
+                                <property name="prefix">
+                                 <string>tcp/</string>
+                                </property>
+                                <property name="minimum">
+                                 <number>80</number>
+                                </property>
+                                <property name="maximum">
+                                 <number>65536</number>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="1" column="0">
+                               <widget class="QLabel" name="label_xmpp_server_ssl">
+                                <property name="text">
+                                 <string>SSL: </string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="1" column="1">
+                               <widget class="QCheckBox" name="checkBox_xmpp_server_ssl">
+                                <property name="text">
+                                 <string/>
+                                </property>
+                               </widget>
+                              </item>
+                             </layout>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                        <item>
+                         <spacer name="verticalSpacer_12">
+                          <property name="orientation">
+                           <enum>Qt::Vertical</enum>
+                          </property>
+                          <property name="sizeHint" stdset="0">
+                           <size>
+                            <width>20</width>
+                            <height>40</height>
+                           </size>
+                          </property>
+                         </spacer>
+                        </item>
+                       </layout>
+                      </widget>
                      </item>
                     </layout>
                    </widget>
@@ -3118,9 +3550,6 @@ Thanks.</string>
                            <enum>QFrame::Plain</enum>
                           </property>
                           <layout class="QHBoxLayout" name="horizontalLayout_3">
-                           <property name="spacing">
-                            <number>0</number>
-                           </property>
                            <property name="leftMargin">
                             <number>0</number>
                            </property>
@@ -3134,122 +3563,47 @@ Thanks.</string>
                             <number>0</number>
                            </property>
                            <item>
-                            <widget class="QGroupBox" name="groupBox_cat_control">
-                             <property name="title">
-                              <string>CAT Control</string>
+                            <widget class="QFrame" name="frame_20">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Ignored" vsizetype="Preferred">
+                               <horstretch>50</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
                              </property>
-                             <layout class="QVBoxLayout" name="verticalLayout_40">
+                             <property name="frameShape">
+                              <enum>QFrame::NoFrame</enum>
+                             </property>
+                             <property name="frameShadow">
+                              <enum>QFrame::Raised</enum>
+                             </property>
+                             <layout class="QHBoxLayout" name="horizontalLayout_47">
+                              <property name="leftMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="topMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="rightMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="bottomMargin">
+                               <number>0</number>
+                              </property>
                               <item>
-                               <widget class="QFrame" name="frame_cat_control">
-                                <property name="frameShape">
-                                 <enum>QFrame::NoFrame</enum>
-                                </property>
-                                <property name="frameShadow">
-                                 <enum>QFrame::Plain</enum>
-                                </property>
-                                <layout class="QFormLayout" name="formLayout_10">
-                                 <property name="leftMargin">
-                                  <number>0</number>
-                                 </property>
-                                 <property name="topMargin">
-                                  <number>0</number>
-                                 </property>
-                                 <property name="rightMargin">
-                                  <number>0</number>
-                                 </property>
-                                 <property name="bottomMargin">
-                                  <number>0</number>
-                                 </property>
-                                 <item row="1" column="1">
-                                  <widget class="QComboBox" name="comboBox_com_port">
-                                   <property name="sizePolicy">
-                                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                                     <horstretch>0</horstretch>
-                                     <verstretch>0</verstretch>
-                                    </sizepolicy>
-                                   </property>
-                                  </widget>
-                                 </item>
-                                 <item row="1" column="0">
-                                  <widget class="QLabel" name="label_com_port">
-                                   <property name="text">
-                                    <string>Device Port: </string>
-                                   </property>
-                                  </widget>
-                                 </item>
-                                 <item row="2" column="0">
-                                  <widget class="QLabel" name="label_device_port_name">
-                                   <property name="text">
-                                    <string>Device Path: </string>
-                                   </property>
-                                  </widget>
-                                 </item>
-                                 <item row="2" column="1">
-                                  <widget class="QLineEdit" name="lineEdit_device_port_name">
-                                   <property name="sizePolicy">
-                                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                                     <horstretch>0</horstretch>
-                                     <verstretch>0</verstretch>
-                                    </sizepolicy>
-                                   </property>
-                                   <property name="maxLength">
-                                    <number>16384</number>
-                                   </property>
-                                   <property name="readOnly">
-                                    <bool>true</bool>
-                                   </property>
-                                   <property name="placeholderText">
-                                    <string>N/A</string>
-                                   </property>
-                                  </widget>
-                                 </item>
-                                </layout>
-                               </widget>
-                              </item>
-                              <item>
-                               <widget class="QGroupBox" name="groupBox_serial_port_parameters">
+                               <widget class="QGroupBox" name="groupBox_cat_control">
                                 <property name="title">
-                                 <string>Serial Port Parameters</string>
+                                 <string>CAT Control</string>
                                 </property>
-                                <layout class="QVBoxLayout" name="verticalLayout_41">
+                                <layout class="QVBoxLayout" name="verticalLayout_40">
                                  <item>
-                                  <widget class="QFrame" name="frame_baud_rate">
+                                  <widget class="QFrame" name="frame_cat_control">
                                    <property name="frameShape">
                                     <enum>QFrame::NoFrame</enum>
                                    </property>
                                    <property name="frameShadow">
                                     <enum>QFrame::Plain</enum>
                                    </property>
-                                   <layout class="QFormLayout" name="formLayout_11">
-                                    <item row="0" column="0">
-                                     <widget class="QLabel" name="label_baud_rate">
-                                      <property name="text">
-                                       <string>Baud Rate: </string>
-                                      </property>
-                                     </widget>
-                                    </item>
-                                    <item row="0" column="1">
-                                     <widget class="QComboBox" name="comboBox_baud_rate">
-                                      <property name="sizePolicy">
-                                       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                                        <horstretch>0</horstretch>
-                                        <verstretch>0</verstretch>
-                                       </sizepolicy>
-                                      </property>
-                                     </widget>
-                                    </item>
-                                   </layout>
-                                  </widget>
-                                 </item>
-                                 <item>
-                                  <widget class="QFrame" name="frame_serial_port_parameters_groupboxes">
-                                   <property name="frameShape">
-                                    <enum>QFrame::NoFrame</enum>
-                                   </property>
-                                   <property name="frameShadow">
-                                    <enum>QFrame::Plain</enum>
-                                   </property>
-                                   <layout class="QVBoxLayout" name="verticalLayout_42">
+                                   <layout class="QFormLayout" name="formLayout_10">
                                     <property name="leftMargin">
                                      <number>0</number>
                                     </property>
@@ -3262,357 +3616,8 @@ Thanks.</string>
                                     <property name="bottomMargin">
                                      <number>0</number>
                                     </property>
-                                    <item>
-                                     <widget class="QGroupBox" name="groupBox_data_bits">
-                                      <property name="title">
-                                       <string>Data Bits</string>
-                                      </property>
-                                      <layout class="QHBoxLayout" name="horizontalLayout_8">
-                                       <item>
-                                        <widget class="QRadioButton" name="radioButton_data_bits_default">
-                                         <property name="text">
-                                          <string>Default</string>
-                                         </property>
-                                        </widget>
-                                       </item>
-                                       <item>
-                                        <widget class="QRadioButton" name="radioButton_data_bits_seven">
-                                         <property name="text">
-                                          <string>Seven (7)</string>
-                                         </property>
-                                        </widget>
-                                       </item>
-                                       <item>
-                                        <widget class="QRadioButton" name="radioButton_data_bits_eight">
-                                         <property name="text">
-                                          <string>Eight (8)</string>
-                                         </property>
-                                        </widget>
-                                       </item>
-                                      </layout>
-                                     </widget>
-                                    </item>
-                                    <item>
-                                     <widget class="QGroupBox" name="groupBox_stop_bits">
-                                      <property name="title">
-                                       <string>Stop Bits</string>
-                                      </property>
-                                      <layout class="QHBoxLayout" name="horizontalLayout_21">
-                                       <item>
-                                        <widget class="QRadioButton" name="radioButton_stop_bits_default">
-                                         <property name="text">
-                                          <string>Default</string>
-                                         </property>
-                                        </widget>
-                                       </item>
-                                       <item>
-                                        <widget class="QRadioButton" name="radioButton_stop_bits_one">
-                                         <property name="text">
-                                          <string>One (1)</string>
-                                         </property>
-                                        </widget>
-                                       </item>
-                                       <item>
-                                        <widget class="QRadioButton" name="radioButton_stop_bits_two">
-                                         <property name="text">
-                                          <string>Two (2)</string>
-                                         </property>
-                                        </widget>
-                                       </item>
-                                      </layout>
-                                     </widget>
-                                    </item>
-                                    <item>
-                                     <widget class="QGroupBox" name="groupBox_handshake">
-                                      <property name="title">
-                                       <string>Handshake</string>
-                                      </property>
-                                      <layout class="QVBoxLayout" name="verticalLayout_44">
-                                       <property name="leftMargin">
-                                        <number>0</number>
-                                       </property>
-                                       <property name="topMargin">
-                                        <number>0</number>
-                                       </property>
-                                       <property name="rightMargin">
-                                        <number>0</number>
-                                       </property>
-                                       <property name="bottomMargin">
-                                        <number>0</number>
-                                       </property>
-                                       <item>
-                                        <widget class="QFrame" name="frame_handshake_radio_1">
-                                         <property name="frameShape">
-                                          <enum>QFrame::NoFrame</enum>
-                                         </property>
-                                         <property name="frameShadow">
-                                          <enum>QFrame::Plain</enum>
-                                         </property>
-                                         <layout class="QHBoxLayout" name="horizontalLayout_22">
-                                          <property name="bottomMargin">
-                                           <number>0</number>
-                                          </property>
-                                          <item>
-                                           <widget class="QRadioButton" name="radioButton_handshake_default">
-                                            <property name="text">
-                                             <string>Default</string>
-                                            </property>
-                                           </widget>
-                                          </item>
-                                          <item>
-                                           <widget class="QRadioButton" name="radioButton_handshake_none">
-                                            <property name="text">
-                                             <string>None</string>
-                                            </property>
-                                           </widget>
-                                          </item>
-                                          <item>
-                                           <widget class="QRadioButton" name="radioButton_handshake_xon_xoff">
-                                            <property name="text">
-                                             <string>XON / XOFF</string>
-                                            </property>
-                                           </widget>
-                                          </item>
-                                          <item>
-                                           <widget class="QRadioButton" name="radioButton_handshake_hardware">
-                                            <property name="text">
-                                             <string>Hardware</string>
-                                            </property>
-                                           </widget>
-                                          </item>
-                                         </layout>
-                                        </widget>
-                                       </item>
-                                      </layout>
-                                     </widget>
-                                    </item>
-                                    <item>
-                                     <widget class="QGroupBox" name="groupBox_force_control_lines">
-                                      <property name="title">
-                                       <string>Force Control Lines</string>
-                                      </property>
-                                      <layout class="QHBoxLayout" name="horizontalLayout_24">
-                                       <item>
-                                        <widget class="QFrame" name="frame_force_control_lines_1">
-                                         <property name="sizePolicy">
-                                          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
-                                           <horstretch>0</horstretch>
-                                           <verstretch>0</verstretch>
-                                          </sizepolicy>
-                                         </property>
-                                         <property name="frameShape">
-                                          <enum>QFrame::NoFrame</enum>
-                                         </property>
-                                         <property name="frameShadow">
-                                          <enum>QFrame::Plain</enum>
-                                         </property>
-                                         <layout class="QFormLayout" name="formLayout_19">
-                                          <property name="leftMargin">
-                                           <number>0</number>
-                                          </property>
-                                          <property name="topMargin">
-                                           <number>0</number>
-                                          </property>
-                                          <property name="rightMargin">
-                                           <number>0</number>
-                                          </property>
-                                          <property name="bottomMargin">
-                                           <number>0</number>
-                                          </property>
-                                          <item row="0" column="0">
-                                           <widget class="QLabel" name="label">
-                                            <property name="text">
-                                             <string>DTR: </string>
-                                            </property>
-                                           </widget>
-                                          </item>
-                                          <item row="0" column="1">
-                                           <widget class="QComboBox" name="comboBox_force_ctrl_lines_dtr">
-                                            <property name="sizePolicy">
-                                             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                                              <horstretch>0</horstretch>
-                                              <verstretch>0</verstretch>
-                                             </sizepolicy>
-                                            </property>
-                                           </widget>
-                                          </item>
-                                         </layout>
-                                        </widget>
-                                       </item>
-                                       <item>
-                                        <widget class="QFrame" name="frame_force_control_lines_2">
-                                         <property name="sizePolicy">
-                                          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
-                                           <horstretch>0</horstretch>
-                                           <verstretch>0</verstretch>
-                                          </sizepolicy>
-                                         </property>
-                                         <property name="frameShape">
-                                          <enum>QFrame::NoFrame</enum>
-                                         </property>
-                                         <property name="frameShadow">
-                                          <enum>QFrame::Plain</enum>
-                                         </property>
-                                         <layout class="QFormLayout" name="formLayout_20">
-                                          <property name="leftMargin">
-                                           <number>0</number>
-                                          </property>
-                                          <property name="topMargin">
-                                           <number>0</number>
-                                          </property>
-                                          <property name="rightMargin">
-                                           <number>0</number>
-                                          </property>
-                                          <property name="bottomMargin">
-                                           <number>0</number>
-                                          </property>
-                                          <item row="0" column="0">
-                                           <widget class="QLabel" name="label_2">
-                                            <property name="text">
-                                             <string>RTS: </string>
-                                            </property>
-                                           </widget>
-                                          </item>
-                                          <item row="0" column="1">
-                                           <widget class="QComboBox" name="comboBox_force_ctrl_lines_rts">
-                                            <property name="sizePolicy">
-                                             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                                              <horstretch>0</horstretch>
-                                              <verstretch>0</verstretch>
-                                             </sizepolicy>
-                                            </property>
-                                           </widget>
-                                          </item>
-                                         </layout>
-                                        </widget>
-                                       </item>
-                                      </layout>
-                                     </widget>
-                                    </item>
-                                   </layout>
-                                  </widget>
-                                 </item>
-                                </layout>
-                               </widget>
-                              </item>
-                             </layout>
-                            </widget>
-                           </item>
-                           <item>
-                            <widget class="QGroupBox" name="groupBox_ptt_method">
-                             <property name="title">
-                              <string>PTT Method</string>
-                             </property>
-                             <layout class="QVBoxLayout" name="verticalLayout_36">
-                              <item>
-                               <widget class="QFrame" name="frame_ptt_method">
-                                <property name="frameShape">
-                                 <enum>QFrame::NoFrame</enum>
-                                </property>
-                                <property name="frameShadow">
-                                 <enum>QFrame::Plain</enum>
-                                </property>
-                                <layout class="QVBoxLayout" name="verticalLayout_43">
-                                 <property name="leftMargin">
-                                  <number>0</number>
-                                 </property>
-                                 <property name="topMargin">
-                                  <number>0</number>
-                                 </property>
-                                 <property name="rightMargin">
-                                  <number>0</number>
-                                 </property>
-                                 <property name="bottomMargin">
-                                  <number>0</number>
-                                 </property>
-                                 <item>
-                                  <widget class="QFrame" name="frame_ptt_method_radio_1">
-                                   <property name="sizePolicy">
-                                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
-                                     <horstretch>0</horstretch>
-                                     <verstretch>0</verstretch>
-                                    </sizepolicy>
-                                   </property>
-                                   <property name="frameShape">
-                                    <enum>QFrame::NoFrame</enum>
-                                   </property>
-                                   <property name="frameShadow">
-                                    <enum>QFrame::Plain</enum>
-                                   </property>
-                                   <layout class="QHBoxLayout" name="horizontalLayout_19">
-                                    <property name="leftMargin">
-                                     <number>0</number>
-                                    </property>
-                                    <property name="topMargin">
-                                     <number>0</number>
-                                    </property>
-                                    <property name="rightMargin">
-                                     <number>0</number>
-                                    </property>
-                                    <property name="bottomMargin">
-                                     <number>0</number>
-                                    </property>
-                                    <item>
-                                     <widget class="QRadioButton" name="radioButton_ptt_method_rts">
-                                      <property name="text">
-                                       <string>RTS</string>
-                                      </property>
-                                     </widget>
-                                    </item>
-                                    <item>
-                                     <widget class="QRadioButton" name="radioButton_ptt_method_vox">
-                                      <property name="text">
-                                       <string>VOX</string>
-                                      </property>
-                                     </widget>
-                                    </item>
-                                    <item>
-                                     <widget class="QRadioButton" name="radioButton_ptt_method_dtr">
-                                      <property name="text">
-                                       <string>DTR</string>
-                                      </property>
-                                     </widget>
-                                    </item>
-                                    <item>
-                                     <widget class="QRadioButton" name="radioButton_ptt_method_cat">
-                                      <property name="text">
-                                       <string>CAT</string>
-                                      </property>
-                                     </widget>
-                                    </item>
-                                   </layout>
-                                  </widget>
-                                 </item>
-                                 <item>
-                                  <widget class="QFrame" name="frame_ptt_method_port_1">
-                                   <property name="frameShape">
-                                    <enum>QFrame::NoFrame</enum>
-                                   </property>
-                                   <property name="frameShadow">
-                                    <enum>QFrame::Plain</enum>
-                                   </property>
-                                   <layout class="QFormLayout" name="formLayout_18">
-                                    <property name="leftMargin">
-                                     <number>0</number>
-                                    </property>
-                                    <property name="topMargin">
-                                     <number>0</number>
-                                    </property>
-                                    <property name="rightMargin">
-                                     <number>0</number>
-                                    </property>
-                                    <property name="bottomMargin">
-                                     <number>0</number>
-                                    </property>
-                                    <item row="0" column="0">
-                                     <widget class="QLabel" name="label_ptt_method_port">
-                                      <property name="text">
-                                       <string>Device Port: </string>
-                                      </property>
-                                     </widget>
-                                    </item>
-                                    <item row="0" column="1">
-                                     <widget class="QComboBox" name="comboBox_ptt_method_port">
+                                    <item row="1" column="1">
+                                     <widget class="QComboBox" name="comboBox_com_port">
                                       <property name="sizePolicy">
                                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
                                         <horstretch>0</horstretch>
@@ -3622,14 +3627,21 @@ Thanks.</string>
                                      </widget>
                                     </item>
                                     <item row="1" column="0">
-                                     <widget class="QLabel" name="label_ptt_method_dev_path">
+                                     <widget class="QLabel" name="label_com_port">
+                                      <property name="text">
+                                       <string>Device Port: </string>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="2" column="0">
+                                     <widget class="QLabel" name="label_device_port_name">
                                       <property name="text">
                                        <string>Device Path: </string>
                                       </property>
                                      </widget>
                                     </item>
-                                    <item row="1" column="1">
-                                     <widget class="QLineEdit" name="lineEdit_ptt_method_dev_path">
+                                    <item row="2" column="1">
+                                     <widget class="QLineEdit" name="lineEdit_device_port_name">
                                       <property name="sizePolicy">
                                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
                                         <horstretch>0</horstretch>
@@ -3650,39 +3662,343 @@ Thanks.</string>
                                    </layout>
                                   </widget>
                                  </item>
+                                 <item>
+                                  <widget class="QGroupBox" name="groupBox_serial_port_parameters">
+                                   <property name="title">
+                                    <string>Serial Port Parameters</string>
+                                   </property>
+                                   <layout class="QVBoxLayout" name="verticalLayout_41">
+                                    <item>
+                                     <widget class="QFrame" name="frame_baud_rate">
+                                      <property name="frameShape">
+                                       <enum>QFrame::NoFrame</enum>
+                                      </property>
+                                      <property name="frameShadow">
+                                       <enum>QFrame::Plain</enum>
+                                      </property>
+                                      <layout class="QFormLayout" name="formLayout_11">
+                                       <item row="0" column="0">
+                                        <widget class="QLabel" name="label_baud_rate">
+                                         <property name="text">
+                                          <string>Baud Rate: </string>
+                                         </property>
+                                        </widget>
+                                       </item>
+                                       <item row="0" column="1">
+                                        <widget class="QComboBox" name="comboBox_baud_rate">
+                                         <property name="sizePolicy">
+                                          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                                           <horstretch>0</horstretch>
+                                           <verstretch>0</verstretch>
+                                          </sizepolicy>
+                                         </property>
+                                        </widget>
+                                       </item>
+                                      </layout>
+                                     </widget>
+                                    </item>
+                                    <item>
+                                     <widget class="QFrame" name="frame_serial_port_parameters_groupboxes">
+                                      <property name="frameShape">
+                                       <enum>QFrame::NoFrame</enum>
+                                      </property>
+                                      <property name="frameShadow">
+                                       <enum>QFrame::Plain</enum>
+                                      </property>
+                                      <layout class="QVBoxLayout" name="verticalLayout_42">
+                                       <property name="leftMargin">
+                                        <number>0</number>
+                                       </property>
+                                       <property name="topMargin">
+                                        <number>0</number>
+                                       </property>
+                                       <property name="rightMargin">
+                                        <number>0</number>
+                                       </property>
+                                       <property name="bottomMargin">
+                                        <number>0</number>
+                                       </property>
+                                       <item>
+                                        <widget class="QGroupBox" name="groupBox_data_bits">
+                                         <property name="title">
+                                          <string>Data Bits</string>
+                                         </property>
+                                         <layout class="QHBoxLayout" name="horizontalLayout_8">
+                                          <item>
+                                           <widget class="QRadioButton" name="radioButton_data_bits_default">
+                                            <property name="text">
+                                             <string>Default</string>
+                                            </property>
+                                           </widget>
+                                          </item>
+                                          <item>
+                                           <widget class="QRadioButton" name="radioButton_data_bits_seven">
+                                            <property name="text">
+                                             <string>Seven (7)</string>
+                                            </property>
+                                           </widget>
+                                          </item>
+                                          <item>
+                                           <widget class="QRadioButton" name="radioButton_data_bits_eight">
+                                            <property name="text">
+                                             <string>Eight (8)</string>
+                                            </property>
+                                           </widget>
+                                          </item>
+                                         </layout>
+                                        </widget>
+                                       </item>
+                                       <item>
+                                        <widget class="QGroupBox" name="groupBox_stop_bits">
+                                         <property name="title">
+                                          <string>Stop Bits</string>
+                                         </property>
+                                         <layout class="QHBoxLayout" name="horizontalLayout_21">
+                                          <item>
+                                           <widget class="QRadioButton" name="radioButton_stop_bits_default">
+                                            <property name="text">
+                                             <string>Default</string>
+                                            </property>
+                                           </widget>
+                                          </item>
+                                          <item>
+                                           <widget class="QRadioButton" name="radioButton_stop_bits_one">
+                                            <property name="text">
+                                             <string>One (1)</string>
+                                            </property>
+                                           </widget>
+                                          </item>
+                                          <item>
+                                           <widget class="QRadioButton" name="radioButton_stop_bits_two">
+                                            <property name="text">
+                                             <string>Two (2)</string>
+                                            </property>
+                                           </widget>
+                                          </item>
+                                         </layout>
+                                        </widget>
+                                       </item>
+                                       <item>
+                                        <widget class="QGroupBox" name="groupBox_handshake">
+                                         <property name="title">
+                                          <string>Handshake</string>
+                                         </property>
+                                         <layout class="QVBoxLayout" name="verticalLayout_44">
+                                          <property name="leftMargin">
+                                           <number>0</number>
+                                          </property>
+                                          <property name="topMargin">
+                                           <number>0</number>
+                                          </property>
+                                          <property name="rightMargin">
+                                           <number>0</number>
+                                          </property>
+                                          <property name="bottomMargin">
+                                           <number>0</number>
+                                          </property>
+                                          <item>
+                                           <widget class="QFrame" name="frame_handshake_radio_1">
+                                            <property name="frameShape">
+                                             <enum>QFrame::NoFrame</enum>
+                                            </property>
+                                            <property name="frameShadow">
+                                             <enum>QFrame::Plain</enum>
+                                            </property>
+                                            <layout class="QHBoxLayout" name="horizontalLayout_22">
+                                             <property name="bottomMargin">
+                                              <number>0</number>
+                                             </property>
+                                             <item>
+                                              <widget class="QRadioButton" name="radioButton_handshake_default">
+                                               <property name="text">
+                                                <string>Default</string>
+                                               </property>
+                                              </widget>
+                                             </item>
+                                             <item>
+                                              <widget class="QRadioButton" name="radioButton_handshake_none">
+                                               <property name="text">
+                                                <string>None</string>
+                                               </property>
+                                              </widget>
+                                             </item>
+                                             <item>
+                                              <widget class="QRadioButton" name="radioButton_handshake_xon_xoff">
+                                               <property name="text">
+                                                <string>XON / XOFF</string>
+                                               </property>
+                                              </widget>
+                                             </item>
+                                             <item>
+                                              <widget class="QRadioButton" name="radioButton_handshake_hardware">
+                                               <property name="text">
+                                                <string>Hardware</string>
+                                               </property>
+                                              </widget>
+                                             </item>
+                                            </layout>
+                                           </widget>
+                                          </item>
+                                         </layout>
+                                        </widget>
+                                       </item>
+                                       <item>
+                                        <widget class="QGroupBox" name="groupBox_force_control_lines">
+                                         <property name="title">
+                                          <string>Force Control Lines</string>
+                                         </property>
+                                         <layout class="QHBoxLayout" name="horizontalLayout_24">
+                                          <item>
+                                           <widget class="QFrame" name="frame_force_control_lines_1">
+                                            <property name="sizePolicy">
+                                             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+                                              <horstretch>0</horstretch>
+                                              <verstretch>0</verstretch>
+                                             </sizepolicy>
+                                            </property>
+                                            <property name="frameShape">
+                                             <enum>QFrame::NoFrame</enum>
+                                            </property>
+                                            <property name="frameShadow">
+                                             <enum>QFrame::Plain</enum>
+                                            </property>
+                                            <layout class="QFormLayout" name="formLayout_19">
+                                             <property name="leftMargin">
+                                              <number>0</number>
+                                             </property>
+                                             <property name="topMargin">
+                                              <number>0</number>
+                                             </property>
+                                             <property name="rightMargin">
+                                              <number>0</number>
+                                             </property>
+                                             <property name="bottomMargin">
+                                              <number>0</number>
+                                             </property>
+                                             <item row="0" column="0">
+                                              <widget class="QLabel" name="label">
+                                               <property name="text">
+                                                <string>DTR: </string>
+                                               </property>
+                                              </widget>
+                                             </item>
+                                             <item row="0" column="1">
+                                              <widget class="QComboBox" name="comboBox_force_ctrl_lines_dtr">
+                                               <property name="sizePolicy">
+                                                <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                                                 <horstretch>0</horstretch>
+                                                 <verstretch>0</verstretch>
+                                                </sizepolicy>
+                                               </property>
+                                              </widget>
+                                             </item>
+                                            </layout>
+                                           </widget>
+                                          </item>
+                                          <item>
+                                           <widget class="QFrame" name="frame_force_control_lines_2">
+                                            <property name="sizePolicy">
+                                             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+                                              <horstretch>0</horstretch>
+                                              <verstretch>0</verstretch>
+                                             </sizepolicy>
+                                            </property>
+                                            <property name="frameShape">
+                                             <enum>QFrame::NoFrame</enum>
+                                            </property>
+                                            <property name="frameShadow">
+                                             <enum>QFrame::Plain</enum>
+                                            </property>
+                                            <layout class="QFormLayout" name="formLayout_20">
+                                             <property name="leftMargin">
+                                              <number>0</number>
+                                             </property>
+                                             <property name="topMargin">
+                                              <number>0</number>
+                                             </property>
+                                             <property name="rightMargin">
+                                              <number>0</number>
+                                             </property>
+                                             <property name="bottomMargin">
+                                              <number>0</number>
+                                             </property>
+                                             <item row="0" column="0">
+                                              <widget class="QLabel" name="label_2">
+                                               <property name="text">
+                                                <string>RTS: </string>
+                                               </property>
+                                              </widget>
+                                             </item>
+                                             <item row="0" column="1">
+                                              <widget class="QComboBox" name="comboBox_force_ctrl_lines_rts">
+                                               <property name="sizePolicy">
+                                                <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                                                 <horstretch>0</horstretch>
+                                                 <verstretch>0</verstretch>
+                                                </sizepolicy>
+                                               </property>
+                                              </widget>
+                                             </item>
+                                            </layout>
+                                           </widget>
+                                          </item>
+                                         </layout>
+                                        </widget>
+                                       </item>
+                                      </layout>
+                                     </widget>
+                                    </item>
+                                   </layout>
+                                  </widget>
+                                 </item>
                                 </layout>
                                </widget>
                               </item>
+                             </layout>
+                            </widget>
+                           </item>
+                           <item>
+                            <widget class="QFrame" name="frame_21">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                               <horstretch>50</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                             <property name="frameShape">
+                              <enum>QFrame::NoFrame</enum>
+                             </property>
+                             <property name="frameShadow">
+                              <enum>QFrame::Raised</enum>
+                             </property>
+                             <layout class="QHBoxLayout" name="horizontalLayout_46">
+                              <property name="leftMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="topMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="rightMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="bottomMargin">
+                               <number>0</number>
+                              </property>
                               <item>
-                               <widget class="QFrame" name="frame_tx_audio_source">
-                                <property name="frameShape">
-                                 <enum>QFrame::NoFrame</enum>
+                               <widget class="QGroupBox" name="groupBox_ptt_method">
+                                <property name="title">
+                                 <string>PTT Method</string>
                                 </property>
-                                <property name="frameShadow">
-                                 <enum>QFrame::Plain</enum>
-                                </property>
-                                <layout class="QVBoxLayout" name="verticalLayout_45">
-                                 <property name="leftMargin">
-                                  <number>0</number>
-                                 </property>
-                                 <property name="topMargin">
-                                  <number>0</number>
-                                 </property>
-                                 <property name="rightMargin">
-                                  <number>0</number>
-                                 </property>
-                                 <property name="bottomMargin">
-                                  <number>0</number>
-                                 </property>
+                                <layout class="QVBoxLayout" name="verticalLayout_36">
                                  <item>
-                                  <widget class="QGroupBox" name="groupBox_tx_audio_source">
-                                   <property name="title">
-                                    <string>Transmit Audio Source</string>
+                                  <widget class="QFrame" name="frame_ptt_method">
+                                   <property name="frameShape">
+                                    <enum>QFrame::NoFrame</enum>
                                    </property>
-                                   <layout class="QHBoxLayout" name="horizontalLayout_7">
-                                    <property name="spacing">
-                                     <number>0</number>
-                                    </property>
+                                   <property name="frameShadow">
+                                    <enum>QFrame::Plain</enum>
+                                   </property>
+                                   <layout class="QVBoxLayout" name="verticalLayout_43">
                                     <property name="leftMargin">
                                      <number>0</number>
                                     </property>
@@ -3696,33 +4012,57 @@ Thanks.</string>
                                      <number>0</number>
                                     </property>
                                     <item>
-                                     <widget class="QFrame" name="frame_tx_audio_rear_data">
+                                     <widget class="QFrame" name="frame_ptt_method_radio_1">
+                                      <property name="sizePolicy">
+                                       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+                                        <horstretch>0</horstretch>
+                                        <verstretch>0</verstretch>
+                                       </sizepolicy>
+                                      </property>
                                       <property name="frameShape">
                                        <enum>QFrame::NoFrame</enum>
                                       </property>
                                       <property name="frameShadow">
                                        <enum>QFrame::Plain</enum>
                                       </property>
-                                      <layout class="QVBoxLayout" name="verticalLayout_39">
-                                       <property name="spacing">
-                                        <number>7</number>
-                                       </property>
+                                      <layout class="QHBoxLayout" name="horizontalLayout_19">
                                        <property name="leftMargin">
-                                        <number>7</number>
+                                        <number>0</number>
                                        </property>
                                        <property name="topMargin">
-                                        <number>7</number>
+                                        <number>0</number>
                                        </property>
                                        <property name="rightMargin">
-                                        <number>7</number>
+                                        <number>0</number>
                                        </property>
                                        <property name="bottomMargin">
-                                        <number>7</number>
+                                        <number>0</number>
                                        </property>
                                        <item>
-                                        <widget class="QRadioButton" name="radioButton_tx_audio_src_rear_data">
+                                        <widget class="QRadioButton" name="radioButton_ptt_method_rts">
                                          <property name="text">
-                                          <string>Rear/Data</string>
+                                          <string>RTS</string>
+                                         </property>
+                                        </widget>
+                                       </item>
+                                       <item>
+                                        <widget class="QRadioButton" name="radioButton_ptt_method_vox">
+                                         <property name="text">
+                                          <string>VOX</string>
+                                         </property>
+                                        </widget>
+                                       </item>
+                                       <item>
+                                        <widget class="QRadioButton" name="radioButton_ptt_method_dtr">
+                                         <property name="text">
+                                          <string>DTR</string>
+                                         </property>
+                                        </widget>
+                                       </item>
+                                       <item>
+                                        <widget class="QRadioButton" name="radioButton_ptt_method_cat">
+                                         <property name="text">
+                                          <string>CAT</string>
                                          </property>
                                         </widget>
                                        </item>
@@ -3730,33 +4070,66 @@ Thanks.</string>
                                      </widget>
                                     </item>
                                     <item>
-                                     <widget class="QFrame" name="frame_tx_audio_front_mic">
+                                     <widget class="QFrame" name="frame_ptt_method_port_1">
                                       <property name="frameShape">
                                        <enum>QFrame::NoFrame</enum>
                                       </property>
                                       <property name="frameShadow">
                                        <enum>QFrame::Plain</enum>
                                       </property>
-                                      <layout class="QVBoxLayout" name="verticalLayout_38">
-                                       <property name="spacing">
-                                        <number>7</number>
-                                       </property>
+                                      <layout class="QFormLayout" name="formLayout_18">
                                        <property name="leftMargin">
-                                        <number>7</number>
+                                        <number>0</number>
                                        </property>
                                        <property name="topMargin">
-                                        <number>7</number>
+                                        <number>0</number>
                                        </property>
                                        <property name="rightMargin">
-                                        <number>7</number>
+                                        <number>0</number>
                                        </property>
                                        <property name="bottomMargin">
-                                        <number>7</number>
+                                        <number>0</number>
                                        </property>
-                                       <item>
-                                        <widget class="QRadioButton" name="radioButton_tx_audio_src_front_mic">
+                                       <item row="0" column="0">
+                                        <widget class="QLabel" name="label_ptt_method_port">
                                          <property name="text">
-                                          <string>Front/Mic</string>
+                                          <string>Device Port: </string>
+                                         </property>
+                                        </widget>
+                                       </item>
+                                       <item row="0" column="1">
+                                        <widget class="QComboBox" name="comboBox_ptt_method_port">
+                                         <property name="sizePolicy">
+                                          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                                           <horstretch>0</horstretch>
+                                           <verstretch>0</verstretch>
+                                          </sizepolicy>
+                                         </property>
+                                        </widget>
+                                       </item>
+                                       <item row="1" column="0">
+                                        <widget class="QLabel" name="label_ptt_method_dev_path">
+                                         <property name="text">
+                                          <string>Device Path: </string>
+                                         </property>
+                                        </widget>
+                                       </item>
+                                       <item row="1" column="1">
+                                        <widget class="QLineEdit" name="lineEdit_ptt_method_dev_path">
+                                         <property name="sizePolicy">
+                                          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                                           <horstretch>0</horstretch>
+                                           <verstretch>0</verstretch>
+                                          </sizepolicy>
+                                         </property>
+                                         <property name="maxLength">
+                                          <number>16384</number>
+                                         </property>
+                                         <property name="readOnly">
+                                          <bool>true</bool>
+                                         </property>
+                                         <property name="placeholderText">
+                                          <string>N/A</string>
                                          </property>
                                         </widget>
                                        </item>
@@ -3766,109 +4139,225 @@ Thanks.</string>
                                    </layout>
                                   </widget>
                                  </item>
-                                </layout>
-                               </widget>
-                              </item>
-                              <item>
-                               <widget class="QFrame" name="frame_mode">
-                                <property name="frameShape">
-                                 <enum>QFrame::NoFrame</enum>
-                                </property>
-                                <property name="frameShadow">
-                                 <enum>QFrame::Plain</enum>
-                                </property>
-                                <layout class="QVBoxLayout" name="verticalLayout_46">
-                                 <property name="leftMargin">
-                                  <number>0</number>
-                                 </property>
-                                 <property name="topMargin">
-                                  <number>0</number>
-                                 </property>
-                                 <property name="rightMargin">
-                                  <number>0</number>
-                                 </property>
-                                 <property name="bottomMargin">
-                                  <number>0</number>
-                                 </property>
                                  <item>
-                                  <widget class="QGroupBox" name="groupBox_mode">
-                                   <property name="title">
-                                    <string>Mode</string>
+                                  <widget class="QFrame" name="frame_tx_audio_source">
+                                   <property name="frameShape">
+                                    <enum>QFrame::NoFrame</enum>
                                    </property>
-                                   <layout class="QHBoxLayout" name="horizontalLayout_25">
+                                   <property name="frameShadow">
+                                    <enum>QFrame::Plain</enum>
+                                   </property>
+                                   <layout class="QVBoxLayout" name="verticalLayout_45">
+                                    <property name="leftMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="topMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="rightMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="bottomMargin">
+                                     <number>0</number>
+                                    </property>
                                     <item>
-                                     <widget class="QRadioButton" name="radioButton_mode_none">
-                                      <property name="text">
-                                       <string>None</string>
+                                     <widget class="QGroupBox" name="groupBox_tx_audio_source">
+                                      <property name="title">
+                                       <string>Transmit Audio Source</string>
                                       </property>
-                                     </widget>
-                                    </item>
-                                    <item>
-                                     <widget class="QRadioButton" name="radioButton_mode_usb">
-                                      <property name="text">
-                                       <string>USB</string>
-                                      </property>
-                                     </widget>
-                                    </item>
-                                    <item>
-                                     <widget class="QRadioButton" name="radioButton_mode_data_pkt">
-                                      <property name="text">
-                                       <string>Data / PKT</string>
-                                      </property>
+                                      <layout class="QHBoxLayout" name="horizontalLayout_7">
+                                       <property name="spacing">
+                                        <number>0</number>
+                                       </property>
+                                       <property name="leftMargin">
+                                        <number>0</number>
+                                       </property>
+                                       <property name="topMargin">
+                                        <number>0</number>
+                                       </property>
+                                       <property name="rightMargin">
+                                        <number>0</number>
+                                       </property>
+                                       <property name="bottomMargin">
+                                        <number>0</number>
+                                       </property>
+                                       <item>
+                                        <widget class="QFrame" name="frame_tx_audio_rear_data">
+                                         <property name="frameShape">
+                                          <enum>QFrame::NoFrame</enum>
+                                         </property>
+                                         <property name="frameShadow">
+                                          <enum>QFrame::Plain</enum>
+                                         </property>
+                                         <layout class="QVBoxLayout" name="verticalLayout_39">
+                                          <property name="spacing">
+                                           <number>7</number>
+                                          </property>
+                                          <property name="leftMargin">
+                                           <number>7</number>
+                                          </property>
+                                          <property name="topMargin">
+                                           <number>7</number>
+                                          </property>
+                                          <property name="rightMargin">
+                                           <number>7</number>
+                                          </property>
+                                          <property name="bottomMargin">
+                                           <number>7</number>
+                                          </property>
+                                          <item>
+                                           <widget class="QRadioButton" name="radioButton_tx_audio_src_rear_data">
+                                            <property name="text">
+                                             <string>Rear/Data</string>
+                                            </property>
+                                           </widget>
+                                          </item>
+                                         </layout>
+                                        </widget>
+                                       </item>
+                                       <item>
+                                        <widget class="QFrame" name="frame_tx_audio_front_mic">
+                                         <property name="frameShape">
+                                          <enum>QFrame::NoFrame</enum>
+                                         </property>
+                                         <property name="frameShadow">
+                                          <enum>QFrame::Plain</enum>
+                                         </property>
+                                         <layout class="QVBoxLayout" name="verticalLayout_38">
+                                          <property name="spacing">
+                                           <number>7</number>
+                                          </property>
+                                          <property name="leftMargin">
+                                           <number>7</number>
+                                          </property>
+                                          <property name="topMargin">
+                                           <number>7</number>
+                                          </property>
+                                          <property name="rightMargin">
+                                           <number>7</number>
+                                          </property>
+                                          <property name="bottomMargin">
+                                           <number>7</number>
+                                          </property>
+                                          <item>
+                                           <widget class="QRadioButton" name="radioButton_tx_audio_src_front_mic">
+                                            <property name="text">
+                                             <string>Front/Mic</string>
+                                            </property>
+                                           </widget>
+                                          </item>
+                                         </layout>
+                                        </widget>
+                                       </item>
+                                      </layout>
                                      </widget>
                                     </item>
                                    </layout>
                                   </widget>
                                  </item>
-                                </layout>
-                               </widget>
-                              </item>
-                              <item>
-                               <widget class="QFrame" name="frame_split_operation">
-                                <property name="frameShape">
-                                 <enum>QFrame::NoFrame</enum>
-                                </property>
-                                <property name="frameShadow">
-                                 <enum>QFrame::Plain</enum>
-                                </property>
-                                <layout class="QVBoxLayout" name="verticalLayout_47">
-                                 <property name="leftMargin">
-                                  <number>0</number>
-                                 </property>
-                                 <property name="topMargin">
-                                  <number>0</number>
-                                 </property>
-                                 <property name="rightMargin">
-                                  <number>0</number>
-                                 </property>
-                                 <property name="bottomMargin">
-                                  <number>0</number>
-                                 </property>
                                  <item>
-                                  <widget class="QGroupBox" name="groupBox_split_operation">
-                                   <property name="title">
-                                    <string>Split Operation</string>
+                                  <widget class="QFrame" name="frame_mode">
+                                   <property name="frameShape">
+                                    <enum>QFrame::NoFrame</enum>
                                    </property>
-                                   <layout class="QHBoxLayout" name="horizontalLayout_26">
+                                   <property name="frameShadow">
+                                    <enum>QFrame::Plain</enum>
+                                   </property>
+                                   <layout class="QVBoxLayout" name="verticalLayout_46">
+                                    <property name="leftMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="topMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="rightMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="bottomMargin">
+                                     <number>0</number>
+                                    </property>
                                     <item>
-                                     <widget class="QRadioButton" name="radioButton_split_none">
-                                      <property name="text">
-                                       <string>None</string>
+                                     <widget class="QGroupBox" name="groupBox_mode">
+                                      <property name="title">
+                                       <string>Mode</string>
                                       </property>
+                                      <layout class="QHBoxLayout" name="horizontalLayout_25">
+                                       <item>
+                                        <widget class="QRadioButton" name="radioButton_mode_none">
+                                         <property name="text">
+                                          <string>None</string>
+                                         </property>
+                                        </widget>
+                                       </item>
+                                       <item>
+                                        <widget class="QRadioButton" name="radioButton_mode_usb">
+                                         <property name="text">
+                                          <string>USB</string>
+                                         </property>
+                                        </widget>
+                                       </item>
+                                       <item>
+                                        <widget class="QRadioButton" name="radioButton_mode_data_pkt">
+                                         <property name="text">
+                                          <string>Data / PKT</string>
+                                         </property>
+                                        </widget>
+                                       </item>
+                                      </layout>
                                      </widget>
                                     </item>
+                                   </layout>
+                                  </widget>
+                                 </item>
+                                 <item>
+                                  <widget class="QFrame" name="frame_split_operation">
+                                   <property name="frameShape">
+                                    <enum>QFrame::NoFrame</enum>
+                                   </property>
+                                   <property name="frameShadow">
+                                    <enum>QFrame::Plain</enum>
+                                   </property>
+                                   <layout class="QVBoxLayout" name="verticalLayout_47">
+                                    <property name="leftMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="topMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="rightMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="bottomMargin">
+                                     <number>0</number>
+                                    </property>
                                     <item>
-                                     <widget class="QRadioButton" name="radioButton_split_rig">
-                                      <property name="text">
-                                       <string>Rig</string>
+                                     <widget class="QGroupBox" name="groupBox_split_operation">
+                                      <property name="title">
+                                       <string>Split Operation</string>
                                       </property>
-                                     </widget>
-                                    </item>
-                                    <item>
-                                     <widget class="QRadioButton" name="radioButton_split_fake_it">
-                                      <property name="text">
-                                       <string>Fake It</string>
-                                      </property>
+                                      <layout class="QHBoxLayout" name="horizontalLayout_26">
+                                       <item>
+                                        <widget class="QRadioButton" name="radioButton_split_none">
+                                         <property name="text">
+                                          <string>None</string>
+                                         </property>
+                                        </widget>
+                                       </item>
+                                       <item>
+                                        <widget class="QRadioButton" name="radioButton_split_rig">
+                                         <property name="text">
+                                          <string>Rig</string>
+                                         </property>
+                                        </widget>
+                                       </item>
+                                       <item>
+                                        <widget class="QRadioButton" name="radioButton_split_fake_it">
+                                         <property name="text">
+                                          <string>Fake It</string>
+                                         </property>
+                                        </widget>
+                                       </item>
+                                      </layout>
                                      </widget>
                                     </item>
                                    </layout>

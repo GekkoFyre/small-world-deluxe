@@ -107,6 +107,7 @@ public:
     ~MainWindow() override;
 
 private slots:
+    void on_actionXMPP_triggered();
     void on_actionE_xit_triggered();
     void on_action_Open_triggered();
     void on_actionCheck_for_Updates_triggered();
@@ -139,6 +140,8 @@ private slots:
     void on_actionFM_toggled(bool arg1);
     void on_actionSSB_toggled(bool arg1);
     void on_actionCW_toggled(bool arg1);
+
+    void on_actionView_Roster_triggered();
 
     //
     // Documentation
@@ -412,6 +415,8 @@ private:
     bool changeStatusBarMsg(const QString &statusMsg = "");
     bool steadyTimer(const int &seconds);
     QRect findActiveScreen();
+
+    void launchXmppRosterDlg();
 
     void print_exception(const std::exception &e, int level = 0);
 

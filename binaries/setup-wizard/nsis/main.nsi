@@ -343,6 +343,13 @@ SectionGroup "Small World Deluxe" SWDsection
       SectionEnd
     SectionGroupEnd
 
+      Section "XMPP"
+        SectionIn RO
+          SetOutPath "$INSTDIR"
+            File "${GK_ROOT_PATH}\cmake-build-debug\libqxmpp.dll"
+      SectionEnd
+    SectionGroupEnd
+
     SectionGroup "Audio API"
       Section "DirectSound support"
         SectionIn RO

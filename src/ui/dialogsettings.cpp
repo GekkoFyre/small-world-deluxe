@@ -2531,3 +2531,18 @@ void DialogSettings::on_comboBox_audio_output_bit_rate_currentIndexChanged(int i
 {
     return;
 }
+
+void DialogSettings::on_toolButton_xmpp_upload_avatar_browse_file_clicked()
+{
+    return;
+}
+
+void DialogSettings::on_toolButton_xmpp_delete_avatar_from_server_clicked()
+{
+    return;
+}
+
+void DialogSettings::on_toolButton_xmpp_upload_avatar_to_server_clicked()
+{
+    return;
+}
