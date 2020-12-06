@@ -41,7 +41,17 @@
 
 #pragma once
 
+#include "src/defines.hpp"
+#include "src/gk_logger.hpp"
+#include "src/gk_xmpp_client.hpp"
+#include <qxmpp/QXmppClient.h>
+#include <qxmpp/QXmppDiscoveryManager.h>
+#include <qxmpp/QXmppRegistrationManager.h>
+#include <memory>
+#include <QString>
+#include <QObject>
 #include <QDialog>
+#include <QPointer>
 
 namespace Ui {
 class GkXmppRegistrationDialog;
@@ -52,8 +62,10 @@ class GkXmppRegistrationDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit GkXmppRegistrationDialog(QWidget *parent = nullptr);
-    ~GkXmppRegistrationDialog();
+    explicit GkXmppRegistrationDialog(const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
+                                      QPointer<GekkoFyre::GkXmppClient> xmppClient,
+                                      QPointer<GekkoFyre::GkEventLogger> eventLogger, QWidget *parent = nullptr);
+    ~GkXmppRegistrationDialog() override;
 
 private slots:
     void on_pushButton_submit_clicked();
@@ -66,5 +78,17 @@ private slots:
 
 private:
     Ui::GkXmppRegistrationDialog *ui;
+    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
+
+    //
+    // QXmpp and XMPP related
+    //
+    GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
+    QPointer<GekkoFyre::GkXmppClient> gkXmppClient;
+    QPointer<QXmppClient> xmppClientPtr;
+    std::unique_ptr<QXmppDiscoveryManager> gkDiscoMgr;
+    std::unique_ptr<QXmppRegistrationManager> gkXmppRegistrationMgr;
+
+    void userSignup(const QString &user, const QString &password, const QString &captcha);
 };
 

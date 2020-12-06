@@ -83,6 +83,7 @@
 #endif
 
 using namespace GekkoFyre;
+using namespace GkAudioFramework;
 using namespace Database;
 using namespace Settings;
 using namespace Audio;
@@ -92,6 +93,8 @@ using namespace Spectrograph;
 using namespace System;
 using namespace Events;
 using namespace Logging;
+using namespace Network;
+using namespace GkXmpp;
 
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
@@ -1655,10 +1658,10 @@ QRect MainWindow::findActiveScreen()
  */
 void MainWindow::launchXmppRosterDlg()
 {
-    QPointer<GkXmppRosterDialog> gkXmppRosterDlg = new GkXmppRosterDialog(tr("test_user"), tr("test_pass"),
-                                                                          gkEventLogger, this);
+    gkXmppClient = new GkXmppClient(xmpp_conn_details, gkEventLogger, this);
+    QPointer<GkXmppRosterDialog> gkXmppRosterDlg = new GkXmppRosterDialog(xmpp_conn_details, gkXmppClient, gkEventLogger, this);
     gkXmppRosterDlg->setWindowFlags(Qt::Window);
-    gkXmppRosterDlg->setAttribute(Qt::WA_DeleteOnClose, true);
+    gkXmppRosterDlg->setAttribute(Qt::WA_DeleteOnClose, false); // Do NOT delete on close!
     gkXmppRosterDlg->show();
 
     return;

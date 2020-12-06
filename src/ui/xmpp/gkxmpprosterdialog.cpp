@@ -41,6 +41,7 @@
 
 #include "gkxmpprosterdialog.hpp"
 #include "ui_gkxmpprosterdialog.h"
+#include <utility>
 
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
@@ -56,15 +57,22 @@ using namespace Logging;
 using namespace Network;
 using namespace GkXmpp;
 
-GkXmppRosterDialog::GkXmppRosterDialog(const QString &jid, const QString &password,
-                                       QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                                       QWidget *parent) : QDialog(parent), ui(new Ui::GkXmppRosterDialog)
+GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPointer<GkXmppClient> xmppClient,
+                                       QPointer<GkEventLogger> eventLogger, QWidget *parent) : QDialog(parent),
+                                       ui(new Ui::GkXmppRosterDialog)
 {
     ui->setupUi(this);
+
+    gkConnDetails = connection_details;
     gkEventLogger = std::move(eventLogger);
 
-    GkConnection conn_details; // TODO: Finish this off!
-    gkXmppClient = new GkXmppClient(conn_details, gkEventLogger, parent);
+    //
+    // QXmpp and XMPP related
+    //
+    gkXmppClient = std::move(xmppClient);
+    xmppClientPtr = std::move(gkXmppClient->xmppClient());
+    gkXmppMsgDlg = new GkXmppMessageDialog(gkXmppClient, parent);
+    gkXmppRegistrationDlg = new GkXmppRegistrationDialog(gkConnDetails, gkXmppClient, gkEventLogger, parent);
 }
 
 GkXmppRosterDialog::~GkXmppRosterDialog()
@@ -84,7 +92,35 @@ void GkXmppRosterDialog::prefillAvailComboBox()
     return;
 }
 
+/**
+ * @brief GkXmppRosterDialog::on_comboBox_current_status_currentIndexChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ */
 void GkXmppRosterDialog::on_comboBox_current_status_currentIndexChanged(int index)
 {
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::on_pushButton_user_login_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRosterDialog::on_pushButton_user_login_clicked()
+{
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::on_pushButton_user_create_account_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRosterDialog::on_pushButton_user_create_account_clicked()
+{
+    gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
+    gkXmppRegistrationDlg->setAttribute(Qt::WA_DeleteOnClose, true);
+    gkXmppRegistrationDlg->show();
+    this->close();
+
     return;
 }

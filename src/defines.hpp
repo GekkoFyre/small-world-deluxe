@@ -673,7 +673,7 @@ namespace Network {
             bool joined;
         };
 
-        struct GkConnection {
+        struct GkUserConn {
             GkHost server;
             QString jid;
             QString password;

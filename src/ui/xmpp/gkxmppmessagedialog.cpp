@@ -41,13 +41,31 @@
 
 #include "gkxmppmessagedialog.hpp"
 #include "ui_gkxmppmessagedialog.h"
+#include <utility>
 #include <QIcon>
+#include <QPixmap>
 
-GkXmppMessageDialog::GkXmppMessageDialog(QWidget *parent) :
+using namespace GekkoFyre;
+using namespace GkAudioFramework;
+using namespace Database;
+using namespace Settings;
+using namespace Audio;
+using namespace AmateurRadio;
+using namespace Control;
+using namespace Spectrograph;
+using namespace System;
+using namespace Events;
+using namespace Logging;
+using namespace Network;
+using namespace GkXmpp;
+
+GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::GkXmppClient> xmppClient, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::GkXmppMessageDialog)
 {
     ui->setupUi(this);
+
+    gkXmppClient = std::move(xmppClient);
 
     ui->label_callsign_2_icon->setPixmap(QPixmap(":/resources/contrib/images/vector/no-attrib/walkie-talkies.svg"));
     ui->toolButton_font->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/font.svg"));

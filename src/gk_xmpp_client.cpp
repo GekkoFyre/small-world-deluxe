@@ -69,8 +69,8 @@ namespace sys = boost::system;
 
 #define OGG_VORBIS_READ (1024)
 
-GkXmppClient::GkXmppClient(const GkConnection &connection_details, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                           QObject *parent) : QXmppClient(parent), m_rosterManager(findExtension<QXmppRosterManager>())
+GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                           QObject *parent) : m_rosterManager(findExtension<QXmppRosterManager>()), QXmppClient(parent)
 {
     try {
         setParent(parent);
@@ -86,7 +86,7 @@ GkXmppClient::GkXmppClient(const GkConnection &connection_details, QPointer<Gekk
                          this, SLOT(presenceChanged(const QString &, const QString &)));
 
         m_dns = new QDnsLookup(this);
-        client = new QXmppClient(parent);
+        m_client = new QXmppClient(parent);
         m_presence = std::make_unique<QXmppPresence>();
         m_mucManager = std::make_unique<QXmppMucManager>();
 
@@ -120,8 +120,8 @@ GkXmppClient::GkXmppClient(const GkConnection &connection_details, QPointer<Gekk
                          gkEventLogger, SLOT(recvXmppLog(QXmppLogger::MessageType, QString)));
 
         QEventLoop loop;
-        QObject::connect(client, SIGNAL(connected()), &loop, SLOT(quit()));
-        QObject::connect(client, SIGNAL(disconnected()), &loop, SLOT(quit()));
+        QObject::connect(m_client, SIGNAL(connected()), &loop, SLOT(quit()));
+        QObject::connect(m_client, SIGNAL(disconnected()), &loop, SLOT(quit()));
 
         QXmppConfiguration config;
         config.setDomain(gkConnDetails.server.host.toString());
@@ -132,7 +132,7 @@ GkXmppClient::GkXmppClient(const GkConnection &connection_details, QPointer<Gekk
         config.setSaslAuthMechanism(""); // TODO: Configure this value properly!
 
         if (!gkConnDetails.server.joined) {
-            client->connectToServer(config, *m_presence);
+            m_client->connectToServer(config, *m_presence);
         }
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(tr("An issue has occurred within the XMPP subsystem. Error:\n\n%1")
@@ -218,6 +218,26 @@ bool GkXmppClient::createMuc(const QString &room_name, const QString &room_subje
     }
 
     return false;
+}
+
+/**
+ * @brief GkXmppClient::xmppClient
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return
+ */
+QPointer<QXmppClient> GkXmppClient::xmppClient()
+{
+    return m_client;
+}
+
+/**
+ * @brief GkXmppClient::xmppRoster
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return
+ */
+std::shared_ptr<QXmppRosterManager> GkXmppClient::xmppRoster()
+{
+    return m_rosterManager;
 }
 
 /**
