@@ -98,6 +98,9 @@ public:
 
     void capture_sys_info();
 
+    void write_xmpp_settings(const QString &value, const GekkoFyre::Database::Settings::GkXmppCfg &key);
+    QString read_xmpp_settings(const GekkoFyre::Database::Settings::GkXmppCfg &key);
+
     QString convSeverityToStr(const GekkoFyre::System::Events::Logging::GkSeverity &severity);
     GekkoFyre::System::Events::Logging::GkSeverity convSeverityToEnum(const QString &severity);
     sentry_level_e convSeverityToSentry(const GekkoFyre::System::Events::Logging::GkSeverity &severity);

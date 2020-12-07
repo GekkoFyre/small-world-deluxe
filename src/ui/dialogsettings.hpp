@@ -43,6 +43,7 @@
 #include "src/audio_devices.hpp"
 #include "src/gk_string_funcs.hpp"
 #include "src/gk_text_to_speech.hpp"
+#include "src/gk_xmpp_client.hpp"
 #include "src/models/tableview/gk_frequency_model.hpp"
 #include <boost/logic/tribool.hpp>
 #include <list>
@@ -90,6 +91,8 @@ public:
                             const QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> &usbPortMap,
                             QPointer<GekkoFyre::GkFrequencies> gkFreqList,
                             QPointer<GekkoFyre::GkFreqTableModel> freqTableModel,
+                            const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
+                            QPointer<GekkoFyre::GkXmppClient> xmppClient,
                             QPointer<GekkoFyre::GkEventLogger> eventLogger,
                             QPointer<GekkoFyre::GkTextToSpeech> textToSpeechPtr,
                             QWidget *parent = nullptr);
@@ -236,7 +239,7 @@ private slots:
     void on_toolButton_xmpp_upload_avatar_to_server_clicked();
     void on_pushButton_xmpp_cfg_change_password_clicked();
     void on_pushButton_xmpp_cfg_change_email_clicked();
-    void on_comboBox_xmpp_server_type_currentIndexChanged(const QString &arg1);
+    void on_comboBox_xmpp_server_type_currentIndexChanged(int index);
 
 signals:
     void changeSelectedTTSEngine(const QString &name);
@@ -278,6 +281,12 @@ private:
     QPointer<GekkoFyre::GkTextToSpeech> gkTextToSpeech;
     QPointer<GekkoFyre::AudioDevices> gkAudioDevices;
     std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> gkRadioPtr;
+
+    //
+    // QXmpp and XMPP related
+    //
+    GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
+    QPointer<GekkoFyre::GkXmppClient> gkXmppClient;
 
     static QComboBox *rig_comboBox;
     static QComboBox *mfg_comboBox;
@@ -321,6 +330,7 @@ private:
     void prefill_audio_devices();
     void prefill_audio_encode_comboboxes();
     void prefill_event_logger();
+    void prefill_xmpp_server_type(const GekkoFyre::Network::GkXmpp::GkServerType &server_type);
     void init_station_info();
 
     void print_exception(const std::exception &e, int level = 0);

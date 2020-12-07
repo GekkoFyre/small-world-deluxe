@@ -80,7 +80,6 @@ private:
     //
     GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
     QPointer<GekkoFyre::GkXmppClient> gkXmppClient;
-    QPointer<QXmppClient> xmppClientPtr;
     QPointer<GkXmppMessageDialog> gkXmppMsgDlg;
 
     void prefillAvailComboBox();

@@ -71,7 +71,6 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
     // QXmpp and XMPP related
     //
     gkXmppClient = std::move(xmppClient);
-    xmppClientPtr = std::move(gkXmppClient->xmppClient());
     gkXmppMsgDlg = new GkXmppMessageDialog(gkXmppClient, parent);
 }
 

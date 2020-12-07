@@ -909,8 +909,8 @@ void MainWindow::launchSettingsWin()
                                                                gkAudioOutput, avail_input_audio_devs, avail_output_audio_devs,
                                                                pref_input_device, pref_output_device, gkRadioLibs,
                                                                gkStringFuncs, gkRadioPtr, gkSerialPortMap, gkUsbPortMap,
-                                                               gkFreqList, gkFreqTableModel, gkEventLogger,
-                                                               gkTextToSpeech, this);
+                                                               gkFreqList, gkFreqTableModel, xmpp_conn_details, gkXmppClient,
+                                                               gkEventLogger, gkTextToSpeech, this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));

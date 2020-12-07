@@ -91,7 +91,6 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
         //
         gkConnDetails = connection_details;
         gkXmppClient = std::move(xmppClient);
-        xmppClientPtr = std::move(gkXmppClient->xmppClient());
         gkDiscoMgr = std::make_unique<QXmppDiscoveryManager>();
         gkXmppRegistrationMgr.reset(gkXmppClient->findExtension<QXmppRegistrationManager>()); // Verify that the extension is available at the given server!
 
@@ -119,10 +118,10 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
         }
 
         QObject::connect(this, SIGNAL(sendError(const QString &)), this, SLOT(handleError(const QString &)));
-        QObject::connect(xmppClientPtr, &QXmppClient::connected, [=]() {
+        QObject::connect(gkXmppClient, &QXmppClient::connected, [=]() {
             // The service discovery manager is added to the client by default...
-            gkDiscoMgr.reset(xmppClientPtr->findExtension<QXmppDiscoveryManager>());
-            gkDiscoMgr->requestInfo(xmppClientPtr->configuration().domain());
+            gkDiscoMgr.reset(gkXmppClient->findExtension<QXmppDiscoveryManager>());
+            gkDiscoMgr->requestInfo(gkXmppClient->configuration().domain());
         });
 
         //
@@ -376,7 +375,7 @@ void GkXmppRegistrationDialog::sendFilledRegistrationForm(const QString &user, c
 
         gkXmppRegistrationMgr->setRegistrationFormToSend(gkRegisterIq);
         gkEventLogger->publishEvent(tr("User, \"%1\", has been registered with XMPP server: %2")
-                                            .arg(gkConnDetails.jid).arg(gkConnDetails.server.host.toString()), GkSeverity::Info,
+                                            .arg(gkConnDetails.jid).arg(gkConnDetails.server.domain.toString()), GkSeverity::Info,
                                     "", true, true, false, false);
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);

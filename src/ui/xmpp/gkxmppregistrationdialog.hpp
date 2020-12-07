@@ -103,7 +103,6 @@ private:
     //
     GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
     QPointer<GekkoFyre::GkXmppClient> gkXmppClient;
-    QPointer<QXmppClient> xmppClientPtr;
     std::unique_ptr<QXmppDiscoveryManager> gkDiscoMgr;
     std::unique_ptr<QXmppRegistrationManager> gkXmppRegistrationMgr;
 

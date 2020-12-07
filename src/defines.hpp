@@ -108,6 +108,9 @@ namespace GekkoFyre {
 //
 #define GK_XMPP_AVAIL_COMBO_AVAILABLE_IDX (0)
 #define GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX (1)
+#define GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX (0)
+#define GK_XMPP_SERVER_TYPE_COMBO_GOOGLE_IDX (1)
+#define GK_XMPP_SERVER_TYPE_COMBO_CUSTOM_IDX (2)
 
 //
 // Networking settings (also sometimes related to XMPP!)
@@ -431,6 +434,18 @@ namespace Database {
             WindowVSize
         };
 
+        enum GkXmppCfg {
+            XmppAllowMsgHistory,
+            XmppAllowFileXfers,
+            XmppAlowMucs,
+            XmppAutoConnect,
+            XmppAvatarByteArray,
+            XmppDomainUrl,
+            XmppServerType,
+            XmppDomainPort,
+            XmppEnableSsl
+        };
+
         enum Codec2Mode {
             freeDvMode2020,
             freeDvMode700D,
@@ -679,7 +694,7 @@ namespace Network {
             NetworkError
         };
 
-        enum GkDnsLookup {                                  // Information pertaining to DNS Lookups for the QXmpp library.
+        enum GkServerType {                                  // Information pertaining to DNS Lookups for the QXmpp library.
             GekkoFyre,
             Google,
             Custom,
@@ -687,8 +702,8 @@ namespace Network {
         };
 
         struct GkHost {                                     // Host information as related to the QXmpp libraries.
-            GkDnsLookup dns;
-            QHostAddress host;
+            GkServerType type;
+            QHostAddress domain;
             QHostInfo info;
             quint16 port;
         };
