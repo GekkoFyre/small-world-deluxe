@@ -2531,3 +2531,33 @@ void DialogSettings::on_comboBox_audio_output_bit_rate_currentIndexChanged(int i
 {
     return;
 }
+
+void DialogSettings::on_toolButton_xmpp_upload_avatar_browse_file_clicked()
+{
+    return;
+}
+
+void DialogSettings::on_toolButton_xmpp_delete_avatar_from_server_clicked()
+{
+    return;
+}
+
+void DialogSettings::on_toolButton_xmpp_upload_avatar_to_server_clicked()
+{
+    return;
+}
+
+void DialogSettings::on_pushButton_xmpp_cfg_change_password_clicked()
+{
+    return;
+}
+
+void DialogSettings::on_pushButton_xmpp_cfg_change_email_clicked()
+{
+    return;
+}
+
+void DialogSettings::on_comboBox_xmpp_server_type_currentIndexChanged(const QString &arg1)
+{
+    return;
+}

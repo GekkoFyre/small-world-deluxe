@@ -42,44 +42,40 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/models/tableview/gk_logger_model.hpp"
-#include <qxmpp/QXmppLogger.h>
-#include <mutex>
-#include <QVariant>
-#include <QPointer>
+#include "src/gk_logger.hpp"
+#include <QMutex>
+#include <QThread>
 #include <QObject>
 #include <QString>
-#include <QList>
+#include <QPointer>
+#include <QProcess>
+#include <QHostInfo>
+#include <QHostAddress>
 
 namespace GekkoFyre {
 
-class GkEventLogger : public QObject {
+class GkNetworkPingModel : public QThread {
     Q_OBJECT
 
 public:
-    explicit GkEventLogger(QPointer<GekkoFyre::StringFuncs> stringFuncs, QObject *parent = nullptr);
-    ~GkEventLogger() override;
+    explicit GkNetworkPingModel(QPointer<GekkoFyre::GkEventLogger> &eventLogger, QObject *parent = nullptr);
+    ~GkNetworkPingModel() override;
+
+    void run() Q_DECL_OVERRIDE;
+    void ping(const QHostAddress &host);
+
+    bool isRunning();
+    bool isFinished();
 
 public slots:
-    void publishEvent(const QString &event, const GekkoFyre::System::Events::Logging::GkSeverity &severity = GekkoFyre::System::Events::Logging::GkSeverity::Warning,
-                      const QVariant &arguments = "", const bool &sys_notification = false, const bool &publishToConsole = true,
-                      const bool &publishToStatusBar = false, const bool &displayMsgBox = false);
-    void recvXmppLog(QXmppLogger::MessageType msg_type, QString msg);
-
-signals:
-    void sendEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &event);
-    void removeEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &event);
-    void sendToStatusBar(const QString &msg);
+    void verifyStatus();
+    void readResult();
 
 private:
-    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
-    QList<GekkoFyre::System::Events::Logging::GkEventLogging> eventLogDb;                       // Where the event log itself is stored in memory...
+    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
-    qint64 setDate();
-    int setEventNo();
-    void systemNotification(const QString &title, const GekkoFyre::System::Events::Logging::GkEventLogging &event_msg);
-    void sendToConsole(const GekkoFyre::System::Events::Logging::GkEventLogging &event_msg,
-                       const GekkoFyre::System::Events::Logging::GkSeverity &severity);
+    QPointer<QProcess> pingProc;
+    bool running;
 
 };
 };

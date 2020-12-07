@@ -77,16 +77,21 @@ sworld_debug_archlinux_x86_64:
   - export CXX=/usr/bin/clang++
   - strip --remove-section=.note.ABI-tag /usr/lib64/libQt5Core.so.5
   - git clone https://github.com/drowe67/codec2.git
+  - git submodule update --init --recursive
   - cd codec2 && mkdir build && cd build
   - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=NO ..
-  - make -j 8 && make install
+  - make -j 4 && make install
   - cd ./../..
+  - cd src/contrib/qxmpp && mkdir build && cd build
+  - cmake -G "Unix Makefiles" -DBUILD_SHARED_LIBS=NO ..
+  - cmake --build . --target install
+  - cd ./../../../..
   script:
   - export CC=/usr/bin/clang
   - export CXX=/usr/bin/clang++
   - mkdir -p src_build && cd src_build
-  - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DGFYRE_BUILD_STATIC=ON -DBUILD_CODEC2_SUPPORT=OFF -DBUILD_OPUS_SUPPORT=OFF ..
-  - make -j 8
+  - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=NO -DGFYRE_BUILD_STATIC=ON ..
+  - make -j 4
   - cd ./..
   after_script:
   - echo "Finished execution of Preparatory Build and secondary, lesser stage!"
@@ -107,8 +112,8 @@ sworld_sentry_archlinux_x86_64:
   script:
   - sentry-cli --auth-token $GK_SENTRY_AUTH_KEY --url $GK_SENTRY_URL upload-dif -o
     gekkofyre-networks -p small-world-deluxe ./src_build/ --include-sources --log-level=error
-  - sentry-cli releases new $MAJOR.$MINOR.$PATCH-$CI_COMMIT_SHA --project small-world-deluxe
-  - sentry-cli releases set-commits $MAJOR.$MINOR.$PATCH-$CI_COMMIT_SHA --auto
+  - sentry-cli releases new $MAJOR.$MINOR.$PATCH --project small-world-deluxe
+  - sentry-cli releases set-commits $MAJOR.$MINOR.$PATCH --auto
   after_script:
   - echo "Finished uploading data to Sentry server!"
   artifacts:

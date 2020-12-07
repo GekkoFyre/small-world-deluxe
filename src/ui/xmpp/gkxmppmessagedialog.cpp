@@ -1,15 +1,15 @@
 /**
- **     __                 _ _   __    __           _     _ 
+ **     __                 _ _   __    __           _     _
  **    / _\_ __ ___   __ _| | | / / /\ \ \___  _ __| | __| |
  **    \ \| '_ ` _ \ / _` | | | \ \/  \/ / _ \| '__| |/ _` |
  **    _\ \ | | | | | (_| | | |  \  /\  / (_) | |  | | (_| |
  **    \__/_| |_| |_|\__,_|_|_|   \/  \/ \___/|_|  |_|\__,_|
- **                                                         
- **                  ___     _                              
- **                 /   \___| |_   ___  _____               
- **                / /\ / _ \ | | | \ \/ / _ \              
- **               / /_//  __/ | |_| |>  <  __/              
- **              /___,' \___|_|\__,_/_/\_\___|              
+ **
+ **                  ___     _
+ **                 /   \___| |_   ___  _____
+ **                / /\ / _ \ | | | \ \/ / _ \
+ **               / /_//  __/ | |_| |>  <  __/
+ **              /___,' \___|_|\__,_/_/\_\___|
  **
  **
  **   If you have downloaded the source code for "Small World Deluxe" and are reading this,
@@ -39,10 +39,11 @@
  **
  ****************************************************************************************************/
 
-#include "src/gk_xmpp_server.hpp"
-#include <boost/exception/all.hpp>
-#include <exception>
-#include <QMessageBox>
+#include "gkxmppmessagedialog.hpp"
+#include "ui_gkxmppmessagedialog.h"
+#include <utility>
+#include <QIcon>
+#include <QPixmap>
 
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
@@ -55,33 +56,45 @@ using namespace Spectrograph;
 using namespace System;
 using namespace Events;
 using namespace Logging;
+using namespace Network;
+using namespace GkXmpp;
 
-namespace fs = boost::filesystem;
-namespace sys = boost::system;
-
-GkXmppServer::GkXmppServer(QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QThread(parent)
+GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::GkXmppClient> xmppClient, QWidget *parent) :
+    QDialog(parent),
+    ui(new Ui::GkXmppMessageDialog)
 {
-    setParent(parent);
-    gkEventLogger = std::move(eventLogger);
+    ui->setupUi(this);
 
-    start();
+    gkXmppClient = std::move(xmppClient);
 
-    // Move event processing of GkPaStreamHandler to this thread
-    QObject::moveToThread(this);
+    ui->label_callsign_2_icon->setPixmap(QPixmap(":/resources/contrib/images/vector/no-attrib/walkie-talkies.svg"));
+    ui->toolButton_font->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/font.svg"));
+    ui->toolButton_font_reset->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/eraser.svg"));
+    ui->toolButton_insert->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/moustache-cream.svg"));
+    ui->toolButton_attach_file->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/attached-file.svg"));
 }
 
-GkXmppServer::~GkXmppServer()
+GkXmppMessageDialog::~GkXmppMessageDialog()
 {
-    quit();
-    wait();
+    delete ui;
 }
 
-/**
- * @brief GkXmppClient::run
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkXmppServer::run()
+void GkXmppMessageDialog::on_toolButton_font_clicked()
 {
-    exec();
+    return;
+}
+
+void GkXmppMessageDialog::on_toolButton_font_reset_clicked()
+{
+    return;
+}
+
+void GkXmppMessageDialog::on_toolButton_insert_clicked()
+{
+    return;
+}
+
+void GkXmppMessageDialog::on_toolButton_attach_file_clicked()
+{
     return;
 }

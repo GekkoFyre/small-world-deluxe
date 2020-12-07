@@ -42,6 +42,7 @@
 #include "src/ui/sendreportdialog.hpp"
 #include "src/ui/gkaudioplaydialog.hpp"
 #include "src/ui/widgets/gk_submit_msg.hpp"
+#include "src/ui/xmpp/gkxmpprosterdialog.hpp"
 #include "src/models/tableview/gk_frequency_model.hpp"
 #include "src/models/tableview/gk_logger_model.hpp"
 #include "src/models/tableview/gk_active_msgs_model.hpp"
@@ -82,6 +83,7 @@
 #endif
 
 using namespace GekkoFyre;
+using namespace GkAudioFramework;
 using namespace Database;
 using namespace Settings;
 using namespace Audio;
@@ -91,6 +93,8 @@ using namespace Spectrograph;
 using namespace System;
 using namespace Events;
 using namespace Logging;
+using namespace Network;
+using namespace GkXmpp;
 
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
@@ -157,13 +161,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         ui->actionSave_Decoded_Ab->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/clipboard-flat.svg"));
         ui->actionPrint->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/printer-rounded.svg"));
         ui->actionSettings->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/settings-flat.svg"));
-        ui->actionView_Spectrogram_Controller->setIcon(QIcon(":/resources/contrib/images/vector/purchased/iconfinder_Graph-Decrease_378375.svg"));
+        ui->actionView_Spectrogram_Controller->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/graph.svg"));
 
         ui->action_Open->setIcon(QIcon(":/resources/contrib/images/vector/purchased/iconfinder_archive_226655.svg"));
         ui->action_Print->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/printer-rounded.svg"));
         ui->actionE_xit->setIcon(QIcon(":/resources/contrib/images/vector/purchased/iconfinder_turn_off_on_power_181492.svg"));
         ui->action_Settings->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/settings-flat.svg"));
-        ui->actionCheck_for_Updates->setIcon(QIcon(":/resources/contrib/images/vector/purchased/iconfinder_chemistry_226643.svg"));
+        ui->actionCheck_for_Updates->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/update.svg"));
+        ui->actionXMPP->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/xmpp.svg"));
 
         //
         // Create a status bar at the bottom of the window with a default message
@@ -789,6 +794,16 @@ MainWindow::~MainWindow()
 
     delete db; // Free the pointer for the Google LevelDB library!
     delete ui;
+}
+
+/**
+ * @brief MainWindow::on_actionXMPP_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::on_actionXMPP_triggered()
+{
+    launchXmppRosterDlg();
+    return;
 }
 
 /**
@@ -1637,6 +1652,22 @@ QRect MainWindow::findActiveScreen()
 }
 
 /**
+ * @brief MainWindow::launchXmppRosterDlg launches the Roster Dialog for the XMPP side of Small World Deluxe, where end-users
+ * may interact with others or even signup to the given, configured server if it's their first time connecting.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::launchXmppRosterDlg()
+{
+    gkXmppClient = new GkXmppClient(xmpp_conn_details, gkEventLogger, this);
+    QPointer<GkXmppRosterDialog> gkXmppRosterDlg = new GkXmppRosterDialog(xmpp_conn_details, gkXmppClient, gkEventLogger, this);
+    gkXmppRosterDlg->setWindowFlags(Qt::Window);
+    gkXmppRosterDlg->setAttribute(Qt::WA_DeleteOnClose, false); // Do NOT delete on close!
+    gkXmppRosterDlg->show();
+
+    return;
+}
+
+/**
  * @brief MainWindow::on_actionCheck_for_Updates_triggered
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
@@ -2447,6 +2478,12 @@ void MainWindow::on_actionCW_toggled(bool arg1)
 {
     Q_UNUSED(arg1);
 
+    return;
+}
+
+void MainWindow::on_actionView_Roster_triggered()
+{
+    launchXmppRosterDlg();
     return;
 }
 

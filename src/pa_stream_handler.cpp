@@ -96,6 +96,8 @@ GkPaStreamHandler::~GkPaStreamHandler()
 
     quit();
     wait();
+
+    return;
 }
 
 /**

@@ -43,12 +43,14 @@
 
 #include "src/defines.hpp"
 #include "src/gk_logger.hpp"
+#include "src/models/system/gk_network_ping_model.hpp"
 #include <qxmpp/QXmppClient.h>
-#include <string>
-#include <vector>
+#include <qxmpp/QXmppMucManager.h>
+#include <qxmpp/QXmppRosterManager.h>
+#include <QString>
 #include <QObject>
-#include <QThread>
 #include <QPointer>
+#include <QDnsLookup>
 #include <QCoreApplication>
 
 namespace GekkoFyre {
@@ -57,16 +59,42 @@ class GkXmppClient : public QXmppClient {
     Q_OBJECT
 
 public:
-    explicit GkXmppClient(QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
+    explicit GkXmppClient(const Network::GkXmpp::GkUserConn &connection_details,
+                          QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkXmppClient() override;
 
+    bool createMuc(const QString &room_name, const QString &room_subject, const QString &room_desc);
+
+    QPointer<QXmppClient> xmppClient();
+    std::shared_ptr<QXmppRosterManager> xmppRoster();
+
+public slots:
+    void clientConnected();
+    void rosterReceived();
+    void presenceChanged(const QString &bareJid, const QString &resource);
+
+    void modifyPresence(const QXmppPresence::Type &pres);
+
+private slots:
+    void handleServers();
+
+signals:
+    void setPresence(const QXmppPresence::Type &pres);
+
 private:
-    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
+    QPointer<GkEventLogger> gkEventLogger;
+    QPointer<GkNetworkPingModel> gkNetworkPing;
 
     //
     // QXmpp and XMPP related
     //
-    QXmppClient client;
+    Network::GkXmpp::GkUserConn gkConnDetails;
+    QPointer<QDnsLookup> m_dns;
+    QPointer<QXmppClient> m_client;
+    std::shared_ptr<QXmppRosterManager> m_rosterManager;
+    std::unique_ptr<QXmppPresence> m_presence;
+    std::unique_ptr<QXmppMucManager> m_mucManager;
+    std::unique_ptr<QXmppMucRoom> m_pRoom;
 
 };
 };

@@ -2,7 +2,7 @@
 
 Copyright © 2019 - 2020 – [GekkoFyre Networks](https://gekkofyre.io/), All Rights Reserved.
 
-Authored with my beloved partner always in mind. Much love to you, Norwaro! Along with many thanks to my closest of friends, Arctic Emerald and Lord Flame Stryke ^,==,^
+I must offer my sincere thanks to the closest of friends, Arctic Emerald, BarkerJr, Davwyn, Kenric D'Souza, Lord Flame Stryke, Luxatos, Mazzeh, Oxtylxq, and others for supporting me in my efforts with coding SWD ^,==,^
 
 #### Authors
 

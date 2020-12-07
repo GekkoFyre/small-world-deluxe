@@ -45,7 +45,7 @@
 #include "src/radiolibs.hpp"
 #include "src/gk_waterfall_gui.hpp"
 #include "src/gk_fft_audio.hpp"
-#include "src/gk_circ_buffer.hpp"
+#include "src/gk_xmpp_client.hpp"
 #include "src/gk_frequency_list.hpp"
 #include "src/ui/dialogsettings.hpp"
 #include "src/ui/widgets/gk_display_image.hpp"
@@ -107,6 +107,7 @@ public:
     ~MainWindow() override;
 
 private slots:
+    void on_actionXMPP_triggered();
     void on_actionE_xit_triggered();
     void on_action_Open_triggered();
     void on_actionCheck_for_Updates_triggered();
@@ -139,6 +140,8 @@ private slots:
     void on_actionFM_toggled(bool arg1);
     void on_actionSSB_toggled(bool arg1);
     void on_actionCW_toggled(bool arg1);
+
+    void on_actionView_Roster_triggered();
 
     //
     // Documentation
@@ -400,6 +403,12 @@ private:
     bool fileOverloadWarning(const int &file_count, const int &max_num_files = GK_SSTV_FILE_DLG_LOAD_IMGS_MAX_FILES_WARN);
 
     //
+    // QXmpp and XMPP related
+    //
+    GekkoFyre::Network::GkXmpp::GkUserConn xmpp_conn_details; // TODO: Finish this off!
+    QPointer<GekkoFyre::GkXmppClient> gkXmppClient;
+
+    //
     // Spectrograph related
     //
     QPointer<GekkoFyre::GkSpectroWaterfall> gkSpectroWaterfall;
@@ -412,6 +421,8 @@ private:
     bool changeStatusBarMsg(const QString &statusMsg = "");
     bool steadyTimer(const int &seconds);
     QRect findActiveScreen();
+
+    void launchXmppRosterDlg();
 
     void print_exception(const std::exception &e, int level = 0);
 

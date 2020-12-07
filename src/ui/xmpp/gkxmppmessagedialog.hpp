@@ -1,15 +1,15 @@
 /**
- **     __                 _ _   __    __           _     _ 
+ **     __                 _ _   __    __           _     _
  **    / _\_ __ ___   __ _| | | / / /\ \ \___  _ __| | __| |
  **    \ \| '_ ` _ \ / _` | | | \ \/  \/ / _ \| '__| |/ _` |
  **    _\ \ | | | | | (_| | | |  \  /\  / (_) | |  | | (_| |
  **    \__/_| |_| |_|\__,_|_|_|   \/  \/ \___/|_|  |_|\__,_|
- **                                                         
- **                  ___     _                              
- **                 /   \___| |_   ___  _____               
- **                / /\ / _ \ | | | \ \/ / _ \              
- **               / /_//  __/ | |_| |>  <  __/              
- **              /___,' \___|_|\__,_/_/\_\___|              
+ **
+ **                  ___     _
+ **                 /   \___| |_   ___  _____
+ **                / /\ / _ \ | | | \ \/ / _ \
+ **               / /_//  __/ | |_| |>  <  __/
+ **              /___,' \___|_|\__,_/_/\_\___|
  **
  **
  **   If you have downloaded the source code for "Small World Deluxe" and are reading this,
@@ -39,49 +39,40 @@
  **
  ****************************************************************************************************/
 
-#include "src/gk_xmpp_server.hpp"
-#include <boost/exception/all.hpp>
-#include <exception>
-#include <QMessageBox>
+#pragma once
 
-using namespace GekkoFyre;
-using namespace GkAudioFramework;
-using namespace Database;
-using namespace Settings;
-using namespace Audio;
-using namespace AmateurRadio;
-using namespace Control;
-using namespace Spectrograph;
-using namespace System;
-using namespace Events;
-using namespace Logging;
+#include "src/defines.hpp"
+#include "src/gk_xmpp_client.hpp"
+#include <memory>
+#include <QString>
+#include <QObject>
+#include <QDialog>
+#include <QPointer>
 
-namespace fs = boost::filesystem;
-namespace sys = boost::system;
-
-GkXmppServer::GkXmppServer(QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QThread(parent)
-{
-    setParent(parent);
-    gkEventLogger = std::move(eventLogger);
-
-    start();
-
-    // Move event processing of GkPaStreamHandler to this thread
-    QObject::moveToThread(this);
+namespace Ui {
+class GkXmppMessageDialog;
 }
 
-GkXmppServer::~GkXmppServer()
+class GkXmppMessageDialog : public QDialog
 {
-    quit();
-    wait();
-}
+    Q_OBJECT
 
-/**
- * @brief GkXmppClient::run
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkXmppServer::run()
-{
-    exec();
-    return;
-}
+public:
+    explicit GkXmppMessageDialog(QPointer<GekkoFyre::GkXmppClient> xmppClient, QWidget *parent = nullptr);
+    ~GkXmppMessageDialog();
+
+private slots:
+    void on_toolButton_font_clicked();
+    void on_toolButton_font_reset_clicked();
+    void on_toolButton_insert_clicked();
+    void on_toolButton_attach_file_clicked();
+
+private:
+    Ui::GkXmppMessageDialog *ui;
+
+    //
+    // QXmpp and XMPP related
+    //
+    QPointer<GekkoFyre::GkXmppClient> gkXmppClient;
+};
+

@@ -50,7 +50,7 @@ cd ./../../../..
 mkdir swd-build
 cd swd-build
 
-cmake -G "Unix Makefiles" -DENBL_VALGRIND_SUPPORT=ON ..
+cmake -G "Unix Makefiles" -DBUILD_SHARED_LIBS=NO -DGFYRE_BUILD_STATIC=ON ..
 make -j$(nproc)
 
 echo "Build of Small World Deluxe has been completed successfully!"
