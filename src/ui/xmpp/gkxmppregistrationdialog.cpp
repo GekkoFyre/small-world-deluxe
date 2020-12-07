@@ -43,6 +43,8 @@
 #include "ui_gkxmppregistrationdialog.h"
 #include <qxmpp/QXmppRegisterIq.h>
 #include <utility>
+#include <QRegularExpression>
+#include <QRegularExpressionValidator>
 
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
@@ -58,7 +60,7 @@ using namespace Logging;
 using namespace Network;
 using namespace GkXmpp;
 
-GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkUserConn &connection_details,
+GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRole, const GkUserConn &connection_details,
                                                    QPointer<GekkoFyre::GkXmppClient> xmppClient,
                                                    QPointer<GekkoFyre::GkEventLogger> eventLogger, QWidget *parent) :
     QDialog(parent), ui(new Ui::GkXmppRegistrationDialog)
@@ -66,6 +68,13 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkUserConn &connection_
     ui->setupUi(this);
 
     try {
+        //
+        // Set these as invisible by default, unless the given XMPP server has a need for them!
+        ui->label_xmpp_login_captcha->setVisible(false);
+        ui->frame_xmpp_login_captcha_top->setVisible(false);
+        ui->frame_xmpp_login_captcha_bottom->setVisible(false);
+
+
         gkEventLogger = std::move(eventLogger);
 
         //
@@ -76,6 +85,41 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkUserConn &connection_
         xmppClientPtr = std::move(gkXmppClient->xmppClient());
         gkDiscoMgr = std::make_unique<QXmppDiscoveryManager>();
         gkXmppRegistrationMgr = std::make_unique<QXmppRegistrationManager>();
+
+        switch (gkRegUiRole) {
+            case AccountCreate: // Create a user account on given XMPP server with provided details...
+                ui->stackedWidget_xmpp_registration_dialog->setCurrentWidget(ui->page_account_signup_ui);
+                break;
+            case AccountLogin: // Login to given XMPP server with provided details...
+                ui->stackedWidget_xmpp_registration_dialog->setCurrentWidget(ui->page_account_login_ui);
+                break;
+            default: // What to do by default, if no information is otherwise given!
+                ui->stackedWidget_xmpp_registration_dialog->setCurrentWidget(ui->page_account_login_ui);
+                break;
+        }
+
+        QObject::connect(xmppClientPtr, &QXmppClient::connected, [=]() {
+            // The service discovery manager is added to the client by default...
+            gkDiscoMgr.reset(xmppClientPtr->findExtension<QXmppDiscoveryManager>());
+            gkDiscoMgr->requestInfo(xmppClientPtr->configuration().domain());
+        });
+
+        //
+        // Validate inputs for the Email Address
+        //
+        QRegularExpression rxEmail(R"(\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}\b)",
+                                   QRegularExpression::CaseInsensitiveOption);
+        ui->lineEdit_email->setValidator(new QRegularExpressionValidator(rxEmail, this));
+        QObject::connect(ui->lineEdit_email, SIGNAL(textChanged(const QString &)),
+                         this, SLOT(setEmailInputColor(const QString &)));
+
+        //
+        // Validate inputs for the Username
+        //
+        QRegularExpression rxUsername(R"(\b[A-Za-z0-9_]\b)", QRegularExpression::CaseInsensitiveOption);
+        ui->lineEdit_username->setValidator(new QRegularExpressionValidator(rxUsername, this));
+        QObject::connect(ui->lineEdit_username, SIGNAL(textChanged(const QString &)),
+                         this, SLOT(setUsernameInputColor(const QString &)));
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);
     }
@@ -89,10 +133,10 @@ GkXmppRegistrationDialog::~GkXmppRegistrationDialog()
 }
 
 /**
- * @brief GkXmppRegistrationDialog::on_pushButton_submit_clicked
+ * @brief GkXmppRegistrationDialog::on_pushButton_signup_submit_clicked
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void GkXmppRegistrationDialog::on_pushButton_submit_clicked()
+void GkXmppRegistrationDialog::on_pushButton_signup_submit_clicked()
 {
     QString username = ui->lineEdit_username->text();
     QString password = ui->lineEdit_password->text();
@@ -124,19 +168,46 @@ void GkXmppRegistrationDialog::on_pushButton_submit_clicked()
 }
 
 /**
- * @brief GkXmppRegistrationDialog::on_pushButton_reset_clicked
+ * @brief GkXmppRegistrationDialog::on_pushButton_signup_reset_clicked
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void GkXmppRegistrationDialog::on_pushButton_reset_clicked()
+void GkXmppRegistrationDialog::on_pushButton_signup_reset_clicked()
 {
     return;
 }
 
 /**
- * @brief GkXmppRegistrationDialog::on_pushButton_cancel_clicked
+ * @brief GkXmppRegistrationDialog::on_pushButton_signup_cancel_clicked
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void GkXmppRegistrationDialog::on_pushButton_cancel_clicked()
+void GkXmppRegistrationDialog::on_pushButton_signup_cancel_clicked()
+{
+    return;
+}
+
+/**
+ * @brief GkXmppRegistrationDialog::on_pushButton_login_submit_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRegistrationDialog::on_pushButton_login_submit_clicked()
+{
+    return;
+}
+
+/**
+ * @brief GkXmppRegistrationDialog::on_pushButton_login_reset_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRegistrationDialog::on_pushButton_login_reset_clicked()
+{
+    return;
+}
+
+/**
+ * @brief GkXmppRegistrationDialog::on_pushButton_login_cancel_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRegistrationDialog::on_pushButton_login_cancel_clicked()
 {
     return;
 }
@@ -146,6 +217,15 @@ void GkXmppRegistrationDialog::on_pushButton_cancel_clicked()
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void GkXmppRegistrationDialog::on_toolButton_xmpp_captcha_refresh_clicked()
+{
+    return;
+}
+
+/**
+ * @brief GkXmppRegistrationDialog::on_toolButton_xmpp_login_captcha_refresh_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRegistrationDialog::on_toolButton_xmpp_login_captcha_refresh_clicked()
 {
     return;
 }
@@ -178,22 +258,64 @@ void GkXmppRegistrationDialog::on_pushButton_exit_clicked()
 }
 
 /**
+ * @brief GkXmppRegistrationDialog::setEmailInputColor adjusts the color of a given QLineEdit widget, dependent on
+ * whether there's acceptable user input or not. If there's acceptable user input, the text appears as Black, otherwise
+ * it will be Red in coloration.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param adj_text Not a used value.
+ */
+void GkXmppRegistrationDialog::setEmailInputColor(const QString &adj_text)
+{
+    Q_UNUSED(adj_text);
+
+    if (!ui->lineEdit_email->hasAcceptableInput()) {
+        ui->lineEdit_email->setStyleSheet("QLineEdit { color: red; }");
+    } else {
+        ui->lineEdit_email->setStyleSheet("QLineEdit { color: black; }");
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppRegistrationDialog::setUsernameInputColor adjusts the color of a given QLineEdit widget, dependent on
+ * whether there's acceptable user input or not. If there's acceptable user input, the text appears as Black, otherwise
+ * it will be Red in coloration.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param adj_text Not a used value.
+ */
+void GkXmppRegistrationDialog::setUsernameInputColor(const QString &adj_text)
+{
+    Q_UNUSED(adj_text);
+
+    if (!ui->lineEdit_username->hasAcceptableInput()) {
+        ui->lineEdit_username->setStyleSheet("QLineEdit { color: red; }");
+    } else {
+        ui->lineEdit_username->setStyleSheet("QLineEdit { color: black; }");
+    }
+
+    return;
+}
+
+/**
  * @brief GkXmppRegistrationDialog::userSignup attempts to sign-up a user with the given XMPP server.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param user The given username to sign-up with.
  * @param password The given password to use with this user account.
  * @param captcha The captcha secret, otherwise the signing-up process will not proceed!
- * @note QXmppRegistrationManager Class Reference <https://doc.qxmpp.org/qxmpp-dev/classQXmppRegistrationManager.html>.
+ * @note QXmppRegistrationManager Class Reference <https://doc.qxmpp.org/qxmpp-dev/classQXmppRegistrationManager.html>,
+ * Kadu by Rafał Malinowski <https://github.com/vogel/kadu/blob/master/plugins/jabber_protocol/services/jabber-register-account.cpp>.
  */
 void GkXmppRegistrationDialog::userSignup(const QString &user, const QString &password, const QString &captcha)
 {
     try {
-        QObject::connect(xmppClientPtr, &QXmppClient::connected, [=]() {
-            // The service discovery manager is added to the client by default...
-            gkDiscoMgr.reset(xmppClientPtr->findExtension<QXmppDiscoveryManager>());
-            gkDiscoMgr->requestInfo(xmppClientPtr->configuration().domain());
-            gkXmppRegistrationMgr->setRegisterOnConnectEnabled(true);
-        });
+        // auto gkRegisterIq = QXmppRegisterIq {};
+        // gkRegisterIq.setEmail();
+        // gkRegisterIq.setPassword();
+        // gkRegisterIq.setType();
+        // gkRegisterIq.setUsername();
+
+        // gkXmppRegistrationMgr->setRegistrationFormToSend();
 
         QObject::connect(gkXmppRegistrationMgr.get(), &QXmppRegistrationManager::registrationFormReceived, [=](const QXmppRegisterIq &iq) {
             qDebug() << "Form received:" << iq.instructions();

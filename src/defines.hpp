@@ -658,14 +658,26 @@ namespace AmateurRadio {
 
 namespace Network {
     namespace GkXmpp {
-        enum GkDnsLookup {
+        enum GkRegUiRole {                                  // Whether the user needs to create an account or is already a pre-existing user.
+            AccountCreate,
+            AccountLogin
+        };
+
+        enum GkOnlineStatus {                               // The online availability of the user in question.
+            Online,
+            Offline,
+            Invisible,
+            NetworkError
+        };
+
+        enum GkDnsLookup {                                  // Information pertaining to DNS Lookups for the QXmpp library.
             GekkoFyre,
             Google,
             Custom,
             Unknown
         };
 
-        struct GkHost {
+        struct GkHost {                                     // Host information as related to the QXmpp libraries.
             GkDnsLookup dns;
             QHostAddress host;
             QHostInfo info;
@@ -673,11 +685,12 @@ namespace Network {
             bool joined;
         };
 
-        struct GkUserConn {
+        struct GkUserConn {                                 // User and server information as related to the QXmpp libraries.
             GkHost server;
-            QString jid;
-            QString password;
-            QString nickname;
+            GkOnlineStatus status;                          // The online availability of the user in question.
+            QString jid;                                    // The Account ID as known to the XMPP server itself; used particularly for logging-in.
+            QString password;                               // The password which is needed for logging-in successfully to the XMPP server.
+            QString nickname;                               // The desired nickname of the user, as it appears to others on the XMPP server network.
         };
     }
 }

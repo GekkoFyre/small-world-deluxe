@@ -41,6 +41,7 @@
 
 #include "gkxmpprosterdialog.hpp"
 #include "ui_gkxmpprosterdialog.h"
+#include "src/ui/xmpp/gkxmppregistrationdialog.hpp"
 #include <utility>
 
 using namespace GekkoFyre;
@@ -72,7 +73,6 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
     gkXmppClient = std::move(xmppClient);
     xmppClientPtr = std::move(gkXmppClient->xmppClient());
     gkXmppMsgDlg = new GkXmppMessageDialog(gkXmppClient, parent);
-    gkXmppRegistrationDlg = new GkXmppRegistrationDialog(gkConnDetails, gkXmppClient, gkEventLogger, parent);
 }
 
 GkXmppRosterDialog::~GkXmppRosterDialog()
@@ -86,14 +86,16 @@ GkXmppRosterDialog::~GkXmppRosterDialog()
  */
 void GkXmppRosterDialog::prefillAvailComboBox()
 {
-    ui->comboBox_current_status->insertItem(GK_XMPP_AVAIL_COMBO_AVAILABLE_IDX, tr("Available"));
-    ui->comboBox_current_status->insertItem(GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX, tr("Unavailable"));
+    // TODO: Insert an icon to the left within this QComboBox at a future date!
+    ui->comboBox_current_status->insertItem(GK_XMPP_AVAIL_COMBO_AVAILABLE_IDX, tr("Online / Available"));
+    ui->comboBox_current_status->insertItem(GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX, tr("Offline / Unavailable"));
 
     return;
 }
 
 /**
- * @brief GkXmppRosterDialog::on_comboBox_current_status_currentIndexChanged
+ * @brief GkXmppRosterDialog::on_comboBox_current_status_currentIndexChanged modify the availability and 'online status' of
+ * the logged-in XMPP user, whether that be, "Available / Online", or, "Unavailable / Offline".
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param index
  */
@@ -103,20 +105,29 @@ void GkXmppRosterDialog::on_comboBox_current_status_currentIndexChanged(int inde
 }
 
 /**
- * @brief GkXmppRosterDialog::on_pushButton_user_login_clicked
+ * @brief GkXmppRosterDialog::on_pushButton_user_login_clicked process the login of an existing user to the given XMPP
+ * server.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void GkXmppRosterDialog::on_pushButton_user_login_clicked()
 {
+    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountLogin, gkConnDetails, gkXmppClient, gkEventLogger, this);
+    gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
+    gkXmppRegistrationDlg->setAttribute(Qt::WA_DeleteOnClose, true);
+    gkXmppRegistrationDlg->show();
+    this->close();
+
     return;
 }
 
 /**
- * @brief GkXmppRosterDialog::on_pushButton_user_create_account_clicked
+ * @brief GkXmppRosterDialog::on_pushButton_user_create_account_clicked process the account creation of a new user to the
+ * given XMPP server.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void GkXmppRosterDialog::on_pushButton_user_create_account_clicked()
 {
+    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountCreate, gkConnDetails, gkXmppClient, gkEventLogger, this);
     gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
     gkXmppRegistrationDlg->setAttribute(Qt::WA_DeleteOnClose, true);
     gkXmppRegistrationDlg->show();

@@ -44,7 +44,6 @@
 #include "src/defines.hpp"
 #include "src/gk_xmpp_client.hpp"
 #include "src/ui/xmpp/gkxmppmessagedialog.hpp"
-#include "src/ui/xmpp/gkxmppregistrationdialog.hpp"
 #include "src/gk_logger.hpp"
 #include <memory>
 #include <QString>
@@ -83,7 +82,6 @@ private:
     QPointer<GekkoFyre::GkXmppClient> gkXmppClient;
     QPointer<QXmppClient> xmppClientPtr;
     QPointer<GkXmppMessageDialog> gkXmppMsgDlg;
-    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg;
 
     void prefillAvailComboBox();
 };

@@ -62,19 +62,27 @@ class GkXmppRegistrationDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit GkXmppRegistrationDialog(const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
+    explicit GkXmppRegistrationDialog(const GekkoFyre::Network::GkXmpp::GkRegUiRole &gkRegUiRole,
+                                      const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
                                       QPointer<GekkoFyre::GkXmppClient> xmppClient,
                                       QPointer<GekkoFyre::GkEventLogger> eventLogger, QWidget *parent = nullptr);
     ~GkXmppRegistrationDialog() override;
 
 private slots:
-    void on_pushButton_submit_clicked();
-    void on_pushButton_reset_clicked();
-    void on_pushButton_cancel_clicked();
+    void on_pushButton_signup_submit_clicked();
+    void on_pushButton_signup_reset_clicked();
+    void on_pushButton_signup_cancel_clicked();
+    void on_pushButton_login_submit_clicked();
+    void on_pushButton_login_reset_clicked();
+    void on_pushButton_login_cancel_clicked();
     void on_toolButton_xmpp_captcha_refresh_clicked();
+    void on_toolButton_xmpp_login_captcha_refresh_clicked();
     void on_pushButton_continue_clicked();
     void on_pushButton_retry_clicked();
     void on_pushButton_exit_clicked();
+
+    void setEmailInputColor(const QString &adj_text);
+    void setUsernameInputColor(const QString &adj_text);
 
 private:
     Ui::GkXmppRegistrationDialog *ui;
