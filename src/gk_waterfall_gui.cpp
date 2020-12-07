@@ -261,7 +261,7 @@ GkSpectroWaterfall::GkSpectroWaterfall(QPointer<GkEventLogger> eventLogger, QWid
         QObject::connect(m_picker, static_cast<void(QwtPlotPicker::*)(const QPointF&)>(&QwtPlotPicker::selected), this, &GkSpectroWaterfall::selectedPoint);
         QObject::connect(m_picker, static_cast<void(QwtPlotPicker::*)(const QPointF&)>(&QwtPlotPicker::moved), this, &GkSpectroWaterfall::selectedPoint);
 
-        m_panner->setMouseButton(Qt::MidButton);
+        m_panner->setMouseButton(Qt::MiddleButton);
 
         QObject::connect(m_plotHorCurve->axisWidget(QwtPlot::xBottom), &QwtScaleWidget::scaleDivChanged, this, &GkSpectroWaterfall::scaleDivChanged, Qt::QueuedConnection);
         QObject::connect(m_plotSpectrogram->axisWidget(QwtPlot::xBottom), &QwtScaleWidget::scaleDivChanged, this, &GkSpectroWaterfall::scaleDivChanged, Qt::QueuedConnection);

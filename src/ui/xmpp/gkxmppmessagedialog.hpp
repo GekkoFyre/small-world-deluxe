@@ -41,7 +41,13 @@
 
 #pragma once
 
+#include "src/defines.hpp"
+#include "src/gk_xmpp_client.hpp"
+#include <memory>
+#include <QString>
+#include <QObject>
 #include <QDialog>
+#include <QPointer>
 
 namespace Ui {
 class GkXmppMessageDialog;
@@ -52,7 +58,7 @@ class GkXmppMessageDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit GkXmppMessageDialog(QWidget *parent = nullptr);
+    explicit GkXmppMessageDialog(QPointer<GekkoFyre::GkXmppClient> xmppClient, QWidget *parent = nullptr);
     ~GkXmppMessageDialog();
 
 private slots:
@@ -63,5 +69,10 @@ private slots:
 
 private:
     Ui::GkXmppMessageDialog *ui;
+
+    //
+    // QXmpp and XMPP related
+    //
+    QPointer<GekkoFyre::GkXmppClient> gkXmppClient;
 };
 

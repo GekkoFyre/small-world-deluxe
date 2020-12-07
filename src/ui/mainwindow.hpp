@@ -45,7 +45,7 @@
 #include "src/radiolibs.hpp"
 #include "src/gk_waterfall_gui.hpp"
 #include "src/gk_fft_audio.hpp"
-#include "src/gk_circ_buffer.hpp"
+#include "src/gk_xmpp_client.hpp"
 #include "src/gk_frequency_list.hpp"
 #include "src/ui/dialogsettings.hpp"
 #include "src/ui/widgets/gk_display_image.hpp"
@@ -401,6 +401,12 @@ private:
     // QFileDialog related
     //
     bool fileOverloadWarning(const int &file_count, const int &max_num_files = GK_SSTV_FILE_DLG_LOAD_IMGS_MAX_FILES_WARN);
+
+    //
+    // QXmpp and XMPP related
+    //
+    GekkoFyre::Network::GkXmpp::GkUserConn xmpp_conn_details; // TODO: Finish this off!
+    QPointer<GekkoFyre::GkXmppClient> gkXmppClient;
 
     //
     // Spectrograph related

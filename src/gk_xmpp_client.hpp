@@ -59,11 +59,14 @@ class GkXmppClient : public QXmppClient {
     Q_OBJECT
 
 public:
-    explicit GkXmppClient(const Network::GkXmpp::GkConnection &connection_details,
+    explicit GkXmppClient(const Network::GkXmpp::GkUserConn &connection_details,
                           QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkXmppClient() override;
 
     bool createMuc(const QString &room_name, const QString &room_subject, const QString &room_desc);
+
+    QPointer<QXmppClient> xmppClient();
+    std::shared_ptr<QXmppRosterManager> xmppRoster();
 
 public slots:
     void clientConnected();
@@ -85,10 +88,10 @@ private:
     //
     // QXmpp and XMPP related
     //
-    Network::GkXmpp::GkConnection gkConnDetails;
+    Network::GkXmpp::GkUserConn gkConnDetails;
     QPointer<QDnsLookup> m_dns;
-    QPointer<QXmppClient> client;
-    std::unique_ptr<QXmppRosterManager> m_rosterManager;
+    QPointer<QXmppClient> m_client;
+    std::shared_ptr<QXmppRosterManager> m_rosterManager;
     std::unique_ptr<QXmppPresence> m_presence;
     std::unique_ptr<QXmppMucManager> m_mucManager;
     std::unique_ptr<QXmppMucRoom> m_pRoom;

@@ -234,6 +234,9 @@ private slots:
     void on_toolButton_xmpp_upload_avatar_browse_file_clicked();
     void on_toolButton_xmpp_delete_avatar_from_server_clicked();
     void on_toolButton_xmpp_upload_avatar_to_server_clicked();
+    void on_pushButton_xmpp_cfg_change_password_clicked();
+    void on_pushButton_xmpp_cfg_change_email_clicked();
+    void on_comboBox_xmpp_server_type_currentIndexChanged(const QString &arg1);
 
 signals:
     void changeSelectedTTSEngine(const QString &name);

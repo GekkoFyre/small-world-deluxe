@@ -43,9 +43,12 @@
 
 #include "src/defines.hpp"
 #include "src/gk_xmpp_client.hpp"
+#include "src/ui/xmpp/gkxmppmessagedialog.hpp"
 #include "src/gk_logger.hpp"
-#include <QDialog>
+#include <memory>
 #include <QString>
+#include <QObject>
+#include <QDialog>
 #include <QPointer>
 
 namespace Ui {
@@ -57,18 +60,28 @@ class GkXmppRosterDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit GkXmppRosterDialog(const QString &jid, const QString &password, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                                QWidget *parent = nullptr);
+    explicit GkXmppRosterDialog(const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
+                                QPointer<GekkoFyre::GkXmppClient> xmppClient,
+                                QPointer<GekkoFyre::GkEventLogger> eventLogger, QWidget *parent = nullptr);
     ~GkXmppRosterDialog();
 
 private slots:
     void on_comboBox_current_status_currentIndexChanged(int index);
+    void on_pushButton_user_login_clicked();
+    void on_pushButton_user_create_account_clicked();
 
 private:
     Ui::GkXmppRosterDialog *ui;
 
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
+
+    //
+    // QXmpp and XMPP related
+    //
+    GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
     QPointer<GekkoFyre::GkXmppClient> gkXmppClient;
+    QPointer<QXmppClient> xmppClientPtr;
+    QPointer<GkXmppMessageDialog> gkXmppMsgDlg;
 
     void prefillAvailComboBox();
 };
