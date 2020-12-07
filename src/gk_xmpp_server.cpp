@@ -59,8 +59,6 @@ using namespace Logging;
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
-#define OGG_VORBIS_READ (1024)
-
 GkXmppServer::GkXmppServer(QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QThread(parent)
 {
     setParent(parent);

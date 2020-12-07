@@ -1854,7 +1854,7 @@ Thanks.</string>
                              <property name="frameShadow">
                               <enum>QFrame::Raised</enum>
                              </property>
-                             <layout class="QVBoxLayout" name="verticalLayout_62">
+                             <layout class="QVBoxLayout" name="verticalLayout_61">
                               <property name="leftMargin">
                                <number>0</number>
                               </property>
@@ -2077,6 +2077,116 @@ Thanks.</string>
                                      <widget class="QToolButton" name="toolButton_xmpp_upload_avatar_to_server">
                                       <property name="text">
                                        <string>Upload</string>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                   </layout>
+                                  </widget>
+                                 </item>
+                                </layout>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QFrame" name="frame_xmpp_change_cfg">
+                                <property name="frameShape">
+                                 <enum>QFrame::NoFrame</enum>
+                                </property>
+                                <property name="frameShadow">
+                                 <enum>QFrame::Raised</enum>
+                                </property>
+                                <layout class="QHBoxLayout" name="horizontalLayout_50">
+                                 <property name="leftMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="topMargin">
+                                  <number>6</number>
+                                 </property>
+                                 <property name="rightMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="bottomMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <item>
+                                  <widget class="QFrame" name="frame_xmpp_change_cfg_left_frame">
+                                   <property name="frameShape">
+                                    <enum>QFrame::NoFrame</enum>
+                                   </property>
+                                   <property name="frameShadow">
+                                    <enum>QFrame::Raised</enum>
+                                   </property>
+                                   <layout class="QHBoxLayout" name="horizontalLayout_52">
+                                    <property name="leftMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="topMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="rightMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="bottomMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <item>
+                                     <widget class="QPushButton" name="pushButton_xmpp_cfg_change_password">
+                                      <property name="sizePolicy">
+                                       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                        <horstretch>13</horstretch>
+                                        <verstretch>0</verstretch>
+                                       </sizepolicy>
+                                      </property>
+                                      <property name="toolTip">
+                                       <string>Play an audio sample.</string>
+                                      </property>
+                                      <property name="text">
+                                       <string>Change Password</string>
+                                      </property>
+                                      <property name="autoDefault">
+                                       <bool>false</bool>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                   </layout>
+                                  </widget>
+                                 </item>
+                                 <item>
+                                  <widget class="QFrame" name="frame_xmpp_change_cfg_right_frame">
+                                   <property name="frameShape">
+                                    <enum>QFrame::NoFrame</enum>
+                                   </property>
+                                   <property name="frameShadow">
+                                    <enum>QFrame::Raised</enum>
+                                   </property>
+                                   <layout class="QHBoxLayout" name="horizontalLayout_51">
+                                    <property name="leftMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="topMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="rightMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="bottomMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <item>
+                                     <widget class="QPushButton" name="pushButton_xmpp_cfg_change_email">
+                                      <property name="sizePolicy">
+                                       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                        <horstretch>13</horstretch>
+                                        <verstretch>0</verstretch>
+                                       </sizepolicy>
+                                      </property>
+                                      <property name="toolTip">
+                                       <string>Play an audio sample.</string>
+                                      </property>
+                                      <property name="text">
+                                       <string>Change E-mail</string>
+                                      </property>
+                                      <property name="autoDefault">
+                                       <bool>false</bool>
                                       </property>
                                      </widget>
                                     </item>

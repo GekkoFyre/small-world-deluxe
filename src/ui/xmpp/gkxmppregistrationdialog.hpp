@@ -45,6 +45,7 @@
 #include "src/gk_logger.hpp"
 #include "src/gk_xmpp_client.hpp"
 #include <qxmpp/QXmppClient.h>
+#include <qxmpp/QXmppRegisterIq.h>
 #include <qxmpp/QXmppDiscoveryManager.h>
 #include <qxmpp/QXmppRegistrationManager.h>
 #include <memory>
@@ -81,8 +82,17 @@ private slots:
     void on_pushButton_retry_clicked();
     void on_pushButton_exit_clicked();
 
+    void handleRegistrationForm(const QXmppRegisterIq &registerIq);
+    void registerIqReceived(const QXmppRegisterIq &registerIq);
+    void sendFilledRegistrationForm(const QString &user, const QString &email, const QString &password, const QString &captcha);
+
     void setEmailInputColor(const QString &adj_text);
     void setUsernameInputColor(const QString &adj_text);
+
+    void handleError(const QString &errorMsg);
+
+signals:
+    void sendError(const QString &errorMsg);
 
 private:
     Ui::GkXmppRegistrationDialog *ui;
@@ -97,6 +107,6 @@ private:
     std::unique_ptr<QXmppDiscoveryManager> gkDiscoMgr;
     std::unique_ptr<QXmppRegistrationManager> gkXmppRegistrationMgr;
 
-    void userSignup(const QString &user, const QString &password, const QString &captcha);
+    GekkoFyre::Network::GkXmpp::GkNetworkState m_netState;
 };
 

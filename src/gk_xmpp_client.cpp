@@ -67,8 +67,6 @@ using namespace GkXmpp;
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
-#define OGG_VORBIS_READ (1024)
-
 GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoFyre::GkEventLogger> eventLogger,
                            QObject *parent) : m_rosterManager(findExtension<QXmppRosterManager>()), QXmppClient(parent)
 {
@@ -124,15 +122,30 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         QObject::connect(m_client, SIGNAL(disconnected()), &loop, SLOT(quit()));
 
         QXmppConfiguration config;
+        if (!gkConnDetails.jid.isEmpty() || !gkConnDetails.password.isEmpty()) {
+            config.setUser(gkConnDetails.jid);
+            config.setPassword(gkConnDetails.password);
+        } else {
+            m_presence = nullptr;
+        }
+
+        // You only need to provide a domain to connectToServer()...
         config.setDomain(gkConnDetails.server.host.toString());
         config.setHost(gkConnDetails.server.host.toString());
         config.setPort(gkConnDetails.server.port);
-        config.setUser(gkConnDetails.jid);
-        config.setPassword(gkConnDetails.password);
-        config.setSaslAuthMechanism(""); // TODO: Configure this value properly!
 
-        if (!gkConnDetails.server.joined) {
+        // TODO: Configure this value properly!
+        // config.setSaslAuthMechanism("");
+
+        if (m_presence) {
             m_client->connectToServer(config, *m_presence);
+        } else {
+            m_client->connectToServer(config);
+        }
+
+        if (m_client->isConnected()) {
+            gkEventLogger->publishEvent(tr("Connected to XMPP server: %1").arg(config.host()), GkSeverity::Info, "",
+                                        true, true, true, false);
         }
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(tr("An issue has occurred within the XMPP subsystem. Error:\n\n%1")

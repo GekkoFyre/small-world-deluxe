@@ -658,9 +658,18 @@ namespace AmateurRadio {
 
 namespace Network {
     namespace GkXmpp {
+        enum GkNetworkState {
+            None,
+            Connecting,
+            WaitForRegistrationForm,
+            WaitForRegistrationConfirmation
+        };
+
         enum GkRegUiRole {                                  // Whether the user needs to create an account or is already a pre-existing user.
             AccountCreate,
-            AccountLogin
+            AccountLogin,
+            AccountChangePassword,
+            AccountChangeEmail
         };
 
         enum GkOnlineStatus {                               // The online availability of the user in question.
@@ -682,7 +691,6 @@ namespace Network {
             QHostAddress host;
             QHostInfo info;
             quint16 port;
-            bool joined;
         };
 
         struct GkUserConn {                                 // User and server information as related to the QXmpp libraries.
