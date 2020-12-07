@@ -1924,6 +1924,9 @@ Thanks.</string>
                                     </item>
                                     <item row="0" column="1">
                                      <widget class="QCheckBox" name="checkBox_allow_msg_history">
+                                      <property name="toolTip">
+                                       <string>Keep an archive of your past messsages on the configured XMPP server.</string>
+                                      </property>
                                       <property name="text">
                                        <string/>
                                       </property>
@@ -1941,6 +1944,9 @@ Thanks.</string>
                                     </item>
                                     <item row="1" column="1">
                                      <widget class="QCheckBox" name="checkBox_allow_file_transfers">
+                                      <property name="toolTip">
+                                       <string>Allow the receiving and transferring of File Transfers via XMPP.</string>
+                                      </property>
                                       <property name="text">
                                        <string/>
                                       </property>
@@ -1988,6 +1994,9 @@ Thanks.</string>
                                     </item>
                                     <item row="0" column="1">
                                      <widget class="QCheckBox" name="checkBox_allow_muc_creation">
+                                      <property name="toolTip">
+                                       <string>Allow the creation and participation of Multi-user Chatrooms.</string>
+                                      </property>
                                       <property name="text">
                                        <string/>
                                       </property>
@@ -2005,6 +2014,9 @@ Thanks.</string>
                                     </item>
                                     <item row="1" column="1">
                                      <widget class="QCheckBox" name="checkBox_connect_automatically">
+                                      <property name="toolTip">
+                                       <string>Connect automatically to the configured XMPP server of your choice upon the launch of Small World Deluxe.</string>
+                                      </property>
                                       <property name="text">
                                        <string/>
                                       </property>
@@ -2128,12 +2140,12 @@ Thanks.</string>
                                    <property name="frameShadow">
                                     <enum>QFrame::Raised</enum>
                                    </property>
-                                   <layout class="QHBoxLayout" name="horizontalLayout_52">
+                                   <layout class="QVBoxLayout" name="verticalLayout_62">
                                     <property name="leftMargin">
                                      <number>0</number>
                                     </property>
                                     <property name="topMargin">
-                                     <number>0</number>
+                                     <number>6</number>
                                     </property>
                                     <property name="rightMargin">
                                      <number>0</number>
@@ -2150,10 +2162,29 @@ Thanks.</string>
                                        </sizepolicy>
                                       </property>
                                       <property name="toolTip">
-                                       <string>Play an audio sample.</string>
+                                       <string>Change the password of your XMPP user account.</string>
                                       </property>
                                       <property name="text">
                                        <string>Change Password</string>
+                                      </property>
+                                      <property name="autoDefault">
+                                       <bool>false</bool>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item>
+                                     <widget class="QPushButton" name="pushButton_xmpp_cfg_signup">
+                                      <property name="sizePolicy">
+                                       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                        <horstretch>13</horstretch>
+                                        <verstretch>0</verstretch>
+                                       </sizepolicy>
+                                      </property>
+                                      <property name="toolTip">
+                                       <string>Sign-up and create a new account to the configured XMPP server of your choice.</string>
+                                      </property>
+                                      <property name="text">
+                                       <string>Sign-up</string>
                                       </property>
                                       <property name="autoDefault">
                                        <bool>false</bool>
@@ -2171,12 +2202,12 @@ Thanks.</string>
                                    <property name="frameShadow">
                                     <enum>QFrame::Raised</enum>
                                    </property>
-                                   <layout class="QHBoxLayout" name="horizontalLayout_51">
+                                   <layout class="QVBoxLayout" name="verticalLayout_63">
                                     <property name="leftMargin">
                                      <number>0</number>
                                     </property>
                                     <property name="topMargin">
-                                     <number>0</number>
+                                     <number>6</number>
                                     </property>
                                     <property name="rightMargin">
                                      <number>0</number>
@@ -2193,10 +2224,29 @@ Thanks.</string>
                                        </sizepolicy>
                                       </property>
                                       <property name="toolTip">
-                                       <string>Play an audio sample.</string>
+                                       <string>Change the e-mail address of your XMPP user account.</string>
                                       </property>
                                       <property name="text">
                                        <string>Change E-mail</string>
+                                      </property>
+                                      <property name="autoDefault">
+                                       <bool>false</bool>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item>
+                                     <widget class="QPushButton" name="pushButton_xmpp_cfg_login_logout">
+                                      <property name="sizePolicy">
+                                       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                        <horstretch>13</horstretch>
+                                        <verstretch>0</verstretch>
+                                       </sizepolicy>
+                                      </property>
+                                      <property name="toolTip">
+                                       <string>Login or logout to the configured XMPP server.</string>
+                                      </property>
+                                      <property name="text">
+                                       <string>Login / Logout</string>
                                       </property>
                                       <property name="autoDefault">
                                        <bool>false</bool>
@@ -2256,7 +2306,11 @@ Thanks.</string>
                                </widget>
                               </item>
                               <item row="1" column="1">
-                               <widget class="QLineEdit" name="lineEdit_xmpp_server_url"/>
+                               <widget class="QLineEdit" name="lineEdit_xmpp_server_url">
+                                <property name="toolTip">
+                                 <string>The Host URL of the XMPP server you wish to connect towards when using the 'custom option'.</string>
+                                </property>
+                               </widget>
                               </item>
                               <item row="0" column="0">
                                <widget class="QLabel" name="label_xmpp_server_type">
@@ -2266,7 +2320,11 @@ Thanks.</string>
                                </widget>
                               </item>
                               <item row="0" column="1">
-                               <widget class="QComboBox" name="comboBox_xmpp_server_type"/>
+                               <widget class="QComboBox" name="comboBox_xmpp_server_type">
+                                <property name="toolTip">
+                                 <string>Whether we should connect to a pre-configured XMPP server or one of your own choosing. Beware of your choices when using this option!</string>
+                                </property>
+                               </widget>
                               </item>
                              </layout>
                             </widget>
@@ -2307,6 +2365,9 @@ Thanks.</string>
                               </item>
                               <item row="0" column="1">
                                <widget class="QSpinBox" name="spinBox_xmpp_server_port">
+                                <property name="toolTip">
+                                 <string>The TCP port of the XMPP server you are making a connection towards.</string>
+                                </property>
                                 <property name="suffix">
                                  <string/>
                                 </property>
@@ -2319,6 +2380,9 @@ Thanks.</string>
                                 <property name="maximum">
                                  <number>65536</number>
                                 </property>
+                                <property name="value">
+                                 <number>443</number>
+                                </property>
                                </widget>
                               </item>
                               <item row="1" column="0">
@@ -2330,6 +2394,9 @@ Thanks.</string>
                               </item>
                               <item row="1" column="1">
                                <widget class="QCheckBox" name="checkBox_xmpp_server_ssl">
+                                <property name="toolTip">
+                                 <string>Whether to force the use of SSL / TLS or not.</string>
+                                </property>
                                 <property name="text">
                                  <string/>
                                 </property>

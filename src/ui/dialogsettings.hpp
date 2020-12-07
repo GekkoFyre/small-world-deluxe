@@ -239,7 +239,10 @@ private slots:
     void on_toolButton_xmpp_upload_avatar_to_server_clicked();
     void on_pushButton_xmpp_cfg_change_password_clicked();
     void on_pushButton_xmpp_cfg_change_email_clicked();
+    void on_pushButton_xmpp_cfg_signup_clicked();
+    void on_pushButton_xmpp_cfg_login_logout_clicked();
     void on_comboBox_xmpp_server_type_currentIndexChanged(int index);
+    void on_checkBox_xmpp_server_ssl_toggled(bool checked);
 
 signals:
     void changeSelectedTTSEngine(const QString &name);
@@ -332,6 +335,8 @@ private:
     void prefill_event_logger();
     void prefill_xmpp_server_type(const GekkoFyre::Network::GkXmpp::GkServerType &server_type);
     void init_station_info();
+
+    void monitorXmppServerChange();
 
     void print_exception(const std::exception &e, int level = 0);
     double convQComboBoxSampleRateToDouble(const int &combobox_idx);

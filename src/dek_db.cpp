@@ -1076,6 +1076,18 @@ void GkLevelDb::write_xmpp_settings(const QString &value, const Settings::GkXmpp
             case Settings::GkXmppCfg::XmppEnableSsl:
                 batch.Put("XmppCfgEnableSsl", value.toStdString());
                 break;
+            case Settings::GkXmppCfg::XmppJid:
+                batch.Put("XmppJid", value.toStdString());
+                break;
+            case Settings::GkXmppCfg::XmppPassword:
+                batch.Put("XmppPassword", value.toStdString());
+                break;
+            case Settings::GkXmppCfg::XmppNickname:
+                batch.Put("XmppNickname", value.toStdString());
+                break;
+            case Settings::GkXmppCfg::XmppEmailAddr:
+                batch.Put("XmppEmailAddr", value.toStdString());
+                break;
             default:
                 return;
         }
@@ -1143,11 +1155,43 @@ QString GkLevelDb::read_xmpp_settings(const Settings::GkXmppCfg &key)
         case Settings::GkXmppCfg::XmppEnableSsl:
             status = db->Get(read_options, "XmppCfgEnableSsl", &value);
             break;
+        case Settings::GkXmppCfg::XmppJid:
+            status = db->Get(read_options, "XmppJid", &value);
+            break;
+        case Settings::GkXmppCfg::XmppPassword:
+            status = db->Get(read_options, "XmppPassword", &value);
+            break;
+        case Settings::GkXmppCfg::XmppNickname:
+            status = db->Get(read_options, "XmppNickname", &value);
+            break;
+        case Settings::GkXmppCfg::XmppEmailAddr:
+            status = db->Get(read_options, "XmppEmailAddr", &value);
+            break;
         default:
             return QString();
     }
 
     return QString::fromStdString(value);
+}
+
+/**
+ * @brief GkLevelDb::convXmppServerTypeFromInt
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+GkXmpp::GkServerType GkLevelDb::convXmppServerTypeFromInt(const qint32 &idx)
+{
+    switch (idx) {
+        case GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX:
+            return GkXmpp::GkServerType::GekkoFyre;
+        case GK_XMPP_SERVER_TYPE_COMBO_GOOGLE_IDX:
+            return GkXmpp::GkServerType::Google;
+        case GK_XMPP_SERVER_TYPE_COMBO_CUSTOM_IDX:
+            return GkXmpp::GkServerType::Custom;
+        default:
+            return GkXmpp::GkServerType::Unknown;
+    }
+
+    return GkXmpp::GkServerType::Unknown;
 }
 
 /**

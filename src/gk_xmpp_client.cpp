@@ -135,16 +135,22 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         config.setAutoAcceptSubscriptions(false);
         config.setAutoReconnectionEnabled(false);
         config.setIgnoreSslErrors(false);
-        config.setStreamSecurityMode(QXmppConfiguration::StreamSecurityMode::TLSEnabled);
+        config.setStreamSecurityMode(QXmppConfiguration::StreamSecurityMode::TLSDisabled);
+        if (gkConnDetails.server.settings_client.enable_ssl) {
+            config.setStreamSecurityMode(QXmppConfiguration::StreamSecurityMode::TLSRequired);
+        }
+
         config.setDomain(gkConnDetails.server.domain.toString());
         config.setPort(gkConnDetails.server.port);
         config.setUseNonSASLAuthentication(false);
         config.setUseSASLAuthentication(false);
 
-        if (m_presence) {
-            connectToServer(config, *m_presence);
-        } else {
-            connectToServer(config);
+        if (gkConnDetails.server.settings_client.auto_connect) {
+            if (m_presence) {
+                connectToServer(config, *m_presence);
+            } else {
+                connectToServer(config);
+            }
         }
 
         if (isConnected()) {

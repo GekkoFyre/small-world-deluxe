@@ -311,12 +311,10 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         //
         // General --> XMPP --> Server Settings
         //
-        QString xmpp_host_url = ui->lineEdit_xmpp_server_url->text();
         qint32 xmpp_server_type = ui->comboBox_xmpp_server_type->currentIndex();
-        qint32 xmpp_host_tcp_port = ui->spinBox_xmpp_server_port->value();
+        quint16 xmpp_host_tcp_port = ui->spinBox_xmpp_server_port->value();
         bool xmpp_enable_ssl = ui->checkBox_xmpp_server_ssl->isChecked();
 
-        gkDekodeDb->write_xmpp_settings(xmpp_host_url, GkXmppCfg::XmppDomainUrl);
         gkDekodeDb->write_xmpp_settings(QString::number(xmpp_server_type), GkXmppCfg::XmppServerType);
         gkDekodeDb->write_xmpp_settings(QString::number(xmpp_host_tcp_port), GkXmppCfg::XmppDomainPort);
         gkDekodeDb->write_xmpp_settings(QString::fromStdString(gkDekodeDb->boolEnum(xmpp_enable_ssl)), GkXmppCfg::XmppEnableSsl);
@@ -826,6 +824,42 @@ void DialogSettings::init_station_info()
 }
 
 /**
+ * @brief DialogSettings::monitorXmppServerChange Monitors for any change given in the widget, `ui->lineEdit_xmpp_server_url`, and
+ * alerts the end-user if they truly wish to make that change before committing it to the Google LevelDB database.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void DialogSettings::monitorXmppServerChange()
+{
+    QString xmpp_host_url = ui->lineEdit_xmpp_server_url->text();
+    QString old_val = gkConnDetails.server.domain.toString();
+
+    if (!xmpp_host_url.isEmpty() && !old_val.isEmpty()) {
+        if (xmpp_host_url == old_val) {
+            QMessageBox msgBox;
+            msgBox.setWindowTitle(tr("Are you sure?"));
+            msgBox.setText(tr(R"(Do you truly wish to permanently disconnect from server, "%1", and connect towards, "%2", instead?)")
+            .arg(old_val).arg(xmpp_host_url));
+            msgBox.setStandardButtons(QMessageBox::Cancel | QMessageBox::Apply);
+            msgBox.setDefaultButton(QMessageBox::Apply);
+            msgBox.setIcon(QMessageBox::Icon::Question);
+            int ret = msgBox.exec();
+
+            switch (ret) {
+                case QMessageBox::Apply:
+                    gkDekodeDb->write_xmpp_settings(xmpp_host_url, GkXmppCfg::XmppDomainUrl);
+                    return;
+                case QMessageBox::Cancel:
+                    return;
+                default:
+                    return;
+            }
+        }
+    }
+
+    return;
+}
+
+/**
  * @brief DialogSettings::print_exception
  * @param e
  * @param level
@@ -1275,7 +1309,7 @@ bool DialogSettings::read_settings()
         //
         QString xmpp_host_url = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppDomainUrl);
         qint32 xmpp_server_type = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppServerType).toInt();
-        qint32 xmpp_host_tcp_port = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppDomainPort).toInt();
+        quint16 xmpp_host_tcp_port = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppDomainPort).toInt();
         bool xmpp_enable_ssl = gkDekodeDb->boolStr(gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppEnableSsl).toStdString());
 
         ui->lineEdit_xmpp_server_url->setText(xmpp_host_url);
@@ -2678,6 +2712,28 @@ void DialogSettings::on_pushButton_xmpp_cfg_change_email_clicked()
     return;
 }
 
+void DialogSettings::on_pushButton_xmpp_cfg_signup_clicked()
+{
+    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountCreate, gkConnDetails, gkXmppClient, gkEventLogger, this);
+    gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
+    gkXmppRegistrationDlg->setAttribute(Qt::WA_DeleteOnClose, true);
+    gkXmppRegistrationDlg->show();
+    this->close();
+
+    return;
+}
+
+void DialogSettings::on_pushButton_xmpp_cfg_login_logout_clicked()
+{
+    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountLogin, gkConnDetails, gkXmppClient, gkEventLogger, this);
+    gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
+    gkXmppRegistrationDlg->setAttribute(Qt::WA_DeleteOnClose, true);
+    gkXmppRegistrationDlg->show();
+    this->close();
+
+    return;
+}
+
 void DialogSettings::on_comboBox_xmpp_server_type_currentIndexChanged(int index)
 {
     switch (index) {
@@ -2706,5 +2762,10 @@ void DialogSettings::on_comboBox_xmpp_server_type_currentIndexChanged(int index)
             break;
     }
 
+    return;
+}
+
+void DialogSettings::on_checkBox_xmpp_server_ssl_toggled(bool checked)
+{
     return;
 }

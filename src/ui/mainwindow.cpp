@@ -773,6 +773,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QPointer<GkCallsignMsgsTableViewModel> gkCallsignMsgsTableViewModel = new GkCallsignMsgsTableViewModel(gkDb, this);
         ui->tableView_mesg_active->setModel(gkActiveMsgsTableViewModel);
         ui->tableView_mesg_callsigns->setModel(gkCallsignMsgsTableViewModel);
+
+        //
+        // QXmpp and XMPP related
+        //
+        gkXmppClient = new GkXmppClient(xmpp_conn_details, gkEventLogger, this);
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
@@ -1652,13 +1657,55 @@ QRect MainWindow::findActiveScreen()
 }
 
 /**
+ * @brief MainWindow::readXmppSettings reads out any saved XMPP settings that have been previously written to the
+ * pre-configured Google LevelDB database.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::readXmppSettings()
+{
+    //
+    // General --> XMPP --> Client Settings
+    //
+    bool xmpp_allow_msg_history = gkDb->boolStr(gkDb->read_xmpp_settings(GkXmppCfg::XmppAllowMsgHistory).toStdString());
+    bool xmpp_allow_file_xfers = gkDb->boolStr(gkDb->read_xmpp_settings(GkXmppCfg::XmppAllowFileXfers).toStdString());
+    bool xmpp_allow_mucs = gkDb->boolStr(gkDb->read_xmpp_settings(GkXmppCfg::XmppAlowMucs).toStdString());
+    bool xmpp_connect_auto = gkDb->boolStr(gkDb->read_xmpp_settings(GkXmppCfg::XmppAutoConnect).toStdString());
+    QByteArray xmpp_upload_avatar; // TODO: Finish this area of code, pronto!
+
+    //
+    // General --> XMPP --> Server Settings
+    //
+    QString xmpp_host_url = gkDb->read_xmpp_settings(GkXmppCfg::XmppDomainUrl);
+    qint32 xmpp_server_type = gkDb->read_xmpp_settings(GkXmppCfg::XmppServerType).toInt();
+    quint16 xmpp_host_tcp_port = gkDb->read_xmpp_settings(GkXmppCfg::XmppDomainPort).toInt();
+    bool xmpp_enable_ssl = gkDb->boolStr(gkDb->read_xmpp_settings(GkXmppCfg::XmppEnableSsl).toStdString());
+
+    xmpp_conn_details.server.settings_client.allow_msg_history = xmpp_allow_msg_history;
+    xmpp_conn_details.server.settings_client.allow_file_xfers = xmpp_allow_file_xfers;
+    xmpp_conn_details.server.settings_client.allow_mucs = xmpp_allow_mucs;
+    xmpp_conn_details.server.settings_client.auto_connect = xmpp_connect_auto;
+    xmpp_conn_details.server.settings_client.enable_ssl = xmpp_enable_ssl;
+    xmpp_conn_details.server.settings_client.upload_avatar_pixmap = xmpp_upload_avatar;
+    xmpp_conn_details.server.type = gkDb->convXmppServerTypeFromInt(xmpp_server_type);
+    xmpp_conn_details.server.domain = QHostAddress(xmpp_host_url);
+    xmpp_conn_details.server.port = xmpp_host_tcp_port;
+    xmpp_conn_details.status = GkOnlineStatus::Offline;
+
+    xmpp_conn_details.jid = gkDb->read_xmpp_settings(GkXmppCfg::XmppJid);;
+    xmpp_conn_details.password = gkDb->read_xmpp_settings(GkXmppCfg::XmppPassword);;
+    xmpp_conn_details.nickname = gkDb->read_xmpp_settings(GkXmppCfg::XmppNickname);;
+    xmpp_conn_details.email = gkDb->read_xmpp_settings(GkXmppCfg::XmppEmailAddr);;
+
+    return;
+}
+
+/**
  * @brief MainWindow::launchXmppRosterDlg launches the Roster Dialog for the XMPP side of Small World Deluxe, where end-users
  * may interact with others or even signup to the given, configured server if it's their first time connecting.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void MainWindow::launchXmppRosterDlg()
 {
-    gkXmppClient = new GkXmppClient(xmpp_conn_details, gkEventLogger, this);
     QPointer<GkXmppRosterDialog> gkXmppRosterDlg = new GkXmppRosterDialog(xmpp_conn_details, gkXmppClient, gkEventLogger, this);
     gkXmppRosterDlg->setWindowFlags(Qt::Window);
     gkXmppRosterDlg->setAttribute(Qt::WA_DeleteOnClose, false); // Do NOT delete on close!
@@ -2484,6 +2531,33 @@ void MainWindow::on_actionCW_toggled(bool arg1)
 void MainWindow::on_actionView_Roster_triggered()
 {
     launchXmppRosterDlg();
+    return;
+}
+
+void MainWindow::on_actionSign_out_triggered()
+{
+    if (gkXmppClient->isConnected()) {
+        gkXmppClient->disconnectFromServer();
+        gkEventLogger->publishEvent(tr("Disconnected from XMPP server: %1")
+        .arg(xmpp_conn_details.server.domain.toString()), GkSeverity::Info, "",
+        true, true, false, false);
+    }
+
+    return;
+}
+
+void MainWindow::on_actionOnline_triggered()
+{
+    return;
+}
+
+void MainWindow::on_actionInvisible_triggered()
+{
+    return;
+}
+
+void MainWindow::on_actionOffline_triggered()
+{
     return;
 }
 

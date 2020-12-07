@@ -67,6 +67,7 @@
 #include <QPointer>
 #include <QDateTime>
 #include <QHostInfo>
+#include <QByteArray>
 #include <QStringList>
 #include <QAudioFormat>
 #include <QHostAddress>
@@ -443,7 +444,11 @@ namespace Database {
             XmppDomainUrl,
             XmppServerType,
             XmppDomainPort,
-            XmppEnableSsl
+            XmppEnableSsl,
+            XmppJid,
+            XmppPassword,
+            XmppNickname,
+            XmppEmailAddr
         };
 
         enum Codec2Mode {
@@ -701,7 +706,17 @@ namespace Network {
             Unknown
         };
 
+        struct GkClientSettings {
+            bool allow_msg_history;                         // Shall we keep a message history with this server, provided it's a supported extension?
+            bool allow_file_xfers;                          // Shall we allow file transfers with this server, provided it's a supported extension?
+            bool allow_mucs;                                // Shall we allow multi-user chats, provided it's a supported extension?
+            bool auto_connect;                              // Do we allow automatic connections to the given XMPP server upon startup of Small World Deluxe?
+            bool enable_ssl;                                // Enable the absolute usage of SSL/TLS, otherwise throw an exception if not available!
+            QByteArray upload_avatar_pixmap;                // The byte-array data for the avatar that's to be uploaded upon next making a successful connection to the given XMPP server.
+        };
+
         struct GkHost {                                     // Host information as related to the QXmpp libraries.
+            GkClientSettings settings_client;               // Client settings that apply when making a connection to the XMPP server.
             GkServerType type;
             QHostAddress domain;
             QHostInfo info;
@@ -714,6 +729,7 @@ namespace Network {
             QString jid;                                    // The Account ID as known to the XMPP server itself; used particularly for logging-in.
             QString password;                               // The password which is needed for logging-in successfully to the XMPP server.
             QString nickname;                               // The desired nickname of the user, as it appears to others on the XMPP server network.
+            QString email;                                  // The email address, if any, that's associated with this end-user.
         };
     }
 }
