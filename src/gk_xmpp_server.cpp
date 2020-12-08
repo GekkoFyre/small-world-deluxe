@@ -40,7 +40,6 @@
  ****************************************************************************************************/
 
 #include "src/gk_xmpp_server.hpp"
-#include <boost/exception/all.hpp>
 #include <exception>
 #include <QMessageBox>
 
@@ -55,9 +54,6 @@ using namespace Spectrograph;
 using namespace System;
 using namespace Events;
 using namespace Logging;
-
-namespace fs = boost::filesystem;
-namespace sys = boost::system;
 
 GkXmppServer::GkXmppServer(QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QThread(parent)
 {

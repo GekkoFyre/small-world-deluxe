@@ -65,18 +65,19 @@ public:
 
     bool createMuc(const QString &room_name, const QString &room_subject, const QString &room_desc);
 
-    QPointer<QXmppClient> xmppClient();
-    std::shared_ptr<QXmppRosterManager> xmppRoster();
-
 public slots:
     void clientConnected();
     void rosterReceived();
     void presenceChanged(const QString &bareJid, const QString &resource);
+    void stateChanged(QXmppClient::State state);
 
+    void createClientConnection(const QXmppConfiguration &config);
+    void deleteClientConnection();
     void modifyPresence(const QXmppPresence::Type &pres);
 
 private slots:
     void handleServers();
+    void handleError(QXmppClient::Error errorMsg);
 
 signals:
     void setPresence(const QXmppPresence::Type &pres);
@@ -90,7 +91,6 @@ private:
     //
     Network::GkXmpp::GkUserConn gkConnDetails;
     QPointer<QDnsLookup> m_dns;
-    QPointer<QXmppClient> m_client;
     std::shared_ptr<QXmppRosterManager> m_rosterManager;
     std::unique_ptr<QXmppPresence> m_presence;
     std::unique_ptr<QXmppMucManager> m_mucManager;

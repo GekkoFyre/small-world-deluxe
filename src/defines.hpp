@@ -67,6 +67,7 @@
 #include <QPointer>
 #include <QDateTime>
 #include <QHostInfo>
+#include <QByteArray>
 #include <QStringList>
 #include <QAudioFormat>
 #include <QHostAddress>
@@ -108,6 +109,9 @@ namespace GekkoFyre {
 //
 #define GK_XMPP_AVAIL_COMBO_AVAILABLE_IDX (0)
 #define GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX (1)
+#define GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX (0)
+#define GK_XMPP_SERVER_TYPE_COMBO_GOOGLE_IDX (1)
+#define GK_XMPP_SERVER_TYPE_COMBO_CUSTOM_IDX (2)
 
 //
 // Networking settings (also sometimes related to XMPP!)
@@ -431,6 +435,22 @@ namespace Database {
             WindowVSize
         };
 
+        enum GkXmppCfg {
+            XmppAllowMsgHistory,
+            XmppAllowFileXfers,
+            XmppAlowMucs,
+            XmppAutoConnect,
+            XmppAvatarByteArray,
+            XmppDomainUrl,
+            XmppServerType,
+            XmppDomainPort,
+            XmppEnableSsl,
+            XmppJid,
+            XmppPassword,
+            XmppNickname,
+            XmppEmailAddr
+        };
+
         enum Codec2Mode {
             freeDvMode2020,
             freeDvMode700D,
@@ -679,16 +699,26 @@ namespace Network {
             NetworkError
         };
 
-        enum GkDnsLookup {                                  // Information pertaining to DNS Lookups for the QXmpp library.
+        enum GkServerType {                                  // Information pertaining to DNS Lookups for the QXmpp library.
             GekkoFyre,
             Google,
             Custom,
             Unknown
         };
 
+        struct GkClientSettings {
+            bool allow_msg_history;                         // Shall we keep a message history with this server, provided it's a supported extension?
+            bool allow_file_xfers;                          // Shall we allow file transfers with this server, provided it's a supported extension?
+            bool allow_mucs;                                // Shall we allow multi-user chats, provided it's a supported extension?
+            bool auto_connect;                              // Do we allow automatic connections to the given XMPP server upon startup of Small World Deluxe?
+            bool enable_ssl;                                // Enable the absolute usage of SSL/TLS, otherwise throw an exception if not available!
+            QByteArray upload_avatar_pixmap;                // The byte-array data for the avatar that's to be uploaded upon next making a successful connection to the given XMPP server.
+        };
+
         struct GkHost {                                     // Host information as related to the QXmpp libraries.
-            GkDnsLookup dns;
-            QHostAddress host;
+            GkClientSettings settings_client;               // Client settings that apply when making a connection to the XMPP server.
+            GkServerType type;
+            QHostAddress domain;
             QHostInfo info;
             quint16 port;
         };
@@ -699,6 +729,7 @@ namespace Network {
             QString jid;                                    // The Account ID as known to the XMPP server itself; used particularly for logging-in.
             QString password;                               // The password which is needed for logging-in successfully to the XMPP server.
             QString nickname;                               // The desired nickname of the user, as it appears to others on the XMPP server network.
+            QString email;                                  // The email address, if any, that's associated with this end-user.
         };
     }
 }
