@@ -91,94 +91,112 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
         //
         gkConnDetails = connection_details;
         gkXmppClient = std::move(xmppClient);
-        gkDiscoMgr = std::make_unique<QXmppDiscoveryManager>();
-        gkXmppRegistrationMgr.reset(gkXmppClient->findExtension<QXmppRegistrationManager>()); // Verify that the extension is available at the given server!
+        gkXmppRegistrationMgr = std::make_unique<QXmppRegistrationManager>();
+        gkXmppClient->addExtension(gkXmppRegistrationMgr.get());
 
-        switch (gkRegUiRole) {
-            case GkRegUiRole::AccountCreate:
-                // Create a new user account on the given XMPP server
-                ui->stackedWidget_xmpp_registration_dialog->setCurrentWidget(ui->page_account_signup_ui);
-                break;
-            case GkRegUiRole::AccountLogin:
-                // Login to pre-existing user account on the given XMPP server
-                ui->stackedWidget_xmpp_registration_dialog->setCurrentWidget(ui->page_account_login_ui);
-                break;
-            case GkRegUiRole::AccountChangePassword:
-                // Change password for pre-existing user account on the given XMPP server
-                ui->stackedWidget_xmpp_registration_dialog->setCurrentWidget(ui->page_account_change_password_ui);
-                break;
-            case GkRegUiRole::AccountChangeEmail:
-                // Change e-mail address for pre-existing user account on the given XMPP server
-                ui->stackedWidget_xmpp_registration_dialog->setCurrentWidget(ui->page_account_change_email_ui);
-                break;
-            default:
-                // What to do by default, if no information is otherwise given!
-                ui->stackedWidget_xmpp_registration_dialog->setCurrentWidget(ui->page_account_login_ui);
-                break;
-        }
+        if (gkXmppRegistrationMgr->supportedByServer()) {
+            switch (gkRegUiRole) {
+                case GkRegUiRole::AccountCreate:
+                    // Create a new user account on the given XMPP server
+                    ui->stackedWidget_xmpp_registration_dialog->setCurrentWidget(ui->page_account_signup_ui);
+                    break;
+                case GkRegUiRole::AccountLogin:
+                    // Login to pre-existing user account on the given XMPP server
+                    ui->stackedWidget_xmpp_registration_dialog->setCurrentWidget(ui->page_account_login_ui);
+                    break;
+                case GkRegUiRole::AccountChangePassword:
+                    // Change password for pre-existing user account on the given XMPP server
+                    ui->stackedWidget_xmpp_registration_dialog->setCurrentWidget(ui->page_account_change_password_ui);
+                    break;
+                case GkRegUiRole::AccountChangeEmail:
+                    // Change e-mail address for pre-existing user account on the given XMPP server
+                    ui->stackedWidget_xmpp_registration_dialog->setCurrentWidget(ui->page_account_change_email_ui);
+                    break;
+                default:
+                    // What to do by default, if no information is otherwise given!
+                    ui->stackedWidget_xmpp_registration_dialog->setCurrentWidget(ui->page_account_login_ui);
+                    break;
+            }
 
-        QObject::connect(this, SIGNAL(sendError(const QString &)), this, SLOT(handleError(const QString &)));
-        QObject::connect(gkXmppClient, &QXmppClient::connected, [=]() {
-            // The service discovery manager is added to the client by default...
-            gkDiscoMgr.reset(gkXmppClient->findExtension<QXmppDiscoveryManager>());
-            gkDiscoMgr->requestInfo(gkXmppClient->configuration().domain());
-        });
+            QObject::connect(this, SIGNAL(sendError(const QString &)), this, SLOT(handleError(const QString &)));
 
-        //
-        // Validate inputs for the Email Address
-        //
-        QRegularExpression rxEmail(R"(\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}\b)",
-                                   QRegularExpression::CaseInsensitiveOption);
-        ui->lineEdit_email->setValidator(new QRegularExpressionValidator(rxEmail, this));
-        ui->lineEdit_change_email_new_address->setValidator(new QRegularExpressionValidator(rxEmail, this));
-
-        QObject::connect(ui->lineEdit_email, SIGNAL(textChanged(const QString &)),
-                         this, SLOT(setEmailInputColor(const QString &)));
-
-        QObject::connect(ui->lineEdit_change_email_new_address, SIGNAL(textChanged(const QString &)),
-                         this, SLOT(setEmailInputColor(const QString &)));
-
-        //
-        // Validate inputs for the Username
-        //
-        QRegularExpression rxUsername(R"(\b[A-Za-z0-9_]\b)", QRegularExpression::CaseInsensitiveOption);
-        ui->lineEdit_username->setValidator(new QRegularExpressionValidator(rxUsername, this));
-        ui->lineEdit_login_username->setValidator(new QRegularExpressionValidator(rxUsername, this));
-        ui->lineEdit_change_password_username->setValidator(new QRegularExpressionValidator(rxUsername, this));
-        ui->lineEdit_change_email_username->setValidator(new QRegularExpressionValidator(rxUsername, this));
-
-        QObject::connect(ui->lineEdit_username, SIGNAL(textChanged(const QString &)),
-                         this, SLOT(setUsernameInputColor(const QString &)));
-
-        QObject::connect(ui->lineEdit_login_username, SIGNAL(textChanged(const QString &)),
-                         this, SLOT(setUsernameInputColor(const QString &)));
-
-        QObject::connect(ui->lineEdit_change_password_username, SIGNAL(textChanged(const QString &)),
-                         this, SLOT(setUsernameInputColor(const QString &)));
-
-        QObject::connect(ui->lineEdit_change_email_username, SIGNAL(textChanged(const QString &)),
-                         this, SLOT(setUsernameInputColor(const QString &)));
-
-        if (gkXmppClient->isConnected()) {
             //
-            // Disconnect from the server since filling out the form may take some time, and we might
-            // timeout on the connection otherwise!
+            // Validate inputs for the Email Address
             //
-            gkXmppClient->disconnectFromServer();
-        }
+            QRegularExpression rxEmail(R"(\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}\b)",
+                                       QRegularExpression::CaseInsensitiveOption);
+            ui->lineEdit_email->setValidator(new QRegularExpressionValidator(rxEmail, this));
+            ui->lineEdit_change_email_new_address->setValidator(new QRegularExpressionValidator(rxEmail, this));
 
-        if (gkXmppRegistrationMgr) { // Verify that the object exists, and the extension is activated at the given server!
-            QObject::connect(gkXmppRegistrationMgr.get(), &QXmppRegistrationManager::registrationFormReceived, [=](const QXmppRegisterIq &iq) {
-                qDebug() << "Form received:" << iq.instructions();
-                registerIqReceived(iq); // You now need to complete the form!
-            });
+            QObject::connect(ui->lineEdit_email, SIGNAL(textChanged(const QString &)),
+                             this, SLOT(setEmailInputColor(const QString &)));
 
-            QObject::connect(gkXmppRegistrationMgr.get(), &QXmppRegistrationManager::registrationFailed, [=](const QXmppStanza::Error &error) {
-                gkEventLogger->publishEvent(tr("Requesting the registration form failed:\n\n%1").arg(error.text()), GkSeverity::Fatal, "",
-                                            false, true, false, true);
-            });
+            QObject::connect(ui->lineEdit_change_email_new_address, SIGNAL(textChanged(const QString &)),
+                             this, SLOT(setEmailInputColor(const QString &)));
 
-            QObject::connect(gkXmppRegistrationMgr.get(), SIGNAL(registrationFailed(const QXmppStanza::Error &)), this, SLOT());
+            //
+            // Validate inputs for the Username
+            //
+            QRegularExpression rxUsername(R"(\b[A-Za-z0-9_]\b)", QRegularExpression::CaseInsensitiveOption);
+            ui->lineEdit_username->setValidator(new QRegularExpressionValidator(rxUsername, this));
+            ui->lineEdit_login_username->setValidator(new QRegularExpressionValidator(rxUsername, this));
+            ui->lineEdit_change_password_username->setValidator(new QRegularExpressionValidator(rxUsername, this));
+            ui->lineEdit_change_email_username->setValidator(new QRegularExpressionValidator(rxUsername, this));
+
+            QObject::connect(ui->lineEdit_username, SIGNAL(textChanged(const QString &)),
+                             this, SLOT(setUsernameInputColor(const QString &)));
+
+            QObject::connect(ui->lineEdit_login_username, SIGNAL(textChanged(const QString &)),
+                             this, SLOT(setUsernameInputColor(const QString &)));
+
+            QObject::connect(ui->lineEdit_change_password_username, SIGNAL(textChanged(const QString &)),
+                             this, SLOT(setUsernameInputColor(const QString &)));
+
+            QObject::connect(ui->lineEdit_change_email_username, SIGNAL(textChanged(const QString &)),
+                             this, SLOT(setUsernameInputColor(const QString &)));
+
+            if (gkXmppClient->isConnected()) {
+                //
+                // Disconnect from the server since filling out the form may take some time, and we might
+                // timeout on the connection otherwise!
+                //
+                gkXmppClient->disconnectFromServer();
+            }
+
+            if (gkXmppRegistrationMgr) { // Verify that the object exists, and the extension is activated at the given server!
+                QObject::connect(gkXmppRegistrationMgr.get(), &QXmppRegistrationManager::registrationFormReceived, [=](const QXmppRegisterIq &iq) {
+                    qDebug() << "Form received:" << iq.instructions();
+                    registerIqReceived(iq); // You now need to complete the form!
+                });
+
+                QObject::connect(gkXmppRegistrationMgr.get(), &QXmppRegistrationManager::registrationFailed, [=](const QXmppStanza::Error &error) {
+                    gkEventLogger->publishEvent(tr("Requesting the registration form failed:\n\n%1").arg(error.text()), GkSeverity::Fatal, "",
+                                                false, true, false, true);
+                });
+
+                QObject::connect(gkXmppRegistrationMgr.get(), &QXmppRegistrationManager::passwordChangeFailed, [=](const QXmppStanza::Error &error) {
+                    gkEventLogger->publishEvent(tr("An attempt to change the password has failed:\n\n%1").arg(error.text()), GkSeverity::Fatal, "",
+                                                false, true, false, true);
+                });
+            }
+        } else {
+            QMessageBox::critical(this, tr("Error!"), tr(""), QMessageBox::Ok);
+            QMessageBox msgBox;
+            msgBox.setWindowTitle(tr("Error!"));
+            msgBox.setText(tr(R"(User registration is not supported by this server. Aborting...")"));
+            msgBox.setStandardButtons(QMessageBox::Ok);
+            msgBox.setDefaultButton(QMessageBox::Ok);
+            msgBox.setIcon(QMessageBox::Icon::Critical);
+            int ret = msgBox.exec();
+
+            switch (ret) {
+                case QMessageBox::Ok:
+                    this->close();
+                    break;
+                default:
+                    this->close();
+                    break;
+            }
         }
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);

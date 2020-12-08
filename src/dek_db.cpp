@@ -1183,8 +1183,6 @@ GkXmpp::GkServerType GkLevelDb::convXmppServerTypeFromInt(const qint32 &idx)
     switch (idx) {
         case GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX:
             return GkXmpp::GkServerType::GekkoFyre;
-        case GK_XMPP_SERVER_TYPE_COMBO_GOOGLE_IDX:
-            return GkXmpp::GkServerType::Google;
         case GK_XMPP_SERVER_TYPE_COMBO_CUSTOM_IDX:
             return GkXmpp::GkServerType::Custom;
         default:

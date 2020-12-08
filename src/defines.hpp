@@ -107,11 +107,11 @@ namespace GekkoFyre {
 //
 // XMPP specific constants
 //
+#define GK_DEFAULT_XMPP_SERVER_PORT (443)
 #define GK_XMPP_AVAIL_COMBO_AVAILABLE_IDX (0)
 #define GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX (1)
 #define GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX (0)
-#define GK_XMPP_SERVER_TYPE_COMBO_GOOGLE_IDX (1)
-#define GK_XMPP_SERVER_TYPE_COMBO_CUSTOM_IDX (2)
+#define GK_XMPP_SERVER_TYPE_COMBO_CUSTOM_IDX (1)
 
 //
 // Networking settings (also sometimes related to XMPP!)
@@ -272,6 +272,10 @@ namespace Filesystem {
     constexpr char gk_crashpad_handler_linux[] = "crashpad_handler";    // The name of the Crashpad handler executable under Linux and possibly Unix-like operating systems.
 
     constexpr char linux_sys_tty[] = "/sys/class/tty/";                 // The location of the TTY-devices under most major Linux distributions
+}
+
+namespace GkXmppGekkoFyreCfg {
+    constexpr char defaultUrl[] = "https://xmpp.vk3vkk.io/";
 }
 
 namespace System {
@@ -701,7 +705,6 @@ namespace Network {
 
         enum GkServerType {                                  // Information pertaining to DNS Lookups for the QXmpp library.
             GekkoFyre,
-            Google,
             Custom,
             Unknown
         };

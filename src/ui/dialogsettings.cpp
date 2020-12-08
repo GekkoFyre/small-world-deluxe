@@ -147,7 +147,6 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         //
         // Fill QComboBox with default items as pertaining to XMPP configurations!
         prefill_xmpp_server_type(GkXmpp::GkServerType::GekkoFyre);
-        prefill_xmpp_server_type(GkXmpp::GkServerType::Google);
         prefill_xmpp_server_type(GkXmpp::GkServerType::Custom);
 
         usb_ports_active = false;
@@ -782,9 +781,6 @@ void DialogSettings::prefill_xmpp_server_type(const GkXmpp::GkServerType &server
         case GkXmpp::GkServerType::GekkoFyre:
             ui->comboBox_xmpp_server_type->insertItem(GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX, tr("GekkoFyre Networks (best choice!)"));
             break;
-        case GkXmpp::GkServerType::Google:
-            ui->comboBox_xmpp_server_type->insertItem(GK_XMPP_SERVER_TYPE_COMBO_GOOGLE_IDX, tr("Google XMPP Servers"));
-            break;
         case GkXmpp::GkServerType::Custom:
             ui->comboBox_xmpp_server_type->insertItem(GK_XMPP_SERVER_TYPE_COMBO_CUSTOM_IDX, tr("Custom (use with caution)"));
             break;
@@ -1293,33 +1289,79 @@ bool DialogSettings::read_settings()
         //
         // General --> XMPP --> Client Settings
         //
-        bool xmpp_allow_msg_history = gkDekodeDb->boolStr(gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppAllowMsgHistory).toStdString());
-        bool xmpp_allow_file_xfers = gkDekodeDb->boolStr(gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppAllowFileXfers).toStdString());
-        bool xmpp_allow_mucs = gkDekodeDb->boolStr(gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppAlowMucs).toStdString());
-        bool xmpp_connect_auto = gkDekodeDb->boolStr(gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppAutoConnect).toStdString());
-        QByteArray xmpp_upload_avatar; // TODO: Finish this area of code, pronto!
+        QString xmpp_allow_msg_history = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppAllowMsgHistory);
+        QString xmpp_allow_file_xfers = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppAllowFileXfers);
+        QString xmpp_allow_mucs = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppAlowMucs);
+        QString xmpp_auto_connect = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppAutoConnect);
 
-        ui->checkBox_allow_msg_history->setChecked(xmpp_allow_msg_history);
-        ui->checkBox_allow_file_transfers->setChecked(xmpp_allow_file_xfers);
-        ui->checkBox_allow_muc_creation->setChecked(xmpp_allow_mucs);
-        ui->checkBox_connect_automatically->setChecked(xmpp_connect_auto);
+        if (!xmpp_allow_msg_history.isEmpty()) {
+            ui->checkBox_allow_msg_history->setChecked(gkDekodeDb->boolStr(xmpp_allow_msg_history.toStdString()));
+        } else {
+            ui->checkBox_allow_msg_history->setChecked(true);
+        }
+
+        if (!xmpp_allow_file_xfers.isEmpty()) {
+            ui->checkBox_allow_file_transfers->setChecked(gkDekodeDb->boolStr(xmpp_allow_file_xfers.toStdString()));
+        } else {
+            ui->checkBox_allow_file_transfers->setChecked(true);
+        }
+
+        if (!xmpp_allow_mucs.isEmpty()) {
+            ui->checkBox_allow_muc_creation->setChecked(gkDekodeDb->boolStr(xmpp_allow_mucs.toStdString()));
+        } else {
+            ui->checkBox_allow_muc_creation->setChecked(true);
+        }
+
+        if (!xmpp_auto_connect.isEmpty()) {
+            ui->checkBox_connect_automatically->setChecked(gkDekodeDb->boolStr(xmpp_auto_connect.toStdString()));
+        } else {
+            ui->checkBox_connect_automatically->setChecked(false);
+        }
 
         //
         // General --> XMPP --> Server Settings
         //
-        QString xmpp_host_url = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppDomainUrl);
-        qint32 xmpp_server_type = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppServerType).toInt();
-        quint16 xmpp_host_tcp_port = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppDomainPort).toInt();
-        bool xmpp_enable_ssl = gkDekodeDb->boolStr(gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppEnableSsl).toStdString());
+        QString xmpp_domain_url = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppDomainUrl);
+        QString xmpp_server_type = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppServerType);
+        QString xmpp_domain_port = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppDomainPort);
+        QString xmpp_enable_ssl = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppEnableSsl);
 
-        ui->lineEdit_xmpp_server_url->setText(xmpp_host_url);
-        ui->comboBox_xmpp_server_type->setCurrentIndex(xmpp_server_type);
-        ui->spinBox_xmpp_server_port->setValue(xmpp_host_tcp_port);
-        ui->checkBox_xmpp_server_ssl->setChecked(xmpp_connect_auto);
+        switch (ui->comboBox_xmpp_server_type->currentIndex()) {
+            case GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX:
+                ui->lineEdit_xmpp_server_url->setText(GkXmppGekkoFyreCfg::defaultUrl);
+                break;
+            case GK_XMPP_SERVER_TYPE_COMBO_CUSTOM_IDX:
+                ui->lineEdit_xmpp_server_url->setText(xmpp_domain_url);
+                break;
+            default:
+                break;
+        }
 
-        //
-        // Update the index for the relevant QComboBox signal/slot!
-        on_comboBox_xmpp_server_type_currentIndexChanged(xmpp_server_type);
+        if (!xmpp_server_type.isEmpty()) {
+            ui->comboBox_xmpp_server_type->setCurrentIndex(xmpp_server_type.toInt());
+
+            //
+            // Update the index for the relevant QComboBox signal/slot!
+            on_comboBox_xmpp_server_type_currentIndexChanged(xmpp_server_type.toInt());
+        } else {
+            ui->comboBox_xmpp_server_type->setCurrentIndex(GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX);
+
+            //
+            // Update the index for the relevant QComboBox signal/slot!
+            on_comboBox_xmpp_server_type_currentIndexChanged(GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX);
+        }
+
+        if (!xmpp_domain_port.isEmpty()) {
+            ui->spinBox_xmpp_server_port->setValue(xmpp_domain_port.toInt());
+        } else {
+            ui->spinBox_xmpp_server_port->setValue(GK_DEFAULT_XMPP_SERVER_PORT);
+        }
+
+        if (!xmpp_enable_ssl.isEmpty()) {
+            ui->checkBox_xmpp_server_ssl->setChecked(gkDekodeDb->boolStr(xmpp_enable_ssl.toStdString()));
+        } else {
+            ui->checkBox_xmpp_server_ssl->setChecked(true);
+        }
 
         //
         // Audio --> Configuration
@@ -2739,13 +2781,6 @@ void DialogSettings::on_comboBox_xmpp_server_type_currentIndexChanged(int index)
     switch (index) {
         case GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX:
             // GekkoFyre Networks' servers have been selected!
-            ui->lineEdit_xmpp_server_url->setEnabled(false);
-            ui->spinBox_xmpp_server_port->setEnabled(false);
-            ui->checkBox_xmpp_server_ssl->setEnabled(false);
-
-            break;
-        case GK_XMPP_SERVER_TYPE_COMBO_GOOGLE_IDX:
-            // Google's own XMPP servers have been chosen!
             ui->lineEdit_xmpp_server_url->setEnabled(false);
             ui->spinBox_xmpp_server_port->setEnabled(false);
             ui->checkBox_xmpp_server_ssl->setEnabled(false);

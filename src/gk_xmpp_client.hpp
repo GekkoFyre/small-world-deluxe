@@ -47,6 +47,7 @@
 #include <qxmpp/QXmppClient.h>
 #include <qxmpp/QXmppMucManager.h>
 #include <qxmpp/QXmppRosterManager.h>
+#include <qxmpp/QXmppDiscoveryManager.h>
 #include <QString>
 #include <QObject>
 #include <QPointer>
@@ -60,7 +61,8 @@ class GkXmppClient : public QXmppClient {
 
 public:
     explicit GkXmppClient(const Network::GkXmpp::GkUserConn &connection_details,
-                          QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
+                          QPointer<GekkoFyre::GkEventLogger> eventLogger, const bool &connectNow = false,
+                          QObject *parent = nullptr);
     ~GkXmppClient() override;
 
     bool createMuc(const QString &room_name, const QString &room_subject, const QString &room_desc);
@@ -92,6 +94,7 @@ private:
     Network::GkXmpp::GkUserConn gkConnDetails;
     QPointer<QDnsLookup> m_dns;
     std::shared_ptr<QXmppRosterManager> m_rosterManager;
+    std::unique_ptr<QXmppDiscoveryManager> gkDiscoMgr;
     std::unique_ptr<QXmppPresence> m_presence;
     std::unique_ptr<QXmppMucManager> m_mucManager;
     std::unique_ptr<QXmppMucRoom> m_pRoom;

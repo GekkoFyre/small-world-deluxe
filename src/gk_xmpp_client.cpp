@@ -65,13 +65,27 @@ using namespace Logging;
 using namespace Network;
 using namespace GkXmpp;
 
+/**
+ * @brief GkXmppClient::GkXmppClient The client-class for all such XMPP calls within Small World Deluxe.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param connection_details The details pertaining to making a successful connection towards the given XMPP server.
+ * @param eventLogger The object for processing logging information.
+ * @param connectNow Whether to intiiate a connection now or at a later time instead.
+ * @param parent The parent object.
+ */
 GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                           QObject *parent) : m_rosterManager(findExtension<QXmppRosterManager>()), QXmppClient(parent)
+                           const bool &connectNow, QObject *parent) : m_rosterManager(findExtension<QXmppRosterManager>()),
+                           QXmppClient(parent)
 {
     try {
         setParent(parent);
         gkConnDetails = connection_details;
         gkEventLogger = std::move(eventLogger);
+
+        m_dns = new QDnsLookup(this);
+        m_presence = std::make_unique<QXmppPresence>();
+        m_mucManager = std::make_unique<QXmppMucManager>();
+        gkDiscoMgr = std::make_unique<QXmppDiscoveryManager>();
 
         QObject::connect(this, SIGNAL(connected()), this, SLOT(clientConnected()));
         QObject::connect(m_rosterManager.get(), SIGNAL(rosterReceived()), this, SLOT(rosterReceived()));
@@ -80,10 +94,6 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         // someone in roster changes...
         QObject::connect(m_rosterManager.get(), SIGNAL(presenceChanged(const QString &, const QString &)),
                          this, SLOT(presenceChanged(const QString &, const QString &)));
-
-        m_dns = new QDnsLookup(this);
-        m_presence = std::make_unique<QXmppPresence>();
-        m_mucManager = std::make_unique<QXmppMucManager>();
 
         //
         // Setup the signals for the DNS object
@@ -103,9 +113,6 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         m_dns->setType(QDnsLookup::SRV);
         QString dns_lookup_str;
         switch (gkConnDetails.server.type) {
-            case GkServerType::Google:
-                dns_lookup_str = "_xmpp-client._tcp.gmail.com";
-                break;
             case GkServerType::Unknown:
                 throw std::invalid_argument(tr("Unable to perform DNS lookup for XMPP; has a server been specified?").toStdString());
             default:
@@ -127,6 +134,21 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         QObject::connect(this, SIGNAL(connected()), &loop, SLOT(quit()));
         QObject::connect(this, SIGNAL(disconnected()), &loop, SLOT(quit()));
 
+        //
+        // Setting up service discovery correctly for this manager
+        // ------------------------------------------------------------
+        // This manager automatically recognizes whether the local server
+        // supports XEP-0077 (see supportedByServer()). You just need to
+        // request the service discovery information from the server on
+        // connect as below...
+        //
+        QObject::connect(this, &QXmppClient::connected, [=]() {
+            //
+            // The service discovery manager is added to the client by default...
+            gkDiscoMgr.reset(findExtension<QXmppDiscoveryManager>());
+            gkDiscoMgr->requestInfo(gkConnDetails.server.domain.toString());
+        });
+
         QXmppConfiguration config;
         if (!gkConnDetails.jid.isEmpty() || !gkConnDetails.password.isEmpty()) {
             config.setUser(gkConnDetails.jid);
@@ -134,6 +156,10 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         } else {
             m_presence = nullptr;
         }
+
+        QObject::connect(this, &QXmppClient::presenceReceived, [=](const QXmppPresence &presence) {
+            gkEventLogger->publishEvent(presence.statusText(), GkSeverity::Info, "", true, true, false, false);
+        });
 
         // You only need to provide a domain to connectToServer()...
         config.setAutoAcceptSubscriptions(false);
@@ -149,7 +175,7 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         config.setUseNonSASLAuthentication(false);
         config.setUseSASLAuthentication(false);
 
-        if (gkConnDetails.server.settings_client.auto_connect) {
+        if (gkConnDetails.server.settings_client.auto_connect || connectNow) {
             if (m_presence) {
                 connectToServer(config, *m_presence);
             } else {

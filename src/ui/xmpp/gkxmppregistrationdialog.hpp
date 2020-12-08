@@ -46,7 +46,6 @@
 #include "src/gk_xmpp_client.hpp"
 #include <qxmpp/QXmppClient.h>
 #include <qxmpp/QXmppRegisterIq.h>
-#include <qxmpp/QXmppDiscoveryManager.h>
 #include <qxmpp/QXmppRegistrationManager.h>
 #include <memory>
 #include <QString>
@@ -111,7 +110,6 @@ private:
     //
     GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
     QPointer<GekkoFyre::GkXmppClient> gkXmppClient;
-    std::unique_ptr<QXmppDiscoveryManager> gkDiscoMgr;
     std::unique_ptr<QXmppRegistrationManager> gkXmppRegistrationMgr;
 
     GekkoFyre::Network::GkXmpp::GkNetworkState m_netState;

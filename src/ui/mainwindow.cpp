@@ -777,7 +777,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // QXmpp and XMPP related
         //
-        gkXmppClient = new GkXmppClient(xmpp_conn_details, gkEventLogger, this);
+        gkXmppClient = new GkXmppClient(xmpp_conn_details, gkEventLogger, false, this);
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
@@ -1666,31 +1666,66 @@ void MainWindow::readXmppSettings()
     //
     // General --> XMPP --> Client Settings
     //
-    bool xmpp_allow_msg_history = gkDb->boolStr(gkDb->read_xmpp_settings(GkXmppCfg::XmppAllowMsgHistory).toStdString());
-    bool xmpp_allow_file_xfers = gkDb->boolStr(gkDb->read_xmpp_settings(GkXmppCfg::XmppAllowFileXfers).toStdString());
-    bool xmpp_allow_mucs = gkDb->boolStr(gkDb->read_xmpp_settings(GkXmppCfg::XmppAlowMucs).toStdString());
-    bool xmpp_connect_auto = gkDb->boolStr(gkDb->read_xmpp_settings(GkXmppCfg::XmppAutoConnect).toStdString());
+    QString xmpp_allow_msg_history = gkDb->read_xmpp_settings(GkXmppCfg::XmppAllowMsgHistory);
+    QString xmpp_allow_file_xfers = gkDb->read_xmpp_settings(GkXmppCfg::XmppAllowFileXfers);
+    QString xmpp_allow_mucs = gkDb->read_xmpp_settings(GkXmppCfg::XmppAlowMucs);
+    QString xmpp_auto_connect = gkDb->read_xmpp_settings(GkXmppCfg::XmppAutoConnect);
     QByteArray xmpp_upload_avatar; // TODO: Finish this area of code, pronto!
+    xmpp_conn_details.server.settings_client.upload_avatar_pixmap = xmpp_upload_avatar;
+
+    if (!xmpp_allow_msg_history.isEmpty()) {
+        xmpp_conn_details.server.settings_client.allow_msg_history = gkDb->boolStr(xmpp_allow_msg_history.toStdString());
+    } else {
+        xmpp_conn_details.server.settings_client.allow_msg_history = true;
+    }
+
+    if (!xmpp_allow_file_xfers.isEmpty()) {
+        xmpp_conn_details.server.settings_client.allow_file_xfers = gkDb->boolStr(xmpp_allow_file_xfers.toStdString());
+    } else {
+        xmpp_conn_details.server.settings_client.allow_file_xfers = true;
+    }
+
+    if (!xmpp_allow_mucs.isEmpty()) {
+        xmpp_conn_details.server.settings_client.allow_mucs = gkDb->boolStr(xmpp_allow_mucs.toStdString());
+    } else {
+        xmpp_conn_details.server.settings_client.allow_mucs = true;
+    }
+
+    if (!xmpp_auto_connect.isEmpty()) {
+        xmpp_conn_details.server.settings_client.auto_connect = gkDb->boolStr(xmpp_auto_connect.toStdString());
+    } else {
+        xmpp_conn_details.server.settings_client.auto_connect = false;
+    }
 
     //
     // General --> XMPP --> Server Settings
     //
-    QString xmpp_host_url = gkDb->read_xmpp_settings(GkXmppCfg::XmppDomainUrl);
-    qint32 xmpp_server_type = gkDb->read_xmpp_settings(GkXmppCfg::XmppServerType).toInt();
-    quint16 xmpp_host_tcp_port = gkDb->read_xmpp_settings(GkXmppCfg::XmppDomainPort).toInt();
-    bool xmpp_enable_ssl = gkDb->boolStr(gkDb->read_xmpp_settings(GkXmppCfg::XmppEnableSsl).toStdString());
+    QString xmpp_domain_url = gkDb->read_xmpp_settings(GkXmppCfg::XmppDomainUrl);
+    QString xmpp_server_type = gkDb->read_xmpp_settings(GkXmppCfg::XmppServerType);
+    QString xmpp_domain_port = gkDb->read_xmpp_settings(GkXmppCfg::XmppDomainPort);
+    QString xmpp_enable_ssl = gkDb->read_xmpp_settings(GkXmppCfg::XmppEnableSsl);
 
-    xmpp_conn_details.server.settings_client.allow_msg_history = xmpp_allow_msg_history;
-    xmpp_conn_details.server.settings_client.allow_file_xfers = xmpp_allow_file_xfers;
-    xmpp_conn_details.server.settings_client.allow_mucs = xmpp_allow_mucs;
-    xmpp_conn_details.server.settings_client.auto_connect = xmpp_connect_auto;
-    xmpp_conn_details.server.settings_client.enable_ssl = xmpp_enable_ssl;
-    xmpp_conn_details.server.settings_client.upload_avatar_pixmap = xmpp_upload_avatar;
-    xmpp_conn_details.server.type = gkDb->convXmppServerTypeFromInt(xmpp_server_type);
-    xmpp_conn_details.server.domain = QHostAddress(xmpp_host_url);
-    xmpp_conn_details.server.port = xmpp_host_tcp_port;
+    if (!xmpp_server_type.isEmpty() && !xmpp_domain_url.isEmpty()) {
+        xmpp_conn_details.server.type = gkDb->convXmppServerTypeFromInt(xmpp_server_type.toInt());
+        xmpp_conn_details.server.domain = QHostAddress(xmpp_domain_url);
+    } else {
+        xmpp_conn_details.server.type = gkDb->convXmppServerTypeFromInt(GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX);
+        xmpp_conn_details.server.domain = QHostAddress(GkXmppGekkoFyreCfg::defaultUrl);
+    }
+
+    if (!xmpp_domain_port.isEmpty()) {
+        xmpp_conn_details.server.port = xmpp_domain_port.toInt();
+    } else {
+        xmpp_conn_details.server.port = GK_DEFAULT_XMPP_SERVER_PORT;
+    }
+
+    if (!xmpp_enable_ssl.isEmpty()) {
+        xmpp_conn_details.server.settings_client.enable_ssl = gkDb->boolStr(xmpp_enable_ssl.toStdString());
+    } else {
+        xmpp_conn_details.server.settings_client.enable_ssl = true;
+    }
+
     xmpp_conn_details.status = GkOnlineStatus::Offline;
-
     xmpp_conn_details.jid = gkDb->read_xmpp_settings(GkXmppCfg::XmppJid);;
     xmpp_conn_details.password = gkDb->read_xmpp_settings(GkXmppCfg::XmppPassword);;
     xmpp_conn_details.nickname = gkDb->read_xmpp_settings(GkXmppCfg::XmppNickname);;
