@@ -141,7 +141,14 @@ private slots:
     void on_actionSSB_toggled(bool arg1);
     void on_actionCW_toggled(bool arg1);
 
+    //
+    // QXmpp and XMPP related
+    //
     void on_actionView_Roster_triggered();
+    void on_actionSign_out_triggered();
+    void on_actionOnline_triggered();
+    void on_actionInvisible_triggered();
+    void on_actionOffline_triggered();
 
     //
     // Documentation
@@ -422,6 +429,7 @@ private:
     bool steadyTimer(const int &seconds);
     QRect findActiveScreen();
 
+    void readXmppSettings();
     void launchXmppRosterDlg();
 
     void print_exception(const std::exception &e, int level = 0);

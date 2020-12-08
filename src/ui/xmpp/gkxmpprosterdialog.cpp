@@ -71,8 +71,15 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
     // QXmpp and XMPP related
     //
     gkXmppClient = std::move(xmppClient);
-    xmppClientPtr = std::move(gkXmppClient->xmppClient());
     gkXmppMsgDlg = new GkXmppMessageDialog(gkXmppClient, parent);
+
+    if (!gkXmppClient->isConnected()) {
+        ui->stackedWidget_roster_ui->setCurrentWidget(ui->page_login_or_create_account);
+    } else {
+        ui->stackedWidget_roster_ui->setCurrentWidget(ui->page_user_roster);
+    }
+
+    return;
 }
 
 GkXmppRosterDialog::~GkXmppRosterDialog()

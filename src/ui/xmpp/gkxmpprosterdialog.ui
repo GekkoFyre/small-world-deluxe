@@ -358,6 +358,15 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>scrollArea_callsigns_groups</tabstop>
+  <tabstop>comboBox_current_status</tabstop>
+  <tabstop>textBrowser_history</tabstop>
+  <tabstop>scrollArea_history</tabstop>
+  <tabstop>pushButton_user_login</tabstop>
+  <tabstop>pushButton_user_create_account</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

@@ -1665,6 +1665,7 @@ QPushButton:disabled {
     </widget>
     <addaction name="menu_Availability"/>
     <addaction name="actionView_Roster"/>
+    <addaction name="actionSign_out"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Configure"/>
@@ -2014,6 +2015,11 @@ QPushButton:disabled {
   <action name="actionOffline">
    <property name="text">
     <string>Offline</string>
+   </property>
+  </action>
+  <action name="actionSign_out">
+   <property name="text">
+    <string>Sign-out</string>
    </property>
   </action>
  </widget>

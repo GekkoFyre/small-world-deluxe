@@ -1,0 +1,5 @@
+## Translations for Small World Deluxe
+
+Hello! This folder is the future holding site for all the translation files for the [Small World Deluxe](https://code.gekkofyre.io/amateur-radio/small-world-deluxe) project. We are looking for multi-lingual writers and speakers to fill this role, primarily for the [EFIGS languages](https://en.wiktionary.org/wiki/EFIGS) at first. Although we aren't a group to knock back anyone willing to translate towards a particular language of their offering if it's something other than English, we're just gracious either way.
+
+The best way to contact the author, Phobos D'thorga, about interest in this area is via the [Discord chat application](https://discord.com/), where you'll need to find the username, `Phobos#0001`. I do appear offline most of the time but that by no means that I'm not generally available most days and times. So send me a message and I should contact you back as soon as possible, thank you :)

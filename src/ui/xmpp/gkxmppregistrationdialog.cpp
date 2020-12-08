@@ -91,7 +91,6 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
         //
         gkConnDetails = connection_details;
         gkXmppClient = std::move(xmppClient);
-        xmppClientPtr = std::move(gkXmppClient->xmppClient());
         gkDiscoMgr = std::make_unique<QXmppDiscoveryManager>();
         gkXmppRegistrationMgr.reset(gkXmppClient->findExtension<QXmppRegistrationManager>()); // Verify that the extension is available at the given server!
 
@@ -119,10 +118,10 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
         }
 
         QObject::connect(this, SIGNAL(sendError(const QString &)), this, SLOT(handleError(const QString &)));
-        QObject::connect(xmppClientPtr, &QXmppClient::connected, [=]() {
+        QObject::connect(gkXmppClient, &QXmppClient::connected, [=]() {
             // The service discovery manager is added to the client by default...
-            gkDiscoMgr.reset(xmppClientPtr->findExtension<QXmppDiscoveryManager>());
-            gkDiscoMgr->requestInfo(xmppClientPtr->configuration().domain());
+            gkDiscoMgr.reset(gkXmppClient->findExtension<QXmppDiscoveryManager>());
+            gkDiscoMgr->requestInfo(gkXmppClient->configuration().domain());
         });
 
         //
@@ -178,6 +177,8 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
                 gkEventLogger->publishEvent(tr("Requesting the registration form failed:\n\n%1").arg(error.text()), GkSeverity::Fatal, "",
                                             false, true, false, true);
             });
+
+            QObject::connect(gkXmppRegistrationMgr.get(), SIGNAL(registrationFailed(const QXmppStanza::Error &)), this, SLOT());
         }
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);
@@ -239,6 +240,11 @@ void GkXmppRegistrationDialog::on_pushButton_signup_submit_clicked()
  */
 void GkXmppRegistrationDialog::on_pushButton_signup_reset_clicked()
 {
+    ui->lineEdit_email->clear();
+    ui->lineEdit_username->clear();
+    ui->lineEdit_password->clear();
+    ui->lineEdit_xmpp_captcha_input->clear();
+
     return;
 }
 
@@ -248,6 +254,7 @@ void GkXmppRegistrationDialog::on_pushButton_signup_reset_clicked()
  */
 void GkXmppRegistrationDialog::on_pushButton_signup_cancel_clicked()
 {
+    this->close();
     return;
 }
 
@@ -266,6 +273,10 @@ void GkXmppRegistrationDialog::on_pushButton_login_submit_clicked()
  */
 void GkXmppRegistrationDialog::on_pushButton_login_reset_clicked()
 {
+    ui->lineEdit_login_username->clear();
+    ui->lineEdit_login_password->clear();
+    ui->lineEdit_xmpp_login_captcha_input->clear();
+
     return;
 }
 
@@ -275,6 +286,7 @@ void GkXmppRegistrationDialog::on_pushButton_login_reset_clicked()
  */
 void GkXmppRegistrationDialog::on_pushButton_login_cancel_clicked()
 {
+    this->close();
     return;
 }
 
@@ -319,6 +331,71 @@ void GkXmppRegistrationDialog::on_pushButton_retry_clicked()
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void GkXmppRegistrationDialog::on_pushButton_exit_clicked()
+{
+    this->close();
+    return;
+}
+
+/**
+ * @brief GkXmppRegistrationDialog::on_pushButton_change_password_reset_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRegistrationDialog::on_pushButton_change_password_reset_clicked()
+{
+    ui->lineEdit_change_password_username->clear();
+    ui->lineEdit_change_password_old_input->clear();
+    ui->lineEdit_change_password_new_input->clear();
+    ui->lineEdit_xmpp_change_password_captcha_input->clear();
+
+    return;
+}
+
+/**
+ * @brief GkXmppRegistrationDialog::on_pushButton_change_password_cancel_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRegistrationDialog::on_pushButton_change_password_cancel_clicked()
+{
+    return;
+}
+
+/**
+ * @brief GkXmppRegistrationDialog::on_pushButton_change_password_submit_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRegistrationDialog::on_pushButton_change_password_submit_clicked()
+{
+    return;
+}
+
+/**
+ * @brief GkXmppRegistrationDialog::on_pushButton_change_email_submit_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRegistrationDialog::on_pushButton_change_email_submit_clicked()
+{
+    return;
+}
+
+/**
+ * @brief GkXmppRegistrationDialog::on_pushButton_change_email_reset_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRegistrationDialog::on_pushButton_change_email_reset_clicked()
+{
+    ui->lineEdit_change_email_new_address->clear();
+    ui->lineEdit_change_email_username->clear();
+    ui->lineEdit_change_email_password->clear();
+    ui->lineEdit_xmpp_change_email_captcha_input->clear();
+
+    return;
+}
+
+/**
+ * @brief GkXmppRegistrationDialog::on_pushButton_change_email_cancel_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRegistrationDialog::on_pushButton_change_email_cancel_clicked()
 {
     return;
 }
@@ -376,7 +453,7 @@ void GkXmppRegistrationDialog::sendFilledRegistrationForm(const QString &user, c
 
         gkXmppRegistrationMgr->setRegistrationFormToSend(gkRegisterIq);
         gkEventLogger->publishEvent(tr("User, \"%1\", has been registered with XMPP server: %2")
-                                            .arg(gkConnDetails.jid).arg(gkConnDetails.server.host.toString()), GkSeverity::Info,
+                                            .arg(gkConnDetails.jid).arg(gkConnDetails.server.domain.toString()), GkSeverity::Info,
                                     "", true, true, false, false);
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);

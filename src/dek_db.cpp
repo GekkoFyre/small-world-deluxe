@@ -67,6 +67,7 @@
 #include <ctime>
 
 using namespace GekkoFyre;
+using namespace GkAudioFramework;
 using namespace Database;
 using namespace Settings;
 using namespace Audio;
@@ -76,6 +77,8 @@ using namespace Spectrograph;
 using namespace System;
 using namespace Events;
 using namespace Logging;
+using namespace Network;
+using namespace GkXmpp;
 
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
@@ -1029,6 +1032,166 @@ void GkLevelDb::capture_sys_info()
     }
 
     return;
+}
+
+/**
+ * @brief GkLevelDb::write_xmpp_settings writes out and saves given XMPP settings to a pre-configured Google LevelDB
+ * database for future reading and processing.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value The actual configuration value to be saved.
+ * @param key The setting in question that the value is to be saved under.
+ */
+void GkLevelDb::write_xmpp_settings(const QString &value, const Settings::GkXmppCfg &key)
+{
+    try {
+        // Put key-value
+        leveldb::WriteBatch batch;
+        leveldb::Status status;
+
+        switch (key) {
+            case Settings::GkXmppCfg::XmppAllowMsgHistory:
+                batch.Put("XmppCfgAllowMsgHistory", value.toStdString());
+                break;
+            case Settings::GkXmppCfg::XmppAllowFileXfers:
+                batch.Put("XmppCfgAllowFileXfers", value.toStdString());
+                break;
+            case Settings::GkXmppCfg::XmppAlowMucs:
+                batch.Put("XmppCfgAllowMucs", value.toStdString());
+                break;
+            case Settings::GkXmppCfg::XmppAutoConnect:
+                batch.Put("XmppCfgAutoConnect", value.toStdString());
+                break;
+            case Settings::GkXmppCfg::XmppAvatarByteArray:
+                batch.Put("XmppCfgAvatarByteArray", value.toStdString());
+                break;
+            case Settings::GkXmppCfg::XmppDomainUrl:
+                batch.Put("XmppCfgDomainUrl", value.toStdString());
+                break;
+            case Settings::GkXmppCfg::XmppServerType:
+                batch.Put("XmppCfgServerType", value.toStdString());
+                break;
+            case Settings::GkXmppCfg::XmppDomainPort:
+                batch.Put("XmppCfgDomainPort", value.toStdString());
+                break;
+            case Settings::GkXmppCfg::XmppEnableSsl:
+                batch.Put("XmppCfgEnableSsl", value.toStdString());
+                break;
+            case Settings::GkXmppCfg::XmppJid:
+                batch.Put("XmppJid", value.toStdString());
+                break;
+            case Settings::GkXmppCfg::XmppPassword:
+                batch.Put("XmppPassword", value.toStdString());
+                break;
+            case Settings::GkXmppCfg::XmppNickname:
+                batch.Put("XmppNickname", value.toStdString());
+                break;
+            case Settings::GkXmppCfg::XmppEmailAddr:
+                batch.Put("XmppEmailAddr", value.toStdString());
+                break;
+            default:
+                return;
+        }
+
+        std::time_t curr_time = std::time(nullptr);
+        std::stringstream ss;
+        ss << curr_time;
+        batch.Put("CurrTime", ss.str());
+
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
+
+        status = db->Write(write_options, &batch);
+
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkLevelDb::read_xmpp_settings reads out the previously saved XMPP settings from the given Google LevelDB
+ * database for further processing.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param key The setting in question that the value we are trying to retrieve is saved under.
+ * @return Our previously saved value from the pre-configured Google LevelDB database.
+ */
+QString GkLevelDb::read_xmpp_settings(const Settings::GkXmppCfg &key)
+{
+    leveldb::Status status;
+    leveldb::ReadOptions read_options;
+    std::string value = "";
+
+    read_options.verify_checksums = true;
+
+    switch (key) {
+        case Settings::GkXmppCfg::XmppAllowMsgHistory:
+            status = db->Get(read_options, "XmppCfgAllowMsgHistory", &value);
+            break;
+        case Settings::GkXmppCfg::XmppAllowFileXfers:
+            status = db->Get(read_options, "XmppCfgAllowFileXfers", &value);
+            break;
+        case Settings::GkXmppCfg::XmppAlowMucs:
+            status = db->Get(read_options, "XmppCfgAllowMucs", &value);
+            break;
+        case Settings::GkXmppCfg::XmppAutoConnect:
+            status = db->Get(read_options, "XmppCfgAutoConnect", &value);
+            break;
+        case Settings::GkXmppCfg::XmppAvatarByteArray:
+            status = db->Get(read_options, "XmppCfgAvatarByteArray", &value);
+            break;
+        case Settings::GkXmppCfg::XmppDomainUrl:
+            status = db->Get(read_options, "XmppCfgDomainUrl", &value);
+            break;
+        case Settings::GkXmppCfg::XmppServerType:
+            status = db->Get(read_options, "XmppCfgServerType", &value);
+            break;
+        case Settings::GkXmppCfg::XmppDomainPort:
+            status = db->Get(read_options, "XmppCfgDomainPort", &value);
+            break;
+        case Settings::GkXmppCfg::XmppEnableSsl:
+            status = db->Get(read_options, "XmppCfgEnableSsl", &value);
+            break;
+        case Settings::GkXmppCfg::XmppJid:
+            status = db->Get(read_options, "XmppJid", &value);
+            break;
+        case Settings::GkXmppCfg::XmppPassword:
+            status = db->Get(read_options, "XmppPassword", &value);
+            break;
+        case Settings::GkXmppCfg::XmppNickname:
+            status = db->Get(read_options, "XmppNickname", &value);
+            break;
+        case Settings::GkXmppCfg::XmppEmailAddr:
+            status = db->Get(read_options, "XmppEmailAddr", &value);
+            break;
+        default:
+            return QString();
+    }
+
+    return QString::fromStdString(value);
+}
+
+/**
+ * @brief GkLevelDb::convXmppServerTypeFromInt
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+GkXmpp::GkServerType GkLevelDb::convXmppServerTypeFromInt(const qint32 &idx)
+{
+    switch (idx) {
+        case GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX:
+            return GkXmpp::GkServerType::GekkoFyre;
+        case GK_XMPP_SERVER_TYPE_COMBO_GOOGLE_IDX:
+            return GkXmpp::GkServerType::Google;
+        case GK_XMPP_SERVER_TYPE_COMBO_CUSTOM_IDX:
+            return GkXmpp::GkServerType::Custom;
+        default:
+            return GkXmpp::GkServerType::Unknown;
+    }
+
+    return GkXmpp::GkServerType::Unknown;
 }
 
 /**
