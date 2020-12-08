@@ -90,6 +90,10 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         QObject::connect(m_dns, SIGNAL(finished()), this, SLOT(handleServers()));
 
         //
+        // This signal is emitted when the client state changes...
+        QObject::connect(this, SIGNAL(stateChanged (QXmppClient::State)), this, SLOT());
+
+        //
         // This signal is emitted when the XMPP connection encounters any error...
         QObject::connect(this, SIGNAL(error(QXmppClient::Error)),
                          this, SLOT(handleError(QXmppClient::Error)));
@@ -151,11 +155,6 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
             } else {
                 connectToServer(config);
             }
-        }
-
-        if (isConnected()) {
-            gkEventLogger->publishEvent(tr("Connected to XMPP server: %1").arg(config.domain()), GkSeverity::Info, "",
-                                        true, true, true, false);
         }
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(tr("An issue has occurred within the XMPP subsystem. Error:\n\n%1")
@@ -288,6 +287,34 @@ void GkXmppClient::presenceChanged(const QString &bareJid, const QString &resour
 {
     gkEventLogger->publishEvent(tr("Presence changed for %1 towards %2.")
     .arg(bareJid).arg(resource));
+
+    return;
+}
+
+/**
+ * @brief GkXmppClient::stateChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param state
+ * @note QXmppClient Class Reference <https://doc.qxmpp.org/qxmpp-dev/classQXmppClient.html#a8bd2617265568c9769a8ba608a4ff05d>.
+ */
+void GkXmppClient::stateChanged(QXmppClient::State state)
+{
+    switch (state) {
+        case QXmppClient::State::DisconnectedState:
+            gkEventLogger->publishEvent(tr("Disconnected from XMPP server: %1").arg(gkConnDetails.server.domain.toString()), GkSeverity::Info, "",
+                                        true, true, true, false);
+            return;
+        case QXmppClient::State::ConnectingState:
+            gkEventLogger->publishEvent(tr("...attempting to make connection towards XMPP server: %1").arg(gkConnDetails.server.domain.toString()), GkSeverity::Info, "",
+                                        true, true, true, false);
+            return;
+        case QXmppClient::State::ConnectedState:
+            gkEventLogger->publishEvent(tr("Connected to XMPP server: %1").arg(gkConnDetails.server.domain.toString()), GkSeverity::Info, "",
+                                        true, true, true, false);
+            return;
+        default:
+            break;
+    }
 
     return;
 }

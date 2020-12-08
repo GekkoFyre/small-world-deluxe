@@ -82,6 +82,14 @@ private slots:
     void on_pushButton_retry_clicked();
     void on_pushButton_exit_clicked();
 
+    void on_pushButton_change_password_reset_clicked();
+    void on_pushButton_change_password_cancel_clicked();
+    void on_pushButton_change_password_submit_clicked();
+
+    void on_pushButton_change_email_submit_clicked();
+    void on_pushButton_change_email_reset_clicked();
+    void on_pushButton_change_email_cancel_clicked();
+
     void handleRegistrationForm(const QXmppRegisterIq &registerIq);
     void registerIqReceived(const QXmppRegisterIq &registerIq);
     void sendFilledRegistrationForm(const QString &user, const QString &email, const QString &password, const QString &captcha);

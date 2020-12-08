@@ -2696,7 +2696,7 @@ void DialogSettings::on_pushButton_xmpp_cfg_change_password_clicked()
     gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
     gkXmppRegistrationDlg->setAttribute(Qt::WA_DeleteOnClose, true);
     gkXmppRegistrationDlg->show();
-    this->close();
+    // this->close();
 
     return;
 }
@@ -2707,7 +2707,7 @@ void DialogSettings::on_pushButton_xmpp_cfg_change_email_clicked()
     gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
     gkXmppRegistrationDlg->setAttribute(Qt::WA_DeleteOnClose, true);
     gkXmppRegistrationDlg->show();
-    this->close();
+    // this->close();
 
     return;
 }
@@ -2718,7 +2718,7 @@ void DialogSettings::on_pushButton_xmpp_cfg_signup_clicked()
     gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
     gkXmppRegistrationDlg->setAttribute(Qt::WA_DeleteOnClose, true);
     gkXmppRegistrationDlg->show();
-    this->close();
+    // this->close();
 
     return;
 }
@@ -2729,7 +2729,7 @@ void DialogSettings::on_pushButton_xmpp_cfg_login_logout_clicked()
     gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
     gkXmppRegistrationDlg->setAttribute(Qt::WA_DeleteOnClose, true);
     gkXmppRegistrationDlg->show();
-    this->close();
+    // this->close();
 
     return;
 }

@@ -3156,8 +3156,8 @@ Thanks.</string>
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>210</width>
-                      <height>125</height>
+                      <width>698</width>
+                      <height>577</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_28">
@@ -4652,8 +4652,8 @@ Thanks.</string>
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>280</width>
-                      <height>234</height>
+                      <width>722</width>
+                      <height>601</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_35">
@@ -5084,6 +5084,136 @@ Thanks.</string>
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>tabWidget_config</tabstop>
+  <tabstop>tabWidget_config_general</tabstop>
+  <tabstop>scrollArea_general_settings</tabstop>
+  <tabstop>lineEdit_rig_my_callsign_2</tabstop>
+  <tabstop>lineEdit_rig_maidenhead_2</tabstop>
+  <tabstop>lineEdit_rig_cq_message</tabstop>
+  <tabstop>lineEdit_rig_reply_message</tabstop>
+  <tabstop>lineEdit_rig_station_info</tabstop>
+  <tabstop>lineEdit_audio_logs_save_dir</tabstop>
+  <tabstop>pushButton_audio_logs_save_dir</tabstop>
+  <tabstop>scrollArea_ui_radio_freqs</tabstop>
+  <tabstop>tableView_working_freqs</tabstop>
+  <tabstop>pushButton_freq_list_new</tabstop>
+  <tabstop>pushButton_freq_list_edit</tabstop>
+  <tabstop>pushButton_freq_list_delete</tabstop>
+  <tabstop>pushButton_freq_list_print</tabstop>
+  <tabstop>doubleSpinBox_freq_calib_intercept</tabstop>
+  <tabstop>doubleSpinBox_freq_calib_slope</tabstop>
+  <tabstop>tableWidget_station_info</tabstop>
+  <tabstop>scrollArea_ui_user_interface</tabstop>
+  <tabstop>horizontalSlider_access_stt_volume</tabstop>
+  <tabstop>horizontalSlider_access_stt_rate</tabstop>
+  <tabstop>horizontalSlider_access_stt_pitch</tabstop>
+  <tabstop>comboBox_access_stt_engine</tabstop>
+  <tabstop>comboBox_access_stt_language</tabstop>
+  <tabstop>comboBox_access_stt_preset_voice</tabstop>
+  <tabstop>pushButton_access_stt_speak</tabstop>
+  <tabstop>pushButton_access_stt_pause</tabstop>
+  <tabstop>pushButton_access_stt_enable</tabstop>
+  <tabstop>pushButton_access_stt_resume</tabstop>
+  <tabstop>pushButton_access_stt_stop</tabstop>
+  <tabstop>plainTextEdit_access_speech_recog_future_updates</tabstop>
+  <tabstop>checkBox_access_misc_enbl_magnifier</tabstop>
+  <tabstop>lineEdit_access_misc_shortcut_key_magnifier</tabstop>
+  <tabstop>checkBox_compress_settings_db</tabstop>
+  <tabstop>checkBox_send_anon_crash_reports</tabstop>
+  <tabstop>checkBox_waterfall_upon_start</tabstop>
+  <tabstop>checkBox_new_msg_audio_notification</tabstop>
+  <tabstop>checkBox_failed_event_audio_notification</tabstop>
+  <tabstop>horizontalSlider_spectro_min_freq</tabstop>
+  <tabstop>spinBox_spectro_min_freq</tabstop>
+  <tabstop>horizontalSlider_spectro_max_freq</tabstop>
+  <tabstop>spinBox_spectro_max_freq</tabstop>
+  <tabstop>spinBox_spectro_render_thread_settings</tabstop>
+  <tabstop>checkBox_enable_panning</tabstop>
+  <tabstop>checkBox_enable_zooming</tabstop>
+  <tabstop>lineEdit_db_save_loc</tabstop>
+  <tabstop>pushButton_db_save_loc</tabstop>
+  <tabstop>scrollArea_ui_xmpp_cfg</tabstop>
+  <tabstop>checkBox_allow_msg_history</tabstop>
+  <tabstop>checkBox_allow_file_transfers</tabstop>
+  <tabstop>checkBox_allow_muc_creation</tabstop>
+  <tabstop>checkBox_connect_automatically</tabstop>
+  <tabstop>lineEdit_xmpp_upload_avatar_file_browser</tabstop>
+  <tabstop>toolButton_xmpp_upload_avatar_browse_file</tabstop>
+  <tabstop>toolButton_xmpp_delete_avatar_from_server</tabstop>
+  <tabstop>toolButton_xmpp_upload_avatar_to_server</tabstop>
+  <tabstop>pushButton_xmpp_cfg_change_password</tabstop>
+  <tabstop>pushButton_xmpp_cfg_change_email</tabstop>
+  <tabstop>pushButton_xmpp_cfg_signup</tabstop>
+  <tabstop>pushButton_xmpp_cfg_login_logout</tabstop>
+  <tabstop>comboBox_xmpp_server_type</tabstop>
+  <tabstop>spinBox_xmpp_server_port</tabstop>
+  <tabstop>lineEdit_xmpp_server_url</tabstop>
+  <tabstop>checkBox_xmpp_server_ssl</tabstop>
+  <tabstop>scrollArea_4</tabstop>
+  <tabstop>comboBox_event_logger_general_verbosity</tabstop>
+  <tabstop>checkBox_event_logger_general_save_history</tabstop>
+  <tabstop>tabWidget_audio</tabstop>
+  <tabstop>scrollArea_audio_config</tabstop>
+  <tabstop>comboBox_soundcard_input</tabstop>
+  <tabstop>pushButton_input_sound_test</tabstop>
+  <tabstop>comboBox_audio_input_bit_rate</tabstop>
+  <tabstop>comboBox_audio_input_sample_rate</tabstop>
+  <tabstop>comboBox_soundcard_input_channels</tabstop>
+  <tabstop>comboBox_soundcard_output</tabstop>
+  <tabstop>pushButton_output_sound_test</tabstop>
+  <tabstop>comboBox_audio_output_bit_rate</tabstop>
+  <tabstop>comboBox_audio_output_sample_rate</tabstop>
+  <tabstop>comboBox_soundcard_output_channels</tabstop>
+  <tabstop>pushButton_refresh_audio_devices</tabstop>
+  <tabstop>checkBox_init_rx_audio_upon_start</tabstop>
+  <tabstop>lineEdit_audio_save_loc</tabstop>
+  <tabstop>pushButton_audio_save_loc</tabstop>
+  <tabstop>scrollArea_audio_recorder_config</tabstop>
+  <tabstop>horizontalSlider_encoding_audio_quality</tabstop>
+  <tabstop>comboBox_encoding_audio_bitrate</tabstop>
+  <tabstop>plainTextEdit_pa_version_text</tabstop>
+  <tabstop>tabWidget_radio</tabstop>
+  <tabstop>scrollArea_2</tabstop>
+  <tabstop>comboBox_brand_selection</tabstop>
+  <tabstop>comboBox_rig_selection</tabstop>
+  <tabstop>comboBox_com_port</tabstop>
+  <tabstop>lineEdit_device_port_name</tabstop>
+  <tabstop>comboBox_baud_rate</tabstop>
+  <tabstop>radioButton_data_bits_default</tabstop>
+  <tabstop>radioButton_data_bits_seven</tabstop>
+  <tabstop>radioButton_data_bits_eight</tabstop>
+  <tabstop>radioButton_stop_bits_default</tabstop>
+  <tabstop>radioButton_stop_bits_one</tabstop>
+  <tabstop>radioButton_stop_bits_two</tabstop>
+  <tabstop>radioButton_handshake_default</tabstop>
+  <tabstop>radioButton_handshake_none</tabstop>
+  <tabstop>radioButton_handshake_xon_xoff</tabstop>
+  <tabstop>radioButton_handshake_hardware</tabstop>
+  <tabstop>comboBox_force_ctrl_lines_dtr</tabstop>
+  <tabstop>comboBox_force_ctrl_lines_rts</tabstop>
+  <tabstop>radioButton_ptt_method_rts</tabstop>
+  <tabstop>radioButton_ptt_method_vox</tabstop>
+  <tabstop>radioButton_ptt_method_dtr</tabstop>
+  <tabstop>radioButton_ptt_method_cat</tabstop>
+  <tabstop>comboBox_ptt_method_port</tabstop>
+  <tabstop>lineEdit_ptt_method_dev_path</tabstop>
+  <tabstop>radioButton_tx_audio_src_rear_data</tabstop>
+  <tabstop>radioButton_tx_audio_src_front_mic</tabstop>
+  <tabstop>radioButton_mode_none</tabstop>
+  <tabstop>radioButton_mode_usb</tabstop>
+  <tabstop>radioButton_mode_data_pkt</tabstop>
+  <tabstop>radioButton_split_none</tabstop>
+  <tabstop>radioButton_split_rig</tabstop>
+  <tabstop>radioButton_split_fake_it</tabstop>
+  <tabstop>lineEdit_adv_ptt_cmd</tabstop>
+  <tabstop>scrollArea_hamlib_api</tabstop>
+  <tabstop>plainTextEdit_hamlib_api_version_info</tabstop>
+  <tabstop>scrollArea_3</tabstop>
+  <tabstop>pushButton_check_for_updates</tabstop>
+  <tabstop>pushButton_submit_config</tabstop>
+  <tabstop>pushButton_cancel_config</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

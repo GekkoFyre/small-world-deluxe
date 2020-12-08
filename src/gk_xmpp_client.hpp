@@ -69,6 +69,7 @@ public slots:
     void clientConnected();
     void rosterReceived();
     void presenceChanged(const QString &bareJid, const QString &resource);
+    void stateChanged(QXmppClient::State state);
 
     void createClientConnection(const QXmppConfiguration &config);
     void deleteClientConnection();

@@ -1494,6 +1494,43 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>lineEdit_email</tabstop>
+  <tabstop>lineEdit_username</tabstop>
+  <tabstop>lineEdit_password</tabstop>
+  <tabstop>lineEdit_xmpp_captcha_input</tabstop>
+  <tabstop>toolButton_xmpp_captcha_refresh</tabstop>
+  <tabstop>pushButton_signup_submit</tabstop>
+  <tabstop>pushButton_signup_reset</tabstop>
+  <tabstop>pushButton_signup_cancel</tabstop>
+  <tabstop>lineEdit_login_username</tabstop>
+  <tabstop>lineEdit_login_password</tabstop>
+  <tabstop>lineEdit_xmpp_login_captcha_input</tabstop>
+  <tabstop>toolButton_xmpp_login_captcha_refresh</tabstop>
+  <tabstop>pushButton_login_submit</tabstop>
+  <tabstop>pushButton_login_reset</tabstop>
+  <tabstop>pushButton_login_cancel</tabstop>
+  <tabstop>lineEdit_change_password_username</tabstop>
+  <tabstop>lineEdit_change_password_old_input</tabstop>
+  <tabstop>lineEdit_change_password_new_input</tabstop>
+  <tabstop>lineEdit_xmpp_change_password_captcha_input</tabstop>
+  <tabstop>toolButton_xmpp_change_password_captcha_refresh</tabstop>
+  <tabstop>pushButton_change_password_submit</tabstop>
+  <tabstop>pushButton_change_password_reset</tabstop>
+  <tabstop>pushButton_change_password_cancel</tabstop>
+  <tabstop>lineEdit_change_email_new_address</tabstop>
+  <tabstop>lineEdit_change_email_username</tabstop>
+  <tabstop>lineEdit_change_email_password</tabstop>
+  <tabstop>lineEdit_xmpp_change_email_captcha_input</tabstop>
+  <tabstop>toolButton_xmpp_change_email_captcha_refresh</tabstop>
+  <tabstop>pushButton_change_email_submit</tabstop>
+  <tabstop>pushButton_change_email_reset</tabstop>
+  <tabstop>pushButton_change_email_cancel</tabstop>
+  <tabstop>textBrowser_account_status_details</tabstop>
+  <tabstop>pushButton_continue</tabstop>
+  <tabstop>pushButton_retry</tabstop>
+  <tabstop>pushButton_exit</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>
