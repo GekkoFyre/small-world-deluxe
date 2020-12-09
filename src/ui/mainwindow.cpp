@@ -777,6 +777,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // QXmpp and XMPP related
         //
+        readXmppSettings();
         gkXmppClient = new GkXmppClient(xmpp_conn_details, gkEventLogger, false, this);
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
@@ -1704,13 +1705,14 @@ void MainWindow::readXmppSettings()
     QString xmpp_server_type = gkDb->read_xmpp_settings(GkXmppCfg::XmppServerType);
     QString xmpp_domain_port = gkDb->read_xmpp_settings(GkXmppCfg::XmppDomainPort);
     QString xmpp_enable_ssl = gkDb->read_xmpp_settings(GkXmppCfg::XmppEnableSsl);
+    QString xmpp_ignore_ssl_errors = gkDb->read_xmpp_settings(GkXmppCfg::XmppIgnoreSslErrors);
 
-    if (!xmpp_server_type.isEmpty() && !xmpp_domain_url.isEmpty()) {
-        xmpp_conn_details.server.type = gkDb->convXmppServerTypeFromInt(xmpp_server_type.toInt());
-        xmpp_conn_details.server.domain = QHostAddress(xmpp_domain_url);
-    } else {
+    if (xmpp_server_type.isEmpty() || xmpp_domain_url.isEmpty()) {
         xmpp_conn_details.server.type = gkDb->convXmppServerTypeFromInt(GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX);
-        xmpp_conn_details.server.domain = QHostAddress(GkXmppGekkoFyreCfg::defaultUrl);
+        xmpp_conn_details.server.url = GkXmppGekkoFyreCfg::defaultUrl;
+    } else {
+        xmpp_conn_details.server.type = gkDb->convXmppServerTypeFromInt(xmpp_server_type.toInt());
+        xmpp_conn_details.server.url = xmpp_domain_url;
     }
 
     if (!xmpp_domain_port.isEmpty()) {
@@ -1723,6 +1725,22 @@ void MainWindow::readXmppSettings()
         xmpp_conn_details.server.settings_client.enable_ssl = gkDb->boolStr(xmpp_enable_ssl.toStdString());
     } else {
         xmpp_conn_details.server.settings_client.enable_ssl = true;
+    }
+
+    if (!xmpp_ignore_ssl_errors.isEmpty()) {
+        switch (xmpp_ignore_ssl_errors.toInt()) {
+            case GK_XMPP_IGNORE_SSL_ERRORS_COMBO_FALSE:
+                xmpp_conn_details.server.settings_client.ignore_ssl_errors = false;
+                break;
+            case GK_XMPP_IGNORE_SSL_ERRORS_COMBO_TRUE:
+                xmpp_conn_details.server.settings_client.ignore_ssl_errors = true;
+                break;
+            default:
+                xmpp_conn_details.server.settings_client.ignore_ssl_errors = false;
+                break;
+        }
+    } else {
+        xmpp_conn_details.server.settings_client.ignore_ssl_errors = false;
     }
 
     xmpp_conn_details.status = GkOnlineStatus::Offline;
@@ -2574,7 +2592,7 @@ void MainWindow::on_actionSign_out_triggered()
     if (gkXmppClient->isConnected()) {
         gkXmppClient->disconnectFromServer();
         gkEventLogger->publishEvent(tr("Disconnected from XMPP server: %1")
-        .arg(xmpp_conn_details.server.domain.toString()), GkSeverity::Info, "",
+        .arg(xmpp_conn_details.server.url), GkSeverity::Info, "",
         true, true, false, false);
     }
 

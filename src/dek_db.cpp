@@ -1076,6 +1076,9 @@ void GkLevelDb::write_xmpp_settings(const QString &value, const Settings::GkXmpp
             case Settings::GkXmppCfg::XmppEnableSsl:
                 batch.Put("XmppCfgEnableSsl", value.toStdString());
                 break;
+            case Settings::GkXmppCfg::XmppIgnoreSslErrors:
+                batch.Put("XmppIgnoreSslErrors", value.toStdString());
+                break;
             case Settings::GkXmppCfg::XmppJid:
                 batch.Put("XmppJid", value.toStdString());
                 break;
@@ -1154,6 +1157,9 @@ QString GkLevelDb::read_xmpp_settings(const Settings::GkXmppCfg &key)
             break;
         case Settings::GkXmppCfg::XmppEnableSsl:
             status = db->Get(read_options, "XmppCfgEnableSsl", &value);
+            break;
+        case Settings::GkXmppCfg::XmppIgnoreSslErrors:
+            status = db->Get(read_options, "XmppIgnoreSslErrors", &value);
             break;
         case Settings::GkXmppCfg::XmppJid:
             status = db->Get(read_options, "XmppJid", &value);

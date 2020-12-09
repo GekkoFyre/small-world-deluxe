@@ -48,11 +48,14 @@
 #include <qxmpp/QXmppMucManager.h>
 #include <qxmpp/QXmppRosterManager.h>
 #include <qxmpp/QXmppDiscoveryManager.h>
+#include <QList>
 #include <QString>
 #include <QObject>
 #include <QPointer>
+#include <QSslError>
 #include <QDnsLookup>
 #include <QCoreApplication>
+#include <QDnsServiceRecord>
 
 namespace GekkoFyre {
 
@@ -80,6 +83,8 @@ public slots:
 private slots:
     void handleServers();
     void handleError(QXmppClient::Error errorMsg);
+    void handleSslErrors(const QList<QSslError> &errorMsg);
+    void recvXmppLog(QXmppLogger::MessageType msgType, const QString &msg);
 
 signals:
     void setPresence(const QXmppPresence::Type &pres);
@@ -87,6 +92,7 @@ signals:
 private:
     QPointer<GkEventLogger> gkEventLogger;
     QPointer<GkNetworkPingModel> gkNetworkPing;
+    QList<QDnsServiceRecord> m_dnsRecords;
 
     //
     // QXmpp and XMPP related

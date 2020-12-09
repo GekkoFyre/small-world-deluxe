@@ -112,6 +112,8 @@ namespace GekkoFyre {
 #define GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX (1)
 #define GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX (0)
 #define GK_XMPP_SERVER_TYPE_COMBO_CUSTOM_IDX (1)
+#define GK_XMPP_IGNORE_SSL_ERRORS_COMBO_FALSE (0)
+#define GK_XMPP_IGNORE_SSL_ERRORS_COMBO_TRUE (1)
 
 //
 // Networking settings (also sometimes related to XMPP!)
@@ -275,7 +277,7 @@ namespace Filesystem {
 }
 
 namespace GkXmppGekkoFyreCfg {
-    constexpr char defaultUrl[] = "https://xmpp.vk3vkk.io/";
+    constexpr char defaultUrl[] = "xmpp.vk3vkk.io";
 }
 
 namespace System {
@@ -449,6 +451,7 @@ namespace Database {
             XmppServerType,
             XmppDomainPort,
             XmppEnableSsl,
+            XmppIgnoreSslErrors,
             XmppJid,
             XmppPassword,
             XmppNickname,
@@ -715,6 +718,7 @@ namespace Network {
             bool allow_mucs;                                // Shall we allow multi-user chats, provided it's a supported extension?
             bool auto_connect;                              // Do we allow automatic connections to the given XMPP server upon startup of Small World Deluxe?
             bool enable_ssl;                                // Enable the absolute usage of SSL/TLS, otherwise throw an exception if not available!
+            bool ignore_ssl_errors;                         // Whether to ignore any SSL errors presented by the server and/or client.
             QByteArray upload_avatar_pixmap;                // The byte-array data for the avatar that's to be uploaded upon next making a successful connection to the given XMPP server.
         };
 
@@ -722,6 +726,7 @@ namespace Network {
             GkClientSettings settings_client;               // Client settings that apply when making a connection to the XMPP server.
             GkServerType type;
             QHostAddress domain;
+            QString url;
             QHostInfo info;
             quint16 port;
         };

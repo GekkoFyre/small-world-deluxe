@@ -94,8 +94,8 @@ GkEventLogger::~GkEventLogger()
 void GkEventLogger::publishEvent(const QString &event, const GkSeverity &severity, const QVariant &arguments, const bool &sys_notification,
                                  const bool &publishToConsole, const bool &publishToStatusBar, const bool &displayMsgBox)
 {
-    std::lock_guard<std::mutex> lock(dataBatchMutex);
-
+    //
+    // TODO: Introduce proper mutex'ing for multithreading!
     GkEventLogging event_log;
     event_log.mesg.message = event;
     event_log.mesg.severity = severity;

@@ -471,7 +471,7 @@ void GkXmppRegistrationDialog::sendFilledRegistrationForm(const QString &user, c
 
         gkXmppRegistrationMgr->setRegistrationFormToSend(gkRegisterIq);
         gkEventLogger->publishEvent(tr("User, \"%1\", has been registered with XMPP server: %2")
-                                            .arg(gkConnDetails.jid).arg(gkConnDetails.server.domain.toString()), GkSeverity::Info,
+                                            .arg(gkConnDetails.jid).arg(gkConnDetails.server.url), GkSeverity::Info,
                                     "", true, true, false, false);
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);

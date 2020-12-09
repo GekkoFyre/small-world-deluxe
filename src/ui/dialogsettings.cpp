@@ -148,6 +148,7 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         // Fill QComboBox with default items as pertaining to XMPP configurations!
         prefill_xmpp_server_type(GkXmpp::GkServerType::GekkoFyre);
         prefill_xmpp_server_type(GkXmpp::GkServerType::Custom);
+        prefill_xmpp_ignore_ssl_errors();
 
         usb_ports_active = false;
         com_ports_active = false;
@@ -310,13 +311,19 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         //
         // General --> XMPP --> Server Settings
         //
+        QString xmpp_host_url = ui->lineEdit_xmpp_server_url->text();
         qint32 xmpp_server_type = ui->comboBox_xmpp_server_type->currentIndex();
         quint16 xmpp_host_tcp_port = ui->spinBox_xmpp_server_port->value();
         bool xmpp_enable_ssl = ui->checkBox_xmpp_server_ssl->isChecked();
+        qint32 xmpp_ignore_ssl_errors = ui->comboBox_xmpp_server_ssl_errors->currentIndex();
 
-        gkDekodeDb->write_xmpp_settings(QString::number(xmpp_server_type), GkXmppCfg::XmppServerType);
-        gkDekodeDb->write_xmpp_settings(QString::number(xmpp_host_tcp_port), GkXmppCfg::XmppDomainPort);
-        gkDekodeDb->write_xmpp_settings(QString::fromStdString(gkDekodeDb->boolEnum(xmpp_enable_ssl)), GkXmppCfg::XmppEnableSsl);
+        if (xmpp_host_url != GkXmppGekkoFyreCfg::defaultUrl) {
+            gkDekodeDb->write_xmpp_settings(xmpp_host_url, GkXmppCfg::XmppDomainUrl);
+            gkDekodeDb->write_xmpp_settings(QString::number(xmpp_server_type), GkXmppCfg::XmppServerType);
+            gkDekodeDb->write_xmpp_settings(QString::number(xmpp_host_tcp_port), GkXmppCfg::XmppDomainPort);
+            gkDekodeDb->write_xmpp_settings(QString::fromStdString(gkDekodeDb->boolEnum(xmpp_enable_ssl)), GkXmppCfg::XmppEnableSsl);
+            gkDekodeDb->write_xmpp_settings(QString::number(xmpp_ignore_ssl_errors), GkXmppCfg::XmppIgnoreSslErrors);
+        }
 
         //
         // Audio --> Configuration
@@ -792,6 +799,18 @@ void DialogSettings::prefill_xmpp_server_type(const GkXmpp::GkServerType &server
 }
 
 /**
+ * @brief DialogSettings::prefill_xmpp_ignore_ssl_errors
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void DialogSettings::prefill_xmpp_ignore_ssl_errors()
+{
+    ui->comboBox_xmpp_server_ssl_errors->insertItem(GK_XMPP_IGNORE_SSL_ERRORS_COMBO_FALSE, tr("Don't ignore SSL errors"));
+    ui->comboBox_xmpp_server_ssl_errors->insertItem(GK_XMPP_IGNORE_SSL_ERRORS_COMBO_TRUE, tr("Ignore all SSL errors"));
+
+    return;
+}
+
+/**
  * @brief DialogSettings::init_station_info
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
@@ -827,7 +846,7 @@ void DialogSettings::init_station_info()
 void DialogSettings::monitorXmppServerChange()
 {
     QString xmpp_host_url = ui->lineEdit_xmpp_server_url->text();
-    QString old_val = gkConnDetails.server.domain.toString();
+    QString old_val = gkConnDetails.server.url;
 
     if (!xmpp_host_url.isEmpty() && !old_val.isEmpty()) {
         if (xmpp_host_url == old_val) {
@@ -1325,6 +1344,7 @@ bool DialogSettings::read_settings()
         QString xmpp_server_type = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppServerType);
         QString xmpp_domain_port = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppDomainPort);
         QString xmpp_enable_ssl = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppEnableSsl);
+        QString xmpp_ignore_ssl_errors = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppIgnoreSslErrors);
 
         switch (ui->comboBox_xmpp_server_type->currentIndex()) {
             case GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX:
@@ -1361,6 +1381,12 @@ bool DialogSettings::read_settings()
             ui->checkBox_xmpp_server_ssl->setChecked(gkDekodeDb->boolStr(xmpp_enable_ssl.toStdString()));
         } else {
             ui->checkBox_xmpp_server_ssl->setChecked(true);
+        }
+
+        if (!xmpp_ignore_ssl_errors.isEmpty()) {
+            ui->comboBox_xmpp_server_ssl_errors->setCurrentIndex(xmpp_ignore_ssl_errors.toInt());
+        } else {
+            ui->comboBox_xmpp_server_ssl_errors->setCurrentIndex(GK_XMPP_IGNORE_SSL_ERRORS_COMBO_FALSE);
         }
 
         //
@@ -2784,6 +2810,7 @@ void DialogSettings::on_comboBox_xmpp_server_type_currentIndexChanged(int index)
             ui->lineEdit_xmpp_server_url->setEnabled(false);
             ui->spinBox_xmpp_server_port->setEnabled(false);
             ui->checkBox_xmpp_server_ssl->setEnabled(false);
+            ui->comboBox_xmpp_server_ssl_errors->setEnabled(false);
 
             break;
         case GK_XMPP_SERVER_TYPE_COMBO_CUSTOM_IDX:
@@ -2791,6 +2818,7 @@ void DialogSettings::on_comboBox_xmpp_server_type_currentIndexChanged(int index)
             ui->lineEdit_xmpp_server_url->setEnabled(true);
             ui->spinBox_xmpp_server_port->setEnabled(true);
             ui->checkBox_xmpp_server_ssl->setEnabled(true);
+            ui->comboBox_xmpp_server_ssl_errors->setEnabled(true);
 
             break;
         default:
@@ -2800,7 +2828,42 @@ void DialogSettings::on_comboBox_xmpp_server_type_currentIndexChanged(int index)
     return;
 }
 
-void DialogSettings::on_checkBox_xmpp_server_ssl_toggled(bool checked)
+/**
+ * @brief DialogSettings::on_comboBox_xmpp_server_ssl_errors_currentIndexChanged Present a dire warning to the end-user if
+ * they so choose to ignore any and all SSL warnings, and what possible consequences their actions could have!
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index The chosen item's index within the targeted QComboBox.
+ */
+void DialogSettings::on_comboBox_xmpp_server_ssl_errors_currentIndexChanged(int index)
 {
+    if (index == GK_XMPP_IGNORE_SSL_ERRORS_COMBO_FALSE) {
+        return;
+    } else {
+        QMessageBox msgBox;
+        msgBox.setWindowTitle(tr("Are you sure?"));
+        msgBox.setText(tr("Please indicate whether you are absolutely sure about disabling all warnings and "
+                          "safety-checks about ignoring any future SSL warnings. This could have dire consequences "
+                          "for your security online!"));
+        msgBox.setStandardButtons(QMessageBox::Ignore | QMessageBox::Abort | QMessageBox::Cancel);
+        msgBox.setDefaultButton(QMessageBox::Abort);
+        msgBox.setIcon(QMessageBox::Icon::Warning);
+        int ret = msgBox.exec();
+
+        switch (ret) {
+            case QMessageBox::Ignore:
+                ui->comboBox_xmpp_server_ssl_errors->setCurrentIndex(GK_XMPP_IGNORE_SSL_ERRORS_COMBO_TRUE);
+                break;
+            case QMessageBox::Abort:
+                ui->comboBox_xmpp_server_ssl_errors->setCurrentIndex(GK_XMPP_IGNORE_SSL_ERRORS_COMBO_FALSE);
+                break;
+            case QMessageBox::Cancel:
+                ui->comboBox_xmpp_server_ssl_errors->setCurrentIndex(GK_XMPP_IGNORE_SSL_ERRORS_COMBO_FALSE);
+                break;
+            default:
+                ui->comboBox_xmpp_server_ssl_errors->setCurrentIndex(GK_XMPP_IGNORE_SSL_ERRORS_COMBO_FALSE);
+                break;
+        }
+    }
+
     return;
 }

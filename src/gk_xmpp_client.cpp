@@ -45,11 +45,9 @@
 #include <qxmpp/QXmppMucIq.h>
 #include <iostream>
 #include <exception>
-#include <QList>
 #include <QEventLoop>
 #include <QMessageBox>
 #include <QStringList>
-#include <QDnsServiceRecord>
 
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
@@ -101,7 +99,7 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
 
         //
         // This signal is emitted when the client state changes...
-        QObject::connect(this, SIGNAL(stateChanged (QXmppClient::State)), this, SLOT());
+        QObject::connect(this, SIGNAL(stateChanged(QXmppClient::State)), this, SLOT(stateChanged(QXmppClient::State)));
 
         //
         // This signal is emitted when the XMPP connection encounters any error...
@@ -109,26 +107,40 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
                          this, SLOT(handleError(QXmppClient::Error)));
 
         //
+        // This signal is emitted to indicate that one or more SSL errors were
+        // encountered while establishing the identity of the server...
+        QObject::connect(this, SIGNAL(sslErrors(const QList<QSslError> &)), this, SLOT(handleSslErrors(const QList<QSslError> &)));
+
+        //
         // Find the XMPP servers as defined by either the user themselves or GekkoFyre Networks...
-        m_dns->setType(QDnsLookup::SRV);
         QString dns_lookup_str;
         switch (gkConnDetails.server.type) {
+            case GkServerType::GekkoFyre:
+                //
+                // Settings for GekkoFyre Networks' server have been specified!
+                m_dns->deleteLater();
+                break;
+            case GkServerType::Custom:
+                //
+                // Settings for a custom server have been specified!
+                m_dns->setType(QDnsLookup::SRV);
+                dns_lookup_str = gkConnDetails.server.url;
+                m_dns->setName(dns_lookup_str);
+                m_dns->lookup();
+
+                break;
             case GkServerType::Unknown:
                 throw std::invalid_argument(tr("Unable to perform DNS lookup for XMPP; has a server been specified?").toStdString());
             default:
-                dns_lookup_str = gkConnDetails.server.domain.toString();
-                break;
+                throw std::invalid_argument(tr("Unable to perform DNS lookup for XMPP; has a server been specified?").toStdString());
         }
-
-        m_dns->setName(dns_lookup_str);
-        m_dns->lookup();
 
         //
         // Setup logging...
         QXmppLogger *logger = QXmppLogger::getLogger();
         logger->setLoggingType(QXmppLogger::SignalLogging);
-        QObject::connect(logger, SIGNAL(message(QXmppLogger::MessageType, QString)),
-                         gkEventLogger, SLOT(recvXmppLog(QXmppLogger::MessageType, QString)));
+        QObject::connect(logger, SIGNAL(message(QXmppLogger::MessageType, const QString &)),
+                         gkEventLogger, SLOT(recvXmppLog(QXmppLogger::MessageType, const QString &)));
 
         QEventLoop loop;
         QObject::connect(this, SIGNAL(connected()), &loop, SLOT(quit()));
@@ -146,7 +158,7 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
             //
             // The service discovery manager is added to the client by default...
             gkDiscoMgr.reset(findExtension<QXmppDiscoveryManager>());
-            gkDiscoMgr->requestInfo(gkConnDetails.server.domain.toString());
+            gkDiscoMgr->requestInfo(gkConnDetails.server.url);
         });
 
         QXmppConfiguration config;
@@ -164,13 +176,18 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         // You only need to provide a domain to connectToServer()...
         config.setAutoAcceptSubscriptions(false);
         config.setAutoReconnectionEnabled(false);
-        config.setIgnoreSslErrors(false);
         config.setStreamSecurityMode(QXmppConfiguration::StreamSecurityMode::TLSDisabled);
         if (gkConnDetails.server.settings_client.enable_ssl) {
             config.setStreamSecurityMode(QXmppConfiguration::StreamSecurityMode::TLSRequired);
         }
 
-        config.setDomain(gkConnDetails.server.domain.toString());
+        config.setIgnoreSslErrors(false); // Do NOT ignore SSL warnings!
+        if (gkConnDetails.server.settings_client.ignore_ssl_errors) {
+            // We have been instructed to IGNORE any and all SSL warnings!
+            config.setIgnoreSslErrors(true);
+        }
+
+        config.setDomain(gkConnDetails.server.url);
         config.setPort(gkConnDetails.server.port);
         config.setUseNonSASLAuthentication(false);
         config.setUseSASLAuthentication(false);
@@ -210,8 +227,8 @@ GkXmppClient::~GkXmppClient()
 bool GkXmppClient::createMuc(const QString &room_name, const QString &room_subject, const QString &room_desc)
 {
     try {
-        if (!room_name.isEmpty() && !m_dns.isNull()) {
-            QString room_jid = QString("%1@conference.%2").arg(room_name).arg(gkConnDetails.server.domain.toString());
+        if (isConnected() && !room_name.isEmpty()) {
+            QString room_jid = QString("%1@conference.%2").arg(room_name).arg(gkConnDetails.server.url);
             QList<QXmppMucRoom *> rooms = m_mucManager->rooms();
             QXmppMucRoom *r;
             foreach(r, rooms) {
@@ -264,6 +281,8 @@ bool GkXmppClient::createMuc(const QString &room_name, const QString &room_subje
             m_pRoom->setConfiguration(form);
 
             return true;
+        } else {
+            throw std::runtime_error(tr("Are you connected to an XMPP server?").toStdString());
         }
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(tr("An issue was encountered while creating a MUC! Error:\n\n%1").arg(QString::fromStdString(e.what())),
@@ -279,7 +298,7 @@ bool GkXmppClient::createMuc(const QString &room_name, const QString &room_subje
  */
 void GkXmppClient::clientConnected()
 {
-    gkEventLogger->publishEvent(tr("A connection has been successfully made towards XMPP server: %1").arg(gkConnDetails.server.domain.toString()),
+    gkEventLogger->publishEvent(tr("A connection has been successfully made towards XMPP server: %1").arg(gkConnDetails.server.url),
                                 GkSeverity::Info, "", true, true, true, false);
     return;
 }
@@ -327,15 +346,15 @@ void GkXmppClient::stateChanged(QXmppClient::State state)
 {
     switch (state) {
         case QXmppClient::State::DisconnectedState:
-            gkEventLogger->publishEvent(tr("Disconnected from XMPP server: %1").arg(gkConnDetails.server.domain.toString()), GkSeverity::Info, "",
+            gkEventLogger->publishEvent(tr("Disconnected from XMPP server: %1").arg(gkConnDetails.server.url), GkSeverity::Info, "",
                                         true, true, true, false);
             return;
         case QXmppClient::State::ConnectingState:
-            gkEventLogger->publishEvent(tr("...attempting to make connection towards XMPP server: %1").arg(gkConnDetails.server.domain.toString()), GkSeverity::Info, "",
+            gkEventLogger->publishEvent(tr("...attempting to make connection towards XMPP server: %1").arg(gkConnDetails.server.url), GkSeverity::Info, "",
                                         true, true, true, false);
             return;
         case QXmppClient::State::ConnectedState:
-            gkEventLogger->publishEvent(tr("Connected to XMPP server: %1").arg(gkConnDetails.server.domain.toString()), GkSeverity::Info, "",
+            gkEventLogger->publishEvent(tr("Connected to XMPP server: %1").arg(gkConnDetails.server.url), GkSeverity::Info, "",
                                         true, true, true, false);
             return;
         default:
@@ -400,18 +419,64 @@ void GkXmppClient::modifyPresence(const QXmppPresence::Type &pres)
  */
 void GkXmppClient::handleServers()
 {
+    //
     // Check that the lookup has succeeded
-    if (m_dns->error() != QDnsLookup::NoError) {
-        gkEventLogger->publishEvent(tr("DNS lookup failed for, \"%1\".").arg(gkConnDetails.server.domain.toString()), GkSeverity::Error, "",
-                                    true, true, false, false);
-        m_dns->deleteLater();
+    switch (m_dns->error()) {
+        case QDnsLookup::NoError:
+            // No errors! Yay!
+            break;
+        case QDnsLookup::ResolverError:
+            gkEventLogger->publishEvent(tr("DNS lookup failed for, \"%1\". There has been a Resolver Error.").arg(gkConnDetails.server.url), GkSeverity::Error, "",
+                                        true, true, false, false);
 
-        return;
+            m_dns->deleteLater();
+            return;
+        case QDnsLookup::OperationCancelledError:
+            gkEventLogger->publishEvent(tr("DNS lookup failed for, \"%1\". The operation was cancelled abruptly.").arg(gkConnDetails.server.url), GkSeverity::Error, "",
+                                        true, true, false, false);
+
+            m_dns->deleteLater();
+            return;
+        case QDnsLookup::InvalidRequestError:
+            gkEventLogger->publishEvent(tr("DNS lookup failed for, \"%1\". There has been an Invalid Request.").arg(gkConnDetails.server.url), GkSeverity::Error, "",
+                                        true, true, false, false);
+
+            m_dns->deleteLater();
+            return;
+        case QDnsLookup::InvalidReplyError:
+            gkEventLogger->publishEvent(tr("DNS lookup failed for, \"%1\". There has been an Invalid Reply.").arg(gkConnDetails.server.url), GkSeverity::Error, "",
+                                        true, true, false, false);
+
+            m_dns->deleteLater();
+            return;
+        case QDnsLookup::ServerFailureError:
+            gkEventLogger->publishEvent(tr(R"(DNS lookup failed for, "%1". There has been a "Server Failure" error on the other end.)").arg(gkConnDetails.server.url), GkSeverity::Error, "",
+                                        true, true, false, false);
+
+            m_dns->deleteLater();
+            return;
+        case QDnsLookup::ServerRefusedError:
+            gkEventLogger->publishEvent(tr(R"(DNS lookup failed for, "%1". There has been a "Server Refused" error on the other end.)").arg(gkConnDetails.server.url), GkSeverity::Error, "",
+                                        true, true, false, false);
+
+            m_dns->deleteLater();
+            return;
+        case QDnsLookup::NotFoundError:
+            gkEventLogger->publishEvent(tr(R"(DNS lookup failed for, "%1". There has been a "Not Found" error.)").arg(gkConnDetails.server.url), GkSeverity::Error, "",
+                                        true, true, false, false);
+
+            m_dns->deleteLater();
+            return;
+        default:
+            // No errors?
+            break;
     }
 
     // Handle the results of the DNS lookup
     const auto records = m_dns->serviceRecords();
-    for (const QDnsServiceRecord &record: records) {}
+    for (const QDnsServiceRecord record: records) {
+        m_dnsRecords.push_back(record); // TODO: Finish this area!
+    }
 
     m_dns->deleteLater();
     return;
@@ -446,5 +511,58 @@ void GkXmppClient::handleError(QXmppClient::Error errorMsg)
     }
 
     deleteLater();
+    return;
+}
+
+/**
+ * @brief GkXmppClient::handleSslErrors handles all the SSL errors given by the XMPP connection client, if
+ * there are any.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param errorMsg The QList of error messages, if any are present.
+ */
+void GkXmppClient::handleSslErrors(const QList<QSslError> &errorMsg)
+{
+    if (!errorMsg.isEmpty()) {
+        for (const auto &error: errorMsg) {
+            gkEventLogger->publishEvent(error.errorString(), GkSeverity::Fatal, "", false, true, false, true);
+        }
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppClient::recvXmppLog
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param msgType
+ * @param msg
+ */
+void GkXmppClient::recvXmppLog(QXmppLogger::MessageType msgType, const QString &msg)
+{
+    switch (msgType) {
+        case QXmppLogger::MessageType::NoMessage:
+            return;
+        case QXmppLogger::DebugMessage:
+            gkEventLogger->publishEvent(msg, GkSeverity::Debug, "", false, true, false, false);
+            return;
+        case QXmppLogger::InformationMessage:
+            gkEventLogger->publishEvent(msg, GkSeverity::Info, "", false, true, false, false);
+            return;
+        case QXmppLogger::WarningMessage:
+            gkEventLogger->publishEvent(msg, GkSeverity::Warning, "", false, true, false, true);
+            return;
+        case QXmppLogger::ReceivedMessage:
+            gkEventLogger->publishEvent(msg, GkSeverity::Info, "", false, true, false, false);
+            return;
+        case QXmppLogger::SentMessage:
+            gkEventLogger->publishEvent(msg, GkSeverity::Info, "", false, true, false, false);
+            return;
+        case QXmppLogger::AnyMessage:
+            gkEventLogger->publishEvent(msg, GkSeverity::Debug, "", false, true, false, false);
+            return;
+        default:
+            return;
+    }
+
     return;
 }
