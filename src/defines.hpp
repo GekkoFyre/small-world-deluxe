@@ -249,6 +249,7 @@ namespace GekkoFyre {
 
 namespace General {
     constexpr char companyName[] = "GekkoFyre Networks";
+    constexpr char companyNameMin[] = "GekkoFyre";
     constexpr char productName[] = "Small World Deluxe";
     constexpr char executableName[] = "smallworld";
     constexpr char appVersion[] = "0.0.1";
@@ -452,6 +453,7 @@ namespace Database {
             XmppDomainPort,
             XmppEnableSsl,
             XmppIgnoreSslErrors,
+            XmppUsername,
             XmppJid,
             XmppPassword,
             XmppNickname,
@@ -735,6 +737,7 @@ namespace Network {
             GkHost server;
             GkOnlineStatus status;                          // The online availability of the user in question.
             QString jid;                                    // The Account ID as known to the XMPP server itself; used particularly for logging-in.
+            QString username;                               // The username, which is the JID without the server URL or resource attached.
             QString password;                               // The password which is needed for logging-in successfully to the XMPP server.
             QString nickname;                               // The desired nickname of the user, as it appears to others on the XMPP server network.
             QString email;                                  // The email address, if any, that's associated with this end-user.

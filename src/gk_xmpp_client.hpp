@@ -45,9 +45,11 @@
 #include "src/gk_logger.hpp"
 #include "src/models/system/gk_network_ping_model.hpp"
 #include <qxmpp/QXmppClient.h>
+#include <qxmpp/QXmppRegisterIq.h>
 #include <qxmpp/QXmppMucManager.h>
 #include <qxmpp/QXmppRosterManager.h>
 #include <qxmpp/QXmppDiscoveryManager.h>
+#include <qxmpp/QXmppRegistrationManager.h>
 #include <QList>
 #include <QString>
 #include <QObject>
@@ -101,6 +103,7 @@ private:
     QPointer<QDnsLookup> m_dns;
     std::shared_ptr<QXmppRosterManager> m_rosterManager;
     std::unique_ptr<QXmppDiscoveryManager> gkDiscoMgr;
+    std::unique_ptr<QXmppRegistrationManager> m_registerManager;
     std::unique_ptr<QXmppPresence> m_presence;
     std::unique_ptr<QXmppMucManager> m_mucManager;
     std::unique_ptr<QXmppMucRoom> m_pRoom;

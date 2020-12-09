@@ -72,8 +72,7 @@ using namespace GkXmpp;
  * @param parent The parent object.
  */
 GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                           const bool &connectNow, QObject *parent) : m_rosterManager(findExtension<QXmppRosterManager>()),
-                           QXmppClient(parent)
+                           const bool &connectNow, QObject *parent) : QXmppClient(parent)
 {
     try {
         setParent(parent);
@@ -84,6 +83,14 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         m_presence = std::make_unique<QXmppPresence>();
         m_mucManager = std::make_unique<QXmppMucManager>();
         gkDiscoMgr = std::make_unique<QXmppDiscoveryManager>();
+
+        m_registerManager = std::make_unique<QXmppRegistrationManager>();
+        m_rosterManager = std::make_shared<QXmppRosterManager>(this);
+
+        addExtension(m_registerManager.get());
+        addExtension(m_rosterManager.get());
+
+        m_registerManager->setRegisterOnConnectEnabled(true);
 
         QObject::connect(this, SIGNAL(connected()), this, SLOT(clientConnected()));
         QObject::connect(m_rosterManager.get(), SIGNAL(rosterReceived()), this, SLOT(rosterReceived()));
@@ -110,6 +117,15 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         // This signal is emitted to indicate that one or more SSL errors were
         // encountered while establishing the identity of the server...
         QObject::connect(this, SIGNAL(sslErrors(const QList<QSslError> &)), this, SLOT(handleSslErrors(const QList<QSslError> &)));
+
+        QObject::connect(m_registerManager.get(), &QXmppRegistrationManager::registrationFormReceived, [=](const QXmppRegisterIq &iq) {
+            qDebug() << "Form received:" << iq.instructions();
+        });
+
+        QObject::connect(m_registerManager.get(), &QXmppRegistrationManager::registrationFailed, [=](const QXmppStanza::Error &error) {
+            gkEventLogger->publishEvent(tr("Requesting the registration form failed:\n\n%1").arg(error.text()), GkSeverity::Fatal, "",
+                                        false, true, false, true);
+        });
 
         //
         // Find the XMPP servers as defined by either the user themselves or GekkoFyre Networks...
@@ -162,11 +178,15 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         });
 
         QXmppConfiguration config;
-        if (!gkConnDetails.jid.isEmpty() || !gkConnDetails.password.isEmpty()) {
-            config.setUser(gkConnDetails.jid);
-            config.setPassword(gkConnDetails.password);
-        } else {
+
+        //
+        // Neither username nor the password can be nullptr, both have to be available
+        // to be of any use!
+        if (gkConnDetails.username.isEmpty() || gkConnDetails.password.isEmpty()) {
             m_presence = nullptr;
+        } else {
+            config.setUser(gkConnDetails.username);
+            config.setPassword(gkConnDetails.password);
         }
 
         QObject::connect(this, &QXmppClient::presenceReceived, [=](const QXmppPresence &presence) {
@@ -187,9 +207,10 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
             config.setIgnoreSslErrors(true);
         }
 
+        config.setResource(General::companyNameMin);
         config.setDomain(gkConnDetails.server.url);
+        config.setHost(gkConnDetails.server.url);
         config.setPort(gkConnDetails.server.port);
-        config.setUseNonSASLAuthentication(false);
         config.setUseSASLAuthentication(false);
 
         if (gkConnDetails.server.settings_client.auto_connect || connectNow) {
@@ -197,6 +218,27 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
                 connectToServer(config, *m_presence);
             } else {
                 connectToServer(config);
+            }
+        }
+
+        if (isConnected()) {
+            if ((config.user().isEmpty() || config.password().isEmpty()) || gkConnDetails.email.isEmpty()) {
+                // Unable to signup!
+                return;
+            } else {
+                m_registerManager.reset(findExtension<QXmppRegistrationManager>());
+                m_rosterManager.reset(findExtension<QXmppRosterManager>());
+
+                if (m_registerManager) {
+                    auto gkRegisterIq = QXmppRegisterIq {};
+                    gkRegisterIq.setEmail(gkConnDetails.email);
+                    gkRegisterIq.setPassword(config.password());
+                    gkRegisterIq.setType(QXmppIq::Type::Set);
+                    gkRegisterIq.setUsername(config.user());
+
+                    m_registerManager->setRegistrationFormToSend(gkRegisterIq);
+                    m_registerManager->sendCachedRegistrationForm();
+                }
             }
         }
     } catch (const std::exception &e) {
@@ -494,8 +536,9 @@ void GkXmppClient::handleError(QXmppClient::Error errorMsg)
         case QXmppClient::Error::NoError:
             break;
         case QXmppClient::Error::SocketError:
-            gkEventLogger->publishEvent(tr("XMPP error encountered due to TCP socket."), GkSeverity::Fatal, "",
-                                        false, true, false, true);
+            gkEventLogger->publishEvent(tr("XMPP error encountered due to TCP socket. Error:\n\n%1")
+            .arg(socketErrorString()), GkSeverity::Fatal, "", false,
+            true, false, true);
             break;
         case QXmppClient::Error::KeepAliveError:
             gkEventLogger->publishEvent(tr("XMPP error encountered due to no response from a keep alive."), GkSeverity::Fatal, "",

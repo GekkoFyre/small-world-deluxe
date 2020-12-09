@@ -1674,6 +1674,13 @@ void MainWindow::readXmppSettings()
     QByteArray xmpp_upload_avatar; // TODO: Finish this area of code, pronto!
     xmpp_conn_details.server.settings_client.upload_avatar_pixmap = xmpp_upload_avatar;
 
+    //
+    // CAUTION!!! Username, password, and e-mail address!
+    //
+    QString xmpp_client_username = gkDb->read_xmpp_settings(GkXmppCfg::XmppUsername);
+    QString xmpp_client_password = gkDb->read_xmpp_settings(GkXmppCfg::XmppPassword);
+    QString xmpp_client_email_addr = gkDb->read_xmpp_settings(GkXmppCfg::XmppEmailAddr);
+
     if (!xmpp_allow_msg_history.isEmpty()) {
         xmpp_conn_details.server.settings_client.allow_msg_history = gkDb->boolStr(xmpp_allow_msg_history.toStdString());
     } else {
@@ -1698,6 +1705,18 @@ void MainWindow::readXmppSettings()
         xmpp_conn_details.server.settings_client.auto_connect = false;
     }
 
+    if (!xmpp_client_password.isEmpty()) {
+        xmpp_conn_details.password = xmpp_client_password;
+    } else {
+        xmpp_conn_details.password = "";
+    }
+
+    if (!xmpp_client_email_addr.isEmpty()) {
+        xmpp_conn_details.email = xmpp_client_email_addr;
+    } else {
+        xmpp_conn_details.email = "";
+    }
+
     //
     // General --> XMPP --> Server Settings
     //
@@ -1713,6 +1732,12 @@ void MainWindow::readXmppSettings()
     } else {
         xmpp_conn_details.server.type = gkDb->convXmppServerTypeFromInt(xmpp_server_type.toInt());
         xmpp_conn_details.server.url = xmpp_domain_url;
+    }
+
+    if (!xmpp_client_username.isEmpty()) {
+        xmpp_conn_details.username = xmpp_client_username;
+    } else {
+        xmpp_conn_details.username = "";
     }
 
     if (!xmpp_domain_port.isEmpty()) {
@@ -1744,7 +1769,6 @@ void MainWindow::readXmppSettings()
     }
 
     xmpp_conn_details.status = GkOnlineStatus::Offline;
-    xmpp_conn_details.jid = gkDb->read_xmpp_settings(GkXmppCfg::XmppJid);;
     xmpp_conn_details.password = gkDb->read_xmpp_settings(GkXmppCfg::XmppPassword);;
     xmpp_conn_details.nickname = gkDb->read_xmpp_settings(GkXmppCfg::XmppNickname);;
     xmpp_conn_details.email = gkDb->read_xmpp_settings(GkXmppCfg::XmppEmailAddr);;

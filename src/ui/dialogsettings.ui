@@ -1955,6 +1955,57 @@ Thanks.</string>
                                       </property>
                                      </widget>
                                     </item>
+                                    <item row="3" column="0">
+                                     <widget class="QLabel" name="label_xmpp_client_username">
+                                      <property name="text">
+                                       <string>Username: </string>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="3" column="1">
+                                     <widget class="QLineEdit" name="lineEdit_xmpp_client_username">
+                                      <property name="maxLength">
+                                       <number>256</number>
+                                      </property>
+                                      <property name="placeholderText">
+                                       <string>&lt;user&gt;@&lt;host&gt;.&lt;tld&gt;</string>
+                                      </property>
+                                      <property name="clearButtonEnabled">
+                                       <bool>true</bool>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="4" column="0">
+                                     <widget class="QLabel" name="label_xmpp_client_password">
+                                      <property name="text">
+                                       <string>Password: </string>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="4" column="1">
+                                     <widget class="QLineEdit" name="lineEdit_xmpp_client_password">
+                                      <property name="maxLength">
+                                       <number>256</number>
+                                      </property>
+                                      <property name="clearButtonEnabled">
+                                       <bool>true</bool>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="2" column="1">
+                                     <widget class="Line" name="line">
+                                      <property name="orientation">
+                                       <enum>Qt::Horizontal</enum>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="2" column="0">
+                                     <widget class="Line" name="line_2">
+                                      <property name="orientation">
+                                       <enum>Qt::Horizontal</enum>
+                                      </property>
+                                     </widget>
+                                    </item>
                                    </layout>
                                   </widget>
                                  </item>
@@ -2019,6 +2070,40 @@ Thanks.</string>
                                       </property>
                                       <property name="text">
                                        <string/>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="3" column="0">
+                                     <widget class="QLabel" name="label_xmpp_client_email_address">
+                                      <property name="text">
+                                       <string>E-mail: </string>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="3" column="1">
+                                     <widget class="QLineEdit" name="lineEdit_xmpp_client_email_address">
+                                      <property name="maxLength">
+                                       <number>512</number>
+                                      </property>
+                                      <property name="placeholderText">
+                                       <string>&lt;user&gt;@&lt;host&gt;.&lt;tld&gt;</string>
+                                      </property>
+                                      <property name="clearButtonEnabled">
+                                       <bool>true</bool>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="2" column="1">
+                                     <widget class="Line" name="line_3">
+                                      <property name="orientation">
+                                       <enum>Qt::Horizontal</enum>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="2" column="0">
+                                     <widget class="Line" name="line_4">
+                                      <property name="orientation">
+                                       <enum>Qt::Horizontal</enum>
                                       </property>
                                      </widget>
                                     </item>

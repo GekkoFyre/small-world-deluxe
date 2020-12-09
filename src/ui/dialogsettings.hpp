@@ -243,6 +243,8 @@ private slots:
     void on_pushButton_xmpp_cfg_login_logout_clicked();
     void on_comboBox_xmpp_server_type_currentIndexChanged(int index);
     void on_comboBox_xmpp_server_ssl_errors_currentIndexChanged(int index);
+    void on_checkBox_connect_automatically_toggled(bool checked);
+    void on_lineEdit_xmpp_server_url_textChanged(const QString &arg1);
 
 signals:
     void changeSelectedTTSEngine(const QString &name);
