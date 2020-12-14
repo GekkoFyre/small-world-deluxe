@@ -71,6 +71,7 @@ public:
     ~GkXmppClient() override;
 
     bool createMuc(const QString &room_name, const QString &room_subject, const QString &room_desc);
+    std::shared_ptr<QXmppRegistrationManager> getRegistrationMgr();
 
 public slots:
     void clientConnected();
@@ -78,8 +79,7 @@ public slots:
     void presenceChanged(const QString &bareJid, const QString &resource);
     void stateChanged(QXmppClient::State state);
 
-    void createClientConnection(const QXmppConfiguration &config);
-    void deleteClientConnection();
+    void createConnectionToServer(const bool &preconfigured_user = false);
     void modifyPresence(const QXmppPresence::Type &pres);
 
 private slots:
@@ -87,6 +87,8 @@ private slots:
     void handleError(QXmppClient::Error errorMsg);
     void handleSslErrors(const QList<QSslError> &errorMsg);
     void recvXmppLog(QXmppLogger::MessageType msgType, const QString &msg);
+
+    void createConnectionToServerPriv();
 
 signals:
     void setPresence(const QXmppPresence::Type &pres);
@@ -100,10 +102,11 @@ private:
     // QXmpp and XMPP related
     //
     Network::GkXmpp::GkUserConn gkConnDetails;
+    QXmppConfiguration config;
     QPointer<QDnsLookup> m_dns;
     std::shared_ptr<QXmppRosterManager> m_rosterManager;
+    std::shared_ptr<QXmppRegistrationManager> m_registerManager;
     std::unique_ptr<QXmppDiscoveryManager> gkDiscoMgr;
-    std::unique_ptr<QXmppRegistrationManager> m_registerManager;
     std::unique_ptr<QXmppPresence> m_presence;
     std::unique_ptr<QXmppMucManager> m_mucManager;
     std::unique_ptr<QXmppMucRoom> m_pRoom;

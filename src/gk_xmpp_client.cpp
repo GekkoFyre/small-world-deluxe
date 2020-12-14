@@ -84,13 +84,16 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         m_mucManager = std::make_unique<QXmppMucManager>();
         gkDiscoMgr = std::make_unique<QXmppDiscoveryManager>();
 
-        m_registerManager = std::make_unique<QXmppRegistrationManager>();
+        m_registerManager = std::make_shared<QXmppRegistrationManager>();
         m_rosterManager = std::make_shared<QXmppRosterManager>(this);
 
         addExtension(m_registerManager.get());
         addExtension(m_rosterManager.get());
 
-        m_registerManager->setRegisterOnConnectEnabled(true);
+        //
+        // Do not attempt to register the configured user (if any) upon making
+        // a successful connection!
+        m_registerManager->setRegisterOnConnectEnabled(false);
 
         QObject::connect(this, SIGNAL(connected()), this, SLOT(clientConnected()));
         QObject::connect(m_rosterManager.get(), SIGNAL(rosterReceived()), this, SLOT(rosterReceived()));
@@ -117,15 +120,6 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         // This signal is emitted to indicate that one or more SSL errors were
         // encountered while establishing the identity of the server...
         QObject::connect(this, SIGNAL(sslErrors(const QList<QSslError> &)), this, SLOT(handleSslErrors(const QList<QSslError> &)));
-
-        QObject::connect(m_registerManager.get(), &QXmppRegistrationManager::registrationFormReceived, [=](const QXmppRegisterIq &iq) {
-            qDebug() << "Form received:" << iq.instructions();
-        });
-
-        QObject::connect(m_registerManager.get(), &QXmppRegistrationManager::registrationFailed, [=](const QXmppStanza::Error &error) {
-            gkEventLogger->publishEvent(tr("Requesting the registration form failed:\n\n%1").arg(error.text()), GkSeverity::Fatal, "",
-                                        false, true, false, true);
-        });
 
         //
         // Find the XMPP servers as defined by either the user themselves or GekkoFyre Networks...
@@ -177,8 +171,6 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
             gkDiscoMgr->requestInfo(gkConnDetails.server.url);
         });
 
-        QXmppConfiguration config;
-
         //
         // Neither username nor the password can be nullptr, both have to be available
         // to be of any use!
@@ -214,11 +206,7 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         config.setUseSASLAuthentication(false);
 
         if (gkConnDetails.server.settings_client.auto_connect || connectNow) {
-            if (m_presence) {
-                connectToServer(config, *m_presence);
-            } else {
-                connectToServer(config);
-            }
+            createConnectionToServer();
         }
 
         if (isConnected()) {
@@ -228,17 +216,6 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
             } else {
                 m_registerManager.reset(findExtension<QXmppRegistrationManager>());
                 m_rosterManager.reset(findExtension<QXmppRosterManager>());
-
-                if (m_registerManager) {
-                    auto gkRegisterIq = QXmppRegisterIq {};
-                    gkRegisterIq.setEmail(gkConnDetails.email);
-                    gkRegisterIq.setPassword(config.password());
-                    gkRegisterIq.setType(QXmppIq::Type::Set);
-                    gkRegisterIq.setUsername(config.user());
-
-                    m_registerManager->setRegistrationFormToSend(gkRegisterIq);
-                    m_registerManager->sendCachedRegistrationForm();
-                }
             }
         }
     } catch (const std::exception &e) {
@@ -252,7 +229,10 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
 
 GkXmppClient::~GkXmppClient()
 {
-    deleteClientConnection();
+    if (isConnected()) {
+        disconnectFromServer();
+    }
+
     QObject::disconnect(this, nullptr, this, nullptr);
     deleteLater();
 }
@@ -335,6 +315,16 @@ bool GkXmppClient::createMuc(const QString &room_name, const QString &room_subje
 }
 
 /**
+ * @brief GkXmppClient::getRegistrationMgr
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return
+ */
+std::shared_ptr<QXmppRegistrationManager> GkXmppClient::getRegistrationMgr()
+{
+    return m_registerManager;
+}
+
+/**
  * @brief GkXmppClient::clientConnected
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
@@ -407,35 +397,19 @@ void GkXmppClient::stateChanged(QXmppClient::State state)
 }
 
 /**
- * @brief GkXmppClient::createClientConnection creates a connection to the given XMPP server via the client
- * object, QXmppClient().
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param config The connection parameters to use when creating a connection to the given XMPP server.
- */
-void GkXmppClient::createClientConnection(const QXmppConfiguration &config)
-{
-    if (config.domain().isEmpty()) {
-        gkEventLogger->publishEvent(tr("Unable to make XMPP connection, the given host parameter is invalid!"), GkSeverity::Fatal, "",
-                                    true, true, false, false);
-        return;
-    }
-
-    if (!isConnected()) {
-        connectToServer(config);
-    }
-
-    return;
-}
-
-/**
- * @brief GkXmppClient::deleteClientConnection deletes a connection from the given XMPP server via the client
- * object, QXmppClient().
+ * @brief GkXmppClient::createConnectionToServer creates a connection to the configured server, which is also callable
+ * from other classes throughout Small World Deluxe's codebase.
+ * @param preconfigured_user Whether to sign-in with preconfigured user details or not.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void GkXmppClient::deleteClientConnection()
+void GkXmppClient::createConnectionToServer(const bool &preconfigured_user)
 {
-    if (isConnected()) {
-        disconnectFromServer();
+    if (preconfigured_user) {
+        if (!config.domain().isEmpty() && !config.user().isEmpty() && !config.password().isEmpty()) {
+            createConnectionToServerPriv();
+        }
+    } else {
+        createConnectionToServerPriv();
     }
 
     return;
@@ -605,6 +579,21 @@ void GkXmppClient::recvXmppLog(QXmppLogger::MessageType msgType, const QString &
             return;
         default:
             return;
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppClient::createConnectionToServerPriv
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppClient::createConnectionToServerPriv()
+{
+    if (m_presence) {
+        connectToServer(config, *m_presence);
+    } else {
+        connectToServer(config);
     }
 
     return;
