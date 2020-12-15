@@ -59,7 +59,7 @@ AboutDialog::AboutDialog(QWidget *parent) :
     ui->setupUi(this);
 
     button_counter = 0;
-    ui->pushButton_icon->setIcon(QIcon(":/resources/contrib/images/vector/purchased/2020-03/iconfinder_293_Frequency_News_Radio_5711690.svg"));
+    ui->pushButton_icon->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/walkie-talkies.svg"));
     ui->pushButton_icon->setIconSize(QSize(96, 96));
 }
 
@@ -82,7 +82,7 @@ void AboutDialog::on_pushButton_icon_clicked()
     ++button_counter;
     switch (button_counter) {
         case GK_ABOUT_SCREEN_BTN_PIXMAP_RADIO_IDX:
-            ui->pushButton_icon->setIcon(QIcon(":/resources/contrib/images/vector/purchased/2020-03/iconfinder_293_Frequency_News_Radio_5711690.svg"));
+            ui->pushButton_icon->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/walkie-talkies.svg"));
             ui->pushButton_icon->setIconSize(QSize(96, 96));
             break;
         case GK_ABOUT_SCREEN_BTN_PIXMAP_ARCTIC_COMM_ONE_IDX:

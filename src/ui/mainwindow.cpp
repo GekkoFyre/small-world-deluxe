@@ -156,7 +156,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         this->window()->showMaximized();; // Maximize the window!
 
-        this->setWindowIcon(QIcon(":/resources/contrib/images/vector/purchased/2020-03/iconfinder_293_Frequency_News_Radio_5711690.svg"));
+        //
+        // Create system tray icon
+        // https://doc.qt.io/qt-5/qtwidgets-desktop-systray-example.html
+        //
+        createTrayActions();
+        createTrayIcon();
+        setIcon();
+        m_trayIcon->show();
+
         ui->actionPlay->setIcon(QIcon(":/resources/contrib/images/vector/Kameleon/Record-Player.svg"));
         ui->actionSave_Decoded_Ab->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/clipboard-flat.svg"));
         ui->actionPrint->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/printer-rounded.svg"));
@@ -935,6 +943,20 @@ void MainWindow::launchSettingsWin()
                      this, SLOT(restartInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)));
 
     dlg_settings->show();
+
+    return;
+}
+
+/**
+ * @brief MainWindow::setIcon
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ */
+void MainWindow::setIcon()
+{
+    QIcon icon_graphic(QString(":/resources/contrib/images/vector/no-attrib/walkie-talkies.svg"));
+    m_trayIcon->setIcon(icon_graphic);
+    this->setWindowIcon(icon_graphic);
 
     return;
 }
@@ -1792,6 +1814,51 @@ void MainWindow::launchXmppRosterDlg()
 }
 
 /**
+ * @brief MainWindow::createTrayActions
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::createTrayActions()
+{
+    m_xmppRosterAction = new QAction(tr("&XMPP"), this);
+    QObject::connect(m_xmppRosterAction, &QAction::triggered, this, &MainWindow::launchXmppRosterDlg);
+
+    m_sstvAction = new QAction(tr("SS&TV"), this);
+    QObject::connect(m_sstvAction, &QAction::triggered, this, &MainWindow::launchSstvTab);
+
+    m_settingsAction = new QAction(tr("&Settings"), this);
+    QObject::connect(m_settingsAction, &QAction::triggered, this, &MainWindow::launchSettingsWin);
+
+    m_restoreAction = new QAction(tr("&Restore"), this);
+    QObject::connect(m_restoreAction, &QAction::triggered, this, &QWidget::showNormal);
+
+    m_quitAction = new QAction(tr("&Quit"), this);
+    QObject::connect(m_quitAction, &QAction::triggered, qApp, &QCoreApplication::quit);
+
+    return;
+}
+
+/**
+ * @brief MainWindow::createTrayIcon
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::createTrayIcon()
+{
+    m_trayIconMenu = new QMenu(this);
+    m_trayIconMenu->addAction(m_xmppRosterAction);
+    m_trayIconMenu->addAction(m_sstvAction);
+    m_trayIconMenu->addSeparator();
+    m_trayIconMenu->addAction(m_settingsAction);
+    m_trayIconMenu->addSeparator();
+    m_trayIconMenu->addAction(m_restoreAction);
+    m_trayIconMenu->addAction(m_quitAction);
+
+    m_trayIcon = new QSystemTrayIcon(this);
+    m_trayIcon->setContextMenu(m_trayIconMenu);
+
+    return;
+}
+
+/**
  * @brief MainWindow::on_actionCheck_for_Updates_triggered
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
@@ -2500,6 +2567,16 @@ void MainWindow::disconnectRigInMemory(std::shared_ptr<Rig> rig_to_disconnect, c
         }
     }
 
+    return;
+}
+
+/**
+ * @brief MainWindow::launchSstvTab
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::launchSstvTab()
+{
+    ui->tabWidget_maingui->setCurrentWidget(ui->tab_maingui_sstv);
     return;
 }
 

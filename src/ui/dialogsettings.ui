@@ -1956,13 +1956,27 @@ Thanks.</string>
                                      </widget>
                                     </item>
                                     <item row="3" column="0">
+                                     <widget class="Line" name="line_2">
+                                      <property name="orientation">
+                                       <enum>Qt::Horizontal</enum>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="3" column="1">
+                                     <widget class="Line" name="line">
+                                      <property name="orientation">
+                                       <enum>Qt::Horizontal</enum>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="4" column="0">
                                      <widget class="QLabel" name="label_xmpp_client_username">
                                       <property name="text">
                                        <string>Username: </string>
                                       </property>
                                      </widget>
                                     </item>
-                                    <item row="3" column="1">
+                                    <item row="4" column="1">
                                      <widget class="QLineEdit" name="lineEdit_xmpp_client_username">
                                       <property name="maxLength">
                                        <number>256</number>
@@ -1975,14 +1989,14 @@ Thanks.</string>
                                       </property>
                                      </widget>
                                     </item>
-                                    <item row="4" column="0">
+                                    <item row="5" column="0">
                                      <widget class="QLabel" name="label_xmpp_client_password">
                                       <property name="text">
                                        <string>Password: </string>
                                       </property>
                                      </widget>
                                     </item>
-                                    <item row="4" column="1">
+                                    <item row="5" column="1">
                                      <widget class="QLineEdit" name="lineEdit_xmpp_client_password">
                                       <property name="maxLength">
                                        <number>256</number>
@@ -1992,17 +2006,17 @@ Thanks.</string>
                                       </property>
                                      </widget>
                                     </item>
-                                    <item row="2" column="1">
-                                     <widget class="Line" name="line">
-                                      <property name="orientation">
-                                       <enum>Qt::Horizontal</enum>
+                                    <item row="2" column="0">
+                                     <widget class="QLabel" name="label_automatic_signup">
+                                      <property name="text">
+                                       <string>Automatic Sign-up: </string>
                                       </property>
                                      </widget>
                                     </item>
-                                    <item row="2" column="0">
-                                     <widget class="Line" name="line_2">
-                                      <property name="orientation">
-                                       <enum>Qt::Horizontal</enum>
+                                    <item row="2" column="1">
+                                     <widget class="QCheckBox" name="checkBox_automatic_signup">
+                                      <property name="text">
+                                       <string/>
                                       </property>
                                      </widget>
                                     </item>
@@ -2074,13 +2088,27 @@ Thanks.</string>
                                      </widget>
                                     </item>
                                     <item row="3" column="0">
+                                     <widget class="Line" name="line_4">
+                                      <property name="orientation">
+                                       <enum>Qt::Horizontal</enum>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="3" column="1">
+                                     <widget class="Line" name="line_3">
+                                      <property name="orientation">
+                                       <enum>Qt::Horizontal</enum>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="4" column="0">
                                      <widget class="QLabel" name="label_xmpp_client_email_address">
                                       <property name="text">
                                        <string>E-mail: </string>
                                       </property>
                                      </widget>
                                     </item>
-                                    <item row="3" column="1">
+                                    <item row="4" column="1">
                                      <widget class="QLineEdit" name="lineEdit_xmpp_client_email_address">
                                       <property name="maxLength">
                                        <number>512</number>
@@ -2093,17 +2121,17 @@ Thanks.</string>
                                       </property>
                                      </widget>
                                     </item>
-                                    <item row="2" column="1">
-                                     <widget class="Line" name="line_3">
-                                      <property name="orientation">
-                                       <enum>Qt::Horizontal</enum>
+                                    <item row="2" column="0">
+                                     <widget class="QLabel" name="label_automatic_reconnect">
+                                      <property name="text">
+                                       <string>Automatic Reconnect: </string>
                                       </property>
                                      </widget>
                                     </item>
-                                    <item row="2" column="0">
-                                     <widget class="Line" name="line_4">
-                                      <property name="orientation">
-                                       <enum>Qt::Horizontal</enum>
+                                    <item row="2" column="1">
+                                     <widget class="QCheckBox" name="checkBox_automatic_reconnect">
+                                      <property name="text">
+                                       <string/>
                                       </property>
                                      </widget>
                                     </item>
