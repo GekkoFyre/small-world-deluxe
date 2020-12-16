@@ -230,7 +230,11 @@ void GkEventLogger::systemNotification(const QString &title, const GkEventLoggin
             }
 
             // Send out a system notification!
+            #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
+            system("powershell -ExecutionPolicy Bypass -F contrib/dend/toast.ps1");
+            #elif __linux__
             system(QString("notify-send '%1' \"%2\"").arg(title).arg(msg).toStdString().c_str());
+            #endif
             return;
         }
     }  catch (const std::exception &e) {

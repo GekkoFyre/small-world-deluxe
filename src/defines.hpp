@@ -704,6 +704,9 @@ namespace Network {
         enum GkOnlineStatus {                               // The online availability of the user in question.
             Online,
             Offline,
+            Away,
+            DoNotDisturb,
+            NotAvailable,
             Invisible,
             NetworkError
         };
