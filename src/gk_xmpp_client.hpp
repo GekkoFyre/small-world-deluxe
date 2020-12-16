@@ -45,39 +45,106 @@
 #include "src/gk_logger.hpp"
 #include "src/models/system/gk_network_ping_model.hpp"
 #include <qxmpp/QXmppClient.h>
+#include <qxmpp/QXmppPresence.h>
+#include <qxmpp/QXmppVersionIq.h>
+#include <qxmpp/QXmppRegisterIq.h>
 #include <qxmpp/QXmppMucManager.h>
+#include <qxmpp/QXmppVCardManager.h>
 #include <qxmpp/QXmppRosterManager.h>
+#include <qxmpp/QXmppVersionManager.h>
+#include <qxmpp/QXmppTransferManager.h>
+#include <qxmpp/QXmppDiscoveryManager.h>
+#include <qxmpp/QXmppRegistrationManager.h>
+#include <QList>
 #include <QString>
 #include <QObject>
 #include <QPointer>
+#include <QSslError>
 #include <QDnsLookup>
+#include <QStringList>
+#include <QDomDocument>
 #include <QCoreApplication>
+#include <QDnsServiceRecord>
 
 namespace GekkoFyre {
+
+class GkXmppVcardData {
+
+public:
+    QString nickname;
+    QString fullName;
+    QString firstName;
+    QString middleName;
+    QString lastName;
+    QString webUrl;
+    QString email;
+
+    GkXmppVcardData() {
+        nickname = "";
+        fullName = "";
+        firstName = "";
+        middleName = "";
+        lastName = "";
+        webUrl = "";
+        email = "";
+    }
+
+    bool isEmpty() const {
+        return (nickname.isEmpty() && fullName.isEmpty() && firstName.isEmpty() && middleName.isEmpty() && lastName.isEmpty() &&
+                webUrl.isEmpty() && email.isEmpty());
+    }
+
+};
+
+class GkXmppVcardCache : public QObject {
+    Q_OBJECT
+
+public:
+    explicit GkXmppVcardCache(QObject *parent = nullptr);
+    ~GkXmppVcardCache() override;
+
+    GkXmppVcardData grabVCard(const QString &bareJid);
+
+private:
+    QString getElementStore(const std::shared_ptr<QDomDocument> doc, const QString &nodeName);
+
+};
 
 class GkXmppClient : public QXmppClient {
     Q_OBJECT
 
 public:
     explicit GkXmppClient(const Network::GkXmpp::GkUserConn &connection_details,
-                          QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
+                          QPointer<GekkoFyre::GkEventLogger> eventLogger, const bool &connectNow = false,
+                          QObject *parent = nullptr);
     ~GkXmppClient() override;
 
+    void createConnectionToServer(const bool &preconfigured_user = false);
     bool createMuc(const QString &room_name, const QString &room_subject, const QString &room_desc);
+
+    std::shared_ptr<QXmppRegistrationManager> getRegistrationMgr();
+    QXmppPresence statusToPresence(const Network::GkXmpp::GkOnlineStatus &status);
 
 public slots:
     void clientConnected();
-    void rosterReceived();
     void presenceChanged(const QString &bareJid, const QString &resource);
     void stateChanged(QXmppClient::State state);
 
-    void createClientConnection(const QXmppConfiguration &config);
-    void deleteClientConnection();
     void modifyPresence(const QXmppPresence::Type &pres);
 
 private slots:
     void handleServers();
     void handleError(QXmppClient::Error errorMsg);
+    void handleSslErrors(const QList<QSslError> &errorMsg);
+    void recvXmppLog(QXmppLogger::MessageType msgType, const QString &msg);
+
+    void versionReceivedSlot(const QXmppVersionIq &version);
+
+    void notifyNewSubscription(const QString &bareJid);
+    void rosterReceived();
+    void itemAdded(const QString &bareJid);
+    void itemRemoved(const QString &bareJid);
+    void itemChanged(const QString &bareJid);
 
 signals:
     void setPresence(const QXmppPresence::Type &pres);
@@ -85,16 +152,42 @@ signals:
 private:
     QPointer<GkEventLogger> gkEventLogger;
     QPointer<GkNetworkPingModel> gkNetworkPing;
+    QList<QDnsServiceRecord> m_dnsRecords;
+
+    //
+    // Connection details and related variables
+    //
+    Network::GkXmpp::GkUserConn gkConnDetails;
+    QPointer<QDnsLookup> m_dns;
+    qint32 m_keepalive;
+    std::unique_ptr<QXmppDiscoveryManager> gkDiscoMgr;
+    std::unique_ptr<QXmppVersionManager> gkVersionMgr;
+
+    //
+    // User, roster and presence details
+    //
+    Network::GkXmpp::GkOnlineStatus m_status;
+    std::unique_ptr<QXmppPresence> m_presence;
+    std::shared_ptr<QXmppRosterManager> m_rosterManager;
+    QStringList rosterGroups;
+
+    //
+    // VCards
+    //
+    std::unique_ptr<GkXmppVcardCache> m_vcardCache;
+    std::unique_ptr<QXmppVCardManager> m_vcardMgr;
 
     //
     // QXmpp and XMPP related
     //
-    Network::GkXmpp::GkUserConn gkConnDetails;
-    QPointer<QDnsLookup> m_dns;
-    std::shared_ptr<QXmppRosterManager> m_rosterManager;
-    std::unique_ptr<QXmppPresence> m_presence;
+    QXmppConfiguration config;
+    std::shared_ptr<QXmppRegistrationManager> m_registerManager;
     std::unique_ptr<QXmppMucManager> m_mucManager;
     std::unique_ptr<QXmppMucRoom> m_pRoom;
+    std::unique_ptr<QXmppTransferManager> m_transferManager;
+
+    void createConnectionToServerPriv();
+    void initRosterMgr();
 
 };
 };

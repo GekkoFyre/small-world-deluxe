@@ -1955,6 +1955,71 @@ Thanks.</string>
                                       </property>
                                      </widget>
                                     </item>
+                                    <item row="3" column="0">
+                                     <widget class="Line" name="line_2">
+                                      <property name="orientation">
+                                       <enum>Qt::Horizontal</enum>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="3" column="1">
+                                     <widget class="Line" name="line">
+                                      <property name="orientation">
+                                       <enum>Qt::Horizontal</enum>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="4" column="0">
+                                     <widget class="QLabel" name="label_xmpp_client_username">
+                                      <property name="text">
+                                       <string>Username: </string>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="4" column="1">
+                                     <widget class="QLineEdit" name="lineEdit_xmpp_client_username">
+                                      <property name="maxLength">
+                                       <number>256</number>
+                                      </property>
+                                      <property name="placeholderText">
+                                       <string>&lt;user&gt;@&lt;host&gt;.&lt;tld&gt;</string>
+                                      </property>
+                                      <property name="clearButtonEnabled">
+                                       <bool>true</bool>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="5" column="0">
+                                     <widget class="QLabel" name="label_xmpp_client_password">
+                                      <property name="text">
+                                       <string>Password: </string>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="5" column="1">
+                                     <widget class="QLineEdit" name="lineEdit_xmpp_client_password">
+                                      <property name="maxLength">
+                                       <number>256</number>
+                                      </property>
+                                      <property name="clearButtonEnabled">
+                                       <bool>true</bool>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="2" column="0">
+                                     <widget class="QLabel" name="label_automatic_signup">
+                                      <property name="text">
+                                       <string>Automatic Sign-up: </string>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="2" column="1">
+                                     <widget class="QCheckBox" name="checkBox_automatic_signup">
+                                      <property name="text">
+                                       <string/>
+                                      </property>
+                                     </widget>
+                                    </item>
                                    </layout>
                                   </widget>
                                  </item>
@@ -2017,6 +2082,54 @@ Thanks.</string>
                                       <property name="toolTip">
                                        <string>Connect automatically to the configured XMPP server of your choice upon the launch of Small World Deluxe.</string>
                                       </property>
+                                      <property name="text">
+                                       <string/>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="3" column="0">
+                                     <widget class="Line" name="line_4">
+                                      <property name="orientation">
+                                       <enum>Qt::Horizontal</enum>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="3" column="1">
+                                     <widget class="Line" name="line_3">
+                                      <property name="orientation">
+                                       <enum>Qt::Horizontal</enum>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="4" column="0">
+                                     <widget class="QLabel" name="label_xmpp_client_email_address">
+                                      <property name="text">
+                                       <string>E-mail: </string>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="4" column="1">
+                                     <widget class="QLineEdit" name="lineEdit_xmpp_client_email_address">
+                                      <property name="maxLength">
+                                       <number>512</number>
+                                      </property>
+                                      <property name="placeholderText">
+                                       <string>&lt;user&gt;@&lt;host&gt;.&lt;tld&gt;</string>
+                                      </property>
+                                      <property name="clearButtonEnabled">
+                                       <bool>true</bool>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="2" column="0">
+                                     <widget class="QLabel" name="label_automatic_reconnect">
+                                      <property name="text">
+                                       <string>Automatic Reconnect: </string>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="2" column="1">
+                                     <widget class="QCheckBox" name="checkBox_automatic_reconnect">
                                       <property name="text">
                                        <string/>
                                       </property>
@@ -2298,20 +2411,6 @@ Thanks.</string>
                               <property name="bottomMargin">
                                <number>0</number>
                               </property>
-                              <item row="1" column="0">
-                               <widget class="QLabel" name="label_xmpp_server_url">
-                                <property name="text">
-                                 <string>Host URL: </string>
-                                </property>
-                               </widget>
-                              </item>
-                              <item row="1" column="1">
-                               <widget class="QLineEdit" name="lineEdit_xmpp_server_url">
-                                <property name="toolTip">
-                                 <string>The Host URL of the XMPP server you wish to connect towards when using the 'custom option'.</string>
-                                </property>
-                               </widget>
-                              </item>
                               <item row="0" column="0">
                                <widget class="QLabel" name="label_xmpp_server_type">
                                 <property name="text">
@@ -2325,6 +2424,30 @@ Thanks.</string>
                                  <string>Whether we should connect to a pre-configured XMPP server or one of your own choosing. Beware of your choices when using this option!</string>
                                 </property>
                                </widget>
+                              </item>
+                              <item row="2" column="0">
+                               <widget class="QLabel" name="label_xmpp_server_url">
+                                <property name="text">
+                                 <string>Host URL: </string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="2" column="1">
+                               <widget class="QLineEdit" name="lineEdit_xmpp_server_url">
+                                <property name="toolTip">
+                                 <string>The Host URL of the XMPP server you wish to connect towards when using the 'custom option'.</string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="1" column="0">
+                               <widget class="QLabel" name="label_xmpp_server_ssl_errors">
+                                <property name="text">
+                                 <string>SSL Errors: </string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="1" column="1">
+                               <widget class="QComboBox" name="comboBox_xmpp_server_ssl_errors"/>
                               </item>
                              </layout>
                             </widget>
@@ -3156,8 +3279,8 @@ Thanks.</string>
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>698</width>
-                      <height>577</height>
+                      <width>210</width>
+                      <height>125</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_28">
@@ -4652,8 +4775,8 @@ Thanks.</string>
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>722</width>
-                      <height>601</height>
+                      <width>280</width>
+                      <height>234</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_35">

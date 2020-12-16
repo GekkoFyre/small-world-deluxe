@@ -154,7 +154,7 @@ else()
     message(FATAL_ERROR "Could not find the Threads library!")
 endif(Threads_FOUND)
 
-find_package(Qt5 COMPONENTS Core Gui Widgets Network LinguistTools Multimedia SerialPort PrintSupport TextToSpeech Test REQUIRED)
+find_package(Qt5 COMPONENTS Core Gui Widgets Network LinguistTools Multimedia SerialPort PrintSupport Xml TextToSpeech Test REQUIRED)
 
 if (MSYS OR MINGW OR LINUX)
     set(Boost_USE_STATIC_LIBS OFF CACHE BOOL "Use static libraries when linking Boost C++.")
@@ -759,13 +759,15 @@ if(GFYRE_BUILD_SHARED)
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
-target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::Multimedia Qt5::SerialPort Qt5::PrintSupport Qt5::TextToSpeech Qt5::Test Threads::Threads SingleApplication::SingleApplication sentry::sentry Opus::opus leveldb kissfft ${LIBS})
+target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::Multimedia Qt5::SerialPort Qt5::PrintSupport Qt5::Xml Qt5::TextToSpeech Qt5::Test Threads::Threads SingleApplication::SingleApplication sentry::sentry Opus::opus leveldb kissfft ${LIBS})
 
 qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)
 add_dependencies(galaxy resources)
 
 set(SWRLD_EXEC ${SWRLD_EXEC}
     src/main.cpp)
+
+configure_file("src/contrib/dend/toast.ps1" "${CMAKE_CURRENT_BINARY_DIR}/contrib/dend/toast.ps1" COPYONLY)
 
 add_executable(smallworld WIN32 ${SWRLD_EXEC})
 target_compile_options(smallworld PRIVATE -fPIC)
