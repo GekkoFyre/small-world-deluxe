@@ -73,8 +73,10 @@
 #include <mutex>
 #include <ctime>
 #include <list>
+#include <QMenu>
 #include <QRect>
 #include <QList>
+#include <QAction>
 #include <QScreen>
 #include <QString>
 #include <QObject>
@@ -91,6 +93,7 @@
 #include <QAudioInput>
 #include <QAudioOutput>
 #include <QAudioFormat>
+#include <QSystemTrayIcon>
 #include <QAudioDeviceInfo>
 #include <QCommandLineParser>
 
@@ -226,6 +229,26 @@ private slots:
     void on_pushButton_sstv_tx_load_image_clicked();
     void on_pushButton_sstv_tx_send_image_clicked();
     void on_pushButton_sstv_tx_remove_clicked();
+
+    //
+    // QXmpp and XMPP related
+    //
+    void launchXmppRosterDlg();
+
+    //
+    // SSTV and related
+    //
+    void launchSstvTab();
+
+    //
+    // Settings dialog and related
+    //
+    void launchSettingsWin();
+
+    //
+    // System tray icon related functions
+    //
+    void setIcon();
 
 protected slots:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
@@ -391,7 +414,6 @@ private:
     QStringList getAmateurBands();
     bool prefillAmateurBands();
 
-    void launchSettingsWin();
     void launchAudioPlayerWin();
     bool radioInitStart();
 
@@ -422,6 +444,17 @@ private:
     QVector<double> waterfall_samples_vec;
     GekkoFyre::Spectrograph::GkGraphType graph_in_use;
 
+    //
+    // System tray icon
+    //
+    QPointer<QSystemTrayIcon> m_trayIcon;
+    QPointer<QMenu> m_trayIconMenu;
+    QPointer<QAction> m_xmppRosterAction;
+    QPointer<QAction> m_sstvAction;
+    QPointer<QAction> m_settingsAction;
+    QPointer<QAction> m_restoreAction;
+    QPointer<QAction> m_quitAction;
+
     void spectroSamplesUpdated();
 
     void createStatusBar(const QString &statusMsg = "");
@@ -430,7 +463,12 @@ private:
     QRect findActiveScreen();
 
     void readXmppSettings();
-    void launchXmppRosterDlg();
+
+    //
+    // System tray icon related functions
+    //
+    void createTrayActions();
+    void createTrayIcon();
 
     void print_exception(const std::exception &e, int level = 0);
 

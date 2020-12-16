@@ -1076,6 +1076,12 @@ void GkLevelDb::write_xmpp_settings(const QString &value, const Settings::GkXmpp
             case Settings::GkXmppCfg::XmppEnableSsl:
                 batch.Put("XmppCfgEnableSsl", value.toStdString());
                 break;
+            case Settings::GkXmppCfg::XmppIgnoreSslErrors:
+                batch.Put("XmppIgnoreSslErrors", value.toStdString());
+                break;
+            case Settings::GkXmppCfg::XmppUsername:
+                batch.Put("XmppUsername", value.toStdString());
+                break;
             case Settings::GkXmppCfg::XmppJid:
                 batch.Put("XmppJid", value.toStdString());
                 break;
@@ -1155,6 +1161,12 @@ QString GkLevelDb::read_xmpp_settings(const Settings::GkXmppCfg &key)
         case Settings::GkXmppCfg::XmppEnableSsl:
             status = db->Get(read_options, "XmppCfgEnableSsl", &value);
             break;
+        case Settings::GkXmppCfg::XmppIgnoreSslErrors:
+            status = db->Get(read_options, "XmppIgnoreSslErrors", &value);
+            break;
+        case Settings::GkXmppCfg::XmppUsername:
+            status = db->Get(read_options, "XmppUsername", &value);
+            break;
         case Settings::GkXmppCfg::XmppJid:
             status = db->Get(read_options, "XmppJid", &value);
             break;
@@ -1183,8 +1195,6 @@ GkXmpp::GkServerType GkLevelDb::convXmppServerTypeFromInt(const qint32 &idx)
     switch (idx) {
         case GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX:
             return GkXmpp::GkServerType::GekkoFyre;
-        case GK_XMPP_SERVER_TYPE_COMBO_GOOGLE_IDX:
-            return GkXmpp::GkServerType::Google;
         case GK_XMPP_SERVER_TYPE_COMBO_CUSTOM_IDX:
             return GkXmpp::GkServerType::Custom;
         default:

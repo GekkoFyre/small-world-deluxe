@@ -147,8 +147,8 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         //
         // Fill QComboBox with default items as pertaining to XMPP configurations!
         prefill_xmpp_server_type(GkXmpp::GkServerType::GekkoFyre);
-        prefill_xmpp_server_type(GkXmpp::GkServerType::Google);
         prefill_xmpp_server_type(GkXmpp::GkServerType::Custom);
+        prefill_xmpp_ignore_ssl_errors();
 
         usb_ports_active = false;
         com_ports_active = false;
@@ -303,21 +303,38 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         bool xmpp_connect_auto = ui->checkBox_connect_automatically->isChecked();
         QByteArray xmpp_upload_avatar; // TODO: Finish this area of code, pronto!
 
+        QString xmpp_client_username = ui->lineEdit_xmpp_client_username->text();
+        QString xmpp_client_password = ui->lineEdit_xmpp_client_password->text();
+        QString xmpp_client_email_addr = ui->lineEdit_xmpp_client_email_address->text();
+
         gkDekodeDb->write_xmpp_settings(QString::fromStdString(gkDekodeDb->boolEnum(xmpp_allow_msg_history)), GkXmppCfg::XmppAllowMsgHistory);
         gkDekodeDb->write_xmpp_settings(QString::fromStdString(gkDekodeDb->boolEnum(xmpp_allow_file_xfers)), GkXmppCfg::XmppAllowFileXfers);
         gkDekodeDb->write_xmpp_settings(QString::fromStdString(gkDekodeDb->boolEnum(xmpp_allow_mucs)), GkXmppCfg::XmppAlowMucs);
         gkDekodeDb->write_xmpp_settings(QString::fromStdString(gkDekodeDb->boolEnum(xmpp_connect_auto)), GkXmppCfg::XmppAutoConnect);
 
         //
+        // CAUTION!!! Username, password, and e-mail address!
+        //
+        gkDekodeDb->write_xmpp_settings(xmpp_client_username, GkXmppCfg::XmppUsername);
+        gkDekodeDb->write_xmpp_settings(xmpp_client_password, GkXmppCfg::XmppPassword);
+        gkDekodeDb->write_xmpp_settings(xmpp_client_email_addr, GkXmppCfg::XmppEmailAddr);
+
+        //
         // General --> XMPP --> Server Settings
         //
+        QString xmpp_host_url = ui->lineEdit_xmpp_server_url->text();
         qint32 xmpp_server_type = ui->comboBox_xmpp_server_type->currentIndex();
         quint16 xmpp_host_tcp_port = ui->spinBox_xmpp_server_port->value();
         bool xmpp_enable_ssl = ui->checkBox_xmpp_server_ssl->isChecked();
+        qint32 xmpp_ignore_ssl_errors = ui->comboBox_xmpp_server_ssl_errors->currentIndex();
 
-        gkDekodeDb->write_xmpp_settings(QString::number(xmpp_server_type), GkXmppCfg::XmppServerType);
-        gkDekodeDb->write_xmpp_settings(QString::number(xmpp_host_tcp_port), GkXmppCfg::XmppDomainPort);
-        gkDekodeDb->write_xmpp_settings(QString::fromStdString(gkDekodeDb->boolEnum(xmpp_enable_ssl)), GkXmppCfg::XmppEnableSsl);
+        if (xmpp_host_url != GkXmppGekkoFyreCfg::defaultUrl) {
+            gkDekodeDb->write_xmpp_settings(xmpp_host_url, GkXmppCfg::XmppDomainUrl);
+            gkDekodeDb->write_xmpp_settings(QString::number(xmpp_server_type), GkXmppCfg::XmppServerType);
+            gkDekodeDb->write_xmpp_settings(QString::number(xmpp_host_tcp_port), GkXmppCfg::XmppDomainPort);
+            gkDekodeDb->write_xmpp_settings(QString::fromStdString(gkDekodeDb->boolEnum(xmpp_enable_ssl)), GkXmppCfg::XmppEnableSsl);
+            gkDekodeDb->write_xmpp_settings(QString::number(xmpp_ignore_ssl_errors), GkXmppCfg::XmppIgnoreSslErrors);
+        }
 
         //
         // Audio --> Configuration
@@ -782,15 +799,24 @@ void DialogSettings::prefill_xmpp_server_type(const GkXmpp::GkServerType &server
         case GkXmpp::GkServerType::GekkoFyre:
             ui->comboBox_xmpp_server_type->insertItem(GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX, tr("GekkoFyre Networks (best choice!)"));
             break;
-        case GkXmpp::GkServerType::Google:
-            ui->comboBox_xmpp_server_type->insertItem(GK_XMPP_SERVER_TYPE_COMBO_GOOGLE_IDX, tr("Google XMPP Servers"));
-            break;
         case GkXmpp::GkServerType::Custom:
             ui->comboBox_xmpp_server_type->insertItem(GK_XMPP_SERVER_TYPE_COMBO_CUSTOM_IDX, tr("Custom (use with caution)"));
             break;
         default:
             std::throw_with_nested(std::invalid_argument(tr("Error encountered whilst pre-filling QComboBoxes for XMPP server-type to use!").toStdString()));
     }
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::prefill_xmpp_ignore_ssl_errors
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void DialogSettings::prefill_xmpp_ignore_ssl_errors()
+{
+    ui->comboBox_xmpp_server_ssl_errors->insertItem(GK_XMPP_IGNORE_SSL_ERRORS_COMBO_FALSE, tr("Don't ignore SSL errors"));
+    ui->comboBox_xmpp_server_ssl_errors->insertItem(GK_XMPP_IGNORE_SSL_ERRORS_COMBO_TRUE, tr("Ignore all SSL errors"));
 
     return;
 }
@@ -831,7 +857,7 @@ void DialogSettings::init_station_info()
 void DialogSettings::monitorXmppServerChange()
 {
     QString xmpp_host_url = ui->lineEdit_xmpp_server_url->text();
-    QString old_val = gkConnDetails.server.domain.toString();
+    QString old_val = gkConnDetails.server.url;
 
     if (!xmpp_host_url.isEmpty() && !old_val.isEmpty()) {
         if (xmpp_host_url == old_val) {
@@ -1293,33 +1319,112 @@ bool DialogSettings::read_settings()
         //
         // General --> XMPP --> Client Settings
         //
-        bool xmpp_allow_msg_history = gkDekodeDb->boolStr(gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppAllowMsgHistory).toStdString());
-        bool xmpp_allow_file_xfers = gkDekodeDb->boolStr(gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppAllowFileXfers).toStdString());
-        bool xmpp_allow_mucs = gkDekodeDb->boolStr(gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppAlowMucs).toStdString());
-        bool xmpp_connect_auto = gkDekodeDb->boolStr(gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppAutoConnect).toStdString());
-        QByteArray xmpp_upload_avatar; // TODO: Finish this area of code, pronto!
+        QString xmpp_allow_msg_history = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppAllowMsgHistory);
+        QString xmpp_allow_file_xfers = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppAllowFileXfers);
+        QString xmpp_allow_mucs = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppAlowMucs);
+        QString xmpp_auto_connect = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppAutoConnect);
 
-        ui->checkBox_allow_msg_history->setChecked(xmpp_allow_msg_history);
-        ui->checkBox_allow_file_transfers->setChecked(xmpp_allow_file_xfers);
-        ui->checkBox_allow_muc_creation->setChecked(xmpp_allow_mucs);
-        ui->checkBox_connect_automatically->setChecked(xmpp_connect_auto);
+        //
+        // CAUTION!!! Username, password, and e-mail address!
+        //
+        QString xmpp_client_username = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppUsername);
+        QString xmpp_client_password = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppPassword);
+        QString xmpp_client_email_addr = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppEmailAddr);
+
+        if (!xmpp_allow_msg_history.isEmpty()) {
+            ui->checkBox_allow_msg_history->setChecked(gkDekodeDb->boolStr(xmpp_allow_msg_history.toStdString()));
+        } else {
+            ui->checkBox_allow_msg_history->setChecked(true);
+        }
+
+        if (!xmpp_allow_file_xfers.isEmpty()) {
+            ui->checkBox_allow_file_transfers->setChecked(gkDekodeDb->boolStr(xmpp_allow_file_xfers.toStdString()));
+        } else {
+            ui->checkBox_allow_file_transfers->setChecked(true);
+        }
+
+        if (!xmpp_allow_mucs.isEmpty()) {
+            ui->checkBox_allow_muc_creation->setChecked(gkDekodeDb->boolStr(xmpp_allow_mucs.toStdString()));
+        } else {
+            ui->checkBox_allow_muc_creation->setChecked(true);
+        }
+
+        if (!xmpp_auto_connect.isEmpty()) {
+            ui->checkBox_connect_automatically->setChecked(gkDekodeDb->boolStr(xmpp_auto_connect.toStdString()));
+        } else {
+            ui->checkBox_connect_automatically->setChecked(false);
+        }
+
+        if (!xmpp_client_username.isEmpty()) {
+            ui->lineEdit_xmpp_client_username->setText(xmpp_client_username);
+        } else {
+            ui->lineEdit_xmpp_client_username->setText("");
+        }
+
+        if (!xmpp_client_password.isEmpty()) {
+            ui->lineEdit_xmpp_client_password->setText(xmpp_client_password);
+        } else {
+            ui->lineEdit_xmpp_client_password->setText("");
+        }
+
+        if (!xmpp_client_email_addr.isEmpty()) {
+            ui->lineEdit_xmpp_client_email_address->setText(xmpp_client_email_addr);
+        } else {
+            ui->lineEdit_xmpp_client_email_address->setText("");
+        }
 
         //
         // General --> XMPP --> Server Settings
         //
-        QString xmpp_host_url = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppDomainUrl);
-        qint32 xmpp_server_type = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppServerType).toInt();
-        quint16 xmpp_host_tcp_port = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppDomainPort).toInt();
-        bool xmpp_enable_ssl = gkDekodeDb->boolStr(gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppEnableSsl).toStdString());
+        QString xmpp_domain_url = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppDomainUrl);
+        QString xmpp_server_type = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppServerType);
+        QString xmpp_domain_port = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppDomainPort);
+        QString xmpp_enable_ssl = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppEnableSsl);
+        QString xmpp_ignore_ssl_errors = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppIgnoreSslErrors);
 
-        ui->lineEdit_xmpp_server_url->setText(xmpp_host_url);
-        ui->comboBox_xmpp_server_type->setCurrentIndex(xmpp_server_type);
-        ui->spinBox_xmpp_server_port->setValue(xmpp_host_tcp_port);
-        ui->checkBox_xmpp_server_ssl->setChecked(xmpp_connect_auto);
+        if (!xmpp_server_type.isEmpty()) {
+            ui->comboBox_xmpp_server_type->setCurrentIndex(xmpp_server_type.toInt());
 
-        //
-        // Update the index for the relevant QComboBox signal/slot!
-        on_comboBox_xmpp_server_type_currentIndexChanged(xmpp_server_type);
+            //
+            // Update the index for the relevant QComboBox signal/slot!
+            on_comboBox_xmpp_server_type_currentIndexChanged(xmpp_server_type.toInt());
+        } else {
+            ui->comboBox_xmpp_server_type->setCurrentIndex(GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX);
+
+            //
+            // Update the index for the relevant QComboBox signal/slot!
+            on_comboBox_xmpp_server_type_currentIndexChanged(GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX);
+        }
+
+        switch (ui->comboBox_xmpp_server_type->currentIndex()) {
+            case GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX:
+                ui->lineEdit_xmpp_server_url->setText(GkXmppGekkoFyreCfg::defaultUrl);
+                ui->lineEdit_xmpp_client_username->setPlaceholderText(QString("@%1").arg(GkXmppGekkoFyreCfg::defaultUrl));
+                break;
+            case GK_XMPP_SERVER_TYPE_COMBO_CUSTOM_IDX:
+                ui->lineEdit_xmpp_server_url->setText(xmpp_domain_url);
+                break;
+            default:
+                break;
+        }
+
+        if (!xmpp_domain_port.isEmpty()) {
+            ui->spinBox_xmpp_server_port->setValue(xmpp_domain_port.toInt());
+        } else {
+            ui->spinBox_xmpp_server_port->setValue(GK_DEFAULT_XMPP_SERVER_PORT);
+        }
+
+        if (!xmpp_enable_ssl.isEmpty()) {
+            ui->checkBox_xmpp_server_ssl->setChecked(gkDekodeDb->boolStr(xmpp_enable_ssl.toStdString()));
+        } else {
+            ui->checkBox_xmpp_server_ssl->setChecked(true);
+        }
+
+        if (!xmpp_ignore_ssl_errors.isEmpty()) {
+            ui->comboBox_xmpp_server_ssl_errors->setCurrentIndex(xmpp_ignore_ssl_errors.toInt());
+        } else {
+            ui->comboBox_xmpp_server_ssl_errors->setCurrentIndex(GK_XMPP_IGNORE_SSL_ERRORS_COMBO_FALSE);
+        }
 
         //
         // Audio --> Configuration
@@ -2742,13 +2847,7 @@ void DialogSettings::on_comboBox_xmpp_server_type_currentIndexChanged(int index)
             ui->lineEdit_xmpp_server_url->setEnabled(false);
             ui->spinBox_xmpp_server_port->setEnabled(false);
             ui->checkBox_xmpp_server_ssl->setEnabled(false);
-
-            break;
-        case GK_XMPP_SERVER_TYPE_COMBO_GOOGLE_IDX:
-            // Google's own XMPP servers have been chosen!
-            ui->lineEdit_xmpp_server_url->setEnabled(false);
-            ui->spinBox_xmpp_server_port->setEnabled(false);
-            ui->checkBox_xmpp_server_ssl->setEnabled(false);
+            ui->comboBox_xmpp_server_ssl_errors->setEnabled(false);
 
             break;
         case GK_XMPP_SERVER_TYPE_COMBO_CUSTOM_IDX:
@@ -2756,6 +2855,7 @@ void DialogSettings::on_comboBox_xmpp_server_type_currentIndexChanged(int index)
             ui->lineEdit_xmpp_server_url->setEnabled(true);
             ui->spinBox_xmpp_server_port->setEnabled(true);
             ui->checkBox_xmpp_server_ssl->setEnabled(true);
+            ui->comboBox_xmpp_server_ssl_errors->setEnabled(true);
 
             break;
         default:
@@ -2765,7 +2865,80 @@ void DialogSettings::on_comboBox_xmpp_server_type_currentIndexChanged(int index)
     return;
 }
 
-void DialogSettings::on_checkBox_xmpp_server_ssl_toggled(bool checked)
+/**
+ * @brief DialogSettings::on_comboBox_xmpp_server_ssl_errors_currentIndexChanged Present a dire warning to the end-user if
+ * they so choose to ignore any and all SSL warnings, and what possible consequences their actions could have!
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index The chosen item's index within the targeted QComboBox.
+ */
+void DialogSettings::on_comboBox_xmpp_server_ssl_errors_currentIndexChanged(int index)
 {
+    if (index == GK_XMPP_IGNORE_SSL_ERRORS_COMBO_FALSE) {
+        return;
+    } else {
+        QMessageBox msgBox;
+        msgBox.setWindowTitle(tr("Are you sure?"));
+        msgBox.setText(tr("Please indicate whether you are absolutely sure about disabling all warnings and "
+                          "safety-checks about ignoring any future SSL warnings. This could have dire consequences "
+                          "for your security online!"));
+        msgBox.setStandardButtons(QMessageBox::Ignore | QMessageBox::Abort | QMessageBox::Cancel);
+        msgBox.setDefaultButton(QMessageBox::Abort);
+        msgBox.setIcon(QMessageBox::Icon::Warning);
+        int ret = msgBox.exec();
+
+        switch (ret) {
+            case QMessageBox::Ignore:
+                ui->comboBox_xmpp_server_ssl_errors->setCurrentIndex(GK_XMPP_IGNORE_SSL_ERRORS_COMBO_TRUE);
+                break;
+            case QMessageBox::Abort:
+                ui->comboBox_xmpp_server_ssl_errors->setCurrentIndex(GK_XMPP_IGNORE_SSL_ERRORS_COMBO_FALSE);
+                break;
+            case QMessageBox::Cancel:
+                ui->comboBox_xmpp_server_ssl_errors->setCurrentIndex(GK_XMPP_IGNORE_SSL_ERRORS_COMBO_FALSE);
+                break;
+            default:
+                ui->comboBox_xmpp_server_ssl_errors->setCurrentIndex(GK_XMPP_IGNORE_SSL_ERRORS_COMBO_FALSE);
+                break;
+        }
+    }
+
     return;
+}
+
+/**
+ * @brief DialogSettings::on_checkBox_connect_automatically_toggled Presents a warning to the user if they check this box and
+ * yet haven't configured a username, password, email, etc. yet.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param checked Whether the tickbox is checked yet or not.
+ */
+void DialogSettings::on_checkBox_connect_automatically_toggled(bool checked)
+{
+    if (checked) {
+        if ((ui->lineEdit_xmpp_client_username->text().isEmpty() || ui->lineEdit_xmpp_client_password->text().isEmpty()) ||
+            ui->lineEdit_xmpp_client_email_address->text().isEmpty()) {
+            // Present warning to the end-user!
+            QMessageBox::information(this, tr("Have you..."), tr("You have yet to configure a username, desired password, e-mail "
+                                                                 "address, etc. all of which we recommend before checking this tickbox!"), QMessageBox::Ok);
+        }
+    } else {
+        // No warning is needed at this time...
+        return;
+    }
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::on_lineEdit_xmpp_server_url_textChanged Updates the username input in real time so that it shows
+ * to the end-user how their JID appears as it does on the backend.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1 The QString as it appears within, `ui->lineEdit_xmpp_server_url()`.
+ */
+void DialogSettings::on_lineEdit_xmpp_server_url_textChanged(const QString &arg1)
+{
+    if (arg1.isEmpty()) {
+        ui->lineEdit_xmpp_client_username->setPlaceholderText(QString("@%1").arg(arg1));
+    }
+
+   return;
 }

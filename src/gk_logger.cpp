@@ -94,8 +94,8 @@ GkEventLogger::~GkEventLogger()
 void GkEventLogger::publishEvent(const QString &event, const GkSeverity &severity, const QVariant &arguments, const bool &sys_notification,
                                  const bool &publishToConsole, const bool &publishToStatusBar, const bool &displayMsgBox)
 {
-    std::lock_guard<std::mutex> lock(dataBatchMutex);
-
+    //
+    // TODO: Introduce proper mutex'ing for multithreading!
     GkEventLogging event_log;
     event_log.mesg.message = event;
     event_log.mesg.severity = severity;
@@ -230,7 +230,11 @@ void GkEventLogger::systemNotification(const QString &title, const GkEventLoggin
             }
 
             // Send out a system notification!
+            #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
+            system("powershell -ExecutionPolicy Bypass -F contrib/dend/toast.ps1");
+            #elif __linux__
             system(QString("notify-send '%1' \"%2\"").arg(title).arg(msg).toStdString().c_str());
+            #endif
             return;
         }
     }  catch (const std::exception &e) {

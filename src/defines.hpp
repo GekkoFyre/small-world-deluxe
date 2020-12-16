@@ -107,11 +107,13 @@ namespace GekkoFyre {
 //
 // XMPP specific constants
 //
+#define GK_DEFAULT_XMPP_SERVER_PORT (443)
 #define GK_XMPP_AVAIL_COMBO_AVAILABLE_IDX (0)
 #define GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX (1)
 #define GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX (0)
-#define GK_XMPP_SERVER_TYPE_COMBO_GOOGLE_IDX (1)
-#define GK_XMPP_SERVER_TYPE_COMBO_CUSTOM_IDX (2)
+#define GK_XMPP_SERVER_TYPE_COMBO_CUSTOM_IDX (1)
+#define GK_XMPP_IGNORE_SSL_ERRORS_COMBO_FALSE (0)
+#define GK_XMPP_IGNORE_SSL_ERRORS_COMBO_TRUE (1)
 
 //
 // Networking settings (also sometimes related to XMPP!)
@@ -247,6 +249,7 @@ namespace GekkoFyre {
 
 namespace General {
     constexpr char companyName[] = "GekkoFyre Networks";
+    constexpr char companyNameMin[] = "GekkoFyre";
     constexpr char productName[] = "Small World Deluxe";
     constexpr char executableName[] = "smallworld";
     constexpr char appVersion[] = "0.0.1";
@@ -272,6 +275,10 @@ namespace Filesystem {
     constexpr char gk_crashpad_handler_linux[] = "crashpad_handler";    // The name of the Crashpad handler executable under Linux and possibly Unix-like operating systems.
 
     constexpr char linux_sys_tty[] = "/sys/class/tty/";                 // The location of the TTY-devices under most major Linux distributions
+}
+
+namespace GkXmppGekkoFyreCfg {
+    constexpr char defaultUrl[] = "xmpp.vk3vkk.io";
 }
 
 namespace System {
@@ -445,6 +452,8 @@ namespace Database {
             XmppServerType,
             XmppDomainPort,
             XmppEnableSsl,
+            XmppIgnoreSslErrors,
+            XmppUsername,
             XmppJid,
             XmppPassword,
             XmppNickname,
@@ -695,13 +704,15 @@ namespace Network {
         enum GkOnlineStatus {                               // The online availability of the user in question.
             Online,
             Offline,
+            Away,
+            DoNotDisturb,
+            NotAvailable,
             Invisible,
             NetworkError
         };
 
         enum GkServerType {                                  // Information pertaining to DNS Lookups for the QXmpp library.
             GekkoFyre,
-            Google,
             Custom,
             Unknown
         };
@@ -712,6 +723,7 @@ namespace Network {
             bool allow_mucs;                                // Shall we allow multi-user chats, provided it's a supported extension?
             bool auto_connect;                              // Do we allow automatic connections to the given XMPP server upon startup of Small World Deluxe?
             bool enable_ssl;                                // Enable the absolute usage of SSL/TLS, otherwise throw an exception if not available!
+            bool ignore_ssl_errors;                         // Whether to ignore any SSL errors presented by the server and/or client.
             QByteArray upload_avatar_pixmap;                // The byte-array data for the avatar that's to be uploaded upon next making a successful connection to the given XMPP server.
         };
 
@@ -719,6 +731,7 @@ namespace Network {
             GkClientSettings settings_client;               // Client settings that apply when making a connection to the XMPP server.
             GkServerType type;
             QHostAddress domain;
+            QString url;
             QHostInfo info;
             quint16 port;
         };
@@ -727,6 +740,7 @@ namespace Network {
             GkHost server;
             GkOnlineStatus status;                          // The online availability of the user in question.
             QString jid;                                    // The Account ID as known to the XMPP server itself; used particularly for logging-in.
+            QString username;                               // The username, which is the JID without the server URL or resource attached.
             QString password;                               // The password which is needed for logging-in successfully to the XMPP server.
             QString nickname;                               // The desired nickname of the user, as it appears to others on the XMPP server network.
             QString email;                                  // The email address, if any, that's associated with this end-user.

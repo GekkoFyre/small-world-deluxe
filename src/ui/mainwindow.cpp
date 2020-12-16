@@ -156,7 +156,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         this->window()->showMaximized();; // Maximize the window!
 
-        this->setWindowIcon(QIcon(":/resources/contrib/images/vector/purchased/2020-03/iconfinder_293_Frequency_News_Radio_5711690.svg"));
+        //
+        // Create system tray icon
+        // https://doc.qt.io/qt-5/qtwidgets-desktop-systray-example.html
+        //
+        createTrayActions();
+        createTrayIcon();
+        setIcon();
+        m_trayIcon->show();
+
         ui->actionPlay->setIcon(QIcon(":/resources/contrib/images/vector/Kameleon/Record-Player.svg"));
         ui->actionSave_Decoded_Ab->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/clipboard-flat.svg"));
         ui->actionPrint->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/printer-rounded.svg"));
@@ -777,7 +785,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // QXmpp and XMPP related
         //
-        gkXmppClient = new GkXmppClient(xmpp_conn_details, gkEventLogger, this);
+        readXmppSettings();
+        gkXmppClient = new GkXmppClient(xmpp_conn_details, gkEventLogger, false, this);
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
@@ -934,6 +943,20 @@ void MainWindow::launchSettingsWin()
                      this, SLOT(restartInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)));
 
     dlg_settings->show();
+
+    return;
+}
+
+/**
+ * @brief MainWindow::setIcon
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ */
+void MainWindow::setIcon()
+{
+    QIcon icon_graphic(QString(":/resources/contrib/images/vector/no-attrib/walkie-talkies.svg"));
+    m_trayIcon->setIcon(icon_graphic);
+    this->setWindowIcon(icon_graphic);
 
     return;
 }
@@ -1666,32 +1689,108 @@ void MainWindow::readXmppSettings()
     //
     // General --> XMPP --> Client Settings
     //
-    bool xmpp_allow_msg_history = gkDb->boolStr(gkDb->read_xmpp_settings(GkXmppCfg::XmppAllowMsgHistory).toStdString());
-    bool xmpp_allow_file_xfers = gkDb->boolStr(gkDb->read_xmpp_settings(GkXmppCfg::XmppAllowFileXfers).toStdString());
-    bool xmpp_allow_mucs = gkDb->boolStr(gkDb->read_xmpp_settings(GkXmppCfg::XmppAlowMucs).toStdString());
-    bool xmpp_connect_auto = gkDb->boolStr(gkDb->read_xmpp_settings(GkXmppCfg::XmppAutoConnect).toStdString());
+    QString xmpp_allow_msg_history = gkDb->read_xmpp_settings(GkXmppCfg::XmppAllowMsgHistory);
+    QString xmpp_allow_file_xfers = gkDb->read_xmpp_settings(GkXmppCfg::XmppAllowFileXfers);
+    QString xmpp_allow_mucs = gkDb->read_xmpp_settings(GkXmppCfg::XmppAlowMucs);
+    QString xmpp_auto_connect = gkDb->read_xmpp_settings(GkXmppCfg::XmppAutoConnect);
     QByteArray xmpp_upload_avatar; // TODO: Finish this area of code, pronto!
+    xmpp_conn_details.server.settings_client.upload_avatar_pixmap = xmpp_upload_avatar;
+
+    //
+    // CAUTION!!! Username, password, and e-mail address!
+    //
+    QString xmpp_client_username = gkDb->read_xmpp_settings(GkXmppCfg::XmppUsername);
+    QString xmpp_client_password = gkDb->read_xmpp_settings(GkXmppCfg::XmppPassword);
+    QString xmpp_client_email_addr = gkDb->read_xmpp_settings(GkXmppCfg::XmppEmailAddr);
+
+    if (!xmpp_allow_msg_history.isEmpty()) {
+        xmpp_conn_details.server.settings_client.allow_msg_history = gkDb->boolStr(xmpp_allow_msg_history.toStdString());
+    } else {
+        xmpp_conn_details.server.settings_client.allow_msg_history = true;
+    }
+
+    if (!xmpp_allow_file_xfers.isEmpty()) {
+        xmpp_conn_details.server.settings_client.allow_file_xfers = gkDb->boolStr(xmpp_allow_file_xfers.toStdString());
+    } else {
+        xmpp_conn_details.server.settings_client.allow_file_xfers = true;
+    }
+
+    if (!xmpp_allow_mucs.isEmpty()) {
+        xmpp_conn_details.server.settings_client.allow_mucs = gkDb->boolStr(xmpp_allow_mucs.toStdString());
+    } else {
+        xmpp_conn_details.server.settings_client.allow_mucs = true;
+    }
+
+    if (!xmpp_auto_connect.isEmpty()) {
+        xmpp_conn_details.server.settings_client.auto_connect = gkDb->boolStr(xmpp_auto_connect.toStdString());
+    } else {
+        xmpp_conn_details.server.settings_client.auto_connect = false;
+    }
+
+    if (!xmpp_client_password.isEmpty()) {
+        xmpp_conn_details.password = xmpp_client_password;
+    } else {
+        xmpp_conn_details.password = "";
+    }
+
+    if (!xmpp_client_email_addr.isEmpty()) {
+        xmpp_conn_details.email = xmpp_client_email_addr;
+    } else {
+        xmpp_conn_details.email = "";
+    }
 
     //
     // General --> XMPP --> Server Settings
     //
-    QString xmpp_host_url = gkDb->read_xmpp_settings(GkXmppCfg::XmppDomainUrl);
-    qint32 xmpp_server_type = gkDb->read_xmpp_settings(GkXmppCfg::XmppServerType).toInt();
-    quint16 xmpp_host_tcp_port = gkDb->read_xmpp_settings(GkXmppCfg::XmppDomainPort).toInt();
-    bool xmpp_enable_ssl = gkDb->boolStr(gkDb->read_xmpp_settings(GkXmppCfg::XmppEnableSsl).toStdString());
+    QString xmpp_domain_url = gkDb->read_xmpp_settings(GkXmppCfg::XmppDomainUrl);
+    QString xmpp_server_type = gkDb->read_xmpp_settings(GkXmppCfg::XmppServerType);
+    QString xmpp_domain_port = gkDb->read_xmpp_settings(GkXmppCfg::XmppDomainPort);
+    QString xmpp_enable_ssl = gkDb->read_xmpp_settings(GkXmppCfg::XmppEnableSsl);
+    QString xmpp_ignore_ssl_errors = gkDb->read_xmpp_settings(GkXmppCfg::XmppIgnoreSslErrors);
 
-    xmpp_conn_details.server.settings_client.allow_msg_history = xmpp_allow_msg_history;
-    xmpp_conn_details.server.settings_client.allow_file_xfers = xmpp_allow_file_xfers;
-    xmpp_conn_details.server.settings_client.allow_mucs = xmpp_allow_mucs;
-    xmpp_conn_details.server.settings_client.auto_connect = xmpp_connect_auto;
-    xmpp_conn_details.server.settings_client.enable_ssl = xmpp_enable_ssl;
-    xmpp_conn_details.server.settings_client.upload_avatar_pixmap = xmpp_upload_avatar;
-    xmpp_conn_details.server.type = gkDb->convXmppServerTypeFromInt(xmpp_server_type);
-    xmpp_conn_details.server.domain = QHostAddress(xmpp_host_url);
-    xmpp_conn_details.server.port = xmpp_host_tcp_port;
+    if (xmpp_server_type.isEmpty() || xmpp_domain_url.isEmpty()) {
+        xmpp_conn_details.server.type = gkDb->convXmppServerTypeFromInt(GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX);
+        xmpp_conn_details.server.url = GkXmppGekkoFyreCfg::defaultUrl;
+    } else {
+        xmpp_conn_details.server.type = gkDb->convXmppServerTypeFromInt(xmpp_server_type.toInt());
+        xmpp_conn_details.server.url = xmpp_domain_url;
+    }
+
+    if (!xmpp_client_username.isEmpty()) {
+        xmpp_conn_details.username = xmpp_client_username;
+    } else {
+        xmpp_conn_details.username = "";
+    }
+
+    if (!xmpp_domain_port.isEmpty()) {
+        xmpp_conn_details.server.port = xmpp_domain_port.toInt();
+    } else {
+        xmpp_conn_details.server.port = GK_DEFAULT_XMPP_SERVER_PORT;
+    }
+
+    if (!xmpp_enable_ssl.isEmpty()) {
+        xmpp_conn_details.server.settings_client.enable_ssl = gkDb->boolStr(xmpp_enable_ssl.toStdString());
+    } else {
+        xmpp_conn_details.server.settings_client.enable_ssl = true;
+    }
+
+    if (!xmpp_ignore_ssl_errors.isEmpty()) {
+        switch (xmpp_ignore_ssl_errors.toInt()) {
+            case GK_XMPP_IGNORE_SSL_ERRORS_COMBO_FALSE:
+                xmpp_conn_details.server.settings_client.ignore_ssl_errors = false;
+                break;
+            case GK_XMPP_IGNORE_SSL_ERRORS_COMBO_TRUE:
+                xmpp_conn_details.server.settings_client.ignore_ssl_errors = true;
+                break;
+            default:
+                xmpp_conn_details.server.settings_client.ignore_ssl_errors = false;
+                break;
+        }
+    } else {
+        xmpp_conn_details.server.settings_client.ignore_ssl_errors = false;
+    }
+
     xmpp_conn_details.status = GkOnlineStatus::Offline;
-
-    xmpp_conn_details.jid = gkDb->read_xmpp_settings(GkXmppCfg::XmppJid);;
     xmpp_conn_details.password = gkDb->read_xmpp_settings(GkXmppCfg::XmppPassword);;
     xmpp_conn_details.nickname = gkDb->read_xmpp_settings(GkXmppCfg::XmppNickname);;
     xmpp_conn_details.email = gkDb->read_xmpp_settings(GkXmppCfg::XmppEmailAddr);;
@@ -1710,6 +1809,51 @@ void MainWindow::launchXmppRosterDlg()
     gkXmppRosterDlg->setWindowFlags(Qt::Window);
     gkXmppRosterDlg->setAttribute(Qt::WA_DeleteOnClose, false); // Do NOT delete on close!
     gkXmppRosterDlg->show();
+
+    return;
+}
+
+/**
+ * @brief MainWindow::createTrayActions
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::createTrayActions()
+{
+    m_xmppRosterAction = new QAction(tr("&XMPP"), this);
+    QObject::connect(m_xmppRosterAction, &QAction::triggered, this, &MainWindow::launchXmppRosterDlg);
+
+    m_sstvAction = new QAction(tr("SS&TV"), this);
+    QObject::connect(m_sstvAction, &QAction::triggered, this, &MainWindow::launchSstvTab);
+
+    m_settingsAction = new QAction(tr("&Settings"), this);
+    QObject::connect(m_settingsAction, &QAction::triggered, this, &MainWindow::launchSettingsWin);
+
+    m_restoreAction = new QAction(tr("&Restore"), this);
+    QObject::connect(m_restoreAction, &QAction::triggered, this, &QWidget::showNormal);
+
+    m_quitAction = new QAction(tr("&Quit"), this);
+    QObject::connect(m_quitAction, &QAction::triggered, qApp, &QCoreApplication::quit);
+
+    return;
+}
+
+/**
+ * @brief MainWindow::createTrayIcon
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::createTrayIcon()
+{
+    m_trayIconMenu = new QMenu(this);
+    m_trayIconMenu->addAction(m_xmppRosterAction);
+    m_trayIconMenu->addAction(m_sstvAction);
+    m_trayIconMenu->addSeparator();
+    m_trayIconMenu->addAction(m_settingsAction);
+    m_trayIconMenu->addSeparator();
+    m_trayIconMenu->addAction(m_restoreAction);
+    m_trayIconMenu->addAction(m_quitAction);
+
+    m_trayIcon = new QSystemTrayIcon(this);
+    m_trayIcon->setContextMenu(m_trayIconMenu);
 
     return;
 }
@@ -2427,6 +2571,16 @@ void MainWindow::disconnectRigInMemory(std::shared_ptr<Rig> rig_to_disconnect, c
 }
 
 /**
+ * @brief MainWindow::launchSstvTab
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::launchSstvTab()
+{
+    ui->tabWidget_maingui->setCurrentWidget(ui->tab_maingui_sstv);
+    return;
+}
+
+/**
  * @brief MainWindow::on_pushButton_radio_tune_clicked
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param checked
@@ -2539,7 +2693,7 @@ void MainWindow::on_actionSign_out_triggered()
     if (gkXmppClient->isConnected()) {
         gkXmppClient->disconnectFromServer();
         gkEventLogger->publishEvent(tr("Disconnected from XMPP server: %1")
-        .arg(xmpp_conn_details.server.domain.toString()), GkSeverity::Info, "",
+        .arg(xmpp_conn_details.server.url), GkSeverity::Info, "",
         true, true, false, false);
     }
 
