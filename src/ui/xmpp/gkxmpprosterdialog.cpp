@@ -43,6 +43,7 @@
 #include "ui_gkxmpprosterdialog.h"
 #include "src/ui/xmpp/gkxmppregistrationdialog.hpp"
 #include <utility>
+#include <QMessageBox>
 
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
@@ -59,12 +60,14 @@ using namespace Network;
 using namespace GkXmpp;
 
 GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPointer<GkXmppClient> xmppClient,
-                                       QPointer<GkEventLogger> eventLogger, QWidget *parent) : QDialog(parent),
+                                       QPointer<GekkoFyre::GkLevelDb> database, QPointer<GkEventLogger> eventLogger,
+                                       QWidget *parent) : shownXmppPreviewNotice(false), QDialog(parent),
                                        ui(new Ui::GkXmppRosterDialog)
 {
     ui->setupUi(this);
 
     gkConnDetails = connection_details;
+    gkDb = std::move(database);
     gkEventLogger = std::move(eventLogger);
 
     //
@@ -72,6 +75,18 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
     //
     gkXmppClient = std::move(xmppClient);
     gkXmppMsgDlg = new GkXmppMessageDialog(gkXmppClient, parent);
+
+    if (!shownXmppPreviewNotice) {
+        QMessageBox msgBox;
+        msgBox.setWindowTitle(tr("Please read..."));
+        msgBox.setText(tr("Do take note that the XMPP feature of %1 is very much in a %2 state as of this stage. Please see the "
+                          "official website at [ %3 ] for further updates!")
+                               .arg(General::productName).arg(General::xmppVersion).arg(General::officialWebsite));
+        msgBox.setStandardButtons(QMessageBox::Ok);
+        msgBox.setDefaultButton(QMessageBox::Ok);
+        msgBox.setIcon(QMessageBox::Icon::Information);
+        msgBox.exec();
+    }
 
     if (!gkXmppClient->isConnected()) {
         ui->stackedWidget_roster_ui->setCurrentWidget(ui->page_login_or_create_account);

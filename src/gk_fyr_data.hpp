@@ -39,45 +39,29 @@
  **
  ****************************************************************************************************/
 
-#include "src/gk_xmpp_server.hpp"
-#include <exception>
-#include <QMessageBox>
+#pragma once
 
-using namespace GekkoFyre;
-using namespace GkAudioFramework;
-using namespace Database;
-using namespace Settings;
-using namespace Audio;
-using namespace AmateurRadio;
-using namespace Control;
-using namespace Spectrograph;
-using namespace System;
-using namespace Events;
-using namespace Logging;
+#include "src/defines.hpp"
+#include "src/gk_logger.hpp"
+#include <string>
+#include <vector>
+#include <QObject>
+#include <QThread>
+#include <QPointer>
 
-GkXmppServer::GkXmppServer(QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QThread(parent)
-{
-    setParent(parent);
-    gkEventLogger = std::move(eventLogger);
+namespace GekkoFyre {
 
-    start();
+class GkFyrData : public QThread {
+    Q_OBJECT
 
-    // Move event processing of GkPaStreamHandler to this thread
-    QObject::moveToThread(this);
-}
+public:
+    explicit GkFyrData(QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
+    ~GkFyrData() override;
 
-GkXmppServer::~GkXmppServer()
-{
-    quit();
-    wait();
-}
+    void run() Q_DECL_OVERRIDE;
 
-/**
- * @brief GkXmppClient::run
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkXmppServer::run()
-{
-    exec();
-    return;
-}
+private:
+    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
+
+};
+};

@@ -521,13 +521,14 @@ set(GALAXY_UI_CPP
     src/dek_db.cpp
     src/file_io.cpp
     src/audio_devices.cpp
+    src/gk_fyr_data.cpp
     src/gk_fft_audio.cpp
     src/gk_waterfall_gui.cpp
     src/gk_spectro_color_maps.cpp
     src/gk_audio_encoding.cpp
     src/gk_audio_decoding.cpp
     src/gk_xmpp_client.cpp
-    src/gk_xmpp_server.cpp
+    src/gk_xmpp_chat.cpp
     src/gk_cli.cpp
     src/gk_modem.cpp
     src/gk_frequency_list.cpp
@@ -614,13 +615,14 @@ set(GALAXY_OBJ_HEADERS
     src/dek_db.hpp
     src/file_io.hpp
     src/audio_devices.hpp
+    src/gk_fyr_data.hpp
     src/gk_fft_audio.hpp
     src/gk_waterfall_gui.hpp
     src/gk_spectro_color_maps.hpp
     src/gk_audio_encoding.hpp
     src/gk_audio_decoding.hpp
     src/gk_xmpp_client.hpp
-    src/gk_xmpp_server.hpp
+    src/gk_xmpp_chat.hpp
     src/gk_cli.hpp
     src/gk_modem.hpp
     src/gk_frequency_list.hpp

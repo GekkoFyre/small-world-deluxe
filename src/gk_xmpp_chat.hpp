@@ -1,15 +1,15 @@
 /**
- **     __                 _ _   __    __           _     _
+ **     __                 _ _   __    __           _     _ 
  **    / _\_ __ ___   __ _| | | / / /\ \ \___  _ __| | __| |
  **    \ \| '_ ` _ \ / _` | | | \ \/  \/ / _ \| '__| |/ _` |
  **    _\ \ | | | | | (_| | | |  \  /\  / (_) | |  | | (_| |
  **    \__/_| |_| |_|\__,_|_|_|   \/  \/ \___/|_|  |_|\__,_|
- **
- **                  ___     _
- **                 /   \___| |_   ___  _____
- **                / /\ / _ \ | | | \ \/ / _ \
- **               / /_//  __/ | |_| |>  <  __/
- **              /___,' \___|_|\__,_/_/\_\___|
+ **                                                         
+ **                  ___     _                              
+ **                 /   \___| |_   ___  _____               
+ **                / /\ / _ \ | | | \ \/ / _ \              
+ **               / /_//  __/ | |_| |>  <  __/              
+ **              /___,' \___|_|\__,_/_/\_\___|              
  **
  **
  **   If you have downloaded the source code for "Small World Deluxe" and are reading this,
@@ -42,49 +42,34 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/dek_db.hpp"
-#include "src/gk_xmpp_client.hpp"
-#include "src/ui/xmpp/gkxmppmessagedialog.hpp"
 #include "src/gk_logger.hpp"
-#include <memory>
-#include <QString>
+#include "src/gk_xmpp_client.hpp"
+#include <string>
+#include <vector>
 #include <QObject>
-#include <QDialog>
+#include <QThread>
 #include <QPointer>
 
-namespace Ui {
-class GkXmppRosterDialog;
-}
+namespace GekkoFyre {
 
-class GkXmppRosterDialog : public QDialog
-{
+class GkXmppChat : public QThread {
     Q_OBJECT
 
 public:
-    explicit GkXmppRosterDialog(const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
-                                QPointer<GekkoFyre::GkXmppClient> xmppClient, QPointer<GekkoFyre::GkLevelDb> database,
-                                QPointer<GekkoFyre::GkEventLogger> eventLogger, QWidget *parent = nullptr);
-    ~GkXmppRosterDialog();
+    explicit GkXmppChat(QPointer<GekkoFyre::GkXmppClient> xmppClient, const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
+                        QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
+    ~GkXmppChat() override;
 
-private slots:
-    void on_comboBox_current_status_currentIndexChanged(int index);
-    void on_pushButton_user_login_clicked();
-    void on_pushButton_user_create_account_clicked();
+    void run() Q_DECL_OVERRIDE;
 
 private:
-    Ui::GkXmppRosterDialog *ui;
-
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
-    QPointer<GekkoFyre::GkLevelDb> gkDb;
-    bool shownXmppPreviewNotice;
 
     //
     // QXmpp and XMPP related
     //
     GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
-    QPointer<GekkoFyre::GkXmppClient> gkXmppClient;
-    QPointer<GkXmppMessageDialog> gkXmppMsgDlg;
+    QPointer<GekkoFyre::GkXmppClient> m_xmppClient;
 
-    void prefillAvailComboBox();
 };
-
+};

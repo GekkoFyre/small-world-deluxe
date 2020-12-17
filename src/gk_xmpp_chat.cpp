@@ -39,29 +39,53 @@
  **
  ****************************************************************************************************/
 
-#pragma once
+#include "src/gk_xmpp_chat.hpp"
+#include <utility>
+#include <exception>
+#include <QMessageBox>
 
-#include "src/defines.hpp"
-#include "src/gk_logger.hpp"
-#include <string>
-#include <vector>
-#include <QObject>
-#include <QThread>
-#include <QPointer>
+using namespace GekkoFyre;
+using namespace GkAudioFramework;
+using namespace Database;
+using namespace Settings;
+using namespace Audio;
+using namespace AmateurRadio;
+using namespace Control;
+using namespace Spectrograph;
+using namespace System;
+using namespace Events;
+using namespace Logging;
 
-namespace GekkoFyre {
+GkXmppChat::GkXmppChat(QPointer<GekkoFyre::GkXmppClient> xmppClient, const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
+                       QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QThread(parent)
+{
+    setParent(parent);
+    gkEventLogger = std::move(eventLogger);
 
-class GkXmppServer : public QThread {
-    Q_OBJECT
+    //
+    // QXmpp and XMPP related
+    //
+    gkConnDetails = connection_details;
+    m_xmppClient = std::move(xmppClient);
 
-public:
-    explicit GkXmppServer(QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
-    ~GkXmppServer() override;
+    start();
 
-    void run() Q_DECL_OVERRIDE;
+    // Move event processing of GkPaStreamHandler to this thread
+    QObject::moveToThread(this);
+}
 
-private:
-    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
+GkXmppChat::~GkXmppChat()
+{
+    quit();
+    wait();
+}
 
-};
-};
+/**
+ * @brief GkXmppClient::run
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppChat::run()
+{
+    exec();
+    return;
+}

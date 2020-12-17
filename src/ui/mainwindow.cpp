@@ -1805,7 +1805,7 @@ void MainWindow::readXmppSettings()
  */
 void MainWindow::launchXmppRosterDlg()
 {
-    QPointer<GkXmppRosterDialog> gkXmppRosterDlg = new GkXmppRosterDialog(xmpp_conn_details, gkXmppClient, gkEventLogger, this);
+    QPointer<GkXmppRosterDialog> gkXmppRosterDlg = new GkXmppRosterDialog(xmpp_conn_details, gkXmppClient, gkDb, gkEventLogger, this);
     gkXmppRosterDlg->setWindowFlags(Qt::Window);
     gkXmppRosterDlg->setAttribute(Qt::WA_DeleteOnClose, false); // Do NOT delete on close!
     gkXmppRosterDlg->show();

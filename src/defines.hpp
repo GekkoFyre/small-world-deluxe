@@ -254,7 +254,9 @@ namespace General {
     constexpr char executableName[] = "smallworld";
     constexpr char appVersion[] = "0.0.1";
     constexpr char appRelease[] = "Pre-alpha";
+    constexpr char xmppVersion[] = "Alpha";
     constexpr char codeRepository[] = "https://code.gekkofyre.io/amateur-radio/small-world-deluxe";
+    constexpr char officialWebsite[] = "https://swdeluxe.io/";
 
     constexpr char gk_sentry_uri[] = "https://5532275153ce4eb4865b89eb2441f356@sentry.gekkofyre.io/2";
     constexpr char gk_sentry_user_side_uri[] = "https://sentry.gekkofyre.io/";
