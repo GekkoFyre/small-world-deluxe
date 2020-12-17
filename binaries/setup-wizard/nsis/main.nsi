@@ -256,9 +256,22 @@ SectionGroup "Small World Deluxe" SWDsection
       SectionIn RO
         # Add files
         SetOutPath "$INSTDIR"
+          File "${GK_ROOT_PATH}\cmake-build-debug\libdouble-conversion.dll"
           File "${GK_ROOT_PATH}\cmake-build-debug\libgcc_s_seh-1.dll"
           File "${GK_ROOT_PATH}\cmake-build-debug\libglib-2.0-0.dll"
           File "${GK_ROOT_PATH}\cmake-build-debug\libwinpthread-1.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\libiconv-2.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\libicudt67.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\libicuin67.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\libicuuc67.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\libintl-8.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\libpcre2-16-0.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\libsnappy.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\libssp-0.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\libstdc++-6.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\libzstd.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\qwt.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\zlib1.dll"
 
           File "${GK_ROOT_PATH}\cmake-build-debug\${MUI_FILE}.exe"
           File "${GK_ROOT_PATH}\cmake-build-debug\libgalaxy.a"
@@ -302,6 +315,7 @@ SectionGroup "Small World Deluxe" SWDsection
             File "${GK_ROOT_PATH}\cmake-build-debug\Qt5Svg.dll"
             File "${GK_ROOT_PATH}\cmake-build-debug\Qt5TextToSpeech.dll"
             File "${GK_ROOT_PATH}\cmake-build-debug\Qt5Widgets.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\Qt5Xml.dll"
 
           SetOutPath "$INSTDIR\mediaservice"
             File "${GK_ROOT_PATH}\cmake-build-debug\mediaservice\dsengine.dll"
@@ -340,13 +354,6 @@ SectionGroup "Small World Deluxe" SWDsection
         SectionIn RO
           SetOutPath "$INSTDIR"
             File "${GK_ROOT_PATH}\cmake-build-debug\libusb-1.0.dll"
-      SectionEnd
-    SectionGroupEnd
-
-      Section "XMPP"
-        SectionIn RO
-          SetOutPath "$INSTDIR"
-            File "${GK_ROOT_PATH}\cmake-build-debug\libqxmpp.dll"
       SectionEnd
     SectionGroupEnd
 
