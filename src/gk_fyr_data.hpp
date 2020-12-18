@@ -43,25 +43,71 @@
 
 #include "src/defines.hpp"
 #include "src/gk_logger.hpp"
+#include "src/dek_db.hpp"
+#include "src/gk_fft_audio.hpp"
+#include <boost/exception/all.hpp>
+#include <boost/filesystem.hpp>
 #include <string>
 #include <vector>
+#include <QFile>
+#include <QTime>
+#include <QBuffer>
 #include <QObject>
 #include <QThread>
 #include <QPointer>
 
+namespace fs = boost::filesystem;
+namespace sys = boost::system;
+
 namespace GekkoFyre {
+
+class GkFyrFormat : public QObject {
+    Q_OBJECT
+
+public:
+    explicit GkFyrFormat(QObject *parent = nullptr);
+    ~GkFyrFormat() override;
+
+    QString msgText;                                        // Any recorded chat-messages as made by the end-user.
+    qint64 magSpecFrames;                                   // The total number of whole frames as calculated by, `timePassed`, divided by how often the waterfall spectrograph refreshes.
+    QString rxCallsign;                                     // The callsign of the receiving party.
+    QString txCallsign;                                     // The callsign of the transmitting party.
+    AmateurRadio::DigitalModes digitalCodec;                // The digital mode codec used to either send or receive this message (if any).
+    double snrRecvMsg;                                      // SNR information of the receiving message (if any).
+    double freqOffsetRecvMsg;                               // Frequency Offset of the receiving message (if any).
+    std::vector<std::vector<double>> magSpec;               // The FFT magnitude calculations for the waterfall spectrograph itself.
+    GkAudioFramework::CodecSupport audioCodec;              // The audio codec to use and record with.
+    QPointer<QBuffer> audioBuf;                             // A pointer for holding buffered audio data.
+
+protected:
+    QTime msgTime;                                          // The time at which a message was made by the end-user.
+    QTime msgTimePassed;                                    // The amount of time passed between the last recorded, `msgText`, by the end-user and the latest updated, `magSpec`. Continues to count time regardless of the presence of a, `msgText`, or not until recording is stopped.
+    QTime totalTime;                                        // The total length of time recorded overall.
+
+private:
+    void calcTotalTime();
+
+};
 
 class GkFyrData : public QThread {
     Q_OBJECT
 
 public:
-    explicit GkFyrData(QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
+    explicit GkFyrData(QPointer<GekkoFyre::GkLevelDb> database, QPointer<GekkoFyre::GkFFTAudio> fftAudio,
+                       QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkFyrData() override;
 
     void run() Q_DECL_OVERRIDE;
 
 private:
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
+    QPointer<GekkoFyre::GkLevelDb> gkDb;
+    QPointer<GekkoFyre::GkFFTAudio> gkFftAudio;
+
+    QFile m_file;
+    QPointer<GkFyrFormat> m_data;
+
+    void createFile(const fs::path &filePath);
 
 };
 };

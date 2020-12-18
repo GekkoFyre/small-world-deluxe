@@ -169,9 +169,7 @@ set(Boost_USE_STATIC_RUNTIME OFF CACHE BOOL "Use static runtime when linking Boo
 find_package(Boost 1.64.0 REQUIRED COMPONENTS "filesystem"
                                               "system"
                                               "exception"
-                                              "chrono"
-                                              "locale"
-                                              "random")
+                                              "locale")
                                               
 if(WIN32 OR MSYS OR MINGW)
     if(${GFYRE_PACKAGE_MAINTAINER} EQUAL ON)

@@ -125,7 +125,7 @@ GkFFTAudio::GkFFTAudio(QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> 
 
     start();
 
-    // Move event processing of GkPaStreamHandler to this thread
+    // Move event processing of GkFFTAudio to this thread
     QObject::moveToThread(this);
 
     return;
@@ -376,7 +376,6 @@ void GkFFTAudio::recordAudioStream()
             gkAudioInput->start(gkAudioBuffer);
             audioStreamProc = true;
 
-            // Move event processing of GkPaStreamHandler to this thread
             gkAudioInput->moveToThread(this);
         } else if (pref_output_audio_device.is_enabled) {
             //
@@ -391,7 +390,6 @@ void GkFFTAudio::recordAudioStream()
             gkAudioOutput->start(gkAudioBuffer);
             audioStreamProc = true;
 
-            // Move event processing of GkPaStreamHandler to this thread
             gkAudioOutput->moveToThread(this);
         } else {
             throw std::invalid_argument(tr("Unable to determine the desired Audio I/O in order to start recording an audio stream to memory!").toStdString());

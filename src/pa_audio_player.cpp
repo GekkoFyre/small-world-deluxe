@@ -44,6 +44,7 @@
 #include <QMessageBox>
 
 using namespace GekkoFyre;
+using namespace GkAudioFramework;
 using namespace Database;
 using namespace Settings;
 using namespace Audio;
@@ -53,6 +54,8 @@ using namespace Spectrograph;
 using namespace System;
 using namespace Events;
 using namespace Logging;
+using namespace Network;
+using namespace GkXmpp;
 
 /**
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>

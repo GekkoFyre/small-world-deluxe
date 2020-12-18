@@ -55,6 +55,8 @@ using namespace Spectrograph;
 using namespace System;
 using namespace Events;
 using namespace Logging;
+using namespace Network;
+using namespace GkXmpp;
 
 GkXmppChat::GkXmppChat(QPointer<GekkoFyre::GkXmppClient> xmppClient, const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
                        QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QThread(parent)
@@ -70,7 +72,7 @@ GkXmppChat::GkXmppChat(QPointer<GekkoFyre::GkXmppClient> xmppClient, const Gekko
 
     start();
 
-    // Move event processing of GkPaStreamHandler to this thread
+    // Move event processing of GkXmppChat to this thread
     QObject::moveToThread(this);
 }
 

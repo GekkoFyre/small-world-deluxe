@@ -81,48 +81,6 @@ FileIo::~FileIo()
 }
 
 /**
- * @brief FileIo::create_random_string Creates a random string of given length
- * @author Konrad Rudolph <https://stackoverflow.com/a/444614/4293625>
- * @param length The given length of the random string
- * @see GekkoFyre::FileIo::init_random_string()
- * @return The generated random string.
- */
-std::string FileIo::create_random_string(const size_t &len)
-{
-    std::string result = "";
-    try {
-        static constexpr auto chars =
-            "0123456789"
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-            "abcdefghijklmnopqrstuvwxyz";
-        thread_local auto rng = random_generator<>();
-        auto dist = std::uniform_int_distribution{{}, std::strlen(chars) - 1};
-        result = std::string(len, '\0');
-        std::generate_n(begin(result), len, [&]() { return chars[dist(rng)]; });
-    } catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), tr("There appears to be an issue with the string randomizer...\n\n%1")
-                             .arg(e.what()), QMessageBox::Ok);
-    }
-
-    return result;
-}
-
-/**
- * @brief FileIo::dummy_path Creates a dummy pathname to a temporary file for the purposes of resolving errors
- * and other edge-cases in a more clean manner.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @return The full pathname to a dummy file within a declared temporary directory for the current user.
- */
-boost::filesystem::path FileIo::dummy_path()
-{
-    std::string rand_file_name = create_random_string(8);
-    fs::path slash = "/";
-    fs::path native_slash = slash.make_preferred().native();
-    const fs::path temp_file_path = fs::path(fs::temp_directory_path().string() + native_slash.string() + rand_file_name + ".tmp");
-    return temp_file_path;
-}
-
-/**
  * @brief FileIo::analyze_dir Will go through a directory and add all the files/dirs within
  * to a typical std::vector, ready for use.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>

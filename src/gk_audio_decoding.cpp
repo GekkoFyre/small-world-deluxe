@@ -88,7 +88,7 @@ GkAudioDecoding::GkAudioDecoding(QPointer<FileIo> fileIo,
 
     start();
 
-    // Move event processing of GkPaStreamHandler to this thread
+    // Move event processing of GkAudioDecoding to this thread
     QObject::moveToThread(this);
 }
 

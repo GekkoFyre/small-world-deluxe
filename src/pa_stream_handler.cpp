@@ -43,7 +43,6 @@
 #include <utility>
 #include <algorithm>
 #include <exception>
-#include <QByteArray>
 #include <QIODevice>
 #include <QBuffer>
 

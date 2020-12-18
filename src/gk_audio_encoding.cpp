@@ -106,7 +106,7 @@ GkAudioEncoding::GkAudioEncoding(QPointer<StringFuncs> stringFuncs, QPointer<QAu
 
     start();
 
-    // Move event processing of GkPaStreamHandler to this thread
+    // Move event processing of GkAudioEncoding to this thread
     QObject::moveToThread(this);
 }
 

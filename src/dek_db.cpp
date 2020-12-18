@@ -1055,11 +1055,17 @@ void GkLevelDb::write_xmpp_settings(const QString &value, const Settings::GkXmpp
             case Settings::GkXmppCfg::XmppAllowFileXfers:
                 batch.Put("XmppCfgAllowFileXfers", value.toStdString());
                 break;
-            case Settings::GkXmppCfg::XmppAlowMucs:
+            case Settings::GkXmppCfg::XmppAllowMucs:
                 batch.Put("XmppCfgAllowMucs", value.toStdString());
                 break;
             case Settings::GkXmppCfg::XmppAutoConnect:
                 batch.Put("XmppCfgAutoConnect", value.toStdString());
+                break;
+            case Settings::GkXmppCfg::XmppAutoReconnect:
+                batch.Put("XmppAutoReconnect", value.toStdString());
+                break;
+            case Settings::GkXmppCfg::XmppAutoSignup:
+                batch.Put("XmppAutoSignup", value.toStdString());
                 break;
             case Settings::GkXmppCfg::XmppAvatarByteArray:
                 batch.Put("XmppCfgAvatarByteArray", value.toStdString());
@@ -1119,6 +1125,40 @@ void GkLevelDb::write_xmpp_settings(const QString &value, const Settings::GkXmpp
 }
 
 /**
+ * @brief GkLevelDb::write_xmpp_alpha_notice
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value
+ */
+void GkLevelDb::write_xmpp_alpha_notice(const bool &value)
+{
+    try {
+        // Put key-value
+        leveldb::WriteBatch batch;
+        leveldb::Status status;
+
+        batch.Put("XmppAlphaMsgBoxNotice", boolEnum(value));
+
+        std::time_t curr_time = std::time(nullptr);
+        std::stringstream ss;
+        ss << curr_time;
+        batch.Put("CurrTime", ss.str());
+
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
+
+        status = db->Write(write_options, &batch);
+
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
  * @brief GkLevelDb::read_xmpp_settings reads out the previously saved XMPP settings from the given Google LevelDB
  * database for further processing.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -1140,11 +1180,17 @@ QString GkLevelDb::read_xmpp_settings(const Settings::GkXmppCfg &key)
         case Settings::GkXmppCfg::XmppAllowFileXfers:
             status = db->Get(read_options, "XmppCfgAllowFileXfers", &value);
             break;
-        case Settings::GkXmppCfg::XmppAlowMucs:
+        case Settings::GkXmppCfg::XmppAllowMucs:
             status = db->Get(read_options, "XmppCfgAllowMucs", &value);
             break;
         case Settings::GkXmppCfg::XmppAutoConnect:
             status = db->Get(read_options, "XmppCfgAutoConnect", &value);
+            break;
+        case Settings::GkXmppCfg::XmppAutoReconnect:
+            status = db->Get(read_options, "XmppAutoReconnect", &value);
+            break;
+        case Settings::GkXmppCfg::XmppAutoSignup:
+            status = db->Get(read_options, "XmppAutoSignup", &value);
             break;
         case Settings::GkXmppCfg::XmppAvatarByteArray:
             status = db->Get(read_options, "XmppCfgAvatarByteArray", &value);
@@ -1184,6 +1230,22 @@ QString GkLevelDb::read_xmpp_settings(const Settings::GkXmppCfg &key)
     }
 
     return QString::fromStdString(value);
+}
+
+/**
+ * @brief GkLevelDb::read_xmpp_alpha_notice
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return
+ */
+bool GkLevelDb::read_xmpp_alpha_notice() {
+    leveldb::Status status;
+    leveldb::ReadOptions read_options;
+    std::string value = "";
+
+    read_options.verify_checksums = true;
+
+    status = db->Get(read_options, "XmppAlphaMsgBoxNotice", &value);
+    return boolStr(value);
 }
 
 /**

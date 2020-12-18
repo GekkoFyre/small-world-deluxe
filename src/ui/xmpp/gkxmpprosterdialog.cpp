@@ -76,6 +76,7 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
     gkXmppClient = std::move(xmppClient);
     gkXmppMsgDlg = new GkXmppMessageDialog(gkXmppClient, parent);
 
+    shownXmppPreviewNotice = gkDb->read_xmpp_alpha_notice();
     if (!shownXmppPreviewNotice) {
         QMessageBox msgBox;
         msgBox.setWindowTitle(tr("Please read..."));
@@ -86,6 +87,9 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
         msgBox.setDefaultButton(QMessageBox::Ok);
         msgBox.setIcon(QMessageBox::Icon::Information);
         msgBox.exec();
+
+        shownXmppPreviewNotice = true;
+        gkDb->write_xmpp_alpha_notice(shownXmppPreviewNotice);
     }
 
     if (!gkXmppClient->isConnected()) {

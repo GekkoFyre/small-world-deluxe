@@ -75,7 +75,6 @@ private:
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QList<GekkoFyre::System::Events::Logging::GkEventLogging> eventLogDb;                       // Where the event log itself is stored in memory...
 
-    qint64 setDate();
     int setEventNo();
     void systemNotification(const QString &title, const GekkoFyre::System::Events::Logging::GkEventLogging &event_msg);
     void sendToConsole(const GekkoFyre::System::Events::Logging::GkEventLogging &event_msg,

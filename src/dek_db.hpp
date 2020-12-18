@@ -99,7 +99,9 @@ public:
     void capture_sys_info();
 
     void write_xmpp_settings(const QString &value, const GekkoFyre::Database::Settings::GkXmppCfg &key);
+    void write_xmpp_alpha_notice(const bool &value);
     QString read_xmpp_settings(const GekkoFyre::Database::Settings::GkXmppCfg &key);
+    bool read_xmpp_alpha_notice();
 
     GekkoFyre::Network::GkXmpp::GkServerType convXmppServerTypeFromInt(const qint32 &idx);
 

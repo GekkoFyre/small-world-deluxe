@@ -447,8 +447,10 @@ namespace Database {
         enum GkXmppCfg {
             XmppAllowMsgHistory,
             XmppAllowFileXfers,
-            XmppAlowMucs,
+            XmppAllowMucs,
             XmppAutoConnect,
+            XmppAutoReconnect,
+            XmppAutoSignup,
             XmppAvatarByteArray,
             XmppDomainUrl,
             XmppServerType,
@@ -724,6 +726,8 @@ namespace Network {
             bool allow_file_xfers;                          // Shall we allow file transfers with this server, provided it's a supported extension?
             bool allow_mucs;                                // Shall we allow multi-user chats, provided it's a supported extension?
             bool auto_connect;                              // Do we allow automatic connections to the given XMPP server upon startup of Small World Deluxe?
+            bool auto_reconnect;                            // Do we attempt a reconnection upon each disconnection from a XMPP server, up to a specified maximum limit (i.e. for safety and to prevent banning)?
+            bool auto_signup;                               // Should we attempt the registration of a user, given the correct information, upon each connection to a XMPP server?
             bool enable_ssl;                                // Enable the absolute usage of SSL/TLS, otherwise throw an exception if not available!
             bool ignore_ssl_errors;                         // Whether to ignore any SSL errors presented by the server and/or client.
             QByteArray upload_avatar_pixmap;                // The byte-array data for the avatar that's to be uploaded upon next making a successful connection to the given XMPP server.
