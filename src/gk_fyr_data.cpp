@@ -63,6 +63,7 @@ using namespace GkXmpp;
  * @brief GkFyrFormat::GkFyrFormat
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param parent
+ * @note Recorded Playback <https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/wikis/Features/Recorded-Playback>.
  */
 GkFyrFormat::GkFyrFormat(QObject *parent) : QObject(parent)
 {

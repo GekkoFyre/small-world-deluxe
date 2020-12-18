@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
+    <width>1024</width>
     <height>768</height>
    </rect>
   </property>
@@ -21,7 +21,7 @@
   </property>
   <property name="minimumSize">
    <size>
-    <width>800</width>
+    <width>1024</width>
     <height>540</height>
    </size>
   </property>
@@ -125,7 +125,7 @@
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>700</width>
+                      <width>924</width>
                       <height>579</height>
                      </rect>
                     </property>
@@ -327,7 +327,7 @@
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>698</width>
+                      <width>922</width>
                       <height>577</height>
                      </rect>
                     </property>
@@ -565,7 +565,7 @@
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>677</width>
+                      <width>901</width>
                       <height>998</height>
                      </rect>
                     </property>
@@ -1829,7 +1829,7 @@ Thanks.</string>
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>698</width>
+                      <width>922</width>
                       <height>577</height>
                      </rect>
                     </property>
@@ -1843,7 +1843,7 @@ Thanks.</string>
                         <item>
                          <widget class="QFrame" name="frame_xmpp_cfg_header_version_warning">
                           <property name="frameShape">
-                           <enum>QFrame::StyledPanel</enum>
+                           <enum>QFrame::NoFrame</enum>
                           </property>
                           <property name="frameShadow">
                            <enum>QFrame::Raised</enum>
@@ -2617,7 +2617,7 @@ Thanks.</string>
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>700</width>
+                      <width>924</width>
                       <height>579</height>
                      </rect>
                     </property>
@@ -2790,7 +2790,7 @@ Thanks.</string>
                         <rect>
                          <x>0</x>
                          <y>0</y>
-                         <width>700</width>
+                         <width>924</width>
                          <height>579</height>
                         </rect>
                        </property>
@@ -3756,7 +3756,7 @@ Thanks.</string>
                         <rect>
                          <x>0</x>
                          <y>0</y>
-                         <width>679</width>
+                         <width>903</width>
                          <height>660</height>
                         </rect>
                        </property>
@@ -5016,7 +5016,7 @@ Thanks.</string>
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>728</width>
+                  <width>952</width>
                   <height>630</height>
                  </rect>
                 </property>
