@@ -40,6 +40,7 @@
  ****************************************************************************************************/
 
 #include "src/gk_audio_encoding.hpp"
+#include <opus/opusenc.h>
 #include <boost/exception/all.hpp>
 #include <fstream>
 #include <iterator>
@@ -87,9 +88,6 @@ GkAudioEncoding::GkAudioEncoding(QPointer<StringFuncs> stringFuncs, QPointer<QAu
 {
     setParent(parent);
 
-    qRegisterMetaType<GekkoFyre::GkAudioFramework::Bitrate>("GekkoFyre::GkAudioFramework::Bitrate");
-    qRegisterMetaType<GekkoFyre::GkAudioFramework::CodecSupport>("GekkoFyre::GkAudioFramework::CodecSupport");
-
     gkStringFuncs = std::move(stringFuncs);
     gkEventLogger = std::move(eventLogger);
 
@@ -100,6 +98,7 @@ GkAudioEncoding::GkAudioEncoding(QPointer<StringFuncs> stringFuncs, QPointer<QAu
 
     QObject::connect(this, SIGNAL(startEncode(const GkDevice &, const qint32 &, const qint32 &, const qint32 &)),
                      this, SLOT(startCaller(const GkDevice &, const qint32 &, const qint32 &, const qint32 &)));
+    QObject::connect(this, SIGNAL(pauseEncode()), this, SLOT(stopCaller()));
     QObject::connect(this, SIGNAL(error(const QString &, const GkSeverity &)),
                      this, SLOT(handleError(const QString &, const GkSeverity &)));
     QObject::connect(this, SIGNAL(encoded(QByteArray)), this, SLOT(processInput(const QByteArray &)));
@@ -127,17 +126,27 @@ void GkAudioEncoding::run()
 }
 
 /**
- * @brief GkAudioEncoding::start
+ * @brief GkAudioEncoding::start begins the very start of the encoding process.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param audio_dev_info
- * @param bitrate
- * @param frame_size
+ * @param audio_dev_info Information pertaining to the audio device in question to record from.
+ * @param bitrate The bitrate to make the recording within.
+ * @param frame_size The frame size to record with.
  * @param application
  */
 void GkAudioEncoding::initEncode(const Settings::Audio::GkDevice &audio_dev_info, const qint32 &bitrate, const qint32 &frame_size,
                                  const qint32 &application)
 {
     emit startEncode(audio_dev_info, bitrate, frame_size, application);
+    return;
+}
+
+/**
+ * @brief GkAudioEncoding::stopEncode halts the encoding process from the upper-most level.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkAudioEncoding::stopEncode()
+{
+    QTimer::singleShot(0, this, &GkAudioEncoding::stopEncode);
     return;
 }
 
@@ -153,11 +162,12 @@ void GkAudioEncoding::writeEncode(const QByteArray &data)
 }
 
 /**
- * @brief GkAudioEncoding::startCaller
+ * @brief GkAudioEncoding::startCaller starts the process of encoding itself, whether that be done with Opus or another
+ * codec such as Ogg Vorbis or even MP3.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param audio_dev_info
- * @param bitrate
- * @param frame_size
+ * @param audio_dev_info Information pertaining to the audio device in question to record from.
+ * @param bitrate The bitrate to make the recording within.
+ * @param frame_size The frame size to record with.
  * @param application
  */
 void GkAudioEncoding::startCaller(const Settings::Audio::GkDevice &audio_dev_info, const qint32 &bitrate,
@@ -197,9 +207,21 @@ void GkAudioEncoding::startCaller(const Settings::Audio::GkDevice &audio_dev_inf
 }
 
 /**
- * @brief GkAudioEncoding::writeCaller
+ * @brief GkAudioEncoding::stopCaller tells the encoding process to clear itself from memory after having been paused
+ * from the upper-most level.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param data
+ * @see GkAudioEncoding::stopEncode().
+ */
+void GkAudioEncoding::stopCaller()
+{
+    deleteLater();
+    return;
+}
+
+/**
+ * @brief GkAudioEncoding::writeCaller performs the action of writing out the actual data from the encoding process itself.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param data The raw data from the chosen codec, whether that be Opus or something like Ogg Vorbis or even MP3.
  */
 void GkAudioEncoding::writeCaller(const QByteArray &data)
 {
@@ -217,9 +239,9 @@ void GkAudioEncoding::writeCaller(const QByteArray &data)
 }
 
 /**
- * @brief GkAudioEncoding::opusEncode
+ * @brief GkAudioEncoding::opusEncode perform an encoding of the given audio samples with Opus.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @return
+ * @return Raw data from the Opus codec itself.
  */
 QByteArray GkAudioEncoding::opusEncode()
 {
@@ -261,10 +283,11 @@ void GkAudioEncoding::processInput(const QByteArray &data)
 }
 
 /**
- * @brief GkAudioEncoding::handleError
+ * @brief GkAudioEncoding::handleError undertakes the handling of any errors in a clean and consistent manner. This should
+ * be used where possible throughout this class if there's any possible errors to be had.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param msg
- * @param severity
+ * @param msg The error message itself.
+ * @param severity The severity of the given error message as per above.
  */
 void GkAudioEncoding::handleError(const QString &msg, const GkSeverity &severity)
 {

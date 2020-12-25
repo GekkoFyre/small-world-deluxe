@@ -394,6 +394,14 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/opus")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/opus/include")
 message(STATUS "The 'Opus' audio (de-/en-)coding libraries have been configured!")
 
+find_package(OpusEnc REQUIRED)
+if (OpusEnc_FOUND)
+    include_directories(${OpusEnc_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${OpusEnc_LIBRARIES})
+else()
+    message(FATAL_ERROR "The 'libopusenc' audio (de-/en-)coding file creation libraries could not be found!")
+endif(OpusEnc_FOUND)
+
 #
 # KissFFT by Mark Borgerding
 # https://github.com/mborgerding/kissfft

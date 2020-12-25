@@ -109,11 +109,13 @@ public:
 public slots:
     void initEncode(const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev_info, const qint32 &bitrate,
                     const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER, const qint32 &application = OPUS_APPLICATION_AUDIO);
+    void stopEncode();
     void writeEncode(const QByteArray &data);
 
 private slots:
     void startCaller(const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev_info, const qint32 &bitrate,
                      const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER, const qint32 &application = OPUS_APPLICATION_AUDIO);
+    void stopCaller();
     void writeCaller(const QByteArray &data);
 
     QByteArray opusEncode();
@@ -124,6 +126,7 @@ private slots:
 signals:
     void startEncode(const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev_info, const qint32 &bitrate,
                      const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER, const qint32 &application = OPUS_APPLICATION_AUDIO);
+    void pauseEncode();
 
     void encoded(QByteArray data);
     void error(const QString &msg, const GekkoFyre::System::Events::Logging::GkSeverity &severity);
@@ -151,5 +154,3 @@ private:
 
 };
 };
-
-Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::Bitrate);
