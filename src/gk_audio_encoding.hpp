@@ -70,6 +70,9 @@ extern "C"
 } // extern "C"
 #endif
 
+namespace fs = boost::filesystem;
+namespace sys = boost::system;
+
 namespace GekkoFyre {
 
 class GkAudioEncoding : public QThread {
@@ -96,43 +99,41 @@ private:
     #endif
 
 public:
-    explicit GkAudioEncoding(QPointer<GekkoFyre::StringFuncs> stringFuncs,
-                             QPointer<QAudioOutput> audioOutput, QPointer<QAudioInput> audioInput,
+    explicit GkAudioEncoding(QPointer<QAudioOutput> audioOutput, QPointer<QAudioInput> audioInput,
                              const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
                              const GekkoFyre::Database::Settings::Audio::GkDevice &input_device,
-                             QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                             QObject *parent = nullptr);
+                             QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkAudioEncoding() override;
 
     void run() Q_DECL_OVERRIDE;
+    QString codecEnumToStr(const GkAudioFramework::CodecSupport &codec);
 
 public slots:
-    void initEncode(const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev_info, const qint32 &bitrate,
+    void initEncode(const fs::path &media_path, const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev_info,
+                    const qint32 &bitrate, const GkAudioFramework::CodecSupport &codec_choice,
                     const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER, const qint32 &application = OPUS_APPLICATION_AUDIO);
     void stopEncode();
     void writeEncode(const QByteArray &data);
 
 private slots:
-    void startCaller(const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev_info, const qint32 &bitrate,
+    void startCaller(const fs::path &media_path, const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev_info,
+                     const qint32 &bitrate, const GkAudioFramework::CodecSupport &codec_choice,
                      const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER, const qint32 &application = OPUS_APPLICATION_AUDIO);
     void stopCaller();
     void writeCaller(const QByteArray &data);
 
     QByteArray opusEncode();
-    void processInput(const QByteArray &data);
+    void processEncData(const QByteArray &data);
 
     void handleError(const QString &msg, const GekkoFyre::System::Events::Logging::GkSeverity &severity);
 
 signals:
-    void startEncode(const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev_info, const qint32 &bitrate,
-                     const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER, const qint32 &application = OPUS_APPLICATION_AUDIO);
     void pauseEncode();
 
     void encoded(QByteArray data);
     void error(const QString &msg, const GekkoFyre::System::Events::Logging::GkSeverity &severity);
 
 private:
-    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
     //
@@ -149,8 +150,10 @@ private:
     bool m_initialized = false;
     qint32 m_channels = -1;
     qint32 m_frame_size = -1;
+    fs::path m_file_path;
     QByteArray m_buffer;
-    OpusEncoder *m_encoder = nullptr;
+    GkAudioFramework::CodecSupport m_chosen_codec;
+    OpusEncoder *m_opus_encoder = nullptr;
 
 };
 };

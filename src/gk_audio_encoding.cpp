@@ -46,7 +46,9 @@
 #include <iterator>
 #include <algorithm>
 #include <QtGui>
+#include <QTimer>
 #include <QByteArray>
+#include <QMetaObject>
 #include <QMessageBox>
 
 #ifdef __cplusplus
@@ -75,33 +77,28 @@ using namespace Spectrograph;
 using namespace System;
 using namespace Events;
 using namespace Logging;
-
-namespace fs = boost::filesystem;
-namespace sys = boost::system;
+using namespace Network;
+using namespace GkXmpp;
 
 #define OGG_VORBIS_READ (1024)
 
-GkAudioEncoding::GkAudioEncoding(QPointer<StringFuncs> stringFuncs, QPointer<QAudioOutput> audioOutput,
-                                 QPointer<QAudioInput> audioInput, const GkDevice &output_device,
-                                 const GkDevice &input_device, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                                 QObject *parent) : QThread(parent)
+GkAudioEncoding::GkAudioEncoding(QPointer<QAudioOutput> audioOutput, QPointer<QAudioInput> audioInput,
+                                 const GkDevice &output_device, const GkDevice &input_device,
+                                 QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QThread(parent)
 {
     setParent(parent);
-
-    gkStringFuncs = std::move(stringFuncs);
     gkEventLogger = std::move(eventLogger);
 
     gkAudioInput = std::move(audioInput);
     gkAudioOutput = std::move(audioOutput);
     gkInputDev = input_device;
     gkOutputDev = output_device;
+    m_chosen_codec = CodecSupport::Unknown;
 
-    QObject::connect(this, SIGNAL(startEncode(const GkDevice &, const qint32 &, const qint32 &, const qint32 &)),
-                     this, SLOT(startCaller(const GkDevice &, const qint32 &, const qint32 &, const qint32 &)));
     QObject::connect(this, SIGNAL(pauseEncode()), this, SLOT(stopCaller()));
     QObject::connect(this, SIGNAL(error(const QString &, const GkSeverity &)),
                      this, SLOT(handleError(const QString &, const GkSeverity &)));
-    QObject::connect(this, SIGNAL(encoded(QByteArray)), this, SLOT(processInput(const QByteArray &)));
+    QObject::connect(this, SIGNAL(encoded(QByteArray)), this, SLOT(processEncData(const QByteArray &)));
 
     start();
 
@@ -111,6 +108,14 @@ GkAudioEncoding::GkAudioEncoding(QPointer<StringFuncs> stringFuncs, QPointer<QAu
 
 GkAudioEncoding::~GkAudioEncoding()
 {
+    if (m_initialized) {
+        m_initialized = false;
+
+        if (m_opus_encoder) {
+            opus_encoder_destroy(m_opus_encoder);
+        }
+    }
+
     quit();
     wait();
 }
@@ -126,17 +131,57 @@ void GkAudioEncoding::run()
 }
 
 /**
+ * @brief GkAudioEncoding::codecEnumToStr converts an enum from, `GkAudioFramework::CodecSupport()`, to the given string
+ * value.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param codec The given enum value.
+ * @return The QString value for the given enum.
+ */
+QString GkAudioEncoding::codecEnumToStr(const CodecSupport &codec)
+{
+    switch (codec) {
+        case PCM:
+            return tr("PCM");
+        case Loopback:
+            return tr("Loopback");
+        case OggVorbis:
+            return tr("Ogg Vorbis");
+        case Opus:
+            return tr("Opus");
+        case FLAC:
+            return tr("FLAC");
+        case Unsupported:
+            return tr("Unsupported");
+        default:
+            break;
+    }
+
+    return tr("Unknown!");
+}
+
+/**
  * @brief GkAudioEncoding::start begins the very start of the encoding process.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param media_path The location of where to save the audio file output (i.e. as a file).
  * @param audio_dev_info Information pertaining to the audio device in question to record from.
  * @param bitrate The bitrate to make the recording within.
+ * @param codec_choice The choice of codec you wish to encode with, whether that be Opus, Ogg Vorbis, MP3, or possibly something else!
  * @param frame_size The frame size to record with.
  * @param application
  */
-void GkAudioEncoding::initEncode(const Settings::Audio::GkDevice &audio_dev_info, const qint32 &bitrate, const qint32 &frame_size,
+void GkAudioEncoding::initEncode(const fs::path &media_path, const GkDevice &audio_dev_info, const qint32 &bitrate,
+                                 const CodecSupport &codec_choice, const qint32 &frame_size,
                                  const qint32 &application)
 {
-    emit startEncode(audio_dev_info, bitrate, frame_size, application);
+    // NOTE: Opus only supports frame sizes between 2.5 - 60 milliseconds!
+    QMetaObject::invokeMethod(this, "startCaller", Qt::QueuedConnection,
+                              Q_ARG(fs::path, media_path),
+                              Q_ARG(GkDevice, audio_dev_info),
+                              Q_ARG(qint32, bitrate),
+                              Q_ARG(CodecSupport, codec_choice),
+                              Q_ARG(qint32, frame_size),
+                              Q_ARG(qint32, application));
+
     return;
 }
 
@@ -151,7 +196,7 @@ void GkAudioEncoding::stopEncode()
 }
 
 /**
- * @brief GkAudioEncoding::writeEncode
+ * @brief GkAudioEncoding::writeEncode will write data to the encoder as it runs.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param data
  */
@@ -165,43 +210,56 @@ void GkAudioEncoding::writeEncode(const QByteArray &data)
  * @brief GkAudioEncoding::startCaller starts the process of encoding itself, whether that be done with Opus or another
  * codec such as Ogg Vorbis or even MP3.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param media_path The location of where to save the audio file output (i.e. as a file).
  * @param audio_dev_info Information pertaining to the audio device in question to record from.
  * @param bitrate The bitrate to make the recording within.
+ * @param codec_choice The choice of codec you wish to encode with, whether that be Opus, Ogg Vorbis, MP3, or possibly something else!
  * @param frame_size The frame size to record with.
  * @param application
  */
-void GkAudioEncoding::startCaller(const Settings::Audio::GkDevice &audio_dev_info, const qint32 &bitrate,
-                                  const qint32 &frame_size, const qint32 &application)
+void GkAudioEncoding::startCaller(const fs::path &media_path, const Settings::Audio::GkDevice &audio_dev_info,
+                                  const qint32 &bitrate, const CodecSupport &codec_choice, const qint32 &frame_size,
+                                  const qint32 &application)
 {
-    if (m_initialized) {
-        return;
+    try {
+        if (m_initialized) {
+            return;
+        }
+
+        if (codec_choice == CodecSupport::Opus) {
+            qint32 err;
+            m_opus_encoder = opus_encoder_create(audio_dev_info.audio_device_info.preferredFormat().sampleRate(),
+                                                 audio_dev_info.audio_device_info.preferredFormat().channelCount(),
+                                                 application, &err);
+
+            if (err < 0) {
+                emit error(tr("Memory error encountered with Opus libraries. Do you have enough free memory?"), GkSeverity::Fatal);
+                return;
+            }
+
+            m_initialized = true;
+            m_chosen_codec = codec_choice;
+            m_file_path = media_path;
+
+            //
+            // Set the desired bitrate, while other parameters can be set if needed as well. The Opus library is designed such to
+            // have good defaults, so only set parameters you know that are truly needed. Doing otherwise is likely to result not in
+            // worse audio quality, but actually better.
+            //
+            err = opus_encoder_ctl(m_opus_encoder, OPUS_SET_BITRATE(bitrate));
+            if (err < 0) {
+                emit error(tr("Failed to set the bitrate for the Opus codec."), GkSeverity::Warning);
+                return;
+            }
+        } else {
+            throw std::invalid_argument(tr("Invalid audio encoding codec specified! It is either not supported yet or an error was made.").toStdString());
+        }
+
+        m_channels = audio_dev_info.audio_device_info.preferredFormat().channelCount();
+        m_frame_size = frame_size;
+    } catch (const std::exception &e) {
+        emit error(e.what(), GkSeverity::Fatal);
     }
-
-    qint32 err;
-    m_encoder = opus_encoder_create(audio_dev_info.audio_device_info.preferredFormat().sampleRate(),
-                                    audio_dev_info.audio_device_info.preferredFormat().channelCount(),
-                                    application, &err);
-
-    if (err < 0) {
-        emit error(tr("Memory error encountered with Opus libraries. Do you have enough free memory?"), GkSeverity::Fatal);
-        return;
-    }
-
-    m_initialized = true;
-
-    //
-    // Set the desired bitrate, while other parameters can be set if needed as well. The Opus library is designed such to
-    // have good defaults, so only set parameters you know that are truly needed. Doing otherwise is likely to result not in
-    // worse audio quality, but actually better.
-    //
-    err = opus_encoder_ctl(m_encoder, OPUS_SET_BITRATE(bitrate));
-    if (err < 0) {
-        emit error(tr("Failed to set the bitrate for the Opus codec."), GkSeverity::Warning);
-        return;
-    }
-
-    m_channels = audio_dev_info.audio_device_info.preferredFormat().channelCount();
-    m_frame_size = frame_size;
 
     return;
 }
@@ -261,7 +319,7 @@ QByteArray GkAudioEncoding::opusEncode()
     QByteArray output = QByteArray(AUDIO_OPUS_MAX_FRAME_SIZE, char(0));
 
     // Encode the frame...
-    nbBytes = opus_encode_float(m_encoder, reinterpret_cast<const float *>(input.constData()), m_frame_size, reinterpret_cast<uchar *>(output.data()), AUDIO_OPUS_MAX_FRAME_SIZE);
+    nbBytes = opus_encode_float(m_opus_encoder, reinterpret_cast<const float *>(input.constData()), m_frame_size, reinterpret_cast<uchar *>(output.data()), AUDIO_OPUS_MAX_FRAME_SIZE);
 
     if (nbBytes < 0) {
         emit error(tr("Opus encode failed: %0").arg(opus_strerror(nbBytes)), GkSeverity::Warning);
@@ -273,12 +331,17 @@ QByteArray GkAudioEncoding::opusEncode()
 }
 
 /**
- * @brief GkAudioEncoding::processInput
+ * @brief GkAudioEncoding::processEncData performs further processing, if any is needed, on the encoded audio information
+ * as it comes out of the codecs for Opus, FLAC, PCM, etc.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param data
+ * @param data The raw, encoded data for the given codec.
  */
-void GkAudioEncoding::processInput(const QByteArray &data)
+void GkAudioEncoding::processEncData(const QByteArray &data)
 {
+    gkEventLogger->publishEvent(tr("Recording of, \"%1\", with the %2 codec has begun!")
+    .arg(QString::fromStdString(m_file_path.string())).arg(codecEnumToStr(m_chosen_codec)), GkSeverity::Info,
+                                "", true, true, false, false);
+
     return;
 }
 

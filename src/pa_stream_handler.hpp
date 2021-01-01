@@ -45,6 +45,7 @@
 #include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
 #include "src/gk_pcm_file_stream.hpp"
+#include "src/gk_audio_encoding.hpp"
 #include <AudioFile.h>
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
@@ -84,7 +85,8 @@ public:
 
 private slots:
     void playMediaFile(const fs::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
-    void recordMediaFile(const fs::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
+    void recordMediaFile(const fs::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
+                         const qint32 encoding_bitrate);
     void stopMediaFile(const fs::path &media_path);
     void startMediaLoopback();
     void playbackHandleStateChanged(QAudio::State changed_state);
@@ -94,6 +96,7 @@ signals:
     void playMedia(const fs::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
     void recordMedia(const fs::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
     void stopMedia(const fs::path &media_path);
+    void encodeMedia(const QByteArray &data);
     void startLoopback();
     void changePlaybackState(QAudio::State changed_state);
     void changeRecorderState(QAudio::State changed_state);
@@ -109,6 +112,11 @@ private:
     std::shared_ptr<AudioFile<double>> gkAudioFile;
 
     //
+    // Audio encoding related objects
+    //
+    QPointer<GekkoFyre::GkAudioEncoding> gkAudioEncoding;
+
+    //
     // QAudioSystem initialization and buffers
     //
     QPointer<QEventLoop> procMediaEventLoop;
@@ -116,7 +124,10 @@ private:
     QPointer<QAudioOutput> gkAudioOutput;
     QPointer<QBuffer> record_input_buf;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
+    GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device; // TODO: Implement this!
     std::map<fs::path, AudioFile<double>> gkSounds;
+
+    void recordInputAudio();
 
 };
 };

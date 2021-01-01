@@ -92,9 +92,6 @@ GkFFTAudio::GkFFTAudio(QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> 
     gkStringFuncs = std::move(stringFuncs);
     gkEventLogger = std::move(eventLogger);
 
-    gkAudioEncoding = new GkAudioEncoding(gkStringFuncs, gkAudioOutput, gkAudioInput, pref_output_audio_device,
-                                          pref_input_audio_device, gkEventLogger, parent);
-
     gkAudioInSampleRate = pref_input_audio_device.audio_device_info.preferredFormat().sampleRate();
     gkAudioInNumSamples = (gkAudioInSampleRate * (SPECTRO_Y_AXIS_SIZE / 1000));
     gkAudioBuffer = new QBuffer(this);
@@ -117,11 +114,6 @@ GkFFTAudio::GkFFTAudio(QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> 
     QObject::connect(spectroRefreshTimer, SIGNAL(timeout()), this, SLOT(refreshGraphTrue()));
     QObject::connect(this, SIGNAL(stopRecording()), spectroRefreshTimer, SLOT(stop()));
     QObject::connect(this, SIGNAL(recordStream()), spectroRefreshTimer, SLOT(start()));
-
-    QObject::connect(this, SIGNAL(initAudioEncode(const GkDevice &, const qint32 &, const qint32 &, const qint32 &)),
-                     gkAudioEncoding, SLOT(initEncode(const GkDevice &, const qint32 &, const qint32 &, const qint32 &)));
-    QObject::connect(this, SIGNAL(writeAudioEncode(const QByteArray &)),
-                     gkAudioEncoding, SLOT(writeEncode(const QByteArray &)));
 
     start();
 
@@ -395,7 +387,7 @@ void GkFFTAudio::recordAudioStream()
             throw std::invalid_argument(tr("Unable to determine the desired Audio I/O in order to start recording an audio stream to memory!").toStdString());
         }
     } catch (const std::exception &e) {
-        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, true, true, false, false);
+        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", true, true, false, false);
     }
 
     return;

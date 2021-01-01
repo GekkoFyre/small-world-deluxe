@@ -47,6 +47,7 @@
 #include <QBuffer>
 
 using namespace GekkoFyre;
+using namespace GkAudioFramework;
 using namespace Database;
 using namespace Settings;
 using namespace Audio;
@@ -56,6 +57,8 @@ using namespace Spectrograph;
 using namespace System;
 using namespace Events;
 using namespace Logging;
+using namespace Network;
+using namespace GkXmpp;
 
 /**
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -78,6 +81,8 @@ GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, co
     //
     pref_output_device = output_device;
     gkPcmFileStream = std::make_unique<GkPcmFileStream>(this);
+    gkAudioEncoding = new GkAudioEncoding(gkAudioOutput, gkAudioInput, pref_output_device, pref_input_device, gkEventLogger, this);
+    QObject::connect(this, SIGNAL(encodeMedia(const QByteArray &)), gkAudioEncoding, SLOT(writeEncode(const QByteArray &)));
 
     start();
 
@@ -221,7 +226,7 @@ void GkPaStreamHandler::playMediaFile(const fs::path &media_path, const GkAudioF
             }
         }
     } catch (const std::exception &e) {
-        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, true, true, false, false);
+        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);
     }
 }
 
@@ -231,41 +236,54 @@ void GkPaStreamHandler::playMediaFile(const fs::path &media_path, const GkAudioF
  * @param media_path The multimedia file to make the recording towards.
  * @param supported_codec The codec you would like to make the recording with.
  */
-void GkPaStreamHandler::recordMediaFile(const fs::path &media_path, const GkAudioFramework::CodecSupport &supported_codec)
+void GkPaStreamHandler::recordMediaFile(const fs::path &media_path, const GkAudioFramework::CodecSupport &supported_codec,
+                                        const qint32 encoding_bitrate)
 {
-    record_input_buf.clear(); // Clear the pointer just in-case it has been used previously!
-    record_input_buf = new QBuffer(this);
-    gkAudioInput->start(record_input_buf);
-    QFile write_file(QString::fromStdString(media_path.string()));
+    sys::error_code ec;
+    try {
+        if (fs::is_directory(media_path, ec)) {
+            if (encoding_bitrate >= 8) {
+                if (pref_input_device.is_enabled) {
+                    //
+                    // Make use of the Input Audio Device!
+                    if (supported_codec == CodecSupport::Opus) {
+                        //
+                        // Use a differing FRAME SIZE for Opus!
+                        gkAudioEncoding->initEncode(media_path, pref_input_device, encoding_bitrate, supported_codec, AUDIO_OPUS_MAX_FRAME_SIZE);
+                    } else {
+                        //
+                        // PCM, Ogg Vorbis, etc.
+                        gkAudioEncoding->initEncode(media_path, pref_input_device, encoding_bitrate, supported_codec, AUDIO_FRAMES_PER_BUFFER);
+                    }
 
-    switch (supported_codec) {
-        case GkAudioFramework::CodecSupport::PCM:
-            write_file.write(record_input_buf->buffer(), QIODevice::WriteOnly);
-            write_file.flush();
+                    recordInputAudio();
+                } else if (pref_output_device.is_enabled) {
+                    //
+                    // Make use of the Output Audio Device!
+                    if (supported_codec == CodecSupport::Opus) {
+                        //
+                        // Use a differing FRAME SIZE for Opus!
+                        gkAudioEncoding->initEncode(media_path, pref_output_device, encoding_bitrate, supported_codec, AUDIO_OPUS_MAX_FRAME_SIZE);
+                    } else {
+                        //
+                        // PCM, Ogg Vorbis, etc.
+                        gkAudioEncoding->initEncode(media_path, pref_output_device, encoding_bitrate, supported_codec, AUDIO_FRAMES_PER_BUFFER);
+                    }
 
-            break;
-        case GkAudioFramework::CodecSupport::Loopback:
-            write_file.write(record_input_buf->buffer(), QIODevice::WriteOnly);
-            write_file.flush();
-
-            break;
-        case GkAudioFramework::CodecSupport::OggVorbis:
-            break;
-        case GkAudioFramework::CodecSupport::Opus:
-            break;
-        case GkAudioFramework::CodecSupport::FLAC:
-            break;
-        case GkAudioFramework::CodecSupport::Unsupported:
-            return;
-        default:
-            return;
+                    recordInputAudio();
+                } else {
+                    //
+                    // There is no audio device that has been chosen!
+                    throw std::invalid_argument(tr("You must configure a suitable audio device within the Settings before continuing!").toStdString());
+                }
+            } else {
+                throw std::invalid_argument(tr("An invalid encoding bitrate has been given! A value of %1 kBps cannot be used.")
+                                                    .arg(QString::number(encoding_bitrate)).toStdString());
+            }
+        }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);
     }
-
-    procMediaEventLoop = new QEventLoop(this);
-    do {
-        procMediaEventLoop->exec(QEventLoop::WaitForMoreEvents);
-    } while (gkAudioInput->state() == QAudio::ActiveState);
-    delete procMediaEventLoop;
 
     return;
 }
@@ -355,6 +373,11 @@ void GkPaStreamHandler::playbackHandleStateChanged(QAudio::State changed_state)
     return;
 }
 
+/**
+ * @brief GkPaStreamHandler::recordingHandleStateChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param changed_state
+ */
 void GkPaStreamHandler::recordingHandleStateChanged(QAudio::State changed_state)
 {
     try {
@@ -376,6 +399,27 @@ void GkPaStreamHandler::recordingHandleStateChanged(QAudio::State changed_state)
         gkEventLogger->publishEvent(tr("An issue has been encountered during audio recording. Error:\n\n%1").arg(QString::fromStdString(e.what())),
                                     GkSeverity::Fatal, "", true, true, false, false);
     }
+
+    return;
+}
+
+/**
+ * @brief GkPaStreamHandler::recordInputAudio
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkPaStreamHandler::recordInputAudio()
+{
+    record_input_buf.clear(); // Clear the pointer just in-case it has been used previously!
+    record_input_buf = new QBuffer(this);
+
+    gkAudioInput->start(record_input_buf);
+    emit encodeMedia(record_input_buf->buffer());
+
+    procMediaEventLoop = new QEventLoop(this);
+    do {
+        procMediaEventLoop->exec(QEventLoop::WaitForMoreEvents);
+    } while (gkAudioInput->state() == QAudio::ActiveState);
+    delete procMediaEventLoop;
 
     return;
 }
