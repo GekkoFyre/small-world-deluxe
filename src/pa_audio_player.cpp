@@ -110,6 +110,25 @@ void GkPaAudioPlayer::play(const GkAudioFramework::CodecSupport &supported_codec
 }
 
 /**
+ * @brief GkPaAudioPlayer::record Initiate a session where we record from either the Audio Input or Output Device, using
+ * a QBuffer within the internals.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param supported_codec The codec to use when creating the recording, whether it be Opus, PCM, FLAC, etc.
+ * @param record_dir The directory to which recordings are to be saved towards.
+ */
+void GkPaAudioPlayer::record(const CodecSupport &supported_codec, const fs::path &record_dir)
+{
+    try {
+        streamHandler->processEvent(GkAudioFramework::AudioEventType::record, record_dir, supported_codec, false);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("A stream processing error has occurred with regards to the PortAudio library handling functions. Error:\n\n%1")
+                .arg(QString::fromStdString(e.what())), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
  * @brief GkPaAudioPlayer::loop
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param audio_file

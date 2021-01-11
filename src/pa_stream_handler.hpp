@@ -128,6 +128,7 @@ private:
     std::map<fs::path, AudioFile<double>> gkSounds;
 
     void recordInputAudio();
+    fs::path createRecordMediaFile(const fs::path &media_path, const GkAudioFramework::CodecSupport &supported_codec);
 
 };
 };

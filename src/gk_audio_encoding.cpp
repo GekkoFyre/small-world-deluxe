@@ -284,14 +284,16 @@ void GkAudioEncoding::stopCaller()
 void GkAudioEncoding::writeCaller(const QByteArray &data)
 {
     m_buffer.append(data);
-    forever {
-        QByteArray result = opusEncode();
-        if (result.isEmpty()) {
-            break;
-        }
+    if (m_chosen_codec == CodecSupport::Opus) {
+        forever {
+            QByteArray result = opusEncode();
+            if (result.isEmpty()) {
+                break;
+            }
 
-        emit encoded(result);
-    };
+            emit encoded(result);
+        };
+    }
 
     return;
 }

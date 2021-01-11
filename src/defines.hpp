@@ -425,7 +425,8 @@ namespace Database {
         };
 
         enum AudioPlaybackDlg {
-            GkAudioDlgLastFolderBrowsed
+            GkAudioDlgLastFolderBrowsed,
+            GkRecordDlgLastFolderBrowsed
         };
 
         enum general_stat_cfg {

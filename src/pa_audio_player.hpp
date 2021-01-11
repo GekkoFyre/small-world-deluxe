@@ -72,6 +72,7 @@ public:
 
     void play(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const fs::path &audio_file);
     void play(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
+    void record(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const fs::path &record_dir);
     void loop(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const fs::path &audio_file);
     void stop(const fs::path &audio_file);
     void loopback();

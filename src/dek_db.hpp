@@ -137,6 +137,7 @@ public:
 
     GekkoFyre::GkAudioFramework::CodecSupport convCodecSupportFromIdxToEnum(const qint32 &codec_support_idx);
 
+    std::string createRandomString(const qint32 &length);
     std::string removeInvalidChars(const std::string &string_to_modify);
     std::string boolEnum(const bool &is_true);
     bool boolStr(const std::string &is_true);
@@ -154,8 +155,6 @@ private:
     void detect_operating_system(QString &build_cpu_arch, QString &curr_cpu_arch, QString &kernel_type, QString &kernel_vers,
                                  QString &machine_host_name, QString &machine_unique_id, QString &pretty_prod_name,
                                  QString &prod_type, QString &prod_vers);
-
-    std::string randomString(const size_t &length);
 
 };
 };

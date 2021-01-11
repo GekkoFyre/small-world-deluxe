@@ -200,7 +200,7 @@
                        <number>32</number>
                       </property>
                       <property name="value">
-                       <number>256</number>
+                       <number>192</number>
                       </property>
                       <property name="orientation">
                        <enum>Qt::Horizontal</enum>
@@ -216,7 +216,7 @@
                     <item>
                      <widget class="QLabel" name="label_playback_rec_bitrate_kbps">
                       <property name="text">
-                       <string>[ 256 kBps ]</string>
+                       <string>[ 192 kBps ]</string>
                       </property>
                      </widget>
                     </item>
@@ -258,8 +258,14 @@
                       <property name="value">
                        <number>0</number>
                       </property>
+                      <property name="alignment">
+                       <set>Qt::AlignCenter</set>
+                      </property>
                       <property name="textVisible">
-                       <bool>false</bool>
+                       <bool>true</bool>
+                      </property>
+                      <property name="format">
+                       <string>Waiting for user input...</string>
                       </property>
                      </widget>
                     </item>

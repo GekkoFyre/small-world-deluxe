@@ -467,6 +467,9 @@ void GkLevelDb::write_audio_playback_dlg_settings(const QString &value, const Au
             case AudioPlaybackDlg::GkAudioDlgLastFolderBrowsed:
                 batch.Put("GkAudioDlgLastFolderBrowsed", value.toStdString());
                 break;
+            case AudioPlaybackDlg::GkRecordDlgLastFolderBrowsed:
+                batch.Put("GkRecordDlgLastFolderBrowsed", value.toStdString());
+                break;
             default:
                 break;
         }
@@ -893,7 +896,7 @@ void GkLevelDb::capture_sys_info()
         if (!sentry_unique_id.isEmpty()) {
             const std::string ret_str = sentry_unique_id.toStdString();
         } else {
-            const std::string ret_str = randomString(24);
+            const std::string ret_str = createRandomString(24);
             write_optin_settings(QString::fromStdString(ret_str), GkOptIn::UserUniqueId);
         }
 
@@ -1589,6 +1592,27 @@ QString GkLevelDb::read_audio_device_settings(const bool &is_output_device)
 }
 
 /**
+ * @brief
+ * @param length
+ * @return
+ */
+std::string GkLevelDb::createRandomString(const qint32 &length)
+{
+    const std::string char_str = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+    std::random_device random_device;
+    std::mt19937 generator(random_device());
+    std::uniform_int_distribution<> distribution(0, char_str.size() - 1);
+
+    std::string random_string;
+    for (std::size_t i = 0; i < length; ++i) {
+        random_string += char_str[distribution(generator)];
+    }
+
+    return random_string;
+}
+
+/**
  * @brief GkLevelDb::removeInvalidChars removes invalid/illegal characters from a given std::string, making it all clean!
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param string_to_modify The given std::string to modify.
@@ -1781,6 +1805,9 @@ QString GkLevelDb::read_audio_playback_dlg_settings(const AudioPlaybackDlg &key)
     switch (key) {
         case AudioPlaybackDlg::GkAudioDlgLastFolderBrowsed:
             status = db->Get(read_options, "GkAudioDlgLastFolderBrowsed", &value);
+            break;
+        case AudioPlaybackDlg::GkRecordDlgLastFolderBrowsed:
+            status = db->Get(read_options, "GkRecordDlgLastFolderBrowsed", &value);
             break;
         default:
             throw std::runtime_error(tr("Invalid key has been provided for reading Audio Playback dialog settings relating to Google LevelDB!").toStdString());
@@ -2331,25 +2358,4 @@ std::string GkLevelDb::deleteCsvValForDb(const std::string &comma_sep_values, co
     }
 
     return "";
-}
-
-/**
- * @brief GkLevelDb::randomString
- * @author Carl <https://stackoverflow.com/a/12468109>
- * @return
- */
-std::string GkLevelDb::randomString(const size_t &length)
-{
-    auto randchar = []() -> char {
-        const char charset[] =
-                "0123456789"
-                "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                "abcdefghijklmnopqrstuvwxyz";
-        const size_t max_index = (sizeof(charset) - 1);
-        return charset[ rand() % max_index ];
-    };
-
-    std::string str(length,0);
-    std::generate_n( str.begin(), length, randchar );
-    return str;
 }

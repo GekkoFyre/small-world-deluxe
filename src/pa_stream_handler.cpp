@@ -44,6 +44,7 @@
 #include <algorithm>
 #include <exception>
 #include <QIODevice>
+#include <QDateTime>
 #include <QBuffer>
 
 using namespace GekkoFyre;
@@ -128,7 +129,7 @@ void GkPaStreamHandler::processEvent(GkAudioFramework::AudioEventType audioEvent
 
                 break;
             case GkAudioFramework::AudioEventType::record:
-                if (!mediaFilePath.empty()) {
+                if (fs::is_directory(mediaFilePath)) {
                     emit recordMedia(mediaFilePath, supported_codec);
                 }
 
@@ -241,45 +242,59 @@ void GkPaStreamHandler::recordMediaFile(const fs::path &media_path, const GkAudi
 {
     sys::error_code ec;
     try {
-        if (fs::is_directory(media_path, ec)) {
-            if (encoding_bitrate >= 8) {
-                if (pref_input_device.is_enabled) {
+        if (encoding_bitrate >= 8) {
+            if (pref_input_device.is_enabled) {
+                //
+                // Make use of the Input Audio Device!
+                if (supported_codec == CodecSupport::Opus) {
                     //
-                    // Make use of the Input Audio Device!
-                    if (supported_codec == CodecSupport::Opus) {
-                        //
-                        // Use a differing FRAME SIZE for Opus!
-                        gkAudioEncoding->initEncode(media_path, pref_input_device, encoding_bitrate, supported_codec, AUDIO_OPUS_MAX_FRAME_SIZE);
-                    } else {
-                        //
-                        // PCM, Ogg Vorbis, etc.
-                        gkAudioEncoding->initEncode(media_path, pref_input_device, encoding_bitrate, supported_codec, AUDIO_FRAMES_PER_BUFFER);
-                    }
+                    // Create a media file with a randomized name within the given path, for recording purposes!
+                    auto mediaFile = createRecordMediaFile(media_path, CodecSupport::Opus);
 
-                    recordInputAudio();
-                } else if (pref_output_device.is_enabled) {
                     //
-                    // Make use of the Output Audio Device!
-                    if (supported_codec == CodecSupport::Opus) {
-                        //
-                        // Use a differing FRAME SIZE for Opus!
-                        gkAudioEncoding->initEncode(media_path, pref_output_device, encoding_bitrate, supported_codec, AUDIO_OPUS_MAX_FRAME_SIZE);
-                    } else {
-                        //
-                        // PCM, Ogg Vorbis, etc.
-                        gkAudioEncoding->initEncode(media_path, pref_output_device, encoding_bitrate, supported_codec, AUDIO_FRAMES_PER_BUFFER);
-                    }
-
-                    recordInputAudio();
+                    // Use a differing FRAME SIZE for Opus!
+                    gkAudioEncoding->initEncode(mediaFile, pref_input_device, encoding_bitrate, supported_codec, AUDIO_OPUS_MAX_FRAME_SIZE);
                 } else {
                     //
-                    // There is no audio device that has been chosen!
-                    throw std::invalid_argument(tr("You must configure a suitable audio device within the Settings before continuing!").toStdString());
+                    // Create a media file with a randomized name within the given path, for recording purposes!
+                    auto mediaFile = createRecordMediaFile(media_path, supported_codec);
+
+                    //
+                    // PCM, Ogg Vorbis, etc.
+                    gkAudioEncoding->initEncode(mediaFile, pref_input_device, encoding_bitrate, supported_codec, AUDIO_FRAMES_PER_BUFFER);
                 }
+
+                recordInputAudio();
+            } else if (pref_output_device.is_enabled) {
+                //
+                // Make use of the Output Audio Device!
+                if (supported_codec == CodecSupport::Opus) {
+                    //
+                    // Create a media file with a randomized name within the given path, for recording purposes!
+                    auto mediaFile = createRecordMediaFile(media_path, CodecSupport::Opus);
+
+                    //
+                    // Use a differing FRAME SIZE for Opus!
+                    gkAudioEncoding->initEncode(mediaFile, pref_output_device, encoding_bitrate, supported_codec, AUDIO_OPUS_MAX_FRAME_SIZE);
+                } else {
+                    //
+                    // Create a media file with a randomized name within the given path, for recording purposes!
+                    auto mediaFile = createRecordMediaFile(media_path, supported_codec);
+
+                    //
+                    // PCM, Ogg Vorbis, etc.
+                    gkAudioEncoding->initEncode(mediaFile, pref_output_device, encoding_bitrate, supported_codec, AUDIO_FRAMES_PER_BUFFER);
+                }
+
+                recordInputAudio();
             } else {
-                throw std::invalid_argument(tr("An invalid encoding bitrate has been given! A value of %1 kBps cannot be used.")
-                                                    .arg(QString::number(encoding_bitrate)).toStdString());
+                //
+                // There is no audio device that has been chosen!
+                throw std::invalid_argument(tr("You must configure a suitable audio device within the Settings before continuing!").toStdString());
             }
+        } else {
+            throw std::invalid_argument(tr("An invalid encoding bitrate has been given! A value of %1 kBps cannot be used.")
+                                                .arg(QString::number(encoding_bitrate)).toStdString());
         }
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);
@@ -422,4 +437,21 @@ void GkPaStreamHandler::recordInputAudio()
     delete procMediaEventLoop;
 
     return;
+}
+
+/**
+ * @brief GkPaStreamHandler::createRecordMediaFile
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param media_path
+ * @param supported_codec
+ * @return
+ */
+fs::path GkPaStreamHandler::createRecordMediaFile(const fs::path &media_path, const CodecSupport &supported_codec)
+{
+    auto randStr = gkDb->createRandomString(16);
+    auto epochSecs = QDateTime::currentSecsSinceEpoch();
+    fs::path mediaRetPath = std::string(media_path.string() + "/" + std::to_string(epochSecs) + "_" + randStr);
+    fs::ofstream(mediaRetPath.string()); // Create the dummy file!
+
+    return mediaRetPath;
 }

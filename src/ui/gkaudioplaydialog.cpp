@@ -96,6 +96,7 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
 
     prefillCodecComboBoxes(GkAudioFramework::CodecSupport::PCM);
     prefillCodecComboBoxes(GkAudioFramework::CodecSupport::Loopback);
+    prefillCodecComboBoxes(GkAudioFramework::CodecSupport::Opus);
 }
 
 GkAudioPlayDialog::~GkAudioPlayDialog()
@@ -293,10 +294,12 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
                 gkEventLogger->publishEvent(
                         tr("Started playing audio file, \"%1\"").arg(QString::fromStdString(audio_file_path.string())),
                         GkSeverity::Info, "", true, true, true, false);
+                ui->progressBar_playback->setFormat(tr("%p%")); // Modify the QProgressBar to display the correct text!
             } else if (codec_used == GkAudioFramework::CodecSupport::Loopback) {
                 gkPaAudioPlayer->play(codec_used);
                 gkEventLogger->publishEvent(
                         tr("Started audio device loopback!"), GkSeverity::Info, "", true, true, true, false);
+                ui->progressBar_playback->setFormat(tr("%p%")); // Modify the QProgressBar to display the correct text!
             } else {
                 throw std::runtime_error(tr("Error with audio playback! Does the file, \"%1\", actually exist?")
                 .arg(r_pback_audio_file.fileName()).toStdString());
@@ -323,16 +326,59 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
  */
 void GkAudioPlayDialog::on_pushButton_playback_record_clicked()
 {
-    if (!audio_out_record) {
-        //
-        // Do start recording!
-        gkStringFuncs->changePushButtonColor(ui->pushButton_playback_record, false);
-        audio_out_record = true;
-    } else {
-        //
-        // End or pause recording...
-        gkStringFuncs->changePushButtonColor(ui->pushButton_playback_record, true);
-        audio_out_record = false;
+    try {
+        if (!audio_out_record) {
+            //
+            // Do start recording!
+            gkStringFuncs->changePushButtonColor(ui->pushButton_playback_record, false);
+            audio_out_record = true;
+
+            QFileDialog fileDialog(this, tr("Save Directory for Recordings"), QStandardPaths::writableLocation(QStandardPaths::MusicLocation));
+            fileDialog.setFileMode(QFileDialog::Directory);
+            fileDialog.setAcceptMode(QFileDialog::AcceptOpen);
+            fileDialog.setViewMode(QFileDialog::List);
+
+            auto remembered_path = gkDb->read_audio_playback_dlg_settings(AudioPlaybackDlg::GkRecordDlgLastFolderBrowsed);
+            if (!remembered_path.isEmpty()) {
+                // There has been a previously used path that the user has used, and it's been remembered by Google LevelDB!
+                fileDialog.setDirectory(remembered_path);
+            }
+
+            fs::path record_dir_path;
+            if (fileDialog.exec()) {
+                QStringList selectedFile = fileDialog.selectedFiles();
+                if (!selectedFile.isEmpty())  {
+                    for (const auto &file: selectedFile) {
+                        record_dir_path = file.toStdString();
+                    }
+                }
+            } else {
+                //
+                // End recording state...
+                gkStringFuncs->changePushButtonColor(ui->pushButton_playback_record, true);
+                audio_out_record = false;
+            }
+
+            GkAudioFramework::CodecSupport codec_used = gkDb->convCodecSupportFromIdxToEnum(ui->comboBox_playback_rec_codec->currentData().toInt());
+            if (fs::is_directory(record_dir_path)) {
+                gkDb->write_audio_playback_dlg_settings(QString::fromStdString(record_dir_path.string()), AudioPlaybackDlg::GkRecordDlgLastFolderBrowsed);
+                if (codec_used != GkAudioFramework::CodecSupport::Loopback) {
+                    gkPaAudioPlayer->record(codec_used, record_dir_path);
+                } else {
+                    QMessageBox::information(this, tr("Not supported!"), tr("Loopback mode is unsupported during recording!"), QMessageBox::Ok);
+                }
+            }
+        } else {
+            //
+            // End or pause recording...
+            gkStringFuncs->changePushButtonColor(ui->pushButton_playback_record, true);
+            audio_out_record = false;
+
+            //
+            // TODO: Implement the ability to STOP recording!
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
     }
 
     return;
