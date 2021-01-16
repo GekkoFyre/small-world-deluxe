@@ -2216,6 +2216,35 @@ GekkoFyre::GkAudioFramework::CodecSupport GkLevelDb::convCodecSupportFromIdxToEn
 }
 
 /**
+ * @brief GkLevelDb::convCodecFormatToFileExtension outputs a file extension for the given codec enumerator as specified by
+ * the Small World Deluxe application.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param codec_support
+ * @return
+ */
+QString GkLevelDb::convCodecFormatToFileExtension(const CodecSupport &codec_support)
+{
+    switch (codec_support) {
+        case CodecSupport::Opus:
+            return QString(".opus");
+        case CodecSupport::PCM:
+            return tr(".pcm");
+        case CodecSupport::Loopback:
+            return tr(".loopback");
+        case CodecSupport::OggVorbis:
+            return QString(".ogg");
+        case CodecSupport::FLAC:
+            return QString(".opus");
+        case CodecSupport::Unsupported:
+            return tr(".unsupported");
+        case CodecSupport::Unknown:
+            return tr(".unknown");
+    }
+
+    return QString();
+}
+
+/**
  * @brief DekodeDb::boolEnum Will enumerate a boolean value to an std::string, ready for use within a database.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param is_true Whether we are dealing with a true or false situation.

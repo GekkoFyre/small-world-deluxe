@@ -424,13 +424,13 @@ void GkAudioPlayDialog::on_comboBox_playback_rec_codec_currentIndexChanged(int i
             case AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX:
                 m_rec_codec_chosen = CodecSupport::Loopback;
             case AUDIO_PLAYBACK_CODEC_VORBIS_IDX:
-                throw std::invalid_argument(tr("This particular codec is not yet supported! Try PCM, Loopback, or Opus.").toStdString());
+                break;
             case AUDIO_PLAYBACK_CODEC_OPUS_IDX:
                 m_rec_codec_chosen = CodecSupport::Opus;
             case AUDIO_PLAYBACK_CODEC_FLAC_IDX:
-                throw std::invalid_argument(tr("This particular codec is not yet supported! Try PCM, Loopback, or Opus.").toStdString());
+                break;
             default:
-                throw std::invalid_argument(tr("Unable to determine the desired codec!").toStdString());
+                break;
         }
     } catch (const std::exception &e) {
         QMessageBox::information(this, tr("Important!"), QString::fromStdString(e.what()), QMessageBox::Ok);

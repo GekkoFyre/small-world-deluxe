@@ -136,6 +136,7 @@ public:
     QString convIARURegionToStr(const GekkoFyre::AmateurRadio::IARURegions &iaru_region);
 
     GekkoFyre::GkAudioFramework::CodecSupport convCodecSupportFromIdxToEnum(const qint32 &codec_support_idx);
+    QString convCodecFormatToFileExtension(const GekkoFyre::GkAudioFramework::CodecSupport &codec_support);
 
     std::string createRandomString(const qint32 &length);
     std::string removeInvalidChars(const std::string &string_to_modify);

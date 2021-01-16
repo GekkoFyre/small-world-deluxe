@@ -69,7 +69,7 @@ namespace sys = boost::system;
 
 namespace GekkoFyre {
 
-class GkPaStreamHandler : public QThread {
+class GkPaStreamHandler : public QObject {
     Q_OBJECT
 
 public:
@@ -80,13 +80,12 @@ public:
 
     void processEvent(GkAudioFramework::AudioEventType audioEventType, const fs::path &mediaFilePath = fs::path(),
                       const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec = GekkoFyre::GkAudioFramework::CodecSupport::Unknown,
-                      bool loop_media = false);
-    void run() Q_DECL_OVERRIDE;
+                      bool loop_media = false, qint32 encode_bitrate = 8);
 
 private slots:
     void playMediaFile(const fs::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
     void recordMediaFile(const fs::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
-                         const qint32 encoding_bitrate);
+                         qint32 encoding_bitrate);
     void stopMediaFile(const fs::path &media_path);
     void startMediaLoopback();
     void playbackHandleStateChanged(QAudio::State changed_state);
@@ -94,12 +93,16 @@ private slots:
 
 signals:
     void playMedia(const fs::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
-    void recordMedia(const fs::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
+    void recordMedia(const fs::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, qint32 encoding_bitrate);
     void stopMedia(const fs::path &media_path);
-    void encodeMedia(const QByteArray &data);
     void startLoopback();
     void changePlaybackState(QAudio::State changed_state);
     void changeRecorderState(QAudio::State changed_state);
+
+    void initEncode(const fs::path &media_path, const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev_info,
+                    const qint32 &bitrate, const GekkoFyre::GkAudioFramework::CodecSupport &codec_choice,
+                    const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER, const qint32 &application = OPUS_APPLICATION_AUDIO);
+    void writeEncode(const QByteArray &data);
 
 private:
     QPointer<GekkoFyre::GkLevelDb> gkDb;
