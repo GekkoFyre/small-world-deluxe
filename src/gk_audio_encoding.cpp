@@ -94,6 +94,7 @@ GkAudioEncoding::GkAudioEncoding(QPointer<QAudioOutput> audioOutput, QPointer<QA
     QObject::connect(this, SIGNAL(pauseEncode()), this, SLOT(stopCaller()));
     QObject::connect(this, SIGNAL(error(const QString &, const GekkoFyre::System::Events::Logging::GkSeverity &)),
                      this, SLOT(handleError(const QString &, const GekkoFyre::System::Events::Logging::GkSeverity &)));
+    QObject::connect(gkAudioInput, &QAudioInput::notify, this, &GkAudioEncoding::processAudioIn);
 }
 
 GkAudioEncoding::~GkAudioEncoding()
@@ -193,15 +194,25 @@ void GkAudioEncoding::startCaller(const fs::path &media_path, const Database::Se
                 throw std::invalid_argument(tr("Invalid number of audio channels provided whilst trying to encode with the Opus codec!").toStdString());
             }
 
+            //
+            // Create the Ogg Opus pointer for interaction with other functions...
             m_opus_encoder = ope_encoder_create_file(media_path.string().c_str(), m_opus_comments, sample_rate, channels, 0, &err);
 
             if (!m_opus_encoder) {
                 emit error(tr("Error encoding to file: %1\n\n%2").arg(QString::fromStdString(media_path.string()))
-                .arg(QString::fromStdString(ope_strerror(err))), GkSeverity::Fatal);
+                                   .arg(QString::fromStdString(ope_strerror(err))), GkSeverity::Fatal);
 
                 ope_comments_destroy(m_opus_comments);
                 return;
             }
+
+            //
+            // Open the buffer for reading and writing purposes!
+            record_input_buf = new QBuffer(this);
+            record_input_buf->open(QBuffer::ReadWrite);
+
+            gkAudioInput->setNotifyInterval(100);
+            gkAudioInput->start(record_input_buf);
 
             m_initialized = true;
             m_chosen_codec = codec_choice;
@@ -232,23 +243,6 @@ void GkAudioEncoding::stopCaller()
 }
 
 /**
- * @brief GkAudioEncoding::writeCaller performs the action of writing out the actual data from the encoding process itself.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param data The raw data from the chosen codec, whether that be Opus or something like Ogg Vorbis or even MP3.
- */
-void GkAudioEncoding::writeCaller(const QByteArray &data)
-{
-    m_buffer.append(data);
-    while (!m_buffer.isEmpty()) {
-        if (m_chosen_codec == CodecSupport::Opus) {
-            encodeOpus();
-        }
-    }
-
-    return;
-}
-
-/**
  * @brief GkAudioEncoding::handleError undertakes the handling of any errors in a clean and consistent manner. This should
  * be used where possible throughout this class if there's any possible errors to be had.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -258,6 +252,30 @@ void GkAudioEncoding::writeCaller(const QByteArray &data)
 void GkAudioEncoding::handleError(const QString &msg, const GkSeverity &severity)
 {
     gkEventLogger->publishEvent(msg, severity, "", true, true, false, false);
+    return;
+}
+
+/**
+ * @brief GkAudioEncoding::processAudioIn is executed once enough audio samples have been written to the buffer in
+ * question (100 milliseconds in this instance).
+ * @author Joel Svensson <https://svenssonjoel.github.io/pages/qt-audio-input/index.html>.
+ */
+void GkAudioEncoding::processAudioIn()
+{
+    if (m_initialized) {
+        record_input_buf->seek(0);
+        m_buffer = record_input_buf->readAll();
+
+        record_input_buf->buffer().clear();
+        record_input_buf->seek(0);
+
+        while (!m_buffer.isEmpty()) {
+            if (m_chosen_codec == CodecSupport::Opus) {
+                encodeOpus();
+            }
+        }
+    }
+
     return;
 }
 

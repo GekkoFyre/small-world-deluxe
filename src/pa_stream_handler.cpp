@@ -102,7 +102,6 @@ GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, co
     QObject::connect(this, SIGNAL(initEncode(const fs::path &, const GekkoFyre::Database::Settings::Audio::GkDevice &, const qint32 &, const GekkoFyre::GkAudioFramework::CodecSupport &, const qint32 &, const qint32 &)),
                      gkAudioEncoding, SLOT(startCaller(const fs::path &, const GekkoFyre::Database::Settings::Audio::GkDevice &, const qint32 &, const GekkoFyre::GkAudioFramework::CodecSupport &,
                      const qint32 &, const qint32 &)));
-    QObject::connect(this, SIGNAL(writeEncode(const QByteArray &)), gkAudioEncoding, SLOT(writeCaller(const QByteArray &)), Qt::QueuedConnection);
     return;
 }
 
@@ -255,7 +254,11 @@ void GkPaStreamHandler::recordMediaFile(const fs::path &media_path, const GkAudi
                     emit initEncode(mediaFile, pref_input_device, encoding_bitrate, supported_codec, AUDIO_FRAMES_PER_BUFFER);
                 }
 
-                recordInputAudio();
+                procMediaEventLoop = new QEventLoop(this);
+                do {
+                    procMediaEventLoop->exec(QEventLoop::WaitForMoreEvents);
+                } while (gkAudioInput->state() == QAudio::ActiveState);
+                delete procMediaEventLoop;
             } else if (pref_output_device.is_enabled) {
                 //
                 // Make use of the Output Audio Device!
@@ -277,7 +280,11 @@ void GkPaStreamHandler::recordMediaFile(const fs::path &media_path, const GkAudi
                     emit initEncode(mediaFile, pref_output_device, encoding_bitrate, supported_codec, AUDIO_FRAMES_PER_BUFFER);
                 }
 
-                recordInputAudio();
+                procMediaEventLoop = new QEventLoop(this);
+                do {
+                    procMediaEventLoop->exec(QEventLoop::WaitForMoreEvents);
+                } while (gkAudioInput->state() == QAudio::ActiveState);
+                delete procMediaEventLoop;
             } else {
                 //
                 // There is no audio device that has been chosen!
@@ -404,57 +411,6 @@ void GkPaStreamHandler::recordingHandleStateChanged(QAudio::State changed_state)
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(tr("An issue has been encountered during audio recording. Error:\n\n%1").arg(QString::fromStdString(e.what())),
                                     GkSeverity::Fatal, "", true, true, false, false);
-    }
-
-    return;
-}
-
-/**
- * @brief GkPaStreamHandler::recordInputAudio
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkPaStreamHandler::recordInputAudio()
-{
-    try {
-        //
-        // Open the buffer for reading and writing purposes!
-        QPointer<QBuffer> record_input_buf = new QBuffer(this);
-        QPointer<QBuffer> record_output_buf = new QBuffer(this);
-        record_output_buf->open(QBuffer::ReadOnly);
-        record_input_buf->open(QBuffer::WriteOnly);
-
-        QObject::connect(record_input_buf, &QIODevice::bytesWritten, [record_input_buf, record_output_buf](qint64) {
-            // Remove all data that was already read
-            record_output_buf->buffer().remove(0, record_output_buf->pos());
-
-            // Set the pointer towards the beginning of the unread data
-            const auto res = record_output_buf->seek(0);
-            assert(res);
-
-            // Write out any new data
-            record_output_buf->buffer().append(record_input_buf->buffer());
-
-            // Remove all data that has already been written
-            record_input_buf->buffer().clear();
-            record_input_buf->seek(0);
-        });
-
-        if (pref_input_device.is_enabled) {
-            gkAudioInput->setNotifyInterval(100);
-            gkAudioInput->start(record_input_buf);
-            emit writeEncode(record_output_buf->buffer());
-
-            procMediaEventLoop = new QEventLoop(this);
-            do {
-                procMediaEventLoop->exec(QEventLoop::WaitForMoreEvents);
-            } while (gkAudioInput->state() == QAudio::ActiveState);
-            delete procMediaEventLoop;
-        } else {
-            throw std::runtime_error(tr("Invalid operation while trying to open input audio buffer!").toStdString());
-        }
-    } catch (const std::exception &e) {
-        std::throw_with_nested(std::runtime_error(tr("An issue was encountered with recording input audio! Error:\n\n%1")
-        .arg(QString::fromStdString(e.what())).toStdString()));
     }
 
     return;

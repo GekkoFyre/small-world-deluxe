@@ -49,6 +49,7 @@
 #include <memory>
 #include <string>
 #include <QObject>
+#include <QBuffer>
 #include <QPointer>
 #include <QIODevice>
 #include <QByteArray>
@@ -77,12 +78,12 @@ public slots:
     void startCaller(const fs::path &media_path, const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev_info,
                      const qint32 &bitrate, const GekkoFyre::GkAudioFramework::CodecSupport &codec_choice,
                      const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER, const qint32 &application = OPUS_APPLICATION_AUDIO);
-    void writeCaller(const QByteArray &data);
     void stopEncode();
 
 private slots:
     void stopCaller();
     void handleError(const QString &msg, const GekkoFyre::System::Events::Logging::GkSeverity &severity);
+    void processAudioIn();
 
     void encodeOpus();
 
@@ -113,6 +114,7 @@ private:
     FILE *m_fin;
     QByteArray m_buffer;
     GkAudioFramework::CodecSupport m_chosen_codec;
+    QPointer<QBuffer> record_input_buf;
     OggOpusEnc *m_opus_encoder = nullptr;
     OggOpusComments *m_opus_comments = nullptr;
 

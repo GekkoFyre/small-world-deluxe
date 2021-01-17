@@ -130,7 +130,6 @@ private:
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
     std::map<fs::path, AudioFile<double>> gkSounds;
 
-    void recordInputAudio();
     fs::path createRecordMediaFile(const fs::path &media_path, const GkAudioFramework::CodecSupport &supported_codec, const bool &create_file = false);
 
 };
