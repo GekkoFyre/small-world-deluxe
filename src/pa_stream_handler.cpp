@@ -45,6 +45,7 @@
 #include <exception>
 #include <QIODevice>
 #include <QDateTime>
+#include <QtEndian>
 #include <QBuffer>
 
 using namespace GekkoFyre;
@@ -65,7 +66,8 @@ using namespace GkXmpp;
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @note <https://qtsource.wordpress.com/2011/09/12/multithreaded-audio-using-qaudiooutput/>.
  */
-GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, const GkDevice &output_device, QPointer<QAudioOutput> audioOutput,
+GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, const GkDevice &output_device,
+                                     const GkDevice &input_device, QPointer<QAudioOutput> audioOutput,
                                      QPointer<QAudioInput> audioInput, QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                      std::shared_ptr<AudioFile<double>> audioFileLib, QObject *parent) : QObject(parent)
 {
@@ -81,6 +83,7 @@ GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, co
     // Initialize variables
     //
     pref_output_device = output_device;
+    pref_input_device = input_device;
     gkPcmFileStream = std::make_unique<GkPcmFileStream>(this);
     gkAudioEncoding = new GkAudioEncoding(gkAudioOutput, gkAudioInput, pref_output_device, pref_input_device, gkEventLogger, this);
 
@@ -237,7 +240,7 @@ void GkPaStreamHandler::recordMediaFile(const fs::path &media_path, const GkAudi
                 if (supported_codec == CodecSupport::Opus) {
                     //
                     // Create a media file with a randomized name within the given path, for recording purposes!
-                    auto mediaFile = createRecordMediaFile(media_path, CodecSupport::Opus);
+                    auto mediaFile = createRecordMediaFile(media_path, CodecSupport::Opus, false);
 
                     //
                     // Use a differing FRAME SIZE for Opus!
@@ -245,7 +248,7 @@ void GkPaStreamHandler::recordMediaFile(const fs::path &media_path, const GkAudi
                 } else {
                     //
                     // Create a media file with a randomized name within the given path, for recording purposes!
-                    auto mediaFile = createRecordMediaFile(media_path, supported_codec);
+                    auto mediaFile = createRecordMediaFile(media_path, supported_codec, false);
 
                     //
                     // PCM, Ogg Vorbis, etc.
@@ -259,7 +262,7 @@ void GkPaStreamHandler::recordMediaFile(const fs::path &media_path, const GkAudi
                 if (supported_codec == CodecSupport::Opus) {
                     //
                     // Create a media file with a randomized name within the given path, for recording purposes!
-                    auto mediaFile = createRecordMediaFile(media_path, CodecSupport::Opus);
+                    auto mediaFile = createRecordMediaFile(media_path, CodecSupport::Opus, false);
 
                     //
                     // Use a differing FRAME SIZE for Opus!
@@ -267,7 +270,7 @@ void GkPaStreamHandler::recordMediaFile(const fs::path &media_path, const GkAudi
                 } else {
                     //
                     // Create a media file with a randomized name within the given path, for recording purposes!
-                    auto mediaFile = createRecordMediaFile(media_path, supported_codec);
+                    auto mediaFile = createRecordMediaFile(media_path, supported_codec, false);
 
                     //
                     // PCM, Ogg Vorbis, etc.
@@ -413,16 +416,33 @@ void GkPaStreamHandler::recordingHandleStateChanged(QAudio::State changed_state)
 void GkPaStreamHandler::recordInputAudio()
 {
     try {
-        record_input_buf.clear(); // Clear the pointer just in-case it has been used previously!
-        record_input_buf = new QBuffer(this);
-
         //
         // Open the buffer for reading and writing purposes!
-        record_input_buf->open(QBuffer::ReadWrite);
+        QPointer<QBuffer> record_input_buf = new QBuffer(this);
+        QPointer<QBuffer> record_output_buf = new QBuffer(this);
+        record_output_buf->open(QBuffer::ReadOnly);
+        record_input_buf->open(QBuffer::WriteOnly);
 
-        if (record_input_buf->isOpen()) {
+        QObject::connect(record_input_buf, &QIODevice::bytesWritten, [record_input_buf, record_output_buf](qint64) {
+            // Remove all data that was already read
+            record_output_buf->buffer().remove(0, record_output_buf->pos());
+
+            // Set the pointer towards the beginning of the unread data
+            const auto res = record_output_buf->seek(0);
+            assert(res);
+
+            // Write out any new data
+            record_output_buf->buffer().append(record_input_buf->buffer());
+
+            // Remove all data that has already been written
+            record_input_buf->buffer().clear();
+            record_input_buf->seek(0);
+        });
+
+        if (pref_input_device.is_enabled) {
+            gkAudioInput->setNotifyInterval(100);
             gkAudioInput->start(record_input_buf);
-            emit writeEncode(record_input_buf->buffer());
+            emit writeEncode(record_output_buf->buffer());
 
             procMediaEventLoop = new QEventLoop(this);
             do {
@@ -443,17 +463,21 @@ void GkPaStreamHandler::recordInputAudio()
 /**
  * @brief GkPaStreamHandler::createRecordMediaFile
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param media_path
- * @param supported_codec
+ * @param media_path The path to where the file is stored.
+ * @param supported_codec The file extension to use.
+ * @param create_file Whether to create the file (i.e. `touch`) or not.
  * @return
  */
-fs::path GkPaStreamHandler::createRecordMediaFile(const fs::path &media_path, const CodecSupport &supported_codec)
+fs::path GkPaStreamHandler::createRecordMediaFile(const fs::path &media_path, const CodecSupport &supported_codec, const bool &create_file)
 {
     const auto randStr = gkDb->createRandomString(16);
     const auto epochSecs = QDateTime::currentSecsSinceEpoch();
     const auto extension = gkDb->convCodecFormatToFileExtension(supported_codec);
     const fs::path mediaRetPath = std::string(media_path.string() + "/" + std::to_string(epochSecs) + "_" + randStr + extension.toStdString());
-    fs::ofstream(mediaRetPath.string()); // Create the dummy file!
+
+    if (create_file) {
+        fs::ofstream(mediaRetPath.string()); // Create the dummy file!
+    }
 
     return mediaRetPath;
 }

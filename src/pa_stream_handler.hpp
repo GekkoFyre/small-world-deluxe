@@ -74,7 +74,8 @@ class GkPaStreamHandler : public QObject {
 
 public:
     explicit GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
-                               QPointer<QAudioOutput> audioOutput, QPointer<QAudioInput> audioInput, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                               const GekkoFyre::Database::Settings::Audio::GkDevice &input_device, QPointer<QAudioOutput> audioOutput,
+                               QPointer<QAudioInput> audioInput, QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                std::shared_ptr<AudioFile<double>> audioFileLib, QObject *parent = nullptr);
     ~GkPaStreamHandler() override;
 
@@ -125,13 +126,12 @@ private:
     QPointer<QEventLoop> procMediaEventLoop;
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
-    QPointer<QBuffer> record_input_buf;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
-    GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device; // TODO: Implement this!
+    GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
     std::map<fs::path, AudioFile<double>> gkSounds;
 
     void recordInputAudio();
-    fs::path createRecordMediaFile(const fs::path &media_path, const GkAudioFramework::CodecSupport &supported_codec);
+    fs::path createRecordMediaFile(const fs::path &media_path, const GkAudioFramework::CodecSupport &supported_codec, const bool &create_file = false);
 
 };
 };

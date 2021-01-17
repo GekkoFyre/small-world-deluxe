@@ -43,32 +43,18 @@
 
 #include "src/defines.hpp"
 #include "src/gk_logger.hpp"
+#include <opus/opusenc.h>
 #include <boost/filesystem.hpp>
+#include <cstdio>
 #include <memory>
 #include <string>
-#include <vector>
-#include <exception>
-#include <iostream>
 #include <QObject>
-#include <QBuffer>
-#include <QThread>
 #include <QPointer>
 #include <QIODevice>
+#include <QByteArray>
 #include <QAudioInput>
 #include <QAudioOutput>
 #include <QAudioFormat>
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#include <opus.h>
-#include <stdint.h>
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
 
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
@@ -77,26 +63,6 @@ namespace GekkoFyre {
 
 class GkAudioEncoding : public QObject {
     Q_OBJECT
-
-private:
-    #ifdef OPUS_LIBS_ENBLD
-    struct OpusErrorException: public virtual std::exception {
-        OpusErrorException(int code) : code(code) {}
-        const char *what() const noexcept;
-
-    private:
-        const int code;
-    };
-
-    struct OpusState {
-        OpusState(int max_frame_size, int max_payload_bytes, int channels): out(max_frame_size * channels),
-                  fbytes(max_frame_size * channels * sizeof(decltype(out)::value_type)), data(max_payload_bytes) {}
-        std::vector<qint16> out;
-        std::vector<unsigned char> fbytes, data;
-        int32_t frameno = 0;
-        bool lost_prev = true;
-    };
-    #endif
 
 public:
     explicit GkAudioEncoding(QPointer<QAudioOutput> audioOutput, QPointer<QAudioInput> audioInput,
@@ -116,11 +82,9 @@ public slots:
 
 private slots:
     void stopCaller();
-
-    QByteArray opusEncode();
-    void processEncData(const QByteArray &data);
-
     void handleError(const QString &msg, const GekkoFyre::System::Events::Logging::GkSeverity &severity);
+
+    void encodeOpus();
 
 signals:
     void pauseEncode();
@@ -146,9 +110,11 @@ private:
     qint32 m_channels = -1;
     qint32 m_frame_size = -1;
     fs::path m_file_path;
+    FILE *m_fin;
     QByteArray m_buffer;
     GkAudioFramework::CodecSupport m_chosen_codec;
-    OpusEncoder *m_opus_encoder = nullptr;
+    OggOpusEnc *m_opus_encoder = nullptr;
+    OggOpusComments *m_opus_comments = nullptr;
 
 };
 };

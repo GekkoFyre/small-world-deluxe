@@ -83,7 +83,7 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
     m_rec_codec_chosen = CodecSupport::PCM;
     m_encode_bitrate_chosen = 8;
     gkAudioFile = std::make_shared<AudioFile<double>>();
-    gkPaAudioPlayer = new GkPaAudioPlayer(gkDb, pref_output_device, gkAudioOutput, gkAudioInput, gkEventLogger, gkAudioFile, this);
+    gkPaAudioPlayer = new GkPaAudioPlayer(gkDb, pref_output_device, pref_input_device, gkAudioOutput, gkAudioInput, gkEventLogger, gkAudioFile, this);
 
     //
     // QPushButtons, etc.

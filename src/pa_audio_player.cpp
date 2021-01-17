@@ -60,14 +60,15 @@ using namespace GkXmpp;
 /**
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-GkPaAudioPlayer::GkPaAudioPlayer(QPointer<GekkoFyre::GkLevelDb> database, const GkDevice &output_device, QPointer<QAudioOutput> audioOutput,
-                                 QPointer<QAudioInput> audioInput, const QPointer<GekkoFyre::GkEventLogger> &eventLogger,
-                                 std::shared_ptr<AudioFile<double>> audioFileLib, QObject *parent)
+GkPaAudioPlayer::GkPaAudioPlayer(QPointer<GekkoFyre::GkLevelDb> database, const GkDevice &output_device, const GkDevice &input_device,
+                                 QPointer<QAudioOutput> audioOutput, QPointer<QAudioInput> audioInput,
+                                 const QPointer<GekkoFyre::GkEventLogger> &eventLogger, std::shared_ptr<AudioFile<double>> audioFileLib,
+                                 QObject *parent)
 {
     gkAudioInput = std::move(audioInput);
     gkAudioOutput = std::move(audioOutput);
     gkAudioFile = std::move(audioFileLib);
-    streamHandler = new GkPaStreamHandler(std::move(database), output_device, gkAudioOutput, gkAudioInput, eventLogger, gkAudioFile, parent);;
+    streamHandler = new GkPaStreamHandler(std::move(database), output_device, input_device, gkAudioOutput, gkAudioInput, eventLogger, gkAudioFile, parent);;
 
     return;
 }
