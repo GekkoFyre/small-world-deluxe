@@ -184,20 +184,6 @@ void GkEventLogger::recvXmppLog(QXmppLogger::MessageType msg_type, QString msg)
 }
 
 /**
- * @brief GkEventLogger::setDate will set the date as according to the milliseconds from UNIX epoch. There is no need to format
- * beforehand, as this will be done accordingly by the QTableView model.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @return The date since UNIX epoch, in milliseconds!
- */
-qint64 GkEventLogger::setDate()
-{
-    std::lock_guard<std::mutex> lock(setDateMutex);
-
-    qint64 curr_date = QDateTime::currentMSecsSinceEpoch();
-    return curr_date;
-}
-
-/**
  * @brief GkEventLogger::setEventNo creates a particular identification number for each event to uniquely identify and characterise
  * them, which not only makes data manipulation easier, but makes identifying by the user easier too!
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>

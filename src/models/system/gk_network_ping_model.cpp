@@ -68,7 +68,7 @@ GkNetworkPingModel::GkNetworkPingModel(QPointer<GkEventLogger> &eventLogger, QOb
 
     start();
 
-    // Move event processing of GkPaStreamHandler to this thread
+    // Move event processing of GkNetworkPingModel to this thread
     QObject::moveToThread(this);
     return;
 }

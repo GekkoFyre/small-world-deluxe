@@ -169,9 +169,7 @@ set(Boost_USE_STATIC_RUNTIME OFF CACHE BOOL "Use static runtime when linking Boo
 find_package(Boost 1.64.0 REQUIRED COMPONENTS "filesystem"
                                               "system"
                                               "exception"
-                                              "chrono"
-                                              "locale"
-                                              "random")
+                                              "locale")
                                               
 if(WIN32 OR MSYS OR MINGW)
     if(${GFYRE_PACKAGE_MAINTAINER} EQUAL ON)
@@ -396,6 +394,14 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/opus")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/opus/include")
 message(STATUS "The 'Opus' audio (de-/en-)coding libraries have been configured!")
 
+find_package(OpusEnc REQUIRED)
+if (OpusEnc_FOUND)
+    include_directories(${OpusEnc_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${OpusEnc_LIBRARIES})
+else()
+    message(FATAL_ERROR "The 'libopusenc' audio (de-/en-)coding file creation libraries could not be found!")
+endif(OpusEnc_FOUND)
+
 #
 # KissFFT by Mark Borgerding
 # https://github.com/mborgerding/kissfft
@@ -521,13 +527,14 @@ set(GALAXY_UI_CPP
     src/dek_db.cpp
     src/file_io.cpp
     src/audio_devices.cpp
+    src/gk_fyr_data.cpp
     src/gk_fft_audio.cpp
     src/gk_waterfall_gui.cpp
     src/gk_spectro_color_maps.cpp
     src/gk_audio_encoding.cpp
     src/gk_audio_decoding.cpp
     src/gk_xmpp_client.cpp
-    src/gk_xmpp_server.cpp
+    src/gk_xmpp_chat.cpp
     src/gk_cli.cpp
     src/gk_modem.cpp
     src/gk_frequency_list.cpp
@@ -614,13 +621,14 @@ set(GALAXY_OBJ_HEADERS
     src/dek_db.hpp
     src/file_io.hpp
     src/audio_devices.hpp
+    src/gk_fyr_data.hpp
     src/gk_fft_audio.hpp
     src/gk_waterfall_gui.hpp
     src/gk_spectro_color_maps.hpp
     src/gk_audio_encoding.hpp
     src/gk_audio_decoding.hpp
     src/gk_xmpp_client.hpp
-    src/gk_xmpp_server.hpp
+    src/gk_xmpp_chat.hpp
     src/gk_cli.hpp
     src/gk_modem.hpp
     src/gk_frequency_list.hpp

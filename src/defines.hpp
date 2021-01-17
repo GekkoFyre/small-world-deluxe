@@ -130,8 +130,10 @@ namespace GekkoFyre {
 #define GK_AUDIO_MAX_CHANNELS (2)                               // The current maximum number of audio channels that Small World Deluxe is able to process for any given multimedia audio file!
 
 #define AUDIO_OPUS_FRAMES_PER_BUFFER (960)                      // This is specific to the Opus multimedia encoding/decoding library.
+#define AUDIO_OPUS_MAX_FRAMES_PER_BUFFER (1276)
 #define AUDIO_OPUS_INT_SIZE (2)
 #define AUDIO_OPUS_MAX_FRAME_SIZE (1276)
+#define AUDIO_OPUS_FILE_PTR_READ_SIZE (256)                     // To be used with `fread` <http://www.cplusplus.com/reference/cstdio/fread/>.
 
 #define AUDIO_SINE_WAVE_PLAYBACK_SECS (3)                       // Play the sine wave test sample for three seconds!
 #define AUDIO_VU_METER_UPDATE_MILLISECS (125)                   // How often the volume meter should update, in milliseconds.
@@ -254,7 +256,9 @@ namespace General {
     constexpr char executableName[] = "smallworld";
     constexpr char appVersion[] = "0.0.1";
     constexpr char appRelease[] = "Pre-alpha";
+    constexpr char xmppVersion[] = "Alpha";
     constexpr char codeRepository[] = "https://code.gekkofyre.io/amateur-radio/small-world-deluxe";
+    constexpr char officialWebsite[] = "https://swdeluxe.io/";
 
     constexpr char gk_sentry_uri[] = "https://5532275153ce4eb4865b89eb2441f356@sentry.gekkofyre.io/2";
     constexpr char gk_sentry_user_side_uri[] = "https://sentry.gekkofyre.io/";
@@ -423,7 +427,8 @@ namespace Database {
         };
 
         enum AudioPlaybackDlg {
-            GkAudioDlgLastFolderBrowsed
+            GkAudioDlgLastFolderBrowsed,
+            GkRecordDlgLastFolderBrowsed
         };
 
         enum general_stat_cfg {
@@ -445,8 +450,10 @@ namespace Database {
         enum GkXmppCfg {
             XmppAllowMsgHistory,
             XmppAllowFileXfers,
-            XmppAlowMucs,
+            XmppAllowMucs,
             XmppAutoConnect,
+            XmppAutoReconnect,
+            XmppAutoSignup,
             XmppAvatarByteArray,
             XmppDomainUrl,
             XmppServerType,
@@ -722,6 +729,8 @@ namespace Network {
             bool allow_file_xfers;                          // Shall we allow file transfers with this server, provided it's a supported extension?
             bool allow_mucs;                                // Shall we allow multi-user chats, provided it's a supported extension?
             bool auto_connect;                              // Do we allow automatic connections to the given XMPP server upon startup of Small World Deluxe?
+            bool auto_reconnect;                            // Do we attempt a reconnection upon each disconnection from a XMPP server, up to a specified maximum limit (i.e. for safety and to prevent banning)?
+            bool auto_signup;                               // Should we attempt the registration of a user, given the correct information, upon each connection to a XMPP server?
             bool enable_ssl;                                // Enable the absolute usage of SSL/TLS, otherwise throw an exception if not available!
             bool ignore_ssl_errors;                         // Whether to ignore any SSL errors presented by the server and/or client.
             QByteArray upload_avatar_pixmap;                // The byte-array data for the avatar that's to be uploaded upon next making a successful connection to the given XMPP server.

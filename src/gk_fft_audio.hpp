@@ -45,7 +45,6 @@
 #include "src/gk_logger.hpp"
 #include "src/gk_string_funcs.hpp"
 #include "src/gk_waterfall_gui.hpp"
-#include "src/gk_audio_encoding.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/exception/all.hpp>
 #include <kiss_fft.h>
@@ -107,15 +106,10 @@ signals:
 
     void refreshGraph(bool forceRepaint = false);
 
-    void initAudioEncode(const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev_info, const qint32 &bitrate,
-                         const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER, const qint32 &application = OPUS_APPLICATION_AUDIO);
-    void writeAudioEncode(const QByteArray &data);
-
 private:
     QPointer<GekkoFyre::GkSpectroWaterfall> gkSpectroWaterfall;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
-    QPointer<GkAudioEncoding> gkAudioEncoding;
 
     //
     // QAudioSystem initialization and buffers

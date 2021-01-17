@@ -39,9 +39,11 @@
  **
  ****************************************************************************************************/
 
-#include "src/gk_xmpp_server.hpp"
+#include "src/gk_fyr_data.hpp"
+#include <utility>
 #include <exception>
 #include <QMessageBox>
+#include <QDomElement>
 
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
@@ -54,19 +56,51 @@ using namespace Spectrograph;
 using namespace System;
 using namespace Events;
 using namespace Logging;
+using namespace Network;
+using namespace GkXmpp;
 
-GkXmppServer::GkXmppServer(QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QThread(parent)
+/**
+ * @brief GkFyrFormat::GkFyrFormat
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param parent
+ * @note Recorded Playback <https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/wikis/Features/Recorded-Playback>.
+ */
+GkFyrFormat::GkFyrFormat(QObject *parent) : QObject(parent)
 {
     setParent(parent);
-    gkEventLogger = std::move(eventLogger);
 
+    return;
+}
+
+GkFyrFormat::~GkFyrFormat()
+{}
+
+/**
+ * @brief GkFyrFormat::calcTotalTime
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkFyrFormat::calcTotalTime()
+{
+    return;
+}
+
+GkFyrData::GkFyrData(QPointer<GekkoFyre::GkLevelDb> database, QPointer<GekkoFyre::GkFFTAudio> fftAudio,
+                     QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QThread(parent)
+{
+    setParent(parent);
+
+    gkEventLogger = std::move(eventLogger);
+    gkDb = std::move(database);
+    gkFftAudio = std::move(fftAudio);
+
+    m_data = new GkFyrFormat(this);
     start();
 
-    // Move event processing of GkPaStreamHandler to this thread
+    // Move event processing of GkFyrData to this thread
     QObject::moveToThread(this);
 }
 
-GkXmppServer::~GkXmppServer()
+GkFyrData::~GkFyrData()
 {
     quit();
     wait();
@@ -76,8 +110,18 @@ GkXmppServer::~GkXmppServer()
  * @brief GkXmppClient::run
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void GkXmppServer::run()
+void GkFyrData::run()
 {
     exec();
+    return;
+}
+
+/**
+ * @brief GkFyrData::createFile
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param filePath
+ */
+void GkFyrData::createFile(const fs::path &filePath)
+{
     return;
 }

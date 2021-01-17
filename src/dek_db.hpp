@@ -99,7 +99,9 @@ public:
     void capture_sys_info();
 
     void write_xmpp_settings(const QString &value, const GekkoFyre::Database::Settings::GkXmppCfg &key);
+    void write_xmpp_alpha_notice(const bool &value);
     QString read_xmpp_settings(const GekkoFyre::Database::Settings::GkXmppCfg &key);
+    bool read_xmpp_alpha_notice();
 
     GekkoFyre::Network::GkXmpp::GkServerType convXmppServerTypeFromInt(const qint32 &idx);
 
@@ -134,7 +136,9 @@ public:
     QString convIARURegionToStr(const GekkoFyre::AmateurRadio::IARURegions &iaru_region);
 
     GekkoFyre::GkAudioFramework::CodecSupport convCodecSupportFromIdxToEnum(const qint32 &codec_support_idx);
+    QString convCodecFormatToFileExtension(const GekkoFyre::GkAudioFramework::CodecSupport &codec_support);
 
+    std::string createRandomString(const qint32 &length);
     std::string removeInvalidChars(const std::string &string_to_modify);
     std::string boolEnum(const bool &is_true);
     bool boolStr(const std::string &is_true);
@@ -152,8 +156,6 @@ private:
     void detect_operating_system(QString &build_cpu_arch, QString &curr_cpu_arch, QString &kernel_type, QString &kernel_vers,
                                  QString &machine_host_name, QString &machine_unique_id, QString &pretty_prod_name,
                                  QString &prod_type, QString &prod_vers);
-
-    std::string randomString(const size_t &length);
 
 };
 };

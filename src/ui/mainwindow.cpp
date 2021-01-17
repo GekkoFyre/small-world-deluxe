@@ -129,6 +129,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<GekkoFyre::AmateurRadio::DigitalModes>("GekkoFyre::AmateurRadio::DigitalModes");
     qRegisterMetaType<GekkoFyre::AmateurRadio::IARURegions>("GekkoFyre::AmateurRadio::IARURegions");
     qRegisterMetaType<GekkoFyre::Spectrograph::GkGraphType>("GekkoFyre::Spectrograph::GkGraphType");
+    qRegisterMetaType<GekkoFyre::GkAudioFramework::Bitrate>("GekkoFyre::GkAudioFramework::Bitrate");
     qRegisterMetaType<GekkoFyre::GkAudioFramework::CodecSupport>("GekkoFyre::GkAudioFramework::CodecSupport");
     qRegisterMetaType<GekkoFyre::AmateurRadio::GkFreqs>("GekkoFyre::AmateurRadio::GkFreqs");
     qRegisterMetaType<boost::filesystem::path>("boost::filesystem::path");
@@ -1691,8 +1692,10 @@ void MainWindow::readXmppSettings()
     //
     QString xmpp_allow_msg_history = gkDb->read_xmpp_settings(GkXmppCfg::XmppAllowMsgHistory);
     QString xmpp_allow_file_xfers = gkDb->read_xmpp_settings(GkXmppCfg::XmppAllowFileXfers);
-    QString xmpp_allow_mucs = gkDb->read_xmpp_settings(GkXmppCfg::XmppAlowMucs);
+    QString xmpp_allow_mucs = gkDb->read_xmpp_settings(GkXmppCfg::XmppAllowMucs);
     QString xmpp_auto_connect = gkDb->read_xmpp_settings(GkXmppCfg::XmppAutoConnect);
+    QString xmpp_auto_reconnect = gkDb->read_xmpp_settings(GkXmppCfg::XmppAutoReconnect);
+    QString xmpp_auto_signup = gkDb->read_xmpp_settings(GkXmppCfg::XmppAutoSignup);
     QByteArray xmpp_upload_avatar; // TODO: Finish this area of code, pronto!
     xmpp_conn_details.server.settings_client.upload_avatar_pixmap = xmpp_upload_avatar;
 
@@ -1725,6 +1728,18 @@ void MainWindow::readXmppSettings()
         xmpp_conn_details.server.settings_client.auto_connect = gkDb->boolStr(xmpp_auto_connect.toStdString());
     } else {
         xmpp_conn_details.server.settings_client.auto_connect = false;
+    }
+
+    if (!xmpp_auto_reconnect.isEmpty()) {
+        xmpp_conn_details.server.settings_client.auto_reconnect = gkDb->boolStr(xmpp_auto_reconnect.toStdString());
+    } else {
+        xmpp_conn_details.server.settings_client.auto_reconnect = false;
+    }
+
+    if (!xmpp_auto_signup.isEmpty()) {
+        xmpp_conn_details.server.settings_client.auto_signup = gkDb->boolStr(xmpp_auto_signup.toStdString());
+    } else {
+        xmpp_conn_details.server.settings_client.auto_signup = false;
     }
 
     if (!xmpp_client_password.isEmpty()) {
@@ -1805,7 +1820,7 @@ void MainWindow::readXmppSettings()
  */
 void MainWindow::launchXmppRosterDlg()
 {
-    QPointer<GkXmppRosterDialog> gkXmppRosterDlg = new GkXmppRosterDialog(xmpp_conn_details, gkXmppClient, gkEventLogger, this);
+    QPointer<GkXmppRosterDialog> gkXmppRosterDlg = new GkXmppRosterDialog(xmpp_conn_details, gkXmppClient, gkDb, gkEventLogger, this);
     gkXmppRosterDlg->setWindowFlags(Qt::Window);
     gkXmppRosterDlg->setAttribute(Qt::WA_DeleteOnClose, false); // Do NOT delete on close!
     gkXmppRosterDlg->show();
