@@ -78,11 +78,12 @@ using namespace GkXmpp;
 
 #define OGG_VORBIS_READ (1024)
 
-GkAudioEncoding::GkAudioEncoding(QPointer<QAudioOutput> audioOutput, QPointer<QAudioInput> audioInput,
-                                 const GkDevice &output_device, const GkDevice &input_device,
+GkAudioEncoding::GkAudioEncoding(QPointer<GekkoFyre::GkLevelDb> database, QPointer<QAudioOutput> audioOutput,
+                                 QPointer<QAudioInput> audioInput, const GkDevice &output_device, const GkDevice &input_device,
                                  QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QObject(parent)
 {
     setParent(parent);
+    gkDb = std::move(database);
     gkEventLogger = std::move(eventLogger);
 
     gkAudioInput = std::move(audioInput);
@@ -90,6 +91,11 @@ GkAudioEncoding::GkAudioEncoding(QPointer<QAudioOutput> audioOutput, QPointer<QA
     gkInputDev = input_device;
     gkOutputDev = output_device;
     m_chosen_codec = CodecSupport::Unknown;
+
+    //
+    // Open the buffer for reading and writing purposes!
+    record_input_buf = new QBuffer(this);
+    record_input_buf->open(QBuffer::ReadWrite);
 
     QObject::connect(this, SIGNAL(pauseEncode()), this, SLOT(stopCaller()));
     QObject::connect(this, SIGNAL(error(const QString &, const GekkoFyre::System::Events::Logging::GkSeverity &)),
@@ -103,7 +109,6 @@ GkAudioEncoding::~GkAudioEncoding()
         m_initialized = false;
 
         if (m_opus_encoder) {
-            ope_encoder_drain(m_opus_encoder);
             ope_encoder_destroy(m_opus_encoder);
         }
 
@@ -172,7 +177,26 @@ void GkAudioEncoding::startCaller(const fs::path &media_path, const Database::Se
             return;
         }
 
+        m_channels = gkAudioInput->format().channelCount();
+
+        //
+        // QAudio defines Stereo as a count of '3' for some odd reason??? No idea why...
+        if (gkAudioInput->format().channelCount() == 3) {
+            m_channels = 2;
+        }
+
+        if (m_sample_rate < 8000) {
+            throw std::invalid_argument(tr("Invalid sample rate provided whilst trying to encode with the Opus codec!").toStdString());
+        }
+
+        if (m_channels < 1) {
+            throw std::invalid_argument(tr("Invalid number of audio channels provided whilst trying to encode with the Opus codec!").toStdString());
+        }
+
         if (codec_choice == CodecSupport::Opus) {
+            //
+            // Ogg Opus
+            //
             m_opus_comments = ope_comments_create();
             ope_comments_add(m_opus_comments, "ARTIST", tr("%1 by %2 et al.")
             .arg(General::productName).arg(General::companyName).toStdString().c_str());
@@ -181,22 +205,10 @@ void GkAudioEncoding::startCaller(const fs::path &media_path, const Database::Se
 
             //
             // NOTE: Opus only supports frame sizes between 2.5 - 60 milliseconds!
+            // https://stackoverflow.com/questions/46786922/how-to-confirm-opus-encode-buffer-size
             //
             qint32 err;
-            const opus_int32 sample_rate = audio_dev_info.audio_device_info.preferredFormat().sampleRate();
-            const qint32 channels = audio_dev_info.audio_device_info.preferredFormat().channelCount();
-
-            if (sample_rate < 8000) {
-                throw std::invalid_argument(tr("Invalid sample rate provided whilst trying to encode with the Opus codec!").toStdString());
-            }
-
-            if (channels < 1) {
-                throw std::invalid_argument(tr("Invalid number of audio channels provided whilst trying to encode with the Opus codec!").toStdString());
-            }
-
-            //
-            // Create the Ogg Opus pointer for interaction with other functions...
-            m_opus_encoder = ope_encoder_create_file(media_path.string().c_str(), m_opus_comments, sample_rate, channels, 0, &err);
+            m_opus_encoder = ope_encoder_create_file(media_path.string().c_str(), m_opus_comments, m_sample_rate, m_channels, 0, &err);
 
             if (!m_opus_encoder) {
                 emit error(tr("Error encoding to file: %1\n\n%2").arg(QString::fromStdString(media_path.string()))
@@ -205,24 +217,40 @@ void GkAudioEncoding::startCaller(const fs::path &media_path, const Database::Se
                 ope_comments_destroy(m_opus_comments);
                 return;
             }
-
+        } else if (codec_choice == CodecSupport::OggVorbis) {
             //
-            // Open the buffer for reading and writing purposes!
-            record_input_buf = new QBuffer(this);
-            record_input_buf->open(QBuffer::ReadWrite);
+            // Ogg Vorbis
+            //
+            SF_VIRTUAL_IO m_virtual_io;
+            m_virtual_io.get_filelen = GkSfVirtualInterface::qbuffer_get_filelen;
+            m_virtual_io.seek = GkSfVirtualInterface::qbuffer_seek;
+            m_virtual_io.read = GkSfVirtualInterface::qbuffer_read;
+            m_virtual_io.write = GkSfVirtualInterface::qbuffer_write;
+            m_virtual_io.tell = GkSfVirtualInterface::qbuffer_tell;
 
-            gkAudioInput->setNotifyInterval(100);
-            gkAudioInput->start(record_input_buf);
+            m_out_file = SndfileHandle(m_virtual_io, (void *)record_input_buf, SFM_RDWR, SF_FORMAT_RAW, m_channels, m_sample_rate);
+        } else if (codec_choice == CodecSupport::FLAC) {
+            //
+            // FLAC
+            //
+            SF_VIRTUAL_IO m_virtual_io;
+            m_virtual_io.get_filelen = GkSfVirtualInterface::qbuffer_get_filelen;
+            m_virtual_io.seek = GkSfVirtualInterface::qbuffer_seek;
+            m_virtual_io.read = GkSfVirtualInterface::qbuffer_read;
+            m_virtual_io.write = GkSfVirtualInterface::qbuffer_write;
+            m_virtual_io.tell = GkSfVirtualInterface::qbuffer_tell;
 
-            m_initialized = true;
-            m_chosen_codec = codec_choice;
-            m_file_path = media_path;
+            m_out_file = SndfileHandle(m_virtual_io, (void *)record_input_buf, SFM_RDWR, SF_FORMAT_RAW, m_channels, m_sample_rate);
         } else {
             throw std::invalid_argument(tr("Invalid audio encoding codec specified! It is either not supported yet or an error was made.").toStdString());
         }
 
-        m_channels = audio_dev_info.audio_device_info.preferredFormat().channelCount();
-        m_frame_size = frame_size;
+        gkAudioInput->setNotifyInterval(100);
+        gkAudioInput->start(record_input_buf);
+
+        m_initialized = true;
+        m_chosen_codec = codec_choice;
+        m_file_path = media_path;
     } catch (const std::exception &e) {
         emit error(e.what(), GkSeverity::Fatal);
     }
@@ -258,13 +286,14 @@ void GkAudioEncoding::handleError(const QString &msg, const GkSeverity &severity
 /**
  * @brief GkAudioEncoding::processAudioIn is executed once enough audio samples have been written to the buffer in
  * question (100 milliseconds in this instance).
- * @author Joel Svensson <https://svenssonjoel.github.io/pages/qt-audio-input/index.html>.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>,
+ * Joel Svensson <https://svenssonjoel.github.io/pages/qt-audio-input/index.html>.
  */
 void GkAudioEncoding::processAudioIn()
 {
     if (m_initialized) {
         record_input_buf->seek(0);
-        m_buffer = record_input_buf->readAll();
+        m_buffer.append(record_input_buf->readAll());
 
         record_input_buf->buffer().clear();
         record_input_buf->seek(0);
@@ -280,10 +309,9 @@ void GkAudioEncoding::processAudioIn()
 }
 
 /**
- * @brief GkAudioEncoding::encodeOpus
+ * @brief GkAudioEncoding::encodeOpus will perform an encoding with the Ogg Opus library and its parameters.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>,
  * александр дмитрыч <https://stackoverflow.com/questions/51638654/how-to-encode-and-decode-audio-data-with-opus>
- * @param compressed_frame
  */
 void GkAudioEncoding::encodeOpus()
 {
@@ -292,17 +320,66 @@ void GkAudioEncoding::encodeOpus()
     }
 
     opus_int16 input_frame[AUDIO_OPUS_FRAMES_PER_BUFFER] = {};
-    opus_int32 compressedBytes = 0;
-
-    m_buffer.resize(gkAudioInput->bytesReady());
+    int err = 0;
     for (qint32 i = 0; i < AUDIO_OPUS_FRAMES_PER_BUFFER; ++i) {
         // Convert from little endian...
         for (qint32 j = 0; j < AUDIO_OPUS_FRAMES_PER_BUFFER; ++j) {
             input_frame[j] = qFromLittleEndian<opus_int16>(m_buffer.data() + j * AUDIO_OPUS_INT_SIZE);
         }
 
-        ope_encoder_write(m_opus_encoder, input_frame, AUDIO_OPUS_FRAMES_PER_BUFFER);
+        //
+        // https://stackoverflow.com/questions/46786922/how-to-confirm-opus-encode-buffer-size
+        if (m_sample_rate == 48000) {
+            //
+            // The frame-size must therefore be 10 milliseconds for stereo!
+            m_frame_size = ((48000 / 1000) * 2) * 10;
+        }
+
+        err = ope_encoder_write(m_opus_encoder, input_frame, m_frame_size);
+        if (err != OPE_OK) {
+            emit error(tr("Error encoding to file: %1\n\n%2").arg(QString::fromStdString(m_file_path.string()))
+                               .arg(QString::fromStdString(ope_strerror(err))), GkSeverity::Fatal);
+
+            ope_comments_destroy(m_opus_comments);
+            return;
+        }
+
+        err = ope_encoder_drain(m_opus_encoder);
+        if (err != OPE_OK) {
+            emit error(tr("Error encoding to file: %1\n\n%2").arg(QString::fromStdString(m_file_path.string()))
+                               .arg(QString::fromStdString(ope_strerror(err))), GkSeverity::Fatal);
+
+            ope_comments_destroy(m_opus_comments);
+            return;
+        }
+
         m_buffer.remove(0, AUDIO_OPUS_FRAMES_PER_BUFFER * AUDIO_OPUS_INT_SIZE);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkAudioEncoding::encodeVorbis
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkAudioEncoding::encodeVorbis()
+{
+    if (!m_initialized) {
+        return;
+    }
+
+    return;
+}
+
+/**
+ * @brief GkAudioEncoding::encodeFLAC
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkAudioEncoding::encodeFLAC()
+{
+    if (!m_initialized) {
+        return;
     }
 
     return;

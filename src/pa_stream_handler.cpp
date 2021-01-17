@@ -85,7 +85,7 @@ GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, co
     pref_output_device = output_device;
     pref_input_device = input_device;
     gkPcmFileStream = std::make_unique<GkPcmFileStream>(this);
-    gkAudioEncoding = new GkAudioEncoding(gkAudioOutput, gkAudioInput, pref_output_device, pref_input_device, gkEventLogger, this);
+    gkAudioEncoding = new GkAudioEncoding(gkDb, gkAudioOutput, gkAudioInput, pref_output_device, pref_input_device, gkEventLogger, this);
 
     QObject::connect(gkAudioOutput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(playbackHandleStateChanged(QAudio::State)));
     QObject::connect(gkAudioInput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(recordingHandleStateChanged(QAudio::State)));

@@ -49,8 +49,6 @@ cmake_policy(SET CMP0074 NEW)
 cmake_policy(SET CMP0054 NEW)
 cmake_policy(SET CMP0087 NEW)
 
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
-
 #
 # RPATH is aimed at Linux installations primarily
 #
@@ -69,9 +67,9 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # Reference: https://cmake.org/cmake/help/latest/manual/cmake-qt.7.html
 # https://doc.qt.io/qt-5/cmake-manual.html
 #
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
-set(CMAKE_AUTOUIC ON)
+# set(CMAKE_AUTOMOC ON)
+# set(CMAKE_AUTORCC ON)
+# set(CMAKE_AUTOUIC ON)
 
 # NOTE: Do not change this unless you know what you are doing!
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -325,6 +323,18 @@ if (Ogg_FOUND)
 else()
     message(FATAL_ERROR "The 'Ogg' audio (de-/en-)coding library could not be found!")
 endif(Ogg_FOUND)
+
+#
+# libsndfile
+# https://github.com/libsndfile/libsndfile
+#
+find_package(Sndfile REQUIRED)
+if (SNDFILE_FOUND)
+    include_directories(${SNDFILE_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${SNDFILE_LIBRARIES})
+else()
+    message(FATAL_ERROR "The 'libsndfile' audio (de-/en-)coding libraries have been configured!")
+endif(SNDFILE_FOUND)
 
 find_package(Iconv REQUIRED)
 if (Iconv_FOUND)
