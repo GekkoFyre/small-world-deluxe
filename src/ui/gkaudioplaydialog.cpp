@@ -12,7 +12,7 @@
  **   then thank you from the bottom of our hearts for making use of our hard work, sweat
  **   and tears in whatever you are implementing this into!
  **
- **   Copyright (C) 2020. GekkoFyre.
+ **   Copyright (C) 2020 - 2021. GekkoFyre.
  **
  **   Small World Deluxe is free software: you can redistribute it and/or modify
  **   it under the terms of the GNU General Public License as published by
@@ -478,26 +478,26 @@ void GkAudioPlayDialog::resetStopButtonColor()
  */
 void GkAudioPlayDialog::prefillCodecComboBoxes(const CodecSupport &supported_codec)
 {
-    try {
-        switch (supported_codec) {
-            case CodecSupport::PCM:
-                ui->comboBox_playback_rec_codec->insertItem(AUDIO_PLAYBACK_CODEC_PCM_IDX, tr("PCM"), AUDIO_PLAYBACK_CODEC_PCM_IDX);
-                break;
-            case CodecSupport::Loopback:
-                ui->comboBox_playback_rec_codec->insertItem(AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX, tr("Input/Output Loopback"), AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX);
-                break;
-            case CodecSupport::Opus:
-                ui->comboBox_playback_rec_codec->insertItem(AUDIO_PLAYBACK_CODEC_OPUS_IDX, tr("Ogg Opus"), AUDIO_PLAYBACK_CODEC_OPUS_IDX);
-                break;
-            case CodecSupport::OggVorbis:
-                ui->comboBox_playback_rec_codec->insertItem(AUDIO_PLAYBACK_CODEC_VORBIS_IDX, tr("Ogg Vorbis"), AUDIO_PLAYBACK_CODEC_VORBIS_IDX);
-                break;
-            case CodecSupport::FLAC:
-                ui->comboBox_playback_rec_codec->insertItem(AUDIO_PLAYBACK_CODEC_FLAC_IDX, tr("FLAC"), AUDIO_PLAYBACK_CODEC_FLAC_IDX);
-                break;
-        }
-    } catch (const std::exception &e) {
-        QMessageBox::warning(this, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
+    switch (supported_codec) {
+        case CodecSupport::PCM:
+            ui->comboBox_playback_rec_codec->insertItem(AUDIO_PLAYBACK_CODEC_PCM_IDX, tr("PCM"), AUDIO_PLAYBACK_CODEC_PCM_IDX);
+            break;
+        case CodecSupport::Loopback:
+            ui->comboBox_playback_rec_codec->insertItem(AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX, tr("Input/Output Loopback"), AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX);
+            break;
+        case CodecSupport::Opus:
+            ui->comboBox_playback_rec_codec->insertItem(AUDIO_PLAYBACK_CODEC_OPUS_IDX, tr("Ogg Opus"), AUDIO_PLAYBACK_CODEC_OPUS_IDX);
+            break;
+        case CodecSupport::OggVorbis:
+            ui->comboBox_playback_rec_codec->insertItem(AUDIO_PLAYBACK_CODEC_VORBIS_IDX, tr("Ogg Vorbis"), AUDIO_PLAYBACK_CODEC_VORBIS_IDX);
+            break;
+        case CodecSupport::FLAC:
+            ui->comboBox_playback_rec_codec->insertItem(AUDIO_PLAYBACK_CODEC_FLAC_IDX, tr("FLAC"), AUDIO_PLAYBACK_CODEC_FLAC_IDX);
+            break;
+        case CodecSupport::Unsupported:
+            break;
+        case CodecSupport::Unknown:
+            break;
     }
 
     return;
