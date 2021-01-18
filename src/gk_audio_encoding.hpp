@@ -48,6 +48,7 @@
 #include <sndfile.hh>
 #include <opus/opusenc.h>
 #include <boost/filesystem.hpp>
+#include <mutex>
 #include <cstdio>
 #include <memory>
 #include <string>
@@ -181,6 +182,13 @@ private:
     qint32 m_frame_size = 0;
     OggOpusEnc *m_opus_encoder = nullptr;
     OggOpusComments *m_opus_comments = nullptr;
+
+    //
+    // Multithreading related objects
+    //
+    std::mutex async_ogg_opus_mtx;
+    std::mutex async_ogg_vorbis_mtx;
+    std::mutex async_flac_mtx;
 
 };
 };

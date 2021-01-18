@@ -41,7 +41,6 @@
 
 #include "src/gk_audio_encoding.hpp"
 #include <boost/exception/all.hpp>
-#include <future>
 #include <vector>
 #include <cstring>
 #include <iostream>
@@ -360,22 +359,16 @@ void GkAudioEncoding::processAudioIn()
 
         record_input_buf->buffer().clear();
         record_input_buf->seek(0);
-
-        std::vector<std::future<void>> futures_vec;
         while (!m_buffer.isEmpty()) {
             if (m_chosen_codec == CodecSupport::Opus) {
-                futures_vec.emplace_back(std::async(std::launch::async, &GkAudioEncoding::encodeOpus, this));
+                encodeOpus();
             } else if (m_chosen_codec == CodecSupport::OggVorbis) {
-                futures_vec.emplace_back(std::async(std::launch::async, &GkAudioEncoding::encodeVorbis, this));
+                encodeVorbis();
             } else if (m_chosen_codec == CodecSupport::FLAC) {
-                futures_vec.emplace_back(std::async(std::launch::async, &GkAudioEncoding::encodeFLAC, this));
+                encodeFLAC();
             } else {
                 throw std::invalid_argument(tr("The codec you have chosen is not supported as of yet, please try another!").toStdString());
             }
-        }
-
-        for (auto &enc_fut: futures_vec) {
-            enc_fut.get();
         }
     }
 
@@ -457,15 +450,15 @@ void GkAudioEncoding::encodeVorbis()
     // https://github.com/libsndfile/libsndfile/blob/master/examples/sfprocess.c
     //
     if (m_out_file.isOpen()) {
+        std::lock_guard<std::mutex> lock_g(async_flac_mtx);
         const qint32 frame_size = AUDIO_FRAMES_PER_BUFFER * m_channels;
         while (!m_buffer.isEmpty()) {
             std::vector<qint32> input_frame;
-            std::vector<qint32>::iterator it;
             input_frame.reserve(frame_size);
             for (qint32 i = 0; i < frame_size; ++i) {
                 // Convert from little endian...
                 for (qint32 j = 0; j < frame_size; ++j) {
-                    input_frame.insert(it + j, qFromLittleEndian<qint16>(m_buffer.data() + j));
+                    input_frame[j] += qFromLittleEndian<qint16>(m_buffer.data() + j);
                 }
             }
 
@@ -504,15 +497,15 @@ void GkAudioEncoding::encodeFLAC()
     // https://github.com/libsndfile/libsndfile/blob/master/examples/sfprocess.c
     //
     if (m_out_file.isOpen()) {
+        std::lock_guard<std::mutex> lock_g(async_flac_mtx);
         const qint32 frame_size = AUDIO_FRAMES_PER_BUFFER * m_channels;
         while (!m_buffer.isEmpty()) {
             std::vector<qint32> input_frame;
-            std::vector<qint32>::iterator it;
             input_frame.reserve(frame_size);
             for (qint32 i = 0; i < frame_size; ++i) {
                 // Convert from little endian...
                 for (qint32 j = 0; j < frame_size; ++j) {
-                    input_frame.insert(it + j, qFromLittleEndian<qint16>(m_buffer.data() + j));
+                    input_frame[j] += qFromLittleEndian<qint16>(m_buffer.data() + j);
                 }
             }
 

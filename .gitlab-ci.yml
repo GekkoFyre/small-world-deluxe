@@ -78,7 +78,7 @@ sworld_debug_archlinux_x86_64:
   - strip --remove-section=.note.ABI-tag /usr/lib64/libQt5Core.so.5
   - git clone https://gitlab.xiph.org/xiph/libopusenc.git
   - git submodule update --init --recursive
-  - cd libopusenc && mkdir build && cd build
+  - cd libopusenc && sh ./autogen.sh && mkdir build && cd build
   - ./../configure --enable-static && make -j 6 && make install
   - cd ./../..
   - git clone https://github.com/drowe67/codec2.git

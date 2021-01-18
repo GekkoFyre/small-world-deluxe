@@ -85,7 +85,11 @@ GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, co
     pref_output_device = output_device;
     pref_input_device = input_device;
     gkPcmFileStream = std::make_unique<GkPcmFileStream>(this);
+
     gkAudioEncoding = new GkAudioEncoding(gkDb, gkAudioOutput, gkAudioInput, pref_output_device, pref_input_device, gkEventLogger, this);
+    gkAudioEncoding->moveToThread(&gkAudioEncodingThread);
+    QObject::connect(&gkAudioEncodingThread, &QThread::finished, gkAudioEncoding, &QObject::deleteLater);
+    gkAudioEncodingThread.start();
 
     QObject::connect(gkAudioOutput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(playbackHandleStateChanged(QAudio::State)));
     QObject::connect(gkAudioInput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(recordingHandleStateChanged(QAudio::State)));
@@ -110,6 +114,9 @@ GkPaStreamHandler::~GkPaStreamHandler()
     if (!procMediaEventLoop.isNull()) {
         delete procMediaEventLoop;
     }
+
+    gkAudioEncodingThread.quit();
+    gkAudioEncodingThread.wait();
 
     return;
 }

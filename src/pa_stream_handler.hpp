@@ -71,6 +71,7 @@ namespace GekkoFyre {
 
 class GkPaStreamHandler : public QObject {
     Q_OBJECT
+    QThread gkAudioEncodingThread;
 
 public:
     explicit GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
