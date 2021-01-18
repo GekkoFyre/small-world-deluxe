@@ -52,6 +52,7 @@
 #include <cstdio>
 #include <memory>
 #include <string>
+#include <QFile>
 #include <QObject>
 #include <QBuffer>
 #include <QPointer>
@@ -164,12 +165,14 @@ private:
     //
     // Encoder variables
     //
-    bool m_initialized = false;
-    fs::path m_file_path;
-    QByteArray m_buffer;
-    GkAudioFramework::CodecSupport m_chosen_codec;
-    QPointer<QBuffer> record_input_buf;
-    SNDFILE	*m_handle_in;
+    bool m_initialized = false;                                 // Whether an encoding operation has begun or not; therefore block other attempts until this singular one has stopped.
+    fs::path m_file_path;                                       // The file-path to the audio file where the encoded information will be written.
+    QByteArray m_buffer;                                        // A QByteArray, providing more readily accessible information as needed by the FLAC, Ogg Vorbis, Ogg Opus, etc. encoders.
+    GkAudioFramework::CodecSupport m_chosen_codec;              // The chosen audio encoding codec, whether it be FLAC, Ogg Vorbis, Ogg Opus, etc.
+    QPointer<QBuffer> record_input_buf;                         // For reading RAW PCM audio data from a given QAudioInput into.
+    QPointer<QBuffer> m_encoded_buf;                            // For holding the encoded data whether it be FLAC, Ogg Vorbis, Ogg Opus, etc. as calculated from `record_input_buf`.
+    SNDFILE	*m_handle_in;                                       // The libsndfile handler, for all related operations such as reading, writing (and hence conversion), etc.
+    QFile m_out_file;
 
     //
     // Opus related

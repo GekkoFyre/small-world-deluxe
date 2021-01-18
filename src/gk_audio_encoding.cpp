@@ -94,6 +94,7 @@ GkAudioEncoding::GkAudioEncoding(QPointer<GekkoFyre::GkLevelDb> database, QPoint
 
     //
     // Open the buffer for reading and writing purposes!
+    m_encoded_buf = new QBuffer(this);
     record_input_buf = new QBuffer(this);
     record_input_buf->open(QBuffer::ReadWrite);
 
@@ -116,6 +117,8 @@ GkAudioEncoding::~GkAudioEncoding()
         if (m_opus_comments) {
             ope_comments_destroy(m_opus_comments);
         }
+
+        m_out_file.close();
     }
 }
 
@@ -168,6 +171,7 @@ void GkAudioEncoding::stopEncode()
  * @param codec_choice The choice of codec you wish to encode with, whether that be Opus, Ogg Vorbis, MP3, or possibly something else!
  * @param frame_size The frame size to record with.
  * @param application
+ * @note rafix07 <https://stackoverflow.com/questions/53405439/how-to-use-stdasync-on-a-queue-of-vectors-or-a-vector-of-vectors-to-sort>.
  */
 void GkAudioEncoding::startCaller(const fs::path &media_path, const Database::Settings::Audio::GkDevice &audio_dev_info,
                                   const qint32 &bitrate, const GkAudioFramework::CodecSupport &codec_choice,
@@ -241,11 +245,30 @@ void GkAudioEncoding::startCaller(const fs::path &media_path, const Database::Se
             sf_handle_in_info.sections = false;
             sf_handle_in_info.seekable = true;
 
-            QPointer<QBuffer> output_buf = new QBuffer(this);
-            m_handle_in = sf_open_virtual(&m_virtual_io, SFM_WRITE, &sf_handle_in_info, (void *)output_buf);
+            m_encoded_buf->open(QBuffer::ReadWrite);
+            m_handle_in = sf_open_virtual(&m_virtual_io, SFM_WRITE, &sf_handle_in_info, (void *)m_encoded_buf);
             if (!m_handle_in) {
                 emit error(tr("Error encoding to file: %1\n\n%2").arg(QString::fromStdString(m_file_path.string()))
                                    .arg(QString::fromStdString(sf_strerror(m_handle_in))), GkSeverity::Fatal);
+            }
+
+            sf_set_string(m_handle_in, SF_STR_ARTIST, tr("%1 by %2 et al.")
+                    .arg(General::productName).arg(General::companyName).toStdString().c_str());
+            sf_set_string(m_handle_in, SF_STR_TITLE, tr("Recorded on %1")
+                    .arg(QDateTime::currentDateTime().toString()).toStdString().c_str());
+
+            if (!m_out_file.isOpen()) {
+                m_out_file.setParent(this);
+                m_out_file.setFileName(QString::fromStdString(m_file_path.string()));
+                if (m_out_file.open(QIODevice::WriteOnly)) {
+                    m_encoded_buf->seek(0);
+                    m_out_file.write(m_encoded_buf->readAll());
+
+                    m_encoded_buf->buffer().clear();
+                    m_encoded_buf->seek(0);
+                }
+            } else {
+                throw std::runtime_error(tr("Race condition encountered: only a singular recording instance may be open at a time!").toStdString());
             }
 
             emit initialize();
@@ -268,11 +291,30 @@ void GkAudioEncoding::startCaller(const fs::path &media_path, const Database::Se
             sf_handle_in_info.sections = false;
             sf_handle_in_info.seekable = true;
 
-            QPointer<QBuffer> output_buf = new QBuffer(this);
-            m_handle_in = sf_open_virtual(&m_virtual_io, SFM_WRITE, &sf_handle_in_info, (void *)output_buf);
+            m_encoded_buf->open(QBuffer::ReadWrite);
+            m_handle_in = sf_open_virtual(&m_virtual_io, SFM_WRITE, &sf_handle_in_info, (void *)m_encoded_buf);
             if (!m_handle_in) {
                 emit error(tr("Error encoding to file: %1\n\n%2").arg(QString::fromStdString(m_file_path.string()))
                                    .arg(QString::fromStdString(sf_strerror(m_handle_in))), GkSeverity::Fatal);
+            }
+
+            sf_set_string(m_handle_in, SF_STR_ARTIST, tr("%1 by %2 et al.")
+                    .arg(General::productName).arg(General::companyName).toStdString().c_str());
+            sf_set_string(m_handle_in, SF_STR_TITLE, tr("Recorded on %1")
+                    .arg(QDateTime::currentDateTime().toString()).toStdString().c_str());
+
+            if (!m_out_file.isOpen()) {
+                m_out_file.setParent(this);
+                m_out_file.setFileName(QString::fromStdString(m_file_path.string()));
+                if (m_out_file.open(QIODevice::WriteOnly)) {
+                    m_encoded_buf->seek(0);
+                    m_out_file.write(m_encoded_buf->readAll());
+
+                    m_encoded_buf->buffer().clear();
+                    m_encoded_buf->seek(0);
+                }
+            } else {
+                throw std::runtime_error(tr("Race condition encountered: only a singular recording instance may be open at a time!").toStdString());
             }
 
             emit initialize();
@@ -435,8 +477,16 @@ void GkAudioEncoding::encodeVorbis(const QByteArray &data_buf)
         // For writing data chunks in terms of frames.
         // The number of items actually read/written = frames * number of channels.
         //
-        sf_writef_int(m_handle_in, input_frame, AUDIO_FRAMES_PER_BUFFER);
+        sf_writef_int(m_handle_in, input_frame, AUDIO_FRAMES_PER_BUFFER * m_channels);
         buf_tmp.remove(0, AUDIO_FRAMES_PER_BUFFER);
+
+        //
+        // Write to an output file!
+        m_encoded_buf->seek(0);
+        m_out_file.write(m_encoded_buf->readAll());
+
+        m_encoded_buf->buffer().clear();
+        m_encoded_buf->seek(0);
     }
 
     return;
@@ -469,8 +519,16 @@ void GkAudioEncoding::encodeFLAC(const QByteArray &data_buf)
         // For writing data chunks in terms of frames.
         // The number of items actually read/written = frames * number of channels.
         //
-        sf_writef_int(m_handle_in, input_frame, AUDIO_FRAMES_PER_BUFFER);
+        sf_writef_int(m_handle_in, input_frame, AUDIO_FRAMES_PER_BUFFER * m_channels);
         buf_tmp.remove(0, AUDIO_FRAMES_PER_BUFFER);
+
+        //
+        // Write to an output file!
+        m_encoded_buf->seek(0);
+        m_out_file.write(m_encoded_buf->readAll());
+
+        m_encoded_buf->buffer().clear();
+        m_encoded_buf->seek(0);
     }
 
     return;
