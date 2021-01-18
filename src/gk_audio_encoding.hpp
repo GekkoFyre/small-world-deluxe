@@ -45,9 +45,10 @@
 #include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
 #include <sndfile.h>
-#include <sndfile.hh>
 #include <opus/opusenc.h>
 #include <boost/filesystem.hpp>
+#include <mutex>
+#include <thread>
 #include <cstdio>
 #include <memory>
 #include <string>
@@ -136,15 +137,17 @@ private slots:
     void handleError(const QString &msg, const GekkoFyre::System::Events::Logging::GkSeverity &severity);
     void processAudioIn();
 
-    void encodeOpus();
-    void encodeVorbis();
-    void encodeFLAC();
+    void startRecBuffer();
+    void encodeOpus(const QByteArray &data_buf);
+    void encodeVorbis(const QByteArray &data_buf);
+    void encodeFLAC(const QByteArray &data_buf);
 
 signals:
     void pauseEncode();
 
     void encoded(QByteArray data);
     void error(const QString &msg, const GekkoFyre::System::Events::Logging::GkSeverity &severity);
+    void initialize();
 
 private:
     QPointer<GekkoFyre::GkLevelDb> gkDb;
@@ -166,7 +169,7 @@ private:
     QByteArray m_buffer;
     GkAudioFramework::CodecSupport m_chosen_codec;
     QPointer<QBuffer> record_input_buf;
-    SndfileHandle m_out_file;
+    SNDFILE	*m_handle_in;
 
     //
     // Opus related

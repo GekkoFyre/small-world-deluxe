@@ -101,6 +101,7 @@ GkAudioEncoding::GkAudioEncoding(QPointer<GekkoFyre::GkLevelDb> database, QPoint
     QObject::connect(this, SIGNAL(error(const QString &, const GekkoFyre::System::Events::Logging::GkSeverity &)),
                      this, SLOT(handleError(const QString &, const GekkoFyre::System::Events::Logging::GkSeverity &)));
     QObject::connect(gkAudioInput, &QAudioInput::notify, this, &GkAudioEncoding::processAudioIn);
+    QObject::connect(this, SIGNAL(initialize()), this, SLOT(startRecBuffer()));
 }
 
 GkAudioEncoding::~GkAudioEncoding()
@@ -177,6 +178,8 @@ void GkAudioEncoding::startCaller(const fs::path &media_path, const Database::Se
             return;
         }
 
+        m_chosen_codec = codec_choice;
+        m_file_path = media_path;
         m_channels = gkAudioInput->format().channelCount();
 
         //
@@ -208,15 +211,17 @@ void GkAudioEncoding::startCaller(const fs::path &media_path, const Database::Se
             // https://stackoverflow.com/questions/46786922/how-to-confirm-opus-encode-buffer-size
             //
             qint32 err;
-            m_opus_encoder = ope_encoder_create_file(media_path.string().c_str(), m_opus_comments, m_sample_rate, m_channels, 0, &err);
+            m_opus_encoder = ope_encoder_create_file(m_file_path.string().c_str(), m_opus_comments, m_sample_rate, m_channels, 0, &err);
 
             if (!m_opus_encoder) {
-                emit error(tr("Error encoding to file: %1\n\n%2").arg(QString::fromStdString(media_path.string()))
+                emit error(tr("Error encoding to file: %1\n\n%2").arg(QString::fromStdString(m_file_path.string()))
                                    .arg(QString::fromStdString(ope_strerror(err))), GkSeverity::Fatal);
 
                 ope_comments_destroy(m_opus_comments);
                 return;
             }
+
+            emit initialize();
         } else if (codec_choice == CodecSupport::OggVorbis) {
             //
             // Ogg Vorbis
@@ -228,7 +233,22 @@ void GkAudioEncoding::startCaller(const fs::path &media_path, const Database::Se
             m_virtual_io.write = GkSfVirtualInterface::qbuffer_write;
             m_virtual_io.tell = GkSfVirtualInterface::qbuffer_tell;
 
-            m_out_file = SndfileHandle(m_virtual_io, (void *)record_input_buf, SFM_RDWR, SF_FORMAT_RAW, m_channels, m_sample_rate);
+            SF_INFO sf_handle_in_info;
+            sf_handle_in_info.frames = AUDIO_FRAMES_PER_BUFFER;
+            sf_handle_in_info.format = SF_FORMAT_OGG | SF_FORMAT_VORBIS;
+            sf_handle_in_info.channels = m_channels;
+            sf_handle_in_info.samplerate = m_sample_rate;
+            sf_handle_in_info.sections = false;
+            sf_handle_in_info.seekable = true;
+
+            QPointer<QBuffer> output_buf = new QBuffer(this);
+            m_handle_in = sf_open_virtual(&m_virtual_io, SFM_WRITE, &sf_handle_in_info, (void *)output_buf);
+            if (!m_handle_in) {
+                emit error(tr("Error encoding to file: %1\n\n%2").arg(QString::fromStdString(m_file_path.string()))
+                                   .arg(QString::fromStdString(sf_strerror(m_handle_in))), GkSeverity::Fatal);
+            }
+
+            emit initialize();
         } else if (codec_choice == CodecSupport::FLAC) {
             //
             // FLAC
@@ -240,17 +260,27 @@ void GkAudioEncoding::startCaller(const fs::path &media_path, const Database::Se
             m_virtual_io.write = GkSfVirtualInterface::qbuffer_write;
             m_virtual_io.tell = GkSfVirtualInterface::qbuffer_tell;
 
-            m_out_file = SndfileHandle(m_virtual_io, (void *)record_input_buf, SFM_RDWR, SF_FORMAT_RAW, m_channels, m_sample_rate);
+            SF_INFO sf_handle_in_info;
+            sf_handle_in_info.frames = AUDIO_FRAMES_PER_BUFFER;
+            sf_handle_in_info.format = SF_FORMAT_FLAC;
+            sf_handle_in_info.channels = m_channels;
+            sf_handle_in_info.samplerate = m_sample_rate;
+            sf_handle_in_info.sections = false;
+            sf_handle_in_info.seekable = true;
+
+            QPointer<QBuffer> output_buf = new QBuffer(this);
+            m_handle_in = sf_open_virtual(&m_virtual_io, SFM_WRITE, &sf_handle_in_info, (void *)output_buf);
+            if (!m_handle_in) {
+                emit error(tr("Error encoding to file: %1\n\n%2").arg(QString::fromStdString(m_file_path.string()))
+                                   .arg(QString::fromStdString(sf_strerror(m_handle_in))), GkSeverity::Fatal);
+            }
+
+            emit initialize();
         } else {
             throw std::invalid_argument(tr("Invalid audio encoding codec specified! It is either not supported yet or an error was made.").toStdString());
         }
 
-        gkAudioInput->setNotifyInterval(100);
-        gkAudioInput->start(record_input_buf);
-
         m_initialized = true;
-        m_chosen_codec = codec_choice;
-        m_file_path = media_path;
     } catch (const std::exception &e) {
         emit error(e.what(), GkSeverity::Fatal);
     }
@@ -300,7 +330,13 @@ void GkAudioEncoding::processAudioIn()
 
         while (!m_buffer.isEmpty()) {
             if (m_chosen_codec == CodecSupport::Opus) {
-                encodeOpus();
+                auto encode_opus_async = std::async(std::launch::async, &GkAudioEncoding::encodeOpus, this, std::ref(m_buffer));
+            } else if (m_chosen_codec == CodecSupport::OggVorbis) {
+                auto encode_vorbis_async = std::async(std::launch::async, &GkAudioEncoding::encodeVorbis, this, std::ref(m_buffer));
+            } else if (m_chosen_codec == CodecSupport::FLAC) {
+                auto encode_flac_async = std::async(std::launch::async, &GkAudioEncoding::encodeFLAC, this, std::ref(m_buffer));
+            } else {
+                throw std::invalid_argument(tr("The codec you have chosen is not supported as of yet, please try another!").toStdString());
             }
         }
     }
@@ -309,11 +345,24 @@ void GkAudioEncoding::processAudioIn()
 }
 
 /**
+ * @brief GkAudioEncoding::startRecBuffer
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkAudioEncoding::startRecBuffer()
+{
+    gkAudioInput->setNotifyInterval(100);
+    gkAudioInput->start(record_input_buf);
+
+    return;
+}
+
+/**
  * @brief GkAudioEncoding::encodeOpus will perform an encoding with the Ogg Opus library and its parameters.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>,
  * александр дмитрыч <https://stackoverflow.com/questions/51638654/how-to-encode-and-decode-audio-data-with-opus>
+ * @param data_buf the data to write to the audio encoder.
  */
-void GkAudioEncoding::encodeOpus()
+void GkAudioEncoding::encodeOpus(const QByteArray &data_buf)
 {
     if (!m_initialized) {
         return;
@@ -362,11 +411,32 @@ void GkAudioEncoding::encodeOpus()
 /**
  * @brief GkAudioEncoding::encodeVorbis
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param data_buf the data to write to the audio encoder.
  */
-void GkAudioEncoding::encodeVorbis()
+void GkAudioEncoding::encodeVorbis(const QByteArray &data_buf)
 {
-    if (!m_initialized) {
-        return;
+    //
+    // Ogg Vorbis
+    // https://github.com/libsndfile/libsndfile/blob/master/examples/sndfilehandle.cc
+    // https://github.com/libsndfile/libsndfile/blob/master/examples/sfprocess.c
+    //
+    QByteArray buf_tmp = data_buf;
+    while (!buf_tmp.isEmpty()) {
+        qint32 input_frame[AUDIO_FRAMES_PER_BUFFER] = {};
+        for (qint32 i = 0; i < AUDIO_FRAMES_PER_BUFFER; ++i) {
+            // Convert from little endian...
+            for (qint32 j = 0; j < AUDIO_FRAMES_PER_BUFFER; ++j) {
+                input_frame[j] = qFromLittleEndian<qint16>(buf_tmp.data() + j);
+            }
+        }
+
+        //
+        // libsndfile:
+        // For writing data chunks in terms of frames.
+        // The number of items actually read/written = frames * number of channels.
+        //
+        sf_writef_int(m_handle_in, input_frame, AUDIO_FRAMES_PER_BUFFER);
+        buf_tmp.remove(0, AUDIO_FRAMES_PER_BUFFER);
     }
 
     return;
@@ -375,11 +445,32 @@ void GkAudioEncoding::encodeVorbis()
 /**
  * @brief GkAudioEncoding::encodeFLAC
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param data_buf the data to write to the audio encoder.
  */
-void GkAudioEncoding::encodeFLAC()
+void GkAudioEncoding::encodeFLAC(const QByteArray &data_buf)
 {
-    if (!m_initialized) {
-        return;
+    //
+    // FLAC
+    // https://github.com/libsndfile/libsndfile/blob/master/examples/sndfilehandle.cc
+    // https://github.com/libsndfile/libsndfile/blob/master/examples/sfprocess.c
+    //
+    QByteArray buf_tmp = data_buf;
+    while (!buf_tmp.isEmpty()) {
+        qint32 input_frame[AUDIO_FRAMES_PER_BUFFER] = {};
+        for (qint32 i = 0; i < AUDIO_FRAMES_PER_BUFFER; ++i) {
+            // Convert from little endian...
+            for (qint32 j = 0; j < AUDIO_FRAMES_PER_BUFFER; ++j) {
+                input_frame[j] = qFromLittleEndian<qint16>(buf_tmp.data() + j);
+            }
+        }
+
+        //
+        // libsndfile:
+        // For writing data chunks in terms of frames.
+        // The number of items actually read/written = frames * number of channels.
+        //
+        sf_writef_int(m_handle_in, input_frame, AUDIO_FRAMES_PER_BUFFER);
+        buf_tmp.remove(0, AUDIO_FRAMES_PER_BUFFER);
     }
 
     return;
