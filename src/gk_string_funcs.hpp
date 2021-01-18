@@ -150,6 +150,7 @@ public:
             throw std::domain_error(tr("chunker() requires k > 0").toStdString());
         }
 
+        std::lock_guard<std::mutex> lock_g(chunker_mtx);
         using INPUT_CONTAINER_TYPE = C<T,A>;
         using INPUT_CONTAINER_VALUE_TYPE = typename INPUT_CONTAINER_TYPE::value_type;
         using OUTPUT_CONTAINER_TYPE = C<INPUT_CONTAINER_TYPE, std::allocator<INPUT_CONTAINER_TYPE>>;
@@ -169,5 +170,9 @@ public:
 
         return out_c;
     }
+
+private:
+    std::mutex chunker_mtx;
+
 };
 };

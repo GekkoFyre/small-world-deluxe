@@ -42,13 +42,19 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
+#include <sndfile.h>
+#include <sndfile.hh>
 #include <opus/opusenc.h>
 #include <boost/filesystem.hpp>
+#include <mutex>
 #include <cstdio>
 #include <memory>
 #include <string>
+#include <QFile>
 #include <QObject>
+#include <QBuffer>
 #include <QPointer>
 #include <QIODevice>
 #include <QByteArray>
@@ -61,12 +67,60 @@ namespace sys = boost::system;
 
 namespace GekkoFyre {
 
+/**
+ * @brief GkSfVirtualInterface
+ * @author Soheil Armin <https://stackoverflow.com/questions/59233615/how-to-use-qbytearray-instead-of-sndfile>.
+ */
+class GkSfVirtualInterface : public QBuffer {
+    Q_OBJECT
+
+public:
+    static sf_count_t qbuffer_get_filelen(void *user_data) {
+        QBuffer *buff = (QBuffer *)user_data;
+        return buff->size();
+    }
+
+    static sf_count_t qbuffer_seek(sf_count_t offset, int whence, void *user_data) {
+        QBuffer *buff = (QBuffer *)user_data;
+        switch (whence) {
+            case SEEK_SET:
+                buff->seek(offset);
+                break;
+            case SEEK_CUR:
+                buff->seek(buff->pos() + offset);
+                break;
+            case SEEK_END:
+                buff->seek(buff->size() + offset);
+                break;
+            default:
+                break;
+        };
+
+        return buff->pos();
+    }
+
+    static sf_count_t qbuffer_read(void *ptr, sf_count_t count, void *user_data) {
+        QBuffer *buff = (QBuffer *)user_data;
+        return buff->read((char *)ptr, count);
+    }
+
+    static sf_count_t qbuffer_write(const void *ptr, sf_count_t count, void *user_data) {
+        QBuffer *buff = (QBuffer *)user_data;
+        return buff->write((const char *)ptr, count);
+    }
+
+    static sf_count_t qbuffer_tell(void *user_data) {
+        QBuffer *buff = (QBuffer *)user_data;
+        return buff->pos();
+    }
+};
+
 class GkAudioEncoding : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkAudioEncoding(QPointer<QAudioOutput> audioOutput, QPointer<QAudioInput> audioInput,
-                             const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
+    explicit GkAudioEncoding(QPointer<GekkoFyre::GkLevelDb> database, QPointer<QAudioOutput> audioOutput,
+                             QPointer<QAudioInput> audioInput, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
                              const GekkoFyre::Database::Settings::Audio::GkDevice &input_device,
                              QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkAudioEncoding() override;
@@ -77,22 +131,27 @@ public slots:
     void startCaller(const fs::path &media_path, const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev_info,
                      const qint32 &bitrate, const GekkoFyre::GkAudioFramework::CodecSupport &codec_choice,
                      const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER, const qint32 &application = OPUS_APPLICATION_AUDIO);
-    void writeCaller(const QByteArray &data);
     void stopEncode();
 
 private slots:
     void stopCaller();
     void handleError(const QString &msg, const GekkoFyre::System::Events::Logging::GkSeverity &severity);
+    void processAudioIn();
 
+    void startRecBuffer();
     void encodeOpus();
+    void encodeVorbis();
+    void encodeFLAC();
 
 signals:
     void pauseEncode();
 
     void encoded(QByteArray data);
     void error(const QString &msg, const GekkoFyre::System::Events::Logging::GkSeverity &severity);
+    void initialize();
 
 private:
+    QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
     //
@@ -106,15 +165,30 @@ private:
     //
     // Encoder variables
     //
-    bool m_initialized = false;
-    qint32 m_channels = -1;
-    qint32 m_frame_size = -1;
-    fs::path m_file_path;
-    FILE *m_fin;
-    QByteArray m_buffer;
-    GkAudioFramework::CodecSupport m_chosen_codec;
+    bool m_initialized = false;                                 // Whether an encoding operation has begun or not; therefore block other attempts until this singular one has stopped.
+    fs::path m_file_path;                                       // The file-path to the audio file where the encoded information will be written.
+    QByteArray m_buffer;                                        // A QByteArray, providing more readily accessible information as needed by the FLAC, Ogg Vorbis, Ogg Opus, etc. encoders.
+    GkAudioFramework::CodecSupport m_chosen_codec;              // The chosen audio encoding codec, whether it be FLAC, Ogg Vorbis, Ogg Opus, etc.
+    QPointer<QBuffer> record_input_buf;                         // For reading RAW PCM audio data from a given QAudioInput into.
+    QPointer<QBuffer> m_encoded_buf;                            // For holding the encoded data whether it be FLAC, Ogg Vorbis, Ogg Opus, etc. as calculated from `record_input_buf`.
+    SndfileHandle m_handle_in;                                       // The libsndfile handler, for all related operations such as reading, writing (and hence conversion), etc.
+    QFile m_out_file;
+
+    //
+    // Opus related
+    //
+    opus_int32 m_sample_rate = 48000;
+    qint32 m_channels = 0;
+    qint32 m_frame_size = 0;
     OggOpusEnc *m_opus_encoder = nullptr;
     OggOpusComments *m_opus_comments = nullptr;
+
+    //
+    // Multithreading related objects
+    //
+    std::mutex async_ogg_opus_mtx;
+    std::mutex async_ogg_vorbis_mtx;
+    std::mutex async_flac_mtx;
 
 };
 };

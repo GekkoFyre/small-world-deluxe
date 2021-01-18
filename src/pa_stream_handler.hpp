@@ -71,6 +71,7 @@ namespace GekkoFyre {
 
 class GkPaStreamHandler : public QObject {
     Q_OBJECT
+    QThread gkAudioEncodingThread;
 
 public:
     explicit GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
@@ -130,7 +131,6 @@ private:
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
     std::map<fs::path, AudioFile<double>> gkSounds;
 
-    void recordInputAudio();
     fs::path createRecordMediaFile(const fs::path &media_path, const GkAudioFramework::CodecSupport &supported_codec, const bool &create_file = false);
 
 };

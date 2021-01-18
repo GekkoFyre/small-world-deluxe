@@ -94,9 +94,11 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
     audio_out_skip_fwd = false;
     audio_out_skip_bck = false;
 
+    prefillCodecComboBoxes(GkAudioFramework::CodecSupport::OggVorbis);
+    prefillCodecComboBoxes(GkAudioFramework::CodecSupport::FLAC);
+    prefillCodecComboBoxes(GkAudioFramework::CodecSupport::Opus);
     prefillCodecComboBoxes(GkAudioFramework::CodecSupport::PCM);
     prefillCodecComboBoxes(GkAudioFramework::CodecSupport::Loopback);
-    prefillCodecComboBoxes(GkAudioFramework::CodecSupport::Opus);
 }
 
 GkAudioPlayDialog::~GkAudioPlayDialog()
@@ -118,6 +120,8 @@ GkAudioPlayDialog::~GkAudioPlayDialog()
  */
 GkAudioChannels GkAudioPlayDialog::determineAudioChannels()
 {
+    //
+    // TODO: This is in need of updating!
     if (!r_pback_audio_file.fileName().isEmpty()) {
         // We currently have a file selected!
         if (gkAudioFile->getNumChannels() == 1) {
@@ -417,23 +421,19 @@ void GkAudioPlayDialog::on_pushButton_playback_skip_forward_clicked()
  */
 void GkAudioPlayDialog::on_comboBox_playback_rec_codec_currentIndexChanged(int index)
 {
-    try {
-        switch (index) {
-            case AUDIO_PLAYBACK_CODEC_PCM_IDX:
-                m_rec_codec_chosen = CodecSupport::PCM;
-            case AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX:
-                m_rec_codec_chosen = CodecSupport::Loopback;
-            case AUDIO_PLAYBACK_CODEC_VORBIS_IDX:
-                break;
-            case AUDIO_PLAYBACK_CODEC_OPUS_IDX:
-                m_rec_codec_chosen = CodecSupport::Opus;
-            case AUDIO_PLAYBACK_CODEC_FLAC_IDX:
-                break;
-            default:
-                break;
-        }
-    } catch (const std::exception &e) {
-        QMessageBox::information(this, tr("Important!"), QString::fromStdString(e.what()), QMessageBox::Ok);
+    switch (index) {
+        case AUDIO_PLAYBACK_CODEC_PCM_IDX:
+            m_rec_codec_chosen = CodecSupport::PCM;
+        case AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX:
+            m_rec_codec_chosen = CodecSupport::Loopback;
+        case AUDIO_PLAYBACK_CODEC_VORBIS_IDX:
+            m_rec_codec_chosen = CodecSupport::OggVorbis;
+        case AUDIO_PLAYBACK_CODEC_OPUS_IDX:
+            m_rec_codec_chosen = CodecSupport::Opus;
+        case AUDIO_PLAYBACK_CODEC_FLAC_IDX:
+            m_rec_codec_chosen = CodecSupport::FLAC;
+        default:
+            break;
     }
 
     return;
@@ -487,7 +487,13 @@ void GkAudioPlayDialog::prefillCodecComboBoxes(const CodecSupport &supported_cod
                 ui->comboBox_playback_rec_codec->insertItem(AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX, tr("Input/Output Loopback"), AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX);
                 break;
             case CodecSupport::Opus:
-                ui->comboBox_playback_rec_codec->insertItem(AUDIO_PLAYBACK_CODEC_OPUS_IDX, tr("Opus"), AUDIO_PLAYBACK_CODEC_OPUS_IDX);
+                ui->comboBox_playback_rec_codec->insertItem(AUDIO_PLAYBACK_CODEC_OPUS_IDX, tr("Ogg Opus"), AUDIO_PLAYBACK_CODEC_OPUS_IDX);
+                break;
+            case CodecSupport::OggVorbis:
+                ui->comboBox_playback_rec_codec->insertItem(AUDIO_PLAYBACK_CODEC_VORBIS_IDX, tr("Ogg Vorbis"), AUDIO_PLAYBACK_CODEC_VORBIS_IDX);
+                break;
+            case CodecSupport::FLAC:
+                ui->comboBox_playback_rec_codec->insertItem(AUDIO_PLAYBACK_CODEC_FLAC_IDX, tr("FLAC"), AUDIO_PLAYBACK_CODEC_FLAC_IDX);
                 break;
         }
     } catch (const std::exception &e) {

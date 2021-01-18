@@ -224,6 +224,7 @@ RUN pacman -S lz4 --noconfirm
 RUN pacman -S zlib --noconfirm
 RUN pacman -S leveldb --noconfirm
 RUN pacman -S portaudio --noconfirm
+RUN pacman -S libsndfile --noconfirm
 RUN pacman -S libusb --noconfirm
 RUN pacman -S fftw --noconfirm
 RUN pacman -S snappy --noconfirm
