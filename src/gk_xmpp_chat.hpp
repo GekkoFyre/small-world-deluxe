@@ -43,6 +43,7 @@
 
 #include "src/defines.hpp"
 #include "src/gk_logger.hpp"
+#include "src/gk_xmpp_client.hpp"
 #include <string>
 #include <vector>
 #include <QObject>
@@ -51,17 +52,24 @@
 
 namespace GekkoFyre {
 
-class GkXmppServer : public QThread {
+class GkXmppChat : public QThread {
     Q_OBJECT
 
 public:
-    explicit GkXmppServer(QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
-    ~GkXmppServer() override;
+    explicit GkXmppChat(QPointer<GekkoFyre::GkXmppClient> xmppClient, const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
+                        QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
+    ~GkXmppChat() override;
 
     void run() Q_DECL_OVERRIDE;
 
 private:
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
+
+    //
+    // QXmpp and XMPP related
+    //
+    GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
+    QPointer<GekkoFyre::GkXmppClient> m_xmppClient;
 
 };
 };

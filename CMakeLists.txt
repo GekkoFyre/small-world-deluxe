@@ -49,8 +49,6 @@ cmake_policy(SET CMP0074 NEW)
 cmake_policy(SET CMP0054 NEW)
 cmake_policy(SET CMP0087 NEW)
 
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
-
 #
 # RPATH is aimed at Linux installations primarily
 #
@@ -69,9 +67,9 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # Reference: https://cmake.org/cmake/help/latest/manual/cmake-qt.7.html
 # https://doc.qt.io/qt-5/cmake-manual.html
 #
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
-set(CMAKE_AUTOUIC ON)
+# set(CMAKE_AUTOMOC ON)
+# set(CMAKE_AUTORCC ON)
+# set(CMAKE_AUTOUIC ON)
 
 # NOTE: Do not change this unless you know what you are doing!
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -169,9 +167,7 @@ set(Boost_USE_STATIC_RUNTIME OFF CACHE BOOL "Use static runtime when linking Boo
 find_package(Boost 1.64.0 REQUIRED COMPONENTS "filesystem"
                                               "system"
                                               "exception"
-                                              "chrono"
-                                              "locale"
-                                              "random")
+                                              "locale")
                                               
 if(WIN32 OR MSYS OR MINGW)
     if(${GFYRE_PACKAGE_MAINTAINER} EQUAL ON)
@@ -328,6 +324,18 @@ else()
     message(FATAL_ERROR "The 'Ogg' audio (de-/en-)coding library could not be found!")
 endif(Ogg_FOUND)
 
+#
+# libsndfile
+# https://github.com/libsndfile/libsndfile
+#
+find_package(Sndfile REQUIRED)
+if (SNDFILE_FOUND)
+    include_directories(${SNDFILE_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${SNDFILE_LIBRARIES})
+else()
+    message(FATAL_ERROR "The 'libsndfile' audio (de-/en-)coding libraries have been configured!")
+endif(SNDFILE_FOUND)
+
 find_package(Iconv REQUIRED)
 if (Iconv_FOUND)
     include_directories(${Iconv_INCLUDE_DIRS})
@@ -395,6 +403,14 @@ message(STATUS "The 'Sentry' error reporting libraries have been configured!")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/opus")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/opus/include")
 message(STATUS "The 'Opus' audio (de-/en-)coding libraries have been configured!")
+
+find_package(OpusEnc REQUIRED)
+if (OpusEnc_FOUND)
+    include_directories(${OpusEnc_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${OpusEnc_LIBRARIES})
+else()
+    message(FATAL_ERROR "The 'libopusenc' audio (de-/en-)coding file creation libraries could not be found!")
+endif(OpusEnc_FOUND)
 
 #
 # KissFFT by Mark Borgerding
@@ -521,13 +537,14 @@ set(GALAXY_UI_CPP
     src/dek_db.cpp
     src/file_io.cpp
     src/audio_devices.cpp
+    src/gk_fyr_data.cpp
     src/gk_fft_audio.cpp
     src/gk_waterfall_gui.cpp
     src/gk_spectro_color_maps.cpp
     src/gk_audio_encoding.cpp
     src/gk_audio_decoding.cpp
     src/gk_xmpp_client.cpp
-    src/gk_xmpp_server.cpp
+    src/gk_xmpp_chat.cpp
     src/gk_cli.cpp
     src/gk_modem.cpp
     src/gk_frequency_list.cpp
@@ -614,13 +631,14 @@ set(GALAXY_OBJ_HEADERS
     src/dek_db.hpp
     src/file_io.hpp
     src/audio_devices.hpp
+    src/gk_fyr_data.hpp
     src/gk_fft_audio.hpp
     src/gk_waterfall_gui.hpp
     src/gk_spectro_color_maps.hpp
     src/gk_audio_encoding.hpp
     src/gk_audio_decoding.hpp
     src/gk_xmpp_client.hpp
-    src/gk_xmpp_server.hpp
+    src/gk_xmpp_chat.hpp
     src/gk_cli.hpp
     src/gk_modem.hpp
     src/gk_frequency_list.hpp

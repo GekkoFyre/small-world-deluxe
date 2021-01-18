@@ -44,6 +44,7 @@
 #include <QMessageBox>
 
 using namespace GekkoFyre;
+using namespace GkAudioFramework;
 using namespace Database;
 using namespace Settings;
 using namespace Audio;
@@ -53,18 +54,21 @@ using namespace Spectrograph;
 using namespace System;
 using namespace Events;
 using namespace Logging;
+using namespace Network;
+using namespace GkXmpp;
 
 /**
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-GkPaAudioPlayer::GkPaAudioPlayer(QPointer<GekkoFyre::GkLevelDb> database, const GkDevice &output_device, QPointer<QAudioOutput> audioOutput,
-                                 QPointer<QAudioInput> audioInput, const QPointer<GekkoFyre::GkEventLogger> &eventLogger,
-                                 std::shared_ptr<AudioFile<double>> audioFileLib, QObject *parent)
+GkPaAudioPlayer::GkPaAudioPlayer(QPointer<GekkoFyre::GkLevelDb> database, const GkDevice &output_device, const GkDevice &input_device,
+                                 QPointer<QAudioOutput> audioOutput, QPointer<QAudioInput> audioInput,
+                                 const QPointer<GekkoFyre::GkEventLogger> &eventLogger, std::shared_ptr<AudioFile<double>> audioFileLib,
+                                 QObject *parent)
 {
     gkAudioInput = std::move(audioInput);
     gkAudioOutput = std::move(audioOutput);
     gkAudioFile = std::move(audioFileLib);
-    streamHandler = new GkPaStreamHandler(std::move(database), output_device, gkAudioOutput, gkAudioInput, eventLogger, gkAudioFile, parent);;
+    streamHandler = new GkPaStreamHandler(std::move(database), output_device, input_device, gkAudioOutput, gkAudioInput, eventLogger, gkAudioFile, parent);;
 
     return;
 }
@@ -98,6 +102,25 @@ void GkPaAudioPlayer::play(const GkAudioFramework::CodecSupport &supported_codec
 {
     try {
         streamHandler->processEvent(GkAudioFramework::AudioEventType::start, fs::path(), supported_codec, false);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), tr("A stream processing error has occurred with regards to the PortAudio library handling functions. Error:\n\n%1")
+                .arg(QString::fromStdString(e.what())), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkPaAudioPlayer::record Initiate a session where we record from either the Audio Input or Output Device, using
+ * a QBuffer within the internals.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param supported_codec The codec to use when creating the recording, whether it be Opus, PCM, FLAC, etc.
+ * @param record_dir The directory to which recordings are to be saved towards.
+ */
+void GkPaAudioPlayer::record(const CodecSupport &supported_codec, const fs::path &record_dir)
+{
+    try {
+        streamHandler->processEvent(GkAudioFramework::AudioEventType::record, record_dir, supported_codec, false);
     } catch (const std::exception &e) {
         QMessageBox::warning(nullptr, tr("Error!"), tr("A stream processing error has occurred with regards to the PortAudio library handling functions. Error:\n\n%1")
                 .arg(QString::fromStdString(e.what())), QMessageBox::Ok);

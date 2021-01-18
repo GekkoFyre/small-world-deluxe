@@ -467,6 +467,9 @@ void GkLevelDb::write_audio_playback_dlg_settings(const QString &value, const Au
             case AudioPlaybackDlg::GkAudioDlgLastFolderBrowsed:
                 batch.Put("GkAudioDlgLastFolderBrowsed", value.toStdString());
                 break;
+            case AudioPlaybackDlg::GkRecordDlgLastFolderBrowsed:
+                batch.Put("GkRecordDlgLastFolderBrowsed", value.toStdString());
+                break;
             default:
                 break;
         }
@@ -893,7 +896,7 @@ void GkLevelDb::capture_sys_info()
         if (!sentry_unique_id.isEmpty()) {
             const std::string ret_str = sentry_unique_id.toStdString();
         } else {
-            const std::string ret_str = randomString(24);
+            const std::string ret_str = createRandomString(24);
             write_optin_settings(QString::fromStdString(ret_str), GkOptIn::UserUniqueId);
         }
 
@@ -1055,11 +1058,17 @@ void GkLevelDb::write_xmpp_settings(const QString &value, const Settings::GkXmpp
             case Settings::GkXmppCfg::XmppAllowFileXfers:
                 batch.Put("XmppCfgAllowFileXfers", value.toStdString());
                 break;
-            case Settings::GkXmppCfg::XmppAlowMucs:
+            case Settings::GkXmppCfg::XmppAllowMucs:
                 batch.Put("XmppCfgAllowMucs", value.toStdString());
                 break;
             case Settings::GkXmppCfg::XmppAutoConnect:
                 batch.Put("XmppCfgAutoConnect", value.toStdString());
+                break;
+            case Settings::GkXmppCfg::XmppAutoReconnect:
+                batch.Put("XmppAutoReconnect", value.toStdString());
+                break;
+            case Settings::GkXmppCfg::XmppAutoSignup:
+                batch.Put("XmppAutoSignup", value.toStdString());
                 break;
             case Settings::GkXmppCfg::XmppAvatarByteArray:
                 batch.Put("XmppCfgAvatarByteArray", value.toStdString());
@@ -1119,6 +1128,40 @@ void GkLevelDb::write_xmpp_settings(const QString &value, const Settings::GkXmpp
 }
 
 /**
+ * @brief GkLevelDb::write_xmpp_alpha_notice
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value
+ */
+void GkLevelDb::write_xmpp_alpha_notice(const bool &value)
+{
+    try {
+        // Put key-value
+        leveldb::WriteBatch batch;
+        leveldb::Status status;
+
+        batch.Put("XmppAlphaMsgBoxNotice", boolEnum(value));
+
+        std::time_t curr_time = std::time(nullptr);
+        std::stringstream ss;
+        ss << curr_time;
+        batch.Put("CurrTime", ss.str());
+
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
+
+        status = db->Write(write_options, &batch);
+
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
  * @brief GkLevelDb::read_xmpp_settings reads out the previously saved XMPP settings from the given Google LevelDB
  * database for further processing.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -1140,11 +1183,17 @@ QString GkLevelDb::read_xmpp_settings(const Settings::GkXmppCfg &key)
         case Settings::GkXmppCfg::XmppAllowFileXfers:
             status = db->Get(read_options, "XmppCfgAllowFileXfers", &value);
             break;
-        case Settings::GkXmppCfg::XmppAlowMucs:
+        case Settings::GkXmppCfg::XmppAllowMucs:
             status = db->Get(read_options, "XmppCfgAllowMucs", &value);
             break;
         case Settings::GkXmppCfg::XmppAutoConnect:
             status = db->Get(read_options, "XmppCfgAutoConnect", &value);
+            break;
+        case Settings::GkXmppCfg::XmppAutoReconnect:
+            status = db->Get(read_options, "XmppAutoReconnect", &value);
+            break;
+        case Settings::GkXmppCfg::XmppAutoSignup:
+            status = db->Get(read_options, "XmppAutoSignup", &value);
             break;
         case Settings::GkXmppCfg::XmppAvatarByteArray:
             status = db->Get(read_options, "XmppCfgAvatarByteArray", &value);
@@ -1184,6 +1233,22 @@ QString GkLevelDb::read_xmpp_settings(const Settings::GkXmppCfg &key)
     }
 
     return QString::fromStdString(value);
+}
+
+/**
+ * @brief GkLevelDb::read_xmpp_alpha_notice
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return
+ */
+bool GkLevelDb::read_xmpp_alpha_notice() {
+    leveldb::Status status;
+    leveldb::ReadOptions read_options;
+    std::string value = "";
+
+    read_options.verify_checksums = true;
+
+    status = db->Get(read_options, "XmppAlphaMsgBoxNotice", &value);
+    return boolStr(value);
 }
 
 /**
@@ -1527,6 +1592,27 @@ QString GkLevelDb::read_audio_device_settings(const bool &is_output_device)
 }
 
 /**
+ * @brief
+ * @param length
+ * @return
+ */
+std::string GkLevelDb::createRandomString(const qint32 &length)
+{
+    const std::string char_str = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+    std::random_device random_device;
+    std::mt19937 generator(random_device());
+    std::uniform_int_distribution<> distribution(0, char_str.size() - 1);
+
+    std::string random_string;
+    for (std::size_t i = 0; i < length; ++i) {
+        random_string += char_str[distribution(generator)];
+    }
+
+    return random_string;
+}
+
+/**
  * @brief GkLevelDb::removeInvalidChars removes invalid/illegal characters from a given std::string, making it all clean!
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param string_to_modify The given std::string to modify.
@@ -1719,6 +1805,9 @@ QString GkLevelDb::read_audio_playback_dlg_settings(const AudioPlaybackDlg &key)
     switch (key) {
         case AudioPlaybackDlg::GkAudioDlgLastFolderBrowsed:
             status = db->Get(read_options, "GkAudioDlgLastFolderBrowsed", &value);
+            break;
+        case AudioPlaybackDlg::GkRecordDlgLastFolderBrowsed:
+            status = db->Get(read_options, "GkRecordDlgLastFolderBrowsed", &value);
             break;
         default:
             throw std::runtime_error(tr("Invalid key has been provided for reading Audio Playback dialog settings relating to Google LevelDB!").toStdString());
@@ -2127,6 +2216,35 @@ GekkoFyre::GkAudioFramework::CodecSupport GkLevelDb::convCodecSupportFromIdxToEn
 }
 
 /**
+ * @brief GkLevelDb::convCodecFormatToFileExtension outputs a file extension for the given codec enumerator as specified by
+ * the Small World Deluxe application.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param codec_support
+ * @return
+ */
+QString GkLevelDb::convCodecFormatToFileExtension(const CodecSupport &codec_support)
+{
+    switch (codec_support) {
+        case CodecSupport::Opus:
+            return QString(".opus");
+        case CodecSupport::PCM:
+            return tr(".pcm");
+        case CodecSupport::Loopback:
+            return tr(".loopback");
+        case CodecSupport::OggVorbis:
+            return QString(".ogg");
+        case CodecSupport::FLAC:
+            return QString(".opus");
+        case CodecSupport::Unsupported:
+            return tr(".unsupported");
+        case CodecSupport::Unknown:
+            return tr(".unknown");
+    }
+
+    return QString();
+}
+
+/**
  * @brief DekodeDb::boolEnum Will enumerate a boolean value to an std::string, ready for use within a database.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param is_true Whether we are dealing with a true or false situation.
@@ -2269,25 +2387,4 @@ std::string GkLevelDb::deleteCsvValForDb(const std::string &comma_sep_values, co
     }
 
     return "";
-}
-
-/**
- * @brief GkLevelDb::randomString
- * @author Carl <https://stackoverflow.com/a/12468109>
- * @return
- */
-std::string GkLevelDb::randomString(const size_t &length)
-{
-    auto randchar = []() -> char {
-        const char charset[] =
-                "0123456789"
-                "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                "abcdefghijklmnopqrstuvwxyz";
-        const size_t max_index = (sizeof(charset) - 1);
-        return charset[ rand() % max_index ];
-    };
-
-    std::string str(length,0);
-    std::generate_n( str.begin(), length, randchar );
-    return str;
 }

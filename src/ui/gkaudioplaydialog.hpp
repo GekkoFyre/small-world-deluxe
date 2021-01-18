@@ -94,7 +94,7 @@ private slots:
     void on_pushButton_playback_skip_forward_clicked();
 
     void on_comboBox_playback_rec_codec_currentIndexChanged(int index);
-    void on_comboBox_playback_rec_bitrate_currentIndexChanged(int index);
+    void on_horizontalSlider_playback_rec_bitrate_valueChanged(int value);
 
     void resetStopButtonColor();
 
@@ -125,6 +125,12 @@ private:
     QPointer<QAudioOutput> gkAudioOutput;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
+
+    //
+    // Audio encoding related objects
+    //
+    GekkoFyre::GkAudioFramework::CodecSupport m_rec_codec_chosen;
+    qint32 m_encode_bitrate_chosen;
 
     //
     // AudioFile objects and related

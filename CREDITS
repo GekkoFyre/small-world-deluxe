@@ -74,15 +74,19 @@ QXmpp by Manjeet Dahiya and Jeremy Lainé et al.
     <https://github.com/qxmpp-project/qxmpp>
         GNU Lesser General Public License (LGPL, version 2.1)
 
-libvorbis by Xiph.org
+libvorbis by Xiph.org Foundation
     <https://www.xiph.org/vorbis/>
         BSD 3-clause License
 
-libogg by Xiph.org
+libogg by Xiph.org Foundation
     <https://www.xiph.org/vorbis/>
         BSD 3-clause License
 
-libopus by Xiph.org et al.
+libopus by Xiph.org Foundation et al.
+    <http://opus-codec.org/>
+        BSD 3-clause License
+
+libopusenc by Xiph.Org Foundation and Jean-Marc Valin et al.
     <http://opus-codec.org/>
         BSD 3-clause License
 
@@ -105,6 +109,10 @@ libsndfile by Erik de Castro Lopo
 udev related C++ classes by Dimitry Ishenko
     <https://github.com/dimitry-ishenko/udev>
         GNU General Public License (GPL, version 3)
+
+AudioStreaming by Antônio Dias (code samples)
+    <https://github.com/antonypro/AudioStreaming>
+        The MIT License
 
 toast.ps1 by Den Delimarsky
     <src/contrib/dend/toast.ps1>

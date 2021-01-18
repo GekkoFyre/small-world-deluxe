@@ -301,6 +301,8 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         bool xmpp_allow_file_xfers = ui->checkBox_allow_file_transfers->isChecked();
         bool xmpp_allow_mucs = ui->checkBox_allow_muc_creation->isChecked();
         bool xmpp_connect_auto = ui->checkBox_connect_automatically->isChecked();
+        bool xmpp_reconnect_auto = ui->checkBox_automatic_reconnect->isChecked();
+        bool xmpp_signup_auto = ui->checkBox_automatic_signup->isChecked();
         QByteArray xmpp_upload_avatar; // TODO: Finish this area of code, pronto!
 
         QString xmpp_client_username = ui->lineEdit_xmpp_client_username->text();
@@ -309,8 +311,10 @@ void DialogSettings::on_pushButton_submit_config_clicked()
 
         gkDekodeDb->write_xmpp_settings(QString::fromStdString(gkDekodeDb->boolEnum(xmpp_allow_msg_history)), GkXmppCfg::XmppAllowMsgHistory);
         gkDekodeDb->write_xmpp_settings(QString::fromStdString(gkDekodeDb->boolEnum(xmpp_allow_file_xfers)), GkXmppCfg::XmppAllowFileXfers);
-        gkDekodeDb->write_xmpp_settings(QString::fromStdString(gkDekodeDb->boolEnum(xmpp_allow_mucs)), GkXmppCfg::XmppAlowMucs);
+        gkDekodeDb->write_xmpp_settings(QString::fromStdString(gkDekodeDb->boolEnum(xmpp_allow_mucs)), GkXmppCfg::XmppAllowMucs);
         gkDekodeDb->write_xmpp_settings(QString::fromStdString(gkDekodeDb->boolEnum(xmpp_connect_auto)), GkXmppCfg::XmppAutoConnect);
+        gkDekodeDb->write_xmpp_settings(QString::fromStdString(gkDekodeDb->boolEnum(xmpp_reconnect_auto)), GkXmppCfg::XmppAutoReconnect);
+        gkDekodeDb->write_xmpp_settings(QString::fromStdString(gkDekodeDb->boolEnum(xmpp_signup_auto)), GkXmppCfg::XmppAutoSignup);
 
         //
         // CAUTION!!! Username, password, and e-mail address!
@@ -1321,8 +1325,10 @@ bool DialogSettings::read_settings()
         //
         QString xmpp_allow_msg_history = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppAllowMsgHistory);
         QString xmpp_allow_file_xfers = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppAllowFileXfers);
-        QString xmpp_allow_mucs = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppAlowMucs);
+        QString xmpp_allow_mucs = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppAllowMucs);
         QString xmpp_auto_connect = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppAutoConnect);
+        QString xmpp_auto_reconnect = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppAutoReconnect);
+        QString xmpp_auto_signup = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppAutoSignup);
 
         //
         // CAUTION!!! Username, password, and e-mail address!
@@ -1353,6 +1359,18 @@ bool DialogSettings::read_settings()
             ui->checkBox_connect_automatically->setChecked(gkDekodeDb->boolStr(xmpp_auto_connect.toStdString()));
         } else {
             ui->checkBox_connect_automatically->setChecked(false);
+        }
+
+        if (!xmpp_auto_reconnect.isEmpty()) {
+            ui->checkBox_automatic_reconnect->setChecked(gkDekodeDb->boolStr(xmpp_auto_reconnect.toStdString()));
+        } else {
+            ui->checkBox_automatic_reconnect->setChecked(false);
+        }
+
+        if (!xmpp_auto_signup.isEmpty()) {
+            ui->checkBox_automatic_signup->setChecked(gkDekodeDb->boolStr(xmpp_auto_signup.toStdString()));
+        } else {
+            ui->checkBox_automatic_signup->setChecked(false);
         }
 
         if (!xmpp_client_username.isEmpty()) {

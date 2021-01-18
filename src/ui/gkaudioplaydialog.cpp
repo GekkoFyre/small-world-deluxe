@@ -47,6 +47,7 @@
 #include <QStandardPaths>
 
 using namespace GekkoFyre;
+using namespace GkAudioFramework;
 using namespace Database;
 using namespace Settings;
 using namespace Audio;
@@ -56,6 +57,8 @@ using namespace Spectrograph;
 using namespace System;
 using namespace Events;
 using namespace Logging;
+using namespace Network;
+using namespace GkXmpp;
 
 GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
                                      const GkDevice &input_device, const GkDevice &output_device,
@@ -77,8 +80,10 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
     //
     pref_input_device = input_device;
     pref_output_device = output_device;
+    m_rec_codec_chosen = CodecSupport::PCM;
+    m_encode_bitrate_chosen = 8;
     gkAudioFile = std::make_shared<AudioFile<double>>();
-    gkPaAudioPlayer = new GkPaAudioPlayer(gkDb, pref_output_device, gkAudioOutput, gkAudioInput, gkEventLogger, gkAudioFile, this);
+    gkPaAudioPlayer = new GkPaAudioPlayer(gkDb, pref_output_device, pref_input_device, gkAudioOutput, gkAudioInput, gkEventLogger, gkAudioFile, this);
 
     //
     // QPushButtons, etc.
@@ -89,6 +94,9 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
     audio_out_skip_fwd = false;
     audio_out_skip_bck = false;
 
+    prefillCodecComboBoxes(GkAudioFramework::CodecSupport::OggVorbis);
+    prefillCodecComboBoxes(GkAudioFramework::CodecSupport::FLAC);
+    prefillCodecComboBoxes(GkAudioFramework::CodecSupport::Opus);
     prefillCodecComboBoxes(GkAudioFramework::CodecSupport::PCM);
     prefillCodecComboBoxes(GkAudioFramework::CodecSupport::Loopback);
 }
@@ -112,6 +120,8 @@ GkAudioPlayDialog::~GkAudioPlayDialog()
  */
 GkAudioChannels GkAudioPlayDialog::determineAudioChannels()
 {
+    //
+    // TODO: This is in need of updating!
     if (!r_pback_audio_file.fileName().isEmpty()) {
         // We currently have a file selected!
         if (gkAudioFile->getNumChannels() == 1) {
@@ -288,10 +298,12 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
                 gkEventLogger->publishEvent(
                         tr("Started playing audio file, \"%1\"").arg(QString::fromStdString(audio_file_path.string())),
                         GkSeverity::Info, "", true, true, true, false);
+                ui->progressBar_playback->setFormat(tr("%p%")); // Modify the QProgressBar to display the correct text!
             } else if (codec_used == GkAudioFramework::CodecSupport::Loopback) {
                 gkPaAudioPlayer->play(codec_used);
                 gkEventLogger->publishEvent(
                         tr("Started audio device loopback!"), GkSeverity::Info, "", true, true, true, false);
+                ui->progressBar_playback->setFormat(tr("%p%")); // Modify the QProgressBar to display the correct text!
             } else {
                 throw std::runtime_error(tr("Error with audio playback! Does the file, \"%1\", actually exist?")
                 .arg(r_pback_audio_file.fileName()).toStdString());
@@ -318,12 +330,59 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
  */
 void GkAudioPlayDialog::on_pushButton_playback_record_clicked()
 {
-    if (!audio_out_record) {
-        gkStringFuncs->changePushButtonColor(ui->pushButton_playback_record, false);
-        audio_out_record = true;
-    } else {
-        gkStringFuncs->changePushButtonColor(ui->pushButton_playback_record, true);
-        audio_out_record = false;
+    try {
+        if (!audio_out_record) {
+            //
+            // Do start recording!
+            gkStringFuncs->changePushButtonColor(ui->pushButton_playback_record, false);
+            audio_out_record = true;
+
+            QFileDialog fileDialog(this, tr("Save Directory for Recordings"), QStandardPaths::writableLocation(QStandardPaths::MusicLocation));
+            fileDialog.setFileMode(QFileDialog::Directory);
+            fileDialog.setAcceptMode(QFileDialog::AcceptOpen);
+            fileDialog.setViewMode(QFileDialog::List);
+
+            auto remembered_path = gkDb->read_audio_playback_dlg_settings(AudioPlaybackDlg::GkRecordDlgLastFolderBrowsed);
+            if (!remembered_path.isEmpty()) {
+                // There has been a previously used path that the user has used, and it's been remembered by Google LevelDB!
+                fileDialog.setDirectory(remembered_path);
+            }
+
+            fs::path record_dir_path;
+            if (fileDialog.exec()) {
+                QStringList selectedFile = fileDialog.selectedFiles();
+                if (!selectedFile.isEmpty())  {
+                    for (const auto &file: selectedFile) {
+                        record_dir_path = file.toStdString();
+                    }
+                }
+            } else {
+                //
+                // End recording state...
+                gkStringFuncs->changePushButtonColor(ui->pushButton_playback_record, true);
+                audio_out_record = false;
+            }
+
+            GkAudioFramework::CodecSupport codec_used = gkDb->convCodecSupportFromIdxToEnum(ui->comboBox_playback_rec_codec->currentData().toInt());
+            if (fs::is_directory(record_dir_path)) {
+                gkDb->write_audio_playback_dlg_settings(QString::fromStdString(record_dir_path.string()), AudioPlaybackDlg::GkRecordDlgLastFolderBrowsed);
+                if (codec_used != GkAudioFramework::CodecSupport::Loopback) {
+                    gkPaAudioPlayer->record(codec_used, record_dir_path);
+                } else {
+                    QMessageBox::information(this, tr("Not supported!"), tr("Loopback mode is unsupported during recording!"), QMessageBox::Ok);
+                }
+            }
+        } else {
+            //
+            // End or pause recording...
+            gkStringFuncs->changePushButtonColor(ui->pushButton_playback_record, true);
+            audio_out_record = false;
+
+            //
+            // TODO: Implement the ability to STOP recording!
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
     }
 
     return;
@@ -362,16 +421,38 @@ void GkAudioPlayDialog::on_pushButton_playback_skip_forward_clicked()
  */
 void GkAudioPlayDialog::on_comboBox_playback_rec_codec_currentIndexChanged(int index)
 {
+    switch (index) {
+        case AUDIO_PLAYBACK_CODEC_PCM_IDX:
+            m_rec_codec_chosen = CodecSupport::PCM;
+        case AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX:
+            m_rec_codec_chosen = CodecSupport::Loopback;
+        case AUDIO_PLAYBACK_CODEC_VORBIS_IDX:
+            m_rec_codec_chosen = CodecSupport::OggVorbis;
+        case AUDIO_PLAYBACK_CODEC_OPUS_IDX:
+            m_rec_codec_chosen = CodecSupport::Opus;
+        case AUDIO_PLAYBACK_CODEC_FLAC_IDX:
+            m_rec_codec_chosen = CodecSupport::FLAC;
+        default:
+            break;
+    }
+
     return;
 }
 
 /**
- * @brief GkAudioPlayDialog::on_comboBox_playback_rec_bitrate_currentIndexChanged
+ * @brief GkAudioPlayDialog::on_horizontalSlider_playback_rec_bitrate_valueChanged
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param index
+ * @param value
  */
-void GkAudioPlayDialog::on_comboBox_playback_rec_bitrate_currentIndexChanged(int index)
+void GkAudioPlayDialog::on_horizontalSlider_playback_rec_bitrate_valueChanged(int value)
 {
+    const qint32 bitrate_val = value;
+    ui->label_playback_rec_bitrate_kbps->setText(QString("[ %1 kBps ]").arg(QString::number(bitrate_val)));
+
+    if (bitrate_val % 8 == 0) {
+        m_encode_bitrate_chosen = bitrate_val;
+    }
+
     return;
 }
 
@@ -393,27 +474,27 @@ void GkAudioPlayDialog::resetStopButtonColor()
 /**
  * @brief GkAudioPlayDialog::prefillCodecComboBoxes
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param supported_codec
  */
-void GkAudioPlayDialog::prefillCodecComboBoxes(const GkAudioFramework::CodecSupport &supported_codec)
+void GkAudioPlayDialog::prefillCodecComboBoxes(const CodecSupport &supported_codec)
 {
     try {
         switch (supported_codec) {
-            case GkAudioFramework::CodecSupport::PCM:
+            case CodecSupport::PCM:
                 ui->comboBox_playback_rec_codec->insertItem(AUDIO_PLAYBACK_CODEC_PCM_IDX, tr("PCM"), AUDIO_PLAYBACK_CODEC_PCM_IDX);
                 break;
-            case GkAudioFramework::CodecSupport::Loopback:
+            case CodecSupport::Loopback:
                 ui->comboBox_playback_rec_codec->insertItem(AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX, tr("Input/Output Loopback"), AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX);
                 break;
-            case GkAudioFramework::CodecSupport::OggVorbis:
-                throw std::invalid_argument(tr("This particular codec is not yet supported!").toStdString());
-            case GkAudioFramework::CodecSupport::Opus:
-                throw std::invalid_argument(tr("This particular codec is not yet supported!").toStdString());
-            case GkAudioFramework::CodecSupport::FLAC:
-                throw std::invalid_argument(tr("This particular codec is not yet supported!").toStdString());
-            case GkAudioFramework::CodecSupport::Unsupported:
-                throw std::invalid_argument(tr("This particular codec is not yet supported!").toStdString());
-            default:
-                throw std::invalid_argument(tr("Unable to determine the desired codec!").toStdString());
+            case CodecSupport::Opus:
+                ui->comboBox_playback_rec_codec->insertItem(AUDIO_PLAYBACK_CODEC_OPUS_IDX, tr("Ogg Opus"), AUDIO_PLAYBACK_CODEC_OPUS_IDX);
+                break;
+            case CodecSupport::OggVorbis:
+                ui->comboBox_playback_rec_codec->insertItem(AUDIO_PLAYBACK_CODEC_VORBIS_IDX, tr("Ogg Vorbis"), AUDIO_PLAYBACK_CODEC_VORBIS_IDX);
+                break;
+            case CodecSupport::FLAC:
+                ui->comboBox_playback_rec_codec->insertItem(AUDIO_PLAYBACK_CODEC_FLAC_IDX, tr("FLAC"), AUDIO_PLAYBACK_CODEC_FLAC_IDX);
+                break;
         }
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);

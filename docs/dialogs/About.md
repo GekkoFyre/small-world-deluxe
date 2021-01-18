@@ -33,7 +33,18 @@ Please see [CREDITS](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/
 
 ------
 
-`Opus -- Copyright © 2001 - 2011 Xiph.Org, Skype Limited, Octasic, Jean-Marc Valin, Timothy B. Terriberry, CSIRO, Gregory Maxwell, Mark Borgerding, Erik de Castro Lopo.`
+```
+Opus
+----------------------------------
+Copyright © 2001 - 2011 Xiph.Org, Skype Limited, Octasic, Jean-Marc Valin, Timothy B. Terriberry, CSIRO, Gregory Maxwell, Mark Borgerding, Erik de Castro Lopo.
+```
+
+```
+libopusenc
+----------------------------------
+Copyright © 1994 - 2013 Xiph.Org Foundation and contributors.
+Copyright © 2017 Jean-Marc Valin.
+```
 
 > Redistribution and use in source and binary forms, with or without
 > modification, are permitted provided that the following conditions
