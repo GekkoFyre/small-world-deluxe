@@ -1,6 +1,6 @@
 ### [Small World Deluxe](https://git.gekkofyre.io/amateur-radio/small-world-deluxe/) (pre-alpha)
 
-Copyright © 2019 - 2020 – [GekkoFyre Networks](https://gekkofyre.io/), All Rights Reserved.
+Copyright © 2019 - 2021 – [GekkoFyre Networks](https://gekkofyre.io/), All Rights Reserved.
 
 I must offer my sincere thanks to the closest of friends, Arctic Emerald, BarkerJr, Davwyn, Kenric D'Souza, Lord Flame Stryke, Luxatos, Mazzeh, Oxtylxq, and others for supporting me in my efforts with coding SWD ^,==,^
 
