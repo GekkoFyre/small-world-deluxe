@@ -164,9 +164,9 @@ private slots:
     // be different colors depending on the needs of any colorblind users for a given session.
     //
     void on_pushButton_bridge_input_audio_clicked();
-    void on_pushButton_radio_receive_clicked();
     void on_pushButton_radio_transmit_clicked();
     void on_pushButton_radio_tx_halt_clicked();
+    void on_pushButton_radio_rx_halt_clicked();
     void on_pushButton_radio_monitor_clicked();
 
     //
@@ -343,6 +343,7 @@ private:
     //
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
+    QPointer<QBuffer> gkAudioInputBuf;
     std::list<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_input_audio_devs;
     std::list<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_output_audio_devs;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
@@ -408,6 +409,7 @@ private:
     bool btn_radio_rx;
     bool btn_radio_tx;
     bool btn_radio_tx_halt;
+    bool btn_radio_rx_halt;
     bool btn_radio_tune;
     bool btn_radio_monitor;
 

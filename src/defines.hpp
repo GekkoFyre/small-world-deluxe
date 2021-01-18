@@ -93,6 +93,8 @@ extern "C"
 } // extern "C"
 #endif
 
+#define USE_KISS_FFT 1
+
 namespace GekkoFyre {
 
 #define GK_EXIT_TIMEOUT (6)                                     // The amount of time, in seconds, to leave 'Small World Deluxe' hanging upon exit before terminating forcefully!
