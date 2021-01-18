@@ -41,8 +41,11 @@
 
 #include "src/gk_audio_encoding.hpp"
 #include <boost/exception/all.hpp>
+#include <future>
+#include <vector>
 #include <cstring>
 #include <iostream>
+#include <iterator>
 #include <algorithm>
 #include <exception>
 #include <QtGui>
@@ -103,6 +106,8 @@ GkAudioEncoding::GkAudioEncoding(QPointer<GekkoFyre::GkLevelDb> database, QPoint
                      this, SLOT(handleError(const QString &, const GekkoFyre::System::Events::Logging::GkSeverity &)));
     QObject::connect(gkAudioInput, &QAudioInput::notify, this, &GkAudioEncoding::processAudioIn);
     QObject::connect(this, SIGNAL(initialize()), this, SLOT(startRecBuffer()));
+
+    return;
 }
 
 GkAudioEncoding::~GkAudioEncoding()
@@ -237,35 +242,24 @@ void GkAudioEncoding::startCaller(const fs::path &media_path, const Database::Se
             m_virtual_io.write = GkSfVirtualInterface::qbuffer_write;
             m_virtual_io.tell = GkSfVirtualInterface::qbuffer_tell;
 
-            SF_INFO sf_handle_in_info;
-            sf_handle_in_info.frames = AUDIO_FRAMES_PER_BUFFER;
-            sf_handle_in_info.format = SF_FORMAT_OGG | SF_FORMAT_VORBIS;
-            sf_handle_in_info.channels = m_channels;
-            sf_handle_in_info.samplerate = m_sample_rate;
-            sf_handle_in_info.sections = false;
-            sf_handle_in_info.seekable = true;
-
             m_encoded_buf->open(QBuffer::ReadWrite);
-            m_handle_in = sf_open_virtual(&m_virtual_io, SFM_WRITE, &sf_handle_in_info, (void *)m_encoded_buf);
+            m_handle_in = SndfileHandle(m_virtual_io, (void *)m_encoded_buf, SFM_WRITE, SF_FORMAT_OGG | SF_FORMAT_VORBIS, m_channels, m_sample_rate);
             if (!m_handle_in) {
                 emit error(tr("Error encoding to file: %1\n\n%2").arg(QString::fromStdString(m_file_path.string()))
-                                   .arg(QString::fromStdString(sf_strerror(m_handle_in))), GkSeverity::Fatal);
+                                   .arg(QString::fromStdString(m_handle_in.strError())), GkSeverity::Fatal);
             }
 
-            sf_set_string(m_handle_in, SF_STR_ARTIST, tr("%1 by %2 et al.")
+            m_handle_in.setString(SF_STR_ARTIST, tr("%1 by %2 et al.")
                     .arg(General::productName).arg(General::companyName).toStdString().c_str());
-            sf_set_string(m_handle_in, SF_STR_TITLE, tr("Recorded on %1")
+            m_handle_in.setString(SF_STR_TITLE, tr("Recorded on %1")
                     .arg(QDateTime::currentDateTime().toString()).toStdString().c_str());
 
             if (!m_out_file.isOpen()) {
                 m_out_file.setParent(this);
                 m_out_file.setFileName(QString::fromStdString(m_file_path.string()));
-                if (m_out_file.open(QIODevice::WriteOnly)) {
-                    m_encoded_buf->seek(0);
-                    m_out_file.write(m_encoded_buf->readAll());
-
-                    m_encoded_buf->buffer().clear();
-                    m_encoded_buf->seek(0);
+                if (!m_out_file.open(QIODevice::WriteOnly)) {
+                    throw std::runtime_error(tr("Error with opening file, \"%1\"")
+                                                     .arg(QString::fromStdString(m_file_path.string())).toStdString());
                 }
             } else {
                 throw std::runtime_error(tr("Race condition encountered: only a singular recording instance may be open at a time!").toStdString());
@@ -292,26 +286,23 @@ void GkAudioEncoding::startCaller(const fs::path &media_path, const Database::Se
             sf_handle_in_info.seekable = true;
 
             m_encoded_buf->open(QBuffer::ReadWrite);
-            m_handle_in = sf_open_virtual(&m_virtual_io, SFM_WRITE, &sf_handle_in_info, (void *)m_encoded_buf);
+            m_handle_in = SndfileHandle(m_virtual_io, (void *)m_encoded_buf, SFM_WRITE, SF_FORMAT_OGG | SF_FORMAT_VORBIS, m_channels, m_sample_rate);
             if (!m_handle_in) {
                 emit error(tr("Error encoding to file: %1\n\n%2").arg(QString::fromStdString(m_file_path.string()))
-                                   .arg(QString::fromStdString(sf_strerror(m_handle_in))), GkSeverity::Fatal);
+                                   .arg(QString::fromStdString(m_handle_in.strError())), GkSeverity::Fatal);
             }
 
-            sf_set_string(m_handle_in, SF_STR_ARTIST, tr("%1 by %2 et al.")
+            m_handle_in.setString(SF_STR_ARTIST, tr("%1 by %2 et al.")
                     .arg(General::productName).arg(General::companyName).toStdString().c_str());
-            sf_set_string(m_handle_in, SF_STR_TITLE, tr("Recorded on %1")
+            m_handle_in.setString(SF_STR_TITLE, tr("Recorded on %1")
                     .arg(QDateTime::currentDateTime().toString()).toStdString().c_str());
 
             if (!m_out_file.isOpen()) {
                 m_out_file.setParent(this);
                 m_out_file.setFileName(QString::fromStdString(m_file_path.string()));
-                if (m_out_file.open(QIODevice::WriteOnly)) {
-                    m_encoded_buf->seek(0);
-                    m_out_file.write(m_encoded_buf->readAll());
-
-                    m_encoded_buf->buffer().clear();
-                    m_encoded_buf->seek(0);
+                if (!m_out_file.open(QIODevice::WriteOnly)) {
+                    throw std::runtime_error(tr("Error with opening file, \"%1\"")
+                                                     .arg(QString::fromStdString(m_file_path.string())).toStdString());
                 }
             } else {
                 throw std::runtime_error(tr("Race condition encountered: only a singular recording instance may be open at a time!").toStdString());
@@ -370,16 +361,21 @@ void GkAudioEncoding::processAudioIn()
         record_input_buf->buffer().clear();
         record_input_buf->seek(0);
 
+        std::vector<std::future<void>> futures_vec;
         while (!m_buffer.isEmpty()) {
             if (m_chosen_codec == CodecSupport::Opus) {
-                auto encode_opus_async = std::async(std::launch::async, &GkAudioEncoding::encodeOpus, this, std::ref(m_buffer));
+                futures_vec.emplace_back(std::async(std::launch::async, &GkAudioEncoding::encodeOpus, this));
             } else if (m_chosen_codec == CodecSupport::OggVorbis) {
-                auto encode_vorbis_async = std::async(std::launch::async, &GkAudioEncoding::encodeVorbis, this, std::ref(m_buffer));
+                futures_vec.emplace_back(std::async(std::launch::async, &GkAudioEncoding::encodeVorbis, this));
             } else if (m_chosen_codec == CodecSupport::FLAC) {
-                auto encode_flac_async = std::async(std::launch::async, &GkAudioEncoding::encodeFLAC, this, std::ref(m_buffer));
+                futures_vec.emplace_back(std::async(std::launch::async, &GkAudioEncoding::encodeFLAC, this));
             } else {
                 throw std::invalid_argument(tr("The codec you have chosen is not supported as of yet, please try another!").toStdString());
             }
+        }
+
+        for (auto &enc_fut: futures_vec) {
+            enc_fut.get();
         }
     }
 
@@ -402,9 +398,8 @@ void GkAudioEncoding::startRecBuffer()
  * @brief GkAudioEncoding::encodeOpus will perform an encoding with the Ogg Opus library and its parameters.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>,
  * александр дмитрыч <https://stackoverflow.com/questions/51638654/how-to-encode-and-decode-audio-data-with-opus>
- * @param data_buf the data to write to the audio encoder.
  */
-void GkAudioEncoding::encodeOpus(const QByteArray &data_buf)
+void GkAudioEncoding::encodeOpus()
 {
     if (!m_initialized) {
         return;
@@ -453,40 +448,45 @@ void GkAudioEncoding::encodeOpus(const QByteArray &data_buf)
 /**
  * @brief GkAudioEncoding::encodeVorbis
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param data_buf the data to write to the audio encoder.
  */
-void GkAudioEncoding::encodeVorbis(const QByteArray &data_buf)
+void GkAudioEncoding::encodeVorbis()
 {
     //
     // Ogg Vorbis
     // https://github.com/libsndfile/libsndfile/blob/master/examples/sndfilehandle.cc
     // https://github.com/libsndfile/libsndfile/blob/master/examples/sfprocess.c
     //
-    QByteArray buf_tmp = data_buf;
-    while (!buf_tmp.isEmpty()) {
-        qint32 input_frame[AUDIO_FRAMES_PER_BUFFER] = {};
-        for (qint32 i = 0; i < AUDIO_FRAMES_PER_BUFFER; ++i) {
-            // Convert from little endian...
-            for (qint32 j = 0; j < AUDIO_FRAMES_PER_BUFFER; ++j) {
-                input_frame[j] = qFromLittleEndian<qint16>(buf_tmp.data() + j);
+    if (m_out_file.isOpen()) {
+        const qint32 frame_size = AUDIO_FRAMES_PER_BUFFER * m_channels;
+        while (!m_buffer.isEmpty()) {
+            std::vector<qint32> input_frame;
+            std::vector<qint32>::iterator it;
+            input_frame.reserve(frame_size);
+            for (qint32 i = 0; i < frame_size; ++i) {
+                // Convert from little endian...
+                for (qint32 j = 0; j < frame_size; ++j) {
+                    input_frame.insert(it + j, qFromLittleEndian<qint16>(m_buffer.data() + j));
+                }
             }
+
+            //
+            // libsndfile:
+            // For writing data chunks in terms of frames.
+            // The number of items actually read/written = frames * number of channels.
+            //
+            m_handle_in.write(input_frame.data(), frame_size);
+            m_buffer.remove(0, frame_size);
+            input_frame.clear();
+
+            //
+            // Write to an output file!
+            m_encoded_buf->seek(0);
+            m_out_file.write(m_encoded_buf->readAll());
+            m_out_file.flush();
+
+            m_encoded_buf->buffer().clear();
+            m_encoded_buf->seek(0);
         }
-
-        //
-        // libsndfile:
-        // For writing data chunks in terms of frames.
-        // The number of items actually read/written = frames * number of channels.
-        //
-        sf_writef_int(m_handle_in, input_frame, AUDIO_FRAMES_PER_BUFFER * m_channels);
-        buf_tmp.remove(0, AUDIO_FRAMES_PER_BUFFER);
-
-        //
-        // Write to an output file!
-        m_encoded_buf->seek(0);
-        m_out_file.write(m_encoded_buf->readAll());
-
-        m_encoded_buf->buffer().clear();
-        m_encoded_buf->seek(0);
     }
 
     return;
@@ -495,40 +495,45 @@ void GkAudioEncoding::encodeVorbis(const QByteArray &data_buf)
 /**
  * @brief GkAudioEncoding::encodeFLAC
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param data_buf the data to write to the audio encoder.
  */
-void GkAudioEncoding::encodeFLAC(const QByteArray &data_buf)
+void GkAudioEncoding::encodeFLAC()
 {
     //
     // FLAC
     // https://github.com/libsndfile/libsndfile/blob/master/examples/sndfilehandle.cc
     // https://github.com/libsndfile/libsndfile/blob/master/examples/sfprocess.c
     //
-    QByteArray buf_tmp = data_buf;
-    while (!buf_tmp.isEmpty()) {
-        qint32 input_frame[AUDIO_FRAMES_PER_BUFFER] = {};
-        for (qint32 i = 0; i < AUDIO_FRAMES_PER_BUFFER; ++i) {
-            // Convert from little endian...
-            for (qint32 j = 0; j < AUDIO_FRAMES_PER_BUFFER; ++j) {
-                input_frame[j] = qFromLittleEndian<qint16>(buf_tmp.data() + j);
+    if (m_out_file.isOpen()) {
+        const qint32 frame_size = AUDIO_FRAMES_PER_BUFFER * m_channels;
+        while (!m_buffer.isEmpty()) {
+            std::vector<qint32> input_frame;
+            std::vector<qint32>::iterator it;
+            input_frame.reserve(frame_size);
+            for (qint32 i = 0; i < frame_size; ++i) {
+                // Convert from little endian...
+                for (qint32 j = 0; j < frame_size; ++j) {
+                    input_frame.insert(it + j, qFromLittleEndian<qint16>(m_buffer.data() + j));
+                }
             }
+
+            //
+            // libsndfile:
+            // For writing data chunks in terms of frames.
+            // The number of items actually read/written = frames * number of channels.
+            //
+            m_handle_in.write(input_frame.data(), frame_size);
+            m_buffer.remove(0, frame_size);
+            input_frame.clear();
+
+            //
+            // Write to an output file!
+            m_encoded_buf->seek(0);
+            m_out_file.write(m_encoded_buf->readAll());
+            m_out_file.flush();
+
+            m_encoded_buf->buffer().clear();
+            m_encoded_buf->seek(0);
         }
-
-        //
-        // libsndfile:
-        // For writing data chunks in terms of frames.
-        // The number of items actually read/written = frames * number of channels.
-        //
-        sf_writef_int(m_handle_in, input_frame, AUDIO_FRAMES_PER_BUFFER * m_channels);
-        buf_tmp.remove(0, AUDIO_FRAMES_PER_BUFFER);
-
-        //
-        // Write to an output file!
-        m_encoded_buf->seek(0);
-        m_out_file.write(m_encoded_buf->readAll());
-
-        m_encoded_buf->buffer().clear();
-        m_encoded_buf->seek(0);
     }
 
     return;

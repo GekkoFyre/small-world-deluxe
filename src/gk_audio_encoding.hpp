@@ -45,10 +45,9 @@
 #include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
 #include <sndfile.h>
+#include <sndfile.hh>
 #include <opus/opusenc.h>
 #include <boost/filesystem.hpp>
-#include <mutex>
-#include <thread>
 #include <cstdio>
 #include <memory>
 #include <string>
@@ -139,9 +138,9 @@ private slots:
     void processAudioIn();
 
     void startRecBuffer();
-    void encodeOpus(const QByteArray &data_buf);
-    void encodeVorbis(const QByteArray &data_buf);
-    void encodeFLAC(const QByteArray &data_buf);
+    void encodeOpus();
+    void encodeVorbis();
+    void encodeFLAC();
 
 signals:
     void pauseEncode();
@@ -171,7 +170,7 @@ private:
     GkAudioFramework::CodecSupport m_chosen_codec;              // The chosen audio encoding codec, whether it be FLAC, Ogg Vorbis, Ogg Opus, etc.
     QPointer<QBuffer> record_input_buf;                         // For reading RAW PCM audio data from a given QAudioInput into.
     QPointer<QBuffer> m_encoded_buf;                            // For holding the encoded data whether it be FLAC, Ogg Vorbis, Ogg Opus, etc. as calculated from `record_input_buf`.
-    SNDFILE	*m_handle_in;                                       // The libsndfile handler, for all related operations such as reading, writing (and hence conversion), etc.
+    SndfileHandle m_handle_in;                                       // The libsndfile handler, for all related operations such as reading, writing (and hence conversion), etc.
     QFile m_out_file;
 
     //

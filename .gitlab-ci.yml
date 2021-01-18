@@ -76,7 +76,6 @@ sworld_debug_archlinux_x86_64:
   - export CC=/usr/bin/clang
   - export CXX=/usr/bin/clang++
   - strip --remove-section=.note.ABI-tag /usr/lib64/libQt5Core.so.5
-  - pacman -S libsndfile
   - git clone https://gitlab.xiph.org/xiph/libopusenc.git
   - git submodule update --init --recursive
   - cd libopusenc && mkdir build && cd build
