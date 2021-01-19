@@ -69,7 +69,7 @@ class GkFFTAudio : public QThread {
     Q_OBJECT
 
 public:
-    explicit GkFFTAudio(QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> audioOutput,
+    explicit GkFFTAudio(const QPointer<QBuffer> &audioInputBuf, QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> audioOutput,
                         const GekkoFyre::Database::Settings::Audio::GkDevice &input_audio_device_details,
                         const GekkoFyre::Database::Settings::Audio::GkDevice &output_audio_device_details,
                         QPointer<GekkoFyre::GkSpectroWaterfall> spectroWaterfall, QPointer<GekkoFyre::StringFuncs> stringFuncs,
@@ -88,13 +88,10 @@ private slots:
     void recordAudioFileStream(const fs::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
     void stopRecordFileStream(const fs::path &media_path);
 
-    void audioInHandleStateChanged(QAudio::State changed_state);
-    void audioOutHandleStateChanged(QAudio::State changed_state);
-
-    void processAudioIn();
     void refreshGraphTrue();
 
 public slots:
+    void processAudioInFft();
     void setAudioIo(const bool &use_input_audio); // True by default!
 
 signals:
@@ -114,9 +111,9 @@ private:
     //
     // QAudioSystem initialization and buffers
     //
-    QPointer<QBuffer> gkAudioBuffer;
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
+    QPointer<QBuffer> gkAudioInputBuf;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_audio_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_audio_device;
     bool audioStreamProc = false;  // Whether an audio stream recording into memory is active or not

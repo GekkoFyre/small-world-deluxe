@@ -531,7 +531,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                 // Given audio parameters are supported, as defined by the user previously!
                                 pref_input_device = input_dev.second;
                                 gkAudioInput = new QAudioInput(input_dev.first, user_input_settings, nullptr);
-
                                 gkEventLogger->publishEvent(tr("Now using the input audio device, \"%1\".").arg(pref_input_device.audio_device_info.deviceName()),
                                                             GkSeverity::Info, "", true, true, false, false);
                             } else {
@@ -653,6 +652,27 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);
         }
 
+        if (!gkAudioInput.isNull()) {
+            gkAudioInputBuf = new QBuffer(this);
+            gkAudioInputBuf->open(QBuffer::ReadWrite);
+            gkAudioInput->setNotifyInterval(100);
+            gkAudioInput->start(gkAudioInputBuf);
+
+            QObject::connect(gkAudioInput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(audioInHandleStateChanged(QAudio::State)));
+
+            //
+            // !! WARNING !!
+            // The ready() signal from QAudioInput is utterly broken and should not be relied upon in any capacity. DO NOT USE.
+            //
+            gkAudioInputReadySignal = new QTimer(this);
+            connect(gkAudioInputReadySignal, SIGNAL(timeout()), this, SLOT(processAudioInMain()));
+            gkAudioInputReadySignal->start(100); // Execute SLOT, `processAudioInMain()`, every 100 milliseconds!
+        }
+
+        if (!gkAudioOutput.isNull()) {
+            QObject::connect(gkAudioOutput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(audioOutHandleStateChanged(QAudio::State)));
+        }
+
         //
         // Setup the ability to change Audio I/O via signals and slots
         //
@@ -661,11 +681,24 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QObject::connect(this, SIGNAL(changeAudioIo(const bool &)), this, SLOT(setAudioIo(const bool &)));
 
         //
+        // Initialize the audio codec encoding/decoding libraries!
+        //
+        gkAudioEncoding = new GkAudioEncoding(gkAudioInputBuf, gkDb, gkAudioOutput, gkAudioInput, pref_output_device, pref_input_device, gkEventLogger, this);
+        gkAudioEncoding->moveToThread(&gkAudioEncodingThread);
+        QObject::connect(&gkAudioEncodingThread, &QThread::finished, gkAudioEncoding, &QObject::deleteLater);
+        gkAudioEncodingThread.start();
+
+        //
         // Initialize the Waterfall / Spectrograph
         //
         gkSpectroWaterfall = new GekkoFyre::GkSpectroWaterfall(gkEventLogger, this);
-        gkFftAudio = new GekkoFyre::GkFFTAudio(gkAudioInput, gkAudioOutput, pref_input_device, pref_output_device, gkSpectroWaterfall,
-                                               gkStringFuncs, gkEventLogger, this);
+        gkFftAudio = new GekkoFyre::GkFFTAudio(gkAudioInputBuf, gkAudioInput, gkAudioOutput, pref_input_device, pref_output_device,
+                                               gkSpectroWaterfall, gkStringFuncs, gkEventLogger, this);
+
+        //
+        // Enable updating and clearing of QBuffer pointers across Small World Deluxe!
+        QObject::connect(this, SIGNAL(updateAudioIn()), gkFftAudio, SLOT(processAudioInFft()));
+        QObject::connect(this, SIGNAL(updateAudioIn()), gkAudioEncoding, SLOT(processAudioInEncode()));
 
         //
         // Allow the changing of Audio I/O with regard to recording audio streams
@@ -806,6 +839,9 @@ MainWindow::~MainWindow()
     if (vu_meter_thread.joinable()) {
         vu_meter_thread.join();
     }
+
+    gkAudioEncodingThread.quit();
+    gkAudioEncodingThread.wait();
 
     delete db; // Free the pointer for the Google LevelDB library!
     delete ui;
@@ -969,7 +1005,7 @@ void MainWindow::setIcon()
 void MainWindow::launchAudioPlayerWin()
 {
     QPointer<GkAudioPlayDialog> gkAudioPlayDlg = new GkAudioPlayDialog(gkDb, pref_input_device, pref_output_device, gkAudioInput, gkAudioOutput,
-                                                                       gkStringFuncs, gkEventLogger, this);
+                                                                       gkStringFuncs, gkAudioEncoding, gkEventLogger, this);
     gkAudioPlayDlg->setWindowFlags(Qt::Window);
     gkAudioPlayDlg->setAttribute(Qt::WA_DeleteOnClose, true);
     gkAudioPlayDlg->show();
@@ -1429,9 +1465,13 @@ QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, rig_type>> MainWind
 void MainWindow::updateVolumeDisplayWidgets()
 {
     try {
-        std::lock_guard<std::mutex> lck_guard(mtx_update_vol_widgets);
-        std::this_thread::sleep_for(std::chrono::milliseconds(2500)); // TODO: This is a huge source of SEGFAULTS!
-        if (gkAudioInput.isNull()) {
+        if (gkAudioInputBuf->isReadable()) {
+            std::lock_guard<std::mutex> lck_guard(mtx_update_vol_widgets);
+            std::this_thread::sleep_for(std::chrono::milliseconds(2500)); // TODO: This is a huge source of SEGFAULTS!
+
+            QByteArray vol_input_ba;
+            gkAudioInputBuf->seek(0);
+            vol_input_ba.append(gkAudioInputBuf->readAll());
             while (gkAudioInput->state() == QAudio::ActiveState) {
                 //
                 // Input audio stream is open and active!
@@ -2159,6 +2199,25 @@ void MainWindow::setAudioIo(const bool &use_input_audio)
 }
 
 /**
+ * @brief MainWindow::processAudioIn responds to audio buffer updates from a QAudioInput pointer (i.e.
+ * specifically `gkAudioInput` in this case) and updates other usages of QBuffer throughout the Small World Deluxe
+ * application.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @note The ready() signal from QAudioInput is utterly broken and should not be relied upon in any capacity. DO NOT USE.
+ */
+void MainWindow::processAudioInMain()
+{
+    if (gkAudioInput->state() == QAudio::ActiveState) {
+        emit updateAudioIn();
+
+        gkAudioInputBuf->buffer().clear();
+        gkAudioInputBuf->seek(0);
+    }
+
+    return;
+}
+
+/**
  * @brief MainWindow::msgOutgoingProcess will process outgoing messages and prepare them for transmission with regards to
  * libraries such as Codec2, whilst clearing `ui->plainTextEdit_mesg_outgoing` of any text at the same time.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -2387,6 +2446,62 @@ void MainWindow::procRigPort(const QString &conn_port, const GekkoFyre::AmateurR
         }
     }  catch (const std::exception &e) {
         QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
+ * @brief MainWindow::audioInHandleStateChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param changed_state
+ */
+void MainWindow::audioInHandleStateChanged(QAudio::State changed_state)
+{
+    try {
+        switch (changed_state) {
+            case QAudio::StoppedState:
+                if (gkAudioInput->error() != QAudio::NoError) { // TODO: Improve the error reporting functionality of this statement!
+                    throw std::runtime_error(tr("Issue with 'QAudio::StoppedState' during media playback!").toStdString());
+                }
+
+                break;
+            default:
+                break;
+        }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(tr("An issue has been encountered during audio playback. Error:\n\n%1").arg(QString::fromStdString(e.what())),
+                                    GkSeverity::Fatal, "", true, true, false, false);
+    }
+
+    return;
+}
+
+/**
+ * @brief MainWindow::audioOutHandleStateChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param changed_state
+ */
+void MainWindow::audioOutHandleStateChanged(QAudio::State changed_state)
+{
+    try {
+        switch (changed_state) {
+            case QAudio::IdleState:
+                gkAudioOutput->stop();
+
+                break;
+            case QAudio::StoppedState:
+                if (gkAudioOutput->error() != QAudio::NoError) { // TODO: Improve the error reporting functionality of this statement!
+                    throw std::runtime_error(tr("Issue with 'QAudio::StoppedState' during media playback!").toStdString());
+                }
+
+                break;
+            default:
+                break;
+        }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(tr("An issue has been encountered during audio playback. Error:\n\n%1").arg(QString::fromStdString(e.what())),
+                                    GkSeverity::Fatal, "", true, true, false, false);
     }
 
     return;
