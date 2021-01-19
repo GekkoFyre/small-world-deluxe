@@ -534,7 +534,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                             if (input_dev.second.audio_device_info.isFormatSupported(user_input_settings)) {
                                 // Given audio parameters are supported, as defined by the user previously!
                                 pref_input_device = input_dev.second;
-                                gkAudioInput = new QAudioInput(input_dev.first, user_input_settings, nullptr);
+                                gkAudioInput = new QAudioInput(input_dev.first, user_input_settings, &gkAudioInputThread);
                                 gkEventLogger->publishEvent(tr("Now using the input audio device, \"%1\".").arg(pref_input_device.audio_device_info.deviceName()),
                                                             GkSeverity::Info, "", true, true, false, false);
                             } else {
@@ -659,9 +659,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         if (!gkAudioInput.isNull()) {
             gkAudioInputBuf = new QBuffer(this);
             gkAudioInputBuf->open(QBuffer::ReadWrite);
+            gkAudioInput->moveToThread(&gkAudioInputThread);
             gkAudioInput->setNotifyInterval(100);
+            gkAudioInputThread.start();
             gkAudioInput->start(gkAudioInputBuf);
 
+            QObject::connect(&gkAudioInputThread, &QThread::finished, gkAudioInput, &QObject::deleteLater);
             QObject::connect(gkAudioInput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(audioInHandleStateChanged(QAudio::State)));
 
             //
@@ -687,7 +690,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the audio codec encoding/decoding libraries!
         //
-        gkAudioEncoding = new GkAudioEncoding(gkAudioInputBuf, gkDb, gkAudioOutput, gkAudioInput, pref_output_device, pref_input_device, gkEventLogger, this);
+        gkAudioEncoding = new GkAudioEncoding(gkAudioInputBuf, gkDb, gkAudioOutput, gkAudioInput, pref_output_device, pref_input_device, gkEventLogger, &gkAudioEncodingThread);
         gkAudioEncoding->moveToThread(&gkAudioEncodingThread);
         QObject::connect(&gkAudioEncodingThread, &QThread::finished, gkAudioEncoding, &QObject::deleteLater);
         gkAudioEncodingThread.start();
@@ -697,7 +700,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         gkSpectroWaterfall = new GekkoFyre::GkSpectroWaterfall(gkEventLogger, this);
         gkFftAudio = new GekkoFyre::GkFFTAudio(gkAudioInputBuf, gkAudioInput, gkAudioOutput, pref_input_device, pref_output_device,
-                                               gkSpectroWaterfall, gkStringFuncs, gkEventLogger, this);
+                                               gkSpectroWaterfall, gkStringFuncs, gkEventLogger, &gkAudioInputThread);
+        gkFftAudio->moveToThread(&gkAudioInputThread);
+        QObject::connect(&gkAudioInputThread, &QThread::finished, gkFftAudio, &QObject::deleteLater);
+        gkAudioInputThread.start();
 
         //
         // Enable updating and clearing of QBuffer pointers across Small World Deluxe!
@@ -767,8 +773,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         if (!pref_input_device.audio_device_info.isNull()) {
             if (pref_input_device.audio_device_info.preferredFormat().channelCount() > 0) {
                 emit startRecording();
-                vu_meter_thread = std::thread(&MainWindow::updateVolumeDisplayWidgets, this);
-                vu_meter_thread.detach();
+                // vu_meter_thread = std::thread(&MainWindow::updateVolumeDisplayWidgets, this);
+                // vu_meter_thread.detach();
             }
         }
 
@@ -844,12 +850,19 @@ MainWindow::~MainWindow()
     emit stopRecording();
     emit disconnectRigInUse(gkRadioPtr->gkRig, gkRadioPtr);
 
-    if (vu_meter_thread.joinable()) {
-        vu_meter_thread.join();
+    if (!gkAudioInputEventLoop.isNull()) {
+        delete gkAudioInputEventLoop;
     }
 
     gkAudioEncodingThread.quit();
     gkAudioEncodingThread.wait();
+
+    gkAudioInputThread.quit();
+    gkAudioInputThread.wait();
+
+    if (vu_meter_thread.joinable()) {
+        vu_meter_thread.join();
+    }
 
     delete db; // Free the pointer for the Google LevelDB library!
     delete ui;
@@ -1544,7 +1557,7 @@ void MainWindow::defaultInputAudioDev(const std::pair<QAudioDeviceInfo, GkDevice
 {
     QAudioDeviceInfo default_input_dev(QAudioDeviceInfo::defaultInputDevice());
     pref_input_device = input_dev.second;
-    gkAudioInput = new QAudioInput(default_input_dev, default_input_dev.preferredFormat(), nullptr);
+    gkAudioInput = new QAudioInput(default_input_dev, default_input_dev.preferredFormat(), &gkAudioInputThread);
 
     return;
 }

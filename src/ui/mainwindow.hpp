@@ -89,6 +89,7 @@
 #include <QDateTime>
 #include <QWindow>
 #include <QByteArray>
+#include <QEventLoop>
 #include <QStringList>
 #include <QMainWindow>
 #include <QPushButton>
@@ -106,6 +107,7 @@ class MainWindow;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
+    QThread gkAudioInputThread;
     QThread gkAudioEncodingThread;
 
 public:
@@ -350,11 +352,16 @@ private:
     boost::filesystem::path native_slash;
 
     //
-    // QAudioSystem initialization and buffers
+    // QAudioSystem initialization, buffers, and event-loops
     //
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
     QPointer<QBuffer> gkAudioInputBuf;
+    QPointer<QEventLoop> gkAudioInputEventLoop;
+
+    //
+    // QAudioSystem miscellaneous variables
+    //
     std::list<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_input_audio_devs;
     std::list<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_output_audio_devs;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
@@ -374,6 +381,7 @@ private:
     //
     std::timed_mutex btn_record_mtx;
     std::future<std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>> rig_future;
+    std::thread gkAudioInputEventLoopExecThread;
     std::thread rig_thread;
     std::thread vu_meter_thread;
 

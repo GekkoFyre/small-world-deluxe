@@ -67,7 +67,7 @@ using namespace Logging;
 GkFFTAudio::GkFFTAudio(const QPointer<QBuffer> &audioInputBuf, QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> audioOutput,
                        const GkDevice &input_audio_device_details, const GkDevice &output_audio_device_details,
                        QPointer<GekkoFyre::GkSpectroWaterfall> spectroWaterfall, QPointer<GekkoFyre::StringFuncs> stringFuncs,
-                       QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QThread(parent)
+                       QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QObject(parent)
 {
     setParent(parent);
 
@@ -97,10 +97,6 @@ GkFFTAudio::GkFFTAudio(const QPointer<QBuffer> &audioInputBuf, QPointer<QAudioIn
     QObject::connect(this, SIGNAL(recordStream()), this, SLOT(recordAudioStream()));
     QObject::connect(this, SIGNAL(stopRecording()), this, SLOT(stopRecordStream()));
 
-    QObject::connect(this, SIGNAL(recordFileStream(const fs::path &, const GekkoFyre::GkAudioFramework::CodecSupport &)),
-                     this, SLOT(recordAudioFileStream(const fs::path &, const GekkoFyre::GkAudioFramework::CodecSupport &)));
-    QObject::connect(this, SIGNAL(stopRecordingFileStream(const fs::path &)), this, SLOT(stopRecordFileStream(const fs::path &)));
-
     QObject::connect(this, SIGNAL(refreshGraph(bool)), gkSpectroWaterfall, SLOT(replot(bool)));
 
     spectroRefreshTimer = new QTimer(this);
@@ -109,19 +105,11 @@ GkFFTAudio::GkFFTAudio(const QPointer<QBuffer> &audioInputBuf, QPointer<QAudioIn
     QObject::connect(this, SIGNAL(stopRecording()), spectroRefreshTimer, SLOT(stop()));
     QObject::connect(this, SIGNAL(recordStream()), spectroRefreshTimer, SLOT(start()));
 
-    start();
-
-    // Move event processing of GkFFTAudio to this thread
-    QObject::moveToThread(this);
-
     return;
 }
 
 GkFFTAudio::~GkFFTAudio()
-{
-    quit();
-    wait();
-}
+{}
 
 /**
  * @brief GkFFTAudio::processAudioIn
@@ -177,7 +165,6 @@ void GkFFTAudio::setAudioIo(const bool &use_input_audio)
                     enableAudioFileStreamProc = true;
                 }
 
-                emit stopRecording();
                 if (enableAudioStreamProc) {
                     emit recordStream();
                     enableAudioStreamProc = false;
@@ -198,7 +185,6 @@ void GkFFTAudio::setAudioIo(const bool &use_input_audio)
                     enableAudioFileStreamProc = true;
                 }
 
-                emit stopRecording();
                 if (enableAudioStreamProc) {
                     emit recordStream();
                     enableAudioStreamProc = false;
@@ -211,16 +197,6 @@ void GkFFTAudio::setAudioIo(const bool &use_input_audio)
         gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);
     }
 
-    return;
-}
-
-/**
- * @brief GkFFTAudio::run
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkFFTAudio::run()
-{
-    exec();
     return;
 }
 
@@ -259,14 +235,12 @@ void GkFFTAudio::processEvent(Spectrograph::GkFftEventType audioEventType, const
     switch (audioEventType) {
         case Spectrograph::GkFftEventType::record:
             if (!mediaFilePath.empty()) {
-                emit recordFileStream(mediaFilePath, supported_codec);
                 audioFileStreamProc = true;
             }
 
             break;
         case Spectrograph::GkFftEventType::stop:
             if (!mediaFilePath.empty()) {
-                emit stopRecordingFileStream(mediaFilePath);
                 audioFileStreamProc = false;
             }
 
@@ -287,8 +261,6 @@ void GkFFTAudio::processEvent(Spectrograph::GkFftEventType audioEventType, const
 void GkFFTAudio::recordAudioStream()
 {
     try {
-        emit stopRecording();
-
         if (pref_input_audio_device.is_enabled) {
             //
             // Input device
@@ -355,27 +327,6 @@ void GkFFTAudio::stopRecordStream()
         gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);
     }
 
-    return;
-}
-
-/**
- * @brief GkFFTAudio::recordAudioFileStream
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param media_path
- * @param supported_codec
- */
-void GkFFTAudio::recordAudioFileStream(const fs::path &media_path, const GkAudioFramework::CodecSupport &supported_codec)
-{
-    return;
-}
-
-/**
- * @brief GkFFTAudio::stopRecordFileStream
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param media_path
- */
-void GkFFTAudio::stopRecordFileStream(const fs::path &media_path)
-{
     return;
 }
 
