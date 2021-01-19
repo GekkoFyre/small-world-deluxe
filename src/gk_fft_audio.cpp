@@ -39,8 +39,6 @@
  **
  ****************************************************************************************************/
 
-#define USE_KISS_FFT 1
-
 #include "src/gk_fft_audio.hpp"
 #include "src/contrib/Gist/src/Gist.h"
 #include <chrono>

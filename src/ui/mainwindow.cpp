@@ -48,6 +48,7 @@
 #include "src/models/tableview/gk_active_msgs_model.hpp"
 #include "src/models/tableview/gk_callsign_msgs_model.hpp"
 #include "src/gk_codec2.hpp"
+#include "src/contrib/Gist/src/Gist.h"
 #include <boost/exception/all.hpp>
 #include <boost/chrono/chrono.hpp>
 #include <cmath>
@@ -70,6 +71,7 @@
 #include <QVector>
 #include <QPixmap>
 #include <QTimer>
+#include <QtGui>
 #include <QDate>
 #include <QFile>
 #include <QUrl>
@@ -198,6 +200,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         btn_radio_rx = false;
         btn_radio_tx = false;
         btn_radio_tx_halt = false;
+        btn_radio_rx_halt = false;
+
         btn_radio_tune = false;
         btn_radio_monitor = false;
 
@@ -760,8 +764,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         const float real_vol_val = (static_cast<float>(ui->verticalSlider_vol_control->value()) / static_cast<float>(vol_slider_max_val));
         updateVolumeSliderLabel(real_vol_val);
 
-        if (!pref_input_device.audio_dev_str.isEmpty() && pref_input_device.sel_channels > 0) {
-            on_pushButton_radio_receive_clicked();
+        if (!pref_input_device.audio_device_info.isNull()) {
+            if (pref_input_device.audio_device_info.preferredFormat().channelCount() > 0) {
+                emit startRecording();
+                vu_meter_thread = std::thread(&MainWindow::updateVolumeDisplayWidgets, this);
+                vu_meter_thread.detach();
+            }
         }
 
         //
@@ -1473,29 +1481,28 @@ void MainWindow::updateVolumeDisplayWidgets()
             gkAudioInputBuf->seek(0);
             vol_input_ba.append(gkAudioInputBuf->readAll());
             while (gkAudioInput->state() == QAudio::ActiveState) {
-                //
-                // Input audio stream is open and active!
-                //
-                QVector<double> recv_samples;
-                if (!recv_samples.empty()) {
-                    qreal peakLevel = 0;
-                    qreal sum = 0.0;
+                while (!vol_input_ba.isEmpty()) {
+                    //
+                    // Input audio stream is open and active!
+                    //
+                    std::vector<double> recv_samples;
+                    const qint32 num_samples = AUDIO_FRAMES_PER_BUFFER * gkAudioInput->format().channelCount(); // Assert that stereo actually equals stereo!
 
-                    qint16 highest = 0;
-                    for (const auto &data: recv_samples) {
-                        highest = std::max<qint16>(highest, data);
+                    for (qint32 i = 0; i < num_samples; ++i) {
+                        // Convert from little endian...
+                        for (qint32 j = 0; j < num_samples; ++j) {
+                            recv_samples[j] += qFromLittleEndian<double>(vol_input_ba.data() + j);
+                        }
                     }
 
-                    const qreal amplitudeToReal = (static_cast<qreal>(highest) / gkStringFuncs->getNumericMax<qint64>());
-                    peakLevel = qMax(peakLevel, amplitudeToReal);
-                    sum += amplitudeToReal * amplitudeToReal;
+                    Gist<double> gist_vol(recv_samples.size(), gkAudioInput->format().sampleRate());
+                    gist_vol.processAudioFrame(recv_samples);
 
-                    const int numSamples = (AUDIO_FRAMES_PER_BUFFER);
-                    qreal rmsLevel = std::sqrt(sum / static_cast<qreal>(numSamples));
+                    double rms = gist_vol.rootMeanSquare();
+                    double peak = gist_vol.peakEnergy();
 
-                    emit refreshVuDisplay(rmsLevel, peakLevel, numSamples);
-                    recv_samples.clear();
-                    recv_samples.shrink_to_fit();
+                    emit refreshVuDisplay(rms, peak, recv_samples.size());
+                    vol_input_ba.clear();
                 }
             }
         }
@@ -2294,60 +2301,6 @@ void MainWindow::on_pushButton_bridge_input_audio_clicked()
     return;
 }
 
-void MainWindow::on_pushButton_radio_receive_clicked()
-{
-    //
-    // TODO: Implement a timer so this button can only be pressed every several
-    // seconds, as according to the boost::thread() function...
-    //
-
-    try {
-        std::unique_lock<std::timed_mutex> btn_record_lck(btn_record_mtx, std::defer_lock);
-        if (!btn_radio_rx) {
-            btn_record_lck.lock();
-            if (!pref_input_device.audio_device_info.isNull()) {
-                if (pref_input_device.audio_device_info.preferredFormat().channelCount() > 0) {
-                    // Set the QPushButton to 'Green'
-                    gkStringFuncs->changePushButtonColor(ui->pushButton_radio_receive, false);
-                    btn_radio_rx = true;
-                    emit startRecording();
-
-                    vu_meter_thread = std::thread(&MainWindow::updateVolumeDisplayWidgets, this);
-                    vu_meter_thread.detach();
-
-                    changeStatusBarMsg(tr("Please wait! Beginning to receive audio..."));
-
-                    return;
-                } else {
-                    QMessageBox::warning(this, tr("Invalid device!"), tr("An invalid audio device has been provided. Please select another."), QMessageBox::Ok);
-                    return;
-                }
-            } else {
-                QMessageBox::warning(this, tr("Unavailable device!"), tr("No default input device! Please select one from the settings."), QMessageBox::Ok);
-                return;
-            }
-        } else {
-            // Set the QPushButton to 'Red'
-            gkStringFuncs->changePushButtonColor(ui->pushButton_radio_receive, true);
-            btn_radio_rx = false;
-            emit stopRecording();
-
-            changeStatusBarMsg(tr("No longer receiving audio!"));
-
-            if (!btn_record_lck.try_lock()) {
-                btn_record_lck.unlock();
-            }
-
-            return;
-        }
-    } catch (const std::exception &e) {
-        QMessageBox::warning(this, tr("Error!"), tr("An issue was encountered while attempting to enter RX mode. Error: %1\n\nCancelling...").arg(e.what()),
-                             QMessageBox::Ok);
-    }
-
-    return;
-}
-
 void MainWindow::on_pushButton_radio_transmit_clicked()
 {
     if (!btn_radio_tx) {
@@ -2373,6 +2326,21 @@ void MainWindow::on_pushButton_radio_tx_halt_clicked()
         // Set the QPushButton to 'Red'
         gkStringFuncs->changePushButtonColor(ui->pushButton_radio_tx_halt, true);
         btn_radio_tx_halt = false;
+    }
+
+    return;
+}
+
+void MainWindow::on_pushButton_radio_rx_halt_clicked()
+{
+    if (!btn_radio_rx_halt) {
+        // Set the QPushButton to 'Green'
+        gkStringFuncs->changePushButtonColor(ui->pushButton_radio_rx_halt, false);
+        btn_radio_rx_halt = true;
+    } else {
+        // Set the QPushButton to 'Red'
+        gkStringFuncs->changePushButtonColor(ui->pushButton_radio_rx_halt, true);
+        btn_radio_rx_halt = false;
     }
 
     return;
@@ -2546,11 +2514,10 @@ void MainWindow::startRecordingInput()
             if (avail_input_audio_devs.empty()) {
                 throw std::invalid_argument(tr("No audio devices have been found!").toStdString());
             }
-
-            gkFftAudio->processEvent(Spectrograph::GkFftEventType::record);
-
-            return;
         }
+
+        gkFftAudio->processEvent(Spectrograph::GkFftEventType::record);
+        return;
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(tr("Problem encountered with initializing input audio device. Error:\n\n%1").arg(QString::fromStdString(e.what())),
                                     GkSeverity::Error, "", false, true, false, true);

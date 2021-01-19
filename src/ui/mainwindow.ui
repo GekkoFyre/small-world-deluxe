@@ -1303,7 +1303,7 @@ QPushButton:disabled {
                 <item>
                  <layout class="QHBoxLayout" name="horizontalLayout_9">
                   <item>
-                   <widget class="QPushButton" name="pushButton_radio_receive">
+                   <widget class="QPushButton" name="pushButton_radio_tune">
                     <property name="toolTip">
                      <string>Enable receiving and processing of audio.</string>
                     </property>
@@ -1326,7 +1326,7 @@ QPushButton:disabled {
 }</string>
                     </property>
                     <property name="text">
-                     <string>RX</string>
+                     <string>Tune</string>
                     </property>
                    </widget>
                   </item>
@@ -1367,7 +1367,7 @@ QPushButton:disabled {
                 <item>
                  <layout class="QHBoxLayout" name="horizontalLayout_16">
                   <item>
-                   <widget class="QPushButton" name="pushButton_radio_tune">
+                   <widget class="QPushButton" name="pushButton_radio_rx_halt">
                     <property name="toolTip">
                      <string>Tune your radio.</string>
                     </property>
@@ -1390,7 +1390,7 @@ QPushButton:disabled {
 }</string>
                     </property>
                     <property name="text">
-                     <string>Tune</string>
+                     <string>Halt RX</string>
                     </property>
                    </widget>
                   </item>
