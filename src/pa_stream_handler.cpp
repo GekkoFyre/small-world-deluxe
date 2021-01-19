@@ -68,8 +68,9 @@ using namespace GkXmpp;
  */
 GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, const GkDevice &output_device,
                                      const GkDevice &input_device, QPointer<QAudioOutput> audioOutput,
-                                     QPointer<QAudioInput> audioInput, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                                     std::shared_ptr<AudioFile<double>> audioFileLib, QObject *parent) : QObject(parent)
+                                     QPointer<QAudioInput> audioInput, QPointer<GekkoFyre::GkAudioEncoding> audioEncoding,
+                                     QPointer<GekkoFyre::GkEventLogger> eventLogger, std::shared_ptr<AudioFile<double>> audioFileLib,
+                                     QObject *parent) : QObject(parent)
 {
     setParent(parent);
 
@@ -77,6 +78,7 @@ GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, co
     gkEventLogger = std::move(eventLogger);
     gkAudioInput = std::move(audioInput);
     gkAudioOutput = std::move(audioOutput);
+    gkAudioEncoding = std::move(audioEncoding);
     gkAudioFile = std::move(audioFileLib);
 
     //
@@ -85,11 +87,6 @@ GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, co
     pref_output_device = output_device;
     pref_input_device = input_device;
     gkPcmFileStream = std::make_unique<GkPcmFileStream>(this);
-
-    gkAudioEncoding = new GkAudioEncoding(gkDb, gkAudioOutput, gkAudioInput, pref_output_device, pref_input_device, gkEventLogger, this);
-    gkAudioEncoding->moveToThread(&gkAudioEncodingThread);
-    QObject::connect(&gkAudioEncodingThread, &QThread::finished, gkAudioEncoding, &QObject::deleteLater);
-    gkAudioEncodingThread.start();
 
     QObject::connect(gkAudioOutput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(playbackHandleStateChanged(QAudio::State)));
     QObject::connect(gkAudioInput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(recordingHandleStateChanged(QAudio::State)));
@@ -114,9 +111,6 @@ GkPaStreamHandler::~GkPaStreamHandler()
     if (!procMediaEventLoop.isNull()) {
         delete procMediaEventLoop;
     }
-
-    gkAudioEncodingThread.quit();
-    gkAudioEncodingThread.wait();
 
     return;
 }

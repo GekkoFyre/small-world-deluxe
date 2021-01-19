@@ -52,7 +52,6 @@
 #include <vector>
 #include <QTimer>
 #include <QString>
-#include <QThread>
 #include <QObject>
 #include <QBuffer>
 #include <QPointer>
@@ -65,18 +64,17 @@ namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
 namespace GekkoFyre {
-class GkFFTAudio : public QThread {
+class GkFFTAudio : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkFFTAudio(QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> audioOutput,
+    explicit GkFFTAudio(const QPointer<QBuffer> &audioInputBuf, QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> audioOutput,
                         const GekkoFyre::Database::Settings::Audio::GkDevice &input_audio_device_details,
                         const GekkoFyre::Database::Settings::Audio::GkDevice &output_audio_device_details,
                         QPointer<GekkoFyre::GkSpectroWaterfall> spectroWaterfall, QPointer<GekkoFyre::StringFuncs> stringFuncs,
                         QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkFFTAudio() override;
 
-    void run() Q_DECL_OVERRIDE;
     void processEvent(Spectrograph::GkFftEventType audioEventType);
     void processEvent(Spectrograph::GkFftEventType audioEventType, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
                       const fs::path &mediaFilePath);
@@ -85,25 +83,15 @@ private slots:
     void recordAudioStream();
     void stopRecordStream();
 
-    void recordAudioFileStream(const fs::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
-    void stopRecordFileStream(const fs::path &media_path);
-
-    void audioInHandleStateChanged(QAudio::State changed_state);
-    void audioOutHandleStateChanged(QAudio::State changed_state);
-
-    void processAudioIn();
     void refreshGraphTrue();
 
 public slots:
+    void processAudioInFft();
     void setAudioIo(const bool &use_input_audio); // True by default!
 
 signals:
     void recordStream();
     void stopRecording();
-
-    void recordFileStream(const fs::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
-    void stopRecordingFileStream(const fs::path &media_path);
-
     void refreshGraph(bool forceRepaint = false);
 
 private:
@@ -114,9 +102,9 @@ private:
     //
     // QAudioSystem initialization and buffers
     //
-    QPointer<QBuffer> gkAudioBuffer;
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
+    QPointer<QBuffer> gkAudioInputBuf;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_audio_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_audio_device;
     bool audioStreamProc = false;  // Whether an audio stream recording into memory is active or not

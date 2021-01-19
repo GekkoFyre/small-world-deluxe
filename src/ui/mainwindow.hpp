@@ -44,6 +44,7 @@
 #include "src/dek_db.hpp"
 #include "src/radiolibs.hpp"
 #include "src/gk_waterfall_gui.hpp"
+#include "src/gk_audio_encoding.hpp"
 #include "src/gk_fft_audio.hpp"
 #include "src/gk_xmpp_client.hpp"
 #include "src/gk_frequency_list.hpp"
@@ -76,6 +77,7 @@
 #include <QMenu>
 #include <QRect>
 #include <QList>
+#include <QThread>
 #include <QAction>
 #include <QScreen>
 #include <QString>
@@ -87,6 +89,7 @@
 #include <QDateTime>
 #include <QWindow>
 #include <QByteArray>
+#include <QEventLoop>
 #include <QStringList>
 #include <QMainWindow>
 #include <QPushButton>
@@ -104,6 +107,8 @@ class MainWindow;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
+    QThread gkAudioInputThread;
+    QThread gkAudioEncodingThread;
 
 public:
     explicit MainWindow(QWidget *parent = nullptr);
@@ -164,9 +169,9 @@ private slots:
     // be different colors depending on the needs of any colorblind users for a given session.
     //
     void on_pushButton_bridge_input_audio_clicked();
-    void on_pushButton_radio_receive_clicked();
     void on_pushButton_radio_transmit_clicked();
     void on_pushButton_radio_tx_halt_clicked();
+    void on_pushButton_radio_rx_halt_clicked();
     void on_pushButton_radio_monitor_clicked();
 
     //
@@ -258,6 +263,13 @@ protected slots:
     //
     void procRigPort(const QString &conn_port, const GekkoFyre::AmateurRadio::GkConnMethod &conn_method);
 
+    //
+    // Audio related
+    //
+    void processAudioInMain();
+    void audioInHandleStateChanged(QAudio::State changed_state);
+    void audioOutHandleStateChanged(QAudio::State changed_state);
+
 public slots:
     void updateProgressBar(const bool &enable, const size_t &min, const size_t &max);
 
@@ -293,6 +305,7 @@ signals:
     //
     // Audio related
     //
+    void updateAudioIn();
     void refreshVuDisplay(const qreal &rmsLevel, const qreal &peakLevel, const int &numSamples);
     void changeVolume(const float &value);
     void stopRecording();
@@ -339,14 +352,21 @@ private:
     boost::filesystem::path native_slash;
 
     //
-    // QAudioSystem initialization and buffers
+    // QAudioSystem initialization, buffers, and event-loops
     //
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
+    QPointer<QBuffer> gkAudioInputBuf;
+    QPointer<QEventLoop> gkAudioInputEventLoop;
+
+    //
+    // QAudioSystem miscellaneous variables
+    //
     std::list<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_input_audio_devs;
     std::list<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_output_audio_devs;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
+    QPointer<GekkoFyre::GkAudioEncoding> gkAudioEncoding;
     QPointer<GekkoFyre::GkFFTAudio> gkFftAudio;
 
     //
@@ -361,6 +381,7 @@ private:
     //
     std::timed_mutex btn_record_mtx;
     std::future<std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>> rig_future;
+    std::thread gkAudioInputEventLoopExecThread;
     std::thread rig_thread;
     std::thread vu_meter_thread;
 
@@ -394,6 +415,7 @@ private:
     //
     // Timing and date related
     //
+    QPointer<QTimer> gkAudioInputReadySignal;
     QPointer<QTimer> info_timer;
     qint64 gk_spectro_start_time;
     qint64 gk_spectro_latest_time;
@@ -408,6 +430,7 @@ private:
     bool btn_radio_rx;
     bool btn_radio_tx;
     bool btn_radio_tx_halt;
+    bool btn_radio_rx_halt;
     bool btn_radio_tune;
     bool btn_radio_monitor;
 

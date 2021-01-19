@@ -71,13 +71,13 @@ namespace GekkoFyre {
 
 class GkPaStreamHandler : public QObject {
     Q_OBJECT
-    QThread gkAudioEncodingThread;
 
 public:
     explicit GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
                                const GekkoFyre::Database::Settings::Audio::GkDevice &input_device, QPointer<QAudioOutput> audioOutput,
-                               QPointer<QAudioInput> audioInput, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                               std::shared_ptr<AudioFile<double>> audioFileLib, QObject *parent = nullptr);
+                               QPointer<QAudioInput> audioInput, QPointer<GekkoFyre::GkAudioEncoding> audioEncoding,
+                               QPointer<GekkoFyre::GkEventLogger> eventLogger, std::shared_ptr<AudioFile<double>> audioFileLib,
+                               QObject *parent = nullptr);
     ~GkPaStreamHandler() override;
 
     void processEvent(GkAudioFramework::AudioEventType audioEventType, const fs::path &mediaFilePath = fs::path(),
