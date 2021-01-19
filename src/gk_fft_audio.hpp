@@ -52,7 +52,6 @@
 #include <vector>
 #include <QTimer>
 #include <QString>
-#include <QThread>
 #include <QObject>
 #include <QBuffer>
 #include <QPointer>
@@ -65,7 +64,7 @@ namespace fs = boost::filesystem;
 namespace sys = boost::system;
 
 namespace GekkoFyre {
-class GkFFTAudio : public QThread {
+class GkFFTAudio : public QObject {
     Q_OBJECT
 
 public:
@@ -76,7 +75,6 @@ public:
                         QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkFFTAudio() override;
 
-    void run() Q_DECL_OVERRIDE;
     void processEvent(Spectrograph::GkFftEventType audioEventType);
     void processEvent(Spectrograph::GkFftEventType audioEventType, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
                       const fs::path &mediaFilePath);
@@ -84,9 +82,6 @@ public:
 private slots:
     void recordAudioStream();
     void stopRecordStream();
-
-    void recordAudioFileStream(const fs::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
-    void stopRecordFileStream(const fs::path &media_path);
 
     void refreshGraphTrue();
 
@@ -97,10 +92,6 @@ public slots:
 signals:
     void recordStream();
     void stopRecording();
-
-    void recordFileStream(const fs::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
-    void stopRecordingFileStream(const fs::path &media_path);
-
     void refreshGraph(bool forceRepaint = false);
 
 private:
