@@ -64,6 +64,7 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
                                      const GkDevice &input_device, const GkDevice &output_device,
                                      QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> audioOutput,
                                      QPointer<GekkoFyre::StringFuncs> stringFuncs,
+                                     QPointer<GekkoFyre::GkAudioEncoding> audioEncoding,
                                      QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                      QWidget *parent) : QDialog(parent), ui(new Ui::GkAudioPlayDialog)
 {
@@ -73,6 +74,7 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
     gkAudioInput = std::move(audioInput);
     gkAudioOutput = std::move(audioOutput);
     gkStringFuncs = std::move(stringFuncs);
+    gkAudioEncoding = std::move(audioEncoding);
     gkEventLogger = std::move(eventLogger);
 
     //
@@ -83,7 +85,7 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
     m_rec_codec_chosen = CodecSupport::PCM;
     m_encode_bitrate_chosen = 8;
     gkAudioFile = std::make_shared<AudioFile<double>>();
-    gkPaAudioPlayer = new GkPaAudioPlayer(gkDb, pref_output_device, pref_input_device, gkAudioOutput, gkAudioInput, gkEventLogger, gkAudioFile, this);
+    gkPaAudioPlayer = new GkPaAudioPlayer(gkDb, pref_output_device, pref_input_device, gkAudioOutput, gkAudioInput, gkAudioEncoding, gkEventLogger, gkAudioFile, this);
 
     //
     // QPushButtons, etc.

@@ -64,10 +64,10 @@ using namespace Logging;
  * @note Joel Svensson <http://svenssonjoel.github.io/pages/qt-audio-fft/index.html>,
  * Paul R <https://stackoverflow.com/questions/4675457/how-to-generate-the-audio-spectrum-using-fft-in-c>.
  */
-GkFFTAudio::GkFFTAudio(QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> audioOutput, const GkDevice &input_audio_device_details,
-                       const GkDevice &output_audio_device_details, QPointer<GekkoFyre::GkSpectroWaterfall> spectroWaterfall,
-                       QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                       QObject *parent) : QThread(parent)
+GkFFTAudio::GkFFTAudio(const QPointer<QBuffer> &audioInputBuf, QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> audioOutput,
+                       const GkDevice &input_audio_device_details, const GkDevice &output_audio_device_details,
+                       QPointer<GekkoFyre::GkSpectroWaterfall> spectroWaterfall, QPointer<GekkoFyre::StringFuncs> stringFuncs,
+                       QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QThread(parent)
 {
     setParent(parent);
 
@@ -86,16 +86,13 @@ GkFFTAudio::GkFFTAudio(QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> 
 
     gkAudioInput = std::move(audioInput);
     gkAudioOutput = std::move(audioOutput);
+    gkAudioInputBuf = std::move(audioInputBuf);
     gkSpectroWaterfall = std::move(spectroWaterfall);
     gkStringFuncs = std::move(stringFuncs);
     gkEventLogger = std::move(eventLogger);
 
     gkAudioInSampleRate = pref_input_audio_device.audio_device_info.preferredFormat().sampleRate();
     gkAudioInNumSamples = (gkAudioInSampleRate * (SPECTRO_Y_AXIS_SIZE / 1000));
-    gkAudioBuffer = new QBuffer(this);
-
-    QObject::connect(gkAudioInput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(audioInHandleStateChanged(QAudio::State)));
-    QObject::connect(gkAudioOutput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(audioOutHandleStateChanged(QAudio::State)));
 
     QObject::connect(this, SIGNAL(recordStream()), this, SLOT(recordAudioStream()));
     QObject::connect(this, SIGNAL(stopRecording()), this, SLOT(stopRecordStream()));
@@ -104,7 +101,6 @@ GkFFTAudio::GkFFTAudio(QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> 
                      this, SLOT(recordAudioFileStream(const fs::path &, const GekkoFyre::GkAudioFramework::CodecSupport &)));
     QObject::connect(this, SIGNAL(stopRecordingFileStream(const fs::path &)), this, SLOT(stopRecordFileStream(const fs::path &)));
 
-    QObject::connect(gkAudioInput, SIGNAL(notify()), this, SLOT(processAudioIn()));
     QObject::connect(this, SIGNAL(refreshGraph(bool)), gkSpectroWaterfall, SLOT(replot(bool)));
 
     spectroRefreshTimer = new QTimer(this);
@@ -128,70 +124,14 @@ GkFFTAudio::~GkFFTAudio()
 }
 
 /**
- * @brief GkFFTAudio::audioInHandleStateChanged
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param changed_state
- */
-void GkFFTAudio::audioInHandleStateChanged(QAudio::State changed_state)
-{
-    try {
-        switch (changed_state) {
-            case QAudio::StoppedState:
-                if (gkAudioInput->error() != QAudio::NoError) { // TODO: Improve the error reporting functionality of this statement!
-                    throw std::runtime_error(tr("Issue with 'QAudio::StoppedState' during media playback!").toStdString());
-                }
-
-                break;
-            default:
-                break;
-        }
-    } catch (const std::exception &e) {
-        gkEventLogger->publishEvent(tr("An issue has been encountered during audio playback. Error:\n\n%1").arg(QString::fromStdString(e.what())),
-                                    GkSeverity::Fatal, "", true, true, false, false);
-    }
-
-    return;
-}
-
-/**
- * @brief GkFFTAudio::audioOutHandleStateChanged
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param changed_state
- */
-void GkFFTAudio::audioOutHandleStateChanged(QAudio::State changed_state)
-{
-    try {
-        switch (changed_state) {
-            case QAudio::IdleState:
-                gkAudioOutput->stop();
-
-                break;
-            case QAudio::StoppedState:
-                if (gkAudioOutput->error() != QAudio::NoError) { // TODO: Improve the error reporting functionality of this statement!
-                    throw std::runtime_error(tr("Issue with 'QAudio::StoppedState' during media playback!").toStdString());
-                }
-
-                break;
-            default:
-                break;
-        }
-    } catch (const std::exception &e) {
-        gkEventLogger->publishEvent(tr("An issue has been encountered during audio playback. Error:\n\n%1").arg(QString::fromStdString(e.what())),
-                                    GkSeverity::Fatal, "", true, true, false, false);
-    }
-
-    return;
-}
-
-/**
  * @brief GkFFTAudio::processAudioIn
  * @author Joel Svensson <http://svenssonjoel.github.io/pages/qt-audio-fft/index.html>
  */
-void GkFFTAudio::processAudioIn()
+void GkFFTAudio::processAudioInFft()
 {
     if (gkAudioInput->state() == QAudio::ActiveState) {
-        gkAudioBuffer->seek(0);
-        QByteArray ba = gkAudioBuffer->readAll();
+        gkAudioInputBuf->seek(0);
+        QByteArray ba = gkAudioInputBuf->readAll();
 
         qint32 ba_num_samples = ba.length() / 2;
         qint32 b_pos = 0;
@@ -205,9 +145,6 @@ void GkFFTAudio::processAudioIn()
                 audioSamples.push_back(0);
             }
         }
-
-        gkAudioBuffer->buffer().clear();
-        gkAudioBuffer->seek(0);
 
         samplesUpdated();
     } else {
@@ -351,7 +288,6 @@ void GkFFTAudio::recordAudioStream()
 {
     try {
         emit stopRecording();
-        gkAudioBuffer->open(QBuffer::ReadWrite);
 
         if (pref_input_audio_device.is_enabled) {
             //
@@ -361,12 +297,8 @@ void GkFFTAudio::recordAudioStream()
                 throw std::runtime_error(tr("A memory error has been encountered whilst trying to process input audio for FFT calculations!").toStdString());
             }
 
-            // gkAudioInput->setVolume(0.1);
-            gkAudioInput->setNotifyInterval(100);
-            gkAudioInput->start(gkAudioBuffer);
             audioStreamProc = true;
-
-            gkAudioInput->moveToThread(this);
+            // gkAudioInput->moveToThread(this);
         } else if (pref_output_audio_device.is_enabled) {
             //
             // Output device
@@ -375,12 +307,8 @@ void GkFFTAudio::recordAudioStream()
                 throw std::runtime_error(tr("A memory error has been encountered whilst trying to process output audio for FFT calculations!").toStdString());
             }
 
-            // gkAudioOutput->setVolume(0.1);
-            gkAudioOutput->setNotifyInterval(100);
-            gkAudioOutput->start(gkAudioBuffer);
             audioStreamProc = true;
-
-            gkAudioOutput->moveToThread(this);
+            // gkAudioOutput->moveToThread(this);
         } else {
             throw std::invalid_argument(tr("Unable to determine the desired Audio I/O in order to start recording an audio stream to memory!").toStdString());
         }

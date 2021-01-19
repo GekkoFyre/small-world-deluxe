@@ -67,7 +67,9 @@ class GkPaAudioPlayer : public QObject {
 public:
     explicit GkPaAudioPlayer(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
                              const GekkoFyre::Database::Settings::Audio::GkDevice &input_device,
-                             QPointer<QAudioOutput> audioOutput, QPointer<QAudioInput> audioInput, const QPointer<GekkoFyre::GkEventLogger> &eventLogger,
+                             QPointer<QAudioOutput> audioOutput, QPointer<QAudioInput> audioInput,
+                             QPointer<GekkoFyre::GkAudioEncoding> audioEncoding,
+                             const QPointer<GekkoFyre::GkEventLogger> &eventLogger,
                              std::shared_ptr<AudioFile<double>> audioFileLib, QObject *parent = nullptr);
     virtual ~GkPaAudioPlayer();
 
@@ -81,6 +83,7 @@ public:
 private:
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
+    QPointer<GekkoFyre::GkAudioEncoding> gkAudioEncoding;
     QPointer<GkPaStreamHandler> streamHandler;
 
     //

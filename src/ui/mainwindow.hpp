@@ -44,6 +44,7 @@
 #include "src/dek_db.hpp"
 #include "src/radiolibs.hpp"
 #include "src/gk_waterfall_gui.hpp"
+#include "src/gk_audio_encoding.hpp"
 #include "src/gk_fft_audio.hpp"
 #include "src/gk_xmpp_client.hpp"
 #include "src/gk_frequency_list.hpp"
@@ -76,6 +77,7 @@
 #include <QMenu>
 #include <QRect>
 #include <QList>
+#include <QThread>
 #include <QAction>
 #include <QScreen>
 #include <QString>
@@ -104,6 +106,7 @@ class MainWindow;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
+    QThread gkAudioEncodingThread;
 
 public:
     explicit MainWindow(QWidget *parent = nullptr);
@@ -258,6 +261,13 @@ protected slots:
     //
     void procRigPort(const QString &conn_port, const GekkoFyre::AmateurRadio::GkConnMethod &conn_method);
 
+    //
+    // Audio related
+    //
+    void processAudioInMain();
+    void audioInHandleStateChanged(QAudio::State changed_state);
+    void audioOutHandleStateChanged(QAudio::State changed_state);
+
 public slots:
     void updateProgressBar(const bool &enable, const size_t &min, const size_t &max);
 
@@ -293,6 +303,7 @@ signals:
     //
     // Audio related
     //
+    void updateAudioIn();
     void refreshVuDisplay(const qreal &rmsLevel, const qreal &peakLevel, const int &numSamples);
     void changeVolume(const float &value);
     void stopRecording();
@@ -348,6 +359,7 @@ private:
     std::list<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_output_audio_devs;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
+    QPointer<GekkoFyre::GkAudioEncoding> gkAudioEncoding;
     QPointer<GekkoFyre::GkFFTAudio> gkFftAudio;
 
     //
@@ -395,6 +407,7 @@ private:
     //
     // Timing and date related
     //
+    QPointer<QTimer> gkAudioInputReadySignal;
     QPointer<QTimer> info_timer;
     qint64 gk_spectro_start_time;
     qint64 gk_spectro_latest_time;

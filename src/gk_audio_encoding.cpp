@@ -80,8 +80,9 @@ using namespace GkXmpp;
 
 #define OGG_VORBIS_READ (1024)
 
-GkAudioEncoding::GkAudioEncoding(QPointer<GekkoFyre::GkLevelDb> database, QPointer<QAudioOutput> audioOutput,
-                                 QPointer<QAudioInput> audioInput, const GkDevice &output_device, const GkDevice &input_device,
+GkAudioEncoding::GkAudioEncoding(const QPointer<QBuffer> &audioInputBuf, QPointer<GekkoFyre::GkLevelDb> database,
+                                 QPointer<QAudioOutput> audioOutput, QPointer<QAudioInput> audioInput,
+                                 const GkDevice &output_device, const GkDevice &input_device,
                                  QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QObject(parent)
 {
     setParent(parent);
@@ -92,19 +93,18 @@ GkAudioEncoding::GkAudioEncoding(QPointer<GekkoFyre::GkLevelDb> database, QPoint
     gkAudioOutput = std::move(audioOutput);
     gkInputDev = input_device;
     gkOutputDev = output_device;
+
+    m_initialized = false;
     m_chosen_codec = CodecSupport::Unknown;
 
     //
-    // Open the buffer for reading and writing purposes!
+    // Open and initialize the buffers for reading and writing purposes!
     m_encoded_buf = new QBuffer(this);
-    record_input_buf = new QBuffer(this);
-    record_input_buf->open(QBuffer::ReadWrite);
+    gkAudioInputBuf = std::move(audioInputBuf);
 
     QObject::connect(this, SIGNAL(pauseEncode()), this, SLOT(stopCaller()));
     QObject::connect(this, SIGNAL(error(const QString &, const GekkoFyre::System::Events::Logging::GkSeverity &)),
                      this, SLOT(handleError(const QString &, const GekkoFyre::System::Events::Logging::GkSeverity &)));
-    QObject::connect(gkAudioInput, &QAudioInput::notify, this, &GkAudioEncoding::processAudioIn);
-    QObject::connect(this, SIGNAL(initialize()), this, SLOT(startRecBuffer()));
 
     return;
 }
@@ -228,8 +228,6 @@ void GkAudioEncoding::startCaller(const fs::path &media_path, const Database::Se
                 ope_comments_destroy(m_opus_comments);
                 return;
             }
-
-            emit initialize();
         } else if (codec_choice == CodecSupport::OggVorbis) {
             //
             // Ogg Vorbis
@@ -263,8 +261,6 @@ void GkAudioEncoding::startCaller(const fs::path &media_path, const Database::Se
             } else {
                 throw std::runtime_error(tr("Race condition encountered: only a singular recording instance may be open at a time!").toStdString());
             }
-
-            emit initialize();
         } else if (codec_choice == CodecSupport::FLAC) {
             //
             // FLAC
@@ -306,8 +302,6 @@ void GkAudioEncoding::startCaller(const fs::path &media_path, const Database::Se
             } else {
                 throw std::runtime_error(tr("Race condition encountered: only a singular recording instance may be open at a time!").toStdString());
             }
-
-            emit initialize();
         } else {
             throw std::invalid_argument(tr("Invalid audio encoding codec specified! It is either not supported yet or an error was made.").toStdString());
         }
@@ -351,14 +345,11 @@ void GkAudioEncoding::handleError(const QString &msg, const GkSeverity &severity
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>,
  * Joel Svensson <https://svenssonjoel.github.io/pages/qt-audio-input/index.html>.
  */
-void GkAudioEncoding::processAudioIn()
+void GkAudioEncoding::processAudioInEncode()
 {
     if (m_initialized) {
-        record_input_buf->seek(0);
-        m_buffer.append(record_input_buf->readAll());
-
-        record_input_buf->buffer().clear();
-        record_input_buf->seek(0);
+        gkAudioInputBuf->seek(0);
+        m_buffer.append(gkAudioInputBuf->readAll());
         while (!m_buffer.isEmpty()) {
             if (m_chosen_codec == CodecSupport::Opus) {
                 encodeOpus();
@@ -371,18 +362,6 @@ void GkAudioEncoding::processAudioIn()
             }
         }
     }
-
-    return;
-}
-
-/**
- * @brief GkAudioEncoding::startRecBuffer
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkAudioEncoding::startRecBuffer()
-{
-    gkAudioInput->setNotifyInterval(100);
-    gkAudioInput->start(record_input_buf);
 
     return;
 }

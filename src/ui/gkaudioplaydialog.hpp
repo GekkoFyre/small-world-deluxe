@@ -77,6 +77,7 @@ public:
                                const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
                                QPointer<QAudioInput> audioInput, QPointer<QAudioOutput> audioOutput,
                                QPointer<GekkoFyre::StringFuncs> stringFuncs,
+                               QPointer<GekkoFyre::GkAudioEncoding> audioEncoding,
                                QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                QWidget *parent = nullptr);
     ~GkAudioPlayDialog() override;
@@ -106,6 +107,7 @@ private:
 
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
+    QPointer<GekkoFyre::GkAudioEncoding> gkAudioEncoding;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     QPointer<GekkoFyre::GkPaAudioPlayer> gkPaAudioPlayer;
 
