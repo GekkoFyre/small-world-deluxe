@@ -359,6 +359,29 @@ namespace System {
             };
         }
     }
+
+    namespace Security {
+        enum GkFirewallCfg {
+            GkAddPort,
+            GkDelPort,
+            GkAddApp,
+            GkDelApp,
+            GkIsPortAdded,
+            GkIsAppAdded,
+            GkReadPorts,
+            GkReadApps,
+            GkActivateFirewall,
+            GkDisableFirewall,
+            GkIsFirewallActive
+        };
+
+        struct GkFirewallSettings {
+            bool sys_firewall_enabled;                  // Is the operating system's primary firewall enabled (e.g. the one that is built into Microsoft Windows)?
+            bool swd_app_added;                         // Has the Small World Deluxe application itself (i.e. the primary executable) been added to the firewall already?
+            std::vector<qint32> required_ports;         // The required TCP and/or UDP ports for Small World Deluxe to operate properly that need to be enabled.
+            std::vector<qint32> enabled_ports;          // The already existing and enabled TCP and/or UDP ports, as required by Small World Deluxe to operate properly, that are already enabled.
+        };
+    }
 }
 
 namespace Database {

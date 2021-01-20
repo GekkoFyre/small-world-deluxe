@@ -79,6 +79,7 @@ using namespace Events;
 using namespace Logging;
 using namespace Network;
 using namespace GkXmpp;
+using namespace Security;
 
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
@@ -490,6 +491,106 @@ void GkLevelDb::write_audio_playback_dlg_settings(const QString &value, const Au
 }
 
 /**
+ * @brief GkLevelDb::write_firewall_settings stores settings pertaining to the default firewall built into the operating
+ * system (if there is one, such as the provided firewall provided with Microsoft Windows).
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value The setting to be stored.
+ * @param key The key to store the setting under.
+ */
+void GkLevelDb::write_firewall_settings(const QString &value, const Security::GkFirewallCfg &key)
+{
+    try {
+        //
+        // Read and write from the Google LevelDB database!
+        leveldb::WriteBatch batch;
+        leveldb::Status status;
+
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
+
+        leveldb::ReadOptions read_options;
+        read_options.verify_checksums = true;
+
+        switch (key) {
+            case Security::GkFirewallCfg::GkAddPort:
+            {
+                //
+                // Add firewall port to the settings!
+                std::string gk_firewall_port_value;
+                db->Get(read_options, "GkFirewallPorts", &gk_firewall_port_value);
+                std::string csv_stored_firewall_port;
+                csv_stored_firewall_port = processCsvToDB("GkFirewallPorts", gk_firewall_port_value, value.toStdString());
+                batch.Put("GkFirewallPorts", csv_stored_firewall_port);
+            }
+
+                break;
+            case Security::GkFirewallCfg::GkDelPort:
+            {
+                //
+                // Delete firewall port from the settings!
+                std::string gk_firewall_port_value;
+                db->Get(read_options, "GkFirewallPorts", &gk_firewall_port_value);
+                std::string csv_stored_firewall_port;
+                csv_stored_firewall_port = deleteCsvValForDb(gk_firewall_port_value, value.toStdString());
+
+                batch.Delete("GkFirewallPorts"); // Delete the key before rewriting the values again!
+                status = db->Write(write_options, &batch);
+                if (!status.ok()) { // Abort because of error!
+                    throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+                }
+
+                batch.Put("GkFirewallPorts", csv_stored_firewall_port);
+            }
+
+                break;
+            case Security::GkFirewallCfg::GkAddApp:
+            {
+                //
+                // Add a firewall application-based rule to the settings!
+                std::string gk_firewall_app_value;
+                db->Get(read_options, "GkFirewallApps", &gk_firewall_app_value);
+                std::string csv_stored_firewall_app;
+                csv_stored_firewall_app = processCsvToDB("GkFirewallApps", gk_firewall_app_value, value.toStdString());
+                batch.Put("GkFirewallApps", csv_stored_firewall_app);
+            }
+
+                break;
+            case Security::GkFirewallCfg::GkDelApp:
+            {
+                //
+                // Delete a firewall application-based rule from the settings!
+                std::string gk_firewall_app_value;
+                db->Get(read_options, "GkFirewallApps", &gk_firewall_app_value);
+                std::string csv_stored_firewall_app;
+                csv_stored_firewall_app = deleteCsvValForDb(gk_firewall_app_value, value.toStdString());
+
+                batch.Delete("GkFirewallApps"); // Delete the key before rewriting the values again!
+                status = db->Write(write_options, &batch);
+                if (!status.ok()) { // Abort because of error!
+                    throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+                }
+
+                batch.Put("GkFirewallApps", csv_stored_firewall_app);
+            }
+
+                break;
+            default:
+                break;
+        }
+
+        status = db->Write(write_options, &batch);
+
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
  * @brief GkLevelDb::write_frequencies_db manages the storage of frequency information within Small World Deluxe, such as
  * deletion, addition, and modification.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -507,28 +608,28 @@ void GkLevelDb::write_frequencies_db(const GkFreqs &write_new_value)
         std::string gk_stored_freq_value = "";
         db->Get(read_options, "GkStoredFreq", &gk_stored_freq_value);
         std::string csv_stored_freq;
-        csv_stored_freq = processCsvToDB(gk_stored_freq_value, QString::number(write_new_value.frequency).toStdString()); // Frequency (CSV)
+        csv_stored_freq = processCsvToDB("GkStoredFreq", gk_stored_freq_value, QString::number(write_new_value.frequency).toStdString()); // Frequency (CSV)
         batch.Put("GkStoredFreq", csv_stored_freq);
 
         // Closest matching frequency band
         std::string gk_closest_band_value = "";
         db->Get(read_options, "GkClosestBand", &gk_closest_band_value);
         std::string csv_closest_band;
-        csv_closest_band = processCsvToDB(gk_closest_band_value, convBandsToStr(write_new_value.closest_freq_band).toStdString()); // Closest matching frequency band (CSV)
+        csv_closest_band = processCsvToDB("GkClosestBand", gk_closest_band_value, convBandsToStr(write_new_value.closest_freq_band).toStdString()); // Closest matching frequency band (CSV)
         batch.Put("GkClosestBand", csv_closest_band);
 
         // Digital mode
         std::string gk_digital_mode_value = "";
         db->Get(read_options, "GkDigitalMode", &gk_digital_mode_value);
         std::string csv_digital_mode;
-        csv_digital_mode = processCsvToDB(gk_digital_mode_value, convDigitalModesToStr(write_new_value.digital_mode).toStdString()); // Digital mode (CSV)
+        csv_digital_mode = processCsvToDB("GkDigitalMode", gk_digital_mode_value, convDigitalModesToStr(write_new_value.digital_mode).toStdString()); // Digital mode (CSV)
         batch.Put("GkDigitalMode", csv_digital_mode);
 
         // IARU Region
         std::string gk_iaru_region_value = "";
         db->Get(read_options, "GkIARURegion", &gk_iaru_region_value);
         std::string csv_iaru_region;
-        csv_iaru_region = processCsvToDB(gk_iaru_region_value, convIARURegionToStr(write_new_value.iaru_region).toStdString()); // IARU Region (CSV)
+        csv_iaru_region = processCsvToDB("GkIARURegion", gk_iaru_region_value, convIARURegionToStr(write_new_value.iaru_region).toStdString()); // IARU Region (CSV)
         batch.Put("GkIARURegion", csv_iaru_region);
 
         remove_frequencies_db(true); // Delete all the frequencies and their component values!
@@ -1817,6 +1918,110 @@ QString GkLevelDb::read_audio_playback_dlg_settings(const AudioPlaybackDlg &key)
 }
 
 /**
+ * @brief GkLevelDb::read_firewall_settings reads out stored settings pertaining to the default firewall built into the
+ * operating system (if there is one, such as the provided firewall provided with Microsoft Windows).
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param comparison The stored setting within the Google LevelDB database to make a comparison against.
+ * @param key The key for which the supposedly stored setting is under. Returns a nullptr if nothing is stored under that
+ * particular key.
+ * @return The stored setting otherwise an exception is returned if there was no stored setting under a given key.
+ */
+boost::tribool GkLevelDb::read_firewall_settings(const std::string &comparison, const Security::GkFirewallCfg &key)
+{
+    leveldb::Status status;
+    leveldb::ReadOptions read_options;
+    std::string value = "";
+
+    read_options.verify_checksums = true;
+    std::vector<std::string> values_vec;
+    rapidcsv::Document doc(value, rapidcsv::LabelParams(), rapidcsv::SeparatorParams(',', true, false, false, false));
+
+    switch (key) {
+        case Security::GkFirewallCfg::GkIsPortAdded:
+        {
+            status = db->Get(read_options, "GkFirewallPorts", &value);
+            if (!value.empty()) {
+                values_vec = doc.GetColumn<std::string>("FirewallPorts");
+            } else {
+                return boost::tribool::indeterminate_value;
+            }
+        }
+
+            break;
+        case Security::GkFirewallCfg::GkIsAppAdded:
+        {
+            status = db->Get(read_options, "GkFirewallApps", &value);
+            if (!value.empty()) {
+                values_vec = doc.GetColumn<std::string>("FirewallApps");
+            } else {
+                return boost::tribool::indeterminate_value;
+            }
+        }
+
+            break;
+        default:
+            break;
+    }
+
+    for (const auto &csv_val: values_vec) {
+        if (comparison == csv_val) {
+            return boost::tribool::true_value;
+        }
+    }
+
+    return boost::tribool::false_value;
+}
+
+/**
+ * @brief GkLevelDb::read_firewall_settings_vec reads out stored settings (only regarding ports and applications in this
+ * function) pertaining to the default firewall built into the operating system (if there is one, such as the provided
+ * firewall provided with Microsoft Windows).
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param key The key for which the supposedly stored setting is under. Returns a nullptr if nothing is stored under that
+ * particular key.
+ * @return The stored setting, as a vector, otherwise nullptr is returned if there was no stored setting under a given key.
+ */
+std::vector<std::string> GkLevelDb::read_firewall_settings_vec(const Security::GkFirewallCfg &key)
+{
+    leveldb::Status status;
+    leveldb::ReadOptions read_options;
+    std::string value = "";
+
+    read_options.verify_checksums = true;
+    std::vector<std::string> values_vec;
+    rapidcsv::Document doc(value, rapidcsv::LabelParams(), rapidcsv::SeparatorParams(',', true, false, false, false));
+
+    switch (key) {
+        case Security::GkFirewallCfg::GkReadPorts:
+        {
+            status = db->Get(read_options, "GkFirewallPorts", &value);
+            if (!value.empty()) {
+                values_vec = doc.GetColumn<std::string>("FirewallPorts");
+            }
+        }
+
+            break;
+        case Security::GkFirewallCfg::GkReadApps:
+        {
+            status = db->Get(read_options, "GkFirewallApps", &value);
+            if (!value.empty()) {
+                values_vec = doc.GetColumn<std::string>("GkFirewallApps");
+            }
+        }
+
+            break;
+        default:
+            break;
+    }
+
+    if (!values_vec.empty()) {
+        return values_vec;
+    }
+
+    return std::vector<std::string>();
+}
+
+/**
  * @brief DekodeDb::convertAudioChannelsEnum converts from an index given by
  * a QComboBox and not by a specific amount of channels.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -2302,11 +2507,12 @@ int GkLevelDb::boolInt(const bool &is_true)
  * @brief GkLevelDb::processCsvToDB takes pre-existing data and appends new values towards it, in the form of CSV. It then returns
  * all the newly made data as a CSV string. Data modifications to existing rows can be made too, which are automatically detected.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param csv_title The header/title to give the CSV list.
  * @param comma_sep_values The pre-existing CSV information.
  * @param data_to_append The information to append onto the pre-existing CSV information, if any.
  * @return The newly made data, with the appended information, as a CSV string.
  */
-std::string GkLevelDb::processCsvToDB(const std::string &comma_sep_values, const std::string &data_to_append)
+std::string GkLevelDb::processCsvToDB(const std::string &csv_title, const std::string &comma_sep_values, const std::string &data_to_append)
 {
     try {
         if (!comma_sep_values.empty()) {
@@ -2337,7 +2543,7 @@ std::string GkLevelDb::processCsvToDB(const std::string &comma_sep_values, const
         } else {
             // We are beginning with a new data set!
             auto csv_vals = gkStringFuncs->csvSplitter(data_to_append);
-            csv_vals.insert(csv_vals.begin(), "FreqValues");
+            csv_vals.insert(csv_vals.begin(), csv_title);
             auto ret_val = gkStringFuncs->csvOutputString(csv_vals);
 
             return ret_val;
@@ -2358,10 +2564,13 @@ std::string GkLevelDb::processCsvToDB(const std::string &comma_sep_values, const
  */
 std::string GkLevelDb::deleteCsvValForDb(const std::string &comma_sep_values, const std::string &data_to_remove)
 {
+    //
+    // TODO: Test to see if this function actually works or not!
+    //
     try {
         if (!comma_sep_values.empty() && !data_to_remove.empty()) {
             std::stringstream sstream(comma_sep_values);
-            rapidcsv::Document doc(sstream, rapidcsv::LabelParams(0, 0));
+            rapidcsv::Document doc(sstream, rapidcsv::LabelParams(), rapidcsv::SeparatorParams(',', true, false, false, false));
             std::vector<std::string> csv_vals = doc.GetColumn<std::string>("FreqValues");
 
             for (size_t i = 0; i < csv_vals.size(); ++i) {

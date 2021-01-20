@@ -607,8 +607,8 @@ HRESULT GkSystem::WindowsFirewallPortIsEnabled(INetFwProfile *fwProfile, LONG po
 {
     HRESULT hr = S_OK;
     VARIANT_BOOL fwEnabled;
-    INetFwOpenPort* fwOpenPort = nullptr;
-    INetFwOpenPorts* fwOpenPorts = nullptr;
+    INetFwOpenPort *fwOpenPort = nullptr;
+    INetFwOpenPorts *fwOpenPorts = nullptr;
 
     Q_ASSERT(fwProfile != nullptr);
     Q_ASSERT(fwPortEnabled != nullptr);
@@ -686,8 +686,8 @@ HRESULT GkSystem::WindowsFirewallPortAdd(INetFwProfile *fwProfile, LONG portNumb
     HRESULT hr = S_OK;
     BOOL fwPortEnabled;
     BSTR fwBstrName = nullptr;
-    INetFwOpenPort* fwOpenPort = nullptr;
-    INetFwOpenPorts* fwOpenPorts = nullptr;
+    INetFwOpenPort *fwOpenPort = nullptr;
+    INetFwOpenPorts *fwOpenPorts = nullptr;
 
     Q_ASSERT(fwProfile != nullptr);
     Q_ASSERT(name != nullptr);

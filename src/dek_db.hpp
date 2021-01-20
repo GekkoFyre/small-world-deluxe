@@ -84,6 +84,7 @@ public:
     void write_misc_audio_settings(const QString &value, const Database::Settings::GkAudioCfg &key);
     void write_event_log_settings(const QString &value, const Database::Settings::GkEventLogCfg &key);
     void write_audio_playback_dlg_settings(const QString &value, const Database::Settings::AudioPlaybackDlg &key);
+    void write_firewall_settings(const QString &value, const System::Security::GkFirewallCfg &key);
 
     void write_frequencies_db(const AmateurRadio::GkFreqs &write_new_value);
     void remove_frequencies_db(const AmateurRadio::GkFreqs &freq_to_remove);
@@ -117,6 +118,8 @@ public:
     QString read_misc_audio_settings(const GekkoFyre::Database::Settings::GkAudioCfg &key);
     QString read_event_log_settings(const Database::Settings::GkEventLogCfg &key);
     QString read_audio_playback_dlg_settings(const Database::Settings::AudioPlaybackDlg &key);
+    boost::tribool read_firewall_settings(const std::string &comparison, const System::Security::GkFirewallCfg &key);
+    std::vector<std::string> read_firewall_settings_vec(const System::Security::GkFirewallCfg &key);
 
     GekkoFyre::Database::Settings::GkAudioChannels convertAudioChannelsEnum(const int &audio_channel_sel);
     qint32 convertAudioChannelsToCount(const GekkoFyre::Database::Settings::GkAudioChannels &channel_enum);
@@ -150,7 +153,7 @@ private:
     leveldb::DB *db;
     QRect gkMainWinGeometry;
 
-    std::string processCsvToDB(const std::string &comma_sep_values, const std::string &data_to_append);
+    std::string processCsvToDB(const std::string &csv_title, const std::string &comma_sep_values, const std::string &data_to_append);
     std::string deleteCsvValForDb(const std::string &comma_sep_values, const std::string &data_to_remove);
 
     void detect_operating_system(QString &build_cpu_arch, QString &curr_cpu_arch, QString &kernel_type, QString &kernel_vers,
