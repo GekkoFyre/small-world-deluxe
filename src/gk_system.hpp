@@ -42,7 +42,10 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include "src/gk_string_funcs.hpp"
+#include "src/gk_logger.hpp"
 #include <string>
+#include <cstdio>
 #include <QObject>
 #include <QString>
 #include <QPointer>
@@ -61,11 +64,30 @@ class GkSystem : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkSystem(QObject *parent = nullptr);
+    explicit GkSystem(QPointer<GekkoFyre::StringFuncs> stringFuncs, QObject *parent = nullptr);
     ~GkSystem() override;
 
     qint32 getNumCpuCores();
     QString renameCommsDevice(const qint32 &port, const GekkoFyre::AmateurRadio::GkConnType &conn_type);
+
+    #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
+    HRESULT WindowsFirewallInitialize(OUT INetFwProfile **fwProfile);
+    HRESULT WindowsFirewallIsOn(IN INetFwProfile *fwProfile, OUT BOOL *fwOn);
+    HRESULT WindowsFirewallAppIsEnabled(IN INetFwProfile *fwProfile, IN const wchar_t *fwProcessImageFileName, OUT BOOL *fwAppEnabled);
+    HRESULT WindowsFirewallTurnOn(IN INetFwProfile *fwProfile);
+    HRESULT WindowsFirewallTurnOff(IN INetFwProfile *fwProfile);
+    HRESULT WindowsFirewallAddApp(IN INetFwProfile *fwProfile, IN const wchar_t *fwProcessImageFileName, IN const wchar_t *fwName);
+    HRESULT WindowsFirewallPortIsEnabled(IN INetFwProfile *fwProfile, IN LONG portNumber, IN NET_FW_IP_PROTOCOL ipProtocol, OUT BOOL *fwPortEnabled);
+    HRESULT WindowsFirewallPortAdd(IN INetFwProfile *fwProfile, IN LONG portNumber, IN NET_FW_IP_PROTOCOL ipProtocol, IN const wchar_t *name);
+    #endif
+
+signals:
+    void publishEventMsg(const QString &event, const GekkoFyre::System::Events::Logging::GkSeverity &severity = GekkoFyre::System::Events::Logging::GkSeverity::Warning,
+                         const QVariant &arguments = "", const bool &sys_notification = false, const bool &publishToConsole = true, const bool &publishToStatusBar = false,
+                         const bool &displayMsgBox = false);
+
+private:
+    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
 
 };
 };

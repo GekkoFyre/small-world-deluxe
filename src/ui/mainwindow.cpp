@@ -67,6 +67,7 @@
 #include <QResource>
 #include <QMultiMap>
 #include <QtGlobal>
+#include <QVariant>
 #include <QWidget>
 #include <QVector>
 #include <QPixmap>
@@ -227,7 +228,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // Create class pointers
         fileIo = new GekkoFyre::FileIo(this);
         gkStringFuncs = new GekkoFyre::StringFuncs(this);
-        gkSystem = new GkSystem(this);
+        gkSystem = new GkSystem(gkStringFuncs, this);
 
         //
         // Settings database-related logic
@@ -418,8 +419,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 // Initialize the all-important `GkRadioPtr`!
                 //
                 gkRadioLibs = new GekkoFyre::RadioLibs(fileIo, gkStringFuncs, gkDb, gkRadioPtr, gkEventLogger, gkSystem, this);
+
+                //
+                // Connect `GekkoFyre::GkEventLogger()` to any external log event publishing sources!
+                //
+                QObject::connect(gkSystem, SIGNAL(publishEventMsg(const QString &, const GekkoFyre::System::Events::Logging::GkSeverity &, const QVariant &, const bool &, const bool &, const bool &, const bool &)),
+                gkEventLogger, SLOT(publishEvent(const QString &, const GekkoFyre::System::Events::Logging::GkSeverity &, const QVariant &, const bool &, const bool &, const bool &, const bool &)));
                 QObject::connect(gkRadioLibs, SIGNAL(publishEventMsg(const QString &, const GekkoFyre::System::Events::Logging::GkSeverity &, const QVariant &, const bool &, const bool &, const bool &, const bool &)),
-                                 gkEventLogger, SLOT(publishEvent(const QString &, const GekkoFyre::System::Events::Logging::GkSeverity &, const QVariant &, const bool &, const bool &, const bool &, const bool &)));
+                gkEventLogger, SLOT(publishEvent(const QString &, const GekkoFyre::System::Events::Logging::GkSeverity &, const QVariant &, const bool &, const bool &, const bool &, const bool &)));
 
                 // Initialize the other radio libraries!
                 gkSerialPortMap = gkRadioLibs->filter_com_ports(gkRadioLibs->status_com_ports());
@@ -707,6 +714,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         //
         // Enable updating and clearing of QBuffer pointers across Small World Deluxe!
+        QObject::connect(this, SIGNAL(updateAudioIn()), this, SLOT(processAudioInMainBuffer()));
         QObject::connect(this, SIGNAL(updateAudioIn()), gkFftAudio, SLOT(processAudioInFft()));
         QObject::connect(this, SIGNAL(updateAudioIn()), gkAudioEncoding, SLOT(processAudioInEncode()));
 
@@ -849,10 +857,6 @@ MainWindow::~MainWindow()
 {
     emit stopRecording();
     emit disconnectRigInUse(gkRadioPtr->gkRig, gkRadioPtr);
-
-    if (!gkAudioInputEventLoop.isNull()) {
-        delete gkAudioInputEventLoop;
-    }
 
     gkAudioEncodingThread.quit();
     gkAudioEncodingThread.wait();
@@ -1490,23 +1494,16 @@ void MainWindow::updateVolumeDisplayWidgets()
             std::lock_guard<std::mutex> lck_guard(mtx_update_vol_widgets);
             std::this_thread::sleep_for(std::chrono::milliseconds(2500)); // TODO: This is a huge source of SEGFAULTS!
 
-            QByteArray vol_input_ba;
-            gkAudioInputBuf->seek(0);
-            vol_input_ba.append(gkAudioInputBuf->readAll());
+            const qint32 num_samples = AUDIO_FRAMES_PER_BUFFER * gkAudioInput->format().channelCount(); // Assert that stereo actually equals stereo!
             while (gkAudioInput->state() == QAudio::ActiveState) {
-                while (!vol_input_ba.isEmpty()) {
+                QByteArray vol_input_ba(std::move(gkAudioInputByteArrayBuf));
+                while (!vol_input_ba.isEmpty() && !vol_input_ba.isNull()) {
                     //
                     // Input audio stream is open and active!
                     //
                     std::vector<double> recv_samples;
-                    const qint32 num_samples = AUDIO_FRAMES_PER_BUFFER * gkAudioInput->format().channelCount(); // Assert that stereo actually equals stereo!
-
-                    for (qint32 i = 0; i < num_samples; ++i) {
-                        // Convert from little endian...
-                        for (qint32 j = 0; j < num_samples; ++j) {
-                            recv_samples[j] += qFromLittleEndian<double>(vol_input_ba.data() + j);
-                        }
-                    }
+                    recv_samples.reserve(num_samples);
+                    std::copy(vol_input_ba.begin(), vol_input_ba.end(), recv_samples.begin());
 
                     Gist<double> gist_vol(recv_samples.size(), gkAudioInput->format().sampleRate());
                     gist_vol.processAudioFrame(recv_samples);
@@ -1515,7 +1512,7 @@ void MainWindow::updateVolumeDisplayWidgets()
                     double peak = gist_vol.peakEnergy();
 
                     emit refreshVuDisplay(rms, peak, recv_samples.size());
-                    vol_input_ba.clear();
+                    vol_input_ba.clear(); // We are done with all the data as a whole, therefore clear the lot!
                 }
             }
         }
@@ -2238,6 +2235,18 @@ void MainWindow::processAudioInMain()
 }
 
 /**
+ * @brief MainWindow::processAudioInMainBuffer
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::processAudioInMainBuffer()
+{
+    gkAudioInputBuf->seek(0);
+    gkAudioInputByteArrayBuf.append(gkAudioInputBuf->readAll());
+
+    return;
+}
+
+/**
  * @brief MainWindow::msgOutgoingProcess will process outgoing messages and prepare them for transmission with regards to
  * libraries such as Codec2, whilst clearing `ui->plainTextEdit_mesg_outgoing` of any text at the same time.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -2380,17 +2389,6 @@ void MainWindow::on_pushButton_radio_monitor_clicked()
  * @param index
  */
 void MainWindow::on_comboBox_select_frequency_activated(int index)
-{
-    Q_UNUSED(index);
-    return;
-}
-
-/**
- * @brief MainWindow::on_comboBox_select_callsign_use_currentIndexChanged
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param index
- */
-void MainWindow::on_comboBox_select_callsign_use_currentIndexChanged(int index)
 {
     Q_UNUSED(index);
     return;
@@ -2772,13 +2770,6 @@ void MainWindow::on_actionAM_toggled(bool arg1)
 }
 
 void MainWindow::on_actionFM_toggled(bool arg1)
-{
-    Q_UNUSED(arg1);
-
-    return;
-}
-
-void MainWindow::on_actionSSB_toggled(bool arg1)
 {
     Q_UNUSED(arg1);
 

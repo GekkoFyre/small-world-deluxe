@@ -273,6 +273,20 @@ QList<int> StringFuncs::extractNumbersFromStr(const QString &str)
 }
 
 /**
+ * @brief StringFuncs::zeroPadding
+ * @author Tianfu Information <https://www.tfzx.net/en/article/2882643.html>,
+ * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param num
+ * @param places
+ * @return
+ */
+QString StringFuncs::zeroPadding(const QVariant &num, const qint32 &places)
+{
+    QString conv_num = num.toString().toUpper();
+    return conv_num.length() < places ? zeroPadding("0" + conv_num, places) : conv_num;
+}
+
+/**
  * @brief StringFuncs::fileSizeHumanReadable will 'prettify' a given file-size, converting it to kilobytes, megabytes,
  * gigabytes, etc. as needed, thusly making it more human readable.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>

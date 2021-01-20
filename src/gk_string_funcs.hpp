@@ -90,6 +90,7 @@ public:
     std::string csvOutputString(const std::vector<std::string> &csv_elements);
 
     QList<int> extractNumbersFromStr(const QString &str);
+    QString zeroPadding(const QVariant &num, const qint32 &places);
 
     QString fileSizeHumanReadable(const qint64 &file_size);
     qreal getPeakValue(const QAudioFormat &format);
