@@ -79,7 +79,8 @@ public:
 
     void writeMultipleKeys(const std::string &base_key_name, const std::vector<std::string> &values,
                            const bool &allow_empty_values = false);
-    bool deleteKeyFromMultiple(const std::string &base_key_name, const std::string &removed_value);
+    bool deleteKeyFromMultiple(const std::string &base_key_name, const std::string &removed_value,
+                               const bool &allow_empty_values = false);
     std::vector<std::string> readMultipleKeys(const std::string &base_key_name);
 
     void write_rig_settings(const QString &value, const Database::Settings::radio_cfg &key);
@@ -90,8 +91,17 @@ public:
     void write_misc_audio_settings(const QString &value, const Database::Settings::GkAudioCfg &key);
     void write_event_log_settings(const QString &value, const Database::Settings::GkEventLogCfg &key);
     void write_audio_playback_dlg_settings(const QString &value, const Database::Settings::AudioPlaybackDlg &key);
-    void write_firewall_settings(const std::string &value, const System::Security::GkFirewallCfg &key);
-    void write_firewall_port_settings(const System::Security::GkFirewallCfg &key, const std::map<qint32, Network::GkNetworkProtocol> &network_ports);
+
+    void write_firewall_is_active_settings(const std::string &value);
+    void write_firewall_port_settings(const std::map<qint32, Network::GkNetworkProtocol> &network_ports);
+    void write_firewall_port_settings(const std::pair<qint32, Network::GkNetworkProtocol> &network_port);
+    void delete_firewall_port_settings(const std::pair<qint32, Network::GkNetworkProtocol> &network_port);
+    void write_firewall_app_settings(const std::vector<std::string> &applications);
+    void write_firewall_app_settings(const std::string &application);
+    void delete_firewall_app_settings(const std::string &application);
+
+    bool read_firewall_settings(const System::Security::GkFirewallCfg &key, const std::string &comparator_value = std::string());
+    std::vector<std::string> read_firewall_settings_vec(const System::Security::GkFirewallCfg &key);
 
     void write_frequencies_db(const AmateurRadio::GkFreqs &write_new_value);
     void remove_frequencies_db(const AmateurRadio::GkFreqs &freq_to_remove);
@@ -126,8 +136,6 @@ public:
     QString read_misc_audio_settings(const GekkoFyre::Database::Settings::GkAudioCfg &key);
     QString read_event_log_settings(const Database::Settings::GkEventLogCfg &key);
     QString read_audio_playback_dlg_settings(const Database::Settings::AudioPlaybackDlg &key);
-    boost::tribool read_firewall_settings(const std::string &comparison, const System::Security::GkFirewallCfg &key);
-    std::vector<std::string> read_firewall_settings_vec(const System::Security::GkFirewallCfg &key);
 
     GekkoFyre::Database::Settings::GkAudioChannels convertAudioChannelsEnum(const int &audio_channel_sel);
     qint32 convertAudioChannelsToCount(const GekkoFyre::Database::Settings::GkAudioChannels &channel_enum);

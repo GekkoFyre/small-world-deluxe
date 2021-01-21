@@ -1708,8 +1708,6 @@ boost::tribool MainWindow::processFirewallRules(INetFwProfile *pfwProfile, const
                         // The end-user has approved the modification of firewall rules for Small World Deluxe!
                         // Add the main executable for Small World Deluxe to the Microsoft Windows firewall!
                         addSwdSysFirewall(pfwProfile, complete_path);
-                        gkDb->write_firewall_settings(gkDb->boolEnum(true), GkFirewallCfg::GkIsAppAdded);
-                        gkDb->write_firewall_settings(exe_name.toStdString(), GkFirewallCfg::GkAddApp);
                         if (!portsToEnable.empty()) {
                             for (const auto &port: portsToEnable) {
                                 BOOL isPortEnabled = S_FALSE;
@@ -1743,8 +1741,6 @@ boost::tribool MainWindow::processFirewallRules(INetFwProfile *pfwProfile, const
                                         auto errMsg = gkSystem->processHResult(hr);
                                         throw std::runtime_error(tr("An issue was encountered while adding, \"%1\", to the system firewall! Error:\n\n%1").arg(errMsg).toStdString());
                                     }
-
-                                    gkDb->write_firewall_settings(std::to_string(port.second), GkFirewallCfg::GkAddPort);
                                 }
                             }
                         }
@@ -1754,7 +1750,6 @@ boost::tribool MainWindow::processFirewallRules(INetFwProfile *pfwProfile, const
                     case QMessageBox::Close:
                         //
                         // The end-user DID NOT APPROVE the modification of firewall rules for Small World Deluxe!
-                        gkDb->write_firewall_settings(gkDb->boolEnum(false), GkFirewallCfg::GkIsAppAdded);
                         QApplication::exit(EXIT_FAILURE);
                         return boost::tribool::false_value;
                     case QMessageBox::No:
@@ -1766,8 +1761,6 @@ boost::tribool MainWindow::processFirewallRules(INetFwProfile *pfwProfile, const
                 }
             }
         }
-
-        gkDb->write_firewall_settings(gkDb->boolEnum(false), GkFirewallCfg::GkIsAppAdded);
     } catch (const std::exception &e) {
         std::throw_with_nested(e.what());
     }
