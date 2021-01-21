@@ -79,6 +79,8 @@ public:
     HRESULT WindowsFirewallAddApp(IN INetFwProfile *fwProfile, IN const wchar_t *fwProcessImageFileName, IN const wchar_t *fwName);
     HRESULT WindowsFirewallPortIsEnabled(IN INetFwProfile *fwProfile, IN LONG portNumber, IN NET_FW_IP_PROTOCOL ipProtocol, OUT BOOL *fwPortEnabled);
     HRESULT WindowsFirewallPortAdd(IN INetFwProfile *fwProfile, IN LONG portNumber, IN NET_FW_IP_PROTOCOL ipProtocol, IN const wchar_t *name);
+
+    static QString processHResult(const HRESULT &hr);
     #endif
 
 signals:

@@ -187,30 +187,24 @@ HRESULT GkSystem::WindowsFirewallInitialize(INetFwProfile **fwProfile)
     // Create an instance of the firewall settings manager.
     hr = CoCreateInstance(__uuidof(NetFwMgr), nullptr, CLSCTX_INPROC_SERVER, __uuidof(INetFwMgr), (void**)&fwMgr);
     if (FAILED(hr)) {
-        _com_error err(hr);
-        LPCTSTR errMsg = err.ErrorMessage();
-        QString errMsgStr = (LPSTR)errMsg;
-        emit publishEventMsg(tr("CoCreateInstance failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsgStr, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
+        auto errMsg = processHResult(hr);
+        emit publishEventMsg(tr("CoCreateInstance failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
         goto error;
     }
 
     // Retrieve the local firewall policy.
     hr = fwMgr->get_LocalPolicy(&fwPolicy);
     if (FAILED(hr)) {
-        _com_error err(hr);
-        LPCTSTR errMsg = err.ErrorMessage();
-        QString errMsgStr = (LPSTR)errMsg;
-        emit publishEventMsg(tr("get_LocalPolicy failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsgStr, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
+        auto errMsg = processHResult(hr);
+        emit publishEventMsg(tr("get_LocalPolicy failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
         goto error;
     }
 
     // Retrieve the firewall profile currently in effect.
     hr = fwPolicy->get_CurrentProfile(fwProfile);
     if (FAILED(hr)) {
-        _com_error err(hr);
-        LPCTSTR errMsg = err.ErrorMessage();
-        QString errMsgStr = (LPSTR)errMsg;
-        emit publishEventMsg(tr("get_CurrentProfile failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsgStr, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
+        auto errMsg = processHResult(hr);
+        emit publishEventMsg(tr("get_CurrentProfile failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
         goto error;
     }
 
@@ -252,10 +246,8 @@ HRESULT GkSystem::WindowsFirewallIsOn(INetFwProfile *fwProfile, WINBOOL *fwOn)
     // Get the current state of the firewall.
     hr = fwProfile->get_FirewallEnabled(&fwEnabled);
     if (FAILED(hr)) {
-        _com_error err(hr);
-        LPCTSTR errMsg = err.ErrorMessage();
-        QString errMsgStr = (LPSTR)errMsg;
-        emit publishEventMsg(tr("get_FirewallEnabled failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsgStr, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
+        auto errMsg = processHResult(hr);
+        emit publishEventMsg(tr("get_FirewallEnabled failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
         goto error;
     }
 
@@ -300,10 +292,8 @@ HRESULT GkSystem::WindowsFirewallAppIsEnabled(INetFwProfile *fwProfile, const wc
     // Retrieve the authorized application collection.
     hr = fwProfile->get_AuthorizedApplications(&fwApps);
     if (FAILED(hr)) {
-        _com_error err(hr);
-        LPCTSTR errMsg = err.ErrorMessage();
-        QString errMsgStr = (LPSTR)errMsg;
-        emit publishEventMsg(tr("get_AuthorizedApplications failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsgStr, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
+        auto errMsg = processHResult(hr);
+        emit publishEventMsg(tr("get_AuthorizedApplications failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
         goto error;
     }
 
@@ -311,10 +301,8 @@ HRESULT GkSystem::WindowsFirewallAppIsEnabled(INetFwProfile *fwProfile, const wc
     fwBstrProcessImageFileName = SysAllocString(fwProcessImageFileName);
     if (fwBstrProcessImageFileName == nullptr) {
         hr = E_OUTOFMEMORY;
-        _com_error err(hr);
-        LPCTSTR errMsg = err.ErrorMessage();
-        QString errMsgStr = (LPSTR)errMsg;
-        emit publishEventMsg(tr("SysAllocString failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsgStr, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
+        auto errMsg = processHResult(hr);
+        emit publishEventMsg(tr("SysAllocString failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
         goto error;
     }
 
@@ -324,10 +312,8 @@ HRESULT GkSystem::WindowsFirewallAppIsEnabled(INetFwProfile *fwProfile, const wc
         // Find out if the authorized application is enabled.
         hr = fwApp->get_Enabled(&fwEnabled);
         if (FAILED(hr)) {
-            _com_error err(hr);
-            LPCTSTR errMsg = err.ErrorMessage();
-            QString errMsgStr = (LPSTR)errMsg;
-            emit publishEventMsg(tr("get_Enabled failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsgStr, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
+            auto errMsg = processHResult(hr);
+            emit publishEventMsg(tr("get_Enabled failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
             goto error;
         }
 
@@ -379,10 +365,8 @@ HRESULT GkSystem::WindowsFirewallTurnOn(INetFwProfile *fwProfile)
     // Check to see if the firewall is off.
     hr = WindowsFirewallIsOn(fwProfile, &fwOn);
     if (FAILED(hr)) {
-        _com_error err(hr);
-        LPCTSTR errMsg = err.ErrorMessage();
-        QString errMsgStr = (LPSTR)errMsg;
-        emit publishEventMsg(tr("WindowsFirewallIsOn failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsgStr, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
+        auto errMsg = processHResult(hr);
+        emit publishEventMsg(tr("WindowsFirewallIsOn failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
         goto error;
     }
 
@@ -391,10 +375,8 @@ HRESULT GkSystem::WindowsFirewallTurnOn(INetFwProfile *fwProfile)
         // Turn the firewall on.
         hr = fwProfile->put_FirewallEnabled(VARIANT_TRUE);
         if (FAILED(hr)) {
-            _com_error err(hr);
-            LPCTSTR errMsg = err.ErrorMessage();
-            QString errMsgStr = (LPSTR)errMsg;
-            emit publishEventMsg(tr("put_FirewallEnabled failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsgStr, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
+            auto errMsg = processHResult(hr);
+            emit publishEventMsg(tr("put_FirewallEnabled failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
             goto error;
         }
 
@@ -425,10 +407,8 @@ HRESULT GkSystem::WindowsFirewallTurnOff(INetFwProfile *fwProfile)
     // Check to see if the firewall is on.
     hr = WindowsFirewallIsOn(fwProfile, &fwOn);
     if (FAILED(hr)) {
-        _com_error err(hr);
-        LPCTSTR errMsg = err.ErrorMessage();
-        QString errMsgStr = (LPSTR)errMsg;
-        emit publishEventMsg(tr("WindowsFirewallIsOn failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsgStr, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
+        auto errMsg = processHResult(hr);
+        emit publishEventMsg(tr("WindowsFirewallIsOn failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
         goto error;
     }
 
@@ -437,10 +417,8 @@ HRESULT GkSystem::WindowsFirewallTurnOff(INetFwProfile *fwProfile)
         // Turn the firewall off.
         hr = fwProfile->put_FirewallEnabled(VARIANT_FALSE);
         if (FAILED(hr)) {
-            _com_error err(hr);
-            LPCTSTR errMsg = err.ErrorMessage();
-            QString errMsgStr = (LPSTR)errMsg;
-            emit publishEventMsg(tr("put_FirewallEnabled failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsgStr, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
+            auto errMsg = processHResult(hr);
+            emit publishEventMsg(tr("put_FirewallEnabled failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
             goto error;
         }
 
@@ -479,10 +457,8 @@ HRESULT GkSystem::WindowsFirewallAddApp(INetFwProfile *fwProfile, const wchar_t 
     // First check to see if the application is already authorized.
     hr = WindowsFirewallAppIsEnabled(fwProfile, fwProcessImageFileName, &fwAppEnabled);
     if (FAILED(hr)) {
-        _com_error err(hr);
-        LPCTSTR errMsg = err.ErrorMessage();
-        QString errMsgStr = (LPSTR)errMsg;
-        emit publishEventMsg(tr("WindowsFirewallAppIsEnabled failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsgStr, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
+        auto errMsg = processHResult(hr);
+        emit publishEventMsg(tr("WindowsFirewallAppIsEnabled failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
 
         goto error;
     }
@@ -492,10 +468,8 @@ HRESULT GkSystem::WindowsFirewallAddApp(INetFwProfile *fwProfile, const wchar_t 
         // Retrieve the authorized application collection.
         hr = fwProfile->get_AuthorizedApplications(&fwApps);
         if (FAILED(hr)) {
-            _com_error err(hr);
-            LPCTSTR errMsg = err.ErrorMessage();
-            QString errMsgStr = (LPSTR)errMsg;
-            emit publishEventMsg(tr("get_AuthorizedApplications failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsgStr, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
+            auto errMsg = processHResult(hr);
+            emit publishEventMsg(tr("get_AuthorizedApplications failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
 
             goto error;
         }
@@ -503,10 +477,8 @@ HRESULT GkSystem::WindowsFirewallAddApp(INetFwProfile *fwProfile, const wchar_t 
         // Create an instance of an authorized application.
         hr = CoCreateInstance(__uuidof(NetFwAuthorizedApplication), nullptr, CLSCTX_INPROC_SERVER, __uuidof(INetFwAuthorizedApplication), (void**)&fwApp);
         if (FAILED(hr)) {
-            _com_error err(hr);
-            LPCTSTR errMsg = err.ErrorMessage();
-            QString errMsgStr = (LPSTR)errMsg;
-            emit publishEventMsg(tr("CoCreateInstance failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsgStr, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
+            auto errMsg = processHResult(hr);
+            emit publishEventMsg(tr("CoCreateInstance failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
 
             goto error;
         }
@@ -515,10 +487,8 @@ HRESULT GkSystem::WindowsFirewallAddApp(INetFwProfile *fwProfile, const wchar_t 
         fwBstrProcessImageFileName = SysAllocString(fwProcessImageFileName);
         if (fwBstrProcessImageFileName == nullptr) {
             hr = E_OUTOFMEMORY;
-            _com_error err(hr);
-            LPCTSTR errMsg = err.ErrorMessage();
-            QString errMsgStr = (LPSTR)errMsg;
-            emit publishEventMsg(tr("SysAllocString failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsgStr, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
+            auto errMsg = processHResult(hr);
+            emit publishEventMsg(tr("SysAllocString failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
 
             goto error;
         }
@@ -526,10 +496,8 @@ HRESULT GkSystem::WindowsFirewallAddApp(INetFwProfile *fwProfile, const wchar_t 
         // Set the process image file name.
         hr = fwApp->put_ProcessImageFileName(fwBstrProcessImageFileName);
         if (FAILED(hr)) {
-            _com_error err(hr);
-            LPCTSTR errMsg = err.ErrorMessage();
-            QString errMsgStr = (LPSTR)errMsg;
-            emit publishEventMsg(tr("put_ProcessImageFileName failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsgStr, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
+            auto errMsg = processHResult(hr);
+            emit publishEventMsg(tr("put_ProcessImageFileName failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
 
             goto error;
         }
@@ -538,10 +506,8 @@ HRESULT GkSystem::WindowsFirewallAddApp(INetFwProfile *fwProfile, const wchar_t 
         fwBstrName = SysAllocString(fwName);
         if (SysStringLen(fwBstrName) == 0) {
             hr = E_OUTOFMEMORY;
-            _com_error err(hr);
-            LPCTSTR errMsg = err.ErrorMessage();
-            QString errMsgStr = (LPSTR)errMsg;
-            emit publishEventMsg(tr("SysAllocString failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsgStr, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
+            auto errMsg = processHResult(hr);
+            emit publishEventMsg(tr("SysAllocString failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
 
             goto error;
         }
@@ -549,10 +515,8 @@ HRESULT GkSystem::WindowsFirewallAddApp(INetFwProfile *fwProfile, const wchar_t 
         // Set the application friendly name.
         hr = fwApp->put_Name(fwBstrName);
         if (FAILED(hr)) {
-            _com_error err(hr);
-            LPCTSTR errMsg = err.ErrorMessage();
-            QString errMsgStr = (LPSTR)errMsg;
-            emit publishEventMsg(tr("put_Name failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsgStr, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
+            auto errMsg = processHResult(hr);
+            emit publishEventMsg(tr("put_Name failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
 
             goto error;
         }
@@ -560,10 +524,8 @@ HRESULT GkSystem::WindowsFirewallAddApp(INetFwProfile *fwProfile, const wchar_t 
         // Add the application to the collection.
         hr = fwApps->Add(fwApp);
         if (FAILED(hr)) {
-            _com_error err(hr);
-            LPCTSTR errMsg = err.ErrorMessage();
-            QString errMsgStr = (LPSTR)errMsg;
-            emit publishEventMsg(tr("Add failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsgStr, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
+            auto errMsg = processHResult(hr);
+            emit publishEventMsg(tr("Add failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
 
             goto error;
         }
@@ -618,10 +580,8 @@ HRESULT GkSystem::WindowsFirewallPortIsEnabled(INetFwProfile *fwProfile, LONG po
     // Retrieve the globally open ports collection.
     hr = fwProfile->get_GloballyOpenPorts(&fwOpenPorts);
     if (FAILED(hr)) {
-        _com_error err(hr);
-        LPCTSTR errMsg = err.ErrorMessage();
-        QString errMsgStr = (LPSTR)errMsg;
-        emit publishEventMsg(tr("get_GloballyOpenPorts failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsgStr, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
+        auto errMsg = processHResult(hr);
+        emit publishEventMsg(tr("get_GloballyOpenPorts failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
 
         goto error;
     }
@@ -632,10 +592,8 @@ HRESULT GkSystem::WindowsFirewallPortIsEnabled(INetFwProfile *fwProfile, LONG po
         // Find out if the globally open port is enabled.
         hr = fwOpenPort->get_Enabled(&fwEnabled);
         if (FAILED(hr)) {
-            _com_error err(hr);
-            LPCTSTR errMsg = err.ErrorMessage();
-            QString errMsgStr = (LPSTR)errMsg;
-            emit publishEventMsg(tr("get_Enabled failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsgStr, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
+            auto errMsg = processHResult(hr);
+            emit publishEventMsg(tr("get_Enabled failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
 
             goto error;
         }
@@ -695,10 +653,8 @@ HRESULT GkSystem::WindowsFirewallPortAdd(INetFwProfile *fwProfile, LONG portNumb
     // First check to see if the port is already added.
     hr = WindowsFirewallPortIsEnabled(fwProfile, portNumber, ipProtocol, &fwPortEnabled);
     if (FAILED(hr)) {
-        _com_error err(hr);
-        LPCTSTR errMsg = err.ErrorMessage();
-        QString errMsgStr = (LPSTR)errMsg;
-        emit publishEventMsg(tr("WindowsFirewallPortIsEnabled failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsgStr, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
+        auto errMsg = processHResult(hr);
+        emit publishEventMsg(tr("WindowsFirewallPortIsEnabled failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
 
         goto error;
     }
@@ -708,10 +664,8 @@ HRESULT GkSystem::WindowsFirewallPortAdd(INetFwProfile *fwProfile, LONG portNumb
         // Retrieve the collection of globally open ports.
         hr = fwProfile->get_GloballyOpenPorts(&fwOpenPorts);
         if (FAILED(hr)) {
-            _com_error err(hr);
-            LPCTSTR errMsg = err.ErrorMessage();
-            QString errMsgStr = (LPSTR)errMsg;
-            emit publishEventMsg(tr("get_GloballyOpenPorts failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsgStr, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
+            auto errMsg = processHResult(hr);
+            emit publishEventMsg(tr("get_GloballyOpenPorts failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
 
             goto error;
         }
@@ -719,10 +673,8 @@ HRESULT GkSystem::WindowsFirewallPortAdd(INetFwProfile *fwProfile, LONG portNumb
         // Create an instance of an open port.
         hr = CoCreateInstance(__uuidof(NetFwOpenPort), nullptr, CLSCTX_INPROC_SERVER, __uuidof(INetFwOpenPort), (void**)&fwOpenPort);
         if (FAILED(hr)) {
-            _com_error err(hr);
-            LPCTSTR errMsg = err.ErrorMessage();
-            QString errMsgStr = (LPSTR)errMsg;
-            emit publishEventMsg(tr("CoCreateInstance failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsgStr, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
+            auto errMsg = processHResult(hr);
+            emit publishEventMsg(tr("CoCreateInstance failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
 
             goto error;
         }
@@ -730,10 +682,8 @@ HRESULT GkSystem::WindowsFirewallPortAdd(INetFwProfile *fwProfile, LONG portNumb
         // Set the port number.
         hr = fwOpenPort->put_Port(portNumber);
         if (FAILED(hr)) {
-            _com_error err(hr);
-            LPCTSTR errMsg = err.ErrorMessage();
-            QString errMsgStr = (LPSTR)errMsg;
-            emit publishEventMsg(tr("put_Port failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsgStr, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
+            auto errMsg = processHResult(hr);
+            emit publishEventMsg(tr("put_Port failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
 
             goto error;
         }
@@ -741,10 +691,8 @@ HRESULT GkSystem::WindowsFirewallPortAdd(INetFwProfile *fwProfile, LONG portNumb
         // Set the IP protocol.
         hr = fwOpenPort->put_Protocol(ipProtocol);
         if (FAILED(hr)) {
-            _com_error err(hr);
-            LPCTSTR errMsg = err.ErrorMessage();
-            QString errMsgStr = (LPSTR)errMsg;
-            emit publishEventMsg(tr("put_Protocol failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsgStr, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
+            auto errMsg = processHResult(hr);
+            emit publishEventMsg(tr("put_Protocol failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
 
             goto error;
         }
@@ -753,10 +701,8 @@ HRESULT GkSystem::WindowsFirewallPortAdd(INetFwProfile *fwProfile, LONG portNumb
         fwBstrName = SysAllocString(name);
         if (SysStringLen(fwBstrName) == 0) {
             hr = E_OUTOFMEMORY;
-            _com_error err(hr);
-            LPCTSTR errMsg = err.ErrorMessage();
-            QString errMsgStr = (LPSTR)errMsg;
-            emit publishEventMsg(tr("SysAllocString failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsgStr, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
+            auto errMsg = processHResult(hr);
+            emit publishEventMsg(tr("SysAllocString failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
 
             goto error;
         }
@@ -764,10 +710,8 @@ HRESULT GkSystem::WindowsFirewallPortAdd(INetFwProfile *fwProfile, LONG portNumb
         // Set the friendly name of the port.
         hr = fwOpenPort->put_Name(fwBstrName);
         if (FAILED(hr)) {
-            _com_error err(hr);
-            LPCTSTR errMsg = err.ErrorMessage();
-            QString errMsgStr = (LPSTR)errMsg;
-            emit publishEventMsg(tr("put_Name failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsgStr, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
+            auto errMsg = processHResult(hr);
+            emit publishEventMsg(tr("put_Name failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
 
             goto error;
         }
@@ -775,10 +719,8 @@ HRESULT GkSystem::WindowsFirewallPortAdd(INetFwProfile *fwProfile, LONG portNumb
         // Opens the port and adds it to the collection.
         hr = fwOpenPorts->Add(fwOpenPort);
         if (FAILED(hr)) {
-            _com_error err(hr);
-            LPCTSTR errMsg = err.ErrorMessage();
-            QString errMsgStr = (LPSTR)errMsg;
-            emit publishEventMsg(tr("Add failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsgStr, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
+            auto errMsg = processHResult(hr);
+            emit publishEventMsg(tr("Add failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
 
             goto error;
         }
@@ -803,4 +745,22 @@ HRESULT GkSystem::WindowsFirewallPortAdd(INetFwProfile *fwProfile, LONG portNumb
 
     return hr;
 }
+#endif
+
+#if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
+/**
+ * @brief GkSystem::processHResult
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param hr
+ * @return
+ */
+QString GkSystem::processHResult(const HRESULT &hr)
+{
+    _com_error err(hr);
+    LPCTSTR errMsg = err.ErrorMessage();
+    QString errMsgStr = (LPSTR)errMsg;
+
+    return errMsgStr;
+}
+
 #endif

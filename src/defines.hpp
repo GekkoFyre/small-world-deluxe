@@ -49,6 +49,7 @@
 #include <boost/logic/tribool.hpp>
 #include <boost/filesystem.hpp>
 #include <qwt/qwt_interval.h>
+#include <map>
 #include <list>
 #include <vector>
 #include <string>
@@ -361,6 +362,14 @@ namespace System {
     }
 
     namespace Security {
+        enum GkFirewallStatus {
+            Enabled,
+            Disabled,
+            Unsupported,
+            NotFound,
+            Unknown
+        };
+
         enum GkFirewallCfg {
             GkAddPort,
             GkDelPort,
@@ -376,10 +385,9 @@ namespace System {
         };
 
         struct GkFirewallSettings {
-            bool sys_firewall_enabled;                  // Is the operating system's primary firewall enabled (e.g. the one that is built into Microsoft Windows)?
-            bool swd_app_added;                         // Has the Small World Deluxe application itself (i.e. the primary executable) been added to the firewall already?
-            std::vector<qint32> required_ports;         // The required TCP and/or UDP ports for Small World Deluxe to operate properly that need to be enabled.
-            std::vector<qint32> enabled_ports;          // The already existing and enabled TCP and/or UDP ports, as required by Small World Deluxe to operate properly, that are already enabled.
+            BOOL sys_firewall_enabled;                              // Is the operating system's primary firewall enabled (e.g. the one that is built into Microsoft Windows)?
+            HRESULT swd_app_added;                                  // Has the Small World Deluxe application itself (i.e. the primary executable) been added to the firewall already?
+            std::map<HRESULT, qint32> required_ports;               // The value determines required TCP and/or UDP ports for Small World Deluxe to operate properly that need to be enabled. The key signifies ports which are already active or not.
         };
     }
 }
@@ -719,6 +727,12 @@ namespace AmateurRadio {
 }
 
 namespace Network {
+    enum GkNetworkProtocol {
+        TCP,
+        UDP,
+        Any
+    };
+
     namespace GkXmpp {
         enum GkNetworkState {
             None,

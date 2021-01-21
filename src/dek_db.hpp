@@ -46,6 +46,7 @@
 #include "src/file_io.hpp"
 #include <leveldb/db.h>
 #include <leveldb/status.h>
+#include <map>
 #include <memory>
 #include <string>
 #include <QRect>
@@ -76,6 +77,11 @@ public:
                        QObject *parent = nullptr);
     ~GkLevelDb() override;
 
+    void writeMultipleKeys(const std::string &base_key_name, const std::vector<std::string> &values,
+                           const bool &allow_empty_values = false);
+    bool deleteKeyFromMultiple(const std::string &base_key_name, const std::string &removed_value);
+    std::vector<std::string> readMultipleKeys(const std::string &base_key_name);
+
     void write_rig_settings(const QString &value, const Database::Settings::radio_cfg &key);
     void write_rig_settings_comms(const QString &value, const Database::Settings::radio_cfg &key);
     void write_general_settings(const QString &value, const Database::Settings::general_stat_cfg &key);
@@ -84,7 +90,8 @@ public:
     void write_misc_audio_settings(const QString &value, const Database::Settings::GkAudioCfg &key);
     void write_event_log_settings(const QString &value, const Database::Settings::GkEventLogCfg &key);
     void write_audio_playback_dlg_settings(const QString &value, const Database::Settings::AudioPlaybackDlg &key);
-    void write_firewall_settings(const QString &value, const System::Security::GkFirewallCfg &key);
+    void write_firewall_settings(const std::string &value, const System::Security::GkFirewallCfg &key);
+    void write_firewall_port_settings(const System::Security::GkFirewallCfg &key, const std::map<qint32, Network::GkNetworkProtocol> &network_ports);
 
     void write_frequencies_db(const AmateurRadio::GkFreqs &write_new_value);
     void remove_frequencies_db(const AmateurRadio::GkFreqs &freq_to_remove);
@@ -105,6 +112,7 @@ public:
     bool read_xmpp_alpha_notice();
 
     GekkoFyre::Network::GkXmpp::GkServerType convXmppServerTypeFromInt(const qint32 &idx);
+    QString convNetworkProtocolEnumToStr(const Network::GkNetworkProtocol &network_protocol);
 
     QString convSeverityToStr(const GekkoFyre::System::Events::Logging::GkSeverity &severity);
     GekkoFyre::System::Events::Logging::GkSeverity convSeverityToEnum(const QString &severity);

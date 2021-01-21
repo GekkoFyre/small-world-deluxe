@@ -465,6 +465,18 @@ private:
     GekkoFyre::Spectrograph::GkGraphType graph_in_use;
 
     //
+    // Firewall and Microsoft Windows security related
+    //
+    GekkoFyre::System::Security::GkFirewallSettings gkFirewallSettings;
+    boost::tribool processFirewallRules(const std::map<GekkoFyre::Network::GkNetworkProtocol, qint32> &portsToEnable =
+    std::map<GekkoFyre::Network::GkNetworkProtocol, qint32>());
+    #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
+    boost::tribool processFirewallRules(INetFwProfile *pfwProfile, const std::map<GekkoFyre::Network::GkNetworkProtocol, qint32> &portsToEnable =
+            std::map<GekkoFyre::Network::GkNetworkProtocol, qint32>());
+    bool addSwdSysFirewall(INetFwProfile *pfwProfile, const QString &full_app_path);
+    #endif
+
+    //
     // System tray icon
     //
     QPointer<QSystemTrayIcon> m_trayIcon;
