@@ -78,6 +78,7 @@
 #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
 #include <winsdkver.h>
 #include <Windows.h>
+#include <icftypes.h>
 #include <tchar.h> // https://linuxgazette.net/147/pfeiffer.html
 #endif
 
@@ -107,6 +108,20 @@ namespace GekkoFyre {
 #define GK_ZLIB_BUFFER_SIZE (4096)                              // The size of the buffer, in kilobytes, as-used by Zlib throughout Small World Deluxe's code-base...
 #define GK_MSG_BOX_SETTINGS_DLG_TIMER (10000)                   // The amount of time, in milliseconds, before displaying any potential QMessageBox's to the user at startup about configuring settings. This is needed to allow SWD to initialize everything firstly.
 #define GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING (8)              // The maximum amount of zero padding to add towards error messages produced by HRESULT's within Microsoft Window's specific C/C++ code.
+
+//
+// Firewall and network security specific settings
+//
+#define GK_SECURITY_FIREWALL_TCP_PORT_HTTP_80 (80)
+#define GK_SECURITY_FIREWALL_TCP_PORT_HTTPS_443 (443)
+#define GK_SECURITY_FIREWALL_TCP_PORT_XMPP_CLIENT_5222 (5222)
+#define GK_SECURITY_FIREWALL_TCP_PORT_XMPP_CLIENT_SSL_5223 (5223)
+#define GK_SECURITY_FIREWALL_TCP_PORT_XMPP_SERVER_5269 (5269)
+#define GK_SECURITY_FIREWALL_TCP_PORT_XMPP_LOCAL_MSGING_5298 (5298)
+#define GK_SECURITY_FIREWALL_TCP_PORT_XMPP_BOSH_SSL_5443 (5443)
+#define GK_SECURITY_FIREWALL_TCP_PORT_XMPP_FILE_XFERS_8010 (8010)
+
+#define GK_SECURITY_FIREWALL_UDP_PORT_XMPP_LOCAL_MSGING_5298 (5298)
 
 //
 // XMPP specific constants
@@ -285,6 +300,77 @@ namespace Filesystem {
     constexpr char linux_sys_tty[] = "/sys/class/tty/";                 // The location of the TTY-devices under most major Linux distributions
 }
 
+namespace Network {
+    enum GkNetworkProtocol {
+        TCP,
+        UDP,
+        Any
+    };
+
+    namespace GkXmpp {
+        enum GkNetworkState {
+            None,
+            Connecting,
+            WaitForRegistrationForm,
+            WaitForRegistrationConfirmation
+        };
+
+        enum GkRegUiRole {                                  // Whether the user needs to create an account or is already a pre-existing user.
+            AccountCreate,
+            AccountLogin,
+            AccountChangePassword,
+            AccountChangeEmail
+        };
+
+        enum GkOnlineStatus {                               // The online availability of the user in question.
+            Online,
+            Offline,
+            Away,
+            DoNotDisturb,
+            NotAvailable,
+            Invisible,
+            NetworkError
+        };
+
+        enum GkServerType {                                  // Information pertaining to DNS Lookups for the QXmpp library.
+            GekkoFyre,
+            Custom,
+            Unknown
+        };
+
+        struct GkClientSettings {
+            bool allow_msg_history;                         // Shall we keep a message history with this server, provided it's a supported extension?
+            bool allow_file_xfers;                          // Shall we allow file transfers with this server, provided it's a supported extension?
+            bool allow_mucs;                                // Shall we allow multi-user chats, provided it's a supported extension?
+            bool auto_connect;                              // Do we allow automatic connections to the given XMPP server upon startup of Small World Deluxe?
+            bool auto_reconnect;                            // Do we attempt a reconnection upon each disconnection from a XMPP server, up to a specified maximum limit (i.e. for safety and to prevent banning)?
+            bool auto_signup;                               // Should we attempt the registration of a user, given the correct information, upon each connection to a XMPP server?
+            bool enable_ssl;                                // Enable the absolute usage of SSL/TLS, otherwise throw an exception if not available!
+            bool ignore_ssl_errors;                         // Whether to ignore any SSL errors presented by the server and/or client.
+            QByteArray upload_avatar_pixmap;                // The byte-array data for the avatar that's to be uploaded upon next making a successful connection to the given XMPP server.
+        };
+
+        struct GkHost {                                     // Host information as related to the QXmpp libraries.
+            GkClientSettings settings_client;               // Client settings that apply when making a connection to the XMPP server.
+            GkServerType type;
+            QHostAddress domain;
+            QString url;
+            QHostInfo info;
+            quint16 port;
+        };
+
+        struct GkUserConn {                                 // User and server information as related to the QXmpp libraries.
+            GkHost server;
+            GkOnlineStatus status;                          // The online availability of the user in question.
+            QString jid;                                    // The Account ID as known to the XMPP server itself; used particularly for logging-in.
+            QString username;                               // The username, which is the JID without the server URL or resource attached.
+            QString password;                               // The password which is needed for logging-in successfully to the XMPP server.
+            QString nickname;                               // The desired nickname of the user, as it appears to others on the XMPP server network.
+            QString email;                                  // The email address, if any, that's associated with this end-user.
+        };
+    }
+}
+
 namespace GkXmppGekkoFyreCfg {
     constexpr char defaultUrl[] = "xmpp.vk3vkk.io";
 }
@@ -385,9 +471,9 @@ namespace System {
         };
 
         struct GkFirewallSettings {
-            BOOL sys_firewall_enabled;                              // Is the operating system's primary firewall enabled (e.g. the one that is built into Microsoft Windows)?
-            HRESULT swd_app_added;                                  // Has the Small World Deluxe application itself (i.e. the primary executable) been added to the firewall already?
-            std::map<HRESULT, qint32> required_ports;               // The value determines required TCP and/or UDP ports for Small World Deluxe to operate properly that need to be enabled. The key signifies ports which are already active or not.
+            bool sys_firewall_enabled;                                                          // Is the operating system's primary firewall enabled (e.g. the one that is built into Microsoft Windows)?
+            bool swd_app_added;                                                                 // Has the Small World Deluxe application itself (i.e. the primary executable) been added to the firewall already?
+            std::map<qint32, std::pair<Network::GkNetworkProtocol, bool>> network_ports;        // The value determines required TCP and/or UDP (or even Any) ports for Small World Deluxe to operate properly, that need to be enabled. The key signifies the port number in-question, while the value signifies the network protocol and whether the port is already enabled.
         };
     }
 }
@@ -722,77 +808,6 @@ namespace AmateurRadio {
             rmode_t mode;                                   // The type of modulation that the transceiver is in, whether it be AM, FM, SSB, etc.
             QString mode_hr;                                // The type of modulation that the transceiver is in, but human readable.
             pbwidth_t width;                                // Bandwidth
-        };
-    }
-}
-
-namespace Network {
-    enum GkNetworkProtocol {
-        TCP,
-        UDP,
-        Any
-    };
-
-    namespace GkXmpp {
-        enum GkNetworkState {
-            None,
-            Connecting,
-            WaitForRegistrationForm,
-            WaitForRegistrationConfirmation
-        };
-
-        enum GkRegUiRole {                                  // Whether the user needs to create an account or is already a pre-existing user.
-            AccountCreate,
-            AccountLogin,
-            AccountChangePassword,
-            AccountChangeEmail
-        };
-
-        enum GkOnlineStatus {                               // The online availability of the user in question.
-            Online,
-            Offline,
-            Away,
-            DoNotDisturb,
-            NotAvailable,
-            Invisible,
-            NetworkError
-        };
-
-        enum GkServerType {                                  // Information pertaining to DNS Lookups for the QXmpp library.
-            GekkoFyre,
-            Custom,
-            Unknown
-        };
-
-        struct GkClientSettings {
-            bool allow_msg_history;                         // Shall we keep a message history with this server, provided it's a supported extension?
-            bool allow_file_xfers;                          // Shall we allow file transfers with this server, provided it's a supported extension?
-            bool allow_mucs;                                // Shall we allow multi-user chats, provided it's a supported extension?
-            bool auto_connect;                              // Do we allow automatic connections to the given XMPP server upon startup of Small World Deluxe?
-            bool auto_reconnect;                            // Do we attempt a reconnection upon each disconnection from a XMPP server, up to a specified maximum limit (i.e. for safety and to prevent banning)?
-            bool auto_signup;                               // Should we attempt the registration of a user, given the correct information, upon each connection to a XMPP server?
-            bool enable_ssl;                                // Enable the absolute usage of SSL/TLS, otherwise throw an exception if not available!
-            bool ignore_ssl_errors;                         // Whether to ignore any SSL errors presented by the server and/or client.
-            QByteArray upload_avatar_pixmap;                // The byte-array data for the avatar that's to be uploaded upon next making a successful connection to the given XMPP server.
-        };
-
-        struct GkHost {                                     // Host information as related to the QXmpp libraries.
-            GkClientSettings settings_client;               // Client settings that apply when making a connection to the XMPP server.
-            GkServerType type;
-            QHostAddress domain;
-            QString url;
-            QHostInfo info;
-            quint16 port;
-        };
-
-        struct GkUserConn {                                 // User and server information as related to the QXmpp libraries.
-            GkHost server;
-            GkOnlineStatus status;                          // The online availability of the user in question.
-            QString jid;                                    // The Account ID as known to the XMPP server itself; used particularly for logging-in.
-            QString username;                               // The username, which is the JID without the server URL or resource attached.
-            QString password;                               // The password which is needed for logging-in successfully to the XMPP server.
-            QString nickname;                               // The desired nickname of the user, as it appears to others on the XMPP server network.
-            QString email;                                  // The email address, if any, that's associated with this end-user.
         };
     }
 }

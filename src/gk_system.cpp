@@ -177,7 +177,7 @@ QString GkSystem::renameCommsDevice(const qint32 &port, const GkConnType &conn_t
  */
 HRESULT GkSystem::WindowsFirewallInitialize(INetFwProfile **fwProfile)
 {
-    HRESULT hr = S_OK;
+    HRESULT hr = NOERROR;
     INetFwMgr* fwMgr = nullptr;
     INetFwPolicy* fwPolicy = nullptr;
 
@@ -235,7 +235,7 @@ HRESULT GkSystem::WindowsFirewallInitialize(INetFwProfile **fwProfile)
  */
 HRESULT GkSystem::WindowsFirewallIsOn(INetFwProfile *fwProfile, WINBOOL *fwOn)
 {
-    HRESULT hr = S_OK;
+    HRESULT hr = NOERROR;
     VARIANT_BOOL fwEnabled;
 
     Q_ASSERT(fwProfile != nullptr);
@@ -277,7 +277,7 @@ HRESULT GkSystem::WindowsFirewallIsOn(INetFwProfile *fwProfile, WINBOOL *fwOn)
  */
 HRESULT GkSystem::WindowsFirewallAppIsEnabled(INetFwProfile *fwProfile, const wchar_t *fwProcessImageFileName, WINBOOL *fwAppEnabled)
 {
-    HRESULT hr = S_OK;
+    HRESULT hr = NOERROR;
     BSTR fwBstrProcessImageFileName = nullptr;
     VARIANT_BOOL fwEnabled;
     INetFwAuthorizedApplication* fwApp = nullptr;
@@ -357,7 +357,7 @@ HRESULT GkSystem::WindowsFirewallAppIsEnabled(INetFwProfile *fwProfile, const wc
  */
 HRESULT GkSystem::WindowsFirewallTurnOn(INetFwProfile *fwProfile)
 {
-    HRESULT hr = S_OK;
+    HRESULT hr = NOERROR;
     BOOL fwOn;
 
     Q_ASSERT(fwProfile != nullptr);
@@ -399,7 +399,7 @@ HRESULT GkSystem::WindowsFirewallTurnOn(INetFwProfile *fwProfile)
  */
 HRESULT GkSystem::WindowsFirewallTurnOff(INetFwProfile *fwProfile)
 {
-    HRESULT hr = S_OK;
+    HRESULT hr = NOERROR;
     BOOL fwOn;
 
     Q_ASSERT(fwProfile != nullptr);
@@ -443,7 +443,7 @@ HRESULT GkSystem::WindowsFirewallTurnOff(INetFwProfile *fwProfile)
  */
 HRESULT GkSystem::WindowsFirewallAddApp(INetFwProfile *fwProfile, const wchar_t *fwProcessImageFileName, const wchar_t *fwName)
 {
-    HRESULT hr = S_OK;
+    HRESULT hr = NOERROR;
     BOOL fwAppEnabled;
     BSTR fwBstrName = nullptr;
     BSTR fwBstrProcessImageFileName = nullptr;
@@ -567,7 +567,7 @@ HRESULT GkSystem::WindowsFirewallAddApp(INetFwProfile *fwProfile, const wchar_t 
  */
 HRESULT GkSystem::WindowsFirewallPortIsEnabled(INetFwProfile *fwProfile, LONG portNumber, NET_FW_IP_PROTOCOL ipProtocol, WINBOOL *fwPortEnabled)
 {
-    HRESULT hr = S_OK;
+    HRESULT hr = NOERROR;
     VARIANT_BOOL fwEnabled;
     INetFwOpenPort *fwOpenPort = nullptr;
     INetFwOpenPorts *fwOpenPorts = nullptr;
@@ -641,7 +641,7 @@ HRESULT GkSystem::WindowsFirewallPortIsEnabled(INetFwProfile *fwProfile, LONG po
  */
 HRESULT GkSystem::WindowsFirewallPortAdd(INetFwProfile *fwProfile, LONG portNumber, NET_FW_IP_PROTOCOL ipProtocol, const wchar_t *name)
 {
-    HRESULT hr = S_OK;
+    HRESULT hr = NOERROR;
     BOOL fwPortEnabled;
     BSTR fwBstrName = nullptr;
     INetFwOpenPort *fwOpenPort = nullptr;
