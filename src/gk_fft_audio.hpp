@@ -55,7 +55,6 @@
 #include <QObject>
 #include <QBuffer>
 #include <QPointer>
-#include <QEventLoop>
 #include <QAudioInput>
 #include <QAudioFormat>
 #include <QAudioOutput>

@@ -142,7 +142,7 @@ spotbugs-sast:
   - "/analyzer run -compile=false"
   variables:
     SAST_DEFAULT_ANALYZERS: flawfinder, gitleaks, trufflehog, secrets
-    SAST_EXCLUDED_PATHS: assets/**, cmake/**, docker/**, docs/**, po/**, toolchains/**,
+    SAST_EXCLUDED_PATHS: assets, po, toolchains, contrib, spec, test, tests, tmp
       src/contrib/**
     SAST_GOSEC_LEVEL: 2
     SAST_FLAWFINDER_LEVEL: 2
@@ -151,8 +151,6 @@ spotbugs-sast:
     expire_in: 1 week
     paths:
     - src_build/
-    reports:
-      sast: gl-sast-report.json
   allow_failure: true
 sast:
   variables:

@@ -89,7 +89,6 @@
 #include <QDateTime>
 #include <QWindow>
 #include <QByteArray>
-#include <QEventLoop>
 #include <QStringList>
 #include <QMainWindow>
 #include <QPushButton>
@@ -146,7 +145,6 @@ private slots:
     void on_actionLSB_toggled(bool arg1);
     void on_actionAM_toggled(bool arg1);
     void on_actionFM_toggled(bool arg1);
-    void on_actionSSB_toggled(bool arg1);
     void on_actionCW_toggled(bool arg1);
 
     //
@@ -185,7 +183,6 @@ private slots:
     // QComboBox'es
     //
     void on_comboBox_select_frequency_activated(int index);
-    void on_comboBox_select_callsign_use_currentIndexChanged(int index);
 
     void infoBar();
     void uponExit();
@@ -267,6 +264,7 @@ protected slots:
     // Audio related
     //
     void processAudioInMain();
+    void processAudioInMainBuffer();
     void audioInHandleStateChanged(QAudio::State changed_state);
     void audioOutHandleStateChanged(QAudio::State changed_state);
 
@@ -357,7 +355,7 @@ private:
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
     QPointer<QBuffer> gkAudioInputBuf;
-    QPointer<QEventLoop> gkAudioInputEventLoop;
+    QByteArray gkAudioInputByteArrayBuf;
 
     //
     // QAudioSystem miscellaneous variables
@@ -381,7 +379,6 @@ private:
     //
     std::timed_mutex btn_record_mtx;
     std::future<std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio>> rig_future;
-    std::thread gkAudioInputEventLoopExecThread;
     std::thread rig_thread;
     std::thread vu_meter_thread;
 
@@ -466,6 +463,19 @@ private:
     QPointer<GekkoFyre::GkSpectroWaterfall> gkSpectroWaterfall;
     QVector<double> waterfall_samples_vec;
     GekkoFyre::Spectrograph::GkGraphType graph_in_use;
+
+    //
+    // Firewall and Microsoft Windows security related
+    //
+    GekkoFyre::System::Security::GkFirewallSettings gkFirewallSettings;
+    void mapInsertFirewallPorts();
+    #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
+    std::map<qint32, std::pair<GekkoFyre::Network::GkNetworkProtocol, bool>> processFirewallRules(INetFwProfile *pfwProfile, const GekkoFyre::System::Security::GkFirewallSettings &portsToEnable);
+    bool addSwdSysFirewall(INetFwProfile *pfwProfile, const QString &full_app_path);
+    bool addPortSysFirewall(INetFwProfile *pfwProfile, const qint32 &network_port, const IN NET_FW_IP_PROTOCOL &network_protocol);
+    #elif __linux__
+    boost::tribool processFirewallRules(const GekkoFyre::System::Security::GkFirewallSettings &portsToEnable);
+    #endif
 
     //
     // System tray icon
