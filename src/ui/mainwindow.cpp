@@ -67,6 +67,7 @@
 #include <QResource>
 #include <QMultiMap>
 #include <QtGlobal>
+#include <QVariant>
 #include <QWidget>
 #include <QVector>
 #include <QPixmap>
@@ -75,14 +76,6 @@
 #include <QDate>
 #include <QFile>
 #include <QUrl>
-
-#ifdef _WIN32
-#include <Windows.h>
-#endif
-
-#ifdef GK_CUDA_FFT_ENBL
-#include "./../spectro_cuda.h"
-#endif
 
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
@@ -97,6 +90,7 @@ using namespace Events;
 using namespace Logging;
 using namespace Network;
 using namespace GkXmpp;
+using namespace Security;
 
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
@@ -227,7 +221,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // Create class pointers
         fileIo = new GekkoFyre::FileIo(this);
         gkStringFuncs = new GekkoFyre::StringFuncs(this);
-        gkSystem = new GkSystem(this);
+        gkSystem = new GkSystem(gkStringFuncs, this);
 
         //
         // Settings database-related logic
@@ -418,8 +412,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 // Initialize the all-important `GkRadioPtr`!
                 //
                 gkRadioLibs = new GekkoFyre::RadioLibs(fileIo, gkStringFuncs, gkDb, gkRadioPtr, gkEventLogger, gkSystem, this);
+
+                //
+                // Connect `GekkoFyre::GkEventLogger()` to any external log event publishing sources!
+                //
+                QObject::connect(gkSystem, SIGNAL(publishEventMsg(const QString &, const GekkoFyre::System::Events::Logging::GkSeverity &, const QVariant &, const bool &, const bool &, const bool &, const bool &)),
+                gkEventLogger, SLOT(publishEvent(const QString &, const GekkoFyre::System::Events::Logging::GkSeverity &, const QVariant &, const bool &, const bool &, const bool &, const bool &)));
                 QObject::connect(gkRadioLibs, SIGNAL(publishEventMsg(const QString &, const GekkoFyre::System::Events::Logging::GkSeverity &, const QVariant &, const bool &, const bool &, const bool &, const bool &)),
-                                 gkEventLogger, SLOT(publishEvent(const QString &, const GekkoFyre::System::Events::Logging::GkSeverity &, const QVariant &, const bool &, const bool &, const bool &, const bool &)));
+                gkEventLogger, SLOT(publishEvent(const QString &, const GekkoFyre::System::Events::Logging::GkSeverity &, const QVariant &, const bool &, const bool &, const bool &, const bool &)));
 
                 // Initialize the other radio libraries!
                 gkSerialPortMap = gkRadioLibs->filter_com_ports(gkRadioLibs->status_com_ports());
@@ -707,6 +707,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         //
         // Enable updating and clearing of QBuffer pointers across Small World Deluxe!
+        QObject::connect(this, SIGNAL(updateAudioIn()), this, SLOT(processAudioInMainBuffer()));
         QObject::connect(this, SIGNAL(updateAudioIn()), gkFftAudio, SLOT(processAudioInFft()));
         QObject::connect(this, SIGNAL(updateAudioIn()), gkAudioEncoding, SLOT(processAudioInEncode()));
 
@@ -831,6 +832,22 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         ui->tableView_mesg_callsigns->setModel(gkCallsignMsgsTableViewModel);
 
         //
+        // Firewall and Microsoft Windows security related
+        //
+        #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
+        HRESULT hr = NOERROR;
+        INetFwProfile *pfwProfile = nullptr;
+        hr = gkSystem->WindowsFirewallInitialize(&pfwProfile);
+        if (FAILED(hr)) {
+            auto errMsg = gkSystem->processHResult(hr);
+            throw std::runtime_error(tr("An issue was encountered while communicating with your system's firewall! Error:\n\n%1").arg(errMsg).toStdString());
+        }
+
+        mapInsertFirewallPorts();
+        processFirewallRules(pfwProfile, gkFirewallSettings);
+        #endif
+
+        //
         // QXmpp and XMPP related
         //
         readXmppSettings();
@@ -849,10 +866,6 @@ MainWindow::~MainWindow()
 {
     emit stopRecording();
     emit disconnectRigInUse(gkRadioPtr->gkRig, gkRadioPtr);
-
-    if (!gkAudioInputEventLoop.isNull()) {
-        delete gkAudioInputEventLoop;
-    }
 
     gkAudioEncodingThread.quit();
     gkAudioEncodingThread.wait();
@@ -1490,23 +1503,16 @@ void MainWindow::updateVolumeDisplayWidgets()
             std::lock_guard<std::mutex> lck_guard(mtx_update_vol_widgets);
             std::this_thread::sleep_for(std::chrono::milliseconds(2500)); // TODO: This is a huge source of SEGFAULTS!
 
-            QByteArray vol_input_ba;
-            gkAudioInputBuf->seek(0);
-            vol_input_ba.append(gkAudioInputBuf->readAll());
+            const qint32 num_samples = AUDIO_FRAMES_PER_BUFFER * gkAudioInput->format().channelCount(); // Assert that stereo actually equals stereo!
             while (gkAudioInput->state() == QAudio::ActiveState) {
-                while (!vol_input_ba.isEmpty()) {
+                QByteArray vol_input_ba(std::move(gkAudioInputByteArrayBuf));
+                while (!vol_input_ba.isEmpty() && !vol_input_ba.isNull()) {
                     //
                     // Input audio stream is open and active!
                     //
                     std::vector<double> recv_samples;
-                    const qint32 num_samples = AUDIO_FRAMES_PER_BUFFER * gkAudioInput->format().channelCount(); // Assert that stereo actually equals stereo!
-
-                    for (qint32 i = 0; i < num_samples; ++i) {
-                        // Convert from little endian...
-                        for (qint32 j = 0; j < num_samples; ++j) {
-                            recv_samples[j] += qFromLittleEndian<double>(vol_input_ba.data() + j);
-                        }
-                    }
+                    recv_samples.reserve(num_samples);
+                    std::copy(vol_input_ba.begin(), vol_input_ba.end(), recv_samples.begin());
 
                     Gist<double> gist_vol(recv_samples.size(), gkAudioInput->format().sampleRate());
                     gist_vol.processAudioFrame(recv_samples);
@@ -1515,7 +1521,7 @@ void MainWindow::updateVolumeDisplayWidgets()
                     double peak = gist_vol.peakEnergy();
 
                     emit refreshVuDisplay(rms, peak, recv_samples.size());
-                    vol_input_ba.clear();
+                    vol_input_ba.clear(); // We are done with all the data as a whole, therefore clear the lot!
                 }
             }
         }
@@ -1611,6 +1617,237 @@ bool MainWindow::fileOverloadWarning(const int &file_count, const int &max_num_f
 
     return false;
 }
+
+/**
+ * @brief MainWindow::mapInsertFirewallPorts fills the structure, `System::Security::GkFirewallSettings`, with the relevant
+ * information needed to process functions such as, MainWindow::processFirewallRules().
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @see MainWindow::processFirewallRules().
+ */
+void MainWindow::mapInsertFirewallPorts()
+{
+    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_HTTP_80, std::make_pair(GkNetworkProtocol::TCP, false)));
+    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_HTTPS_443, std::make_pair(GkNetworkProtocol::TCP, false)));
+    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_CLIENT_5222, std::make_pair(GkNetworkProtocol::TCP, false)));
+    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_CLIENT_SSL_5223, std::make_pair(GkNetworkProtocol::TCP, false)));
+    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_SERVER_5269, std::make_pair(GkNetworkProtocol::TCP, false)));
+    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_LOCAL_MSGING_5298, std::make_pair(GkNetworkProtocol::TCP, false)));
+    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_BOSH_SSL_5443, std::make_pair(GkNetworkProtocol::TCP, false)));
+    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_FILE_XFERS_8010, std::make_pair(GkNetworkProtocol::TCP, false)));
+
+    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_UDP_PORT_XMPP_LOCAL_MSGING_5298, std::make_pair(GkNetworkProtocol::UDP, false)));
+    return;
+}
+
+#if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
+#elif __linux__
+/**
+ * @brief MainWindow::processFirewallRules processes the rules and ports (TCP and/or UDP) for Small World Deluxe to operate
+ * at its maximum utility towards the end-user, regarding the default firewall that has come with the target operating system,
+ * such as the built-in firewall provided with recent Microsoft Windows operating systems.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+  * @param portsToEnable A vector of ports, from 0-65536 (TCP and/or UDP) that are required to be enabled for Small World
+ * Deluxe to operate both properly and fully.
+ * @return Whether all the operations and/or just target ones were performant to a success or not, or even otherwise to
+ * an unknown return value.
+ */
+boost::tribool MainWindow::processFirewallRules(const GekkoFyre::System::Security::GkFirewallSettings &portsToEnable)
+{
+    Q_UNUSED(portsToEnable);
+    QString current_path = QDir::currentPath();
+    QString exe_name;
+    QString complete_path;
+    exe_name = QString(QString::fromStdString(General::executableName)); // No file extension attributor is needed for Linux distros!
+    complete_path = current_path + "/" + exe_name;
+
+    return boost::tribool();
+}
+#else
+#error "The target operating system is not supported yet!"
+#endif
+
+#if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
+/**
+ * @brief MainWindow::processFirewallRules processes the rules and ports (TCP and/or UDP) for Small World Deluxe to operate
+ * at its maximum utility towards the end-user, regarding the default firewall that has come with the target operating system,
+ * such as the built-in firewall provided with recent Microsoft Windows operating systems.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param pfwProfile The pointer to the main, default firewall within Microft Windows.
+ * @param portsToEnable A vector of ports, from 0-65536 (TCP and/or UDP) that are required to be enabled for Small World
+ * Deluxe to operate both properly and fully.
+ * @return A modified list of the original std::map of network ports, protocols, and other parameters as according to the
+ * new firewall rules that should've been implemented (exceptions would've been thrown otherwise).
+ * @see MainWindow::addSwdSysFirewall(), MainWindow::addPortSysFirewall()
+ */
+std::map<qint32, std::pair<Network::GkNetworkProtocol, bool>> MainWindow::processFirewallRules(INetFwProfile *pfwProfile, const GekkoFyre::System::Security::GkFirewallSettings &portsToEnable)
+{
+    try {
+        HRESULT hr = NOERROR;
+        BOOL isSysFirewallEnabled = FALSE;
+        hr = gkSystem->WindowsFirewallIsOn(pfwProfile, &isSysFirewallEnabled); // Check that the firewall provided with Microsoft Windows is enabled!
+        if (FAILED(hr)) {
+            auto errMsg = gkSystem->processHResult(hr);
+            throw std::runtime_error(tr("An issue was encountered while adding, \"%1\", to the system firewall! Error:\n\n%1").arg(errMsg).toStdString());
+        }
+
+        if (isSysFirewallEnabled == TRUE) { // The default firewall for Microsoft Windows is enabled!
+            QString current_path = QDir::currentPath();
+            QString exe_name;
+            QString complete_path;
+            BOOL isSwdEnabled = FALSE;
+            exe_name = QString("%1.exe").arg(QString::fromStdString(General::executableName));
+            complete_path = current_path + "/" + exe_name;
+
+            //
+            // Check that the main executable for Small World Deluxe is already added to the Microsoft Windows firewall already or not!
+            gkSystem->WindowsFirewallAppIsEnabled(pfwProfile, complete_path.toStdWString().c_str(), &isSwdEnabled);
+            if (FAILED(hr)) {
+                auto errMsg = gkSystem->processHResult(hr);
+                throw std::runtime_error(tr("An issue was encountered while adding, \"%1\", to the system firewall! Error:\n\n%1").arg(errMsg).toStdString());
+            }
+
+            if (isSwdEnabled == FALSE) {
+                QMessageBox msgBoxFirewall;
+                // msgBoxFirewall.setParent(this);
+                msgBoxFirewall.setWindowTitle(tr("Add to firewall?"));
+                msgBoxFirewall.setText(tr("In order for %1 to work properly, the application must add some rules to your system's firewall. "
+                                          "Do you give permission for this?").arg(QString::fromStdString(General::productName)));
+                msgBoxFirewall.setStandardButtons(QMessageBox::Apply | QMessageBox::Close | QMessageBox::No);
+                msgBoxFirewall.setDefaultButton(QMessageBox::Apply);
+                msgBoxFirewall.setIcon(QMessageBox::Question);
+                int ret = msgBoxFirewall.exec();
+
+                switch (ret) {
+                    case QMessageBox::Apply:
+                    {
+                        //
+                        // The end-user has approved the modification of firewall rules for Small World Deluxe!
+                        // Add the main executable for Small World Deluxe to the Microsoft Windows firewall!
+                        addSwdSysFirewall(pfwProfile, complete_path);
+                        std::map<qint32, std::pair<Network::GkNetworkProtocol, bool>> modified_ports;
+                        if (!portsToEnable.network_ports.empty()) {
+                            for (auto &port: portsToEnable.network_ports) {
+                                if (!port.second.second) {
+                                    BOOL isPortEnabled = NOERROR;
+                                    IN NET_FW_IP_PROTOCOL network_protocol;
+                                    switch (port.second.first) {
+                                        case Network::GkNetworkProtocol::TCP:
+                                            network_protocol = NET_FW_IP_PROTOCOL_TCP;
+                                            break;
+                                        case Network::GkNetworkProtocol::UDP:
+                                            network_protocol = NET_FW_IP_PROTOCOL_UDP;
+                                            break;
+                                        default:
+                                            throw std::invalid_argument(tr("Invalid argument provided while processing firewall rules for operating system!").toStdString());
+                                    }
+
+                                    if (addPortSysFirewall(pfwProfile, port.first, network_protocol)) {
+                                        modified_ports.insert(std::make_pair(port.first, std::make_pair(port.second.first, true)));
+                                        continue;
+                                    }
+
+                                    modified_ports.insert(std::make_pair(port.first, std::make_pair(port.second.first, false)));
+                                }
+                            }
+                        }
+                    }
+
+                        return std::map<qint32, std::pair<Network::GkNetworkProtocol, bool>>();
+                    case QMessageBox::Close:
+                        //
+                        // The end-user DID NOT APPROVE the modification of firewall rules for Small World Deluxe!
+                        QApplication::exit(EXIT_FAILURE);
+                        return std::map<qint32, std::pair<Network::GkNetworkProtocol, bool>>();
+                    case QMessageBox::No:
+                        //
+                        // The end-user DID NOT APPROVE the modification of firewall rules for Small World Deluxe!
+                        break;
+                    default:
+                        return std::map<qint32, std::pair<Network::GkNetworkProtocol, bool>>();
+                }
+            }
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(e.what());
+    }
+
+    return std::map<qint32, std::pair<Network::GkNetworkProtocol, bool>>();
+}
+#endif
+
+#if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
+/**
+ * @brief MainWindow::addSwdSysFirewall will add the main executable for Small World Deluxe and any other, related
+ * sub-executables towards the firewall that comes by default with some operating systems, such as the more recent
+ * versions of Microsoft Windows.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param pfwProfile The pointer to the main, default firewall within Microft Windows.
+ * @param full_app_path The full, file-system path to where the main executable for Small World Deluxe is located.
+ * @return Whether the target operations were a success or failure.
+ * @see MainWindow::processFirewallRules()
+ */
+bool MainWindow::addSwdSysFirewall(INetFwProfile *pfwProfile, const QString &full_app_path)
+{
+    try {
+        HRESULT hr = gkSystem->WindowsFirewallAddApp(pfwProfile, full_app_path.toStdWString().c_str(), tr("%1 (main executable)").arg(General::productName).toStdWString().c_str());
+        if (FAILED(hr)) {
+            auto errMsg = gkSystem->processHResult(hr);
+            throw std::runtime_error(tr("An issue was encountered while adding, \"%1\", to the system firewall! Error:\n\n%1").arg(errMsg).toStdString());
+        }
+
+        return true;
+    } catch (const std::exception &e) {
+        std::throw_with_nested(e.what());
+    }
+
+    return false;
+}
+#endif
+
+#if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
+/**
+ * @brief MainWindow::addPortSysFirewall will add a given network port for Small World Deluxe along with whether TCP
+ * and/or UDP is preferred towards the firewall that comes by default with some operating systems, such as the more
+ * recent versions of Microsoft Windows.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param pfwProfile The pointer to the main, default firewall within Microft Windows.
+ * @param network_port The network-related port in question to add to the firewall.
+ * @param network_protocol If TCP and/or UDP is preferred, or even any.
+ * @return Returns true if the target operations were a success and false primarily if the port already exists in the
+ * operating system's ruleset. On error, an exception should be thrown as the norm.
+ * @see MainWindow::processFirewallRules()
+ */
+bool MainWindow::addPortSysFirewall(INetFwProfile *pfwProfile, const qint32 &network_port, const IN NET_FW_IP_PROTOCOL &network_protocol)
+{
+    try {
+        HRESULT hr = NOERROR;
+        BOOL isPortEnabled = NOERROR;
+        hr = gkSystem->WindowsFirewallPortIsEnabled(pfwProfile, network_port, network_protocol, &isPortEnabled);
+        if (FAILED(hr)) {
+            auto errMsg = gkSystem->processHResult(hr);
+            throw std::runtime_error(tr("An issue was encountered while adding, \"%1\", to the system firewall! Error:\n\n%1").arg(errMsg).toStdString());
+        }
+
+        if (isPortEnabled == FALSE) {
+            //
+            // We need to add the network_port to the firewall!
+            hr = gkSystem->WindowsFirewallPortAdd(pfwProfile, network_port, network_protocol, QString("%1").arg(General::productName).toStdWString().c_str());
+            if (FAILED(hr)) {
+                auto errMsg = gkSystem->processHResult(hr);
+                throw std::runtime_error(tr("An issue was encountered while adding, \"%1\", to the system firewall! Error:\n\n%1").arg(errMsg).toStdString());
+            }
+
+            return true;
+        }
+
+        return false;
+    } catch (const std::exception &e) {
+        std::throw_with_nested(e.what());
+    }
+
+    return false;
+}
+#endif
 
 /**
  * @brief MainWindow::removeFreqFromDb will remove a frequency and its related values from the Google LevelDB database.
@@ -2238,6 +2475,18 @@ void MainWindow::processAudioInMain()
 }
 
 /**
+ * @brief MainWindow::processAudioInMainBuffer
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::processAudioInMainBuffer()
+{
+    gkAudioInputBuf->seek(0);
+    gkAudioInputByteArrayBuf.append(gkAudioInputBuf->readAll());
+
+    return;
+}
+
+/**
  * @brief MainWindow::msgOutgoingProcess will process outgoing messages and prepare them for transmission with regards to
  * libraries such as Codec2, whilst clearing `ui->plainTextEdit_mesg_outgoing` of any text at the same time.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -2380,17 +2629,6 @@ void MainWindow::on_pushButton_radio_monitor_clicked()
  * @param index
  */
 void MainWindow::on_comboBox_select_frequency_activated(int index)
-{
-    Q_UNUSED(index);
-    return;
-}
-
-/**
- * @brief MainWindow::on_comboBox_select_callsign_use_currentIndexChanged
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param index
- */
-void MainWindow::on_comboBox_select_callsign_use_currentIndexChanged(int index)
 {
     Q_UNUSED(index);
     return;
@@ -2772,13 +3010,6 @@ void MainWindow::on_actionAM_toggled(bool arg1)
 }
 
 void MainWindow::on_actionFM_toggled(bool arg1)
-{
-    Q_UNUSED(arg1);
-
-    return;
-}
-
-void MainWindow::on_actionSSB_toggled(bool arg1)
 {
     Q_UNUSED(arg1);
 

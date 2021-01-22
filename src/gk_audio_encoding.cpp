@@ -373,45 +373,55 @@ void GkAudioEncoding::processAudioInEncode()
  */
 void GkAudioEncoding::encodeOpus()
 {
+    //
+    // Ogg Opus
+    //
     if (!m_initialized) {
         return;
     }
 
-    opus_int16 input_frame[AUDIO_OPUS_FRAMES_PER_BUFFER] = {};
-    int err = 0;
-    for (qint32 i = 0; i < AUDIO_OPUS_FRAMES_PER_BUFFER; ++i) {
-        // Convert from little endian...
-        for (qint32 j = 0; j < AUDIO_OPUS_FRAMES_PER_BUFFER; ++j) {
-            input_frame[j] = qFromLittleEndian<opus_int16>(m_buffer.data() + j * AUDIO_OPUS_INT_SIZE);
-        }
+    if (m_out_file.isOpen()) {
+        std::lock_guard<std::mutex> lock_g(async_ogg_opus_mtx);
+        const qint32 frame_size = AUDIO_OPUS_FRAMES_PER_BUFFER * m_channels;
+        while (!m_buffer.isEmpty()) {
+            int err = 0;
+            std::vector<opus_int16> input_frame;
+            input_frame.reserve(frame_size);
+            for (qint32 i = 0; i < frame_size; ++i) {
+                // Convert from little endian...
+                for (qint32 j = 0; j < frame_size; ++j) {
+                    input_frame[j] += qFromLittleEndian<opus_int16>(m_buffer.data() + j * AUDIO_OPUS_INT_SIZE);
+                }
+            }
 
-        //
-        // https://stackoverflow.com/questions/46786922/how-to-confirm-opus-encode-buffer-size
-        if (m_sample_rate == 48000) {
             //
-            // The frame-size must therefore be 10 milliseconds for stereo!
-            m_frame_size = ((48000 / 1000) * 2) * 10;
+            // https://stackoverflow.com/questions/46786922/how-to-confirm-opus-encode-buffer-size
+            if (m_sample_rate == 48000) {
+                //
+                // The frame-size must therefore be 10 milliseconds for stereo!
+                m_frame_size = ((48000 / 1000) * 2) * 10;
+            }
+
+            err = ope_encoder_write(m_opus_encoder, input_frame.data(), m_frame_size);
+            if (err != OPE_OK) {
+                emit error(tr("Error encoding to file: %1\n\n%2").arg(QString::fromStdString(m_file_path.string()))
+                                   .arg(QString::fromStdString(ope_strerror(err))), GkSeverity::Fatal);
+
+                ope_comments_destroy(m_opus_comments);
+                return;
+            }
+
+            err = ope_encoder_drain(m_opus_encoder);
+            if (err != OPE_OK) {
+                emit error(tr("Error encoding to file: %1\n\n%2").arg(QString::fromStdString(m_file_path.string()))
+                                   .arg(QString::fromStdString(ope_strerror(err))), GkSeverity::Fatal);
+
+                ope_comments_destroy(m_opus_comments);
+                return;
+            }
+
+            m_buffer.remove(0, AUDIO_OPUS_FRAMES_PER_BUFFER * AUDIO_OPUS_INT_SIZE);
         }
-
-        err = ope_encoder_write(m_opus_encoder, input_frame, m_frame_size);
-        if (err != OPE_OK) {
-            emit error(tr("Error encoding to file: %1\n\n%2").arg(QString::fromStdString(m_file_path.string()))
-                               .arg(QString::fromStdString(ope_strerror(err))), GkSeverity::Fatal);
-
-            ope_comments_destroy(m_opus_comments);
-            return;
-        }
-
-        err = ope_encoder_drain(m_opus_encoder);
-        if (err != OPE_OK) {
-            emit error(tr("Error encoding to file: %1\n\n%2").arg(QString::fromStdString(m_file_path.string()))
-                               .arg(QString::fromStdString(ope_strerror(err))), GkSeverity::Fatal);
-
-            ope_comments_destroy(m_opus_comments);
-            return;
-        }
-
-        m_buffer.remove(0, AUDIO_OPUS_FRAMES_PER_BUFFER * AUDIO_OPUS_INT_SIZE);
     }
 
     return;
@@ -428,6 +438,10 @@ void GkAudioEncoding::encodeVorbis()
     // https://github.com/libsndfile/libsndfile/blob/master/examples/sndfilehandle.cc
     // https://github.com/libsndfile/libsndfile/blob/master/examples/sfprocess.c
     //
+    if (!m_initialized) {
+        return;
+    }
+
     if (m_out_file.isOpen()) {
         std::lock_guard<std::mutex> lock_g(async_flac_mtx);
         const qint32 frame_size = AUDIO_FRAMES_PER_BUFFER * m_channels;
@@ -456,6 +470,8 @@ void GkAudioEncoding::encodeVorbis()
             m_out_file.write(m_encoded_buf->readAll());
             m_out_file.flush();
 
+            //
+            // DO NOT DELETE THIS!
             m_encoded_buf->buffer().clear();
             m_encoded_buf->seek(0);
         }
@@ -475,6 +491,10 @@ void GkAudioEncoding::encodeFLAC()
     // https://github.com/libsndfile/libsndfile/blob/master/examples/sndfilehandle.cc
     // https://github.com/libsndfile/libsndfile/blob/master/examples/sfprocess.c
     //
+    if (!m_initialized) {
+        return;
+    }
+
     if (m_out_file.isOpen()) {
         std::lock_guard<std::mutex> lock_g(async_flac_mtx);
         const qint32 frame_size = AUDIO_FRAMES_PER_BUFFER * m_channels;
@@ -503,6 +523,8 @@ void GkAudioEncoding::encodeFLAC()
             m_out_file.write(m_encoded_buf->readAll());
             m_out_file.flush();
 
+            //
+            // DO NOT DELETE THIS!
             m_encoded_buf->buffer().clear();
             m_encoded_buf->seek(0);
         }

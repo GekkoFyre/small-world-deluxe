@@ -53,6 +53,7 @@
 #include <QDesktopWidget>
 #include <QApplication>
 #include <QMessageBox>
+#include <QDateTime>
 #include <QVariant>
 #include <QSysInfo>
 #include <QDebug>
@@ -79,6 +80,7 @@ using namespace Events;
 using namespace Logging;
 using namespace Network;
 using namespace GkXmpp;
+using namespace Security;
 
 namespace fs = boost::filesystem;
 namespace sys = boost::system;
@@ -98,6 +100,142 @@ GkLevelDb::GkLevelDb(leveldb::DB *db_ptr, QPointer<FileIo> filePtr, QPointer<Gek
 
 GkLevelDb::~GkLevelDb()
 {}
+
+/**
+ * @brief GkLevelDb::writeMultipleKeys stores multiple values under the 'one' key within the Google LevelDB database.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param base_key_name The base-name of the key to start with.
+ * @param values The values that are to be written under the 'one' key.
+ * @param allow_empty_values If present, then whether to allow the insertion of empty values into the Google LevelDB
+ * database with it's matching, strictly non-empty key.
+ * @note miste...@googlemail.com <https://groups.google.com/g/leveldb/c/Bq30nafYSTY/m/NTbE0lqxEAYJ>.
+ * @see GkLevelDb::readMultipleKeys().
+ */
+void GkLevelDb::writeMultipleKeys(const std::string &base_key_name, const std::vector<std::string> &values,
+                                  const bool &allow_empty_values)
+{
+    try {
+        leveldb::WriteBatch batch;
+        leveldb::Status status;
+
+        if (!base_key_name.empty() && !values.empty()) {
+            //
+            // See if there are any values already pre-existing under this base-key! As we must prepend to these if
+            // that's the case.
+            //
+            std::vector<std::string> values_modifiable;
+            std::map<std::string, std::string> key_value_map;
+
+            std::copy(values.begin(), values.end(), values_modifiable.begin());
+            auto preexisting_values = readMultipleKeys(base_key_name);
+            if (!preexisting_values.empty()) {
+                for (const auto &value: preexisting_values) {
+                    values_modifiable.emplace_back(value);
+                }
+            }
+
+            //
+            // Insert the multiple values under the singular key, with adjunct UNIX Epoch acting as the 'hash'!
+            for (const auto &value: values_modifiable) {
+                qint64 curr_unix_epoch = QDateTime::currentMSecsSinceEpoch();
+                std::string new_key_name = std::string(base_key_name + '!' + std::to_string(curr_unix_epoch));
+                key_value_map.insert(std::make_pair(new_key_name, value));
+            }
+
+            for (const auto &key_value: key_value_map) {
+                if (!key_value.first.empty()) {
+                    if (!key_value.second.empty() || (allow_empty_values && key_value.second.empty())) {
+                        batch.Put(key_value.first, key_value.second);
+                    }
+                }
+            }
+
+            leveldb::WriteOptions write_options;
+            write_options.sync = true;
+
+            status = db->Write(write_options, &batch);
+
+            if (!status.ok()) { // Abort because of error!
+                throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+            }
+        } else {
+            throw std::invalid_argument(tr("Empty string provided while writing key or value to Google LevelDB database!").toStdString());
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return;
+}
+
+/**
+ * @brief GkLevelDb::deleteKeyFromMultiple deletes a singular value from under the 'one' key within the Google LevelDB
+ * database, which is acting as a list for multiple values.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param base_key_name The values which are to be read out from the 'single' base-key.
+ * @param removed_value The value to be removed from the list of read out, multiple values.
+ * @return Whether the deletion operation was a success or not.
+ */
+bool GkLevelDb::deleteKeyFromMultiple(const std::string &base_key_name, const std::string &removed_value, const bool &allow_empty_values)
+{
+    try {
+        if (!base_key_name.empty() && !removed_value.empty()) {
+            auto modified_values = readMultipleKeys(base_key_name);
+            auto it = modified_values.begin();
+            while (it != modified_values.end()) {
+                if (*it == removed_value) {
+                    it = modified_values.erase(it);
+                } else {
+                    ++it;
+                }
+            }
+
+            writeMultipleKeys(base_key_name, modified_values, allow_empty_values);
+        } else {
+            throw std::invalid_argument(tr("Empty string provided while modifying key or value with Google LevelDB database!").toStdString());
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
+    return false;
+}
+
+/**
+ * @brief GkLevelDb::readMultipleKeys reads out the values which have been stored under the 'one' key within a Google
+ * LevelDB database.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param base_key_name The values which are to be read out from the 'single' base-key.
+ * @return The multiple values which have been stored under the 'one' base-key.
+ * @note miste...@googlemail.com <https://groups.google.com/g/leveldb/c/Bq30nafYSTY/m/NTbE0lqxEAYJ>.
+ * @see GkLevelDb::writeMultipleKeys().
+ */
+std::vector<std::string> GkLevelDb::readMultipleKeys(const std::string &base_key_name)
+{
+    try {
+        if (!base_key_name.empty()) {
+            leveldb::Status status;
+            leveldb::ReadOptions read_options;
+            std::vector<std::string> values;
+
+            read_options.verify_checksums = true;
+            leveldb::Iterator *it = db->NewIterator(read_options);
+            for (it->Seek(std::string(base_key_name + "!")); it->Valid() && it->key().ToString() < std::string(base_key_name + "!~"); it->Next()) {
+                if (!it->value().empty()) {
+                    values.emplace_back(it->value().ToString());
+                }
+            }
+
+            return values;
+        } else {
+            throw std::invalid_argument(tr("Empty string provided while attempting to read key and/or value with Google LevelDB database!").toStdString());
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return std::vector<std::string>();
+}
 
 /**
  * @brief GkLevelDb::write_rig_settings writes out the given settings desired by the user to a Google LevelDB database stored
@@ -490,6 +628,184 @@ void GkLevelDb::write_audio_playback_dlg_settings(const QString &value, const Au
 }
 
 /**
+ * @brief GkLevelDb::write_firewall_is_active_settings stores settings pertaining to the default firewall built into the
+ * operating system (if there is one, such as the provided firewall provided with Microsoft Windows).
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value The setting to be stored.
+ */
+void GkLevelDb::write_firewall_is_active_settings(const std::string &value)
+{
+    try {
+        // Put key-value
+        leveldb::WriteBatch batch;
+        leveldb::Status status;
+
+        batch.Put("GkIsFirewallActive", value);
+
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
+
+        status = db->Write(write_options, &batch);
+
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return;
+}
+
+/**
+ * @brief GkLevelDb::write_firewall_port_settings stores network port settings (including whether TCP and/or UDP is
+ * preferred) pertaining to the default firewall built into the operating system (if there is one, such as the provided
+ * firewall provided with Microsoft Windows).
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param key The key to store the setting under.
+ * @param network_ports The network port(s) to store within the Google LevelDB database, from 0 - 65536, and whether TCP
+ * and/or UDP is preferred.
+ */
+void GkLevelDb::write_firewall_port_settings(const std::map<qint32, Network::GkNetworkProtocol> &network_ports)
+{
+    try {
+        std::vector<std::string> ports;
+        //
+        // Insert a vector of network ports along with whether TCP and/or UDP is possibly preferred into the Google
+        // LevelDB database!
+        //
+        for (const auto &port: network_ports) {
+            ports.emplace_back(std::string(std::to_string(port.first) + "," + convNetworkProtocolEnumToStr(port.second).toStdString()));
+        }
+
+        writeMultipleKeys("GkFirewallPorts", ports, false);
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return;
+}
+
+/**
+ * @brief GkLevelDb::write_firewall_port_settings inserts a given, singular network port setting (including whether TCP
+ * and/or UDP is preferred) pertaining to the default firewall built into the operating system (if there is one, such as
+ * the provided firewall provided with Microsoft Windows).
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param network_port
+ */
+void GkLevelDb::write_firewall_port_settings(const std::pair<qint32, Network::GkNetworkProtocol> &network_port)
+{
+    try {
+        const std::vector<std::string> read_ports = readMultipleKeys("GkFirewallPorts");
+        std::stringstream ss;
+        for (const auto &port: read_ports) {
+            if (!port.empty()) {
+                ss << port << std::endl; // Compile all the CSV values into one, big block for easier decoding by a CSV interpreter...
+            }
+        }
+
+        // TODO: Finish writing this!
+
+        //
+        // Insert a singular network port along with whether TCP and/or UDP is possibly preferred into the Google
+        // LevelDB database!
+        //
+        // writeMultipleKeys("GkFirewallPorts", ports, false);
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return;
+}
+
+/**
+ * @brief GkLevelDb::delete_firewall_port_settings deletes a given network port from the stored settings, pertaining to
+ * the default firewall built into the operating system (if there is one, such as the provided firewall provided with
+ * Microsoft Windows).
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param network_port The network port to delete within the Google LevelDB database, from 0 - 65536, along with whether
+ * TCP and/or UDP was preferred.
+ */
+void GkLevelDb::delete_firewall_port_settings(const std::pair<qint32, Network::GkNetworkProtocol> &network_port)
+{
+    try {
+        //
+        // Delete the given port from the Google LevelDB database!
+        deleteKeyFromMultiple("GkFirewallPorts", std::string(network_port.first + "," + convNetworkProtocolEnumToStr(network_port.second).toStdString()), false);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkLevelDb::write_firewall_app_settings writes a given network enabled application from the stored settings,
+ * pertaining to the default firewall built into the operating system (if there is one, such as the provided firewall
+ * provided with Microsoft Windows).
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param applications The network enabled application in question to write towards the Google LevelDB database, that has
+ * already being enabled in the firewall that is default to the operating system (if there is one, such as the provided
+ * firewall provided with Microsoft Windows).
+ */
+void GkLevelDb::write_firewall_app_settings(const std::vector<std::string> &applications)
+{
+    try {
+        //
+        // Insert a vector of network enabled, software applications to the Google LevelDB database!
+        writeMultipleKeys("GkFirewallApps", applications, false);
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return;
+}
+
+/**
+ * @brief GkLevelDb::write_firewall_app_settings inserts a given, singular network enabled application from the stored
+ * settings, pertaining to the default firewall built into the operating system (if there is one, such as the provided
+ * firewall provided with Microsoft Windows).
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param application
+ */
+void GkLevelDb::write_firewall_app_settings(const std::string &application)
+{
+    try {
+        //
+        // Insert a singular, network enabled software application into the Google LevelDB database!
+
+        // TODO: Finish writing this!
+        // writeMultipleKeys("GkFirewallApps", application, false);
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return;
+}
+
+/**
+ * @brief GkLevelDb::delete_firewall_app_settings deletes a given network enabled application from the stored settings,
+ * pertaining to the default firewall built into the operating system (if there is one, such as the provided firewall
+ * provided with Microsoft Windows).
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param application The network enabled application in question to delete from the Google LevelDB database, that has
+ * already being disabled within the firewall that is default to the operating system (if there is one, such as the
+ * provided firewall provided with Microsoft Windows).
+ */
+void GkLevelDb::delete_firewall_app_settings(const std::string &application)
+{
+    try {
+        //
+        // Delete the given application from the Google LevelDB database!
+        deleteKeyFromMultiple("GkFirewallApps", application, false);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
  * @brief GkLevelDb::write_frequencies_db manages the storage of frequency information within Small World Deluxe, such as
  * deletion, addition, and modification.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -507,28 +823,28 @@ void GkLevelDb::write_frequencies_db(const GkFreqs &write_new_value)
         std::string gk_stored_freq_value = "";
         db->Get(read_options, "GkStoredFreq", &gk_stored_freq_value);
         std::string csv_stored_freq;
-        csv_stored_freq = processCsvToDB(gk_stored_freq_value, QString::number(write_new_value.frequency).toStdString()); // Frequency (CSV)
+        csv_stored_freq = processCsvToDB("GkStoredFreq", gk_stored_freq_value, QString::number(write_new_value.frequency).toStdString()); // Frequency (CSV)
         batch.Put("GkStoredFreq", csv_stored_freq);
 
         // Closest matching frequency band
         std::string gk_closest_band_value = "";
         db->Get(read_options, "GkClosestBand", &gk_closest_band_value);
         std::string csv_closest_band;
-        csv_closest_band = processCsvToDB(gk_closest_band_value, convBandsToStr(write_new_value.closest_freq_band).toStdString()); // Closest matching frequency band (CSV)
+        csv_closest_band = processCsvToDB("GkClosestBand", gk_closest_band_value, convBandsToStr(write_new_value.closest_freq_band).toStdString()); // Closest matching frequency band (CSV)
         batch.Put("GkClosestBand", csv_closest_band);
 
         // Digital mode
         std::string gk_digital_mode_value = "";
         db->Get(read_options, "GkDigitalMode", &gk_digital_mode_value);
         std::string csv_digital_mode;
-        csv_digital_mode = processCsvToDB(gk_digital_mode_value, convDigitalModesToStr(write_new_value.digital_mode).toStdString()); // Digital mode (CSV)
+        csv_digital_mode = processCsvToDB("GkDigitalMode", gk_digital_mode_value, convDigitalModesToStr(write_new_value.digital_mode).toStdString()); // Digital mode (CSV)
         batch.Put("GkDigitalMode", csv_digital_mode);
 
         // IARU Region
         std::string gk_iaru_region_value = "";
         db->Get(read_options, "GkIARURegion", &gk_iaru_region_value);
         std::string csv_iaru_region;
-        csv_iaru_region = processCsvToDB(gk_iaru_region_value, convIARURegionToStr(write_new_value.iaru_region).toStdString()); // IARU Region (CSV)
+        csv_iaru_region = processCsvToDB("GkIARURegion", gk_iaru_region_value, convIARURegionToStr(write_new_value.iaru_region).toStdString()); // IARU Region (CSV)
         batch.Put("GkIARURegion", csv_iaru_region);
 
         remove_frequencies_db(true); // Delete all the frequencies and their component values!
@@ -1270,6 +1586,28 @@ GkXmpp::GkServerType GkLevelDb::convXmppServerTypeFromInt(const qint32 &idx)
 }
 
 /**
+ * @brief GkLevelDb::convNetworkProtocolEnumToStr
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param network_protocol
+ * @return
+ */
+QString GkLevelDb::convNetworkProtocolEnumToStr(const GkNetworkProtocol &network_protocol)
+{
+    switch (network_protocol) {
+        case GkNetworkProtocol::TCP:
+            return "TCP";
+        case UDP:
+            return "UDP";
+        case Any:
+            return "Any";
+        default:
+            break;
+    }
+
+    return QString();
+}
+
+/**
  * @brief GkLevelDb::detect_operating_system will detect the operating system and hopefully, version, used by the user of this
  * application, mostly for purposes needed by Sentry.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -1817,6 +2155,99 @@ QString GkLevelDb::read_audio_playback_dlg_settings(const AudioPlaybackDlg &key)
 }
 
 /**
+ * @brief GkLevelDb::read_firewall_settings reads out stored settings pertaining to the default firewall built into the
+ * operating system (if there is one, such as the provided firewall provided with Microsoft Windows).
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param key The key for which the supposedly stored setting is under. Returns a nullptr if nothing is stored under that
+ * particular key.
+ * @param comparator_value The std::string to make a comparison against; this is only applicable for some, certain keys.
+ * @return The stored setting otherwise an exception is returned if there was no stored setting under a given key.
+ */
+bool GkLevelDb::read_firewall_settings(const Security::GkFirewallCfg &key, const std::string &comparator_value)
+{
+    try {
+        leveldb::Status status;
+        leveldb::ReadOptions read_options;
+        std::string value = "";
+
+        read_options.verify_checksums = true;
+        std::vector<std::string> firewall_values;
+
+        switch (key) {
+            case Security::GkIsPortAdded:
+            {
+                firewall_values = readMultipleKeys("GkFirewallPorts");
+                for (const auto &firewall: firewall_values) {
+                    if (comparator_value == firewall) {
+                        return true;
+                    }
+                }
+            }
+
+                break;
+            case Security::GkIsAppAdded:
+            {
+                firewall_values = readMultipleKeys("GkFirewallApps");
+                for (const auto &firewall: firewall_values) {
+                    if (comparator_value == firewall) {
+                        return true;
+                    }
+                }
+            }
+
+                break;
+            case Security::GkIsFirewallActive:
+            {
+                status = db->Get(read_options, "GkFirewallActive", &value);
+                if (!status.ok()) { // Abort because of error!
+                    throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+                }
+
+                if (comparator_value == value) {
+                    return true;
+                }
+            }
+
+                break;
+            default:
+                throw std::runtime_error(tr("Invalid key has been provided for reading Firewall settings relating to Google LevelDB!").toStdString());
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return false;
+}
+
+/**
+ * @brief GkLevelDb::read_firewall_settings_vec reads out stored settings (only regarding ports and applications in this
+ * function) pertaining to the default firewall built into the operating system (if there is one, such as the provided
+ * firewall provided with Microsoft Windows).
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param key The key for which the supposedly stored setting is under. Returns a nullptr if nothing is stored under that
+ * particular key.
+ * @return The stored setting, as a vector, otherwise nullptr is returned if there was no stored setting under a given key.
+ */
+std::vector<std::string> GkLevelDb::read_firewall_settings_vec(const Security::GkFirewallCfg &key)
+{
+    try {
+        std::vector<std::string> firewall_values;
+        switch (key) {
+            case Security::GkFirewallCfg::GkReadPorts:
+                return readMultipleKeys("GkFirewallPorts");
+            case Security::GkReadApps:
+                return readMultipleKeys("GkFirewallApps");
+            default:
+                break;
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return std::vector<std::string>();
+}
+
+/**
  * @brief DekodeDb::convertAudioChannelsEnum converts from an index given by
  * a QComboBox and not by a specific amount of channels.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -2302,11 +2733,12 @@ int GkLevelDb::boolInt(const bool &is_true)
  * @brief GkLevelDb::processCsvToDB takes pre-existing data and appends new values towards it, in the form of CSV. It then returns
  * all the newly made data as a CSV string. Data modifications to existing rows can be made too, which are automatically detected.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param csv_title The header/title to give the CSV list.
  * @param comma_sep_values The pre-existing CSV information.
  * @param data_to_append The information to append onto the pre-existing CSV information, if any.
  * @return The newly made data, with the appended information, as a CSV string.
  */
-std::string GkLevelDb::processCsvToDB(const std::string &comma_sep_values, const std::string &data_to_append)
+std::string GkLevelDb::processCsvToDB(const std::string &csv_title, const std::string &comma_sep_values, const std::string &data_to_append)
 {
     try {
         if (!comma_sep_values.empty()) {
@@ -2337,7 +2769,7 @@ std::string GkLevelDb::processCsvToDB(const std::string &comma_sep_values, const
         } else {
             // We are beginning with a new data set!
             auto csv_vals = gkStringFuncs->csvSplitter(data_to_append);
-            csv_vals.insert(csv_vals.begin(), "FreqValues");
+            csv_vals.insert(csv_vals.begin(), csv_title);
             auto ret_val = gkStringFuncs->csvOutputString(csv_vals);
 
             return ret_val;
@@ -2358,10 +2790,13 @@ std::string GkLevelDb::processCsvToDB(const std::string &comma_sep_values, const
  */
 std::string GkLevelDb::deleteCsvValForDb(const std::string &comma_sep_values, const std::string &data_to_remove)
 {
+    //
+    // TODO: Test to see if this function actually works or not!
+    //
     try {
         if (!comma_sep_values.empty() && !data_to_remove.empty()) {
             std::stringstream sstream(comma_sep_values);
-            rapidcsv::Document doc(sstream, rapidcsv::LabelParams(0, 0));
+            rapidcsv::Document doc(sstream, rapidcsv::LabelParams(), rapidcsv::SeparatorParams(',', true, false, false, false));
             std::vector<std::string> csv_vals = doc.GetColumn<std::string>("FreqValues");
 
             for (size_t i = 0; i < csv_vals.size(); ++i) {
