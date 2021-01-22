@@ -44,7 +44,6 @@
 #include <utility>
 #include <QMessageBox>
 #include <QtGlobal>
-#include <comdef.h>
 
 using namespace GekkoFyre;
 using namespace Database;

@@ -79,6 +79,7 @@
 #include <winsdkver.h>
 #include <Windows.h>
 #include <icftypes.h>
+#include <comdef.h>
 #include <tchar.h> // https://linuxgazette.net/147/pfeiffer.html
 #endif
 

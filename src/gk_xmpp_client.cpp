@@ -64,6 +64,7 @@ using namespace Events;
 using namespace Logging;
 using namespace Network;
 using namespace GkXmpp;
+using namespace Security;
 
 /**
  * @brief GkXmppVcardCache::GkXmppVcardCache
