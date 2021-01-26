@@ -119,7 +119,8 @@ public:
                           QObject *parent = nullptr);
     ~GkXmppClient() override;
 
-    void createConnectionToServer(const bool &preconfigured_user = false);
+    void createConnectionToServer(const QString &domain_url, const quint16 &network_port, const QString &username = "",
+                                  const QString &password = "");
     bool createMuc(const QString &room_name, const QString &room_subject, const QString &room_desc);
 
     std::shared_ptr<QXmppRegistrationManager> getRegistrationMgr();
@@ -130,11 +131,17 @@ public slots:
     void presenceChanged(const QString &bareJid, const QString &resource);
     void stateChanged(QXmppClient::State state);
 
+    void clientError(const QXmppClient::Error &error);
+
     void modifyPresence(const QXmppPresence::Type &pres);
+
+    void handleRegistrationForm(const QXmppRegisterIq &registerIq);
 
 private slots:
     void handleServers();
+    void handleSuccess();
     void handleError(QXmppClient::Error errorMsg);
+    void handleError(const QString &errorMsg);
     void handleSslErrors(const QList<QSslError> &errorMsg);
     void recvXmppLog(QXmppLogger::MessageType msgType, const QString &msg);
 
@@ -148,6 +155,9 @@ private slots:
 
 signals:
     void setPresence(const QXmppPresence::Type &pres);
+    void sendRegistrationForm(const QXmppRegisterIq &registerIq);
+    void sendError(const QString &error);
+    void sendError(const QXmppClient::Error &error);
 
 private:
     QPointer<GkEventLogger> gkEventLogger;
@@ -186,7 +196,9 @@ private:
     std::unique_ptr<QXmppMucRoom> m_pRoom;
     std::unique_ptr<QXmppTransferManager> m_transferManager;
 
-    void createConnectionToServerPriv();
+    GekkoFyre::Network::GkXmpp::GkNetworkState m_netState;
+    QString m_id;
+
     void initRosterMgr();
 
 };

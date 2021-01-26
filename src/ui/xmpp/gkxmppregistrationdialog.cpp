@@ -120,7 +120,6 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
             }
 
             QObject::connect(this, SIGNAL(sendError(const QString &)), this, SLOT(handleError(const QString &)));
-            QObject::connect(m_xmppClient, SIGNAL(error(QXmppClient::Error)), this, SLOT(clientError(QXmppClient::Error)));
 
             //
             // Validate inputs for the Email Address
@@ -139,7 +138,7 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
             //
             // Validate inputs for the Username
             //
-            QRegularExpression rxUsername(R"(\b[A-Za-z0-9_]\b)", QRegularExpression::CaseInsensitiveOption);
+            QRegularExpression rxUsername(R"(^[a-zA-Z0-9]*$)", QRegularExpression::CaseInsensitiveOption);
             ui->lineEdit_username->setValidator(new QRegularExpressionValidator(rxUsername, this));
             ui->lineEdit_login_username->setValidator(new QRegularExpressionValidator(rxUsername, this));
             ui->lineEdit_change_password_username->setValidator(new QRegularExpressionValidator(rxUsername, this));
@@ -164,11 +163,6 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
                 //
                 m_xmppClient->disconnectFromServer();
             }
-
-            QObject::connect(m_registerManager.get(), SIGNAL(registerIqReceived(QXmppRegisterIq)), this, SLOT(registerIqReceived(QXmppRegisterIq)));
-            QObject::connect(m_registerManager.get(), &QXmppRegistrationManager::registrationFormReceived, [=](const QXmppRegisterIq &iq) {
-                qDebug() << "Form received:" << iq.instructions();
-            });
 
             QObject::connect(m_registerManager.get(), &QXmppRegistrationManager::registrationFailed, [=](const QXmppStanza::Error &error) {
                 gkEventLogger->publishEvent(tr("Requesting the registration form failed:\n\n%1").arg(error.text()), GkSeverity::Fatal, "",
@@ -253,7 +247,7 @@ void GkXmppRegistrationDialog::on_pushButton_signup_submit_clicked()
     //
     // Initiate the connection process!
     QObject::connect(m_xmppClient, SIGNAL(connected()), this, SLOT(askForRegistration()));
-    m_xmppClient->createConnectionToServer(); // Initiate a connection to the configured server!
+    m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, m_username, m_password); // Initiate a connection to the configured server!
     return;
 }
 
@@ -443,83 +437,6 @@ void GkXmppRegistrationDialog::askForRegistration()
 }
 
 /**
- * @brief GkXmppRegistrationDialog::handleRegistrationForm
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkXmppRegistrationDialog::handleRegistrationForm(const QXmppRegisterIq &registerIq)
-{
-    if (!registerIq.form().isNull()) {
-        QString errMsg = tr("XMPP Data Forms support is required at this server for user registration to work. Small World Deluxe is yet to implement this.");
-        if (!registerIq.instructions().isEmpty()) {
-            errMsg = tr("%1\n\nServer message: %2").arg(errMsg).arg(registerIq.instructions());
-            handleError(errMsg);
-            return;
-        }
-    }
-
-    sendFilledRegistrationForm();
-    m_netState = GkNetworkState::WaitForRegistrationConfirmation;
-
-    return;
-}
-
-/**
- * @brief GkXmppRegistrationDialog::handleRegistrationConfirmation
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param registerIq
- */
-void GkXmppRegistrationDialog::handleRegistrationConfirmation(const QXmppRegisterIq &registerIq)
-{
-    if (registerIq.type() == QXmppIq::Type::Result) {
-        handleSuccess();
-    } else {
-        handleError(tr("An error has been encountered with user registration regarding XMPP functionality:\n\nreceived unwanted stanza type %1").arg(registerIq.type()));
-    }
-
-    return;
-}
-
-/**
- * @brief GkXmppRegistrationDialog::registerIqReceived
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param registerIq
- */
-void GkXmppRegistrationDialog::registerIqReceived(QXmppRegisterIq registerIq)
-{
-    if (m_id != registerIq.id()) {
-        return;
-    }
-
-    if (registerIq.type() == QXmppIq::Type::Error) {
-        switch (registerIq.error().condition()) {
-            case QXmppStanza::Error::Conflict:
-                handleError(tr("A user has already been previously registered with this username."));
-                break;
-            default:
-                break;
-        }
-    }
-
-    switch (m_netState) {
-        case GkXmpp::None:
-            break;
-        case GkXmpp::Connecting:
-            break;
-        case GkXmpp::WaitForRegistrationForm:
-            handleRegistrationForm(registerIq);
-            return;
-        case GkXmpp::WaitForRegistrationConfirmation:
-            handleRegistrationConfirmation(registerIq);
-            return;
-        default:
-            handleError(tr("An internal error has been encountered with processing user registration for XMPP: invalid state."));
-            return;
-    }
-
-    return;
-}
-
-/**
  * @brief GkXmppRegistrationDialog::sendFilledRegistrationForm attempts to sign-up a user with the given XMPP server.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @note QXmppRegistrationManager Class Reference <https://doc.qxmpp.org/qxmpp-dev/classQXmppRegistrationManager.html>.
@@ -578,40 +495,6 @@ void GkXmppRegistrationDialog::setUsernameInputColor(const QString &adj_text)
     } else {
         ui->lineEdit_username->setStyleSheet("QLineEdit { color: black; }");
     }
-
-    return;
-}
-
-/**
- * @brief GkXmppRegistrationDialog::clientError
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param error
- */
-void GkXmppRegistrationDialog::clientError(QXmppClient::Error error)
-{
-    switch (error) {
-        case QXmppClient::Error::NoError:
-            break;
-        case QXmppClient::Error::SocketError:
-            gkEventLogger->publishEvent(tr("XMPP error encountered due to TCP socket. Error:\n\n%1")
-                                                .arg(m_xmppClient->socketErrorString()), GkSeverity::Fatal, "", false,
-                                        true, false, true);
-            break;
-        case QXmppClient::Error::KeepAliveError:
-            gkEventLogger->publishEvent(tr("XMPP error encountered due to no response from a keep alive."), GkSeverity::Fatal, "",
-                                        false, true, false, true);
-            break;
-        case QXmppClient::Error::XmppStreamError:
-            gkEventLogger->publishEvent(tr("XMPP error encountered due to XML stream."), GkSeverity::Fatal, "",
-                                        false, true, false, true);
-            break;
-        default:
-            std::cerr << tr("An unknown XMPP error has been encountered!").toStdString() << std::endl;
-            break;
-    }
-
-    QObject::disconnect(m_xmppClient, nullptr, this, nullptr);
-    deleteLater();
 
     return;
 }

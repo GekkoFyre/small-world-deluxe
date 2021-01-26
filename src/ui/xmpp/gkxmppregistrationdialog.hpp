@@ -91,15 +91,11 @@ private slots:
     void on_pushButton_change_email_cancel_clicked();
 
     void askForRegistration();
-    void handleRegistrationForm(const QXmppRegisterIq &registerIq);
-    void handleRegistrationConfirmation(const QXmppRegisterIq &registerIq);
-    void registerIqReceived(QXmppRegisterIq registerIq);
     void sendFilledRegistrationForm();
 
     void setEmailInputColor(const QString &adj_text);
     void setUsernameInputColor(const QString &adj_text);
 
-    void clientError(QXmppClient::Error error);
     void handleError(const QString &errorMsg);
     void handleSuccess();
 
