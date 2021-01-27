@@ -320,6 +320,9 @@ void GkXmppRegistrationDialog::on_pushButton_login_cancel_clicked()
  */
 void GkXmppRegistrationDialog::on_toolButton_xmpp_captcha_refresh_clicked()
 {
+    //
+    // Refresh the captcha presented to the user!
+
     return;
 }
 
@@ -490,8 +493,11 @@ void GkXmppRegistrationDialog::recvCaptcha(const QString &cid, const QUrl &url)
                     throw std::runtime_error(tr("").toStdString());
                 }
             }
+
+            loop.quit();
         });
 
+        loop.exec();
         ui->label_xmpp_captcha_pixmap->setPixmap(captcha_img);
     }
 

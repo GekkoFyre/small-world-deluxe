@@ -130,7 +130,7 @@ GkSpectroWaterfall::GkSpectroWaterfall(QPointer<GkEventLogger> eventLogger, QWid
 
         m_spectrogram->setRenderThreadCount(0); // use system specific thread count
         m_spectrogram->setCachePolicy(QwtPlotRasterItem::PaintCache);
-        m_spectrogram->attach(m_plotSpectrogram);
+        m_spectrogram->attach(m_plotSpectrogram.get());
 
         // Setup color map
         setColorMap(m_ctrlPts);
@@ -214,9 +214,9 @@ GkSpectroWaterfall::GkSpectroWaterfall(QPointer<GkEventLogger> eventLogger, QWid
         axis->setColorBarWidth(20);
 
         QGridLayout* const gridLayout = new QGridLayout(this);
-        gridLayout->addWidget(m_plotHorCurve, 0, 1);
-        gridLayout->addWidget(m_plotSpectrogram, 1, 1);
-        gridLayout->addWidget(m_plotVertCurve, 1, 0);
+        gridLayout->addWidget(m_plotHorCurve.get(), 0, 1);
+        gridLayout->addWidget(m_plotSpectrogram.get(), 1, 1);
+        gridLayout->addWidget(m_plotVertCurve.get(), 1, 0);
         gridLayout->setContentsMargins(0, 0, 0, 0);
         gridLayout->setSpacing(5);
 
@@ -244,7 +244,7 @@ GkSpectroWaterfall::GkSpectroWaterfall(QPointer<GkEventLogger> eventLogger, QWid
         m_zoomer->setRubberBandPen(c);
         m_zoomer->setTrackerPen(c);
 
-        QObject::QObject::connect(m_zoomer, &QwtPlotZoomer::zoomed, this, &GkSpectroWaterfall::autoRescale);
+        QObject::QObject::connect(m_zoomer.get(), &QwtPlotZoomer::zoomed, this, &GkSpectroWaterfall::autoRescale);
 
         /*m_plotCurve->canvas()->setToolTip(
         "Zooming:\n"
@@ -258,8 +258,8 @@ GkSpectroWaterfall::GkSpectroWaterfall(QPointer<GkEventLogger> eventLogger, QWid
         //m_picker->setTrackerPen( QColor( Qt::white ) );
         m_picker->setTrackerMode(QwtPicker::AlwaysOff);
         m_picker->setEnabled(false);
-        QObject::connect(m_picker, static_cast<void(QwtPlotPicker::*)(const QPointF&)>(&QwtPlotPicker::selected), this, &GkSpectroWaterfall::selectedPoint);
-        QObject::connect(m_picker, static_cast<void(QwtPlotPicker::*)(const QPointF&)>(&QwtPlotPicker::moved), this, &GkSpectroWaterfall::selectedPoint);
+        QObject::connect(m_picker.get(), static_cast<void(QwtPlotPicker::*)(const QPointF&)>(&QwtPlotPicker::selected), this, &GkSpectroWaterfall::selectedPoint);
+        QObject::connect(m_picker.get(), static_cast<void(QwtPlotPicker::*)(const QPointF&)>(&QwtPlotPicker::moved), this, &GkSpectroWaterfall::selectedPoint);
 
         m_panner->setMouseButton(Qt::MiddleButton);
 
@@ -277,23 +277,23 @@ GkSpectroWaterfall::GkSpectroWaterfall(QPointer<GkEventLogger> eventLogger, QWid
             horCurveGrid->enableXMin(true);
             horCurveGrid->setMinorPen(QPen(Qt::lightGray, 0 , Qt::DotLine));
             horCurveGrid->setMajorPen(QPen(Qt::lightGray, 0 , Qt::DotLine));
-            horCurveGrid->attach(m_plotHorCurve);
+            horCurveGrid->attach(m_plotHorCurve.get());
 
             QwtPlotGrid* vertCurveGrid = new QwtPlotGrid;
             vertCurveGrid->enableXMin(true);
             vertCurveGrid->setMinorPen(QPen(Qt::lightGray, 0, Qt::DotLine));
             vertCurveGrid->setMajorPen(QPen(Qt::lightGray, 0, Qt::DotLine));
-            vertCurveGrid->attach(m_plotVertCurve);
+            vertCurveGrid->attach(m_plotVertCurve.get());
         }
 
         {
             m_horCurveMarker->setLineStyle(QwtPlotMarker::VLine);
             m_horCurveMarker->setLinePen(Qt::red, 0, Qt::SolidLine);
-            m_horCurveMarker->attach(m_plotHorCurve);
+            m_horCurveMarker->attach(m_plotHorCurve.get());
 
             m_vertCurveMarker->setLineStyle( QwtPlotMarker::HLine );
             m_vertCurveMarker->setLinePen(Qt::red, 0, Qt::SolidLine );
-            m_vertCurveMarker->attach(m_plotVertCurve);
+            m_vertCurveMarker->attach(m_plotVertCurve.get());
         }
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(tr("An error occurred during the handling of waterfall / spectrograph data!"), GkSeverity::Fatal, e.what(), true);
@@ -318,8 +318,8 @@ GkSpectroWaterfall::~GkSpectroWaterfall()
  */
 void GkSpectroWaterfall::setDataDimensions(double dXMin, double dXMax, const size_t historyExtent, const size_t layerPoints)
 {
-    gkWaterfallData = new WaterfallData<double>(dXMin, dXMax, historyExtent, layerPoints);
-    m_spectrogram->setData(gkWaterfallData);
+    gkWaterfallData = QSharedPointer<WaterfallData<double>>(new WaterfallData<double>(dXMin, dXMax, historyExtent, layerPoints));
+    m_spectrogram->setData(gkWaterfallData.get());
 
     setupCurves();
     freeCurvesData();
@@ -412,9 +412,9 @@ void GkSpectroWaterfall::replot(bool forceRepaint)
 {
     if (!m_plotSpectrogram->isVisible()) {
         // Temporary solution for older Qwt versions
-        QApplication::postEvent(m_plotHorCurve, new QEvent(QEvent::LayoutRequest));
-        QApplication::postEvent(m_plotVertCurve, new QEvent(QEvent::LayoutRequest));
-        QApplication::postEvent(m_plotSpectrogram, new QEvent(QEvent::LayoutRequest));
+        QApplication::postEvent(m_plotHorCurve.get(), new QEvent(QEvent::LayoutRequest));
+        QApplication::postEvent(m_plotVertCurve.get(), new QEvent(QEvent::LayoutRequest));
+        QApplication::postEvent(m_plotSpectrogram.get(), new QEvent(QEvent::LayoutRequest));
     }
 
     updateLayout();
@@ -776,17 +776,17 @@ void GkSpectroWaterfall::setupCurves()
     m_plotHorCurve->detachItems(QwtPlotItem::Rtti_PlotCurve, true);
     m_plotVertCurve->detachItems(QwtPlotItem::Rtti_PlotCurve, true);
 
-    m_horCurve = new QwtPlotCurve;
-    m_vertCurve = new QwtPlotCurve;
+    m_horCurve = QSharedPointer<QwtPlotCurve>(new QwtPlotCurve);
+    m_vertCurve = QSharedPointer<QwtPlotCurve>(new QwtPlotCurve);
 
     // Horizontal Curve
-    m_horCurve->attach(m_plotHorCurve);
+    m_horCurve->attach(m_plotHorCurve.get());
     m_horCurve->setRenderHint(QwtPlotItem::RenderAntialiased, true);
     m_horCurve->setStyle(QwtPlotCurve::Lines);
     m_horCurve->setPen(QColor(Qt::GlobalColor(Qt::yellow)));
 
     // Vertical Curve
-    m_vertCurve->attach(m_plotVertCurve);
+    m_vertCurve->attach(m_plotVertCurve.get());
     m_vertCurve->setRenderHint(QwtPlotItem::RenderAntialiased, true);
     m_vertCurve->setStyle(QwtPlotCurve::Lines);
     m_vertCurve->setPen(QColor(Qt::GlobalColor(Qt::yellow)));
@@ -900,7 +900,7 @@ void GkSpectroWaterfall::scaleDivChanged()
 
     m_inScaleSync = true;
 
-    QwtPlot* updatedPlot;
+    QSharedPointer<QwtPlot> updatedPlot;
     int axisId;
     if (m_plotHorCurve->axisWidget(QwtPlot::xBottom) == sender()) {
         updatedPlot = m_plotHorCurve;
@@ -916,7 +916,7 @@ void GkSpectroWaterfall::scaleDivChanged()
     }
 
     if (updatedPlot) {
-        QwtPlot* plotToUpdate;
+        QSharedPointer<QwtPlot> plotToUpdate;
         if (axisId == QwtPlot::xBottom) {
             plotToUpdate = (updatedPlot == m_plotHorCurve) ? m_plotSpectrogram : m_plotHorCurve;
         } else {

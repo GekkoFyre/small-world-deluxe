@@ -732,9 +732,7 @@ if (GFYRE_SWORLD_DBG_VERBOSITY)
 endif()
 
 if (ENBL_VALGRIND_SUPPORT)
-    if (LINUX)
-        add_definitions(-DGK_ENBL_VALGRIND_SUPPORT)
-    endif()
+    add_definitions(-DGK_ENBL_VALGRIND_SUPPORT)
 endif()
 
 #

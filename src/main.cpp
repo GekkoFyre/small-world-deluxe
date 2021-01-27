@@ -95,10 +95,17 @@ int main(int argc, char *argv[])
     QCoreApplication::addLibraryPath(".");
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 
+    #ifndef GK_ENBL_VALGRIND_SUPPORT
+    //
+    // This, unintentionally, prevents the launching of Valgrind, Dr. Memory, etc. and other such
+    // diagnostic tools...
     SingleApplication app(argc, argv, false, SingleApplication::Mode::System);
     if (app.isSecondary()) {
         app.exit();
     }
+    #else
+    QApplication app(argc, argv);
+    #endif
 
     QCoreApplication::setOrganizationName(GekkoFyre::General::companyName);
     QCoreApplication::setOrganizationDomain(GekkoFyre::General::codeRepository);
@@ -111,12 +118,17 @@ int main(int argc, char *argv[])
     //
     // Display a splash screen!
     //
+    #ifndef GK_ENBL_VALGRIND_SUPPORT
+    //
+    // For some reason this too interferes with Valgrind, Dr. Memory, etc. and other such
+    // diagnostic tools for reasons that are currently unknown.
     QPixmap pixmap(":/resources/contrib/images/vector/gekkofyre-networks/rionquosue/logo_blank_border_text_square_rionquosue.svg");
     int width = pixmap.width();
     int height = pixmap.height();
     QSplashScreen splash(pixmap.scaled((width / 2), (height / 2), Qt::KeepAspectRatio), Qt::WindowStaysOnTopHint);
     splash.show();
     QTimer::singleShot(3000, &splash, &QWidget::close);
+    #endif
 
     //
     // Set a custom style!

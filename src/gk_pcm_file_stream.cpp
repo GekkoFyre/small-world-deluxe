@@ -97,7 +97,7 @@ QAudioFormat GkPcmFileStream::format()
  */
 qint64 GkPcmFileStream::readData(char *data, qint64 maxlen)
 {
-    std::memset(data, 0, maxlen);
+    std::memset(data, 0, maxlen); //-V781
 
     if (m_state == GkAudioFramework::GkAudioState::Playing) {
         m_output.read(data, maxlen);
