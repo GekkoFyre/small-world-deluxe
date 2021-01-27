@@ -48,7 +48,6 @@
 #include <iostream>
 #include <exception>
 #include <QEventLoop>
-#include <QByteArray>
 #include <QMessageBox>
 
 using namespace GekkoFyre;
@@ -143,6 +142,8 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         gkConnDetails = connection_details;
         gkEventLogger = std::move(eventLogger);
 
+        QObject::connect(this, SIGNAL(sendError(const QString &)), this, SLOT(handleError(const QString &)));
+
         //
         // This signal is emitted when the client state changes...
         QObject::connect(this, SIGNAL(stateChanged(QXmppClient::State)), this, SLOT(stateChanged(QXmppClient::State)));
@@ -187,7 +188,12 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         // Attempt to register the configured user (if any) upon making a successful connection!
         m_registerManager->setRegisterOnConnectEnabled(gkConnDetails.server.settings_client.auto_signup);
 
+        //
+        // Handles errors that are primarily emitted upon making or attempting a connection to the XMPP server in question!
         QObject::connect(this, SIGNAL(sendError(const QXmppClient::Error &)), this, SLOT(clientError(const QXmppClient::Error &)));
+
+        //
+        // Notifies upon when a successful connection is made, thus enabling the activation of other, highly essential code!
         QObject::connect(this, SIGNAL(connected()), this, SLOT(clientConnected()));
 
         //
@@ -270,15 +276,12 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
                 });
 
                 QObject::connect(m_registerManager.get(), &QXmppRegistrationManager::registrationFailed, [=](const QXmppStanza::Error &error) {
-                    gkEventLogger->publishEvent(tr("Requesting the XMPP registration form failed: %1").arg(error.text()), GkSeverity::Fatal, "",
-                                                false, true, false, true);
+                    emit sendError(tr("Requesting the XMPP registration form failed: %1").arg(error.text()));
                 });
             }
         }
     } catch (const std::exception &e) {
-        gkEventLogger->publishEvent(tr("An issue has occurred within the XMPP subsystem. Error:\n\n%1")
-        .arg(QString::fromStdString(e.what())), GkSeverity::Fatal, "", false,
-        true, false, true);
+        emit sendError(tr("An issue has occurred within the XMPP subsystem. Error:\n\n%1").arg(QString::fromStdString(e.what())));
     }
 
     return;
@@ -364,8 +367,7 @@ bool GkXmppClient::createMuc(const QString &room_name, const QString &room_subje
             throw std::runtime_error(tr("Are you connected to an XMPP server?").toStdString());
         }
     } catch (const std::exception &e) {
-        gkEventLogger->publishEvent(tr("An issue was encountered while creating a MUC! Error:\n\n%1").arg(QString::fromStdString(e.what())),
-                                    GkSeverity::Fatal, "", false, true, false, true);
+        emit sendError(tr("An issue was encountered while creating a MUC! Error:\n\n%1").arg(QString::fromStdString(e.what())));
     }
 
     return false;
@@ -542,6 +544,33 @@ void GkXmppClient::clientError(const QXmppClient::Error &error)
 }
 
 /**
+ * @brief GkXmppClient::verifyReplyData
+ * @author Georg Rudoy <https://leechcraft.org/>,
+ * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param mapData
+ * @param reply
+ */
+void GkXmppClient::verifyReplyData(const QVariant &mapData, QNetworkReply *reply)
+{
+    const auto &map = mapData.toMap();
+    if (!map.contains("error")) {
+        return;
+    }
+
+    const auto &errMap = map["error"].toMap();
+    const auto ec = errMap["error_code"].toInt();
+    const auto &errMsg = errMap["error_msg"].toString();
+
+    emit sendError(tr("Received %1 while processing XMPP events:\n\n%2").arg(QString::number(ec)).arg(errMsg));
+
+    const QString &cid = errMap["captcha_sid"].toString();
+    const QString &img = errMap["captcha_img"].toString();
+
+    emit sendCaptcha(cid, QUrl::fromEncoded(img.toUtf8()));
+    return;
+}
+
+/**
  * @brief GkXmppClient::modifyPresence
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param pres
@@ -564,6 +593,7 @@ void GkXmppClient::handleRegistrationForm(const QXmppRegisterIq &registerIq)
 {
     QXmppRegisterIq registration_form;
     registration_form.setForm(registerIq.form());
+    registration_form.setInstructions(registerIq.instructions());
     registration_form.setInstructions(registerIq.instructions());
     registration_form.setEmail(gkConnDetails.email);
     registration_form.setPassword(config.password());
@@ -667,17 +697,13 @@ void GkXmppClient::handleError(QXmppClient::Error errorMsg)
         case QXmppClient::Error::NoError:
             break;
         case QXmppClient::Error::SocketError:
-            gkEventLogger->publishEvent(tr("XMPP error encountered due to TCP socket. Error:\n\n%1")
-            .arg(socketErrorString()), GkSeverity::Fatal, "", false,
-            true, false, true);
+            emit sendError(tr("XMPP error encountered due to TCP socket. Error:\n\n%1").arg(socketErrorString()));
             break;
         case QXmppClient::Error::KeepAliveError:
-            gkEventLogger->publishEvent(tr("XMPP error encountered due to no response from a keep alive."), GkSeverity::Fatal, "",
-                                        false, true, false, true);
+            emit sendError(tr("XMPP error encountered due to no response from a keep alive."));
             break;
         case QXmppClient::Error::XmppStreamError:
-            gkEventLogger->publishEvent(tr("XMPP error encountered due to XML stream."), GkSeverity::Fatal, "",
-                                        false, true, false, true);
+            emit sendError(tr("XMPP error encountered due to XML stream."));
             break;
         default:
             std::cerr << tr("An unknown XMPP error has been encountered!").toStdString() << std::endl;
@@ -697,7 +723,7 @@ void GkXmppClient::handleError(const QString &errorMsg)
 {
     QObject::disconnect(this, nullptr, this, nullptr);
     if (!errorMsg.isEmpty()) {
-        gkEventLogger->publishEvent(errorMsg, GkSeverity::Fatal, "", false, true, false, true);
+        emit sendError(errorMsg);
     }
 
     deleteLater();
@@ -714,7 +740,7 @@ void GkXmppClient::handleSslErrors(const QList<QSslError> &errorMsg)
 {
     if (!errorMsg.isEmpty()) {
         for (const auto &error: errorMsg) {
-            gkEventLogger->publishEvent(error.errorString(), GkSeverity::Fatal, "", false, true, false, true);
+            emit sendError(error.errorString());
         }
     }
 

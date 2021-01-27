@@ -55,14 +55,17 @@
 #include <qxmpp/QXmppTransferManager.h>
 #include <qxmpp/QXmppDiscoveryManager.h>
 #include <qxmpp/QXmppRegistrationManager.h>
+#include <QUrl>
 #include <QList>
 #include <QString>
 #include <QObject>
 #include <QPointer>
 #include <QSslError>
+#include <QByteArray>
 #include <QDnsLookup>
 #include <QStringList>
 #include <QDomDocument>
+#include <QNetworkReply>
 #include <QCoreApplication>
 #include <QDnsServiceRecord>
 
@@ -123,39 +126,63 @@ public:
                                   const QString &password = "");
     bool createMuc(const QString &room_name, const QString &room_subject, const QString &room_desc);
 
+    //
+    // User, roster and presence details
     std::shared_ptr<QXmppRegistrationManager> getRegistrationMgr();
     QXmppPresence statusToPresence(const Network::GkXmpp::GkOnlineStatus &status);
 
 public slots:
-    void clientConnected();
-    void presenceChanged(const QString &bareJid, const QString &resource);
-    void stateChanged(QXmppClient::State state);
-
+    //
+    // Event & Logging management
     void clientError(const QXmppClient::Error &error);
 
+    void clientConnected();
+    void stateChanged(QXmppClient::State state);
+
+    //
+    // General networking
+    void verifyReplyData(const QVariant &mapData, QNetworkReply *reply);
+
+    //
+    // User, roster and presence details
+    void presenceChanged(const QString &bareJid, const QString &resource);
     void modifyPresence(const QXmppPresence::Type &pres);
 
+    //
+    // Registration management
     void handleRegistrationForm(const QXmppRegisterIq &registerIq);
 
 private slots:
+    //
+    // Event & Logging management
     void handleServers();
     void handleSuccess();
+
     void handleError(QXmppClient::Error errorMsg);
     void handleError(const QString &errorMsg);
     void handleSslErrors(const QList<QSslError> &errorMsg);
-    void recvXmppLog(QXmppLogger::MessageType msgType, const QString &msg);
 
+    void recvXmppLog(QXmppLogger::MessageType msgType, const QString &msg);
     void versionReceivedSlot(const QXmppVersionIq &version);
 
+    //
+    // User, roster and presence details
     void notifyNewSubscription(const QString &bareJid);
     void rosterReceived();
+
     void itemAdded(const QString &bareJid);
     void itemRemoved(const QString &bareJid);
     void itemChanged(const QString &bareJid);
 
 signals:
+    //
+    // User, roster and presence details
     void setPresence(const QXmppPresence::Type &pres);
     void sendRegistrationForm(const QXmppRegisterIq &registerIq);
+    void sendCaptcha(const QString &cid, const QUrl &url);
+
+    //
+    // Event & Logging management
     void sendError(const QString &error);
     void sendError(const QXmppClient::Error &error);
 

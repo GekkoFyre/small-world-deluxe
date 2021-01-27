@@ -44,7 +44,11 @@
 #include <qxmpp/QXmppDataForm.h>
 #include <qxmpp/QXmppLogger.h>
 #include <utility>
+#include <QPixmap>
+#include <QEventLoop>
+#include <QScopedPointer>
 #include <QRegularExpression>
+#include <QNetworkAccessManager>
 #include <QRegularExpressionValidator>
 
 using namespace GekkoFyre;
@@ -94,6 +98,9 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
         gkConnDetails = connection_details;
         m_xmppClient = std::move(xmppClient);
         m_registerManager = std::move(m_xmppClient->getRegistrationMgr());
+
+        QObject::connect(m_xmppClient, SIGNAL(sendCaptcha(const QString &, const QUrl &)),
+                         this, SLOT(recvCaptcha(const QString &, const QUrl &)));
 
         if (m_registerManager) { // Verify that the object exists, and the extension is activated at the given server!
             switch (gkRegUiRole) {
@@ -460,9 +467,41 @@ void GkXmppRegistrationDialog::sendFilledRegistrationForm()
 }
 
 /**
+ * @brief GkXmppRegistrationDialog::recvCaptcha processes any captcha requests from the given XMPP server, provided that a captcha
+ * is required for authentication and/or user registration purposes.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param cid
+ * @param url The URL pointing to the captcha data on the given XMPP server, if it is otherwise unavailable via forms (for
+ * more details, see the XEP-0158 standard at the official XMPP website).
+ */
+void GkXmppRegistrationDialog::recvCaptcha(const QString &cid, const QUrl &url)
+{
+    if (!url.isEmpty()) {
+        QPixmap captcha_img;
+        QNetworkAccessManager manager;
+        QEventLoop loop;
+
+        QScopedPointer<QNetworkReply> reply(manager.get(QNetworkRequest(url)));
+        QObject::connect(reply.get(), &QNetworkReply::finished, &loop, [&reply, &captcha_img, &loop](){
+            if (reply->error() == QNetworkReply::NoError) {
+                QByteArray img_data = reply->readAll();
+                captcha_img.loadFromData(img_data);
+                if (captcha_img.isNull()) {
+                    throw std::runtime_error(tr("").toStdString());
+                }
+            }
+        });
+
+        ui->label_xmpp_captcha_pixmap->setPixmap(captcha_img);
+    }
+
+    return;
+}
+
+/**
  * @brief GkXmppRegistrationDialog::setEmailInputColor adjusts the color of a given QLineEdit widget, dependent on
- * whether there's acceptable user input or not. If there's acceptable user input, the text appears as Black, otherwise
- * it will be Red in coloration.
+ * whether there's acceptable user input or not. If there's acceptable user input, the text appears as white, otherwise
+ * it will be orange in coloration.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param adj_text Not a used value.
  */
@@ -471,9 +510,9 @@ void GkXmppRegistrationDialog::setEmailInputColor(const QString &adj_text)
     Q_UNUSED(adj_text);
 
     if (!ui->lineEdit_email->hasAcceptableInput()) {
-        ui->lineEdit_email->setStyleSheet("QLineEdit { color: red; }");
+        ui->lineEdit_email->setStyleSheet("QLineEdit { color: orange; }");
     } else {
-        ui->lineEdit_email->setStyleSheet("QLineEdit { color: black; }");
+        ui->lineEdit_email->setStyleSheet("QLineEdit { color: white; }");
     }
 
     return;
@@ -481,8 +520,8 @@ void GkXmppRegistrationDialog::setEmailInputColor(const QString &adj_text)
 
 /**
  * @brief GkXmppRegistrationDialog::setUsernameInputColor adjusts the color of a given QLineEdit widget, dependent on
- * whether there's acceptable user input or not. If there's acceptable user input, the text appears as Black, otherwise
- * it will be Red in coloration.
+ * whether there's acceptable user input or not. If there's acceptable user input, the text appears as white, otherwise
+ * it will be orange in coloration.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param adj_text Not a used value.
  */
@@ -491,9 +530,9 @@ void GkXmppRegistrationDialog::setUsernameInputColor(const QString &adj_text)
     Q_UNUSED(adj_text);
 
     if (!ui->lineEdit_username->hasAcceptableInput()) {
-        ui->lineEdit_username->setStyleSheet("QLineEdit { color: red; }");
+        ui->lineEdit_username->setStyleSheet("QLineEdit { color: orange; }");
     } else {
-        ui->lineEdit_username->setStyleSheet("QLineEdit { color: black; }");
+        ui->lineEdit_username->setStyleSheet("QLineEdit { color: white; }");
     }
 
     return;
