@@ -2541,7 +2541,7 @@ void MainWindow::on_actionSave_Decoded_Ab_triggered()
 
 void MainWindow::on_actionView_Spectrogram_Controller_triggered()
 {
-    QPointer<SpectroDialog> dlg_spectro = new SpectroDialog(gkSpectroWaterfall, this);
+    QPointer<SpectroDialog> dlg_spectro = new SpectroDialog(this);
     dlg_spectro->setWindowFlags(Qt::Tool | Qt::Dialog);
     dlg_spectro->show();
 

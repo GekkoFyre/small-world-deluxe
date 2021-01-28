@@ -397,6 +397,8 @@ else()
     set(SENTRY_CRASHPAD_SYSTEM OFF CACHE BOOL "This instructs the build system to use system-installed breakpad or crashpad libraries instead of using the in-tree version. This is generally not recommended for crashpad, as sentry uses a patched version that has attachment support.")
 endif()
 
+set(SENTRY_BUILD_TESTS OFF CACHE BOOL "Build sentry-native tests. This is not required for the compilation of Small World Deluxe." FORCE)
+set(SENTRY_BUILD_EXAMPLES OFF CACHE BOOL "Build sentry-native example(s). This is not required for the compilation of Small World Deluxe." FORCE)
 set(SENTRY_LINK_PTHREAD ON CACHE BOOL "Links to the pthread library on Unix targets.")
 set(SENTRY_BUILD_FORCE32 OFF CACHE BOOL "Otherwise forces cross-compilation from 64-bit host to 32-bit target. Only has an effect on Linux." FORCE)
 

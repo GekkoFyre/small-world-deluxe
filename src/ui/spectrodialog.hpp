@@ -38,7 +38,6 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/gk_waterfall_gui.hpp"
 #include <QEvent>
 #include <QObject>
 #include <QDialog>
@@ -54,7 +53,7 @@ class SpectroDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit SpectroDialog(QPointer<GekkoFyre::GkSpectroWaterfall> spectroGui, QWidget *parent = nullptr);
+    explicit SpectroDialog(QWidget *parent = nullptr);
     ~SpectroDialog() override;
 
 private slots:
@@ -67,7 +66,6 @@ private slots:
 
 private:
     Ui::SpectroDialog *ui;
-    QPointer<GekkoFyre::GkSpectroWaterfall> gkSpectroGui;
 
     void prefillGraphTiming(const GekkoFyre::Spectrograph::GkGraphTiming &graph_timing);
 };

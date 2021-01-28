@@ -121,7 +121,6 @@ GkSpectroWaterfall::GkSpectroWaterfall(QPointer<GkEventLogger> eventLogger, QWid
     std::lock_guard<std::mutex> lck_guard(spectro_main_mtx);
 
     try {
-        setParent(parent);
         gkEventLogger = std::move(eventLogger);
 
         m_plotHorCurve->setAutoReplot(false);
@@ -244,7 +243,7 @@ GkSpectroWaterfall::GkSpectroWaterfall(QPointer<GkEventLogger> eventLogger, QWid
         m_zoomer->setRubberBandPen(c);
         m_zoomer->setTrackerPen(c);
 
-        QObject::QObject::connect(m_zoomer.get(), &QwtPlotZoomer::zoomed, this, &GkSpectroWaterfall::autoRescale);
+        QObject::connect(m_zoomer.get(), &QwtPlotZoomer::zoomed, this, &GkSpectroWaterfall::autoRescale);
 
         /*m_plotCurve->canvas()->setToolTip(
         "Zooming:\n"
@@ -318,8 +317,8 @@ GkSpectroWaterfall::~GkSpectroWaterfall()
  */
 void GkSpectroWaterfall::setDataDimensions(double dXMin, double dXMax, const size_t historyExtent, const size_t layerPoints)
 {
-    gkWaterfallData = QSharedPointer<WaterfallData<double>>(new WaterfallData<double>(dXMin, dXMax, historyExtent, layerPoints));
-    m_spectrogram->setData(gkWaterfallData.get());
+    gkWaterfallData = new WaterfallData<double>(dXMin, dXMax, historyExtent, layerPoints);
+    m_spectrogram->setData(gkWaterfallData);
 
     setupCurves();
     freeCurvesData();
@@ -709,8 +708,8 @@ void GkSpectroWaterfall::updateLayout()
  */
 void GkSpectroWaterfall::allocateCurvesData()
 {
-    if (m_horCurveXAxisData || m_horCurveYAxisData || m_vertCurveXAxisData ||
-        m_vertCurveYAxisData || !gkWaterfallData) {
+    if (m_horCurveXAxisData.empty() || m_horCurveYAxisData.empty() || m_vertCurveXAxisData.empty() ||
+        m_vertCurveYAxisData.empty() || !gkWaterfallData) {
         return;
     }
 
@@ -719,10 +718,10 @@ void GkSpectroWaterfall::allocateCurvesData()
     const double dXMax = gkWaterfallData->getXMax();
     const size_t historyExtent = gkWaterfallData->getMaxHistoryLength();
 
-    m_horCurveXAxisData = new double[layerPoints];
-    m_horCurveYAxisData = new double[layerPoints];
-    m_vertCurveXAxisData = new double[historyExtent];
-    m_vertCurveYAxisData = new double[historyExtent];
+    m_horCurveXAxisData[layerPoints];
+    m_horCurveYAxisData[layerPoints];
+    m_vertCurveXAxisData[historyExtent];
+    m_vertCurveYAxisData[historyExtent];
 
     // Generate curve X-axis data
     const double dx = (dXMax - dXMin) / layerPoints; // x spacing
@@ -744,26 +743,6 @@ void GkSpectroWaterfall::allocateCurvesData()
  */
 void GkSpectroWaterfall::freeCurvesData()
 {
-    if (m_horCurveXAxisData) {
-        delete [] m_horCurveXAxisData;
-        m_horCurveXAxisData = nullptr;
-    }
-
-    if (m_horCurveYAxisData) {
-        delete [] m_horCurveYAxisData;
-        m_horCurveYAxisData = nullptr;
-    }
-
-    if (m_vertCurveXAxisData) {
-        delete [] m_vertCurveXAxisData;
-        m_vertCurveXAxisData = nullptr;
-    }
-
-    if (m_vertCurveYAxisData) {
-        delete [] m_vertCurveYAxisData;
-        m_vertCurveYAxisData = nullptr;
-    }
-
     return;
 }
 
@@ -812,16 +791,16 @@ void GkSpectroWaterfall::updateCurvesData()
         return;
     }
 
-    if (m_horCurveXAxisData && m_horCurveYAxisData) {
+    if (!m_horCurveXAxisData.empty() && !m_horCurveYAxisData.empty()) {
         std::copy(wfData + layerPts * markerY,
                   wfData + layerPts * (markerY + 1),
-                  m_horCurveYAxisData);
-        m_horCurve->setRawSamples(m_horCurveXAxisData, m_horCurveYAxisData, layerPts);
+                  m_horCurveYAxisData.begin());
+        m_horCurve->setRawSamples(&m_horCurveXAxisData[0], &m_horCurveYAxisData[0], layerPts);
     }
 
     const double offset = gkWaterfallData->getOffset();
 
-    if (currentHistory > 0 && m_vertCurveXAxisData && m_vertCurveYAxisData) {
+    if (currentHistory > 0 && !m_vertCurveXAxisData.empty() && !m_vertCurveYAxisData.empty()) {
         size_t dataIndex = 0;
         for (size_t layer = maxHistory - currentHistory; layer < maxHistory; ++layer, ++dataIndex) {
             const double z = gkWaterfallData->value(m_markerX, layer + size_t(offset));
@@ -830,7 +809,7 @@ void GkSpectroWaterfall::updateCurvesData()
             m_vertCurveYAxisData[dataIndex] = t;
         }
 
-        m_vertCurve->setRawSamples(m_vertCurveXAxisData, m_vertCurveYAxisData, currentHistory);
+        m_vertCurve->setRawSamples(&m_vertCurveXAxisData[0], &m_vertCurveYAxisData[0], currentHistory);
     }
     
     return;

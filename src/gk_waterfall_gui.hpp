@@ -141,7 +141,7 @@ public:
     QString m_zUnit;
 
 protected:
-    QSharedPointer<WaterfallData<double>> gkWaterfallData;
+    WaterfallData<double> *gkWaterfallData = nullptr;
     QSharedPointer<QwtPlot> const m_plotHorCurve;
     QSharedPointer<QwtPlot> const m_plotVertCurve;
     QSharedPointer<QwtPlot> const m_plotSpectrogram;
@@ -156,11 +156,11 @@ protected:
 
     bool m_bColorBarInitialized = false;
 
-    double* m_horCurveXAxisData = nullptr;
-    double* m_horCurveYAxisData = nullptr;
+    std::vector<double> m_horCurveXAxisData;
+    std::vector<double> m_horCurveYAxisData;
 
-    double* m_vertCurveXAxisData = nullptr;
-    double* m_vertCurveYAxisData = nullptr;
+    std::vector<double> m_vertCurveXAxisData;
+    std::vector<double> m_vertCurveYAxisData;
 
     mutable bool m_inScaleSync = false;
 
