@@ -50,7 +50,7 @@ find_path(QXMPP_INCLUDE_DIR
 find_library(QXMPP_LIBRARY
     NAMES "qxmpp" "libqxmpp"
     HINTS ${PC_QXMPP_LIBDIR} ${PC_QXMPP_LIBRARY_DIRS}
-    PATHS "/usr/local/lib" "/usr/local/lib64" "/usr/lib" "/usr/lib64" "/usr/lib/x86_64-linux-gnu" "/sw/lib" "/opt/local/lib")
+    PATHS "/usr/local/lib" "/usr/local/lib64" "/usr/lib" "/usr/lib64" "/mingw64/bin" "/mingw64/lib" "/usr/lib/x86_64-linux-gnu" "/sw/lib" "/opt/local/lib")
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(QXMPP DEFAULT_MSG QXMPP_LIBRARY QXMPP_INCLUDE_DIR)

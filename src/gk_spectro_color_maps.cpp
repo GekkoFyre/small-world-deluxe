@@ -20,7 +20,7 @@ ControlPoints BlackBodyRadiation()
     ControlPoints ctrlPts;
     for (size_t rgb = 0; rgb < sizeof(rgbPoints) / sizeof(double); rgb += 4)
     {
-        ctrlPts.push_back(ControlPoint(rgbPoints[rgb],
+        ctrlPts.emplace_back(ControlPoint(rgbPoints[rgb],
                                        rgbPoints[rgb + 1],
                                        rgbPoints[rgb + 2],
                                        rgbPoints[rgb + 3]));
@@ -43,7 +43,7 @@ ControlPoints CoolToWarm()
     ControlPoints ctrlPts;
     for (size_t rgb = 0; rgb < sizeof(rgbPoints) / sizeof(double); rgb += 4)
     {
-        ctrlPts.push_back(ControlPoint(rgbPoints[rgb],
+        ctrlPts.emplace_back(ControlPoint(rgbPoints[rgb],
                                        rgbPoints[rgb + 1],
                                        rgbPoints[rgb + 2],
                                        rgbPoints[rgb + 3]));
@@ -76,7 +76,7 @@ ControlPoints Jet()
     ControlPoints ctrlPts;
     for (size_t rgb = 0; rgb < sizeof(rgbPoints) / sizeof(double); rgb += 4)
     {
-        ctrlPts.push_back(ControlPoint(rgbPoints[rgb],
+        ctrlPts.emplace_back(ControlPoint(rgbPoints[rgb],
                                        rgbPoints[rgb + 1],
                                        rgbPoints[rgb + 2],
                                        rgbPoints[rgb + 3]));

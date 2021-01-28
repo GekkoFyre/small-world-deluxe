@@ -48,9 +48,9 @@ find_path(QWT_INCLUDE_DIR
     PATHS "/usr/local/include" "/usr/include")
 
 find_library(QWT_LIBRARY
-    NAMES "qwt-qt5" "libqwt-qt5" "qwtd" "qwt" "libqwtd"
+    NAMES "qwt" "qwt-qt5" "libqwt-qt5" "libqwt" "qwtd" "libqwtd"
     HINTS ${PC_QWT_LIBDIR} ${PC_QWT_LIBRARY_DIRS}
-    PATHS "/usr/local/lib" "/usr/local/lib64" "/usr/lib" "/usr/lib64")
+    PATHS "/usr/local/lib" "/usr/local/lib64" "/usr/lib" "/usr/lib64" "/mingw64/bin" "/mingw64/lib")
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(QWT DEFAULT_MSG QWT_LIBRARY QWT_INCLUDE_DIR)
