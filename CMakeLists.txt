@@ -98,6 +98,12 @@ endif()
 
 option(GFYRE_ENABLE_PVS_STUDIO "Enable the static analysis of the Small World Deluxe project via PVS-Studio. More details can be found here: https://github.com/viva64/pvs-studio-cmake-examples" OFF)
 
+if(MSYS OR MINGW)
+    add_definitions(-DCMAKE_CROSSCOMPILING=1)
+    add_definitions(-DRUN_HAVE_STD_REGEX=0)
+    add_definitions(-DRUN_HAVE_POSIX_REGEX=0)
+endif()
+
 #
 # Determine the current version of Microsoft Windows in use, if that is indeed the operating system.
 # Then proceed to build specifically for that operating system, provided the right flags have been set.
@@ -131,28 +137,14 @@ if (LINUX)
     set(SYSCONFIG_INSTALL_DIR "/etc/small-world-deluxe/" CACHE PATH "Location for the settings directory.")
 endif()
 
-if (GFYRE_BUILD_STATIC)
-    option(BUILD_SHARED_LIBS "Set this option to OFF in order to compile a static set of libraries." OFF)
+find_package(QWT REQUIRED)
+if (QWT_FOUND)
+    include_directories(${QWT_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${QWT_LIBRARIES})
+    add_definitions(-DQWT_DLL)
 else()
-    option(BUILD_SHARED_LIBS "Set this option to OFF in order to compile a static set of libraries." ON)
-endif(GFYRE_BUILD_STATIC)
-
-#
-# https://stackoverflow.com/questions/33991918/link-to-pthread-library-using-cmake-in-clion
-# Find 'libpthreads'
-#
-if (LINUX)
-    set(THREADS_PREFER_PTHREAD_FLAG ON)
-endif()
-set(THREADS_PREFER_PTHREAD_FLAG ON)
-find_package(Threads REQUIRED)
-if (Threads_FOUND)
-    set(LIBS ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
-else()
-    message(FATAL_ERROR "Could not find the Threads library!")
-endif(Threads_FOUND)
-
-find_package(Qt5 COMPONENTS Core Gui Widgets Network LinguistTools Multimedia SerialPort PrintSupport Xml TextToSpeech Test REQUIRED)
+    message(FATAL_ERROR "The 'QWT' graphing/charting library could not be found!")
+endif(QWT_FOUND)
 
 if (MSYS OR MINGW OR LINUX)
     set(Boost_USE_STATIC_LIBS OFF CACHE BOOL "Use static libraries when linking Boost C++.")
@@ -192,14 +184,10 @@ else()
     message(FATAL_ERROR "The required 'Boost C++' libraries are either not installed, or not multithreaded and/or of not an up-to-date version. Boost C++ 1.54.0 is the minimally required version.")
 endif(Boost_FOUND)
 
-find_package(ZLIB REQUIRED)
-if (ZLIB_FOUND)
-    include_directories(${ZLIB_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${ZLIB_LIBRARIES})
-else()
-    message(FATAL_ERROR "The 'ZLIB' compression library could not be found!")
-endif(ZLIB_FOUND)
-
+#
+# Hamlib
+# https://hamlib.github.io/
+#
 find_package(Hamlib REQUIRED)
 if (HAMLIB_FOUND)
     include_directories(${HAMLIB_INCLUDE_DIRS})
@@ -215,6 +203,62 @@ set(GALAXY_HAMLIB_CPP
     src/contrib/hamlib++/rotclass.cc
     src/contrib/hamlib++/include/hamlib/rigclass.h
     src/contrib/hamlib++/include/hamlib/rotclass.h)
+
+#
+# OpusEnc
+# https://gitlab.xiph.org/xiph/libopusenc
+#
+find_package(OpusEnc REQUIRED)
+if (OpusEnc_FOUND)
+    include_directories(${OpusEnc_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${OpusEnc_LIBRARIES})
+else()
+    message(FATAL_ERROR "The 'libopusenc' audio (de-/en-)coding file creation libraries could not be found!")
+endif(OpusEnc_FOUND)
+
+#
+# libsndfile
+# https://github.com/libsndfile/libsndfile
+#
+find_package(Sndfile REQUIRED)
+if (SNDFILE_FOUND)
+    include_directories(${SNDFILE_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${SNDFILE_LIBRARIES})
+else()
+    message(FATAL_ERROR "The 'libsndfile' audio (de-/en-)coding libraries have been configured!")
+endif(SNDFILE_FOUND)
+
+if (GFYRE_BUILD_STATIC)
+    set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+    option(BUILD_SHARED_LIBS "Set this option to OFF in order to compile a static set of libraries." OFF)
+else()
+    option(BUILD_SHARED_LIBS "Set this option to OFF in order to compile a static set of libraries." ON)
+endif(GFYRE_BUILD_STATIC)
+
+#
+# https://stackoverflow.com/questions/33991918/link-to-pthread-library-using-cmake-in-clion
+# Find 'libpthreads'
+#
+if (LINUX)
+    set(THREADS_PREFER_PTHREAD_FLAG ON)
+endif()
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+if (Threads_FOUND)
+    set(LIBS ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
+else()
+    message(FATAL_ERROR "Could not find the Threads library!")
+endif(Threads_FOUND)
+
+find_package(Qt5 COMPONENTS Core Gui Widgets Network LinguistTools Multimedia SerialPort PrintSupport Xml TextToSpeech Test REQUIRED)
+
+find_package(ZLIB REQUIRED)
+if (ZLIB_FOUND)
+    include_directories(${ZLIB_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${ZLIB_LIBRARIES})
+else()
+    message(FATAL_ERROR "The 'ZLIB' compression library could not be found!")
+endif(ZLIB_FOUND)
 
 set_property(SOURCE ${GALAXY_HAMLIB_CPP} PROPERTY SKIP_AUTOUIC ON)
 
@@ -270,14 +314,6 @@ else()
     message(FATAL_ERROR "Either `libusb.h` and/or `usb.h` could not be found for the 'libusb' system device and enumeration libraries!")
 endif(USB_FOUND)
 
-find_package(QWT REQUIRED)
-if (QWT_FOUND)
-    include_directories(${QWT_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${QWT_LIBRARIES})
-else()
-    message(FATAL_ERROR "The 'QWT' graphing/charting library could not be found!")
-endif(QWT_FOUND)
-
 if (LINUX)
     find_package(UDev REQUIRED)
     if (udev_FOUND)
@@ -324,18 +360,6 @@ else()
     message(FATAL_ERROR "The 'Ogg' audio (de-/en-)coding library could not be found!")
 endif(Ogg_FOUND)
 
-#
-# libsndfile
-# https://github.com/libsndfile/libsndfile
-#
-find_package(Sndfile REQUIRED)
-if (SNDFILE_FOUND)
-    include_directories(${SNDFILE_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${SNDFILE_LIBRARIES})
-else()
-    message(FATAL_ERROR "The 'libsndfile' audio (de-/en-)coding libraries have been configured!")
-endif(SNDFILE_FOUND)
-
 find_package(Iconv REQUIRED)
 if (Iconv_FOUND)
     include_directories(${Iconv_INCLUDE_DIRS})
@@ -373,10 +397,12 @@ else()
     set(SENTRY_CRASHPAD_SYSTEM OFF CACHE BOOL "This instructs the build system to use system-installed breakpad or crashpad libraries instead of using the in-tree version. This is generally not recommended for crashpad, as sentry uses a patched version that has attachment support.")
 endif()
 
+set(SENTRY_BUILD_TESTS OFF CACHE BOOL "Build sentry-native tests. This is not required for the compilation of Small World Deluxe." FORCE)
+set(SENTRY_BUILD_EXAMPLES OFF CACHE BOOL "Build sentry-native example(s). This is not required for the compilation of Small World Deluxe." FORCE)
 set(SENTRY_LINK_PTHREAD ON CACHE BOOL "Links to the pthread library on Unix targets.")
 set(SENTRY_BUILD_FORCE32 OFF CACHE BOOL "Otherwise forces cross-compilation from 64-bit host to 32-bit target. Only has an effect on Linux." FORCE)
 
-if(WIN32 OR MSYS OR MINGW)
+if(WIN32)
     set(SENTRY_TRANSPORT "winhttp" CACHE STRING "Please do not modify this." FORCE)
 else()
     set(SENTRY_TRANSPORT "curl" CACHE STRING "Please do not modify this." FORCE)
@@ -403,14 +429,6 @@ message(STATUS "The 'Sentry' error reporting libraries have been configured!")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/opus")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/opus/include")
 message(STATUS "The 'Opus' audio (de-/en-)coding libraries have been configured!")
-
-find_package(OpusEnc REQUIRED)
-if (OpusEnc_FOUND)
-    include_directories(${OpusEnc_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${OpusEnc_LIBRARIES})
-else()
-    message(FATAL_ERROR "The 'libopusenc' audio (de-/en-)coding file creation libraries could not be found!")
-endif(OpusEnc_FOUND)
 
 #
 # KissFFT by Mark Borgerding
@@ -724,17 +742,13 @@ else()
         ${GK_EXTRA_LIBS})
 endif()
 
-add_definitions(-DQWT_DLL)
-
 if (GFYRE_SWORLD_DBG_VERBOSITY)
     message(STATUS "Enabled maximum verbosity with Small World Deluxe and its use of third-party libraries throughout the application itself; debug mode now activated!")
     add_definitions(-DGFYRE_SWORLD_DBG_VERBOSITY)
 endif()
 
 if (ENBL_VALGRIND_SUPPORT)
-    if (LINUX)
-        add_definitions(-DGK_ENBL_VALGRIND_SUPPORT)
-    endif()
+    add_definitions(-DGK_ENBL_VALGRIND_SUPPORT)
 endif()
 
 #
@@ -762,8 +776,7 @@ endif()
 #
 if(GFYRE_BUILD_STATIC)
     add_library(galaxy STATIC ${QM_FILES} ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP} ${GALAXY_HAMLIB_CPP})
-    
-    # add_library(galaxy_fort STATIC ${GALAXY_WSJTX_QRA64_FORT})
+    target_link_libraries(galaxy PUBLIC "-static")
 else()
     set(GFYRE_BUILD_SHARED ON)
 endif(GFYRE_BUILD_STATIC)

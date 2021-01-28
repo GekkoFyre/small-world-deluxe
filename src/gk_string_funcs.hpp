@@ -131,7 +131,7 @@ public:
 
             for (size_t i = 0; i < std::min(desired_size, input_data.size()); ++i) {
                 end += (remaining > 0) ? (length + !!(remaining--)) : length;
-                ret_vec.push_back(std::vector<T>(input_data.begin() + begin, input_data.begin() + end));
+                ret_vec.emplace_back(std::vector<T>(input_data.begin() + begin, input_data.begin() + end));
                 begin = end;
             }
 

@@ -90,16 +90,22 @@ private slots:
     void on_pushButton_change_email_reset_clicked();
     void on_pushButton_change_email_cancel_clicked();
 
+    //
+    // User, roster and presence details
     void askForRegistration();
-    void handleRegistrationForm(const QXmppRegisterIq &registerIq);
-    void handleRegistrationConfirmation(const QXmppRegisterIq &registerIq);
-    void registerIqReceived(QXmppRegisterIq registerIq);
     void sendFilledRegistrationForm();
 
+    //
+    // Captcha management and processing
+    void recvCaptcha(const QString &cid, const QUrl &url);
+
+    //
+    // QRegularExpression
     void setEmailInputColor(const QString &adj_text);
     void setUsernameInputColor(const QString &adj_text);
 
-    void clientError(QXmppClient::Error error);
+    //
+    // Event & Logging management
     void handleError(const QString &errorMsg);
     void handleSuccess();
 
@@ -124,6 +130,8 @@ private:
     QString m_password;
     QString m_captcha;
 
+    //
+    // General networking
     GekkoFyre::Network::GkXmpp::GkNetworkState m_netState;
     QString m_id;
 };

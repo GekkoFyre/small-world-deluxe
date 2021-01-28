@@ -78,6 +78,8 @@
 #include <QPointer>
 #include <QDateTime>
 #include <QMouseEvent>
+#include <QSharedPointer>
+#include <QScopedPointer>
 
 namespace GekkoFyre {
 
@@ -119,9 +121,9 @@ public:
     void setZTooltipUnit(const QString& zUnit);
     bool setColorMap(const ColorMaps::ControlPoints& colorMap);
     ColorMaps::ControlPoints getColorMap() const;
-    QwtPlot* getHorizontalCurvePlot() const { return m_plotHorCurve; }
-    QwtPlot* getVerticalCurvePlot() const { return m_plotVertCurve; }
-    QwtPlot* getSpectrogramPlot() const { return m_plotSpectrogram; }
+    QSharedPointer<QwtPlot> getHorizontalCurvePlot() const { return m_plotHorCurve; }
+    QSharedPointer<QwtPlot> getVerticalCurvePlot() const { return m_plotVertCurve; }
+    QSharedPointer<QwtPlot> getSpectrogramPlot() const { return m_plotSpectrogram; }
 
     //
     // Data
@@ -140,25 +142,25 @@ public:
 
 protected:
     WaterfallData<double> *gkWaterfallData = nullptr;
-    QwtPlot* const m_plotHorCurve = nullptr;
-    QwtPlot* const m_plotVertCurve = nullptr;
-    QwtPlot* const m_plotSpectrogram = nullptr;
-    QwtPlotCurve* m_horCurve = nullptr;
-    QwtPlotCurve* m_vertCurve = nullptr;
-    QwtPlotPicker* const m_picker = nullptr;
-    QwtPlotPanner* const m_panner = nullptr;
-    QwtPlotSpectrogram* const m_spectrogram = nullptr;
-    QwtPlotZoomer* const m_zoomer = nullptr;
-    QwtPlotMarker* const m_horCurveMarker = nullptr;
-    QwtPlotMarker* const m_vertCurveMarker = nullptr;
+    QSharedPointer<QwtPlot> const m_plotHorCurve;
+    QSharedPointer<QwtPlot> const m_plotVertCurve;
+    QSharedPointer<QwtPlot> const m_plotSpectrogram;
+    QSharedPointer<QwtPlotCurve> m_horCurve;
+    QSharedPointer<QwtPlotCurve> m_vertCurve;
+    QScopedPointer<QwtPlotPicker> const m_picker;
+    QScopedPointer<QwtPlotPanner> const m_panner;
+    QSharedPointer<QwtPlotSpectrogram> const m_spectrogram;
+    QSharedPointer<QwtPlotZoomer> const m_zoomer;
+    QScopedPointer<QwtPlotMarker> const m_horCurveMarker;
+    QScopedPointer<QwtPlotMarker> const m_vertCurveMarker;
 
     bool m_bColorBarInitialized = false;
 
-    double* m_horCurveXAxisData = nullptr;
-    double* m_horCurveYAxisData = nullptr;
+    std::vector<double> m_horCurveXAxisData;
+    std::vector<double> m_horCurveYAxisData;
 
-    double* m_vertCurveXAxisData = nullptr;
-    double* m_vertCurveYAxisData = nullptr;
+    std::vector<double> m_vertCurveXAxisData;
+    std::vector<double> m_vertCurveYAxisData;
 
     mutable bool m_inScaleSync = false;
 
@@ -230,14 +232,14 @@ public:
 
 class GkZoomer: public QwtPlotZoomer {
 
-    QwtPlotSpectrogram* m_spectro;
+    QSharedPointer<QwtPlotSpectrogram> m_spectro;
     const GkSpectroWaterfall &m_waterfallPlot; // In order to retrieve the time...
     mutable QDateTime m_dateTime;
 
 public:
-    explicit GkZoomer(QWidget *canvas, QwtPlotSpectrogram *spectro, const GkSpectroWaterfall &waterfall) : QwtPlotZoomer(canvas),
-                                                                                                           m_spectro(spectro),
-                                                                                                           m_waterfallPlot(waterfall) {
+    explicit GkZoomer(QWidget *canvas, QSharedPointer<QwtPlotSpectrogram> spectro, const GkSpectroWaterfall &waterfall) : QwtPlotZoomer(canvas),
+                                                                                                                          m_spectro(spectro),
+                                                                                                                          m_waterfallPlot(waterfall) {
         Q_ASSERT(m_spectro);
         setTrackerMode(AlwaysOn);
     }

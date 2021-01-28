@@ -54,7 +54,7 @@ using namespace Spectrograph;
  * @param spectroGui
  * @param parent
  */
-SpectroDialog::SpectroDialog(QPointer<GekkoFyre::GkSpectroWaterfall> spectroGui, QWidget *parent) :
+SpectroDialog::SpectroDialog(QWidget *parent) :
     QDialog(parent), ui(new Ui::SpectroDialog)
 {
     ui->setupUi(this);
@@ -65,8 +65,6 @@ SpectroDialog::SpectroDialog(QPointer<GekkoFyre::GkSpectroWaterfall> spectroGui,
     prefillGraphTiming(GkGraphTiming::GkGraphTime2Sec);
     prefillGraphTiming(GkGraphTiming::GkGraphTime5Sec);
     prefillGraphTiming(GkGraphTiming::GkGraphTime10Sec);
-
-    gkSpectroGui = std::move(spectroGui);
 
     ui->comboBox_colour_map->insertItem(0, tr("Linear Colour Map (RGB)"));
 }

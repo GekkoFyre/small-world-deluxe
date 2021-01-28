@@ -43,10 +43,8 @@ public:
         m_xMin = dXMin;
         m_xMax = dXMax;
 
-        setInterval(Qt::XAxis,
-                    QwtInterval(dXMin, dXMax, QwtInterval::ExcludeMaximum));
-        setInterval(Qt::YAxis,
-                    QwtInterval(m_offset, m_maxHistoryLength + m_offset, QwtInterval::ExcludeMaximum));
+        WaterfallData::setInterval(Qt::XAxis, QwtInterval(dXMin, dXMax, QwtInterval::ExcludeMaximum));
+        WaterfallData::setInterval(Qt::YAxis, QwtInterval(m_offset, m_maxHistoryLength + m_offset, QwtInterval::ExcludeMaximum));
     }
 
     ~WaterfallData() override

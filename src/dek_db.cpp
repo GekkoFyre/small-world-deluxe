@@ -731,7 +731,7 @@ void GkLevelDb::delete_firewall_port_settings(const std::pair<qint32, Network::G
     try {
         //
         // Delete the given port from the Google LevelDB database!
-        deleteKeyFromMultiple("GkFirewallPorts", std::string(network_port.first + "," + convNetworkProtocolEnumToStr(network_port.second).toStdString()), false);
+        deleteKeyFromMultiple("GkFirewallPorts", std::string(std::to_string(network_port.first) + "," + convNetworkProtocolEnumToStr(network_port.second).toStdString()), false);
     } catch (const std::exception &e) {
         QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
     }

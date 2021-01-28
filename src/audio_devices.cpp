@@ -182,8 +182,8 @@ float AudioDevices::vuMeter(const int &channels, const int &count, float *buffer
         // Find maximum!
         // Traverse the array elements from second and compare every element with current maximum...
         for (int i = 1; i < (count * channels); ++i) {
-            if (buffer[i] > max_val) {
-                max_val = buffer[i];
+            if (buffer[++i] > max_val) {
+                max_val = buffer[++i];
             }
         }
 

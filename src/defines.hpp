@@ -79,6 +79,7 @@
 #include <winsdkver.h>
 #include <Windows.h>
 #include <icftypes.h>
+#include <comdef.h>
 #include <tchar.h> // https://linuxgazette.net/147/pfeiffer.html
 #endif
 
@@ -126,7 +127,7 @@ namespace GekkoFyre {
 //
 // XMPP specific constants
 //
-#define GK_DEFAULT_XMPP_SERVER_PORT (443)
+#define GK_DEFAULT_XMPP_SERVER_PORT (5223)
 #define GK_XMPP_AVAIL_COMBO_AVAILABLE_IDX (0)
 #define GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX (1)
 #define GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX (0)

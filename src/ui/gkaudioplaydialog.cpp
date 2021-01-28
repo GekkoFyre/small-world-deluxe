@@ -426,14 +426,19 @@ void GkAudioPlayDialog::on_comboBox_playback_rec_codec_currentIndexChanged(int i
     switch (index) {
         case AUDIO_PLAYBACK_CODEC_PCM_IDX:
             m_rec_codec_chosen = CodecSupport::PCM;
+            return;
         case AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX:
             m_rec_codec_chosen = CodecSupport::Loopback;
+            return;
         case AUDIO_PLAYBACK_CODEC_VORBIS_IDX:
             m_rec_codec_chosen = CodecSupport::OggVorbis;
+            return;
         case AUDIO_PLAYBACK_CODEC_OPUS_IDX:
             m_rec_codec_chosen = CodecSupport::Opus;
+            return;
         case AUDIO_PLAYBACK_CODEC_FLAC_IDX:
             m_rec_codec_chosen = CodecSupport::FLAC;
+            return;
         default:
             break;
     }
