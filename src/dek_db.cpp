@@ -139,7 +139,7 @@ void GkLevelDb::writeMultipleKeys(const std::string &base_key_name, const std::v
             for (const auto &value: values_modifiable) {
                 qint64 curr_unix_epoch = QDateTime::currentMSecsSinceEpoch();
                 std::string new_key_name = std::string(base_key_name + '!' + std::to_string(curr_unix_epoch));
-                key_value_map.insert(std::make_pair(new_key_name, value));
+                key_value_map.emplace(std::make_pair(new_key_name, value));
             }
 
             for (const auto &key_value: key_value_map) {
@@ -1210,7 +1210,7 @@ void GkLevelDb::capture_sys_info()
         std::string ret_str = "";
         QString sentry_unique_id = read_optin_settings(GkOptIn::UserUniqueId);
         if (!sentry_unique_id.isEmpty()) {
-            const std::string ret_str = sentry_unique_id.toStdString();
+            const std::string ret_str = sentry_unique_id.toStdString(); //-V808
         } else {
             const std::string ret_str = createRandomString(24);
             write_optin_settings(QString::fromStdString(ret_str), GkOptIn::UserUniqueId);
@@ -1999,7 +1999,7 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
         // Output audio device
         //
         std::string output_id;
-        std::string output_pa_host_idx;
+        std::string output_pa_host_idx; //-V808
         std::string output_sel_channels;
         std::string output_def_sys_device;
         std::string output_user_activity;
@@ -2029,7 +2029,7 @@ GkDevice GkLevelDb::read_audio_details_settings(const bool &is_output_device)
         // Input audio device
         //
         std::string input_id;
-        std::string input_pa_host_idx;
+        std::string input_pa_host_idx; //-V808
         std::string input_sel_channels;
         std::string input_def_sys_device;
         std::string input_user_activity;
@@ -2231,7 +2231,7 @@ bool GkLevelDb::read_firewall_settings(const Security::GkFirewallCfg &key, const
 std::vector<std::string> GkLevelDb::read_firewall_settings_vec(const Security::GkFirewallCfg &key)
 {
     try {
-        std::vector<std::string> firewall_values;
+        std::vector<std::string> firewall_values; //-V808
         switch (key) {
             case Security::GkFirewallCfg::GkReadPorts:
                 return readMultipleKeys("GkFirewallPorts");

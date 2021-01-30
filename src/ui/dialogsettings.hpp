@@ -80,14 +80,14 @@ public:
                             QPointer<GekkoFyre::AudioDevices> audioDevices,
                             const QPointer<QAudioInput> &audioSysInput,
                             const QPointer<QAudioOutput> &audioSysOutput,
-                            const std::list<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> &gkAvailInputDevs,
-                            const std::list<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> &gkAvailOutputDevs,
+                            const std::vector<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> &gkAvailInputDevs,
+                            const std::vector<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> &gkAvailOutputDevs,
                             const GekkoFyre::Database::Settings::Audio::GkDevice &gkPrefInputDev,
                             const GekkoFyre::Database::Settings::Audio::GkDevice &gkPrefOutputDev,
                             QPointer<GekkoFyre::RadioLibs> radioLibs,
                             QPointer<GekkoFyre::StringFuncs> stringFuncs,
                             std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> radioPtr,
-                            const std::list<GekkoFyre::Database::Settings::GkComPort> &com_ports,
+                            const std::vector<GekkoFyre::Database::Settings::GkComPort> &com_ports,
                             const QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> &usbPortMap,
                             QPointer<GekkoFyre::GkFrequencies> gkFreqList,
                             QPointer<GekkoFyre::GkFreqTableModel> freqTableModel,
@@ -301,7 +301,7 @@ private:
     double audio_quality_val;
 
     // This variable is responsible for managing the COM/RS232/Serial ports of the system!
-    std::list<GekkoFyre::Database::Settings::GkComPort> gkSerialPortMap;
+    std::vector<GekkoFyre::Database::Settings::GkComPort> gkSerialPortMap;
 
     // The key is the USB devices' port number and the value is the associated struct
     QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> gkUsbPortMap;
@@ -321,8 +321,8 @@ private:
     //
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
-    std::list<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_input_audio_devs;
-    std::list<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_output_audio_devs;
+    std::vector<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_input_audio_devs;
+    std::vector<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_output_audio_devs;
     GekkoFyre::Database::Settings::Audio::GkDevice chosen_input_audio_dev;
     GekkoFyre::Database::Settings::Audio::GkDevice chosen_output_audio_dev;
 
@@ -346,7 +346,7 @@ private:
 
     QMap<int, int> collectComboBoxIndexes(const QComboBox *combo_box);
     void prefill_rig_force_ctrl_lines(const ptt_type_t &ptt_type);
-    void prefill_avail_com_ports(const std::list<GekkoFyre::Database::Settings::GkComPort> &com_ports);
+    void prefill_avail_com_ports(const std::vector<GekkoFyre::Database::Settings::GkComPort> &com_ports);
     void prefill_avail_usb_ports(const QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> &usb_devices);
     void prefill_com_baud_speed(const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate);
     void enable_device_port_options();

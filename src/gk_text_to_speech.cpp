@@ -63,7 +63,7 @@ GkTextToSpeech::GkTextToSpeech(QPointer<GekkoFyre::GkLevelDb> dbPtr, QPointer<Ge
     gkEventLogger = std::move(eventLogger);
 
     m_speech = new QTextToSpeech(this);
-    engineName = "";
+    engineName.clear();
     engineSelected(0);
 }
 

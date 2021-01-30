@@ -360,8 +360,8 @@ private:
     //
     // QAudioSystem miscellaneous variables
     //
-    std::list<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_input_audio_devs;
-    std::list<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_output_audio_devs;
+    std::vector<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_input_audio_devs;
+    std::vector<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_output_audio_devs;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
     QPointer<GekkoFyre::GkAudioEncoding> gkAudioEncoding;
@@ -386,7 +386,7 @@ private:
     // USB & RS232
     //
     QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> gkUsbPortMap; // This is used for making connections to radio rigs with Hamlib!
-    std::list<GekkoFyre::Database::Settings::GkComPort> gkSerialPortMap; // This variable is responsible for managing the COM/RS232/Serial ports!
+    std::vector<GekkoFyre::Database::Settings::GkComPort> gkSerialPortMap; // This variable is responsible for managing the COM/RS232/Serial ports!
 
     //
     // Radio and Hamlib related

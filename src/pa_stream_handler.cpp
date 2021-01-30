@@ -135,7 +135,7 @@ void GkPaStreamHandler::processEvent(GkAudioFramework::AudioEventType audioEvent
             case GkAudioFramework::AudioEventType::start:
                 {
                     if (!mediaFilePath.empty()) {
-                        gkSounds.insert(std::make_pair(mediaFilePath, *gkAudioFile));
+                        gkSounds.emplace(std::make_pair(mediaFilePath, *gkAudioFile));
                         emit playMedia(mediaFilePath, supported_codec);
                     }
                 }

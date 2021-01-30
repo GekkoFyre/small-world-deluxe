@@ -155,12 +155,12 @@ QString StringFuncs::addErrorMsg(const QString &orig_msg, const QString &err_msg
  * @param csv_vals
  * @return
  */
-std::vector<std::string> StringFuncs::csvSplitter(const std::string &csv_vals)
+std::deque<std::string> StringFuncs::csvSplitter(const std::string &csv_vals)
 {
     try {
         if (!csv_vals.empty()) {
             std::stringstream ss(csv_vals);
-            std::vector<std::string> result;
+            std::deque<std::string> result;
             while (ss.good()) {
                 std::string substr;
                 std::getline(ss, substr, ',');
@@ -175,7 +175,7 @@ std::vector<std::string> StringFuncs::csvSplitter(const std::string &csv_vals)
         std::throw_with_nested(std::runtime_error(tr("An error has occurred whilst attempting to modify CSV data.\n\n%1").arg(QString::fromStdString(e.what())).toStdString()));
     }
 
-    return std::vector<std::string>();
+    return std::deque<std::string>();
 }
 
 /**
@@ -187,11 +187,11 @@ std::vector<std::string> StringFuncs::csvSplitter(const std::string &csv_vals)
  * @return
  * @see StringFuncs::csvSplitter().
  */
-std::vector<std::string> StringFuncs::csvRemoveElement(const std::vector<std::string> &csv_elements, const std::string &val_to_remove)
+std::deque<std::string> StringFuncs::csvRemoveElement(const std::deque<std::string> &csv_elements, const std::string &val_to_remove)
 {
     try {
         if (!csv_elements.empty()) {
-            std::vector<std::string> csv_elements_cpy(csv_elements.begin(), csv_elements.end());
+            std::deque<std::string> csv_elements_cpy(csv_elements.begin(), csv_elements.end());
             for (auto it = csv_elements_cpy.begin(); it != csv_elements_cpy.end();) {
                 if (*it == val_to_remove) {
                     it = csv_elements_cpy.erase(it);
@@ -205,7 +205,7 @@ std::vector<std::string> StringFuncs::csvRemoveElement(const std::vector<std::st
         std::throw_with_nested(std::runtime_error(tr("An error has occurred whilst attempting to modify CSV data.\n\n%1").arg(QString::fromStdString(e.what())).toStdString()));
     }
 
-    return std::vector<std::string>();
+    return std::deque<std::string>();
 }
 
 /**
@@ -217,7 +217,7 @@ std::vector<std::string> StringFuncs::csvRemoveElement(const std::vector<std::st
  * @return
  * @see StringFuncs::csvSplitter(), StringFuncs::csvRemoveElement().
  */
-std::string StringFuncs::csvOutputString(const std::vector<std::string> &csv_elements)
+std::string StringFuncs::csvOutputString(const std::deque<std::string> &csv_elements)
 {
     try {
         if (!csv_elements.empty()) {
@@ -234,7 +234,7 @@ std::string StringFuncs::csvOutputString(const std::vector<std::string> &csv_ele
                 }
             } else {
                 // There exists only one element within this vector
-                ss << csv_elements.at(0) << std::endl;
+                ss << csv_elements[0] << std::endl;
             }
 
             return ss.str();

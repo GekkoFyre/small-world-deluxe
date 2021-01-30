@@ -704,12 +704,13 @@ void GkSpectroWaterfall::updateLayout()
 
 /**
  * @brief GkSpectroWaterfall::allocateCurvesData
- * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>.
+ * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>,
+ * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void GkSpectroWaterfall::allocateCurvesData()
 {
-    if (m_horCurveXAxisData.empty() || m_horCurveYAxisData.empty() || m_vertCurveXAxisData.empty() ||
-        m_vertCurveYAxisData.empty() || !gkWaterfallData) {
+    if (!m_horCurveXAxisData.empty() || !m_horCurveYAxisData.empty() || !m_vertCurveXAxisData.empty() ||
+        !m_vertCurveYAxisData.empty() || !gkWaterfallData) {
         return;
     }
 
@@ -718,16 +719,16 @@ void GkSpectroWaterfall::allocateCurvesData()
     const double dXMax = gkWaterfallData->getXMax();
     const size_t historyExtent = gkWaterfallData->getMaxHistoryLength();
 
-    m_horCurveXAxisData[layerPoints];
-    m_horCurveYAxisData[layerPoints];
-    m_vertCurveXAxisData[historyExtent];
-    m_vertCurveYAxisData[historyExtent];
+    m_horCurveXAxisData.reserve(layerPoints);
+    m_horCurveYAxisData.reserve(layerPoints);
+    m_vertCurveXAxisData.reserve(historyExtent);
+    m_vertCurveYAxisData.reserve(historyExtent);
 
     // Generate curve X-axis data
     const double dx = (dXMax - dXMin) / layerPoints; // x spacing
-    m_horCurveXAxisData[0] = dXMin;
+    m_horCurveXAxisData.assign(0, dXMin);
     for (size_t x = 1u; x < layerPoints; ++x) {
-        m_horCurveXAxisData[x] = m_horCurveXAxisData[x - 1] + dx;
+        m_horCurveXAxisData.assign(x, m_horCurveXAxisData[x - 1] + dx);
     }
 
     // Reset marker to the default position
@@ -739,7 +740,7 @@ void GkSpectroWaterfall::allocateCurvesData()
 
 /**
  * @brief GkSpectroWaterfall::freeCurvesData
- * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void GkSpectroWaterfall::freeCurvesData()
 {
@@ -776,7 +777,8 @@ void GkSpectroWaterfall::setupCurves()
 
 /**
  * @brief GkSpectroWaterfall::updateCurvesData
- * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>.
+ * @author Copyright © 2019 Amine Mzoughi <https://github.com/embeddedmz/QwtWaterfallplot>,
+ * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void GkSpectroWaterfall::updateCurvesData()
 {
@@ -784,7 +786,7 @@ void GkSpectroWaterfall::updateCurvesData()
     const size_t currentHistory = gkWaterfallData->getHistoryLength();
     const size_t layerPts = gkWaterfallData->getLayerPoints();
     const size_t maxHistory = gkWaterfallData->getMaxHistoryLength();
-    const double *wfData = gkWaterfallData->getData();
+    const std::vector<double> wfData(*gkWaterfallData->getData());
 
     const size_t markerY = m_markerY;
     if (markerY >= maxHistory) {
@@ -792,10 +794,10 @@ void GkSpectroWaterfall::updateCurvesData()
     }
 
     if (!m_horCurveXAxisData.empty() && !m_horCurveYAxisData.empty()) {
-        std::copy(wfData + layerPts * markerY,
-                  wfData + layerPts * (markerY + 1),
-                  m_horCurveYAxisData.begin());
-        m_horCurve->setRawSamples(&m_horCurveXAxisData[0], &m_horCurveYAxisData[0], layerPts);
+        std::copy(wfData.begin() + layerPts * markerY,
+                  wfData.end() + layerPts * (markerY + 1),
+                  std::back_inserter(m_horCurveYAxisData));
+        m_horCurve->setRawSamples(m_horCurveXAxisData.data(), m_horCurveYAxisData.data(), layerPts);
     }
 
     const double offset = gkWaterfallData->getOffset();
@@ -805,11 +807,11 @@ void GkSpectroWaterfall::updateCurvesData()
         for (size_t layer = maxHistory - currentHistory; layer < maxHistory; ++layer, ++dataIndex) {
             const double z = gkWaterfallData->value(m_markerX, layer + size_t(offset));
             const double t = double(layer) + offset;
-            m_vertCurveXAxisData[dataIndex] = z;
-            m_vertCurveYAxisData[dataIndex] = t;
+            m_vertCurveXAxisData.assign(dataIndex, z);
+            m_vertCurveYAxisData.assign(dataIndex, t);
         }
 
-        m_vertCurve->setRawSamples(&m_vertCurveXAxisData[0], &m_vertCurveYAxisData[0], currentHistory);
+        m_vertCurve->setRawSamples(m_vertCurveXAxisData.data(), m_vertCurveYAxisData.data(), currentHistory);
     }
     
     return;

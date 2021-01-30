@@ -91,7 +91,7 @@ public:
     GekkoFyre::AmateurRadio::com_baud_rates convertBaudRateIntToEnum(const int &baud_rate);
     int convertBaudRateFromEnum(const GekkoFyre::AmateurRadio::com_baud_rates &baud_rate);
     [[nodiscard]] QList<QSerialPortInfo> status_com_ports() const;
-    [[nodiscard]] std::list<Database::Settings::GkComPort> filter_com_ports(const QList<QSerialPortInfo> &serial_port_info) const;
+    [[nodiscard]] std::vector<Database::Settings::GkComPort> filter_com_ports(const QList<QSerialPortInfo> &serial_port_info) const;
     QString hamlibModulEnumToStr(const rmode_t &modulation);
 
     GekkoFyre::AmateurRadio::GkConnType convGkConnTypeToEnum(const QString &conn_type);

@@ -83,13 +83,13 @@ public:
     QString email;
 
     GkXmppVcardData() {
-        nickname = "";
-        fullName = "";
-        firstName = "";
-        middleName = "";
-        lastName = "";
-        webUrl = "";
-        email = "";
+        nickname.clear();
+        fullName.clear();
+        firstName.clear();
+        middleName.clear();
+        lastName.clear();
+        webUrl.clear();
+        email.clear();
     }
 
     bool isEmpty() const {
@@ -109,7 +109,7 @@ public:
     GkXmppVcardData grabVCard(const QString &bareJid);
 
 private:
-    QString getElementStore(const std::shared_ptr<QDomDocument> doc, const QString &nodeName);
+    QString getElementStore(const std::shared_ptr<QDomDocument> &doc, const QString &nodeName);
 
 };
 
