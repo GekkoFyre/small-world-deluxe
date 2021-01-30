@@ -99,8 +99,13 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
         m_xmppClient = std::move(xmppClient);
         m_registerManager = std::move(m_xmppClient->getRegistrationMgr());
 
+        QObject::connect(m_xmppClient, SIGNAL(sendRegistrationForm(const QXmppRegisterIq &)),
+                         this, SLOT(recvRegistrationForm(const QXmppRegisterIq &)));
         QObject::connect(m_xmppClient, SIGNAL(sendCaptcha(const QString &, const QUrl &)),
                          this, SLOT(recvCaptcha(const QString &, const QUrl &)));
+
+        QObject::connect(this, SIGNAL(registerUser(const std::unique_ptr<QXmppRegisterIq> &)),
+                         this, SLOT(sendRegistrationForm(const std::unique_ptr<QXmppRegisterIq> &)));
 
         if (m_registerManager) { // Verify that the object exists, and the extension is activated at the given server!
             switch (gkRegUiRole) {
@@ -199,6 +204,10 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
                     return;
             }
         }
+
+        if (!m_xmppClient->isConnected()) {
+            m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, m_username, m_password);
+        }
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);
     }
@@ -251,10 +260,7 @@ void GkXmppRegistrationDialog::on_pushButton_signup_submit_clicked()
     m_password = password;
     m_captcha = captcha;
 
-    //
-    // Initiate the connection process!
-    QObject::connect(m_xmppClient, SIGNAL(connected()), this, SLOT(askForRegistration()));
-    m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, m_username, m_password); // Initiate a connection to the configured server!
+    emit registerUser(m_registerForm);
     return;
 }
 
@@ -428,43 +434,66 @@ void GkXmppRegistrationDialog::on_pushButton_change_email_cancel_clicked()
 }
 
 /**
- * @brief GkXmppRegistrationDialog::askForRegistration
+ * @brief GkXmppRegistrationDialog::recvRegistrationForm receives the registration form necessary for the sign-up of a
+ * new user to the desired XMPP server in question. Without this, you are neither able to sign-up nor login to a given
+ * XMPP server.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param registerIq The user registration form to be filled out, as received from the connected towards XMPP server.
+ * @note QXmppRegistrationManager Class Reference <https://doc.qxmpp.org/qxmpp-dev/classQXmppRegistrationManager.html>.
+ * @see GkXmppRegistrationDialog::sendRegistrationForm().
  */
-void GkXmppRegistrationDialog::askForRegistration()
+void GkXmppRegistrationDialog::recvRegistrationForm(const QXmppRegisterIq &registerIq)
 {
-    gkEventLogger->publishEvent(tr("Negotiating parameters for user registration with XMPP service."), GkSeverity::Debug, "",
-                                false, true, false, false);
-
-    auto registerIq = QXmppRegisterIq {};
-    registerIq.setType(QXmppIq::Type::Get);
-
-    m_id = registerIq.id();
-    m_xmppClient->sendPacket(registerIq);
     m_netState = GkNetworkState::WaitForRegistrationForm;
+    m_registerForm = std::make_unique<QXmppRegisterIq>(registerIq);
+    m_id = registerIq.id();
+
+    gkEventLogger->publishEvent(tr("Received the registration form for XMPP server:\n\n%1")
+                                        .arg(gkConnDetails.server.url), GkSeverity::Debug, "", false,
+                                true, false, false);
 
     return;
 }
 
 /**
- * @brief GkXmppRegistrationDialog::sendFilledRegistrationForm attempts to sign-up a user with the given XMPP server.
+ * @brief GkXmppRegistrationDialog::sendRegistrationForm attempts to sign-up a user with the given XMPP server by
+ * submitting the registration form received by function, `GkXmppRegistrationDialog::recvRegistrationForm()`.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param registerIq The user registration form to be filled out, as received from the connected towards XMPP server.
  * @note QXmppRegistrationManager Class Reference <https://doc.qxmpp.org/qxmpp-dev/classQXmppRegistrationManager.html>.
+ * @see GkXmppRegistrationDialog::recvRegistrationForm().
  */
-void GkXmppRegistrationDialog::sendFilledRegistrationForm()
+void GkXmppRegistrationDialog::sendRegistrationForm(const std::unique_ptr<QXmppRegisterIq> &registerIq)
 {
-    auto registerIq = QXmppRegisterIq {};
-    registerIq.setEmail(m_email);
-    registerIq.setPassword(m_password);
-    registerIq.setType(QXmppIq::Type::Set);
-    registerIq.setUsername(m_username);
+    QXmppRegisterIq registration_form;
+    try {
+        registration_form.setForm(registerIq->form());
+        registration_form.setInstructions(registerIq->instructions());
+        registration_form.setEmail(m_email);
+        registration_form.setPassword(m_password);
+        registration_form.setUsername(m_username);
+        registration_form.setType(QXmppIq::Type::Set);
 
-    m_id = registerIq.id();
-    m_xmppClient->sendPacket(registerIq);
+        if (!m_xmppClient->isConnected()) {
+            //
+            // Initiate the connection process!
+            m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, m_username, m_password);
+        }
 
-    gkEventLogger->publishEvent(tr("User, \"%1\", has been registered with XMPP server:\n\n%2")
-    .arg(m_username).arg(gkConnDetails.server.url), GkSeverity::Info, "", true,
-    true, false, false);
+        QObject::connect(m_xmppClient, &QXmppClient::connected, [=]() {
+            m_registerManager->setRegistrationFormToSend(registration_form);
+            m_registerManager->sendCachedRegistrationForm();
+
+            gkEventLogger->publishEvent(tr("User, \"%1\", has been registered with XMPP server:\n\n%2")
+            .arg(m_username).arg(gkConnDetails.server.url), GkSeverity::Info, "", true,
+            true, false, false);
+
+            // m_xmppClient->disconnectFromServer(); // Disconnect from the server!
+        });
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(tr("Issues were encountered with trying to register user with XMPP server! Error:\n\n%1")
+                                            .arg(e.what()), GkSeverity::Fatal, "", false, true, false, true);
+    }
 
     return;
 }

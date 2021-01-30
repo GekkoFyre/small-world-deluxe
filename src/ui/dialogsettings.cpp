@@ -89,12 +89,12 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
                                QPointer<AudioDevices> audioDevices,
                                const QPointer<QAudioInput> &audioSysInput,
                                const QPointer<QAudioOutput> &audioSysOutput,
-                               const std::list<std::pair<QAudioDeviceInfo, GkDevice>> &gkAvailInputDevs,
-                               const std::list<std::pair<QAudioDeviceInfo, GkDevice>> &gkAvailOutputDevs,
+                               const std::vector<std::pair<QAudioDeviceInfo, GkDevice>> &gkAvailInputDevs,
+                               const std::vector<std::pair<QAudioDeviceInfo, GkDevice>> &gkAvailOutputDevs,
                                const GkDevice &gkPrefInputDev, const GkDevice &gkPrefOutputDev,
                                QPointer<RadioLibs> radioLibs, QPointer<StringFuncs> stringFuncs,
                                std::shared_ptr<GkRadio> radioPtr,
-                               const std::list<GekkoFyre::Database::Settings::GkComPort> &com_ports,
+                               const std::vector<GekkoFyre::Database::Settings::GkComPort> &com_ports,
                                const QMap<quint16, GekkoFyre::Database::Settings::GkUsbPort> &usbPortMap,
                                QPointer<GkFrequencies> gkFreqList,
                                QPointer<GkFreqTableModel> freqTableModel,
@@ -1014,7 +1014,7 @@ void DialogSettings::prefill_rig_force_ctrl_lines(const ptt_type_t &ptt_type)
  * port is active or not.
  * @see GekkoFyre::RadioLibs::detect_com_ports(), DialogSettings::prefill_avail_usb_ports()
  */
-void DialogSettings::prefill_avail_com_ports(const std::list<GkComPort> &com_ports)
+void DialogSettings::prefill_avail_com_ports(const std::vector<GkComPort> &com_ports)
 {
     using namespace Database::Settings;
 

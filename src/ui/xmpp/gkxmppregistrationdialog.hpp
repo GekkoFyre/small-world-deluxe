@@ -92,8 +92,8 @@ private slots:
 
     //
     // User, roster and presence details
-    void askForRegistration();
-    void sendFilledRegistrationForm();
+    void recvRegistrationForm(const QXmppRegisterIq &registerIq);
+    void sendRegistrationForm(const std::unique_ptr<QXmppRegisterIq> &registerIq);
 
     //
     // Captcha management and processing
@@ -111,6 +111,7 @@ private slots:
 
 signals:
     void sendError(const QString &errorMsg);
+    void registerUser(const std::unique_ptr<QXmppRegisterIq> &registerIq);
 
 private:
     Ui::GkXmppRegistrationDialog *ui;
@@ -129,6 +130,7 @@ private:
     QString m_email;
     QString m_password;
     QString m_captcha;
+    std::unique_ptr<QXmppRegisterIq> m_registerForm;
 
     //
     // General networking

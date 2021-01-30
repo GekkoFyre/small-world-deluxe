@@ -136,7 +136,7 @@ void GkModemQRA64::encodeWithJT65(const QString &callsign_1, const QString &call
 {
     std::vector<int> own_callsign = gkStringFuncs->convStrToIntArray(callsign_1);
     std::vector<int> reply_callsign = gkStringFuncs->convStrToIntArray(callsign_2);
-    std::vector<int> maidenhead_int = gkStringFuncs->convStrToIntArray(maidenhead_grid); // TODO: Check for the size of this that it's not over the limits!
+    std::vector<int> maidenhead_int = gkStringFuncs->convStrToIntArray(maidenhead_grid); // TODO: Check for the size of this that it's not over the limits! //-V808
 
     //
     // Determine whether we are over the symbol/character limit or not...

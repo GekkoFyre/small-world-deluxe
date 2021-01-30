@@ -112,7 +112,7 @@ GkXmppVcardData GkXmppVcardCache::grabVCard(const QString &bareJid)
  * @param nodeName
  * @return
  */
-QString GkXmppVcardCache::getElementStore(const std::shared_ptr<QDomDocument> doc, const QString &nodeName)
+QString GkXmppVcardCache::getElementStore(const std::shared_ptr<QDomDocument> &doc, const QString &nodeName)
 {
     QString val = "";
 
@@ -238,7 +238,8 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         }
 
         if (isConnected()) {
-            QObject::connect(this, SIGNAL(sendRegistrationForm(const QXmppRegisterIq &)), this, SLOT(handleRegistrationForm(const QXmppRegisterIq &)));
+            QObject::connect(this, SIGNAL(sendRegistrationForm(const QXmppRegisterIq &)),
+                             this, SLOT(handleRegistrationForm(const QXmppRegisterIq &)));
             if ((config.user().isEmpty() || config.password().isEmpty()) || gkConnDetails.email.isEmpty()) {
                 //
                 // Unable to signup as username and/or password and/or email are empty values!
@@ -443,7 +444,7 @@ void GkXmppClient::rosterReceived()
     const QStringList bareJids = m_rosterManager->getRosterBareJids();
     for (const auto &bareJid: bareJids) {
         // Get the contact name, as we might need it...
-        QString name = m_rosterManager->getRosterEntry(bareJid).name();
+        QString name = m_rosterManager->getRosterEntry(bareJid).name(); //-V808
 
         // Attempt to get the vCard...
         GkXmppVcardData vcData = m_vcardCache->grabVCard(bareJid);
@@ -587,20 +588,37 @@ void GkXmppClient::modifyPresence(const QXmppPresence::Type &pres)
 /**
  * @brief GkXmppClient::handleRegistrationForm
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param registerIq
+ * @param registerIq The user registration form to be filled out, as received from the connected towards XMPP server.
  */
 void GkXmppClient::handleRegistrationForm(const QXmppRegisterIq &registerIq)
 {
-    QXmppRegisterIq registration_form;
-    registration_form.setForm(registerIq.form());
-    registration_form.setInstructions(registerIq.instructions());
-    registration_form.setInstructions(registerIq.instructions());
-    registration_form.setEmail(gkConnDetails.email);
-    registration_form.setPassword(config.password());
-    registration_form.setUsername(config.user());
+    try {
+        QXmppRegisterIq registration_form;
+        if (gkConnDetails.server.settings_client.auto_signup) { // If not handled here, process the form otherwise in `GkXmppRegistrationDialog`!
+            if (!isConnected()) {
+                createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, gkConnDetails.username,
+                                         gkConnDetails.password);
+            }
 
-    m_registerManager->setRegistrationFormToSend(registration_form);
-    m_registerManager->sendCachedRegistrationForm();
+            registration_form.setForm(registerIq.form());
+            registration_form.setInstructions(registerIq.instructions());
+            registration_form.setEmail(gkConnDetails.email);
+            registration_form.setPassword(config.password());
+            registration_form.setUsername(config.user());
+            registration_form.setType(QXmppIq::Type::Set);
+
+            m_registerManager->setRegistrationFormToSend(registration_form);
+            m_registerManager->sendCachedRegistrationForm();
+
+            gkEventLogger->publishEvent(tr("User, \"%1\", has been registered with XMPP server:\n\n%2")
+                                                .arg(config.user()).arg(gkConnDetails.server.url), GkSeverity::Info, "", true,
+                                        true, false, false);
+        }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(tr("Issues were encountered with trying to register user with XMPP server! Error:\n\n%1")
+        .arg(e.what()), GkSeverity::Fatal, "", false, true, false, true);
+    }
+
     return;
 }
 
@@ -906,7 +924,7 @@ void GkXmppClient::initRosterMgr()
 void GkXmppClient::versionReceivedSlot(const QXmppVersionIq &version)
 {
     if (version.type() == QXmppIq::Result) {
-        QString version_str = version.name() + " " + version.version() + (version.os() != "" ? "@" + version.os() : QString());
+        QString version_str = version.name() + " " + version.version() + (!version.os().isEmpty() ? "@" + version.os() : QString());
         gkEventLogger->publishEvent(tr("%1 server version: %2").arg(gkConnDetails.server.url).arg(version_str), GkSeverity::Info, "", false, true, false, false);
     }
 

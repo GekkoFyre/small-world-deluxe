@@ -209,8 +209,8 @@ void GkEventLogger::systemNotification(const QString &title, const GkEventLoggin
 {
     try {
         if (!event_msg.mesg.message.isNull() && !event_msg.mesg.message.isEmpty()) {
-            QString msg = event_msg.mesg.message;
             if (!event_msg.mesg.arguments.isNull() && !event_msg.mesg.arguments.toString().isEmpty()) {
+                QString msg = event_msg.mesg.message;
                 msg.clear();
                 msg = gkStringFuncs->addErrorMsg(event_msg.mesg.message, event_msg.mesg.arguments.toString());
             }
