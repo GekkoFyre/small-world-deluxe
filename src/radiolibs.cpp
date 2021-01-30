@@ -304,12 +304,12 @@ QList<QSerialPortInfo> RadioLibs::status_com_ports() const
  * @param serial_port_info
  * @return
  */
-std::list<GkComPort> RadioLibs::filter_com_ports(const QList<QSerialPortInfo> &serial_port_info) const
+std::vector<GkComPort> RadioLibs::filter_com_ports(const QList<QSerialPortInfo> &serial_port_info) const
 {
     std::lock_guard<std::mutex> lck_guard(mtx_filter_com_ports);
 
     try {
-        std::list<GkComPort> com_map;
+        std::vector<GkComPort> com_map;
         for (const auto &port: serial_port_info) {
             if (!port.isNull() && port.hasProductIdentifier()) {
                 GkComPort com_struct;
@@ -330,7 +330,7 @@ std::list<GkComPort> RadioLibs::filter_com_ports(const QList<QSerialPortInfo> &s
                 .arg(QString::fromStdString(e.what())), QMessageBox::Ok);
     }
 
-    return std::list<GkComPort>();
+    return std::vector<GkComPort>();
 }
 
 /**

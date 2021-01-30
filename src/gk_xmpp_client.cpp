@@ -112,7 +112,7 @@ GkXmppVcardData GkXmppVcardCache::grabVCard(const QString &bareJid)
  * @param nodeName
  * @return
  */
-QString GkXmppVcardCache::getElementStore(const std::shared_ptr<QDomDocument> doc, const QString &nodeName)
+QString GkXmppVcardCache::getElementStore(const std::shared_ptr<QDomDocument> &doc, const QString &nodeName)
 {
     QString val = "";
 
@@ -444,7 +444,7 @@ void GkXmppClient::rosterReceived()
     const QStringList bareJids = m_rosterManager->getRosterBareJids();
     for (const auto &bareJid: bareJids) {
         // Get the contact name, as we might need it...
-        QString name = m_rosterManager->getRosterEntry(bareJid).name();
+        QString name = m_rosterManager->getRosterEntry(bareJid).name(); //-V808
 
         // Attempt to get the vCard...
         GkXmppVcardData vcData = m_vcardCache->grabVCard(bareJid);
@@ -924,7 +924,7 @@ void GkXmppClient::initRosterMgr()
 void GkXmppClient::versionReceivedSlot(const QXmppVersionIq &version)
 {
     if (version.type() == QXmppIq::Result) {
-        QString version_str = version.name() + " " + version.version() + (version.os() != "" ? "@" + version.os() : QString());
+        QString version_str = version.name() + " " + version.version() + (!version.os().isEmpty() ? "@" + version.os() : QString());
         gkEventLogger->publishEvent(tr("%1 server version: %2").arg(gkConnDetails.server.url).arg(version_str), GkSeverity::Info, "", false, true, false, false);
     }
 

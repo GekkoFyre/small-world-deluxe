@@ -102,11 +102,11 @@ AudioDevices::~AudioDevices()
  * @return The found audio devices and their statistics.
  * @note <https://doc.qt.io/qt-5/audiooverview.html>.
  */
-std::list<std::pair<QAudioDeviceInfo, GkDevice>> AudioDevices::enumAudioDevicesCpp(const QList<QAudioDeviceInfo> &audioDeviceInfo)
+std::vector<std::pair<QAudioDeviceInfo, GkDevice>> AudioDevices::enumAudioDevicesCpp(const QList<QAudioDeviceInfo> &audioDeviceInfo)
 {
     try {
         std::lock_guard<std::mutex> audio_guard(enum_audio_dev_mtx);
-        std::list<std::pair<QAudioDeviceInfo, GkDevice>> audio_devices_vec;
+        std::vector<std::pair<QAudioDeviceInfo, GkDevice>> audio_devices_vec;
 
         for (const auto &device: audioDeviceInfo) {
             #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
@@ -152,7 +152,7 @@ std::list<std::pair<QAudioDeviceInfo, GkDevice>> AudioDevices::enumAudioDevicesC
         gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
     }
 
-    return std::list<std::pair<QAudioDeviceInfo, GkDevice>>();
+    return std::vector<std::pair<QAudioDeviceInfo, GkDevice>>();
 }
 
 /**

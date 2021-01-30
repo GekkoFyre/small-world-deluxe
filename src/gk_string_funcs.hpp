@@ -55,6 +55,7 @@
 #include <vector>
 #include <limits>
 #include <mutex>
+#include <deque>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -85,9 +86,9 @@ public:
     std::vector<int> convStrToIntArray(const QString &str);
     QString addErrorMsg(const QString &orig_msg, const QString &err_msg);
 
-    std::vector<std::string> csvSplitter(const std::string &csv_vals);
-    std::vector<std::string> csvRemoveElement(const std::vector<std::string> &csv_elements, const std::string &val_to_remove);
-    std::string csvOutputString(const std::vector<std::string> &csv_elements);
+    std::deque<std::string> csvSplitter(const std::string &csv_vals);
+    std::deque<std::string> csvRemoveElement(const std::deque<std::string> &csv_elements, const std::string &val_to_remove);
+    std::string csvOutputString(const std::deque<std::string> &csv_elements);
 
     QList<int> extractNumbersFromStr(const QString &str);
     QString zeroPadding(const QVariant &num, const qint32 &places);

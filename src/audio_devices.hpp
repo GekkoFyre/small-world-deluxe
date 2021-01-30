@@ -74,7 +74,7 @@ public:
                           QObject *parent = nullptr);
     ~AudioDevices() override;
 
-    std::list<std::pair<QAudioDeviceInfo, Database::Settings::Audio::GkDevice>> enumAudioDevicesCpp(const QList<QAudioDeviceInfo> &audioDeviceInfo);
+    std::vector<std::pair<QAudioDeviceInfo, Database::Settings::Audio::GkDevice>> enumAudioDevicesCpp(const QList<QAudioDeviceInfo> &audioDeviceInfo);
 
     void systemVolumeSetting();
     float vuMeter(const int &channels, const int &count, float *buffer);
