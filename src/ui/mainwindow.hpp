@@ -175,7 +175,7 @@ private slots:
     //
     // Audio/Volume related controls
     //
-    void on_verticalSlider_vol_control_valueChanged(int value);
+    void on_verticalSlider_vol_control_sliderMoved(int position);
     void on_pushButton_radio_tune_clicked(bool checked);
     void on_checkBox_rx_tx_vol_toggle_stateChanged(int arg1);
 
@@ -195,7 +195,6 @@ private slots:
     //
     // Audio related
     //
-    void updateVolume(const float &value);
     void setAudioIo(const bool &use_input_audio); // True by default!
 
     //
@@ -370,6 +369,7 @@ private:
     //
     // Audio sub-system
     //
+    qreal calcVolumeFactor(const qreal &vol_level, const qreal &factor = GK_AUDIO_VOL_FACTOR);
     double global_rx_audio_volume;
     double global_tx_audio_volume;
 
@@ -442,7 +442,6 @@ private:
     static QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>> initRadioModelsVar();
 
     void updateVolumeDisplayWidgets();
-    void updateVolumeSliderLabel(const float &vol_level);
     void defaultInputAudioDev(const std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice> &input_dev);
     void defaultOutputAudioDev(const std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice> &output_dev);
 

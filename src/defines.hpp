@@ -159,6 +159,8 @@ namespace GekkoFyre {
 #define AUDIO_VU_METER_UPDATE_MILLISECS (125)                   // How often the volume meter should update, in milliseconds.
 #define AUDIO_VU_METER_PEAK_DECAY_RATE (0.001)                  // Unknown
 #define AUDIO_VU_METER_PEAK_HOLD_LEVEL_DURATION (2000)          // Measured in milliseconds
+#define GK_AUDIO_VOL_MAX_PERCENTAGE (75.0)
+#define GK_AUDIO_VOL_FACTOR (1.3334)
 
 #define AUDIO_PLAYBACK_CODEC_PCM_IDX (3)
 #define AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX (4)

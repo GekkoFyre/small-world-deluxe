@@ -837,8 +837,8 @@ color: white;</string>
                                <rect>
                                 <x>0</x>
                                 <y>0</y>
-                                <width>100</width>
-                                <height>30</height>
+                                <width>16</width>
+                                <height>16</height>
                                </rect>
                               </property>
                               <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -1447,10 +1447,10 @@ QPushButton:disabled {
                 <string>Adjust volume of outgoing audio signal.</string>
                </property>
                <property name="minimum">
-                <number>10</number>
+                <number>0</number>
                </property>
                <property name="maximum">
-                <number>100</number>
+                <number>75</number>
                </property>
                <property name="pageStep">
                 <number>5</number>

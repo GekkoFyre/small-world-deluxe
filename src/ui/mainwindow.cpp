@@ -760,16 +760,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // printer->setOutputFileName(QString::fromStdString(default_path.string())); // TODO: Clean up this abomination of multiple std::string() <-> QString() conversions!
 
         //
-        // Initiate at startup to set any default values and/or signals/slots!
-        //
-        QObject::connect(this, SIGNAL(changeVolume(const float &)), this, SLOT(updateVolume(const float &)));
-
-        //
         // Set a default value for the Volume Slider and its QLabel
         //
-        const int vol_slider_max_val = ui->verticalSlider_vol_control->maximum();
-        const float real_vol_val = (static_cast<float>(ui->verticalSlider_vol_control->value()) / static_cast<float>(vol_slider_max_val));
-        updateVolumeSliderLabel(real_vol_val);
+        auto audio_vol_tick_pos = ui->verticalSlider_vol_control->tickPosition();
+        const qreal audio_vol = qreal(audio_vol_tick_pos / 100.0);
+        gkAudioInput->setVolume(audio_vol);
+        gkAudioOutput->setVolume(audio_vol);
+        ui->label_vol_control_disp->setText(tr("%1%").arg(QString::number(calcVolumeFactor(audio_vol_tick_pos, GK_AUDIO_VOL_FACTOR))));
 
         if (!pref_input_device.audio_device_info.isNull()) {
             if (pref_input_device.audio_device_info.preferredFormat().channelCount() > 0) {
@@ -1491,6 +1488,21 @@ QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, rig_type>> MainWind
 }
 
 /**
+ * @brief MainWindow::calcVolumeFactor since we don't want the maximum volume level given to `gkAudioInput` or
+ * `gkAudioOutput` to be a full 100%, we set it to something like 75% instead. But we still need to show the user a
+ * corrected value in order to minimize confusion, so this is where this function comes into play.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param vol_level The actual, real volume level.
+ * @param factor The correction factor to use to bring the real volume level to '100%' when at maximum.
+ * @return The corrected volume level to display to the user.
+ */
+qreal MainWindow::calcVolumeFactor(const qreal &vol_level, const qreal &factor)
+{
+    qreal corrected_vol = std::round(vol_level * factor);
+    return corrected_vol;
+}
+
+/**
  * @brief MainWindow::updateVolumeDisplayWidgets will update the volume widget within the QMainWindow of Small
  * World Deluxe and keep it updated as long as there is an incoming audio signal.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -1532,24 +1544,6 @@ void MainWindow::updateVolumeDisplayWidgets()
         QString error_msg = tr("An unknown exception has occurred. There are no further details.");
         gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
     }
-
-    return;
-}
-
-/**
- * @brief MainWindow::updateVolumeSliderLabel will update the volume QLabel UI widget, `label_vol_control_disp`.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param vol_level The actual slider value itself, derived from UI widget, `verticalSlider_vol_control`.
- */
-void MainWindow::updateVolumeSliderLabel(const float &vol_level)
-{
-    const float vol_level_decibel = (20.0f * std::log10(vol_level));
-    std::stringstream ss;
-    ss << std::setprecision(3) << vol_level_decibel;
-    ui->label_vol_control_disp->setText(tr("%1 dB").arg(QString::fromStdString(ss.str())));
-
-    float vol_level_multiplier = vol_level / 100.0f; // Since QAudioInput and QAudioOutput only read volume between the range of 0.1 - 1.0...
-    emit changeVolume(vol_level_multiplier);
 
     return;
 }
@@ -2406,36 +2400,6 @@ void MainWindow::configInputAudioDevice()
 }
 
 /**
- * @brief MainWindow::updateVolume will update the data within the circular buffer to the volume level as set
- * by the user themselves, usually from within QMainWindow.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param value The adjustment needed to the buffered data.
- * @note trukvl <https://stackoverflow.com/questions/15776390/controlling-audio-volume-in-real-time>
- */
-void MainWindow::updateVolume(const float &value)
-{
-    if (pref_input_device.is_enabled) {
-        //
-        // Input device!
-        //
-        if (!gkAudioInput.isNull()) {
-            gkAudioInput->setVolume(value);
-        }
-    } else if (pref_output_device.is_enabled) {
-        //
-        // Output device!
-        //
-        if (!gkAudioOutput.isNull()) {
-            gkAudioOutput->setVolume(value);
-        }
-    } else {
-        std::cerr << tr("Unable to determine Audio I/O for making volume changes!").toStdString() << std::endl;
-    }
-
-    return;
-}
-
-/**
  * @brief MainWindow::setAudioIo
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param use_input_audio
@@ -2500,35 +2464,22 @@ void MainWindow::msgOutgoingProcess(const QString &curr_text)
 }
 
 /**
- * @brief MainWindow::on_verticalSlider_vol_control_valueChanged indirectly adjusts the volume of the audio data buffer itself
- * via the decibel formulae <https://en.wikipedia.org/wiki/Decibel#Acoustics>.
+ * @brief MainWindow::on_verticalSlider_vol_control_sliderMoved
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param value The value of the QSlider from the QMainWindow, ranging from 0-100 individual units.
- * @note Ansis Māliņš <https://stackoverflow.com/questions/49014440/what-is-the-correct-audio-volume-slider-formula>,
- * trukvl <https://stackoverflow.com/questions/15776390/controlling-audio-volume-in-real-time>
+ * @param position
  */
-void MainWindow::on_verticalSlider_vol_control_valueChanged(int value)
+void MainWindow::on_verticalSlider_vol_control_sliderMoved(int position)
 {
-    //
-    // The volume is a float between 0.0 and 1.0 and essentially represents a percentage of the max volume of the
-    // audio. Since it will always be either 100% or less, the dB value will be either 0 (for full volume) or
-    // negative. A positive dB value would mean there is amplification taking place which isn't possible with
-    // simple playback.
-    //
-    const int vol_slider_max_val = ui->verticalSlider_vol_control->maximum();
-    const float real_val = (static_cast<float>(value) / static_cast<float>(vol_slider_max_val));
-
-    if (pref_input_device.is_enabled) {
-        if (!gkAudioInput.isNull()) {
-            updateVolumeSliderLabel(real_val);
-        }
-    } else if (pref_output_device.is_enabled) {
-        if (!gkAudioOutput.isNull()) {
-            updateVolumeSliderLabel(real_val);
-        }
+    qreal audio_vol = qreal(position / 100.0);
+    ui->label_vol_control_disp->setText(tr("%1%").arg(QString::number(calcVolumeFactor(position, GK_AUDIO_VOL_FACTOR))));
+    if (ui->checkBox_rx_tx_vol_toggle->isChecked()) {
+        //
+        // RX is selected!
+        gkAudioInput->setVolume(audio_vol);
     } else {
-        gkEventLogger->publishEvent(tr("Unable to determine Audio I/O for changing audio state!"), GkSeverity::Error,
-                                    "", false, true, false, true);
+        //
+        // TX is selected!
+        gkAudioOutput->setVolume(audio_vol);
     }
 
     return;
