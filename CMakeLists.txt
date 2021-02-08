@@ -527,6 +527,7 @@ qt5_wrap_ui(UI_HEADERS
     src/ui/spectrodialog.ui
     src/ui/gkaudioplaydialog.ui
     src/ui/sendreportdialog.ui
+    src/ui/widgets/gk_vu_change_widget.ui
     src/ui/xmpp/gkxmpprosterdialog.ui
     src/ui/xmpp/gkxmppmessagedialog.ui
     src/ui/xmpp/gkxmppregistrationdialog.ui)
@@ -575,6 +576,7 @@ set(GALAXY_UI_CPP
     src/pa_stream_handler.cpp
     src/gk_sinewave.cpp
     src/pa_audio_player.cpp
+    src/ui/widgets/gk_vu_change_widget.cpp
     src/ui/widgets/gk_vu_meter_widget.cpp
     src/ui/widgets/gk_submit_msg.cpp
     src/ui/widgets/gk_display_image.cpp
@@ -670,6 +672,7 @@ set(GALAXY_OBJ_HEADERS
     src/gk_sinewave.hpp
     src/gk_waterfall_data.hpp
     src/pa_audio_player.hpp
+    src/ui/widgets/gk_vu_change_widget.hpp
     src/ui/widgets/gk_vu_meter_widget.hpp
     src/ui/widgets/gk_submit_msg.hpp
     src/ui/widgets/gk_display_image.hpp

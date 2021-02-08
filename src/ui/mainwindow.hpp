@@ -49,6 +49,7 @@
 #include "src/gk_xmpp_client.hpp"
 #include "src/gk_frequency_list.hpp"
 #include "src/ui/dialogsettings.hpp"
+#include "src/ui/widgets/gk_vu_change_widget.hpp"
 #include "src/ui/widgets/gk_display_image.hpp"
 #include "src/ui/widgets/gk_vu_meter_widget.hpp"
 #include "src/gk_logger.hpp"
@@ -107,6 +108,7 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
     QThread gkAudioInputThread;
+    QThread gkAudioOutputThread;
     QThread gkAudioEncodingThread;
 
 public:
@@ -265,6 +267,8 @@ protected slots:
     void processAudioInMain();
     void processAudioInMainBuffer();
     void audioInHandleStateChanged(QAudio::State changed_state);
+    void processAudioOutMain();
+    void processAudioOutMainBuffer();
     void audioOutHandleStateChanged(QAudio::State changed_state);
 
 public slots:
@@ -274,7 +278,9 @@ public slots:
     // Audio related
     //
     void stopRecordingInput();
+    void stopRecordingOutput();
     void startRecordingInput();
+    void startRecordingOutput();
 
     void restartInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &input_device);
 
@@ -303,10 +309,13 @@ signals:
     // Audio related
     //
     void updateAudioIn();
+    void updateAudioOut();
     void refreshVuDisplay(const qreal &rmsLevel, const qreal &peakLevel, const int &numSamples);
     void changeVolume(const float &value);
-    void stopRecording();
-    void startRecording();
+    void stopRecInput();
+    void stopRecOutput();
+    void startRecInput();
+    void startRecOutput();
 
     //
     // QAudioSystem and related
@@ -353,8 +362,11 @@ private:
     //
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
+    QPointer<GkVuAdjust> gkVuAdjustDlg;
     QPointer<QBuffer> gkAudioInputBuf;
+    QPointer<QBuffer> gkAudioOutputBuf;
     QByteArray gkAudioInputByteArrayBuf;
+    QByteArray gkAudioOutputByteArrayBuf;
 
     //
     // QAudioSystem miscellaneous variables

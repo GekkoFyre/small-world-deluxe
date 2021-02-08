@@ -677,6 +677,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
 
         if (!gkAudioOutput.isNull()) {
+            gkAudioOutputBuf = new QBuffer(this);
+            gkAudioOutputBuf->open(QBuffer::ReadWrite);
+            gkAudioOutput->moveToThread(&gkAudioOutputThread);
+            gkAudioOutput->setNotifyInterval(100);
+            gkAudioOutputThread.start();
+            gkAudioOutput->start(gkAudioOutputBuf);
+
             QObject::connect(gkAudioOutput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(audioOutHandleStateChanged(QAudio::State)));
         }
 
@@ -730,8 +737,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Sound & Audio Devices
         //
-        QObject::connect(this, SIGNAL(stopRecording()), this, SLOT(stopRecordingInput()));
-        QObject::connect(this, SIGNAL(startRecording()), this, SLOT(startRecordingInput()));
+        QObject::connect(this, SIGNAL(stopRecInput()), this, SLOT(stopRecordingInput()));
+        QObject::connect(this, SIGNAL(stopRecOutput()), this, SLOT(stopRecordingOutput()));
+        QObject::connect(this, SIGNAL(startRecInput()), this, SLOT(startRecordingInput()));
+        QObject::connect(this, SIGNAL(startRecOutput()), this, SLOT(startRecordingOutput()));
+
         QObject::connect(this, SIGNAL(refreshVuDisplay(const qreal &, const qreal &, const int &)),
                          gkVuMeter, SLOT(levelChanged(const qreal &, const qreal &, const int &)));
         QObject::connect(this, SIGNAL(changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)),
@@ -762,17 +772,32 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Set a default value for the Volume Slider and its QLabel
         //
-        auto audio_vol_tick_pos = ui->verticalSlider_vol_control->tickPosition();
+        ui->verticalSlider_vol_control->setValue(static_cast<qint32>(GK_AUDIO_VOL_INIT_PERCENTAGE));
+        qint32 audio_vol_tick_pos = ui->verticalSlider_vol_control->value();
         const qreal audio_vol = qreal(audio_vol_tick_pos / 100.0);
         gkAudioInput->setVolume(audio_vol);
         gkAudioOutput->setVolume(audio_vol);
         ui->label_vol_control_disp->setText(tr("%1%").arg(QString::number(calcVolumeFactor(audio_vol_tick_pos, GK_AUDIO_VOL_FACTOR))));
 
+        //
+        // Setup the volume adjustment dialog / overlay!
+        gkVuAdjustDlg = new GkVuAdjust(gkAudioInput, gkAudioOutput, this);
+
         if (!pref_input_device.audio_device_info.isNull()) {
             if (pref_input_device.audio_device_info.preferredFormat().channelCount() > 0) {
-                emit startRecording();
-                // vu_meter_thread = std::thread(&MainWindow::updateVolumeDisplayWidgets, this);
-                // vu_meter_thread.detach();
+                //
+                // Start recording of configured input audio device!
+                emit startRecInput();
+                vu_meter_thread = std::thread(&MainWindow::updateVolumeDisplayWidgets, this);
+                vu_meter_thread.detach();
+            }
+        }
+
+        if (!pref_input_device.audio_device_info.isNull()) {
+            if (pref_input_device.audio_device_info.preferredFormat().channelCount() > 0) {
+                //
+                // Start recording of configured output audio device!
+                emit startRecOutput();
             }
         }
 
@@ -861,7 +886,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
  */
 MainWindow::~MainWindow()
 {
-    emit stopRecording();
+    emit stopRecInput();
+    emit stopRecOutput();
     emit disconnectRigInUse(gkRadioPtr->gkRig, gkRadioPtr);
 
     gkAudioEncodingThread.quit();
@@ -869,6 +895,9 @@ MainWindow::~MainWindow()
 
     gkAudioInputThread.quit();
     gkAudioInputThread.wait();
+
+    gkAudioOutputThread.quit();
+    gkAudioOutputThread.wait();
 
     if (vu_meter_thread.joinable()) {
         vu_meter_thread.join();
@@ -1511,29 +1540,28 @@ qreal MainWindow::calcVolumeFactor(const qreal &vol_level, const qreal &factor)
 void MainWindow::updateVolumeDisplayWidgets()
 {
     try {
-        if (gkAudioInputBuf->isReadable()) {
-            std::lock_guard<std::mutex> lck_guard(mtx_update_vol_widgets);
-            std::this_thread::sleep_for(std::chrono::milliseconds(2500)); // TODO: This is a huge source of SEGFAULTS!
-
-            const qint32 num_samples = AUDIO_FRAMES_PER_BUFFER * gkAudioInput->format().channelCount(); // Assert that stereo actually equals stereo!
-            while (gkAudioInput->state() == QAudio::ActiveState) {
-                QByteArray vol_input_ba(std::move(gkAudioInputByteArrayBuf));
-                while (!vol_input_ba.isEmpty() && !vol_input_ba.isNull()) {
+        if (ui->checkBox_rx_tx_vol_toggle->isChecked()) {
+            if (gkAudioInputBuf->isReadable()) {
+                std::lock_guard<std::mutex> lck_guard(mtx_update_vol_widgets);
+                std::this_thread::sleep_for(std::chrono::milliseconds(2500)); // TODO: This is a huge source of SEGFAULTS!
+                const qint32 num_samples = AUDIO_FRAMES_PER_BUFFER * gkAudioInput->format().channelCount(); // Assert that stereo actually equals stereo!
+                while (gkAudioInput->state() == QAudio::ActiveState) {
                     //
                     // Input audio stream is open and active!
                     //
-                    std::vector<double> recv_samples;
-                    recv_samples.reserve(num_samples);
-                    std::copy(vol_input_ba.begin(), vol_input_ba.end(), recv_samples.begin());
-
-                    Gist<double> gist_vol(recv_samples.size(), gkAudioInput->format().sampleRate());
-                    gist_vol.processAudioFrame(recv_samples);
-
-                    double rms = gist_vol.rootMeanSquare();
-                    double peak = gist_vol.peakEnergy();
-
-                    emit refreshVuDisplay(rms, peak, recv_samples.size());
-                    vol_input_ba.clear(); // We are done with all the data as a whole, therefore clear the lot!
+                    emit refreshVuDisplay(gkAudioInput->volume(), 1.0, num_samples);
+                }
+            }
+        } else {
+            if (gkAudioOutputBuf->isReadable()) {
+                std::lock_guard<std::mutex> lck_guard(mtx_update_vol_widgets);
+                std::this_thread::sleep_for(std::chrono::milliseconds(2500)); // TODO: This is a huge source of SEGFAULTS!
+                const qint32 num_samples = AUDIO_FRAMES_PER_BUFFER * gkAudioOutput->format().channelCount(); // Assert that stereo actually equals stereo!
+                while (gkAudioOutput->state() == QAudio::ActiveState) {
+                    //
+                    // Output audio stream is open and active!
+                    //
+                    emit refreshVuDisplay(gkAudioOutput->volume(), 1.0, num_samples);
                 }
             }
         }
@@ -2363,7 +2391,9 @@ void MainWindow::infoBar()
  */
 void MainWindow::uponExit()
 {
-    emit stopRecording();
+    emit stopRecInput();
+    emit stopRecOutput();
+
     QApplication::exit(EXIT_SUCCESS);
 }
 
@@ -2431,8 +2461,12 @@ void MainWindow::processAudioInMain()
     if (gkAudioInput->state() == QAudio::ActiveState) {
         emit updateAudioIn();
 
+        //
+        // Clear and reset the buffers!
         gkAudioInputBuf->buffer().clear();
         gkAudioInputBuf->seek(0);
+        gkAudioInputByteArrayBuf.clear();
+        gkAudioInputByteArrayBuf.shrink_to_fit();
     }
 
     return;
@@ -2648,6 +2682,41 @@ void MainWindow::audioInHandleStateChanged(QAudio::State changed_state)
 }
 
 /**
+ * @brief MainWindow::processAudioOutMain responds to audio buffer updates from a QAudioOutput pointer (i.e.
+ * specifically `gkAudioOutput` in this case) and updates other usages of QBuffer throughout the Small World Deluxe
+ * application.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @note The ready() signal from QAudioOutput is utterly broken and should not be relied upon in any capacity. DO NOT USE.
+ */
+void MainWindow::processAudioOutMain()
+{
+    if (gkAudioOutput->state() == QAudio::ActiveState) {
+        emit updateAudioOut();
+
+        //
+        // Clear and reset the buffers!
+        gkAudioOutputBuf->buffer().clear();
+        gkAudioOutputBuf->seek(0);
+        gkAudioOutputByteArrayBuf.clear();
+        gkAudioOutputByteArrayBuf.shrink_to_fit();
+    }
+
+    return;
+}
+
+/**
+ * @brief MainWindow::processAudioOutMainBuffer
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::processAudioOutMainBuffer()
+{
+    gkAudioOutputBuf->seek(0);
+    gkAudioOutputByteArrayBuf.append(gkAudioOutputBuf->readAll());
+
+    return;
+}
+
+/**
  * @brief MainWindow::audioOutHandleStateChanged
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param changed_state
@@ -2702,6 +2771,25 @@ void MainWindow::stopRecordingInput()
 }
 
 /**
+ * @brief MainWindow::stopRecordingOutput
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::stopRecordingOutput()
+{
+    try {
+        if (!gkAudioOutput.isNull() && gkAudioOutput->state() == QAudio::ActiveState) {
+            // TODO: Implement a close-stream state!
+            gkAudioOutput->stop();
+        }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(tr("Problem encountered with stopping output audio device. Error:\n\n%1").arg(QString::fromStdString(e.what())),
+                                    GkSeverity::Error, "", false, true, false, true);
+    }
+
+    return;
+}
+
+/**
  * @brief MainWindow::startRecordingInput
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param wait_time How long to wait for the thread to instantiate safely before forcing
@@ -2711,10 +2799,35 @@ void MainWindow::startRecordingInput()
 {
     try {
         if (gkAudioInput->state() == QAudio::StoppedState) {
-            emit stopRecording();
+            emit stopRecInput();
 
             if (avail_input_audio_devs.empty()) {
-                throw std::invalid_argument(tr("No audio devices have been found!").toStdString());
+                throw std::invalid_argument(tr("No input audio devices have been found!").toStdString());
+            }
+        }
+
+        gkFftAudio->processEvent(Spectrograph::GkFftEventType::record);
+        return;
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(tr("Problem encountered with initializing input audio device. Error:\n\n%1").arg(QString::fromStdString(e.what())),
+                                    GkSeverity::Error, "", false, true, false, true);
+    }
+
+    return;
+}
+
+/**
+ * @brief MainWindow::startRecordingOutput
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::startRecordingOutput()
+{
+    try {
+        if (gkAudioOutput->state() == QAudio::StoppedState) {
+            emit stopRecOutput();
+
+            if (avail_output_audio_devs.empty()) {
+                throw std::invalid_argument(tr("No output audio devices have been found!").toStdString());
             }
         }
 
@@ -2736,7 +2849,7 @@ void MainWindow::startRecordingInput()
 void MainWindow::restartInputAudioInterface(const GkDevice &input_device)
 {
     try {
-        emit stopRecording();
+        emit stopRecInput();
         pref_input_device = {}; // Clear the structure ready for re-use!
         pref_input_device = input_device;
     } catch (const std::exception &e) {
