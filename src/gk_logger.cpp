@@ -57,6 +57,10 @@ using namespace System;
 using namespace Events;
 using namespace Logging;
 
+#if defined(GFYRE_ENBL_MSVC_WINTOAST)
+using namespace WinToastLib;
+#endif
+
 std::mutex dataBatchMutex;
 std::mutex setDateMutex;
 std::mutex setEventNoMutex;
@@ -67,10 +71,24 @@ std::mutex setEventNoMutex;
  * @param viewModel
  * @param parent
  */
-GkEventLogger::GkEventLogger(QPointer<GekkoFyre::StringFuncs> stringFuncs, QObject *parent)
+GkEventLogger::GkEventLogger(const QPointer<GekkoFyre::StringFuncs> &stringFuncs, QObject *parent)
 {
     setParent(parent);
     gkStringFuncs = std::move(stringFuncs);
+
+    #if defined(GFYRE_ENBL_MSVC_WINTOAST)
+    WinToast::instance()->setAppName(QString(General::productName).toStdWString());
+    const auto aumi = WinToast::configureAUMI(QString(General::companyName).toStdWString(), QString(General::productName).toStdWString(),
+                                              QString(General::executableName).toStdWString(), QString(General::appVersion).toStdWString());
+    WinToast::instance()->setAppUserModelId(aumi);
+    if (!WinToast::instance()->initialize()) {
+        publishEvent(tr("Could not initialize toast notification library!"), GkSeverity::Error, "", false, true, false, true);
+    }
+
+    toastTempl = std::make_unique<WinToastLib::WinToastTemplate>(WinToastTemplate::ImageAndText02);
+    toastTempl->setImagePath(QString(":/resources/contrib/images/vector/gekkofyre-networks/rionquosue/logo_blank_border_text_square_rionquosue.svg").toStdWString());
+    toastTempl->setTextField(QString(General::productName).toStdWString(), WinToastTemplate::FirstLine);
+    #endif
 
     return;
 }
@@ -216,8 +234,8 @@ void GkEventLogger::systemNotification(const QString &title, const GkEventLoggin
             }
 
             // Send out a system notification!
-            #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
-            system("powershell -ExecutionPolicy Bypass -F contrib/dend/toast.ps1");
+            #if defined(GFYRE_ENBL_MSVC_WINTOAST)
+            toastTempl->setTextField(event_msg.mesg.message.toStdWString(), WinToastTemplate::SecondLine);
             #elif __linux__
             system(QString("notify-send '%1' \"%2\"").arg(title).arg(msg).toStdString().c_str());
             #endif

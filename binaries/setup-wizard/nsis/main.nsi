@@ -283,7 +283,6 @@ SectionGroup "Small World Deluxe" SWDsection
           File "${GK_ROOT_PATH}\cmake-build-debug\zlib1.dll"
           
           File "${GK_ROOT_PATH}\cmake-build-debug\crashpad_handler.exe"
-          File "${GK_ROOT_PATH}\cmake-build-debug\contrib\dend\toast.ps1"
 
           File "${GK_ROOT_PATH}\cmake-build-debug\${MUI_FILE}.exe"
           File "${GK_ROOT_PATH}\cmake-build-debug\libgalaxy.a"

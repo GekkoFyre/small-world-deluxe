@@ -45,11 +45,16 @@
 #include "src/models/tableview/gk_logger_model.hpp"
 #include <qxmpp/QXmppLogger.h>
 #include <mutex>
-#include <QVariant>
-#include <QPointer>
+#include <memory>
+#include <QList>
 #include <QObject>
 #include <QString>
-#include <QList>
+#include <QVariant>
+#include <QPointer>
+
+#if defined(GFYRE_ENBL_MSVC_WINTOAST)
+#include "src/contrib/WinToast/src/wintoastlib.h"
+#endif
 
 namespace GekkoFyre {
 
@@ -57,7 +62,7 @@ class GkEventLogger : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkEventLogger(QPointer<GekkoFyre::StringFuncs> stringFuncs, QObject *parent = nullptr);
+    explicit GkEventLogger(const QPointer<GekkoFyre::StringFuncs> &stringFuncs, QObject *parent = nullptr);
     ~GkEventLogger() override;
 
 public slots:
@@ -74,6 +79,10 @@ signals:
 private:
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QList<GekkoFyre::System::Events::Logging::GkEventLogging> eventLogDb;                       // Where the event log itself is stored in memory...
+
+    #if defined(GFYRE_ENBL_MSVC_WINTOAST)
+    std::unique_ptr<WinToastLib::WinToastTemplate> toastTempl;
+    #endif
 
     int setEventNo();
     void systemNotification(const QString &title, const GekkoFyre::System::Events::Logging::GkEventLogging &event_msg);

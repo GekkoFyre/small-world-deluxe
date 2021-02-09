@@ -509,6 +509,34 @@ set(GALAXY_GIST_HPP
 
 set_property(SOURCE ${GALAXY_GIST_HPP} PROPERTY SKIP_AUTOUIC ON)
 
+if(WIN32 AND !MSYS AND !MINGW)
+    add_definitions(-DGFYRE_ENBL_MSVC_WINTOAST)
+    set(GALAXY_WINTOAST_HPP
+        ${GALAXY_WINTOAST_HPP}
+        src/contrib/WinToast/src/wintoastlib.h)
+
+    set_property(SOURCE ${GALAXY_WINTOAST_HPP} PROPERTY SKIP_AUTOUIC ON)
+
+    set(GALAXY_WINTOAST_CPP
+        ${GALAXY_WINTOAST_CPP}
+        src/contrib/WinToast/src/wintoastlib.cpp)
+
+    set_property(SOURCE ${GALAXY_WINTOAST_CPP} PROPERTY SKIP_AUTOUIC ON)
+else()
+    #
+    # Deliberately left empty!
+    #
+    set(GALAXY_WINTOAST_HPP
+        ${GALAXY_WINTOAST_HPP})
+
+    set_property(SOURCE ${GALAXY_WINTOAST_HPP} PROPERTY SKIP_AUTOUIC ON)
+
+    set(GALAXY_WINTOAST_CPP
+        ${GALAXY_WINTOAST_CPP})
+
+    set_property(SOURCE ${GALAXY_WINTOAST_CPP} PROPERTY SKIP_AUTOUIC ON)
+endif()
+
 #
 # SingleApplication
 # https://github.com/itay-grudev/SingleApplication
@@ -779,7 +807,7 @@ endif()
 # Build Small World Deluxe as a static package!
 #
 if(GFYRE_BUILD_STATIC)
-    add_library(galaxy STATIC ${QM_FILES} ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP} ${GALAXY_HAMLIB_CPP})
+    add_library(galaxy STATIC ${QM_FILES} ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP} ${GALAXY_HAMLIB_CPP} ${GALAXY_WINTOAST_HPP} ${GALAXY_WINTOAST_CPP})
     target_link_libraries(galaxy PUBLIC "-static")
 else()
     set(GFYRE_BUILD_SHARED ON)
@@ -789,7 +817,7 @@ endif(GFYRE_BUILD_STATIC)
 # Build Small World Deluxe as a shared package!
 #
 if(GFYRE_BUILD_SHARED)
-    add_library(galaxy SHARED ${QM_FILES} ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP} ${GALAXY_HAMLIB_CPP})
+    add_library(galaxy SHARED ${QM_FILES} ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP} ${GALAXY_HAMLIB_CPP} ${GALAXY_WINTOAST_HPP} ${GALAXY_WINTOAST_CPP})
     
     # add_library(galaxy_fort STATIC ${GALAXY_WSJTX_QRA64_FORT})
 endif(GFYRE_BUILD_SHARED)
@@ -802,8 +830,6 @@ add_dependencies(galaxy resources)
 
 set(SWRLD_EXEC ${SWRLD_EXEC}
     src/main.cpp)
-
-configure_file("src/contrib/dend/toast.ps1" "${CMAKE_CURRENT_BINARY_DIR}/contrib/dend/toast.ps1" COPYONLY)
 
 add_executable(smallworld WIN32 ${SWRLD_EXEC})
 target_compile_options(smallworld PRIVATE -fPIC)

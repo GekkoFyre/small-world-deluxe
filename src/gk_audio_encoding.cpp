@@ -80,9 +80,9 @@ using namespace GkXmpp;
 
 #define OGG_VORBIS_READ (1024)
 
-GkAudioEncoding::GkAudioEncoding(const QPointer<QBuffer> &audioInputBuf, QPointer<GekkoFyre::GkLevelDb> database,
-                                 QPointer<QAudioOutput> audioOutput, QPointer<QAudioInput> audioInput,
-                                 const GkDevice &output_device, const GkDevice &input_device,
+GkAudioEncoding::GkAudioEncoding(const QPointer<QBuffer> &audioInputBuf, const QPointer<QBuffer> &audioOutputBuf,
+                                 QPointer<GekkoFyre::GkLevelDb> database, QPointer<QAudioOutput> audioOutput,
+                                 QPointer<QAudioInput> audioInput, const GkDevice &output_device, const GkDevice &input_device,
                                  QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QObject(parent)
 {
     setParent(parent);
@@ -101,6 +101,7 @@ GkAudioEncoding::GkAudioEncoding(const QPointer<QBuffer> &audioInputBuf, QPointe
     // Open and initialize the buffers for reading and writing purposes!
     m_encoded_buf = new QBuffer(this);
     gkAudioInputBuf = std::move(audioInputBuf);
+    gkAudioOutputBuf = std::move(audioOutputBuf);
 
     QObject::connect(this, SIGNAL(pauseEncode()), this, SLOT(stopCaller()));
     QObject::connect(this, SIGNAL(error(const QString &, const GekkoFyre::System::Events::Logging::GkSeverity &)),
@@ -350,6 +351,33 @@ void GkAudioEncoding::processAudioInEncode()
     if (m_initialized) {
         gkAudioInputBuf->seek(0);
         m_buffer.append(gkAudioInputBuf->readAll());
+        while (!m_buffer.isEmpty()) {
+            if (m_chosen_codec == CodecSupport::Opus) {
+                encodeOpus();
+            } else if (m_chosen_codec == CodecSupport::OggVorbis) {
+                encodeVorbis();
+            } else if (m_chosen_codec == CodecSupport::FLAC) {
+                encodeFLAC();
+            } else {
+                throw std::invalid_argument(tr("The codec you have chosen is not supported as of yet, please try another!").toStdString());
+            }
+        }
+    }
+
+    return;
+}
+
+/**
+ * @brief GkAudioEncoding::processAudioOutEncode is executed once enough audio samples have been written to the buffer in
+ * question (100 milliseconds in this instance).
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>,
+ * Joel Svensson <https://svenssonjoel.github.io/pages/qt-audio-input/index.html>.
+ */
+void GkAudioEncoding::processAudioOutEncode()
+{
+    if (m_initialized) {
+        gkAudioOutputBuf->seek(0);
+        m_buffer.append(gkAudioOutputBuf->readAll());
         while (!m_buffer.isEmpty()) {
             if (m_chosen_codec == CodecSupport::Opus) {
                 encodeOpus();

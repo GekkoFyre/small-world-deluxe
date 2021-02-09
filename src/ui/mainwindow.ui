@@ -1617,20 +1617,7 @@ QPushButton:disabled {
      <property name="title">
       <string>Soun&amp;d</string>
      </property>
-     <widget class="QMenu" name="menu_Input_RX">
-      <property name="title">
-       <string>&amp;Input (RX)</string>
-      </property>
-      <addaction name="actionSet_Volume_Input"/>
-     </widget>
-     <widget class="QMenu" name="menuOut_put_TX">
-      <property name="title">
-       <string>Out&amp;put (TX)</string>
-      </property>
-      <addaction name="actionSet_Volume_Output"/>
-     </widget>
-     <addaction name="menu_Input_RX"/>
-     <addaction name="menuOut_put_TX"/>
+     <addaction name="actionAdjust_Volume"/>
     </widget>
     <addaction name="actionSet_Offset"/>
     <addaction name="separator"/>
@@ -2018,14 +2005,9 @@ QPushButton:disabled {
     <string>Sign-out</string>
    </property>
   </action>
-  <action name="actionSet_Volume_Input">
+  <action name="actionAdjust_Volume">
    <property name="text">
-    <string>Set Volume</string>
-   </property>
-  </action>
-  <action name="actionSet_Volume_Output">
-   <property name="text">
-    <string>Set Volume</string>
+    <string>Adjust &amp;Volume</string>
    </property>
   </action>
  </widget>

@@ -626,7 +626,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                             if (output_dev.second.audio_device_info.isFormatSupported(user_output_settings)) {
                                 // Given audio parameters are supported, as defined by the user previously!
                                 pref_output_device = output_dev.second;
-                                gkAudioOutput = new QAudioOutput(output_dev.first, user_output_settings, this);
+                                gkAudioOutput = new QAudioOutput(output_dev.first, user_output_settings, &gkAudioOutputThread);
                                 gkEventLogger->publishEvent(tr("Now using the output audio device, \"%1\".").arg(pref_output_device.audio_device_info.deviceName()),
                                                             GkSeverity::Info, "", true, true, false, false);
                             } else {
@@ -684,6 +684,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             gkAudioOutputThread.start();
             gkAudioOutput->start(gkAudioOutputBuf);
 
+            QObject::connect(&gkAudioOutputThread, &QThread::finished, gkFftAudio, &QObject::deleteLater);
             QObject::connect(gkAudioOutput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(audioOutHandleStateChanged(QAudio::State)));
         }
 
@@ -697,7 +698,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the audio codec encoding/decoding libraries!
         //
-        gkAudioEncoding = new GkAudioEncoding(gkAudioInputBuf, gkDb, gkAudioOutput, gkAudioInput, pref_output_device, pref_input_device, gkEventLogger, &gkAudioEncodingThread);
+        gkAudioEncoding = new GkAudioEncoding(gkAudioInputBuf, gkAudioOutputBuf, gkDb, gkAudioOutput, gkAudioInput, pref_output_device, pref_input_device, gkEventLogger, &gkAudioEncodingThread);
         gkAudioEncoding->moveToThread(&gkAudioEncodingThread);
         QObject::connect(&gkAudioEncodingThread, &QThread::finished, gkAudioEncoding, &QObject::deleteLater);
         gkAudioEncodingThread.start();
@@ -1068,6 +1069,8 @@ void MainWindow::launchAudioPlayerWin()
                                                                        gkStringFuncs, gkAudioEncoding, gkEventLogger, this);
     gkAudioPlayDlg->setWindowFlags(Qt::Window);
     gkAudioPlayDlg->setAttribute(Qt::WA_DeleteOnClose, true);
+    QObject::connect(gkAudioPlayDlg, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
+
     gkAudioPlayDlg->show();
 }
 
@@ -1599,7 +1602,7 @@ void MainWindow::defaultOutputAudioDev(const std::pair<QAudioDeviceInfo, GkDevic
 {
     QAudioDeviceInfo default_output_dev(QAudioDeviceInfo::defaultOutputDevice());
     pref_output_device = output_dev.second;
-    gkAudioOutput = new QAudioOutput(default_output_dev, default_output_dev.preferredFormat(), this);
+    gkAudioOutput = new QAudioOutput(default_output_dev, default_output_dev.preferredFormat(), &gkAudioOutputThread);
 
     return;
 }
@@ -2142,6 +2145,8 @@ void MainWindow::launchXmppRosterDlg()
     QPointer<GkXmppRosterDialog> gkXmppRosterDlg = new GkXmppRosterDialog(xmpp_conn_details, gkXmppClient, gkDb, gkEventLogger, this);
     gkXmppRosterDlg->setWindowFlags(Qt::Window);
     gkXmppRosterDlg->setAttribute(Qt::WA_DeleteOnClose, false); // Do NOT delete on close!
+    QObject::connect(gkXmppRosterDlg, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
+
     gkXmppRosterDlg->show();
 
     return;
@@ -2211,6 +2216,7 @@ void MainWindow::on_action_About_Dekoder_triggered()
     dlg_about->setWindowFlags(Qt::Window);
     dlg_about->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_about, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
+
     dlg_about->show();
 }
 
@@ -2221,6 +2227,20 @@ void MainWindow::on_action_About_Dekoder_triggered()
 void MainWindow::on_actionSet_Offset_triggered()
 {
     QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+}
+
+/**
+ * @brief MainWindow::on_actionAdjust_Volume_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::on_actionAdjust_Volume_triggered()
+{
+    gkVuAdjustDlg->setWindowFlags(Qt::Window);
+    gkVuAdjustDlg->setAttribute(Qt::WA_DeleteOnClose, true);
+    QObject::connect(gkVuAdjustDlg, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
+
+    gkVuAdjustDlg->show();
+    return;
 }
 
 /**
