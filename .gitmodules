@@ -40,3 +40,6 @@
 [submodule "src/contrib/WinToast"]
 	path = src/contrib/WinToast
 	url = https://github.com/mohabouje/WinToast.git
+[submodule "src/contrib/libopusenc"]
+	path = src/contrib/libopusenc
+	url = https://gitlab.xiph.org/xiph/libopusenc.git
