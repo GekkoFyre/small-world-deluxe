@@ -90,7 +90,10 @@ sworld_debug_archlinux_x86_64:
   - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=OFF ..
   - make -j 4 && make install
   - cd ./../..
-  - cd src/contrib/qxmpp && mkdir build && cd build
+  - cd src/contrib && git submodule update --init --recursive
+  - cd leveldb/third_party && git submodule update --init --recursive
+  - cd ./../..
+  - cd qxmpp && mkdir build && cd build
   - cmake -G "Unix Makefiles" -DBUILD_SHARED_LIBS=OFF ..
   - cmake --build . --target install
   - cd ./../../../..
