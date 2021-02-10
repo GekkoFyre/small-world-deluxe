@@ -40,6 +40,3 @@
 [submodule "src/contrib/WinToast"]
 	path = src/contrib/WinToast
 	url = https://github.com/mohabouje/WinToast.git
-[submodule "src/contrib/wil"]
-	path = src/contrib/wil
-	url = https://github.com/microsoft/wil.git
