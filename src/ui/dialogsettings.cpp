@@ -99,7 +99,6 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
                                QPointer<GkFrequencies> gkFreqList,
                                QPointer<GkFreqTableModel> freqTableModel,
                                const GkUserConn &connection_details,
-                               QPointer<GekkoFyre::GkXmppClient> xmppClient,
                                QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                QPointer<GekkoFyre::GkTextToSpeech> textToSpeechPtr,
                                QWidget *parent)
@@ -134,7 +133,6 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         // QXmpp and XMPP related
         //
         gkConnDetails = connection_details;
-        gkXmppClient = std::move(xmppClient);
 
         //
         // Set default placeholder text, dependent on whether we are within Microsoft Windows or Linux!
@@ -2815,7 +2813,7 @@ void DialogSettings::on_toolButton_xmpp_upload_avatar_to_server_clicked()
 
 void DialogSettings::on_pushButton_xmpp_cfg_change_password_clicked()
 {
-    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountChangePassword, gkConnDetails, gkXmppClient, gkEventLogger, this);
+    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountChangePassword, gkConnDetails, gkEventLogger, this);
     gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
     gkXmppRegistrationDlg->setAttribute(Qt::WA_DeleteOnClose, true);
     gkXmppRegistrationDlg->show();
@@ -2826,7 +2824,7 @@ void DialogSettings::on_pushButton_xmpp_cfg_change_password_clicked()
 
 void DialogSettings::on_pushButton_xmpp_cfg_change_email_clicked()
 {
-    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountChangeEmail, gkConnDetails, gkXmppClient, gkEventLogger, this);
+    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountChangeEmail, gkConnDetails, gkEventLogger, this);
     gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
     gkXmppRegistrationDlg->setAttribute(Qt::WA_DeleteOnClose, true);
     gkXmppRegistrationDlg->show();
@@ -2837,7 +2835,7 @@ void DialogSettings::on_pushButton_xmpp_cfg_change_email_clicked()
 
 void DialogSettings::on_pushButton_xmpp_cfg_signup_clicked()
 {
-    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountCreate, gkConnDetails, gkXmppClient, gkEventLogger, this);
+    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountCreate, gkConnDetails, gkEventLogger, this);
     gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
     gkXmppRegistrationDlg->setAttribute(Qt::WA_DeleteOnClose, true);
     gkXmppRegistrationDlg->show();
@@ -2848,7 +2846,7 @@ void DialogSettings::on_pushButton_xmpp_cfg_signup_clicked()
 
 void DialogSettings::on_pushButton_xmpp_cfg_login_logout_clicked()
 {
-    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountLogin, gkConnDetails, gkXmppClient, gkEventLogger, this);
+    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountLogin, gkConnDetails, gkEventLogger, this);
     gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
     gkXmppRegistrationDlg->setAttribute(Qt::WA_DeleteOnClose, true);
     gkXmppRegistrationDlg->show();

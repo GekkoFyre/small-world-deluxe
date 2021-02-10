@@ -40,11 +40,9 @@
  ****************************************************************************************************/
 
 #include "src/gk_xmpp_client.hpp"
-#include <qxmpp/QXmppDataForm.h>
-#include <qxmpp/QXmppVCardIq.h>
-#include <qxmpp/QXmppLogger.h>
 #include <qxmpp/QXmppMucIq.h>
 #include <qxmpp/QXmppUtils.h>
+#include <qxmpp/QXmppVCardIq.h>
 #include <iostream>
 #include <exception>
 #include <QEventLoop>
@@ -66,18 +64,88 @@ using namespace GkXmpp;
 using namespace Security;
 
 /**
- * @brief GkXmppVcardCache::GkXmppVcardCache
+ * @brief GkXmppCaptchaIq::getDataForm
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param parent
+ * @return
  */
-GkXmppVcardCache::GkXmppVcardCache(QObject *parent) : QObject(parent)
+QXmppDataForm GkXmppCaptchaIq::getDataForm() const
 {
+    return m_dataForm;
+}
+
+/**
+ * @brief GkXmppCaptchaIq::setDataForm
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param data_form
+ */
+void GkXmppCaptchaIq::setDataForm(const QXmppDataForm &data_form)
+{
+    m_dataForm = data_form;
     return;
 }
 
-GkXmppVcardCache::~GkXmppVcardCache()
+/**
+ * @brief GkXmppCaptchaIq::toXmlElementFromChild
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppCaptchaIq::toXmlElementFromChild(QXmlStreamWriter *stream_writer) const
 {
-    return;
+    stream_writer->writeStartElement("captcha");
+    stream_writer->writeAttribute("xmlns", General::Xmpp::captchaNamespace);
+    m_dataForm.toXml(stream_writer);
+    stream_writer->writeEndElement();
+}
+
+/**
+ * @brief GkXmppCaptchaMgr::handleStanza
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param dom
+ * @return
+ */
+bool GkXmppCaptchaMgr::handleStanza(const QDomElement &dom)
+{
+    if (dom.tagName() != "message") {
+        return false;
+    }
+
+    const auto &captcha_stanza = dom.firstChildElement("captcha");
+    if (captcha_stanza.namespaceURI() != General::Xmpp::captchaNamespace) {
+        return false;
+    }
+
+    const auto &data_form_stanza = captcha_stanza.firstChildElement("x");
+    if (data_form_stanza.isNull()) {
+        return false;
+    }
+
+    QXmppDataForm data_form;
+    data_form.parse(data_form_stanza);
+    if (data_form.isNull()) {
+        return false;
+    }
+
+    emit sendCaptchaForm(dom.attribute("from"), data_form);
+    return true;
+}
+
+/**
+ * @brief GkXmppCaptchaMgr::sendResponse
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param recipient
+ * @param data_form
+ * @return
+ */
+QString GkXmppCaptchaMgr::sendResponse(const QString &recipient, const QXmppDataForm &data_form)
+{
+    GkXmppCaptchaIq iq_request;
+    iq_request.setType(QXmppIq::Set);
+    iq_request.setTo(recipient);
+    iq_request.setDataForm(data_form);
+    if(client()->sendPacket(iq_request)) {
+        return iq_request.id();
+    }
+
+    return QString();
 }
 
 /**
@@ -126,6 +194,8 @@ QString GkXmppVcardCache::getElementStore(const std::shared_ptr<QDomDocument> &d
     return val;
 }
 
+bool GkXmppClient::gkXmppIsConnected = false;
+
 /**
  * @brief GkXmppClient::GkXmppClient The client-class for all such XMPP calls within Small World Deluxe.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -141,6 +211,7 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         setParent(parent);
         gkConnDetails = connection_details;
         gkEventLogger = std::move(eventLogger);
+        gkXmppCaptchaMgr = new GkXmppCaptchaMgr(this);
 
         QObject::connect(this, SIGNAL(sendError(const QString &)), this, SLOT(handleError(const QString &)));
 
@@ -156,6 +227,11 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         //
         // This signal is emitted when the XMPP connection encounters any error...
         QObject::connect(this, SIGNAL(error(QXmppClient::Error)), this, SLOT(handleError(QXmppClient::Error)));
+
+        //
+        // For the receiving and processing of captchas from the connected towards server...
+        QObject::connect(gkXmppCaptchaMgr, SIGNAL(sendCaptchaForm(const QString &, const QXmppDataForm &)),
+                         this, SLOT(handleCaptchaRecv(const QString &, const QXmppDataForm &)));
 
         m_status = GkOnlineStatus::Online;
         m_keepalive = 60;
@@ -282,7 +358,7 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
             }
         }
     } catch (const std::exception &e) {
-        emit sendError(tr("An issue has occurred within the XMPP subsystem. Error:\n\n%1").arg(QString::fromStdString(e.what())));
+        std::throw_with_nested(std::runtime_error(tr("An issue has occurred within the XMPP subsystem. Error:\n\n%1").arg(QString::fromStdString(e.what())).toStdString()));
     }
 
     return;
@@ -292,6 +368,7 @@ GkXmppClient::~GkXmppClient()
 {
     if (isConnected()) {
         disconnectFromServer();
+        gkXmppIsConnected = false;
     }
 
     QObject::disconnect(this, nullptr, this, nullptr);
@@ -541,33 +618,6 @@ void GkXmppClient::clientError(const QXmppClient::Error &error)
     QObject::disconnect(this, nullptr, this, nullptr);
     deleteLater();
 
-    return;
-}
-
-/**
- * @brief GkXmppClient::verifyReplyData
- * @author Georg Rudoy <https://leechcraft.org/>,
- * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param mapData
- * @param reply
- */
-void GkXmppClient::verifyReplyData(const QVariant &mapData, QNetworkReply *reply)
-{
-    const auto &map = mapData.toMap();
-    if (!map.contains("error")) {
-        return;
-    }
-
-    const auto &errMap = map["error"].toMap();
-    const auto ec = errMap["error_code"].toInt();
-    const auto &errMsg = errMap["error_msg"].toString();
-
-    emit sendError(tr("Received %1 while processing XMPP events:\n\n%2").arg(QString::number(ec)).arg(errMsg));
-
-    const QString &cid = errMap["captcha_sid"].toString();
-    const QString &img = errMap["captcha_img"].toString();
-
-    emit sendCaptcha(cid, QUrl::fromEncoded(img.toUtf8()));
     return;
 }
 
@@ -881,13 +931,27 @@ void GkXmppClient::createConnectionToServer(const QString &domain_url, const qui
 
         if (m_presence) {
             connectToServer(config, *m_presence);
+            gkXmppIsConnected = true;
         } else {
             connectToServer(config);
+            gkXmppIsConnected = true;
         }
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(e.what()));
     }
 
+    return;
+}
+
+/**
+ * @brief GkXmppClient::handleCaptchaRecv
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param jid
+ * @param data_form
+ */
+void GkXmppClient::handleCaptchaRecv(const QString &jid, const QXmppDataForm &data_form)
+{
+    emit sendCaptcha(jid, data_form);
     return;
 }
 

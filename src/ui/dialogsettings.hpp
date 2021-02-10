@@ -43,7 +43,6 @@
 #include "src/audio_devices.hpp"
 #include "src/gk_string_funcs.hpp"
 #include "src/gk_text_to_speech.hpp"
-#include "src/gk_xmpp_client.hpp"
 #include "src/models/tableview/gk_frequency_model.hpp"
 #include <boost/logic/tribool.hpp>
 #include <list>
@@ -92,7 +91,6 @@ public:
                             QPointer<GekkoFyre::GkFrequencies> gkFreqList,
                             QPointer<GekkoFyre::GkFreqTableModel> freqTableModel,
                             const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
-                            QPointer<GekkoFyre::GkXmppClient> xmppClient,
                             QPointer<GekkoFyre::GkEventLogger> eventLogger,
                             QPointer<GekkoFyre::GkTextToSpeech> textToSpeechPtr,
                             QWidget *parent = nullptr);
@@ -291,7 +289,6 @@ private:
     // QXmpp and XMPP related
     //
     GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
-    QPointer<GekkoFyre::GkXmppClient> gkXmppClient;
 
     static QComboBox *rig_comboBox;
     static QComboBox *mfg_comboBox;

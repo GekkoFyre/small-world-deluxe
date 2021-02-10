@@ -148,6 +148,8 @@ namespace GekkoFyre {
 
 #define AUDIO_FRAMES_PER_BUFFER (1024)                          // Frames per buffer, i.e. the number of sample frames that RtAudio will request from the callback.
 #define GK_AUDIO_MAX_CHANNELS (2)                               // The current maximum number of audio channels that Small World Deluxe is able to process for any given multimedia audio file!
+#define GK_AUDIO_PEAK_MAX (32768)                               // The maximum integer/signal value possible within the QAudio system.
+#define GK_AUDIO_PEAK_MIN (-32768)                              // The minimum integer/signal value possible within the QAudio system.
 
 #define AUDIO_OPUS_FRAMES_PER_BUFFER (960)                      // This is specific to the Opus multimedia encoding/decoding library.
 #define AUDIO_OPUS_MAX_FRAMES_PER_BUFFER (1276)
@@ -286,6 +288,10 @@ namespace General {
     constexpr char gk_sentry_uri[] = "https://5532275153ce4eb4865b89eb2441f356@sentry.gekkofyre.io/2";
     constexpr char gk_sentry_user_side_uri[] = "https://sentry.gekkofyre.io/";
     constexpr char gk_sentry_env[] = "development";
+
+    namespace Xmpp {
+        constexpr char captchaNamespace[] = "urn:xmpp:captcha";
+    }
 }
 
 namespace Filesystem {

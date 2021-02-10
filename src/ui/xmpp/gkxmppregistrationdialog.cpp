@@ -46,6 +46,8 @@
 #include <utility>
 #include <QPixmap>
 #include <QEventLoop>
+#include <QFormLayout>
+#include <QMessageBox>
 #include <QScopedPointer>
 #include <QRegularExpression>
 #include <QNetworkAccessManager>
@@ -76,7 +78,6 @@ using namespace GkXmpp;
  * @note QXmppRegistrationManager Class Reference <https://doc.qxmpp.org/qxmpp-dev/classQXmppRegistrationManager.html>.
  */
 GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRole, const GkUserConn &connection_details,
-                                                   QPointer<GekkoFyre::GkXmppClient> xmppClient,
                                                    QPointer<GekkoFyre::GkEventLogger> eventLogger, QWidget *parent) :
     m_netState(GkNetworkState::None), QDialog(parent), ui(new Ui::GkXmppRegistrationDialog)
 {
@@ -96,13 +97,13 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
         // QXmpp and XMPP related
         //
         gkConnDetails = connection_details;
-        m_xmppClient = std::move(xmppClient);
-        m_registerManager = std::move(m_xmppClient->getRegistrationMgr());
+        m_xmppClient = new GkXmppClient(gkConnDetails, gkEventLogger, false, this);
+        m_registerManager = m_xmppClient->getRegistrationMgr();
 
         QObject::connect(m_xmppClient, SIGNAL(sendRegistrationForm(const QXmppRegisterIq &)),
                          this, SLOT(recvRegistrationForm(const QXmppRegisterIq &)));
-        QObject::connect(m_xmppClient, SIGNAL(sendCaptcha(const QString &, const QUrl &)),
-                         this, SLOT(recvCaptcha(const QString &, const QUrl &)));
+        QObject::connect(m_xmppClient, SIGNAL(sendCaptcha(const QString &, const QXmppDataForm &)),
+                         this, SLOT(recvCaptcha(const QString &, const QXmppDataForm &)));
 
         QObject::connect(this, SIGNAL(registerUser(const std::unique_ptr<QXmppRegisterIq> &)),
                          this, SLOT(sendRegistrationForm(const std::unique_ptr<QXmppRegisterIq> &)));
@@ -186,7 +187,6 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
                                             false, true, false, true);
             });
         } else {
-            QMessageBox::critical(this, tr("Error!"), tr(""), QMessageBox::Ok);
             QMessageBox msgBox;
             msgBox.setWindowTitle(tr("Error!"));
             msgBox.setText(tr(R"(User registration is not supported by this server. Aborting...")"));
@@ -206,10 +206,30 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
         }
 
         if (!m_xmppClient->isConnected()) {
-            m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, m_username, m_password);
+            switch (gkRegUiRole) {
+                case GkRegUiRole::AccountCreate:
+                    // Create a new user account on the given XMPP server
+                    m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port);
+                    break;
+                case GkRegUiRole::AccountLogin:
+                    // Login to pre-existing user account on the given XMPP server
+                    m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, gkConnDetails.username, gkConnDetails.password);
+                    break;
+                case GkRegUiRole::AccountChangePassword:
+                    // Change password for pre-existing user account on the given XMPP server
+                    m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, gkConnDetails.username, gkConnDetails.password);
+                    break;
+                case GkRegUiRole::AccountChangeEmail:
+                    // Change e-mail address for pre-existing user account on the given XMPP server
+                    m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, gkConnDetails.username, gkConnDetails.password);
+                    break;
+                default:
+                    // What to do by default, if no information is otherwise given!
+                    throw std::invalid_argument(tr("Invalid argument given while attempting to create/modify XMPP account!").toStdString());
+            }
         }
     } catch (const std::exception &e) {
-        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);
+        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
     }
 
     return;
@@ -255,10 +275,10 @@ void GkXmppRegistrationDialog::on_pushButton_signup_submit_clicked()
         return;
     }
 
-    m_username = username;
-    m_email = email;
-    m_password = password;
-    m_captcha = captcha;
+    m_reg_username = username;
+    m_reg_email = email;
+    m_reg_password = password;
+    m_reg_captcha = captcha;
 
     emit registerUser(m_registerForm);
     return;
@@ -469,15 +489,16 @@ void GkXmppRegistrationDialog::sendRegistrationForm(const std::unique_ptr<QXmppR
     try {
         registration_form.setForm(registerIq->form());
         registration_form.setInstructions(registerIq->instructions());
-        registration_form.setEmail(m_email);
-        registration_form.setPassword(m_password);
-        registration_form.setUsername(m_username);
+        registration_form.setEmail(m_reg_email);
+        registration_form.setPassword(m_reg_password);
+        registration_form.setUsername(m_reg_username);
         registration_form.setType(QXmppIq::Type::Set);
 
         if (!m_xmppClient->isConnected()) {
             //
             // Initiate the connection process!
-            m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, m_username, m_password);
+            // Create a connection without any authentication, since this is a new user account...
+            m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port);
         }
 
         QObject::connect(m_xmppClient, &QXmppClient::connected, [=]() {
@@ -485,10 +506,10 @@ void GkXmppRegistrationDialog::sendRegistrationForm(const std::unique_ptr<QXmppR
             m_registerManager->sendCachedRegistrationForm();
 
             gkEventLogger->publishEvent(tr("User, \"%1\", has been registered with XMPP server:\n\n%2")
-            .arg(m_username).arg(gkConnDetails.server.url), GkSeverity::Info, "", true,
-            true, false, false);
+            .arg(gkConnDetails.username).arg(gkConnDetails.server.url), GkSeverity::Info, "", false,
+            true, false, true);
 
-            // m_xmppClient->disconnectFromServer(); // Disconnect from the server!
+            m_xmppClient->disconnectFromServer(); // Disconnect from the server!
         });
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(tr("Issues were encountered with trying to register user with XMPP server! Error:\n\n%1")
@@ -502,32 +523,26 @@ void GkXmppRegistrationDialog::sendRegistrationForm(const std::unique_ptr<QXmppR
  * @brief GkXmppRegistrationDialog::recvCaptcha processes any captcha requests from the given XMPP server, provided that a captcha
  * is required for authentication and/or user registration purposes.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param cid
- * @param url The URL pointing to the captcha data on the given XMPP server, if it is otherwise unavailable via forms (for
- * more details, see the XEP-0158 standard at the official XMPP website).
+ * @param jid
+ * @param data_form
  */
-void GkXmppRegistrationDialog::recvCaptcha(const QString &cid, const QUrl &url)
+void GkXmppRegistrationDialog::recvCaptcha(const QString &jid, const QXmppDataForm &data_form)
 {
-    if (!url.isEmpty()) {
-        QPixmap captcha_img;
-        QNetworkAccessManager manager;
-        QEventLoop loop;
+    try {
+        QScopedPointer<QFormLayout> form_layout(new QFormLayout);
+        ui->formLayout_recv_captcha->deleteLater();
+        ui->horizontalLayout_4->addLayout(form_layout.get());
 
-        QScopedPointer<QNetworkReply> reply(manager.get(QNetworkRequest(url)));
-        QObject::connect(reply.get(), &QNetworkReply::finished, &loop, [&reply, &captcha_img, &loop](){
-            if (reply->error() == QNetworkReply::NoError) {
-                QByteArray img_data = reply->readAll();
-                captcha_img.loadFromData(img_data);
-                if (captcha_img.isNull()) {
-                    throw std::runtime_error(tr("").toStdString());
-                }
-            }
+        if (!data_form.title().isEmpty()) {
+            form_layout->addRow(new QLabel(data_form.title()));
+        }
 
-            loop.quit();
-        });
-
-        loop.exec();
-        ui->label_xmpp_captcha_pixmap->setPixmap(captcha_img);
+        if (!data_form.instructions().isEmpty()) {
+            form_layout->addRow(new QLabel(data_form.instructions()));
+        }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(tr("Issues were encountered while processing the captcha! Error:\n\n%1")
+                                            .arg(e.what()), GkSeverity::Fatal, "", false, true, false, true);
     }
 
     return;

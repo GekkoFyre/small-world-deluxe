@@ -65,7 +65,6 @@ class GkXmppRegistrationDialog : public QDialog
 public:
     explicit GkXmppRegistrationDialog(const GekkoFyre::Network::GkXmpp::GkRegUiRole &gkRegUiRole,
                                       const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
-                                      QPointer<GekkoFyre::GkXmppClient> xmppClient,
                                       QPointer<GekkoFyre::GkEventLogger> eventLogger, QWidget *parent = nullptr);
     ~GkXmppRegistrationDialog() override;
 
@@ -97,7 +96,7 @@ private slots:
 
     //
     // Captcha management and processing
-    void recvCaptcha(const QString &cid, const QUrl &url);
+    void recvCaptcha(const QString &jid, const QXmppDataForm &data_form);
 
     //
     // QRegularExpression
@@ -120,16 +119,16 @@ private:
     //
     // QXmpp and XMPP related
     //
-    GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
     QPointer<GekkoFyre::GkXmppClient> m_xmppClient;
     std::shared_ptr<QXmppRegistrationManager> m_registerManager;
 
     //
     // Registration details for the user in question...
-    QString m_username;
-    QString m_email;
-    QString m_password;
-    QString m_captcha;
+    GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
+    QString m_reg_username;
+    QString m_reg_email;
+    QString m_reg_password;
+    QString m_reg_captcha;
     std::unique_ptr<QXmppRegisterIq> m_registerForm;
 
     //

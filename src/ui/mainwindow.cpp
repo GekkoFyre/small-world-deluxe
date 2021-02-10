@@ -57,6 +57,7 @@
 #include <cstring>
 #include <iomanip>
 #include <iostream>
+#include <algorithm>
 #include <functional>
 #include <QDesktopServices>
 #include <QStandardPaths>
@@ -874,7 +875,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // QXmpp and XMPP related
         //
         readXmppSettings();
-        gkXmppClient = new GkXmppClient(xmpp_conn_details, gkEventLogger, false, this);
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
@@ -1021,8 +1021,8 @@ void MainWindow::launchSettingsWin()
                                                                gkAudioOutput, avail_input_audio_devs, avail_output_audio_devs,
                                                                pref_input_device, pref_output_device, gkRadioLibs,
                                                                gkStringFuncs, gkRadioPtr, gkSerialPortMap, gkUsbPortMap,
-                                                               gkFreqList, gkFreqTableModel, xmpp_conn_details, gkXmppClient,
-                                                               gkEventLogger, gkTextToSpeech, this);
+                                                               gkFreqList, gkFreqTableModel, xmpp_conn_details, gkEventLogger,
+                                                               gkTextToSpeech, this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
@@ -1509,7 +1509,7 @@ int MainWindow::parseRigCapabilities(const rig_caps *caps, void *data)
         break;
     }
 
-    return 1; /* !=0, we want them all! */
+    return 1; /* != 0, we want them all! */
 }
 
 QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, rig_type>> MainWindow::initRadioModelsVar()
@@ -1543,7 +1543,7 @@ qreal MainWindow::calcVolumeFactor(const qreal &vol_level, const qreal &factor)
 void MainWindow::updateVolumeDisplayWidgets()
 {
     try {
-        if (ui->checkBox_rx_tx_vol_toggle->isChecked()) {
+        if (ui->checkBox_rx_tx_vol_toggle->isChecked()) { // Input audio is chosen!
             if (gkAudioInputBuf->isReadable()) {
                 std::lock_guard<std::mutex> lck_guard(mtx_update_vol_widgets);
                 std::this_thread::sleep_for(std::chrono::milliseconds(2500)); // TODO: This is a huge source of SEGFAULTS!
@@ -1552,10 +1552,21 @@ void MainWindow::updateVolumeDisplayWidgets()
                     //
                     // Input audio stream is open and active!
                     //
-                    emit refreshVuDisplay(gkAudioInput->volume(), 1.0, num_samples);
+                    QByteArray vol_input_ba(std::move(gkAudioInputByteArrayBuf));
+                    while (!vol_input_ba.isEmpty() && !vol_input_ba.isNull()) {
+                        std::vector<double> recv_samples(vol_input_ba.begin(), vol_input_ba.end());
+                        const double largest_element = *std::max_element(recv_samples.begin(), recv_samples.end());
+                        const double dB_calc = 20 * std::log10(largest_element);
+                        emit refreshVuDisplay(dB_calc, GK_AUDIO_PEAK_MAX, recv_samples.size());
+
+                        //
+                        // We are done with all the data as a whole, therefore clear the lot!
+                        vol_input_ba.clear();
+                        recv_samples.clear();
+                    }
                 }
             }
-        } else {
+        } else { // Output audio is chosen!
             if (gkAudioOutputBuf->isReadable()) {
                 std::lock_guard<std::mutex> lck_guard(mtx_update_vol_widgets);
                 std::this_thread::sleep_for(std::chrono::milliseconds(2500)); // TODO: This is a huge source of SEGFAULTS!
@@ -1564,7 +1575,21 @@ void MainWindow::updateVolumeDisplayWidgets()
                     //
                     // Output audio stream is open and active!
                     //
-                    emit refreshVuDisplay(gkAudioOutput->volume(), 1.0, num_samples);
+                    QByteArray vol_output_ba(std::move(gkAudioOutputByteArrayBuf));
+                    while (!vol_output_ba.isEmpty() && !vol_output_ba.isNull()) {
+                        std::vector<double> recv_samples(vol_output_ba.begin(), vol_output_ba.end());
+                        double largest_element = *std::max_element(recv_samples.begin(), recv_samples.end());
+
+                        const double dB_calc = 20 * std::log10(largest_element);
+                        const double dB_max = 20 * std::log10(GK_AUDIO_PEAK_MAX); // TODO: Fix this so it works with other audio bit-rates than just 16-bit!
+
+                        emit refreshVuDisplay(dB_calc, dB_max, recv_samples.size());
+
+                        //
+                        // We are done with all the data as a whole, therefore clear the lot!
+                        vol_output_ba.clear();
+                        recv_samples.clear();
+                    }
                 }
             }
         }
@@ -2142,11 +2167,8 @@ void MainWindow::readXmppSettings()
  */
 void MainWindow::launchXmppRosterDlg()
 {
-    QPointer<GkXmppRosterDialog> gkXmppRosterDlg = new GkXmppRosterDialog(xmpp_conn_details, gkXmppClient, gkDb, gkEventLogger, this);
+    QPointer<GkXmppRosterDialog> gkXmppRosterDlg = new GkXmppRosterDialog(xmpp_conn_details, gkDb, gkEventLogger, this);
     gkXmppRosterDlg->setWindowFlags(Qt::Window);
-    gkXmppRosterDlg->setAttribute(Qt::WA_DeleteOnClose, false); // Do NOT delete on close!
-    QObject::connect(gkXmppRosterDlg, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
-
     gkXmppRosterDlg->show();
 
     return;
@@ -3115,12 +3137,14 @@ void MainWindow::on_actionView_Roster_triggered()
 
 void MainWindow::on_actionSign_out_triggered()
 {
+    /*
     if (gkXmppClient->isConnected()) {
         gkXmppClient->disconnectFromServer();
         gkEventLogger->publishEvent(tr("Disconnected from XMPP server: %1")
         .arg(xmpp_conn_details.server.url), GkSeverity::Info, "",
         true, true, false, false);
     }
+    */
 
     return;
 }

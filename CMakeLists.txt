@@ -412,6 +412,8 @@ endif()
 #
 # Google LevelDB [ https://github.com/google/leveldb ]
 #
+set(LEVELDB_BUILD_TESTS OFF CACHE BOOL "Build Google LevelDB tests. This is not required for the compilation of Small World Deluxe." FORCE)
+set(LEVELDB_BUILD_BENCHMARKS OFF CACHE BOOL "Build Google LevelDB benchmarks. This is not required for the compilation of Small World Deluxe." FORCE)
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/leveldb")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/leveldb/include")
 message(STATUS "The 'Google LevelDB' database libraries have been configured!")

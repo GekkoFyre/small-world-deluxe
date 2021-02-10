@@ -43,7 +43,6 @@
 
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
-#include "src/gk_xmpp_client.hpp"
 #include "src/ui/xmpp/gkxmppmessagedialog.hpp"
 #include "src/gk_logger.hpp"
 #include <memory>
@@ -62,8 +61,8 @@ class GkXmppRosterDialog : public QDialog
 
 public:
     explicit GkXmppRosterDialog(const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
-                                QPointer<GekkoFyre::GkXmppClient> xmppClient, QPointer<GekkoFyre::GkLevelDb> database,
-                                QPointer<GekkoFyre::GkEventLogger> eventLogger, QWidget *parent = nullptr);
+                                QPointer<GekkoFyre::GkLevelDb> database, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                                QWidget *parent = nullptr);
     ~GkXmppRosterDialog();
 
 private slots:
@@ -82,8 +81,6 @@ private:
     // QXmpp and XMPP related
     //
     GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
-    QPointer<GekkoFyre::GkXmppClient> gkXmppClient;
-    QPointer<GkXmppMessageDialog> gkXmppMsgDlg;
 
     void prefillAvailComboBox();
 };

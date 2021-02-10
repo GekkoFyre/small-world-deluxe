@@ -46,7 +46,6 @@
 #include "src/gk_waterfall_gui.hpp"
 #include "src/gk_audio_encoding.hpp"
 #include "src/gk_fft_audio.hpp"
-#include "src/gk_xmpp_client.hpp"
 #include "src/gk_frequency_list.hpp"
 #include "src/ui/dialogsettings.hpp"
 #include "src/ui/widgets/gk_vu_change_widget.hpp"
@@ -467,7 +466,6 @@ private:
     // QXmpp and XMPP related
     //
     GekkoFyre::Network::GkXmpp::GkUserConn xmpp_conn_details; // TODO: Finish this off!
-    QPointer<GekkoFyre::GkXmppClient> gkXmppClient;
 
     //
     // Spectrograph related
