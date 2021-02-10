@@ -81,20 +81,21 @@ sworld_debug_archlinux_x86_64:
   - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=OFF -DSNAPPY_BUILD_TESTS=OFF -DSNAPPY_BUILD_BENCHMARKS=OFF ..
   - make -j 4 && make install
   - cd ./../..
+  - rm -rvf snappy
   - git clone https://gitlab.xiph.org/xiph/libopusenc.git
   - cd libopusenc && git submodule update --init --recursive && autoreconf -isf && mkdir build && cd build
   - ./../configure --enable-static && make -j 6 && make install
   - cd ./../..
+  - rm -rvf libopusenc
   - git clone https://github.com/drowe67/codec2.git
   - cd codec2 && git submodule update --init --recursive && mkdir build && cd build
   - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=OFF ..
   - make -j 4 && make install
   - cd ./../..
-  - cd src/contrib && git submodule update --init --recursive
-  - cd leveldb/third_party && git submodule update --init --recursive
-  - cd ./../..
-  - cd qxmpp && mkdir build && cd build
-  - cmake -G "Unix Makefiles" -DBUILD_SHARED_LIBS=OFF ..
+  - rm -rvf codec2
+  - git submodule update --init --recursive
+  - cd src/contrib/qxmpp && mkdir build && cd build
+  - cmake -G "Unix Makefiles" -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=OFF ..
   - cmake --build . --target install
   - cd ./../../../..
   script:
