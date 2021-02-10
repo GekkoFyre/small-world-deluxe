@@ -26,6 +26,7 @@
 #include <iostream>
 
 
+//! @cond Doxygen_Suppress
 class BACKEND_IMPEXP Rig
 {
 private:
@@ -33,7 +34,7 @@ private:
 
 protected:
 public:
-    Rig(rig_model_t rig_model);
+    explicit Rig(rig_model_t rig_model);
 
     virtual ~Rig();
 
@@ -125,8 +126,8 @@ public:
     void setMem(int ch, vfo_t vfo = RIG_VFO_CURR);
     int getMem(vfo_t vfo = RIG_VFO_CURR);
 
-    void setChannel(const channel_t *chan);
-    void getChannel(channel_t *chan);
+    void setChannel(const channel_t *chan, vfo_t vfo);
+    void getChannel(channel_t *chan, vfo_t vfo, int readOnly);
 
     void setPowerStat(powerstat_t status);
     powerstat_t getPowerStat(void);
@@ -156,8 +157,8 @@ public:
     void setXit(shortfreq_t xit, vfo_t vfo = RIG_VFO_CURR);
     shortfreq_t getXit(vfo_t vfo = RIG_VFO_CURR);
 
-    void setAnt(ant_t ant, vfo_t vfo = RIG_VFO_CURR);
-    ant_t getAnt(vfo_t vfo = RIG_VFO_CURR);
+    void setAnt(value_t option, ant_t ant, vfo_t vfo = RIG_VFO_CURR);
+    ant_t getAnt(ant_t &ant_rx, ant_t &ant_tx, ant_t ant, value_t &option, ant_t &ant_curr, vfo_t vfo = RIG_VFO_CURR);
 
     void sendDtmf(const char *digits, vfo_t vfo = RIG_VFO_CURR);
     int recvDtmf(char *digits, vfo_t vfo = RIG_VFO_CURR);
@@ -189,6 +190,7 @@ public:
         return RIG_OK;
     }
 };
+//! @endcond
 
 
 #ifdef __GNUG__
@@ -237,28 +239,28 @@ extern "C" {
 }
 
 #include <iostream>
-#if !(defined(__GNUG__)||defined(__SUNPRO_CC))
+#if !(defined(__GNUG__)||defined(__SUNPRO_CC)||defined(_WIN32))
 extern "C" void exit(int);
 #endif
 
 
+//! @cond Doxygen_Suppress
 // Forward Declarations
-
 class BACKEND_IMPEXP RigException
 {
 public:
     const char *message;
     int errorno;
 
-    RigException(const char *msg, int err)
+    explicit RigException(const char *msg, int err)
         : message(msg), errorno(err)
     {};
 
-    RigException(int err)
+    explicit RigException(int err)
         : message(rigerror(err)), errorno(err)
     {};
 
-    RigException(const char *msg)
+    explicit RigException(const char *msg)
         : message(msg), errorno(-RIG_EINTERNAL)
     {};
 
@@ -274,6 +276,7 @@ public:
         return "Rig";
     }
 };
+//! @endcond
 
 
 inline void THROW(const RigException *e)
@@ -289,7 +292,7 @@ inline void THROW(const RigException *e)
 #else
 
     if (e) {
-        std::cerr << e->message << endl;
+        std::cerr << e->message << std::endl;
     }
 
     exit(0);

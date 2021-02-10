@@ -50,7 +50,7 @@ static int hamlibpp_freq_event(RIG *rig, vfo_t vfo, freq_t freq, rig_ptr_t arg)
 		return -RIG_EINVAL;
 
 /* assert rig == ((Rig*)rig->state.obj).theRig */
-	return ((Rig*)rig->state.obj)->FreqEvent(vfo, freq, arg);
+	return (static_cast<Rig*>(rig->state.obj))->FreqEvent(vfo, freq, arg);
 }
 
 
@@ -535,16 +535,14 @@ shortfreq_t Rig::getXit(vfo_t vfo)
 	return xit;
 }
 
-void Rig::setAnt(ant_t ant, vfo_t vfo)
+void Rig::setAnt(const value_t option, ant_t ant, vfo_t vfo)
 {
-	CHECK_RIG(rig_set_ant(theRig, vfo, ant));
+	CHECK_RIG(rig_set_ant(theRig, vfo, ant, option));
 }
 
-ant_t Rig::getAnt(vfo_t vfo)
+ant_t Rig::getAnt(ant_t &ant_rx, ant_t &ant_tx, ant_t ant, value_t &option, ant_t &ant_curr, vfo_t vfo)
 {
-	ant_t ant;
-
-	CHECK_RIG( rig_get_ant(theRig, vfo, &ant) );
+	CHECK_RIG( rig_get_ant(theRig, vfo, ant, &option, &ant_curr, &ant_tx, &ant_rx) );
 
 	return ant;
 }
@@ -645,14 +643,14 @@ int Rig::getMem (vfo_t vfo)
 	return mem;
 }
 
-void Rig::setChannel (const channel_t *chan)
+void Rig::setChannel (const channel_t *chan, vfo_t vfo)
 {
-	CHECK_RIG( rig_set_channel(theRig, chan) );
+	CHECK_RIG( rig_set_channel(theRig, vfo, chan) );
 }
 
-void Rig::getChannel (channel_t *chan)
+void Rig::getChannel (channel_t *chan,vfo_t vfo, int readOnly)
 {
-	CHECK_RIG( rig_get_channel(theRig, chan) );
+	CHECK_RIG( rig_get_channel(theRig, vfo, chan, readOnly) );
 }
 
 
@@ -673,15 +671,14 @@ powerstat_t Rig::getPowerStat (void)
 rmode_t Rig::RngRxModes (freq_t freq)
 {
 	unsigned modes = RIG_MODE_NONE;
-	freq_range_t *rng;
 	int i;
 
 	for (i=0; i<FRQRANGESIZ; i++) {
-		rng = &theRig->state.rx_range_list[i];
+		freq_range_t *rng = &theRig->state.rx_range_list[i];
 		if (RIG_IS_FRNG_END(*rng)) {
 			return (rmode_t)modes;
 		}
-		if (freq >= rng->start && freq <= rng->end)
+		if (freq >= rng->startf && freq <= rng->endf)
 			modes |= (unsigned)rng->modes;
 	}
 
@@ -691,15 +688,14 @@ rmode_t Rig::RngRxModes (freq_t freq)
 rmode_t Rig::RngTxModes (freq_t freq)
 {
 	unsigned modes = RIG_MODE_NONE;
-	freq_range_t *rng;
 	int i;
 
 	for (i=0; i<FRQRANGESIZ; i++) {
-		rng = &theRig->state.tx_range_list[i];
+	  freq_range_t *rng = &theRig->state.tx_range_list[i];
 		if (RIG_IS_FRNG_END(*rng)) {
 			return (rmode_t)modes;
 		}
-		if (freq >= rng->start && freq <= rng->end)
+		if (freq >= rng->startf && freq <= rng->endf)
 			modes |= (unsigned)rng->modes;
 	}
 

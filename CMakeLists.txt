@@ -82,7 +82,7 @@ set(CMAKE_MODULE_PATH
 # Custom options specific to Small World Deluxe and/or GekkoFyre Networks <https://gekkofyre.io/>
 #
 option(GFYRE_PACKAGE_MAINTAINER "Are you a package maintainer? If so, set this option to `ON`! It'll enable specific build settings to make your life easier." ON)
-option(GFYRE_BUILD_STATIC "Build Small World Deluxe as a static library/package. This will result in a larger executable at the benefit of requiring less DLL dependencies." ON)
+option(GFYRE_BUILD_STATIC "Build Small World Deluxe as a static library/package. Only available under Microsoft Windows systems." ON)
 option(GFYRE_BUILD_SHARED "Build Small World Deluxe as a shared library/package. This will result in a smaller executable at the cost of requiring further DLL dependencies." OFF)
 option(GFYRE_SWORLD_DBG_VERBOSITY "Enable DEBUG verbosity for Small World Deluxe and its use of third-party libraries throughout the program itself." OFF)
 
@@ -186,6 +186,22 @@ else()
 endif(Boost_FOUND)
 
 #
+# QXmpp
+# https://github.com/qxmpp-project/qxmpp
+#
+function(install_qxmpp)
+    find_package(QXmpp REQUIRED)
+    if (QXMPP_FOUND)
+        include_directories(${QXMPP_INCLUDE_DIRS})
+        set(LIBS ${LIBS} ${QXMPP_LIBRARIES})
+        include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/QXmpp.cmake")
+        message(STATUS "The 'QXmpp' Extensible Messaging and Presence Protocol (XMPP) libraries have been configured!")
+    else()
+        message(FATAL_ERROR "The 'QXmpp' Extensible Messaging and Presence Protocol (XMPP) libraries could not be found!")
+    endif(QXMPP_FOUND)
+endfunction()
+
+#
 # Hamlib
 # https://hamlib.github.io/
 #
@@ -229,12 +245,25 @@ else()
     message(FATAL_ERROR "The 'libsndfile' audio (de-/en-)coding libraries have been configured!")
 endif(SNDFILE_FOUND)
 
-if (GFYRE_BUILD_STATIC)
-    set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-    option(BUILD_SHARED_LIBS "Set this option to OFF in order to compile a static set of libraries." OFF)
-else()
-    option(BUILD_SHARED_LIBS "Set this option to OFF in order to compile a static set of libraries." ON)
-endif(GFYRE_BUILD_STATIC)
+if (LINUX)
+    install_qxmpp() # Install QXmpp as non-static under Linux!
+    find_package(UDev REQUIRED)
+    if (UDEV_FOUND)
+        include_directories(${UDEV_INCLUDE_DIRS})
+        set(LIBS ${LIBS} ${UDEV_LIBRARIES})
+    else()
+        message(FATAL_ERROR "The 'udev' SystemD libraries could not be found!")
+    endif(UDEV_FOUND)
+endif(LINUX)
+
+if(WIN32 OR MSYS OR MINGW)
+    if (GFYRE_BUILD_STATIC)
+        set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+        option(BUILD_SHARED_LIBS "Set this option to OFF in order to compile a static set of libraries." OFF)
+    else()
+        option(BUILD_SHARED_LIBS "Set this option to OFF in order to compile a static set of libraries." ON)
+    endif(GFYRE_BUILD_STATIC)
+endif()
 
 #
 # https://stackoverflow.com/questions/33991918/link-to-pthread-library-using-cmake-in-clion
@@ -315,29 +344,9 @@ else()
     message(FATAL_ERROR "Either `libusb.h` and/or `usb.h` could not be found for the 'libusb' system device and enumeration libraries!")
 endif(USB_FOUND)
 
-if (LINUX)
-    find_package(UDev REQUIRED)
-    if (udev_FOUND)
-        include_directories(${UDEV_INCLUDE_DIRS})
-        set(LIBS ${LIBS} ${UDEV_LIBRARIES})
-    else()
-        message(FATAL_ERROR "The 'udev' SystemD libraries could not be found!")
-    endif(udev_FOUND)
-endif(LINUX)
-
-#
-# QXmpp
-# https://github.com/qxmpp-project/qxmpp
-#
-find_package(QXmpp REQUIRED)
-if (QXMPP_FOUND)
-    include_directories(${QXMPP_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${QXMPP_LIBRARIES})
-    include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/QXmpp.cmake")
-    message(STATUS "The 'QXmpp' Extensible Messaging and Presence Protocol (XMPP) libraries have been configured!")
-else()
-    message(FATAL_ERROR "The 'QXmpp' Extensible Messaging and Presence Protocol (XMPP) libraries could not be found!")
-endif(QXMPP_FOUND)
+if (MSYS OR MINGW OR LINUX OR UNIX)
+    install_qxmpp() # Install QXmpp as static under Microsoft Windows systems!
+endif()
 
 #
 # https://xiph.org/vorbis/
@@ -810,7 +819,9 @@ endif()
 #
 if(GFYRE_BUILD_STATIC)
     add_library(galaxy STATIC ${QM_FILES} ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP} ${GALAXY_HAMLIB_CPP} ${GALAXY_WINTOAST_HPP} ${GALAXY_WINTOAST_CPP})
-    target_link_libraries(galaxy PUBLIC "-static")
+    if(WIN32 OR MSYS OR MINGW)
+        target_link_libraries(galaxy PUBLIC "-static")
+    endif()
 else()
     set(GFYRE_BUILD_SHARED ON)
 endif(GFYRE_BUILD_STATIC)

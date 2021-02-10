@@ -241,7 +241,7 @@ void GkEventLogger::systemNotification(const QString &title, const GkEventLoggin
             #if defined(GFYRE_ENBL_MSVC_WINTOAST)
             toastTempl->setTextField(event_msg.mesg.message.toStdWString(), WinToastTemplate::SecondLine);
             #elif __linux__
-            system(QString("notify-send '%1' \"%2\"").arg(title).arg(msg).toStdString().c_str());
+            system(QString("notify-send '%1' \"%2\"").arg(title).arg(event_msg.mesg.message).toStdString().c_str());
             #endif
             return;
         }
