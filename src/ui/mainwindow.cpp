@@ -685,7 +685,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             gkAudioOutputThread.start();
             gkAudioOutput->start(gkAudioOutputBuf);
 
-            QObject::connect(&gkAudioOutputThread, &QThread::finished, gkFftAudio, &QObject::deleteLater);
             QObject::connect(gkAudioOutput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(audioOutHandleStateChanged(QAudio::State)));
         }
 
@@ -707,12 +706,17 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the Waterfall / Spectrograph
         //
+        #ifndef ENBL_VALGRIND_SUPPORT
         gkSpectroWaterfall = new GekkoFyre::GkSpectroWaterfall(gkEventLogger, this);
         gkFftAudio = new GekkoFyre::GkFFTAudio(gkAudioInputBuf, gkAudioInput, gkAudioOutput, pref_input_device, pref_output_device,
                                                gkSpectroWaterfall, gkStringFuncs, gkEventLogger, &gkAudioInputThread);
         gkFftAudio->moveToThread(&gkAudioInputThread);
         QObject::connect(&gkAudioInputThread, &QThread::finished, gkFftAudio, &QObject::deleteLater);
         gkAudioInputThread.start();
+
+        if (!gkAudioOutput.isNull()) {
+            QObject::connect(&gkAudioOutputThread, &QThread::finished, gkFftAudio, &QObject::deleteLater);
+        }
 
         //
         // Enable updating and clearing of QBuffer pointers across Small World Deluxe!
@@ -735,6 +739,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Add the spectrograph / waterfall to the QMainWindow!
         ui->horizontalLayout_12->addWidget(gkSpectroWaterfall);
+        #endif
 
         //
         // Sound & Audio Devices

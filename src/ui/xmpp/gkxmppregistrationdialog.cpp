@@ -45,7 +45,6 @@
 #include <qxmpp/QXmppLogger.h>
 #include <utility>
 #include <QPixmap>
-#include <QEventLoop>
 #include <QFormLayout>
 #include <QMessageBox>
 #include <QScopedPointer>
