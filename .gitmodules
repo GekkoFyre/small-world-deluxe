@@ -19,9 +19,6 @@
 [submodule "src/contrib/leveldb"]
 	path = src/contrib/leveldb
 	url = https://github.com/google/leveldb.git
-[submodule "src/contrib/AudioFile"]
-	path = src/contrib/AudioFile
-	url = https://github.com/adamstark/AudioFile.git
 [submodule "src/contrib/wsjt-x"]
 	path = src/contrib/wsjt-x
 	url = https://code.gekkofyre.io/amateur-radio/wsjt-x.git
