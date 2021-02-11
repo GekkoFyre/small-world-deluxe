@@ -48,7 +48,7 @@
 #include <boost/exception/all.hpp>
 #include <boost/logic/tribool.hpp>
 #include <boost/filesystem.hpp>
-#include <qwt/qwt_interval.h>
+#include <qwt_interval.h>
 #include <map>
 #include <list>
 #include <vector>
@@ -148,6 +148,8 @@ namespace GekkoFyre {
 
 #define AUDIO_FRAMES_PER_BUFFER (1024)                          // Frames per buffer, i.e. the number of sample frames that RtAudio will request from the callback.
 #define GK_AUDIO_MAX_CHANNELS (2)                               // The current maximum number of audio channels that Small World Deluxe is able to process for any given multimedia audio file!
+#define GK_AUDIO_PEAK_MAX (32768)                               // The maximum integer/signal value possible within the QAudio system.
+#define GK_AUDIO_PEAK_MIN (-32768)                              // The minimum integer/signal value possible within the QAudio system.
 
 #define AUDIO_OPUS_FRAMES_PER_BUFFER (960)                      // This is specific to the Opus multimedia encoding/decoding library.
 #define AUDIO_OPUS_MAX_FRAMES_PER_BUFFER (1276)
@@ -159,6 +161,9 @@ namespace GekkoFyre {
 #define AUDIO_VU_METER_UPDATE_MILLISECS (125)                   // How often the volume meter should update, in milliseconds.
 #define AUDIO_VU_METER_PEAK_DECAY_RATE (0.001)                  // Unknown
 #define AUDIO_VU_METER_PEAK_HOLD_LEVEL_DURATION (2000)          // Measured in milliseconds
+#define GK_AUDIO_VOL_INIT_PERCENTAGE (25.0)
+#define GK_AUDIO_VOL_MAX_PERCENTAGE (75.0)
+#define GK_AUDIO_VOL_FACTOR (1.3334)
 
 #define AUDIO_PLAYBACK_CODEC_PCM_IDX (3)
 #define AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX (4)
@@ -283,6 +288,10 @@ namespace General {
     constexpr char gk_sentry_uri[] = "https://5532275153ce4eb4865b89eb2441f356@sentry.gekkofyre.io/2";
     constexpr char gk_sentry_user_side_uri[] = "https://sentry.gekkofyre.io/";
     constexpr char gk_sentry_env[] = "development";
+
+    namespace Xmpp {
+        constexpr char captchaNamespace[] = "urn:xmpp:captcha";
+    }
 }
 
 namespace Filesystem {
@@ -778,7 +787,7 @@ namespace AmateurRadio {
 
     namespace Control {
         struct GkRadio {                                    // <https://github.com/Hamlib/Hamlib/blob/master/c%2B%2B/rigclass.cc>.
-            std::shared_ptr<Rig> gkRig;                     // Hamlib rig pointer
+            Rig *gkRig = new Rig(RIG_MODEL_DUMMY);  // Hamlib rig pointer
             int rig_brand;                                  // Hamlib rig brand/manufacturer
             rig_model_t rig_model;                          // The actual amateur radio rig itself!
             std::unique_ptr<rig_caps> capabilities;         // Read-only; the capabilities of the configured amateur radio rig in question, as defined by Hamlib.

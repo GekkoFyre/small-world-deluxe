@@ -41,9 +41,9 @@
 #include "src/radiolibs.hpp"
 #include "src/dek_db.hpp"
 #include "src/audio_devices.hpp"
+#include "src/gk_xmpp_client.hpp"
 #include "src/gk_string_funcs.hpp"
 #include "src/gk_text_to_speech.hpp"
-#include "src/gk_xmpp_client.hpp"
 #include "src/models/tableview/gk_frequency_model.hpp"
 #include <boost/logic/tribool.hpp>
 #include <list>
@@ -290,8 +290,8 @@ private:
     //
     // QXmpp and XMPP related
     //
+    QPointer<GekkoFyre::GkXmppClient> m_xmppClient;
     GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
-    QPointer<GekkoFyre::GkXmppClient> gkXmppClient;
 
     static QComboBox *rig_comboBox;
     static QComboBox *mfg_comboBox;

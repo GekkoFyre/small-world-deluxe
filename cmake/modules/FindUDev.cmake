@@ -39,15 +39,18 @@
 #
 
 find_package(PkgConfig)
-pkg_check_modules(PC_UDEV QUIET libudev)
+pkg_check_modules(PC_UDEV QUIET "libudev")
 set(UDEV_DEFINITIONS ${PC_UDEV_CFLAGS_OTHER})
 
-find_path(UDEV_INCLUDE_DIR NAMES "libudev.h"
-            HINTS ${PC_UDEV_INCLUDE_DIR} ${PC_UDEV_INCLUDE_DIRS}
-            PATH_SUFFIXES include)
+find_path(UDEV_INCLUDE_DIR
+    NAMES "libudev.h"
+    HINTS ${PC_UDEV_INCLUDE_DIR} ${PC_UDEV_INCLUDE_DIRS}
+    PATHS "/usr/local/include" "/usr/include" "/opt/local/include" "/sw/include")
 
-find_library(UDEV_LIBRARY NAMES "udev" "libudev"
-            HINTS ${PC_UDEV_LIBDIR} ${PC_UDEV_LIBRARY_DIRS})
+find_library(UDEV_LIBRARY
+    NAMES "udev" "libudev"
+    HINTS ${PC_UDEV_LIBDIR} ${PC_UDEV_LIBRARY_DIRS}
+    PATHS "/usr/local/lib" "/usr/local/lib64" "/usr/lib" "/usr/lib64" "/usr/lib/x86_64-linux-gnu" "/lib/x86_64-linux-gnu" "/sw/lib" "/opt/local/lib")
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(udev DEFAULT_MSG UDEV_LIBRARY UDEV_INCLUDE_DIR)

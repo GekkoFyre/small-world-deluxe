@@ -57,6 +57,7 @@
 #include <cstring>
 #include <iomanip>
 #include <iostream>
+#include <algorithm>
 #include <functional>
 #include <QDesktopServices>
 #include <QStandardPaths>
@@ -383,8 +384,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                  this, SLOT(gatherRigCapabilities(const rig_model_t &, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
                 QObject::connect(this, SIGNAL(addRigInUse(const rig_model_t &, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
                                  this, SLOT(addRigToMemory(const rig_model_t &, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
-                QObject::connect(this, SIGNAL(disconnectRigInUse(std::shared_ptr<Rig>, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
-                                 this, SLOT(disconnectRigInMemory(std::shared_ptr<Rig>, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
+                QObject::connect(this, SIGNAL(disconnectRigInUse(Rig *, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
+                                 this, SLOT(disconnectRigInMemory(Rig *, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
 
                 //
                 // Initialize the Events logger
@@ -430,8 +431,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 //
                 // Setup the SIGNALS & SLOTS for `gkRadioLibs`...
                 //
-                QObject::connect(gkRadioLibs, SIGNAL(disconnectRigInUse(std::shared_ptr<Rig>, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
-                                 this, SLOT(disconnectRigInMemory(std::shared_ptr<Rig>, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
+                QObject::connect(gkRadioLibs, SIGNAL(disconnectRigInUse(Rig *, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
+                                 this, SLOT(disconnectRigInMemory(Rig *, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
             } else {
                 throw std::runtime_error(tr("Unable to find settings database; we've lost its location!").toStdString());
             }
@@ -456,12 +457,29 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QObject::connect(this, SIGNAL(gkExitApp()), this, SLOT(uponExit()));
 
         try {
+            //
+            // Initialize the list of frequencies that Small World Deluxe needs to communicate with other users
+            // throughout the globe/world!
+            //
+            gkFreqList = new GkFrequencies(gkDb, this);
+            QObject::connect(gkFreqList, SIGNAL(addFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
+                             this, SLOT(addFreqToDb(const GekkoFyre::AmateurRadio::GkFreqs &)));
+            QObject::connect(gkFreqList, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
+                             this, SLOT(removeFreqFromDb(const GekkoFyre::AmateurRadio::GkFreqs &)));
+
+            gkFreqList->publishFreqList();
             gkAudioDevices = new GekkoFyre::AudioDevices(gkDb, fileIo, gkFreqList, gkStringFuncs, gkEventLogger, gkSystem, this);
 
             const auto outputDeviceInfos = QAudioDeviceInfo::availableDevices(QAudio::AudioOutput);
             const auto inputDeviceInfos = QAudioDeviceInfo::availableDevices(QAudio::AudioInput);
-            avail_input_audio_devs = gkAudioDevices->enumAudioDevicesCpp(inputDeviceInfos);
-            avail_output_audio_devs = gkAudioDevices->enumAudioDevicesCpp(outputDeviceInfos);
+
+            if (!inputDeviceInfos.isEmpty()) {
+                avail_input_audio_devs = gkAudioDevices->enumAudioDevicesCpp(inputDeviceInfos);
+            }
+
+            if (!outputDeviceInfos.isEmpty()) {
+                avail_output_audio_devs = gkAudioDevices->enumAudioDevicesCpp(outputDeviceInfos);
+            }
 
             //
             // Initialize any QAudioSystem libraries and associated buffers!
@@ -626,7 +644,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                             if (output_dev.second.audio_device_info.isFormatSupported(user_output_settings)) {
                                 // Given audio parameters are supported, as defined by the user previously!
                                 pref_output_device = output_dev.second;
-                                gkAudioOutput = new QAudioOutput(output_dev.first, user_output_settings, this);
+                                gkAudioOutput = new QAudioOutput(output_dev.first, user_output_settings, &gkAudioOutputThread);
                                 gkEventLogger->publishEvent(tr("Now using the output audio device, \"%1\".").arg(pref_output_device.audio_device_info.deviceName()),
                                                             GkSeverity::Info, "", true, true, false, false);
                             } else {
@@ -677,6 +695,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
 
         if (!gkAudioOutput.isNull()) {
+            gkAudioOutputBuf = new QBuffer(this);
+            gkAudioOutputBuf->open(QBuffer::ReadWrite);
+            gkAudioOutput->moveToThread(&gkAudioOutputThread);
+            gkAudioOutput->setNotifyInterval(100);
+            gkAudioOutputThread.start();
+            gkAudioOutput->start(gkAudioOutputBuf);
+
             QObject::connect(gkAudioOutput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(audioOutHandleStateChanged(QAudio::State)));
         }
 
@@ -690,7 +715,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the audio codec encoding/decoding libraries!
         //
-        gkAudioEncoding = new GkAudioEncoding(gkAudioInputBuf, gkDb, gkAudioOutput, gkAudioInput, pref_output_device, pref_input_device, gkEventLogger, &gkAudioEncodingThread);
+        gkAudioEncoding = new GkAudioEncoding(gkAudioInputBuf, gkAudioOutputBuf, gkDb, gkAudioOutput, gkAudioInput, pref_output_device, pref_input_device, gkEventLogger, &gkAudioEncodingThread);
         gkAudioEncoding->moveToThread(&gkAudioEncodingThread);
         QObject::connect(&gkAudioEncodingThread, &QThread::finished, gkAudioEncoding, &QObject::deleteLater);
         gkAudioEncodingThread.start();
@@ -698,12 +723,17 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the Waterfall / Spectrograph
         //
+        #ifndef ENBL_VALGRIND_SUPPORT
         gkSpectroWaterfall = new GekkoFyre::GkSpectroWaterfall(gkEventLogger, this);
         gkFftAudio = new GekkoFyre::GkFFTAudio(gkAudioInputBuf, gkAudioInput, gkAudioOutput, pref_input_device, pref_output_device,
                                                gkSpectroWaterfall, gkStringFuncs, gkEventLogger, &gkAudioInputThread);
         gkFftAudio->moveToThread(&gkAudioInputThread);
         QObject::connect(&gkAudioInputThread, &QThread::finished, gkFftAudio, &QObject::deleteLater);
         gkAudioInputThread.start();
+
+        if (!gkAudioOutput.isNull()) {
+            QObject::connect(&gkAudioOutputThread, &QThread::finished, gkFftAudio, &QObject::deleteLater);
+        }
 
         //
         // Enable updating and clearing of QBuffer pointers across Small World Deluxe!
@@ -726,12 +756,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Add the spectrograph / waterfall to the QMainWindow!
         ui->horizontalLayout_12->addWidget(gkSpectroWaterfall);
+        #endif
 
         //
         // Sound & Audio Devices
         //
-        QObject::connect(this, SIGNAL(stopRecording()), this, SLOT(stopRecordingInput()));
-        QObject::connect(this, SIGNAL(startRecording()), this, SLOT(startRecordingInput()));
+        QObject::connect(this, SIGNAL(stopRecInput()), this, SLOT(stopRecordingInput()));
+        QObject::connect(this, SIGNAL(stopRecOutput()), this, SLOT(stopRecordingOutput()));
+        QObject::connect(this, SIGNAL(startRecInput()), this, SLOT(startRecordingInput()));
+        QObject::connect(this, SIGNAL(startRecOutput()), this, SLOT(startRecordingOutput()));
+
         QObject::connect(this, SIGNAL(refreshVuDisplay(const qreal &, const qreal &, const int &)),
                          gkVuMeter, SLOT(levelChanged(const qreal &, const qreal &, const int &)));
         QObject::connect(this, SIGNAL(changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)),
@@ -760,36 +794,36 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // printer->setOutputFileName(QString::fromStdString(default_path.string())); // TODO: Clean up this abomination of multiple std::string() <-> QString() conversions!
 
         //
-        // Initiate at startup to set any default values and/or signals/slots!
-        //
-        QObject::connect(this, SIGNAL(changeVolume(const float &)), this, SLOT(updateVolume(const float &)));
-
-        //
         // Set a default value for the Volume Slider and its QLabel
         //
-        const int vol_slider_max_val = ui->verticalSlider_vol_control->maximum();
-        const float real_vol_val = (static_cast<float>(ui->verticalSlider_vol_control->value()) / static_cast<float>(vol_slider_max_val));
-        updateVolumeSliderLabel(real_vol_val);
+        ui->verticalSlider_vol_control->setValue(static_cast<qint32>(GK_AUDIO_VOL_INIT_PERCENTAGE));
+        qint32 audio_vol_tick_pos = ui->verticalSlider_vol_control->value();
+        const qreal audio_vol = qreal(audio_vol_tick_pos / 100.0);
+        gkAudioInput->setVolume(audio_vol);
+        gkAudioOutput->setVolume(audio_vol);
+        ui->label_vol_control_disp->setText(tr("%1%").arg(QString::number(calcVolumeFactor(audio_vol_tick_pos, GK_AUDIO_VOL_FACTOR))));
+
+        //
+        // Setup the volume adjustment dialog / overlay!
+        gkVuAdjustDlg = new GkVuAdjust(gkAudioInput, gkAudioOutput, this);
 
         if (!pref_input_device.audio_device_info.isNull()) {
             if (pref_input_device.audio_device_info.preferredFormat().channelCount() > 0) {
-                emit startRecording();
-                // vu_meter_thread = std::thread(&MainWindow::updateVolumeDisplayWidgets, this);
-                // vu_meter_thread.detach();
+                //
+                // Start recording of configured input audio device!
+                emit startRecInput();
+                vu_meter_thread = std::thread(&MainWindow::updateVolumeDisplayWidgets, this);
+                vu_meter_thread.detach();
             }
         }
 
-        //
-        // Initialize the list of frequencies that Small World Deluxe needs to communicate with other users
-        // throughout the globe/world!
-        //
-        gkFreqList = new GkFrequencies(gkDb, this);
-        QObject::connect(gkFreqList, SIGNAL(addFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
-                         this, SLOT(addFreqToDb(const GekkoFyre::AmateurRadio::GkFreqs &)));
-        QObject::connect(gkFreqList, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
-                         this, SLOT(removeFreqFromDb(const GekkoFyre::AmateurRadio::GkFreqs &)));
-
-        gkFreqList->publishFreqList();
+        if (!pref_input_device.audio_device_info.isNull()) {
+            if (pref_input_device.audio_device_info.preferredFormat().channelCount() > 0) {
+                //
+                // Start recording of configured output audio device!
+                emit startRecOutput();
+            }
+        }
 
         //
         // Setup the SSTV sections in QMainWindow!
@@ -851,7 +885,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // QXmpp and XMPP related
         //
         readXmppSettings();
-        gkXmppClient = new GkXmppClient(xmpp_conn_details, gkEventLogger, false, this);
+
+        //
+        // Initialize the QXmpp client!
+        m_xmppClient = new GkXmppClient(xmpp_conn_details, gkEventLogger, false, nullptr);
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
@@ -864,7 +901,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
  */
 MainWindow::~MainWindow()
 {
-    emit stopRecording();
+    emit stopRecInput();
+    emit stopRecOutput();
     emit disconnectRigInUse(gkRadioPtr->gkRig, gkRadioPtr);
 
     gkAudioEncodingThread.quit();
@@ -872,6 +910,9 @@ MainWindow::~MainWindow()
 
     gkAudioInputThread.quit();
     gkAudioInputThread.wait();
+
+    gkAudioOutputThread.quit();
+    gkAudioOutputThread.wait();
 
     if (vu_meter_thread.joinable()) {
         vu_meter_thread.join();
@@ -994,7 +1035,7 @@ void MainWindow::launchSettingsWin()
                                                                gkAudioOutput, avail_input_audio_devs, avail_output_audio_devs,
                                                                pref_input_device, pref_output_device, gkRadioLibs,
                                                                gkStringFuncs, gkRadioPtr, gkSerialPortMap, gkUsbPortMap,
-                                                               gkFreqList, gkFreqTableModel, xmpp_conn_details, gkXmppClient,
+                                                               gkFreqList, gkFreqTableModel, xmpp_conn_details, m_xmppClient,
                                                                gkEventLogger, gkTextToSpeech, this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
@@ -1042,6 +1083,8 @@ void MainWindow::launchAudioPlayerWin()
                                                                        gkStringFuncs, gkAudioEncoding, gkEventLogger, this);
     gkAudioPlayDlg->setWindowFlags(Qt::Window);
     gkAudioPlayDlg->setAttribute(Qt::WA_DeleteOnClose, true);
+    QObject::connect(gkAudioPlayDlg, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
+
     gkAudioPlayDlg->show();
 }
 
@@ -1480,7 +1523,7 @@ int MainWindow::parseRigCapabilities(const rig_caps *caps, void *data)
         break;
     }
 
-    return 1; /* !=0, we want them all! */
+    return 1; /* != 0, we want them all! */
 }
 
 QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, rig_type>> MainWindow::initRadioModelsVar()
@@ -1488,6 +1531,21 @@ QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, rig_type>> MainWind
     QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, rig_type>> mmap;
     mmap.insert(-1, std::make_tuple(nullptr, "", GekkoFyre::AmateurRadio::rig_type::Unknown));
     return mmap;
+}
+
+/**
+ * @brief MainWindow::calcVolumeFactor since we don't want the maximum volume level given to `gkAudioInput` or
+ * `gkAudioOutput` to be a full 100%, we set it to something like 75% instead. But we still need to show the user a
+ * corrected value in order to minimize confusion, so this is where this function comes into play.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param vol_level The actual, real volume level.
+ * @param factor The correction factor to use to bring the real volume level to '100%' when at maximum.
+ * @return The corrected volume level to display to the user.
+ */
+qreal MainWindow::calcVolumeFactor(const qreal &vol_level, const qreal &factor)
+{
+    qreal corrected_vol = std::round(vol_level * factor);
+    return corrected_vol;
 }
 
 /**
@@ -1499,29 +1557,53 @@ QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, rig_type>> MainWind
 void MainWindow::updateVolumeDisplayWidgets()
 {
     try {
-        if (gkAudioInputBuf->isReadable()) {
-            std::lock_guard<std::mutex> lck_guard(mtx_update_vol_widgets);
-            std::this_thread::sleep_for(std::chrono::milliseconds(2500)); // TODO: This is a huge source of SEGFAULTS!
-
-            const qint32 num_samples = AUDIO_FRAMES_PER_BUFFER * gkAudioInput->format().channelCount(); // Assert that stereo actually equals stereo!
-            while (gkAudioInput->state() == QAudio::ActiveState) {
-                QByteArray vol_input_ba(std::move(gkAudioInputByteArrayBuf));
-                while (!vol_input_ba.isEmpty() && !vol_input_ba.isNull()) {
+        if (ui->checkBox_rx_tx_vol_toggle->isChecked()) { // Input audio is chosen!
+            if (gkAudioInputBuf->isReadable()) {
+                std::lock_guard<std::mutex> lck_guard(mtx_update_vol_widgets);
+                std::this_thread::sleep_for(std::chrono::milliseconds(2500)); // TODO: This is a huge source of SEGFAULTS!
+                const qint32 num_samples = AUDIO_FRAMES_PER_BUFFER * gkAudioInput->format().channelCount(); // Assert that stereo actually equals stereo!
+                while (gkAudioInput->state() == QAudio::ActiveState) {
                     //
                     // Input audio stream is open and active!
                     //
-                    std::vector<double> recv_samples;
-                    recv_samples.reserve(num_samples);
-                    std::copy(vol_input_ba.begin(), vol_input_ba.end(), recv_samples.begin());
+                    QByteArray vol_input_ba(std::move(gkAudioInputByteArrayBuf));
+                    while (!vol_input_ba.isEmpty() && !vol_input_ba.isNull()) {
+                        std::vector<double> recv_samples(vol_input_ba.begin(), vol_input_ba.end());
+                        const double largest_element = *std::max_element(recv_samples.begin(), recv_samples.end());
+                        const double dB_calc = 20 * std::log10(largest_element);
+                        emit refreshVuDisplay(dB_calc, GK_AUDIO_PEAK_MAX, recv_samples.size());
 
-                    Gist<double> gist_vol(recv_samples.size(), gkAudioInput->format().sampleRate());
-                    gist_vol.processAudioFrame(recv_samples);
+                        //
+                        // We are done with all the data as a whole, therefore clear the lot!
+                        vol_input_ba.clear();
+                        recv_samples.clear();
+                    }
+                }
+            }
+        } else { // Output audio is chosen!
+            if (gkAudioOutputBuf->isReadable()) {
+                std::lock_guard<std::mutex> lck_guard(mtx_update_vol_widgets);
+                std::this_thread::sleep_for(std::chrono::milliseconds(2500)); // TODO: This is a huge source of SEGFAULTS!
+                const qint32 num_samples = AUDIO_FRAMES_PER_BUFFER * gkAudioOutput->format().channelCount(); // Assert that stereo actually equals stereo!
+                while (gkAudioOutput->state() == QAudio::ActiveState) {
+                    //
+                    // Output audio stream is open and active!
+                    //
+                    QByteArray vol_output_ba(std::move(gkAudioOutputByteArrayBuf));
+                    while (!vol_output_ba.isEmpty() && !vol_output_ba.isNull()) {
+                        std::vector<double> recv_samples(vol_output_ba.begin(), vol_output_ba.end());
+                        double largest_element = *std::max_element(recv_samples.begin(), recv_samples.end());
 
-                    double rms = gist_vol.rootMeanSquare();
-                    double peak = gist_vol.peakEnergy();
+                        const double dB_calc = 20 * std::log10(largest_element);
+                        const double dB_max = 20 * std::log10(GK_AUDIO_PEAK_MAX); // TODO: Fix this so it works with other audio bit-rates than just 16-bit!
 
-                    emit refreshVuDisplay(rms, peak, recv_samples.size());
-                    vol_input_ba.clear(); // We are done with all the data as a whole, therefore clear the lot!
+                        emit refreshVuDisplay(dB_calc, dB_max, recv_samples.size());
+
+                        //
+                        // We are done with all the data as a whole, therefore clear the lot!
+                        vol_output_ba.clear();
+                        recv_samples.clear();
+                    }
                 }
             }
         }
@@ -1532,24 +1614,6 @@ void MainWindow::updateVolumeDisplayWidgets()
         QString error_msg = tr("An unknown exception has occurred. There are no further details.");
         gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
     }
-
-    return;
-}
-
-/**
- * @brief MainWindow::updateVolumeSliderLabel will update the volume QLabel UI widget, `label_vol_control_disp`.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param vol_level The actual slider value itself, derived from UI widget, `verticalSlider_vol_control`.
- */
-void MainWindow::updateVolumeSliderLabel(const float &vol_level)
-{
-    const float vol_level_decibel = (20.0f * std::log10(vol_level));
-    std::stringstream ss;
-    ss << std::setprecision(3) << vol_level_decibel;
-    ui->label_vol_control_disp->setText(tr("%1 dB").arg(QString::fromStdString(ss.str())));
-
-    float vol_level_multiplier = vol_level / 100.0f; // Since QAudioInput and QAudioOutput only read volume between the range of 0.1 - 1.0...
-    emit changeVolume(vol_level_multiplier);
 
     return;
 }
@@ -1577,7 +1641,7 @@ void MainWindow::defaultOutputAudioDev(const std::pair<QAudioDeviceInfo, GkDevic
 {
     QAudioDeviceInfo default_output_dev(QAudioDeviceInfo::defaultOutputDevice());
     pref_output_device = output_dev.second;
-    gkAudioOutput = new QAudioOutput(default_output_dev, default_output_dev.preferredFormat(), this);
+    gkAudioOutput = new QAudioOutput(default_output_dev, default_output_dev.preferredFormat(), &gkAudioOutputThread);
 
     return;
 }
@@ -2117,9 +2181,8 @@ void MainWindow::readXmppSettings()
  */
 void MainWindow::launchXmppRosterDlg()
 {
-    QPointer<GkXmppRosterDialog> gkXmppRosterDlg = new GkXmppRosterDialog(xmpp_conn_details, gkXmppClient, gkDb, gkEventLogger, this);
+    QPointer<GkXmppRosterDialog> gkXmppRosterDlg = new GkXmppRosterDialog(xmpp_conn_details, m_xmppClient, gkDb, gkEventLogger, this);
     gkXmppRosterDlg->setWindowFlags(Qt::Window);
-    gkXmppRosterDlg->setAttribute(Qt::WA_DeleteOnClose, false); // Do NOT delete on close!
     gkXmppRosterDlg->show();
 
     return;
@@ -2189,6 +2252,7 @@ void MainWindow::on_action_About_Dekoder_triggered()
     dlg_about->setWindowFlags(Qt::Window);
     dlg_about->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_about, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
+
     dlg_about->show();
 }
 
@@ -2199,6 +2263,20 @@ void MainWindow::on_action_About_Dekoder_triggered()
 void MainWindow::on_actionSet_Offset_triggered()
 {
     QMessageBox::information(this, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+}
+
+/**
+ * @brief MainWindow::on_actionAdjust_Volume_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::on_actionAdjust_Volume_triggered()
+{
+    gkVuAdjustDlg->setWindowFlags(Qt::Window);
+    gkVuAdjustDlg->setAttribute(Qt::WA_DeleteOnClose, true);
+    QObject::connect(gkVuAdjustDlg, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
+
+    gkVuAdjustDlg->show();
+    return;
 }
 
 /**
@@ -2369,7 +2447,9 @@ void MainWindow::infoBar()
  */
 void MainWindow::uponExit()
 {
-    emit stopRecording();
+    emit stopRecInput();
+    emit stopRecOutput();
+
     QApplication::exit(EXIT_SUCCESS);
 }
 
@@ -2400,36 +2480,6 @@ void MainWindow::configInputAudioDevice()
             break;
         default:
             break;
-    }
-
-    return;
-}
-
-/**
- * @brief MainWindow::updateVolume will update the data within the circular buffer to the volume level as set
- * by the user themselves, usually from within QMainWindow.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param value The adjustment needed to the buffered data.
- * @note trukvl <https://stackoverflow.com/questions/15776390/controlling-audio-volume-in-real-time>
- */
-void MainWindow::updateVolume(const float &value)
-{
-    if (pref_input_device.is_enabled) {
-        //
-        // Input device!
-        //
-        if (!gkAudioInput.isNull()) {
-            gkAudioInput->setVolume(value);
-        }
-    } else if (pref_output_device.is_enabled) {
-        //
-        // Output device!
-        //
-        if (!gkAudioOutput.isNull()) {
-            gkAudioOutput->setVolume(value);
-        }
-    } else {
-        std::cerr << tr("Unable to determine Audio I/O for making volume changes!").toStdString() << std::endl;
     }
 
     return;
@@ -2467,8 +2517,12 @@ void MainWindow::processAudioInMain()
     if (gkAudioInput->state() == QAudio::ActiveState) {
         emit updateAudioIn();
 
+        //
+        // Clear and reset the buffers!
         gkAudioInputBuf->buffer().clear();
         gkAudioInputBuf->seek(0);
+        gkAudioInputByteArrayBuf.clear();
+        gkAudioInputByteArrayBuf.shrink_to_fit();
     }
 
     return;
@@ -2500,35 +2554,22 @@ void MainWindow::msgOutgoingProcess(const QString &curr_text)
 }
 
 /**
- * @brief MainWindow::on_verticalSlider_vol_control_valueChanged indirectly adjusts the volume of the audio data buffer itself
- * via the decibel formulae <https://en.wikipedia.org/wiki/Decibel#Acoustics>.
+ * @brief MainWindow::on_verticalSlider_vol_control_sliderMoved
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param value The value of the QSlider from the QMainWindow, ranging from 0-100 individual units.
- * @note Ansis Māliņš <https://stackoverflow.com/questions/49014440/what-is-the-correct-audio-volume-slider-formula>,
- * trukvl <https://stackoverflow.com/questions/15776390/controlling-audio-volume-in-real-time>
+ * @param position
  */
-void MainWindow::on_verticalSlider_vol_control_valueChanged(int value)
+void MainWindow::on_verticalSlider_vol_control_sliderMoved(int position)
 {
-    //
-    // The volume is a float between 0.0 and 1.0 and essentially represents a percentage of the max volume of the
-    // audio. Since it will always be either 100% or less, the dB value will be either 0 (for full volume) or
-    // negative. A positive dB value would mean there is amplification taking place which isn't possible with
-    // simple playback.
-    //
-    const int vol_slider_max_val = ui->verticalSlider_vol_control->maximum();
-    const float real_val = (static_cast<float>(value) / static_cast<float>(vol_slider_max_val));
-
-    if (pref_input_device.is_enabled) {
-        if (!gkAudioInput.isNull()) {
-            updateVolumeSliderLabel(real_val);
-        }
-    } else if (pref_output_device.is_enabled) {
-        if (!gkAudioOutput.isNull()) {
-            updateVolumeSliderLabel(real_val);
-        }
+    qreal audio_vol = qreal(position / 100.0);
+    ui->label_vol_control_disp->setText(tr("%1%").arg(QString::number(calcVolumeFactor(position, GK_AUDIO_VOL_FACTOR))));
+    if (ui->checkBox_rx_tx_vol_toggle->isChecked()) {
+        //
+        // RX is selected!
+        gkAudioInput->setVolume(audio_vol);
     } else {
-        gkEventLogger->publishEvent(tr("Unable to determine Audio I/O for changing audio state!"), GkSeverity::Error,
-                                    "", false, true, false, true);
+        //
+        // TX is selected!
+        gkAudioOutput->setVolume(audio_vol);
     }
 
     return;
@@ -2697,6 +2738,41 @@ void MainWindow::audioInHandleStateChanged(QAudio::State changed_state)
 }
 
 /**
+ * @brief MainWindow::processAudioOutMain responds to audio buffer updates from a QAudioOutput pointer (i.e.
+ * specifically `gkAudioOutput` in this case) and updates other usages of QBuffer throughout the Small World Deluxe
+ * application.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @note The ready() signal from QAudioOutput is utterly broken and should not be relied upon in any capacity. DO NOT USE.
+ */
+void MainWindow::processAudioOutMain()
+{
+    if (gkAudioOutput->state() == QAudio::ActiveState) {
+        emit updateAudioOut();
+
+        //
+        // Clear and reset the buffers!
+        gkAudioOutputBuf->buffer().clear();
+        gkAudioOutputBuf->seek(0);
+        gkAudioOutputByteArrayBuf.clear();
+        gkAudioOutputByteArrayBuf.shrink_to_fit();
+    }
+
+    return;
+}
+
+/**
+ * @brief MainWindow::processAudioOutMainBuffer
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::processAudioOutMainBuffer()
+{
+    gkAudioOutputBuf->seek(0);
+    gkAudioOutputByteArrayBuf.append(gkAudioOutputBuf->readAll());
+
+    return;
+}
+
+/**
  * @brief MainWindow::audioOutHandleStateChanged
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param changed_state
@@ -2751,6 +2827,25 @@ void MainWindow::stopRecordingInput()
 }
 
 /**
+ * @brief MainWindow::stopRecordingOutput
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::stopRecordingOutput()
+{
+    try {
+        if (!gkAudioOutput.isNull() && gkAudioOutput->state() == QAudio::ActiveState) {
+            // TODO: Implement a close-stream state!
+            gkAudioOutput->stop();
+        }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(tr("Problem encountered with stopping output audio device. Error:\n\n%1").arg(QString::fromStdString(e.what())),
+                                    GkSeverity::Error, "", false, true, false, true);
+    }
+
+    return;
+}
+
+/**
  * @brief MainWindow::startRecordingInput
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param wait_time How long to wait for the thread to instantiate safely before forcing
@@ -2760,10 +2855,35 @@ void MainWindow::startRecordingInput()
 {
     try {
         if (gkAudioInput->state() == QAudio::StoppedState) {
-            emit stopRecording();
+            emit stopRecInput();
 
             if (avail_input_audio_devs.empty()) {
-                throw std::invalid_argument(tr("No audio devices have been found!").toStdString());
+                throw std::invalid_argument(tr("No input audio devices have been found!").toStdString());
+            }
+        }
+
+        gkFftAudio->processEvent(Spectrograph::GkFftEventType::record);
+        return;
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(tr("Problem encountered with initializing input audio device. Error:\n\n%1").arg(QString::fromStdString(e.what())),
+                                    GkSeverity::Error, "", false, true, false, true);
+    }
+
+    return;
+}
+
+/**
+ * @brief MainWindow::startRecordingOutput
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::startRecordingOutput()
+{
+    try {
+        if (gkAudioOutput->state() == QAudio::StoppedState) {
+            emit stopRecOutput();
+
+            if (avail_output_audio_devs.empty()) {
+                throw std::invalid_argument(tr("No output audio devices have been found!").toStdString());
             }
         }
 
@@ -2785,7 +2905,7 @@ void MainWindow::startRecordingInput()
 void MainWindow::restartInputAudioInterface(const GkDevice &input_device)
 {
     try {
-        emit stopRecording();
+        emit stopRecInput();
         pref_input_device = {}; // Clear the structure ready for re-use!
         pref_input_device = input_device;
     } catch (const std::exception &e) {
@@ -2859,9 +2979,7 @@ void MainWindow::gatherRigCapabilities(const rig_model_t &rig_model_update,
  */
 void MainWindow::addRigToMemory(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr)
 {
-    if (radio_ptr->gkRig.get() != nullptr) {
-        emit disconnectRigInUse(radio_ptr->gkRig, radio_ptr);
-    }
+    emit disconnectRigInUse(radio_ptr->gkRig, radio_ptr);
 
     //
     // Attempt to initialize the amateur radio rig!
@@ -2879,36 +2997,34 @@ void MainWindow::addRigToMemory(const rig_model_t &rig_model_update, const std::
  * @param rig_to_disconnect The radio rig in question to disconnect.
  * @param radio_ptr The pointer to Hamlib's radio structure and any information thereof.
  */
-void MainWindow::disconnectRigInMemory(std::shared_ptr<Rig> rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr)
+void MainWindow::disconnectRigInMemory(Rig *rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr)
 {
     Q_UNUSED(rig_to_disconnect);
 
     if (gkRadioPtr != nullptr) {
-        if (gkRadioPtr->gkRig != nullptr) {
-            if (gkRadioPtr->is_open) {
-                // Free the pointer(s) for the Hamlib library!
-                rig_to_disconnect->close(); // Close port
-                gkRadioPtr->is_open = false;
+        if (gkRadioPtr->is_open) {
+            // Free the pointer(s) for the Hamlib library!
+            rig_to_disconnect->close(); // Close port
+            gkRadioPtr->is_open = false;
 
-                for (const auto &port: gkSerialPortMap) {
-                    //
-                    // CAT Port
-                    //
-                    if (radio_ptr->cat_conn_port == port.port_info.portName()) {
-                        QSerialPort serial(port.port_info);
-                        if (serial.isOpen()) {
-                            serial.close();
-                        }
+            for (const auto &port: gkSerialPortMap) {
+                //
+                // CAT Port
+                //
+                if (radio_ptr->cat_conn_port == port.port_info.portName()) {
+                    QSerialPort serial(port.port_info);
+                    if (serial.isOpen()) {
+                        serial.close();
                     }
+                }
 
-                    //
-                    // PTT Port
-                    //
-                    if (radio_ptr->ptt_conn_port == port.port_info.portName()) {
-                        QSerialPort serial(port.port_info);
-                        if (serial.isOpen()) {
-                            serial.close();
-                        }
+                //
+                // PTT Port
+                //
+                if (radio_ptr->ptt_conn_port == port.port_info.portName()) {
+                    QSerialPort serial(port.port_info);
+                    if (serial.isOpen()) {
+                        serial.close();
                     }
                 }
             }
@@ -3031,12 +3147,14 @@ void MainWindow::on_actionView_Roster_triggered()
 
 void MainWindow::on_actionSign_out_triggered()
 {
+    /*
     if (gkXmppClient->isConnected()) {
         gkXmppClient->disconnectFromServer();
         gkEventLogger->publishEvent(tr("Disconnected from XMPP server: %1")
         .arg(xmpp_conn_details.server.url), GkSeverity::Info, "",
         true, true, false, false);
     }
+    */
 
     return;
 }

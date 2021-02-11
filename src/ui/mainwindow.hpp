@@ -46,9 +46,10 @@
 #include "src/gk_waterfall_gui.hpp"
 #include "src/gk_audio_encoding.hpp"
 #include "src/gk_fft_audio.hpp"
-#include "src/gk_xmpp_client.hpp"
 #include "src/gk_frequency_list.hpp"
+#include "src/gk_xmpp_client.hpp"
 #include "src/ui/dialogsettings.hpp"
+#include "src/ui/widgets/gk_vu_change_widget.hpp"
 #include "src/ui/widgets/gk_display_image.hpp"
 #include "src/ui/widgets/gk_vu_meter_widget.hpp"
 #include "src/gk_logger.hpp"
@@ -107,6 +108,7 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
     QThread gkAudioInputThread;
+    QThread gkAudioOutputThread;
     QThread gkAudioEncodingThread;
 
 public:
@@ -120,6 +122,7 @@ private slots:
     void on_actionCheck_for_Updates_triggered();
     void on_action_About_Dekoder_triggered();
     void on_actionSet_Offset_triggered();
+    void on_actionAdjust_Volume_triggered();
     void on_action_Settings_triggered();
     void on_actionSave_Decoded_triggered();
     void on_actionSave_All_triggered();
@@ -175,7 +178,7 @@ private slots:
     //
     // Audio/Volume related controls
     //
-    void on_verticalSlider_vol_control_valueChanged(int value);
+    void on_verticalSlider_vol_control_sliderMoved(int position);
     void on_pushButton_radio_tune_clicked(bool checked);
     void on_checkBox_rx_tx_vol_toggle_stateChanged(int arg1);
 
@@ -195,7 +198,6 @@ private slots:
     //
     // Audio related
     //
-    void updateVolume(const float &value);
     void setAudioIo(const bool &use_input_audio); // True by default!
 
     //
@@ -266,6 +268,8 @@ protected slots:
     void processAudioInMain();
     void processAudioInMainBuffer();
     void audioInHandleStateChanged(QAudio::State changed_state);
+    void processAudioOutMain();
+    void processAudioOutMainBuffer();
     void audioOutHandleStateChanged(QAudio::State changed_state);
 
 public slots:
@@ -275,7 +279,9 @@ public slots:
     // Audio related
     //
     void stopRecordingInput();
+    void stopRecordingOutput();
     void startRecordingInput();
+    void startRecordingOutput();
 
     void restartInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &input_device);
 
@@ -285,7 +291,7 @@ public slots:
     void gatherRigCapabilities(const rig_model_t &rig_model_update,
                                const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void addRigToMemory(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
-    void disconnectRigInMemory(std::shared_ptr<Rig> rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
+    void disconnectRigInMemory(Rig *rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
 
 signals:
     void updatePaVol(const int &percentage);
@@ -298,16 +304,19 @@ signals:
     void changeConnPort(const QString &conn_port, const GekkoFyre::AmateurRadio::GkConnMethod &conn_method);
     void addRigInUse(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void recvRigCapabilities(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
-    void disconnectRigInUse(std::shared_ptr<Rig> rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
+    void disconnectRigInUse(Rig *rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
 
     //
     // Audio related
     //
     void updateAudioIn();
+    void updateAudioOut();
     void refreshVuDisplay(const qreal &rmsLevel, const qreal &peakLevel, const int &numSamples);
     void changeVolume(const float &value);
-    void stopRecording();
-    void startRecording();
+    void stopRecInput();
+    void stopRecOutput();
+    void startRecInput();
+    void startRecOutput();
 
     //
     // QAudioSystem and related
@@ -354,8 +363,11 @@ private:
     //
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
+    QPointer<GkVuAdjust> gkVuAdjustDlg;
     QPointer<QBuffer> gkAudioInputBuf;
+    QPointer<QBuffer> gkAudioOutputBuf;
     QByteArray gkAudioInputByteArrayBuf;
+    QByteArray gkAudioOutputByteArrayBuf;
 
     //
     // QAudioSystem miscellaneous variables
@@ -370,6 +382,7 @@ private:
     //
     // Audio sub-system
     //
+    qreal calcVolumeFactor(const qreal &vol_level, const qreal &factor = GK_AUDIO_VOL_FACTOR);
     double global_rx_audio_volume;
     double global_tx_audio_volume;
 
@@ -442,7 +455,6 @@ private:
     static QMultiMap<rig_model_t, std::tuple<const rig_caps *, QString, GekkoFyre::AmateurRadio::rig_type>> initRadioModelsVar();
 
     void updateVolumeDisplayWidgets();
-    void updateVolumeSliderLabel(const float &vol_level);
     void defaultInputAudioDev(const std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice> &input_dev);
     void defaultOutputAudioDev(const std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice> &output_dev);
 
@@ -454,8 +466,8 @@ private:
     //
     // QXmpp and XMPP related
     //
+    QPointer<GekkoFyre::GkXmppClient> m_xmppClient;
     GekkoFyre::Network::GkXmpp::GkUserConn xmpp_conn_details; // TODO: Finish this off!
-    QPointer<GekkoFyre::GkXmppClient> gkXmppClient;
 
     //
     // Spectrograph related

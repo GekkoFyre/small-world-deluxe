@@ -104,7 +104,7 @@ public:
     std::vector<Database::Settings::GkUsbPort> printBosUsb(libusb_device_handle *handle);
 
 signals:
-    void disconnectRigInUse(std::shared_ptr<Rig> rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
+    void disconnectRigInUse(Rig *rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr);
     void publishEventMsg(const QString &event, const GekkoFyre::System::Events::Logging::GkSeverity &severity = GekkoFyre::System::Events::Logging::GkSeverity::Warning,
                          const QVariant &arguments = "", const bool &sys_notification = false, const bool &publishToConsole = true,
                          const bool &publishToStatusBar = false, const bool &displayMsgBox = false);

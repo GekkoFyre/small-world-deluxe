@@ -258,6 +258,7 @@ SectionGroup "Small World Deluxe" SWDsection
         SetOutPath "$INSTDIR"
           File "${GK_ROOT_PATH}\cmake-build-debug\libdouble-conversion.dll"
           File "${GK_ROOT_PATH}\cmake-build-debug\libgcc_s_seh-1.dll"
+          File "${GK_ROOT_PATH}\cmake-build-debug\libgcc_s_sjlj-1.dll"
           File "${GK_ROOT_PATH}\cmake-build-debug\libglib-2.0-0.dll"
           File "${GK_ROOT_PATH}\cmake-build-debug\libwinpthread-1.dll"
           File "${GK_ROOT_PATH}\cmake-build-debug\libbrotlicommon.dll"
@@ -283,7 +284,6 @@ SectionGroup "Small World Deluxe" SWDsection
           File "${GK_ROOT_PATH}\cmake-build-debug\zlib1.dll"
           
           File "${GK_ROOT_PATH}\cmake-build-debug\crashpad_handler.exe"
-          File "${GK_ROOT_PATH}\cmake-build-debug\contrib\dend\toast.ps1"
 
           File "${GK_ROOT_PATH}\cmake-build-debug\${MUI_FILE}.exe"
           File "${GK_ROOT_PATH}\cmake-build-debug\libgalaxy.a"
@@ -368,7 +368,7 @@ SectionGroup "Small World Deluxe" SWDsection
       Section "Hamlib"
         SectionIn RO
           SetOutPath "$INSTDIR"
-            File "${GK_ROOT_PATH}\cmake-build-debug\libhamlib-2.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\libhamlib-4.dll"
       SectionEnd
 
       Section "libusb-1.0"

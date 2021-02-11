@@ -119,7 +119,8 @@ class GkAudioEncoding : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkAudioEncoding(const QPointer<QBuffer> &audioInputBuf, QPointer<GekkoFyre::GkLevelDb> database, QPointer<QAudioOutput> audioOutput,
+    explicit GkAudioEncoding(const QPointer<QBuffer> &audioInputBuf, const QPointer<QBuffer> &audioOutputBuf,
+                             QPointer<GekkoFyre::GkLevelDb> database, QPointer<QAudioOutput> audioOutput,
                              QPointer<QAudioInput> audioInput, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
                              const GekkoFyre::Database::Settings::Audio::GkDevice &input_device,
                              QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
@@ -133,6 +134,7 @@ public slots:
                      const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER, const qint32 &application = OPUS_APPLICATION_AUDIO);
     void stopEncode();
     void processAudioInEncode();
+    void processAudioOutEncode();
 
 private slots:
     void stopCaller();
@@ -169,6 +171,7 @@ private:
     QByteArray m_buffer;                                        // A QByteArray, providing more readily accessible information as needed by the FLAC, Ogg Vorbis, Ogg Opus, etc. encoders.
     GkAudioFramework::CodecSupport m_chosen_codec;              // The chosen audio encoding codec, whether it be FLAC, Ogg Vorbis, Ogg Opus, etc.
     QPointer<QBuffer> gkAudioInputBuf;                          // For reading RAW PCM audio data from a given QAudioInput into.
+    QPointer<QBuffer> gkAudioOutputBuf;                         // For reading RAW PCM audio data from a given QAudioOutput into.
     QPointer<QBuffer> m_encoded_buf;                            // For holding the encoded data whether it be FLAC, Ogg Vorbis, Ogg Opus, etc. as calculated from `record_input_buf`.
     SndfileHandle m_handle_in;                                  // The libsndfile handler, for all related operations such as reading, writing (and hence conversion), etc.
     QFile m_out_file;
