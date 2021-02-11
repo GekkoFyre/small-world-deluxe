@@ -49,6 +49,7 @@ CMAKE_POLICY(SET CMP0020 NEW)
 cmake_policy(SET CMP0074 NEW)
 cmake_policy(SET CMP0054 NEW)
 cmake_policy(SET CMP0087 NEW)
+cmake_policy(SET CMP0025 NEW)
 
 #
 # RPATH is aimed at Linux installations primarily
@@ -85,6 +86,7 @@ option(GFYRE_PACKAGE_MAINTAINER "Are you a package maintainer? If so, set this o
 option(GFYRE_BUILD_STATIC "Build Small World Deluxe as a static library/package. Only available under Microsoft Windows systems." ON)
 option(GFYRE_BUILD_SHARED "Build Small World Deluxe as a shared library/package. This will result in a smaller executable at the cost of requiring further DLL dependencies." OFF)
 option(GFYRE_SWORLD_DBG_VERBOSITY "Enable DEBUG verbosity for Small World Deluxe and its use of third-party libraries throughout the program itself." OFF)
+option(GFYRE_BOOST_CPP_DBG "Enable the use of debug libraries for the Boost C++ dependency!" OFF)
 
 option(ENBL_VALGRIND_SUPPORT "Allows for the use of Valgrind memory analysis on the application, thereby disabling certain, otherwise needed features that enhance the user-experience." OFF)
 option(ENBL_CLANG_ADDRESS_SANITIZER "LLVM's AddressSanitizer is a fast memory error detector. Clang support must be enabled for this to work." OFF)
@@ -139,21 +141,16 @@ if (LINUX)
     set(SYSCONFIG_INSTALL_DIR "/etc/small-world-deluxe/" CACHE PATH "Location for the settings directory.")
 endif()
 
-find_package(QWT REQUIRED)
-if (QWT_FOUND)
-    include_directories(${QWT_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${QWT_LIBRARIES})
-    add_definitions(-DQWT_DLL)
-else()
-    message(FATAL_ERROR "The 'QWT' graphing/charting library could not be found!")
-endif(QWT_FOUND)
-
-if (MSYS OR MINGW OR LINUX)
+if (LINUX)
     set(Boost_USE_STATIC_LIBS OFF CACHE BOOL "Use static libraries when linking Boost C++.")
-elseif(WIN32)
+elseif(WIN32 OR MSYS OR MINGW)
     set(Boost_USE_STATIC_LIBS ON CACHE BOOL "Use static libraries when linking Boost C++.")
 else()
     message(SEND_ERROR "The only operating systems and/or build environments we OFFICIALLY support as of the moment are Microsoft Windows, MinGW/MSYS, and Linux. Sorry!")
+endif()
+
+if (GFYRE_BOOST_CPP_DBG)
+    set(Boost_USE_DEBUG_LIBS ON CACHE BOOL "Enable the use of debug libraries for the Boost C++ dependency!")
 endif()
 
 set(Boost_USE_MULTITHREADED ON CACHE BOOL "Use multithreaded libraries when linking Boost C++.")
@@ -202,6 +199,17 @@ function(install_qxmpp)
     endif(QXMPP_FOUND)
 endfunction()
 
+function(install_qwt)
+    find_package(QWT REQUIRED)
+    if (QWT_FOUND)
+        include_directories(${QWT_INCLUDE_DIRS})
+        set(LIBS ${LIBS} ${QWT_LIBRARIES})
+        add_definitions(-DQWT_DLL)
+    else()
+        message(FATAL_ERROR "The 'QWT' graphing/charting library could not be found!")
+    endif(QWT_FOUND)
+endfunction()
+
 #
 # Hamlib
 # https://hamlib.github.io/
@@ -248,6 +256,8 @@ endif(SNDFILE_FOUND)
 
 if (LINUX)
     install_qxmpp() # Install QXmpp as non-static under Linux!
+    install_qwt() # Install Qwt as non-static under Linux!
+    
     find_package(UDev REQUIRED)
     if (UDEV_FOUND)
         include_directories(${UDEV_INCLUDE_DIRS})
@@ -256,6 +266,10 @@ if (LINUX)
         message(FATAL_ERROR "The 'udev' SystemD libraries could not be found!")
     endif(UDEV_FOUND)
 endif(LINUX)
+
+if(WIN32 OR MSYS OR MINGW)
+    install_qwt() # Install Qwt as static under Microsoft Windows systems!
+endif()
 
 if(WIN32 OR MSYS OR MINGW)
     if (GFYRE_BUILD_STATIC)
@@ -347,7 +361,7 @@ else()
     message(FATAL_ERROR "Either `libusb.h` and/or `usb.h` could not be found for the 'libusb' system device and enumeration libraries!")
 endif(USB_FOUND)
 
-if (MSYS OR MINGW OR LINUX OR UNIX)
+if (MSYS OR MINGW)
     install_qxmpp() # Install QXmpp as static under Microsoft Windows systems!
 endif()
 
@@ -887,31 +901,47 @@ SET(CMAKE_CXX_FLAGS_MINSIZEREL_INIT     "-Os -DNDEBUG")
 SET(CMAKE_CXX_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG")
 SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
 
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    # Using regular Clang or AppleClang
-    set(CMAKE_C_COMPILER "/usr/bin/clang")
-    set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
-    add_compile_options(-Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-missing-field-initializers)
-    
-    #
-    # https://clang.llvm.org/docs/AddressSanitizer.html
-    #
-    if(ENBL_CLANG_ADDRESS_SANITIZER)
-        set(CMAKE_BUILD_TYPE "ASAN")
+if(MSYS OR MINGW OR LINUX)
+    if (CMAKE_CXX_COMPILER_ID MATCHES "clang")
+        #
+        # Using regular Clang or AppleClang
+        if(MSYS OR MINGW)
+            set(CMAKE_C_COMPILER "/mingw64/bin/clang")
+            set(CMAKE_CXX_COMPILER "/mingw64/bin/clang++")
+        else()
+            set(CMAKE_C_COMPILER "/usr/bin/clang")
+            set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
+        endif()
+        add_compile_options(-Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-missing-field-initializers)
+        
+        #
+        # https://clang.llvm.org/docs/AddressSanitizer.html
+        #
+        if(ENBL_CLANG_ADDRESS_SANITIZER)
+            set(CMAKE_BUILD_TYPE "ASAN")
+        endif()
+    elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+        #
+        # Using GCC
+        if(MSYS OR MINGW)
+            #
+            # Nothing!
+        else()
+            set(CMAKE_C_COMPILER "/usr/bin/gcc")
+            set(CMAKE_CXX_COMPILER "/usr/bin/g++")
+        endif()
+        add_compile_options(-Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-missing-field-initializers)
+    elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+        # Using Intel C++
     endif()
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    # Using GCC
-    set(CMAKE_C_COMPILER "/usr/bin/gcc")
-    set(CMAKE_CXX_COMPILER "/usr/bin/g++")
-    add_compile_options(-Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-missing-field-initializers)
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-    # Using Intel C++
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-    # Using Microsoft Visual Studio C++
-    if(CMAKE_BUILD_TYPE MATCHES "Debug")
-        add_compile_options(\$<\$<CXX_COMPILER_ID:MSVC>:/W3 /WX)
-    elseif(CMAKE_BUILD_TYPE MATCHES "Release")
-        add_compile_options(\$<\$<CXX_COMPILER_ID:MSVC>:/W3 /WX /GL)
+elseif(WIN32)
+    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+        # Using Microsoft Visual Studio C++
+        if(CMAKE_BUILD_TYPE MATCHES "Debug")
+            add_compile_options(\$<\$<CXX_COMPILER_ID:MSVC>:/W3 /WX)
+        elseif(CMAKE_BUILD_TYPE MATCHES "Release")
+            add_compile_options(\$<\$<CXX_COMPILER_ID:MSVC>:/W3 /WX /GL)
+        endif()
     endif()
 endif()
 
