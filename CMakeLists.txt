@@ -87,6 +87,7 @@ option(GFYRE_BUILD_SHARED "Build Small World Deluxe as a shared library/package.
 option(GFYRE_SWORLD_DBG_VERBOSITY "Enable DEBUG verbosity for Small World Deluxe and its use of third-party libraries throughout the program itself." OFF)
 
 option(ENBL_VALGRIND_SUPPORT "Allows for the use of Valgrind memory analysis on the application, thereby disabling certain, otherwise needed features that enhance the user-experience." OFF)
+option(ENBL_CLANG_ADDRESS_SANITIZER "LLVM's AddressSanitizer is a fast memory error detector. Clang support must be enabled for this to work." OFF)
 
 option(BUILD_CODEC2_SUPPORT "Enable support for the 'Codec2' open source speech codec library." ON)
 
@@ -873,15 +874,34 @@ endif()
 
 INSTALL(TARGETS smallworld)
 
-#
-# https://stackoverflow.com/questions/23995019/what-is-the-modern-method-for-setting-general-compile-flags-in-cmake
-# https://stackoverflow.com/questions/20105167/c-error-failure-localefacet-s-create-c-locale-name-not-valid-when-runni
-#
+SET(CMAKE_C_FLAGS_DEBUG_INIT          "-g")
+SET(CMAKE_C_FLAGS_MINSIZEREL_INIT     "-Os -DNDEBUG")
+SET(CMAKE_C_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG")
+SET(CMAKE_C_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
+
+SET(CMAKE_CXX_FLAGS_INIT                "-Wall")
+SET(CMAKE_CXX_FLAGS_DEBUG_INIT          "-g")
+SET(CMAKE_CXX_FLAGS_MINSIZEREL_INIT     "-Os -DNDEBUG")
+SET(CMAKE_CXX_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG")
+SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
+
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # Using regular Clang or AppleClang
+    set(CMAKE_C_COMPILER "/usr/bin/clang")
+    set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
     add_compile_options(-Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -enable-clocale)
+    
+    #
+    # https://clang.llvm.org/docs/AddressSanitizer.html
+    #
+    if(ENBL_CLANG_ADDRESS_SANITIZER)
+        set(CMAKE_BUILD_TYPE "Debug")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+    endif()
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     # Using GCC
+    set(CMAKE_C_COMPILER "/usr/bin/gcc")
+    set(CMAKE_CXX_COMPILER "/usr/bin/g++")
     add_compile_options(-Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -enable-clocale)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
     # Using Intel C++
