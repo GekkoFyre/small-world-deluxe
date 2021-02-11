@@ -48,7 +48,7 @@
 #include <boost/exception/all.hpp>
 #include <boost/logic/tribool.hpp>
 #include <boost/filesystem.hpp>
-#include <qwt/qwt_interval.h>
+#include <qwt_interval.h>
 #include <map>
 #include <list>
 #include <vector>

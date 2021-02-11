@@ -141,6 +141,15 @@ if (LINUX)
     set(SYSCONFIG_INSTALL_DIR "/etc/small-world-deluxe/" CACHE PATH "Location for the settings directory.")
 endif()
 
+find_package(QWT REQUIRED)
+if (QWT_FOUND)
+    include_directories(${QWT_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${QWT_LIBRARIES})
+    add_definitions(-DQWT_DLL)
+else()
+    message(FATAL_ERROR "The 'QWT' graphing/charting library could not be found!")
+endif(QWT_FOUND)
+
 if (LINUX)
     set(Boost_USE_STATIC_LIBS OFF CACHE BOOL "Use static libraries when linking Boost C++.")
 elseif(WIN32 OR MSYS OR MINGW)
@@ -199,17 +208,6 @@ function(install_qxmpp)
     endif(QXMPP_FOUND)
 endfunction()
 
-function(install_qwt)
-    find_package(QWT REQUIRED)
-    if (QWT_FOUND)
-        include_directories(${QWT_INCLUDE_DIRS})
-        set(LIBS ${LIBS} ${QWT_LIBRARIES})
-        add_definitions(-DQWT_DLL)
-    else()
-        message(FATAL_ERROR "The 'QWT' graphing/charting library could not be found!")
-    endif(QWT_FOUND)
-endfunction()
-
 #
 # Hamlib
 # https://hamlib.github.io/
@@ -255,9 +253,7 @@ else()
 endif(SNDFILE_FOUND)
 
 if (LINUX)
-    install_qxmpp() # Install QXmpp as non-static under Linux!
-    install_qwt() # Install Qwt as non-static under Linux!
-    
+    install_qxmpp() # Install QXmpp as non-static under Linux!    
     find_package(UDev REQUIRED)
     if (UDEV_FOUND)
         include_directories(${UDEV_INCLUDE_DIRS})
@@ -266,10 +262,6 @@ if (LINUX)
         message(FATAL_ERROR "The 'udev' SystemD libraries could not be found!")
     endif(UDEV_FOUND)
 endif(LINUX)
-
-if(WIN32 OR MSYS OR MINGW)
-    install_qwt() # Install Qwt as static under Microsoft Windows systems!
-endif()
 
 if(WIN32 OR MSYS OR MINGW)
     if (GFYRE_BUILD_STATIC)
