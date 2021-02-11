@@ -273,8 +273,10 @@ endif()
 if (LINUX)
     set(THREADS_PREFER_PTHREAD_FLAG ON)
 endif()
+
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
+
 if (Threads_FOUND)
     set(LIBS ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
 else()
@@ -889,28 +891,27 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # Using regular Clang or AppleClang
     set(CMAKE_C_COMPILER "/usr/bin/clang")
     set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
-    add_compile_options(-Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -enable-clocale)
+    add_compile_options(-Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-missing-field-initializers)
     
     #
     # https://clang.llvm.org/docs/AddressSanitizer.html
     #
     if(ENBL_CLANG_ADDRESS_SANITIZER)
-        set(CMAKE_BUILD_TYPE "Debug")
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+        set(CMAKE_BUILD_TYPE "ASAN")
     endif()
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     # Using GCC
     set(CMAKE_C_COMPILER "/usr/bin/gcc")
     set(CMAKE_CXX_COMPILER "/usr/bin/g++")
-    add_compile_options(-Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -enable-clocale)
+    add_compile_options(-Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-missing-field-initializers)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
     # Using Intel C++
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     # Using Microsoft Visual Studio C++
     if(CMAKE_BUILD_TYPE MATCHES "Debug")
-        add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W3 /WX)
+        add_compile_options(\$<\$<CXX_COMPILER_ID:MSVC>:/W3 /WX)
     elseif(CMAKE_BUILD_TYPE MATCHES "Release")
-        add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W3 /WX /GL)
+        add_compile_options(\$<\$<CXX_COMPILER_ID:MSVC>:/W3 /WX /GL)
     endif()
 endif()
 

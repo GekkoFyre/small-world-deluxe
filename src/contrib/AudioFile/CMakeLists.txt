@@ -21,10 +21,4 @@ target_include_directories (
 target_compile_features (${PROJECT_NAME} INTERFACE cxx_std_11)
 
 #===============================================================================
-add_subdirectory (examples)
-
-enable_testing()
-add_subdirectory (tests)
-
-#===============================================================================
 set (CMAKE_SUPPRESS_REGENERATION true)

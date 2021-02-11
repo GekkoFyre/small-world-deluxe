@@ -384,8 +384,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                  this, SLOT(gatherRigCapabilities(const rig_model_t &, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
                 QObject::connect(this, SIGNAL(addRigInUse(const rig_model_t &, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
                                  this, SLOT(addRigToMemory(const rig_model_t &, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
-                QObject::connect(this, SIGNAL(disconnectRigInUse(std::shared_ptr<Rig>, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
-                                 this, SLOT(disconnectRigInMemory(std::shared_ptr<Rig>, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
+                QObject::connect(this, SIGNAL(disconnectRigInUse(Rig *, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
+                                 this, SLOT(disconnectRigInMemory(Rig *, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
 
                 //
                 // Initialize the Events logger
@@ -431,8 +431,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 //
                 // Setup the SIGNALS & SLOTS for `gkRadioLibs`...
                 //
-                QObject::connect(gkRadioLibs, SIGNAL(disconnectRigInUse(std::shared_ptr<Rig>, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
-                                 this, SLOT(disconnectRigInMemory(std::shared_ptr<Rig>, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
+                QObject::connect(gkRadioLibs, SIGNAL(disconnectRigInUse(Rig *, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
+                                 this, SLOT(disconnectRigInMemory(Rig *, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
             } else {
                 throw std::runtime_error(tr("Unable to find settings database; we've lost its location!").toStdString());
             }
@@ -457,12 +457,29 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QObject::connect(this, SIGNAL(gkExitApp()), this, SLOT(uponExit()));
 
         try {
+            //
+            // Initialize the list of frequencies that Small World Deluxe needs to communicate with other users
+            // throughout the globe/world!
+            //
+            gkFreqList = new GkFrequencies(gkDb, this);
+            QObject::connect(gkFreqList, SIGNAL(addFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
+                             this, SLOT(addFreqToDb(const GekkoFyre::AmateurRadio::GkFreqs &)));
+            QObject::connect(gkFreqList, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
+                             this, SLOT(removeFreqFromDb(const GekkoFyre::AmateurRadio::GkFreqs &)));
+
+            gkFreqList->publishFreqList();
             gkAudioDevices = new GekkoFyre::AudioDevices(gkDb, fileIo, gkFreqList, gkStringFuncs, gkEventLogger, gkSystem, this);
 
             const auto outputDeviceInfos = QAudioDeviceInfo::availableDevices(QAudio::AudioOutput);
             const auto inputDeviceInfos = QAudioDeviceInfo::availableDevices(QAudio::AudioInput);
-            avail_input_audio_devs = gkAudioDevices->enumAudioDevicesCpp(inputDeviceInfos);
-            avail_output_audio_devs = gkAudioDevices->enumAudioDevicesCpp(outputDeviceInfos);
+
+            if (!inputDeviceInfos.isEmpty()) {
+                avail_input_audio_devs = gkAudioDevices->enumAudioDevicesCpp(inputDeviceInfos);
+            }
+
+            if (!outputDeviceInfos.isEmpty()) {
+                avail_output_audio_devs = gkAudioDevices->enumAudioDevicesCpp(outputDeviceInfos);
+            }
 
             //
             // Initialize any QAudioSystem libraries and associated buffers!
@@ -807,18 +824,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 emit startRecOutput();
             }
         }
-
-        //
-        // Initialize the list of frequencies that Small World Deluxe needs to communicate with other users
-        // throughout the globe/world!
-        //
-        gkFreqList = new GkFrequencies(gkDb, this);
-        QObject::connect(gkFreqList, SIGNAL(addFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
-                         this, SLOT(addFreqToDb(const GekkoFyre::AmateurRadio::GkFreqs &)));
-        QObject::connect(gkFreqList, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
-                         this, SLOT(removeFreqFromDb(const GekkoFyre::AmateurRadio::GkFreqs &)));
-
-        gkFreqList->publishFreqList();
 
         //
         // Setup the SSTV sections in QMainWindow!
@@ -2970,9 +2975,7 @@ void MainWindow::gatherRigCapabilities(const rig_model_t &rig_model_update,
  */
 void MainWindow::addRigToMemory(const rig_model_t &rig_model_update, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr)
 {
-    if (radio_ptr->gkRig.get() != nullptr) {
-        emit disconnectRigInUse(radio_ptr->gkRig, radio_ptr);
-    }
+    emit disconnectRigInUse(radio_ptr->gkRig, radio_ptr);
 
     //
     // Attempt to initialize the amateur radio rig!
@@ -2990,36 +2993,34 @@ void MainWindow::addRigToMemory(const rig_model_t &rig_model_update, const std::
  * @param rig_to_disconnect The radio rig in question to disconnect.
  * @param radio_ptr The pointer to Hamlib's radio structure and any information thereof.
  */
-void MainWindow::disconnectRigInMemory(std::shared_ptr<Rig> rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr)
+void MainWindow::disconnectRigInMemory(Rig *rig_to_disconnect, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &radio_ptr)
 {
     Q_UNUSED(rig_to_disconnect);
 
     if (gkRadioPtr != nullptr) {
-        if (gkRadioPtr->gkRig != nullptr) {
-            if (gkRadioPtr->is_open) {
-                // Free the pointer(s) for the Hamlib library!
-                rig_to_disconnect->close(); // Close port
-                gkRadioPtr->is_open = false;
+        if (gkRadioPtr->is_open) {
+            // Free the pointer(s) for the Hamlib library!
+            rig_to_disconnect->close(); // Close port
+            gkRadioPtr->is_open = false;
 
-                for (const auto &port: gkSerialPortMap) {
-                    //
-                    // CAT Port
-                    //
-                    if (radio_ptr->cat_conn_port == port.port_info.portName()) {
-                        QSerialPort serial(port.port_info);
-                        if (serial.isOpen()) {
-                            serial.close();
-                        }
+            for (const auto &port: gkSerialPortMap) {
+                //
+                // CAT Port
+                //
+                if (radio_ptr->cat_conn_port == port.port_info.portName()) {
+                    QSerialPort serial(port.port_info);
+                    if (serial.isOpen()) {
+                        serial.close();
                     }
+                }
 
-                    //
-                    // PTT Port
-                    //
-                    if (radio_ptr->ptt_conn_port == port.port_info.portName()) {
-                        QSerialPort serial(port.port_info);
-                        if (serial.isOpen()) {
-                            serial.close();
-                        }
+                //
+                // PTT Port
+                //
+                if (radio_ptr->ptt_conn_port == port.port_info.portName()) {
+                    QSerialPort serial(port.port_info);
+                    if (serial.isOpen()) {
+                        serial.close();
                     }
                 }
             }

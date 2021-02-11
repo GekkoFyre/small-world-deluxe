@@ -638,7 +638,7 @@ void RadioLibs::gkInitRadioRig(const std::shared_ptr<GkRadio> &radio_ptr)
         // Set verbosity level
         rig_set_debug(radio_ptr->verbosity);
 
-        radio_ptr->gkRig = std::make_shared<Rig>(radio_ptr->rig_model);
+        radio_ptr->gkRig = new Rig(radio_ptr->rig_model);
 
         // Setup serial port, baud rate, etc.
         int baud_rate = 9600;
