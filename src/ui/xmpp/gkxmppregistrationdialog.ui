@@ -172,11 +172,7 @@
                        <number>0</number>
                       </property>
                       <item>
-                       <widget class="QLabel" name="label_xmpp_captcha_pixmap">
-                        <property name="text">
-                         <string>&lt;captcha&gt;</string>
-                        </property>
-                       </widget>
+                       <layout class="QFormLayout" name="formLayout_recv_captcha"/>
                       </item>
                       <item>
                        <widget class="QToolButton" name="toolButton_xmpp_captcha_refresh">

@@ -19,9 +19,6 @@
 [submodule "src/contrib/leveldb"]
 	path = src/contrib/leveldb
 	url = https://github.com/google/leveldb.git
-[submodule "src/contrib/AudioFile"]
-	path = src/contrib/AudioFile
-	url = https://github.com/adamstark/AudioFile.git
 [submodule "src/contrib/wsjt-x"]
 	path = src/contrib/wsjt-x
 	url = https://code.gekkofyre.io/amateur-radio/wsjt-x.git
@@ -37,3 +34,9 @@
 [submodule "src/contrib/qxmpp"]
 	path = src/contrib/qxmpp
 	url = https://github.com/qxmpp-project/qxmpp.git
+[submodule "src/contrib/WinToast"]
+	path = src/contrib/WinToast
+	url = https://github.com/mohabouje/WinToast.git
+[submodule "src/contrib/libopusenc"]
+	path = src/contrib/libopusenc
+	url = https://gitlab.xiph.org/xiph/libopusenc.git

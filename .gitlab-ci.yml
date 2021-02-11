@@ -76,26 +76,33 @@ sworld_debug_archlinux_x86_64:
   - export CC=/usr/bin/clang
   - export CXX=/usr/bin/clang++
   - strip --remove-section=.note.ABI-tag /usr/lib64/libQt5Core.so.5
-  - git clone https://gitlab.xiph.org/xiph/libopusenc.git
-  - git submodule update --init --recursive
-  - cd libopusenc && sh ./autogen.sh && mkdir build && cd build
-  - ./../configure --enable-static && make -j 6 && make install
-  - cd ./../..
-  - git clone https://github.com/drowe67/codec2.git
-  - git submodule update --init --recursive
-  - cd codec2 && mkdir build && cd build
-  - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=NO ..
+  - git clone https://github.com/google/snappy.git
+  - cd snappy && git submodule update --init --recursive && mkdir build && cd build
+  - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=OFF -DSNAPPY_BUILD_TESTS=OFF -DSNAPPY_BUILD_BENCHMARKS=OFF ..
   - make -j 4 && make install
   - cd ./../..
-  - cd src/contrib/qxmpp && mkdir build && cd build
-  - cmake -G "Unix Makefiles" -DBUILD_SHARED_LIBS=NO ..
-  - cmake --build . --target install
-  - cd ./../../../..
+  - rm -rvf snappy
+  - git clone https://gitlab.xiph.org/xiph/libopusenc.git
+  - cd libopusenc && git submodule update --init --recursive && autoreconf -isf && mkdir build && cd build
+  - ./../configure --enable-static && make -j 6 && make install
+  - cd ./../..
+  - rm -rvf libopusenc
+  - git clone https://github.com/drowe67/codec2.git
+  - cd codec2 && git submodule update --init --recursive && mkdir build && cd build
+  - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=OFF ..
+  - make -j 4 && make install
+  - cd ./../..
+  - rm -rvf codec2
   script:
   - export CC=/usr/bin/clang
   - export CXX=/usr/bin/clang++
+  - git submodule update --init --recursive
+  - cd src/contrib/qxmpp && mkdir build && cd build
+  - cmake -G "Unix Makefiles" -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=OFF ..
+  - cmake --build . --target install
+  - cd ./../../../..
   - mkdir -p src_build && cd src_build
-  - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=NO -DGFYRE_BUILD_STATIC=ON ..
+  - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=OFF -DGFYRE_BUILD_STATIC=ON ..
   - make -j 4
   - cd ./..
   after_script:

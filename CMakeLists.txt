@@ -49,6 +49,7 @@ CMAKE_POLICY(SET CMP0020 NEW)
 cmake_policy(SET CMP0074 NEW)
 cmake_policy(SET CMP0054 NEW)
 cmake_policy(SET CMP0087 NEW)
+cmake_policy(SET CMP0025 NEW)
 
 #
 # RPATH is aimed at Linux installations primarily
@@ -82,11 +83,13 @@ set(CMAKE_MODULE_PATH
 # Custom options specific to Small World Deluxe and/or GekkoFyre Networks <https://gekkofyre.io/>
 #
 option(GFYRE_PACKAGE_MAINTAINER "Are you a package maintainer? If so, set this option to `ON`! It'll enable specific build settings to make your life easier." ON)
-option(GFYRE_BUILD_STATIC "Build Small World Deluxe as a static library/package. This will result in a larger executable at the benefit of requiring less DLL dependencies." ON)
+option(GFYRE_BUILD_STATIC "Build Small World Deluxe as a static library/package. Only available under Microsoft Windows systems." ON)
 option(GFYRE_BUILD_SHARED "Build Small World Deluxe as a shared library/package. This will result in a smaller executable at the cost of requiring further DLL dependencies." OFF)
 option(GFYRE_SWORLD_DBG_VERBOSITY "Enable DEBUG verbosity for Small World Deluxe and its use of third-party libraries throughout the program itself." OFF)
+option(GFYRE_BOOST_CPP_DBG "Enable the use of debug libraries for the Boost C++ dependency!" OFF)
 
 option(ENBL_VALGRIND_SUPPORT "Allows for the use of Valgrind memory analysis on the application, thereby disabling certain, otherwise needed features that enhance the user-experience." OFF)
+option(ENBL_CLANG_ADDRESS_SANITIZER "LLVM's AddressSanitizer is a fast memory error detector. Clang support must be enabled for this to work." OFF)
 
 option(BUILD_CODEC2_SUPPORT "Enable support for the 'Codec2' open source speech codec library." ON)
 
@@ -147,12 +150,16 @@ else()
     message(FATAL_ERROR "The 'QWT' graphing/charting library could not be found!")
 endif(QWT_FOUND)
 
-if (MSYS OR MINGW OR LINUX)
+if (LINUX)
     set(Boost_USE_STATIC_LIBS OFF CACHE BOOL "Use static libraries when linking Boost C++.")
-elseif(WIN32)
+elseif(WIN32 OR MSYS OR MINGW)
     set(Boost_USE_STATIC_LIBS ON CACHE BOOL "Use static libraries when linking Boost C++.")
 else()
     message(SEND_ERROR "The only operating systems and/or build environments we OFFICIALLY support as of the moment are Microsoft Windows, MinGW/MSYS, and Linux. Sorry!")
+endif()
+
+if (GFYRE_BOOST_CPP_DBG)
+    set(Boost_USE_DEBUG_LIBS ON CACHE BOOL "Enable the use of debug libraries for the Boost C++ dependency!")
 endif()
 
 set(Boost_USE_MULTITHREADED ON CACHE BOOL "Use multithreaded libraries when linking Boost C++.")
@@ -184,6 +191,22 @@ if (Boost_FOUND)
 else()
     message(FATAL_ERROR "The required 'Boost C++' libraries are either not installed, or not multithreaded and/or of not an up-to-date version. Boost C++ 1.54.0 is the minimally required version.")
 endif(Boost_FOUND)
+
+#
+# QXmpp
+# https://github.com/qxmpp-project/qxmpp
+#
+function(install_qxmpp)
+    find_package(QXmpp REQUIRED)
+    if (QXMPP_FOUND)
+        include_directories(${QXMPP_INCLUDE_DIRS})
+        set(LIBS ${LIBS} ${QXMPP_LIBRARIES})
+        include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/QXmpp.cmake")
+        message(STATUS "The 'QXmpp' Extensible Messaging and Presence Protocol (XMPP) libraries have been configured!")
+    else()
+        message(FATAL_ERROR "The 'QXmpp' Extensible Messaging and Presence Protocol (XMPP) libraries could not be found!")
+    endif(QXMPP_FOUND)
+endfunction()
 
 #
 # Hamlib
@@ -229,12 +252,25 @@ else()
     message(FATAL_ERROR "The 'libsndfile' audio (de-/en-)coding libraries have been configured!")
 endif(SNDFILE_FOUND)
 
-if (GFYRE_BUILD_STATIC)
-    set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-    option(BUILD_SHARED_LIBS "Set this option to OFF in order to compile a static set of libraries." OFF)
-else()
-    option(BUILD_SHARED_LIBS "Set this option to OFF in order to compile a static set of libraries." ON)
-endif(GFYRE_BUILD_STATIC)
+if (LINUX)
+    install_qxmpp() # Install QXmpp as non-static under Linux!    
+    find_package(UDev REQUIRED)
+    if (UDEV_FOUND)
+        include_directories(${UDEV_INCLUDE_DIRS})
+        set(LIBS ${LIBS} ${UDEV_LIBRARIES})
+    else()
+        message(FATAL_ERROR "The 'udev' SystemD libraries could not be found!")
+    endif(UDEV_FOUND)
+endif(LINUX)
+
+if(WIN32 OR MSYS OR MINGW)
+    if (GFYRE_BUILD_STATIC)
+        set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+        option(BUILD_SHARED_LIBS "Set this option to OFF in order to compile a static set of libraries." OFF)
+    else()
+        option(BUILD_SHARED_LIBS "Set this option to OFF in order to compile a static set of libraries." ON)
+    endif(GFYRE_BUILD_STATIC)
+endif()
 
 #
 # https://stackoverflow.com/questions/33991918/link-to-pthread-library-using-cmake-in-clion
@@ -243,8 +279,10 @@ endif(GFYRE_BUILD_STATIC)
 if (LINUX)
     set(THREADS_PREFER_PTHREAD_FLAG ON)
 endif()
+
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
+
 if (Threads_FOUND)
     set(LIBS ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
 else()
@@ -315,29 +353,9 @@ else()
     message(FATAL_ERROR "Either `libusb.h` and/or `usb.h` could not be found for the 'libusb' system device and enumeration libraries!")
 endif(USB_FOUND)
 
-if (LINUX)
-    find_package(UDev REQUIRED)
-    if (udev_FOUND)
-        include_directories(${UDEV_INCLUDE_DIRS})
-        set(LIBS ${LIBS} ${UDEV_LIBRARIES})
-    else()
-        message(FATAL_ERROR "The 'udev' SystemD libraries could not be found!")
-    endif(udev_FOUND)
-endif(LINUX)
-
-#
-# QXmpp
-# https://github.com/qxmpp-project/qxmpp
-#
-find_package(QXmpp REQUIRED)
-if (QXMPP_FOUND)
-    include_directories(${QXMPP_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${QXMPP_LIBRARIES})
-    include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/QXmpp.cmake")
-    message(STATUS "The 'QXmpp' Extensible Messaging and Presence Protocol (XMPP) libraries have been configured!")
-else()
-    message(FATAL_ERROR "The 'QXmpp' Extensible Messaging and Presence Protocol (XMPP) libraries could not be found!")
-endif(QXMPP_FOUND)
+if (MSYS OR MINGW)
+    install_qxmpp() # Install QXmpp as static under Microsoft Windows systems!
+endif()
 
 #
 # https://xiph.org/vorbis/
@@ -412,6 +430,8 @@ endif()
 #
 # Google LevelDB [ https://github.com/google/leveldb ]
 #
+set(LEVELDB_BUILD_TESTS OFF CACHE BOOL "Build Google LevelDB tests. This is not required for the compilation of Small World Deluxe." FORCE)
+set(LEVELDB_BUILD_BENCHMARKS OFF CACHE BOOL "Build Google LevelDB benchmarks. This is not required for the compilation of Small World Deluxe." FORCE)
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/leveldb")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/leveldb/include")
 message(STATUS "The 'Google LevelDB' database libraries have been configured!")
@@ -509,6 +529,34 @@ set(GALAXY_GIST_HPP
 
 set_property(SOURCE ${GALAXY_GIST_HPP} PROPERTY SKIP_AUTOUIC ON)
 
+if(WIN32 AND !MSYS AND !MINGW)
+    add_definitions(-DGFYRE_ENBL_MSVC_WINTOAST)
+    set(GALAXY_WINTOAST_HPP
+        ${GALAXY_WINTOAST_HPP}
+        src/contrib/WinToast/src/wintoastlib.h)
+
+    set_property(SOURCE ${GALAXY_WINTOAST_HPP} PROPERTY SKIP_AUTOUIC ON)
+
+    set(GALAXY_WINTOAST_CPP
+        ${GALAXY_WINTOAST_CPP}
+        src/contrib/WinToast/src/wintoastlib.cpp)
+
+    set_property(SOURCE ${GALAXY_WINTOAST_CPP} PROPERTY SKIP_AUTOUIC ON)
+else()
+    #
+    # Deliberately left empty!
+    #
+    set(GALAXY_WINTOAST_HPP
+        ${GALAXY_WINTOAST_HPP})
+
+    set_property(SOURCE ${GALAXY_WINTOAST_HPP} PROPERTY SKIP_AUTOUIC ON)
+
+    set(GALAXY_WINTOAST_CPP
+        ${GALAXY_WINTOAST_CPP})
+
+    set_property(SOURCE ${GALAXY_WINTOAST_CPP} PROPERTY SKIP_AUTOUIC ON)
+endif()
+
 #
 # SingleApplication
 # https://github.com/itay-grudev/SingleApplication
@@ -527,6 +575,7 @@ qt5_wrap_ui(UI_HEADERS
     src/ui/spectrodialog.ui
     src/ui/gkaudioplaydialog.ui
     src/ui/sendreportdialog.ui
+    src/ui/widgets/gk_vu_change_widget.ui
     src/ui/xmpp/gkxmpprosterdialog.ui
     src/ui/xmpp/gkxmppmessagedialog.ui
     src/ui/xmpp/gkxmppregistrationdialog.ui)
@@ -575,6 +624,7 @@ set(GALAXY_UI_CPP
     src/pa_stream_handler.cpp
     src/gk_sinewave.cpp
     src/pa_audio_player.cpp
+    src/ui/widgets/gk_vu_change_widget.cpp
     src/ui/widgets/gk_vu_meter_widget.cpp
     src/ui/widgets/gk_submit_msg.cpp
     src/ui/widgets/gk_display_image.cpp
@@ -670,6 +720,7 @@ set(GALAXY_OBJ_HEADERS
     src/gk_sinewave.hpp
     src/gk_waterfall_data.hpp
     src/pa_audio_player.hpp
+    src/ui/widgets/gk_vu_change_widget.hpp
     src/ui/widgets/gk_vu_meter_widget.hpp
     src/ui/widgets/gk_submit_msg.hpp
     src/ui/widgets/gk_display_image.hpp
@@ -776,8 +827,10 @@ endif()
 # Build Small World Deluxe as a static package!
 #
 if(GFYRE_BUILD_STATIC)
-    add_library(galaxy STATIC ${QM_FILES} ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP} ${GALAXY_HAMLIB_CPP})
-    target_link_libraries(galaxy PUBLIC "-static")
+    add_library(galaxy STATIC ${QM_FILES} ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP} ${GALAXY_HAMLIB_CPP} ${GALAXY_WINTOAST_HPP} ${GALAXY_WINTOAST_CPP})
+    if(WIN32 OR MSYS OR MINGW)
+        target_link_libraries(galaxy PUBLIC "-static")
+    endif()
 else()
     set(GFYRE_BUILD_SHARED ON)
 endif(GFYRE_BUILD_STATIC)
@@ -786,7 +839,7 @@ endif(GFYRE_BUILD_STATIC)
 # Build Small World Deluxe as a shared package!
 #
 if(GFYRE_BUILD_SHARED)
-    add_library(galaxy SHARED ${QM_FILES} ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP} ${GALAXY_HAMLIB_CPP})
+    add_library(galaxy SHARED ${QM_FILES} ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP} ${GALAXY_HAMLIB_CPP} ${GALAXY_WINTOAST_HPP} ${GALAXY_WINTOAST_CPP})
     
     # add_library(galaxy_fort STATIC ${GALAXY_WSJTX_QRA64_FORT})
 endif(GFYRE_BUILD_SHARED)
@@ -799,8 +852,6 @@ add_dependencies(galaxy resources)
 
 set(SWRLD_EXEC ${SWRLD_EXEC}
     src/main.cpp)
-
-configure_file("src/contrib/dend/toast.ps1" "${CMAKE_CURRENT_BINARY_DIR}/contrib/dend/toast.ps1" COPYONLY)
 
 add_executable(smallworld WIN32 ${SWRLD_EXEC})
 target_compile_options(smallworld PRIVATE -fPIC)
@@ -831,24 +882,58 @@ endif()
 
 INSTALL(TARGETS smallworld)
 
-#
-# https://stackoverflow.com/questions/23995019/what-is-the-modern-method-for-setting-general-compile-flags-in-cmake
-# https://stackoverflow.com/questions/20105167/c-error-failure-localefacet-s-create-c-locale-name-not-valid-when-runni
-#
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    # Using regular Clang or AppleClang
-    add_compile_options(-Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -enable-clocale)
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    # Using GCC
-    add_compile_options(-Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -enable-clocale)
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-    # Using Intel C++
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-    # Using Microsoft Visual Studio C++
-    if(CMAKE_BUILD_TYPE MATCHES "Debug")
-        add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W3 /WX)
-    elseif(CMAKE_BUILD_TYPE MATCHES "Release")
-        add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W3 /WX /GL)
+SET(CMAKE_C_FLAGS_DEBUG_INIT          "-g")
+SET(CMAKE_C_FLAGS_MINSIZEREL_INIT     "-Os -DNDEBUG")
+SET(CMAKE_C_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG")
+SET(CMAKE_C_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
+
+SET(CMAKE_CXX_FLAGS_INIT                "-Wall")
+SET(CMAKE_CXX_FLAGS_DEBUG_INIT          "-g")
+SET(CMAKE_CXX_FLAGS_MINSIZEREL_INIT     "-Os -DNDEBUG")
+SET(CMAKE_CXX_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG")
+SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
+
+if(MSYS OR MINGW OR LINUX)
+    if (CMAKE_CXX_COMPILER_ID MATCHES "clang")
+        #
+        # Using regular Clang or AppleClang
+        if(MSYS OR MINGW)
+            set(CMAKE_C_COMPILER "/mingw64/bin/clang")
+            set(CMAKE_CXX_COMPILER "/mingw64/bin/clang++")
+        else()
+            set(CMAKE_C_COMPILER "/usr/bin/clang")
+            set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
+        endif()
+        add_compile_options(-Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-missing-field-initializers)
+        
+        #
+        # https://clang.llvm.org/docs/AddressSanitizer.html
+        #
+        if(ENBL_CLANG_ADDRESS_SANITIZER)
+            set(CMAKE_BUILD_TYPE "ASAN")
+        endif()
+    elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+        #
+        # Using GCC
+        if(MSYS OR MINGW)
+            #
+            # Nothing!
+        else()
+            set(CMAKE_C_COMPILER "/usr/bin/gcc")
+            set(CMAKE_CXX_COMPILER "/usr/bin/g++")
+        endif()
+        add_compile_options(-Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-missing-field-initializers)
+    elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+        # Using Intel C++
+    endif()
+elseif(WIN32)
+    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+        # Using Microsoft Visual Studio C++
+        if(CMAKE_BUILD_TYPE MATCHES "Debug")
+            add_compile_options(\$<\$<CXX_COMPILER_ID:MSVC>:/W3 /WX)
+        elseif(CMAKE_BUILD_TYPE MATCHES "Release")
+            add_compile_options(\$<\$<CXX_COMPILER_ID:MSVC>:/W3 /WX /GL)
+        endif()
     endif()
 endif()
 

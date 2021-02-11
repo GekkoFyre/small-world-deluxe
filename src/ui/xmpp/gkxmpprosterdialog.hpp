@@ -61,9 +61,9 @@ class GkXmppRosterDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit GkXmppRosterDialog(const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
-                                QPointer<GekkoFyre::GkXmppClient> xmppClient, QPointer<GekkoFyre::GkLevelDb> database,
-                                QPointer<GekkoFyre::GkEventLogger> eventLogger, QWidget *parent = nullptr);
+    explicit GkXmppRosterDialog(const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details, QPointer<GekkoFyre::GkXmppClient> xmppClient,
+                                QPointer<GekkoFyre::GkLevelDb> database, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                                QWidget *parent = nullptr);
     ~GkXmppRosterDialog();
 
 private slots:
@@ -76,14 +76,13 @@ private:
 
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     QPointer<GekkoFyre::GkLevelDb> gkDb;
+    QPointer<GekkoFyre::GkXmppClient> m_xmppClient;
     bool shownXmppPreviewNotice;
 
     //
     // QXmpp and XMPP related
     //
     GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
-    QPointer<GekkoFyre::GkXmppClient> gkXmppClient;
-    QPointer<GkXmppMessageDialog> gkXmppMsgDlg;
 
     void prefillAvailComboBox();
 };

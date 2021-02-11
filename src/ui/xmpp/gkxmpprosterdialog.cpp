@@ -59,43 +59,42 @@ using namespace Logging;
 using namespace Network;
 using namespace GkXmpp;
 
-GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPointer<GkXmppClient> xmppClient,
+GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPointer<GekkoFyre::GkXmppClient> xmppClient,
                                        QPointer<GekkoFyre::GkLevelDb> database, QPointer<GkEventLogger> eventLogger,
                                        QWidget *parent) : shownXmppPreviewNotice(false), QDialog(parent),
                                        ui(new Ui::GkXmppRosterDialog)
 {
     ui->setupUi(this);
 
-    gkConnDetails = connection_details;
-    gkDb = std::move(database);
-    gkEventLogger = std::move(eventLogger);
+    try {
+        gkConnDetails = connection_details;
+        m_xmppClient = std::move(xmppClient);
+        gkDb = std::move(database);
+        gkEventLogger = std::move(eventLogger);
 
-    //
-    // QXmpp and XMPP related
-    //
-    gkXmppClient = std::move(xmppClient);
-    gkXmppMsgDlg = new GkXmppMessageDialog(gkXmppClient, parent);
+        shownXmppPreviewNotice = gkDb->read_xmpp_alpha_notice();
+        if (!shownXmppPreviewNotice) {
+            QMessageBox msgBox;
+            msgBox.setWindowTitle(tr("Please read..."));
+            msgBox.setText(tr("Do take note that the XMPP feature of %1 is very much in a %2 state as of this stage. Please see the "
+                              "official website at [ %3 ] for further updates!")
+                                   .arg(General::productName).arg(General::xmppVersion).arg(General::officialWebsite));
+            msgBox.setStandardButtons(QMessageBox::Ok);
+            msgBox.setDefaultButton(QMessageBox::Ok);
+            msgBox.setIcon(QMessageBox::Icon::Information);
+            msgBox.exec();
 
-    shownXmppPreviewNotice = gkDb->read_xmpp_alpha_notice();
-    if (!shownXmppPreviewNotice) {
-        QMessageBox msgBox;
-        msgBox.setWindowTitle(tr("Please read..."));
-        msgBox.setText(tr("Do take note that the XMPP feature of %1 is very much in a %2 state as of this stage. Please see the "
-                          "official website at [ %3 ] for further updates!")
-                               .arg(General::productName).arg(General::xmppVersion).arg(General::officialWebsite));
-        msgBox.setStandardButtons(QMessageBox::Ok);
-        msgBox.setDefaultButton(QMessageBox::Ok);
-        msgBox.setIcon(QMessageBox::Icon::Information);
-        msgBox.exec();
+            shownXmppPreviewNotice = true;
+            gkDb->write_xmpp_alpha_notice(shownXmppPreviewNotice);
+        }
 
-        shownXmppPreviewNotice = true;
-        gkDb->write_xmpp_alpha_notice(shownXmppPreviewNotice);
-    }
-
-    if (!gkXmppClient->isConnected()) {
-        ui->stackedWidget_roster_ui->setCurrentWidget(ui->page_login_or_create_account);
-    } else {
-        ui->stackedWidget_roster_ui->setCurrentWidget(ui->page_user_roster);
+        if (!GekkoFyre::GkXmppClient::gkXmppIsConnected) {
+            ui->stackedWidget_roster_ui->setCurrentWidget(ui->page_login_or_create_account);
+        } else {
+            ui->stackedWidget_roster_ui->setCurrentWidget(ui->page_user_roster);
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
     }
 
     return;
@@ -137,11 +136,11 @@ void GkXmppRosterDialog::on_comboBox_current_status_currentIndexChanged(int inde
  */
 void GkXmppRosterDialog::on_pushButton_user_login_clicked()
 {
-    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountLogin, gkConnDetails, gkXmppClient, gkEventLogger, this);
+    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountLogin, gkConnDetails, m_xmppClient, gkEventLogger, this);
     gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
     gkXmppRegistrationDlg->setAttribute(Qt::WA_DeleteOnClose, true);
+    QObject::connect(gkXmppRegistrationDlg, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
     gkXmppRegistrationDlg->show();
-    this->close();
 
     return;
 }
@@ -153,11 +152,9 @@ void GkXmppRosterDialog::on_pushButton_user_login_clicked()
  */
 void GkXmppRosterDialog::on_pushButton_user_create_account_clicked()
 {
-    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountCreate, gkConnDetails, gkXmppClient, gkEventLogger, this);
+    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountCreate, gkConnDetails, m_xmppClient, gkEventLogger, nullptr);
     gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
-    gkXmppRegistrationDlg->setAttribute(Qt::WA_DeleteOnClose, true);
     gkXmppRegistrationDlg->show();
-    this->close();
 
     return;
 }

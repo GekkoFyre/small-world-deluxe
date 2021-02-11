@@ -1447,10 +1447,10 @@ QPushButton:disabled {
                 <string>Adjust volume of outgoing audio signal.</string>
                </property>
                <property name="minimum">
-                <number>10</number>
+                <number>0</number>
                </property>
                <property name="maximum">
-                <number>100</number>
+                <number>75</number>
                </property>
                <property name="pageStep">
                 <number>5</number>
@@ -1617,8 +1617,7 @@ QPushButton:disabled {
      <property name="title">
       <string>Soun&amp;d</string>
      </property>
-     <addaction name="action_Input"/>
-     <addaction name="actionOut_put"/>
+     <addaction name="actionAdjust_Volume"/>
     </widget>
     <addaction name="actionSet_Offset"/>
     <addaction name="separator"/>
@@ -1881,22 +1880,6 @@ QPushButton:disabled {
     <string>Ctrl+G</string>
    </property>
   </action>
-  <action name="action_Input">
-   <property name="text">
-    <string>&amp;Input (RX)</string>
-   </property>
-   <property name="toolTip">
-    <string>The input speakers, such as your microphone which is used to record sounds</string>
-   </property>
-  </action>
-  <action name="actionOut_put">
-   <property name="text">
-    <string>Out&amp;put (TX)</string>
-   </property>
-   <property name="toolTip">
-    <string>Your output speakers (i.e. the stereo speakers that play music from YouTube, etc.)</string>
-   </property>
-  </action>
   <action name="action_Print">
    <property name="text">
     <string>&amp;Print...</string>
@@ -2020,6 +2003,11 @@ QPushButton:disabled {
   <action name="actionSign_out">
    <property name="text">
     <string>Sign-out</string>
+   </property>
+  </action>
+  <action name="actionAdjust_Volume">
+   <property name="text">
+    <string>Adjust &amp;Volume</string>
    </property>
   </action>
  </widget>

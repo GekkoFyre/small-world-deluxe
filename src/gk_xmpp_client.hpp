@@ -44,7 +44,10 @@
 #include "src/defines.hpp"
 #include "src/gk_logger.hpp"
 #include "src/models/system/gk_network_ping_model.hpp"
+#include <qxmpp/QXmppIq.h>
 #include <qxmpp/QXmppClient.h>
+#include <qxmpp/QXmppLogger.h>
+#include <qxmpp/QXmppDataForm.h>
 #include <qxmpp/QXmppPresence.h>
 #include <qxmpp/QXmppVersionIq.h>
 #include <qxmpp/QXmppRegisterIq.h>
@@ -53,6 +56,7 @@
 #include <qxmpp/QXmppRosterManager.h>
 #include <qxmpp/QXmppVersionManager.h>
 #include <qxmpp/QXmppTransferManager.h>
+#include <qxmpp/QXmppClientExtension.h>
 #include <qxmpp/QXmppDiscoveryManager.h>
 #include <qxmpp/QXmppRegistrationManager.h>
 #include <QUrl>
@@ -63,13 +67,44 @@
 #include <QSslError>
 #include <QByteArray>
 #include <QDnsLookup>
+#include <QDomElement>
 #include <QStringList>
 #include <QDomDocument>
 #include <QNetworkReply>
+#include <QScopedPointer>
 #include <QCoreApplication>
 #include <QDnsServiceRecord>
 
 namespace GekkoFyre {
+
+class GkXmppCaptchaIq : public QXmppIq {
+    QXmppDataForm m_dataForm;
+
+public:
+    explicit GkXmppCaptchaIq(Type = QXmppIq::Get) : QXmppIq() {}
+    ~GkXmppCaptchaIq() override = default;
+
+    [[nodiscard]] QXmppDataForm getDataForm() const;
+    void setDataForm(const QXmppDataForm &data_form);
+protected:
+    void toXmlElementFromChild(QXmlStreamWriter *stream_writer) const override;
+
+};
+
+class GkXmppCaptchaMgr : public QXmppClientExtension {
+    Q_OBJECT
+
+public:
+    explicit GkXmppCaptchaMgr(QObject *parent = nullptr) : QXmppClientExtension() {}
+    ~GkXmppCaptchaMgr() override = default;
+
+    bool handleStanza(const QDomElement &dom) override;
+    QString sendResponse(const QString &recipient, const QXmppDataForm &data_form);
+
+signals:
+    void sendCaptchaForm(const QString &recv_by, const QXmppDataForm &form);
+
+};
 
 class GkXmppVcardData {
 
@@ -103,13 +138,13 @@ class GkXmppVcardCache : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkXmppVcardCache(QObject *parent = nullptr);
-    ~GkXmppVcardCache() override;
+    explicit GkXmppVcardCache(QObject *parent = nullptr) : QObject(parent) {}
+    ~GkXmppVcardCache() override = default;
 
     GkXmppVcardData grabVCard(const QString &bareJid);
 
 private:
-    QString getElementStore(const std::shared_ptr<QDomDocument> &doc, const QString &nodeName);
+    QString getElementStore(const QScopedPointer<QDomDocument> &doc, const QString &nodeName);
 
 };
 
@@ -131,6 +166,10 @@ public:
     std::shared_ptr<QXmppRegistrationManager> getRegistrationMgr();
     QXmppPresence statusToPresence(const Network::GkXmpp::GkOnlineStatus &status);
 
+    //
+    // Connection information
+    static bool gkXmppIsConnected;
+
 public slots:
     //
     // Event & Logging management
@@ -138,10 +177,6 @@ public slots:
 
     void clientConnected();
     void stateChanged(QXmppClient::State state);
-
-    //
-    // General networking
-    void verifyReplyData(const QVariant &mapData, QNetworkReply *reply);
 
     //
     // User, roster and presence details
@@ -174,12 +209,14 @@ private slots:
     void itemRemoved(const QString &bareJid);
     void itemChanged(const QString &bareJid);
 
+    void handleCaptchaRecv(const QString &jid, const QXmppDataForm &data_form);
+
 signals:
     //
     // User, roster and presence details
     void setPresence(const QXmppPresence::Type &pres);
     void sendRegistrationForm(const QXmppRegisterIq &registerIq);
-    void sendCaptcha(const QString &cid, const QUrl &url);
+    void sendCaptcha(const QString &jid, const QXmppDataForm &data_form);
 
     //
     // Event & Logging management
@@ -207,6 +244,11 @@ private:
     std::unique_ptr<QXmppPresence> m_presence;
     std::shared_ptr<QXmppRosterManager> m_rosterManager;
     QStringList rosterGroups;
+
+    //
+    // Custom QXmpp classes
+    //
+    QPointer<GkXmppCaptchaMgr> gkXmppCaptchaMgr;
 
     //
     // VCards

@@ -40,10 +40,10 @@
  ****************************************************************************************************/
 
 #include "src/gk_waterfall_gui.hpp"
-#include <qwt/qwt_picker_machine.h>
-#include <qwt/qwt_plot_layout.h>
-#include <qwt/qwt_plot_grid.h>
-#include <qwt/qwt_panner.h>
+#include <qwt_picker_machine.h>
+#include <qwt_plot_layout.h>
+#include <qwt_plot_grid.h>
+#include <qwt_panner.h>
 #include <algorithm>
 #include <stdexcept>
 #include <exception>
