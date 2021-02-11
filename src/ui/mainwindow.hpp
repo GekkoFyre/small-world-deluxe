@@ -47,6 +47,7 @@
 #include "src/gk_audio_encoding.hpp"
 #include "src/gk_fft_audio.hpp"
 #include "src/gk_frequency_list.hpp"
+#include "src/gk_xmpp_client.hpp"
 #include "src/ui/dialogsettings.hpp"
 #include "src/ui/widgets/gk_vu_change_widget.hpp"
 #include "src/ui/widgets/gk_display_image.hpp"
@@ -465,6 +466,7 @@ private:
     //
     // QXmpp and XMPP related
     //
+    QPointer<GekkoFyre::GkXmppClient> m_xmppClient;
     GekkoFyre::Network::GkXmpp::GkUserConn xmpp_conn_details; // TODO: Finish this off!
 
     //

@@ -43,6 +43,7 @@
 
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
+#include "src/gk_xmpp_client.hpp"
 #include "src/ui/xmpp/gkxmppmessagedialog.hpp"
 #include "src/gk_logger.hpp"
 #include <memory>
@@ -60,7 +61,7 @@ class GkXmppRosterDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit GkXmppRosterDialog(const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
+    explicit GkXmppRosterDialog(const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details, QPointer<GekkoFyre::GkXmppClient> xmppClient,
                                 QPointer<GekkoFyre::GkLevelDb> database, QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                 QWidget *parent = nullptr);
     ~GkXmppRosterDialog();
@@ -75,6 +76,7 @@ private:
 
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     QPointer<GekkoFyre::GkLevelDb> gkDb;
+    QPointer<GekkoFyre::GkXmppClient> m_xmppClient;
     bool shownXmppPreviewNotice;
 
     //

@@ -71,6 +71,7 @@
 #include <QStringList>
 #include <QDomDocument>
 #include <QNetworkReply>
+#include <QScopedPointer>
 #include <QCoreApplication>
 #include <QDnsServiceRecord>
 
@@ -143,7 +144,7 @@ public:
     GkXmppVcardData grabVCard(const QString &bareJid);
 
 private:
-    QString getElementStore(const std::shared_ptr<QDomDocument> &doc, const QString &nodeName);
+    QString getElementStore(const QScopedPointer<QDomDocument> &doc, const QString &nodeName);
 
 };
 

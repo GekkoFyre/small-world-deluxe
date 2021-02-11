@@ -787,7 +787,7 @@ namespace AmateurRadio {
 
     namespace Control {
         struct GkRadio {                                    // <https://github.com/Hamlib/Hamlib/blob/master/c%2B%2B/rigclass.cc>.
-            Rig *gkRig = new Rig(RIG_MODEL_DUMMY); // Hamlib rig pointer
+            Rig *gkRig = new Rig(RIG_MODEL_DUMMY);  // Hamlib rig pointer
             int rig_brand;                                  // Hamlib rig brand/manufacturer
             rig_model_t rig_model;                          // The actual amateur radio rig itself!
             std::unique_ptr<rig_caps> capabilities;         // Read-only; the capabilities of the configured amateur radio rig in question, as defined by Hamlib.

@@ -137,12 +137,12 @@ bool GkXmppCaptchaMgr::handleStanza(const QDomElement &dom)
  */
 QString GkXmppCaptchaMgr::sendResponse(const QString &recipient, const QXmppDataForm &data_form)
 {
-    GkXmppCaptchaIq iq_request;
-    iq_request.setType(QXmppIq::Set);
-    iq_request.setTo(recipient);
-    iq_request.setDataForm(data_form);
-    if(client()->sendPacket(iq_request)) {
-        return iq_request.id();
+    QScopedPointer<GkXmppCaptchaIq> iq_request(new GkXmppCaptchaIq());
+    iq_request->setType(QXmppIq::Set);
+    iq_request->setTo(recipient);
+    iq_request->setDataForm(data_form);
+    if(client()->sendPacket(*iq_request)) {
+        return iq_request->id();
     }
 
     return QString();
@@ -156,7 +156,7 @@ QString GkXmppCaptchaMgr::sendResponse(const QString &recipient, const QXmppData
  */
 GkXmppVcardData GkXmppVcardCache::grabVCard(const QString &bareJid)
 {
-    std::shared_ptr<QDomDocument> vcXmlDoc = std::make_shared<QDomDocument>();
+    QScopedPointer<QDomDocument> vcXmlDoc(new QDomDocument());
     QByteArray vcByteArray;
     GkXmppVcardData data;
 
@@ -180,7 +180,7 @@ GkXmppVcardData GkXmppVcardCache::grabVCard(const QString &bareJid)
  * @param nodeName
  * @return
  */
-QString GkXmppVcardCache::getElementStore(const std::shared_ptr<QDomDocument> &doc, const QString &nodeName)
+QString GkXmppVcardCache::getElementStore(const QScopedPointer<QDomDocument> &doc, const QString &nodeName)
 {
     QString val = "";
 
@@ -615,9 +615,6 @@ void GkXmppClient::clientError(const QXmppClient::Error &error)
             break;
     }
 
-    QObject::disconnect(this, nullptr, this, nullptr);
-    deleteLater();
-
     return;
 }
 
@@ -747,9 +744,9 @@ void GkXmppClient::handleServers()
  */
 void GkXmppClient::handleSuccess()
 {
-    QObject::disconnect(this, nullptr, this, nullptr);
+    //
+    // TODO: Fill out this section!
 
-    deleteLater();
     return;
 }
 
@@ -760,25 +757,27 @@ void GkXmppClient::handleSuccess()
  */
 void GkXmppClient::handleError(QXmppClient::Error errorMsg)
 {
-    QObject::disconnect(this, nullptr, this, nullptr);
     switch (errorMsg) {
         case QXmppClient::Error::NoError:
             break;
         case QXmppClient::Error::SocketError:
-            emit sendError(tr("XMPP error encountered due to TCP socket. Error:\n\n%1").arg(socketErrorString()));
+            std::cerr << tr("XMPP error encountered due to TCP socket. Error:\n\n%1").arg(socketErrorString()).toStdString() << std::endl;
+            QMessageBox::warning(nullptr, tr("Error!"), tr("XMPP error encountered due to TCP socket. Error:\n\n%1").arg(socketErrorString()), QMessageBox::Ok);
             break;
         case QXmppClient::Error::KeepAliveError:
-            emit sendError(tr("XMPP error encountered due to no response from a keep alive."));
+            std::cerr << tr("XMPP error encountered due to no response from a keep alive.").toStdString() << std::endl;
+            QMessageBox::warning(nullptr, tr("Error!"), tr("XMPP error encountered due to no response from a keep alive."), QMessageBox::Ok);
             break;
         case QXmppClient::Error::XmppStreamError:
-            emit sendError(tr("XMPP error encountered due to XML stream."));
+            std::cerr << tr("XMPP error encountered due to XML stream.").toStdString() << std::endl;
+            QMessageBox::warning(nullptr, tr("Error!"), tr("XMPP error encountered due to XML stream."), QMessageBox::Ok);
             break;
         default:
             std::cerr << tr("An unknown XMPP error has been encountered!").toStdString() << std::endl;
+            QMessageBox::warning(nullptr, tr("Error!"), tr("An unknown XMPP error has been encountered!"), QMessageBox::Ok);
             break;
     }
 
-    deleteLater();
     return;
 }
 
@@ -789,12 +788,14 @@ void GkXmppClient::handleError(QXmppClient::Error errorMsg)
  */
 void GkXmppClient::handleError(const QString &errorMsg)
 {
-    QObject::disconnect(this, nullptr, this, nullptr);
     if (!errorMsg.isEmpty()) {
+        if (isConnected()) {
+            disconnectFromServer();
+        }
+
         emit sendError(errorMsg);
     }
 
-    deleteLater();
     return;
 }
 

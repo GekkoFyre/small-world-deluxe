@@ -65,6 +65,7 @@ class GkXmppRegistrationDialog : public QDialog
 public:
     explicit GkXmppRegistrationDialog(const GekkoFyre::Network::GkXmpp::GkRegUiRole &gkRegUiRole,
                                       const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
+                                      QPointer<GekkoFyre::GkXmppClient> xmppClient,
                                       QPointer<GekkoFyre::GkEventLogger> eventLogger, QWidget *parent = nullptr);
     ~GkXmppRegistrationDialog() override;
 

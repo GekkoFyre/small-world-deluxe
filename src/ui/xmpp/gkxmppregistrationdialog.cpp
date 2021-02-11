@@ -77,6 +77,7 @@ using namespace GkXmpp;
  * @note QXmppRegistrationManager Class Reference <https://doc.qxmpp.org/qxmpp-dev/classQXmppRegistrationManager.html>.
  */
 GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRole, const GkUserConn &connection_details,
+                                                   QPointer<GekkoFyre::GkXmppClient> xmppClient,
                                                    QPointer<GekkoFyre::GkEventLogger> eventLogger, QWidget *parent) :
     m_netState(GkNetworkState::None), QDialog(parent), ui(new Ui::GkXmppRegistrationDialog)
 {
@@ -91,12 +92,12 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
 
 
         gkEventLogger = std::move(eventLogger);
+        m_xmppClient = std::move(xmppClient);
 
         //
         // QXmpp and XMPP related
         //
         gkConnDetails = connection_details;
-        m_xmppClient = new GkXmppClient(gkConnDetails, gkEventLogger, false, this);
         m_registerManager = m_xmppClient->getRegistrationMgr();
 
         QObject::connect(m_xmppClient, SIGNAL(sendRegistrationForm(const QXmppRegisterIq &)),
@@ -205,26 +206,12 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
         }
 
         if (!m_xmppClient->isConnected()) {
-            switch (gkRegUiRole) {
-                case GkRegUiRole::AccountCreate:
-                    // Create a new user account on the given XMPP server
-                    m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port);
-                    break;
-                case GkRegUiRole::AccountLogin:
-                    // Login to pre-existing user account on the given XMPP server
-                    m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, gkConnDetails.username, gkConnDetails.password);
-                    break;
-                case GkRegUiRole::AccountChangePassword:
-                    // Change password for pre-existing user account on the given XMPP server
-                    m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, gkConnDetails.username, gkConnDetails.password);
-                    break;
-                case GkRegUiRole::AccountChangeEmail:
-                    // Change e-mail address for pre-existing user account on the given XMPP server
-                    m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, gkConnDetails.username, gkConnDetails.password);
-                    break;
-                default:
-                    // What to do by default, if no information is otherwise given!
-                    throw std::invalid_argument(tr("Invalid argument given while attempting to create/modify XMPP account!").toStdString());
+            if (gkRegUiRole == GkRegUiRole::AccountCreate) {
+                // Create a new user account on the given XMPP server...
+                m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port);
+            } else {
+                // Sign-in with the given credentials!
+                m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, gkConnDetails.username, gkConnDetails.password);
             }
         }
     } catch (const std::exception &e) {

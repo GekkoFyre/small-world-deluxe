@@ -638,6 +638,10 @@ void RadioLibs::gkInitRadioRig(const std::shared_ptr<GkRadio> &radio_ptr)
         // Set verbosity level
         rig_set_debug(radio_ptr->verbosity);
 
+        if (radio_ptr->gkRig) {
+            radio_ptr->gkRig->close();
+        }
+
         radio_ptr->gkRig = new Rig(radio_ptr->rig_model);
 
         // Setup serial port, baud rate, etc.

@@ -885,6 +885,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // QXmpp and XMPP related
         //
         readXmppSettings();
+
+        //
+        // Initialize the QXmpp client!
+        m_xmppClient = new GkXmppClient(xmpp_conn_details, gkEventLogger, false, nullptr);
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
@@ -1031,8 +1035,8 @@ void MainWindow::launchSettingsWin()
                                                                gkAudioOutput, avail_input_audio_devs, avail_output_audio_devs,
                                                                pref_input_device, pref_output_device, gkRadioLibs,
                                                                gkStringFuncs, gkRadioPtr, gkSerialPortMap, gkUsbPortMap,
-                                                               gkFreqList, gkFreqTableModel, xmpp_conn_details, gkEventLogger,
-                                                               gkTextToSpeech, this);
+                                                               gkFreqList, gkFreqTableModel, xmpp_conn_details, m_xmppClient,
+                                                               gkEventLogger, gkTextToSpeech, this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
@@ -2177,7 +2181,7 @@ void MainWindow::readXmppSettings()
  */
 void MainWindow::launchXmppRosterDlg()
 {
-    QPointer<GkXmppRosterDialog> gkXmppRosterDlg = new GkXmppRosterDialog(xmpp_conn_details, gkDb, gkEventLogger, this);
+    QPointer<GkXmppRosterDialog> gkXmppRosterDlg = new GkXmppRosterDialog(xmpp_conn_details, m_xmppClient, gkDb, gkEventLogger, this);
     gkXmppRosterDlg->setWindowFlags(Qt::Window);
     gkXmppRosterDlg->show();
 

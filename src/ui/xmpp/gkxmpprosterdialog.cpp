@@ -41,7 +41,6 @@
 
 #include "gkxmpprosterdialog.hpp"
 #include "ui_gkxmpprosterdialog.h"
-#include "src/gk_xmpp_client.hpp"
 #include "src/ui/xmpp/gkxmppregistrationdialog.hpp"
 #include <utility>
 #include <QMessageBox>
@@ -60,14 +59,16 @@ using namespace Logging;
 using namespace Network;
 using namespace GkXmpp;
 
-GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPointer<GekkoFyre::GkLevelDb> database,
-                                       QPointer<GkEventLogger> eventLogger, QWidget *parent) : shownXmppPreviewNotice(false),
-                                       QDialog(parent), ui(new Ui::GkXmppRosterDialog)
+GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPointer<GekkoFyre::GkXmppClient> xmppClient,
+                                       QPointer<GekkoFyre::GkLevelDb> database, QPointer<GkEventLogger> eventLogger,
+                                       QWidget *parent) : shownXmppPreviewNotice(false), QDialog(parent),
+                                       ui(new Ui::GkXmppRosterDialog)
 {
     ui->setupUi(this);
 
     try {
         gkConnDetails = connection_details;
+        m_xmppClient = std::move(xmppClient);
         gkDb = std::move(database);
         gkEventLogger = std::move(eventLogger);
 
@@ -135,7 +136,7 @@ void GkXmppRosterDialog::on_comboBox_current_status_currentIndexChanged(int inde
  */
 void GkXmppRosterDialog::on_pushButton_user_login_clicked()
 {
-    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountLogin, gkConnDetails, gkEventLogger, this);
+    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountLogin, gkConnDetails, m_xmppClient, gkEventLogger, this);
     gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
     gkXmppRegistrationDlg->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(gkXmppRegistrationDlg, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
@@ -151,10 +152,8 @@ void GkXmppRosterDialog::on_pushButton_user_login_clicked()
  */
 void GkXmppRosterDialog::on_pushButton_user_create_account_clicked()
 {
-    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountCreate, gkConnDetails, gkEventLogger, nullptr);
+    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountCreate, gkConnDetails, m_xmppClient, gkEventLogger, nullptr);
     gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
-    gkXmppRegistrationDlg->setAttribute(Qt::WA_DeleteOnClose, true);
-    QObject::connect(gkXmppRegistrationDlg, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
     gkXmppRegistrationDlg->show();
 
     return;
