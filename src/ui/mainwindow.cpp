@@ -703,6 +703,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             gkAudioOutput->start(gkAudioOutputBuf);
 
             QObject::connect(gkAudioOutput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(audioOutHandleStateChanged(QAudio::State)));
+
+            //
+            // !! WARNING !!
+            // The ready() signal from QAudioOutput is utterly broken and should not be relied upon in any capacity. DO NOT USE.
+            //
+            gkAudioOutputReadySignal = new QTimer(this);
+            connect(gkAudioOutputReadySignal, SIGNAL(timeout()), this, SLOT(processAudioOutMain()));
+            gkAudioOutputReadySignal->start(100); // Execute SLOT, `processAudioOutMain()`, every 100 milliseconds!
         }
 
         //
@@ -1578,6 +1586,8 @@ void MainWindow::updateVolumeDisplayWidgets()
                         vol_input_ba.clear();
                         recv_samples.clear();
                     }
+
+                    vol_input_ba.clear();
                 }
             }
         } else { // Output audio is chosen!
@@ -1604,6 +1614,8 @@ void MainWindow::updateVolumeDisplayWidgets()
                         vol_output_ba.clear();
                         recv_samples.clear();
                     }
+
+                    vol_output_ba.clear();
                 }
             }
         }
@@ -2956,10 +2968,12 @@ void MainWindow::gatherRigCapabilities(const rig_model_t &rig_model_update,
             for (const auto &model: gkRadioModels.toStdMap()) {
                 if (rig_model_update == model.first) {
                     // We have the desired amateur radio rig in question!
-                    radio_ptr->capabilities.reset();
-                    radio_ptr->capabilities = std::make_unique<rig_caps>(*std::get<0>(model.second));
+                    if (std::get<0>(model.second) != nullptr) {
+                        radio_ptr->capabilities.reset();
+                        radio_ptr->capabilities = std::make_unique<rig_caps>(*std::get<0>(model.second));
 
-                    return;
+                        return;
+                    }
                 }
             }
         }
