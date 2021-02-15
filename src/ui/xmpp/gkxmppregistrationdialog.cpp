@@ -113,22 +113,27 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
                 case GkRegUiRole::AccountCreate:
                     // Create a new user account on the given XMPP server
                     ui->stackedWidget_xmpp_registration_dialog->setCurrentWidget(ui->page_account_signup_ui);
+                    createInitialConnection = true;
                     break;
                 case GkRegUiRole::AccountLogin:
                     // Login to pre-existing user account on the given XMPP server
                     ui->stackedWidget_xmpp_registration_dialog->setCurrentWidget(ui->page_account_login_ui);
+                    createInitialConnection = false;
                     break;
                 case GkRegUiRole::AccountChangePassword:
                     // Change password for pre-existing user account on the given XMPP server
                     ui->stackedWidget_xmpp_registration_dialog->setCurrentWidget(ui->page_account_change_password_ui);
+                    createInitialConnection = false;
                     break;
                 case GkRegUiRole::AccountChangeEmail:
                     // Change e-mail address for pre-existing user account on the given XMPP server
                     ui->stackedWidget_xmpp_registration_dialog->setCurrentWidget(ui->page_account_change_email_ui);
+                    createInitialConnection = false;
                     break;
                 default:
                     // What to do by default, if no information is otherwise given!
                     ui->stackedWidget_xmpp_registration_dialog->setCurrentWidget(ui->page_account_login_ui);
+                    createInitialConnection = false;
                     break;
             }
 
@@ -151,7 +156,7 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
             //
             // Validate inputs for the Username
             //
-            QRegularExpression rxUsername(R"(^[a-zA-Z0-9]*$)", QRegularExpression::CaseInsensitiveOption);
+            QRegularExpression rxUsername(R"(\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}\b)", QRegularExpression::CaseInsensitiveOption);
             ui->lineEdit_username->setValidator(new QRegularExpressionValidator(rxUsername, this));
             ui->lineEdit_login_username->setValidator(new QRegularExpressionValidator(rxUsername, this));
             ui->lineEdit_change_password_username->setValidator(new QRegularExpressionValidator(rxUsername, this));
@@ -187,25 +192,12 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
                                             false, true, false, true);
             });
         } else {
-            QMessageBox msgBox;
-            msgBox.setWindowTitle(tr("Error!"));
-            msgBox.setText(tr(R"(User registration is not supported by this server. Aborting...")"));
-            msgBox.setStandardButtons(QMessageBox::Ok);
-            msgBox.setDefaultButton(QMessageBox::Ok);
-            msgBox.setIcon(QMessageBox::Icon::Critical);
-            int ret = msgBox.exec();
-
-            switch (ret) {
-                case QMessageBox::Ok:
-                    this->close();
-                    return;
-                default:
-                    this->close();
-                    return;
-            }
+            QMessageBox::critical(nullptr, tr("Error!"), tr("User registration is not supported by this server. Aborting..."), QMessageBox::Ok);
+            this->close();
+            return;
         }
 
-        if (!m_xmppClient->isConnected()) {
+        if (!m_xmppClient->isConnected() && createInitialConnection) {
             if (gkRegUiRole == GkRegUiRole::AccountCreate) {
                 // Create a new user account on the given XMPP server...
                 m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port);
@@ -300,6 +292,88 @@ void GkXmppRegistrationDialog::on_pushButton_signup_cancel_clicked()
  */
 void GkXmppRegistrationDialog::on_pushButton_login_submit_clicked()
 {
+    try {
+        QString username;
+        QString old_password;
+        QString new_password;
+        QString email;
+        QString captcha;
+        quint16 network_port;
+
+        if (ui->stackedWidget_xmpp_registration_dialog->currentWidget() == ui->page_account_signup_ui) {
+            //
+            // Account signup!
+            email = ui->lineEdit_email->text();
+            username = ui->lineEdit_username->text();
+            new_password = ui->lineEdit_password->text();
+            network_port = ui->spinBox_xmpp_port->value();
+
+            // Captcha
+            captcha = ui->lineEdit_xmpp_captcha_input->text();
+
+            //
+            // TODO: Create process that allows signing-up of user!
+
+            return;
+        } else if (ui->stackedWidget_xmpp_registration_dialog->currentWidget() == ui->page_account_login_ui) {
+            //
+            // Account login!
+            username = ui->lineEdit_login_username->text();
+            old_password = ui->lineEdit_login_password->text();
+            network_port = ui->spinBox_login_xmpp_port->value();
+
+            // Captcha
+            captcha = ui->lineEdit_xmpp_login_captcha_input->text();
+
+            //
+            // Disconnect from server if already connected...
+            if (!m_xmppClient->isConnected()) {
+                m_xmppClient->disconnectFromServer();
+            }
+
+            //
+            // Attempt a login to the server!
+            loginToServer(gkConnDetails.server.url, network_port, username, old_password);
+
+            return;
+        } else if (ui->stackedWidget_xmpp_registration_dialog->currentWidget() == ui->page_account_change_password_ui) {
+            //
+            // Change of new_password!
+            username = ui->lineEdit_change_password_username->text();
+            old_password = ui->lineEdit_change_password_old_input->text();
+            new_password = ui->lineEdit_change_password_new_input->text();
+
+            // Captcha
+            captcha = ui->lineEdit_xmpp_change_password_captcha_input->text();
+
+            //
+            // TODO: Create process that allows changing of password!
+
+            return;
+        } else if (ui->stackedWidget_xmpp_registration_dialog->currentWidget() == ui->page_account_change_email_ui) {
+            //
+            // Change of email!
+            email = ui->lineEdit_change_email_new_address->text();
+            username = ui->lineEdit_change_email_username->text();
+            old_password = ui->lineEdit_change_email_password->text();
+
+            // Captcha
+            captcha = ui->lineEdit_xmpp_change_email_captcha_input->text();
+
+            //
+            // TODO: Create process that allows changing of email!
+
+            return;
+        } else {
+            //
+            // Default...
+
+            return;
+        }
+    } catch (const std::exception &e) {
+        emit sendError(QString::fromStdString(e.what()));
+    }
+
     return;
 }
 
@@ -309,9 +383,37 @@ void GkXmppRegistrationDialog::on_pushButton_login_submit_clicked()
  */
 void GkXmppRegistrationDialog::on_pushButton_login_reset_clicked()
 {
-    ui->lineEdit_login_username->clear();
-    ui->lineEdit_login_password->clear();
-    ui->lineEdit_xmpp_login_captcha_input->clear();
+    if (ui->stackedWidget_xmpp_registration_dialog->currentWidget() == ui->page_account_signup_ui) {
+        //
+        // Account signup!
+        ui->lineEdit_email->clear();
+        ui->lineEdit_username->clear();
+        ui->lineEdit_password->clear();
+
+        // Captcha
+        ui->lineEdit_xmpp_captcha_input->clear();
+        return;
+    } else if (ui->stackedWidget_xmpp_registration_dialog->currentWidget() == ui->page_account_login_ui) {
+        //
+        // Account login!
+        ui->lineEdit_login_username->clear();
+        ui->lineEdit_login_password->clear();
+
+        // Captcha
+        ui->lineEdit_xmpp_login_captcha_input->clear();
+        return;
+    } else if (ui->stackedWidget_xmpp_registration_dialog->currentWidget() == ui->page_account_change_password_ui) {
+        //
+        // Change of password!
+        return;
+    } else if (ui->stackedWidget_xmpp_registration_dialog->currentWidget() == ui->page_account_change_email_ui) {
+        //
+        // Change of email!
+        return;
+    } else {
+        //
+        // Default...
+    }
 
     return;
 }
@@ -506,6 +608,40 @@ void GkXmppRegistrationDialog::sendRegistrationForm(const std::unique_ptr<QXmppR
 }
 
 /**
+ * @brief GkXmppRegistrationDialog::loginToServer
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param hostname
+ * @param network_port
+ * @param username
+ * @param password
+ */
+void GkXmppRegistrationDialog::loginToServer(const QString &hostname, const quint16 &network_port, const QString &username,
+                                             const QString &password)
+{
+    if (!username.isEmpty() && !password.isEmpty()) {
+        //
+        // A username and password has been provided!
+        QString user_hostname = m_xmppClient->getHostname(username); // Just in-case the user has entered a differing hostname!
+        if (!user_hostname.isEmpty()) {
+            //
+            // A hostname has been provided as well!
+            m_xmppClient->createConnectionToServer(user_hostname, network_port, username, password);
+            return;
+        }
+
+        //
+        // No hostname has been provided, therefore we will use the pre-configured settings (if any)!
+        m_xmppClient->createConnectionToServer(hostname, network_port, username, password);
+        return;
+    }
+
+    //
+    // No username or password has been provided!
+    m_xmppClient->createConnectionToServer(hostname, network_port);
+    return;
+}
+
+/**
  * @brief GkXmppRegistrationDialog::recvCaptcha processes any captcha requests from the given XMPP server, provided that a captcha
  * is required for authentication and/or user registration purposes.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -587,7 +723,6 @@ void GkXmppRegistrationDialog::handleError(const QString &errorMsg)
         gkEventLogger->publishEvent(errorMsg, GkSeverity::Fatal, "", false, true, false, true);
     }
 
-    deleteLater();
     return;
 }
 

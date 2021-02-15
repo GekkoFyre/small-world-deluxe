@@ -88,7 +88,7 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
             gkDb->write_xmpp_alpha_notice(shownXmppPreviewNotice);
         }
 
-        if (!GekkoFyre::GkXmppClient::gkXmppIsConnected) {
+        if (!m_xmppClient->isConnected()) {
             ui->stackedWidget_roster_ui->setCurrentWidget(ui->page_login_or_create_account);
         } else {
             ui->stackedWidget_roster_ui->setCurrentWidget(ui->page_user_roster);

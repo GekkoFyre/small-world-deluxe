@@ -194,8 +194,6 @@ QString GkXmppVcardCache::getElementStore(const QScopedPointer<QDomDocument> &do
     return val;
 }
 
-bool GkXmppClient::gkXmppIsConnected = false;
-
 /**
  * @brief GkXmppClient::GkXmppClient The client-class for all such XMPP calls within Small World Deluxe.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -335,7 +333,7 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
                     if (iq.type() == QXmppIq::Type::Error) {
                         switch (iq.error().condition()) {
                             case QXmppStanza::Error::Conflict:
-                                handleError(tr("A user has already been previously registered with this username for server: %1").arg(gkConnDetails.server.url));
+                                emit sendError(tr("A user has already been previously registered with this username for server: %1").arg(gkConnDetails.server.url));
                                 break;
                             case QXmppStanza::Error::RegistrationRequired:
                                 emit sendRegistrationForm(iq);
@@ -347,7 +345,7 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
                     } else if (iq.type() == QXmppIq::Type::Result) {
                         handleSuccess();
                     } else {
-                        handleError(tr("An error has occurred during user registration with connected XMPP server: %1\n\nreceived unwanted stanza type %2")
+                        emit sendError(tr("An error has occurred during user registration with connected XMPP server: %1\n\nreceived unwanted stanza type %2")
                         .arg(gkConnDetails.server.url).arg(QString::number(iq.type())));
                     }
                 });
@@ -368,7 +366,6 @@ GkXmppClient::~GkXmppClient()
 {
     if (isConnected()) {
         disconnectFromServer();
-        gkXmppIsConnected = false;
     }
 
     QObject::disconnect(this, nullptr, this, nullptr);
@@ -449,6 +446,34 @@ bool GkXmppClient::createMuc(const QString &room_name, const QString &room_subje
     }
 
     return false;
+}
+
+/**
+ * @brief GkXmppClient::isHostnameSame
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param hostname
+ * @param comparison
+ * @return
+ */
+bool GkXmppClient::isHostnameSame(const QString &hostname, const QString &comparison)
+{
+    return false;
+}
+
+/**
+ * @brief GkXmppClient::getHostname
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param username
+ * @return
+ */
+QString GkXmppClient::getHostname(const QString &username)
+{
+    auto domain = username.split('@', Qt::SkipEmptyParts);
+    if (!domain.empty()) {
+        return domain.last();
+    }
+
+    return QString();
 }
 
 /**
@@ -602,16 +627,16 @@ void GkXmppClient::clientError(const QXmppClient::Error &error)
         case QXmppClient::Error::NoError:
             break;
         case QXmppClient::Error::SocketError:
-            handleError(tr("XMPP error encountered due to TCP socket. Error:\n\n%1").arg(this->socketErrorString()));
+            emit sendError(tr("XMPP error encountered due to TCP socket. Error:\n\n%1").arg(this->socketErrorString()));
             break;
         case QXmppClient::Error::KeepAliveError:
-            handleError(tr("XMPP error encountered due to no response from a keep alive."));
+            emit sendError(tr("XMPP error encountered due to no response from a keep alive."));
             break;
         case QXmppClient::Error::XmppStreamError:
-            handleError(tr("XMPP error encountered due to XML stream."));
+            emit sendError(tr("XMPP error encountered due to XML stream."));
             break;
         default:
-            handleError(tr("An unknown XMPP error has been encountered!"));
+            emit sendError(tr("An unknown XMPP error has been encountered!"));
             break;
     }
 
@@ -761,20 +786,16 @@ void GkXmppClient::handleError(QXmppClient::Error errorMsg)
         case QXmppClient::Error::NoError:
             break;
         case QXmppClient::Error::SocketError:
-            std::cerr << tr("XMPP error encountered due to TCP socket. Error:\n\n%1").arg(socketErrorString()).toStdString() << std::endl;
-            QMessageBox::warning(nullptr, tr("Error!"), tr("XMPP error encountered due to TCP socket. Error:\n\n%1").arg(socketErrorString()), QMessageBox::Ok);
+            emit sendError(tr("XMPP error encountered due to TCP socket. Error:\n\n%1").arg(this->socketErrorString()));
             break;
         case QXmppClient::Error::KeepAliveError:
-            std::cerr << tr("XMPP error encountered due to no response from a keep alive.").toStdString() << std::endl;
-            QMessageBox::warning(nullptr, tr("Error!"), tr("XMPP error encountered due to no response from a keep alive."), QMessageBox::Ok);
+            emit sendError(tr("XMPP error encountered due to no response from a keep alive."));
             break;
         case QXmppClient::Error::XmppStreamError:
-            std::cerr << tr("XMPP error encountered due to XML stream.").toStdString() << std::endl;
-            QMessageBox::warning(nullptr, tr("Error!"), tr("XMPP error encountered due to XML stream."), QMessageBox::Ok);
+            emit sendError(tr("XMPP error encountered due to XML stream."));
             break;
         default:
-            std::cerr << tr("An unknown XMPP error has been encountered!").toStdString() << std::endl;
-            QMessageBox::warning(nullptr, tr("Error!"), tr("An unknown XMPP error has been encountered!"), QMessageBox::Ok);
+            emit sendError(tr("An unknown XMPP error has been encountered!"));
             break;
     }
 
@@ -793,7 +814,8 @@ void GkXmppClient::handleError(const QString &errorMsg)
             disconnectFromServer();
         }
 
-        emit sendError(errorMsg);
+        std::cerr << errorMsg.toStdString() << std::endl;
+        QMessageBox::warning(nullptr, tr("Error!"), errorMsg, QMessageBox::Ok);
     }
 
     return;
@@ -932,10 +954,8 @@ void GkXmppClient::createConnectionToServer(const QString &domain_url, const qui
 
         if (m_presence) {
             connectToServer(config, *m_presence);
-            gkXmppIsConnected = true;
         } else {
             connectToServer(config);
-            gkXmppIsConnected = true;
         }
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(e.what()));

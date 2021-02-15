@@ -2038,6 +2038,9 @@ Thanks.</string>
                                       <property name="maxLength">
                                        <number>256</number>
                                       </property>
+                                      <property name="echoMode">
+                                       <enum>QLineEdit::Password</enum>
+                                      </property>
                                       <property name="clearButtonEnabled">
                                        <bool>true</bool>
                                       </property>
