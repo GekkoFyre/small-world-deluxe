@@ -210,6 +210,7 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         gkConnDetails = connection_details;
         gkEventLogger = std::move(eventLogger);
         gkXmppCaptchaMgr = new GkXmppCaptchaMgr(this);
+        m_sslSocket = new QSslSocket(this);
 
         QObject::connect(this, SIGNAL(sendError(const QString &)), this, SLOT(handleError(const QString &)));
 
@@ -230,6 +231,12 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         // For the receiving and processing of captchas from the connected towards server...
         QObject::connect(gkXmppCaptchaMgr, SIGNAL(sendCaptchaForm(const QString &, const QXmppDataForm &)),
                          this, SLOT(handleCaptchaRecv(const QString &, const QXmppDataForm &)));
+
+        QObject::connect(m_sslSocket, SIGNAL(sslErrors(const QList<QSslError> &)), m_sslSocket, SLOT(ignoreSslErrors()));
+
+        QObject::connect(m_sslSocket, SIGNAL(connected()), this, SLOT(handleSslGreeting()));
+
+        QObject::connect(m_sslSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(handleSocketError(QAbstractSocket::SocketError)));
 
         m_status = GkOnlineStatus::Online;
         m_keepalive = 60;
@@ -795,6 +802,93 @@ void GkXmppClient::handleSslErrors(const QList<QSslError> &errorMsg)
 }
 
 /**
+ * @brief GkXmppClient::handleSocketError
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param errorMsg
+ */
+void GkXmppClient::handleSocketError(QAbstractSocket::SocketError errorMsg)
+{
+    switch (errorMsg) {
+        case QAbstractSocket::SocketError::ConnectionRefusedError:
+            emit sendError(tr("SSL Socket Error: Connection refused."));
+            break;
+        case QAbstractSocket::RemoteHostClosedError:
+            emit sendError(tr("SSL Socket Error: Remote host closed."));
+            break;
+        case QAbstractSocket::HostNotFoundError:
+            emit sendError(tr("SSL Socket Error: Host not found."));
+            break;
+        case QAbstractSocket::SocketAccessError:
+            emit sendError(tr("SSL Socket Error: Socket access error."));
+            break;
+        case QAbstractSocket::SocketResourceError:
+            emit sendError(tr("SSL Socket Error: Socket resource error."));
+            break;
+        case QAbstractSocket::SocketTimeoutError:
+            emit sendError(tr("SSL Socket Error: Socket timeout error."));
+            break;
+        case QAbstractSocket::DatagramTooLargeError:
+            emit sendError(tr("SSL Socket Error: Datagram too large."));
+            break;
+        case QAbstractSocket::NetworkError:
+            emit sendError(tr("SSL Socket Error: Network error."));
+            break;
+        case QAbstractSocket::AddressInUseError:
+            emit sendError(tr("SSL Socket Error: Address in use."));
+            break;
+        case QAbstractSocket::SocketAddressNotAvailableError:
+            emit sendError(tr("SSL Socket Error: Address not available."));
+            break;
+        case QAbstractSocket::UnsupportedSocketOperationError:
+            emit sendError(tr("SSL Socket Error: Unsupported socket operation."));
+            break;
+        case QAbstractSocket::UnfinishedSocketOperationError:
+            emit sendError(tr("SSL Socket Error: Unfinished socket operation."));
+            break;
+        case QAbstractSocket::ProxyAuthenticationRequiredError:
+            emit sendError(tr("SSL Socket Error: Proxy authentication required."));
+            break;
+        case QAbstractSocket::SslHandshakeFailedError:
+            emit sendError(tr("SSL Socket Error: SSL handshake failed."));
+            break;
+        case QAbstractSocket::ProxyConnectionRefusedError:
+            emit sendError(tr("SSL Socket Error: Proxy connection refused."));
+            break;
+        case QAbstractSocket::ProxyConnectionClosedError:
+            emit sendError(tr("SSL Socket Error: Proxy connection closed."));
+            break;
+        case QAbstractSocket::ProxyConnectionTimeoutError:
+            emit sendError(tr("SSL Socket Error: Proxy connection timeout."));
+            break;
+        case QAbstractSocket::ProxyNotFoundError:
+            emit sendError(tr("SSL Socket Error: Proxy not found."));
+            break;
+        case QAbstractSocket::ProxyProtocolError:
+            emit sendError(tr("SSL Socket Error: Proxy protocol error."));
+            break;
+        case QAbstractSocket::OperationError:
+            emit sendError(tr("SSL Socket Error: Operational error."));
+            break;
+        case QAbstractSocket::SslInternalError:
+            emit sendError(tr("SSL Socket Error: Internal SSL error."));
+            break;
+        case QAbstractSocket::SslInvalidUserDataError:
+            emit sendError(tr("SSL Socket Error: Invalid user data error."));
+            break;
+        case QAbstractSocket::TemporaryError:
+            emit sendError(tr("SSL Socket Error: Temporary error."));
+            break;
+        case QAbstractSocket::UnknownSocketError:
+            emit sendError(tr("SSL Socket Error: Unknown socket error."));
+            break;
+        default:
+            break;
+    }
+
+    return;
+}
+
+/**
  * @brief GkXmppClient::recvXmppLog
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param msgType
@@ -844,7 +938,7 @@ void GkXmppClient::recvXmppLog(QXmppLogger::MessageType msgType, const QString &
  * @param password
  */
 void GkXmppClient::createConnectionToServer(const QString &domain_url, const quint16 &network_port, const QString &username,
-                                            const QString &password)
+                                            const QString &password, const bool &user_signup)
 {
     try {
         if (domain_url.isEmpty()) {
@@ -879,13 +973,21 @@ void GkXmppClient::createConnectionToServer(const QString &domain_url, const qui
             m_vcardMgr.reset(findExtension<QXmppVCardManager>());
         });
 
+        if (user_signup) { // Override...
+            //
+            // Allow the registration of a new user to proceed!
+            // Sets whether to only request the registration form and not to connect with username/password.
+            //
+            m_registerManager->setRegisterOnConnectEnabled(true); // https://doc.qxmpp.org/qxmpp-1/classQXmppRegistrationManager.html
+        }
+
         //
         // Neither username nor the password can be nullptr, both have to be available
         // to be of any use!
         if (username.isEmpty() || password.isEmpty()) {
             m_presence = nullptr;
         } else {
-            config.setUser(username);
+            config.setJid(username);
             config.setPassword(password);
         }
 
@@ -897,8 +999,10 @@ void GkXmppClient::createConnectionToServer(const QString &domain_url, const qui
         config.setAutoAcceptSubscriptions(false);
         config.setAutoReconnectionEnabled(gkConnDetails.server.settings_client.auto_reconnect);
         config.setStreamSecurityMode(QXmppConfiguration::StreamSecurityMode::TLSDisabled);
-        if (gkConnDetails.server.settings_client.enable_ssl) {
-            config.setStreamSecurityMode(QXmppConfiguration::StreamSecurityMode::TLSRequired);
+        if (gkConnDetails.server.settings_client.enable_ssl && QSslSocket::supportsSsl()) { // https://xmpp.org/extensions/xep-0035.html
+            config.setStreamSecurityMode(QXmppConfiguration::StreamSecurityMode::TLSEnabled);
+            qDebug() << tr("SSL version for build: ") << QSslSocket::sslLibraryBuildVersionString();
+            qDebug() << tr("SSL version for run-time: ") << QSslSocket::sslLibraryVersionNumber();
         }
 
         config.setIgnoreSslErrors(false); // Do NOT ignore SSL warnings!
@@ -911,14 +1015,12 @@ void GkXmppClient::createConnectionToServer(const QString &domain_url, const qui
         config.setDomain(domain_url);
         config.setHost(domain_url);
         config.setPort(network_port);
-        config.setUseSASLAuthentication(false);
+        config.setUseSASLAuthentication(true);
+        config.setSaslAuthMechanism("PLAIN");
 
         if (m_presence) {
             connectToServer(config, *m_presence);
         } else {
-            //
-            // Allow the registration of a new user to proceed!
-            m_registerManager->setRegisterOnConnectEnabled(true); // https://doc.qxmpp.org/qxmpp-1/classQXmppRegistrationManager.html
             connectToServer(config);
         }
     } catch (const std::exception &e) {
@@ -937,6 +1039,16 @@ void GkXmppClient::createConnectionToServer(const QString &domain_url, const qui
 void GkXmppClient::handleCaptchaRecv(const QString &jid, const QXmppDataForm &data_form)
 {
     emit sendCaptcha(jid, data_form);
+    return;
+}
+
+/**
+ * @brief GkXmppClient::handleSslGreeting sends a ping back to the server upon having successfully authenticated on this
+ * side (the client's side) regarding SSL/TLS!
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppClient::handleSslGreeting()
+{
     return;
 }
 

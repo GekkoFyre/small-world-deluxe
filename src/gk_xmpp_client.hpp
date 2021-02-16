@@ -66,6 +66,7 @@
 #include <QPointer>
 #include <QSslError>
 #include <QByteArray>
+#include <QSslSocket>
 #include <QDnsLookup>
 #include <QDomElement>
 #include <QStringList>
@@ -158,8 +159,9 @@ public:
     ~GkXmppClient() override;
 
     void createConnectionToServer(const QString &domain_url, const quint16 &network_port, const QString &username = "",
-                                  const QString &password = "");
+                                  const QString &password = "", const bool &user_signup = false);
     bool createMuc(const QString &room_name, const QString &room_subject, const QString &room_desc);
+
     static bool isHostnameSame(const QString &hostname, const QString &comparison = "");
     static QString getHostname(const QString &username);
 
@@ -190,6 +192,7 @@ private slots:
     void handleError(QXmppClient::Error errorMsg);
     void handleError(const QString &errorMsg);
     void handleSslErrors(const QList<QSslError> &errorMsg);
+    void handleSocketError(QAbstractSocket::SocketError errorMsg);
 
     void recvXmppLog(QXmppLogger::MessageType msgType, const QString &msg);
     void versionReceivedSlot(const QXmppVersionIq &version);
@@ -204,6 +207,7 @@ private slots:
     void itemChanged(const QString &bareJid);
 
     void handleCaptchaRecv(const QString &jid, const QXmppDataForm &data_form);
+    void handleSslGreeting();
 
 signals:
     //
@@ -249,6 +253,11 @@ private:
     //
     std::unique_ptr<GkXmppVcardCache> m_vcardCache;
     std::unique_ptr<QXmppVCardManager> m_vcardMgr;
+
+    //
+    // SSL / TLS / STARTTLS
+    //
+    QPointer<QSslSocket> m_sslSocket;
 
     //
     // QXmpp and XMPP related
