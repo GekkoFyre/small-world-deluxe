@@ -91,7 +91,7 @@ sworld_debug_archlinux_x86_64:
   - cd codec2 && git submodule update --init --recursive && mkdir build && cd build
   - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=OFF ..
   - make -j 4 && make install
-  - cd ./../..
+  - cd ./../../..
   - rm -rvf codec2
   script:
   - export CC=/usr/bin/clang
