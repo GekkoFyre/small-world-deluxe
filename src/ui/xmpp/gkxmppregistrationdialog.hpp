@@ -94,10 +94,9 @@ private slots:
     // User, roster and presence details
     void recvRegistrationForm(const QXmppRegisterIq &registerIq);
     void sendRegistrationForm(const std::unique_ptr<QXmppRegisterIq> &registerIq);
-
-    //
-    // Captcha management and processing
-    void recvCaptcha(const QString &jid, const QXmppDataForm &data_form);
+    void loginToServer(const QString &hostname, const quint16 &network_port, const QString &username = "",
+                       const QString &password = "", const bool &credentials_fail = false);
+    void userSignup(const QString &hostname, const quint16 &network_port, const QString &username, const QString &password);
 
     //
     // QRegularExpression
@@ -136,5 +135,7 @@ private:
     // General networking
     GekkoFyre::Network::GkXmpp::GkNetworkState m_netState;
     QString m_id;
+
+    void print_exception(const std::exception &e, int level = 0);
 };
 

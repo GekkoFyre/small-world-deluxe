@@ -81,6 +81,23 @@
                 <property name="bottomMargin">
                  <number>0</number>
                 </property>
+                <item row="0" column="0">
+                 <widget class="QLabel" name="label_email">
+                  <property name="text">
+                   <string>E-mail: </string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1">
+                 <widget class="QLineEdit" name="lineEdit_email">
+                  <property name="maxLength">
+                   <number>512</number>
+                  </property>
+                  <property name="clearButtonEnabled">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
                 <item row="1" column="0">
                  <widget class="QLabel" name="label_username">
                   <property name="text">
@@ -92,6 +109,9 @@
                  <widget class="QLineEdit" name="lineEdit_username">
                   <property name="maxLength">
                    <number>256</number>
+                  </property>
+                  <property name="placeholderText">
+                   <string>&lt;user&gt;@&lt;host&gt;.&lt;tld&gt;</string>
                   </property>
                   <property name="clearButtonEnabled">
                    <bool>true</bool>
@@ -110,26 +130,42 @@
                   <property name="maxLength">
                    <number>256</number>
                   </property>
+                  <property name="echoMode">
+                   <enum>QLineEdit::Password</enum>
+                  </property>
                   <property name="clearButtonEnabled">
                    <bool>true</bool>
                   </property>
                  </widget>
                 </item>
-                <item row="3" column="1">
-                 <widget class="Line" name="line">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
+                <item row="3" column="0">
+                 <widget class="QLabel" name="label_xmpp_port">
+                  <property name="text">
+                   <string>Port: </string>
                   </property>
                  </widget>
                 </item>
-                <item row="4" column="0">
+                <item row="3" column="1">
+                 <widget class="QSpinBox" name="spinBox_xmpp_port">
+                  <property name="minimum">
+                   <number>80</number>
+                  </property>
+                  <property name="maximum">
+                   <number>65535</number>
+                  </property>
+                  <property name="value">
+                   <number>5222</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="5" column="0">
                  <widget class="QLabel" name="label_xmpp_captcha">
                   <property name="text">
                    <string>Captcha: </string>
                   </property>
                  </widget>
                 </item>
-                <item row="4" column="1">
+                <item row="5" column="1">
                  <widget class="QFrame" name="frame_xmpp_captcha">
                   <property name="frameShape">
                    <enum>QFrame::NoFrame</enum>
@@ -221,20 +257,10 @@
                   </layout>
                  </widget>
                 </item>
-                <item row="0" column="0">
-                 <widget class="QLabel" name="label_email">
-                  <property name="text">
-                   <string>E-mail: </string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="1">
-                 <widget class="QLineEdit" name="lineEdit_email">
-                  <property name="maxLength">
-                   <number>512</number>
-                  </property>
-                  <property name="clearButtonEnabled">
-                   <bool>true</bool>
+                <item row="4" column="1">
+                 <widget class="Line" name="line">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
                   </property>
                  </widget>
                 </item>
@@ -418,6 +444,9 @@
                   <property name="maxLength">
                    <number>256</number>
                   </property>
+                  <property name="placeholderText">
+                   <string>&lt;user&gt;@&lt;host&gt;.&lt;tld&gt;</string>
+                  </property>
                   <property name="clearButtonEnabled">
                    <bool>true</bool>
                   </property>
@@ -435,26 +464,22 @@
                   <property name="maxLength">
                    <number>256</number>
                   </property>
+                  <property name="echoMode">
+                   <enum>QLineEdit::Password</enum>
+                  </property>
                   <property name="clearButtonEnabled">
                    <bool>true</bool>
                   </property>
                  </widget>
                 </item>
-                <item row="2" column="1">
-                 <widget class="Line" name="line_2">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                 </widget>
-                </item>
-                <item row="3" column="0">
+                <item row="4" column="0">
                  <widget class="QLabel" name="label_xmpp_login_captcha">
                   <property name="text">
                    <string>Captcha: </string>
                   </property>
                  </widget>
                 </item>
-                <item row="3" column="1">
+                <item row="4" column="1">
                  <widget class="QFrame" name="frame_xmpp_login_captcha">
                   <property name="frameShape">
                    <enum>QFrame::NoFrame</enum>
@@ -548,6 +573,33 @@
                     </widget>
                    </item>
                   </layout>
+                 </widget>
+                </item>
+                <item row="2" column="0">
+                 <widget class="QLabel" name="label_login_xmpp_port">
+                  <property name="text">
+                   <string>Port: </string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="1">
+                 <widget class="QSpinBox" name="spinBox_login_xmpp_port">
+                  <property name="minimum">
+                   <number>80</number>
+                  </property>
+                  <property name="maximum">
+                   <number>65535</number>
+                  </property>
+                  <property name="value">
+                   <number>5222</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="3" column="1">
+                 <widget class="Line" name="line_2">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
                  </widget>
                 </item>
                </layout>
@@ -730,6 +782,9 @@
                   <property name="maxLength">
                    <number>256</number>
                   </property>
+                  <property name="placeholderText">
+                   <string>&lt;user&gt;@&lt;host&gt;.&lt;tld&gt;</string>
+                  </property>
                   <property name="clearButtonEnabled">
                    <bool>true</bool>
                   </property>
@@ -746,6 +801,9 @@
                  <widget class="QLineEdit" name="lineEdit_change_password_old_input">
                   <property name="maxLength">
                    <number>256</number>
+                  </property>
+                  <property name="echoMode">
+                   <enum>QLineEdit::Password</enum>
                   </property>
                   <property name="clearButtonEnabled">
                    <bool>true</bool>
@@ -866,6 +924,9 @@
                  <widget class="QLineEdit" name="lineEdit_change_password_new_input">
                   <property name="maxLength">
                    <number>256</number>
+                  </property>
+                  <property name="echoMode">
+                   <enum>QLineEdit::Password</enum>
                   </property>
                  </widget>
                 </item>
@@ -1056,6 +1117,9 @@
                   <property name="maxLength">
                    <number>256</number>
                   </property>
+                  <property name="placeholderText">
+                   <string>&lt;user&gt;@&lt;host&gt;.&lt;tld&gt;</string>
+                  </property>
                   <property name="clearButtonEnabled">
                    <bool>true</bool>
                   </property>
@@ -1072,6 +1136,9 @@
                  <widget class="QLineEdit" name="lineEdit_change_email_password">
                   <property name="maxLength">
                    <number>256</number>
+                  </property>
+                  <property name="echoMode">
+                   <enum>QLineEdit::Password</enum>
                   </property>
                   <property name="clearButtonEnabled">
                    <bool>true</bool>

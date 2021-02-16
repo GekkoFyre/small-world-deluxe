@@ -315,6 +315,27 @@ SectionGroup "Small World Deluxe" SWDsection
     SectionGroupEnd
 
     SectionGroup "Shared Libraries"
+      Section "Boost C++"
+        SectionIn RO
+          SetOutPath "$INSTDIR"
+            File "${GK_ROOT_PATH}\cmake-build-debug\libboost_filesystem-mt.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\libboost_locale-mt.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\libboost_system-mt.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\libboost_thread-mt.dll"
+      SectionEnd
+
+      Section "Hamlib"
+        SectionIn RO
+          SetOutPath "$INSTDIR"
+            File "${GK_ROOT_PATH}\cmake-build-debug\libhamlib-4.dll"
+      SectionEnd
+
+      Section "libusb-1.0"
+        SectionIn RO
+          SetOutPath "$INSTDIR"
+            File "${GK_ROOT_PATH}\cmake-build-debug\libusb-1.0.dll"
+      SectionEnd
+
       Section "Qt5"
         SectionIn RO
           SetOutPath "$INSTDIR"
@@ -356,25 +377,10 @@ SectionGroup "Small World Deluxe" SWDsection
             File "${GK_ROOT_PATH}\cmake-build-debug\audio\qtaudio_windows.dll"
       SectionEnd
 
-      Section "Boost C++"
+      Section "QXmpp"
         SectionIn RO
           SetOutPath "$INSTDIR"
-            File "${GK_ROOT_PATH}\cmake-build-debug\libboost_filesystem-mt.dll"
-            File "${GK_ROOT_PATH}\cmake-build-debug\libboost_locale-mt.dll"
-            File "${GK_ROOT_PATH}\cmake-build-debug\libboost_system-mt.dll"
-            File "${GK_ROOT_PATH}\cmake-build-debug\libboost_thread-mt.dll"
-      SectionEnd
-
-      Section "Hamlib"
-        SectionIn RO
-          SetOutPath "$INSTDIR"
-            File "${GK_ROOT_PATH}\cmake-build-debug\libhamlib-4.dll"
-      SectionEnd
-
-      Section "libusb-1.0"
-        SectionIn RO
-          SetOutPath "$INSTDIR"
-            File "${GK_ROOT_PATH}\cmake-build-debug\libusb-1.0.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\libqxmpp.dll"
       SectionEnd
     SectionGroupEnd
 
@@ -384,6 +390,17 @@ SectionGroup "Small World Deluxe" SWDsection
           SetOutPath "$INSTDIR\mediaservice"
             File "${GK_ROOT_PATH}\cmake-build-debug\mediaservice\dsengine.dll"
             File "${GK_ROOT_PATH}\cmake-build-debug\mediaservice\qtmedia_audioengine.dll"
+      SectionEnd
+
+      Section "Encoding / Decoding"
+        SectionIn RO
+          SetOutPath "$INSTDIR\mediaservice"
+            File "${GK_ROOT_PATH}\cmake-build-debug\libFLAC-8.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\libogg-0.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\libopus-0.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\libopusenc-0.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\libvorbis-0.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\libvorbisenc-2.dll"
       SectionEnd
     SectionGroupEnd
 
