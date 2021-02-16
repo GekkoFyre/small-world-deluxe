@@ -169,10 +169,6 @@ public:
     QXmppPresence statusToPresence(const Network::GkXmpp::GkOnlineStatus &status);
 
 public slots:
-    //
-    // Event & Logging management
-    void clientError(const QXmppClient::Error &error);
-
     void clientConnected();
     void stateChanged(QXmppClient::State state);
 
@@ -267,6 +263,7 @@ private:
     QString m_id;
 
     void initRosterMgr();
+    static QString getErrorCondition(const QXmppStanza::Error::Condition &condition);
 
 };
 };
