@@ -99,10 +99,6 @@ private slots:
     void userSignup(const QString &hostname, const quint16 &network_port, const QString &username, const QString &password);
 
     //
-    // Captcha management and processing
-    void recvCaptcha(const QString &jid, const QXmppDataForm &data_form);
-
-    //
     // QRegularExpression
     void setEmailInputColor(const QString &adj_text);
     void setUsernameInputColor(const QString &adj_text);

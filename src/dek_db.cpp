@@ -1383,8 +1383,8 @@ void GkLevelDb::write_xmpp_settings(const QString &value, const Settings::GkXmpp
             case Settings::GkXmppCfg::XmppAutoReconnect:
                 batch.Put("XmppAutoReconnect", value.toStdString());
                 break;
-            case Settings::GkXmppCfg::XmppAutoSignup:
-                batch.Put("XmppAutoSignup", value.toStdString());
+            case Settings::GkXmppCfg::XmppUriLookupMethod:
+                batch.Put("XmppUriLookupMethod", value.toStdString());
                 break;
             case Settings::GkXmppCfg::XmppAvatarByteArray:
                 batch.Put("XmppCfgAvatarByteArray", value.toStdString());
@@ -1508,8 +1508,8 @@ QString GkLevelDb::read_xmpp_settings(const Settings::GkXmppCfg &key)
         case Settings::GkXmppCfg::XmppAutoReconnect:
             status = db->Get(read_options, "XmppAutoReconnect", &value);
             break;
-        case Settings::GkXmppCfg::XmppAutoSignup:
-            status = db->Get(read_options, "XmppAutoSignup", &value);
+        case Settings::GkXmppCfg::XmppUriLookupMethod:
+            status = db->Get(read_options, "XmppUriLookupMethod", &value);
             break;
         case Settings::GkXmppCfg::XmppAvatarByteArray:
             status = db->Get(read_options, "XmppCfgAvatarByteArray", &value);

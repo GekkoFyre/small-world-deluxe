@@ -2068,7 +2068,6 @@ void MainWindow::readXmppSettings()
     QString xmpp_allow_mucs = gkDb->read_xmpp_settings(GkXmppCfg::XmppAllowMucs);
     QString xmpp_auto_connect = gkDb->read_xmpp_settings(GkXmppCfg::XmppAutoConnect);
     QString xmpp_auto_reconnect = gkDb->read_xmpp_settings(GkXmppCfg::XmppAutoReconnect);
-    QString xmpp_auto_signup = gkDb->read_xmpp_settings(GkXmppCfg::XmppAutoSignup);
     QByteArray xmpp_upload_avatar; // TODO: Finish this area of code, pronto!
     xmpp_conn_details.server.settings_client.upload_avatar_pixmap = xmpp_upload_avatar;
 
@@ -2109,12 +2108,6 @@ void MainWindow::readXmppSettings()
         xmpp_conn_details.server.settings_client.auto_reconnect = false;
     }
 
-    if (!xmpp_auto_signup.isEmpty()) {
-        xmpp_conn_details.server.settings_client.auto_signup = gkDb->boolStr(xmpp_auto_signup.toStdString());
-    } else {
-        xmpp_conn_details.server.settings_client.auto_signup = false;
-    }
-
     if (!xmpp_client_password.isEmpty()) {
         xmpp_conn_details.password = xmpp_client_password;
     } else {
@@ -2135,6 +2128,7 @@ void MainWindow::readXmppSettings()
     QString xmpp_domain_port = gkDb->read_xmpp_settings(GkXmppCfg::XmppDomainPort);
     QString xmpp_enable_ssl = gkDb->read_xmpp_settings(GkXmppCfg::XmppEnableSsl);
     QString xmpp_ignore_ssl_errors = gkDb->read_xmpp_settings(GkXmppCfg::XmppIgnoreSslErrors);
+    QString xmpp_uri_lookup_method = gkDb->read_xmpp_settings(GkXmppCfg::XmppUriLookupMethod);
 
     if (xmpp_server_type.isEmpty() || xmpp_domain_url.isEmpty()) {
         xmpp_conn_details.server.type = gkDb->convXmppServerTypeFromInt(GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX);
@@ -2176,6 +2170,22 @@ void MainWindow::readXmppSettings()
         }
     } else {
         xmpp_conn_details.server.settings_client.ignore_ssl_errors = false;
+    }
+
+    if (!xmpp_uri_lookup_method.isEmpty()) {
+        switch (xmpp_uri_lookup_method.toInt()) {
+            case GK_XMPP_URI_LOOKUP_DNS_SRV_METHOD:
+                xmpp_conn_details.server.settings_client.uri_lookup_method = GkUriLookupMethod::QtDnsSrv;
+                break;
+            case GK_XMPP_URI_LOOKUP_MANUAL_METHOD:
+                xmpp_conn_details.server.settings_client.uri_lookup_method = GkUriLookupMethod::Manual;
+                break;
+            default:
+                xmpp_conn_details.server.settings_client.uri_lookup_method = GkUriLookupMethod::QtDnsSrv;
+                break;
+        }
+    } else {
+        xmpp_conn_details.server.settings_client.uri_lookup_method = GkUriLookupMethod::QtDnsSrv;
     }
 
     xmpp_conn_details.status = GkOnlineStatus::Offline;

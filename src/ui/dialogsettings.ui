@@ -1992,6 +1992,20 @@ Thanks.</string>
                                       </property>
                                      </widget>
                                     </item>
+                                    <item row="2" column="0">
+                                     <widget class="QLabel" name="label_automatic_reconnect">
+                                      <property name="text">
+                                       <string>Automatic Reconnect: </string>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="2" column="1">
+                                     <widget class="QCheckBox" name="checkBox_automatic_reconnect">
+                                      <property name="text">
+                                       <string/>
+                                      </property>
+                                     </widget>
+                                    </item>
                                     <item row="3" column="0">
                                      <widget class="Line" name="line_2">
                                       <property name="orientation">
@@ -2043,20 +2057,6 @@ Thanks.</string>
                                       </property>
                                       <property name="clearButtonEnabled">
                                        <bool>true</bool>
-                                      </property>
-                                     </widget>
-                                    </item>
-                                    <item row="2" column="0">
-                                     <widget class="QLabel" name="label_automatic_signup">
-                                      <property name="text">
-                                       <string>Automatic Sign-up: </string>
-                                      </property>
-                                     </widget>
-                                    </item>
-                                    <item row="2" column="1">
-                                     <widget class="QCheckBox" name="checkBox_automatic_signup">
-                                      <property name="text">
-                                       <string/>
                                       </property>
                                      </widget>
                                     </item>
@@ -2134,21 +2134,14 @@ Thanks.</string>
                                       </property>
                                      </widget>
                                     </item>
-                                    <item row="3" column="1">
-                                     <widget class="Line" name="line_3">
-                                      <property name="orientation">
-                                       <enum>Qt::Horizontal</enum>
-                                      </property>
-                                     </widget>
-                                    </item>
-                                    <item row="4" column="0">
+                                    <item row="6" column="0">
                                      <widget class="QLabel" name="label_xmpp_client_email_address">
                                       <property name="text">
                                        <string>E-mail: </string>
                                       </property>
                                      </widget>
                                     </item>
-                                    <item row="4" column="1">
+                                    <item row="6" column="1">
                                      <widget class="QLineEdit" name="lineEdit_xmpp_client_email_address">
                                       <property name="maxLength">
                                        <number>512</number>
@@ -2161,19 +2154,18 @@ Thanks.</string>
                                       </property>
                                      </widget>
                                     </item>
-                                    <item row="2" column="0">
-                                     <widget class="QLabel" name="label_automatic_reconnect">
-                                      <property name="text">
-                                       <string>Automatic Reconnect: </string>
+                                    <item row="3" column="1">
+                                     <widget class="Line" name="line_3">
+                                      <property name="orientation">
+                                       <enum>Qt::Horizontal</enum>
                                       </property>
                                      </widget>
                                     </item>
-                                    <item row="2" column="1">
-                                     <widget class="QCheckBox" name="checkBox_automatic_reconnect">
-                                      <property name="text">
-                                       <string/>
-                                      </property>
-                                     </widget>
+                                    <item row="5" column="1">
+                                     <layout class="QHBoxLayout" name="horizontalLayout_54"/>
+                                    </item>
+                                    <item row="4" column="1">
+                                     <layout class="QHBoxLayout" name="horizontalLayout_55"/>
                                     </item>
                                    </layout>
                                   </widget>
@@ -2519,14 +2511,14 @@ Thanks.</string>
                               <property name="bottomMargin">
                                <number>0</number>
                               </property>
-                              <item row="0" column="0">
+                              <item row="1" column="0">
                                <widget class="QLabel" name="label_xmpp_server_port">
                                 <property name="text">
                                  <string>Port: </string>
                                 </property>
                                </widget>
                               </item>
-                              <item row="0" column="1">
+                              <item row="1" column="1">
                                <widget class="QSpinBox" name="spinBox_xmpp_server_port">
                                 <property name="toolTip">
                                  <string>The TCP port of the XMPP server you are making a connection towards.</string>
@@ -2548,14 +2540,14 @@ Thanks.</string>
                                 </property>
                                </widget>
                               </item>
-                              <item row="1" column="0">
+                              <item row="2" column="0">
                                <widget class="QLabel" name="label_xmpp_server_ssl">
                                 <property name="text">
                                  <string>SSL / TLS: </string>
                                 </property>
                                </widget>
                               </item>
-                              <item row="1" column="1">
+                              <item row="2" column="1">
                                <widget class="QCheckBox" name="checkBox_xmpp_server_ssl">
                                 <property name="toolTip">
                                  <string>Whether to force the use of SSL / TLS or not.</string>
@@ -2567,6 +2559,16 @@ Thanks.</string>
                                  <bool>true</bool>
                                 </property>
                                </widget>
+                              </item>
+                              <item row="0" column="0">
+                               <widget class="QLabel" name="label_xmpp_server_uri_lookup_method">
+                                <property name="text">
+                                 <string>URI Lookup: </string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="0" column="1">
+                               <widget class="QComboBox" name="comboBox_xmpp_server_uri_lookup_method"/>
                               </item>
                              </layout>
                             </widget>
@@ -3319,8 +3321,8 @@ Thanks.</string>
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>922</width>
-                      <height>577</height>
+                      <width>497</width>
+                      <height>366</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_28">

@@ -78,35 +78,6 @@
 
 namespace GekkoFyre {
 
-class GkXmppCaptchaIq : public QXmppIq {
-    QXmppDataForm m_dataForm;
-
-public:
-    explicit GkXmppCaptchaIq(Type = QXmppIq::Get) : QXmppIq() {}
-    ~GkXmppCaptchaIq() override = default;
-
-    [[nodiscard]] QXmppDataForm getDataForm() const;
-    void setDataForm(const QXmppDataForm &data_form);
-protected:
-    void toXmlElementFromChild(QXmlStreamWriter *stream_writer) const override;
-
-};
-
-class GkXmppCaptchaMgr : public QXmppClientExtension {
-    Q_OBJECT
-
-public:
-    explicit GkXmppCaptchaMgr(QObject *parent = nullptr) : QXmppClientExtension() {}
-    ~GkXmppCaptchaMgr() override = default;
-
-    bool handleStanza(const QDomElement &dom) override;
-    QString sendResponse(const QString &recipient, const QXmppDataForm &data_form);
-
-signals:
-    void sendCaptchaForm(const QString &recv_by, const QXmppDataForm &form);
-
-};
-
 class GkXmppVcardData {
 
 public:
@@ -200,21 +171,18 @@ private slots:
     //
     // User, roster and presence details
     void notifyNewSubscription(const QString &bareJid);
-    void rosterReceived();
+    void handleRosterReceived();
 
     void itemAdded(const QString &bareJid);
     void itemRemoved(const QString &bareJid);
     void itemChanged(const QString &bareJid);
 
-    void handleCaptchaRecv(const QString &jid, const QXmppDataForm &data_form);
     void handleSslGreeting();
 
 signals:
     //
     // User, roster and presence details
     void setPresence(const QXmppPresence::Type &pres);
-    void sendRegistrationForm(const QXmppRegisterIq &registerIq);
-    void sendCaptcha(const QString &jid, const QXmppDataForm &data_form);
 
     //
     // Event & Logging management
@@ -232,8 +200,8 @@ private:
     Network::GkXmpp::GkUserConn gkConnDetails;
     QPointer<QDnsLookup> m_dns;
     qint32 m_keepalive;
-    std::unique_ptr<QXmppDiscoveryManager> gkDiscoMgr;
-    std::unique_ptr<QXmppVersionManager> gkVersionMgr;
+    std::unique_ptr<QXmppDiscoveryManager> m_discoMgr;
+    std::unique_ptr<QXmppVersionManager> m_versionMgr;
 
     //
     // User, roster and presence details
@@ -242,11 +210,6 @@ private:
     std::unique_ptr<QXmppPresence> m_presence;
     std::shared_ptr<QXmppRosterManager> m_rosterManager;
     QStringList rosterGroups;
-
-    //
-    // Custom QXmpp classes
-    //
-    QPointer<GkXmppCaptchaMgr> gkXmppCaptchaMgr;
 
     //
     // VCards
