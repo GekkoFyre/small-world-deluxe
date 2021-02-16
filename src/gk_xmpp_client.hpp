@@ -66,6 +66,7 @@
 #include <QPointer>
 #include <QSslError>
 #include <QByteArray>
+#include <QSslSocket>
 #include <QDnsLookup>
 #include <QDomElement>
 #include <QStringList>
@@ -76,35 +77,6 @@
 #include <QDnsServiceRecord>
 
 namespace GekkoFyre {
-
-class GkXmppCaptchaIq : public QXmppIq {
-    QXmppDataForm m_dataForm;
-
-public:
-    explicit GkXmppCaptchaIq(Type = QXmppIq::Get) : QXmppIq() {}
-    ~GkXmppCaptchaIq() override = default;
-
-    [[nodiscard]] QXmppDataForm getDataForm() const;
-    void setDataForm(const QXmppDataForm &data_form);
-protected:
-    void toXmlElementFromChild(QXmlStreamWriter *stream_writer) const override;
-
-};
-
-class GkXmppCaptchaMgr : public QXmppClientExtension {
-    Q_OBJECT
-
-public:
-    explicit GkXmppCaptchaMgr(QObject *parent = nullptr) : QXmppClientExtension() {}
-    ~GkXmppCaptchaMgr() override = default;
-
-    bool handleStanza(const QDomElement &dom) override;
-    QString sendResponse(const QString &recipient, const QXmppDataForm &data_form);
-
-signals:
-    void sendCaptchaForm(const QString &recv_by, const QXmppDataForm &form);
-
-};
 
 class GkXmppVcardData {
 
@@ -158,23 +130,18 @@ public:
     ~GkXmppClient() override;
 
     void createConnectionToServer(const QString &domain_url, const quint16 &network_port, const QString &username = "",
-                                  const QString &password = "");
+                                  const QString &password = "", const bool &user_signup = false);
     bool createMuc(const QString &room_name, const QString &room_subject, const QString &room_desc);
+
+    static bool isHostnameSame(const QString &hostname, const QString &comparison = "");
+    static QString getHostname(const QString &username);
 
     //
     // User, roster and presence details
     std::shared_ptr<QXmppRegistrationManager> getRegistrationMgr();
     QXmppPresence statusToPresence(const Network::GkXmpp::GkOnlineStatus &status);
 
-    //
-    // Connection information
-    static bool gkXmppIsConnected;
-
 public slots:
-    //
-    // Event & Logging management
-    void clientError(const QXmppClient::Error &error);
-
     void clientConnected();
     void stateChanged(QXmppClient::State state);
 
@@ -196,6 +163,7 @@ private slots:
     void handleError(QXmppClient::Error errorMsg);
     void handleError(const QString &errorMsg);
     void handleSslErrors(const QList<QSslError> &errorMsg);
+    void handleSocketError(QAbstractSocket::SocketError errorMsg);
 
     void recvXmppLog(QXmppLogger::MessageType msgType, const QString &msg);
     void versionReceivedSlot(const QXmppVersionIq &version);
@@ -203,20 +171,18 @@ private slots:
     //
     // User, roster and presence details
     void notifyNewSubscription(const QString &bareJid);
-    void rosterReceived();
+    void handleRosterReceived();
 
     void itemAdded(const QString &bareJid);
     void itemRemoved(const QString &bareJid);
     void itemChanged(const QString &bareJid);
 
-    void handleCaptchaRecv(const QString &jid, const QXmppDataForm &data_form);
+    void handleSslGreeting();
 
 signals:
     //
     // User, roster and presence details
     void setPresence(const QXmppPresence::Type &pres);
-    void sendRegistrationForm(const QXmppRegisterIq &registerIq);
-    void sendCaptcha(const QString &jid, const QXmppDataForm &data_form);
 
     //
     // Event & Logging management
@@ -234,8 +200,8 @@ private:
     Network::GkXmpp::GkUserConn gkConnDetails;
     QPointer<QDnsLookup> m_dns;
     qint32 m_keepalive;
-    std::unique_ptr<QXmppDiscoveryManager> gkDiscoMgr;
-    std::unique_ptr<QXmppVersionManager> gkVersionMgr;
+    std::unique_ptr<QXmppDiscoveryManager> m_discoMgr;
+    std::unique_ptr<QXmppVersionManager> m_versionMgr;
 
     //
     // User, roster and presence details
@@ -246,15 +212,15 @@ private:
     QStringList rosterGroups;
 
     //
-    // Custom QXmpp classes
-    //
-    QPointer<GkXmppCaptchaMgr> gkXmppCaptchaMgr;
-
-    //
     // VCards
     //
     std::unique_ptr<GkXmppVcardCache> m_vcardCache;
     std::unique_ptr<QXmppVCardManager> m_vcardMgr;
+
+    //
+    // SSL / TLS / STARTTLS
+    //
+    QPointer<QSslSocket> m_sslSocket;
 
     //
     // QXmpp and XMPP related
@@ -269,6 +235,7 @@ private:
     QString m_id;
 
     void initRosterMgr();
+    static QString getErrorCondition(const QXmppStanza::Error::Condition &condition);
 
 };
 };

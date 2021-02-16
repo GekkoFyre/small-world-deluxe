@@ -252,8 +252,9 @@ else()
     message(FATAL_ERROR "The 'libsndfile' audio (de-/en-)coding libraries have been configured!")
 endif(SNDFILE_FOUND)
 
+install_qxmpp() # Install QXmpp as non-static!
+
 if (LINUX)
-    install_qxmpp() # Install QXmpp as non-static under Linux!    
     find_package(UDev REQUIRED)
     if (UDEV_FOUND)
         include_directories(${UDEV_INCLUDE_DIRS})
@@ -288,6 +289,15 @@ if (Threads_FOUND)
 else()
     message(FATAL_ERROR "Could not find the Threads library!")
 endif(Threads_FOUND)
+
+find_package(OpenSSL REQUIRED)
+if (OPENSSL_FOUND)
+    include_directories(${OPENSSL_INCLUDE_DIR})
+    set(LIBS ${LIBS} ${OPENSSL_SSL_LIBRARIES})
+    message(STATUS "The 'OpenSSL' cryptography libraries have been configured!")
+else()
+    message(FATAL_ERROR "The 'OpenSSL' cryptography libraries could not be found!")
+endif(OPENSSL_FOUND)
 
 find_package(Qt5 COMPONENTS Core Gui Widgets Network LinguistTools Multimedia SerialPort PrintSupport Xml TextToSpeech Test REQUIRED)
 
@@ -352,10 +362,6 @@ if (USB_FOUND)
 else()
     message(FATAL_ERROR "Either `libusb.h` and/or `usb.h` could not be found for the 'libusb' system device and enumeration libraries!")
 endif(USB_FOUND)
-
-if (MSYS OR MINGW)
-    install_qxmpp() # Install QXmpp as static under Microsoft Windows systems!
-endif()
 
 #
 # https://xiph.org/vorbis/
@@ -785,7 +791,8 @@ if (MSYS OR MINGW)
         -lhid
         -lsetupapi
         -lole32
-        -loleaut32)
+        -loleaut32
+        -lgdi32)
 else()
     #
     # Just an empty container for now!
@@ -845,7 +852,7 @@ if(GFYRE_BUILD_SHARED)
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
-target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::Multimedia Qt5::SerialPort Qt5::PrintSupport Qt5::Xml Qt5::TextToSpeech Qt5::Test QXmpp::QXmpp Threads::Threads SingleApplication::SingleApplication sentry::sentry Opus::opus leveldb kissfft ${LIBS})
+target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} OpenSSL::SSL Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::Multimedia Qt5::SerialPort Qt5::PrintSupport Qt5::Xml Qt5::TextToSpeech Qt5::Test QXmpp::QXmpp Threads::Threads SingleApplication::SingleApplication sentry::sentry Opus::opus leveldb kissfft ${LIBS})
 
 qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)
 add_dependencies(galaxy resources)

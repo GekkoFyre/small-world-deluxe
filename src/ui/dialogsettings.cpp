@@ -302,7 +302,6 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         bool xmpp_allow_mucs = ui->checkBox_allow_muc_creation->isChecked();
         bool xmpp_connect_auto = ui->checkBox_connect_automatically->isChecked();
         bool xmpp_reconnect_auto = ui->checkBox_automatic_reconnect->isChecked();
-        bool xmpp_signup_auto = ui->checkBox_automatic_signup->isChecked();
         QByteArray xmpp_upload_avatar; // TODO: Finish this area of code, pronto!
 
         QString xmpp_client_username = ui->lineEdit_xmpp_client_username->text();
@@ -314,7 +313,6 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         gkDekodeDb->write_xmpp_settings(QString::fromStdString(gkDekodeDb->boolEnum(xmpp_allow_mucs)), GkXmppCfg::XmppAllowMucs);
         gkDekodeDb->write_xmpp_settings(QString::fromStdString(gkDekodeDb->boolEnum(xmpp_connect_auto)), GkXmppCfg::XmppAutoConnect);
         gkDekodeDb->write_xmpp_settings(QString::fromStdString(gkDekodeDb->boolEnum(xmpp_reconnect_auto)), GkXmppCfg::XmppAutoReconnect);
-        gkDekodeDb->write_xmpp_settings(QString::fromStdString(gkDekodeDb->boolEnum(xmpp_signup_auto)), GkXmppCfg::XmppAutoSignup);
 
         //
         // CAUTION!!! Username, password, and e-mail address!
@@ -331,6 +329,7 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         quint16 xmpp_host_tcp_port = ui->spinBox_xmpp_server_port->value();
         bool xmpp_enable_ssl = ui->checkBox_xmpp_server_ssl->isChecked();
         qint32 xmpp_ignore_ssl_errors = ui->comboBox_xmpp_server_ssl_errors->currentIndex();
+        qint32 xmpp_uri_lookup_method = ui->comboBox_xmpp_server_uri_lookup_method->currentIndex();
 
         if (xmpp_host_url != GkXmppGekkoFyreCfg::defaultUrl) {
             gkDekodeDb->write_xmpp_settings(xmpp_host_url, GkXmppCfg::XmppDomainUrl);
@@ -338,6 +337,7 @@ void DialogSettings::on_pushButton_submit_config_clicked()
             gkDekodeDb->write_xmpp_settings(QString::number(xmpp_host_tcp_port), GkXmppCfg::XmppDomainPort);
             gkDekodeDb->write_xmpp_settings(QString::fromStdString(gkDekodeDb->boolEnum(xmpp_enable_ssl)), GkXmppCfg::XmppEnableSsl);
             gkDekodeDb->write_xmpp_settings(QString::number(xmpp_ignore_ssl_errors), GkXmppCfg::XmppIgnoreSslErrors);
+            gkDekodeDb->write_xmpp_settings(QString::number(xmpp_uri_lookup_method), GkXmppCfg::XmppUriLookupMethod);
         }
 
         //
@@ -821,6 +821,18 @@ void DialogSettings::prefill_xmpp_ignore_ssl_errors()
 {
     ui->comboBox_xmpp_server_ssl_errors->insertItem(GK_XMPP_IGNORE_SSL_ERRORS_COMBO_FALSE, tr("Don't ignore SSL errors"));
     ui->comboBox_xmpp_server_ssl_errors->insertItem(GK_XMPP_IGNORE_SSL_ERRORS_COMBO_TRUE, tr("Ignore all SSL errors"));
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::prefill_uri_lookup_method
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void DialogSettings::prefill_uri_lookup_method()
+{
+    ui->comboBox_xmpp_server_uri_lookup_method->insertItem(GK_XMPP_URI_LOOKUP_DNS_SRV_METHOD, tr("SRV lookup via DNS"));
+    ui->comboBox_xmpp_server_uri_lookup_method->insertItem(GK_XMPP_URI_LOOKUP_MANUAL_METHOD, tr("Manual input (not recommended)"));
 
     return;
 }
@@ -1328,7 +1340,7 @@ bool DialogSettings::read_settings()
         QString xmpp_allow_mucs = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppAllowMucs);
         QString xmpp_auto_connect = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppAutoConnect);
         QString xmpp_auto_reconnect = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppAutoReconnect);
-        QString xmpp_auto_signup = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppAutoSignup);
+        QString xmpp_uri_lookup_method = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppUriLookupMethod);
 
         //
         // CAUTION!!! Username, password, and e-mail address!
@@ -1367,10 +1379,18 @@ bool DialogSettings::read_settings()
             ui->checkBox_automatic_reconnect->setChecked(false);
         }
 
-        if (!xmpp_auto_signup.isEmpty()) {
-            ui->checkBox_automatic_signup->setChecked(gkDekodeDb->boolStr(xmpp_auto_signup.toStdString()));
+        if (!xmpp_uri_lookup_method.isEmpty()) {
+            ui->comboBox_xmpp_server_uri_lookup_method->setCurrentIndex(xmpp_uri_lookup_method.toInt());
+
+            //
+            // Update the index for the relevant QComboBox signal/slot!
+            on_comboBox_xmpp_server_uri_lookup_method_currentIndexChanged(xmpp_uri_lookup_method.toInt());
         } else {
-            ui->checkBox_automatic_signup->setChecked(false);
+            ui->comboBox_xmpp_server_uri_lookup_method->setCurrentIndex(GK_XMPP_URI_LOOKUP_DNS_SRV_METHOD);
+
+            //
+            // Update the index for the relevant QComboBox signal/slot!
+            on_comboBox_xmpp_server_uri_lookup_method_currentIndexChanged(GK_XMPP_URI_LOOKUP_DNS_SRV_METHOD);
         }
 
         if (!xmpp_client_username.isEmpty()) {
@@ -2920,6 +2940,16 @@ void DialogSettings::on_comboBox_xmpp_server_ssl_errors_currentIndexChanged(int 
         }
     }
 
+    return;
+}
+
+/**
+ * @brief DialogSettings::on_comboBox_xmpp_server_uri_lookup_method_currentIndexChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ */
+void DialogSettings::on_comboBox_xmpp_server_uri_lookup_method_currentIndexChanged(int index)
+{
     return;
 }
 

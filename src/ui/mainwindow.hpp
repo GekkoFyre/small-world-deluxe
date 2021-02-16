@@ -426,6 +426,7 @@ private:
     // Timing and date related
     //
     QPointer<QTimer> gkAudioInputReadySignal;
+    QPointer<QTimer> gkAudioOutputReadySignal;
     QPointer<QTimer> info_timer;
     qint64 gk_spectro_start_time;
     qint64 gk_spectro_latest_time;
