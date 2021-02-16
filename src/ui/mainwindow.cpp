@@ -1776,7 +1776,7 @@ std::map<qint32, std::pair<Network::GkNetworkProtocol, bool>> MainWindow::proces
 
             //
             // Check that the main executable for Small World Deluxe is already added to the Microsoft Windows firewall already or not!
-            gkSystem->WindowsFirewallAppIsEnabled(pfwProfile, complete_path.toStdWString().c_str(), &isSwdEnabled);
+            hr = gkSystem->WindowsFirewallAppIsEnabled(pfwProfile, complete_path.toStdWString().c_str(), &isSwdEnabled);
             if (FAILED(hr)) {
                 auto errMsg = gkSystem->processHResult(hr);
                 throw std::runtime_error(tr("An issue was encountered while adding, \"%1\", to the system firewall! Error:\n\n%1").arg(errMsg).toStdString());
