@@ -210,7 +210,7 @@ private:
     //
     // Connection details and related variables
     //
-    Network::GkXmpp::GkUserConn gkConnDetails;
+    Network::GkXmpp::GkUserConn m_connDetails;
     QPointer<QDnsLookup> m_dns;
     qint32 m_keepalive;
     std::unique_ptr<QXmppDiscoveryManager> m_discoMgr;
