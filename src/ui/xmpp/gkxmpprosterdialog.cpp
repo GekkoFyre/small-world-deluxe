@@ -44,6 +44,7 @@
 #include "src/ui/xmpp/gkxmppregistrationdialog.hpp"
 #include <utility>
 #include <QMessageBox>
+#include <QStringList>
 
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
@@ -58,6 +59,7 @@ using namespace Events;
 using namespace Logging;
 using namespace Network;
 using namespace GkXmpp;
+using namespace Security;
 
 GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPointer<GekkoFyre::GkXmppClient> xmppClient,
                                        QPointer<GekkoFyre::GkLevelDb> database, QPointer<GkEventLogger> eventLogger,
@@ -71,6 +73,24 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
         m_xmppClient = std::move(xmppClient);
         gkDb = std::move(database);
         gkEventLogger = std::move(eventLogger);
+
+        const QStringList headers({tr("Status"), tr("Nickname")});
+        QVector<QVariant> root_data;
+        for (const auto &header: headers) {
+            root_data << header;
+        }
+
+        m_rootItem = QSharedPointer<GkXmppRosterTreeViewItem>(new GkXmppRosterTreeViewItem(root_data));
+        m_xmppRosterTreeViewModel = new GkXmppRosterTreeViewModel(m_rootItem.get(), this);
+
+        ui->treeView_callsigns_groups->setModel(m_xmppRosterTreeViewModel);
+        for (qint32 column = 0; column < m_xmppRosterTreeViewModel->columnCount(); ++column) {
+            ui->treeView_callsigns_groups->header()->setSectionResizeMode(column, QHeaderView::ResizeToContents);
+        }
+
+        ui->treeView_callsigns_groups->setVisible(true);
+        ui->treeView_callsigns_groups->show();
+        QObject::connect(ui->treeView_callsigns_groups->selectionModel(), &QItemSelectionModel::selectionChanged, this, &GkXmppRosterDialog::updateActions);
 
         shownXmppPreviewNotice = gkDb->read_xmpp_alpha_notice();
         if (!shownXmppPreviewNotice) {
@@ -104,6 +124,20 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
 GkXmppRosterDialog::~GkXmppRosterDialog()
 {
     delete ui;
+}
+
+/**
+ * @brief GkXmppRosterDialog::updateActions
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @note Editable Tree Model Example <https://doc.qt.io/qt-5/qtwidgets-itemviews-editabletreemodel-example.html>.
+ */
+void GkXmppRosterDialog::updateActions()
+{
+    //
+    // TODO: Finish this section for XMPP!
+    const bool hasSelection = !ui->treeView_callsigns_groups->selectionModel()->selection().isEmpty();
+
+    return;
 }
 
 /**

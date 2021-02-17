@@ -129,6 +129,7 @@ private:
     QString m_reg_email;
     QString m_reg_password;
     QString m_reg_captcha;
+    bool m_reg_remember_credentials;
     std::unique_ptr<QXmppRegisterIq> m_registerForm;
 
     //

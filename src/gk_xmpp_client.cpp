@@ -96,7 +96,7 @@ GkXmppVcardData GkXmppVcardCache::grabVCard(const QString &bareJid)
  */
 QString GkXmppVcardCache::getElementStore(const QScopedPointer<QDomDocument> &doc, const QString &nodeName)
 {
-    QString val = "";
+    QString val;
 
     QDomNode nodeElement = doc->elementsByTagName(nodeName).item(0);
     QDomNode te = nodeElement.firstChild();

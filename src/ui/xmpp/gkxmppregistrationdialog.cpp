@@ -85,6 +85,28 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
     try {
         //
         // Set these as invisible by default, unless the given XMPP server has a need for them!
+        //
+
+        //
+        // User registration captcha
+        ui->label_xmpp_captcha->setVisible(false);
+        ui->frame_xmpp_captcha_top->setVisible(false);
+        ui->frame_xmpp_captcha_bottom->setVisible(false);
+
+        //
+        // Change password captcha
+        ui->label_xmpp_change_password_captcha->setVisible(false);
+        ui->frame_xmpp_change_password_captcha_top->setVisible(false);
+        ui->frame_xmpp_change_password_captcha_bottom->setVisible(false);
+
+        //
+        // Change email captcha
+        ui->label_xmpp_change_email_captcha->setVisible(false);
+        ui->frame_xmpp_change_email_captcha_top->setVisible(false);
+        ui->frame_xmpp_change_email_captcha_bottom->setVisible(false);
+
+        //
+        // User login captcha
         ui->label_xmpp_login_captcha->setVisible(false);
         ui->frame_xmpp_login_captcha_top->setVisible(false);
         ui->frame_xmpp_login_captcha_bottom->setVisible(false);

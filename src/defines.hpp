@@ -253,6 +253,13 @@ namespace GekkoFyre {
 #define GK_CSIGN_MSGS_TABLEVIEW_MODEL_TOTAL_IDX (8)     // The total amount of indexes (i.e. columns) for the QTableView model, `GkActiveMsgsTableViewModel`. Be sure to keep this up-to-date!
 
 //
+// QTreeView Models
+//
+#define GK_XMPP_ROSTER_TREEVIEW_MODEL_PRESENCE_IDX (0)
+#define GK_XMPP_ROSTER_TREEVIEW_MODEL_NICKNAME_IDX (1)
+#define GK_XMPP_ROSTER_TREEVIEW_MODEL_TOTAL_IDX (2)
+
+//
 // Hamlib related
 //
 #define GK_HAMLIB_DEFAULT_TIMEOUT (3000)                // The default timeout value for Hamlib, measured in milliseconds.

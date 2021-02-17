@@ -393,7 +393,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 QPointer<GkEventLoggerTableViewModel> gkEventLoggerModel = new GkEventLoggerTableViewModel(gkDb, this);
                 ui->tableView_maingui_logs->setModel(gkEventLoggerModel);
                 ui->tableView_maingui_logs->horizontalHeader()->setVisible(true);
-                ui->tableView_maingui_logs->horizontalHeader()->setStretchLastSection(true);
+                ui->tableView_maingui_logs->horizontalHeader()->setSectionResizeMode(GK_EVENTLOG_TABLEVIEW_MODEL_MESSAGE_IDX, QHeaderView::Stretch);
                 ui->tableView_maingui_logs->show();
 
                 gkEventLogger = new GkEventLogger(gkStringFuncs, this);
