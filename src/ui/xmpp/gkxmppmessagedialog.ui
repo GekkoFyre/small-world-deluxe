@@ -179,6 +179,20 @@
               <number>0</number>
              </property>
              <item>
+              <widget class="QToolButton" name="toolButton_view_roster">
+               <property name="text">
+                <string>View Roster</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="Line" name="line_4">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+              </widget>
+             </item>
+             <item>
               <widget class="QToolButton" name="toolButton_font">
                <property name="text">
                 <string>Font</string>

@@ -690,7 +690,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             // The ready() signal from QAudioInput is utterly broken and should not be relied upon in any capacity. DO NOT USE.
             //
             gkAudioInputReadySignal = new QTimer(this);
-            connect(gkAudioInputReadySignal, SIGNAL(timeout()), this, SLOT(processAudioInMain()));
+            QObject::connect(gkAudioInputReadySignal, SIGNAL(timeout()), this, SLOT(processAudioInMain()));
             gkAudioInputReadySignal->start(100); // Execute SLOT, `processAudioInMain()`, every 100 milliseconds!
         }
 
@@ -896,7 +896,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         //
         // Initialize the QXmpp client!
-        m_xmppClient = new GkXmppClient(xmpp_conn_details, gkEventLogger, false, nullptr);
+        m_xmppClient = new GkXmppClient(xmpp_conn_details, gkDb, gkEventLogger, false, nullptr);
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
@@ -1707,11 +1707,12 @@ void MainWindow::mapInsertFirewallPorts()
     gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_CLIENT_5222, std::make_pair(GkNetworkProtocol::TCP, false)));
     gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_CLIENT_SSL_5223, std::make_pair(GkNetworkProtocol::TCP, false)));
     gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_SERVER_5269, std::make_pair(GkNetworkProtocol::TCP, false)));
-    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_LOCAL_MSGING_5298, std::make_pair(GkNetworkProtocol::TCP, false)));
-    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_BOSH_SSL_5443, std::make_pair(GkNetworkProtocol::TCP, false)));
-    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_FILE_XFERS_8010, std::make_pair(GkNetworkProtocol::TCP, false)));
+    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_HTTP_BINDING_7070, std::make_pair(GkNetworkProtocol::TCP, false)));
+    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_HTTPS_BINDING_7443, std::make_pair(GkNetworkProtocol::TCP, false)));
+    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_CONNECT_MGR_5262, std::make_pair(GkNetworkProtocol::TCP, false)));
+    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_CONNECT_MGR_SSL_5263, std::make_pair(GkNetworkProtocol::TCP, false)));
+    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_FILE_XFER_PROXY_7777, std::make_pair(GkNetworkProtocol::TCP, false)));
 
-    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_UDP_PORT_XMPP_LOCAL_MSGING_5298, std::make_pair(GkNetworkProtocol::UDP, false)));
     return;
 }
 

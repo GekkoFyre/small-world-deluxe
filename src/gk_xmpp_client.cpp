@@ -45,7 +45,10 @@
 #include <qxmpp/QXmppVCardIq.h>
 #include <iostream>
 #include <exception>
+#include <QImage>
+#include <QBuffer>
 #include <QMessageBox>
+#include <QXmlStreamWriter>
 
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
@@ -116,8 +119,9 @@ QString GkXmppVcardCache::getElementStore(const QScopedPointer<QDomDocument> &do
  * @param connectNow Whether to intiiate a connection now or at a later time instead.
  * @param parent The parent object.
  */
-GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                           const bool &connectNow, QObject *parent) : m_registerManager(findExtension<QXmppRegistrationManager>()),
+GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoFyre::GkLevelDb> database,
+                           QPointer<GekkoFyre::GkEventLogger> eventLogger, const bool &connectNow, QObject *parent)
+                           : m_registerManager(findExtension<QXmppRegistrationManager>()),
                                                                       m_rosterManager(findExtension<QXmppRosterManager>()),
                                                                       m_vcardMgr(findExtension<QXmppVCardManager>()),
                                                                       m_versionMgr(findExtension<QXmppVersionManager>()),
@@ -127,6 +131,7 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
     try {
         setParent(parent);
         gkConnDetails = connection_details;
+        gkDb = std::move(database);
         gkEventLogger = std::move(eventLogger);
         m_sslSocket = new QSslSocket(this);
 
@@ -159,7 +164,6 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         m_status = GkOnlineStatus::Online;
         m_keepalive = 60;
 
-        m_vcardCache = std::make_unique<GkXmppVcardCache>(parent);
         m_presence = std::make_unique<QXmppPresence>();
 
         if (m_versionMgr) {
@@ -231,6 +235,10 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
                 m_discoMgr->requestInfo(gkConnDetails.server.url);
             }
 
+            //
+            // Initialize all the SIGNALS and SLOTS for QXmppRosterManager...
+            initRosterMgr();
+
             m_registerManager = std::make_shared<QXmppRegistrationManager>();
             m_mucManager = std::make_unique<QXmppMucManager>();
             m_transferManager = std::make_unique<QXmppTransferManager>();
@@ -257,6 +265,10 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
 
             QObject::connect(m_registerManager.get(), SIGNAL(registrationFormReceived(const QXmppRegisterIq &)),
                              this, SLOT(handleRegistrationForm(const QXmppRegisterIq &)));
+
+            m_vCardRosterTimer = new QTimer(this);
+            QObject::connect(m_vCardRosterTimer, SIGNAL(timeout()), this, SLOT(updateVCardRosterDb()));
+            m_vCardRosterTimer->start(GK_XMPP_VCARD_ROSTER_UPDATE_SECS * 1000);
         });
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(tr("An issue has occurred within the XMPP subsystem. Error:\n\n%1").arg(QString::fromStdString(e.what())).toStdString()));
@@ -267,7 +279,11 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
 
 GkXmppClient::~GkXmppClient()
 {
-    if (isConnected()) {
+    if (isConnected() || m_netState == GkNetworkState::Connecting) {
+        if (!m_vCardRoster.isEmpty()) {
+            gkDb->write_xmpp_vcard_data(m_vCardRoster);
+        }
+
         disconnectFromServer();
     }
 
@@ -446,35 +462,81 @@ void GkXmppClient::clientConnected()
 void GkXmppClient::handleRosterReceived()
 {
     try {
-        const QStringList bareJids = m_rosterManager->getRosterBareJids();
-        for (const auto &bareJid: bareJids) {
-            // Get the contact name, as we might need it...
-            QString name = m_rosterManager->getRosterEntry(bareJid).name(); //-V808
-
-            // Attempt to get the vCard...
-            GkXmppVcardData vcData = m_vcardCache->grabVCard(bareJid);
-            if (vcData.isEmpty()) {
-                gkEventLogger->publishEvent(tr("User, %1, has no VCard. Requesting...").arg(bareJid), GkSeverity::Info, "", false, true, false, false);
-                if (m_vcardMgr) {
-                    m_vcardMgr->requestVCard(bareJid);
-                }
-            }
-
-            // Prepare groups...
-            QStringList groups_roster = m_rosterManager->getRosterEntry(bareJid).groups().values();
-
-            // Iterate through the group list and add them to a cache!
-            for (const auto &user: groups_roster) {
-                if (!rosterGroups.contains(user)) {
-                    rosterGroups.push_back(user);
-                }
-            }
-
-            // TODO: Do something with this!
-            // qint32 subType = (qint32)m_rosterManager->getRosterEntry(bareJid).subscriptionType();
-        }
+        QObject::connect(m_vcardMgr.get(), SIGNAL(vCardReceived(const QXmppVCardIq &)), this, SLOT(handlevCardReceived(const QXmppVCardIq &)));
     } catch (const std::exception &e) {
         emit sendError(tr("An issue has been encountered while managing the XMPP roster! Error:\n\n%1")
+        .arg(QString::fromStdString(e.what())));
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppClient::handlevCardReceived
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param vCard
+ * @note example_9_vCard <https://github.com/qxmpp-project/qxmpp/tree/master/examples/example_9_vCard>.
+ * @see GkXmppClient::handleRosterReceived(), GkLevelDb::write_xmpp_vcard_data().
+ */
+void GkXmppClient::handlevCardReceived(const QXmppVCardIq &vCard)
+{
+    try {
+        QString bareJid = vCard.from();
+        QPointer<GkXmppVcardCache> m_vcardCache = new GkXmppVcardCache(this);
+        auto vCardData = m_vcardCache->grabVCard(bareJid);
+
+        if (vCardData.isEmpty()) {
+            QString report_name = vCardData.nickname;
+            if (vCardData.nickname.isEmpty()) {
+                report_name = vCardData.fullName;
+            }
+
+            gkEventLogger->publishEvent(tr("vCard received: %1").arg(report_name), GkSeverity::Debug, "", false, true, false, false);
+
+            //
+            // Collect the XML stream from the vCard itself and write it out to the buffers!
+            QPointer<QBuffer> xmlBuffer = new QBuffer(this);
+            xmlBuffer->open(QIODevice::ReadWrite);
+            QXmlStreamWriter stream(xmlBuffer);
+            vCard.toXml(&stream);
+
+            //
+            // Write out the vCard XML stream to the QByteArray object!
+            xmlBuffer->seek(0);
+            QByteArray tmp_xml_bA = xmlBuffer->readAll();
+
+            //
+            // Collect the avatar image (if one is present) from the vCard itself and write it out to the buffers!
+            QPointer<QBuffer> imgBuffer = new QBuffer(this);
+            QByteArray avatar_image = vCard.photo();
+            imgBuffer->open(QIODevice::ReadWrite);
+            imgBuffer->setData(avatar_image);
+
+            //
+            // Write out the vCard-gathered avatar to the QByteArray object!
+            imgBuffer->seek(0);
+            QByteArray tmp_img_bA = imgBuffer->readAll();
+
+            //
+            // Use Google LevelDB to store the vCard information and data-streams!
+            m_vCardRoster.insert(bareJid, std::make_pair(tmp_xml_bA, tmp_img_bA));
+
+            //
+            // Clean-up any data that's now no longer needed!
+            xmlBuffer.clear();
+            xmlBuffer->close();
+            xmlBuffer->reset();
+            tmp_xml_bA.clear();
+
+            //
+            // Clean-up any data that's now no longer needed!
+            imgBuffer.clear();
+            imgBuffer->close();
+            imgBuffer->reset();
+            tmp_img_bA.clear();
+        }
+    } catch (const std::exception &e) {
+        emit sendError(tr("An issue was encountered while processing roster information and vCards! Error:\n\n%1")
         .arg(QString::fromStdString(e.what())));
     }
 
@@ -507,14 +569,17 @@ void GkXmppClient::stateChanged(QXmppClient::State state)
         case QXmppClient::State::DisconnectedState:
             gkEventLogger->publishEvent(tr("Disconnected from XMPP server: %1").arg(gkConnDetails.server.url), GkSeverity::Info, "",
                                         true, true, true, false);
+            m_netState = GkNetworkState::Disconnected;
             return;
         case QXmppClient::State::ConnectingState:
             gkEventLogger->publishEvent(tr("...attempting to make connection towards XMPP server: %1").arg(gkConnDetails.server.url), GkSeverity::Info, "",
                                         true, true, true, false);
+            m_netState = GkNetworkState::Connecting;
             return;
         case QXmppClient::State::ConnectedState:
             gkEventLogger->publishEvent(tr("Connected to XMPP server: %1").arg(gkConnDetails.server.url), GkSeverity::Info, "",
                                         true, true, true, false);
+            m_netState = GkNetworkState::Connected;
             return;
         default:
             break;
@@ -975,6 +1040,19 @@ void GkXmppClient::versionReceivedSlot(const QXmppVersionIq &version)
     if (version.type() == QXmppIq::Result) {
         QString version_str = version.name() + " " + version.version() + (!version.os().isEmpty() ? "@" + version.os() : QString());
         gkEventLogger->publishEvent(tr("%1 server version: %2").arg(gkConnDetails.server.url).arg(version_str), GkSeverity::Info, "", false, true, false, false);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppClient::updateVCardRosterDb
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppClient::updateVCardRosterDb()
+{
+    if (!m_vCardRoster.isEmpty()) {
+        gkDb->write_xmpp_vcard_data(m_vCardRoster);
     }
 
     return;

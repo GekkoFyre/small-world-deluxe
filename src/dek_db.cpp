@@ -53,6 +53,7 @@
 #include <QDesktopWidget>
 #include <QApplication>
 #include <QMessageBox>
+#include <QTextCodec>
 #include <QDateTime>
 #include <QVariant>
 #include <QSysInfo>
@@ -124,40 +125,57 @@ void GkLevelDb::writeMultipleKeys(const std::string &base_key_name, const std::v
             // that's the case.
             //
             std::vector<std::string> values_modifiable;
-            std::map<std::string, std::string> key_value_map;
-
-            std::copy(values.begin(), values.end(), values_modifiable.begin());
+            std::copy(values.begin(), values.end(), std::back_inserter(values_modifiable));
             auto preexisting_values = readMultipleKeys(base_key_name);
+
+            preexisting_values.emplace_back();
             if (!preexisting_values.empty()) {
-                for (const auto &value: preexisting_values) {
-                    values_modifiable.emplace_back(value);
-                }
+                std::copy(preexisting_values.begin(), preexisting_values.end(), std::back_inserter(values_modifiable));
             }
 
+            writeHashedKeys(base_key_name, preexisting_values, allow_empty_values);
+        } else {
+            throw std::invalid_argument(tr("Empty string provided while writing key or value to Google LevelDB database!").toStdString());
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return;
+}
+
+/**
+ * @brief GkLevelDb::writeMultipleKeys stores multiple values under the 'one' key within the Google LevelDB database.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param base_key_name The base-name of the key to start with.
+ * @param values The values that are to be written under the 'one' key.
+ * @param allow_empty_values If present, then whether to allow the insertion of empty values into the Google LevelDB
+ * database with it's matching, strictly non-empty key.
+ * @note miste...@googlemail.com <https://groups.google.com/g/leveldb/c/Bq30nafYSTY/m/NTbE0lqxEAYJ>.
+ * @see GkLevelDb::readMultipleKeys().
+ */
+void GkLevelDb::writeMultipleKeys(const std::string &base_key_name, const std::string &value, const bool &allow_empty_values)
+{
+    try {
+        if (!base_key_name.empty() && !value.empty()) {
             //
-            // Insert the multiple values under the singular key, with adjunct UNIX Epoch acting as the 'hash'!
-            for (const auto &value: values_modifiable) {
-                qint64 curr_unix_epoch = QDateTime::currentMSecsSinceEpoch();
-                std::string new_key_name = std::string(base_key_name + '!' + std::to_string(curr_unix_epoch));
-                key_value_map.emplace(std::make_pair(new_key_name, value));
+            // See if there are any values already pre-existing under this base-key! As we must prepend to these if
+            // that's the case.
+            //
+            //
+            // See if there are any values already pre-existing under this base-key! As we must prepend to these if
+            // that's the case.
+            //
+            std::vector<std::string> values_modifiable;
+            std::map<std::string, std::string> key_value_map;
+            auto preexisting_values = readMultipleKeys(base_key_name);
+
+            preexisting_values.emplace_back(value);
+            if (!preexisting_values.empty()) {
+                std::copy(preexisting_values.begin(), preexisting_values.end(), std::back_inserter(values_modifiable));
             }
 
-            for (const auto &key_value: key_value_map) {
-                if (!key_value.first.empty()) {
-                    if (!key_value.second.empty() || (allow_empty_values && key_value.second.empty())) {
-                        batch.Put(key_value.first, key_value.second);
-                    }
-                }
-            }
-
-            leveldb::WriteOptions write_options;
-            write_options.sync = true;
-
-            status = db->Write(write_options, &batch);
-
-            if (!status.ok()) { // Abort because of error!
-                throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
-            }
+            writeHashedKeys(base_key_name, preexisting_values, allow_empty_values);
         } else {
             throw std::invalid_argument(tr("Empty string provided while writing key or value to Google LevelDB database!").toStdString());
         }
@@ -1444,6 +1462,97 @@ void GkLevelDb::write_xmpp_settings(const QString &value, const Settings::GkXmpp
 }
 
 /**
+ * @brief GkLevelDb::write_xmpp_vcard_data stores the information of users as outputted by the QXmppRosterManager upon
+ * a successful connection having been made to a given XMPP server.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param vcard_roster The details pertaining to all the vCards within the XMPP roster. Of the values, the first is the
+ * XML Stream for the vCard(s) themselves and the second of the pair is the QByteArray for the avatar(s), if present. This
+ * leaves the key, which is simply the JID and all of its pertaining information.
+ * @note example_9_vCard <https://github.com/qxmpp-project/qxmpp/tree/master/examples/example_9_vCard>.
+ * @see GkXmppClient::handlevCardReceived(), GkXmppClient::handleRosterReceived().
+ */
+void GkLevelDb::write_xmpp_vcard_data(const QMap<QString, std::pair<QByteArray, QByteArray>> &vcard_roster)
+{
+    try {
+        if (!vcard_roster.isEmpty()) {
+            auto stored_jid = readMultipleKeys(General::Xmpp::GoogleLevelDb::jidLookupKey);
+            for (const auto &vcard: vcard_roster.toStdMap()) {
+                if (!vcard.first.isEmpty()) {
+                    for (const auto &existing_jid: stored_jid) {
+                        if (vcard.first.toStdString() == existing_jid) {
+                            //
+                            // JID is already stored within Google LevelDB!
+                            continue;
+                        } else {
+                            //
+                            // We are dealing with a new JID entry!
+                            writeMultipleKeys(General::Xmpp::GoogleLevelDb::jidLookupKey, vcard.first.toStdString(), false);
+                        }
+
+                        QString xml_stream = QTextCodec::codecForMib(1015)->toUnicode(vcard.second.first); // NOTE: An encoding other than `1015` might be needed!
+                        QString img_stream = QTextCodec::codecForMib(1015)->toUnicode(vcard.second.second); // NOTE: An encoding other than `1015` might be needed!
+
+                        writeMultipleKeys(convXmppVcardKey(vcard.first, GkVcardKeyConv::XmlStream).toStdString(), xml_stream.toStdString(), true);
+                        writeMultipleKeys(convXmppVcardKey(vcard.first, GkVcardKeyConv::AvatarImg).toStdString(), img_stream.toStdString(), true);
+                    }
+                }
+            }
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkLevelDb::write_xmpp_vcard_data removes the information of users as updated by the QXmppRosterManager upon
+ * a successful connection having been made to a given XMPP server.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param vcard_roster The details pertaining to all the vCards within the XMPP roster. Of the values, the first is the
+ * XML Stream for the vCard(s) themselves and the second of the pair is the QByteArray for the avatar(s), if present. This
+ * leaves the key, which is simply the JID and all of its pertaining information.
+ * @note example_9_vCard <https://github.com/qxmpp-project/qxmpp/tree/master/examples/example_9_vCard>.
+ * @see GkXmppClient::handlevCardReceived(), GkXmppClient::handleRosterReceived().
+ */
+void GkLevelDb::remove_xmpp_vcard_data(const QMap<QString, std::pair<QByteArray, QByteArray>> &vcard_roster)
+{
+    try {
+        if (!vcard_roster.isEmpty()) {
+            auto stored_jid = readMultipleKeys(General::Xmpp::GoogleLevelDb::jidLookupKey);
+            for (const auto &vcard: vcard_roster.toStdMap()) {
+                if (!vcard.first.isEmpty()) {
+                    for (const auto &existing_jid: stored_jid) {
+                        if (vcard.first.toStdString() == existing_jid) {
+                            //
+                            // JID is already stored within Google LevelDB!
+
+                            //
+                            // Start by deleting the value from the Google LevelDB database...
+                            QString xml_stream = QTextCodec::codecForMib(1015)->toUnicode(vcard.second.first);
+                            QString img_stream = QTextCodec::codecForMib(1015)->toUnicode(vcard.second.second); // NOTE: An encoding other than `1015` might be needed!
+                            deleteKeyFromMultiple(convXmppVcardKey(vcard.first, GkVcardKeyConv::XmlStream).toStdString(), xml_stream.toStdString(), true);
+                            deleteKeyFromMultiple(convXmppVcardKey(vcard.first, GkVcardKeyConv::AvatarImg).toStdString(), img_stream.toStdString(), true);
+
+                            //
+                            // Now it's time to delete the key itself!
+                            deleteKeyFromMultiple(General::Xmpp::GoogleLevelDb::jidLookupKey, vcard.first.toStdString(), false);
+                        } else {
+                            //
+                            // We are dealing with a new entry, accidentally! We better add this to the database...
+                        }
+                    }
+                }
+            }
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
  * @brief GkLevelDb::write_xmpp_alpha_notice
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param value
@@ -1605,6 +1714,77 @@ QString GkLevelDb::convNetworkProtocolEnumToStr(const GkNetworkProtocol &network
     }
 
     return QString();
+}
+
+/**
+ * @brief GkLevelDb::writeHashedKeys
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param base_key_name The base-name of the key to start with.
+ * @param values The values that are to be written under the 'one' key.
+ * @param allow_empty_values If present, then whether to allow the insertion of empty values into the Google LevelDB
+ * @see GkLevelDb::writeMultipleKeys().
+ */
+void GkLevelDb::writeHashedKeys(const std::string &base_key_name, const std::vector<std::string> &values,
+                                const bool &allow_empty_values)
+{
+    try {
+        leveldb::WriteBatch batch;
+        leveldb::Status status;
+        std::map<std::string, std::string> key_value_map;
+
+        for (const auto &value: values) {
+            qint64 curr_unix_epoch = QDateTime::currentMSecsSinceEpoch();
+            std::string new_key_name = std::string(base_key_name + '!' + std::to_string(curr_unix_epoch));
+            key_value_map.emplace(std::make_pair(new_key_name, value));
+        }
+
+        for (const auto &key_value: key_value_map) {
+            if (!key_value.first.empty()) {
+                if (!key_value.second.empty() || (allow_empty_values && key_value.second.empty())) {
+                    batch.Put(key_value.first, key_value.second);
+                }
+            }
+        }
+
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
+
+        status = db->Write(write_options, &batch);
+
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return;
+}
+
+/**
+ * @brief GkLevelDb::convXmppVcardKey converts a 'base-key' to something more manageable for use with GkLevelDb::writeMultipleKeys() so
+ * that multiple values maybe stored with the 'one' key instead.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param keyToConv
+ * @param method
+ * @return
+ * @see GkLevelDb::writeMultipleKeys(), GkLevelDb::write_xmpp_vcard_data().
+ */
+QString GkLevelDb::convXmppVcardKey(const QString &keyToConv, const GkXmpp::GkVcardKeyConv &method)
+{
+    QString ret_key;
+    switch (method) {
+        case GkXmpp::GkVcardKeyConv::XmlStream:
+            ret_key = QString(keyToConv + General::Xmpp::GoogleLevelDb::keyToConvXmlStream);
+            break;
+        case GkXmpp::GkVcardKeyConv::AvatarImg:
+            ret_key = QString(keyToConv + General::Xmpp::GoogleLevelDb::keyToConvAvatarImg);
+            break;
+        default:
+            break;
+    }
+
+    return ret_key;
 }
 
 /**

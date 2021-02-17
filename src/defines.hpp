@@ -118,11 +118,11 @@ namespace GekkoFyre {
 #define GK_SECURITY_FIREWALL_TCP_PORT_XMPP_CLIENT_5222 (5222)
 #define GK_SECURITY_FIREWALL_TCP_PORT_XMPP_CLIENT_SSL_5223 (5223)
 #define GK_SECURITY_FIREWALL_TCP_PORT_XMPP_SERVER_5269 (5269)
-#define GK_SECURITY_FIREWALL_TCP_PORT_XMPP_LOCAL_MSGING_5298 (5298)
-#define GK_SECURITY_FIREWALL_TCP_PORT_XMPP_BOSH_SSL_5443 (5443)
-#define GK_SECURITY_FIREWALL_TCP_PORT_XMPP_FILE_XFERS_8010 (8010)
-
-#define GK_SECURITY_FIREWALL_UDP_PORT_XMPP_LOCAL_MSGING_5298 (5298)
+#define GK_SECURITY_FIREWALL_TCP_PORT_XMPP_HTTP_BINDING_7070 (7070)
+#define GK_SECURITY_FIREWALL_TCP_PORT_XMPP_HTTPS_BINDING_7443 (7443)
+#define GK_SECURITY_FIREWALL_TCP_PORT_XMPP_CONNECT_MGR_5262 (5262)
+#define GK_SECURITY_FIREWALL_TCP_PORT_XMPP_CONNECT_MGR_SSL_5263 (5263)
+#define GK_SECURITY_FIREWALL_TCP_PORT_XMPP_FILE_XFER_PROXY_7777 (7777)
 
 //
 // XMPP specific constants
@@ -136,6 +136,7 @@ namespace GekkoFyre {
 #define GK_XMPP_IGNORE_SSL_ERRORS_COMBO_TRUE (1)
 #define GK_XMPP_URI_LOOKUP_DNS_SRV_METHOD (0)
 #define GK_XMPP_URI_LOOKUP_MANUAL_METHOD (1)
+#define GK_XMPP_VCARD_ROSTER_UPDATE_SECS (20)
 
 //
 // Networking settings (also sometimes related to XMPP!)
@@ -300,6 +301,11 @@ namespace General {
 
     namespace Xmpp {
         constexpr char captchaNamespace[] = "urn:xmpp:captcha";
+        namespace GoogleLevelDb {
+            constexpr char jidLookupKey[] = "GkXmppStoredJid";
+            constexpr char keyToConvXmlStream[] = "GkXmlStream";
+            constexpr char keyToConvAvatarImg[] = "GkAvatarImg";
+        }
     }
 }
 
@@ -335,6 +341,8 @@ namespace Network {
         enum GkNetworkState {
             None,
             Connecting,
+            Connected,
+            Disconnected,
             WaitForRegistrationForm,
             WaitForRegistrationConfirmation
         };
@@ -360,6 +368,11 @@ namespace Network {
             GekkoFyre,
             Custom,
             Unknown
+        };
+
+        enum GkVcardKeyConv {
+            XmlStream,
+            AvatarImg
         };
 
         struct GkClientSettings {

@@ -53,6 +53,7 @@
 #include <QObject>
 #include <QString>
 #include <QPointer>
+#include <QStringList>
 #include <QAudioFormat>
 
 #ifdef __cplusplus
@@ -76,12 +77,6 @@ public:
                        QPointer<GekkoFyre::StringFuncs> stringFuncs, const QRect &main_win_geometry,
                        QObject *parent = nullptr);
     ~GkLevelDb() override;
-
-    void writeMultipleKeys(const std::string &base_key_name, const std::vector<std::string> &values,
-                           const bool &allow_empty_values = false);
-    bool deleteKeyFromMultiple(const std::string &base_key_name, const std::string &removed_value,
-                               const bool &allow_empty_values = false);
-    std::vector<std::string> readMultipleKeys(const std::string &base_key_name);
 
     void write_rig_settings(const QString &value, const Database::Settings::radio_cfg &key);
     void write_rig_settings_comms(const QString &value, const Database::Settings::radio_cfg &key);
@@ -117,7 +112,9 @@ public:
     void capture_sys_info();
 
     void write_xmpp_settings(const QString &value, const GekkoFyre::Database::Settings::GkXmppCfg &key);
+    void write_xmpp_vcard_data(const QMap<QString, std::pair<QByteArray, QByteArray>> &vcard_roster);
     void write_xmpp_alpha_notice(const bool &value);
+    void remove_xmpp_vcard_data(const QMap<QString, std::pair<QByteArray, QByteArray>> &vcard_roster);
     QString read_xmpp_settings(const GekkoFyre::Database::Settings::GkXmppCfg &key);
     bool read_xmpp_alpha_notice();
 
@@ -171,6 +168,17 @@ private:
 
     std::string processCsvToDB(const std::string &csv_title, const std::string &comma_sep_values, const std::string &data_to_append);
     std::string deleteCsvValForDb(const std::string &comma_sep_values, const std::string &data_to_remove);
+
+    void writeMultipleKeys(const std::string &base_key_name, const std::vector<std::string> &values,
+                           const bool &allow_empty_values = false);
+    void writeMultipleKeys(const std::string &base_key_name, const std::string &value, const bool &allow_empty_values = false);
+    bool deleteKeyFromMultiple(const std::string &base_key_name, const std::string &removed_value,
+                               const bool &allow_empty_values = false);
+    std::vector<std::string> readMultipleKeys(const std::string &base_key_name);
+    void writeHashedKeys(const std::string &base_key_name, const std::vector<std::string> &values,
+                         const bool &allow_empty_values = false);
+
+    QString convXmppVcardKey(const QString &keyToConv, const Network::GkXmpp::GkVcardKeyConv &method);
 
     void detect_operating_system(QString &build_cpu_arch, QString &curr_cpu_arch, QString &kernel_type, QString &kernel_vers,
                                  QString &machine_host_name, QString &machine_unique_id, QString &pretty_prod_name,

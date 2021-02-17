@@ -42,6 +42,7 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
 #include "src/models/system/gk_network_ping_model.hpp"
 #include <qxmpp/QXmppIq.h>
@@ -59,8 +60,12 @@
 #include <qxmpp/QXmppClientExtension.h>
 #include <qxmpp/QXmppDiscoveryManager.h>
 #include <qxmpp/QXmppRegistrationManager.h>
+#include <memory>
+#include <utility>
+#include <QMap>
 #include <QUrl>
 #include <QList>
+#include <QTimer>
 #include <QString>
 #include <QObject>
 #include <QPointer>
@@ -124,7 +129,7 @@ class GkXmppClient : public QXmppClient {
     Q_OBJECT
 
 public:
-    explicit GkXmppClient(const Network::GkXmpp::GkUserConn &connection_details,
+    explicit GkXmppClient(const Network::GkXmpp::GkUserConn &connection_details, QPointer<GekkoFyre::GkLevelDb> database,
                           QPointer<GekkoFyre::GkEventLogger> eventLogger, const bool &connectNow = false,
                           QObject *parent = nullptr);
     ~GkXmppClient() override;
@@ -169,9 +174,16 @@ private slots:
     void versionReceivedSlot(const QXmppVersionIq &version);
 
     //
+    // Timers and Event Loops
+    //
+    void updateVCardRosterDb();
+
+    //
     // User, roster and presence details
     void notifyNewSubscription(const QString &bareJid);
     void handleRosterReceived();
+
+    void handlevCardReceived(const QXmppVCardIq &vCard);
 
     void itemAdded(const QString &bareJid);
     void itemRemoved(const QString &bareJid);
@@ -190,6 +202,7 @@ signals:
     void sendError(const QXmppClient::Error &error);
 
 private:
+    QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GkEventLogger> gkEventLogger;
     QPointer<GkNetworkPingModel> gkNetworkPing;
     QList<QDnsServiceRecord> m_dnsRecords;
@@ -204,6 +217,11 @@ private:
     std::unique_ptr<QXmppVersionManager> m_versionMgr;
 
     //
+    // Timers and Event Loops
+    //
+    QPointer<QTimer> m_vCardRosterTimer;
+
+    //
     // User, roster and presence details
     //
     Network::GkXmpp::GkOnlineStatus m_status;
@@ -214,7 +232,6 @@ private:
     //
     // VCards
     //
-    std::unique_ptr<GkXmppVcardCache> m_vcardCache;
     std::unique_ptr<QXmppVCardManager> m_vcardMgr;
 
     //
@@ -233,6 +250,7 @@ private:
 
     GekkoFyre::Network::GkXmpp::GkNetworkState m_netState;
     QString m_id;
+    QMap<QString, std::pair<QByteArray, QByteArray>> m_vCardRoster;
 
     void initRosterMgr();
     static QString getErrorCondition(const QXmppStanza::Error::Condition &condition);
