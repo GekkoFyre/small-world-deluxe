@@ -83,7 +83,8 @@ sworld_debug_archlinux_x86_64:
   - cd ./../..
   - rm -rvf snappy
   - git clone https://gitlab.xiph.org/xiph/libopusenc.git
-  - cd libopusenc && git submodule update --init --recursive && autoreconf -isf
+  - cd libopusenc && git submodule update --init --recursive
+  - ./autogen.sh
   - ./configure --enable-static && make -j 6 && make install
   - cd ./..
   - rm -rvf libopusenc
