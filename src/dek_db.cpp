@@ -167,7 +167,6 @@ void GkLevelDb::writeMultipleKeys(const std::string &base_key_name, const std::s
             // that's the case.
             //
             std::vector<std::string> values_modifiable;
-            std::map<std::string, std::string> key_value_map;
             auto preexisting_values = readMultipleKeys(base_key_name);
 
             preexisting_values.emplace_back(value);

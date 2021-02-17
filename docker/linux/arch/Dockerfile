@@ -63,6 +63,7 @@ WORKDIR /opt/gekkofyre/app
 #
 # Install the following packages and update the system!
 #
+RUN pacman-db-upgrade
 RUN pacman -Sy --noconfirm
 RUN pacman -Syyu --noconfirm
 RUN pacman -S git --noconfirm

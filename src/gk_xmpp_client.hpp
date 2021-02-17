@@ -139,7 +139,9 @@ public:
     bool createMuc(const QString &room_name, const QString &room_subject, const QString &room_desc);
 
     static bool isHostnameSame(const QString &hostname, const QString &comparison = "");
+    static QString getUsername(const QString &username);
     static QString getHostname(const QString &username);
+    GekkoFyre::Network::GkXmpp::GkNetworkState getNetworkState() const;
 
     //
     // User, roster and presence details
@@ -195,6 +197,7 @@ signals:
     //
     // User, roster and presence details
     void setPresence(const QXmppPresence::Type &pres);
+    void sendRegistrationForm(const QXmppRegisterIq &registerIq);
 
     //
     // Event & Logging management

@@ -837,8 +837,8 @@ color: white;</string>
                                <rect>
                                 <x>0</x>
                                 <y>0</y>
-                                <width>100</width>
-                                <height>30</height>
+                                <width>16</width>
+                                <height>16</height>
                                </rect>
                               </property>
                               <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -1662,9 +1662,19 @@ QPushButton:disabled {
      <addaction name="actionInvisible"/>
      <addaction name="actionOffline"/>
     </widget>
+    <widget class="QMenu" name="menuAcco_unt">
+     <property name="title">
+      <string>Acco&amp;unt</string>
+     </property>
+     <addaction name="action_Register_Account"/>
+     <addaction name="separator"/>
+     <addaction name="actionSign_in"/>
+     <addaction name="actionSign_out"/>
+    </widget>
+    <addaction name="menuAcco_unt"/>
     <addaction name="menu_Availability"/>
+    <addaction name="separator"/>
     <addaction name="actionView_Roster"/>
-    <addaction name="actionSign_out"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Configure"/>
@@ -2008,6 +2018,16 @@ QPushButton:disabled {
   <action name="actionAdjust_Volume">
    <property name="text">
     <string>Adjust &amp;Volume</string>
+   </property>
+  </action>
+  <action name="actionSign_in">
+   <property name="text">
+    <string>Sign-in</string>
+   </property>
+  </action>
+  <action name="action_Register_Account">
+   <property name="text">
+    <string>&amp;Register Account</string>
    </property>
   </action>
  </widget>

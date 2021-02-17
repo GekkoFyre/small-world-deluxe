@@ -49,6 +49,7 @@
 #include <qxmpp/QXmppDiscoveryManager.h>
 #include <qxmpp/QXmppRegistrationManager.h>
 #include <memory>
+#include <QTimer>
 #include <QString>
 #include <QObject>
 #include <QDialog>
@@ -93,10 +94,10 @@ private slots:
     //
     // User, roster and presence details
     void recvRegistrationForm(const QXmppRegisterIq &registerIq);
-    void sendRegistrationForm(const std::unique_ptr<QXmppRegisterIq> &registerIq);
+    void handleRegistrationForm(const QXmppRegisterIq &registerIq);
     void loginToServer(const QString &hostname, const quint16 &network_port, const QString &username = "",
                        const QString &password = "", const bool &credentials_fail = false);
-    void userSignup(const QString &hostname, const quint16 &network_port, const QString &username, const QString &password);
+    void userSignup(const quint16 &network_port, const QString &jid, const QString &password);
 
     //
     // QRegularExpression
@@ -108,9 +109,13 @@ private slots:
     void handleError(const QString &errorMsg);
     void handleSuccess();
 
+    //
+    // Network management
+    void updateNetworkState();
+
 signals:
     void sendError(const QString &errorMsg);
-    void registerUser(const std::unique_ptr<QXmppRegisterIq> &registerIq);
+    void registerUser(const QXmppRegisterIq &registerIq);
 
 private:
     Ui::GkXmppRegistrationDialog *ui;
@@ -123,14 +128,18 @@ private:
     std::shared_ptr<QXmppRegistrationManager> m_registerManager;
 
     //
+    // Timers and Event Loops
+    //
+    QPointer<QTimer> m_updateNetworkStateTimer;
+
+    //
     // Registration details for the user in question...
-    GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
-    QString m_reg_username;
+    GekkoFyre::Network::GkXmpp::GkUserConn m_connDetails;
+    QString m_reg_jid;
     QString m_reg_email;
     QString m_reg_password;
     QString m_reg_captcha;
     bool m_reg_remember_credentials;
-    std::unique_ptr<QXmppRegisterIq> m_registerForm;
 
     //
     // General networking

@@ -43,6 +43,7 @@
 #include "src/ui/gkaudioplaydialog.hpp"
 #include "src/ui/widgets/gk_submit_msg.hpp"
 #include "src/ui/xmpp/gkxmpprosterdialog.hpp"
+#include "src/ui/xmpp/gkxmppregistrationdialog.hpp"
 #include "src/models/tableview/gk_frequency_model.hpp"
 #include "src/models/tableview/gk_logger_model.hpp"
 #include "src/models/tableview/gk_active_msgs_model.hpp"
@@ -3170,16 +3171,25 @@ void MainWindow::on_actionView_Roster_triggered()
     return;
 }
 
+void MainWindow::on_actionSign_in_triggered()
+{
+    //
+    // TODO: Code up this function ASAP!
+
+    return;
+}
+
 void MainWindow::on_actionSign_out_triggered()
 {
-    /*
-    if (gkXmppClient->isConnected()) {
-        gkXmppClient->disconnectFromServer();
-        gkEventLogger->publishEvent(tr("Disconnected from XMPP server: %1")
-        .arg(xmpp_conn_details.server.url), GkSeverity::Info, "",
-        true, true, false, false);
-    }
-    */
+    m_xmppClient->disconnectFromServer();
+    return;
+}
+
+void MainWindow::on_action_Register_Account_triggered()
+{
+    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountCreate, xmpp_conn_details, m_xmppClient, gkEventLogger, this);
+    gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
+    gkXmppRegistrationDlg->show();
 
     return;
 }

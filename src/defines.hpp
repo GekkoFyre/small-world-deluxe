@@ -136,7 +136,9 @@ namespace GekkoFyre {
 #define GK_XMPP_IGNORE_SSL_ERRORS_COMBO_TRUE (1)
 #define GK_XMPP_URI_LOOKUP_DNS_SRV_METHOD (0)
 #define GK_XMPP_URI_LOOKUP_MANUAL_METHOD (1)
+
 #define GK_XMPP_VCARD_ROSTER_UPDATE_SECS (20)
+#define GK_XMPP_NETWORK_STATE_UPDATE_SECS (1)
 
 //
 // Networking settings (also sometimes related to XMPP!)
@@ -336,6 +338,15 @@ namespace Network {
         enum GkUriLookupMethod {
             QtDnsSrv,
             Manual
+        };
+
+        enum GkSaslAuthMethod {
+            Plain,
+            ScramSha1,
+            External,
+            DigestMd5,
+            CramMd5,
+            Anonymous
         };
 
         enum GkNetworkState {
