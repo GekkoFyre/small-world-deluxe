@@ -135,7 +135,8 @@ public:
     ~GkXmppClient() override;
 
     void createConnectionToServer(const QString &domain_url, const quint16 &network_port, const QString &username = "",
-                                  const QString &password = "", const bool &user_signup = false);
+                                  const QString &password = "", const QString &jid = "", const bool &user_signup = false,
+                                  const bool &send_registration_form = false);
     bool createMuc(const QString &room_name, const QString &room_subject, const QString &room_desc);
 
     static bool isHostnameSame(const QString &hostname, const QString &comparison = "");
@@ -147,6 +148,8 @@ public:
     // User, roster and presence details
     std::shared_ptr<QXmppRegistrationManager> getRegistrationMgr();
     QXmppPresence statusToPresence(const Network::GkXmpp::GkOnlineStatus &status);
+
+    QString getErrorCondition(const QXmppStanza::Error::Condition &condition);
 
 public slots:
     void clientConnected();
@@ -256,7 +259,6 @@ private:
     QMap<QString, std::pair<QByteArray, QByteArray>> m_vCardRoster;
 
     void initRosterMgr();
-    static QString getErrorCondition(const QXmppStanza::Error::Condition &condition);
 
 };
 };

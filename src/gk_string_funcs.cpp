@@ -247,6 +247,27 @@ std::string StringFuncs::csvOutputString(const std::deque<std::string> &csv_elem
 }
 
 /**
+ * @brief StringFuncs::htmlSpecialCharEncoding
+ * @author wysota <https://www.qtcentre.org/threads/52456-HTML-Unicode-ampersand-encoding?p=234858#post234858>,
+ * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>.
+ * @param string
+ * @return
+ */
+QString StringFuncs::htmlSpecialCharEncoding(const QString &string)
+{
+    QString encoded;
+    for (auto ch: string) {
+        if (ch.unicode() > 255) {
+            encoded += QString("&#%1;").arg((int)ch.unicode());
+        } else {
+            encoded += ch;
+        }
+    }
+
+    return encoded;
+}
+
+/**
  * @brief StringFuncs::extractNumbersFromStr will extract any identifiable integers from a given QString.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param str
@@ -558,5 +579,4 @@ bool StringFuncs::modalDlgBoxOk(const HWND &hwnd, const QString &title, const QS
 
     return false;
 }
-
 #endif

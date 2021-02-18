@@ -94,9 +94,9 @@ private slots:
     //
     // User, roster and presence details
     void recvRegistrationForm(const QXmppRegisterIq &registerIq);
-    void handleRegistrationForm(const QXmppRegisterIq &registerIq);
+    void handleRegistrationForm();
     void loginToServer(const QString &hostname, const quint16 &network_port, const QString &username = "",
-                       const QString &password = "", const bool &credentials_fail = false);
+                       const QString &password = "", const QString &jid = "", const bool &credentials_fail = false);
     void userSignup(const quint16 &network_port, const QString &jid, const QString &password);
 
     //
@@ -115,7 +115,6 @@ private slots:
 
 signals:
     void sendError(const QString &errorMsg);
-    void registerUser(const QXmppRegisterIq &registerIq);
 
 private:
     Ui::GkXmppRegistrationDialog *ui;
@@ -136,9 +135,13 @@ private:
     // Registration details for the user in question...
     GekkoFyre::Network::GkXmpp::GkUserConn m_connDetails;
     QString m_reg_jid;
+    QString m_reg_user;
+    QString m_reg_domain;
     QString m_reg_email;
     QString m_reg_password;
     QString m_reg_captcha;
+
+    QXmppRegisterIq m_registerIq;
     bool m_reg_remember_credentials;
 
     //

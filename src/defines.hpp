@@ -139,6 +139,7 @@ namespace GekkoFyre {
 
 #define GK_XMPP_VCARD_ROSTER_UPDATE_SECS (20)
 #define GK_XMPP_NETWORK_STATE_UPDATE_SECS (1)
+#define GK_XMPP_REGISTER_USER_SINGLE_SHOT_TIMER_SECS (3)
 
 //
 // Networking settings (also sometimes related to XMPP!)
