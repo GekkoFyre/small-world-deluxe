@@ -41,10 +41,13 @@
  ****************************************************************************************************/
 
 #include "src/gk_logger.hpp"
+#include <boost/exception/all.hpp>
+#include <boost/filesystem.hpp>
 #include <utility>
 #include <chrono>
 #include <thread>
 #include <QDateTime>
+#include <QStandardPaths>
 
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
@@ -69,30 +72,63 @@ std::mutex dataBatchMutex;
 std::mutex setDateMutex;
 std::mutex setEventNoMutex;
 
+namespace fs = boost::filesystem;
+namespace sys = boost::system;
+
 /**
  * @brief GkEventLogger::GkEventLogger
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param viewModel
  * @param parent
  */
-GkEventLogger::GkEventLogger(const QPointer<GekkoFyre::StringFuncs> &stringFuncs, QObject *parent)
+GkEventLogger::GkEventLogger(const QPointer<GekkoFyre::StringFuncs> &stringFuncs, QPointer<GekkoFyre::FileIo> fileIo, QObject *parent)
 {
-    setParent(parent);
-    gkStringFuncs = std::move(stringFuncs);
+    try {
+        setParent(parent);
+        gkStringFuncs = std::move(stringFuncs);
 
-    #if defined(GFYRE_ENBL_MSVC_WINTOAST)
-    WinToast::instance()->setAppName(QString(General::productName).toStdWString());
-    const auto aumi = WinToast::configureAUMI(QString(General::companyName).toStdWString(), QString(General::productName).toStdWString(),
-                                              QString(General::executableName).toStdWString(), QString(General::appVersion).toStdWString());
-    WinToast::instance()->setAppUserModelId(aumi);
-    if (!WinToast::instance()->initialize()) {
-        publishEvent(tr("Could not initialize toast notification library!"), GkSeverity::Error, "", false, true, false, true);
+        //
+        // File I/O
+        gkFileIo = std::move(fileIo);
+        sys::error_code ec;
+        fs::path slash = "/";
+        fs::path native_slash = slash.make_preferred().native();
+
+        const fs::path dir_to_append = fs::path(Filesystem::defaultDirAppend + native_slash.string() + Filesystem::fileLogData);
+        const fs::path log_data_loc = gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation),
+                                                                 true, QString::fromStdString(dir_to_append.string())).toStdString();
+        if (fs::exists(log_data_loc)) { // Entity already exists!
+            if (fs::is_directory(log_data_loc)) {
+                // Entity is a directory, so therefore we must delete it before continuing!
+                fs::remove_all(log_data_loc, ec);
+                if (ec.failed()) {
+                    throw ec.message();
+                }
+            }
+        }
+
+        gkWriteCsvIo.setFileName(QString::fromStdString(log_data_loc.string()));
+        if (!gkWriteCsvIo.open(QFile::Append | QFile::Text)) {
+            throw std::runtime_error(tr("Error with opening File I/O for logging data!").toStdString());
+        }
+
+        #if defined(GFYRE_ENBL_MSVC_WINTOAST)
+        WinToast::instance()->setAppName(QString(General::productName).toStdWString());
+        const auto aumi = WinToast::configureAUMI(QString(General::companyName).toStdWString(), QString(General::productName).toStdWString(),
+                                                  QString(General::executableName).toStdWString(), QString(General::appVersion).toStdWString());
+        WinToast::instance()->setAppUserModelId(aumi);
+        if (!WinToast::instance()->initialize()) {
+            publishEvent(tr("Could not initialize toast notification library!"), GkSeverity::Error, "", false, true, false, true);
+        }
+
+        toastTempl = std::make_unique<WinToastLib::WinToastTemplate>(WinToastTemplate::ImageAndText02);
+        toastTempl->setImagePath(QString(":/resources/contrib/images/vector/gekkofyre-networks/rionquosue/logo_blank_border_text_square_rionquosue.svg").toStdWString());
+        toastTempl->setTextField(QString(General::productName).toStdWString(), WinToastTemplate::FirstLine);
+        #endif
+    } catch (const std::exception &e) {
+        std::cerr << e.what() << std::endl;
+        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
     }
-
-    toastTempl = std::make_unique<WinToastLib::WinToastTemplate>(WinToastTemplate::ImageAndText02);
-    toastTempl->setImagePath(QString(":/resources/contrib/images/vector/gekkofyre-networks/rionquosue/logo_blank_border_text_square_rionquosue.svg").toStdWString());
-    toastTempl->setTextField(QString(General::productName).toStdWString(), WinToastTemplate::FirstLine);
-    #endif
 
     return;
 }
@@ -162,6 +198,8 @@ void GkEventLogger::publishEvent(const QString &event, const GkSeverity &severit
         }
     }
 
+    // TODO: Write out in a neater format! Such as XML, CSV, etc.
+    gkWriteCsvIo.write(event_log.mesg.message.toStdString().c_str(), event_log.mesg.message.length());
     return;
 }
 
@@ -276,6 +314,24 @@ void GkEventLogger::sendToConsole(const GkEventLogging &event_msg, const Events:
             std::cout << msg.toStdString() << std::endl;
         } else {
             std::cerr << msg.toStdString() << std::endl;
+        }
+    }
+
+    return;
+}
+
+/**
+ * @brief GkEventLogger::writeToCsv
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param event_msg
+ * @param severity
+ */
+void GkEventLogger::writeToCsv(const Events::Logging::GkEventLogging &event_msg, const Events::Logging::GkSeverity &severity)
+{
+    if (!event_msg.mesg.message.isNull() && !event_msg.mesg.message.isEmpty()) {
+        QString msg = event_msg.mesg.message;
+        if (!event_msg.mesg.arguments.isNull() && !event_msg.mesg.arguments.toString().isEmpty()) {
+
         }
     }
 
