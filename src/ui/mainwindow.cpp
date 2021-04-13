@@ -808,8 +808,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         ui->verticalSlider_vol_control->setValue(static_cast<qint32>(GK_AUDIO_VOL_INIT_PERCENTAGE));
         qint32 audio_vol_tick_pos = ui->verticalSlider_vol_control->value();
         const qreal audio_vol = qreal(audio_vol_tick_pos / 100.0);
-        gkAudioInput->setVolume(audio_vol);
-        gkAudioOutput->setVolume(audio_vol);
+        if (!gkAudioInput.isNull()) {
+            gkAudioInput->setVolume(audio_vol);
+        }
+
+        if (!gkAudioOutput.isNull()) {
+            gkAudioOutput->setVolume(audio_vol);
+        }
+
         ui->label_vol_control_disp->setText(tr("%1%").arg(QString::number(calcVolumeFactor(audio_vol_tick_pos, GK_AUDIO_VOL_FACTOR))));
 
         //
@@ -2070,6 +2076,7 @@ void MainWindow::readXmppSettings()
     QString xmpp_allow_mucs = gkDb->read_xmpp_settings(GkXmppCfg::XmppAllowMucs);
     QString xmpp_auto_connect = gkDb->read_xmpp_settings(GkXmppCfg::XmppAutoConnect);
     QString xmpp_auto_reconnect = gkDb->read_xmpp_settings(GkXmppCfg::XmppAutoReconnect);
+
     QByteArray xmpp_upload_avatar; // TODO: Finish this area of code, pronto!
     xmpp_conn_details.server.settings_client.upload_avatar_pixmap = xmpp_upload_avatar;
 
@@ -2129,6 +2136,7 @@ void MainWindow::readXmppSettings()
     QString xmpp_server_type = gkDb->read_xmpp_settings(GkXmppCfg::XmppServerType);
     QString xmpp_domain_port = gkDb->read_xmpp_settings(GkXmppCfg::XmppDomainPort);
     QString xmpp_enable_ssl = gkDb->read_xmpp_settings(GkXmppCfg::XmppEnableSsl);
+    QString xmpp_network_timeout = gkDb->read_xmpp_settings(GkXmppCfg::XmppNetworkTimeout);
     QString xmpp_ignore_ssl_errors = gkDb->read_xmpp_settings(GkXmppCfg::XmppIgnoreSslErrors);
     QString xmpp_uri_lookup_method = gkDb->read_xmpp_settings(GkXmppCfg::XmppUriLookupMethod);
 
@@ -2156,6 +2164,12 @@ void MainWindow::readXmppSettings()
         xmpp_conn_details.server.settings_client.enable_ssl = gkDb->boolStr(xmpp_enable_ssl.toStdString());
     } else {
         xmpp_conn_details.server.settings_client.enable_ssl = true;
+    }
+
+    if (!xmpp_network_timeout.isEmpty()) {
+        xmpp_conn_details.server.settings_client.network_timeout = xmpp_network_timeout.toInt();
+    } else {
+        xmpp_conn_details.server.settings_client.network_timeout = 15;
     }
 
     if (!xmpp_ignore_ssl_errors.isEmpty()) {

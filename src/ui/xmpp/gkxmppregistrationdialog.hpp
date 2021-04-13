@@ -94,7 +94,7 @@ private slots:
     //
     // User, roster and presence details
     void recvRegistrationForm(const QXmppRegisterIq &registerIq);
-    void handleRegistrationForm();
+    void handleRegistrationForm(const QXmppRegisterIq &registerIq);
     void loginToServer(const QString &hostname, const quint16 &network_port, const QString &username = "",
                        const QString &password = "", const QString &jid = "", const bool &credentials_fail = false);
     void userSignup(const quint16 &network_port, const QString &jid, const QString &password);
@@ -115,6 +115,7 @@ private slots:
 
 signals:
     void sendError(const QString &errorMsg);
+    void sendRegistrationForm(const QXmppRegisterIq &registerIq);
 
 private:
     Ui::GkXmppRegistrationDialog *ui;
@@ -141,7 +142,6 @@ private:
     QString m_reg_password;
     QString m_reg_captcha;
 
-    QXmppRegisterIq m_registerIq;
     bool m_reg_remember_credentials;
 
     //

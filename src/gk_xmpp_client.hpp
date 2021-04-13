@@ -76,6 +76,7 @@
 #include <QDomElement>
 #include <QStringList>
 #include <QDomDocument>
+#include <QElapsedTimer>
 #include <QNetworkReply>
 #include <QScopedPointer>
 #include <QCoreApplication>
@@ -135,8 +136,7 @@ public:
     ~GkXmppClient() override;
 
     void createConnectionToServer(const QString &domain_url, const quint16 &network_port, const QString &username = "",
-                                  const QString &password = "", const QString &jid = "", const bool &user_signup = false,
-                                  const bool &send_registration_form = false);
+                                  const QString &password = "", const QString &jid = "", const bool &user_signup = false);
     bool createMuc(const QString &room_name, const QString &room_subject, const QString &room_desc);
 
     static bool isHostnameSame(const QString &hostname, const QString &comparison = "");
@@ -163,6 +163,7 @@ public slots:
     //
     // Registration management
     void handleRegistrationForm(const QXmppRegisterIq &registerIq);
+    void requestRegistrationForm();
 
 private slots:
     //
@@ -226,6 +227,7 @@ private:
     // Timers and Event Loops
     //
     QPointer<QTimer> m_vCardRosterTimer;
+    std::unique_ptr<QElapsedTimer> m_dnsKeepAlive;
 
     //
     // User, roster and presence details
@@ -253,6 +255,7 @@ private:
     std::unique_ptr<QXmppMucManager> m_mucManager;
     std::unique_ptr<QXmppMucRoom> m_pRoom;
     std::unique_ptr<QXmppTransferManager> m_transferManager;
+    QScopedPointer<QXmppLogger> m_xmppLogger;
 
     GekkoFyre::Network::GkXmpp::GkNetworkState m_netState;
     QString m_id;

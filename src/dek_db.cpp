@@ -1436,6 +1436,9 @@ void GkLevelDb::write_xmpp_settings(const QString &value, const Settings::GkXmpp
             case Settings::GkXmppCfg::XmppEmailAddr:
                 batch.Put("XmppEmailAddr", value.toStdString());
                 break;
+            case Settings::GkXmppCfg::XmppNetworkTimeout:
+                batch.Put("XmppNetworkTimeout", value.toStdString());
+                break;
             default:
                 return;
         }
@@ -1651,6 +1654,9 @@ QString GkLevelDb::read_xmpp_settings(const Settings::GkXmppCfg &key)
             break;
         case Settings::GkXmppCfg::XmppEmailAddr:
             status = db->Get(read_options, "XmppEmailAddr", &value);
+            break;
+        case Settings::GkXmppCfg::XmppNetworkTimeout:
+            status = db->Get(read_options, "XmppNetworkTimeout", &value);
             break;
         default:
             return QString();

@@ -154,6 +154,9 @@
                           <property name="toolTip">
                            <string>Your personal and licensed as by the government, call-sign.</string>
                           </property>
+                          <property name="clearButtonEnabled">
+                           <bool>true</bool>
+                          </property>
                          </widget>
                         </item>
                         <item row="1" column="0">
@@ -164,7 +167,11 @@
                          </widget>
                         </item>
                         <item row="1" column="1">
-                         <widget class="QLineEdit" name="lineEdit_rig_maidenhead_2"/>
+                         <widget class="QLineEdit" name="lineEdit_rig_maidenhead_2">
+                          <property name="clearButtonEnabled">
+                           <bool>true</bool>
+                          </property>
+                         </widget>
                         </item>
                        </layout>
                       </widget>
@@ -183,7 +190,11 @@
                          </widget>
                         </item>
                         <item row="0" column="1">
-                         <widget class="QLineEdit" name="lineEdit_rig_cq_message"/>
+                         <widget class="QLineEdit" name="lineEdit_rig_cq_message">
+                          <property name="clearButtonEnabled">
+                           <bool>true</bool>
+                          </property>
+                         </widget>
                         </item>
                         <item row="1" column="0">
                          <widget class="QLabel" name="label_rig_reply_message">
@@ -193,7 +204,11 @@
                          </widget>
                         </item>
                         <item row="1" column="1">
-                         <widget class="QLineEdit" name="lineEdit_rig_reply_message"/>
+                         <widget class="QLineEdit" name="lineEdit_rig_reply_message">
+                          <property name="clearButtonEnabled">
+                           <bool>true</bool>
+                          </property>
+                         </widget>
                         </item>
                         <item row="2" column="0">
                          <widget class="QLabel" name="label_rig_station_info">
@@ -206,6 +221,9 @@
                          <widget class="QLineEdit" name="lineEdit_rig_station_info">
                           <property name="toolTip">
                            <string>This includes such details as your primary Rig(s), Antenna(e), Location, etc. but be sure to keep it short!</string>
+                          </property>
+                          <property name="clearButtonEnabled">
+                           <bool>true</bool>
                           </property>
                          </widget>
                         </item>
@@ -265,6 +283,9 @@
                                <horstretch>0</horstretch>
                                <verstretch>0</verstretch>
                               </sizepolicy>
+                             </property>
+                             <property name="clearButtonEnabled">
+                              <bool>true</bool>
                              </property>
                             </widget>
                            </item>
@@ -2001,6 +2022,9 @@ Thanks.</string>
                                     </item>
                                     <item row="2" column="1">
                                      <widget class="QCheckBox" name="checkBox_automatic_reconnect">
+                                      <property name="toolTip">
+                                       <string>Whether to automatically reconnect on disconnections or not.</string>
+                                      </property>
                                       <property name="text">
                                        <string/>
                                       </property>
@@ -2029,6 +2053,9 @@ Thanks.</string>
                                     </item>
                                     <item row="4" column="1">
                                      <widget class="QLineEdit" name="lineEdit_xmpp_client_username">
+                                      <property name="toolTip">
+                                       <string>The JID to your XMPP account.</string>
+                                      </property>
                                       <property name="maxLength">
                                        <number>256</number>
                                       </property>
@@ -2049,6 +2076,9 @@ Thanks.</string>
                                     </item>
                                     <item row="5" column="1">
                                      <widget class="QLineEdit" name="lineEdit_xmpp_client_password">
+                                      <property name="toolTip">
+                                       <string>The password to your account. Please choose a secure one wisely!</string>
+                                      </property>
                                       <property name="maxLength">
                                        <number>256</number>
                                       </property>
@@ -2134,15 +2164,25 @@ Thanks.</string>
                                       </property>
                                      </widget>
                                     </item>
-                                    <item row="6" column="0">
+                                    <item row="3" column="1">
+                                     <widget class="Line" name="line_3">
+                                      <property name="orientation">
+                                       <enum>Qt::Horizontal</enum>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item row="5" column="0">
                                      <widget class="QLabel" name="label_xmpp_client_email_address">
                                       <property name="text">
                                        <string>E-mail: </string>
                                       </property>
                                      </widget>
                                     </item>
-                                    <item row="6" column="1">
+                                    <item row="5" column="1">
                                      <widget class="QLineEdit" name="lineEdit_xmpp_client_email_address">
+                                      <property name="toolTip">
+                                       <string>Your email address.</string>
+                                      </property>
                                       <property name="maxLength">
                                        <number>512</number>
                                       </property>
@@ -2154,18 +2194,22 @@ Thanks.</string>
                                       </property>
                                      </widget>
                                     </item>
-                                    <item row="3" column="1">
-                                     <widget class="Line" name="line_3">
-                                      <property name="orientation">
-                                       <enum>Qt::Horizontal</enum>
+                                    <item row="4" column="0">
+                                     <widget class="QLabel" name="label_xmpp_server_nickname">
+                                      <property name="text">
+                                       <string>Nickname: </string>
                                       </property>
                                      </widget>
                                     </item>
-                                    <item row="5" column="1">
-                                     <layout class="QHBoxLayout" name="horizontalLayout_54"/>
-                                    </item>
                                     <item row="4" column="1">
-                                     <layout class="QHBoxLayout" name="horizontalLayout_55"/>
+                                     <widget class="QLineEdit" name="lineEdit_xmpp_server_nickname">
+                                      <property name="placeholderText">
+                                       <string>John Doe</string>
+                                      </property>
+                                      <property name="clearButtonEnabled">
+                                       <bool>true</bool>
+                                      </property>
+                                     </widget>
                                     </item>
                                    </layout>
                                   </widget>
@@ -2224,8 +2268,14 @@ Thanks.</string>
                                     </property>
                                     <item>
                                      <widget class="QLineEdit" name="lineEdit_xmpp_upload_avatar_file_browser">
+                                      <property name="toolTip">
+                                       <string>Proudly show your avatar to the world!</string>
+                                      </property>
                                       <property name="placeholderText">
                                        <string>C:\Users\ExampleUser\Pictures\avatar.png</string>
+                                      </property>
+                                      <property name="clearButtonEnabled">
+                                       <bool>true</bool>
                                       </property>
                                      </widget>
                                     </item>
@@ -2457,6 +2507,20 @@ Thanks.</string>
                                 </property>
                                </widget>
                               </item>
+                              <item row="1" column="0">
+                               <widget class="QLabel" name="label_xmpp_server_ssl_errors">
+                                <property name="text">
+                                 <string>SSL Errors: </string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="1" column="1">
+                               <widget class="QComboBox" name="comboBox_xmpp_server_ssl_errors">
+                                <property name="toolTip">
+                                 <string>Should we report on SSL errors or ignore them entirely?</string>
+                                </property>
+                               </widget>
+                              </item>
                               <item row="2" column="0">
                                <widget class="QLabel" name="label_xmpp_server_url">
                                 <property name="text">
@@ -2469,17 +2533,42 @@ Thanks.</string>
                                 <property name="toolTip">
                                  <string>The Host URL of the XMPP server you wish to connect towards when using the 'custom option'.</string>
                                 </property>
-                               </widget>
-                              </item>
-                              <item row="1" column="0">
-                               <widget class="QLabel" name="label_xmpp_server_ssl_errors">
-                                <property name="text">
-                                 <string>SSL Errors: </string>
+                                <property name="clearButtonEnabled">
+                                 <bool>true</bool>
                                 </property>
                                </widget>
                               </item>
-                              <item row="1" column="1">
-                               <widget class="QComboBox" name="comboBox_xmpp_server_ssl_errors"/>
+                              <item row="3" column="0">
+                               <widget class="QLabel" name="label_xmpp_server_network_timeout">
+                                <property name="text">
+                                 <string>Network Timeout: </string>
+                                </property>
+                               </widget>
+                              </item>
+                              <item row="3" column="1">
+                               <widget class="QSpinBox" name="spinBox_xmpp_server_network_timeout">
+                                <property name="toolTip">
+                                 <string>How long should we wait for a network connectivity operation to proceed to completion before failing.</string>
+                                </property>
+                                <property name="buttonSymbols">
+                                 <enum>QAbstractSpinBox::PlusMinus</enum>
+                                </property>
+                                <property name="accelerated">
+                                 <bool>true</bool>
+                                </property>
+                                <property name="showGroupSeparator" stdset="0">
+                                 <bool>true</bool>
+                                </property>
+                                <property name="suffix">
+                                 <string> seconds</string>
+                                </property>
+                                <property name="minimum">
+                                 <number>15</number>
+                                </property>
+                                <property name="maximum">
+                                 <number>432000</number>
+                                </property>
+                               </widget>
                               </item>
                              </layout>
                             </widget>
@@ -2522,6 +2611,12 @@ Thanks.</string>
                                <widget class="QSpinBox" name="spinBox_xmpp_server_port">
                                 <property name="toolTip">
                                  <string>The TCP port of the XMPP server you are making a connection towards.</string>
+                                </property>
+                                <property name="accelerated">
+                                 <bool>true</bool>
+                                </property>
+                                <property name="showGroupSeparator" stdset="0">
+                                 <bool>true</bool>
                                 </property>
                                 <property name="suffix">
                                  <string/>

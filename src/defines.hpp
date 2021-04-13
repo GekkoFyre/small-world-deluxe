@@ -139,7 +139,7 @@ namespace GekkoFyre {
 
 #define GK_XMPP_VCARD_ROSTER_UPDATE_SECS (20)
 #define GK_XMPP_NETWORK_STATE_UPDATE_SECS (1)
-#define GK_XMPP_REGISTER_USER_SINGLE_SHOT_TIMER_SECS (3)
+#define GK_XMPP_HANDLE_DISCONNECTION_SINGLE_SHOT_TIMER_SECS (5)
 
 //
 // Networking settings (also sometimes related to XMPP!)
@@ -396,6 +396,7 @@ namespace Network {
             GkUriLookupMethod uri_lookup_method;            // The method by which we lookup the connection settings for the given XMPP server, whether by automatic DNS SRV Lookup or manual user input.
             bool enable_ssl;                                // Enable the absolute usage of SSL/TLS, otherwise throw an exception if not available!
             bool ignore_ssl_errors;                         // Whether to ignore any SSL errors presented by the server and/or client.
+            qint32 network_timeout;                         // A timeout value for anything network related, such as serving DNS queries for SRV records, to finally making a connection towards XMPP servers.
             QByteArray upload_avatar_pixmap;                // The byte-array data for the avatar that's to be uploaded upon next making a successful connection to the given XMPP server.
         };
 
@@ -633,7 +634,8 @@ namespace Database {
             XmppPassword,
             XmppNickname,
             XmppEmailAddr,
-            XmppUriLookupMethod
+            XmppUriLookupMethod,
+            XmppNetworkTimeout
         };
 
         enum Codec2Mode {

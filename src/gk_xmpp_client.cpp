@@ -43,6 +43,7 @@
 #include <qxmpp/QXmppMucIq.h>
 #include <qxmpp/QXmppUtils.h>
 #include <qxmpp/QXmppVCardIq.h>
+#include <qxmpp/QXmppStreamFeatures.h>
 #include <iostream>
 #include <exception>
 #include <QImage>
@@ -116,7 +117,7 @@ QString GkXmppVcardCache::getElementStore(const QScopedPointer<QDomDocument> &do
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param connection_details The details pertaining to making a successful connection towards the given XMPP server.
  * @param eventLogger The object for processing logging information.
- * @param connectNow Whether to intiiate a connection now or at a later time instead.
+ * @param connectNow Whether to initiate a connection now or at a later time instead.
  * @param parent The parent object.
  */
 GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoFyre::GkLevelDb> database,
@@ -124,6 +125,7 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
                            :                                          m_rosterManager(findExtension<QXmppRosterManager>()),
                                                                       m_vcardMgr(findExtension<QXmppVCardManager>()),
                                                                       m_versionMgr(findExtension<QXmppVersionManager>()),
+                                                                      m_xmppLogger(QXmppLogger::getLogger()),
                                                                       m_discoMgr(findExtension<QXmppDiscoveryManager>()),
                                                                       QXmppClient(parent)
 {
@@ -206,7 +208,7 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
                 //
                 // Settings for a custom server have been specified!
                 if (m_connDetails.server.settings_client.uri_lookup_method == GkUriLookupMethod::QtDnsSrv) {
-                    m_dns = new QDnsLookup(this); // TODO: Finish implementing this!
+                    m_dns = new QDnsLookup(this);
 
                     //
                     // Setup the signals for the DNS object
@@ -216,6 +218,12 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
                     dns_lookup_str = QString("_xmpp-client._tcp.%1").arg(m_connDetails.server.url);
                     m_dns->setName(dns_lookup_str);
                     m_dns->lookup();
+
+                    m_dnsKeepAlive = std::make_unique<QElapsedTimer>();
+                    m_dnsKeepAlive->start();
+                    while (!m_dns->isFinished()) {
+                        continue;
+                    }
                 }
 
                 break;
@@ -227,14 +235,13 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
 
         //
         // Setup logging...
-        QXmppLogger *logger = QXmppLogger::getLogger();
-        logger->setLoggingType(QXmppLogger::SignalLogging);
-        QObject::connect(logger, SIGNAL(message(QXmppLogger::MessageType, const QString &)),
+        m_xmppLogger->setLoggingType(QXmppLogger::SignalLogging);
+        QObject::connect(m_xmppLogger.get(), SIGNAL(message(QXmppLogger::MessageType, const QString &)),
                          gkEventLogger, SLOT(recvXmppLog(QXmppLogger::MessageType, const QString &)));
 
         if (m_connDetails.server.settings_client.auto_connect || connectNow) {
             createConnectionToServer(m_connDetails.server.url, m_connDetails.server.port, getUsername(m_connDetails.jid),
-                                     m_connDetails.password, m_connDetails.jid, false, false);
+                                     m_connDetails.password, m_connDetails.jid, false);
         }
 
         //
@@ -659,6 +666,27 @@ void GkXmppClient::handleRegistrationForm(const QXmppRegisterIq &registerIq)
 }
 
 /**
+ * @brief GkXmppClient::requestRegistrationForm
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppClient::requestRegistrationForm()
+{
+    m_registerManager->setRegistrationFormToSend(QXmppRegisterIq());
+    m_registerManager->setRegisterOnConnectEnabled(true);
+
+    QObject::connect(m_xmppLogger.get(), &QXmppLogger::message, this, [&](QXmppLogger::MessageType type, const QString &text) {
+        if (type == QXmppLogger::SentMessage) {
+            text.contains(QStringLiteral("<query xmlns=\"jabber:iq:register\"/>"));
+        }
+    });
+
+    m_registerManager->requestRegistrationForm();
+    m_registerManager->setRegisterOnConnectEnabled(false);
+
+    return;
+}
+
+/**
  * @brief GkXmppClient::handleServers
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
@@ -669,6 +697,17 @@ void GkXmppClient::handleServers()
     switch (m_dns->error()) {
         case QDnsLookup::NoError:
             // No errors! Yay!
+            m_dnsRecords = m_dns->serviceRecords();
+            if (!m_dnsRecords.isEmpty()) {
+                size_t counter = 0;
+                for (const auto &record: m_dnsRecords) {
+                    ++counter;
+                    gkEventLogger->publishEvent(tr("DNS lookup succeeded for, \"%1\"! Record %1 of %2 found: %3 (target port: %4)")
+                    .arg(QString::number(counter)).arg(QString::number(m_dnsRecords.size())).arg(record.name()).arg(QString::number(record.port())),
+                    GkSeverity::Error, "", false, true, false, true);
+                }
+            }
+
             break;
         case QDnsLookup::ResolverError:
             gkEventLogger->publishEvent(tr("DNS lookup failed for, \"%1\". There has been a Resolver Error.").arg(m_connDetails.server.url), GkSeverity::Error, "",
@@ -928,8 +967,7 @@ void GkXmppClient::recvXmppLog(QXmppLogger::MessageType msgType, const QString &
  * @param send_registration_form
  */
 void GkXmppClient::createConnectionToServer(const QString &domain_url, const quint16 &network_port, const QString &username,
-                                            const QString &password, const QString &jid, const bool &user_signup,
-                                            const bool &send_registration_form)
+                                            const QString &password, const QString &jid, const bool &user_signup)
 {
     try {
         if (domain_url.isEmpty()) {
@@ -945,7 +983,6 @@ void GkXmppClient::createConnectionToServer(const QString &domain_url, const qui
             // Allow the registration of a new user to proceed!
             // Sets whether to only request the registration form and not to connect with username/password.
             //
-            m_registerManager->setRegistrationFormToSend(QXmppRegisterIq());
             m_registerManager->setRegisterOnConnectEnabled(true); // https://doc.qxmpp.org/qxmpp-1/classQXmppRegistrationManager.html
         }
 
@@ -954,19 +991,23 @@ void GkXmppClient::createConnectionToServer(const QString &domain_url, const qui
         // to be of any use! If these are empty initially, then we are attempting to
         // make an in-band user registration...
         //
-        if (username.isEmpty() || password.isEmpty() || m_registerManager->registerOnConnectEnabled()) {
-            m_presence = nullptr;
+        if (!username.isEmpty() && !password.isEmpty() && !jid.isEmpty() && !m_registerManager->registerOnConnectEnabled()) {
+            config.setJid(jid);
+            config.setUser(username);
+            config.setPassword(password);
+            config.setHost(domain_url);
+            config.setPort(network_port);
         } else {
-            config.setJid(jid);
-            config.setPassword(password);
-        }
-
-        if (send_registration_form) {
             //
-            // If finalizing and sending the registration form, then otherwise set the username and
-            // password regardless!
-            config.setJid(jid);
-            config.setPassword(password);
+            // User in-band registration is most likely requested so therefore we will proceed with that in mind!
+            if (!domain_url.isEmpty()) {
+                m_presence = nullptr;
+                config.setDomain(domain_url);
+                config.setPort(network_port);
+                m_registerManager->requestRegistrationForm();
+            } else {
+                throw std::invalid_argument(tr("The given URL (used for the JID) is empty! As such, connection towards the XMPP server cannot proceed.").toStdString());
+            }
         }
 
         if (!m_registerManager->registerOnConnectEnabled()) {
@@ -995,9 +1036,6 @@ void GkXmppClient::createConnectionToServer(const QString &domain_url, const qui
         }
 
         config.setResource(General::companyNameMin);
-        config.setDomain(domain_url);
-        config.setHost(domain_url);
-        config.setPort(network_port);
         config.setUseSASLAuthentication(true);
         config.setSaslAuthMechanism("PLAIN");
 
