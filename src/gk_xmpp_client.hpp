@@ -42,6 +42,7 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
 #include "src/models/system/gk_network_ping_model.hpp"
 #include <qxmpp/QXmppIq.h>
@@ -59,8 +60,12 @@
 #include <qxmpp/QXmppClientExtension.h>
 #include <qxmpp/QXmppDiscoveryManager.h>
 #include <qxmpp/QXmppRegistrationManager.h>
+#include <memory>
+#include <utility>
+#include <QMap>
 #include <QUrl>
 #include <QList>
+#include <QTimer>
 #include <QString>
 #include <QObject>
 #include <QPointer>
@@ -71,6 +76,7 @@
 #include <QDomElement>
 #include <QStringList>
 #include <QDomDocument>
+#include <QElapsedTimer>
 #include <QNetworkReply>
 #include <QScopedPointer>
 #include <QCoreApplication>
@@ -78,68 +84,31 @@
 
 namespace GekkoFyre {
 
-class GkXmppVcardData {
-
-public:
-    QString nickname;
-    QString fullName;
-    QString firstName;
-    QString middleName;
-    QString lastName;
-    QString webUrl;
-    QString email;
-
-    GkXmppVcardData() {
-        nickname.clear();
-        fullName.clear();
-        firstName.clear();
-        middleName.clear();
-        lastName.clear();
-        webUrl.clear();
-        email.clear();
-    }
-
-    bool isEmpty() const {
-        return (nickname.isEmpty() && fullName.isEmpty() && firstName.isEmpty() && middleName.isEmpty() && lastName.isEmpty() &&
-                webUrl.isEmpty() && email.isEmpty());
-    }
-
-};
-
-class GkXmppVcardCache : public QObject {
-    Q_OBJECT
-
-public:
-    explicit GkXmppVcardCache(QObject *parent = nullptr) : QObject(parent) {}
-    ~GkXmppVcardCache() override = default;
-
-    GkXmppVcardData grabVCard(const QString &bareJid);
-
-private:
-    QString getElementStore(const QScopedPointer<QDomDocument> &doc, const QString &nodeName);
-
-};
-
 class GkXmppClient : public QXmppClient {
     Q_OBJECT
 
 public:
-    explicit GkXmppClient(const Network::GkXmpp::GkUserConn &connection_details,
+    explicit GkXmppClient(const Network::GkXmpp::GkUserConn &connection_details, QPointer<GekkoFyre::GkLevelDb> database,
                           QPointer<GekkoFyre::GkEventLogger> eventLogger, const bool &connectNow = false,
                           QObject *parent = nullptr);
     ~GkXmppClient() override;
 
     void createConnectionToServer(const QString &domain_url, const quint16 &network_port, const QString &username = "",
-                                  const QString &password = "", const bool &user_signup = false);
+                                  const QString &password = "", const QString &jid = "", const bool &user_signup = false);
     bool createMuc(const QString &room_name, const QString &room_subject, const QString &room_desc);
 
     static bool isHostnameSame(const QString &hostname, const QString &comparison = "");
+    static QString getUsername(const QString &username);
     static QString getHostname(const QString &username);
+    GekkoFyre::Network::GkXmpp::GkNetworkState getNetworkState() const;
 
     //
     // User, roster and presence details
     std::shared_ptr<QXmppRegistrationManager> getRegistrationMgr();
     QXmppPresence statusToPresence(const Network::GkXmpp::GkOnlineStatus &status);
+    bool deleteUserAccount();
+
+    QString getErrorCondition(const QXmppStanza::Error::Condition &condition);
 
 public slots:
     void clientConnected();
@@ -183,6 +152,7 @@ signals:
     //
     // User, roster and presence details
     void setPresence(const QXmppPresence::Type &pres);
+    void sendRegistrationForm(const QXmppRegisterIq &registerIq);
 
     //
     // Event & Logging management
@@ -190,6 +160,7 @@ signals:
     void sendError(const QXmppClient::Error &error);
 
 private:
+    QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GkEventLogger> gkEventLogger;
     QPointer<GkNetworkPingModel> gkNetworkPing;
     QList<QDnsServiceRecord> m_dnsRecords;
@@ -197,11 +168,16 @@ private:
     //
     // Connection details and related variables
     //
-    Network::GkXmpp::GkUserConn gkConnDetails;
+    Network::GkXmpp::GkUserConn m_connDetails;
     QPointer<QDnsLookup> m_dns;
     qint32 m_keepalive;
     std::unique_ptr<QXmppDiscoveryManager> m_discoMgr;
     std::unique_ptr<QXmppVersionManager> m_versionMgr;
+
+    //
+    // Timers and Event Loops
+    //
+    std::unique_ptr<QElapsedTimer> m_dnsKeepAlive;
 
     //
     // User, roster and presence details
@@ -210,12 +186,6 @@ private:
     std::unique_ptr<QXmppPresence> m_presence;
     std::shared_ptr<QXmppRosterManager> m_rosterManager;
     QStringList rosterGroups;
-
-    //
-    // VCards
-    //
-    std::unique_ptr<GkXmppVcardCache> m_vcardCache;
-    std::unique_ptr<QXmppVCardManager> m_vcardMgr;
 
     //
     // SSL / TLS / STARTTLS
@@ -230,12 +200,12 @@ private:
     std::unique_ptr<QXmppMucManager> m_mucManager;
     std::unique_ptr<QXmppMucRoom> m_pRoom;
     std::unique_ptr<QXmppTransferManager> m_transferManager;
+    QScopedPointer<QXmppLogger> m_xmppLogger;
 
     GekkoFyre::Network::GkXmpp::GkNetworkState m_netState;
     QString m_id;
 
     void initRosterMgr();
-    static QString getErrorCondition(const QXmppStanza::Error::Condition &condition);
 
 };
 };

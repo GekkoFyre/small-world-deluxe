@@ -42,10 +42,12 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include "src/file_io.hpp"
 #include "src/models/tableview/gk_logger_model.hpp"
 #include <qxmpp/QXmppLogger.h>
 #include <mutex>
 #include <memory>
+#include <QFile>
 #include <QList>
 #include <QObject>
 #include <QString>
@@ -62,7 +64,7 @@ class GkEventLogger : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkEventLogger(const QPointer<GekkoFyre::StringFuncs> &stringFuncs, QObject *parent = nullptr);
+    explicit GkEventLogger(const QPointer<GekkoFyre::StringFuncs> &stringFuncs, QPointer<GekkoFyre::FileIo> fileIo, QObject *parent = nullptr);
     ~GkEventLogger() override;
 
 public slots:
@@ -80,6 +82,11 @@ private:
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QList<GekkoFyre::System::Events::Logging::GkEventLogging> eventLogDb;                       // Where the event log itself is stored in memory...
 
+    //
+    // File I/O
+    QPointer<GekkoFyre::FileIo> gkFileIo;
+    QFile gkWriteCsvIo;
+
     #if defined(GFYRE_ENBL_MSVC_WINTOAST)
     std::unique_ptr<WinToastLib::WinToastTemplate> toastTempl;
     #endif
@@ -88,6 +95,8 @@ private:
     void systemNotification(const QString &title, const GekkoFyre::System::Events::Logging::GkEventLogging &event_msg);
     void sendToConsole(const GekkoFyre::System::Events::Logging::GkEventLogging &event_msg,
                        const GekkoFyre::System::Events::Logging::GkSeverity &severity);
+    void writeToCsv(const GekkoFyre::System::Events::Logging::GkEventLogging &event_msg,
+                    const GekkoFyre::System::Events::Logging::GkSeverity &severity);
 
 };
 };

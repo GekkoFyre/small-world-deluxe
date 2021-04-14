@@ -90,6 +90,8 @@ public:
     std::deque<std::string> csvRemoveElement(const std::deque<std::string> &csv_elements, const std::string &val_to_remove);
     std::string csvOutputString(const std::deque<std::string> &csv_elements);
 
+    static QString htmlSpecialCharEncoding(const QString &string);
+
     QList<int> extractNumbersFromStr(const QString &str);
     QString zeroPadding(const QVariant &num, const qint32 &places);
 

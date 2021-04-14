@@ -45,12 +45,14 @@
 #include "src/dek_db.hpp"
 #include "src/gk_xmpp_client.hpp"
 #include "src/ui/xmpp/gkxmppmessagedialog.hpp"
+#include "src/models/treeview/xmpp/gk_xmpp_roster_model.hpp"
 #include "src/gk_logger.hpp"
 #include <memory>
 #include <QString>
 #include <QObject>
 #include <QDialog>
 #include <QPointer>
+#include <QSharedPointer>
 
 namespace Ui {
 class GkXmppRosterDialog;
@@ -71,6 +73,11 @@ private slots:
     void on_pushButton_user_login_clicked();
     void on_pushButton_user_create_account_clicked();
 
+    //
+    // XMPP Roster management and related
+    //
+    void updateActions();
+
 private:
     Ui::GkXmppRosterDialog *ui;
 
@@ -78,6 +85,12 @@ private:
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::GkXmppClient> m_xmppClient;
     bool shownXmppPreviewNotice;
+
+    //
+    // QTreeView and related
+    //
+    QSharedPointer<GekkoFyre::GkXmppRosterTreeViewItem> m_rootItem;
+    QPointer<GekkoFyre::GkXmppRosterTreeViewModel> m_xmppRosterTreeViewModel;
 
     //
     // QXmpp and XMPP related

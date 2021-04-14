@@ -43,6 +43,7 @@
 #include "src/ui/gkaudioplaydialog.hpp"
 #include "src/ui/widgets/gk_submit_msg.hpp"
 #include "src/ui/xmpp/gkxmpprosterdialog.hpp"
+#include "src/ui/xmpp/gkxmppregistrationdialog.hpp"
 #include "src/models/tableview/gk_frequency_model.hpp"
 #include "src/models/tableview/gk_logger_model.hpp"
 #include "src/models/tableview/gk_active_msgs_model.hpp"
@@ -393,10 +394,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 QPointer<GkEventLoggerTableViewModel> gkEventLoggerModel = new GkEventLoggerTableViewModel(gkDb, this);
                 ui->tableView_maingui_logs->setModel(gkEventLoggerModel);
                 ui->tableView_maingui_logs->horizontalHeader()->setVisible(true);
-                ui->tableView_maingui_logs->horizontalHeader()->setStretchLastSection(true);
+                ui->tableView_maingui_logs->horizontalHeader()->setSectionResizeMode(GK_EVENTLOG_TABLEVIEW_MODEL_MESSAGE_IDX, QHeaderView::Stretch);
                 ui->tableView_maingui_logs->show();
 
-                gkEventLogger = new GkEventLogger(gkStringFuncs, this);
+                gkEventLogger = new GkEventLogger(gkStringFuncs, fileIo, this);
                 QObject::connect(gkEventLogger, SIGNAL(sendEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &)),
                                  gkEventLoggerModel, SLOT(insertData(const GekkoFyre::System::Events::Logging::GkEventLogging &)));
                 QObject::connect(gkEventLogger, SIGNAL(removeEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &)),
@@ -690,7 +691,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             // The ready() signal from QAudioInput is utterly broken and should not be relied upon in any capacity. DO NOT USE.
             //
             gkAudioInputReadySignal = new QTimer(this);
-            connect(gkAudioInputReadySignal, SIGNAL(timeout()), this, SLOT(processAudioInMain()));
+            QObject::connect(gkAudioInputReadySignal, SIGNAL(timeout()), this, SLOT(processAudioInMain()));
             gkAudioInputReadySignal->start(100); // Execute SLOT, `processAudioInMain()`, every 100 milliseconds!
         }
 
@@ -807,8 +808,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         ui->verticalSlider_vol_control->setValue(static_cast<qint32>(GK_AUDIO_VOL_INIT_PERCENTAGE));
         qint32 audio_vol_tick_pos = ui->verticalSlider_vol_control->value();
         const qreal audio_vol = qreal(audio_vol_tick_pos / 100.0);
-        gkAudioInput->setVolume(audio_vol);
-        gkAudioOutput->setVolume(audio_vol);
+        if (!gkAudioInput.isNull()) {
+            gkAudioInput->setVolume(audio_vol);
+        }
+
+        if (!gkAudioOutput.isNull()) {
+            gkAudioOutput->setVolume(audio_vol);
+        }
+
         ui->label_vol_control_disp->setText(tr("%1%").arg(QString::number(calcVolumeFactor(audio_vol_tick_pos, GK_AUDIO_VOL_FACTOR))));
 
         //
@@ -896,7 +903,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         //
         // Initialize the QXmpp client!
-        m_xmppClient = new GkXmppClient(xmpp_conn_details, gkEventLogger, false, nullptr);
+        m_xmppClient = new GkXmppClient(xmpp_conn_details, gkDb, gkEventLogger, false, nullptr);
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
@@ -1707,11 +1714,12 @@ void MainWindow::mapInsertFirewallPorts()
     gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_CLIENT_5222, std::make_pair(GkNetworkProtocol::TCP, false)));
     gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_CLIENT_SSL_5223, std::make_pair(GkNetworkProtocol::TCP, false)));
     gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_SERVER_5269, std::make_pair(GkNetworkProtocol::TCP, false)));
-    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_LOCAL_MSGING_5298, std::make_pair(GkNetworkProtocol::TCP, false)));
-    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_BOSH_SSL_5443, std::make_pair(GkNetworkProtocol::TCP, false)));
-    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_FILE_XFERS_8010, std::make_pair(GkNetworkProtocol::TCP, false)));
+    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_HTTP_BINDING_7070, std::make_pair(GkNetworkProtocol::TCP, false)));
+    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_HTTPS_BINDING_7443, std::make_pair(GkNetworkProtocol::TCP, false)));
+    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_CONNECT_MGR_5262, std::make_pair(GkNetworkProtocol::TCP, false)));
+    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_CONNECT_MGR_SSL_5263, std::make_pair(GkNetworkProtocol::TCP, false)));
+    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_FILE_XFER_PROXY_7777, std::make_pair(GkNetworkProtocol::TCP, false)));
 
-    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_UDP_PORT_XMPP_LOCAL_MSGING_5298, std::make_pair(GkNetworkProtocol::UDP, false)));
     return;
 }
 
@@ -1776,7 +1784,7 @@ std::map<qint32, std::pair<Network::GkNetworkProtocol, bool>> MainWindow::proces
 
             //
             // Check that the main executable for Small World Deluxe is already added to the Microsoft Windows firewall already or not!
-            gkSystem->WindowsFirewallAppIsEnabled(pfwProfile, complete_path.toStdWString().c_str(), &isSwdEnabled);
+            hr = gkSystem->WindowsFirewallAppIsEnabled(pfwProfile, complete_path.toStdWString().c_str(), &isSwdEnabled);
             if (FAILED(hr)) {
                 auto errMsg = gkSystem->processHResult(hr);
                 throw std::runtime_error(tr("An issue was encountered while adding, \"%1\", to the system firewall! Error:\n\n%1").arg(errMsg).toStdString());
@@ -2068,6 +2076,7 @@ void MainWindow::readXmppSettings()
     QString xmpp_allow_mucs = gkDb->read_xmpp_settings(GkXmppCfg::XmppAllowMucs);
     QString xmpp_auto_connect = gkDb->read_xmpp_settings(GkXmppCfg::XmppAutoConnect);
     QString xmpp_auto_reconnect = gkDb->read_xmpp_settings(GkXmppCfg::XmppAutoReconnect);
+
     QByteArray xmpp_upload_avatar; // TODO: Finish this area of code, pronto!
     xmpp_conn_details.server.settings_client.upload_avatar_pixmap = xmpp_upload_avatar;
 
@@ -2127,6 +2136,7 @@ void MainWindow::readXmppSettings()
     QString xmpp_server_type = gkDb->read_xmpp_settings(GkXmppCfg::XmppServerType);
     QString xmpp_domain_port = gkDb->read_xmpp_settings(GkXmppCfg::XmppDomainPort);
     QString xmpp_enable_ssl = gkDb->read_xmpp_settings(GkXmppCfg::XmppEnableSsl);
+    QString xmpp_network_timeout = gkDb->read_xmpp_settings(GkXmppCfg::XmppNetworkTimeout);
     QString xmpp_ignore_ssl_errors = gkDb->read_xmpp_settings(GkXmppCfg::XmppIgnoreSslErrors);
     QString xmpp_uri_lookup_method = gkDb->read_xmpp_settings(GkXmppCfg::XmppUriLookupMethod);
 
@@ -2154,6 +2164,12 @@ void MainWindow::readXmppSettings()
         xmpp_conn_details.server.settings_client.enable_ssl = gkDb->boolStr(xmpp_enable_ssl.toStdString());
     } else {
         xmpp_conn_details.server.settings_client.enable_ssl = true;
+    }
+
+    if (!xmpp_network_timeout.isEmpty()) {
+        xmpp_conn_details.server.settings_client.network_timeout = xmpp_network_timeout.toInt();
+    } else {
+        xmpp_conn_details.server.settings_client.network_timeout = 15;
     }
 
     if (!xmpp_ignore_ssl_errors.isEmpty()) {
@@ -3169,16 +3185,48 @@ void MainWindow::on_actionView_Roster_triggered()
     return;
 }
 
+void MainWindow::on_actionSign_in_triggered()
+{
+    if (!xmpp_conn_details.username.isEmpty()) {
+        switch (xmpp_conn_details.server.type) {
+            case GkServerType::GekkoFyre:
+                if (!xmpp_conn_details.password.isEmpty()) { // A password is required for GekkoFyre Networks' XMPP server!
+                    m_xmppClient->createConnectionToServer(xmpp_conn_details.server.url, xmpp_conn_details.server.port, xmpp_conn_details.username, xmpp_conn_details.password, QString(), false);
+                }
+
+                break;
+            case GkServerType::Custom:
+                if (!xmpp_conn_details.password.isEmpty()) { // A password is required for GekkoFyre Networks' XMPP server!
+                    // Password provided
+                    m_xmppClient->createConnectionToServer(xmpp_conn_details.server.url, xmpp_conn_details.server.port, xmpp_conn_details.username, xmpp_conn_details.password, QString(), true);
+                } else {
+                    // Connecting anonymously
+                    m_xmppClient->createConnectionToServer(xmpp_conn_details.server.url, xmpp_conn_details.server.port, xmpp_conn_details.username, QString(), QString(), true);
+                }
+
+                break;
+            default:
+                break;
+        }
+    }
+
+    return;
+}
+
 void MainWindow::on_actionSign_out_triggered()
 {
-    /*
-    if (gkXmppClient->isConnected()) {
-        gkXmppClient->disconnectFromServer();
-        gkEventLogger->publishEvent(tr("Disconnected from XMPP server: %1")
-        .arg(xmpp_conn_details.server.url), GkSeverity::Info, "",
-        true, true, false, false);
+    if (m_xmppClient->isConnected()) {
+        m_xmppClient->disconnectFromServer();
     }
-    */
+
+    return;
+}
+
+void MainWindow::on_action_Register_Account_triggered()
+{
+    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountCreate, xmpp_conn_details, m_xmppClient, gkEventLogger, this);
+    gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
+    gkXmppRegistrationDlg->show();
 
     return;
 }

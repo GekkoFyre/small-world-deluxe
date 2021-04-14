@@ -66,6 +66,7 @@ private slots:
     void on_toolButton_font_reset_clicked();
     void on_toolButton_insert_clicked();
     void on_toolButton_attach_file_clicked();
+    void on_toolButton_view_roster_clicked();
 
 private:
     Ui::GkXmppMessageDialog *ui;

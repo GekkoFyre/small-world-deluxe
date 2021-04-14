@@ -15,13 +15,118 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QFrame" name="frame_2">
+    <widget class="QFrame" name="frame_self_info">
      <property name="frameShape">
-      <enum>QFrame::StyledPanel</enum>
+      <enum>QFrame::NoFrame</enum>
      </property>
      <property name="frameShadow">
-      <enum>QFrame::Raised</enum>
+      <enum>QFrame::Plain</enum>
      </property>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QFrame" name="frame_self_avatar">
+        <property name="frameShape">
+         <enum>QFrame::NoFrame</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Plain</enum>
+        </property>
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QPushButton" name="pushButton_self_avatar">
+           <property name="minimumSize">
+            <size>
+             <width>75</width>
+             <height>75</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>&lt;avatar/&gt;</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QFrame" name="frame_self_labels">
+        <property name="frameShape">
+         <enum>QFrame::NoFrame</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Plain</enum>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_15">
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <spacer name="verticalSpacer_3">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_self_nickname">
+           <property name="text">
+            <string>&lt;nickname/&gt;</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="comboBox_self_custom_status">
+           <property name="editable">
+            <bool>true</bool>
+           </property>
+           <property name="maxCount">
+            <number>24</number>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </item>
    <item>
@@ -63,6 +168,9 @@
           </property>
           <item>
            <widget class="QTabWidget" name="tabWidget">
+            <property name="tabPosition">
+             <enum>QTabWidget::South</enum>
+            </property>
             <property name="currentIndex">
              <number>0</number>
             </property>
@@ -100,28 +208,12 @@
                    <x>0</x>
                    <y>0</y>
                    <width>290</width>
-                   <height>541</height>
+                   <height>477</height>
                   </rect>
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_5">
                   <item>
-                   <widget class="QGroupBox" name="groupBox_callsigns_uncategorized">
-                    <property name="title">
-                     <string>Global / Uncategorized</string>
-                    </property>
-                    <layout class="QVBoxLayout" name="verticalLayout_6">
-                     <item>
-                      <widget class="QFrame" name="frame_callsign_list">
-                       <property name="frameShape">
-                        <enum>QFrame::NoFrame</enum>
-                       </property>
-                       <property name="frameShadow">
-                        <enum>QFrame::Raised</enum>
-                       </property>
-                      </widget>
-                     </item>
-                    </layout>
-                   </widget>
+                   <widget class="QTreeView" name="treeView_callsigns_groups"/>
                   </item>
                  </layout>
                 </widget>
@@ -163,7 +255,7 @@
                    <x>0</x>
                    <y>0</y>
                    <width>290</width>
-                   <height>541</height>
+                   <height>477</height>
                   </rect>
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_8">
