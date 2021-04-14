@@ -2060,7 +2060,7 @@ Thanks.</string>
                                        <number>256</number>
                                       </property>
                                       <property name="placeholderText">
-                                       <string>&lt;user&gt;@&lt;host&gt;.&lt;tld&gt;</string>
+                                       <string>&lt;username&gt;</string>
                                       </property>
                                       <property name="clearButtonEnabled">
                                        <bool>true</bool>
@@ -2211,6 +2211,19 @@ Thanks.</string>
                                       </property>
                                      </widget>
                                     </item>
+                                    <item row="2" column="1">
+                                     <spacer name="horizontalSpacer_29">
+                                      <property name="orientation">
+                                       <enum>Qt::Horizontal</enum>
+                                      </property>
+                                      <property name="sizeHint" stdset="0">
+                                       <size>
+                                        <width>40</width>
+                                        <height>20</height>
+                                       </size>
+                                      </property>
+                                     </spacer>
+                                    </item>
                                    </layout>
                                   </widget>
                                  </item>
@@ -2281,6 +2294,9 @@ Thanks.</string>
                                     </item>
                                     <item>
                                      <widget class="QToolButton" name="toolButton_xmpp_upload_avatar_browse_file">
+                                      <property name="toolTip">
+                                       <string>Browse for an avatar to upload to the XMPP server.</string>
+                                      </property>
                                       <property name="text">
                                        <string>Browse</string>
                                       </property>
@@ -2288,6 +2304,9 @@ Thanks.</string>
                                     </item>
                                     <item>
                                      <widget class="QToolButton" name="toolButton_xmpp_delete_avatar_from_server">
+                                      <property name="toolTip">
+                                       <string>Delete already given avatar from the server, if present.</string>
+                                      </property>
                                       <property name="text">
                                        <string>Delete</string>
                                       </property>
@@ -2295,6 +2314,9 @@ Thanks.</string>
                                     </item>
                                     <item>
                                      <widget class="QToolButton" name="toolButton_xmpp_upload_avatar_to_server">
+                                      <property name="toolTip">
+                                       <string>Upload the provided avatar to the XMPP server.</string>
+                                      </property>
                                       <property name="text">
                                        <string>Upload</string>
                                       </property>
@@ -2386,6 +2408,13 @@ Thanks.</string>
                                       </property>
                                      </widget>
                                     </item>
+                                    <item>
+                                     <widget class="QPushButton" name="pushButton_xmpp_cfg_delete_account">
+                                      <property name="text">
+                                       <string>Delete Account</string>
+                                      </property>
+                                     </widget>
+                                    </item>
                                    </layout>
                                   </widget>
                                  </item>
@@ -2445,6 +2474,13 @@ Thanks.</string>
                                       </property>
                                       <property name="autoDefault">
                                        <bool>false</bool>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                    <item>
+                                     <widget class="QPushButton" name="pushButton_xmpp_cfg_delete_msg_history">
+                                      <property name="text">
+                                       <string>Delete Message History</string>
                                       </property>
                                      </widget>
                                     </item>
@@ -2664,6 +2700,32 @@ Thanks.</string>
                               </item>
                               <item row="0" column="1">
                                <widget class="QComboBox" name="comboBox_xmpp_server_uri_lookup_method"/>
+                              </item>
+                              <item row="3" column="1">
+                               <spacer name="horizontalSpacer_30">
+                                <property name="orientation">
+                                 <enum>Qt::Horizontal</enum>
+                                </property>
+                                <property name="sizeHint" stdset="0">
+                                 <size>
+                                  <width>40</width>
+                                  <height>20</height>
+                                 </size>
+                                </property>
+                               </spacer>
+                              </item>
+                              <item row="3" column="0">
+                               <spacer name="horizontalSpacer_31">
+                                <property name="orientation">
+                                 <enum>Qt::Horizontal</enum>
+                                </property>
+                                <property name="sizeHint" stdset="0">
+                                 <size>
+                                  <width>40</width>
+                                  <height>20</height>
+                                 </size>
+                                </property>
+                               </spacer>
                               </item>
                              </layout>
                             </widget>
@@ -5417,7 +5479,7 @@ p, li { white-space: pre-wrap; }
                           </font>
                          </property>
                          <property name="text">
-                          <string>&lt;Version&gt;</string>
+                          <string>&lt;Version&gt; (0000-00-0000)</string>
                          </property>
                          <property name="alignment">
                           <set>Qt::AlignCenter</set>
@@ -5439,7 +5501,7 @@ p, li { white-space: pre-wrap; }
                        <item row="0" column="0">
                         <widget class="QLabel" name="label_version_form_sub_header">
                          <property name="text">
-                          <string>Version: </string>
+                          <string>Available version: </string>
                          </property>
                         </widget>
                        </item>
@@ -5478,6 +5540,13 @@ p, li { white-space: pre-wrap; }
                         <widget class="QPushButton" name="pushButton_check_for_updates">
                          <property name="text">
                           <string>Check for Updates</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QProgressBar" name="progressBar_update_completion">
+                         <property name="value">
+                          <number>0</number>
                          </property>
                         </widget>
                        </item>

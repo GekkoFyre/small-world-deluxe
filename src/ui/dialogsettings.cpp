@@ -1469,7 +1469,6 @@ bool DialogSettings::read_settings()
         switch (ui->comboBox_xmpp_server_type->currentIndex()) {
             case GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX:
                 ui->lineEdit_xmpp_server_url->setText(GkXmppGekkoFyreCfg::defaultUrl);
-                ui->lineEdit_xmpp_client_username->setPlaceholderText(QString("@%1").arg(GkXmppGekkoFyreCfg::defaultUrl));
                 break;
             case GK_XMPP_SERVER_TYPE_COMBO_CUSTOM_IDX:
                 ui->lineEdit_xmpp_server_url->setText(xmpp_domain_url);
@@ -2852,6 +2851,10 @@ void DialogSettings::on_comboBox_audio_output_bit_rate_currentIndexChanged(int i
 
 void DialogSettings::on_toolButton_xmpp_upload_avatar_browse_file_clicked()
 {
+    QString filePath = QFileDialog::getOpenFileName(this, tr("Open Image"), QStandardPaths::writableLocation(QStandardPaths::PicturesLocation),
+                                                    tr("All Image Files (*.png *.jpg *.jpeg *.jpe *.jfif *.exif *.bmp *.gif);;PNG (*.png);;JPEG (*.jpg *.jpeg *.jpe *.jfif *.exif);;Bitmap (*.bmp);;GIF (*.gif);;All Files (*.*)"));
+    ui->lineEdit_xmpp_upload_avatar_file_browser->setText(filePath);
+
     return;
 }
 
@@ -2909,6 +2912,23 @@ void DialogSettings::on_pushButton_xmpp_cfg_login_logout_clicked()
     return;
 }
 
+void DialogSettings::on_pushButton_xmpp_cfg_delete_account_clicked()
+{
+    if (m_xmppClient->deleteUserAccount()) {
+        QMessageBox::information(nullptr, tr("Success!"), tr("User account deleted successfully from the server!"), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+void DialogSettings::on_pushButton_xmpp_cfg_delete_msg_history_clicked()
+{
+    // TODO: Implement this function!
+    QMessageBox::information(nullptr, tr("Not implemented!"), tr("This operation has yet to be implemented."), QMessageBox::Ok);
+
+    return;
+}
+
 void DialogSettings::on_comboBox_xmpp_server_type_currentIndexChanged(int index)
 {
     switch (index) {
@@ -2918,6 +2938,7 @@ void DialogSettings::on_comboBox_xmpp_server_type_currentIndexChanged(int index)
             ui->spinBox_xmpp_server_port->setEnabled(false);
             ui->checkBox_xmpp_server_ssl->setEnabled(false);
             ui->comboBox_xmpp_server_ssl_errors->setEnabled(false);
+            ui->lineEdit_xmpp_client_username->setPlaceholderText(tr("<username>"));
 
             break;
         case GK_XMPP_SERVER_TYPE_COMBO_CUSTOM_IDX:
@@ -2926,6 +2947,7 @@ void DialogSettings::on_comboBox_xmpp_server_type_currentIndexChanged(int index)
             ui->spinBox_xmpp_server_port->setEnabled(true);
             ui->checkBox_xmpp_server_ssl->setEnabled(true);
             ui->comboBox_xmpp_server_ssl_errors->setEnabled(true);
+            ui->lineEdit_xmpp_client_username->setPlaceholderText(tr("<username>@<host>.<tld>"));
 
             break;
         default:

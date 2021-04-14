@@ -241,6 +241,8 @@ private slots:
     void on_pushButton_xmpp_cfg_change_email_clicked();
     void on_pushButton_xmpp_cfg_signup_clicked();
     void on_pushButton_xmpp_cfg_login_logout_clicked();
+    void on_pushButton_xmpp_cfg_delete_msg_history_clicked();
+    void on_pushButton_xmpp_cfg_delete_account_clicked();
     void on_comboBox_xmpp_server_type_currentIndexChanged(int index);
     void on_comboBox_xmpp_server_ssl_errors_currentIndexChanged(int index);
     void on_comboBox_xmpp_server_uri_lookup_method_currentIndexChanged(int index);

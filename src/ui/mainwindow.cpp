@@ -3187,15 +3187,38 @@ void MainWindow::on_actionView_Roster_triggered()
 
 void MainWindow::on_actionSign_in_triggered()
 {
-    //
-    // TODO: Code up this function ASAP!
+    if (!xmpp_conn_details.username.isEmpty()) {
+        switch (xmpp_conn_details.server.type) {
+            case GkServerType::GekkoFyre:
+                if (!xmpp_conn_details.password.isEmpty()) { // A password is required for GekkoFyre Networks' XMPP server!
+                    m_xmppClient->createConnectionToServer(xmpp_conn_details.server.url, xmpp_conn_details.server.port, xmpp_conn_details.username, xmpp_conn_details.password, QString(), false);
+                }
+
+                break;
+            case GkServerType::Custom:
+                if (!xmpp_conn_details.password.isEmpty()) { // A password is required for GekkoFyre Networks' XMPP server!
+                    // Password provided
+                    m_xmppClient->createConnectionToServer(xmpp_conn_details.server.url, xmpp_conn_details.server.port, xmpp_conn_details.username, xmpp_conn_details.password, QString(), true);
+                } else {
+                    // Connecting anonymously
+                    m_xmppClient->createConnectionToServer(xmpp_conn_details.server.url, xmpp_conn_details.server.port, xmpp_conn_details.username, QString(), QString(), true);
+                }
+
+                break;
+            default:
+                break;
+        }
+    }
 
     return;
 }
 
 void MainWindow::on_actionSign_out_triggered()
 {
-    m_xmppClient->disconnectFromServer();
+    if (m_xmppClient->isConnected()) {
+        m_xmppClient->disconnectFromServer();
+    }
+
     return;
 }
 

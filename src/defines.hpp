@@ -423,7 +423,7 @@ namespace Network {
 }
 
 namespace GkXmppGekkoFyreCfg {
-    constexpr char defaultUrl[] = "xmpp.vk3vkk.io";
+    constexpr char defaultUrl[] = "vk3vkk.chat";
 }
 
 namespace System {

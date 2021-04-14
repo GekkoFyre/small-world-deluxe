@@ -84,48 +84,6 @@
 
 namespace GekkoFyre {
 
-class GkXmppVcardData {
-
-public:
-    QString nickname;
-    QString fullName;
-    QString firstName;
-    QString middleName;
-    QString lastName;
-    QString webUrl;
-    QString email;
-
-    GkXmppVcardData() {
-        nickname.clear();
-        fullName.clear();
-        firstName.clear();
-        middleName.clear();
-        lastName.clear();
-        webUrl.clear();
-        email.clear();
-    }
-
-    bool isEmpty() const {
-        return (nickname.isEmpty() && fullName.isEmpty() && firstName.isEmpty() && middleName.isEmpty() && lastName.isEmpty() &&
-                webUrl.isEmpty() && email.isEmpty());
-    }
-
-};
-
-class GkXmppVcardCache : public QObject {
-    Q_OBJECT
-
-public:
-    explicit GkXmppVcardCache(QObject *parent = nullptr) : QObject(parent) {}
-    ~GkXmppVcardCache() override = default;
-
-    GkXmppVcardData grabVCard(const QString &bareJid);
-
-private:
-    QString getElementStore(const QScopedPointer<QDomDocument> &doc, const QString &nodeName);
-
-};
-
 class GkXmppClient : public QXmppClient {
     Q_OBJECT
 
@@ -148,6 +106,7 @@ public:
     // User, roster and presence details
     std::shared_ptr<QXmppRegistrationManager> getRegistrationMgr();
     QXmppPresence statusToPresence(const Network::GkXmpp::GkOnlineStatus &status);
+    bool deleteUserAccount();
 
     QString getErrorCondition(const QXmppStanza::Error::Condition &condition);
 
@@ -179,16 +138,9 @@ private slots:
     void versionReceivedSlot(const QXmppVersionIq &version);
 
     //
-    // Timers and Event Loops
-    //
-    void updateVCardRosterDb();
-
-    //
     // User, roster and presence details
     void notifyNewSubscription(const QString &bareJid);
     void handleRosterReceived();
-
-    void handlevCardReceived(const QXmppVCardIq &vCard);
 
     void itemAdded(const QString &bareJid);
     void itemRemoved(const QString &bareJid);
@@ -225,7 +177,6 @@ private:
     //
     // Timers and Event Loops
     //
-    QPointer<QTimer> m_vCardRosterTimer;
     std::unique_ptr<QElapsedTimer> m_dnsKeepAlive;
 
     //
@@ -235,11 +186,6 @@ private:
     std::unique_ptr<QXmppPresence> m_presence;
     std::shared_ptr<QXmppRosterManager> m_rosterManager;
     QStringList rosterGroups;
-
-    //
-    // VCards
-    //
-    std::unique_ptr<QXmppVCardManager> m_vcardMgr;
 
     //
     // SSL / TLS / STARTTLS
@@ -258,7 +204,6 @@ private:
 
     GekkoFyre::Network::GkXmpp::GkNetworkState m_netState;
     QString m_id;
-    QMap<QString, std::pair<QByteArray, QByteArray>> m_vCardRoster;
 
     void initRosterMgr();
 
