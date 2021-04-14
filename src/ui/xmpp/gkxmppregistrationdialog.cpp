@@ -122,7 +122,7 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
         m_registerManager = m_xmppClient->getRegistrationMgr();
 
         QObject::connect(m_xmppClient, SIGNAL(sendRegistrationForm(const QXmppRegisterIq &)),
-                         this, SLOT(recvRegistrationForm(const QXmppRegisterIq &)));
+                         this, SLOT(handleRegistrationForm(const QXmppRegisterIq &)));
 
         switch (gkRegUiRole) {
             case GkRegUiRole::AccountCreate:
@@ -196,11 +196,6 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
         // Allow the processing of the in-band user registration form...
         QObject::connect(this, SIGNAL(sendRegistrationForm(const QXmppRegisterIq &)),
                          this, SLOT(handleRegistrationForm(const QXmppRegisterIq &)));
-
-        QObject::connect(m_registerManager.get(), &QXmppRegistrationManager::registrationFailed, [=](const QXmppStanza::Error &error) {
-            gkEventLogger->publishEvent(tr("Requesting the registration form failed: %1").arg(m_xmppClient->getErrorCondition(error.condition())), GkSeverity::Fatal, "",
-                                        false, true, false, true);
-        });
 
         QObject::connect(m_registerManager.get(), &QXmppRegistrationManager::passwordChangeFailed, [=](const QXmppStanza::Error &error) {
             gkEventLogger->publishEvent(tr("An attempt to change the password has failed: %1").arg(error.text()), GkSeverity::Fatal, "",

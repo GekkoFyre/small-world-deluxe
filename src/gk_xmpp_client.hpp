@@ -163,7 +163,6 @@ public slots:
     //
     // Registration management
     void handleRegistrationForm(const QXmppRegisterIq &registerIq);
-    void requestRegistrationForm();
 
 private slots:
     //

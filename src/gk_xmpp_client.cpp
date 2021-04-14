@@ -123,6 +123,7 @@ QString GkXmppVcardCache::getElementStore(const QScopedPointer<QDomDocument> &do
 GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoFyre::GkLevelDb> database,
                            QPointer<GekkoFyre::GkEventLogger> eventLogger, const bool &connectNow, QObject *parent)
                            :                                          m_rosterManager(findExtension<QXmppRosterManager>()),
+                                                                      m_registerManager(findExtension<QXmppRegistrationManager>()),
                                                                       m_vcardMgr(findExtension<QXmppVCardManager>()),
                                                                       m_versionMgr(findExtension<QXmppVersionManager>()),
                                                                       m_xmppLogger(QXmppLogger::getLogger()),
@@ -136,14 +137,14 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         gkEventLogger = std::move(eventLogger);
         m_sslSocket = new QSslSocket(this);
 
+        m_registerManager = std::make_shared<QXmppRegistrationManager>();
+        m_mucManager = std::make_unique<QXmppMucManager>();
+        m_transferManager = std::make_unique<QXmppTransferManager>();
+
         addExtension(m_rosterManager.get());
         addExtension(m_vcardMgr.get());
         addExtension(m_versionMgr.get());
         addExtension(m_discoMgr.get());
-
-        m_registerManager = std::make_shared<QXmppRegistrationManager>();
-        m_mucManager = std::make_unique<QXmppMucManager>();
-        m_transferManager = std::make_unique<QXmppTransferManager>();
 
         if (m_registerManager) {
             addExtension(m_registerManager.get());
@@ -250,6 +251,11 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         //
         QObject::connect(m_registerManager.get(), SIGNAL(registrationFormReceived(const QXmppRegisterIq &)),
                          this, SLOT(handleRegistrationForm(const QXmppRegisterIq &)));
+
+        QObject::connect(m_registerManager.get(), &QXmppRegistrationManager::registrationFailed, [=](const QXmppStanza::Error &error) {
+            gkEventLogger->publishEvent(tr("Requesting the registration form failed: %1").arg(getErrorCondition(error.condition())), GkSeverity::Fatal, "",
+                                        false, true, false, true);
+        });
 
         //
         // Setting up service discovery correctly for this manager
@@ -666,27 +672,6 @@ void GkXmppClient::handleRegistrationForm(const QXmppRegisterIq &registerIq)
 }
 
 /**
- * @brief GkXmppClient::requestRegistrationForm
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkXmppClient::requestRegistrationForm()
-{
-    m_registerManager->setRegistrationFormToSend(QXmppRegisterIq());
-    m_registerManager->setRegisterOnConnectEnabled(true);
-
-    QObject::connect(m_xmppLogger.get(), &QXmppLogger::message, this, [&](QXmppLogger::MessageType type, const QString &text) {
-        if (type == QXmppLogger::SentMessage) {
-            text.contains(QStringLiteral("<query xmlns=\"jabber:iq:register\"/>"));
-        }
-    });
-
-    m_registerManager->requestRegistrationForm();
-    m_registerManager->setRegisterOnConnectEnabled(false);
-
-    return;
-}
-
-/**
  * @brief GkXmppClient::handleServers
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
@@ -1004,7 +989,6 @@ void GkXmppClient::createConnectionToServer(const QString &domain_url, const qui
                 m_presence = nullptr;
                 config.setDomain(domain_url);
                 config.setPort(network_port);
-                m_registerManager->requestRegistrationForm();
             } else {
                 throw std::invalid_argument(tr("The given URL (used for the JID) is empty! As such, connection towards the XMPP server cannot proceed.").toStdString());
             }

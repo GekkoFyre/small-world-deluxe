@@ -298,7 +298,7 @@ namespace General {
     constexpr char codeRepository[] = "https://code.gekkofyre.io/amateur-radio/small-world-deluxe";
     constexpr char officialWebsite[] = "https://swdeluxe.io/";
 
-    constexpr char gk_sentry_uri[] = "https://5532275153ce4eb4865b89eb2441f356@sentry.gekkofyre.io/2";
+    constexpr char gk_sentry_uri[] = "https://2c7b92c7437b4728a2856a6ca71ddbe6@sentry.gekkofyre.io/2";
     constexpr char gk_sentry_user_side_uri[] = "https://sentry.gekkofyre.io/";
     constexpr char gk_sentry_env[] = "development";
 
