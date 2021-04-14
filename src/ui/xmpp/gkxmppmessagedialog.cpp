@@ -58,6 +58,7 @@ using namespace Events;
 using namespace Logging;
 using namespace Network;
 using namespace GkXmpp;
+using namespace Security;
 
 GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::GkXmppClient> xmppClient, QWidget *parent) :
     QDialog(parent),
@@ -95,6 +96,11 @@ void GkXmppMessageDialog::on_toolButton_insert_clicked()
 }
 
 void GkXmppMessageDialog::on_toolButton_attach_file_clicked()
+{
+    return;
+}
+
+void GkXmppMessageDialog::on_toolButton_view_roster_clicked()
 {
     return;
 }

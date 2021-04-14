@@ -42,10 +42,13 @@
 #include "src/gk_xmpp_client.hpp"
 #include <qxmpp/QXmppMucIq.h>
 #include <qxmpp/QXmppUtils.h>
-#include <qxmpp/QXmppVCardIq.h>
+#include <qxmpp/QXmppStreamFeatures.h>
 #include <iostream>
 #include <exception>
+#include <QImage>
+#include <QBuffer>
 #include <QMessageBox>
+#include <QXmlStreamWriter>
 
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
@@ -63,78 +66,51 @@ using namespace GkXmpp;
 using namespace Security;
 
 /**
- * @brief GkXmppVcardCache::grabVCard
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param bareJid
- * @return
- */
-GkXmppVcardData GkXmppVcardCache::grabVCard(const QString &bareJid)
-{
-    QScopedPointer<QDomDocument> vcXmlDoc(new QDomDocument());
-    QByteArray vcByteArray;
-    GkXmppVcardData data;
-
-    vcXmlDoc->setContent(vcByteArray);
-
-    data.nickname = getElementStore(vcXmlDoc, "nickname");
-    data.fullName = getElementStore(vcXmlDoc, "fullName");
-    data.firstName = getElementStore(vcXmlDoc, "firstName");
-    data.middleName = getElementStore(vcXmlDoc, "middleName");
-    data.lastName = getElementStore(vcXmlDoc, "lastName");
-    data.webUrl = getElementStore(vcXmlDoc, "webUrl");
-    data.email = getElementStore(vcXmlDoc, "email");
-
-    return data;
-}
-
-/**
- * @brief GkXmppVcardCache::getElementStore
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param doc
- * @param nodeName
- * @return
- */
-QString GkXmppVcardCache::getElementStore(const QScopedPointer<QDomDocument> &doc, const QString &nodeName)
-{
-    QString val = "";
-
-    QDomNode nodeElement = doc->elementsByTagName(nodeName).item(0);
-    QDomNode te = nodeElement.firstChild();
-
-    if (!te.isNull()) {
-        val = te.nodeValue();
-    }
-
-    return val;
-}
-
-/**
  * @brief GkXmppClient::GkXmppClient The client-class for all such XMPP calls within Small World Deluxe.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param connection_details The details pertaining to making a successful connection towards the given XMPP server.
  * @param eventLogger The object for processing logging information.
- * @param connectNow Whether to intiiate a connection now or at a later time instead.
+ * @param connectNow Whether to initiate a connection now or at a later time instead.
  * @param parent The parent object.
  */
-GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                           const bool &connectNow, QObject *parent) : m_registerManager(findExtension<QXmppRegistrationManager>()),
-                                                                      m_rosterManager(findExtension<QXmppRosterManager>()),
-                                                                      m_vcardMgr(findExtension<QXmppVCardManager>()),
+GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoFyre::GkLevelDb> database,
+                           QPointer<GekkoFyre::GkEventLogger> eventLogger, const bool &connectNow, QObject *parent)
+                           :                                          m_rosterManager(findExtension<QXmppRosterManager>()),
+                                                                      m_registerManager(findExtension<QXmppRegistrationManager>()),
                                                                       m_versionMgr(findExtension<QXmppVersionManager>()),
+                                                                      m_xmppLogger(QXmppLogger::getLogger()),
                                                                       m_discoMgr(findExtension<QXmppDiscoveryManager>()),
                                                                       QXmppClient(parent)
 {
     try {
         setParent(parent);
-        gkConnDetails = connection_details;
+        m_connDetails = connection_details;
+        gkDb = std::move(database);
         gkEventLogger = std::move(eventLogger);
         m_sslSocket = new QSslSocket(this);
 
+        m_registerManager = std::make_shared<QXmppRegistrationManager>();
+        m_mucManager = std::make_unique<QXmppMucManager>();
+        m_transferManager = std::make_unique<QXmppTransferManager>();
+
         addExtension(m_rosterManager.get());
-        addExtension(m_vcardMgr.get());
         addExtension(m_versionMgr.get());
         addExtension(m_discoMgr.get());
 
+        if (m_registerManager) {
+            addExtension(m_registerManager.get());
+        }
+
+        if (m_mucManager) {
+            addExtension(m_mucManager.get());
+        }
+
+        if (m_transferManager) {
+            addExtension(m_transferManager.get());
+        }
+
+        //
+        // Setup error handling for QXmppClient...
         QObject::connect(this, SIGNAL(sendError(const QString &)), this, SLOT(handleError(const QString &)));
 
         //
@@ -159,7 +135,6 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         m_status = GkOnlineStatus::Online;
         m_keepalive = 60;
 
-        m_vcardCache = std::make_unique<GkXmppVcardCache>(parent);
         m_presence = std::make_unique<QXmppPresence>();
 
         if (m_versionMgr) {
@@ -174,27 +149,51 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         QObject::connect(this, SIGNAL(connected()), this, SLOT(clientConnected()));
 
         //
+        // Setup logging...
+        m_xmppLogger->setLoggingType(QXmppLogger::SignalLogging);
+        QObject::connect(m_xmppLogger.get(), SIGNAL(message(QXmppLogger::MessageType, const QString &)),
+                         gkEventLogger, SLOT(recvXmppLog(QXmppLogger::MessageType, const QString &)));
+
+        //
         // Find the XMPP servers as defined by either the user themselves or GekkoFyre Networks...
         QString dns_lookup_str;
-        switch (gkConnDetails.server.type) {
+        switch (m_connDetails.server.type) {
             case GkServerType::GekkoFyre:
                 //
                 // Settings for GekkoFyre Networks' server have been specified!
+                if (m_connDetails.server.settings_client.auto_connect || connectNow) {
+                    gkEventLogger->publishEvent(tr("Attempting connection towards GekkoFyre Networks!"), GkSeverity::Info,
+                                                "", false, true, false, false);
+                    createConnectionToServer(GkXmppGekkoFyreCfg::defaultUrl, GK_DEFAULT_XMPP_SERVER_PORT, getUsername(m_connDetails.jid),
+                                             m_connDetails.password, m_connDetails.jid, false);
+                }
+
                 break;
             case GkServerType::Custom:
                 //
                 // Settings for a custom server have been specified!
-                if (gkConnDetails.server.settings_client.uri_lookup_method == GkUriLookupMethod::QtDnsSrv) {
-                    m_dns = new QDnsLookup(this); // TODO: Finish implementing this!
+                if (m_connDetails.server.settings_client.uri_lookup_method == GkUriLookupMethod::QtDnsSrv) {
+                    m_dns = new QDnsLookup(this);
 
                     //
                     // Setup the signals for the DNS object
                     QObject::connect(m_dns, SIGNAL(finished()), this, SLOT(handleServers()));
 
                     m_dns->setType(QDnsLookup::SRV);
-                    dns_lookup_str = QString("_xmpp-client._tcp.%1").arg(gkConnDetails.server.url);
+                    dns_lookup_str = QString("_xmpp-client._tcp.%1").arg(m_connDetails.server.url);
                     m_dns->setName(dns_lookup_str);
                     m_dns->lookup();
+
+                    m_dnsKeepAlive = std::make_unique<QElapsedTimer>();
+                    m_dnsKeepAlive->start();
+                    while (!m_dns->isFinished()) {
+                        continue;
+                    }
+                }
+
+                if (m_connDetails.server.settings_client.auto_connect || connectNow) {
+                    createConnectionToServer(m_connDetails.server.url, m_connDetails.server.port, getUsername(m_connDetails.jid),
+                                             m_connDetails.password, m_connDetails.jid, false);
                 }
 
                 break;
@@ -205,16 +204,16 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         }
 
         //
-        // Setup logging...
-        QXmppLogger *logger = QXmppLogger::getLogger();
-        logger->setLoggingType(QXmppLogger::SignalLogging);
-        QObject::connect(logger, SIGNAL(message(QXmppLogger::MessageType, const QString &)),
-                         gkEventLogger, SLOT(recvXmppLog(QXmppLogger::MessageType, const QString &)));
+        // As soon as you connect towards a XMPP server with no JID, this connection should come alive provided that
+        // the most minimal of in-band user registration is supported by said server!
+        //
+        QObject::connect(m_registerManager.get(), SIGNAL(registrationFormReceived(const QXmppRegisterIq &)),
+                         this, SLOT(handleRegistrationForm(const QXmppRegisterIq &)));
 
-        if (gkConnDetails.server.settings_client.auto_connect || connectNow) {
-            createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, gkConnDetails.username,
-                                     gkConnDetails.password);
-        }
+        QObject::connect(m_registerManager.get(), &QXmppRegistrationManager::registrationFailed, [=](const QXmppStanza::Error &error) {
+            gkEventLogger->publishEvent(tr("Requesting the registration form failed: %1").arg(getErrorCondition(error.condition())), GkSeverity::Fatal, "",
+                                        false, true, false, true);
+        });
 
         //
         // Setting up service discovery correctly for this manager
@@ -228,38 +227,23 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
             //
             // The service discovery manager is added to the client by default...
             if (m_discoMgr) {
-                m_discoMgr->requestInfo(gkConnDetails.server.url);
+                m_discoMgr->requestInfo(configuration().domain());
             }
 
-            m_registerManager = std::make_shared<QXmppRegistrationManager>();
-            m_mucManager = std::make_unique<QXmppMucManager>();
-            m_transferManager = std::make_unique<QXmppTransferManager>();
-
-            m_registerManager.reset(findExtension<QXmppRegistrationManager>());
-            m_mucManager.reset(findExtension<QXmppMucManager>());
-            m_transferManager.reset(findExtension<QXmppTransferManager>());
-
-            if (m_registerManager) {
-                addExtension(m_registerManager.get());
+            if (m_registerManager->supportedByServer()) {
+                gkEventLogger->publishEvent(tr("XEP-0077 is supported by: %1").arg(m_connDetails.server.url),
+                                            GkSeverity::Info, "", false, true, false, false);
+            } else {
+                gkEventLogger->publishEvent(tr("Failed to find support for XEP-0077 on server: %1").arg(m_connDetails.server.url),
+                                            GkSeverity::Info, "", false, true, false, false);
             }
 
-            if (m_mucManager) {
-                addExtension(m_mucManager.get());
-            }
-
-            if (m_transferManager) {
-                addExtension(m_transferManager.get());
-            }
-
-            QObject::connect(m_registerManager.get(), &QXmppRegistrationManager::registrationFailed, this, [=](const QXmppStanza::Error &error) {
-                emit sendError(tr("Requesting the XMPP registration form failed: %1").arg(error.text()));
-            });
-
-            QObject::connect(m_registerManager.get(), SIGNAL(registrationFormReceived(const QXmppRegisterIq &)),
-                             this, SLOT(handleRegistrationForm(const QXmppRegisterIq &)));
+            //
+            // Initialize all the SIGNALS and SLOTS for QXmppRosterManager...
+            initRosterMgr();
         });
     } catch (const std::exception &e) {
-        std::throw_with_nested(std::runtime_error(tr("An issue has occurred within the XMPP subsystem. Error:\n\n%1").arg(QString::fromStdString(e.what())).toStdString()));
+        std::throw_with_nested(std::runtime_error(tr("An issue has occurred within the XMPP subsystem. Error: %1").arg(QString::fromStdString(e.what())).toStdString()));
     }
 
     return;
@@ -267,7 +251,7 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
 
 GkXmppClient::~GkXmppClient()
 {
-    if (isConnected()) {
+    if (isConnected() || m_netState == GkNetworkState::Connecting) {
         disconnectFromServer();
     }
 
@@ -286,8 +270,8 @@ GkXmppClient::~GkXmppClient()
 bool GkXmppClient::createMuc(const QString &room_name, const QString &room_subject, const QString &room_desc)
 {
     try {
-        if (isConnected() && !room_name.isEmpty()) {
-            QString room_jid = QString("%1@conference.%2").arg(room_name).arg(gkConnDetails.server.url);
+        if ((isConnected() && m_netState != GkNetworkState::Connecting) && !room_name.isEmpty()) {
+            QString room_jid = QString("%1@conference.%2").arg(room_name).arg(m_connDetails.server.url);
             QList<QXmppMucRoom *> rooms = m_mucManager->rooms();
             QXmppMucRoom *r;
             foreach(r, rooms) {
@@ -301,7 +285,7 @@ bool GkXmppClient::createMuc(const QString &room_name, const QString &room_subje
             m_pRoom.reset(m_mucManager->addRoom(room_jid));
             if (m_pRoom) {
                 // Nickname...
-                m_pRoom->setNickName(gkConnDetails.nickname);
+                m_pRoom->setNickName(m_connDetails.nickname);
                 // Join the room itself...
                 m_pRoom->join();
             }
@@ -344,7 +328,7 @@ bool GkXmppClient::createMuc(const QString &room_name, const QString &room_subje
             throw std::runtime_error(tr("Are you connected to an XMPP server?").toStdString());
         }
     } catch (const std::exception &e) {
-        emit sendError(tr("An issue was encountered while creating a MUC! Error:\n\n%1").arg(QString::fromStdString(e.what())));
+        emit sendError(tr("An issue was encountered while creating a MUC! Error: %1").arg(QString::fromStdString(e.what())));
     }
 
     return false;
@@ -363,6 +347,22 @@ bool GkXmppClient::isHostnameSame(const QString &hostname, const QString &compar
 }
 
 /**
+ * @brief GkXmppClient::getUsername
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param username
+ * @return
+ */
+QString GkXmppClient::getUsername(const QString &username)
+{
+    auto domain = username.split('@', Qt::SkipEmptyParts);
+    if (!domain.empty()) {
+        return domain.first();
+    }
+
+    return QString();
+}
+
+/**
  * @brief GkXmppClient::getHostname
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param username
@@ -376,6 +376,16 @@ QString GkXmppClient::getHostname(const QString &username)
     }
 
     return QString();
+}
+
+/**
+ * @brief GkXmppClient::getNetworkState
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return
+ */
+GekkoFyre::Network::GkXmpp::GkNetworkState GkXmppClient::getNetworkState() const
+{
+    return m_netState;
 }
 
 /**
@@ -429,12 +439,31 @@ QXmppPresence GkXmppClient::statusToPresence(const GkXmpp::GkOnlineStatus &statu
 }
 
 /**
+ * @brief GkXmppClient::deleteUserAccount will delete a given, already registered user account from the provided XMPP server.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return
+ */
+bool GkXmppClient::deleteUserAccount()
+{
+    try {
+        if (isConnected()) {
+            m_registerManager->deleteAccount();
+            return true;
+        }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(e.what(), GkSeverity::Fatal, "", false, true, false, true);
+    }
+
+    return false;
+}
+
+/**
  * @brief GkXmppClient::clientConnected
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void GkXmppClient::clientConnected()
 {
-    gkEventLogger->publishEvent(tr("A connection has been successfully made towards XMPP server: %1").arg(gkConnDetails.server.url),
+    gkEventLogger->publishEvent(tr("A connection has been successfully made towards XMPP server: %1").arg(m_connDetails.server.url),
                                 GkSeverity::Info, "", true, true, true, false);
     return;
 }
@@ -445,39 +474,6 @@ void GkXmppClient::clientConnected()
  */
 void GkXmppClient::handleRosterReceived()
 {
-    try {
-        const QStringList bareJids = m_rosterManager->getRosterBareJids();
-        for (const auto &bareJid: bareJids) {
-            // Get the contact name, as we might need it...
-            QString name = m_rosterManager->getRosterEntry(bareJid).name(); //-V808
-
-            // Attempt to get the vCard...
-            GkXmppVcardData vcData = m_vcardCache->grabVCard(bareJid);
-            if (vcData.isEmpty()) {
-                gkEventLogger->publishEvent(tr("User, %1, has no VCard. Requesting...").arg(bareJid), GkSeverity::Info, "", false, true, false, false);
-                if (m_vcardMgr) {
-                    m_vcardMgr->requestVCard(bareJid);
-                }
-            }
-
-            // Prepare groups...
-            QStringList groups_roster = m_rosterManager->getRosterEntry(bareJid).groups().values();
-
-            // Iterate through the group list and add them to a cache!
-            for (const auto &user: groups_roster) {
-                if (!rosterGroups.contains(user)) {
-                    rosterGroups.push_back(user);
-                }
-            }
-
-            // TODO: Do something with this!
-            // qint32 subType = (qint32)m_rosterManager->getRosterEntry(bareJid).subscriptionType();
-        }
-    } catch (const std::exception &e) {
-        emit sendError(tr("An issue has been encountered while managing the XMPP roster! Error:\n\n%1")
-        .arg(QString::fromStdString(e.what())));
-    }
-
     return;
 }
 
@@ -505,16 +501,19 @@ void GkXmppClient::stateChanged(QXmppClient::State state)
 {
     switch (state) {
         case QXmppClient::State::DisconnectedState:
-            gkEventLogger->publishEvent(tr("Disconnected from XMPP server: %1").arg(gkConnDetails.server.url), GkSeverity::Info, "",
+            gkEventLogger->publishEvent(tr("Disconnected from XMPP server: %1").arg(m_connDetails.server.url), GkSeverity::Info, "",
                                         true, true, true, false);
+            m_netState = GkNetworkState::Disconnected;
             return;
         case QXmppClient::State::ConnectingState:
-            gkEventLogger->publishEvent(tr("...attempting to make connection towards XMPP server: %1").arg(gkConnDetails.server.url), GkSeverity::Info, "",
+            gkEventLogger->publishEvent(tr("...attempting to make connection towards XMPP server: %1").arg(m_connDetails.server.url), GkSeverity::Info, "",
                                         true, true, true, false);
+            m_netState = GkNetworkState::Connecting;
             return;
         case QXmppClient::State::ConnectedState:
-            gkEventLogger->publishEvent(tr("Connected to XMPP server: %1").arg(gkConnDetails.server.url), GkSeverity::Info, "",
+            gkEventLogger->publishEvent(tr("Connected to XMPP server: %1").arg(m_connDetails.server.url), GkSeverity::Info, "",
                                         true, true, true, false);
+            m_netState = GkNetworkState::Connected;
             return;
         default:
             break;
@@ -547,50 +546,15 @@ void GkXmppClient::handleRegistrationForm(const QXmppRegisterIq &registerIq)
     try {
         qDebug() << "XMPP registration form received: " << registerIq.instructions();
         if (registerIq.type() == QXmppIq::Type::Error) {
-            switch (registerIq.error().condition()) {
-                case QXmppStanza::Error::Conflict:
-                    throw std::runtime_error(tr("A user has already been previously registered with this username for server: %1")
-                    .arg(gkConnDetails.server.url).toStdString());
-                case QXmppStanza::Error::RegistrationRequired:
-                {
-                    //
-                    // The form now needs to be completed!
-                    QXmppRegisterIq registration_form;
-                    if (m_registerManager->registerOnConnectEnabled()) { // If not handled here, process the form otherwise in `GkXmppRegistrationDialog`!
-                        if (!isConnected()) {
-                            createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, gkConnDetails.username,
-                                                     gkConnDetails.password);
-                        }
-
-                        registration_form.setForm(registerIq.form());
-                        registration_form.setInstructions(registerIq.instructions());
-                        registration_form.setEmail(gkConnDetails.email);
-                        registration_form.setPassword(config.password());
-                        registration_form.setUsername(config.user());
-                        registration_form.setType(QXmppIq::Type::Set);
-
-                        m_registerManager->setRegistrationFormToSend(registration_form);
-                        m_registerManager->sendCachedRegistrationForm();
-
-                        gkEventLogger->publishEvent(tr("User, \"%1\", has been registered with XMPP server:\n\n%2")
-                                                            .arg(config.user()).arg(gkConnDetails.server.url), GkSeverity::Info, "", true,
-                                                    true, false, false);
-                    }
-                }
-
-                    break;
-                default:
-                    throw std::invalid_argument(tr("An unknown error has occurred during user registration with connected XMPP server: %1")
-                                                        .arg(gkConnDetails.server.url).toStdString());
-            }
+            throw std::runtime_error(tr("Requesting the registration form failed: %1").arg(getErrorCondition(registerIq.error().condition())).toStdString());
         } else if (registerIq.type() == QXmppIq::Type::Result) {
-            handleSuccess();
+            emit sendRegistrationForm(registerIq);
         } else {
-            throw std::runtime_error(tr("An error has occurred during user registration with connected XMPP server: %1\n\nreceived unwanted stanza type %2")
-                                             .arg(gkConnDetails.server.url).arg(QString::number(registerIq.type())).toStdString());
+            throw std::runtime_error(tr("An error has occurred during user registration with connected XMPP server: %1 received unwanted stanza type %2")
+                                             .arg(m_connDetails.server.url).arg(QString::number(registerIq.type())).toStdString());
         }
     } catch (const std::exception &e) {
-        gkEventLogger->publishEvent(tr("Issues were encountered with trying to register user with XMPP server! Error:\n\n%1")
+        gkEventLogger->publishEvent(tr("Issues were encountered with trying to register user with XMPP server! Error: %1")
         .arg(e.what()), GkSeverity::Fatal, "", false, true, false, true);
     }
 
@@ -608,39 +572,50 @@ void GkXmppClient::handleServers()
     switch (m_dns->error()) {
         case QDnsLookup::NoError:
             // No errors! Yay!
+            m_dnsRecords = m_dns->serviceRecords();
+            if (!m_dnsRecords.isEmpty()) {
+                size_t counter = 0;
+                for (const auto &record: m_dnsRecords) {
+                    ++counter;
+                    gkEventLogger->publishEvent(tr("DNS lookup succeeded for, \"%1\"! Record %1 of %2 found: %3 (target port: %4)")
+                    .arg(QString::number(counter)).arg(QString::number(m_dnsRecords.size())).arg(record.name()).arg(QString::number(record.port())),
+                    GkSeverity::Error, "", false, true, false, true);
+                }
+            }
+
             break;
         case QDnsLookup::ResolverError:
-            gkEventLogger->publishEvent(tr("DNS lookup failed for, \"%1\". There has been a Resolver Error.").arg(gkConnDetails.server.url), GkSeverity::Error, "",
+            gkEventLogger->publishEvent(tr("DNS lookup failed for, \"%1\". There has been a Resolver Error.").arg(m_connDetails.server.url), GkSeverity::Error, "",
                                         false, true, false, true);
 
             return;
         case QDnsLookup::OperationCancelledError:
-            gkEventLogger->publishEvent(tr("DNS lookup failed for, \"%1\". The operation was cancelled abruptly.").arg(gkConnDetails.server.url), GkSeverity::Error, "",
+            gkEventLogger->publishEvent(tr("DNS lookup failed for, \"%1\". The operation was cancelled abruptly.").arg(m_connDetails.server.url), GkSeverity::Error, "",
                                         false, true, false, true);
 
             return;
         case QDnsLookup::InvalidRequestError:
-            gkEventLogger->publishEvent(tr("DNS lookup failed for, \"%1\". There has been an Invalid Request.").arg(gkConnDetails.server.url), GkSeverity::Error, "",
+            gkEventLogger->publishEvent(tr("DNS lookup failed for, \"%1\". There has been an Invalid Request.").arg(m_connDetails.server.url), GkSeverity::Error, "",
                                         false, true, false, true);
 
             return;
         case QDnsLookup::InvalidReplyError:
-            gkEventLogger->publishEvent(tr("DNS lookup failed for, \"%1\". There has been an Invalid Reply.").arg(gkConnDetails.server.url), GkSeverity::Error, "",
+            gkEventLogger->publishEvent(tr("DNS lookup failed for, \"%1\". There has been an Invalid Reply.").arg(m_connDetails.server.url), GkSeverity::Error, "",
                                         false, true, false, true);
 
             return;
         case QDnsLookup::ServerFailureError:
-            gkEventLogger->publishEvent(tr(R"(DNS lookup failed for, "%1". There has been a "Server Failure" error on the other end.)").arg(gkConnDetails.server.url), GkSeverity::Error, "",
+            gkEventLogger->publishEvent(tr(R"(DNS lookup failed for, "%1". There has been a "Server Failure" error on the other end.)").arg(m_connDetails.server.url), GkSeverity::Error, "",
                                         false, true, false, true);
 
             return;
         case QDnsLookup::ServerRefusedError:
-            gkEventLogger->publishEvent(tr(R"(DNS lookup failed for, "%1". There has been a "Server Refused" error on the other end.)").arg(gkConnDetails.server.url), GkSeverity::Error, "",
+            gkEventLogger->publishEvent(tr(R"(DNS lookup failed for, "%1". There has been a "Server Refused" error on the other end.)").arg(m_connDetails.server.url), GkSeverity::Error, "",
                                         false, true, false, true);
 
             return;
         case QDnsLookup::NotFoundError:
-            gkEventLogger->publishEvent(tr(R"(DNS lookup failed for, "%1". There has been a "Not Found" error.)").arg(gkConnDetails.server.url), GkSeverity::Error, "",
+            gkEventLogger->publishEvent(tr(R"(DNS lookup failed for, "%1". There has been a "Not Found" error.)").arg(m_connDetails.server.url), GkSeverity::Error, "",
                                         false, true, false, true);
 
             return;
@@ -675,13 +650,13 @@ void GkXmppClient::handleError(QXmppClient::Error errorMsg)
         case QXmppClient::Error::NoError:
             break;
         case QXmppClient::Error::SocketError:
-            emit sendError(tr("XMPP error encountered due to TCP socket. Error:\n\n%1").arg(this->socketErrorString()));
+            emit sendError(tr("XMPP error encountered due to TCP socket. Error: %1").arg(this->socketErrorString()));
             break;
         case QXmppClient::Error::KeepAliveError:
             emit sendError(tr("XMPP error encountered due to no response from a keep alive."));
             break;
         case QXmppClient::Error::XmppStreamError:
-            emit sendError(tr("XMPP error encountered due to XML stream. Error:\n\n%1").arg(getErrorCondition(this->xmppStreamError())));
+            emit sendError(tr("XMPP error encountered due to XML stream. Error: %1").arg(getErrorCondition(this->xmppStreamError())));
             break;
         default:
             emit sendError(tr("An unknown XMPP error has been encountered!"));
@@ -699,7 +674,7 @@ void GkXmppClient::handleError(QXmppClient::Error errorMsg)
 void GkXmppClient::handleError(const QString &errorMsg)
 {
     if (!errorMsg.isEmpty()) {
-        if (isConnected()) {
+        if (isConnected() || m_netState == GkNetworkState::Connecting) {
             disconnectFromServer();
         }
 
@@ -862,9 +837,12 @@ void GkXmppClient::recvXmppLog(QXmppLogger::MessageType msgType, const QString &
  * @param network_port
  * @param username
  * @param password
+ * @param jid
+ * @param user_signup
+ * @param send_registration_form
  */
 void GkXmppClient::createConnectionToServer(const QString &domain_url, const quint16 &network_port, const QString &username,
-                                            const QString &password, const bool &user_signup)
+                                            const QString &password, const QString &jid, const bool &user_signup)
 {
     try {
         if (domain_url.isEmpty()) {
@@ -883,40 +861,54 @@ void GkXmppClient::createConnectionToServer(const QString &domain_url, const qui
             m_registerManager->setRegisterOnConnectEnabled(true); // https://doc.qxmpp.org/qxmpp-1/classQXmppRegistrationManager.html
         }
 
-        //
-        // Neither username nor the password can be nullptr, both have to be available
-        // to be of any use!
-        if (username.isEmpty() || password.isEmpty()) {
-            m_presence = nullptr;
-        } else {
-            config.setJid(username);
+        // Attempt a connection to the given XMPP server! If no username and password are give, then we will attempt to
+        // connect anonymously!
+        if (!username.isEmpty() && !password.isEmpty() && !m_registerManager->registerOnConnectEnabled()) {
+            if (!jid.isEmpty()) {
+                config.setJid(jid);
+            } else {
+                config.setJid(QString("%1@%2").arg(username).arg(GkXmppGekkoFyreCfg::defaultUrl));
+            }
+
             config.setPassword(password);
+            config.setHost(domain_url);
+            config.setPort(network_port);
+        } else {
+            if (!domain_url.isEmpty()) {
+                m_presence = nullptr;
+                config.setDomain(domain_url);
+                config.setPort(network_port);
+            } else {
+                throw std::invalid_argument(tr("The given URL (used for the JID) is empty! As such, connection towards the XMPP server cannot proceed.").toStdString());
+            }
         }
 
-        QObject::connect(this, &QXmppClient::presenceReceived, this, [=](const QXmppPresence &presence) {
-            gkEventLogger->publishEvent(presence.statusText(), GkSeverity::Info, "", true, true, false, false);
-        });
+        if (!m_registerManager->registerOnConnectEnabled()) {
+            //
+            // Enable only if we are not attempting an in-band user registration...
+            QObject::connect(this, &QXmppClient::presenceReceived, this, [=](const QXmppPresence &presence) {
+                gkEventLogger->publishEvent(presence.statusText(), GkSeverity::Info, "", true, true, false, false);
+            });
+        }
 
+        //
         // You only need to provide a domain to connectToServer()...
         config.setAutoAcceptSubscriptions(false);
-        config.setAutoReconnectionEnabled(gkConnDetails.server.settings_client.auto_reconnect);
+        config.setAutoReconnectionEnabled(m_connDetails.server.settings_client.auto_reconnect);
         config.setStreamSecurityMode(QXmppConfiguration::StreamSecurityMode::TLSDisabled);
-        if (gkConnDetails.server.settings_client.enable_ssl && QSslSocket::supportsSsl()) { // https://xmpp.org/extensions/xep-0035.html
+        if (m_connDetails.server.settings_client.enable_ssl && QSslSocket::supportsSsl()) { // https://xmpp.org/extensions/xep-0035.html
             config.setStreamSecurityMode(QXmppConfiguration::StreamSecurityMode::TLSEnabled);
             qDebug() << tr("SSL version for build: ") << QSslSocket::sslLibraryBuildVersionString();
             qDebug() << tr("SSL version for run-time: ") << QSslSocket::sslLibraryVersionNumber();
         }
 
         config.setIgnoreSslErrors(false); // Do NOT ignore SSL warnings!
-        if (gkConnDetails.server.settings_client.ignore_ssl_errors) {
+        if (m_connDetails.server.settings_client.ignore_ssl_errors) {
             // We have been instructed to IGNORE any and all SSL warnings!
             config.setIgnoreSslErrors(true);
         }
 
         config.setResource(General::companyNameMin);
-        config.setDomain(domain_url);
-        config.setHost(domain_url);
-        config.setPort(network_port);
         config.setUseSASLAuthentication(true);
         config.setSaslAuthMechanism("PLAIN");
 
@@ -949,7 +941,7 @@ void GkXmppClient::handleSslGreeting()
 void GkXmppClient::initRosterMgr()
 {
     if (isConnected()) {
-        if ((config.user().isEmpty() || config.password().isEmpty()) || gkConnDetails.email.isEmpty()) {
+        if ((config.user().isEmpty() || config.password().isEmpty()) || m_connDetails.email.isEmpty()) {
             // Unable to signup!
             return;
         } else {
@@ -974,7 +966,7 @@ void GkXmppClient::versionReceivedSlot(const QXmppVersionIq &version)
 {
     if (version.type() == QXmppIq::Result) {
         QString version_str = version.name() + " " + version.version() + (!version.os().isEmpty() ? "@" + version.os() : QString());
-        gkEventLogger->publishEvent(tr("%1 server version: %2").arg(gkConnDetails.server.url).arg(version_str), GkSeverity::Info, "", false, true, false, false);
+        gkEventLogger->publishEvent(tr("%1 server version: %2").arg(m_connDetails.server.url).arg(version_str), GkSeverity::Info, "", false, true, false, false);
     }
 
     return;
@@ -1044,7 +1036,7 @@ QString GkXmppClient::getErrorCondition(const QXmppStanza::Error::Condition &con
         case QXmppStanza::Error::ItemNotFound:
             return tr("Item not found.");
         case QXmppStanza::Error::JidMalformed:
-            return tr("JID malformed.");
+            return tr("JID malformed (see: \"%1\").").arg(configuration().jid());
         case QXmppStanza::Error::NotAcceptable:
             return tr("Not acceptable.");
         case QXmppStanza::Error::NotAllowed:

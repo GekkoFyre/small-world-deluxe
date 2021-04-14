@@ -154,7 +154,9 @@ private slots:
     // QXmpp and XMPP related
     //
     void on_actionView_Roster_triggered();
+    void on_actionSign_in_triggered();
     void on_actionSign_out_triggered();
+    void on_action_Register_Account_triggered();
     void on_actionOnline_triggered();
     void on_actionInvisible_triggered();
     void on_actionOffline_triggered();

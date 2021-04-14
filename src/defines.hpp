@@ -118,11 +118,11 @@ namespace GekkoFyre {
 #define GK_SECURITY_FIREWALL_TCP_PORT_XMPP_CLIENT_5222 (5222)
 #define GK_SECURITY_FIREWALL_TCP_PORT_XMPP_CLIENT_SSL_5223 (5223)
 #define GK_SECURITY_FIREWALL_TCP_PORT_XMPP_SERVER_5269 (5269)
-#define GK_SECURITY_FIREWALL_TCP_PORT_XMPP_LOCAL_MSGING_5298 (5298)
-#define GK_SECURITY_FIREWALL_TCP_PORT_XMPP_BOSH_SSL_5443 (5443)
-#define GK_SECURITY_FIREWALL_TCP_PORT_XMPP_FILE_XFERS_8010 (8010)
-
-#define GK_SECURITY_FIREWALL_UDP_PORT_XMPP_LOCAL_MSGING_5298 (5298)
+#define GK_SECURITY_FIREWALL_TCP_PORT_XMPP_HTTP_BINDING_7070 (7070)
+#define GK_SECURITY_FIREWALL_TCP_PORT_XMPP_HTTPS_BINDING_7443 (7443)
+#define GK_SECURITY_FIREWALL_TCP_PORT_XMPP_CONNECT_MGR_5262 (5262)
+#define GK_SECURITY_FIREWALL_TCP_PORT_XMPP_CONNECT_MGR_SSL_5263 (5263)
+#define GK_SECURITY_FIREWALL_TCP_PORT_XMPP_FILE_XFER_PROXY_7777 (7777)
 
 //
 // XMPP specific constants
@@ -136,6 +136,10 @@ namespace GekkoFyre {
 #define GK_XMPP_IGNORE_SSL_ERRORS_COMBO_TRUE (1)
 #define GK_XMPP_URI_LOOKUP_DNS_SRV_METHOD (0)
 #define GK_XMPP_URI_LOOKUP_MANUAL_METHOD (1)
+
+#define GK_XMPP_VCARD_ROSTER_UPDATE_SECS (20)
+#define GK_XMPP_NETWORK_STATE_UPDATE_SECS (1)
+#define GK_XMPP_HANDLE_DISCONNECTION_SINGLE_SHOT_TIMER_SECS (5)
 
 //
 // Networking settings (also sometimes related to XMPP!)
@@ -253,6 +257,13 @@ namespace GekkoFyre {
 #define GK_CSIGN_MSGS_TABLEVIEW_MODEL_TOTAL_IDX (8)     // The total amount of indexes (i.e. columns) for the QTableView model, `GkActiveMsgsTableViewModel`. Be sure to keep this up-to-date!
 
 //
+// QTreeView Models
+//
+#define GK_XMPP_ROSTER_TREEVIEW_MODEL_PRESENCE_IDX (0)
+#define GK_XMPP_ROSTER_TREEVIEW_MODEL_NICKNAME_IDX (1)
+#define GK_XMPP_ROSTER_TREEVIEW_MODEL_TOTAL_IDX (2)
+
+//
 // Hamlib related
 //
 #define GK_HAMLIB_DEFAULT_TIMEOUT (3000)                // The default timeout value for Hamlib, measured in milliseconds.
@@ -287,12 +298,17 @@ namespace General {
     constexpr char codeRepository[] = "https://code.gekkofyre.io/amateur-radio/small-world-deluxe";
     constexpr char officialWebsite[] = "https://swdeluxe.io/";
 
-    constexpr char gk_sentry_uri[] = "https://5532275153ce4eb4865b89eb2441f356@sentry.gekkofyre.io/2";
+    constexpr char gk_sentry_uri[] = "https://2c7b92c7437b4728a2856a6ca71ddbe6@sentry.gekkofyre.io/2";
     constexpr char gk_sentry_user_side_uri[] = "https://sentry.gekkofyre.io/";
     constexpr char gk_sentry_env[] = "development";
 
     namespace Xmpp {
         constexpr char captchaNamespace[] = "urn:xmpp:captcha";
+        namespace GoogleLevelDb {
+            constexpr char jidLookupKey[] = "GkXmppStoredJid";
+            constexpr char keyToConvXmlStream[] = "GkXmlStream";
+            constexpr char keyToConvAvatarImg[] = "GkAvatarImg";
+        }
     }
 }
 
@@ -301,6 +317,7 @@ namespace Filesystem {
 
     constexpr char defaultDirAppend[] = "SmallWorld";                   // The dir to append at the end of a default path, such as within the user's profile directory.
     constexpr char fileName[] = "settings";                             // The filename for the database itself which is TAR archived and compressed
+    constexpr char fileLogData[] = "log.dat";                           // Where a record of the most up-to-date logging records are kept, from the last application run.
     constexpr char tarExtension[] = ".tar";                             // The file extension given to (mostly uncompressed) TAR archive
     constexpr char tmpExtension[] = ".tmp";                             // The file extension give to temporary files
 
@@ -325,9 +342,20 @@ namespace Network {
             Manual
         };
 
+        enum GkSaslAuthMethod {
+            Plain,
+            ScramSha1,
+            External,
+            DigestMd5,
+            CramMd5,
+            Anonymous
+        };
+
         enum GkNetworkState {
             None,
             Connecting,
+            Connected,
+            Disconnected,
             WaitForRegistrationForm,
             WaitForRegistrationConfirmation
         };
@@ -355,6 +383,11 @@ namespace Network {
             Unknown
         };
 
+        enum GkVcardKeyConv {
+            XmlStream,
+            AvatarImg
+        };
+
         struct GkClientSettings {
             bool allow_msg_history;                         // Shall we keep a message history with this server, provided it's a supported extension?
             bool allow_file_xfers;                          // Shall we allow file transfers with this server, provided it's a supported extension?
@@ -364,6 +397,7 @@ namespace Network {
             GkUriLookupMethod uri_lookup_method;            // The method by which we lookup the connection settings for the given XMPP server, whether by automatic DNS SRV Lookup or manual user input.
             bool enable_ssl;                                // Enable the absolute usage of SSL/TLS, otherwise throw an exception if not available!
             bool ignore_ssl_errors;                         // Whether to ignore any SSL errors presented by the server and/or client.
+            qint32 network_timeout;                         // A timeout value for anything network related, such as serving DNS queries for SRV records, to finally making a connection towards XMPP servers.
             QByteArray upload_avatar_pixmap;                // The byte-array data for the avatar that's to be uploaded upon next making a successful connection to the given XMPP server.
         };
 
@@ -389,7 +423,7 @@ namespace Network {
 }
 
 namespace GkXmppGekkoFyreCfg {
-    constexpr char defaultUrl[] = "xmpp.vk3vkk.io";
+    constexpr char defaultUrl[] = "vk3vkk.chat";
 }
 
 namespace System {
@@ -601,7 +635,8 @@ namespace Database {
             XmppPassword,
             XmppNickname,
             XmppEmailAddr,
-            XmppUriLookupMethod
+            XmppUriLookupMethod,
+            XmppNetworkTimeout
         };
 
         enum Codec2Mode {

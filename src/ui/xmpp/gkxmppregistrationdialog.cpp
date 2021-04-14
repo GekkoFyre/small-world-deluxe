@@ -41,6 +41,7 @@
 
 #include "gkxmppregistrationdialog.hpp"
 #include "ui_gkxmppregistrationdialog.h"
+#include "src/gk_string_funcs.hpp"
 #include <qxmpp/QXmppDataForm.h>
 #include <qxmpp/QXmppLogger.h>
 #include <utility>
@@ -85,6 +86,28 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
     try {
         //
         // Set these as invisible by default, unless the given XMPP server has a need for them!
+        //
+
+        //
+        // User registration captcha
+        ui->label_xmpp_captcha->setVisible(false);
+        ui->frame_xmpp_captcha_top->setVisible(false);
+        ui->frame_xmpp_captcha_bottom->setVisible(false);
+
+        //
+        // Change password captcha
+        ui->label_xmpp_change_password_captcha->setVisible(false);
+        ui->frame_xmpp_change_password_captcha_top->setVisible(false);
+        ui->frame_xmpp_change_password_captcha_bottom->setVisible(false);
+
+        //
+        // Change email captcha
+        ui->label_xmpp_change_email_captcha->setVisible(false);
+        ui->frame_xmpp_change_email_captcha_top->setVisible(false);
+        ui->frame_xmpp_change_email_captcha_bottom->setVisible(false);
+
+        //
+        // User login captcha
         ui->label_xmpp_login_captcha->setVisible(false);
         ui->frame_xmpp_login_captcha_top->setVisible(false);
         ui->frame_xmpp_login_captcha_bottom->setVisible(false);
@@ -95,14 +118,11 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
         //
         // QXmpp and XMPP related
         //
-        gkConnDetails = connection_details;
+        m_connDetails = connection_details;
         m_registerManager = m_xmppClient->getRegistrationMgr();
 
         QObject::connect(m_xmppClient, SIGNAL(sendRegistrationForm(const QXmppRegisterIq &)),
-                         this, SLOT(recvRegistrationForm(const QXmppRegisterIq &)));
-
-        QObject::connect(this, SIGNAL(registerUser(const std::unique_ptr<QXmppRegisterIq> &)),
-                         this, SLOT(sendRegistrationForm(const std::unique_ptr<QXmppRegisterIq> &)));
+                         this, SLOT(handleRegistrationForm(const QXmppRegisterIq &)));
 
         switch (gkRegUiRole) {
             case GkRegUiRole::AccountCreate:
@@ -164,7 +184,7 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
         QObject::connect(ui->lineEdit_change_email_username, SIGNAL(textChanged(const QString &)),
                          this, SLOT(setUsernameInputColor(const QString &)));
 
-        if (m_xmppClient->isConnected()) {
+        if (m_xmppClient->isConnected() || m_netState == GkNetworkState::Connecting) {
             //
             // Disconnect from the server since filling out the form may take some time, and we might
             // timeout on the connection otherwise!
@@ -172,17 +192,32 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
             m_xmppClient->disconnectFromServer();
         }
 
-        QObject::connect(m_xmppClient, &QXmppClient::connected, m_xmppClient, [=]() {
-            QObject::connect(m_registerManager.get(), &QXmppRegistrationManager::registrationFailed, [=](const QXmppStanza::Error &error) {
-                gkEventLogger->publishEvent(tr("Requesting the registration form failed:\n\n%1").arg(error.text()), GkSeverity::Fatal, "",
-                                            false, true, false, true);
-            });
+        //
+        // Allow the processing of the in-band user registration form...
+        QObject::connect(this, SIGNAL(sendRegistrationForm(const QXmppRegisterIq &)),
+                         this, SLOT(handleRegistrationForm(const QXmppRegisterIq &)));
 
-            QObject::connect(m_registerManager.get(), &QXmppRegistrationManager::passwordChangeFailed, [=](const QXmppStanza::Error &error) {
-                gkEventLogger->publishEvent(tr("An attempt to change the password has failed:\n\n%1").arg(error.text()), GkSeverity::Fatal, "",
-                                            false, true, false, true);
-            });
+        QObject::connect(m_registerManager.get(), &QXmppRegistrationManager::passwordChangeFailed, [=](const QXmppStanza::Error &error) {
+            gkEventLogger->publishEvent(tr("An attempt to change the password has failed: %1").arg(error.text()), GkSeverity::Fatal, "",
+                                        false, true, false, true);
         });
+
+        QObject::connect(m_registerManager.get(), &QXmppRegistrationManager::passwordChanged, this, [=](const QString &newPassword) {
+            Q_UNUSED(newPassword);
+            gkEventLogger->publishEvent(tr("Password successfully changed for user, \"%1\", that's registered with XMPP server: %2").arg(m_reg_user)
+                                                .arg(m_reg_domain), GkSeverity::Info, "", true, true, false, false);
+            m_xmppClient->disconnectFromServer();
+        });
+
+        QObject::connect(m_registerManager.get(), &QXmppRegistrationManager::registrationSucceeded, this, [=]() {
+            gkEventLogger->publishEvent(tr("User, \"%1\", has been successfully registered with XMPP server: %2").arg(m_reg_user)
+                                                .arg(m_reg_domain), GkSeverity::Info, "", true, true, false, false);
+            m_xmppClient->disconnectFromServer();
+        });
+
+        m_updateNetworkStateTimer = new QTimer(this);
+        QObject::connect(m_updateNetworkStateTimer, SIGNAL(timeout()), this, SLOT(updateNetworkState()));
+        m_updateNetworkStateTimer->start(GK_XMPP_NETWORK_STATE_UPDATE_SECS * 1000);
     } catch (const std::exception &e) {
         QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
     }
@@ -201,7 +236,7 @@ GkXmppRegistrationDialog::~GkXmppRegistrationDialog()
  */
 void GkXmppRegistrationDialog::on_pushButton_signup_submit_clicked()
 {
-    QString username;
+    QString jid;
     QString email;
     QString new_password;
     quint16 network_port;
@@ -211,16 +246,16 @@ void GkXmppRegistrationDialog::on_pushButton_signup_submit_clicked()
         //
         // Account signup!
         email = ui->lineEdit_email->text();
-        username = ui->lineEdit_username->text();
+        jid = ui->lineEdit_username->text();
         new_password = ui->lineEdit_password->text();
         network_port = ui->spinBox_xmpp_port->value();
 
         // Captcha
         captcha = ui->lineEdit_xmpp_captcha_input->text();
 
-        if (username.isEmpty()) {
+        if (jid.isEmpty()) {
             // Username field is empty!
-            QMessageBox::warning(this, tr("Empty field!"), tr("The username field cannot be empty!"), QMessageBox::Ok);
+            QMessageBox::warning(this, tr("Empty field!"), tr("The jid field cannot be empty!"), QMessageBox::Ok);
             return;
         }
 
@@ -250,13 +285,14 @@ void GkXmppRegistrationDialog::on_pushButton_signup_submit_clicked()
         }
          */
 
-        m_reg_username = username;
+        m_reg_jid = jid;
+        m_reg_user = m_xmppClient->getUsername(jid); // Extract the username from the given JID and its attached URI!
+        m_reg_domain = m_xmppClient->getHostname(jid); // Extract the URI from the given JID!
         m_reg_email = email;
         m_reg_password = new_password;
         m_reg_captcha = captcha;
 
-        userSignup(gkConnDetails.server.url, network_port, username, new_password);
-        // emit registerUser(m_registerForm);
+        userSignup(network_port, jid, new_password);
         return;
     }
 
@@ -294,7 +330,7 @@ void GkXmppRegistrationDialog::on_pushButton_signup_cancel_clicked()
 void GkXmppRegistrationDialog::on_pushButton_login_submit_clicked()
 {
     try {
-        QString username;
+        QString jid;
         QString old_password;
         QString captcha;
         quint16 network_port;
@@ -302,16 +338,16 @@ void GkXmppRegistrationDialog::on_pushButton_login_submit_clicked()
         if (ui->stackedWidget_xmpp_registration_dialog->currentWidget() == ui->page_account_login_ui) {
             //
             // Account login!
-            username = ui->lineEdit_login_username->text();
+            jid = ui->lineEdit_login_username->text();
             old_password = ui->lineEdit_login_password->text();
             network_port = ui->spinBox_login_xmpp_port->value();
 
             // Captcha
             captcha = ui->lineEdit_xmpp_login_captcha_input->text();
 
-            if (username.isEmpty()) {
+            if (jid.isEmpty()) {
                 // Username field is empty!
-                QMessageBox::warning(this, tr("Empty field!"), tr("The username field cannot be empty!"), QMessageBox::Ok);
+                QMessageBox::warning(this, tr("Empty field!"), tr("The jid field cannot be empty!"), QMessageBox::Ok);
                 return;
             }
 
@@ -337,7 +373,7 @@ void GkXmppRegistrationDialog::on_pushButton_login_submit_clicked()
 
             //
             // Attempt a login to the server!
-            loginToServer(gkConnDetails.server.url, network_port, username, old_password);
+            loginToServer(m_xmppClient->getHostname(jid), network_port, m_xmppClient->getUsername(jid), jid, old_password);
 
             return;
         } else {
@@ -524,50 +560,58 @@ void GkXmppRegistrationDialog::on_pushButton_change_email_cancel_clicked()
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param registerIq The user registration form to be filled out, as received from the connected towards XMPP server.
  * @note QXmppRegistrationManager Class Reference <https://doc.qxmpp.org/qxmpp-dev/classQXmppRegistrationManager.html>.
- * @see GkXmppRegistrationDialog::sendRegistrationForm().
+ * @see GkXmppRegistrationDialog::handleRegistrationForm().
  */
 void GkXmppRegistrationDialog::recvRegistrationForm(const QXmppRegisterIq &registerIq)
 {
     m_netState = GkNetworkState::WaitForRegistrationForm;
-    m_registerForm = std::make_unique<QXmppRegisterIq>(registerIq);
     m_id = registerIq.id();
+    emit sendRegistrationForm(registerIq);
 
-    gkEventLogger->publishEvent(tr("Received the registration form for XMPP server:\n\n%1")
-                                        .arg(gkConnDetails.server.url), GkSeverity::Debug, "", false,
-                                true, false, false);
-
+    gkEventLogger->publishEvent(tr("Received the registration form for XMPP server: %1")
+                                        .arg(m_connDetails.server.url), GkSeverity::Debug, "", false, true, false, false);
     return;
 }
 
 /**
- * @brief GkXmppRegistrationDialog::sendRegistrationForm attempts to sign-up a user with the given XMPP server by
+ * @brief GkXmppRegistrationDialog::handleRegistrationForm attempts to sign-up a user with the given XMPP server by
  * submitting the registration form received by function, `GkXmppRegistrationDialog::recvRegistrationForm()`.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param registerIq The user registration form to be filled out, as received from the connected towards XMPP server.
+ * @param registerIq
  * @note QXmppRegistrationManager Class Reference <https://doc.qxmpp.org/qxmpp-dev/classQXmppRegistrationManager.html>.
  * @see GkXmppRegistrationDialog::recvRegistrationForm().
  */
-void GkXmppRegistrationDialog::sendRegistrationForm(const std::unique_ptr<QXmppRegisterIq> &registerIq)
+void GkXmppRegistrationDialog::handleRegistrationForm(const QXmppRegisterIq &registerIq)
 {
-    QXmppRegisterIq registration_form;
     try {
-        registration_form.setForm(registerIq->form());
-        registration_form.setInstructions(registerIq->instructions());
-        registration_form.setEmail(m_reg_email);
-        registration_form.setPassword(m_reg_password);
-        registration_form.setUsername(m_reg_username);
-        registration_form.setType(QXmppIq::Type::Set);
+        if (!m_reg_user.isEmpty() && !m_reg_password.isEmpty() && !m_reg_email.isEmpty()) {
+            //
+            // The form now needs to be completed!
+            QXmppRegisterIq registration_form = registerIq;
+            registration_form.setEmail(StringFuncs::htmlSpecialCharEncoding(m_reg_email));
+            registration_form.setPassword(StringFuncs::htmlSpecialCharEncoding(m_reg_password));
+            registration_form.setUsername(StringFuncs::htmlSpecialCharEncoding(m_reg_user));
+            registration_form.setId(QStringLiteral("register1"));
+            registration_form.setType(QXmppIq::Type::Set);
 
-        QObject::connect(m_xmppClient, &QXmppClient::connected, [=]() {
+            //
+            // Allow the registration of a new user to proceed!
+            m_registerManager->setRegisterOnConnectEnabled(true);
+
+            //
+            // Send the filled out form itself! But only once we reconnect, where it will automatically be sent
+            // immediately upon a successful connection being made to the server in question.
+            // https://doc.qxmpp.org/qxmpp-1/classQXmppRegistrationManager.html
+            //
             m_registerManager->setRegistrationFormToSend(registration_form);
             m_registerManager->sendCachedRegistrationForm();
 
-            gkEventLogger->publishEvent(tr("User, \"%1\", has been registered with XMPP server:\n\n%2")
-            .arg(gkConnDetails.username).arg(gkConnDetails.server.url), GkSeverity::Info, "", false,
-            true, false, true);
-        });
+            //
+            // Disconnect from the given XMPP after so many seconds have passed by...
+            QTimer::singleShot(GK_XMPP_HANDLE_DISCONNECTION_SINGLE_SHOT_TIMER_SECS * 1000, m_xmppClient, &GkXmppClient::disconnectFromServer);
+        }
     } catch (const std::exception &e) {
-        gkEventLogger->publishEvent(tr("Issues were encountered with trying to register user with XMPP server! Error:\n\n%1")
+        gkEventLogger->publishEvent(tr("Issues were encountered with trying to register user with XMPP server! Error: %1")
                                             .arg(e.what()), GkSeverity::Fatal, "", false, true, false, true);
     }
 
@@ -585,12 +629,12 @@ void GkXmppRegistrationDialog::sendRegistrationForm(const std::unique_ptr<QXmppR
  * @param credentials_fail Whether to fail or not if there are no credentials, or invalid credentials, provided.
  */
 void GkXmppRegistrationDialog::loginToServer(const QString &hostname, const quint16 &network_port, const QString &username,
-                                             const QString &password, const bool &credentials_fail)
+                                             const QString &password, const QString &jid, const bool &credentials_fail)
 {
     try {
         //
         // Disconnect from server if already connected...
-        if (!m_xmppClient->isConnected()) {
+        if (!m_xmppClient->isConnected() || m_netState == GkNetworkState::Connecting) {
             m_xmppClient->disconnectFromServer();
         }
 
@@ -601,13 +645,13 @@ void GkXmppRegistrationDialog::loginToServer(const QString &hostname, const quin
             if (!user_hostname.isEmpty()) {
                 //
                 // A hostname has been provided as well and thusly derived from the username!
-                m_xmppClient->createConnectionToServer(user_hostname, network_port, username, password);
+                m_xmppClient->createConnectionToServer(user_hostname, network_port, username, password, jid, false);
                 return;
             }
 
             //
             // No hostname has been provided, therefore we will use the pre-configured settings (if any)!
-            m_xmppClient->createConnectionToServer(hostname, network_port, username, password);
+            m_xmppClient->createConnectionToServer(hostname, network_port, username, password, jid, false);
             return;
         }
 
@@ -625,36 +669,34 @@ void GkXmppRegistrationDialog::loginToServer(const QString &hostname, const quin
  * @brief GkXmppRegistrationDialog::userSignup initializes the signing-up and in-band registration of a new user to a
  * given XMPP server.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param hostname The XMPP server in question to connect towards (i.e. `xmpp.example.com`, without the quotes).
  * @param network_port The network port to connect towards, if manually specified.
  * @param username The username of the registrant in question.
  * @param password The password of the registrant in question.
  * @see GkXmppClient::createConnectionToServer().
  */
-void GkXmppRegistrationDialog::userSignup(const QString &hostname, const quint16 &network_port, const QString &username,
-                                          const QString &password)
+void GkXmppRegistrationDialog::userSignup(const quint16 &network_port, const QString &jid, const QString &password)
 {
     try {
-        if (m_xmppClient->isConnected()) {
+        if (m_xmppClient->isConnected() || m_netState == GkNetworkState::Connecting) {
             m_xmppClient->disconnectFromServer();
         }
 
-        if (username.isEmpty() || password.isEmpty()) {
+        if (jid.isEmpty() || password.isEmpty()) {
             throw std::invalid_argument(tr("Provided username and/or password are empty! Unable to continue with "
                                            "user registration.").toStdString());
         }
 
         //
         // A username and password has been provided!
-        QString user_hostname = m_xmppClient->getHostname(username); // Just in-case the user has entered a differing hostname!
-        if (!user_hostname.isEmpty()) {
+        QString hostname = m_xmppClient->getHostname(jid);
+        QString username = m_xmppClient->getUsername(jid);
+
+        if (!hostname.isEmpty() && !username.isEmpty()) {
             //
             // A hostname has been provided as well and thusly derived from the username!
-            m_xmppClient->createConnectionToServer(user_hostname, network_port, username, password);
+            m_xmppClient->createConnectionToServer(hostname, network_port, QString(), QString(), QString(), true);
             return;
         }
-
-        m_xmppClient->createConnectionToServer(hostname, network_port, username, password, true);
     } catch (const std::exception &e) {
         print_exception(e);
     }
@@ -726,6 +768,16 @@ void GkXmppRegistrationDialog::handleSuccess()
 {
     QObject::disconnect(m_xmppClient, nullptr, this, nullptr);
 
+    return;
+}
+
+/**
+ * @brief GkXmppRegistrationDialog::updateNetworkState
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRegistrationDialog::updateNetworkState()
+{
+    m_netState = m_xmppClient->getNetworkState();
     return;
 }
 

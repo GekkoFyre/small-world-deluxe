@@ -63,6 +63,7 @@ WORKDIR /opt/gekkofyre/app
 #
 # Install the following packages and update the system!
 #
+RUN pacman-db-upgrade
 RUN pacman -Sy --noconfirm
 RUN pacman -Syyu --noconfirm
 RUN pacman -S git --noconfirm
@@ -172,7 +173,9 @@ RUN yay -S --noconfirm --noprogressbar --needed \
         mingw-w64-qt5-serialport \
         mingw-w64-qt5-speech \
         mingw-w64-configure \
-        mingw-w64-python-bin 
+        mingw-w64-python-bin \
+        uasm \
+        qxmpp
 
 # Cleanup
 USER root
@@ -203,6 +206,8 @@ RUN pacman -S llvm-libs --noconfirm
 RUN pacman -S automake --noconfirm
 RUN pacman -S autoconf --noconfirm
 RUN pacman -S autoconf-archive --noconfirm
+RUN pacman -S libtool --noconfirm
+RUN pacman -S openssl --noconfirm
 RUN pacman -S boost --noconfirm
 RUN pacman -S qt5-base --noconfirm
 RUN pacman -S qt5-tools --noconfirm

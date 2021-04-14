@@ -48,6 +48,7 @@
 #include <QFileDialog>
 #include <QStandardPaths>
 #include <QTableWidgetItem>
+#include <QRegularExpression>
 #include <exception>
 #include <set>
 #include <iomanip>
@@ -252,6 +253,19 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         QObject::connect(gkTextToSpeech, SLOT(localeChanged(const QLocale &)), this, SLOT(ttsLocaleChanged(const QLocale &)));
         QObject::connect(ui->comboBox_access_stt_preset_voice, SIGNAL(currentIndexChanged(int)), gkTextToSpeech, SLOT(voiceSelected(int)));
         QObject::connect(ui->comboBox_access_stt_language, SIGNAL(currentIndexChanged(int)), gkTextToSpeech, SLOT(languageSelected(int)));
+
+        //
+        // Validate inputs for the Email Address
+        //
+        QRegularExpression rxEmail(R"(\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}\b)",
+                                   QRegularExpression::CaseInsensitiveOption);
+        ui->lineEdit_xmpp_client_email_address->setValidator(new QRegularExpressionValidator(rxEmail, this));
+
+        //
+        // Validate inputs for the Username
+        //
+        QRegularExpression rxUsername(R"(\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}\b)", QRegularExpression::CaseInsensitiveOption);
+        ui->lineEdit_xmpp_client_username->setValidator(new QRegularExpressionValidator(rxUsername, this));
     } catch (const std::exception &e) {
         QString error_msg = tr("A generic exception has occurred:\n\n%1").arg(e.what());
         gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
@@ -307,12 +321,15 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         QString xmpp_client_username = ui->lineEdit_xmpp_client_username->text();
         QString xmpp_client_password = ui->lineEdit_xmpp_client_password->text();
         QString xmpp_client_email_addr = ui->lineEdit_xmpp_client_email_address->text();
+        QString xmpp_client_nickname = ui->lineEdit_xmpp_server_nickname->text();
+        qint32 xmpp_network_timeout = ui->spinBox_xmpp_server_network_timeout->value();
 
         gkDekodeDb->write_xmpp_settings(QString::fromStdString(gkDekodeDb->boolEnum(xmpp_allow_msg_history)), GkXmppCfg::XmppAllowMsgHistory);
         gkDekodeDb->write_xmpp_settings(QString::fromStdString(gkDekodeDb->boolEnum(xmpp_allow_file_xfers)), GkXmppCfg::XmppAllowFileXfers);
         gkDekodeDb->write_xmpp_settings(QString::fromStdString(gkDekodeDb->boolEnum(xmpp_allow_mucs)), GkXmppCfg::XmppAllowMucs);
         gkDekodeDb->write_xmpp_settings(QString::fromStdString(gkDekodeDb->boolEnum(xmpp_connect_auto)), GkXmppCfg::XmppAutoConnect);
         gkDekodeDb->write_xmpp_settings(QString::fromStdString(gkDekodeDb->boolEnum(xmpp_reconnect_auto)), GkXmppCfg::XmppAutoReconnect);
+        gkDekodeDb->write_xmpp_settings(QString::number(xmpp_network_timeout), GkXmppCfg::XmppNetworkTimeout);
 
         //
         // CAUTION!!! Username, password, and e-mail address!
@@ -320,6 +337,7 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         gkDekodeDb->write_xmpp_settings(xmpp_client_username, GkXmppCfg::XmppUsername);
         gkDekodeDb->write_xmpp_settings(xmpp_client_password, GkXmppCfg::XmppPassword);
         gkDekodeDb->write_xmpp_settings(xmpp_client_email_addr, GkXmppCfg::XmppEmailAddr);
+        gkDekodeDb->write_xmpp_settings(xmpp_client_nickname, GkXmppCfg::XmppNickname);
 
         //
         // General --> XMPP --> Server Settings
@@ -1341,6 +1359,7 @@ bool DialogSettings::read_settings()
         QString xmpp_auto_connect = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppAutoConnect);
         QString xmpp_auto_reconnect = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppAutoReconnect);
         QString xmpp_uri_lookup_method = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppUriLookupMethod);
+        QString xmpp_network_timeout = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppNetworkTimeout);
 
         //
         // CAUTION!!! Username, password, and e-mail address!
@@ -1348,6 +1367,7 @@ bool DialogSettings::read_settings()
         QString xmpp_client_username = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppUsername);
         QString xmpp_client_password = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppPassword);
         QString xmpp_client_email_addr = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppEmailAddr);
+        QString xmpp_client_nickname = gkDekodeDb->read_xmpp_settings(GkXmppCfg::XmppNickname);
 
         if (!xmpp_allow_msg_history.isEmpty()) {
             ui->checkBox_allow_msg_history->setChecked(gkDekodeDb->boolStr(xmpp_allow_msg_history.toStdString()));
@@ -1411,6 +1431,18 @@ bool DialogSettings::read_settings()
             ui->lineEdit_xmpp_client_email_address->setText("");
         }
 
+        if (!xmpp_client_nickname.isEmpty()) {
+            ui->lineEdit_xmpp_server_nickname->setText(xmpp_client_nickname);
+        } else {
+            ui->lineEdit_xmpp_server_nickname->setText("");
+        }
+
+        if (!xmpp_network_timeout.isEmpty()) {
+            ui->spinBox_xmpp_server_network_timeout->setValue(xmpp_network_timeout.toInt());
+        } else {
+            ui->spinBox_xmpp_server_network_timeout->setValue(15);
+        }
+
         //
         // General --> XMPP --> Server Settings
         //
@@ -1437,7 +1469,6 @@ bool DialogSettings::read_settings()
         switch (ui->comboBox_xmpp_server_type->currentIndex()) {
             case GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX:
                 ui->lineEdit_xmpp_server_url->setText(GkXmppGekkoFyreCfg::defaultUrl);
-                ui->lineEdit_xmpp_client_username->setPlaceholderText(QString("@%1").arg(GkXmppGekkoFyreCfg::defaultUrl));
                 break;
             case GK_XMPP_SERVER_TYPE_COMBO_CUSTOM_IDX:
                 ui->lineEdit_xmpp_server_url->setText(xmpp_domain_url);
@@ -2820,6 +2851,10 @@ void DialogSettings::on_comboBox_audio_output_bit_rate_currentIndexChanged(int i
 
 void DialogSettings::on_toolButton_xmpp_upload_avatar_browse_file_clicked()
 {
+    QString filePath = QFileDialog::getOpenFileName(this, tr("Open Image"), QStandardPaths::writableLocation(QStandardPaths::PicturesLocation),
+                                                    tr("All Image Files (*.png *.jpg *.jpeg *.jpe *.jfif *.exif *.bmp *.gif);;PNG (*.png);;JPEG (*.jpg *.jpeg *.jpe *.jfif *.exif);;Bitmap (*.bmp);;GIF (*.gif);;All Files (*.*)"));
+    ui->lineEdit_xmpp_upload_avatar_file_browser->setText(filePath);
+
     return;
 }
 
@@ -2877,6 +2912,23 @@ void DialogSettings::on_pushButton_xmpp_cfg_login_logout_clicked()
     return;
 }
 
+void DialogSettings::on_pushButton_xmpp_cfg_delete_account_clicked()
+{
+    if (m_xmppClient->deleteUserAccount()) {
+        QMessageBox::information(nullptr, tr("Success!"), tr("User account deleted successfully from the server!"), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+void DialogSettings::on_pushButton_xmpp_cfg_delete_msg_history_clicked()
+{
+    // TODO: Implement this function!
+    QMessageBox::information(nullptr, tr("Not implemented!"), tr("This operation has yet to be implemented."), QMessageBox::Ok);
+
+    return;
+}
+
 void DialogSettings::on_comboBox_xmpp_server_type_currentIndexChanged(int index)
 {
     switch (index) {
@@ -2886,6 +2938,7 @@ void DialogSettings::on_comboBox_xmpp_server_type_currentIndexChanged(int index)
             ui->spinBox_xmpp_server_port->setEnabled(false);
             ui->checkBox_xmpp_server_ssl->setEnabled(false);
             ui->comboBox_xmpp_server_ssl_errors->setEnabled(false);
+            ui->lineEdit_xmpp_client_username->setPlaceholderText(tr("<username>"));
 
             break;
         case GK_XMPP_SERVER_TYPE_COMBO_CUSTOM_IDX:
@@ -2894,6 +2947,7 @@ void DialogSettings::on_comboBox_xmpp_server_type_currentIndexChanged(int index)
             ui->spinBox_xmpp_server_port->setEnabled(true);
             ui->checkBox_xmpp_server_ssl->setEnabled(true);
             ui->comboBox_xmpp_server_ssl_errors->setEnabled(true);
+            ui->lineEdit_xmpp_client_username->setPlaceholderText(tr("<username>@<host>.<tld>"));
 
             break;
         default:
