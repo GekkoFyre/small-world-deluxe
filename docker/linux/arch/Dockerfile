@@ -71,6 +71,7 @@ RUN pacman -S sudo --noconfirm
 RUN pacman -S fakeroot --noconfirm
 RUN pacman -S binutils --noconfirm
 RUN pacman -S base-devel --noconfirm
+RUN pacman -S nasm --noconfirm
 
 # Create devel user...
 RUN useradd -m -d /home/devel -u 1000 -U -G users,tty -s /bin/bash devel
@@ -174,7 +175,6 @@ RUN yay -S --noconfirm --noprogressbar --needed \
         mingw-w64-qt5-speech \
         mingw-w64-configure \
         mingw-w64-python-bin \
-        uasm \
         qxmpp
 
 # Cleanup

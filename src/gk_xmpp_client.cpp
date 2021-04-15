@@ -925,7 +925,8 @@ void GkXmppClient::createConnectionToServer(const QString &domain_url, const qui
             if (m_connTimer->elapsed() == GK_NETWORK_CONN_TIMEOUT_MILLSECS) {
                 disconnectFromServer();
                 m_connTimer->invalidate();
-                QMessageBox::warning(nullptr, tr("Timeout!"), tr("An attempt was made at connecting to the XMPP server but the timeout interval was reached!"), QMessageBox::Ok);
+                gkEventLogger->publishEvent(tr("An attempt was made at connecting to the XMPP server but the timeout interval was reached!"), GkSeverity::Fatal, "",
+                                            false, true, false, true);
             }
         } else {
             m_connTimer->start(); // Network timeout timer
@@ -933,7 +934,8 @@ void GkXmppClient::createConnectionToServer(const QString &domain_url, const qui
             if (m_connTimer->elapsed() == GK_NETWORK_CONN_TIMEOUT_MILLSECS) {
                 disconnectFromServer();
                 m_connTimer->invalidate();
-                QMessageBox::warning(nullptr, tr("Timeout!"), tr("An attempt was made at connecting to the XMPP server but the timeout interval was reached!"), QMessageBox::Ok);
+                gkEventLogger->publishEvent(tr("An attempt was made at connecting to the XMPP server but the timeout interval was reached!"), GkSeverity::Fatal, "",
+                                            false, true, false, true);
             }
         }
     } catch (const std::exception &e) {

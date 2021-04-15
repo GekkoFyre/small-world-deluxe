@@ -48,7 +48,7 @@
 # Note that environment variables can be set in several places
 # See https://docs.gitlab.com/ee/ci/variables/#priority-of-environment-variables
 
-image: gekkofyre/swd-arch-linux-latest
+image: gekkofyre/swd-arch-linux:latest
 stages:
 - sworld_debug_archlinux_x86_64
 - sworld_sentry_archlinux_x86_64
