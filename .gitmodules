@@ -13,9 +13,6 @@
 [submodule "src/contrib/codec2"]
 	path = src/contrib/codec2
 	url = https://github.com/drowe67/codec2.git
-[submodule "src/contrib/kissfft"]
-	path = src/contrib/kissfft
-	url = https://github.com/mborgerding/kissfft.git
 [submodule "src/contrib/leveldb"]
 	path = src/contrib/leveldb
 	url = https://github.com/google/leveldb.git
@@ -40,3 +37,6 @@
 [submodule "src/contrib/libopusenc"]
 	path = src/contrib/libopusenc
 	url = https://gitlab.xiph.org/xiph/libopusenc.git
+[submodule "src/contrib/kissfft"]
+	path = src/contrib/kissfft
+	url = http://code.gekkofyre.io/amateur-radio/kissfft.git
