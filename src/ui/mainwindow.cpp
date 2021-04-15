@@ -899,6 +899,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // QXmpp and XMPP related
         //
+        QObject::connect(m_xmppClient, SIGNAL(subscriptionRequestRecv(const QString &)), this, SLOT());
         readXmppSettings();
 
         //
@@ -2062,6 +2063,38 @@ QRect MainWindow::findActiveScreen()
 }
 
 /**
+ * @brief MainWindow::createXmppConnection
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::createXmppConnection()
+{
+    if (!xmpp_conn_details.username.isEmpty()) {
+        switch (xmpp_conn_details.server.type) {
+            case GkServerType::GekkoFyre:
+                if (!xmpp_conn_details.password.isEmpty()) { // A password is required for GekkoFyre Networks' XMPP server!
+                    m_xmppClient->createConnectionToServer(xmpp_conn_details.server.url, xmpp_conn_details.server.port, xmpp_conn_details.username, xmpp_conn_details.password, QString(), false);
+                }
+
+                break;
+            case GkServerType::Custom:
+                if (!xmpp_conn_details.password.isEmpty()) { // A password is required for GekkoFyre Networks' XMPP server!
+                    // Password provided
+                    m_xmppClient->createConnectionToServer(xmpp_conn_details.server.url, xmpp_conn_details.server.port, xmpp_conn_details.username, xmpp_conn_details.password, QString(), true);
+                } else {
+                    // Connecting anonymously
+                    m_xmppClient->createConnectionToServer(xmpp_conn_details.server.url, xmpp_conn_details.server.port, xmpp_conn_details.username, QString(), QString(), true);
+                }
+
+                break;
+            default:
+                break;
+        }
+    }
+
+    return;
+}
+
+/**
  * @brief MainWindow::readXmppSettings reads out any saved XMPP settings that have been previously written to the
  * pre-configured Google LevelDB database.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -2219,7 +2252,26 @@ void MainWindow::readXmppSettings()
  */
 void MainWindow::launchXmppRosterDlg()
 {
-    QPointer<GkXmppRosterDialog> gkXmppRosterDlg = new GkXmppRosterDialog(xmpp_conn_details, m_xmppClient, gkDb, gkEventLogger, this);
+    if (!m_xmppClient->isConnected()) {
+        QMessageBox msgBox;
+        msgBox.setWindowTitle(tr("Initializing..."));
+        msgBox.setText(tr("Do you wish to create a connection to the XMPP server, \"%1\"?").arg(xmpp_conn_details.server.url));
+        msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+        msgBox.setDefaultButton(QMessageBox::Ok);
+        msgBox.setIcon(QMessageBox::Icon::Information);
+        qint32 ret = msgBox.exec();
+        switch (ret) {
+            case QMessageBox::Ok:
+                createXmppConnection();
+                break;
+            case QMessageBox::Cancel:
+                return;
+            default:
+                return;
+        }
+    }
+
+    QPointer<GkXmppRosterDialog> gkXmppRosterDlg = new GkXmppRosterDialog(xmpp_conn_details, m_xmppClient, gkDb, gkEventLogger, true, this);
     gkXmppRosterDlg->setWindowFlags(Qt::Window);
     gkXmppRosterDlg->show();
 
@@ -3187,29 +3239,11 @@ void MainWindow::on_actionView_Roster_triggered()
 
 void MainWindow::on_actionSign_in_triggered()
 {
-    if (!xmpp_conn_details.username.isEmpty()) {
-        switch (xmpp_conn_details.server.type) {
-            case GkServerType::GekkoFyre:
-                if (!xmpp_conn_details.password.isEmpty()) { // A password is required for GekkoFyre Networks' XMPP server!
-                    m_xmppClient->createConnectionToServer(xmpp_conn_details.server.url, xmpp_conn_details.server.port, xmpp_conn_details.username, xmpp_conn_details.password, QString(), false);
-                }
-
-                break;
-            case GkServerType::Custom:
-                if (!xmpp_conn_details.password.isEmpty()) { // A password is required for GekkoFyre Networks' XMPP server!
-                    // Password provided
-                    m_xmppClient->createConnectionToServer(xmpp_conn_details.server.url, xmpp_conn_details.server.port, xmpp_conn_details.username, xmpp_conn_details.password, QString(), true);
-                } else {
-                    // Connecting anonymously
-                    m_xmppClient->createConnectionToServer(xmpp_conn_details.server.url, xmpp_conn_details.server.port, xmpp_conn_details.username, QString(), QString(), true);
-                }
-
-                break;
-            default:
-                break;
-        }
+    if (m_xmppClient->isConnected()) {
+        m_xmppClient->disconnectFromServer();
     }
 
+    createXmppConnection();
     return;
 }
 
@@ -3242,6 +3276,18 @@ void MainWindow::on_actionInvisible_triggered()
 }
 
 void MainWindow::on_actionOffline_triggered()
+{
+    return;
+}
+
+/**
+ * @brief MainWindow::handleSubscriptionRequestRecv handles the processing and management of external subscription requests to
+ * the given, connected towards XMPP server in question. This function will only work if Small World Deluxe is actively
+ * connected towards an XMPP server at the time.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid
+ */
+void MainWindow::handleSubscriptionRequestRecv(const QString &bareJid)
 {
     return;
 }

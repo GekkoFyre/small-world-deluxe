@@ -152,6 +152,9 @@
       </property>
       <item>
        <widget class="QStackedWidget" name="stackedWidget_roster_ui">
+        <property name="currentIndex">
+         <number>0</number>
+        </property>
         <widget class="QWidget" name="page_user_roster">
          <layout class="QVBoxLayout" name="verticalLayout_9">
           <property name="leftMargin">
@@ -213,7 +216,11 @@
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_5">
                   <item>
-                   <widget class="QTreeView" name="treeView_callsigns_groups"/>
+                   <widget class="QTreeView" name="treeView_callsigns_groups">
+                    <property name="contextMenuPolicy">
+                     <enum>Qt::CustomContextMenu</enum>
+                    </property>
+                   </widget>
                   </item>
                  </layout>
                 </widget>
@@ -221,11 +228,11 @@
               </item>
              </layout>
             </widget>
-            <widget class="QWidget" name="tab_history">
+            <widget class="QWidget" name="tab_pending">
              <attribute name="title">
-              <string>History</string>
+              <string>Pending</string>
              </attribute>
-             <layout class="QVBoxLayout" name="verticalLayout_7">
+             <layout class="QVBoxLayout" name="verticalLayout_18">
               <property name="leftMargin">
                <number>0</number>
               </property>
@@ -239,9 +246,12 @@
                <number>0</number>
               </property>
               <item>
-               <widget class="QScrollArea" name="scrollArea_history">
+               <widget class="QScrollArea" name="scrollArea_callsigns_pending">
                 <property name="frameShape">
                  <enum>QFrame::NoFrame</enum>
+                </property>
+                <property name="frameShadow">
+                 <enum>QFrame::Plain</enum>
                 </property>
                 <property name="horizontalScrollBarPolicy">
                  <enum>Qt::ScrollBarAlwaysOff</enum>
@@ -249,7 +259,7 @@
                 <property name="widgetResizable">
                  <bool>true</bool>
                 </property>
-                <widget class="QWidget" name="scrollAreaWidgetContents_history">
+                <widget class="QWidget" name="scrollAreaWidgetContents_callsigns_pending">
                  <property name="geometry">
                   <rect>
                    <x>0</x>
@@ -258,14 +268,11 @@
                    <height>477</height>
                   </rect>
                  </property>
-                 <layout class="QVBoxLayout" name="verticalLayout_8">
+                 <layout class="QVBoxLayout" name="verticalLayout_19">
                   <item>
-                   <widget class="QTextBrowser" name="textBrowser_history">
-                    <property name="horizontalScrollBarPolicy">
-                     <enum>Qt::ScrollBarAlwaysOff</enum>
-                    </property>
-                    <property name="openExternalLinks">
-                     <bool>true</bool>
+                   <widget class="QTreeView" name="treeView_callsigns_pending">
+                    <property name="contextMenuPolicy">
+                     <enum>Qt::CustomContextMenu</enum>
                     </property>
                    </widget>
                   </item>
@@ -416,6 +423,151 @@
           </item>
          </layout>
         </widget>
+        <widget class="QWidget" name="page_add_new_contact">
+         <layout class="QVBoxLayout" name="verticalLayout_6">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QScrollArea" name="scrollArea_add_new_contact">
+            <property name="frameShape">
+             <enum>QFrame::NoFrame</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Plain</enum>
+            </property>
+            <property name="widgetResizable">
+             <bool>true</bool>
+            </property>
+            <widget class="QWidget" name="scrollAreaWidgetContents">
+             <property name="geometry">
+              <rect>
+               <x>0</x>
+               <y>0</y>
+               <width>219</width>
+               <height>130</height>
+              </rect>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_16">
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item>
+               <widget class="QGroupBox" name="groupBox_add_new_contact">
+                <property name="title">
+                 <string>Add Contact</string>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_17">
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="QFrame" name="frame_add_new_contact_form">
+                   <property name="frameShape">
+                    <enum>QFrame::StyledPanel</enum>
+                   </property>
+                   <property name="frameShadow">
+                    <enum>QFrame::Raised</enum>
+                   </property>
+                   <layout class="QFormLayout" name="formLayout">
+                    <item row="0" column="0">
+                     <widget class="QLabel" name="label_add_contact_username">
+                      <property name="text">
+                       <string>Username: </string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="0" column="1">
+                     <widget class="QLineEdit" name="lineEdit_add_contact_username">
+                      <property name="toolTip">
+                       <string>The desired username you wish to add to your roster.</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QFrame" name="frame_add_new_contact_buttons">
+                   <property name="frameShape">
+                    <enum>QFrame::StyledPanel</enum>
+                   </property>
+                   <property name="frameShadow">
+                    <enum>QFrame::Raised</enum>
+                   </property>
+                   <layout class="QHBoxLayout" name="horizontalLayout_3">
+                    <item>
+                     <widget class="QPushButton" name="pushButton_add_contact_submit">
+                      <property name="toolTip">
+                       <string>Submit and add the new contact to your roster.</string>
+                      </property>
+                      <property name="text">
+                       <string>Submit</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QPushButton" name="pushButton_add_contact_cancel">
+                      <property name="toolTip">
+                       <string>Cancel and return back to the main roster screen.</string>
+                      </property>
+                      <property name="text">
+                       <string>Cancel</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="verticalSpacer_4">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>20</width>
+                     <height>372</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </widget>
+          </item>
+         </layout>
+        </widget>
        </widget>
       </item>
      </layout>
@@ -449,13 +601,59 @@
     </widget>
    </item>
   </layout>
+  <action name="actionAdd_Contact">
+   <property name="text">
+    <string>Add Contact</string>
+   </property>
+   <property name="toolTip">
+    <string>Insert a new contact into your address book.</string>
+   </property>
+  </action>
+  <action name="actionEdit_Contact">
+   <property name="text">
+    <string>Edit Contact</string>
+   </property>
+   <property name="toolTip">
+    <string>Edit an already added contact from your address book.</string>
+   </property>
+  </action>
+  <action name="actionDelete_Contact">
+   <property name="text">
+    <string>Delete Contact</string>
+   </property>
+   <property name="toolTip">
+    <string>Delete a previously added contact from your address book.</string>
+   </property>
+  </action>
+  <action name="actionAcceptInvite">
+   <property name="text">
+    <string>Accept</string>
+   </property>
+   <property name="toolTip">
+    <string>Accept the subscription invite.</string>
+   </property>
+  </action>
+  <action name="actionRefuseInvite">
+   <property name="text">
+    <string>Refuse</string>
+   </property>
+   <property name="toolTip">
+    <string>Refuse the subscription invite.</string>
+   </property>
+  </action>
+  <action name="actionBlockUser">
+   <property name="text">
+    <string>Block User</string>
+   </property>
+   <property name="toolTip">
+    <string>Block the user from messaging you and/or making subscription requests.</string>
+   </property>
+  </action>
  </widget>
  <tabstops>
   <tabstop>tabWidget</tabstop>
   <tabstop>scrollArea_callsigns_groups</tabstop>
   <tabstop>comboBox_current_status</tabstop>
-  <tabstop>textBrowser_history</tabstop>
-  <tabstop>scrollArea_history</tabstop>
   <tabstop>pushButton_user_login</tabstop>
   <tabstop>pushButton_user_create_account</tabstop>
  </tabstops>

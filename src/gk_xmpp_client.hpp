@@ -153,6 +153,7 @@ signals:
     // User, roster and presence details
     void setPresence(const QXmppPresence::Type &pres);
     void sendRegistrationForm(const QXmppRegisterIq &registerIq);
+    void subscriptionRequestRecv(const QString &bareJid);
 
     //
     // Event & Logging management

@@ -64,8 +64,8 @@ using namespace Security;
 
 GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPointer<GekkoFyre::GkXmppClient> xmppClient,
                                        QPointer<GekkoFyre::GkLevelDb> database, QPointer<GkEventLogger> eventLogger,
-                                       QWidget *parent) : shownXmppPreviewNotice(false), QDialog(parent),
-                                       ui(new Ui::GkXmppRosterDialog)
+                                       const bool &skipConnectionCheck, QWidget *parent) : shownXmppPreviewNotice(false),
+                                       QDialog(parent), ui(new Ui::GkXmppRosterDialog)
 {
     ui->setupUi(this);
 
@@ -83,6 +83,10 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
 
         m_rootItem = QSharedPointer<GkXmppRosterTreeViewItem>(new GkXmppRosterTreeViewItem(root_data));
         m_xmppRosterTreeViewModel = new GkXmppRosterTreeViewModel(m_rootItem.get(), this);
+
+        //
+        // Fill out the presence status ComboBox!
+        prefillAvailComboBox();
 
         ui->treeView_callsigns_groups->setContextMenuPolicy(Qt::CustomContextMenu);
         QObject::connect(ui->treeView_callsigns_groups, SIGNAL(customContextMenuRequested(const QPoint &)),
@@ -113,9 +117,13 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
             gkDb->write_xmpp_alpha_notice(shownXmppPreviewNotice);
         }
 
-        if (!m_xmppClient->isConnected()) {
-            ui->frame_self_info->setVisible(false);
-            ui->stackedWidget_roster_ui->setCurrentWidget(ui->page_login_or_create_account);
+        if (!skipConnectionCheck) {
+            if (!m_xmppClient->isConnected()) {
+                ui->frame_self_info->setVisible(false);
+                ui->stackedWidget_roster_ui->setCurrentWidget(ui->page_login_or_create_account);
+            } else {
+                ui->stackedWidget_roster_ui->setCurrentWidget(ui->page_user_roster);
+            }
         } else {
             ui->stackedWidget_roster_ui->setCurrentWidget(ui->page_user_roster);
         }
@@ -152,8 +160,12 @@ void GkXmppRosterDialog::updateActions()
 void GkXmppRosterDialog::prefillAvailComboBox()
 {
     // TODO: Insert an icon to the left within this QComboBox at a future date!
-    ui->comboBox_current_status->insertItem(GK_XMPP_AVAIL_COMBO_AVAILABLE_IDX, tr("Online / Available"));
-    ui->comboBox_current_status->insertItem(GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX, tr("Offline / Unavailable"));
+    ui->comboBox_current_status->insertItem(GK_XMPP_AVAIL_COMBO_AVAILABLE_IDX, QString("  %1").arg(tr("Online / Available")));
+    ui->comboBox_current_status->setItemIcon(GK_XMPP_AVAIL_COMBO_AVAILABLE_IDX,
+                                             QIcon(":/resources/contrib/images/raster/gekkofyre-networks/green-circle.png"));
+    ui->comboBox_current_status->insertItem(GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX, QString("  %1").arg(tr("Offline / Unavailable")));
+    ui->comboBox_current_status->setItemIcon(GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX,
+                                             QIcon(":/resources/contrib/images/raster/gekkofyre-networks/red-circle.png"));
 
     return;
 }
@@ -200,25 +212,129 @@ void GkXmppRosterDialog::on_pushButton_user_create_account_clicked()
 }
 
 /**
- * @brief GkXmppRosterDialog::onCustomContextMenu
+ * @brief GkXmppRosterDialog::on_treeView_callsigns_groups_customContextMenuRequested
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param point
+ * @param pos
  */
-void GkXmppRosterDialog::onCustomContextMenu(const QPoint &point)
+void GkXmppRosterDialog::on_treeView_callsigns_groups_customContextMenuRequested(const QPoint &pos)
 {
     std::unique_ptr<QMenu> contextMenu = std::make_unique<QMenu>(ui->treeView_callsigns_groups);
+    contextMenu->addAction(ui->actionAdd_Contact);
+    contextMenu->addAction(ui->actionEdit_Contact);
+    contextMenu->addAction(ui->actionDelete_Contact);
 
-    m_action_add_contact = std::make_unique<QAction>(tr("Add Contact"), this);
-    m_action_edit_contact = std::make_unique<QAction>(tr("Edit Contact"), this);
-    m_action_delete_contact = std::make_unique<QAction>(tr("Delete Contact"), this);
-    contextMenu->addAction(m_action_add_contact.get());
-    contextMenu->addAction(m_action_edit_contact.get());
-    contextMenu->addAction(m_action_delete_contact.get());
+    //
+    // Save the position data to the QAction
+    ui->actionAdd_Contact->setData(QVariant(pos));
+    ui->actionEdit_Contact->setData(QVariant(pos));
+    ui->actionDelete_Contact->setData(QVariant(pos));
 
-    QModelIndex index = ui->treeView_callsigns_groups->indexAt(point);
-    if (index.isValid() && index.row() % 2 == 0) {
-        contextMenu->exec(ui->treeView_callsigns_groups->viewport()->mapToGlobal(point));
-    }
+    contextMenu->exec(ui->treeView_callsigns_groups->mapToGlobal(pos));
 
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::on_actionAdd_Contact_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRosterDialog::on_actionAdd_Contact_triggered()
+{
+    ui->stackedWidget_roster_ui->setCurrentWidget(ui->page_add_new_contact);
+
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::on_actionEdit_Contact_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRosterDialog::on_actionEdit_Contact_triggered()
+{
+    QModelIndex idx = ui->treeView_callsigns_groups->indexAt(ui->actionEdit_Contact->data().toPoint());
+    QVariant data = ui->treeView_callsigns_groups->model()->data(idx);
+    QString text = data.toString();
+
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::on_actionDelete_Contact_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRosterDialog::on_actionDelete_Contact_triggered()
+{
+    QModelIndex idx = ui->treeView_callsigns_groups->indexAt(ui->actionDelete_Contact->data().toPoint());
+    QVariant data = ui->treeView_callsigns_groups->model()->data(idx);
+    QString text = data.toString();
+
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::on_treeView_callsigns_pending_customContextMenuRequested
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param pos
+ */
+void GkXmppRosterDialog::on_treeView_callsigns_pending_customContextMenuRequested(const QPoint &pos)
+{
+    std::unique_ptr<QMenu> contextMenu = std::make_unique<QMenu>(ui->treeView_callsigns_pending);
+    contextMenu->addAction(ui->actionAcceptInvite);
+    contextMenu->addAction(ui->actionRefuseInvite);
+    contextMenu->addAction(ui->actionBlockUser);
+
+    //
+    // Save the position data to the QAction
+    ui->actionAcceptInvite->setData(QVariant(pos));
+    ui->actionRefuseInvite->setData(QVariant(pos));
+    ui->actionBlockUser->setData(QVariant(pos));
+
+    contextMenu->exec(ui->treeView_callsigns_pending->mapToGlobal(pos));
+
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::on_pushButton_add_contact_submit_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRosterDialog::on_pushButton_add_contact_submit_clicked()
+{
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::on_pushButton_add_contact_cancel_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRosterDialog::on_pushButton_add_contact_cancel_clicked()
+{
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::on_actionAcceptInvite_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRosterDialog::on_actionAcceptInvite_triggered()
+{
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::on_actionRefuseInvite_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRosterDialog::on_actionRefuseInvite_triggered()
+{
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::on_actionBlockUser_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRosterDialog::on_actionBlockUser_triggered()
+{
     return;
 }

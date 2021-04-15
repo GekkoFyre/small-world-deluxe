@@ -205,18 +205,6 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
             m_xmppClient->disconnectFromServer();
         });
 
-        QObject::connect(m_registerManager.get(), &QXmppRegistrationManager::registrationSucceeded, this, [=]() {
-            gkEventLogger->publishEvent(tr("User, \"%1\", has been successfully registered with XMPP server: %2").arg(m_reg_user)
-                                                .arg(m_reg_domain), GkSeverity::Info, "", true, true, false, false);
-            m_xmppClient->disconnectFromServer();
-        });
-
-        QObject::connect(m_registerManager.get(), &QXmppRegistrationManager::registrationFailed, this, [=]() {
-            gkEventLogger->publishEvent(tr("Registration failed for user, \"%1\", with XMPP server: %2").arg(m_reg_user)
-                                                .arg(m_reg_domain), GkSeverity::Info, "", true, true, false, false);
-            m_xmppClient->disconnectFromServer();
-        });
-
         m_updateNetworkStateTimer = new QTimer(this);
         QObject::connect(m_updateNetworkStateTimer, SIGNAL(timeout()), this, SLOT(updateNetworkState()));
         m_updateNetworkStateTimer->start(GK_XMPP_NETWORK_STATE_UPDATE_SECS * 1000);

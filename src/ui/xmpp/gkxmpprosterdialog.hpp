@@ -66,19 +66,28 @@ class GkXmppRosterDialog : public QDialog
 public:
     explicit GkXmppRosterDialog(const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details, QPointer<GekkoFyre::GkXmppClient> xmppClient,
                                 QPointer<GekkoFyre::GkLevelDb> database, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                                QWidget *parent = nullptr);
+                                const bool &skipConnectionCheck = false, QWidget *parent = nullptr);
     ~GkXmppRosterDialog();
 
 private slots:
     void on_comboBox_current_status_currentIndexChanged(int index);
     void on_pushButton_user_login_clicked();
     void on_pushButton_user_create_account_clicked();
-    void onCustomContextMenu(const QPoint &point);
+    void on_treeView_callsigns_groups_customContextMenuRequested(const QPoint &pos);
+    void on_actionAdd_Contact_triggered();
+    void on_actionEdit_Contact_triggered();
+    void on_actionDelete_Contact_triggered();
+    void on_treeView_callsigns_pending_customContextMenuRequested(const QPoint &pos);
 
     //
     // XMPP Roster management and related
     //
     void updateActions();
+    void on_pushButton_add_contact_cancel_clicked();
+    void on_pushButton_add_contact_submit_clicked();
+    void on_actionAcceptInvite_triggered();
+    void on_actionRefuseInvite_triggered();
+    void on_actionBlockUser_triggered();
 
 private:
     Ui::GkXmppRosterDialog *ui;
@@ -93,13 +102,6 @@ private:
     //
     QSharedPointer<GekkoFyre::GkXmppRosterTreeViewItem> m_rootItem;
     QPointer<GekkoFyre::GkXmppRosterTreeViewModel> m_xmppRosterTreeViewModel;
-
-    //
-    // QAction's / Right-click menu items
-    //
-    std::unique_ptr<QAction> m_action_add_contact;
-    std::unique_ptr<QAction> m_action_delete_contact;
-    std::unique_ptr<QAction> m_action_edit_contact;
 
     //
     // QXmpp and XMPP related

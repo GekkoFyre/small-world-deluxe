@@ -210,6 +210,12 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         QObject::connect(m_registerManager.get(), SIGNAL(registrationFormReceived(const QXmppRegisterIq &)),
                          this, SLOT(handleRegistrationForm(const QXmppRegisterIq &)));
 
+        QObject::connect(m_registerManager.get(), &QXmppRegistrationManager::registrationSucceeded, this, [=]() {
+            gkEventLogger->publishEvent(tr("User, \"%1\", has been successfully registered with XMPP server: %2").arg(configuration().user())
+                                                .arg(configuration().domain()), GkSeverity::Info, "", true, true, false, false);
+            disconnectFromServer();
+        });
+
         QObject::connect(m_registerManager.get(), &QXmppRegistrationManager::registrationFailed, [=](const QXmppStanza::Error &error) {
             gkEventLogger->publishEvent(tr("Requesting the registration form failed: %1").arg(getErrorCondition(error.condition())), GkSeverity::Fatal, "",
                                         false, true, false, true);
@@ -859,6 +865,7 @@ void GkXmppClient::createConnectionToServer(const QString &domain_url, const qui
             throw std::invalid_argument(tr("An invalid XMPP Server network port has been provided! It cannot be less than 80/TCP (HTTP)!").toStdString());
         }
 
+        m_registerManager->setRegisterOnConnectEnabled(false);
         if (user_signup) { // Override...
             //
             // Allow the registration of a new user to proceed!
@@ -1000,6 +1007,10 @@ void GkXmppClient::versionReceivedSlot(const QXmppVersionIq &version)
  */
 void GkXmppClient::notifyNewSubscription(const QString &bareJid)
 {
+    gkEventLogger->publishEvent(tr("User, \"%1\", wishes to add you to their roster!").arg(getUsername(bareJid)),
+                                GkSeverity::Info, "", true, true, false, false);
+    emit subscriptionRequestRecv(bareJid);
+
     return;
 }
 
@@ -1010,6 +1021,9 @@ void GkXmppClient::notifyNewSubscription(const QString &bareJid)
  */
 void GkXmppClient::itemAdded(const QString &bareJid)
 {
+    gkEventLogger->publishEvent(tr("User, \"%1\", successfully added to roster!").arg(getUsername(bareJid)),
+                                GkSeverity::Info, "", true, true, false, false);
+
     return;
 }
 
@@ -1020,6 +1034,9 @@ void GkXmppClient::itemAdded(const QString &bareJid)
  */
 void GkXmppClient::itemRemoved(const QString &bareJid)
 {
+    gkEventLogger->publishEvent(tr("User, \"%1\", successfully removed from roster!").arg(getUsername(bareJid)),
+                                GkSeverity::Info, "", true, true, false, false);
+
     return;
 }
 
@@ -1030,6 +1047,9 @@ void GkXmppClient::itemRemoved(const QString &bareJid)
  */
 void GkXmppClient::itemChanged(const QString &bareJid)
 {
+    gkEventLogger->publishEvent(tr("Details for user, \"%1\", have changed within the roster!").arg(getUsername(bareJid)),
+                                GkSeverity::Info, "", true, true, false, false);
+
     return;
 }
 
