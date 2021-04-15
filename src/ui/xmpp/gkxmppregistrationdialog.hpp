@@ -70,6 +70,8 @@ public:
                                       QPointer<GekkoFyre::GkEventLogger> eventLogger, QWidget *parent = nullptr);
     ~GkXmppRegistrationDialog() override;
 
+    void externalUserSignup(const quint16 &network_port, const QString &jid, const QString &email, const QString &password);
+
 private slots:
     void on_pushButton_signup_submit_clicked();
     void on_pushButton_signup_reset_clicked();
@@ -116,6 +118,8 @@ private slots:
 signals:
     void sendError(const QString &errorMsg);
     void sendRegistrationForm(const QXmppRegisterIq &registerIq);
+    void registrationSuccessful();
+    void registrationUnsuccessful();
 
 private:
     Ui::GkXmppRegistrationDialog *ui;

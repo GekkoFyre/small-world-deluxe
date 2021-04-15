@@ -48,6 +48,7 @@
 #include "src/models/treeview/xmpp/gk_xmpp_roster_model.hpp"
 #include "src/gk_logger.hpp"
 #include <memory>
+#include <QAction>
 #include <QString>
 #include <QObject>
 #include <QDialog>
@@ -72,6 +73,7 @@ private slots:
     void on_comboBox_current_status_currentIndexChanged(int index);
     void on_pushButton_user_login_clicked();
     void on_pushButton_user_create_account_clicked();
+    void onCustomContextMenu(const QPoint &point);
 
     //
     // XMPP Roster management and related
@@ -91,6 +93,13 @@ private:
     //
     QSharedPointer<GekkoFyre::GkXmppRosterTreeViewItem> m_rootItem;
     QPointer<GekkoFyre::GkXmppRosterTreeViewModel> m_xmppRosterTreeViewModel;
+
+    //
+    // QAction's / Right-click menu items
+    //
+    std::unique_ptr<QAction> m_action_add_contact;
+    std::unique_ptr<QAction> m_action_delete_contact;
+    std::unique_ptr<QAction> m_action_edit_contact;
 
     //
     // QXmpp and XMPP related
