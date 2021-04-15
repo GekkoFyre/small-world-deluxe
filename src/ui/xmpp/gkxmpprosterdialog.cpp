@@ -43,6 +43,7 @@
 #include "ui_gkxmpprosterdialog.h"
 #include "src/ui/xmpp/gkxmppregistrationdialog.hpp"
 #include <utility>
+#include <QMenu>
 #include <QMessageBox>
 #include <QStringList>
 
@@ -82,6 +83,10 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
 
         m_rootItem = QSharedPointer<GkXmppRosterTreeViewItem>(new GkXmppRosterTreeViewItem(root_data));
         m_xmppRosterTreeViewModel = new GkXmppRosterTreeViewModel(m_rootItem.get(), this);
+
+        ui->treeView_callsigns_groups->setContextMenuPolicy(Qt::CustomContextMenu);
+        QObject::connect(ui->treeView_callsigns_groups, SIGNAL(customContextMenuRequested(const QPoint &)),
+                         this, SLOT(onCustomContextMenu(const QPoint &)));
 
         ui->treeView_callsigns_groups->setModel(m_xmppRosterTreeViewModel);
         for (qint32 column = 0; column < m_xmppRosterTreeViewModel->columnCount(); ++column) {
@@ -190,6 +195,30 @@ void GkXmppRosterDialog::on_pushButton_user_create_account_clicked()
     QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountCreate, gkConnDetails, m_xmppClient, gkEventLogger, this);
     gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
     gkXmppRegistrationDlg->show();
+
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::onCustomContextMenu
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param point
+ */
+void GkXmppRosterDialog::onCustomContextMenu(const QPoint &point)
+{
+    std::unique_ptr<QMenu> contextMenu = std::make_unique<QMenu>(ui->treeView_callsigns_groups);
+
+    m_action_add_contact = std::make_unique<QAction>(tr("Add Contact"), this);
+    m_action_edit_contact = std::make_unique<QAction>(tr("Edit Contact"), this);
+    m_action_delete_contact = std::make_unique<QAction>(tr("Delete Contact"), this);
+    contextMenu->addAction(m_action_add_contact.get());
+    contextMenu->addAction(m_action_edit_contact.get());
+    contextMenu->addAction(m_action_delete_contact.get());
+
+    QModelIndex index = ui->treeView_callsigns_groups->indexAt(point);
+    if (index.isValid() && index.row() % 2 == 0) {
+        contextMenu->exec(ui->treeView_callsigns_groups->viewport()->mapToGlobal(point));
+    }
 
     return;
 }

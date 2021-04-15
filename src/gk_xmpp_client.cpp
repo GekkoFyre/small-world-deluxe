@@ -448,6 +448,12 @@ bool GkXmppClient::deleteUserAccount()
     try {
         if (isConnected()) {
             m_registerManager->deleteAccount();
+            QObject::connect(m_registerManager.get(), &QXmppRegistrationManager::accountDeleted, [=]() {
+                disconnectFromServer();
+                gkEventLogger->publishEvent(tr("User account deleted successfully!"), GkSeverity::Info, "",
+                                            false, true, false, true);
+            });
+
             return true;
         }
     } catch (const std::exception &e) {
@@ -912,10 +918,23 @@ void GkXmppClient::createConnectionToServer(const QString &domain_url, const qui
         config.setUseSASLAuthentication(true);
         config.setSaslAuthMechanism("PLAIN");
 
+        m_connTimer = std::make_unique<QElapsedTimer>();
         if (m_presence) {
+            m_connTimer->start(); // Network timeout timer
             connectToServer(config, *m_presence);
+            if (m_connTimer->elapsed() == GK_NETWORK_CONN_TIMEOUT_MILLSECS) {
+                disconnectFromServer();
+                m_connTimer->invalidate();
+                QMessageBox::warning(nullptr, tr("Timeout!"), tr("An attempt was made at connecting to the XMPP server but the timeout interval was reached!"), QMessageBox::Ok);
+            }
         } else {
+            m_connTimer->start(); // Network timeout timer
             connectToServer(config);
+            if (m_connTimer->elapsed() == GK_NETWORK_CONN_TIMEOUT_MILLSECS) {
+                disconnectFromServer();
+                m_connTimer->invalidate();
+                QMessageBox::warning(nullptr, tr("Timeout!"), tr("An attempt was made at connecting to the XMPP server but the timeout interval was reached!"), QMessageBox::Ok);
+            }
         }
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(e.what()));

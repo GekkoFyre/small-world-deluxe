@@ -344,6 +344,7 @@ private:
     void init_station_info();
 
     void monitorXmppServerChange();
+    void createXmppConnectionFromSettings();
 
     void print_exception(const std::exception &e, int level = 0);
     double convQComboBoxSampleRateToDouble(const int &combobox_idx);

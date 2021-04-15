@@ -146,6 +146,7 @@ namespace GekkoFyre {
 //
 #define GK_NETWORK_PING_TIMEOUT_MILLISECS (3000)                // The amount of time, in milliseconds, until a network ping attempt should timeout within.
 #define GK_NETWORK_PING_COUNT (3)                               // The amount of times to attempt a network ping until either giving up or ending altogether.
+#define GK_NETWORK_CONN_TIMEOUT_MILLSECS (30000)                // The amount of time, in milliseconds, until timeout for an attempted network connection.
 
 //
 // Amateur radio specific functions
