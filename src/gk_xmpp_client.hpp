@@ -178,6 +178,7 @@ private:
     // Timers and Event Loops
     //
     std::unique_ptr<QElapsedTimer> m_dnsKeepAlive;
+    std::unique_ptr<QElapsedTimer> m_connTimer;
 
     //
     // User, roster and presence details

@@ -231,6 +231,47 @@ GkXmppRegistrationDialog::~GkXmppRegistrationDialog()
 }
 
 /**
+ * @brief GkXmppRegistrationDialog::externalUserSignup
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param network_port
+ * @param jid
+ * @param email
+ * @param password
+ */
+void GkXmppRegistrationDialog::externalUserSignup(const quint16 &network_port, const QString &jid, const QString &email,
+                                                  const QString &password)
+{
+    if (jid.isEmpty()) {
+        // Username field is empty!
+        QMessageBox::warning(this, tr("Empty field!"), tr("The jid field cannot be empty!"), QMessageBox::Ok);
+        return;
+    }
+
+    if (password.isEmpty()) {
+        // Password field is empty!
+        QMessageBox::warning(this, tr("Empty field!"), tr("The password field cannot be empty!"), QMessageBox::Ok);
+        return;
+    }
+
+    if (network_port < 80) {
+        // Password field is empty!
+        QMessageBox::warning(this, tr("Invalid value!"), tr("The network port cannot be less than 80 (i.e. HTTP)!"), QMessageBox::Ok);
+        return;
+    }
+
+    m_reg_jid = jid;
+    m_reg_user = m_xmppClient->getUsername(jid); // Extract the username from the given JID and its attached URI!
+    m_reg_domain = m_xmppClient->getHostname(jid); // Extract the URI from the given JID!
+    m_reg_email = email;
+    m_reg_password = password;
+
+    // TODO: Implement proper captcha support!
+
+    userSignup(network_port, jid, password);
+    return;
+}
+
+/**
  * @brief GkXmppRegistrationDialog::on_pushButton_signup_submit_clicked
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
