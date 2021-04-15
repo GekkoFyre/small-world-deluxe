@@ -39,4 +39,4 @@
 	url = https://gitlab.xiph.org/xiph/libopusenc.git
 [submodule "src/contrib/kissfft"]
 	path = src/contrib/kissfft
-	url = http://code.gekkofyre.io/amateur-radio/kissfft.git
+	url = https://github.com/mborgerding/kissfft.git
