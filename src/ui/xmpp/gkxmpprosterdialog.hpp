@@ -48,11 +48,13 @@
 #include "src/models/treeview/xmpp/gk_xmpp_roster_model.hpp"
 #include "src/gk_logger.hpp"
 #include <memory>
+#include <QImage>
 #include <QAction>
 #include <QString>
 #include <QObject>
 #include <QDialog>
 #include <QPointer>
+#include <QByteArray>
 #include <QSharedPointer>
 
 namespace Ui {
@@ -78,6 +80,13 @@ private slots:
     void on_actionEdit_Contact_triggered();
     void on_actionDelete_Contact_triggered();
     void on_treeView_callsigns_pending_customContextMenuRequested(const QPoint &pos);
+    void on_pushButton_self_avatar_clicked();
+
+    //
+    // VCard management
+    //
+    void recvClientAvatarImg(const QByteArray &avatar_pic);
+    void updateClientAvatarPlaceholder(const QImage &avatar_img);
 
     //
     // XMPP Roster management and related
@@ -88,6 +97,11 @@ private slots:
     void on_actionAcceptInvite_triggered();
     void on_actionRefuseInvite_triggered();
     void on_actionBlockUser_triggered();
+
+signals:
+    void updateClientVCard(const QString &first_name, const QString &last_name, const QString &email,
+                           const QString &callsign, const QByteArray &avatar_pic);
+    void updateClientAvatarImg(const QImage &avatar_img);
 
 private:
     Ui::GkXmppRosterDialog *ui;
@@ -107,6 +121,11 @@ private:
     // QXmpp and XMPP related
     //
     GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
+
+    //
+    // VCard management
+    //
+    QByteArray m_client_avatar_img;
 
     void prefillAvailComboBox();
 };

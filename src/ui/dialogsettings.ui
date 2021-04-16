@@ -2197,7 +2197,7 @@ Thanks.</string>
                                     <item row="4" column="0">
                                      <widget class="QLabel" name="label_xmpp_server_nickname">
                                       <property name="text">
-                                       <string>Nickname: </string>
+                                       <string>Call-sign / Nickname: </string>
                                       </property>
                                      </widget>
                                     </item>

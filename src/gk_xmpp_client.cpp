@@ -48,6 +48,9 @@
 #include <QImage>
 #include <QBuffer>
 #include <QMessageBox>
+#include <QFileDialog>
+#include <QImageReader>
+#include <QStandardPaths>
 #include <QXmlStreamWriter>
 
 using namespace GekkoFyre;
@@ -65,6 +68,9 @@ using namespace Network;
 using namespace GkXmpp;
 using namespace Security;
 
+namespace fs = boost::filesystem;
+namespace sys = boost::system;
+
 /**
  * @brief GkXmppClient::GkXmppClient The client-class for all such XMPP calls within Small World Deluxe.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -74,10 +80,11 @@ using namespace Security;
  * @param parent The parent object.
  */
 GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoFyre::GkLevelDb> database,
-                           QPointer<GekkoFyre::GkEventLogger> eventLogger, const bool &connectNow, QObject *parent)
-                           :                                          m_rosterManager(findExtension<QXmppRosterManager>()),
+                           QPointer<GekkoFyre::FileIo> fileIo, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                           const bool &connectNow, QObject *parent) : m_rosterManager(findExtension<QXmppRosterManager>()),
                                                                       m_registerManager(findExtension<QXmppRegistrationManager>()),
                                                                       m_versionMgr(findExtension<QXmppVersionManager>()),
+                                                                      m_vCardManager(findExtension<QXmppVCardManager>()),
                                                                       m_xmppLogger(QXmppLogger::getLogger()),
                                                                       m_discoMgr(findExtension<QXmppDiscoveryManager>()),
                                                                       QXmppClient(parent)
@@ -86,6 +93,7 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         setParent(parent);
         m_connDetails = connection_details;
         gkDb = std::move(database);
+        gkFileIo = std::move(fileIo);
         gkEventLogger = std::move(eventLogger);
         m_sslSocket = new QSslSocket(this);
 
@@ -101,12 +109,46 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
             addExtension(m_registerManager.get());
         }
 
+        if (m_vCardManager) {
+            addExtension(m_vCardManager.get());
+        }
+
         if (m_mucManager) {
             addExtension(m_mucManager.get());
         }
 
         if (m_transferManager) {
             addExtension(m_transferManager.get());
+        }
+
+        sys::error_code ec;
+        fs::path slash = "/";
+        native_slash = slash.make_preferred().native();
+
+        const fs::path dir_to_append = fs::path(Filesystem::defaultDirAppend + native_slash.string() + Filesystem::xmppVCardDir);
+        vcard_save_path = gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation),
+                                                                    true, QString::fromStdString(dir_to_append.string())).toStdString(); // Path to save final database towards
+        if (!fs::exists(vcard_save_path)) {
+            if (fs::create_directory(vcard_save_path, ec)) {
+                gkEventLogger->publishEvent(tr("Directory, \"%1\", has been created successfully!")
+                                                    .arg(QString::fromStdString(vcard_save_path.string())), GkSeverity::Info, "",
+                                            false, true, false, false);
+            } else {
+                throw std::runtime_error(tr("Unsuccessfully attempted to capture vCards for XMPP user roster. Error: %1").arg(QString::fromStdString(ec.message())).toStdString());
+            }
+        }
+
+        if (!fs::is_directory(vcard_save_path)) {
+            fs::remove(vcard_save_path, ec);
+            if (ec.failed()) {
+                throw std::runtime_error(tr("Unsuccessfully attempted to capture vCards for XMPP user roster. Error: %1").arg(QString::fromStdString(ec.message())).toStdString());
+            }
+
+            if (fs::create_directory(vcard_save_path)) {
+                gkEventLogger->publishEvent(tr("Directory, \"%1\", has been created successfully!")
+                                                    .arg(QString::fromStdString(vcard_save_path.string())), GkSeverity::Info, "",
+                                            false, true, false, false);
+            }
         }
 
         //
@@ -131,6 +173,10 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         QObject::connect(m_sslSocket, SIGNAL(connected()), this, SLOT(handleSslGreeting()));
 
         QObject::connect(m_sslSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(handleSocketError(QAbstractSocket::SocketError)));
+
+        QObject::connect(m_vCardManager.get(), SIGNAL(vCardReceived(const QXmppVCardIq &)), this, SLOT(vCardReceived(const QXmppVCardIq &)));
+        QObject::connect(m_vCardManager.get(), SIGNAL(clientVCardReceived()), this, SLOT(clientVCardReceived()));
+        QObject::connect(this, SIGNAL(sendClientVCard(const QXmppVCardIq &)), this, SLOT(updateClientVCard(const QXmppVCardIq &)));
 
         m_status = GkOnlineStatus::Online;
         m_keepalive = 60;
@@ -247,6 +293,17 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
             //
             // Initialize all the SIGNALS and SLOTS for QXmppRosterManager...
             initRosterMgr();
+
+            //
+            // Request the client's own vCard from the server...
+            m_vCardManager->requestClientVCard();
+
+            //
+            // Request vCard of all the bareJids in roster...
+            const QStringList bareJids = m_rosterManager->getRosterBareJids();
+            for (const auto &bareJid : bareJids) {
+                m_vCardManager->requestVCard(bareJid);
+            }
         });
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(tr("An issue has occurred within the XMPP subsystem. Error: %1").arg(QString::fromStdString(e.what())).toStdString()));
@@ -470,6 +527,37 @@ bool GkXmppClient::deleteUserAccount()
 }
 
 /**
+ * @brief GkXmppClient::obtainAvatarFilePath
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return
+ */
+QString GkXmppClient::obtainAvatarFilePath()
+{
+    QString filePath = QFileDialog::getOpenFileName(nullptr, tr("Open Image"), QStandardPaths::writableLocation(QStandardPaths::PicturesLocation),
+                                                    tr("All Image Files (*.png *.jpg *.jpeg *.jpe *.jfif *.exif *.bmp *.gif);;PNG (*.png);;JPEG (*.jpg *.jpeg *.jpe *.jfif *.exif);;Bitmap (*.bmp);;GIF (*.gif);;All Files (*.*)"));
+    return filePath;
+}
+
+/**
+ * @brief GkXmppClient::processImgToByteArray processes a given image, or avatar in this case, into a QByteArray so that
+ * it is readily usable by QXmppVCardManager().
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param filePath The path to which image file should be loaded into memory, ready to be processed into a QByteArray.
+ * @return The QByteArray as produced from the given image file.
+ * @see GkXmppClient::updateClientVCardForm().
+ */
+QByteArray GkXmppClient::processImgToByteArray(const QString &filePath)
+{
+    QPointer<QFile> imageFile = new QFile(filePath);
+    imageFile->open(QIODevice::ReadOnly);
+    QByteArray byteArray = imageFile->readAll();
+    imageFile->close();
+    delete imageFile;
+
+    return byteArray;
+}
+
+/**
  * @brief GkXmppClient::clientConnected
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
@@ -486,6 +574,84 @@ void GkXmppClient::clientConnected()
  */
 void GkXmppClient::handleRosterReceived()
 {
+    return;
+}
+
+/**
+ * @brief GkXmppClient::vCardReceived processes and saves vCards for users saved/added within the user's roster for the
+ * given XMPP server in question. Avatars are also saved in conjunction with the vCard, being part of the vCard itself.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param vCard The vCard in question to process and derive information from.
+ */
+void GkXmppClient::vCardReceived(const QXmppVCardIq &vCard)
+{
+    try {
+        QString bareJid = vCard.from();
+        gkEventLogger->publishEvent(tr("vCard received for user, \"%1\"").arg(bareJid), GkSeverity::Debug,
+                                    "", false, true, false, false);
+
+        fs::path fileName = fs::path(vcard_save_path.string() + native_slash.string() + bareJid.toStdString() + ".png");
+        QByteArray photo = vCard.photo();
+        QPointer<QBuffer> buffer = new QBuffer(this);
+        buffer->setData(photo);
+        buffer->open(QIODevice::ReadOnly);
+        QImageReader imageReader(buffer);
+        QImage image = imageReader.read();
+        if (image.save(QString::fromStdString(fileName.string()))) {
+            gkEventLogger->publishEvent(tr("vCard avatar saved to filesystem for user, \"%1\"").arg(bareJid),
+                                        GkSeverity::Debug, "", false, true, false, false);
+            return;
+        }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppClient::clientVCardReceived and the likewise signal is emitted when the client's vCard is received after
+ * calling the requestClientVCard() function.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppClient::clientVCardReceived()
+{
+    try {
+        m_clientVCard = m_vCardManager->clientVCard();
+        fs::path fileName = fs::path(vcard_save_path.string() + native_slash.string() + getUsername(m_connDetails.jid).toStdString() + ".png");
+
+        QByteArray photo = m_clientVCard.photo();
+        QPointer<QBuffer> buffer = new QBuffer(this);
+        buffer->setData(photo);
+        buffer->open(QIODevice::ReadOnly);
+        QImageReader imageReader(buffer);
+        QImage image = imageReader.read();
+        if (image.save(QString::fromStdString(fileName.string()))) {
+            gkEventLogger->publishEvent(tr("vCard avatar saved to filesystem for self-client."),
+                                        GkSeverity::Debug, "", false, true, false, false);
+            emit savedClientVCard(photo);
+            return;
+        }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppClient::updateClientVCard will update and upload the connecting client's own vCard to the given, connected
+ * towards XMPP server.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param vCard The connecting client's own vCard in question to upload to the given XMPP server.
+ */
+void GkXmppClient::updateClientVCard(const QXmppVCardIq &vCard)
+{
+    if (isConnected() && m_netState != GkNetworkState::Connecting) {
+        m_vCardManager->setClientVCard(vCard);
+        gkEventLogger->publishEvent(tr("Your user details have been updated successfully with the XMPP server!"), GkSeverity::Info, "", true, true, false, false);
+    }
+
     return;
 }
 
@@ -570,6 +736,44 @@ void GkXmppClient::handleRegistrationForm(const QXmppRegisterIq &registerIq)
         .arg(e.what()), GkSeverity::Fatal, "", false, true, false, true);
     }
 
+    return;
+}
+
+/**
+ * @brief GkXmppClient::updateClientVCardForm processes the details of creating a vCard for the connecting client before
+ * sending it to the function, updateClientVCard(), for upload to the given, connected towards XMPP server.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param first_name The first, birth name of the connecting client.
+ * @param last_name The last, birth name of the connecting client.
+ * @param email The email address of the connecting client.
+ * @param callsign The call-sign, as used in amateur radio, or otherwise a given nickname will do just fine.
+ * @param avatar_pic An avatar picture that the connecting client might wish to upload for others to see and identify them.
+ */
+void GkXmppClient::updateClientVCardForm(const QString &first_name, const QString &last_name, const QString &email,
+                                         const QString &callsign, const QByteArray &avatar_pic)
+{
+    QXmppVCardIq client_vcard;
+    if (first_name.isEmpty()) {
+        client_vcard.setFirstName(first_name);
+    }
+
+    if (last_name.isEmpty()) {
+        client_vcard.setLastName(last_name);
+    }
+
+    if (callsign.isEmpty()) {
+        client_vcard.setNickName(callsign);
+    }
+
+    if (email.isEmpty()) {
+        client_vcard.setEmail(email);
+    }
+
+    if (!avatar_pic.isEmpty()) {
+        client_vcard.setPhoto(avatar_pic);
+    }
+
+    emit sendClientVCard(client_vcard);
     return;
 }
 

@@ -145,8 +145,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     native_slash = slash.make_preferred().native();
 
     const fs::path dir_to_append = fs::path(Filesystem::defaultDirAppend + native_slash.string() + Filesystem::fileName);
-    const fs::path swrld_save_path = fileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation),
-                                                              true, QString::fromStdString(dir_to_append.string())).toStdString(); // Path to save final database towards
+    const fs::path swrld_save_path = gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation),
+                                                                true, QString::fromStdString(dir_to_append.string())).toStdString(); // Path to save final database towards
 
     try {
         // Print out the current date
@@ -221,15 +221,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         rig_list_foreach(parseRigCapabilities, nullptr);
 
         // Create class pointers
-        fileIo = new GekkoFyre::FileIo(this);
+        gkFileIo = new GekkoFyre::FileIo(this);
         gkStringFuncs = new GekkoFyre::StringFuncs(this);
         gkSystem = new GkSystem(gkStringFuncs, this);
 
         //
         // Settings database-related logic
         //
-        QString init_settings_db_loc = fileIo->read_initial_settings(init_cfg::DbLoc);
-        QString init_settings_db_name = fileIo->read_initial_settings(init_cfg::DbName);
+        QString init_settings_db_loc = gkFileIo->read_initial_settings(init_cfg::DbLoc);
+        QString init_settings_db_name = gkFileIo->read_initial_settings(init_cfg::DbName);
 
         // Create path to file-database
         try {
@@ -271,7 +271,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             if (!save_db_path.empty()) {
                 status = leveldb::DB::Open(options, save_db_path.string(), &db);
                 const QRect main_win_coord = findActiveScreen();
-                gkDb = new GekkoFyre::GkLevelDb(db, fileIo, gkStringFuncs, main_win_coord, this);
+                gkDb = new GekkoFyre::GkLevelDb(db, gkFileIo, gkStringFuncs, main_win_coord, this);
 
                 bool enableSentry = false;
                 bool askSentry = gkDb->read_sentry_settings(GkSentry::AskedDialog);
@@ -335,8 +335,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                     #endif
 
                     const fs::path sentry_crash_dir = fs::path(Filesystem::defaultDirAppend + native_slash.string() + Filesystem::gk_sentry_dump_dir);
-                    const fs::path gk_minidump = fileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation),
-                                                                          true, QString::fromStdString(sentry_crash_dir.string())).toStdString();
+                    const fs::path gk_minidump = gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation),
+                                                                            true, QString::fromStdString(sentry_crash_dir.string())).toStdString();
 
                     const qint64 sentry_curr_epoch = QDateTime::currentMSecsSinceEpoch();
                     const fs::path gk_sentry_attachments = std::string(gk_minidump.string() + native_slash.string() + QString::number(sentry_curr_epoch).toStdString()
@@ -397,7 +397,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 ui->tableView_maingui_logs->horizontalHeader()->setSectionResizeMode(GK_EVENTLOG_TABLEVIEW_MODEL_MESSAGE_IDX, QHeaderView::Stretch);
                 ui->tableView_maingui_logs->show();
 
-                gkEventLogger = new GkEventLogger(gkStringFuncs, fileIo, this);
+                gkEventLogger = new GkEventLogger(gkStringFuncs, gkFileIo, this);
                 QObject::connect(gkEventLogger, SIGNAL(sendEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &)),
                                  gkEventLoggerModel, SLOT(insertData(const GekkoFyre::System::Events::Logging::GkEventLogging &)));
                 QObject::connect(gkEventLogger, SIGNAL(removeEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &)),
@@ -413,7 +413,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 //
                 // Initialize the all-important `GkRadioPtr`!
                 //
-                gkRadioLibs = new GekkoFyre::RadioLibs(fileIo, gkStringFuncs, gkDb, gkRadioPtr, gkEventLogger, gkSystem, this);
+                gkRadioLibs = new GekkoFyre::RadioLibs(gkFileIo, gkStringFuncs, gkDb, gkRadioPtr, gkEventLogger, gkSystem, this);
 
                 //
                 // Connect `GekkoFyre::GkEventLogger()` to any external log event publishing sources!
@@ -447,7 +447,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // https://doc.qt.io/qt-5/qcommandlineparser.html
         //
         gkCliParser = std::make_shared<QCommandLineParser>();
-        gkCli = std::make_shared<GekkoFyre::GkCli>(gkCliParser, fileIo, gkDb, gkRadioLibs, this);
+        gkCli = std::make_shared<GekkoFyre::GkCli>(gkCliParser, gkFileIo, gkDb, gkRadioLibs, this);
 
         std::unique_ptr<QString> error_msg = std::make_unique<QString>("");
         gkCli->parseCommandLine(error_msg.get());
@@ -469,7 +469,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                              this, SLOT(removeFreqFromDb(const GekkoFyre::AmateurRadio::GkFreqs &)));
 
             gkFreqList->publishFreqList();
-            gkAudioDevices = new GekkoFyre::AudioDevices(gkDb, fileIo, gkFreqList, gkStringFuncs, gkEventLogger, gkSystem, this);
+            gkAudioDevices = new GekkoFyre::AudioDevices(gkDb, gkFileIo, gkFreqList, gkStringFuncs, gkEventLogger, gkSystem, this);
 
             const auto outputDeviceInfos = QAudioDeviceInfo::availableDevices(QAudio::AudioOutput);
             const auto inputDeviceInfos = QAudioDeviceInfo::availableDevices(QAudio::AudioInput);
@@ -904,7 +904,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         //
         // Initialize the QXmpp client!
-        m_xmppClient = new GkXmppClient(xmpp_conn_details, gkDb, gkEventLogger, false, nullptr);
+        m_xmppClient = new GkXmppClient(xmpp_conn_details, gkDb, gkFileIo, gkEventLogger, false, nullptr);
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
@@ -1047,7 +1047,7 @@ void MainWindow::launchSettingsWin()
     QObject::connect(gkFreqTableModel, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
                      gkFreqList, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)));
 
-    QPointer<DialogSettings> dlg_settings = new DialogSettings(gkDb, fileIo, gkAudioDevices, gkAudioInput,
+    QPointer<DialogSettings> dlg_settings = new DialogSettings(gkDb, gkFileIo, gkAudioDevices, gkAudioInput,
                                                                gkAudioOutput, avail_input_audio_devs, avail_output_audio_devs,
                                                                pref_input_device, pref_output_device, gkRadioLibs,
                                                                gkStringFuncs, gkRadioPtr, gkSerialPortMap, gkUsbPortMap,
@@ -2750,6 +2750,45 @@ void MainWindow::on_pushButton_radio_monitor_clicked()
         gkStringFuncs->changePushButtonColor(ui->pushButton_radio_monitor, true);
         btn_radio_monitor = false;
     }
+
+    return;
+}
+
+/**
+ * @brief MainWindow::on_tableView_mesg_active_customContextMenuRequested
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param pos
+ */
+void MainWindow::on_tableView_mesg_active_customContextMenuRequested(const QPoint &pos)
+{
+    std::unique_ptr<QMenu> contextMenu = std::make_unique<QMenu>(ui->tableView_mesg_active);
+    contextMenu->exec(ui->tableView_mesg_active->mapToGlobal(pos));
+
+    return;
+}
+
+/**
+ * @brief MainWindow::on_tableView_mesg_callsigns_customContextMenuRequested
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param pos
+ */
+void MainWindow::on_tableView_mesg_callsigns_customContextMenuRequested(const QPoint &pos)
+{
+    std::unique_ptr<QMenu> contextMenu = std::make_unique<QMenu>(ui->tableView_mesg_callsigns);
+    contextMenu->exec(ui->tableView_mesg_callsigns->mapToGlobal(pos));
+
+    return;
+}
+
+/**
+ * @brief MainWindow::on_tableView_maingui_logs_customContextMenuRequested
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param pos
+ */
+void MainWindow::on_tableView_maingui_logs_customContextMenuRequested(const QPoint &pos)
+{
+    std::unique_ptr<QMenu> contextMenu = std::make_unique<QMenu>(ui->tableView_maingui_logs);
+    contextMenu->exec(ui->tableView_maingui_logs->mapToGlobal(pos));
 
     return;
 }

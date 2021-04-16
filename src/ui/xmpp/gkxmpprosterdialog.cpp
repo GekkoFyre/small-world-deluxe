@@ -44,8 +44,10 @@
 #include "src/ui/xmpp/gkxmppregistrationdialog.hpp"
 #include <utility>
 #include <QMenu>
+#include <QBuffer>
 #include <QMessageBox>
 #include <QStringList>
+#include <QImageReader>
 
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
@@ -74,6 +76,11 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
         m_xmppClient = std::move(xmppClient);
         gkDb = std::move(database);
         gkEventLogger = std::move(eventLogger);
+
+        QObject::connect(this, SIGNAL(updateClientVCard(const QString &, const QString &, const QString &, const QString &, const QByteArray &)),
+                         m_xmppClient, SLOT(updateClientVCardForm(const QString &, const QString &, const QString &, const QString &, const QByteArray &)));
+        QObject::connect(m_xmppClient, SIGNAL(savedClientVCard(const QByteArray &)), this, SLOT(recvClientAvatarImg(const QByteArray &)));
+        QObject::connect(this, SIGNAL(updateClientAvatarImg(const QImage &)), this, SLOT(updateClientAvatarPlaceholder(const QImage &)));
 
         const QStringList headers({tr("Status"), tr("Nickname")});
         QVector<QVariant> root_data;
@@ -290,6 +297,55 @@ void GkXmppRosterDialog::on_treeView_callsigns_pending_customContextMenuRequeste
     ui->actionBlockUser->setData(QVariant(pos));
 
     contextMenu->exec(ui->treeView_callsigns_pending->mapToGlobal(pos));
+
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::on_pushButton_self_avatar_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRosterDialog::on_pushButton_self_avatar_clicked()
+{
+    QString filePath = m_xmppClient->obtainAvatarFilePath();
+    if (!filePath.isEmpty()) {
+        QByteArray avatarByteArray = m_xmppClient->processImgToByteArray(filePath);
+        emit updateClientVCard("", "", "", "", avatarByteArray);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::recvClientAvatarImg receives the current, set avatar image from the given XMPP server for
+ * the logged-in client themselves.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param avatar_pic
+ */
+void GkXmppRosterDialog::recvClientAvatarImg(const QByteArray &avatar_pic)
+{
+    if (!avatar_pic.isEmpty()) {
+        m_client_avatar_img = avatar_pic;
+        QPointer<QBuffer> buffer = new QBuffer(this);
+        buffer->setData(m_client_avatar_img);
+        buffer->open(QIODevice::ReadOnly);
+        QImageReader imageReader(buffer);
+        QImage image = imageReader.read();
+        emit updateClientAvatarImg(image);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::updateClientAvatarPlaceholder
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param avatar_img
+ */
+void GkXmppRosterDialog::updateClientAvatarPlaceholder(const QImage &avatar_img)
+{
+    ui->pushButton_self_avatar->setIcon(QIcon(QPixmap::fromImage(avatar_img)));
+    gkEventLogger->publishEvent(tr("vCard avatar has been registered for self-client."), GkSeverity::Debug, "", false, true, false, false);
 
     return;
 }

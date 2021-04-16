@@ -2876,8 +2876,7 @@ void DialogSettings::on_comboBox_audio_output_bit_rate_currentIndexChanged(int i
 
 void DialogSettings::on_toolButton_xmpp_upload_avatar_browse_file_clicked()
 {
-    QString filePath = QFileDialog::getOpenFileName(this, tr("Open Image"), QStandardPaths::writableLocation(QStandardPaths::PicturesLocation),
-                                                    tr("All Image Files (*.png *.jpg *.jpeg *.jpe *.jfif *.exif *.bmp *.gif);;PNG (*.png);;JPEG (*.jpg *.jpeg *.jpe *.jfif *.exif);;Bitmap (*.bmp);;GIF (*.gif);;All Files (*.*)"));
+    QString filePath = m_xmppClient->obtainAvatarFilePath();
     ui->lineEdit_xmpp_upload_avatar_file_browser->setText(filePath);
 
     return;

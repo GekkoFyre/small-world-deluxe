@@ -179,6 +179,13 @@ private slots:
     void on_pushButton_radio_monitor_clicked();
 
     //
+    // Custom context-menu
+    //
+    void on_tableView_mesg_active_customContextMenuRequested(const QPoint &pos);
+    void on_tableView_mesg_callsigns_customContextMenuRequested(const QPoint &pos);
+    void on_tableView_maingui_logs_customContextMenuRequested(const QPoint &pos);
+
+    //
     // Audio/Volume related controls
     //
     void on_verticalSlider_vol_control_sliderMoved(int position);
@@ -339,7 +346,7 @@ private:
     QPointer<GekkoFyre::AudioDevices> gkAudioDevices;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GekkoFyre::GkCli> gkCli;
-    QPointer<GekkoFyre::FileIo> fileIo;
+    QPointer<GekkoFyre::FileIo> gkFileIo;
     QPointer<GekkoFyre::GkFrequencies> gkFreqList;
     QPointer<GekkoFyre::RadioLibs> gkRadioLibs;
     QPointer<GekkoFyre::GkVuMeter> gkVuMeter;
