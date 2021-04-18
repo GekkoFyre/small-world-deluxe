@@ -129,7 +129,11 @@ namespace GekkoFyre {
 //
 #define GK_DEFAULT_XMPP_SERVER_PORT (5222)
 #define GK_XMPP_AVAIL_COMBO_AVAILABLE_IDX (0)
-#define GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX (1)
+#define GK_XMPP_AVAIL_COMBO_AWAY_FROM_KB_IDX (1)
+#define GK_XMPP_AVAIL_COMBO_EXTENDED_AWAY_IDX (2)
+#define GK_XMPP_AVAIL_COMBO_INVISIBLE_IDX (3)
+#define GK_XMPP_AVAIL_COMBO_BUSY_DND_IDX (4)
+#define GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX (5)
 #define GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX (0)
 #define GK_XMPP_SERVER_TYPE_COMBO_CUSTOM_IDX (1)
 #define GK_XMPP_IGNORE_SSL_ERRORS_COMBO_FALSE (0)
@@ -318,6 +322,7 @@ namespace Filesystem {
 
     constexpr char defaultDirAppend[] = "SmallWorld";                   // The dir to append at the end of a default path, such as within the user's profile directory.
     constexpr char fileName[] = "settings";                             // The filename for the database itself which is TAR archived and compressed
+    constexpr char xmppVCardDir[] = "xmpp-vcards";                      // The directory for where VCards obtained via XMPP are stored within.
     constexpr char fileLogData[] = "log.dat";                           // Where a record of the most up-to-date logging records are kept, from the last application run.
     constexpr char tarExtension[] = ".tar";                             // The file extension given to (mostly uncompressed) TAR archive
     constexpr char tmpExtension[] = ".tmp";                             // The file extension give to temporary files
@@ -411,9 +416,17 @@ namespace Network {
             quint16 port;
         };
 
+        struct GkXmppBlocklist {
+            GkHost server;
+            QString jid;
+            QString username;
+            QString nickname;
+        };
+
         struct GkUserConn {                                 // User and server information as related to the QXmpp libraries.
             GkHost server;
             GkOnlineStatus status;                          // The online availability of the user in question.
+            QList<GkXmppBlocklist> blocked;                 // A blocklist of XMPP users who have been blocked by the connecting client.
             QString jid;                                    // The Account ID as known to the XMPP server itself; used particularly for logging-in.
             QString username;                               // The username, which is the JID without the server URL or resource attached.
             QString password;                               // The password which is needed for logging-in successfully to the XMPP server.
@@ -625,6 +638,7 @@ namespace Database {
             XmppAllowMucs,
             XmppAutoConnect,
             XmppAutoReconnect,
+            XmppAutoReconnectIgnore,
             XmppAvatarByteArray,
             XmppDomainUrl,
             XmppServerType,

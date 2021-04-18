@@ -463,7 +463,7 @@ message(STATUS "The 'Opus' audio (de-/en-)coding libraries have been configured!
 #
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/kissfft")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/kissfft")
-message(STATUS "The 'KissFFT' mathematical libraries have been configured!")
+message(STATUS "The 'KissFFT' fourier transform libraries have been configured!")
 
 #
 # AudioFile by Adam Stark

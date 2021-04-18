@@ -2876,8 +2876,7 @@ void DialogSettings::on_comboBox_audio_output_bit_rate_currentIndexChanged(int i
 
 void DialogSettings::on_toolButton_xmpp_upload_avatar_browse_file_clicked()
 {
-    QString filePath = QFileDialog::getOpenFileName(this, tr("Open Image"), QStandardPaths::writableLocation(QStandardPaths::PicturesLocation),
-                                                    tr("All Image Files (*.png *.jpg *.jpeg *.jpe *.jfif *.exif *.bmp *.gif);;PNG (*.png);;JPEG (*.jpg *.jpeg *.jpe *.jfif *.exif);;Bitmap (*.bmp);;GIF (*.gif);;All Files (*.*)"));
+    QString filePath = m_xmppClient->obtainAvatarFilePath();
     ui->lineEdit_xmpp_upload_avatar_file_browser->setText(filePath);
 
     return;
@@ -2917,14 +2916,13 @@ void DialogSettings::on_pushButton_xmpp_cfg_change_email_clicked()
 
 void DialogSettings::on_pushButton_xmpp_cfg_signup_clicked()
 {
-    std::unique_ptr<GkXmppRegistrationDialog> gkXmppRegistrationDlg = std::make_unique<GkXmppRegistrationDialog>(GkRegUiRole::AccountCreate, gkConnDetails, m_xmppClient, gkEventLogger, this);
+    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountCreate, gkConnDetails, m_xmppClient, gkEventLogger, this);
     if (ui->lineEdit_xmpp_client_username->text().isEmpty() || ui->lineEdit_xmpp_client_password->text().isEmpty()) {
         //
         // Open the registration form so that the user knows what information to provide!
         gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
         gkXmppRegistrationDlg->setAttribute(Qt::WA_DeleteOnClose, true);
         gkXmppRegistrationDlg->show();
-        // this->close();
     } else {
         //
         // Register with the information already provided within the setting's dialog!
@@ -2940,15 +2938,16 @@ void DialogSettings::on_pushButton_xmpp_cfg_signup_clicked()
                 break;
         }
 
-        gkXmppRegistrationDlg->externalUserSignup(ui->spinBox_xmpp_server_port->value(), tmp_jid, ui->lineEdit_xmpp_client_email_address->text(),
-                                                  ui->lineEdit_xmpp_client_password->text());
-        QObject::connect(gkXmppRegistrationDlg.get(), &GkXmppRegistrationDialog::registrationSuccessful, this, [=]() {
-            QMessageBox::information(nullptr, tr("Success!"), tr("A user account has been successfully created!"), QMessageBox::Ok);
-        });
+        //
+        // Prefill the user signup form with most of the details already provided by the user from within the Settings Dialog!
+        gkXmppRegistrationDlg->prefillFormFields(tmp_jid, ui->lineEdit_xmpp_client_password->text(), ui->lineEdit_xmpp_client_email_address->text(),
+                                                 ui->spinBox_xmpp_server_port->value());
 
-        QObject::connect(gkXmppRegistrationDlg.get(), &GkXmppRegistrationDialog::registrationUnsuccessful, this, [=]() {
-            QMessageBox::warning(nullptr, tr("Unsuccessful!"), tr("The operation to create a user account was not successful! Please check the event log for more details."), QMessageBox::Ok);
-        });
+        //
+        // Open the registration form so that the user knows what information to provide!
+        gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
+        gkXmppRegistrationDlg->setAttribute(Qt::WA_DeleteOnClose, true);
+        gkXmppRegistrationDlg->show();
     }
 
     return;

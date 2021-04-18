@@ -71,6 +71,7 @@ RUN pacman -S sudo --noconfirm
 RUN pacman -S fakeroot --noconfirm
 RUN pacman -S binutils --noconfirm
 RUN pacman -S base-devel --noconfirm
+RUN pacman -S nasm --noconfirm
 
 # Create devel user...
 RUN useradd -m -d /home/devel -u 1000 -U -G users,tty -s /bin/bash devel
@@ -174,7 +175,6 @@ RUN yay -S --noconfirm --noprogressbar --needed \
         mingw-w64-qt5-speech \
         mingw-w64-configure \
         mingw-w64-python-bin \
-        uasm \
         qxmpp
 
 # Cleanup
@@ -240,7 +240,6 @@ RUN pacman -S opus --noconfirm
 RUN pacman -S opusfile --noconfirm
 RUN pacman -S texinfo --noconfirm
 RUN pacman -S libusb-compat --noconfirm
-RUN pacman -S hamlib --noconfirm
 RUN pacman -S cmake --noconfirm
 RUN pacman -S wget --noconfirm
 RUN pacman -S curl --noconfirm
@@ -285,6 +284,14 @@ CMD [ "make", "-j 12" ]
 CMD [ "make", "install" ]
 CMD cd ./../..
 CMD rm -rvf codec2
+RUN [ "wget", "https://github.com/Hamlib/Hamlib/releases/download/4.1/hamlib-4.1.tar.gz" ]
+RUN tar -xvzf hamlib-4.1.tar.gz
+CMD cd hamlib-4.1
+CMD [ "./configure", "--enable-static --enable-shared" ]
+CMD [ "make", "-j 12" ]
+CMD [ "make", "install" ]
+CMD cd ./..
+CMD rm -rvf hamlib-4.1
 
 #
 # Make it so that the Qt5 libraries (i.e. specifically `libQt5Core.so.5`) can run with Small World Deluxe, and thusly 

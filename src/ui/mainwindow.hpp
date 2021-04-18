@@ -49,6 +49,7 @@
 #include "src/gk_frequency_list.hpp"
 #include "src/gk_xmpp_client.hpp"
 #include "src/ui/dialogsettings.hpp"
+#include "src/ui/xmpp/gkxmpprosterdialog.hpp"
 #include "src/ui/widgets/gk_vu_change_widget.hpp"
 #include "src/ui/widgets/gk_display_image.hpp"
 #include "src/ui/widgets/gk_vu_meter_widget.hpp"
@@ -176,6 +177,13 @@ private slots:
     void on_pushButton_radio_tx_halt_clicked();
     void on_pushButton_radio_rx_halt_clicked();
     void on_pushButton_radio_monitor_clicked();
+
+    //
+    // Custom context-menu
+    //
+    void on_tableView_mesg_active_customContextMenuRequested(const QPoint &pos);
+    void on_tableView_mesg_callsigns_customContextMenuRequested(const QPoint &pos);
+    void on_tableView_maingui_logs_customContextMenuRequested(const QPoint &pos);
 
     //
     // Audio/Volume related controls
@@ -338,7 +346,7 @@ private:
     QPointer<GekkoFyre::AudioDevices> gkAudioDevices;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     std::shared_ptr<GekkoFyre::GkCli> gkCli;
-    QPointer<GekkoFyre::FileIo> fileIo;
+    QPointer<GekkoFyre::FileIo> gkFileIo;
     QPointer<GekkoFyre::GkFrequencies> gkFreqList;
     QPointer<GekkoFyre::RadioLibs> gkRadioLibs;
     QPointer<GekkoFyre::GkVuMeter> gkVuMeter;
@@ -430,8 +438,6 @@ private:
     QPointer<QTimer> gkAudioInputReadySignal;
     QPointer<QTimer> gkAudioOutputReadySignal;
     QPointer<QTimer> info_timer;
-    qint64 gk_spectro_start_time;
-    qint64 gk_spectro_latest_time;
 
     //
     // This sub-section contains all the boolean variables pertaining to the QPushButtons on QMainWindow that
@@ -470,7 +476,8 @@ private:
     // QXmpp and XMPP related
     //
     QPointer<GekkoFyre::GkXmppClient> m_xmppClient;
-    GekkoFyre::Network::GkXmpp::GkUserConn xmpp_conn_details; // TODO: Finish this off!
+    QPointer<GkXmppRosterDialog> gkXmppRosterDlg;
+    GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
 
     //
     // Spectrograph related
@@ -510,6 +517,7 @@ private:
     bool steadyTimer(const int &seconds);
     QRect findActiveScreen();
 
+    void createXmppConnection();
     void readXmppSettings();
 
     //
