@@ -1400,6 +1400,9 @@ void GkLevelDb::write_xmpp_settings(const QString &value, const Settings::GkXmpp
             case Settings::GkXmppCfg::XmppAutoReconnect:
                 batch.Put("XmppAutoReconnect", value.toStdString());
                 break;
+            case Settings::GkXmppCfg::XmppAutoReconnectIgnore:
+                batch.Put("XmppAutoReconnectIgnore", value.toStdString());
+                break;
             case Settings::GkXmppCfg::XmppUriLookupMethod:
                 batch.Put("XmppUriLookupMethod", value.toStdString());
                 break;
@@ -1618,6 +1621,9 @@ QString GkLevelDb::read_xmpp_settings(const Settings::GkXmppCfg &key)
             break;
         case Settings::GkXmppCfg::XmppAutoReconnect:
             status = db->Get(read_options, "XmppAutoReconnect", &value);
+            break;
+        case Settings::GkXmppCfg::XmppAutoReconnectIgnore:
+            status = db->Get(read_options, "XmppAutoReconnectIgnore", &value);
             break;
         case Settings::GkXmppCfg::XmppUriLookupMethod:
             status = db->Get(read_options, "XmppUriLookupMethod", &value);

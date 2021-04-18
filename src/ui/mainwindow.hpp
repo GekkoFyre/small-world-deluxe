@@ -161,7 +161,6 @@ private slots:
     void on_actionOnline_triggered();
     void on_actionInvisible_triggered();
     void on_actionOffline_triggered();
-    void handleSubscriptionRequestRecv(const QString &bareJid);
 
     //
     // Documentation
@@ -478,7 +477,7 @@ private:
     //
     QPointer<GekkoFyre::GkXmppClient> m_xmppClient;
     QPointer<GkXmppRosterDialog> gkXmppRosterDlg;
-    GekkoFyre::Network::GkXmpp::GkUserConn xmpp_conn_details;
+    GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
 
     //
     // Spectrograph related

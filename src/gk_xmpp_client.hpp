@@ -121,7 +121,6 @@ public:
 
 public slots:
     void clientConnected();
-    void stateChanged(QXmppClient::State state);
 
     //
     // User, roster and presence details
@@ -174,7 +173,13 @@ signals:
     // User, roster and presence details
     void setPresence(const QXmppPresence::Type &pres);
     void sendRegistrationForm(const QXmppRegisterIq &registerIq);
-    void subscriptionRequestRecv(const QString &bareJid);
+
+    void sendSubscriptionRequest(const QString &bareJid); // A subscription request was made, therefore notify client!
+    void retractSubscriptionRequest(const QString &bareJid); // A subscription request was retracted, therefore delete JID!
+
+    void addJidToRoster(const QString &bareJid); // Subscription request was successful, add new JID!
+    void delJidToRoster(const QString &bareJid); // User requested a deletion from the roster, therefore remove JID!
+    void changeRosterJid(const QString &bareJid); // A change needs to be made within the roster, therefore modify JID!
 
     //
     // vCard management
@@ -206,7 +211,6 @@ private:
     // Timers and Event Loops
     //
     std::unique_ptr<QElapsedTimer> m_dnsKeepAlive;
-    std::unique_ptr<QElapsedTimer> m_connTimer;
 
     //
     // User, roster and presence details

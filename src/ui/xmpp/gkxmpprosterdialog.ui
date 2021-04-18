@@ -269,6 +269,12 @@
                     <property name="contextMenuPolicy">
                      <enum>Qt::CustomContextMenu</enum>
                     </property>
+                    <property name="wordWrap">
+                     <bool>true</bool>
+                    </property>
+                    <property name="headerHidden">
+                     <bool>true</bool>
+                    </property>
                    </widget>
                   </item>
                  </layout>
@@ -322,6 +328,72 @@
                    <widget class="QTreeView" name="treeView_callsigns_pending">
                     <property name="contextMenuPolicy">
                      <enum>Qt::CustomContextMenu</enum>
+                    </property>
+                    <property name="wordWrap">
+                     <bool>true</bool>
+                    </property>
+                    <property name="headerHidden">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+            <widget class="QWidget" name="tab_callsigns_blocked">
+             <attribute name="title">
+              <string>Blocked</string>
+             </attribute>
+             <layout class="QVBoxLayout" name="verticalLayout_7">
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item>
+               <widget class="QScrollArea" name="scrollArea_callsigns_blocked">
+                <property name="frameShape">
+                 <enum>QFrame::NoFrame</enum>
+                </property>
+                <property name="frameShadow">
+                 <enum>QFrame::Plain</enum>
+                </property>
+                <property name="horizontalScrollBarPolicy">
+                 <enum>Qt::ScrollBarAlwaysOff</enum>
+                </property>
+                <property name="widgetResizable">
+                 <bool>true</bool>
+                </property>
+                <widget class="QWidget" name="scrollAreaWidgetContents_callsigns_blocked">
+                 <property name="geometry">
+                  <rect>
+                   <x>0</x>
+                   <y>0</y>
+                   <width>290</width>
+                   <height>477</height>
+                  </rect>
+                 </property>
+                 <layout class="QVBoxLayout" name="verticalLayout_8">
+                  <item>
+                   <widget class="QTreeView" name="treeView_callsigns_blocked">
+                    <property name="contextMenuPolicy">
+                     <enum>Qt::CustomContextMenu</enum>
+                    </property>
+                    <property name="wordWrap">
+                     <bool>true</bool>
+                    </property>
+                    <property name="headerHidden">
+                     <bool>true</bool>
                     </property>
                    </widget>
                   </item>
@@ -502,8 +574,8 @@
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>219</width>
-               <height>130</height>
+               <width>296</width>
+               <height>505</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_16">
@@ -557,6 +629,9 @@
                      <widget class="QLineEdit" name="lineEdit_add_contact_username">
                       <property name="toolTip">
                        <string>The desired username you wish to add to your roster.</string>
+                      </property>
+                      <property name="placeholderText">
+                       <string>&lt;username&gt;</string>
                       </property>
                      </widget>
                     </item>
@@ -696,6 +771,14 @@
    </property>
    <property name="toolTip">
     <string>Block the user from messaging you and/or making subscription requests.</string>
+   </property>
+  </action>
+  <action name="actionUnblockUser">
+   <property name="text">
+    <string>Unblock User</string>
+   </property>
+   <property name="toolTip">
+    <string>Reverse the block you placed on this user, thereby allowing them to potentially message and subscribe to you once again.</string>
    </property>
   </action>
  </widget>

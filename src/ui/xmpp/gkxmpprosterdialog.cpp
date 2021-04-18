@@ -46,9 +46,11 @@
 #include <utility>
 #include <QMenu>
 #include <QBuffer>
+#include <QRegExp>
 #include <QMessageBox>
 #include <QStringList>
 #include <QImageReader>
+#include <QRegExpValidator>
 
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
@@ -89,11 +91,20 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
         QObject::connect(this, SIGNAL(updateAvailableStatusType(const QXmppPresence::AvailableStatusType &)),
                          m_xmppClient, SLOT(modifyAvailableStatusType(const QXmppPresence::AvailableStatusType &)));
 
+        QObject::connect(m_xmppClient, SIGNAL(sendSubscriptionRequest(const QString &)), this, SLOT(subscriptionRequestRecv(const QString &)));
+        QObject::connect(m_xmppClient, SIGNAL(retractSubscriptionRequest(const QString &)), this, SLOT(subscriptionRequestRetracted(const QString &)));
+
         QObject::connect(ui->label_self_nickname, SIGNAL(clicked(const QString &)), this, SLOT(editNicknameLabel(const QString &)));
         ui->label_self_nickname->setText(tr("Anonymous"));
         if (!gkConnDetails.nickname.isEmpty()) {
             ui->label_self_nickname->setText(gkConnDetails.nickname);
         }
+
+        QPointer<QRegExpValidator> rxUsernameAdd = new QRegExpValidator(this);
+        QRegExp rxUsernameExp(R"(\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}\b)");
+        rxUsernameExp.setCaseSensitivity(Qt::CaseSensitivity::CaseInsensitive);
+        rxUsernameAdd->setRegExp(rxUsernameExp);
+        ui->lineEdit_add_contact_username->setValidator(rxUsernameAdd);
 
         const QStringList headers({tr("Status"), tr("Nickname")});
         QVector<QVariant> root_data;
@@ -107,6 +118,11 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
         //
         // Fill out the presence status ComboBox!
         prefillAvailComboBox();
+        QObject::connect(m_xmppClient, &QXmppClient::disconnected, this, [=]() {
+            //
+            // Change the presence status to 'Offline / Unavailable' when disconnected!
+            ui->comboBox_current_status->setCurrentIndex(GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX);
+        });
 
         ui->treeView_callsigns_groups->setModel(m_xmppRosterTreeViewModel);
         for (qint32 column = 0; column < m_xmppRosterTreeViewModel->columnCount(); ++column) {
@@ -169,6 +185,29 @@ void GkXmppRosterDialog::updateActions()
     return;
 }
 
+/**
+ * @brief GkXmppRosterDialog::subscriptionRequestRecv handles the processing and management of external subscription requests
+ * to the given, connected towards XMPP server in question. This function will only work if Small World Deluxe is actively
+ * connected towards an XMPP server at the time.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid The external user's details.
+ */
+void GkXmppRosterDialog::subscriptionRequestRecv(const QString &bareJid)
+{
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::subscriptionRequestRetracted removes the given subscription request (if still active and
+ * present) as requested by the external user.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid The external user's details.
+ */
+void GkXmppRosterDialog::subscriptionRequestRetracted(const QString &bareJid)
+{
+    return;
+}
+
 /*
  * @brief GkXmppRosterDialog::reconnectToXmpp reconnects back to the given XMPP server, for if the user has been disconnected, either
  * intentionally or unintentionally.
@@ -176,9 +215,25 @@ void GkXmppRosterDialog::updateActions()
  */
 void GkXmppRosterDialog::reconnectToXmpp()
 {
-    if (!m_xmppClient->isConnected()) {
-        m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, gkConnDetails.username,
-                                               gkConnDetails.password, gkConnDetails.jid, false);
+    if (!m_xmppClient->isConnected() || m_xmppClient->getNetworkState() != GkNetworkState::Connecting) {
+        QMessageBox msgBox;
+        msgBox.setParent(nullptr);
+        msgBox.setWindowTitle(tr("Initializing..."));
+        msgBox.setText(tr("Do you wish to create a connection to the XMPP server, \"%1\"?").arg(gkConnDetails.server.url));
+        msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+        msgBox.setDefaultButton(QMessageBox::Ok);
+        msgBox.setIcon(QMessageBox::Icon::Information);
+        qint32 ret = msgBox.exec();
+        switch (ret) {
+            case QMessageBox::Ok:
+                m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, gkConnDetails.username,
+                                                       gkConnDetails.password, gkConnDetails.jid, false);
+                break;
+            case QMessageBox::Cancel:
+                return;
+            default:
+                return;
+        }
     }
 
     return;
@@ -226,25 +281,24 @@ void GkXmppRosterDialog::prefillAvailComboBox()
  */
 void GkXmppRosterDialog::on_comboBox_current_status_currentIndexChanged(int index)
 {
+    if (!m_xmppClient->isConnected()) {
+        reconnectToXmpp();
+    }
+
     switch (index) {
         case GK_XMPP_AVAIL_COMBO_AVAILABLE_IDX: // Online / Available
-            reconnectToXmpp();
             emit updateAvailableStatusType(QXmppPresence::AvailableStatusType::Online);
             break;
         case GK_XMPP_AVAIL_COMBO_AWAY_FROM_KB_IDX: // Away / Be Back Soon
-            reconnectToXmpp();
             emit updateAvailableStatusType(QXmppPresence::AvailableStatusType::Away);
             break;
         case GK_XMPP_AVAIL_COMBO_EXTENDED_AWAY_IDX: // XA / Extended Away
-            reconnectToXmpp();
             emit updateAvailableStatusType(QXmppPresence::AvailableStatusType::XA);
             break;
         case GK_XMPP_AVAIL_COMBO_INVISIBLE_IDX: // Online / Invisible
-            reconnectToXmpp();
             emit updateAvailableStatusType(QXmppPresence::AvailableStatusType::Invisible);
             break;
         case GK_XMPP_AVAIL_COMBO_BUSY_DND_IDX:
-            reconnectToXmpp();
             emit updateAvailableStatusType(QXmppPresence::AvailableStatusType::DND);
             break;
         case GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX: // Offline / Unavailable
@@ -309,7 +363,6 @@ void GkXmppRosterDialog::on_treeView_callsigns_groups_customContextMenuRequested
     ui->actionDelete_Contact->setData(QVariant(pos));
 
     contextMenu->exec(ui->treeView_callsigns_groups->mapToGlobal(pos));
-
     return;
 }
 
@@ -369,7 +422,6 @@ void GkXmppRosterDialog::on_treeView_callsigns_pending_customContextMenuRequeste
     ui->actionBlockUser->setData(QVariant(pos));
 
     contextMenu->exec(ui->treeView_callsigns_pending->mapToGlobal(pos));
-
     return;
 }
 
@@ -404,6 +456,24 @@ void GkXmppRosterDialog::on_lineEdit_self_nickname_returnPressed()
         ui->label_self_nickname->setText(entered_text);
     }
 
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::on_treeView_callsigns_blocked_customContextMenuRequested
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param pos
+ */
+void GkXmppRosterDialog::on_treeView_callsigns_blocked_customContextMenuRequested(const QPoint &pos)
+{
+    std::unique_ptr<QMenu> contextMenu = std::make_unique<QMenu>(ui->treeView_callsigns_blocked);
+    contextMenu->addAction(ui->actionUnblockUser);
+
+    //
+    // Save the position data to the QAction
+    ui->actionUnblockUser->setData(QVariant(pos));
+
+    contextMenu->exec(ui->treeView_callsigns_blocked->mapToGlobal(pos));
     return;
 }
 
@@ -471,7 +541,8 @@ void GkXmppRosterDialog::editNicknameLabel(const QString &value)
 }
 
 /**
- * @brief GkXmppRosterDialog::on_pushButton_add_contact_submit_clicked
+ * @brief GkXmppRosterDialog::on_pushButton_add_contact_submit_clicked requests for an external JID to be added to the
+ * connecting client's own roster via XMPP subscription.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void GkXmppRosterDialog::on_pushButton_add_contact_submit_clicked()
@@ -485,6 +556,9 @@ void GkXmppRosterDialog::on_pushButton_add_contact_submit_clicked()
  */
 void GkXmppRosterDialog::on_pushButton_add_contact_cancel_clicked()
 {
+    ui->lineEdit_add_contact_username->clear();
+    ui->stackedWidget_roster_ui->setCurrentWidget(ui->page_user_roster);
+
     return;
 }
 
@@ -511,6 +585,15 @@ void GkXmppRosterDialog::on_actionRefuseInvite_triggered()
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void GkXmppRosterDialog::on_actionBlockUser_triggered()
+{
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::on_actionUnblockUser_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRosterDialog::on_actionUnblockUser_triggered()
 {
     return;
 }

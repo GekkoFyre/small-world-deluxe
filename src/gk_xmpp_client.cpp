@@ -156,10 +156,6 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         QObject::connect(this, SIGNAL(sendError(const QString &)), this, SLOT(handleError(const QString &)));
 
         //
-        // This signal is emitted when the client state changes...
-        QObject::connect(this, SIGNAL(stateChanged(QXmppClient::State)), this, SLOT(stateChanged(QXmppClient::State)));
-
-        //
         // This signal is emitted to indicate that one or more SSL errors were
         // encountered while establishing the identity of the server...
         QObject::connect(this, SIGNAL(sslErrors(const QList<QSslError> &)), this, SLOT(handleSslErrors(const QList<QSslError> &)));
@@ -267,6 +263,28 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
                                         false, true, false, true);
         });
 
+        QObject::connect(this, &QXmppClient::stateChanged, this, [=](QXmppClient::State state) {
+            switch (state) {
+                case ConnectingState:
+                    gkEventLogger->publishEvent(tr("...attempting to make connection towards XMPP server: %1").arg(m_connDetails.server.url), GkSeverity::Info, "",
+                                                true, true, true, false);
+                    m_netState = GkNetworkState::Connecting;
+                    break;
+                case ConnectedState:
+                    gkEventLogger->publishEvent(tr("Connected to XMPP server: %1").arg(m_connDetails.server.url), GkSeverity::Info, "",
+                                                true, true, true, false);
+                    m_netState = GkNetworkState::Connected;
+                    break;
+                case DisconnectedState:
+                    gkEventLogger->publishEvent(tr("Disconnected from XMPP server: %1").arg(m_connDetails.server.url), GkSeverity::Info, "",
+                                                true, true, true, false);
+                    m_netState = GkNetworkState::Disconnected;
+                    break;
+                default:
+                    break;
+            }
+        });
+
         //
         // Setting up service discovery correctly for this manager
         // ------------------------------------------------------------
@@ -303,6 +321,39 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
             const QStringList bareJids = m_rosterManager->getRosterBareJids();
             for (const auto &bareJid : bareJids) {
                 m_vCardManager->requestVCard(bareJid);
+            }
+        });
+
+        QObject::connect(this, &QXmppClient::disconnected, this, [=]() {
+            if (!m_connDetails.server.settings_client.auto_reconnect) {
+                if (!this->isConnected()) { // We have been disconnected from the given XMPP server!
+                    QMessageBox msgBoxPolicy;
+                    msgBoxPolicy.setParent(nullptr);
+                    msgBoxPolicy.setWindowTitle(tr("Disconnected!"));
+                    msgBoxPolicy.setText(tr("You have been disconnected from the XMPP server, \"%1\"! Do you wish to enable a automatic reconnect policy?").arg(m_connDetails.server.url));
+                    msgBoxPolicy.setStandardButtons(QMessageBox::Apply | QMessageBox::Ignore | QMessageBox::Cancel);
+                    msgBoxPolicy.setDefaultButton(QMessageBox::Apply);
+                    msgBoxPolicy.setIcon(QMessageBox::Icon::Information);
+                    qint32 ret = msgBoxPolicy.exec();
+                    switch (ret) {
+                        case QMessageBox::Apply:
+                            gkDb->write_xmpp_settings(QString::fromStdString(gkDb->boolEnum(true)), GkXmppCfg::XmppAutoReconnect);
+                            gkDb->write_xmpp_settings(QString::fromStdString(gkDb->boolEnum(false)), GkXmppCfg::XmppAutoReconnectIgnore);
+                            return;
+                        case QMessageBox::Ignore:
+                            gkDb->write_xmpp_settings(QString::fromStdString(gkDb->boolEnum(true)), GkXmppCfg::XmppAutoReconnectIgnore);
+                            gkDb->write_xmpp_settings(QString::fromStdString(gkDb->boolEnum(false)), GkXmppCfg::XmppAutoReconnect);
+                            return;
+                        case QMessageBox::Cancel:
+                            gkDb->write_xmpp_settings(QString::fromStdString(gkDb->boolEnum(false)), GkXmppCfg::XmppAutoReconnect);
+                            gkDb->write_xmpp_settings(QString::fromStdString(gkDb->boolEnum(false)), GkXmppCfg::XmppAutoReconnectIgnore);
+                            return;
+                        default:
+                            gkDb->write_xmpp_settings(QString::fromStdString(gkDb->boolEnum(false)), GkXmppCfg::XmppAutoReconnect);
+                            gkDb->write_xmpp_settings(QString::fromStdString(gkDb->boolEnum(false)), GkXmppCfg::XmppAutoReconnectIgnore);
+                            return;
+                    }
+                }
             }
         });
     } catch (const std::exception &e) {
@@ -667,37 +718,6 @@ void GkXmppClient::presenceChanged(const QString &bareJid, const QString &resour
 {
     gkEventLogger->publishEvent(tr("Presence changed for %1 towards %2.")
     .arg(bareJid).arg(resource));
-
-    return;
-}
-
-/**
- * @brief GkXmppClient::stateChanged
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param state
- * @note QXmppClient Class Reference <https://doc.qxmpp.org/qxmpp-dev/classQXmppClient.html#a8bd2617265568c9769a8ba608a4ff05d>.
- */
-void GkXmppClient::stateChanged(QXmppClient::State state)
-{
-    switch (state) {
-        case QXmppClient::State::DisconnectedState:
-            gkEventLogger->publishEvent(tr("Disconnected from XMPP server: %1").arg(m_connDetails.server.url), GkSeverity::Info, "",
-                                        true, true, true, false);
-            m_netState = GkNetworkState::Disconnected;
-            return;
-        case QXmppClient::State::ConnectingState:
-            gkEventLogger->publishEvent(tr("...attempting to make connection towards XMPP server: %1").arg(m_connDetails.server.url), GkSeverity::Info, "",
-                                        true, true, true, false);
-            m_netState = GkNetworkState::Connecting;
-            return;
-        case QXmppClient::State::ConnectedState:
-            gkEventLogger->publishEvent(tr("Connected to XMPP server: %1").arg(m_connDetails.server.url), GkSeverity::Info, "",
-                                        true, true, true, false);
-            m_netState = GkNetworkState::Connected;
-            return;
-        default:
-            break;
-    }
 
     return;
 }
@@ -1143,25 +1163,10 @@ void GkXmppClient::createConnectionToServer(const QString &domain_url, const qui
         config.setUseSASLAuthentication(true);
         config.setSaslAuthMechanism("PLAIN");
 
-        m_connTimer = std::make_unique<QElapsedTimer>();
         if (m_presence) {
-            m_connTimer->start(); // Network timeout timer
             connectToServer(config, *m_presence);
-            if (m_connTimer->elapsed() == GK_NETWORK_CONN_TIMEOUT_MILLSECS) {
-                disconnectFromServer();
-                m_connTimer->invalidate();
-                gkEventLogger->publishEvent(tr("An attempt was made at connecting to the XMPP server but the timeout interval was reached!"), GkSeverity::Fatal, "",
-                                            false, true, false, true);
-            }
         } else {
-            m_connTimer->start(); // Network timeout timer
             connectToServer(config);
-            if (m_connTimer->elapsed() == GK_NETWORK_CONN_TIMEOUT_MILLSECS) {
-                disconnectFromServer();
-                m_connTimer->invalidate();
-                gkEventLogger->publishEvent(tr("An attempt was made at connecting to the XMPP server but the timeout interval was reached!"), GkSeverity::Fatal, "",
-                                            false, true, false, true);
-            }
         }
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(e.what()));
@@ -1227,7 +1232,7 @@ void GkXmppClient::notifyNewSubscription(const QString &bareJid)
 {
     gkEventLogger->publishEvent(tr("User, \"%1\", wishes to add you to their roster!").arg(getUsername(bareJid)),
                                 GkSeverity::Info, "", true, true, false, false);
-    emit subscriptionRequestRecv(bareJid);
+    emit sendSubscriptionRequest(bareJid);
 
     return;
 }
@@ -1239,6 +1244,7 @@ void GkXmppClient::notifyNewSubscription(const QString &bareJid)
  */
 void GkXmppClient::itemAdded(const QString &bareJid)
 {
+    emit addJidToRoster(bareJid);
     gkEventLogger->publishEvent(tr("User, \"%1\", successfully added to roster!").arg(getUsername(bareJid)),
                                 GkSeverity::Info, "", true, true, false, false);
 
@@ -1252,6 +1258,7 @@ void GkXmppClient::itemAdded(const QString &bareJid)
  */
 void GkXmppClient::itemRemoved(const QString &bareJid)
 {
+    emit delJidToRoster(bareJid);
     gkEventLogger->publishEvent(tr("User, \"%1\", successfully removed from roster!").arg(getUsername(bareJid)),
                                 GkSeverity::Info, "", true, true, false, false);
 
@@ -1265,6 +1272,7 @@ void GkXmppClient::itemRemoved(const QString &bareJid)
  */
 void GkXmppClient::itemChanged(const QString &bareJid)
 {
+    emit changeRosterJid(bareJid);
     gkEventLogger->publishEvent(tr("Details for user, \"%1\", have changed within the roster!").arg(getUsername(bareJid)),
                                 GkSeverity::Info, "", true, true, false, false);
 

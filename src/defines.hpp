@@ -416,9 +416,17 @@ namespace Network {
             quint16 port;
         };
 
+        struct GkXmppBlocklist {
+            GkHost server;
+            QString jid;
+            QString username;
+            QString nickname;
+        };
+
         struct GkUserConn {                                 // User and server information as related to the QXmpp libraries.
             GkHost server;
             GkOnlineStatus status;                          // The online availability of the user in question.
+            QList<GkXmppBlocklist> blocked;                 // A blocklist of XMPP users who have been blocked by the connecting client.
             QString jid;                                    // The Account ID as known to the XMPP server itself; used particularly for logging-in.
             QString username;                               // The username, which is the JID without the server URL or resource attached.
             QString password;                               // The password which is needed for logging-in successfully to the XMPP server.
@@ -630,6 +638,7 @@ namespace Database {
             XmppAllowMucs,
             XmppAutoConnect,
             XmppAutoReconnect,
+            XmppAutoReconnectIgnore,
             XmppAvatarByteArray,
             XmppDomainUrl,
             XmppServerType,

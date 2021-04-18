@@ -83,6 +83,7 @@ private slots:
     void on_treeView_callsigns_pending_customContextMenuRequested(const QPoint &pos);
     void on_pushButton_self_avatar_clicked();
     void on_lineEdit_self_nickname_returnPressed();
+    void on_treeView_callsigns_blocked_customContextMenuRequested(const QPoint &pos);
 
     //
     // VCard management
@@ -96,11 +97,14 @@ private slots:
     // XMPP Roster management and related
     //
     void updateActions();
+    void subscriptionRequestRecv(const QString &bareJid);
+    void subscriptionRequestRetracted(const QString &bareJid);
     void on_pushButton_add_contact_cancel_clicked();
     void on_pushButton_add_contact_submit_clicked();
     void on_actionAcceptInvite_triggered();
     void on_actionRefuseInvite_triggered();
     void on_actionBlockUser_triggered();
+    void on_actionUnblockUser_triggered();
 
 signals:
     void updateAvailableStatusType(const QXmppPresence::AvailableStatusType &stat_type);
