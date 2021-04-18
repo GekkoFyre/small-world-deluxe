@@ -42,7 +42,6 @@
 #include "src/ui/sendreportdialog.hpp"
 #include "src/ui/gkaudioplaydialog.hpp"
 #include "src/ui/widgets/gk_submit_msg.hpp"
-#include "src/ui/xmpp/gkxmpprosterdialog.hpp"
 #include "src/ui/xmpp/gkxmppregistrationdialog.hpp"
 #include "src/models/tableview/gk_frequency_model.hpp"
 #include "src/models/tableview/gk_logger_model.hpp"
@@ -203,9 +202,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         global_rx_audio_volume = 0.0;
         global_tx_audio_volume = 0.0;
-
-        gk_spectro_start_time = 0;
-        gk_spectro_latest_time = 0;
 
         //
         // SSTV related
@@ -905,6 +901,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the QXmpp client!
         m_xmppClient = new GkXmppClient(xmpp_conn_details, gkDb, gkFileIo, gkEventLogger, false, nullptr);
+        gkXmppRosterDlg = new GkXmppRosterDialog(xmpp_conn_details, m_xmppClient, gkDb, gkEventLogger, true, this);
+
+        if (xmpp_conn_details.server.settings_client.auto_connect) { // Should we connect automatically to a given XMPP server at start?
+            if (!gkXmppRosterDlg->isVisible()) { // The dialog window has not been launched yet!
+                createXmppConnection(); // Create an active connection to the given XMPP server!
+                gkEventLogger->publishEvent(tr("Automatically connecting..."), GkSeverity::Info, "", true, true, true, false);
+                gkXmppRosterDlg->setWindowFlags(Qt::Window);
+                gkXmppRosterDlg->show();
+            }
+        }
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
@@ -2252,28 +2258,29 @@ void MainWindow::readXmppSettings()
  */
 void MainWindow::launchXmppRosterDlg()
 {
-    if (!m_xmppClient->isConnected()) {
-        QMessageBox msgBox;
-        msgBox.setWindowTitle(tr("Initializing..."));
-        msgBox.setText(tr("Do you wish to create a connection to the XMPP server, \"%1\"?").arg(xmpp_conn_details.server.url));
-        msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
-        msgBox.setDefaultButton(QMessageBox::Ok);
-        msgBox.setIcon(QMessageBox::Icon::Information);
-        qint32 ret = msgBox.exec();
-        switch (ret) {
-            case QMessageBox::Ok:
-                createXmppConnection();
-                break;
-            case QMessageBox::Cancel:
-                return;
-            default:
-                return;
+    if (!gkXmppRosterDlg->isVisible()) { // The dialog window has not been launched yet!
+        if (!m_xmppClient->isConnected()) { // An active connection has yet to be made!
+            QMessageBox msgBox;
+            msgBox.setWindowTitle(tr("Initializing..."));
+            msgBox.setText(tr("Do you wish to create a connection to the XMPP server, \"%1\"?").arg(xmpp_conn_details.server.url));
+            msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+            msgBox.setDefaultButton(QMessageBox::Ok);
+            msgBox.setIcon(QMessageBox::Icon::Information);
+            qint32 ret = msgBox.exec();
+            switch (ret) {
+                case QMessageBox::Ok:
+                    createXmppConnection();
+                    break;
+                case QMessageBox::Cancel:
+                    return;
+                default:
+                    return;
+            }
         }
-    }
 
-    QPointer<GkXmppRosterDialog> gkXmppRosterDlg = new GkXmppRosterDialog(xmpp_conn_details, m_xmppClient, gkDb, gkEventLogger, true, this);
-    gkXmppRosterDlg->setWindowFlags(Qt::Window);
-    gkXmppRosterDlg->show();
+        gkXmppRosterDlg->setWindowFlags(Qt::Window);
+        gkXmppRosterDlg->show();
+    }
 
     return;
 }

@@ -49,6 +49,7 @@
 #include "src/gk_logger.hpp"
 #include <memory>
 #include <QImage>
+#include <QTimer>
 #include <QAction>
 #include <QString>
 #include <QObject>
@@ -81,12 +82,15 @@ private slots:
     void on_actionDelete_Contact_triggered();
     void on_treeView_callsigns_pending_customContextMenuRequested(const QPoint &pos);
     void on_pushButton_self_avatar_clicked();
+    void on_lineEdit_self_nickname_returnPressed();
 
     //
     // VCard management
     //
     void recvClientAvatarImg(const QByteArray &avatar_pic);
+    void updateClientAvatarPlaceholder();
     void updateClientAvatarPlaceholder(const QImage &avatar_img);
+    void editNicknameLabel(const QString &value);
 
     //
     // XMPP Roster management and related
@@ -99,6 +103,7 @@ private slots:
     void on_actionBlockUser_triggered();
 
 signals:
+    void updateAvailableStatusType(const QXmppPresence::AvailableStatusType &stat_type);
     void updateClientVCard(const QString &first_name, const QString &last_name, const QString &email,
                            const QString &callsign, const QByteArray &avatar_pic);
     void updateClientAvatarImg(const QImage &avatar_img);
@@ -123,10 +128,16 @@ private:
     GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
 
     //
+    // Time & Date
+    //
+    QPointer<QTimer> m_clientAvatarImgUpdateTimer;
+
+    //
     // VCard management
     //
-    QByteArray m_client_avatar_img;
+    QByteArray m_clientAvatarImg;
 
+    void reconnectToXmpp();
     void prefillAvailComboBox();
 };
 

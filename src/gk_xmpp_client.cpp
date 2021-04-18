@@ -618,19 +618,21 @@ void GkXmppClient::clientVCardReceived()
 {
     try {
         m_clientVCard = m_vCardManager->clientVCard();
-        fs::path fileName = fs::path(vcard_save_path.string() + native_slash.string() + getUsername(m_connDetails.jid).toStdString() + ".png");
+        fs::path fileName = fs::path(vcard_save_path.string() + native_slash.string() + m_connDetails.username.toStdString() + ".png");
 
         QByteArray photo = m_clientVCard.photo();
-        QPointer<QBuffer> buffer = new QBuffer(this);
-        buffer->setData(photo);
-        buffer->open(QIODevice::ReadOnly);
-        QImageReader imageReader(buffer);
-        QImage image = imageReader.read();
-        if (image.save(QString::fromStdString(fileName.string()))) {
-            gkEventLogger->publishEvent(tr("vCard avatar saved to filesystem for self-client."),
-                                        GkSeverity::Debug, "", false, true, false, false);
-            emit savedClientVCard(photo);
-            return;
+        if (!photo.isEmpty()) {
+            QPointer<QBuffer> buffer = new QBuffer(this);
+            buffer->setData(photo);
+            buffer->open(QIODevice::ReadOnly);
+            QImageReader imageReader(buffer);
+            QImage image = imageReader.read();
+            if (image.save(QString::fromStdString(fileName.string()))) {
+                gkEventLogger->publishEvent(tr("vCard avatar saved to filesystem for self-client."),
+                                            GkSeverity::Debug, "", false, true, false, false);
+                emit savedClientVCard(photo);
+                return;
+            }
         }
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);
@@ -711,6 +713,18 @@ void GkXmppClient::modifyPresence(const QXmppPresence::Type &pres)
     gkEventLogger->publishEvent(tr("User has changed their XMPP status towards %1."), GkSeverity::Info, "",
                                 true, true, false, false); // TODO: Make this complete!
 
+    return;
+}
+
+/**
+ * @brief GkXmppClient::modifyAvailableStatusType changes whether the connecting client themselves is available, invisible,
+ * offline, etc. which is then shown to the other users within their roster.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param stat_type The availability status that the connecting client wishes to show to others.
+ */
+void GkXmppClient::modifyAvailableStatusType(const QXmppPresence::AvailableStatusType &stat_type)
+{
+    m_presence->setAvailableStatusType(stat_type);
     return;
 }
 

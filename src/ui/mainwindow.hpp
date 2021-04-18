@@ -49,6 +49,7 @@
 #include "src/gk_frequency_list.hpp"
 #include "src/gk_xmpp_client.hpp"
 #include "src/ui/dialogsettings.hpp"
+#include "src/ui/xmpp/gkxmpprosterdialog.hpp"
 #include "src/ui/widgets/gk_vu_change_widget.hpp"
 #include "src/ui/widgets/gk_display_image.hpp"
 #include "src/ui/widgets/gk_vu_meter_widget.hpp"
@@ -438,8 +439,6 @@ private:
     QPointer<QTimer> gkAudioInputReadySignal;
     QPointer<QTimer> gkAudioOutputReadySignal;
     QPointer<QTimer> info_timer;
-    qint64 gk_spectro_start_time;
-    qint64 gk_spectro_latest_time;
 
     //
     // This sub-section contains all the boolean variables pertaining to the QPushButtons on QMainWindow that
@@ -478,7 +477,8 @@ private:
     // QXmpp and XMPP related
     //
     QPointer<GekkoFyre::GkXmppClient> m_xmppClient;
-    GekkoFyre::Network::GkXmpp::GkUserConn xmpp_conn_details; // TODO: Finish this off!
+    QPointer<GkXmppRosterDialog> gkXmppRosterDlg;
+    GekkoFyre::Network::GkXmpp::GkUserConn xmpp_conn_details;
 
     //
     // Spectrograph related

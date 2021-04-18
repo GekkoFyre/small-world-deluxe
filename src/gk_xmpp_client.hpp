@@ -127,6 +127,7 @@ public slots:
     // User, roster and presence details
     void presenceChanged(const QString &bareJid, const QString &resource);
     void modifyPresence(const QXmppPresence::Type &pres);
+    void modifyAvailableStatusType(const QXmppPresence::AvailableStatusType &stat_type);
 
     //
     // Registration management
