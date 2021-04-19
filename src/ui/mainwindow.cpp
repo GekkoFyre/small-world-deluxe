@@ -787,6 +787,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         info_timer->start(1000);
 
         //
+        // Hunspell & Spelling dictionaries
+        //
+        // m_Hunspell = std::make_shared<Hunspell>();
+
+        //
         // QPrinter-specific options!
         // https://doc.qt.io/qt-5/qprinter.html
         // https://doc.qt.io/qt-5/qtprintsupport-index.html
@@ -902,15 +907,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // Initialize the QXmpp client!
         m_xmppClient = new GkXmppClient(gkConnDetails, gkDb, gkFileIo, gkEventLogger, false, nullptr);
         gkXmppRosterDlg = new GkXmppRosterDialog(gkConnDetails, m_xmppClient, gkDb, gkEventLogger, true, this);
-
-        if (gkConnDetails.server.settings_client.auto_connect) { // Should we connect automatically to a given XMPP server at start?
-            if (!gkXmppRosterDlg->isVisible()) { // The dialog window has not been launched yet!
-                createXmppConnection(); // Create an active connection to the given XMPP server!
-                gkEventLogger->publishEvent(tr("Automatically connecting..."), GkSeverity::Info, "", true, true, true, false);
-                gkXmppRosterDlg->setWindowFlags(Qt::Window);
-                gkXmppRosterDlg->show();
-            }
-        }
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
@@ -950,7 +946,7 @@ MainWindow::~MainWindow()
  */
 void MainWindow::on_actionXMPP_triggered()
 {
-    launchXmppRosterDlg();
+    launchXmppRosterDlg(true, true);
     return;
 }
 
@@ -2149,7 +2145,7 @@ void MainWindow::readXmppSettings()
     if (!xmpp_auto_connect.isEmpty()) {
         gkConnDetails.server.settings_client.auto_connect = gkDb->boolStr(xmpp_auto_connect.toStdString());
     } else {
-        gkConnDetails.server.settings_client.auto_connect = false;
+        gkConnDetails.server.settings_client.auto_connect = true;
     }
 
     if (!xmpp_auto_reconnect.isEmpty()) {
@@ -2257,11 +2253,13 @@ void MainWindow::readXmppSettings()
  * @brief MainWindow::launchXmppRosterDlg launches the Roster Dialog for the XMPP side of Small World Deluxe, where end-users
  * may interact with others or even signup to the given, configured server if it's their first time connecting.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param msgBoxDlg Whether to display the message dialog box or not.
+ * @param showRosterDlg Whether to show the roster dialog after making a successful connection or not.
  */
-void MainWindow::launchXmppRosterDlg()
+void MainWindow::launchXmppRosterDlg(const bool &msgBoxDlg, const bool &showRosterDlg)
 {
-    if (!gkXmppRosterDlg->isVisible()) { // The dialog window has not been launched yet!
-        if (!m_xmppClient->isConnected() || m_xmppClient->getNetworkState() != GkNetworkState::Connecting) { // An active connection has yet to be made!
+    if (!m_xmppClient->isConnected() || m_xmppClient->getNetworkState() != GkNetworkState::Connecting) { // An active connection has yet to be made!
+        if (msgBoxDlg) { // Whether we should show the message box dialog or not!
             QMessageBox msgBox;
             msgBox.setParent(nullptr);
             msgBox.setWindowTitle(tr("Initializing..."));
@@ -2279,8 +2277,12 @@ void MainWindow::launchXmppRosterDlg()
                 default:
                     return;
             }
+        } else {
+            createXmppConnection();
         }
+    }
 
+    if (!gkXmppRosterDlg->isVisible() && showRosterDlg) { // The dialog window has not been launched yet, and whether we should show it or not!
         gkXmppRosterDlg->setWindowFlags(Qt::Window);
         gkXmppRosterDlg->show();
     }
@@ -2295,7 +2297,7 @@ void MainWindow::launchXmppRosterDlg()
 void MainWindow::createTrayActions()
 {
     m_xmppRosterAction = new QAction(tr("&XMPP"), this);
-    QObject::connect(m_xmppRosterAction, &QAction::triggered, this, &MainWindow::launchXmppRosterDlg);
+    QObject::connect(m_xmppRosterAction, &QAction::triggered, this, &MainWindow::on_actionXMPP_triggered);
 
     m_sstvAction = new QAction(tr("SS&TV"), this);
     QObject::connect(m_sstvAction, &QAction::triggered, this, &MainWindow::launchSstvTab);
@@ -3283,7 +3285,7 @@ void MainWindow::on_actionCW_toggled(bool arg1)
 
 void MainWindow::on_actionView_Roster_triggered()
 {
-    launchXmppRosterDlg();
+    launchXmppRosterDlg(true, true);
     return;
 }
 

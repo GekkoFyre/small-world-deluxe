@@ -64,6 +64,7 @@
 #include <leveldb/db.h>
 #include <leveldb/status.h>
 #include <leveldb/options.h>
+#include <hunspell/hunspell.hxx>
 #include <stdexcept>
 #include <exception>
 #include <utility>
@@ -247,7 +248,7 @@ private slots:
     //
     // QXmpp and XMPP related
     //
-    void launchXmppRosterDlg();
+    void launchXmppRosterDlg(const bool &msgBoxDlg = true, const bool &showRosterDlg = true);
 
     //
     // SSTV and related
@@ -438,6 +439,11 @@ private:
     QPointer<QTimer> gkAudioInputReadySignal;
     QPointer<QTimer> gkAudioOutputReadySignal;
     QPointer<QTimer> info_timer;
+
+    //
+    // Hunspell & Spelling dictionaries
+    //
+    std::shared_ptr<Hunspell> m_Hunspell;
 
     //
     // This sub-section contains all the boolean variables pertaining to the QPushButtons on QMainWindow that

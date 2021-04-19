@@ -313,6 +313,12 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
             initRosterMgr();
 
             //
+            // Manage queues that were created prior to a full connection being made...
+            for (; !m_availStatusTypeQueue.empty(); m_availStatusTypeQueue.pop()) {
+                m_presence->setAvailableStatusType(m_availStatusTypeQueue.front());
+            }
+
+            //
             // Request the client's own vCard from the server...
             m_vCardManager->requestClientVCard();
 
@@ -744,7 +750,14 @@ void GkXmppClient::modifyPresence(const QXmppPresence::Type &pres)
  */
 void GkXmppClient::modifyAvailableStatusType(const QXmppPresence::AvailableStatusType &stat_type)
 {
-    m_presence->setAvailableStatusType(stat_type);
+    if (isConnected()) {
+        m_presence->setAvailableStatusType(stat_type);
+    }
+
+    if (!isConnected()) {
+        m_availStatusTypeQueue.emplace(stat_type);
+    }
+
     return;
 }
 

@@ -197,7 +197,7 @@ endif(Boost_FOUND)
 # https://github.com/qxmpp-project/qxmpp
 #
 function(install_qxmpp)
-    find_package(QXmpp REQUIRED)
+    find_package(QXMPP REQUIRED)
     if (QXMPP_FOUND)
         include_directories(${QXMPP_INCLUDE_DIRS})
         set(LIBS ${LIBS} ${QXMPP_LIBRARIES})
@@ -308,6 +308,27 @@ if (ZLIB_FOUND)
 else()
     message(FATAL_ERROR "The 'ZLIB' compression library could not be found!")
 endif(ZLIB_FOUND)
+
+#
+# Hunspell
+# http://hunspell.github.io/
+#
+find_package(Hunspell REQUIRED)
+if (HUNSPELL_FOUND)
+    include_directories(${HUNSPELL_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${HUNSPELL_LIBRARIES})
+    file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/dictionaries/dictionaries" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Library")
+    file(RENAME "${CMAKE_CURRENT_BINARY_DIR}/Library/dictionaries" "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling")
+
+    #
+    # Remove all the unneeded files now!
+    file(GLOB_RECURSE RM_HUNSPELL_FILES_JS "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling/*.js")
+    file(GLOB_RECURSE RM_HUNSPELL_FILES_JSON "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling/*.json")
+    file(REMOVE ${RM_HUNSPELL_FILES_JS})
+    file(REMOVE ${RM_HUNSPELL_FILES_JSON})
+else()
+    message(FATAL_ERROR "The 'Hunspell' spell-checking library has been configured!")
+endif(HUNSPELL_FOUND)
 
 set_property(SOURCE ${GALAXY_HAMLIB_CPP} PROPERTY SKIP_AUTOUIC ON)
 
@@ -891,10 +912,10 @@ endif()
 
 INSTALL(TARGETS smallworld)
 
-SET(CMAKE_C_FLAGS_DEBUG_INIT          "-g")
-SET(CMAKE_C_FLAGS_MINSIZEREL_INIT     "-Os -DNDEBUG")
-SET(CMAKE_C_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG")
-SET(CMAKE_C_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
+SET(CMAKE_C_FLAGS_DEBUG_INIT            "-g")
+SET(CMAKE_C_FLAGS_MINSIZEREL_INIT       "-Os -DNDEBUG")
+SET(CMAKE_C_FLAGS_RELEASE_INIT          "-O3 -DNDEBUG")
+SET(CMAKE_C_FLAGS_RELWITHDEBINFO_INIT   "-O2 -g")
 
 SET(CMAKE_CXX_FLAGS_INIT                "-Wall")
 SET(CMAKE_CXX_FLAGS_DEBUG_INIT          "-g")

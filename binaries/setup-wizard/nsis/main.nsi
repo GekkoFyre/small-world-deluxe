@@ -54,7 +54,7 @@
   !define GK_ROOT_PATH ".\..\..\.."
   !define GK_VERSION_LONG "0.0.0.1"
   !define GK_VERSION_TAG "-pre-alpha"
-  !define COPYRIGHT "Copyright © 2019 - 2020 Christopher D. McGill and GekkoFyre Networks"
+  !define COPYRIGHT "Copyright © 2019 - 2021 Christopher D. McGill and GekkoFyre Networks"
   !define DESCRIPTION "Small World Deluxe is an ultra-modern weak-signal digital communicator powered by low bit rate, digital voice codecs originally adapted via telephony. Typical usage requires a SSB radio transceiver and a personal computer with a capable sound-card."
   
   CRCCheck On
@@ -75,8 +75,9 @@
   InstallDirRegKey HKCU "Software\${MUI_BRANDINGTEXT}\${MUI_PRODUCT}" ""
   
   # Request application privileges for Windows Vista
-  RequestExecutionLevel user
- 
+  # Require admin rights on NT6+ (especially when UAC is enabled)
+  RequestExecutionLevel admin
+
   !define MUI_ICON "${GK_ROOT_PATH}\src\contrib\images\vector\purchased\2020-03\iconfinder_293_Frequency_News_Radio_5711690.ico"
   !define MUI_UNICON "${GK_ROOT_PATH}\src\contrib\images\vector\purchased\2020-03\iconfinder_293_Frequency_News_Radio_5711690.ico"
   !define MUI_SPECIALBITMAP "${GK_ROOT_PATH}\src\contrib\images\vector\gekkofyre-networks\rionquosue\logo_blank_border_text_square_rionquosue.bmp"
@@ -221,16 +222,24 @@ Function .onInit
   
   # The plugins dir is automatically deleted when the installer exits
   InitPluginsDir
-  
+
+  UserInfo::GetAccountType
+  pop $0
+  ${If} $0 != "admin" # Require admin rights on NT4+
+    MessageBox mb_iconstop "Administration rights are required!"
+    SetErrorLevel 740 # ERROR_ELEVATION_REQUIRED
+    Quit
+  ${EndIf}
+
   MessageBox MB_OK "Transparency/Fading"
   File /oname=$PLUGINSDIR\splash.bmp "${GK_ROOT_PATH}\src\contrib\images\vector\gekkofyre-networks\rionquosue\logo_blank_border_text_square_rionquosue.bmp"
-  advsplash::show 1000 600 400 0x000000 $PLUGINSDIR\splash
+  advsplash::show 1000 600 400 -1 $PLUGINSDIR\splash
   Pop $0          # $0 has '1' if the user closed the splash screen early,
                   # '0' if everything closed normally, and '-1' if some error occurred...
   
   Delete $PLUGINSDIR\splash.bmp
 
-FunctionEnd 
+FunctionEnd
 
 # Descriptions
 # -------------------------------
@@ -241,11 +250,6 @@ FunctionEnd
   !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
     !insertmacro MUI_DESCRIPTION_TEXT ${SWDsection} "Small World Deluxe executable and data."
   !insertmacro MUI_FUNCTION_DESCRIPTION_END
-
-# Order of pages
-# -------------------------------
-
-Page instfiles
 
 # Installer Sections
 # -------------------------------
@@ -292,9 +296,9 @@ SectionGroup "Small World Deluxe" SWDsection
           WriteRegStr HKCU "Software\${MUI_BRANDINGTEXT}\${MUI_PRODUCT}" "" $INSTDIR
           
           # Write uninstall information to the registry
-          WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_BRANDINGTEXT}\${MUI_PRODUCT}" "DisplayName" "${MUI_PRODUCT} (remove only)"
-          WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_BRANDINGTEXT}\${MUI_PRODUCT}" "UninstallString" "$INSTDIR\Uninstall.exe"
- 
+          WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT}" "DisplayName" "${MUI_PRODUCT} (remove only)"
+          WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT}" "UninstallString" "$\"$INSTDIR\Uninstall.exe$\" /S"
+
           WriteUninstaller "$INSTDIR\Uninstall.exe"
     SectionEnd
     
@@ -302,15 +306,15 @@ SectionGroup "Small World Deluxe" SWDsection
       Section "Desktop"
         SectionIn 1
           # Create desktop shortcut
-          CreateShortCut "$DESKTOP\${MUI_PRODUCT}.lnk" "$INSTDIR\${MUI_FILE}.exe" ""
+          CreateShortCut "$DESKTOP\${MUI_PRODUCT}.lnk" "$INSTDIR\${MUI_FILE}.exe" "" "$INSTDIR\${MUI_FILE}.exe" 0 SW_SHOWMAXIMIZED
       SectionEnd
 
       Section "Start Menu"
         SectionIn 2
           # Create start-menu items
           CreateDirectory "$SMPROGRAMS\${MUI_PRODUCT}"
-          CreateShortCut "$SMPROGRAMS\${MUI_PRODUCT}\Uninstall.lnk" "$INSTDIR\Uninstall.exe" "" "$INSTDIR\Uninstall.exe" 0
-          CreateShortCut "$SMPROGRAMS\${MUI_PRODUCT}\${MUI_PRODUCT}.lnk" "$INSTDIR\${MUI_FILE}.exe" "" "$INSTDIR\${MUI_FILE}.exe" 0
+          CreateShortCut "$SMPROGRAMS\${MUI_PRODUCT}\Uninstall.lnk" "$INSTDIR\Uninstall.exe" "" "$INSTDIR\Uninstall.exe" 0 SW_SHOWNORMAL
+          CreateShortCut "$SMPROGRAMS\${MUI_PRODUCT}\${MUI_PRODUCT}.lnk" "$INSTDIR\${MUI_FILE}.exe" "" "$INSTDIR\${MUI_FILE}.exe" 0 SW_SHOWMAXIMIZED
       SectionEnd
     SectionGroupEnd
 
@@ -328,6 +332,12 @@ SectionGroup "Small World Deluxe" SWDsection
         SectionIn RO
           SetOutPath "$INSTDIR"
             File "${GK_ROOT_PATH}\cmake-build-debug\libhamlib-4.dll"
+      SectionEnd
+
+      Section "Hunspell (Dictionaries)"
+        SectionIn RO
+          SetOutPath "$INSTDIR\Library\Spelling"
+            File /r "${GK_ROOT_PATH}\cmake-build-debug\Library\Spelling\*" # Copy the entire contents of this directory; note the backslash at the end of the pathname!
       SectionEnd
 
       Section "libusb-1.0"
@@ -418,7 +428,10 @@ SectionGroupEnd
 # -------------------------------
 
 Section "Uninstall"
- 
+
+  # Always delete uninstaller first
+  Delete "$INSTDIR\Uninstall.exe"
+
   # Delete Files 
   RMDir /r "$INSTDIR\*.*"    
  
@@ -432,7 +445,7 @@ Section "Uninstall"
  
   # Delete Uninstaller And Unistall Registry Entries
   DeleteRegKey /ifempty HKCU "Software\${MUI_BRANDINGTEXT}\${MUI_PRODUCT}"
-  DeleteRegKey /ifempty HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_BRANDINGTEXT}\${MUI_PRODUCT}"  
+  DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT}"
  
 SectionEnd
 

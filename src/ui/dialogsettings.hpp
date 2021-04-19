@@ -249,6 +249,12 @@ private slots:
     void on_checkBox_connect_automatically_toggled(bool checked);
     void on_lineEdit_xmpp_server_url_textChanged(const QString &arg1);
 
+    //
+    // Language & Dictionaries
+    //
+    void on_comboBox_accessibility_lang_ui_currentIndexChanged(int index);
+    void on_comboBox_accessibility_dict_currentIndexChanged(int index);
+
 signals:
     void changeSelectedTTSEngine(const QString &name);
 

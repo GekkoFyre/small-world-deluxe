@@ -64,6 +64,7 @@
 #include <qxmpp/QXmppClientExtension.h>
 #include <qxmpp/QXmppDiscoveryManager.h>
 #include <qxmpp/QXmppRegistrationManager.h>
+#include <queue>
 #include <memory>
 #include <utility>
 #include <QMap>
@@ -235,6 +236,11 @@ private:
     // SSL / TLS / STARTTLS
     //
     QPointer<QSslSocket> m_sslSocket;
+
+    //
+    // Queue's relating to XMPP
+    //
+    std::queue<QXmppPresence::AvailableStatusType> m_availStatusTypeQueue;
 
     //
     // QXmpp and XMPP related

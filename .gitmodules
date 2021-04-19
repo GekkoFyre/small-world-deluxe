@@ -40,3 +40,6 @@
 [submodule "src/contrib/kissfft"]
 	path = src/contrib/kissfft
 	url = https://github.com/mborgerding/kissfft.git
+[submodule "src/contrib/dictionaries"]
+	path = src/contrib/dictionaries
+	url = https://github.com/wooorm/dictionaries.git

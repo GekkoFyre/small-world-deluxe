@@ -3101,3 +3101,23 @@ void DialogSettings::on_lineEdit_xmpp_server_url_textChanged(const QString &arg1
 
    return;
 }
+
+/**
+ * @brief DialogSettings::on_comboBox_accessibility_lang_ui_currentIndexChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ */
+void DialogSettings::on_comboBox_accessibility_lang_ui_currentIndexChanged(int index)
+{
+    return;
+}
+
+/**
+ * @brief DialogSettings::on_comboBox_accessibility_dict_currentIndexChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ */
+void DialogSettings::on_comboBox_accessibility_dict_currentIndexChanged(int index)
+{
+    return;
+}
