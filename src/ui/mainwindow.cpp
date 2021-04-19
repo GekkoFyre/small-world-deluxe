@@ -82,6 +82,7 @@ using namespace GekkoFyre;
 using namespace GkAudioFramework;
 using namespace Database;
 using namespace Settings;
+using namespace Language;
 using namespace Audio;
 using namespace AmateurRadio;
 using namespace Control;
@@ -789,7 +790,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Hunspell & Spelling dictionaries
         //
-        // m_Hunspell = std::make_shared<Hunspell>();
+        readHunspellSettings();
 
         //
         // QPrinter-specific options!
@@ -2245,6 +2246,51 @@ void MainWindow::readXmppSettings()
     gkConnDetails.password = gkDb->read_xmpp_settings(GkXmppCfg::XmppPassword);;
     gkConnDetails.nickname = gkDb->read_xmpp_settings(GkXmppCfg::XmppNickname);;
     gkConnDetails.email = gkDb->read_xmpp_settings(GkXmppCfg::XmppEmailAddr);;
+
+    return;
+}
+
+/**
+ * @brief MainWindow::readHunspellSettings reads any settings related to Hunspell and its dictionaries from the Google
+ * LevelDB database attached to the Small World Deluxe instance.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::readHunspellSettings()
+{
+    sys::error_code ec;
+    try {
+        QString curr_chosen_dict = gkDb->read_lang_dict_settings(Language::GkDictionary::ChosenDictLang);
+
+        if (!curr_chosen_dict.isEmpty()) {
+            if (curr_chosen_dict == Filesystem::hunspellDisabledOption) { // The user has chosen to disable Hunspell entirely!
+                return;
+            }
+        }
+
+        if (curr_chosen_dict.isEmpty()) {
+            curr_chosen_dict = Filesystem::hunspellSpellDefLang; // Default language dictionary to use if none has been specified!
+        }
+
+        fs::path active_dict_dir = gkFileIo->getLangFile(curr_chosen_dict, Language::GkLangSettings::DictLang);
+        if (fs::exists(active_dict_dir, ec)) {
+            if (fs::is_directory(active_dict_dir, ec)) {
+                fs::path active_aff = fs::path(active_dict_dir.string() + native_slash.string() + Filesystem::hunspellSpellAffExt);
+                fs::path active_dic = fs::path(active_dict_dir.string() + native_slash.string() + Filesystem::hunspellSpellDicExt);
+
+                if (fs::exists(active_aff, ec) && fs::exists(active_dic, ec)) {
+                    //
+                    // The *.aff and *.dic exists!
+                    m_Hunspell = std::make_shared<Hunspell>(active_aff.string().c_str(), active_dic.string().c_str());
+                }
+            }
+
+            if (ec.failed()) {
+                throw std::invalid_argument(tr("An issue was encountered while attempting to read Hunspell dictionary! Error: %1").arg(QString::fromStdString(ec.message())).toStdString());
+            }
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
 
     return;
 }

@@ -674,7 +674,11 @@
                                      <number>0</number>
                                     </property>
                                     <item>
-                                     <widget class="QComboBox" name="comboBox_accessibility_lang_ui"/>
+                                     <widget class="QComboBox" name="comboBox_accessibility_lang_ui">
+                                      <property name="toolTip">
+                                       <string>Change the display language of the user interface itself.</string>
+                                      </property>
+                                     </widget>
                                     </item>
                                    </layout>
                                   </widget>
@@ -732,7 +736,11 @@
                                      <number>0</number>
                                     </property>
                                     <item>
-                                     <widget class="QComboBox" name="comboBox_accessibility_dict"/>
+                                     <widget class="QComboBox" name="comboBox_accessibility_dict">
+                                      <property name="toolTip">
+                                       <string>Choose a dictionary that can be used for spell-checking typos. This is separate to the UI Language.</string>
+                                      </property>
+                                     </widget>
                                     </item>
                                    </layout>
                                   </widget>

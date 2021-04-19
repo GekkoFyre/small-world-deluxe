@@ -284,6 +284,10 @@ CMD [ "make", "-j 12" ]
 CMD [ "make", "install" ]
 CMD cd ./../..
 CMD rm -rvf codec2
+
+#
+# We had to login to the Docker image itself and compile this by hand manually!
+#
 RUN [ "wget", "https://github.com/Hamlib/Hamlib/releases/download/4.1/hamlib-4.1.tar.gz" ]
 RUN tar -xvzf hamlib-4.1.tar.gz
 CMD cd hamlib-4.1

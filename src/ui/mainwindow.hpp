@@ -526,6 +526,8 @@ private:
     void createXmppConnection();
     void readXmppSettings();
 
+    void readHunspellSettings();
+
     //
     // System tray icon related functions
     //

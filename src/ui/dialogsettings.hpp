@@ -253,7 +253,7 @@ private slots:
     // Language & Dictionaries
     //
     void on_comboBox_accessibility_lang_ui_currentIndexChanged(int index);
-    void on_comboBox_accessibility_dict_currentIndexChanged(int index);
+    void on_comboBox_accessibility_dict_currentIndexChanged(const QString &arg1);
 
 signals:
     void changeSelectedTTSEngine(const QString &name);
@@ -347,6 +347,8 @@ private:
     void prefill_xmpp_server_type(const GekkoFyre::Network::GkXmpp::GkServerType &server_type);
     void prefill_xmpp_ignore_ssl_errors();
     void prefill_uri_lookup_method();
+    void prefill_lang_dictionaries();
+    void prefill_ui_lang();
     void init_station_info();
 
     void monitorXmppServerChange();
