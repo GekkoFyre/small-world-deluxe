@@ -48,11 +48,14 @@
 #include "src/models/treeview/xmpp/gk_xmpp_roster_model.hpp"
 #include "src/gk_logger.hpp"
 #include <memory>
+#include <QImage>
+#include <QTimer>
 #include <QAction>
 #include <QString>
 #include <QObject>
 #include <QDialog>
 #include <QPointer>
+#include <QByteArray>
 #include <QSharedPointer>
 
 namespace Ui {
@@ -66,19 +69,48 @@ class GkXmppRosterDialog : public QDialog
 public:
     explicit GkXmppRosterDialog(const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details, QPointer<GekkoFyre::GkXmppClient> xmppClient,
                                 QPointer<GekkoFyre::GkLevelDb> database, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                                QWidget *parent = nullptr);
+                                const bool &skipConnectionCheck = false, QWidget *parent = nullptr);
     ~GkXmppRosterDialog();
 
 private slots:
     void on_comboBox_current_status_currentIndexChanged(int index);
     void on_pushButton_user_login_clicked();
     void on_pushButton_user_create_account_clicked();
-    void onCustomContextMenu(const QPoint &point);
+    void on_treeView_callsigns_groups_customContextMenuRequested(const QPoint &pos);
+    void on_actionAdd_Contact_triggered();
+    void on_actionEdit_Contact_triggered();
+    void on_actionDelete_Contact_triggered();
+    void on_treeView_callsigns_pending_customContextMenuRequested(const QPoint &pos);
+    void on_pushButton_self_avatar_clicked();
+    void on_lineEdit_self_nickname_returnPressed();
+    void on_treeView_callsigns_blocked_customContextMenuRequested(const QPoint &pos);
+
+    //
+    // VCard management
+    //
+    void recvClientAvatarImg(const QByteArray &avatar_pic);
+    void updateClientAvatarPlaceholder();
+    void updateClientAvatarPlaceholder(const QImage &avatar_img);
+    void editNicknameLabel(const QString &value);
 
     //
     // XMPP Roster management and related
     //
     void updateActions();
+    void subscriptionRequestRecv(const QString &bareJid);
+    void subscriptionRequestRetracted(const QString &bareJid);
+    void on_pushButton_add_contact_cancel_clicked();
+    void on_pushButton_add_contact_submit_clicked();
+    void on_actionAcceptInvite_triggered();
+    void on_actionRefuseInvite_triggered();
+    void on_actionBlockUser_triggered();
+    void on_actionUnblockUser_triggered();
+
+signals:
+    void updateAvailableStatusType(const QXmppPresence::AvailableStatusType &stat_type);
+    void updateClientVCard(const QString &first_name, const QString &last_name, const QString &email,
+                           const QString &callsign, const QByteArray &avatar_pic);
+    void updateClientAvatarImg(const QImage &avatar_img);
 
 private:
     Ui::GkXmppRosterDialog *ui;
@@ -95,17 +127,21 @@ private:
     QPointer<GekkoFyre::GkXmppRosterTreeViewModel> m_xmppRosterTreeViewModel;
 
     //
-    // QAction's / Right-click menu items
-    //
-    std::unique_ptr<QAction> m_action_add_contact;
-    std::unique_ptr<QAction> m_action_delete_contact;
-    std::unique_ptr<QAction> m_action_edit_contact;
-
-    //
     // QXmpp and XMPP related
     //
     GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
 
+    //
+    // Time & Date
+    //
+    QPointer<QTimer> m_clientAvatarImgUpdateTimer;
+
+    //
+    // VCard management
+    //
+    QByteArray m_clientAvatarImg;
+
+    void reconnectToXmpp();
     void prefillAvailComboBox();
 };
 

@@ -72,6 +72,7 @@ using namespace GekkoFyre;
 using namespace GkAudioFramework;
 using namespace Database;
 using namespace Settings;
+using namespace Language;
 using namespace Audio;
 using namespace AmateurRadio;
 using namespace Control;
@@ -626,7 +627,7 @@ void GkLevelDb::write_audio_playback_dlg_settings(const QString &value, const Au
                 batch.Put("GkRecordDlgLastFolderBrowsed", value.toStdString());
                 break;
             default:
-                break;
+                throw std::runtime_error(tr("Invalid key has been provided for writing Audio Playback settings relating to Google LevelDB!").toStdString());
         }
 
         leveldb::WriteOptions write_options;
@@ -820,6 +821,140 @@ void GkLevelDb::delete_firewall_app_settings(const std::string &application)
     }
 
     return;
+}
+
+/**
+ * @brief GkLevelDb::write_lang_ui_settings
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value
+ * @param lang_key
+ */
+void GkLevelDb::write_lang_ui_settings(const QString &value, const Settings::Language::GkUiLang &lang_key)
+{
+    try {
+        // Put key-value
+        leveldb::WriteBatch batch;
+        leveldb::Status status;
+
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
+
+        switch (lang_key) {
+            case ChosenUiLang:
+                batch.Put("GkChosenUiLang", value.toStdString());
+                break;
+            default:
+                throw std::runtime_error(tr("Invalid key has been provided for writing UI Language settings relating to Google LevelDB!").toStdString());
+        }
+
+        status = db->Write(write_options, &batch);
+
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return;
+}
+
+/**
+ * @brief GkLevelDb::write_lang_dict_settings
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value
+ * @param dict_key
+ */
+void GkLevelDb::write_lang_dict_settings(const QString &value, const Settings::Language::GkDictionary &dict_key)
+{
+    try {
+        // Put key-value
+        leveldb::WriteBatch batch;
+        leveldb::Status status;
+
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
+
+        switch (dict_key) {
+            case ChosenDictLang:
+                batch.Put("GkChosenDictLang", value.toStdString());
+                break;
+            default:
+                throw std::runtime_error(tr("Invalid key has been provided for writing Hunspell dictionary settings relating to Google LevelDB!").toStdString());
+        }
+
+        status = db->Write(write_options, &batch);
+
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return;
+}
+
+/**
+ * @brief GkLevelDb::read_lang_dict_settings
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param dict_key
+ * @return
+ */
+QString GkLevelDb::read_lang_dict_settings(const Settings::Language::GkDictionary &dict_key)
+{
+    try {
+        leveldb::Status status;
+        leveldb::ReadOptions read_options;
+        std::string value = "";
+
+        read_options.verify_checksums = true;
+
+        switch (dict_key) {
+            case ChosenDictLang:
+                status = db->Get(read_options, "GkChosenDictLang", &value);
+                break;
+            default:
+                throw std::runtime_error(tr("Invalid key has been provided for writing Hunspell dictionary settings relating to Google LevelDB!").toStdString());
+        }
+
+        return QString::fromStdString(value);
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return QString();
+}
+
+/**
+ * @brief GkLevelDb::read_lang_ui_settings
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param lang_key
+ * @return
+ */
+QString GkLevelDb::read_lang_ui_settings(const Settings::Language::GkUiLang &lang_key)
+{
+    try {
+        leveldb::Status status;
+        leveldb::ReadOptions read_options;
+        std::string value = "";
+
+        read_options.verify_checksums = true;
+
+        switch (lang_key) {
+            case ChosenUiLang:
+                status = db->Get(read_options, "GkChosenUiLang", &value);
+                break;
+            default:
+                throw std::runtime_error(tr("Invalid key has been provided for writing UI Language settings relating to Google LevelDB!").toStdString());
+        }
+
+        return QString::fromStdString(value);
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return QString();
 }
 
 /**
@@ -1400,6 +1535,9 @@ void GkLevelDb::write_xmpp_settings(const QString &value, const Settings::GkXmpp
             case Settings::GkXmppCfg::XmppAutoReconnect:
                 batch.Put("XmppAutoReconnect", value.toStdString());
                 break;
+            case Settings::GkXmppCfg::XmppAutoReconnectIgnore:
+                batch.Put("XmppAutoReconnectIgnore", value.toStdString());
+                break;
             case Settings::GkXmppCfg::XmppUriLookupMethod:
                 batch.Put("XmppUriLookupMethod", value.toStdString());
                 break;
@@ -1618,6 +1756,9 @@ QString GkLevelDb::read_xmpp_settings(const Settings::GkXmppCfg &key)
             break;
         case Settings::GkXmppCfg::XmppAutoReconnect:
             status = db->Get(read_options, "XmppAutoReconnect", &value);
+            break;
+        case Settings::GkXmppCfg::XmppAutoReconnectIgnore:
+            status = db->Get(read_options, "XmppAutoReconnectIgnore", &value);
             break;
         case Settings::GkXmppCfg::XmppUriLookupMethod:
             status = db->Get(read_options, "XmppUriLookupMethod", &value);

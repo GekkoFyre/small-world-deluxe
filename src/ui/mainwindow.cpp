@@ -42,7 +42,6 @@
 #include "src/ui/sendreportdialog.hpp"
 #include "src/ui/gkaudioplaydialog.hpp"
 #include "src/ui/widgets/gk_submit_msg.hpp"
-#include "src/ui/xmpp/gkxmpprosterdialog.hpp"
 #include "src/ui/xmpp/gkxmppregistrationdialog.hpp"
 #include "src/models/tableview/gk_frequency_model.hpp"
 #include "src/models/tableview/gk_logger_model.hpp"
@@ -83,6 +82,7 @@ using namespace GekkoFyre;
 using namespace GkAudioFramework;
 using namespace Database;
 using namespace Settings;
+using namespace Language;
 using namespace Audio;
 using namespace AmateurRadio;
 using namespace Control;
@@ -145,8 +145,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     native_slash = slash.make_preferred().native();
 
     const fs::path dir_to_append = fs::path(Filesystem::defaultDirAppend + native_slash.string() + Filesystem::fileName);
-    const fs::path swrld_save_path = fileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation),
-                                                              true, QString::fromStdString(dir_to_append.string())).toStdString(); // Path to save final database towards
+    const fs::path swrld_save_path = gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation),
+                                                                true, QString::fromStdString(dir_to_append.string())).toStdString(); // Path to save final database towards
 
     try {
         // Print out the current date
@@ -204,9 +204,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         global_rx_audio_volume = 0.0;
         global_tx_audio_volume = 0.0;
 
-        gk_spectro_start_time = 0;
-        gk_spectro_latest_time = 0;
-
         //
         // SSTV related
         //
@@ -221,15 +218,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         rig_list_foreach(parseRigCapabilities, nullptr);
 
         // Create class pointers
-        fileIo = new GekkoFyre::FileIo(this);
+        gkFileIo = new GekkoFyre::FileIo(this);
         gkStringFuncs = new GekkoFyre::StringFuncs(this);
         gkSystem = new GkSystem(gkStringFuncs, this);
 
         //
         // Settings database-related logic
         //
-        QString init_settings_db_loc = fileIo->read_initial_settings(init_cfg::DbLoc);
-        QString init_settings_db_name = fileIo->read_initial_settings(init_cfg::DbName);
+        QString init_settings_db_loc = gkFileIo->read_initial_settings(init_cfg::DbLoc);
+        QString init_settings_db_name = gkFileIo->read_initial_settings(init_cfg::DbName);
 
         // Create path to file-database
         try {
@@ -271,12 +268,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             if (!save_db_path.empty()) {
                 status = leveldb::DB::Open(options, save_db_path.string(), &db);
                 const QRect main_win_coord = findActiveScreen();
-                gkDb = new GekkoFyre::GkLevelDb(db, fileIo, gkStringFuncs, main_win_coord, this);
+                gkDb = new GekkoFyre::GkLevelDb(db, gkFileIo, gkStringFuncs, main_win_coord, this);
 
                 bool enableSentry = false;
                 bool askSentry = gkDb->read_sentry_settings(GkSentry::AskedDialog);
                 if (!askSentry) {
                     QMessageBox optInMsgBox;
+                    optInMsgBox.setParent(nullptr);
                     optInMsgBox.setWindowTitle(tr("Help improve Small World!"));
                     optInMsgBox.setText(tr("With your voluntary consent, Small World Deluxe can report anonymous information that helps developers improve this "
                                            "application. This includes things like your screen resolution, along with any crashes you wish to submit."));
@@ -335,8 +333,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                     #endif
 
                     const fs::path sentry_crash_dir = fs::path(Filesystem::defaultDirAppend + native_slash.string() + Filesystem::gk_sentry_dump_dir);
-                    const fs::path gk_minidump = fileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation),
-                                                                          true, QString::fromStdString(sentry_crash_dir.string())).toStdString();
+                    const fs::path gk_minidump = gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation),
+                                                                            true, QString::fromStdString(sentry_crash_dir.string())).toStdString();
 
                     const qint64 sentry_curr_epoch = QDateTime::currentMSecsSinceEpoch();
                     const fs::path gk_sentry_attachments = std::string(gk_minidump.string() + native_slash.string() + QString::number(sentry_curr_epoch).toStdString()
@@ -397,7 +395,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 ui->tableView_maingui_logs->horizontalHeader()->setSectionResizeMode(GK_EVENTLOG_TABLEVIEW_MODEL_MESSAGE_IDX, QHeaderView::Stretch);
                 ui->tableView_maingui_logs->show();
 
-                gkEventLogger = new GkEventLogger(gkStringFuncs, fileIo, this);
+                gkEventLogger = new GkEventLogger(gkStringFuncs, gkFileIo, this);
                 QObject::connect(gkEventLogger, SIGNAL(sendEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &)),
                                  gkEventLoggerModel, SLOT(insertData(const GekkoFyre::System::Events::Logging::GkEventLogging &)));
                 QObject::connect(gkEventLogger, SIGNAL(removeEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &)),
@@ -413,7 +411,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 //
                 // Initialize the all-important `GkRadioPtr`!
                 //
-                gkRadioLibs = new GekkoFyre::RadioLibs(fileIo, gkStringFuncs, gkDb, gkRadioPtr, gkEventLogger, gkSystem, this);
+                gkRadioLibs = new GekkoFyre::RadioLibs(gkFileIo, gkStringFuncs, gkDb, gkRadioPtr, gkEventLogger, gkSystem, this);
 
                 //
                 // Connect `GekkoFyre::GkEventLogger()` to any external log event publishing sources!
@@ -447,7 +445,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // https://doc.qt.io/qt-5/qcommandlineparser.html
         //
         gkCliParser = std::make_shared<QCommandLineParser>();
-        gkCli = std::make_shared<GekkoFyre::GkCli>(gkCliParser, fileIo, gkDb, gkRadioLibs, this);
+        gkCli = std::make_shared<GekkoFyre::GkCli>(gkCliParser, gkFileIo, gkDb, gkRadioLibs, this);
 
         std::unique_ptr<QString> error_msg = std::make_unique<QString>("");
         gkCli->parseCommandLine(error_msg.get());
@@ -469,7 +467,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                              this, SLOT(removeFreqFromDb(const GekkoFyre::AmateurRadio::GkFreqs &)));
 
             gkFreqList->publishFreqList();
-            gkAudioDevices = new GekkoFyre::AudioDevices(gkDb, fileIo, gkFreqList, gkStringFuncs, gkEventLogger, gkSystem, this);
+            gkAudioDevices = new GekkoFyre::AudioDevices(gkDb, gkFileIo, gkFreqList, gkStringFuncs, gkEventLogger, gkSystem, this);
 
             const auto outputDeviceInfos = QAudioDeviceInfo::availableDevices(QAudio::AudioOutput);
             const auto inputDeviceInfos = QAudioDeviceInfo::availableDevices(QAudio::AudioInput);
@@ -790,6 +788,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         info_timer->start(1000);
 
         //
+        // Hunspell & Spelling dictionaries
+        //
+        readHunspellSettings();
+
+        //
         // QPrinter-specific options!
         // https://doc.qt.io/qt-5/qprinter.html
         // https://doc.qt.io/qt-5/qtprintsupport-index.html
@@ -903,7 +906,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         //
         // Initialize the QXmpp client!
-        m_xmppClient = new GkXmppClient(xmpp_conn_details, gkDb, gkEventLogger, false, nullptr);
+        m_xmppClient = new GkXmppClient(gkConnDetails, gkDb, gkFileIo, gkEventLogger, false, nullptr);
+        gkXmppRosterDlg = new GkXmppRosterDialog(gkConnDetails, m_xmppClient, gkDb, gkEventLogger, true, this);
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
@@ -943,7 +947,7 @@ MainWindow::~MainWindow()
  */
 void MainWindow::on_actionXMPP_triggered()
 {
-    launchXmppRosterDlg();
+    launchXmppRosterDlg(true, true);
     return;
 }
 
@@ -954,6 +958,7 @@ void MainWindow::on_actionXMPP_triggered()
 void MainWindow::on_actionE_xit_triggered()
 {
     QMessageBox msgBox;
+    msgBox.setParent(nullptr);
     msgBox.setWindowTitle(tr("Terminate"));
     msgBox.setText(tr("Are you sure you wish to terminate Small World Deluxe?"));
     msgBox.setStandardButtons(QMessageBox::Cancel | QMessageBox::Ok);
@@ -1046,11 +1051,11 @@ void MainWindow::launchSettingsWin()
     QObject::connect(gkFreqTableModel, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
                      gkFreqList, SIGNAL(removeFreq(const GekkoFyre::AmateurRadio::GkFreqs &)));
 
-    QPointer<DialogSettings> dlg_settings = new DialogSettings(gkDb, fileIo, gkAudioDevices, gkAudioInput,
+    QPointer<DialogSettings> dlg_settings = new DialogSettings(gkDb, gkFileIo, gkAudioDevices, gkAudioInput,
                                                                gkAudioOutput, avail_input_audio_devs, avail_output_audio_devs,
                                                                pref_input_device, pref_output_device, gkRadioLibs,
                                                                gkStringFuncs, gkRadioPtr, gkSerialPortMap, gkUsbPortMap,
-                                                               gkFreqList, gkFreqTableModel, xmpp_conn_details, m_xmppClient,
+                                                               gkFreqList, gkFreqTableModel, gkConnDetails, m_xmppClient,
                                                                gkEventLogger, gkTextToSpeech, this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
@@ -1678,6 +1683,7 @@ bool MainWindow::fileOverloadWarning(const int &file_count, const int &max_num_f
     if (file_count > max_num_files) {
         // Warn the user about the implications of loading too many files into memory all at once!
         QMessageBox msgBoxWarn;
+        msgBoxWarn.setParent(nullptr);
         msgBoxWarn.setWindowTitle(tr("Warning!"));
         msgBoxWarn.setText(tr("You have selected an excessive number of files/images to load into memory (i.e. %1 files)! Proceeding with this "
                               "fact in mind can mean instability with Small World Deluxe.").arg(QString::number(file_count)));
@@ -1792,7 +1798,7 @@ std::map<qint32, std::pair<Network::GkNetworkProtocol, bool>> MainWindow::proces
 
             if (isSwdEnabled == FALSE) {
                 QMessageBox msgBoxFirewall;
-                // msgBoxFirewall.setParent(this);
+                msgBoxFirewall.setParent(nullptr);
                 msgBoxFirewall.setWindowTitle(tr("Add to firewall?"));
                 msgBoxFirewall.setText(tr("In order for %1 to work properly, the application must add some rules to your system's firewall. "
                                           "Do you give permission for this?").arg(QString::fromStdString(General::productName)));
@@ -2062,6 +2068,38 @@ QRect MainWindow::findActiveScreen()
 }
 
 /**
+ * @brief MainWindow::createXmppConnection
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::createXmppConnection()
+{
+    if (!gkConnDetails.username.isEmpty()) {
+        switch (gkConnDetails.server.type) {
+            case GkServerType::GekkoFyre:
+                if (!gkConnDetails.password.isEmpty()) { // A password is required for GekkoFyre Networks' XMPP server!
+                    m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, gkConnDetails.username, gkConnDetails.password, QString(), false);
+                }
+
+                break;
+            case GkServerType::Custom:
+                if (!gkConnDetails.password.isEmpty()) { // A password is required for GekkoFyre Networks' XMPP server!
+                    // Password provided
+                    m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, gkConnDetails.username, gkConnDetails.password, QString(), true);
+                } else {
+                    // Connecting anonymously
+                    m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, gkConnDetails.username, QString(), QString(), true);
+                }
+
+                break;
+            default:
+                break;
+        }
+    }
+
+    return;
+}
+
+/**
  * @brief MainWindow::readXmppSettings reads out any saved XMPP settings that have been previously written to the
  * pre-configured Google LevelDB database.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -2078,7 +2116,7 @@ void MainWindow::readXmppSettings()
     QString xmpp_auto_reconnect = gkDb->read_xmpp_settings(GkXmppCfg::XmppAutoReconnect);
 
     QByteArray xmpp_upload_avatar; // TODO: Finish this area of code, pronto!
-    xmpp_conn_details.server.settings_client.upload_avatar_pixmap = xmpp_upload_avatar;
+    gkConnDetails.server.settings_client.upload_avatar_pixmap = xmpp_upload_avatar;
 
     //
     // CAUTION!!! Username, password, and e-mail address!
@@ -2088,45 +2126,45 @@ void MainWindow::readXmppSettings()
     QString xmpp_client_email_addr = gkDb->read_xmpp_settings(GkXmppCfg::XmppEmailAddr);
 
     if (!xmpp_allow_msg_history.isEmpty()) {
-        xmpp_conn_details.server.settings_client.allow_msg_history = gkDb->boolStr(xmpp_allow_msg_history.toStdString());
+        gkConnDetails.server.settings_client.allow_msg_history = gkDb->boolStr(xmpp_allow_msg_history.toStdString());
     } else {
-        xmpp_conn_details.server.settings_client.allow_msg_history = true;
+        gkConnDetails.server.settings_client.allow_msg_history = true;
     }
 
     if (!xmpp_allow_file_xfers.isEmpty()) {
-        xmpp_conn_details.server.settings_client.allow_file_xfers = gkDb->boolStr(xmpp_allow_file_xfers.toStdString());
+        gkConnDetails.server.settings_client.allow_file_xfers = gkDb->boolStr(xmpp_allow_file_xfers.toStdString());
     } else {
-        xmpp_conn_details.server.settings_client.allow_file_xfers = true;
+        gkConnDetails.server.settings_client.allow_file_xfers = true;
     }
 
     if (!xmpp_allow_mucs.isEmpty()) {
-        xmpp_conn_details.server.settings_client.allow_mucs = gkDb->boolStr(xmpp_allow_mucs.toStdString());
+        gkConnDetails.server.settings_client.allow_mucs = gkDb->boolStr(xmpp_allow_mucs.toStdString());
     } else {
-        xmpp_conn_details.server.settings_client.allow_mucs = true;
+        gkConnDetails.server.settings_client.allow_mucs = true;
     }
 
     if (!xmpp_auto_connect.isEmpty()) {
-        xmpp_conn_details.server.settings_client.auto_connect = gkDb->boolStr(xmpp_auto_connect.toStdString());
+        gkConnDetails.server.settings_client.auto_connect = gkDb->boolStr(xmpp_auto_connect.toStdString());
     } else {
-        xmpp_conn_details.server.settings_client.auto_connect = false;
+        gkConnDetails.server.settings_client.auto_connect = true;
     }
 
     if (!xmpp_auto_reconnect.isEmpty()) {
-        xmpp_conn_details.server.settings_client.auto_reconnect = gkDb->boolStr(xmpp_auto_reconnect.toStdString());
+        gkConnDetails.server.settings_client.auto_reconnect = gkDb->boolStr(xmpp_auto_reconnect.toStdString());
     } else {
-        xmpp_conn_details.server.settings_client.auto_reconnect = false;
+        gkConnDetails.server.settings_client.auto_reconnect = false;
     }
 
     if (!xmpp_client_password.isEmpty()) {
-        xmpp_conn_details.password = xmpp_client_password;
+        gkConnDetails.password = xmpp_client_password;
     } else {
-        xmpp_conn_details.password = "";
+        gkConnDetails.password = "";
     }
 
     if (!xmpp_client_email_addr.isEmpty()) {
-        xmpp_conn_details.email = xmpp_client_email_addr;
+        gkConnDetails.email = xmpp_client_email_addr;
     } else {
-        xmpp_conn_details.email = "";
+        gkConnDetails.email = "";
     }
 
     //
@@ -2141,73 +2179,118 @@ void MainWindow::readXmppSettings()
     QString xmpp_uri_lookup_method = gkDb->read_xmpp_settings(GkXmppCfg::XmppUriLookupMethod);
 
     if (xmpp_server_type.isEmpty() || xmpp_domain_url.isEmpty()) {
-        xmpp_conn_details.server.type = gkDb->convXmppServerTypeFromInt(GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX);
-        xmpp_conn_details.server.url = GkXmppGekkoFyreCfg::defaultUrl;
+        gkConnDetails.server.type = gkDb->convXmppServerTypeFromInt(GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX);
+        gkConnDetails.server.url = GkXmppGekkoFyreCfg::defaultUrl;
     } else {
-        xmpp_conn_details.server.type = gkDb->convXmppServerTypeFromInt(xmpp_server_type.toInt());
-        xmpp_conn_details.server.url = xmpp_domain_url;
+        gkConnDetails.server.type = gkDb->convXmppServerTypeFromInt(xmpp_server_type.toInt());
+        gkConnDetails.server.url = xmpp_domain_url;
     }
 
     if (!xmpp_client_username.isEmpty()) {
-        xmpp_conn_details.username = xmpp_client_username;
+        gkConnDetails.username = xmpp_client_username;
     } else {
-        xmpp_conn_details.username = "";
+        gkConnDetails.username = "";
     }
 
     if (!xmpp_domain_port.isEmpty()) {
-        xmpp_conn_details.server.port = xmpp_domain_port.toInt();
+        gkConnDetails.server.port = xmpp_domain_port.toInt();
     } else {
-        xmpp_conn_details.server.port = GK_DEFAULT_XMPP_SERVER_PORT;
+        gkConnDetails.server.port = GK_DEFAULT_XMPP_SERVER_PORT;
     }
 
     if (!xmpp_enable_ssl.isEmpty()) {
-        xmpp_conn_details.server.settings_client.enable_ssl = gkDb->boolStr(xmpp_enable_ssl.toStdString());
+        gkConnDetails.server.settings_client.enable_ssl = gkDb->boolStr(xmpp_enable_ssl.toStdString());
     } else {
-        xmpp_conn_details.server.settings_client.enable_ssl = true;
+        gkConnDetails.server.settings_client.enable_ssl = true;
     }
 
     if (!xmpp_network_timeout.isEmpty()) {
-        xmpp_conn_details.server.settings_client.network_timeout = xmpp_network_timeout.toInt();
+        gkConnDetails.server.settings_client.network_timeout = xmpp_network_timeout.toInt();
     } else {
-        xmpp_conn_details.server.settings_client.network_timeout = 15;
+        gkConnDetails.server.settings_client.network_timeout = 15;
     }
 
     if (!xmpp_ignore_ssl_errors.isEmpty()) {
         switch (xmpp_ignore_ssl_errors.toInt()) {
             case GK_XMPP_IGNORE_SSL_ERRORS_COMBO_FALSE:
-                xmpp_conn_details.server.settings_client.ignore_ssl_errors = false;
+                gkConnDetails.server.settings_client.ignore_ssl_errors = false;
                 break;
             case GK_XMPP_IGNORE_SSL_ERRORS_COMBO_TRUE:
-                xmpp_conn_details.server.settings_client.ignore_ssl_errors = true;
+                gkConnDetails.server.settings_client.ignore_ssl_errors = true;
                 break;
             default:
-                xmpp_conn_details.server.settings_client.ignore_ssl_errors = false;
+                gkConnDetails.server.settings_client.ignore_ssl_errors = false;
                 break;
         }
     } else {
-        xmpp_conn_details.server.settings_client.ignore_ssl_errors = false;
+        gkConnDetails.server.settings_client.ignore_ssl_errors = false;
     }
 
     if (!xmpp_uri_lookup_method.isEmpty()) {
         switch (xmpp_uri_lookup_method.toInt()) {
             case GK_XMPP_URI_LOOKUP_DNS_SRV_METHOD:
-                xmpp_conn_details.server.settings_client.uri_lookup_method = GkUriLookupMethod::QtDnsSrv;
+                gkConnDetails.server.settings_client.uri_lookup_method = GkUriLookupMethod::QtDnsSrv;
                 break;
             case GK_XMPP_URI_LOOKUP_MANUAL_METHOD:
-                xmpp_conn_details.server.settings_client.uri_lookup_method = GkUriLookupMethod::Manual;
+                gkConnDetails.server.settings_client.uri_lookup_method = GkUriLookupMethod::Manual;
                 break;
             default:
-                xmpp_conn_details.server.settings_client.uri_lookup_method = GkUriLookupMethod::QtDnsSrv;
+                gkConnDetails.server.settings_client.uri_lookup_method = GkUriLookupMethod::QtDnsSrv;
                 break;
         }
     } else {
-        xmpp_conn_details.server.settings_client.uri_lookup_method = GkUriLookupMethod::QtDnsSrv;
+        gkConnDetails.server.settings_client.uri_lookup_method = GkUriLookupMethod::QtDnsSrv;
     }
 
-    xmpp_conn_details.status = GkOnlineStatus::Offline;
-    xmpp_conn_details.password = gkDb->read_xmpp_settings(GkXmppCfg::XmppPassword);;
-    xmpp_conn_details.nickname = gkDb->read_xmpp_settings(GkXmppCfg::XmppNickname);;
-    xmpp_conn_details.email = gkDb->read_xmpp_settings(GkXmppCfg::XmppEmailAddr);;
+    gkConnDetails.status = GkOnlineStatus::Offline;
+    gkConnDetails.password = gkDb->read_xmpp_settings(GkXmppCfg::XmppPassword);;
+    gkConnDetails.nickname = gkDb->read_xmpp_settings(GkXmppCfg::XmppNickname);;
+    gkConnDetails.email = gkDb->read_xmpp_settings(GkXmppCfg::XmppEmailAddr);;
+
+    return;
+}
+
+/**
+ * @brief MainWindow::readHunspellSettings reads any settings related to Hunspell and its dictionaries from the Google
+ * LevelDB database attached to the Small World Deluxe instance.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::readHunspellSettings()
+{
+    sys::error_code ec;
+    try {
+        QString curr_chosen_dict = gkDb->read_lang_dict_settings(Language::GkDictionary::ChosenDictLang);
+
+        if (!curr_chosen_dict.isEmpty()) {
+            if (curr_chosen_dict == Filesystem::hunspellDisabledOption) { // The user has chosen to disable Hunspell entirely!
+                return;
+            }
+        }
+
+        if (curr_chosen_dict.isEmpty()) {
+            curr_chosen_dict = Filesystem::hunspellSpellDefLang; // Default language dictionary to use if none has been specified!
+        }
+
+        fs::path active_dict_dir = gkFileIo->getLangFile(curr_chosen_dict, Language::GkLangSettings::DictLang);
+        if (fs::exists(active_dict_dir, ec)) {
+            if (fs::is_directory(active_dict_dir, ec)) {
+                fs::path active_aff = fs::path(active_dict_dir.string() + native_slash.string() + Filesystem::hunspellSpellAffExt);
+                fs::path active_dic = fs::path(active_dict_dir.string() + native_slash.string() + Filesystem::hunspellSpellDicExt);
+
+                if (fs::exists(active_aff, ec) && fs::exists(active_dic, ec)) {
+                    //
+                    // The *.aff and *.dic exists!
+                    m_Hunspell = std::make_shared<Hunspell>(active_aff.string().c_str(), active_dic.string().c_str());
+                }
+            }
+
+            if (ec.failed()) {
+                throw std::invalid_argument(tr("An issue was encountered while attempting to read Hunspell dictionary! Error: %1").arg(QString::fromStdString(ec.message())).toStdString());
+            }
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
 
     return;
 }
@@ -2216,12 +2299,39 @@ void MainWindow::readXmppSettings()
  * @brief MainWindow::launchXmppRosterDlg launches the Roster Dialog for the XMPP side of Small World Deluxe, where end-users
  * may interact with others or even signup to the given, configured server if it's their first time connecting.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param msgBoxDlg Whether to display the message dialog box or not.
+ * @param showRosterDlg Whether to show the roster dialog after making a successful connection or not.
  */
-void MainWindow::launchXmppRosterDlg()
+void MainWindow::launchXmppRosterDlg(const bool &msgBoxDlg, const bool &showRosterDlg)
 {
-    QPointer<GkXmppRosterDialog> gkXmppRosterDlg = new GkXmppRosterDialog(xmpp_conn_details, m_xmppClient, gkDb, gkEventLogger, this);
-    gkXmppRosterDlg->setWindowFlags(Qt::Window);
-    gkXmppRosterDlg->show();
+    if (!m_xmppClient->isConnected() || m_xmppClient->getNetworkState() != GkNetworkState::Connecting) { // An active connection has yet to be made!
+        if (msgBoxDlg) { // Whether we should show the message box dialog or not!
+            QMessageBox msgBox;
+            msgBox.setParent(nullptr);
+            msgBox.setWindowTitle(tr("Initializing..."));
+            msgBox.setText(tr("Do you wish to create a connection to the XMPP server, \"%1\"?").arg(gkConnDetails.server.url));
+            msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+            msgBox.setDefaultButton(QMessageBox::Ok);
+            msgBox.setIcon(QMessageBox::Icon::Information);
+            qint32 ret = msgBox.exec();
+            switch (ret) {
+                case QMessageBox::Ok:
+                    createXmppConnection();
+                    break;
+                case QMessageBox::Cancel:
+                    return;
+                default:
+                    return;
+            }
+        } else {
+            createXmppConnection();
+        }
+    }
+
+    if (!gkXmppRosterDlg->isVisible() && showRosterDlg) { // The dialog window has not been launched yet, and whether we should show it or not!
+        gkXmppRosterDlg->setWindowFlags(Qt::Window);
+        gkXmppRosterDlg->show();
+    }
 
     return;
 }
@@ -2233,7 +2343,7 @@ void MainWindow::launchXmppRosterDlg()
 void MainWindow::createTrayActions()
 {
     m_xmppRosterAction = new QAction(tr("&XMPP"), this);
-    QObject::connect(m_xmppRosterAction, &QAction::triggered, this, &MainWindow::launchXmppRosterDlg);
+    QObject::connect(m_xmppRosterAction, &QAction::triggered, this, &MainWindow::on_actionXMPP_triggered);
 
     m_sstvAction = new QAction(tr("SS&TV"), this);
     QObject::connect(m_sstvAction, &QAction::triggered, this, &MainWindow::launchSstvTab);
@@ -2335,6 +2445,7 @@ void MainWindow::on_action_Disconnect_triggered()
 {
     try {
         QMessageBox msgBox;
+        msgBox.setParent(nullptr);
         msgBox.setWindowTitle(tr("Disconnect"));
         if ((gkRadioPtr.get() != nullptr) && (gkRadioPtr->capabilities.get() != nullptr) && (gkRadioPtr->capabilities->model_name != nullptr)) {
             msgBox.setText(tr("Are you sure you wish to disconnect from your [ %1 ] radio rig?").arg(QString::fromStdString(gkRadioPtr->capabilities->model_name)));
@@ -2499,7 +2610,7 @@ void MainWindow::uponExit()
 void MainWindow::configInputAudioDevice()
 {
     QMessageBox msgBoxSettings;
-    // msgBoxSettings.setParent(this);
+    msgBoxSettings.setParent(nullptr);
     msgBoxSettings.setWindowTitle(tr("Unavailable device!"));
     msgBoxSettings.setText(tr("You must firstly configure an appropriate **input** sound device. Please select one from the settings."));
     msgBoxSettings.setStandardButtons(QMessageBox::Ok | QMessageBox::Close | QMessageBox::Cancel);
@@ -2698,6 +2809,45 @@ void MainWindow::on_pushButton_radio_monitor_clicked()
         gkStringFuncs->changePushButtonColor(ui->pushButton_radio_monitor, true);
         btn_radio_monitor = false;
     }
+
+    return;
+}
+
+/**
+ * @brief MainWindow::on_tableView_mesg_active_customContextMenuRequested
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param pos
+ */
+void MainWindow::on_tableView_mesg_active_customContextMenuRequested(const QPoint &pos)
+{
+    std::unique_ptr<QMenu> contextMenu = std::make_unique<QMenu>(ui->tableView_mesg_active);
+    contextMenu->exec(ui->tableView_mesg_active->mapToGlobal(pos));
+
+    return;
+}
+
+/**
+ * @brief MainWindow::on_tableView_mesg_callsigns_customContextMenuRequested
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param pos
+ */
+void MainWindow::on_tableView_mesg_callsigns_customContextMenuRequested(const QPoint &pos)
+{
+    std::unique_ptr<QMenu> contextMenu = std::make_unique<QMenu>(ui->tableView_mesg_callsigns);
+    contextMenu->exec(ui->tableView_mesg_callsigns->mapToGlobal(pos));
+
+    return;
+}
+
+/**
+ * @brief MainWindow::on_tableView_maingui_logs_customContextMenuRequested
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param pos
+ */
+void MainWindow::on_tableView_maingui_logs_customContextMenuRequested(const QPoint &pos)
+{
+    std::unique_ptr<QMenu> contextMenu = std::make_unique<QMenu>(ui->tableView_maingui_logs);
+    contextMenu->exec(ui->tableView_maingui_logs->mapToGlobal(pos));
 
     return;
 }
@@ -3181,35 +3331,17 @@ void MainWindow::on_actionCW_toggled(bool arg1)
 
 void MainWindow::on_actionView_Roster_triggered()
 {
-    launchXmppRosterDlg();
+    launchXmppRosterDlg(true, true);
     return;
 }
 
 void MainWindow::on_actionSign_in_triggered()
 {
-    if (!xmpp_conn_details.username.isEmpty()) {
-        switch (xmpp_conn_details.server.type) {
-            case GkServerType::GekkoFyre:
-                if (!xmpp_conn_details.password.isEmpty()) { // A password is required for GekkoFyre Networks' XMPP server!
-                    m_xmppClient->createConnectionToServer(xmpp_conn_details.server.url, xmpp_conn_details.server.port, xmpp_conn_details.username, xmpp_conn_details.password, QString(), false);
-                }
-
-                break;
-            case GkServerType::Custom:
-                if (!xmpp_conn_details.password.isEmpty()) { // A password is required for GekkoFyre Networks' XMPP server!
-                    // Password provided
-                    m_xmppClient->createConnectionToServer(xmpp_conn_details.server.url, xmpp_conn_details.server.port, xmpp_conn_details.username, xmpp_conn_details.password, QString(), true);
-                } else {
-                    // Connecting anonymously
-                    m_xmppClient->createConnectionToServer(xmpp_conn_details.server.url, xmpp_conn_details.server.port, xmpp_conn_details.username, QString(), QString(), true);
-                }
-
-                break;
-            default:
-                break;
-        }
+    if (m_xmppClient->isConnected()) {
+        m_xmppClient->disconnectFromServer();
     }
 
+    createXmppConnection();
     return;
 }
 
@@ -3224,7 +3356,7 @@ void MainWindow::on_actionSign_out_triggered()
 
 void MainWindow::on_action_Register_Account_triggered()
 {
-    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountCreate, xmpp_conn_details, m_xmppClient, gkEventLogger, this);
+    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountCreate, gkConnDetails, m_xmppClient, gkEventLogger, this);
     gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
     gkXmppRegistrationDlg->show();
 

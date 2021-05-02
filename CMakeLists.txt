@@ -91,7 +91,7 @@ option(GFYRE_BOOST_CPP_DBG "Enable the use of debug libraries for the Boost C++ 
 option(ENBL_VALGRIND_SUPPORT "Allows for the use of Valgrind memory analysis on the application, thereby disabling certain, otherwise needed features that enhance the user-experience." OFF)
 option(ENBL_CLANG_ADDRESS_SANITIZER "LLVM's AddressSanitizer is a fast memory error detector. Clang support must be enabled for this to work." OFF)
 
-option(BUILD_CODEC2_SUPPORT "Enable support for the 'Codec2' open source speech codec library." ON)
+option(BUILD_CODEC2_SUPPORT "Enable support for the 'Codec2' open source speech codec library." OFF)
 
 #
 # Detect if we are dealing with the Linux operating system and not Apple OS/X
@@ -197,7 +197,7 @@ endif(Boost_FOUND)
 # https://github.com/qxmpp-project/qxmpp
 #
 function(install_qxmpp)
-    find_package(QXmpp REQUIRED)
+    find_package(QXMPP REQUIRED)
     if (QXMPP_FOUND)
         include_directories(${QXMPP_INCLUDE_DIRS})
         set(LIBS ${LIBS} ${QXMPP_LIBRARIES})
@@ -227,6 +227,27 @@ set(GALAXY_HAMLIB_CPP
     src/contrib/hamlib++/rotclass.cc
     src/contrib/hamlib++/include/hamlib/rigclass.h
     src/contrib/hamlib++/include/hamlib/rotclass.h)
+
+#
+# Hunspell
+# http://hunspell.github.io/
+#
+find_package(Hunspell REQUIRED)
+if (HUNSPELL_FOUND)
+    include_directories(${HUNSPELL_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${HUNSPELL_LIBRARIES})
+    file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/dictionaries/dictionaries" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Library")
+    file(RENAME "${CMAKE_CURRENT_BINARY_DIR}/Library/dictionaries" "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling")
+
+    #
+    # Remove all the unneeded files now!
+    file(GLOB_RECURSE RM_HUNSPELL_FILES_JS "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling/*.js")
+    file(GLOB_RECURSE RM_HUNSPELL_FILES_JSON "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling/*.json")
+    file(REMOVE ${RM_HUNSPELL_FILES_JS})
+    file(REMOVE ${RM_HUNSPELL_FILES_JSON})
+else()
+    message(FATAL_ERROR "The 'Hunspell' spell-checking library has been configured!")
+endif(HUNSPELL_FOUND)
 
 #
 # OpusEnc
@@ -463,7 +484,7 @@ message(STATUS "The 'Opus' audio (de-/en-)coding libraries have been configured!
 #
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/kissfft")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/kissfft")
-message(STATUS "The 'KissFFT' mathematical libraries have been configured!")
+message(STATUS "The 'KissFFT' fourier transform libraries have been configured!")
 
 #
 # AudioFile by Adam Stark
@@ -891,10 +912,10 @@ endif()
 
 INSTALL(TARGETS smallworld)
 
-SET(CMAKE_C_FLAGS_DEBUG_INIT          "-g")
-SET(CMAKE_C_FLAGS_MINSIZEREL_INIT     "-Os -DNDEBUG")
-SET(CMAKE_C_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG")
-SET(CMAKE_C_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
+SET(CMAKE_C_FLAGS_DEBUG_INIT            "-g")
+SET(CMAKE_C_FLAGS_MINSIZEREL_INIT       "-Os -DNDEBUG")
+SET(CMAKE_C_FLAGS_RELEASE_INIT          "-O3 -DNDEBUG")
+SET(CMAKE_C_FLAGS_RELWITHDEBINFO_INIT   "-O2 -g")
 
 SET(CMAKE_CXX_FLAGS_INIT                "-Wall")
 SET(CMAKE_CXX_FLAGS_DEBUG_INIT          "-g")

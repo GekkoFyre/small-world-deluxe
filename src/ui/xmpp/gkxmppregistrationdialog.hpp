@@ -71,6 +71,7 @@ public:
     ~GkXmppRegistrationDialog() override;
 
     void externalUserSignup(const quint16 &network_port, const QString &jid, const QString &email, const QString &password);
+    void prefillFormFields(const QString &jid, const QString &password, const QString &email, const quint16 &network_port = 0);
 
 private slots:
     void on_pushButton_signup_submit_clicked();
@@ -95,7 +96,6 @@ private slots:
 
     //
     // User, roster and presence details
-    void recvRegistrationForm(const QXmppRegisterIq &registerIq);
     void handleRegistrationForm(const QXmppRegisterIq &registerIq);
     void loginToServer(const QString &hostname, const quint16 &network_port, const QString &username = "",
                        const QString &password = "", const QString &jid = "", const bool &credentials_fail = false);
@@ -117,9 +117,6 @@ private slots:
 
 signals:
     void sendError(const QString &errorMsg);
-    void sendRegistrationForm(const QXmppRegisterIq &registerIq);
-    void registrationSuccessful();
-    void registrationUnsuccessful();
 
 private:
     Ui::GkXmppRegistrationDialog *ui;
@@ -145,6 +142,7 @@ private:
     QString m_reg_email;
     QString m_reg_password;
     QString m_reg_captcha;
+    quint16 m_network_port;
 
     bool m_reg_remember_credentials;
 

@@ -80,7 +80,8 @@ using namespace GkXmpp;
 GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRole, const GkUserConn &connection_details,
                                                    QPointer<GekkoFyre::GkXmppClient> xmppClient,
                                                    QPointer<GekkoFyre::GkEventLogger> eventLogger, QWidget *parent) :
-    m_netState(GkNetworkState::None), QDialog(parent), ui(new Ui::GkXmppRegistrationDialog)
+                                                   m_netState(GkNetworkState::None), QDialog(parent),
+                                                   ui(new Ui::GkXmppRegistrationDialog)
 {
     ui->setupUi(this);
     try {
@@ -192,11 +193,6 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
             m_xmppClient->disconnectFromServer();
         }
 
-        //
-        // Allow the processing of the in-band user registration form...
-        QObject::connect(this, SIGNAL(sendRegistrationForm(const QXmppRegisterIq &)),
-                         this, SLOT(handleRegistrationForm(const QXmppRegisterIq &)));
-
         QObject::connect(m_registerManager.get(), &QXmppRegistrationManager::passwordChangeFailed, [=](const QXmppStanza::Error &error) {
             gkEventLogger->publishEvent(tr("An attempt to change the password has failed: %1").arg(error.text()), GkSeverity::Fatal, "",
                                         false, true, false, true);
@@ -205,12 +201,6 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
         QObject::connect(m_registerManager.get(), &QXmppRegistrationManager::passwordChanged, this, [=](const QString &newPassword) {
             Q_UNUSED(newPassword);
             gkEventLogger->publishEvent(tr("Password successfully changed for user, \"%1\", that's registered with XMPP server: %2").arg(m_reg_user)
-                                                .arg(m_reg_domain), GkSeverity::Info, "", true, true, false, false);
-            m_xmppClient->disconnectFromServer();
-        });
-
-        QObject::connect(m_registerManager.get(), &QXmppRegistrationManager::registrationSucceeded, this, [=]() {
-            gkEventLogger->publishEvent(tr("User, \"%1\", has been successfully registered with XMPP server: %2").arg(m_reg_user)
                                                 .arg(m_reg_domain), GkSeverity::Info, "", true, true, false, false);
             m_xmppClient->disconnectFromServer();
         });
@@ -260,7 +250,6 @@ void GkXmppRegistrationDialog::externalUserSignup(const quint16 &network_port, c
     }
 
     m_reg_jid = jid;
-    m_reg_user = m_xmppClient->getUsername(jid); // Extract the username from the given JID and its attached URI!
     m_reg_domain = m_xmppClient->getHostname(jid); // Extract the URI from the given JID!
     m_reg_email = email;
     m_reg_password = password;
@@ -268,6 +257,59 @@ void GkXmppRegistrationDialog::externalUserSignup(const quint16 &network_port, c
     // TODO: Implement proper captcha support!
 
     userSignup(network_port, jid, password);
+    return;
+}
+
+/**
+ * @brief GkXmppRegistrationDialog::prefillFormFields
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param jid
+ * @param password
+ * @param email
+ * @param network_port
+ */
+void GkXmppRegistrationDialog::prefillFormFields(const QString &jid, const QString &password, const QString &email,
+                                                 const quint16 &network_port)
+{
+    //
+    // Register as global variables, if not empty!
+    if (!jid.isEmpty()) {
+        m_reg_user = m_xmppClient->getUsername(jid); // Extract the username from the given JID and its attached URI!
+        m_reg_domain = m_xmppClient->getHostname(jid); // Extract the URI from the given JID!
+    }
+
+    if (!password.isEmpty()) {
+        m_reg_password = password;
+    }
+
+    if (!email.isEmpty()) {
+        m_reg_email = email;
+    }
+
+    if (network_port >= 80) {
+        m_network_port = network_port;
+    }
+
+    if (ui->stackedWidget_xmpp_registration_dialog->currentWidget() == ui->page_account_signup_ui) {
+        if (!jid.isEmpty()) {
+            if (!m_reg_user.isEmpty() && !m_reg_domain.isEmpty()) {
+                ui->lineEdit_username->setText(QString("%1@%2").arg(m_reg_user).arg(m_reg_domain));
+            }
+        }
+
+        if (!m_reg_password.isEmpty()) {
+            ui->lineEdit_password->setText(m_reg_password);
+        }
+
+        if (!m_reg_email.isEmpty()) {
+            ui->lineEdit_email->setText(m_reg_email);
+        }
+
+        if (m_network_port >= 80) {
+            ui->spinBox_xmpp_port->setValue(m_network_port);
+        }
+    }
+
     return;
 }
 
@@ -591,26 +633,6 @@ void GkXmppRegistrationDialog::on_pushButton_change_email_reset_clicked()
  */
 void GkXmppRegistrationDialog::on_pushButton_change_email_cancel_clicked()
 {
-    return;
-}
-
-/**
- * @brief GkXmppRegistrationDialog::recvRegistrationForm receives the registration form necessary for the sign-up of a
- * new user to the desired XMPP server in question. Without this, you are neither able to sign-up nor login to a given
- * XMPP server.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param registerIq The user registration form to be filled out, as received from the connected towards XMPP server.
- * @note QXmppRegistrationManager Class Reference <https://doc.qxmpp.org/qxmpp-dev/classQXmppRegistrationManager.html>.
- * @see GkXmppRegistrationDialog::handleRegistrationForm().
- */
-void GkXmppRegistrationDialog::recvRegistrationForm(const QXmppRegisterIq &registerIq)
-{
-    m_netState = GkNetworkState::WaitForRegistrationForm;
-    m_id = registerIq.id();
-    emit sendRegistrationForm(registerIq);
-
-    gkEventLogger->publishEvent(tr("Received the registration form for XMPP server: %1")
-                                        .arg(m_connDetails.server.url), GkSeverity::Debug, "", false, true, false, false);
     return;
 }
 

@@ -43,11 +43,15 @@
 
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
+#include "src/file_io.hpp"
 #include "src/gk_logger.hpp"
 #include "src/models/system/gk_network_ping_model.hpp"
+#include <boost/exception/all.hpp>
+#include <boost/filesystem.hpp>
 #include <qxmpp/QXmppIq.h>
 #include <qxmpp/QXmppClient.h>
 #include <qxmpp/QXmppLogger.h>
+#include <qxmpp/QXmppVCardIq.h>
 #include <qxmpp/QXmppDataForm.h>
 #include <qxmpp/QXmppPresence.h>
 #include <qxmpp/QXmppVersionIq.h>
@@ -60,6 +64,7 @@
 #include <qxmpp/QXmppClientExtension.h>
 #include <qxmpp/QXmppDiscoveryManager.h>
 #include <qxmpp/QXmppRegistrationManager.h>
+#include <queue>
 #include <memory>
 #include <utility>
 #include <QMap>
@@ -89,8 +94,8 @@ class GkXmppClient : public QXmppClient {
 
 public:
     explicit GkXmppClient(const Network::GkXmpp::GkUserConn &connection_details, QPointer<GekkoFyre::GkLevelDb> database,
-                          QPointer<GekkoFyre::GkEventLogger> eventLogger, const bool &connectNow = false,
-                          QObject *parent = nullptr);
+                          QPointer<GekkoFyre::FileIo> fileIo, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                          const bool &connectNow = false, QObject *parent = nullptr);
     ~GkXmppClient() override;
 
     void createConnectionToServer(const QString &domain_url, const quint16 &network_port, const QString &username = "",
@@ -107,21 +112,31 @@ public:
     std::shared_ptr<QXmppRegistrationManager> getRegistrationMgr();
     QXmppPresence statusToPresence(const Network::GkXmpp::GkOnlineStatus &status);
     bool deleteUserAccount();
+    QString obtainAvatarFilePath();
+
+    //
+    // vCard management
+    QByteArray processImgToByteArray(const QString &filePath);
 
     QString getErrorCondition(const QXmppStanza::Error::Condition &condition);
 
 public slots:
     void clientConnected();
-    void stateChanged(QXmppClient::State state);
 
     //
     // User, roster and presence details
     void presenceChanged(const QString &bareJid, const QString &resource);
     void modifyPresence(const QXmppPresence::Type &pres);
+    void modifyAvailableStatusType(const QXmppPresence::AvailableStatusType &stat_type);
 
     //
     // Registration management
     void handleRegistrationForm(const QXmppRegisterIq &registerIq);
+
+    //
+    // vCard management
+    void updateClientVCardForm(const QString &first_name, const QString &last_name, const QString &email,
+                               const QString &callsign, const QByteArray &avatar_pic);
 
 private slots:
     //
@@ -142,6 +157,12 @@ private slots:
     void notifyNewSubscription(const QString &bareJid);
     void handleRosterReceived();
 
+    //
+    // vCard management
+    void vCardReceived(const QXmppVCardIq &vCard);
+    void clientVCardReceived();
+    void updateClientVCard(const QXmppVCardIq &vCard);
+
     void itemAdded(const QString &bareJid);
     void itemRemoved(const QString &bareJid);
     void itemChanged(const QString &bareJid);
@@ -154,6 +175,18 @@ signals:
     void setPresence(const QXmppPresence::Type &pres);
     void sendRegistrationForm(const QXmppRegisterIq &registerIq);
 
+    void sendSubscriptionRequest(const QString &bareJid); // A subscription request was made, therefore notify client!
+    void retractSubscriptionRequest(const QString &bareJid); // A subscription request was retracted, therefore delete JID!
+
+    void addJidToRoster(const QString &bareJid); // Subscription request was successful, add new JID!
+    void delJidToRoster(const QString &bareJid); // User requested a deletion from the roster, therefore remove JID!
+    void changeRosterJid(const QString &bareJid); // A change needs to be made within the roster, therefore modify JID!
+
+    //
+    // vCard management
+    void sendClientVCard(const QXmppVCardIq &vCard);
+    void savedClientVCard(const QByteArray &avatar_pic);
+
     //
     // Event & Logging management
     void sendError(const QString &error);
@@ -161,6 +194,7 @@ signals:
 
 private:
     QPointer<GekkoFyre::GkLevelDb> gkDb;
+    QPointer<GekkoFyre::FileIo> gkFileIo;
     QPointer<GkEventLogger> gkEventLogger;
     QPointer<GkNetworkPingModel> gkNetworkPing;
     QList<QDnsServiceRecord> m_dnsRecords;
@@ -178,7 +212,6 @@ private:
     // Timers and Event Loops
     //
     std::unique_ptr<QElapsedTimer> m_dnsKeepAlive;
-    std::unique_ptr<QElapsedTimer> m_connTimer;
 
     //
     // User, roster and presence details
@@ -189,9 +222,25 @@ private:
     QStringList rosterGroups;
 
     //
+    // Filesystem & Directories
+    //
+    boost::filesystem::path native_slash;
+    boost::filesystem::path vcard_save_path;
+
+    //
+    // vCard management
+    //
+    QXmppVCardIq m_clientVCard;
+
+    //
     // SSL / TLS / STARTTLS
     //
     QPointer<QSslSocket> m_sslSocket;
+
+    //
+    // Queue's relating to XMPP
+    //
+    std::queue<QXmppPresence::AvailableStatusType> m_availStatusTypeQueue;
 
     //
     // QXmpp and XMPP related
@@ -201,6 +250,7 @@ private:
     std::unique_ptr<QXmppMucManager> m_mucManager;
     std::unique_ptr<QXmppMucRoom> m_pRoom;
     std::unique_ptr<QXmppTransferManager> m_transferManager;
+    std::unique_ptr<QXmppVCardManager> m_vCardManager;
     QScopedPointer<QXmppLogger> m_xmppLogger;
 
     GekkoFyre::Network::GkXmpp::GkNetworkState m_netState;

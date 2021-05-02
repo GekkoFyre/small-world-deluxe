@@ -58,6 +58,7 @@ using namespace GekkoFyre;
 using namespace GkAudioFramework;
 using namespace Database;
 using namespace Settings;
+using namespace Language;
 using namespace Audio;
 using namespace AmateurRadio;
 using namespace Control;
@@ -136,6 +137,12 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         // QXmpp and XMPP related
         //
         gkConnDetails = connection_details;
+        prefill_uri_lookup_method();
+
+        //
+        // Hunspell & Spelling dictionaries
+        //
+        prefill_lang_dictionaries();
 
         //
         // Set default placeholder text, dependent on whether we are within Microsoft Windows or Linux!
@@ -307,6 +314,20 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         QString com_device_ptt = ui->comboBox_ptt_method_port->currentData().toString();
         int com_baud_rate = ui->comboBox_baud_rate->currentIndex();
         QString ptt_adv_cmd = ui->lineEdit_adv_ptt_cmd->text();
+
+        //
+        // General --> User Interface
+        //
+        const QString user_interface_ui_lang = ui->comboBox_accessibility_lang_ui->currentText();
+        const QString user_interface_hunspell_dict = ui->comboBox_accessibility_dict->currentText();
+
+        if (!user_interface_ui_lang.isEmpty()) {
+            gkDekodeDb->write_lang_ui_settings(user_interface_ui_lang, Language::GkUiLang::ChosenUiLang);
+        }
+
+        if (!user_interface_hunspell_dict.isEmpty()) {
+            gkDekodeDb->write_lang_dict_settings(user_interface_hunspell_dict, Language::GkDictionary::ChosenDictLang);
+        }
 
         //
         // General --> XMPP --> Client Settings
@@ -856,6 +877,120 @@ void DialogSettings::prefill_uri_lookup_method()
 }
 
 /**
+ * @brief DialogSettings::prefill_lang_dictionaries prefills the combobox, `ui->comboBox_accessibility_dict()`, with all
+ * the language dictionaries required for Hunspell to function properly.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void DialogSettings::prefill_lang_dictionaries()
+{
+    ui->comboBox_accessibility_dict->addItem(Filesystem::hunspellDisabledOption);
+    ui->comboBox_accessibility_dict->addItem("bg");
+    ui->comboBox_accessibility_dict->addItem("br");
+    ui->comboBox_accessibility_dict->addItem("ca");
+    ui->comboBox_accessibility_dict->addItem("ca-valencia");
+    ui->comboBox_accessibility_dict->addItem("cs");
+    ui->comboBox_accessibility_dict->addItem("da");
+    ui->comboBox_accessibility_dict->addItem("de");
+    ui->comboBox_accessibility_dict->addItem("de-AT");
+    ui->comboBox_accessibility_dict->addItem("de-CH");
+    ui->comboBox_accessibility_dict->addItem("el");
+    ui->comboBox_accessibility_dict->addItem("el-polyton");
+    ui->comboBox_accessibility_dict->addItem("en");
+    ui->comboBox_accessibility_dict->addItem("en-AU");
+    ui->comboBox_accessibility_dict->addItem("en-CA");
+    ui->comboBox_accessibility_dict->addItem("en-GB");
+    ui->comboBox_accessibility_dict->addItem("en-ZA");
+    ui->comboBox_accessibility_dict->addItem("eo");
+    ui->comboBox_accessibility_dict->addItem("es");
+    ui->comboBox_accessibility_dict->addItem("es-AR");
+    ui->comboBox_accessibility_dict->addItem("es-BO");
+    ui->comboBox_accessibility_dict->addItem("es-CL");
+    ui->comboBox_accessibility_dict->addItem("es-CO");
+    ui->comboBox_accessibility_dict->addItem("es-CR");
+    ui->comboBox_accessibility_dict->addItem("es-CU");
+    ui->comboBox_accessibility_dict->addItem("es-DO");
+    ui->comboBox_accessibility_dict->addItem("es-EC");
+    ui->comboBox_accessibility_dict->addItem("es-GT");
+    ui->comboBox_accessibility_dict->addItem("es-HN");
+    ui->comboBox_accessibility_dict->addItem("es-MX");
+    ui->comboBox_accessibility_dict->addItem("es-NI");
+    ui->comboBox_accessibility_dict->addItem("es-PA");
+    ui->comboBox_accessibility_dict->addItem("es-PE");
+    ui->comboBox_accessibility_dict->addItem("es-PH");
+    ui->comboBox_accessibility_dict->addItem("es-PR");
+    ui->comboBox_accessibility_dict->addItem("es-PY");
+    ui->comboBox_accessibility_dict->addItem("es-SV");
+    ui->comboBox_accessibility_dict->addItem("es-US");
+    ui->comboBox_accessibility_dict->addItem("es-UY");
+    ui->comboBox_accessibility_dict->addItem("es-VE");
+    ui->comboBox_accessibility_dict->addItem("et");
+    ui->comboBox_accessibility_dict->addItem("eu");
+    ui->comboBox_accessibility_dict->addItem("fa");
+    ui->comboBox_accessibility_dict->addItem("fo");
+    ui->comboBox_accessibility_dict->addItem("fr");
+    ui->comboBox_accessibility_dict->addItem("fur");
+    ui->comboBox_accessibility_dict->addItem("fy");
+    ui->comboBox_accessibility_dict->addItem("ga");
+    ui->comboBox_accessibility_dict->addItem("gd");
+    ui->comboBox_accessibility_dict->addItem("gl");
+    ui->comboBox_accessibility_dict->addItem("he");
+    ui->comboBox_accessibility_dict->addItem("hr");
+    ui->comboBox_accessibility_dict->addItem("hu");
+    ui->comboBox_accessibility_dict->addItem("hy");
+    ui->comboBox_accessibility_dict->addItem("hyw");
+    ui->comboBox_accessibility_dict->addItem("ia");
+    ui->comboBox_accessibility_dict->addItem("ie");
+    ui->comboBox_accessibility_dict->addItem("is");
+    ui->comboBox_accessibility_dict->addItem("it");
+    ui->comboBox_accessibility_dict->addItem("ka");
+    ui->comboBox_accessibility_dict->addItem("ko");
+    ui->comboBox_accessibility_dict->addItem("la");
+    ui->comboBox_accessibility_dict->addItem("lb");
+    ui->comboBox_accessibility_dict->addItem("lt");
+    ui->comboBox_accessibility_dict->addItem("ltg");
+    ui->comboBox_accessibility_dict->addItem("lv");
+    ui->comboBox_accessibility_dict->addItem("mk");
+    ui->comboBox_accessibility_dict->addItem("mn");
+    ui->comboBox_accessibility_dict->addItem("nb");
+    ui->comboBox_accessibility_dict->addItem("nds");
+    ui->comboBox_accessibility_dict->addItem("ne");
+    ui->comboBox_accessibility_dict->addItem("nl");
+    ui->comboBox_accessibility_dict->addItem("nn");
+    ui->comboBox_accessibility_dict->addItem("oc");
+    ui->comboBox_accessibility_dict->addItem("pl");
+    ui->comboBox_accessibility_dict->addItem("pt");
+    ui->comboBox_accessibility_dict->addItem("pt-PT");
+    ui->comboBox_accessibility_dict->addItem("ro");
+    ui->comboBox_accessibility_dict->addItem("ru");
+    ui->comboBox_accessibility_dict->addItem("rw");
+    ui->comboBox_accessibility_dict->addItem("sk");
+    ui->comboBox_accessibility_dict->addItem("sl");
+    ui->comboBox_accessibility_dict->addItem("sr");
+    ui->comboBox_accessibility_dict->addItem("sr-Latn");
+    ui->comboBox_accessibility_dict->addItem("sv");
+    ui->comboBox_accessibility_dict->addItem("sv-FI");
+    ui->comboBox_accessibility_dict->addItem("tk");
+    ui->comboBox_accessibility_dict->addItem("tlh");
+    ui->comboBox_accessibility_dict->addItem("tlh-Latn");
+    ui->comboBox_accessibility_dict->addItem("tr");
+    ui->comboBox_accessibility_dict->addItem("uk");
+    ui->comboBox_accessibility_dict->addItem("vi");
+
+    return;
+}
+
+/**
+ * @brief DialogSettings::prefill_ui_lang prefills the combobox, `ui->comboBox_accessibility_lang_ui()`, with all the
+ * available languages for the User Interface itself of Small World Deluxe.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void DialogSettings::prefill_ui_lang()
+{
+    ui->comboBox_accessibility_lang_ui->addItem(Filesystem::userInterfaceDefLang);
+    return;
+}
+
+/**
  * @brief DialogSettings::init_station_info
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
@@ -1363,6 +1498,11 @@ bool DialogSettings::read_settings()
         const QString audioRecLoc = gkDekodeDb->read_misc_audio_settings(GkAudioCfg::AudioRecLoc);
         const QString settingsDbLoc = gkDekodeDb->read_misc_audio_settings(GkAudioCfg::settingsDbLoc);
 
+        //
+        // General --> User Interface
+        //
+        const QString ui_lang = gkDekodeDb->read_lang_ui_settings(Language::GkUiLang::ChosenUiLang);
+        const QString hunspell_dict = gkDekodeDb->read_lang_dict_settings(Language::GkDictionary::ChosenDictLang);
         const QString msg_audio_notif = gkDekodeDb->read_general_settings(general_stat_cfg::MsgAudioNotif);
         const QString fail_event_notif = gkDekodeDb->read_general_settings(general_stat_cfg::FailAudioNotif);
 
@@ -1873,6 +2013,30 @@ bool DialogSettings::read_settings()
         //
         // General --> User Interface
         //
+        if (!ui_lang.isEmpty()) {
+            qint32 idx = ui->comboBox_accessibility_lang_ui->findData(ui_lang);
+            if (idx >= 0) { // -1 means it is not found!
+                ui->comboBox_accessibility_lang_ui->setCurrentIndex(idx);
+            }
+        } else {
+            qint32 idx = ui->comboBox_accessibility_lang_ui->findData(Filesystem::userInterfaceDefLang);
+            if (idx >= 0) { // -1 means it is not found!
+                ui->comboBox_accessibility_lang_ui->setCurrentIndex(idx);
+            }
+        }
+
+        if (!hunspell_dict.isEmpty()) {
+            qint32 idx = ui->comboBox_accessibility_dict->findData(hunspell_dict);
+            if (idx >= 0) { // -1 means it is not found!
+                ui->comboBox_accessibility_dict->setCurrentIndex(idx);
+            }
+        } else {
+            qint32 idx = ui->comboBox_accessibility_dict->findData(Filesystem::hunspellSpellDefLang);
+            if (idx >= 0) { // -1 means it is not found!
+                ui->comboBox_accessibility_dict->setCurrentIndex(idx);
+            }
+        }
+
         if (!msg_audio_notif.isEmpty()) {
             const bool msg_audio_notif_bool = gkDekodeDb->boolStr(msg_audio_notif.toStdString());
             ui->checkBox_new_msg_audio_notification->setChecked(msg_audio_notif_bool);
@@ -2876,8 +3040,7 @@ void DialogSettings::on_comboBox_audio_output_bit_rate_currentIndexChanged(int i
 
 void DialogSettings::on_toolButton_xmpp_upload_avatar_browse_file_clicked()
 {
-    QString filePath = QFileDialog::getOpenFileName(this, tr("Open Image"), QStandardPaths::writableLocation(QStandardPaths::PicturesLocation),
-                                                    tr("All Image Files (*.png *.jpg *.jpeg *.jpe *.jfif *.exif *.bmp *.gif);;PNG (*.png);;JPEG (*.jpg *.jpeg *.jpe *.jfif *.exif);;Bitmap (*.bmp);;GIF (*.gif);;All Files (*.*)"));
+    QString filePath = m_xmppClient->obtainAvatarFilePath();
     ui->lineEdit_xmpp_upload_avatar_file_browser->setText(filePath);
 
     return;
@@ -2917,14 +3080,13 @@ void DialogSettings::on_pushButton_xmpp_cfg_change_email_clicked()
 
 void DialogSettings::on_pushButton_xmpp_cfg_signup_clicked()
 {
-    std::unique_ptr<GkXmppRegistrationDialog> gkXmppRegistrationDlg = std::make_unique<GkXmppRegistrationDialog>(GkRegUiRole::AccountCreate, gkConnDetails, m_xmppClient, gkEventLogger, this);
+    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountCreate, gkConnDetails, m_xmppClient, gkEventLogger, this);
     if (ui->lineEdit_xmpp_client_username->text().isEmpty() || ui->lineEdit_xmpp_client_password->text().isEmpty()) {
         //
         // Open the registration form so that the user knows what information to provide!
         gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
         gkXmppRegistrationDlg->setAttribute(Qt::WA_DeleteOnClose, true);
         gkXmppRegistrationDlg->show();
-        // this->close();
     } else {
         //
         // Register with the information already provided within the setting's dialog!
@@ -2940,15 +3102,16 @@ void DialogSettings::on_pushButton_xmpp_cfg_signup_clicked()
                 break;
         }
 
-        gkXmppRegistrationDlg->externalUserSignup(ui->spinBox_xmpp_server_port->value(), tmp_jid, ui->lineEdit_xmpp_client_email_address->text(),
-                                                  ui->lineEdit_xmpp_client_password->text());
-        QObject::connect(gkXmppRegistrationDlg.get(), &GkXmppRegistrationDialog::registrationSuccessful, this, [=]() {
-            QMessageBox::information(nullptr, tr("Success!"), tr("A user account has been successfully created!"), QMessageBox::Ok);
-        });
+        //
+        // Prefill the user signup form with most of the details already provided by the user from within the Settings Dialog!
+        gkXmppRegistrationDlg->prefillFormFields(tmp_jid, ui->lineEdit_xmpp_client_password->text(), ui->lineEdit_xmpp_client_email_address->text(),
+                                                 ui->spinBox_xmpp_server_port->value());
 
-        QObject::connect(gkXmppRegistrationDlg.get(), &GkXmppRegistrationDialog::registrationUnsuccessful, this, [=]() {
-            QMessageBox::warning(nullptr, tr("Unsuccessful!"), tr("The operation to create a user account was not successful! Please check the event log for more details."), QMessageBox::Ok);
-        });
+        //
+        // Open the registration form so that the user knows what information to provide!
+        gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
+        gkXmppRegistrationDlg->setAttribute(Qt::WA_DeleteOnClose, true);
+        gkXmppRegistrationDlg->show();
     }
 
     return;
@@ -3101,4 +3264,24 @@ void DialogSettings::on_lineEdit_xmpp_server_url_textChanged(const QString &arg1
     }
 
    return;
+}
+
+/**
+ * @brief DialogSettings::on_comboBox_accessibility_lang_ui_currentIndexChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ */
+void DialogSettings::on_comboBox_accessibility_lang_ui_currentIndexChanged(int index)
+{
+    return;
+}
+
+/**
+ * @brief DialogSettings::on_comboBox_accessibility_dict_currentIndexChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
+void DialogSettings::on_comboBox_accessibility_dict_currentIndexChanged(const QString &arg1)
+{
+    return;
 }
