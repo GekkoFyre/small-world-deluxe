@@ -262,7 +262,6 @@ SectionGroup "Small World Deluxe" SWDsection
         SetOutPath "$INSTDIR"
           File "${GK_ROOT_PATH}\cmake-build-debug\libdouble-conversion.dll"
           File "${GK_ROOT_PATH}\cmake-build-debug\libgcc_s_seh-1.dll"
-          File "${GK_ROOT_PATH}\cmake-build-debug\libgcc_s_sjlj-1.dll"
           File "${GK_ROOT_PATH}\cmake-build-debug\libglib-2.0-0.dll"
           File "${GK_ROOT_PATH}\cmake-build-debug\libwinpthread-1.dll"
           File "${GK_ROOT_PATH}\cmake-build-debug\libbrotlicommon.dll"

@@ -45,6 +45,10 @@ git submodule update --init --recursive
 
 cd leveldb/third_party
 git submodule update --init --recursive
+cd ./../..
+
+cd sentry-native\external
+git submodule update --init --recursive
 
 cd ./../../../..
 mkdir swd-build

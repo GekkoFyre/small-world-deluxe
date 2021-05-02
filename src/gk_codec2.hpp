@@ -44,7 +44,6 @@
 #include "src/defines.hpp"
 #include "src/gk_logger.hpp"
 #include "src/gk_string_funcs.hpp"
-#include <codec2/codec2.h>
 #include <iterator>
 #include <memory>
 #include <string>
@@ -54,6 +53,10 @@
 #include <QObject>
 #include <QPointer>
 #include <QByteArray>
+
+#ifdef CODEC2_LIBS_ENBLD
+#include <codec2/codec2.h>
+#endif
 
 namespace GekkoFyre {
 

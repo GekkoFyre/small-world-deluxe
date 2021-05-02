@@ -91,7 +91,7 @@ option(GFYRE_BOOST_CPP_DBG "Enable the use of debug libraries for the Boost C++ 
 option(ENBL_VALGRIND_SUPPORT "Allows for the use of Valgrind memory analysis on the application, thereby disabling certain, otherwise needed features that enhance the user-experience." OFF)
 option(ENBL_CLANG_ADDRESS_SANITIZER "LLVM's AddressSanitizer is a fast memory error detector. Clang support must be enabled for this to work." OFF)
 
-option(BUILD_CODEC2_SUPPORT "Enable support for the 'Codec2' open source speech codec library." ON)
+option(BUILD_CODEC2_SUPPORT "Enable support for the 'Codec2' open source speech codec library." OFF)
 
 #
 # Detect if we are dealing with the Linux operating system and not Apple OS/X
