@@ -587,7 +587,7 @@
                       <x>0</x>
                       <y>0</y>
                       <width>901</width>
-                      <height>998</height>
+                      <height>1067</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_23">
@@ -597,6 +597,163 @@
                         <string>Accessibility</string>
                        </property>
                        <layout class="QVBoxLayout" name="verticalLayout_50">
+                        <item>
+                         <widget class="QGroupBox" name="groupBox_accessibility_lang_spellchecking">
+                          <property name="title">
+                           <string>Language</string>
+                          </property>
+                          <layout class="QVBoxLayout" name="verticalLayout_66">
+                           <item>
+                            <widget class="QFrame" name="frame_accessibility_lang_spellchecking">
+                             <property name="frameShape">
+                              <enum>QFrame::NoFrame</enum>
+                             </property>
+                             <property name="frameShadow">
+                              <enum>QFrame::Plain</enum>
+                             </property>
+                             <layout class="QHBoxLayout" name="horizontalLayout_54">
+                              <property name="leftMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="topMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="rightMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="bottomMargin">
+                               <number>0</number>
+                              </property>
+                              <item>
+                               <widget class="QFrame" name="frame_accessibility_lang_left">
+                                <property name="frameShape">
+                                 <enum>QFrame::NoFrame</enum>
+                                </property>
+                                <property name="frameShadow">
+                                 <enum>QFrame::Plain</enum>
+                                </property>
+                                <layout class="QFormLayout" name="formLayout_38">
+                                 <property name="leftMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="topMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="rightMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="bottomMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <item row="0" column="0">
+                                  <widget class="QLabel" name="label_accessibility_lang_ui">
+                                   <property name="text">
+                                    <string>UI Language: </string>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                 <item row="0" column="1">
+                                  <widget class="QFrame" name="frame_accessibility_lang_ui">
+                                   <property name="frameShape">
+                                    <enum>QFrame::NoFrame</enum>
+                                   </property>
+                                   <property name="frameShadow">
+                                    <enum>QFrame::Plain</enum>
+                                   </property>
+                                   <layout class="QHBoxLayout" name="horizontalLayout_55">
+                                    <property name="leftMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="topMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="rightMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="bottomMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <item>
+                                     <widget class="QComboBox" name="comboBox_accessibility_lang_ui">
+                                      <property name="toolTip">
+                                       <string>Change the display language of the user interface itself.</string>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                   </layout>
+                                  </widget>
+                                 </item>
+                                </layout>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QFrame" name="frame_accessibility_lang_right">
+                                <property name="frameShape">
+                                 <enum>QFrame::NoFrame</enum>
+                                </property>
+                                <property name="frameShadow">
+                                 <enum>QFrame::Plain</enum>
+                                </property>
+                                <layout class="QFormLayout" name="formLayout_39">
+                                 <property name="leftMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="topMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="rightMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="bottomMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <item row="0" column="0">
+                                  <widget class="QLabel" name="label_accessibility_dict">
+                                   <property name="text">
+                                    <string>Dictionary: </string>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                 <item row="0" column="1">
+                                  <widget class="QFrame" name="frame_accessibility_dict">
+                                   <property name="frameShape">
+                                    <enum>QFrame::NoFrame</enum>
+                                   </property>
+                                   <property name="frameShadow">
+                                    <enum>QFrame::Plain</enum>
+                                   </property>
+                                   <layout class="QHBoxLayout" name="horizontalLayout_56">
+                                    <property name="leftMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="topMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="rightMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <property name="bottomMargin">
+                                     <number>0</number>
+                                    </property>
+                                    <item>
+                                     <widget class="QComboBox" name="comboBox_accessibility_dict">
+                                      <property name="toolTip">
+                                       <string>Choose a dictionary that can be used for spell-checking typos. This is separate to the UI Language.</string>
+                                      </property>
+                                     </widget>
+                                    </item>
+                                   </layout>
+                                  </widget>
+                                 </item>
+                                </layout>
+                               </widget>
+                              </item>
+                             </layout>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
                         <item>
                          <widget class="QGroupBox" name="groupBox_accessibility_speech_to_text">
                           <property name="title">

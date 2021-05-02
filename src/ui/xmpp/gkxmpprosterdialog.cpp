@@ -80,7 +80,10 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
         gkDb = std::move(database);
         gkEventLogger = std::move(eventLogger);
 
+        ui->comboBox_current_status->setCurrentIndex(GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX);
+        ui->comboBox_current_status->setEnabled(false);
         m_clientAvatarImgUpdateTimer = new QTimer(this);
+
         QObject::connect(m_clientAvatarImgUpdateTimer, SIGNAL(timeout()), this, SLOT(updateClientAvatarPlaceholder()));
 
         QObject::connect(this, SIGNAL(updateClientVCard(const QString &, const QString &, const QString &, const QString &, const QByteArray &)),
@@ -118,10 +121,19 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
         //
         // Fill out the presence status ComboBox!
         prefillAvailComboBox();
+
+        QObject::connect(m_xmppClient, &QXmppClient::connected, this, [=]() {
+            //
+            // Change the presence status to the last used once connected!
+            ui->comboBox_current_status->setCurrentIndex(GK_XMPP_AVAIL_COMBO_AVAILABLE_IDX); // TODO: Implement the Google LevelDB functions for this!
+            ui->comboBox_current_status->setEnabled(true);
+        });
+
         QObject::connect(m_xmppClient, &QXmppClient::disconnected, this, [=]() {
             //
             // Change the presence status to 'Offline / Unavailable' when disconnected!
             ui->comboBox_current_status->setCurrentIndex(GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX);
+            ui->comboBox_current_status->setEnabled(false);
         });
 
         ui->treeView_callsigns_groups->setModel(m_xmppRosterTreeViewModel);
@@ -282,33 +294,28 @@ void GkXmppRosterDialog::prefillAvailComboBox()
 void GkXmppRosterDialog::on_comboBox_current_status_currentIndexChanged(int index)
 {
     if (!m_xmppClient->isConnected()) {
-        reconnectToXmpp();
-    }
-
-    switch (index) {
-        case GK_XMPP_AVAIL_COMBO_AVAILABLE_IDX: // Online / Available
-            emit updateAvailableStatusType(QXmppPresence::AvailableStatusType::Online);
-            break;
-        case GK_XMPP_AVAIL_COMBO_AWAY_FROM_KB_IDX: // Away / Be Back Soon
-            emit updateAvailableStatusType(QXmppPresence::AvailableStatusType::Away);
-            break;
-        case GK_XMPP_AVAIL_COMBO_EXTENDED_AWAY_IDX: // XA / Extended Away
-            emit updateAvailableStatusType(QXmppPresence::AvailableStatusType::XA);
-            break;
-        case GK_XMPP_AVAIL_COMBO_INVISIBLE_IDX: // Online / Invisible
-            emit updateAvailableStatusType(QXmppPresence::AvailableStatusType::Invisible);
-            break;
-        case GK_XMPP_AVAIL_COMBO_BUSY_DND_IDX:
-            emit updateAvailableStatusType(QXmppPresence::AvailableStatusType::DND);
-            break;
-        case GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX: // Offline / Unavailable
-            if (m_xmppClient->isConnected()) {
+        switch (index) {
+            case GK_XMPP_AVAIL_COMBO_AVAILABLE_IDX: // Online / Available
+                emit updateAvailableStatusType(QXmppPresence::AvailableStatusType::Online);
+                break;
+            case GK_XMPP_AVAIL_COMBO_AWAY_FROM_KB_IDX: // Away / Be Back Soon
+                emit updateAvailableStatusType(QXmppPresence::AvailableStatusType::Away);
+                break;
+            case GK_XMPP_AVAIL_COMBO_EXTENDED_AWAY_IDX: // XA / Extended Away
+                emit updateAvailableStatusType(QXmppPresence::AvailableStatusType::XA);
+                break;
+            case GK_XMPP_AVAIL_COMBO_INVISIBLE_IDX: // Online / Invisible
+                emit updateAvailableStatusType(QXmppPresence::AvailableStatusType::Invisible);
+                break;
+            case GK_XMPP_AVAIL_COMBO_BUSY_DND_IDX:
+                emit updateAvailableStatusType(QXmppPresence::AvailableStatusType::DND);
+                break;
+            case GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX: // Offline / Unavailable
                 m_xmppClient->disconnectFromServer();
-            }
-
-            break;
-        default:
-            break;
+                break;
+            default:
+                break;
+        }
     }
 
     return;

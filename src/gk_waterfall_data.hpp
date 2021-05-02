@@ -1,7 +1,7 @@
 #ifndef WATERFALLDATA_H
 #define WATERFALLDATA_H
 
-#include <qwt_matrix_raster_data.h>
+#include <qwt/qwt_matrix_raster_data.h>
 
 #include <ctime>
 

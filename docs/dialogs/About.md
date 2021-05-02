@@ -29,6 +29,8 @@ Please see [CREDITS](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/
 
 `KissFFT -- Copyright © 2003 - 2010 Mark Borgerding . All rights reserved.`
 
+`Hunspell -- Copyright © 2021 Kevin Hendricks and Caolán McNamara et al.`
+
 `QwtWaterfallplot -- Copyright © 2019 Amine Mzoughi.`
 
 ------
@@ -37,6 +39,24 @@ Please see [CREDITS](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/
 Opus
 ----------------------------------
 Copyright © 2001 - 2011 Xiph.Org, Skype Limited, Octasic, Jean-Marc Valin, Timothy B. Terriberry, CSIRO, Gregory Maxwell, Mark Borgerding, Erik de Castro Lopo.
+```
+
+```
+Hunspell (dictionaries)
+----------------------------------
+The MIT License
+Copyright © 2015 Titus Wormer <tituswormer@gmail.com>
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+'Software'), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
 ```
 
 ```

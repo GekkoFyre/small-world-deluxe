@@ -82,6 +82,7 @@ using namespace GekkoFyre;
 using namespace GkAudioFramework;
 using namespace Database;
 using namespace Settings;
+using namespace Language;
 using namespace Audio;
 using namespace AmateurRadio;
 using namespace Control;
@@ -787,6 +788,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         info_timer->start(1000);
 
         //
+        // Hunspell & Spelling dictionaries
+        //
+        readHunspellSettings();
+
+        //
         // QPrinter-specific options!
         // https://doc.qt.io/qt-5/qprinter.html
         // https://doc.qt.io/qt-5/qtprintsupport-index.html
@@ -902,15 +908,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // Initialize the QXmpp client!
         m_xmppClient = new GkXmppClient(gkConnDetails, gkDb, gkFileIo, gkEventLogger, false, nullptr);
         gkXmppRosterDlg = new GkXmppRosterDialog(gkConnDetails, m_xmppClient, gkDb, gkEventLogger, true, this);
-
-        if (gkConnDetails.server.settings_client.auto_connect) { // Should we connect automatically to a given XMPP server at start?
-            if (!gkXmppRosterDlg->isVisible()) { // The dialog window has not been launched yet!
-                createXmppConnection(); // Create an active connection to the given XMPP server!
-                gkEventLogger->publishEvent(tr("Automatically connecting..."), GkSeverity::Info, "", true, true, true, false);
-                gkXmppRosterDlg->setWindowFlags(Qt::Window);
-                gkXmppRosterDlg->show();
-            }
-        }
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
@@ -950,7 +947,7 @@ MainWindow::~MainWindow()
  */
 void MainWindow::on_actionXMPP_triggered()
 {
-    launchXmppRosterDlg();
+    launchXmppRosterDlg(true, true);
     return;
 }
 
@@ -2149,7 +2146,7 @@ void MainWindow::readXmppSettings()
     if (!xmpp_auto_connect.isEmpty()) {
         gkConnDetails.server.settings_client.auto_connect = gkDb->boolStr(xmpp_auto_connect.toStdString());
     } else {
-        gkConnDetails.server.settings_client.auto_connect = false;
+        gkConnDetails.server.settings_client.auto_connect = true;
     }
 
     if (!xmpp_auto_reconnect.isEmpty()) {
@@ -2254,14 +2251,61 @@ void MainWindow::readXmppSettings()
 }
 
 /**
+ * @brief MainWindow::readHunspellSettings reads any settings related to Hunspell and its dictionaries from the Google
+ * LevelDB database attached to the Small World Deluxe instance.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::readHunspellSettings()
+{
+    sys::error_code ec;
+    try {
+        QString curr_chosen_dict = gkDb->read_lang_dict_settings(Language::GkDictionary::ChosenDictLang);
+
+        if (!curr_chosen_dict.isEmpty()) {
+            if (curr_chosen_dict == Filesystem::hunspellDisabledOption) { // The user has chosen to disable Hunspell entirely!
+                return;
+            }
+        }
+
+        if (curr_chosen_dict.isEmpty()) {
+            curr_chosen_dict = Filesystem::hunspellSpellDefLang; // Default language dictionary to use if none has been specified!
+        }
+
+        fs::path active_dict_dir = gkFileIo->getLangFile(curr_chosen_dict, Language::GkLangSettings::DictLang);
+        if (fs::exists(active_dict_dir, ec)) {
+            if (fs::is_directory(active_dict_dir, ec)) {
+                fs::path active_aff = fs::path(active_dict_dir.string() + native_slash.string() + Filesystem::hunspellSpellAffExt);
+                fs::path active_dic = fs::path(active_dict_dir.string() + native_slash.string() + Filesystem::hunspellSpellDicExt);
+
+                if (fs::exists(active_aff, ec) && fs::exists(active_dic, ec)) {
+                    //
+                    // The *.aff and *.dic exists!
+                    m_Hunspell = std::make_shared<Hunspell>(active_aff.string().c_str(), active_dic.string().c_str());
+                }
+            }
+
+            if (ec.failed()) {
+                throw std::invalid_argument(tr("An issue was encountered while attempting to read Hunspell dictionary! Error: %1").arg(QString::fromStdString(ec.message())).toStdString());
+            }
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return;
+}
+
+/**
  * @brief MainWindow::launchXmppRosterDlg launches the Roster Dialog for the XMPP side of Small World Deluxe, where end-users
  * may interact with others or even signup to the given, configured server if it's their first time connecting.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param msgBoxDlg Whether to display the message dialog box or not.
+ * @param showRosterDlg Whether to show the roster dialog after making a successful connection or not.
  */
-void MainWindow::launchXmppRosterDlg()
+void MainWindow::launchXmppRosterDlg(const bool &msgBoxDlg, const bool &showRosterDlg)
 {
-    if (!gkXmppRosterDlg->isVisible()) { // The dialog window has not been launched yet!
-        if (!m_xmppClient->isConnected() || m_xmppClient->getNetworkState() != GkNetworkState::Connecting) { // An active connection has yet to be made!
+    if (!m_xmppClient->isConnected() || m_xmppClient->getNetworkState() != GkNetworkState::Connecting) { // An active connection has yet to be made!
+        if (msgBoxDlg) { // Whether we should show the message box dialog or not!
             QMessageBox msgBox;
             msgBox.setParent(nullptr);
             msgBox.setWindowTitle(tr("Initializing..."));
@@ -2279,8 +2323,12 @@ void MainWindow::launchXmppRosterDlg()
                 default:
                     return;
             }
+        } else {
+            createXmppConnection();
         }
+    }
 
+    if (!gkXmppRosterDlg->isVisible() && showRosterDlg) { // The dialog window has not been launched yet, and whether we should show it or not!
         gkXmppRosterDlg->setWindowFlags(Qt::Window);
         gkXmppRosterDlg->show();
     }
@@ -2295,7 +2343,7 @@ void MainWindow::launchXmppRosterDlg()
 void MainWindow::createTrayActions()
 {
     m_xmppRosterAction = new QAction(tr("&XMPP"), this);
-    QObject::connect(m_xmppRosterAction, &QAction::triggered, this, &MainWindow::launchXmppRosterDlg);
+    QObject::connect(m_xmppRosterAction, &QAction::triggered, this, &MainWindow::on_actionXMPP_triggered);
 
     m_sstvAction = new QAction(tr("SS&TV"), this);
     QObject::connect(m_sstvAction, &QAction::triggered, this, &MainWindow::launchSstvTab);
@@ -3283,7 +3331,7 @@ void MainWindow::on_actionCW_toggled(bool arg1)
 
 void MainWindow::on_actionView_Roster_triggered()
 {
-    launchXmppRosterDlg();
+    launchXmppRosterDlg(true, true);
     return;
 }
 

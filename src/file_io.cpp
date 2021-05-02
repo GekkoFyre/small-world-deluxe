@@ -47,6 +47,7 @@
 #include <ostream>
 #include <utility>
 #include <fstream>
+#include <QDir>
 #include <QMessageBox>
 #include <QVariant>
 #include <QStandardPaths>
@@ -54,6 +55,7 @@
 using namespace GekkoFyre;
 using namespace Database;
 using namespace Settings;
+using namespace Language;
 using namespace Audio;
 using namespace AmateurRadio;
 using namespace Control;
@@ -301,6 +303,36 @@ QString FileIo::defaultDirectory(const QString &base_path, const bool &use_nativ
     }
 
     return "";
+}
+
+/**
+ * @brief FileIo::getLangFile retrieves the correct system directory value for both Hunspell dictionaries and the language
+ * files for the User Interface itself.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param lang_val The actual language value, whether it be, 'en-AU' (for English, Australian), or something else entirely.
+ * @param lang_settings Whether we are dealing with a Hunspell dictionary file or a User Interface language file.
+ * @return The correct, system path to the needed dictionary/language file.
+ */
+fs::path FileIo::getLangFile(const QString &lang_val, const Language::GkLangSettings &lang_settings)
+{
+    try {
+        QString lang_path;
+        if (lang_settings == Language::GkLangSettings::DictLang) {
+            lang_path = QDir(QDir::currentPath() + "/" + Filesystem::hunspellLibraryDir + "/" + Filesystem::hunspellSpellDir).path();
+            fs::path dict_path = QDir(lang_path + "/" + lang_val).path().toStdString();
+
+            return dict_path;
+        } else if (lang_settings == Language::GkLangSettings::UiLang) {
+            // TODO: Finish this section for the UI Languages!
+            return fs::path();
+        } else {
+            throw std::invalid_argument(tr("Incorrect argument given when dealing with language files!").toStdString());
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return fs::path();
 }
 
 /**

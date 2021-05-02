@@ -95,6 +95,13 @@ public:
     void write_firewall_app_settings(const std::string &application);
     void delete_firewall_app_settings(const std::string &application);
 
+    //
+    // Hunspell & UI Language
+    void write_lang_ui_settings(const QString &value, const Database::Settings::Language::GkUiLang &lang_key);
+    void write_lang_dict_settings(const QString &value, const Database::Settings::Language::GkDictionary &dict_key);
+    QString read_lang_dict_settings(const Database::Settings::Language::GkDictionary &dict_key);
+    QString read_lang_ui_settings(const Database::Settings::Language::GkUiLang &lang_key);
+
     bool read_firewall_settings(const System::Security::GkFirewallCfg &key, const std::string &comparator_value = std::string());
     std::vector<std::string> read_firewall_settings_vec(const System::Security::GkFirewallCfg &key);
 
