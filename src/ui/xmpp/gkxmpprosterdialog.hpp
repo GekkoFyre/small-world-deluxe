@@ -46,6 +46,7 @@
 #include "src/gk_xmpp_client.hpp"
 #include "src/ui/xmpp/gkxmppmessagedialog.hpp"
 #include "src/models/treeview/xmpp/gk_xmpp_roster_model.hpp"
+#include "src/models/tableview/xmpp/gk_callsigns_roster_pending_model.hpp"
 #include "src/gk_logger.hpp"
 #include <memory>
 #include <QImage>
@@ -80,7 +81,7 @@ private slots:
     void on_actionAdd_Contact_triggered();
     void on_actionEdit_Contact_triggered();
     void on_actionDelete_Contact_triggered();
-    void on_treeView_callsigns_pending_customContextMenuRequested(const QPoint &pos);
+    void on_tableView_callsigns_pending_customContextMenuRequested(const QPoint &pos);
     void on_pushButton_self_avatar_clicked();
     void on_lineEdit_self_nickname_returnPressed();
     void on_treeView_callsigns_blocked_customContextMenuRequested(const QPoint &pos);
@@ -125,6 +126,7 @@ private:
     //
     QSharedPointer<GekkoFyre::GkXmppRosterTreeViewItem> m_rootItem;
     QPointer<GekkoFyre::GkXmppRosterTreeViewModel> m_xmppRosterTreeViewModel;
+    QPointer<GekkoFyre::GkCallsignsRosterPendingModel> m_xmppCallsignsPendingModel;
 
     //
     // QXmpp and XMPP related

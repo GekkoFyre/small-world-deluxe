@@ -519,6 +519,20 @@ std::shared_ptr<QXmppRegistrationManager> GkXmppClient::getRegistrationMgr()
 }
 
 /**
+ * @brief GkXmppClient::getRosterMap
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return
+ */
+QMap<QString, QXmppPresence> GkXmppClient::getRosterMap()
+{
+    if (!m_rosterMap.isEmpty()) {
+        return m_rosterMap;
+    }
+
+    return QMap<QString, QXmppPresence>();
+}
+
+/**
  * @brief GkXmppClient::statusToPresence
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param status
@@ -1204,19 +1218,12 @@ void GkXmppClient::handleSslGreeting()
  */
 void GkXmppClient::initRosterMgr()
 {
-    if (isConnected()) {
-        if ((config.user().isEmpty() || config.password().isEmpty()) || m_connDetails.email.isEmpty()) {
-            // Unable to signup!
-            return;
-        } else {
-            QObject::connect(m_rosterManager.get(), SIGNAL(presenceChanged(const QString &, const QString &)), this, SLOT(presenceChanged(const QString &, const QString &)), Qt::UniqueConnection);
-            QObject::connect(m_rosterManager.get(), SIGNAL(rosterReceived()), this, SLOT(handleRosterReceived()), Qt::UniqueConnection);
-            QObject::connect(m_rosterManager.get(), SIGNAL(subscriptionReceived(const QString &)), this, SLOT(notifyNewSubscription(const QString &)), Qt::UniqueConnection);
-            QObject::connect(m_rosterManager.get(), SIGNAL(itemAdded(const QString &)), this, SLOT(itemAdded(const QString &)), Qt::UniqueConnection);
-            QObject::connect(m_rosterManager.get(), SIGNAL(itemRemoved(const QString &)), this, SLOT(itemRemoved(const QString &)), Qt::UniqueConnection);
-            QObject::connect(m_rosterManager.get(), SIGNAL(itemChanged(const QString &)), this, SLOT(itemChanged(const QString &)), Qt::UniqueConnection);
-        }
-    }
+    QObject::connect(m_rosterManager.get(), SIGNAL(presenceChanged(const QString &, const QString &)), this, SLOT(presenceChanged(const QString &, const QString &)), Qt::UniqueConnection);
+    QObject::connect(m_rosterManager.get(), SIGNAL(rosterReceived()), this, SLOT(handleRosterReceived()), Qt::UniqueConnection);
+    QObject::connect(m_rosterManager.get(), SIGNAL(subscriptionReceived(const QString &)), this, SLOT(notifyNewSubscription(const QString &)), Qt::UniqueConnection);
+    QObject::connect(m_rosterManager.get(), SIGNAL(itemAdded(const QString &)), this, SLOT(itemAdded(const QString &)), Qt::UniqueConnection);
+    QObject::connect(m_rosterManager.get(), SIGNAL(itemRemoved(const QString &)), this, SLOT(itemRemoved(const QString &)), Qt::UniqueConnection);
+    QObject::connect(m_rosterManager.get(), SIGNAL(itemChanged(const QString &)), this, SLOT(itemChanged(const QString &)), Qt::UniqueConnection);
 
     return;
 }

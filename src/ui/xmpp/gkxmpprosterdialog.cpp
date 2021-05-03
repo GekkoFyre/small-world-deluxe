@@ -49,8 +49,10 @@
 #include <QRegExp>
 #include <QMessageBox>
 #include <QStringList>
+#include <QModelIndex>
 #include <QImageReader>
 #include <QRegExpValidator>
+#include <QAbstractItemModel>
 
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
@@ -109,7 +111,7 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
         rxUsernameAdd->setRegExp(rxUsernameExp);
         ui->lineEdit_add_contact_username->setValidator(rxUsernameAdd);
 
-        const QStringList headers({tr("Status"), tr("Nickname")});
+        const QStringList headers({tr("Presence / Status"), tr("Nickname")});
         QVector<QVariant> root_data;
         for (const auto &header: headers) {
             root_data << header;
@@ -117,6 +119,7 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
 
         m_rootItem = QSharedPointer<GkXmppRosterTreeViewItem>(new GkXmppRosterTreeViewItem(root_data));
         m_xmppRosterTreeViewModel = new GkXmppRosterTreeViewModel(m_rootItem.get(), this);
+        m_xmppCallsignsPendingModel = new GkCallsignsRosterPendingModel(this);
 
         //
         // Fill out the presence status ComboBox!
@@ -137,12 +140,22 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
         });
 
         ui->treeView_callsigns_groups->setModel(m_xmppRosterTreeViewModel);
-        for (qint32 column = 0; column < m_xmppRosterTreeViewModel->columnCount(); ++column) {
-            ui->treeView_callsigns_groups->header()->setSectionResizeMode(column, QHeaderView::ResizeToContents);
-        }
-
+        ui->treeView_callsigns_groups->expandAll();
+        ui->treeView_callsigns_groups->header()->setStretchLastSection(true);
+        ui->treeView_callsigns_groups->header()->setSectionResizeMode(GK_XMPP_ROSTER_TREEVIEW_MODEL_PRESENCE_IDX, QHeaderView::ResizeToContents);
+        // ui->treeView_callsigns_groups->header()->hide();
+        ui->treeView_callsigns_groups->setItemsExpandable(true);
+        ui->treeView_callsigns_groups->setRootIsDecorated(true);
+        ui->treeView_callsigns_groups->setIndentation(10);
         ui->treeView_callsigns_groups->setVisible(true);
         ui->treeView_callsigns_groups->show();
+
+        ui->tableView_callsigns_pending->setModel(m_xmppCallsignsPendingModel);
+        ui->tableView_callsigns_pending->horizontalHeader()->setStretchLastSection(true);
+        ui->tableView_callsigns_pending->horizontalHeader()->setSectionResizeMode(GK_XMPP_ROSTER_PENDING_CALLSIGNS_MODEL_PRESENCE_IDX, QHeaderView::ResizeToContents);
+        ui->tableView_callsigns_pending->setVisible(true);
+        ui->tableView_callsigns_pending->show();
+
         QObject::connect(ui->treeView_callsigns_groups->selectionModel(), &QItemSelectionModel::selectionChanged, this, &GkXmppRosterDialog::updateActions);
 
         shownXmppPreviewNotice = gkDb->read_xmpp_alpha_notice();
@@ -206,6 +219,17 @@ void GkXmppRosterDialog::updateActions()
  */
 void GkXmppRosterDialog::subscriptionRequestRecv(const QString &bareJid)
 {
+    if (!bareJid.isEmpty()) {
+        auto rosterMap = m_xmppClient->getRosterMap();
+        if (!rosterMap.isEmpty()) {
+            for (const auto &roster: rosterMap.toStdMap()) {
+                if (roster.first == bareJid) {
+                    m_xmppCallsignsPendingModel->insertData(bareJid, QXmppPresence::Type::Unsubscribed);
+                }
+            }
+        }
+    }
+
     return;
 }
 
@@ -366,10 +390,15 @@ void GkXmppRosterDialog::on_treeView_callsigns_groups_customContextMenuRequested
     //
     // Save the position data to the QAction
     ui->actionAdd_Contact->setData(QVariant(pos));
-    ui->actionEdit_Contact->setData(QVariant(pos));
-    ui->actionDelete_Contact->setData(QVariant(pos));
-
     contextMenu->exec(ui->treeView_callsigns_groups->mapToGlobal(pos));
+
+    QModelIndex index = ui->treeView_callsigns_groups->indexAt(pos); // The exact item that the right-click has been made over!
+    if (index.isValid() && index.row() % 2 == 0) {
+        ui->actionEdit_Contact->setData(QVariant(pos));
+        ui->actionDelete_Contact->setData(QVariant(pos));
+        contextMenu->exec(ui->treeView_callsigns_groups->viewport()->mapToGlobal(pos));
+    }
+
     return;
 }
 
@@ -411,24 +440,29 @@ void GkXmppRosterDialog::on_actionDelete_Contact_triggered()
 }
 
 /**
- * @brief GkXmppRosterDialog::on_treeView_callsigns_pending_customContextMenuRequested
+ * @brief GkXmppRosterDialog::on_tableView_callsigns_pending_customContextMenuRequested
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param pos
  */
-void GkXmppRosterDialog::on_treeView_callsigns_pending_customContextMenuRequested(const QPoint &pos)
+void GkXmppRosterDialog::on_tableView_callsigns_pending_customContextMenuRequested(const QPoint &pos)
 {
-    std::unique_ptr<QMenu> contextMenu = std::make_unique<QMenu>(ui->treeView_callsigns_pending);
+    std::unique_ptr<QMenu> contextMenu = std::make_unique<QMenu>(ui->tableView_callsigns_pending);
     contextMenu->addAction(ui->actionAcceptInvite);
     contextMenu->addAction(ui->actionRefuseInvite);
     contextMenu->addAction(ui->actionBlockUser);
 
-    //
-    // Save the position data to the QAction
-    ui->actionAcceptInvite->setData(QVariant(pos));
-    ui->actionRefuseInvite->setData(QVariant(pos));
-    ui->actionBlockUser->setData(QVariant(pos));
+    QModelIndex index = ui->treeView_callsigns_groups->indexAt(pos); // The exact item that the right-click has been made over!
+    if (index.isValid() && index.row() % 2 == 0) {
+        //
+        // Save the position data to the QAction
+        ui->actionAcceptInvite->setData(QVariant(pos));
+        ui->actionRefuseInvite->setData(QVariant(pos));
+        ui->actionBlockUser->setData(QVariant(pos));
 
-    contextMenu->exec(ui->treeView_callsigns_pending->mapToGlobal(pos));
+        contextMenu->exec(ui->treeView_callsigns_groups->viewport()->mapToGlobal(pos));
+        ui->treeView_callsigns_groups->indexAt(pos);
+    }
+
     return;
 }
 
@@ -575,6 +609,18 @@ void GkXmppRosterDialog::on_pushButton_add_contact_cancel_clicked()
  */
 void GkXmppRosterDialog::on_actionAcceptInvite_triggered()
 {
+    const QModelIndex index = ui->treeView_callsigns_groups->selectionModel()->currentIndex();
+    std::unique_ptr<QAbstractItemModel> model(ui->treeView_callsigns_groups->model());
+    if (!model->insertRow(index.row() + 1, index.parent())) {
+        return;
+    }
+
+    updateActions();
+    for (qint32 column = 0; column < model->columnCount(index.parent()); ++column) {
+        const QModelIndex child = model->index(index.row() + 1, column, index.parent());
+        // model->setData(child, QVariant(bareJid), Qt::EditRole);
+    }
+
     return;
 }
 

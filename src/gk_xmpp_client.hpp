@@ -49,6 +49,7 @@
 #include <boost/exception/all.hpp>
 #include <boost/filesystem.hpp>
 #include <qxmpp/QXmppIq.h>
+#include <qxmpp/QXmppGlobal.h>
 #include <qxmpp/QXmppClient.h>
 #include <qxmpp/QXmppLogger.h>
 #include <qxmpp/QXmppVCardIq.h>
@@ -110,6 +111,7 @@ public:
     //
     // User, roster and presence details
     std::shared_ptr<QXmppRegistrationManager> getRegistrationMgr();
+    QMap<QString, QXmppPresence> getRosterMap();
     QXmppPresence statusToPresence(const Network::GkXmpp::GkOnlineStatus &status);
     bool deleteUserAccount();
     QString obtainAvatarFilePath();
@@ -220,6 +222,7 @@ private:
     std::unique_ptr<QXmppPresence> m_presence;
     std::shared_ptr<QXmppRosterManager> m_rosterManager;
     QStringList rosterGroups;
+    QMap<QString, QXmppPresence> m_rosterMap;
 
     //
     // Filesystem & Directories

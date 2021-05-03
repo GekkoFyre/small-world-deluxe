@@ -259,8 +259,8 @@
                   <rect>
                    <x>0</x>
                    <y>0</y>
-                   <width>290</width>
-                   <height>477</height>
+                   <width>292</width>
+                   <height>485</height>
                   </rect>
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_5">
@@ -268,6 +268,9 @@
                    <widget class="QTreeView" name="treeView_callsigns_groups">
                     <property name="contextMenuPolicy">
                      <enum>Qt::CustomContextMenu</enum>
+                    </property>
+                    <property name="verticalScrollBarPolicy">
+                     <enum>Qt::ScrollBarAlwaysOff</enum>
                     </property>
                     <property name="wordWrap">
                      <bool>true</bool>
@@ -319,20 +322,20 @@
                   <rect>
                    <x>0</x>
                    <y>0</y>
-                   <width>290</width>
-                   <height>477</height>
+                   <width>292</width>
+                   <height>485</height>
                   </rect>
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_19">
                   <item>
-                   <widget class="QTreeView" name="treeView_callsigns_pending">
+                   <widget class="QTableView" name="tableView_callsigns_pending">
                     <property name="contextMenuPolicy">
                      <enum>Qt::CustomContextMenu</enum>
                     </property>
-                    <property name="wordWrap">
-                     <bool>true</bool>
+                    <property name="verticalScrollBarPolicy">
+                     <enum>Qt::ScrollBarAlwaysOff</enum>
                     </property>
-                    <property name="headerHidden">
+                    <property name="alternatingRowColors">
                      <bool>true</bool>
                     </property>
                    </widget>
@@ -379,8 +382,8 @@
                   <rect>
                    <x>0</x>
                    <y>0</y>
-                   <width>290</width>
-                   <height>477</height>
+                   <width>292</width>
+                   <height>485</height>
                   </rect>
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_8">
@@ -388,6 +391,9 @@
                    <widget class="QTreeView" name="treeView_callsigns_blocked">
                     <property name="contextMenuPolicy">
                      <enum>Qt::CustomContextMenu</enum>
+                    </property>
+                    <property name="verticalScrollBarPolicy">
+                     <enum>Qt::ScrollBarAlwaysOff</enum>
                     </property>
                     <property name="wordWrap">
                      <bool>true</bool>
@@ -574,8 +580,8 @@
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>296</width>
-               <height>505</height>
+               <width>200</width>
+               <height>118</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_16">
