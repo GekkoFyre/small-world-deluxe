@@ -248,7 +248,7 @@ private slots:
     //
     // QXmpp and XMPP related
     //
-    void launchXmppRosterDlg(const bool &msgBoxDlg = true, const bool &showRosterDlg = true);
+    void launchXmppRosterDlg();
 
     //
     // SSTV and related

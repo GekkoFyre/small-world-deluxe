@@ -130,6 +130,10 @@ public slots:
     void presenceChanged(const QString &bareJid, const QString &resource);
     void modifyPresence(const QXmppPresence::Type &pres);
     void modifyAvailableStatusType(const QXmppPresence::AvailableStatusType &stat_type);
+    void acceptSubscriptionRequest(const QString &bareJid);
+    void refuseSubscriptionRequest(const QString &bareJid);
+    void blockUser(const QString &bareJid);
+    void unblockUser(const QString &bareJid);
 
     //
     // Registration management
@@ -222,6 +226,7 @@ private:
     std::unique_ptr<QXmppPresence> m_presence;
     std::shared_ptr<QXmppRosterManager> m_rosterManager;
     QStringList rosterGroups;
+    QVector<QString> m_blockList;
     QMap<QString, QXmppPresence> m_rosterMap;
 
     //

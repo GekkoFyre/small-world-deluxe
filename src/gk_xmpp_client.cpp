@@ -776,6 +776,70 @@ void GkXmppClient::modifyAvailableStatusType(const QXmppPresence::AvailableStatu
 }
 
 /**
+ * @brief GkXmppClient::acceptSubscriptionRequest accepts a subscription request (i.e. a user request to be added to the
+ * address book).
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid The username making the request in question.
+ */
+void GkXmppClient::acceptSubscriptionRequest(const QString &bareJid)
+{
+    m_rosterManager->acceptSubscription(bareJid);
+    gkEventLogger->publishEvent(tr("Invite request has successfully been processed for user, \"%1\"").arg(bareJid),
+                                GkSeverity::Info, "", true, true, false, false);
+
+    return;
+}
+
+/**
+ * @brief GkXmppClient::refuseSubscriptionRequest refuses a subscription request (i.e. a user request to be added to the
+ * address book).
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid The username in question.
+ */
+void GkXmppClient::refuseSubscriptionRequest(const QString &bareJid)
+{
+    m_rosterManager->refuseSubscription(bareJid);
+    gkEventLogger->publishEvent(tr("Invite request has successfully been refused for user, \"%1\"").arg(bareJid),
+                                GkSeverity::Info, "", true, true, false, false);
+
+    return;
+}
+
+/**
+ * @brief GkXmppClient::blockUser attempts to block a user from making any requests to the client themselves.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid
+ */
+void GkXmppClient::blockUser(const QString &bareJid)
+{
+    m_blockList.push_back(bareJid);
+    gkEventLogger->publishEvent(tr("User, \"%1\", has been successfully added to the blocklist.").arg(bareJid),
+                                GkSeverity::Info, "", true, true, false, false);
+
+    return;
+}
+
+/**
+ * @brief GkXmppClient::unblockUser attempts to unblock a user so that they can make requests once again to the client themselves.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid
+ */
+void GkXmppClient::unblockUser(const QString &bareJid)
+{
+    for (auto iter = m_blockList.begin(); iter != m_blockList.end(); ++iter) {
+        if (*iter == bareJid) {
+            m_blockList.erase(iter);
+            gkEventLogger->publishEvent(tr("User, \"%1\", has been successfully removed from the blocklist.").arg(bareJid),
+                                        GkSeverity::Info, "", true, true, false, false);
+
+            break;
+        }
+    }
+
+    return;
+}
+
+/**
  * @brief GkXmppClient::handleRegistrationForm
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param registerIq The user registration form to be filled out, as received from the connected towards XMPP server.

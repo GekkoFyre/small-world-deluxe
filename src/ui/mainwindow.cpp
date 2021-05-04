@@ -946,7 +946,7 @@ MainWindow::~MainWindow()
  */
 void MainWindow::on_actionXMPP_triggered()
 {
-    launchXmppRosterDlg(true, true);
+    launchXmppRosterDlg();
     return;
 }
 
@@ -2215,36 +2215,10 @@ void MainWindow::readHunspellSettings()
  * @brief MainWindow::launchXmppRosterDlg launches the Roster Dialog for the XMPP side of Small World Deluxe, where end-users
  * may interact with others or even signup to the given, configured server if it's their first time connecting.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param msgBoxDlg Whether to display the message dialog box or not.
- * @param showRosterDlg Whether to show the roster dialog after making a successful connection or not.
  */
-void MainWindow::launchXmppRosterDlg(const bool &msgBoxDlg, const bool &showRosterDlg)
+void MainWindow::launchXmppRosterDlg()
 {
-    if (!m_xmppClient->isConnected() || m_xmppClient->getNetworkState() != GkNetworkState::Connecting) { // An active connection has yet to be made!
-        if (msgBoxDlg) { // Whether we should show the message box dialog or not!
-            QMessageBox msgBox;
-            msgBox.setParent(nullptr);
-            msgBox.setWindowTitle(tr("Initializing..."));
-            msgBox.setText(tr("Do you wish to create a connection to the XMPP server, \"%1\"?").arg(gkConnDetails.server.url));
-            msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
-            msgBox.setDefaultButton(QMessageBox::Ok);
-            msgBox.setIcon(QMessageBox::Icon::Information);
-            qint32 ret = msgBox.exec();
-            switch (ret) {
-                case QMessageBox::Ok:
-                    createXmppConnection();
-                    break;
-                case QMessageBox::Cancel:
-                    return;
-                default:
-                    return;
-            }
-        } else {
-            createXmppConnection();
-        }
-    }
-
-    if (!gkXmppRosterDlg->isVisible() && showRosterDlg) { // The dialog window has not been launched yet, and whether we should show it or not!
+    if (!gkXmppRosterDlg->isVisible()) { // The dialog window has not been launched yet, and whether we should show it or not!
         gkXmppRosterDlg->setWindowFlags(Qt::Window);
         gkXmppRosterDlg->show();
     }
@@ -3247,7 +3221,7 @@ void MainWindow::on_actionCW_toggled(bool arg1)
 
 void MainWindow::on_actionView_Roster_triggered()
 {
-    launchXmppRosterDlg(true, true);
+    launchXmppRosterDlg();
     return;
 }
 
@@ -3258,6 +3232,8 @@ void MainWindow::on_actionSign_in_triggered()
     }
 
     createXmppConnection();
+    launchXmppRosterDlg();
+
     return;
 }
 

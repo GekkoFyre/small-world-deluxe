@@ -98,6 +98,10 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
 
         QObject::connect(m_xmppClient, SIGNAL(sendSubscriptionRequest(const QString &)), this, SLOT(subscriptionRequestRecv(const QString &)));
         QObject::connect(m_xmppClient, SIGNAL(retractSubscriptionRequest(const QString &)), this, SLOT(subscriptionRequestRetracted(const QString &)));
+        QObject::connect(this, SIGNAL(acceptSubscription(const QString &)), m_xmppClient, SLOT(acceptSubscriptionRequest(const QString &)));
+        QObject::connect(this, SIGNAL(refuseSubscription(const QString &)), m_xmppClient, SLOT(refuseSubscriptionRequest(const QString &)));
+        QObject::connect(this, SIGNAL(blockUser(const QString &)), m_xmppClient, SLOT(blockUser(const QString &)));
+        QObject::connect(this, SIGNAL(unblockUser(const QString &)), m_xmppClient, SLOT(unblockUser(const QString &)));
 
         QObject::connect(ui->label_self_nickname, SIGNAL(clicked(const QString &)), this, SLOT(editNicknameLabel(const QString &)));
         ui->label_self_nickname->setText(tr("Anonymous"));
@@ -110,16 +114,6 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
         rxUsernameExp.setCaseSensitivity(Qt::CaseSensitivity::CaseInsensitive);
         rxUsernameAdd->setRegExp(rxUsernameExp);
         ui->lineEdit_add_contact_username->setValidator(rxUsernameAdd);
-
-        const QStringList headers({tr("Presence / Status"), tr("Nickname")});
-        QVector<QVariant> root_data;
-        for (const auto &header: headers) {
-            root_data << header;
-        }
-
-        m_rootItem = QSharedPointer<GkXmppRosterTreeViewItem>(new GkXmppRosterTreeViewItem(root_data));
-        m_xmppRosterTreeViewModel = new GkXmppRosterTreeViewModel(m_rootItem.get(), this);
-        m_xmppCallsignsPendingModel = new GkCallsignsRosterPendingModel(this);
 
         //
         // Fill out the presence status ComboBox!
@@ -139,24 +133,34 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
             ui->comboBox_current_status->setEnabled(false);
         });
 
-        ui->treeView_callsigns_groups->setModel(m_xmppRosterTreeViewModel);
-        ui->treeView_callsigns_groups->expandAll();
-        ui->treeView_callsigns_groups->header()->setStretchLastSection(true);
-        ui->treeView_callsigns_groups->header()->setSectionResizeMode(GK_XMPP_ROSTER_TREEVIEW_MODEL_PRESENCE_IDX, QHeaderView::ResizeToContents);
-        // ui->treeView_callsigns_groups->header()->hide();
-        ui->treeView_callsigns_groups->setItemsExpandable(true);
-        ui->treeView_callsigns_groups->setRootIsDecorated(true);
-        ui->treeView_callsigns_groups->setIndentation(10);
-        ui->treeView_callsigns_groups->setVisible(true);
-        ui->treeView_callsigns_groups->show();
+        //
+        // Users, presence, and contact requests
+        ui->treeWidget_callsigns_groups->setHeaderLabels(QStringList() << tr("# / Presence") << tr("Nickname"));
+        ui->treeWidget_callsigns_groups->header()->setStretchLastSection(true);
+        ui->treeWidget_callsigns_groups->header()->setSectionResizeMode(GK_XMPP_ROSTER_TREEWIDGET_MODEL_PRESENCE_IDX, QHeaderView::ResizeToContents);
+        // ui->treeWidget_callsigns_groups->header()->hide();
+        ui->treeWidget_callsigns_groups->setItemsExpandable(true);
+        ui->treeWidget_callsigns_groups->setRootIsDecorated(true);
+        ui->treeWidget_callsigns_groups->setVisible(true);
+        ui->treeWidget_callsigns_groups->show();
 
-        ui->tableView_callsigns_pending->setModel(m_xmppCallsignsPendingModel);
-        ui->tableView_callsigns_pending->horizontalHeader()->setStretchLastSection(true);
-        ui->tableView_callsigns_pending->horizontalHeader()->setSectionResizeMode(GK_XMPP_ROSTER_PENDING_CALLSIGNS_MODEL_PRESENCE_IDX, QHeaderView::ResizeToContents);
-        ui->tableView_callsigns_pending->setVisible(true);
-        ui->tableView_callsigns_pending->show();
+        m_subRequests = std::make_shared<QTreeWidgetItem>(xmppRosterPresenceInsertTreeRoot("0", tr("Subscription Requests")));
+        m_onlineUsers = std::make_shared<QTreeWidgetItem>(xmppRosterPresenceInsertTreeRoot("0", tr("Online")));
+        m_offlineUsers = std::make_shared<QTreeWidgetItem>(xmppRosterPresenceInsertTreeRoot("0", tr("Offline")));
 
-        QObject::connect(ui->treeView_callsigns_groups->selectionModel(), &QItemSelectionModel::selectionChanged, this, &GkXmppRosterDialog::updateActions);
+        //
+        // Blocked users
+        ui->treeWidget_callsigns_blocked->setHeaderLabels(QStringList() << tr("Nickname"));
+        ui->treeWidget_callsigns_blocked->header()->setStretchLastSection(true);
+        ui->treeWidget_callsigns_blocked->header()->setSectionResizeMode(GK_XMPP_ROSTER_BLOCKED_TREEWIDGET_MODEL_NICKNAME_IDX, QHeaderView::ResizeToContents);
+        // ui->treeWidget_callsigns_blocked->header()->hide();
+        ui->treeWidget_callsigns_blocked->setItemsExpandable(true);
+        ui->treeWidget_callsigns_blocked->setRootIsDecorated(true);
+        ui->treeWidget_callsigns_blocked->setVisible(true);
+        ui->treeWidget_callsigns_blocked->show();
+
+        QObject::connect(ui->treeWidget_callsigns_groups->selectionModel(), &QItemSelectionModel::selectionChanged, this,
+                         &GkXmppRosterDialog::updateActions);
 
         shownXmppPreviewNotice = gkDb->read_xmpp_alpha_notice();
         if (!shownXmppPreviewNotice) {
@@ -197,20 +201,6 @@ GkXmppRosterDialog::~GkXmppRosterDialog()
 }
 
 /**
- * @brief GkXmppRosterDialog::updateActions
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @note Editable Tree Model Example <https://doc.qt.io/qt-5/qtwidgets-itemviews-editabletreemodel-example.html>.
- */
-void GkXmppRosterDialog::updateActions()
-{
-    //
-    // TODO: Finish this section for XMPP!
-    const bool hasSelection = !ui->treeView_callsigns_groups->selectionModel()->selection().isEmpty();
-
-    return;
-}
-
-/**
  * @brief GkXmppRosterDialog::subscriptionRequestRecv handles the processing and management of external subscription requests
  * to the given, connected towards XMPP server in question. This function will only work if Small World Deluxe is actively
  * connected towards an XMPP server at the time.
@@ -220,14 +210,8 @@ void GkXmppRosterDialog::updateActions()
 void GkXmppRosterDialog::subscriptionRequestRecv(const QString &bareJid)
 {
     if (!bareJid.isEmpty()) {
-        auto rosterMap = m_xmppClient->getRosterMap();
-        if (!rosterMap.isEmpty()) {
-            for (const auto &roster: rosterMap.toStdMap()) {
-                if (roster.first == bareJid) {
-                    m_xmppCallsignsPendingModel->insertData(bareJid, QXmppPresence::Type::Unsubscribed);
-                }
-            }
-        }
+        xmppRosterPresenceInsertTreeChild(m_subRequests.get(), tr("Unknown"), bareJid);
+        updateActions();
     }
 
     return;
@@ -241,6 +225,90 @@ void GkXmppRosterDialog::subscriptionRequestRecv(const QString &bareJid)
  */
 void GkXmppRosterDialog::subscriptionRequestRetracted(const QString &bareJid)
 {
+    if (!bareJid.isEmpty()) {
+        xmppRosterPresenceRemoveTreeChild(m_subRequests.get(), bareJid);
+        updateActions();
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::updateActions
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @note Editable Tree Model Example <https://doc.qt.io/qt-5/qtwidgets-itemviews-editabletreemodel-example.html>.
+ */
+void GkXmppRosterDialog::updateActions()
+{
+    const bool presenceHasSelection = !ui->treeWidget_callsigns_groups->selectionModel()->selection().isEmpty();
+    ui->actionEdit_Contact->setEnabled(presenceHasSelection);
+    ui->actionDelete_Contact->setEnabled(presenceHasSelection);
+    ui->actionBlockUser->setEnabled(presenceHasSelection);
+
+    ui->actionAcceptInvite->setEnabled(presenceHasSelection);
+    ui->actionRefuseInvite->setEnabled(presenceHasSelection);
+    ui->actionAcceptInvite->setVisible(presenceHasSelection);
+    ui->actionRefuseInvite->setVisible(presenceHasSelection);
+
+    const bool blockedHasSelection = !ui->treeWidget_callsigns_blocked->selectionModel()->selection().isEmpty();
+    ui->actionUnblockUser->setEnabled(blockedHasSelection);
+
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::xmppRosterPresenceInsertTreeRoot
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param name
+ * @param desc
+ * @return The QTreeWidgetItem object that was generated by this function.
+ */
+QTreeWidgetItem *GkXmppRosterDialog::xmppRosterPresenceInsertTreeRoot(const QString &name, const QString &desc)
+{
+    QTreeWidgetItem *treeItem = new QTreeWidgetItem(ui->treeWidget_callsigns_groups);
+
+    treeItem->setText(GK_XMPP_ROSTER_TREEWIDGET_MODEL_PRESENCE_IDX, name);
+    treeItem->setText(GK_XMPP_ROSTER_TREEWIDGET_MODEL_NICKNAME_IDX, desc);
+
+    return treeItem;
+}
+
+/**
+ * @brief GkXmppRosterDialog::xmppRosterPresenceInsertTreeChild
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param parent
+ * @param name
+ * @param desc
+ */
+void GkXmppRosterDialog::xmppRosterPresenceInsertTreeChild(QTreeWidgetItem *parent, const QString &name,
+                                                           const QString &desc)
+{
+    QTreeWidgetItem *treeItem = new QTreeWidgetItem();
+
+    treeItem->setText(GK_XMPP_ROSTER_TREEWIDGET_MODEL_PRESENCE_IDX, name);
+    treeItem->setText(GK_XMPP_ROSTER_TREEWIDGET_MODEL_NICKNAME_IDX, desc);
+    parent->addChild(treeItem);
+
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::xmppRosterPresenceRemoveTreeChild
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param parent
+ * @param desc
+ */
+void GkXmppRosterDialog::xmppRosterPresenceRemoveTreeChild(QTreeWidgetItem *parent, const QString &desc)
+{
+    QList<QTreeWidgetItem *> search = ui->treeWidget_callsigns_groups->findItems(desc, Qt::MatchFlag::MatchExactly, 1);
+    if (search.isEmpty()) {
+        return;
+    }
+
+    for (const auto &item: search) {
+        delete item;
+    }
+
     return;
 }
 
@@ -252,24 +320,8 @@ void GkXmppRosterDialog::subscriptionRequestRetracted(const QString &bareJid)
 void GkXmppRosterDialog::reconnectToXmpp()
 {
     if (!m_xmppClient->isConnected() || m_xmppClient->getNetworkState() != GkNetworkState::Connecting) {
-        QMessageBox msgBox;
-        msgBox.setParent(nullptr);
-        msgBox.setWindowTitle(tr("Initializing..."));
-        msgBox.setText(tr("Do you wish to create a connection to the XMPP server, \"%1\"?").arg(gkConnDetails.server.url));
-        msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
-        msgBox.setDefaultButton(QMessageBox::Ok);
-        msgBox.setIcon(QMessageBox::Icon::Information);
-        qint32 ret = msgBox.exec();
-        switch (ret) {
-            case QMessageBox::Ok:
-                m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, gkConnDetails.username,
-                                                       gkConnDetails.password, gkConnDetails.jid, false);
-                break;
-            case QMessageBox::Cancel:
-                return;
-            default:
-                return;
-        }
+        m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, gkConnDetails.username,
+                                               gkConnDetails.password, gkConnDetails.jid, false);
     }
 
     return;
@@ -376,27 +428,53 @@ void GkXmppRosterDialog::on_pushButton_user_create_account_clicked()
 }
 
 /**
- * @brief GkXmppRosterDialog::on_treeView_callsigns_groups_customContextMenuRequested
+ * @brief GkXmppRosterDialog::on_treeWidget_callsigns_groups_customContextMenuRequested
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param pos
  */
-void GkXmppRosterDialog::on_treeView_callsigns_groups_customContextMenuRequested(const QPoint &pos)
+void GkXmppRosterDialog::on_treeWidget_callsigns_groups_customContextMenuRequested(const QPoint &pos)
 {
-    std::unique_ptr<QMenu> contextMenu = std::make_unique<QMenu>(ui->treeView_callsigns_groups);
+    std::unique_ptr<QMenu> contextMenu = std::make_unique<QMenu>(ui->treeWidget_callsigns_groups);
     contextMenu->addAction(ui->actionAdd_Contact);
     contextMenu->addAction(ui->actionEdit_Contact);
     contextMenu->addAction(ui->actionDelete_Contact);
 
+    contextMenu->addAction(ui->actionAcceptInvite);
+    contextMenu->addAction(ui->actionRefuseInvite);
+    contextMenu->addAction(ui->actionBlockUser);
+
+    updateActions();
+
     //
     // Save the position data to the QAction
     ui->actionAdd_Contact->setData(QVariant(pos));
-    contextMenu->exec(ui->treeView_callsigns_groups->mapToGlobal(pos));
+    ui->actionEdit_Contact->setData(QVariant(pos));
+    ui->actionDelete_Contact->setData(QVariant(pos));
 
-    QModelIndex index = ui->treeView_callsigns_groups->indexAt(pos); // The exact item that the right-click has been made over!
-    if (index.isValid() && index.row() % 2 == 0) {
-        ui->actionEdit_Contact->setData(QVariant(pos));
-        ui->actionDelete_Contact->setData(QVariant(pos));
-        contextMenu->exec(ui->treeView_callsigns_groups->viewport()->mapToGlobal(pos));
+    ui->actionAcceptInvite->setData(QVariant(pos));
+    ui->actionRefuseInvite->setData(QVariant(pos));
+    ui->actionBlockUser->setData(QVariant(pos));
+
+    contextMenu->exec(ui->treeWidget_callsigns_groups->mapToGlobal(pos));
+    QModelIndex index = ui->treeWidget_callsigns_groups->indexAt(pos); // The exact item that the right-click has been made over!
+
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::on_treeWidget_callsigns_groups_itemClicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param item
+ * @param column
+ */
+void GkXmppRosterDialog::on_treeWidget_callsigns_groups_itemClicked(QTreeWidgetItem *item, int column)
+{
+    updateActions();
+    if (item == m_subRequests.get()) {
+        ui->actionAcceptInvite->setEnabled(true);
+        ui->actionRefuseInvite->setEnabled(true);
+        ui->actionAcceptInvite->setVisible(true);
+        ui->actionRefuseInvite->setVisible(true);
     }
 
     return;
@@ -419,8 +497,8 @@ void GkXmppRosterDialog::on_actionAdd_Contact_triggered()
  */
 void GkXmppRosterDialog::on_actionEdit_Contact_triggered()
 {
-    QModelIndex idx = ui->treeView_callsigns_groups->indexAt(ui->actionEdit_Contact->data().toPoint());
-    QVariant data = ui->treeView_callsigns_groups->model()->data(idx);
+    QModelIndex idx = ui->treeWidget_callsigns_groups->indexAt(ui->actionEdit_Contact->data().toPoint());
+    QVariant data = ui->treeWidget_callsigns_groups->model()->data(idx);
     QString text = data.toString();
 
     return;
@@ -432,36 +510,9 @@ void GkXmppRosterDialog::on_actionEdit_Contact_triggered()
  */
 void GkXmppRosterDialog::on_actionDelete_Contact_triggered()
 {
-    QModelIndex idx = ui->treeView_callsigns_groups->indexAt(ui->actionDelete_Contact->data().toPoint());
-    QVariant data = ui->treeView_callsigns_groups->model()->data(idx);
+    QModelIndex idx = ui->treeWidget_callsigns_groups->indexAt(ui->actionDelete_Contact->data().toPoint());
+    QVariant data = ui->treeWidget_callsigns_groups->model()->data(idx);
     QString text = data.toString();
-
-    return;
-}
-
-/**
- * @brief GkXmppRosterDialog::on_tableView_callsigns_pending_customContextMenuRequested
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param pos
- */
-void GkXmppRosterDialog::on_tableView_callsigns_pending_customContextMenuRequested(const QPoint &pos)
-{
-    std::unique_ptr<QMenu> contextMenu = std::make_unique<QMenu>(ui->tableView_callsigns_pending);
-    contextMenu->addAction(ui->actionAcceptInvite);
-    contextMenu->addAction(ui->actionRefuseInvite);
-    contextMenu->addAction(ui->actionBlockUser);
-
-    QModelIndex index = ui->treeView_callsigns_groups->indexAt(pos); // The exact item that the right-click has been made over!
-    if (index.isValid() && index.row() % 2 == 0) {
-        //
-        // Save the position data to the QAction
-        ui->actionAcceptInvite->setData(QVariant(pos));
-        ui->actionRefuseInvite->setData(QVariant(pos));
-        ui->actionBlockUser->setData(QVariant(pos));
-
-        contextMenu->exec(ui->treeView_callsigns_groups->viewport()->mapToGlobal(pos));
-        ui->treeView_callsigns_groups->indexAt(pos);
-    }
 
     return;
 }
@@ -501,20 +552,31 @@ void GkXmppRosterDialog::on_lineEdit_self_nickname_returnPressed()
 }
 
 /**
- * @brief GkXmppRosterDialog::on_treeView_callsigns_blocked_customContextMenuRequested
+ * @brief GkXmppRosterDialog::on_treeWidget_callsigns_blocked_customContextMenuRequested
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param pos
  */
-void GkXmppRosterDialog::on_treeView_callsigns_blocked_customContextMenuRequested(const QPoint &pos)
+void GkXmppRosterDialog::on_treeWidget_callsigns_blocked_customContextMenuRequested(const QPoint &pos)
 {
-    std::unique_ptr<QMenu> contextMenu = std::make_unique<QMenu>(ui->treeView_callsigns_blocked);
+    std::unique_ptr<QMenu> contextMenu = std::make_unique<QMenu>(ui->treeWidget_callsigns_blocked);
     contextMenu->addAction(ui->actionUnblockUser);
 
     //
     // Save the position data to the QAction
     ui->actionUnblockUser->setData(QVariant(pos));
 
-    contextMenu->exec(ui->treeView_callsigns_blocked->mapToGlobal(pos));
+    contextMenu->exec(ui->treeWidget_callsigns_blocked->mapToGlobal(pos));
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::on_treeWidget_callsigns_blocked_itemClicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param item
+ * @param column
+ */
+void GkXmppRosterDialog::on_treeWidget_callsigns_blocked_itemClicked(QTreeWidgetItem *item, int column)
+{
     return;
 }
 
@@ -609,18 +671,14 @@ void GkXmppRosterDialog::on_pushButton_add_contact_cancel_clicked()
  */
 void GkXmppRosterDialog::on_actionAcceptInvite_triggered()
 {
-    const QModelIndex index = ui->treeView_callsigns_groups->selectionModel()->currentIndex();
-    std::unique_ptr<QAbstractItemModel> model(ui->treeView_callsigns_groups->model());
-    if (!model->insertRow(index.row() + 1, index.parent())) {
-        return;
+    QList<QTreeWidgetItem *> items;
+    items = ui->treeWidget_callsigns_groups->selectedItems();
+    for (const auto &item: items) {
+        emit acceptSubscription(item->text(GK_XMPP_ROSTER_TREEWIDGET_MODEL_NICKNAME_IDX));
+        break;
     }
 
     updateActions();
-    for (qint32 column = 0; column < model->columnCount(index.parent()); ++column) {
-        const QModelIndex child = model->index(index.row() + 1, column, index.parent());
-        // model->setData(child, QVariant(bareJid), Qt::EditRole);
-    }
-
     return;
 }
 
@@ -630,6 +688,14 @@ void GkXmppRosterDialog::on_actionAcceptInvite_triggered()
  */
 void GkXmppRosterDialog::on_actionRefuseInvite_triggered()
 {
+    QList<QTreeWidgetItem *> items;
+    items = ui->treeWidget_callsigns_groups->selectedItems();
+    for (const auto &item: items) {
+        emit refuseSubscription(item->text(GK_XMPP_ROSTER_TREEWIDGET_MODEL_NICKNAME_IDX));
+        break;
+    }
+
+    updateActions();
     return;
 }
 
@@ -639,6 +705,33 @@ void GkXmppRosterDialog::on_actionRefuseInvite_triggered()
  */
 void GkXmppRosterDialog::on_actionBlockUser_triggered()
 {
+    QList<QTreeWidgetItem *> items;
+    items = ui->treeWidget_callsigns_groups->selectedItems();
+    for (const auto &item: items) {
+        QString bareJid = item->text(GK_XMPP_ROSTER_TREEWIDGET_MODEL_NICKNAME_IDX);
+        QMessageBox msgBox;
+        msgBox.setParent(nullptr);
+        msgBox.setWindowTitle(tr("Are you sure?"));
+        msgBox.setText(tr("Do you wish to block user, \"%1\"?").arg(bareJid));
+        msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+        msgBox.setDefaultButton(QMessageBox::Ok);
+        msgBox.setIcon(QMessageBox::Icon::Information);
+        int ret = msgBox.exec();
+
+        switch (ret) {
+            case QMessageBox::Ok:
+                emit blockUser(bareJid);
+                break;
+            case QMessageBox::Cancel:
+                break;
+            default:
+                break;
+        }
+
+        break;
+    }
+
+    updateActions();
     return;
 }
 
@@ -648,5 +741,32 @@ void GkXmppRosterDialog::on_actionBlockUser_triggered()
  */
 void GkXmppRosterDialog::on_actionUnblockUser_triggered()
 {
+    QList<QTreeWidgetItem *> items;
+    items = ui->treeWidget_callsigns_groups->selectedItems();
+    for (const auto &item: items) {
+        QString bareJid = item->text(GK_XMPP_ROSTER_TREEWIDGET_MODEL_NICKNAME_IDX);
+        QMessageBox msgBox;
+        msgBox.setParent(nullptr);
+        msgBox.setWindowTitle(tr("Are you sure?"));
+        msgBox.setText(tr("Do you wish to unblock user, \"%1\", and allow possible communications once again?").arg(bareJid));
+        msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+        msgBox.setDefaultButton(QMessageBox::Ok);
+        msgBox.setIcon(QMessageBox::Icon::Information);
+        int ret = msgBox.exec();
+
+        switch (ret) {
+            case QMessageBox::Ok:
+                emit unblockUser(bareJid);
+                break;
+            case QMessageBox::Cancel:
+                break;
+            default:
+                break;
+        }
+
+        break;
+    }
+
+    updateActions();
     return;
 }
