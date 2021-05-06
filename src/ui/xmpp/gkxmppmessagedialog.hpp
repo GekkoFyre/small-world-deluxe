@@ -67,7 +67,6 @@ private slots:
     void on_toolButton_insert_clicked();
     void on_toolButton_attach_file_clicked();
     void on_toolButton_view_roster_clicked();
-    void on_treeView_recv_msg_dlg_customContextMenuRequested(const QPoint &pos);
 
 private:
     Ui::GkXmppMessageDialog *ui;

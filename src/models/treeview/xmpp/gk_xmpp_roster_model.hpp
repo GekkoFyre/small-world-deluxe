@@ -74,19 +74,20 @@ public:
     bool removeChildren(qint32 position, qint32 count);
     bool removeColumns(qint32 position, qint32 columns);
     qint32 childNumber() const;
-    bool setData(qint32 column, const QVariant &value);
+    bool setData(const QVariant &nickname, const QVariant &presence);
 
 private:
     QVector<GkXmppRosterTreeViewItem *> childItems;
     QVector<QVariant> itemData;
     GkXmppRosterTreeViewItem *parentItem;
+
 };
 
 class GkXmppRosterTreeViewModel : public QAbstractItemModel {
     Q_OBJECT
 
 public:
-    explicit GkXmppRosterTreeViewModel(const QStringList &headers, QObject *parent = nullptr);
+    explicit GkXmppRosterTreeViewModel(GkXmppRosterTreeViewItem *rootItem, QObject *parent = nullptr);
     ~GkXmppRosterTreeViewModel() override;
 
     QVariant data(const QModelIndex &index, qint32 role) const override;
@@ -94,7 +95,6 @@ public:
 
     QModelIndex index(qint32 row, qint32 column, const QModelIndex &parent = QModelIndex()) const override;
     QModelIndex parent(const QModelIndex &index) const override;
-    QModelIndex indexForTreeItem(GkXmppRosterTreeViewItem *item);
 
     qint32 rowCount(const QModelIndex &parent = QModelIndex()) const override;
     qint32 columnCount(const QModelIndex &parent = QModelIndex()) const override;
@@ -108,9 +108,13 @@ public:
     bool insertRows(qint32 position, qint32 rows, const QModelIndex &parent = QModelIndex()) override;
     bool removeRows(qint32 position, qint32 rows, const QModelIndex &parent = QModelIndex()) override;
 
+    void insertModelData(const QString &nickname, const QString &presence, GkXmppRosterTreeViewItem *parent);
+    void modifyModelData(const QString &nickname, const QString &presence, GkXmppRosterTreeViewItem *parent);
+
 private:
     GkXmppRosterTreeViewItem *getItem(const QModelIndex &index) const;
 
     GkXmppRosterTreeViewItem *m_rootItem;
+
 };
 };

@@ -45,6 +45,7 @@
 #include "src/dek_db.hpp"
 #include "src/gk_xmpp_client.hpp"
 #include "src/ui/xmpp/gkxmppmessagedialog.hpp"
+#include "src/models/treeview/xmpp/gk_xmpp_roster_model.hpp"
 #include "src/gk_logger.hpp"
 #include <memory>
 #include <QImage>
@@ -55,7 +56,7 @@
 #include <QDialog>
 #include <QPointer>
 #include <QByteArray>
-#include <QTreeWidgetItem>
+#include <QSharedPointer>
 
 namespace Ui {
 class GkXmppRosterDialog;
@@ -75,15 +76,14 @@ private slots:
     void on_comboBox_current_status_currentIndexChanged(int index);
     void on_pushButton_user_login_clicked();
     void on_pushButton_user_create_account_clicked();
-    void on_treeWidget_callsigns_groups_customContextMenuRequested(const QPoint &pos);
-    void on_treeWidget_callsigns_groups_itemClicked(QTreeWidgetItem *item, int column);
+    void on_treeView_callsigns_groups_customContextMenuRequested(const QPoint &pos);
     void on_actionAdd_Contact_triggered();
     void on_actionEdit_Contact_triggered();
     void on_actionDelete_Contact_triggered();
+    void on_treeView_callsigns_pending_customContextMenuRequested(const QPoint &pos);
     void on_pushButton_self_avatar_clicked();
     void on_lineEdit_self_nickname_returnPressed();
-    void on_treeWidget_callsigns_blocked_customContextMenuRequested(const QPoint &pos);
-    void on_treeWidget_callsigns_blocked_itemClicked(QTreeWidgetItem *item, int column);
+    void on_treeView_callsigns_blocked_customContextMenuRequested(const QPoint &pos);
 
     //
     // VCard management
@@ -96,6 +96,7 @@ private slots:
     //
     // XMPP Roster management and related
     //
+    void updateActions();
     void subscriptionRequestRecv(const QString &bareJid);
     void subscriptionRequestRetracted(const QString &bareJid);
     void on_pushButton_add_contact_cancel_clicked();
@@ -111,11 +112,6 @@ signals:
                            const QString &callsign, const QByteArray &avatar_pic);
     void updateClientAvatarImg(const QImage &avatar_img);
 
-    void acceptSubscription(const QString &bareJid);
-    void refuseSubscription(const QString &bareJid);
-    void blockUser(const QString &bareJid);
-    void unblockUser(const QString &bareJid);
-
 private:
     Ui::GkXmppRosterDialog *ui;
 
@@ -125,16 +121,10 @@ private:
     bool shownXmppPreviewNotice;
 
     //
-    // QTreeWidget and related
+    // QTreeView and related
     //
-    QTreeWidgetItem *xmppRosterPresenceInsertTreeRoot(const QString &name, const QString &desc);
-    void xmppRosterPresenceInsertTreeChild(QTreeWidgetItem *parent, const QString &name, const QString &desc);
-    void xmppRosterPresenceRemoveTreeChild(QTreeWidgetItem *parent, const QString &desc);
-    void updateActions();
-
-    std::shared_ptr<QTreeWidgetItem> m_subRequests;
-    std::shared_ptr<QTreeWidgetItem> m_onlineUsers;
-    std::shared_ptr<QTreeWidgetItem> m_offlineUsers;
+    QSharedPointer<GekkoFyre::GkXmppRosterTreeViewItem> m_rootItem;
+    QPointer<GekkoFyre::GkXmppRosterTreeViewModel> m_xmppRosterTreeViewModel;
 
     //
     // QXmpp and XMPP related

@@ -49,8 +49,6 @@
 #include <boost/logic/tribool.hpp>
 #include <boost/filesystem.hpp>
 #include <qwt/qwt_interval.h>
-#include <qxmpp/QXmppGlobal.h>
-#include <qxmpp/QXmppPresence.h>
 #include <map>
 #include <list>
 #include <vector>
@@ -266,19 +264,11 @@ namespace GekkoFyre {
 //
 // QTreeView Models
 //
-#define GK_XMPP_ROSTER_TREEWIDGET_MODEL_PRESENCE_IDX (0)
-#define GK_XMPP_ROSTER_TREEWIDGET_MODEL_NICKNAME_IDX (1)
-#define GK_XMPP_ROSTER_TREEWIDGET_MODEL_TOTAL_IDX (2)
+#define GK_XMPP_ROSTER_TREEVIEW_MODEL_PRESENCE_IDX (0)
+#define GK_XMPP_ROSTER_TREEVIEW_MODEL_NICKNAME_IDX (1)
+#define GK_XMPP_ROSTER_TREEVIEW_MODEL_TOTAL_IDX (2)
 
-#define GK_XMPP_ROSTER_BLOCKED_TREEWIDGET_MODEL_NICKNAME_IDX (0)
-#define GK_XMPP_ROSTER_BLOCKED_TREEWIDGET_MODEL_REASON_IDX (1)
-#define GK_XMPP_ROSTER_BLOCKED_TREEWIDGET_MODEL_TOTAL_IDX (2)
-
-#define GK_XMPP_ROSTER_PRESENCE_TREEWIDGET_MODEL_COL_SUB_REQUESTS_IDX (0)
-#define GK_XMPP_ROSTER_PRESENCE_TREEWIDGET_MODEL_COL_ONLINE_USERS_IDX (1)
-#define GK_XMPP_ROSTER_PRESENCE_TREEWIDGET_MODEL_COL_OFFLINE_USERS_IDX (2)
-#define GK_XMPP_ROSTER_PRESENCE_TREEWIDGET_MODEL_COL_TOTAL_IDX (3)
-
+//
 // Hamlib related
 //
 #define GK_HAMLIB_DEFAULT_TIMEOUT (3000)                // The default timeout value for Hamlib, measured in milliseconds.
@@ -437,13 +427,6 @@ namespace Network {
             QString url;
             QHostInfo info;
             quint16 port;
-        };
-
-        struct GkXmppPendingCallsign {
-            GkHost server;
-            QString bareJid;
-            QString nickname;
-            QXmppPresence presence;
         };
 
         struct GkXmppBlocklist {

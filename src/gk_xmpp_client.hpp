@@ -49,7 +49,6 @@
 #include <boost/exception/all.hpp>
 #include <boost/filesystem.hpp>
 #include <qxmpp/QXmppIq.h>
-#include <qxmpp/QXmppGlobal.h>
 #include <qxmpp/QXmppClient.h>
 #include <qxmpp/QXmppLogger.h>
 #include <qxmpp/QXmppVCardIq.h>
@@ -111,7 +110,6 @@ public:
     //
     // User, roster and presence details
     std::shared_ptr<QXmppRegistrationManager> getRegistrationMgr();
-    QMap<QString, QXmppPresence> getRosterMap();
     QXmppPresence statusToPresence(const Network::GkXmpp::GkOnlineStatus &status);
     bool deleteUserAccount();
     QString obtainAvatarFilePath();
@@ -130,10 +128,6 @@ public slots:
     void presenceChanged(const QString &bareJid, const QString &resource);
     void modifyPresence(const QXmppPresence::Type &pres);
     void modifyAvailableStatusType(const QXmppPresence::AvailableStatusType &stat_type);
-    void acceptSubscriptionRequest(const QString &bareJid);
-    void refuseSubscriptionRequest(const QString &bareJid);
-    void blockUser(const QString &bareJid);
-    void unblockUser(const QString &bareJid);
 
     //
     // Registration management
@@ -226,8 +220,6 @@ private:
     std::unique_ptr<QXmppPresence> m_presence;
     std::shared_ptr<QXmppRosterManager> m_rosterManager;
     QStringList rosterGroups;
-    QVector<QString> m_blockList;
-    QMap<QString, QXmppPresence> m_rosterMap;
 
     //
     // Filesystem & Directories

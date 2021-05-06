@@ -259,38 +259,82 @@
                   <rect>
                    <x>0</x>
                    <y>0</y>
-                   <width>292</width>
-                   <height>485</height>
+                   <width>290</width>
+                   <height>477</height>
                   </rect>
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_5">
                   <item>
-                   <widget class="QTreeWidget" name="treeWidget_callsigns_groups">
+                   <widget class="QTreeView" name="treeView_callsigns_groups">
                     <property name="contextMenuPolicy">
                      <enum>Qt::CustomContextMenu</enum>
-                    </property>
-                    <property name="verticalScrollBarPolicy">
-                     <enum>Qt::ScrollBarAlwaysOff</enum>
-                    </property>
-                    <property name="sortingEnabled">
-                     <bool>true</bool>
                     </property>
                     <property name="wordWrap">
                      <bool>true</bool>
                     </property>
-                    <property name="columnCount">
-                     <number>2</number>
+                    <property name="headerHidden">
+                     <bool>true</bool>
                     </property>
-                    <column>
-                     <property name="text">
-                      <string notr="true">1</string>
-                     </property>
-                    </column>
-                    <column>
-                     <property name="text">
-                      <string notr="true">2</string>
-                     </property>
-                    </column>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+            <widget class="QWidget" name="tab_pending">
+             <attribute name="title">
+              <string>Pending</string>
+             </attribute>
+             <layout class="QVBoxLayout" name="verticalLayout_18">
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item>
+               <widget class="QScrollArea" name="scrollArea_callsigns_pending">
+                <property name="frameShape">
+                 <enum>QFrame::NoFrame</enum>
+                </property>
+                <property name="frameShadow">
+                 <enum>QFrame::Plain</enum>
+                </property>
+                <property name="horizontalScrollBarPolicy">
+                 <enum>Qt::ScrollBarAlwaysOff</enum>
+                </property>
+                <property name="widgetResizable">
+                 <bool>true</bool>
+                </property>
+                <widget class="QWidget" name="scrollAreaWidgetContents_callsigns_pending">
+                 <property name="geometry">
+                  <rect>
+                   <x>0</x>
+                   <y>0</y>
+                   <width>290</width>
+                   <height>477</height>
+                  </rect>
+                 </property>
+                 <layout class="QVBoxLayout" name="verticalLayout_19">
+                  <item>
+                   <widget class="QTreeView" name="treeView_callsigns_pending">
+                    <property name="contextMenuPolicy">
+                     <enum>Qt::CustomContextMenu</enum>
+                    </property>
+                    <property name="wordWrap">
+                     <bool>true</bool>
+                    </property>
+                    <property name="headerHidden">
+                     <bool>true</bool>
+                    </property>
                    </widget>
                   </item>
                  </layout>
@@ -335,27 +379,22 @@
                   <rect>
                    <x>0</x>
                    <y>0</y>
-                   <width>292</width>
-                   <height>485</height>
+                   <width>290</width>
+                   <height>477</height>
                   </rect>
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_8">
                   <item>
-                   <widget class="QTreeWidget" name="treeWidget_callsigns_blocked">
+                   <widget class="QTreeView" name="treeView_callsigns_blocked">
                     <property name="contextMenuPolicy">
                      <enum>Qt::CustomContextMenu</enum>
-                    </property>
-                    <property name="verticalScrollBarPolicy">
-                     <enum>Qt::ScrollBarAlwaysOff</enum>
                     </property>
                     <property name="wordWrap">
                      <bool>true</bool>
                     </property>
-                    <column>
-                     <property name="text">
-                      <string notr="true">1</string>
-                     </property>
-                    </column>
+                    <property name="headerHidden">
+                     <bool>true</bool>
+                    </property>
                    </widget>
                   </item>
                  </layout>
@@ -535,8 +574,8 @@
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>200</width>
-               <height>118</height>
+               <width>296</width>
+               <height>505</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_16">

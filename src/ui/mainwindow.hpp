@@ -248,7 +248,7 @@ private slots:
     //
     // QXmpp and XMPP related
     //
-    void launchXmppRosterDlg();
+    void launchXmppRosterDlg(const bool &msgBoxDlg = true, const bool &showRosterDlg = true);
 
     //
     // SSTV and related
@@ -496,12 +496,13 @@ private:
     // Firewall and Microsoft Windows security related
     //
     GekkoFyre::System::Security::GkFirewallSettings gkFirewallSettings;
+    void mapInsertFirewallPorts();
     #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
-    void processFirewallRules(INetFwProfile *pfwProfile);
+    std::map<qint32, std::pair<GekkoFyre::Network::GkNetworkProtocol, bool>> processFirewallRules(INetFwProfile *pfwProfile, const GekkoFyre::System::Security::GkFirewallSettings &portsToEnable);
     bool addSwdSysFirewall(INetFwProfile *pfwProfile, const QString &full_app_path);
     bool addPortSysFirewall(INetFwProfile *pfwProfile, const qint32 &network_port, const IN NET_FW_IP_PROTOCOL &network_protocol);
     #elif __linux__
-    void processFirewallRules(const GekkoFyre::System::Security::GkFirewallSettings &portsToEnable);
+    boost::tribool processFirewallRules(const GekkoFyre::System::Security::GkFirewallSettings &portsToEnable);
     #endif
 
     //

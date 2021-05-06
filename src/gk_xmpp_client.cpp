@@ -519,20 +519,6 @@ std::shared_ptr<QXmppRegistrationManager> GkXmppClient::getRegistrationMgr()
 }
 
 /**
- * @brief GkXmppClient::getRosterMap
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @return
- */
-QMap<QString, QXmppPresence> GkXmppClient::getRosterMap()
-{
-    if (!m_rosterMap.isEmpty()) {
-        return m_rosterMap;
-    }
-
-    return QMap<QString, QXmppPresence>();
-}
-
-/**
  * @brief GkXmppClient::statusToPresence
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param status
@@ -770,70 +756,6 @@ void GkXmppClient::modifyAvailableStatusType(const QXmppPresence::AvailableStatu
 
     if (!isConnected()) {
         m_availStatusTypeQueue.emplace(stat_type);
-    }
-
-    return;
-}
-
-/**
- * @brief GkXmppClient::acceptSubscriptionRequest accepts a subscription request (i.e. a user request to be added to the
- * address book).
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param bareJid The username making the request in question.
- */
-void GkXmppClient::acceptSubscriptionRequest(const QString &bareJid)
-{
-    m_rosterManager->acceptSubscription(bareJid);
-    gkEventLogger->publishEvent(tr("Invite request has successfully been processed for user, \"%1\"").arg(bareJid),
-                                GkSeverity::Info, "", true, true, false, false);
-
-    return;
-}
-
-/**
- * @brief GkXmppClient::refuseSubscriptionRequest refuses a subscription request (i.e. a user request to be added to the
- * address book).
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param bareJid The username in question.
- */
-void GkXmppClient::refuseSubscriptionRequest(const QString &bareJid)
-{
-    m_rosterManager->refuseSubscription(bareJid);
-    gkEventLogger->publishEvent(tr("Invite request has successfully been refused for user, \"%1\"").arg(bareJid),
-                                GkSeverity::Info, "", true, true, false, false);
-
-    return;
-}
-
-/**
- * @brief GkXmppClient::blockUser attempts to block a user from making any requests to the client themselves.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param bareJid
- */
-void GkXmppClient::blockUser(const QString &bareJid)
-{
-    m_blockList.push_back(bareJid);
-    gkEventLogger->publishEvent(tr("User, \"%1\", has been successfully added to the blocklist.").arg(bareJid),
-                                GkSeverity::Info, "", true, true, false, false);
-
-    return;
-}
-
-/**
- * @brief GkXmppClient::unblockUser attempts to unblock a user so that they can make requests once again to the client themselves.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param bareJid
- */
-void GkXmppClient::unblockUser(const QString &bareJid)
-{
-    for (auto iter = m_blockList.begin(); iter != m_blockList.end(); ++iter) {
-        if (*iter == bareJid) {
-            m_blockList.erase(iter);
-            gkEventLogger->publishEvent(tr("User, \"%1\", has been successfully removed from the blocklist.").arg(bareJid),
-                                        GkSeverity::Info, "", true, true, false, false);
-
-            break;
-        }
     }
 
     return;
@@ -1282,12 +1204,19 @@ void GkXmppClient::handleSslGreeting()
  */
 void GkXmppClient::initRosterMgr()
 {
-    QObject::connect(m_rosterManager.get(), SIGNAL(presenceChanged(const QString &, const QString &)), this, SLOT(presenceChanged(const QString &, const QString &)), Qt::UniqueConnection);
-    QObject::connect(m_rosterManager.get(), SIGNAL(rosterReceived()), this, SLOT(handleRosterReceived()), Qt::UniqueConnection);
-    QObject::connect(m_rosterManager.get(), SIGNAL(subscriptionReceived(const QString &)), this, SLOT(notifyNewSubscription(const QString &)), Qt::UniqueConnection);
-    QObject::connect(m_rosterManager.get(), SIGNAL(itemAdded(const QString &)), this, SLOT(itemAdded(const QString &)), Qt::UniqueConnection);
-    QObject::connect(m_rosterManager.get(), SIGNAL(itemRemoved(const QString &)), this, SLOT(itemRemoved(const QString &)), Qt::UniqueConnection);
-    QObject::connect(m_rosterManager.get(), SIGNAL(itemChanged(const QString &)), this, SLOT(itemChanged(const QString &)), Qt::UniqueConnection);
+    if (isConnected()) {
+        if ((config.user().isEmpty() || config.password().isEmpty()) || m_connDetails.email.isEmpty()) {
+            // Unable to signup!
+            return;
+        } else {
+            QObject::connect(m_rosterManager.get(), SIGNAL(presenceChanged(const QString &, const QString &)), this, SLOT(presenceChanged(const QString &, const QString &)), Qt::UniqueConnection);
+            QObject::connect(m_rosterManager.get(), SIGNAL(rosterReceived()), this, SLOT(handleRosterReceived()), Qt::UniqueConnection);
+            QObject::connect(m_rosterManager.get(), SIGNAL(subscriptionReceived(const QString &)), this, SLOT(notifyNewSubscription(const QString &)), Qt::UniqueConnection);
+            QObject::connect(m_rosterManager.get(), SIGNAL(itemAdded(const QString &)), this, SLOT(itemAdded(const QString &)), Qt::UniqueConnection);
+            QObject::connect(m_rosterManager.get(), SIGNAL(itemRemoved(const QString &)), this, SLOT(itemRemoved(const QString &)), Qt::UniqueConnection);
+            QObject::connect(m_rosterManager.get(), SIGNAL(itemChanged(const QString &)), this, SLOT(itemChanged(const QString &)), Qt::UniqueConnection);
+        }
+    }
 
     return;
 }

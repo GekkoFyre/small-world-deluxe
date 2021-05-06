@@ -124,10 +124,7 @@
            <number>7</number>
           </property>
           <item>
-           <widget class="QTreeView" name="treeView_recv_msg_dlg">
-            <property name="contextMenuPolicy">
-             <enum>Qt::CustomContextMenu</enum>
-            </property>
+           <widget class="QTextBrowser" name="textBrowser_recv_msg_dialog">
             <property name="horizontalScrollBarPolicy">
              <enum>Qt::ScrollBarAlwaysOff</enum>
             </property>
@@ -280,14 +277,13 @@
   </layout>
  </widget>
  <tabstops>
+  <tabstop>tabWidget_chat_window</tabstop>
+  <tabstop>textBrowser_recv_msg_dialog</tabstop>
   <tabstop>textEdit_tx_msg_dialog</tabstop>
-  <tabstop>toolButton_view_roster</tabstop>
   <tabstop>toolButton_font</tabstop>
   <tabstop>toolButton_font_reset</tabstop>
   <tabstop>toolButton_insert</tabstop>
   <tabstop>toolButton_attach_file</tabstop>
-  <tabstop>treeView_recv_msg_dlg</tabstop>
-  <tabstop>tabWidget_chat_window</tabstop>
  </tabstops>
  <resources/>
  <connections/>

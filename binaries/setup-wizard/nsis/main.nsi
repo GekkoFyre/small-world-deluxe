@@ -262,7 +262,6 @@ SectionGroup "Small World Deluxe" SWDsection
         SetOutPath "$INSTDIR"
           File "${GK_ROOT_PATH}\cmake-build-debug\libdouble-conversion.dll"
           File "${GK_ROOT_PATH}\cmake-build-debug\libgcc_s_seh-1.dll"
-		  File "${GK_ROOT_PATH}\cmake-build-debug\libgcc_s_sjlj-1.dll"
           File "${GK_ROOT_PATH}\cmake-build-debug\libglib-2.0-0.dll"
           File "${GK_ROOT_PATH}\cmake-build-debug\libwinpthread-1.dll"
           File "${GK_ROOT_PATH}\cmake-build-debug\libbrotlicommon.dll"
@@ -271,7 +270,6 @@ SectionGroup "Small World Deluxe" SWDsection
           File "${GK_ROOT_PATH}\cmake-build-debug\libfreetype-6.dll"
           File "${GK_ROOT_PATH}\cmake-build-debug\libgraphite2.dll"
           File "${GK_ROOT_PATH}\cmake-build-debug\libharfbuzz-0.dll"
-		  File "${GK_ROOT_PATH}\cmake-build-debug\libhunspell-1.7-0.dll"
           File "${GK_ROOT_PATH}\cmake-build-debug\libpng16-16.dll"
           File "${GK_ROOT_PATH}\cmake-build-debug\libiconv-2.dll"
           File "${GK_ROOT_PATH}\cmake-build-debug\libicudt68.dll"
@@ -320,6 +318,15 @@ SectionGroup "Small World Deluxe" SWDsection
     SectionGroupEnd
 
     SectionGroup "Shared Libraries"
+      Section "Boost C++"
+        SectionIn RO
+          SetOutPath "$INSTDIR"
+            File "${GK_ROOT_PATH}\cmake-build-debug\libboost_filesystem-mt.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\libboost_locale-mt.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\libboost_system-mt.dll"
+            File "${GK_ROOT_PATH}\cmake-build-debug\libboost_thread-mt.dll"
+      SectionEnd
+
       Section "Hamlib"
         SectionIn RO
           SetOutPath "$INSTDIR"
