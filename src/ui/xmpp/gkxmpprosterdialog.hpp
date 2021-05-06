@@ -89,14 +89,13 @@ private slots:
     // VCard management
     //
     void recvClientAvatarImg(const QByteArray &avatar_pic);
-    void defaultClientAvatarPlaceholder();
-    void updateClientAvatar(const QImage &avatar_img);
+    void updateClientAvatarPlaceholder();
+    void updateClientAvatarPlaceholder(const QImage &avatar_img);
     void editNicknameLabel(const QString &value);
 
     //
     // XMPP Roster management and related
     //
-    void on_label_self_nickname_customContextMenuRequested(const QPoint &pos);
     void subscriptionRequestRecv(const QString &bareJid);
     void subscriptionRequestRetracted(const QString &bareJid);
     void on_pushButton_add_contact_cancel_clicked();
@@ -105,9 +104,6 @@ private slots:
     void on_actionRefuseInvite_triggered();
     void on_actionBlockUser_triggered();
     void on_actionUnblockUser_triggered();
-    void on_actionEdit_Nickname_triggered();
-    void on_lineEdit_edit_nickname_returnPressed();
-    void on_lineEdit_edit_nickname_inputRejected();
 
 signals:
     void updateAvailableStatusType(const QXmppPresence::AvailableStatusType &stat_type);
@@ -144,6 +140,11 @@ private:
     // QXmpp and XMPP related
     //
     GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
+
+    //
+    // Time & Date
+    //
+    QPointer<QTimer> m_clientAvatarImgUpdateTimer;
 
     //
     // VCard management

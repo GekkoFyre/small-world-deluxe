@@ -177,7 +177,7 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         m_status = GkOnlineStatus::Online;
         m_keepalive = 60;
 
-        m_presence = std::make_shared<QXmppPresence>();
+        m_presence = std::make_unique<QXmppPresence>();
 
         if (m_versionMgr) {
             m_versionMgr->setClientName(General::companyNameMin);
@@ -523,13 +523,13 @@ std::shared_ptr<QXmppRegistrationManager> GkXmppClient::getRegistrationMgr()
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return
  */
-QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign> GkXmppClient::getRosterMap()
+QMap<QString, QXmppPresence> GkXmppClient::getRosterMap()
 {
-    if (!m_rosterList.isEmpty()) {
-        return m_rosterList;
+    if (!m_rosterMap.isEmpty()) {
+        return m_rosterMap;
     }
 
-    return QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign>();
+    return QMap<QString, QXmppPresence>();
 }
 
 /**
@@ -560,41 +560,13 @@ QXmppPresence GkXmppClient::statusToPresence(const GkXmpp::GkOnlineStatus &statu
             result.setAvailableStatusType(QXmppPresence::XA);
             result.setStatusText(tr("Not Available"));
             break;
+        case GkXmpp::Offline:
         case GkXmpp::Invisible:
         case GkXmpp::NetworkError:
         default:
             result.setAvailableStatusType(QXmppPresence::Invisible);
             result.setStatusText(tr("Invisible"));
             break;
-    }
-
-    return result;
-}
-
-/**
- * @brief GkXmppClient::presenceToStatus
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param xmppPresence
- * @return
- */
-Network::GkXmpp::GkOnlineStatus GkXmppClient::presenceToStatus(const QXmppPresence::AvailableStatusType &xmppPresence)
-{
-    auto result = GkXmpp::GkOnlineStatus {};
-    switch (xmppPresence) {
-        case QXmppPresence::Online:
-            return GkXmpp::Online;
-        case QXmppPresence::Away:
-            return GkXmpp::Away;
-        case QXmppPresence::XA:
-            return GkXmpp::NotAvailable;
-        case QXmppPresence::DND:
-            return GkXmpp::DoNotDisturb;
-        case QXmppPresence::Chat:
-            return GkXmpp::Online;
-        case QXmppPresence::Invisible:
-            return GkXmpp::Invisible;
-        default:
-            return GkXmpp::NetworkError;
     }
 
     return result;
@@ -668,22 +640,11 @@ void GkXmppClient::clientConnected()
 }
 
 /**
- * @brief GkXmppClient::handleRosterReceived is emitted when the Roster IQ is received after a successful connection. That
- * is the roster entries are empty before this signal is emitted. One should use `getRosterBareJids()` and `getRosterEntry()`
- * only after this signal has been emitted.
+ * @brief GkXmppClient::handleRosterReceived
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void GkXmppClient::handleRosterReceived()
 {
-    auto rosterBareJids = m_rosterManager->getRosterBareJids();
-    for (const auto &bareJid: rosterBareJids) {
-        GkXmppCallsign callsign;
-        callsign.bareJid = bareJid;
-        callsign.presence = std::make_shared<QXmppPresence>(QXmppPresence::Type::Unsubscribed);
-        callsign.subStatus = m_rosterManager->getRosterEntry(bareJid).subscriptionType();
-        m_rosterList.push_back(callsign);
-    }
-
     return;
 }
 
@@ -775,64 +736,24 @@ void GkXmppClient::updateClientVCard(const QXmppVCardIq &vCard)
  */
 void GkXmppClient::presenceChanged(const QString &bareJid, const QString &resource)
 {
-    try {
-        for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
-            if (iter->bareJid == bareJid) {
-                iter->presence = std::make_shared<QXmppPresence>(m_rosterManager->getPresence(bareJid, resource));
-                gkEventLogger->publishEvent(tr("Presence changed for user, \"%1\", towards: %2")
-                                                    .arg(bareJid).arg(resource));
-                break;
-            }
-        }
-    } catch (const std::exception &e) {
-        std::throw_with_nested(std::runtime_error(e.what()));
-    }
+    gkEventLogger->publishEvent(tr("Presence changed for %1 towards %2.")
+    .arg(bareJid).arg(resource));
 
     return;
 }
 
 /**
- * @brief GkXmppClient::modifyPresence sets the presence for the client themselves.
+ * @brief GkXmppClient::modifyPresence
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param pres The presence to be set towards.
+ * @param pres
  */
 void GkXmppClient::modifyPresence(const QXmppPresence::Type &pres)
 {
-    try {
-        for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
-            if (iter->bareJid == m_connDetails.jid) {
-                m_presence->setType(pres);
-                iter->presence.reset();
-                iter->presence = std::make_shared<QXmppPresence>(pres);
-
-                gkEventLogger->publishEvent(tr("You have successfully changed your presence status towards: %1"), GkSeverity::Info, "",
-                                            true, true, false, false);
-            }
-        }
-    } catch (const std::exception &e) {
-        std::throw_with_nested(std::runtime_error(e.what()));
-    }
+    m_presence->setType(pres);
+    gkEventLogger->publishEvent(tr("User has changed their XMPP status towards %1."), GkSeverity::Info, "",
+                                true, true, false, false); // TODO: Make this complete!
 
     return;
-}
-
-/**
- * @brief GkXmppClient::getPresence
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param bareJid
- * @return
- */
-std::shared_ptr<QXmppPresence> GkXmppClient::getPresence(const QString &bareJid)
-{
-    if (!bareJid.isEmpty() && !m_rosterList.isEmpty()) {
-        for (const auto &entry: m_rosterList) {
-            if (bareJid == entry.bareJid) {
-                return entry.presence;
-            }
-        }
-    }
-
-    return std::shared_ptr<QXmppPresence>();
 }
 
 /**
@@ -1308,7 +1229,7 @@ void GkXmppClient::createConnectionToServer(const QString &domain_url, const qui
             //
             // Enable only if we are not attempting an in-band user registration...
             QObject::connect(this, &QXmppClient::presenceReceived, this, [=](const QXmppPresence &presence) {
-                gkEventLogger->publishEvent(presence.statusText(), GkSeverity::Info, "", false, true, false, false);
+                gkEventLogger->publishEvent(presence.statusText(), GkSeverity::Info, "", true, true, false, false);
             });
         }
 
@@ -1395,11 +1316,6 @@ void GkXmppClient::notifyNewSubscription(const QString &bareJid)
 {
     gkEventLogger->publishEvent(tr("User, \"%1\", wishes to add you to their roster!").arg(getUsername(bareJid)),
                                 GkSeverity::Info, "", true, true, false, false);
-    GkXmppCallsign callsign;
-    callsign.bareJid = bareJid;
-    callsign.presence = std::make_shared<QXmppPresence>(QXmppPresence::Type::Unsubscribed);
-    callsign.subStatus = m_rosterManager->getRosterEntry(bareJid).subscriptionType();
-    m_rosterList.push_back(callsign);
     emit sendSubscriptionRequest(bareJid);
 
     return;

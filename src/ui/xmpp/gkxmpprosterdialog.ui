@@ -68,7 +68,7 @@
             <string>Your currently set avatar.</string>
            </property>
            <property name="text">
-            <string/>
+            <string>&lt;avatar/&gt;</string>
            </property>
           </widget>
          </item>
@@ -127,9 +127,6 @@
              </property>
              <item>
               <widget class="QLabel" name="label_self_nickname">
-               <property name="contextMenuPolicy">
-                <enum>Qt::CustomContextMenu</enum>
-               </property>
                <property name="toolTip">
                 <string>Double-click to change your nickname.</string>
                </property>
@@ -166,7 +163,14 @@
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="lineEdit_edit_nickname"/>
+          <widget class="QComboBox" name="comboBox_self_custom_status">
+           <property name="editable">
+            <bool>true</bool>
+           </property>
+           <property name="maxCount">
+            <number>24</number>
+           </property>
+          </widget>
          </item>
         </layout>
        </widget>
@@ -736,14 +740,6 @@
    </property>
    <property name="toolTip">
     <string>Reverse the block you placed on this user, thereby allowing them to potentially message and subscribe to you once again.</string>
-   </property>
-  </action>
-  <action name="actionEdit_Nickname">
-   <property name="text">
-    <string>Edit Nickname</string>
-   </property>
-   <property name="toolTip">
-    <string>Edit your nickname and possibly change it to something else.</string>
    </property>
   </action>
  </widget>

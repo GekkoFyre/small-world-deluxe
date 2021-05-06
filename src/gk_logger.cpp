@@ -81,12 +81,10 @@ namespace sys = boost::system;
  * @param viewModel
  * @param parent
  */
-GkEventLogger::GkEventLogger(const QPointer<QSystemTrayIcon> &sysTrayIcon, const QPointer<GekkoFyre::StringFuncs> &stringFuncs,
-                             QPointer<GekkoFyre::FileIo> fileIo, QObject *parent)
+GkEventLogger::GkEventLogger(const QPointer<GekkoFyre::StringFuncs> &stringFuncs, QPointer<GekkoFyre::FileIo> fileIo, QObject *parent)
 {
     try {
         setParent(parent);
-        m_trayIcon = std::move(sysTrayIcon);
         gkStringFuncs = std::move(stringFuncs);
 
         //
@@ -241,7 +239,7 @@ void GkEventLogger::recvXmppLog(QXmppLogger::MessageType msg_type, QString msg)
             break;
     }
 
-    publishEvent(msg, severity, "", false, false, false, false);
+    publishEvent(msg, severity, "", true, false, true, false);
     return;
 }
 
@@ -282,8 +280,6 @@ void GkEventLogger::systemNotification(const QString &title, const GkEventLoggin
             toastTempl->setTextField(event_msg.mesg.message.toStdWString(), WinToastTemplate::SecondLine);
             #elif __linux__
             system(QString("notify-send '%1' \"%2\"").arg(title).arg(event_msg.mesg.message).toStdString().c_str());
-            #else
-            m_trayIcon->showMessage(title, event_msg.mesg.message); // The fallback option!
             #endif
             return;
         }

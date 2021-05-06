@@ -410,7 +410,7 @@ void DialogSettings::on_pushButton_submit_config_clicked()
                         chosen_input_audio_dev.user_config_succ = true;
 
                         gkEventLogger->publishEvent(tr("Now using the input audio device, \"%1\".")
-                                                            .arg(input_dev.first.deviceName()), GkSeverity::Info, "", false, true, false, false);
+                                                            .arg(input_dev.first.deviceName()), GkSeverity::Info, "", true, true, false, false);
                         break;
                     }
                 }
@@ -431,7 +431,7 @@ void DialogSettings::on_pushButton_submit_config_clicked()
                         chosen_output_audio_dev.user_config_succ = true;
 
                         gkEventLogger->publishEvent(tr("Now using the output audio device, \"%1\".")
-                                                            .arg(output_dev.first.deviceName()), GkSeverity::Info, "", false, true, false, false);
+                                                            .arg(output_dev.first.deviceName()), GkSeverity::Info, "", true, true, false, false);
                         break;
                     }
                 }

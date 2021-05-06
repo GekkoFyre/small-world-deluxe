@@ -253,9 +253,9 @@ HRESULT GkSystem::WindowsFirewallIsOn(INetFwProfile *fwProfile, WINBOOL *fwOn)
     // Check to see if the firewall is on.
     if (fwEnabled != VARIANT_FALSE) {
         *fwOn = TRUE;
-        emit publishEventMsg(tr("The firewall is on."), GkSeverity::Debug, "", false, true, false, false);
+        emit publishEventMsg(tr("The firewall is on."), GkSeverity::Debug, "", true, true, false, false);
     } else {
-        emit publishEventMsg(tr("The firewall is off."), GkSeverity::Debug, "", false, true, false, false);
+        emit publishEventMsg(tr("The firewall is off."), GkSeverity::Debug, "", true, true, false, false);
     }
 
     error:
@@ -319,14 +319,14 @@ HRESULT GkSystem::WindowsFirewallAppIsEnabled(INetFwProfile *fwProfile, const wc
         if (fwEnabled != VARIANT_FALSE) {
             // The authorized application is enabled.
             *fwAppEnabled = TRUE;
-            emit publishEventMsg(tr("Authorized application %1 is enabled in the firewall.").arg(QString::fromWCharArray(fwProcessImageFileName)), GkSeverity::Debug, "", false, true, false, false);
+            emit publishEventMsg(tr("Authorized application %1 is enabled in the firewall.").arg(QString::fromWCharArray(fwProcessImageFileName)), GkSeverity::Debug, "", true, true, false, false);
         } else {
-            emit publishEventMsg(tr("Authorized application %1 is disabled in the firewall.").arg(QString::fromWCharArray(fwProcessImageFileName)), GkSeverity::Debug, "", false, true, false, false);
+            emit publishEventMsg(tr("Authorized application %1 is disabled in the firewall.").arg(QString::fromWCharArray(fwProcessImageFileName)), GkSeverity::Debug, "", true, true, false, false);
         }
     } else {
         // The authorized application was not in the collection.
         hr = S_OK;
-        emit publishEventMsg(tr("Authorized application %1 is disabled in the firewall.").arg(QString::fromWCharArray(fwProcessImageFileName)), GkSeverity::Debug, "", false, true, false, false);
+        emit publishEventMsg(tr("Authorized application %1 is disabled in the firewall.").arg(QString::fromWCharArray(fwProcessImageFileName)), GkSeverity::Debug, "", true, true, false, false);
     }
 
     error:
