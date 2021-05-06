@@ -104,3 +104,8 @@ void GkXmppMessageDialog::on_toolButton_view_roster_clicked()
 {
     return;
 }
+
+void GkXmppMessageDialog::on_treeView_recv_msg_dlg_customContextMenuRequested(const QPoint &pos)
+{
+    return;
+}

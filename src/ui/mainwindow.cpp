@@ -395,7 +395,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 ui->tableView_maingui_logs->horizontalHeader()->setSectionResizeMode(GK_EVENTLOG_TABLEVIEW_MODEL_MESSAGE_IDX, QHeaderView::Stretch);
                 ui->tableView_maingui_logs->show();
 
-                gkEventLogger = new GkEventLogger(gkStringFuncs, gkFileIo, this);
+                gkEventLogger = new GkEventLogger(m_trayIcon, gkStringFuncs, gkFileIo, this);
                 QObject::connect(gkEventLogger, SIGNAL(sendEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &)),
                                  gkEventLoggerModel, SLOT(insertData(const GekkoFyre::System::Events::Logging::GkEventLogging &)));
                 QObject::connect(gkEventLogger, SIGNAL(removeEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &)),
@@ -553,7 +553,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                 pref_input_device = input_dev.second;
                                 gkAudioInput = new QAudioInput(input_dev.first, user_input_settings, &gkAudioInputThread);
                                 gkEventLogger->publishEvent(tr("Now using the input audio device, \"%1\".").arg(pref_input_device.audio_device_info.deviceName()),
-                                                            GkSeverity::Info, "", true, true, false, false);
+                                                            GkSeverity::Info, "", false, true, false, false);
                             } else {
                                 // Given audio parameters are NOT supported, therefore use defaults for now and let the user know!
                                 defaultInputAudioDev(input_dev);
@@ -570,7 +570,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                             //
                             defaultInputAudioDev(input_dev);
                             gkEventLogger->publishEvent(tr("Now using the input audio device, \"%1\".").arg(pref_input_device.audio_device_info.deviceName()),
-                                                        GkSeverity::Info, "", true, true, false, false);
+                                                        GkSeverity::Info, "", false, true, false, false);
                         }
                     }
                 }
@@ -645,7 +645,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                 pref_output_device = output_dev.second;
                                 gkAudioOutput = new QAudioOutput(output_dev.first, user_output_settings, &gkAudioOutputThread);
                                 gkEventLogger->publishEvent(tr("Now using the output audio device, \"%1\".").arg(pref_output_device.audio_device_info.deviceName()),
-                                                            GkSeverity::Info, "", true, true, false, false);
+                                                            GkSeverity::Info, "", false, true, false, false);
                             } else {
                                 // Given audio parameters are NOT supported, therefore use defaults for now and let the user know!
                                 defaultOutputAudioDev(output_dev);
@@ -662,7 +662,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                             //
                             defaultOutputAudioDev(output_dev);
                             gkEventLogger->publishEvent(tr("Now using the output audio device, \"%1\".").arg(pref_output_device.audio_device_info.deviceName()),
-                                                        GkSeverity::Info, "", true, true, false, false);
+                                                        GkSeverity::Info, "", false, true, false, false);
                         }
                     }
                 }
@@ -895,8 +895,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             throw std::runtime_error(tr("An issue was encountered while communicating with your system's firewall! Error:\n\n%1").arg(errMsg).toStdString());
         }
 
-        mapInsertFirewallPorts();
-        processFirewallRules(pfwProfile, gkFirewallSettings);
+        processFirewallRules(pfwProfile);
         #endif
 
         //
@@ -947,7 +946,7 @@ MainWindow::~MainWindow()
  */
 void MainWindow::on_actionXMPP_triggered()
 {
-    launchXmppRosterDlg(true, true);
+    launchXmppRosterDlg();
     return;
 }
 
@@ -1707,28 +1706,6 @@ bool MainWindow::fileOverloadWarning(const int &file_count, const int &max_num_f
     return false;
 }
 
-/**
- * @brief MainWindow::mapInsertFirewallPorts fills the structure, `System::Security::GkFirewallSettings`, with the relevant
- * information needed to process functions such as, MainWindow::processFirewallRules().
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @see MainWindow::processFirewallRules().
- */
-void MainWindow::mapInsertFirewallPorts()
-{
-    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_HTTP_80, std::make_pair(GkNetworkProtocol::TCP, false)));
-    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_HTTPS_443, std::make_pair(GkNetworkProtocol::TCP, false)));
-    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_CLIENT_5222, std::make_pair(GkNetworkProtocol::TCP, false)));
-    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_CLIENT_SSL_5223, std::make_pair(GkNetworkProtocol::TCP, false)));
-    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_SERVER_5269, std::make_pair(GkNetworkProtocol::TCP, false)));
-    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_HTTP_BINDING_7070, std::make_pair(GkNetworkProtocol::TCP, false)));
-    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_HTTPS_BINDING_7443, std::make_pair(GkNetworkProtocol::TCP, false)));
-    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_CONNECT_MGR_5262, std::make_pair(GkNetworkProtocol::TCP, false)));
-    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_CONNECT_MGR_SSL_5263, std::make_pair(GkNetworkProtocol::TCP, false)));
-    gkFirewallSettings.network_ports.insert(std::make_pair(GK_SECURITY_FIREWALL_TCP_PORT_XMPP_FILE_XFER_PROXY_7777, std::make_pair(GkNetworkProtocol::TCP, false)));
-
-    return;
-}
-
 #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
 #elif __linux__
 /**
@@ -1738,10 +1715,8 @@ void MainWindow::mapInsertFirewallPorts()
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
   * @param portsToEnable A vector of ports, from 0-65536 (TCP and/or UDP) that are required to be enabled for Small World
  * Deluxe to operate both properly and fully.
- * @return Whether all the operations and/or just target ones were performant to a success or not, or even otherwise to
- * an unknown return value.
  */
-boost::tribool MainWindow::processFirewallRules(const GekkoFyre::System::Security::GkFirewallSettings &portsToEnable)
+void MainWindow::processFirewallRules(const GekkoFyre::System::Security::GkFirewallSettings &portsToEnable)
 {
     Q_UNUSED(portsToEnable);
     QString current_path = QDir::currentPath();
@@ -1750,7 +1725,7 @@ boost::tribool MainWindow::processFirewallRules(const GekkoFyre::System::Securit
     exe_name = QString(QString::fromStdString(General::executableName)); // No file extension attributor is needed for Linux distros!
     complete_path = current_path + "/" + exe_name;
 
-    return boost::tribool();
+    return;
 }
 #else
 #error "The target operating system is not supported yet!"
@@ -1762,14 +1737,10 @@ boost::tribool MainWindow::processFirewallRules(const GekkoFyre::System::Securit
  * at its maximum utility towards the end-user, regarding the default firewall that has come with the target operating system,
  * such as the built-in firewall provided with recent Microsoft Windows operating systems.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param pfwProfile The pointer to the main, default firewall within Microft Windows.
- * @param portsToEnable A vector of ports, from 0-65536 (TCP and/or UDP) that are required to be enabled for Small World
- * Deluxe to operate both properly and fully.
- * @return A modified list of the original std::map of network ports, protocols, and other parameters as according to the
- * new firewall rules that should've been implemented (exceptions would've been thrown otherwise).
+ * @param pfwProfile The pointer to the main, default firewall within Microsoft Windows.
  * @see MainWindow::addSwdSysFirewall(), MainWindow::addPortSysFirewall()
  */
-std::map<qint32, std::pair<Network::GkNetworkProtocol, bool>> MainWindow::processFirewallRules(INetFwProfile *pfwProfile, const GekkoFyre::System::Security::GkFirewallSettings &portsToEnable)
+void MainWindow::processFirewallRules(INetFwProfile *pfwProfile)
 {
     try {
         HRESULT hr = NOERROR;
@@ -1796,72 +1767,17 @@ std::map<qint32, std::pair<Network::GkNetworkProtocol, bool>> MainWindow::proces
                 throw std::runtime_error(tr("An issue was encountered while adding, \"%1\", to the system firewall! Error:\n\n%1").arg(errMsg).toStdString());
             }
 
-            if (isSwdEnabled == FALSE) {
-                QMessageBox msgBoxFirewall;
-                msgBoxFirewall.setParent(nullptr);
-                msgBoxFirewall.setWindowTitle(tr("Add to firewall?"));
-                msgBoxFirewall.setText(tr("In order for %1 to work properly, the application must add some rules to your system's firewall. "
-                                          "Do you give permission for this?").arg(QString::fromStdString(General::productName)));
-                msgBoxFirewall.setStandardButtons(QMessageBox::Apply | QMessageBox::Close | QMessageBox::No);
-                msgBoxFirewall.setDefaultButton(QMessageBox::Apply);
-                msgBoxFirewall.setIcon(QMessageBox::Question);
-                int ret = msgBoxFirewall.exec();
-
-                switch (ret) {
-                    case QMessageBox::Apply:
-                    {
-                        //
-                        // The end-user has approved the modification of firewall rules for Small World Deluxe!
-                        // Add the main executable for Small World Deluxe to the Microsoft Windows firewall!
-                        addSwdSysFirewall(pfwProfile, complete_path);
-                        std::map<qint32, std::pair<Network::GkNetworkProtocol, bool>> modified_ports;
-                        if (!portsToEnable.network_ports.empty()) {
-                            for (auto &port: portsToEnable.network_ports) {
-                                if (!port.second.second) {
-                                    BOOL isPortEnabled = NOERROR;
-                                    IN NET_FW_IP_PROTOCOL network_protocol;
-                                    switch (port.second.first) {
-                                        case Network::GkNetworkProtocol::TCP:
-                                            network_protocol = NET_FW_IP_PROTOCOL_TCP;
-                                            break;
-                                        case Network::GkNetworkProtocol::UDP:
-                                            network_protocol = NET_FW_IP_PROTOCOL_UDP;
-                                            break;
-                                        default:
-                                            throw std::invalid_argument(tr("Invalid argument provided while processing firewall rules for operating system!").toStdString());
-                                    }
-
-                                    if (addPortSysFirewall(pfwProfile, port.first, network_protocol)) {
-                                        modified_ports.insert(std::make_pair(port.first, std::make_pair(port.second.first, true)));
-                                        continue;
-                                    }
-
-                                    modified_ports.insert(std::make_pair(port.first, std::make_pair(port.second.first, false)));
-                                }
-                            }
-                        }
-                    }
-
-                        return std::map<qint32, std::pair<Network::GkNetworkProtocol, bool>>();
-                    case QMessageBox::Close:
-                        //
-                        // The end-user DID NOT APPROVE the modification of firewall rules for Small World Deluxe!
-                        QApplication::exit(EXIT_FAILURE);
-                        return std::map<qint32, std::pair<Network::GkNetworkProtocol, bool>>();
-                    case QMessageBox::No:
-                        //
-                        // The end-user DID NOT APPROVE the modification of firewall rules for Small World Deluxe!
-                        break;
-                    default:
-                        return std::map<qint32, std::pair<Network::GkNetworkProtocol, bool>>();
-                }
+            if (isSwdEnabled == FALSE) { // The firewall policy for Small World Deluxe has yet to be added!
+                addSwdSysFirewall(pfwProfile, complete_path);
             }
         }
+
+        return;
     } catch (const std::exception &e) {
         std::throw_with_nested(e.what());
     }
 
-    return std::map<qint32, std::pair<Network::GkNetworkProtocol, bool>>();
+    return;
 }
 #endif
 
@@ -1871,7 +1787,7 @@ std::map<qint32, std::pair<Network::GkNetworkProtocol, bool>> MainWindow::proces
  * sub-executables towards the firewall that comes by default with some operating systems, such as the more recent
  * versions of Microsoft Windows.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param pfwProfile The pointer to the main, default firewall within Microft Windows.
+ * @param pfwProfile The pointer to the main, default firewall within Microsoft Windows.
  * @param full_app_path The full, file-system path to where the main executable for Small World Deluxe is located.
  * @return Whether the target operations were a success or failure.
  * @see MainWindow::processFirewallRules()
@@ -1900,7 +1816,7 @@ bool MainWindow::addSwdSysFirewall(INetFwProfile *pfwProfile, const QString &ful
  * and/or UDP is preferred towards the firewall that comes by default with some operating systems, such as the more
  * recent versions of Microsoft Windows.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param pfwProfile The pointer to the main, default firewall within Microft Windows.
+ * @param pfwProfile The pointer to the main, default firewall within Microsoft Windows.
  * @param network_port The network-related port in question to add to the firewall.
  * @param network_protocol If TCP and/or UDP is preferred, or even any.
  * @return Returns true if the target operations were a success and false primarily if the port already exists in the
@@ -2242,7 +2158,7 @@ void MainWindow::readXmppSettings()
         gkConnDetails.server.settings_client.uri_lookup_method = GkUriLookupMethod::QtDnsSrv;
     }
 
-    gkConnDetails.status = GkOnlineStatus::Offline;
+    gkConnDetails.status = GkOnlineStatus::NetworkError;
     gkConnDetails.password = gkDb->read_xmpp_settings(GkXmppCfg::XmppPassword);;
     gkConnDetails.nickname = gkDb->read_xmpp_settings(GkXmppCfg::XmppNickname);;
     gkConnDetails.email = gkDb->read_xmpp_settings(GkXmppCfg::XmppEmailAddr);;
@@ -2299,36 +2215,10 @@ void MainWindow::readHunspellSettings()
  * @brief MainWindow::launchXmppRosterDlg launches the Roster Dialog for the XMPP side of Small World Deluxe, where end-users
  * may interact with others or even signup to the given, configured server if it's their first time connecting.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param msgBoxDlg Whether to display the message dialog box or not.
- * @param showRosterDlg Whether to show the roster dialog after making a successful connection or not.
  */
-void MainWindow::launchXmppRosterDlg(const bool &msgBoxDlg, const bool &showRosterDlg)
+void MainWindow::launchXmppRosterDlg()
 {
-    if (!m_xmppClient->isConnected() || m_xmppClient->getNetworkState() != GkNetworkState::Connecting) { // An active connection has yet to be made!
-        if (msgBoxDlg) { // Whether we should show the message box dialog or not!
-            QMessageBox msgBox;
-            msgBox.setParent(nullptr);
-            msgBox.setWindowTitle(tr("Initializing..."));
-            msgBox.setText(tr("Do you wish to create a connection to the XMPP server, \"%1\"?").arg(gkConnDetails.server.url));
-            msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
-            msgBox.setDefaultButton(QMessageBox::Ok);
-            msgBox.setIcon(QMessageBox::Icon::Information);
-            qint32 ret = msgBox.exec();
-            switch (ret) {
-                case QMessageBox::Ok:
-                    createXmppConnection();
-                    break;
-                case QMessageBox::Cancel:
-                    return;
-                default:
-                    return;
-            }
-        } else {
-            createXmppConnection();
-        }
-    }
-
-    if (!gkXmppRosterDlg->isVisible() && showRosterDlg) { // The dialog window has not been launched yet, and whether we should show it or not!
+    if (!gkXmppRosterDlg->isVisible()) { // The dialog window has not been launched yet, and whether we should show it or not!
         gkXmppRosterDlg->setWindowFlags(Qt::Window);
         gkXmppRosterDlg->show();
     }
@@ -3331,7 +3221,7 @@ void MainWindow::on_actionCW_toggled(bool arg1)
 
 void MainWindow::on_actionView_Roster_triggered()
 {
-    launchXmppRosterDlg(true, true);
+    launchXmppRosterDlg();
     return;
 }
 
@@ -3342,6 +3232,8 @@ void MainWindow::on_actionSign_in_triggered()
     }
 
     createXmppConnection();
+    launchXmppRosterDlg();
+
     return;
 }
 
