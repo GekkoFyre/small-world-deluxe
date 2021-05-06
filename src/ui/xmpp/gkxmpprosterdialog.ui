@@ -68,7 +68,7 @@
             <string>Your currently set avatar.</string>
            </property>
            <property name="text">
-            <string>&lt;avatar/&gt;</string>
+            <string/>
            </property>
           </widget>
          </item>
@@ -127,6 +127,9 @@
              </property>
              <item>
               <widget class="QLabel" name="label_self_nickname">
+               <property name="contextMenuPolicy">
+                <enum>Qt::CustomContextMenu</enum>
+               </property>
                <property name="toolTip">
                 <string>Double-click to change your nickname.</string>
                </property>
@@ -163,14 +166,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="comboBox_self_custom_status">
-           <property name="editable">
-            <bool>true</bool>
-           </property>
-           <property name="maxCount">
-            <number>24</number>
-           </property>
-          </widget>
+          <widget class="QLineEdit" name="lineEdit_edit_nickname"/>
          </item>
         </layout>
        </widget>
@@ -259,82 +255,38 @@
                   <rect>
                    <x>0</x>
                    <y>0</y>
-                   <width>290</width>
-                   <height>477</height>
+                   <width>292</width>
+                   <height>485</height>
                   </rect>
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_5">
                   <item>
-                   <widget class="QTreeView" name="treeView_callsigns_groups">
+                   <widget class="QTreeWidget" name="treeWidget_callsigns_groups">
                     <property name="contextMenuPolicy">
                      <enum>Qt::CustomContextMenu</enum>
+                    </property>
+                    <property name="verticalScrollBarPolicy">
+                     <enum>Qt::ScrollBarAlwaysOff</enum>
+                    </property>
+                    <property name="sortingEnabled">
+                     <bool>true</bool>
                     </property>
                     <property name="wordWrap">
                      <bool>true</bool>
                     </property>
-                    <property name="headerHidden">
-                     <bool>true</bool>
+                    <property name="columnCount">
+                     <number>2</number>
                     </property>
-                   </widget>
-                  </item>
-                 </layout>
-                </widget>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-            <widget class="QWidget" name="tab_pending">
-             <attribute name="title">
-              <string>Pending</string>
-             </attribute>
-             <layout class="QVBoxLayout" name="verticalLayout_18">
-              <property name="leftMargin">
-               <number>0</number>
-              </property>
-              <property name="topMargin">
-               <number>0</number>
-              </property>
-              <property name="rightMargin">
-               <number>0</number>
-              </property>
-              <property name="bottomMargin">
-               <number>0</number>
-              </property>
-              <item>
-               <widget class="QScrollArea" name="scrollArea_callsigns_pending">
-                <property name="frameShape">
-                 <enum>QFrame::NoFrame</enum>
-                </property>
-                <property name="frameShadow">
-                 <enum>QFrame::Plain</enum>
-                </property>
-                <property name="horizontalScrollBarPolicy">
-                 <enum>Qt::ScrollBarAlwaysOff</enum>
-                </property>
-                <property name="widgetResizable">
-                 <bool>true</bool>
-                </property>
-                <widget class="QWidget" name="scrollAreaWidgetContents_callsigns_pending">
-                 <property name="geometry">
-                  <rect>
-                   <x>0</x>
-                   <y>0</y>
-                   <width>290</width>
-                   <height>477</height>
-                  </rect>
-                 </property>
-                 <layout class="QVBoxLayout" name="verticalLayout_19">
-                  <item>
-                   <widget class="QTreeView" name="treeView_callsigns_pending">
-                    <property name="contextMenuPolicy">
-                     <enum>Qt::CustomContextMenu</enum>
-                    </property>
-                    <property name="wordWrap">
-                     <bool>true</bool>
-                    </property>
-                    <property name="headerHidden">
-                     <bool>true</bool>
-                    </property>
+                    <column>
+                     <property name="text">
+                      <string notr="true">1</string>
+                     </property>
+                    </column>
+                    <column>
+                     <property name="text">
+                      <string notr="true">2</string>
+                     </property>
+                    </column>
                    </widget>
                   </item>
                  </layout>
@@ -379,22 +331,27 @@
                   <rect>
                    <x>0</x>
                    <y>0</y>
-                   <width>290</width>
-                   <height>477</height>
+                   <width>292</width>
+                   <height>485</height>
                   </rect>
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_8">
                   <item>
-                   <widget class="QTreeView" name="treeView_callsigns_blocked">
+                   <widget class="QTreeWidget" name="treeWidget_callsigns_blocked">
                     <property name="contextMenuPolicy">
                      <enum>Qt::CustomContextMenu</enum>
+                    </property>
+                    <property name="verticalScrollBarPolicy">
+                     <enum>Qt::ScrollBarAlwaysOff</enum>
                     </property>
                     <property name="wordWrap">
                      <bool>true</bool>
                     </property>
-                    <property name="headerHidden">
-                     <bool>true</bool>
-                    </property>
+                    <column>
+                     <property name="text">
+                      <string notr="true">1</string>
+                     </property>
+                    </column>
                    </widget>
                   </item>
                  </layout>
@@ -574,8 +531,8 @@
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>296</width>
-               <height>505</height>
+               <width>200</width>
+               <height>118</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_16">
@@ -779,6 +736,14 @@
    </property>
    <property name="toolTip">
     <string>Reverse the block you placed on this user, thereby allowing them to potentially message and subscribe to you once again.</string>
+   </property>
+  </action>
+  <action name="actionEdit_Nickname">
+   <property name="text">
+    <string>Edit Nickname</string>
+   </property>
+   <property name="toolTip">
+    <string>Edit your nickname and possibly change it to something else.</string>
    </property>
   </action>
  </widget>

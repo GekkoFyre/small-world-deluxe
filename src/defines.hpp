@@ -49,6 +49,9 @@
 #include <boost/logic/tribool.hpp>
 #include <boost/filesystem.hpp>
 #include <qwt/qwt_interval.h>
+#include <qxmpp/QXmppGlobal.h>
+#include <qxmpp/QXmppPresence.h>
+#include <qxmpp/QXmppRosterIq.h>
 #include <map>
 #include <list>
 #include <vector>
@@ -264,11 +267,19 @@ namespace GekkoFyre {
 //
 // QTreeView Models
 //
-#define GK_XMPP_ROSTER_TREEVIEW_MODEL_PRESENCE_IDX (0)
-#define GK_XMPP_ROSTER_TREEVIEW_MODEL_NICKNAME_IDX (1)
-#define GK_XMPP_ROSTER_TREEVIEW_MODEL_TOTAL_IDX (2)
+#define GK_XMPP_ROSTER_TREEWIDGET_MODEL_PRESENCE_IDX (0)
+#define GK_XMPP_ROSTER_TREEWIDGET_MODEL_NICKNAME_IDX (1)
+#define GK_XMPP_ROSTER_TREEWIDGET_MODEL_TOTAL_IDX (2)
 
-//
+#define GK_XMPP_ROSTER_BLOCKED_TREEWIDGET_MODEL_NICKNAME_IDX (0)
+#define GK_XMPP_ROSTER_BLOCKED_TREEWIDGET_MODEL_REASON_IDX (1)
+#define GK_XMPP_ROSTER_BLOCKED_TREEWIDGET_MODEL_TOTAL_IDX (2)
+
+#define GK_XMPP_ROSTER_PRESENCE_TREEWIDGET_MODEL_COL_SUB_REQUESTS_IDX (0)
+#define GK_XMPP_ROSTER_PRESENCE_TREEWIDGET_MODEL_COL_ONLINE_USERS_IDX (1)
+#define GK_XMPP_ROSTER_PRESENCE_TREEWIDGET_MODEL_COL_OFFLINE_USERS_IDX (2)
+#define GK_XMPP_ROSTER_PRESENCE_TREEWIDGET_MODEL_COL_TOTAL_IDX (3)
+
 // Hamlib related
 //
 #define GK_HAMLIB_DEFAULT_TIMEOUT (3000)                // The default timeout value for Hamlib, measured in milliseconds.
@@ -388,7 +399,6 @@ namespace Network {
 
         enum GkOnlineStatus {                               // The online availability of the user in question.
             Online,
-            Offline,
             Away,
             DoNotDisturb,
             NotAvailable,
@@ -429,6 +439,14 @@ namespace Network {
             quint16 port;
         };
 
+        struct GkXmppCallsign {
+            GkHost server;
+            QString bareJid;
+            QString nickname;
+            std::shared_ptr<QXmppPresence> presence;
+            QXmppRosterIq::Item::SubscriptionType subStatus;
+        };
+
         struct GkXmppBlocklist {
             GkHost server;
             QString jid;
@@ -444,6 +462,8 @@ namespace Network {
             QString username;                               // The username, which is the JID without the server URL or resource attached.
             QString password;                               // The password which is needed for logging-in successfully to the XMPP server.
             QString nickname;                               // The desired nickname of the user, as it appears to others on the XMPP server network.
+            QString firstName;                              // The first name of the user, if provided.
+            QString lastName;                               // The last name of the user, if provided.
             QString email;                                  // The email address, if any, that's associated with this end-user.
         };
     }

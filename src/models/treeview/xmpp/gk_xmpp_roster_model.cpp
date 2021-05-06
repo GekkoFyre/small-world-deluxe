@@ -40,10 +40,7 @@
  ****************************************************************************************************/
 
 #include "src/models/treeview/xmpp/gk_xmpp_roster_model.hpp"
-#include <utility>
-#include <QVector>
 #include <QApplication>
-#include <QItemSelectionModel>
 
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
@@ -65,7 +62,6 @@ using namespace Security;
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param data
  * @param parent
- * @note Editable Tree Model Example <https://doc.qt.io/qt-5/qtwidgets-itemviews-editabletreemodel-example.html>.
  */
 GkXmppRosterTreeViewItem::GkXmppRosterTreeViewItem(const QVector<QVariant> &data, GkXmppRosterTreeViewItem *parent) : itemData(data), parentItem(parent)
 {
@@ -158,7 +154,19 @@ bool GkXmppRosterTreeViewItem::removeChildren(qint32 position, qint32 count)
 
 bool GkXmppRosterTreeViewItem::removeColumns(qint32 position, qint32 columns)
 {
-    return false;
+    if (position < 0 || position + columns > itemData.size()) {
+        return false;
+    }
+
+    for (qint32 column = 0; column < columns; ++column) {
+        itemData.remove(position);
+    }
+
+    for (GkXmppRosterTreeViewItem *child : qAsConst(childItems)) {
+        child->removeColumns(position, columns);
+    }
+
+    return true;
 }
 
 qint32 GkXmppRosterTreeViewItem::childNumber() const
@@ -170,11 +178,13 @@ qint32 GkXmppRosterTreeViewItem::childNumber() const
     return 0;
 }
 
-bool GkXmppRosterTreeViewItem::setData(const QVariant &nickname, const QVariant &presence)
+bool GkXmppRosterTreeViewItem::setData(qint32 column, const QVariant &value)
 {
-    itemData[GK_XMPP_ROSTER_TREEVIEW_MODEL_PRESENCE_IDX] = presence;
-    itemData[GK_XMPP_ROSTER_TREEVIEW_MODEL_NICKNAME_IDX] = nickname;
+    if (column < 0 || column >= itemData.size()) {
+        return false;
+    }
 
+    itemData[column] = value;
     return true;
 }
 
@@ -184,16 +194,21 @@ bool GkXmppRosterTreeViewItem::setData(const QVariant &nickname, const QVariant 
  * @param headers
  * @param data
  * @param parent
- * @note Editable Tree Model Example <https://doc.qt.io/qt-5/qtwidgets-itemviews-editabletreemodel-example.html>.
  */
-GkXmppRosterTreeViewModel::GkXmppRosterTreeViewModel(GkXmppRosterTreeViewItem *rootItem, QObject *parent) : QAbstractItemModel(parent)
+GkXmppRosterTreeViewModel::GkXmppRosterTreeViewModel(const QStringList &headers, QObject *parent) : QAbstractItemModel(parent)
 {
-    m_rootItem = std::move(rootItem);
+    QVector<QVariant> rootData;
+    for (const QString &header: headers) {
+        rootData << header;
+    }
+
+    m_rootItem = new GkXmppRosterTreeViewItem(rootData);
     return;
 }
 
 GkXmppRosterTreeViewModel::~GkXmppRosterTreeViewModel()
 {
+    delete m_rootItem;
     return;
 }
 
@@ -226,6 +241,16 @@ QModelIndex GkXmppRosterTreeViewModel::index(qint32 row, qint32 column, const QM
         return QModelIndex();
     }
 
+    GkXmppRosterTreeViewItem *parentItem = getItem(parent);
+    if (!parentItem) {
+        return QModelIndex();
+    }
+
+    GkXmppRosterTreeViewItem *childItem = parentItem->child(row);
+    if (childItem) {
+        return createIndex(row, column, childItem);
+    }
+
     return QModelIndex();
 }
 
@@ -243,6 +268,18 @@ QModelIndex GkXmppRosterTreeViewModel::parent(const QModelIndex &index) const
     }
 
     return createIndex(parentItem->childNumber(), 0, parentItem);
+}
+
+/**
+ * @brief GkXmppRosterTreeViewModel::indexForTreeItem calculates a QModelIndex, ready for use in creating a child, by
+ * external QTableView functions.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param item
+ * @return The calculated QModelIndex in question.
+ */
+QModelIndex GkXmppRosterTreeViewModel::indexForTreeItem(GkXmppRosterTreeViewItem *item)
+{
+    return createIndex(item->childNumber(), 0, item);
 }
 
 qint32 GkXmppRosterTreeViewModel::rowCount(const QModelIndex &parent) const
@@ -282,13 +319,15 @@ bool GkXmppRosterTreeViewModel::setData(const QModelIndex &index, const QVariant
     return result;
 }
 
-bool GkXmppRosterTreeViewModel::setHeaderData(qint32 section, Qt::Orientation orientation, const QVariant &value, qint32 role)
+bool
+GkXmppRosterTreeViewModel::setHeaderData(qint32 section, Qt::Orientation orientation, const QVariant &value, qint32 role)
 {
     if (role != Qt::EditRole || orientation != Qt::Horizontal) {
         return false;
     }
 
     const bool result = m_rootItem->setData(section, value);
+
     if (result) {
         emit headerDataChanged(orientation, section, section);
     }
@@ -346,56 +385,10 @@ bool GkXmppRosterTreeViewModel::removeRows(qint32 position, qint32 rows, const Q
     return success;
 }
 
-/**
- * @brief GkXmppRosterTreeViewModel::insertModelData inserts data into the QTreeView model, or in this case, the object
- * as managed by QXmppRosterManager.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param nickname The nickname of the contact on the given XMPP server as obtained via QXmppRosterManager.
- * @param presence The presence, otherwise known as the online/availability status, on the given XMPP server as obtained
- * via QXmppRosterManager.
- * @param parent The parent QTreeView item.
- * @note Editable Tree Model Example <https://doc.qt.io/qt-5/qtwidgets-itemviews-editabletreemodel-example.html>,
- * QXmppRosterManager <https://doc.qxmpp.org/qxmpp-1/classQXmppRosterManager.html>.
- * @see GkXmppClient::GkXmppClient().
- */
-void GkXmppRosterTreeViewModel::insertModelData(const QString &nickname, const QString &presence, GkXmppRosterTreeViewItem *parent)
-{
-    QVector<GkXmppRosterTreeViewItem *> parents;
-    parents << parent;
-    if (parents.last()->childCount() > 0) {
-        parents << parents.last()->child(parents.last()->childCount() - 1);
-    }
-
-    //
-    // Append a new item to the current parent's list of children...
-    parent = parents.last();
-    parent->insertChildren(parent->childCount(), 1, m_rootItem->columnCount());
-    parent->child(parent->childCount() - 1)->setData(nickname, presence);
-
-    return;
-}
-
-/**
- * @brief GkXmppRosterTreeViewModel::modifyModelData allows the modification of data into the QTreeView model, or in
- * this case, the object as managed by QXmppRosterManager.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param nickname The nickname of the contact on the given XMPP server as obtained via QXmppRosterManager.
- * @param presence The presence, otherwise known as the online/availability status, on the given XMPP server as obtained
- * via QXmppRosterManager.
- * @param parent The parent QTreeView item.
- * @note Editable Tree Model Example <https://doc.qt.io/qt-5/qtwidgets-itemviews-editabletreemodel-example.html>,
- * QXmppRosterManager <https://doc.qxmpp.org/qxmpp-1/classQXmppRosterManager.html>.
- * @see GkXmppClient::GkXmppClient().
- */
-void GkXmppRosterTreeViewModel::modifyModelData(const QString &nickname, const QString &presence, GkXmppRosterTreeViewItem *parent)
-{
-    return;
-}
-
 GkXmppRosterTreeViewItem *GkXmppRosterTreeViewModel::getItem(const QModelIndex &index) const
 {
     if (index.isValid()) {
-        GkXmppRosterTreeViewItem *item = static_cast<GkXmppRosterTreeViewItem*>(index.internalPointer());
+        GkXmppRosterTreeViewItem *item = static_cast<GkXmppRosterTreeViewItem *>(index.internalPointer());
         if (item) {
             return item;
         }
