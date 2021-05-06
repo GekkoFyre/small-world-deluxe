@@ -42,6 +42,7 @@
         <file>contrib/images/raster/gekkofyre-networks/RaptorVonSqueaker/2019_RaptorVonSqueaker_artwork_commission_arctic_phobos_resized.png</file>
         <file>contrib/images/raster/gekkofyre-networks/Silberry/2020_silberry_artwork_commission_arctic_phobos_resized.png</file>
         <file>contrib/images/vector/gekkofyre-networks/rionquosue/logo_blank_border_text_square_rionquosue.svg</file>
+		<file>contrib/images/raster/gekkofyre-networks/CurioDraco/gekkofyre_drgn_server_thumb_transp.png</file>
         <file>contrib/images/raster/gekkofyre-networks/green-circle.png</file>
         <file>contrib/images/raster/gekkofyre-networks/green-halftone-circle.png</file>
         <file>contrib/images/raster/gekkofyre-networks/red-circle.png</file>
@@ -49,6 +50,7 @@
         <file>contrib/images/raster/gekkofyre-networks/yellow-circle.png</file>
         <file>contrib/images/raster/gekkofyre-networks/yellow-halftone-circle.png</file>
         <file>contrib/images/raster/unknown-author/sstv/sstv-image-placeholder.jpg</file>
+		<file>contrib/images/raster/unknown-author/error.png</file>
         <file>contrib/sounds/notifications/notification_1.ogg</file>
     </qresource>
 </RCC>
