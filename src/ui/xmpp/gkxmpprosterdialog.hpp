@@ -44,6 +44,7 @@
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
 #include "src/gk_xmpp_client.hpp"
+#include "src/models/tableview/gk_xmpp_roster_model.hpp"
 #include "src/ui/xmpp/gkxmppmessagedialog.hpp"
 #include "src/gk_logger.hpp"
 #include <memory>
@@ -76,17 +77,15 @@ private slots:
     void on_comboBox_current_status_currentIndexChanged(int index);
     void on_pushButton_user_login_clicked();
     void on_pushButton_user_create_account_clicked();
-    void on_treeWidget_callsigns_groups_customContextMenuRequested(const QPoint &pos);
-    void on_treeWidget_callsigns_groups_itemClicked(QTreeWidgetItem *item, int column);
-    void on_treeWidget_callsigns_groups_itemDoubleClicked(QTreeWidgetItem *item, int column);
+    void on_tableView_callsigns_groups_customContextMenuRequested(const QPoint &pos);
+    void on_tableView_callsigns_groups_itemClicked(QTreeWidgetItem *item, int column);
+    void on_tableView_callsigns_groups_itemDoubleClicked(QTreeWidgetItem *item, int column);
     void on_actionAdd_Contact_triggered();
     void on_actionEdit_Contact_triggered();
     void on_actionDelete_Contact_triggered();
     void on_pushButton_self_avatar_clicked();
     void on_lineEdit_self_nickname_returnPressed();
-    void on_treeWidget_callsigns_blocked_customContextMenuRequested(const QPoint &pos);
-    void on_treeWidget_callsigns_blocked_itemClicked(QTreeWidgetItem *item, int column);
-    void on_treeWidget_callsigns_blocked_itemDoubleClicked(QTreeWidgetItem *item, int column);
+    void on_tableView_callsigns_blocked_customContextMenuRequested(const QPoint &pos);
 
     //
     // VCard management
@@ -100,9 +99,12 @@ private slots:
     //
     // XMPP Roster management and related
     //
-    void on_label_self_nickname_customContextMenuRequested(const QPoint &pos);
     void subscriptionRequestRecv(const QString &bareJid);
     void subscriptionRequestRetracted(const QString &bareJid);
+    void addJidToRoster(const QString &bareJid); // Subscription request was successful, add new JID!
+    void delJidFromRoster(const QString &bareJid); // User requested a deletion from the roster, therefore remove JID!
+    void changeRosterJid(const QString &bareJid); // A change needs to be made within the roster, therefore modify JID!
+    void on_label_self_nickname_customContextMenuRequested(const QPoint &pos);
     void on_pushButton_add_contact_cancel_clicked();
     void on_pushButton_add_contact_submit_clicked();
     void on_actionAcceptInvite_triggered();
@@ -112,6 +114,8 @@ private slots:
     void on_actionEdit_Nickname_triggered();
     void on_lineEdit_edit_nickname_returnPressed();
     void on_lineEdit_edit_nickname_inputRejected();
+    void on_tableView_callsigns_pending_clicked(const QModelIndex &index);
+    void on_tableView_callsigns_pending_doubleClicked(const QModelIndex &index);
 
 signals:
     void updateAvailableStatusType(const QXmppPresence::AvailableStatusType &stat_type);
@@ -134,18 +138,12 @@ private:
     bool shownXmppPreviewNotice;
 
     //
-    // QTreeWidget and related
+    // QTableView and related
     //
-    QTreeWidgetItem *xmppRosterPresenceInsertTreeRoot(const QString &presence, const QString &bareJid, const QString &nickname);
-    void xmppRosterPresenceInsertTreeChild(QTreeWidgetItem *parent, const QIcon &presence, const QString &bareJid,
-                                           const QString &nickname);
-    void xmppRosterPresenceRemoveTreeChild(QTreeWidgetItem *parent, const QString &desc, const qint32 &column);
+    void insertRosterPresenceTable(const QIcon &presence, const QString &bareJid, const QString &nickname);
+    void removeRosterPresenceTable(const QString &bareJid);
     void updateRoster();
     void updateActions();
-
-    std::shared_ptr<QTreeWidgetItem> m_subRequests;
-    std::shared_ptr<QTreeWidgetItem> m_onlineUsers;
-    std::shared_ptr<QTreeWidgetItem> m_offlineUsers;
 
     //
     // QXmpp and XMPP related

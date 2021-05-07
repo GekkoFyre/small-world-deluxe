@@ -107,6 +107,7 @@ public:
     static QString getUsername(const QString &username);
     static QString getHostname(const QString &username);
     GekkoFyre::Network::GkXmpp::GkNetworkState getNetworkState() const;
+    bool isJidOnline(const QString &bareJid);
 
     //
     // User, roster and presence details
@@ -138,6 +139,7 @@ public slots:
     void refuseSubscriptionRequest(const QString &bareJid);
     void blockUser(const QString &bareJid);
     void unblockUser(const QString &bareJid);
+    void subscribeToUser(const QString &bareJid, const QString &reason = "");
 
     //
     // Registration management
@@ -189,7 +191,7 @@ signals:
     void retractSubscriptionRequest(const QString &bareJid); // A subscription request was retracted, therefore delete JID!
 
     void addJidToRoster(const QString &bareJid); // Subscription request was successful, add new JID!
-    void delJidToRoster(const QString &bareJid); // User requested a deletion from the roster, therefore remove JID!
+    void delJidFromRoster(const QString &bareJid); // User requested a deletion from the roster, therefore remove JID!
     void changeRosterJid(const QString &bareJid); // A change needs to be made within the roster, therefore modify JID!
 
     void updateRoster();

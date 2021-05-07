@@ -510,6 +510,40 @@ GekkoFyre::Network::GkXmpp::GkNetworkState GkXmppClient::getNetworkState() const
 }
 
 /**
+ * @brief GkXmppClient::isJidOnline checks to see whether the bareJid is online, in any capacity, at all.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid The user in question.
+ * @return Whether the given bareJid is online, in any capacity, at all.
+ */
+bool GkXmppClient::isJidOnline(const QString &bareJid)
+{
+    for (const auto &entry: m_rosterList) {
+        if (entry.bareJid == bareJid) {
+            switch (entry.presence->availableStatusType()) {
+                case QXmppPresence::Online:
+                    return true;
+                case QXmppPresence::Away:
+                    return true;
+                case QXmppPresence::XA:
+                    return true;
+                case QXmppPresence::DND:
+                    return true;
+                case QXmppPresence::Chat:
+                    return true;
+                case QXmppPresence::Invisible:
+                    return false;
+                default:
+                    return false;
+            }
+
+            break;
+        }
+    }
+
+    return false;
+}
+
+/**
  * @brief GkXmppClient::getRegistrationMgr
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return
@@ -1044,6 +1078,26 @@ void GkXmppClient::unblockUser(const QString &bareJid)
 }
 
 /**
+ * @brief GkXmppClient::subscribeToUser requests a subscription to the given contact. As a result, the server will initiate
+ * a roster push, causing the `m_rosterManager->itemAdded()` or `m_rosterManager->itemChanged()` signal to be emitted.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid
+ */
+void GkXmppClient::subscribeToUser(const QString &bareJid, const QString &reason)
+{
+    if (!bareJid.isEmpty()) {
+        if (!reason.isEmpty()) {
+            m_rosterManager->subscribe(bareJid, reason);
+            return;
+        }
+
+        m_rosterManager->subscribe(bareJid);
+    }
+
+    return;
+}
+
+/**
  * @brief GkXmppClient::handleRegistrationForm
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param registerIq The user registration form to be filled out, as received from the connected towards XMPP server.
@@ -1552,7 +1606,7 @@ void GkXmppClient::itemAdded(const QString &bareJid)
  */
 void GkXmppClient::itemRemoved(const QString &bareJid)
 {
-    emit delJidToRoster(bareJid);
+    emit delJidFromRoster(bareJid);
     gkEventLogger->publishEvent(tr("User, \"%1\", successfully removed from roster!").arg(getUsername(bareJid)),
                                 GkSeverity::Info, "", true, true, false, false);
 
