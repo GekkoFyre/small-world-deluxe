@@ -178,7 +178,7 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         m_status = GkOnlineStatus::Online;
         m_keepalive = 60;
 
-        m_presence = std::make_unique<QXmppPresence>();
+        m_presence = std::make_shared<QXmppPresence>();
 
         if (m_versionMgr) {
             m_versionMgr->setClientName(General::companyNameMin);
@@ -524,13 +524,13 @@ std::shared_ptr<QXmppRegistrationManager> GkXmppClient::getRegistrationMgr()
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return
  */
-QMap<QString, QXmppPresence> GkXmppClient::getRosterMap()
+QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign> GkXmppClient::getRosterMap()
 {
-    if (!m_rosterMap.isEmpty()) {
-        return m_rosterMap;
+    if (!m_rosterList.isEmpty()) {
+        return m_rosterList;
     }
 
-    return QMap<QString, QXmppPresence>();
+    return QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign>();
 }
 
 /**
@@ -561,7 +561,6 @@ QXmppPresence GkXmppClient::statusToPresence(const GkXmpp::GkOnlineStatus &statu
             result.setAvailableStatusType(QXmppPresence::XA);
             result.setStatusText(tr("Not Available"));
             break;
-        case GkXmpp::Offline:
         case GkXmpp::Invisible:
         case GkXmpp::NetworkError:
         default:
@@ -736,7 +735,9 @@ void GkXmppClient::clientConnected()
 }
 
 /**
- * @brief GkXmppClient::handleRosterReceived
+ * @brief GkXmppClient::handleRosterReceived is emitted when the Roster IQ is received after a successful connection. That
+ * is the roster entries are empty before this signal is emitted. One should use `getRosterBareJids()` and `getRosterEntry()`
+ * only after this signal has been emitted.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void GkXmppClient::handleRosterReceived()
@@ -914,9 +915,9 @@ void GkXmppClient::presenceChanged(const QString &bareJid, const QString &resour
 }
 
 /**
- * @brief GkXmppClient::modifyPresence
+ * @brief GkXmppClient::modifyPresence sets the presence for the client themselves.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param pres
+ * @param pres The presence to be set towards.
  */
 void GkXmppClient::modifyPresence(const QXmppPresence::Type &pres)
 {
@@ -928,7 +929,34 @@ void GkXmppClient::modifyPresence(const QXmppPresence::Type &pres)
                 iter->presence = std::make_shared<QXmppPresence>(pres);
                 emit updateRoster();
 
+                gkEventLogger->publishEvent(tr("You have successfully changed your presence status towards: %1"), GkSeverity::Info, "",
+                                            true, true, false, false);
+            }
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
     return;
+}
+
+/**
+ * @brief GkXmppClient::getPresence
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid
+ * @return
+ */
+std::shared_ptr<QXmppPresence> GkXmppClient::getPresence(const QString &bareJid)
+{
+    if (!bareJid.isEmpty() && !m_rosterList.isEmpty()) {
+        for (const auto &entry: m_rosterList) {
+            if (bareJid == entry.bareJid) {
+                return entry.presence;
+            }
+        }
+    }
+
+    return std::shared_ptr<QXmppPresence>();
 }
 
 /**
@@ -1405,7 +1433,7 @@ void GkXmppClient::createConnectionToServer(const QString &domain_url, const qui
             //
             // Enable only if we are not attempting an in-band user registration...
             QObject::connect(this, &QXmppClient::presenceReceived, this, [=](const QXmppPresence &presence) {
-                gkEventLogger->publishEvent(presence.statusText(), GkSeverity::Info, "", true, true, false, false);
+                gkEventLogger->publishEvent(presence.statusText(), GkSeverity::Info, "", false, true, false, false);
             });
         }
 

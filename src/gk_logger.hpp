@@ -53,6 +53,7 @@
 #include <QString>
 #include <QVariant>
 #include <QPointer>
+#include <QSystemTrayIcon>
 
 #if defined(GFYRE_ENBL_MSVC_WINTOAST)
 #include "src/contrib/WinToast/src/wintoastlib.h"
@@ -64,7 +65,8 @@ class GkEventLogger : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkEventLogger(const QPointer<GekkoFyre::StringFuncs> &stringFuncs, QPointer<GekkoFyre::FileIo> fileIo, QObject *parent = nullptr);
+    explicit GkEventLogger(const QPointer<QSystemTrayIcon> &sysTrayIcon, const QPointer<GekkoFyre::StringFuncs> &stringFuncs,
+                           QPointer<GekkoFyre::FileIo> fileIo, QObject *parent = nullptr);
     ~GkEventLogger() override;
 
 public slots:
@@ -79,6 +81,7 @@ signals:
     void sendToStatusBar(const QString &msg);
 
 private:
+    QPointer<QSystemTrayIcon> m_trayIcon;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QList<GekkoFyre::System::Events::Logging::GkEventLogging> eventLogDb;                       // Where the event log itself is stored in memory...
 

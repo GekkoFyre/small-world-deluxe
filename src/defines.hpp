@@ -51,6 +51,7 @@
 #include <qwt/qwt_interval.h>
 #include <qxmpp/QXmppGlobal.h>
 #include <qxmpp/QXmppPresence.h>
+#include <qxmpp/QXmppRosterIq.h>
 #include <map>
 #include <list>
 #include <vector>
@@ -399,7 +400,6 @@ namespace Network {
 
         enum GkOnlineStatus {                               // The online availability of the user in question.
             Online,
-            Offline,
             Away,
             DoNotDisturb,
             NotAvailable,
@@ -471,6 +471,8 @@ namespace Network {
             QString username;                               // The username, which is the JID without the server URL or resource attached.
             QString password;                               // The password which is needed for logging-in successfully to the XMPP server.
             QString nickname;                               // The desired nickname of the user, as it appears to others on the XMPP server network.
+            QString firstName;                              // The first name of the user, if provided.
+            QString lastName;                               // The last name of the user, if provided.
             QString email;                                  // The email address, if any, that's associated with this end-user.
         };
     }

@@ -82,7 +82,6 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
 
         ui->comboBox_current_status->setCurrentIndex(GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX);
         ui->comboBox_current_status->setEnabled(false);
-        m_clientAvatarImgUpdateTimer = new QTimer(this);
 
         //
         // Disable tab-ordering for the following widgets...
@@ -113,6 +112,7 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
         QObject::connect(this, SIGNAL(unblockUser(const QString &)), m_xmppClient, SLOT(unblockUser(const QString &)));
 
         QObject::connect(ui->label_self_nickname, SIGNAL(clicked(const QString &)), this, SLOT(editNicknameLabel(const QString &)));
+        defaultClientAvatarPlaceholder();
         ui->label_self_nickname->setText(tr("Anonymous"));
         if (!gkConnDetails.nickname.isEmpty()) {
             ui->label_self_nickname->setText(gkConnDetails.nickname);
@@ -132,14 +132,16 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
             //
             // Change the presence status to the last used once connected!
             ui->comboBox_current_status->setCurrentIndex(GK_XMPP_AVAIL_COMBO_AVAILABLE_IDX); // TODO: Implement the Google LevelDB functions for this!
-            ui->comboBox_current_status->setEnabled(true);
+            ui->pushButton_self_avatar->setEnabled(true);
+            ui->lineEdit_edit_nickname->setEnabled(true);
         });
 
         QObject::connect(m_xmppClient, &QXmppClient::disconnected, this, [=]() {
             //
             // Change the presence status to 'Offline / Unavailable' when disconnected!
             ui->comboBox_current_status->setCurrentIndex(GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX);
-            ui->comboBox_current_status->setEnabled(false);
+            ui->pushButton_self_avatar->setEnabled(false);
+            ui->lineEdit_edit_nickname->setEnabled(false);
         });
 
         //
@@ -223,6 +225,26 @@ GkXmppRosterDialog::~GkXmppRosterDialog()
 }
 
 /**
+ * @brief GkXmppRosterDialog::on_label_self_nickname_customContextMenuRequested brings up a context-menu for the
+ * object, `ui->label_self_nickname()`.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRosterDialog::on_label_self_nickname_customContextMenuRequested(const QPoint &pos)
+{
+    std::unique_ptr<QMenu> contextMenu = std::make_unique<QMenu>(ui->label_self_nickname);
+    contextMenu->addAction(ui->actionEdit_Nickname);
+
+    updateActions();
+
+    //
+    // Save the position data to the QAction
+    ui->actionEdit_Nickname->setData(QVariant(pos));
+    contextMenu->exec(ui->label_self_nickname->mapToGlobal(pos));
+
+    return;
+}
+
+/**
  * @brief GkXmppRosterDialog::subscriptionRequestRecv handles the processing and management of external subscription requests
  * to the given, connected towards XMPP server in question. This function will only work if Small World Deluxe is actively
  * connected towards an XMPP server at the time.
@@ -286,10 +308,11 @@ void GkXmppRosterDialog::updateActions()
         ui->actionDelete_Contact->setEnabled(presenceHasSelection);
         ui->actionBlockUser->setEnabled(presenceHasSelection);
 
-    ui->actionAcceptInvite->setEnabled(presenceHasSelection);
-    ui->actionRefuseInvite->setEnabled(presenceHasSelection);
-    ui->actionAcceptInvite->setVisible(presenceHasSelection);
-    ui->actionRefuseInvite->setVisible(presenceHasSelection);
+        ui->actionAcceptInvite->setEnabled(presenceHasSelection);
+        ui->actionRefuseInvite->setEnabled(presenceHasSelection);
+        ui->actionAcceptInvite->setVisible(presenceHasSelection);
+        ui->actionRefuseInvite->setVisible(presenceHasSelection);
+    }
 
     if (ui->treeWidget_callsigns_blocked->isActiveWindow()) {
         const bool blockedHasSelection = !ui->treeWidget_callsigns_blocked->selectionModel()->selection().isEmpty();
@@ -612,9 +635,10 @@ void GkXmppRosterDialog::on_pushButton_self_avatar_clicked()
     QString filePath = m_xmppClient->obtainAvatarFilePath();
     if (!filePath.isEmpty()) {
         QByteArray avatarByteArray = m_xmppClient->processImgToByteArray(filePath);
-        emit updateClientVCard("", "", "", "", avatarByteArray);
-        m_clientAvatarImgUpdateTimer->start(GK_NETWORK_CONN_TIMEOUT_MILLSECS);
-        ui->pushButton_self_avatar->setText(tr("Updating..."));
+        emit updateClientVCard(gkConnDetails.firstName, gkConnDetails.lastName, gkConnDetails.email, gkConnDetails.nickname, avatarByteArray);
+        m_clientAvatarImg = avatarByteArray;
+        QImage avatar_img = QImage::fromData(m_clientAvatarImg);
+        emit updateClientAvatarImg(avatar_img);
     }
 
     return;
@@ -707,25 +731,38 @@ void GkXmppRosterDialog::recvClientAvatarImg(const QByteArray &avatar_pic)
 }
 
 /**
- * @brief GkXmppRosterDialog::updateClientAvatarPlaceholder
+ * @brief GkXmppRosterDialog::defaultClientAvatarPlaceholder
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void GkXmppRosterDialog::updateClientAvatarPlaceholder()
+void GkXmppRosterDialog::defaultClientAvatarPlaceholder()
 {
-    ui->pushButton_self_avatar->setText(tr("<avatar/>"));
+    m_clientAvatarImg = gkDb->read_xmpp_settings(Settings::GkXmppCfg::XmppAvatarByteArray).toUtf8();
+    if (!m_clientAvatarImg.isEmpty()) {
+        QImage avatar_img = QImage::fromData(QByteArray::fromBase64(m_clientAvatarImg));
+        emit updateClientAvatarImg(avatar_img);
+    } else {
+        emit updateClientAvatarImg(QImage(":/resources/contrib/images/raster/gekkofyre-networks/CurioDraco/gekkofyre_drgn_server_thumb_transp.png"));
+    }
+
     return;
 }
 
 /**
- * @brief GkXmppRosterDialog::updateClientAvatarPlaceholder
+ * @brief GkXmppRosterDialog::updateClientAvatar
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param avatar_img
  */
-void GkXmppRosterDialog::updateClientAvatarPlaceholder(const QImage &avatar_img)
+void GkXmppRosterDialog::updateClientAvatar(const QImage &avatar_img)
 {
     ui->pushButton_self_avatar->setIcon(QIcon(QPixmap::fromImage(avatar_img)));
+    ui->pushButton_self_avatar->setIconSize(QSize(150, 150));
+
+    QByteArray ba;
+    QPointer<QBuffer> buffer = new QBuffer(this);
+    buffer->open(QIODevice::WriteOnly);
+    avatar_img.save(buffer, "PNG");
+    gkDb->write_xmpp_settings(buffer->readAll().toBase64(), Settings::GkXmppCfg::XmppAvatarByteArray);
     gkEventLogger->publishEvent(tr("vCard avatar has been registered for self-client."), GkSeverity::Debug, "", false, true, false, false);
-    m_clientAvatarImgUpdateTimer->stop();
 
     return;
 }
@@ -883,5 +920,47 @@ void GkXmppRosterDialog::on_actionUnblockUser_triggered()
     }
 
     updateActions();
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::on_actionEdit_Nickname_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRosterDialog::on_actionEdit_Nickname_triggered()
+{
+    if (ui->lineEdit_edit_nickname->isEnabled()) {
+        ui->lineEdit_edit_nickname->setVisible(true);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::on_lineEdit_edit_nickname_returnPressed
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRosterDialog::on_lineEdit_edit_nickname_returnPressed()
+{
+    QString newNickname = ui->lineEdit_edit_nickname->text();
+    if (!newNickname.isEmpty()) {
+        // Apply the new nickname!
+        emit updateClientVCard(gkConnDetails.firstName, gkConnDetails.lastName, gkConnDetails.email, newNickname, m_clientAvatarImg);
+        return;
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::on_lineEdit_edit_nickname_inputRejected
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRosterDialog::on_lineEdit_edit_nickname_inputRejected()
+{
+    if (ui->lineEdit_edit_nickname->isVisible()) {
+        ui->lineEdit_edit_nickname->setVisible(false);
+    }
+
     return;
 }

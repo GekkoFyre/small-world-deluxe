@@ -50,13 +50,4 @@ cd ./../..
 cd sentry-native\external
 git submodule update --init --recursive
 
-cd ./../../../..
-mkdir swd-build
-cd swd-build
-
-cmake -G "Unix Makefiles" -DBUILD_SHARED_LIBS=NO -DGFYRE_BUILD_STATIC=ON ..
-make -j$(nproc)
-
-echo "Build of Small World Deluxe has been completed successfully!"
-echo "Check directory:"
-pwd
+echo "Grabbing of all Git sub-directories has been successful! Please check aforementioned logs for any errors."

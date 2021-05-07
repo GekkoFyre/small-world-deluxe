@@ -111,7 +111,7 @@ public:
     //
     // User, roster and presence details
     std::shared_ptr<QXmppRegistrationManager> getRegistrationMgr();
-    QMap<QString, QXmppPresence> getRosterMap();
+    QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign> getRosterMap();
     QXmppPresence statusToPresence(const Network::GkXmpp::GkOnlineStatus &status);
     Network::GkXmpp::GkOnlineStatus presenceToStatus(const QXmppPresence::AvailableStatusType &xmppPresence);
     QString presenceToString(const QXmppPresence::AvailableStatusType &xmppPresence);
@@ -132,6 +132,7 @@ public slots:
     // User, roster and presence details
     void presenceChanged(const QString &bareJid, const QString &resource);
     void modifyPresence(const QXmppPresence::Type &pres);
+    std::shared_ptr<QXmppPresence> getPresence(const QString &bareJid);
     void modifyAvailableStatusType(const QXmppPresence::AvailableStatusType &stat_type);
     void acceptSubscriptionRequest(const QString &bareJid);
     void refuseSubscriptionRequest(const QString &bareJid);
@@ -228,8 +229,9 @@ private:
     //
     // User, roster and presence details
     //
+    GekkoFyre::Network::GkXmpp::GkHost m_host;
     Network::GkXmpp::GkOnlineStatus m_status;
-    std::unique_ptr<QXmppPresence> m_presence;
+    std::shared_ptr<QXmppPresence> m_presence;
     std::shared_ptr<QXmppRosterManager> m_rosterManager;
     QStringList rosterGroups;
     QVector<QString> m_blockList;

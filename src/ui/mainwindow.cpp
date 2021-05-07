@@ -395,7 +395,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 ui->tableView_maingui_logs->horizontalHeader()->setSectionResizeMode(GK_EVENTLOG_TABLEVIEW_MODEL_MESSAGE_IDX, QHeaderView::Stretch);
                 ui->tableView_maingui_logs->show();
 
-                gkEventLogger = new GkEventLogger(gkStringFuncs, gkFileIo, this);
+                gkEventLogger = new GkEventLogger(m_trayIcon, gkStringFuncs, gkFileIo, this);
                 QObject::connect(gkEventLogger, SIGNAL(sendEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &)),
                                  gkEventLoggerModel, SLOT(insertData(const GekkoFyre::System::Events::Logging::GkEventLogging &)));
                 QObject::connect(gkEventLogger, SIGNAL(removeEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &)),
@@ -553,7 +553,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                 pref_input_device = input_dev.second;
                                 gkAudioInput = new QAudioInput(input_dev.first, user_input_settings, &gkAudioInputThread);
                                 gkEventLogger->publishEvent(tr("Now using the input audio device, \"%1\".").arg(pref_input_device.audio_device_info.deviceName()),
-                                                            GkSeverity::Info, "", true, true, false, false);
+                                                            GkSeverity::Info, "", false, true, false, false);
                             } else {
                                 // Given audio parameters are NOT supported, therefore use defaults for now and let the user know!
                                 defaultInputAudioDev(input_dev);
@@ -570,7 +570,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                             //
                             defaultInputAudioDev(input_dev);
                             gkEventLogger->publishEvent(tr("Now using the input audio device, \"%1\".").arg(pref_input_device.audio_device_info.deviceName()),
-                                                        GkSeverity::Info, "", true, true, false, false);
+                                                        GkSeverity::Info, "", false, true, false, false);
                         }
                     }
                 }
@@ -645,7 +645,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                 pref_output_device = output_dev.second;
                                 gkAudioOutput = new QAudioOutput(output_dev.first, user_output_settings, &gkAudioOutputThread);
                                 gkEventLogger->publishEvent(tr("Now using the output audio device, \"%1\".").arg(pref_output_device.audio_device_info.deviceName()),
-                                                            GkSeverity::Info, "", true, true, false, false);
+                                                            GkSeverity::Info, "", false, true, false, false);
                             } else {
                                 // Given audio parameters are NOT supported, therefore use defaults for now and let the user know!
                                 defaultOutputAudioDev(output_dev);
@@ -662,7 +662,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                             //
                             defaultOutputAudioDev(output_dev);
                             gkEventLogger->publishEvent(tr("Now using the output audio device, \"%1\".").arg(pref_output_device.audio_device_info.deviceName()),
-                                                        GkSeverity::Info, "", true, true, false, false);
+                                                        GkSeverity::Info, "", false, true, false, false);
                         }
                     }
                 }
@@ -2158,7 +2158,7 @@ void MainWindow::readXmppSettings()
         gkConnDetails.server.settings_client.uri_lookup_method = GkUriLookupMethod::QtDnsSrv;
     }
 
-    gkConnDetails.status = GkOnlineStatus::Offline;
+    gkConnDetails.status = GkOnlineStatus::NetworkError;
     gkConnDetails.password = gkDb->read_xmpp_settings(GkXmppCfg::XmppPassword);;
     gkConnDetails.nickname = gkDb->read_xmpp_settings(GkXmppCfg::XmppNickname);;
     gkConnDetails.email = gkDb->read_xmpp_settings(GkXmppCfg::XmppEmailAddr);;
