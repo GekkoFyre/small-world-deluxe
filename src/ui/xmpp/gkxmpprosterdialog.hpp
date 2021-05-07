@@ -49,6 +49,7 @@
 #include <memory>
 #include <QImage>
 #include <QTimer>
+#include <QVector>
 #include <QAction>
 #include <QString>
 #include <QObject>
@@ -77,6 +78,7 @@ private slots:
     void on_pushButton_user_create_account_clicked();
     void on_treeWidget_callsigns_groups_customContextMenuRequested(const QPoint &pos);
     void on_treeWidget_callsigns_groups_itemClicked(QTreeWidgetItem *item, int column);
+    void on_treeWidget_callsigns_groups_itemDoubleClicked(QTreeWidgetItem *item, int column);
     void on_actionAdd_Contact_triggered();
     void on_actionEdit_Contact_triggered();
     void on_actionDelete_Contact_triggered();
@@ -84,13 +86,15 @@ private slots:
     void on_lineEdit_self_nickname_returnPressed();
     void on_treeWidget_callsigns_blocked_customContextMenuRequested(const QPoint &pos);
     void on_treeWidget_callsigns_blocked_itemClicked(QTreeWidgetItem *item, int column);
+    void on_treeWidget_callsigns_blocked_itemDoubleClicked(QTreeWidgetItem *item, int column);
 
     //
     // VCard management
     //
     void recvClientAvatarImg(const QByteArray &avatar_pic);
-    void updateClientAvatarPlaceholder();
-    void updateClientAvatarPlaceholder(const QImage &avatar_img);
+    void defaultClientAvatarPlaceholder();
+    void updateClientAvatar(const QImage &avatar_img);
+    void updateUserVCard(const QXmppVCardIq &vCard);
     void editNicknameLabel(const QString &value);
 
     //
@@ -122,14 +126,17 @@ private:
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::GkXmppClient> m_xmppClient;
+    QPointer<GkXmppMessageDialog> gkXmppMsgDlg;
     bool shownXmppPreviewNotice;
 
     //
     // QTreeWidget and related
     //
-    QTreeWidgetItem *xmppRosterPresenceInsertTreeRoot(const QString &name, const QString &desc);
-    void xmppRosterPresenceInsertTreeChild(QTreeWidgetItem *parent, const QString &name, const QString &desc);
-    void xmppRosterPresenceRemoveTreeChild(QTreeWidgetItem *parent, const QString &desc);
+    QTreeWidgetItem *xmppRosterPresenceInsertTreeRoot(const QString &presence, const QString &bareJid, const QString &nickname);
+    void xmppRosterPresenceInsertTreeChild(QTreeWidgetItem *parent, const QIcon &presence, const QString &bareJid,
+                                           const QString &nickname);
+    void xmppRosterPresenceRemoveTreeChild(QTreeWidgetItem *parent, const QString &desc, const qint32 &column);
+    void updateRoster();
     void updateActions();
 
     std::shared_ptr<QTreeWidgetItem> m_subRequests;
@@ -140,6 +147,7 @@ private:
     // QXmpp and XMPP related
     //
     GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
+    QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign> m_rosterList;
 
     //
     // Time & Date
@@ -152,6 +160,7 @@ private:
     QByteArray m_clientAvatarImg;
 
     void reconnectToXmpp();
+    void launchMsgDlg(const QString &bareJid);
     void prefillAvailComboBox();
 };
 

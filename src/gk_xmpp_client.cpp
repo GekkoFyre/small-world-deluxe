@@ -45,6 +45,7 @@
 #include <qxmpp/QXmppStreamFeatures.h>
 #include <iostream>
 #include <exception>
+#include <QFile>
 #include <QImage>
 #include <QBuffer>
 #include <QMessageBox>
@@ -573,6 +574,91 @@ QXmppPresence GkXmppClient::statusToPresence(const GkXmpp::GkOnlineStatus &statu
 }
 
 /**
+ * @brief GkXmppClient::presenceToStatus
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param xmppPresence
+ * @return
+ */
+Network::GkXmpp::GkOnlineStatus GkXmppClient::presenceToStatus(const QXmppPresence::AvailableStatusType &xmppPresence)
+{
+    auto result = GkXmpp::GkOnlineStatus {};
+    switch (xmppPresence) {
+        case QXmppPresence::Online:
+            return GkXmpp::Online;
+        case QXmppPresence::Away:
+            return GkXmpp::Away;
+        case QXmppPresence::XA:
+            return GkXmpp::NotAvailable;
+        case QXmppPresence::DND:
+            return GkXmpp::DoNotDisturb;
+        case QXmppPresence::Chat:
+            return GkXmpp::Online;
+        case QXmppPresence::Invisible:
+            return GkXmpp::Invisible;
+        default:
+            return GkXmpp::NetworkError;
+    }
+
+    return result;
+}
+
+/**
+ * @brief GkXmppClient::presenceToString
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param xmppPresence
+ * @return
+ */
+QString GkXmppClient::presenceToString(const QXmppPresence::AvailableStatusType &xmppPresence)
+{
+    switch (xmppPresence) {
+        case QXmppPresence::Online:
+            return tr("Online");
+        case QXmppPresence::Away:
+            return tr("Away");
+        case QXmppPresence::XA:
+            return tr("Not Available");
+        case QXmppPresence::DND:
+            return tr("Do Not Disturb");
+        case QXmppPresence::Chat:
+            return tr("Online");
+        case QXmppPresence::Invisible:
+            return tr("Invisible");
+        default:
+            return tr("Network Error");
+    }
+
+    return QString();
+}
+
+/**
+ * @brief GkXmppClient::presenceToIcon
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param xmppPresence
+ * @return
+ */
+QIcon GkXmppClient::presenceToIcon(const QXmppPresence::AvailableStatusType &xmppPresence)
+{
+    switch (xmppPresence) {
+        case QXmppPresence::Online:
+            return QIcon(":/resources/contrib/images/raster/gekkofyre-networks/green-circle.png");
+        case QXmppPresence::Away:
+            return QIcon(":/resources/contrib/images/raster/gekkofyre-networks/yellow-circle.png");
+        case QXmppPresence::XA:
+            return QIcon(":/resources/contrib/images/raster/gekkofyre-networks/yellow-halftone-circle.png");
+        case QXmppPresence::DND:
+            return QIcon(":/resources/contrib/images/raster/gekkofyre-networks/red-circle.png");
+        case QXmppPresence::Chat:
+            return QIcon(":/resources/contrib/images/raster/gekkofyre-networks/green-circle.png");
+        case QXmppPresence::Invisible:
+            return QIcon(":/resources/contrib/images/raster/gekkofyre-networks/green-halftone-circle.png");
+        default:
+            return QIcon(":/resources/contrib/images/raster/gekkofyre-networks/red-halftone-circle.png");
+    }
+
+    return QIcon();
+}
+
+/**
  * @brief GkXmppClient::deleteUserAccount will delete a given, already registered user account from the provided XMPP server.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return
@@ -636,6 +722,16 @@ void GkXmppClient::clientConnected()
 {
     gkEventLogger->publishEvent(tr("A connection has been successfully made towards XMPP server: %1").arg(m_connDetails.server.url),
                                 GkSeverity::Info, "", true, true, true, false);
+
+    m_vCardManager->requestVCard(m_connDetails.jid);
+    GkXmpp::GkXmppCallsign client_callsign;
+    client_callsign.presence = std::make_shared<QXmppPresence>(statusToPresence(m_connDetails.status));
+    client_callsign.vCard.nickname = m_connDetails.nickname;
+    client_callsign.server = m_connDetails.server;
+    client_callsign.bareJid = m_connDetails.jid;
+    m_rosterList.push_back(client_callsign);
+    emit updateRoster();
+
     return;
 }
 
@@ -645,6 +741,16 @@ void GkXmppClient::clientConnected()
  */
 void GkXmppClient::handleRosterReceived()
 {
+    auto rosterBareJids = m_rosterManager->getRosterBareJids();
+    for (const auto &bareJid: rosterBareJids) {
+        GkXmppCallsign callsign;
+        callsign.bareJid = bareJid;
+        callsign.presence = std::make_shared<QXmppPresence>(QXmppPresence::Type::Unsubscribed);
+        callsign.subStatus = m_rosterManager->getRosterEntry(bareJid).subscriptionType();
+        m_rosterList.push_back(callsign);
+        emit updateRoster();
+    }
+
     return;
 }
 
@@ -661,17 +767,46 @@ void GkXmppClient::vCardReceived(const QXmppVCardIq &vCard)
         gkEventLogger->publishEvent(tr("vCard received for user, \"%1\"").arg(bareJid), GkSeverity::Debug,
                                     "", false, true, false, false);
 
-        fs::path fileName = fs::path(vcard_save_path.string() + native_slash.string() + bareJid.toStdString() + ".png");
-        QByteArray photo = vCard.photo();
-        QPointer<QBuffer> buffer = new QBuffer(this);
-        buffer->setData(photo);
-        buffer->open(QIODevice::ReadOnly);
-        QImageReader imageReader(buffer);
-        QImage image = imageReader.read();
-        if (image.save(QString::fromStdString(fileName.string()))) {
-            gkEventLogger->publishEvent(tr("vCard avatar saved to filesystem for user, \"%1\"").arg(bareJid),
+        fs::path imgFileName = fs::path(vcard_save_path.string() + native_slash.string() + bareJid.toStdString() + ".png");
+        fs::path xmlFileName = fs::path(vcard_save_path.string() + native_slash.string() + bareJid.toStdString() + ".xml");
+        GkXmppVCard vCardTmp;
+
+        QFile xmlFile(QString::fromStdString(xmlFileName.string()));
+        if (xmlFile.open(QIODevice::ReadWrite)) {
+            QXmlStreamWriter stream(&xmlFile);
+            vCard.toXml(&stream);
+            xmlFile.close();
+            emit sendUserVCard(vCard);
+
+            vCardTmp.firstName = vCard.firstName();
+            vCardTmp.lastName = vCard.lastName();
+            vCardTmp.nickname = vCard.nickName();
+            vCardTmp.email = vCard.email();
+
+            gkEventLogger->publishEvent(tr("vCard XML data saved to filesystem for user, \"%1\"").arg(bareJid),
                                         GkSeverity::Debug, "", false, true, false, false);
-            return;
+        }
+
+        QByteArray photo = vCard.photo();
+        vCardTmp.avatarImg = photo;
+        for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
+            if (iter->bareJid == bareJid) {
+                iter->vCard = vCardTmp;
+                break;
+            }
+        }
+
+        if (!photo.isEmpty()) {
+            QPointer<QBuffer> buffer = new QBuffer(this);
+            buffer->setData(photo);
+            buffer->open(QIODevice::ReadOnly);
+            QImageReader imageReader(buffer);
+            QImage image = imageReader.read();
+            if (image.save(QString::fromStdString(imgFileName.string()))) {
+                gkEventLogger->publishEvent(tr("vCard avatar saved to filesystem for user, \"%1\"").arg(bareJid),
+                                            GkSeverity::Debug, "", false, true, false, false);
+                return;
+            }
         }
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);
@@ -689,16 +824,41 @@ void GkXmppClient::clientVCardReceived()
 {
     try {
         m_clientVCard = m_vCardManager->clientVCard();
-        fs::path fileName = fs::path(vcard_save_path.string() + native_slash.string() + m_connDetails.username.toStdString() + ".png");
+        fs::path imgFileName = fs::path(vcard_save_path.string() + native_slash.string() + config.jid().toStdString() + ".png");
+        fs::path xmlFileName = fs::path(vcard_save_path.string() + native_slash.string() + config.jid().toStdString() + ".xml");
+        GkXmppVCard vCardTmp;
+
+        QFile xmlFile(QString::fromStdString(xmlFileName.string()));
+        if (xmlFile.open(QIODevice::ReadWrite)) {
+            QXmlStreamWriter stream(&xmlFile);
+            m_clientVCard.toXml(&stream);
+            xmlFile.close();
+
+            vCardTmp.firstName = m_clientVCard.firstName();
+            vCardTmp.lastName = m_clientVCard.lastName();
+            vCardTmp.nickname = m_clientVCard.nickName();
+            vCardTmp.email = m_clientVCard.email();
+
+            gkEventLogger->publishEvent(tr("vCard XML data saved to filesystem for self-client."),
+                                        GkSeverity::Debug, "", false, true, false, false);
+        }
 
         QByteArray photo = m_clientVCard.photo();
+        vCardTmp.avatarImg = photo;
+        for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
+            if (iter->bareJid == m_connDetails.jid) {
+                iter->vCard = vCardTmp;
+                break;
+            }
+        }
+
         if (!photo.isEmpty()) {
             QPointer<QBuffer> buffer = new QBuffer(this);
             buffer->setData(photo);
             buffer->open(QIODevice::ReadOnly);
             QImageReader imageReader(buffer);
             QImage image = imageReader.read();
-            if (image.save(QString::fromStdString(fileName.string()))) {
+            if (image.save(QString::fromStdString(imgFileName.string()))) {
                 gkEventLogger->publishEvent(tr("vCard avatar saved to filesystem for self-client."),
                                             GkSeverity::Debug, "", false, true, false, false);
                 emit savedClientVCard(photo);
@@ -736,8 +896,19 @@ void GkXmppClient::updateClientVCard(const QXmppVCardIq &vCard)
  */
 void GkXmppClient::presenceChanged(const QString &bareJid, const QString &resource)
 {
-    gkEventLogger->publishEvent(tr("Presence changed for %1 towards %2.")
-    .arg(bareJid).arg(resource));
+    try {
+        for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
+            if (iter->bareJid == bareJid) {
+                iter->presence = std::make_shared<QXmppPresence>(m_rosterManager->getPresence(bareJid, resource));
+                emit updateRoster();
+                gkEventLogger->publishEvent(tr("Presence changed for user, \"%1\", towards: %2")
+                                                    .arg(bareJid).arg(resource));
+                break;
+            }
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
 
     return;
 }
@@ -749,9 +920,13 @@ void GkXmppClient::presenceChanged(const QString &bareJid, const QString &resour
  */
 void GkXmppClient::modifyPresence(const QXmppPresence::Type &pres)
 {
-    m_presence->setType(pres);
-    gkEventLogger->publishEvent(tr("User has changed their XMPP status towards %1."), GkSeverity::Info, "",
-                                true, true, false, false); // TODO: Make this complete!
+    try {
+        for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
+            if (iter->bareJid == m_connDetails.jid) {
+                m_presence->setType(pres);
+                iter->presence.reset();
+                iter->presence = std::make_shared<QXmppPresence>(pres);
+                emit updateRoster();
 
     return;
 }
@@ -784,6 +959,7 @@ void GkXmppClient::modifyAvailableStatusType(const QXmppPresence::AvailableStatu
 void GkXmppClient::acceptSubscriptionRequest(const QString &bareJid)
 {
     m_rosterManager->acceptSubscription(bareJid);
+    m_vCardManager->requestVCard(bareJid);
     gkEventLogger->publishEvent(tr("Invite request has successfully been processed for user, \"%1\"").arg(bareJid),
                                 GkSeverity::Info, "", true, true, false, false);
 
@@ -1316,6 +1492,12 @@ void GkXmppClient::notifyNewSubscription(const QString &bareJid)
 {
     gkEventLogger->publishEvent(tr("User, \"%1\", wishes to add you to their roster!").arg(getUsername(bareJid)),
                                 GkSeverity::Info, "", true, true, false, false);
+    GkXmppCallsign callsign;
+    callsign.bareJid = bareJid;
+    callsign.presence = std::make_shared<QXmppPresence>(QXmppPresence::Type::Unsubscribed);
+    callsign.subStatus = m_rosterManager->getRosterEntry(bareJid).subscriptionType();
+    m_rosterList.push_back(callsign);
+    emit updateRoster();
     emit sendSubscriptionRequest(bareJid);
 
     return;

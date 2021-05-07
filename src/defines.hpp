@@ -267,8 +267,9 @@ namespace GekkoFyre {
 // QTreeView Models
 //
 #define GK_XMPP_ROSTER_TREEWIDGET_MODEL_PRESENCE_IDX (0)
-#define GK_XMPP_ROSTER_TREEWIDGET_MODEL_NICKNAME_IDX (1)
-#define GK_XMPP_ROSTER_TREEWIDGET_MODEL_TOTAL_IDX (2)
+#define GK_XMPP_ROSTER_TREEWIDGET_MODEL_BAREJID_IDX (1)
+#define GK_XMPP_ROSTER_TREEWIDGET_MODEL_NICKNAME_IDX (2)
+#define GK_XMPP_ROSTER_TREEWIDGET_MODEL_TOTAL_IDX (3)
 
 #define GK_XMPP_ROSTER_BLOCKED_TREEWIDGET_MODEL_NICKNAME_IDX (0)
 #define GK_XMPP_ROSTER_BLOCKED_TREEWIDGET_MODEL_REASON_IDX (1)
@@ -439,11 +440,20 @@ namespace Network {
             quint16 port;
         };
 
-        struct GkXmppPendingCallsign {
+        struct GkXmppVCard {
+            QString firstName;
+            QString lastName;
+            QString email;
+            QString nickname;
+            QByteArray avatarImg;
+        };
+
+        struct GkXmppCallsign {
             GkHost server;
             QString bareJid;
-            QString nickname;
-            QXmppPresence presence;
+            GkXmppVCard vCard;
+            std::shared_ptr<QXmppPresence> presence;
+            QXmppRosterIq::Item::SubscriptionType subStatus;
         };
 
         struct GkXmppBlocklist {

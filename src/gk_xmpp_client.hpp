@@ -113,6 +113,9 @@ public:
     std::shared_ptr<QXmppRegistrationManager> getRegistrationMgr();
     QMap<QString, QXmppPresence> getRosterMap();
     QXmppPresence statusToPresence(const Network::GkXmpp::GkOnlineStatus &status);
+    Network::GkXmpp::GkOnlineStatus presenceToStatus(const QXmppPresence::AvailableStatusType &xmppPresence);
+    QString presenceToString(const QXmppPresence::AvailableStatusType &xmppPresence);
+    QIcon presenceToIcon(const QXmppPresence::AvailableStatusType &xmppPresence);
     bool deleteUserAccount();
     QString obtainAvatarFilePath();
 
@@ -188,10 +191,13 @@ signals:
     void delJidToRoster(const QString &bareJid); // User requested a deletion from the roster, therefore remove JID!
     void changeRosterJid(const QString &bareJid); // A change needs to be made within the roster, therefore modify JID!
 
+    void updateRoster();
+
     //
     // vCard management
     void sendClientVCard(const QXmppVCardIq &vCard);
     void savedClientVCard(const QByteArray &avatar_pic);
+    void sendUserVCard(const QXmppVCardIq &vCard);
 
     //
     // Event & Logging management
@@ -227,7 +233,7 @@ private:
     std::shared_ptr<QXmppRosterManager> m_rosterManager;
     QStringList rosterGroups;
     QVector<QString> m_blockList;
-    QMap<QString, QXmppPresence> m_rosterMap;
+    QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign> m_rosterList;
 
     //
     // Filesystem & Directories

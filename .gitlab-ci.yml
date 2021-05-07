@@ -73,6 +73,8 @@ sworld_debug_archlinux_x86_64:
   before_script:
   - pacman -Sy --noconfirm
   - pacman -Syyu --noconfirm
+  - pacman -S hunspell
+  - pacman -S hunspell-en
   - export CC=/usr/bin/clang
   - export CXX=/usr/bin/clang++
   - strip --remove-section=.note.ABI-tag /usr/lib64/libQt5Core.so.5

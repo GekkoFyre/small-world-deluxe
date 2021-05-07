@@ -279,16 +279,21 @@
                      <bool>true</bool>
                     </property>
                     <property name="columnCount">
-                     <number>2</number>
+                     <number>3</number>
                     </property>
                     <column>
                      <property name="text">
-                      <string notr="true">1</string>
+                      <string notr="true"># / Presence</string>
                      </property>
                     </column>
                     <column>
                      <property name="text">
-                      <string notr="true">2</string>
+                      <string notr="true">ID</string>
+                     </property>
+                    </column>
+                    <column>
+                     <property name="text">
+                      <string>Nickname</string>
                      </property>
                     </column>
                    </widget>
@@ -353,7 +358,12 @@
                     </property>
                     <column>
                      <property name="text">
-                      <string notr="true">1</string>
+                      <string notr="true">Nickname</string>
+                     </property>
+                    </column>
+                    <column>
+                     <property name="text">
+                      <string>Reason</string>
                      </property>
                     </column>
                    </widget>
@@ -744,11 +754,21 @@
   </action>
  </widget>
  <tabstops>
-  <tabstop>tabWidget</tabstop>
+  <tabstop>pushButton_self_avatar</tabstop>
+  <tabstop>lineEdit_edit_nickname</tabstop>
   <tabstop>scrollArea_callsigns_groups</tabstop>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>treeWidget_callsigns_groups</tabstop>
   <tabstop>comboBox_current_status</tabstop>
-  <tabstop>pushButton_user_login</tabstop>
+  <tabstop>lineEdit_self_nickname</tabstop>
   <tabstop>pushButton_user_create_account</tabstop>
+  <tabstop>treeWidget_callsigns_blocked</tabstop>
+  <tabstop>pushButton_user_login</tabstop>
+  <tabstop>scrollArea_callsigns_blocked</tabstop>
+  <tabstop>scrollArea_add_new_contact</tabstop>
+  <tabstop>lineEdit_add_contact_username</tabstop>
+  <tabstop>pushButton_add_contact_submit</tabstop>
+  <tabstop>pushButton_add_contact_cancel</tabstop>
  </tabstops>
  <resources/>
  <connections/>
