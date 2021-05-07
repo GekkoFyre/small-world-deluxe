@@ -60,13 +60,20 @@ using namespace Network;
 using namespace GkXmpp;
 using namespace Security;
 
-GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::GkXmppClient> xmppClient, QWidget *parent) :
-    QDialog(parent),
-    ui(new Ui::GkXmppMessageDialog)
+/**
+ * @brief GkXmppMessageDialog::GkXmppMessageDialog
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param xmppClient The XMPP client object.
+ * @param bareJid The user we are in communique with!
+ * @param parent The parent to this dialog.
+ */
+GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::GkXmppClient> xmppClient, const QString &bareJid,
+                                         QWidget *parent) : QDialog(parent), ui(new Ui::GkXmppMessageDialog)
 {
     ui->setupUi(this);
 
     gkXmppClient = std::move(xmppClient);
+    m_bareJid = bareJid;
 
     ui->label_callsign_2_icon->setPixmap(QPixmap(":/resources/contrib/images/vector/no-attrib/walkie-talkies.svg"));
     ui->toolButton_font->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/font.svg"));
@@ -105,7 +112,7 @@ void GkXmppMessageDialog::on_toolButton_view_roster_clicked()
     return;
 }
 
-void GkXmppMessageDialog::on_treeView_recv_msg_dlg_customContextMenuRequested(const QPoint &pos)
+void GkXmppMessageDialog::on_textBrowser_recv_msg_dlg_customContextMenuRequested(const QPoint &pos)
 {
     return;
 }
