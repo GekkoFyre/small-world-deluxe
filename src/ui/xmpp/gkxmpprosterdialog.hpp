@@ -44,7 +44,9 @@
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
 #include "src/gk_xmpp_client.hpp"
-#include "src/models/tableview/gk_xmpp_roster_model.hpp"
+#include "src/models/tableview/gk_xmpp_roster_presence_model.hpp"
+#include "src/models/tableview/gk_xmpp_roster_pending_model.hpp"
+#include "src/models/tableview/gk_xmpp_roster_blocked_model.hpp"
 #include "src/ui/xmpp/gkxmppmessagedialog.hpp"
 #include "src/gk_logger.hpp"
 #include <memory>
@@ -78,8 +80,6 @@ private slots:
     void on_pushButton_user_login_clicked();
     void on_pushButton_user_create_account_clicked();
     void on_tableView_callsigns_groups_customContextMenuRequested(const QPoint &pos);
-    void on_tableView_callsigns_groups_itemClicked(QTreeWidgetItem *item, int column);
-    void on_tableView_callsigns_groups_itemDoubleClicked(QTreeWidgetItem *item, int column);
     void on_actionAdd_Contact_triggered();
     void on_actionEdit_Contact_triggered();
     void on_actionDelete_Contact_triggered();
@@ -116,6 +116,10 @@ private slots:
     void on_lineEdit_edit_nickname_inputRejected();
     void on_tableView_callsigns_pending_clicked(const QModelIndex &index);
     void on_tableView_callsigns_pending_doubleClicked(const QModelIndex &index);
+    void on_tableView_callsigns_groups_clicked(const QModelIndex &index);
+    void on_tableView_callsigns_groups_doubleClicked(const QModelIndex &index);
+    void on_tableView_callsigns_blocked_clicked(const QModelIndex &index);
+    void on_tableView_callsigns_blocked_doubleClicked(const QModelIndex &index);
 
 signals:
     void updateAvailableStatusType(const QXmppPresence::AvailableStatusType &stat_type);
@@ -140,6 +144,13 @@ private:
     //
     // QTableView and related
     //
+    QPointer<GekkoFyre::GkXmppRosterPresenceTableViewModel> gkXmppPresenceTableViewModel;
+    QPointer<GekkoFyre::GkXmppRosterPendingTableViewModel> gkXmppPendingTableViewModel;
+    QPointer<GekkoFyre::GkXmppRosterBlockedTableViewModel> gkXmppBlockedTableViewModel;
+    QVector<GekkoFyre::Network::GkXmpp::GkPresenceTableViewModel> m_presenceRosterData;
+    QVector<GekkoFyre::Network::GkXmpp::GkPendingTableViewModel> m_pendingRosterData;
+    QVector<GekkoFyre::Network::GkXmpp::GkBlockedTableViewModel> m_blockedRosterData;
+
     void insertRosterPresenceTable(const QIcon &presence, const QString &bareJid, const QString &nickname);
     void removeRosterPresenceTable(const QString &bareJid);
     void updateRoster();

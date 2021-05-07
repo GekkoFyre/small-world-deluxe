@@ -660,7 +660,9 @@ set(GALAXY_UI_CPP
     src/models/tableview/gk_logger_model.cpp
     src/models/tableview/gk_active_msgs_model.cpp
     src/models/tableview/gk_callsign_msgs_model.cpp
-	src/models/tableview/gk_xmpp_roster_model.cpp
+	src/models/tableview/gk_xmpp_roster_presence_model.cpp
+	src/models/tableview/gk_xmpp_roster_pending_model.cpp
+	src/models/tableview/gk_xmpp_roster_blocked_model.cpp
     src/models/treeview/xmpp/gk_xmpp_roster_model.cpp)
 
 if(WIN32 OR MSYS OR MINGW)
@@ -758,7 +760,9 @@ set(GALAXY_OBJ_HEADERS
     src/models/tableview/gk_logger_model.hpp
     src/models/tableview/gk_active_msgs_model.hpp
     src/models/tableview/gk_callsign_msgs_model.hpp
-	src/models/tableview/gk_xmpp_roster_model.hpp
+	src/models/tableview/gk_xmpp_roster_presence_model.hpp
+	src/models/tableview/gk_xmpp_roster_pending_model.hpp
+	src/models/tableview/gk_xmpp_roster_blocked_model.hpp
     src/models/treeview/xmpp/gk_xmpp_roster_model.hpp)
 
 if(WIN32 OR MSYS OR MINGW)

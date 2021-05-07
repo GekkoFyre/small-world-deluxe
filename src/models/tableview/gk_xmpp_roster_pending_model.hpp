@@ -42,7 +42,6 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/dek_db.hpp"
 #include <memory>
 #include <QList>
 #include <QMutex>
@@ -54,27 +53,16 @@
 #include <QAbstractTableModel>
 #include <QSortFilterProxyModel>
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#include <sentry.h>
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
-
 namespace GekkoFyre {
 
-class GkXmppRosterTableViewModel : public QAbstractTableModel {
+class GkXmppRosterPendingTableViewModel : public QAbstractTableModel {
     Q_OBJECT
 
 public:
-    explicit GkXmppRosterTableViewModel(QPointer<GekkoFyre::GkLevelDb> database, QWidget *parent = nullptr);
-    ~GkXmppRosterTableViewModel() override;
+    explicit GkXmppRosterPendingTableViewModel(QPointer<QTableView> tableView, QWidget *parent = nullptr);
+    ~GkXmppRosterPendingTableViewModel() override;
 
-    void populateData(const QList<GekkoFyre::System::Events::Logging::GkEventLogging> &event_logs);
+    void populateData(const QList<GekkoFyre::Network::GkXmpp::GkPendingTableViewModel> &data_list);
     [[nodiscard]] int rowCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
     [[nodiscard]] int columnCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
 
@@ -82,21 +70,15 @@ public:
     [[nodiscard]] QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
 
 public slots:
-    void insertData(const GekkoFyre::System::Events::Logging::GkEventLogging &event);
-    void removeData(const GekkoFyre::System::Events::Logging::GkEventLogging &event);
-
-signals:
-    void grabRowSeverity(const GekkoFyre::System::Events::Logging::GkSeverity &severity);
+    void insertData(const GekkoFyre::Network::GkXmpp::GkPendingTableViewModel &data);
+    void removeData(const GekkoFyre::Network::GkXmpp::GkPendingTableViewModel &data);
 
 private:
-    QPointer<GekkoFyre::GkLevelDb> gkDb;
-    QList<GekkoFyre::System::Events::Logging::GkEventLogging> m_data;
+    QList<GekkoFyre::Network::GkXmpp::GkPendingTableViewModel> m_data;
 
     QPointer<QSortFilterProxyModel> proxyModel;
     QPointer<QTableView> table;
 
     QMutex dataBatchMutex;
-
-    QString determineSeverity() const;
 };
 };

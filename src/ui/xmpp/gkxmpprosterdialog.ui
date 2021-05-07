@@ -6,9 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>320</width>
+    <width>400</width>
     <height>640</height>
    </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>400</width>
+    <height>480</height>
+   </size>
   </property>
   <property name="windowTitle">
    <string>Callsign List</string>
@@ -220,29 +226,20 @@
              <enum>QTabWidget::South</enum>
             </property>
             <property name="currentIndex">
-             <number>2</number>
+             <number>0</number>
             </property>
             <widget class="QWidget" name="tab_callsigns">
              <attribute name="title">
               <string>Callsigns</string>
              </attribute>
              <layout class="QVBoxLayout" name="verticalLayout_3">
-              <property name="leftMargin">
-               <number>0</number>
-              </property>
-              <property name="topMargin">
-               <number>0</number>
-              </property>
-              <property name="rightMargin">
-               <number>0</number>
-              </property>
-              <property name="bottomMargin">
-               <number>0</number>
-              </property>
               <item>
                <widget class="QScrollArea" name="scrollArea_callsigns_groups">
                 <property name="frameShape">
                  <enum>QFrame::NoFrame</enum>
+                </property>
+                <property name="frameShadow">
+                 <enum>QFrame::Plain</enum>
                 </property>
                 <property name="horizontalScrollBarPolicy">
                  <enum>Qt::ScrollBarAlwaysOff</enum>
@@ -255,11 +252,23 @@
                   <rect>
                    <x>0</x>
                    <y>0</y>
-                   <width>292</width>
-                   <height>485</height>
+                   <width>352</width>
+                   <height>465</height>
                   </rect>
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_5">
+                  <property name="leftMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>0</number>
+                  </property>
                   <item>
                    <widget class="QTableView" name="tableView_callsigns_groups">
                     <property name="contextMenuPolicy">
@@ -300,7 +309,7 @@
                   <rect>
                    <x>0</x>
                    <y>0</y>
-                   <width>272</width>
+                   <width>352</width>
                    <height>465</height>
                   </rect>
                  </property>
@@ -335,18 +344,6 @@
               <string>Blocked</string>
              </attribute>
              <layout class="QVBoxLayout" name="verticalLayout_7">
-              <property name="leftMargin">
-               <number>0</number>
-              </property>
-              <property name="topMargin">
-               <number>0</number>
-              </property>
-              <property name="rightMargin">
-               <number>0</number>
-              </property>
-              <property name="bottomMargin">
-               <number>0</number>
-              </property>
               <item>
                <widget class="QScrollArea" name="scrollArea_callsigns_blocked">
                 <property name="frameShape">
@@ -366,11 +363,23 @@
                   <rect>
                    <x>0</x>
                    <y>0</y>
-                   <width>292</width>
-                   <height>485</height>
+                   <width>352</width>
+                   <height>465</height>
                   </rect>
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_8">
+                  <property name="leftMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>0</number>
+                  </property>
                   <item>
                    <widget class="QTableView" name="tableView_callsigns_blocked">
                     <property name="contextMenuPolicy">
