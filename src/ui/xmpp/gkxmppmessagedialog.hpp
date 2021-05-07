@@ -58,7 +58,7 @@ class GkXmppMessageDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit GkXmppMessageDialog(QPointer<GekkoFyre::GkXmppClient> xmppClient, QWidget *parent = nullptr);
+    explicit GkXmppMessageDialog(QPointer<GekkoFyre::GkXmppClient> xmppClient, const QString &bareJid, QWidget *parent = nullptr);
     ~GkXmppMessageDialog();
 
 private slots:
@@ -67,7 +67,7 @@ private slots:
     void on_toolButton_insert_clicked();
     void on_toolButton_attach_file_clicked();
     void on_toolButton_view_roster_clicked();
-    void on_treeView_recv_msg_dlg_customContextMenuRequested(const QPoint &pos);
+    void on_textBrowser_recv_msg_dlg_customContextMenuRequested(const QPoint &pos);
 
 private:
     Ui::GkXmppMessageDialog *ui;
@@ -76,5 +76,6 @@ private:
     // QXmpp and XMPP related
     //
     QPointer<GekkoFyre::GkXmppClient> gkXmppClient;
+    QString m_bareJid;
 };
 
