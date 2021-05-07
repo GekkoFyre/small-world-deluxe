@@ -112,14 +112,18 @@ private slots:
     void on_actionBlockUser_triggered();
     void on_actionUnblockUser_triggered();
     void on_actionEdit_Nickname_triggered();
-    void on_lineEdit_edit_nickname_returnPressed();
-    void on_lineEdit_edit_nickname_inputRejected();
+    void on_lineEdit_search_roster_returnPressed();
+    void on_lineEdit_search_roster_inputRejected();
     void on_tableView_callsigns_pending_clicked(const QModelIndex &index);
     void on_tableView_callsigns_pending_doubleClicked(const QModelIndex &index);
     void on_tableView_callsigns_groups_clicked(const QModelIndex &index);
     void on_tableView_callsigns_groups_doubleClicked(const QModelIndex &index);
     void on_tableView_callsigns_blocked_clicked(const QModelIndex &index);
     void on_tableView_callsigns_blocked_doubleClicked(const QModelIndex &index);
+
+    void recvUpdatePresenceTableViewModel();
+    void recvUpdatePendingTableViewModel();
+    void recvUpdateBlockedTableViewModel();
 
 signals:
     void updateAvailableStatusType(const QXmppPresence::AvailableStatusType &stat_type);
@@ -131,6 +135,10 @@ signals:
     void refuseSubscription(const QString &bareJid);
     void blockUser(const QString &bareJid);
     void unblockUser(const QString &bareJid);
+
+    void updatePresenceTableViewModel();
+    void updatePendingTableViewModel();
+    void updateBlockedTableViewModel();
 
 private:
     Ui::GkXmppRosterDialog *ui;
@@ -150,9 +158,16 @@ private:
     QVector<GekkoFyre::Network::GkXmpp::GkPresenceTableViewModel> m_presenceRosterData;
     QVector<GekkoFyre::Network::GkXmpp::GkPendingTableViewModel> m_pendingRosterData;
     QVector<GekkoFyre::Network::GkXmpp::GkBlockedTableViewModel> m_blockedRosterData;
+    QString m_bareJidPresenceSel;   // Currently selected item for already subscribed users
+    QString m_bareJidPendingSel;    // Currently selected item for users pending subscription
+    QString m_bareJidBlockedSel;    // Currently selected item for blocked users
 
     void insertRosterPresenceTable(const QIcon &presence, const QString &bareJid, const QString &nickname);
     void removeRosterPresenceTable(const QString &bareJid);
+    void insertRosterPendingTable(const QIcon &presence, const QString &bareJid, const QString &nickname);
+    void removeRosterPendingTable(const QString &bareJid);
+    void insertRosterBlockedTable(const QString &bareJid, const QString &reason);
+    void removeRosterBlockedTable(const QString &bareJid);
     void updateRoster();
     void updateActions();
 

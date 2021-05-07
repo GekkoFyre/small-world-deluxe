@@ -128,15 +128,16 @@ void GkXmppRosterPresenceTableViewModel::insertData(const GkPresenceTableViewMod
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param event
  */
-void GkXmppRosterPresenceTableViewModel::removeData(const GkPresenceTableViewModel &data)
+void GkXmppRosterPresenceTableViewModel::removeData(const QString &bareJid)
 {
     dataBatchMutex.lock();
-
-    for (int i = 0; i < m_data.size(); ++i) {
-        if (m_data[i].bareJid == data.bareJid) {
+    for (auto iter = m_data.begin(); iter != m_data.end();) {
+        if (iter->bareJid == bareJid) {
             beginRemoveRows(QModelIndex(), (m_data.count() - 1), (m_data.count() - 1));
-            m_data.removeAt(i); // Remove any occurrence of this value, one at a time!
+            m_data.erase(iter);
             endRemoveRows();
+        } else {
+            ++iter;
         }
     }
 

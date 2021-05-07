@@ -107,6 +107,7 @@ public:
     static QString getUsername(const QString &username);
     static QString getHostname(const QString &username);
     GekkoFyre::Network::GkXmpp::GkNetworkState getNetworkState() const;
+    bool isJidExist(const QString &bareJid);
     bool isJidOnline(const QString &bareJid);
 
     //

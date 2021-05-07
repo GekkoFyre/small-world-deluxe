@@ -446,6 +446,7 @@ namespace Network {
             QString lastName;
             QString email;
             QString nickname;
+            QString fullName;
             QByteArray avatarImg;
         };
 
@@ -481,17 +482,20 @@ namespace Network {
             QIcon presence;
             QString bareJid;
             QString nickName;
+            bool added;
         };
 
         struct GkPendingTableViewModel {
             QIcon presence;
             QString bareJid;
             QString nickName;
+            bool added;
         };
 
         struct GkBlockedTableViewModel {
             QString bareJid;
             QString reason;
+            bool added;
         };
     }
 }

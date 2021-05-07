@@ -71,7 +71,7 @@ public:
 
 public slots:
     void insertData(const GekkoFyre::Network::GkXmpp::GkBlockedTableViewModel &data);
-    void removeData(const GekkoFyre::Network::GkXmpp::GkBlockedTableViewModel &data);
+    void removeData(const QString &bareJid);
 
 private:
     QList<GekkoFyre::Network::GkXmpp::GkBlockedTableViewModel> m_data;

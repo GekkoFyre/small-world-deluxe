@@ -510,6 +510,23 @@ GekkoFyre::Network::GkXmpp::GkNetworkState GkXmppClient::getNetworkState() const
 }
 
 /**
+ * @brief GkXmppClient::isJidExist determines whether the JID exists or not.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid The user in question.
+ * @return Whether the given bareJid exists or not.
+ */
+bool GkXmppClient::isJidExist(const QString &bareJid)
+{
+    for (const auto &entry: m_rosterList) {
+        if (entry.bareJid == bareJid) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
  * @brief GkXmppClient::isJidOnline checks to see whether the bareJid is online, in any capacity, at all.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param bareJid The user in question.

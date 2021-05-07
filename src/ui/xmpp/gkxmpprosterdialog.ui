@@ -172,7 +172,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="lineEdit_edit_nickname"/>
+          <widget class="QLineEdit" name="lineEdit_search_roster"/>
          </item>
         </layout>
        </widget>
@@ -801,7 +801,7 @@
   </action>
  </widget>
  <tabstops>
-  <tabstop>lineEdit_edit_nickname</tabstop>
+  <tabstop>lineEdit_search_roster</tabstop>
   <tabstop>tableView_callsigns_blocked</tabstop>
   <tabstop>pushButton_user_login</tabstop>
   <tabstop>scrollArea_callsigns_blocked</tabstop>
