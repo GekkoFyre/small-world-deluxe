@@ -10,8 +10,14 @@
     <x>0</x>
     <y>0</y>
     <width>640</width>
-    <height>320</height>
+    <height>480</height>
    </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>640</width>
+    <height>480</height>
+   </size>
   </property>
   <property name="windowTitle">
    <string>XMPP Registration -- Small World Deluxe</string>
@@ -84,14 +90,14 @@
                 <property name="bottomMargin">
                  <number>0</number>
                 </property>
-                <item row="0" column="0">
+                <item row="1" column="0">
                  <widget class="QLabel" name="label_email">
                   <property name="text">
                    <string>E-mail: </string>
                   </property>
                  </widget>
                 </item>
-                <item row="0" column="1">
+                <item row="1" column="1">
                  <widget class="QLineEdit" name="lineEdit_email">
                   <property name="maxLength">
                    <number>512</number>
@@ -101,14 +107,14 @@
                   </property>
                  </widget>
                 </item>
-                <item row="1" column="0">
+                <item row="2" column="0">
                  <widget class="QLabel" name="label_username">
                   <property name="text">
                    <string>Username: </string>
                   </property>
                  </widget>
                 </item>
-                <item row="1" column="1">
+                <item row="2" column="1">
                  <widget class="QLineEdit" name="lineEdit_username">
                   <property name="maxLength">
                    <number>256</number>
@@ -121,14 +127,14 @@
                   </property>
                  </widget>
                 </item>
-                <item row="2" column="0">
+                <item row="3" column="0">
                  <widget class="QLabel" name="label_password">
                   <property name="text">
                    <string>Password: </string>
                   </property>
                  </widget>
                 </item>
-                <item row="2" column="1">
+                <item row="3" column="1">
                  <widget class="QLineEdit" name="lineEdit_password">
                   <property name="maxLength">
                    <number>256</number>
@@ -141,14 +147,14 @@
                   </property>
                  </widget>
                 </item>
-                <item row="3" column="0">
+                <item row="4" column="0">
                  <widget class="QLabel" name="label_xmpp_port">
                   <property name="text">
                    <string>Port: </string>
                   </property>
                  </widget>
                 </item>
-                <item row="3" column="1">
+                <item row="4" column="1">
                  <widget class="QSpinBox" name="spinBox_xmpp_port">
                   <property name="minimum">
                    <number>80</number>
@@ -161,14 +167,14 @@
                   </property>
                  </widget>
                 </item>
-                <item row="5" column="0">
+                <item row="6" column="0">
                  <widget class="QLabel" name="label_xmpp_captcha">
                   <property name="text">
                    <string>Captcha: </string>
                   </property>
                  </widget>
                 </item>
-                <item row="5" column="1">
+                <item row="6" column="1">
                  <widget class="QFrame" name="frame_xmpp_captcha">
                   <property name="frameShape">
                    <enum>QFrame::NoFrame</enum>
@@ -263,12 +269,22 @@
                   </layout>
                  </widget>
                 </item>
-                <item row="4" column="1">
+                <item row="5" column="1">
                  <widget class="Line" name="line">
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
                   </property>
                  </widget>
+                </item>
+                <item row="0" column="0">
+                 <widget class="QLabel" name="label_server_type">
+                  <property name="text">
+                   <string>Server: </string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1">
+                 <widget class="QComboBox" name="comboBox_server_type"/>
                 </item>
                </layout>
               </widget>
@@ -445,14 +461,14 @@
                 <property name="bottomMargin">
                  <number>0</number>
                 </property>
-                <item row="0" column="0">
+                <item row="1" column="0">
                  <widget class="QLabel" name="label_login_username">
                   <property name="text">
                    <string>Username: </string>
                   </property>
                  </widget>
                 </item>
-                <item row="0" column="1">
+                <item row="1" column="1">
                  <widget class="QLineEdit" name="lineEdit_login_username">
                   <property name="maxLength">
                    <number>256</number>
@@ -465,14 +481,14 @@
                   </property>
                  </widget>
                 </item>
-                <item row="1" column="0">
+                <item row="2" column="0">
                  <widget class="QLabel" name="label_login_password">
                   <property name="text">
                    <string>Password: </string>
                   </property>
                  </widget>
                 </item>
-                <item row="1" column="1">
+                <item row="2" column="1">
                  <widget class="QLineEdit" name="lineEdit_login_password">
                   <property name="maxLength">
                    <number>256</number>
@@ -485,14 +501,14 @@
                   </property>
                  </widget>
                 </item>
-                <item row="4" column="0">
+                <item row="5" column="0">
                  <widget class="QLabel" name="label_xmpp_login_captcha">
                   <property name="text">
                    <string>Captcha: </string>
                   </property>
                  </widget>
                 </item>
-                <item row="4" column="1">
+                <item row="5" column="1">
                  <widget class="QFrame" name="frame_xmpp_login_captcha">
                   <property name="frameShape">
                    <enum>QFrame::NoFrame</enum>
@@ -587,14 +603,14 @@
                   </layout>
                  </widget>
                 </item>
-                <item row="2" column="0">
+                <item row="3" column="0">
                  <widget class="QLabel" name="label_login_xmpp_port">
                   <property name="text">
                    <string>Port: </string>
                   </property>
                  </widget>
                 </item>
-                <item row="2" column="1">
+                <item row="3" column="1">
                  <widget class="QSpinBox" name="spinBox_login_xmpp_port">
                   <property name="minimum">
                    <number>80</number>
@@ -607,12 +623,22 @@
                   </property>
                  </widget>
                 </item>
-                <item row="3" column="1">
+                <item row="4" column="1">
                  <widget class="Line" name="line_2">
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
                   </property>
                  </widget>
+                </item>
+                <item row="0" column="0">
+                 <widget class="QLabel" name="label_xmpp_login_server_type">
+                  <property name="text">
+                   <string>Server: </string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1">
+                 <widget class="QComboBox" name="comboBox_xmpp_login_server_type"/>
                 </item>
                </layout>
               </widget>
@@ -789,14 +815,14 @@
                 <property name="bottomMargin">
                  <number>0</number>
                 </property>
-                <item row="0" column="0">
+                <item row="1" column="0">
                  <widget class="QLabel" name="label_change_password_username">
                   <property name="text">
                    <string>Username: </string>
                   </property>
                  </widget>
                 </item>
-                <item row="0" column="1">
+                <item row="1" column="1">
                  <widget class="QLineEdit" name="lineEdit_change_password_username">
                   <property name="maxLength">
                    <number>256</number>
@@ -809,14 +835,14 @@
                   </property>
                  </widget>
                 </item>
-                <item row="1" column="0">
+                <item row="2" column="0">
                  <widget class="QLabel" name="label_change_password_old_input">
                   <property name="text">
                    <string>Old Password: </string>
                   </property>
                  </widget>
                 </item>
-                <item row="1" column="1">
+                <item row="2" column="1">
                  <widget class="QLineEdit" name="lineEdit_change_password_old_input">
                   <property name="maxLength">
                    <number>256</number>
@@ -829,21 +855,21 @@
                   </property>
                  </widget>
                 </item>
-                <item row="3" column="1">
+                <item row="4" column="1">
                  <widget class="Line" name="line_3">
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
                   </property>
                  </widget>
                 </item>
-                <item row="4" column="0">
+                <item row="5" column="0">
                  <widget class="QLabel" name="label_xmpp_change_password_captcha">
                   <property name="text">
                    <string>Captcha: </string>
                   </property>
                  </widget>
                 </item>
-                <item row="4" column="1">
+                <item row="5" column="1">
                  <widget class="QFrame" name="frame_xmpp_change_password_captcha">
                   <property name="frameShape">
                    <enum>QFrame::NoFrame</enum>
@@ -938,7 +964,7 @@
                   </layout>
                  </widget>
                 </item>
-                <item row="2" column="1">
+                <item row="3" column="1">
                  <widget class="QLineEdit" name="lineEdit_change_password_new_input">
                   <property name="maxLength">
                    <number>256</number>
@@ -948,12 +974,22 @@
                   </property>
                  </widget>
                 </item>
-                <item row="2" column="0">
+                <item row="3" column="0">
                  <widget class="QLabel" name="label_change_password_new_input">
                   <property name="text">
                    <string>New Password: </string>
                   </property>
                  </widget>
+                </item>
+                <item row="0" column="0">
+                 <widget class="QLabel" name="label_xmpp_change_password_server_type">
+                  <property name="text">
+                   <string>Server: </string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1">
+                 <widget class="QComboBox" name="comboBox_xmpp_change_password_server_type"/>
                 </item>
                </layout>
               </widget>
@@ -1130,14 +1166,14 @@
                 <property name="bottomMargin">
                  <number>0</number>
                 </property>
-                <item row="1" column="0">
+                <item row="2" column="0">
                  <widget class="QLabel" name="label_change_email_username">
                   <property name="text">
                    <string>Username: </string>
                   </property>
                  </widget>
                 </item>
-                <item row="1" column="1">
+                <item row="2" column="1">
                  <widget class="QLineEdit" name="lineEdit_change_email_username">
                   <property name="maxLength">
                    <number>256</number>
@@ -1150,14 +1186,14 @@
                   </property>
                  </widget>
                 </item>
-                <item row="2" column="0">
+                <item row="3" column="0">
                  <widget class="QLabel" name="label_change_email_password">
                   <property name="text">
                    <string>Password: </string>
                   </property>
                  </widget>
                 </item>
-                <item row="2" column="1">
+                <item row="3" column="1">
                  <widget class="QLineEdit" name="lineEdit_change_email_password">
                   <property name="maxLength">
                    <number>256</number>
@@ -1170,21 +1206,21 @@
                   </property>
                  </widget>
                 </item>
-                <item row="3" column="1">
+                <item row="4" column="1">
                  <widget class="Line" name="line_4">
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
                   </property>
                  </widget>
                 </item>
-                <item row="4" column="0">
+                <item row="5" column="0">
                  <widget class="QLabel" name="label_xmpp_change_email_captcha">
                   <property name="text">
                    <string>Captcha: </string>
                   </property>
                  </widget>
                 </item>
-                <item row="4" column="1">
+                <item row="5" column="1">
                  <widget class="QFrame" name="frame_xmpp_change_email_captcha">
                   <property name="frameShape">
                    <enum>QFrame::NoFrame</enum>
@@ -1279,19 +1315,29 @@
                   </layout>
                  </widget>
                 </item>
-                <item row="0" column="0">
+                <item row="1" column="0">
                  <widget class="QLabel" name="label_change_email_new_address">
                   <property name="text">
                    <string>New e-mail: </string>
                   </property>
                  </widget>
                 </item>
-                <item row="0" column="1">
+                <item row="1" column="1">
                  <widget class="QLineEdit" name="lineEdit_change_email_new_address">
                   <property name="maxLength">
                    <number>512</number>
                   </property>
                  </widget>
+                </item>
+                <item row="0" column="0">
+                 <widget class="QLabel" name="label_change_email_server_type">
+                  <property name="text">
+                   <string>Server: </string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1">
+                 <widget class="QComboBox" name="comboBox_change_email_server_type"/>
                 </item>
                </layout>
               </widget>

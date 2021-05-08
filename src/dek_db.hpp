@@ -165,7 +165,8 @@ public:
     std::string removeInvalidChars(const std::string &string_to_modify);
     std::string boolEnum(const bool &is_true);
     bool boolStr(const std::string &is_true);
-    int boolInt(const bool &is_true);
+    qint32 boolInt(const bool &is_true);
+    bool intBool(const qint32 &value);
 
 private:
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;

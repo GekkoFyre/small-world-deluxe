@@ -95,6 +95,7 @@ public:
                             QPointer<GekkoFyre::GkXmppClient> xmppClient,
                             QPointer<GekkoFyre::GkEventLogger> eventLogger,
                             QPointer<GekkoFyre::GkTextToSpeech> textToSpeechPtr,
+                            const GekkoFyre::System::UserInterface::GkSettingsDlgTab &settingsDlgTab = GekkoFyre::System::UserInterface::GkSettingsDlgTab::GkGeneralStation,
                             QWidget *parent = nullptr);
     ~DialogSettings() override;
 
@@ -340,6 +341,8 @@ private:
 
     QPointer<GekkoFyre::GkFrequencies> gkFreqs;
     QPointer<GekkoFyre::GkFreqTableModel> gkFreqTableModel;
+
+    GekkoFyre::System::UserInterface::GkSettingsDlgTab gkSettingsDlgTab;
 
     void prefill_audio_devices();
     void prefill_audio_encode_comboboxes();

@@ -3043,7 +3043,7 @@ bool GkLevelDb::boolStr(const std::string &is_true)
  * @param is_true
  * @return
  */
-int GkLevelDb::boolInt(const bool &is_true)
+qint32 GkLevelDb::boolInt(const bool &is_true)
 {
     int ret = -1;
     if (is_true == true) {
@@ -3053,6 +3053,27 @@ int GkLevelDb::boolInt(const bool &is_true)
     }
 
     return ret;
+}
+
+/**
+ * @brief GkLevelDb::intBool converts an integer to the equivalent boolean value, or otherwise, throws an exception if it
+ * is out-of-range.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value The corresponding integer value.
+ * @return Whether a corresponding true or false was indicated.
+ */
+bool GkLevelDb::intBool(const qint32 &value)
+{
+    switch (value) {
+        case 0:
+            return false;
+        case 1:
+            return true;
+        default:
+            std::throw_with_nested(std::invalid_argument(tr("An invalid boolean value was provided!").toStdString()));
+    }
+
+    return false;
 }
 
 /**
