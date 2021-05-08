@@ -275,7 +275,5 @@ private:
     GekkoFyre::Network::GkXmpp::GkNetworkState m_netState;
     QString m_id;
 
-    void initRosterMgr();
-
 };
 };
