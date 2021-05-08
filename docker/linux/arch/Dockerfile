@@ -72,6 +72,8 @@ RUN pacman -S fakeroot --noconfirm
 RUN pacman -S binutils --noconfirm
 RUN pacman -S base-devel --noconfirm
 RUN pacman -S nasm --noconfirm
+RUN pacman -S nano --noconfirm
+RUN pacman -S mlocate --noconfirm
 
 # Create devel user...
 RUN useradd -m -d /home/devel -u 1000 -U -G users,tty -s /bin/bash devel
@@ -174,8 +176,7 @@ RUN yay -S --noconfirm --noprogressbar --needed \
         mingw-w64-qt5-serialport \
         mingw-w64-qt5-speech \
         mingw-w64-configure \
-        mingw-w64-python-bin \
-        qxmpp
+        mingw-w64-python-bin
 
 # Cleanup
 USER root
@@ -271,7 +272,7 @@ RUN [ "wget", "https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.16.tar.gz" ]
 RUN tar -xvzf libiconv-1.16.tar.gz
 CMD cd libiconv-1.16
 CMD [ "./configure", "--enable-static --enable-shared" ]
-CMD [ "make", "-j 12" ]
+CMD [ "make", "-j$(nproc)" ]
 CMD [ "make", "install" ]
 CMD cd ./..
 CMD rm -rvf libiconv-1.16
@@ -280,10 +281,48 @@ CMD cd codec2
 CMD mkdir build
 CMD cd build
 CMD [ "cmake", "-G 'Unix Makefiles' -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=NO .." ]
-CMD [ "make", "-j 12" ]
+CMD [ "make", "-j$(nproc)" ]
 CMD [ "make", "install" ]
 CMD cd ./../..
 CMD rm -rvf codec2
+RUN [ "wget", "https://github.com/hunspell/hunspell/files/2573619/hunspell-1.7.0.tar.gz" ]
+RUN tar -xvzf hunspell-1.7.0.tar.gz
+CMD cd hunspell-1.7.0
+CMD [ "autoreconf", "-vfi" ]
+CMD [ "./configure", "--enable-static --enable-shared" ]
+CMD [ "make", "-j$(nproc)" ]
+CMD [ "make", "install" ]
+CMD cd ./..
+CMD rm -rvf hunspell-1.7.0
+CMD [ "git", "clone https://gitlab.xiph.org/xiph/libopusenc.git" ]
+CMD cd libopusenc
+CMD [ "git", "submodule update --init --recursive" ]
+CMD sh autogen.sh
+CMD [ "./configure", "--enable-static" ]
+CMD [ "make", "-j$(nproc)" ]
+CMD [ "make", "install" ]
+CMD cd ./..
+CMD rm -rvf libopusenc
+CMD [ "git", "clone https://github.com/qxmpp-project/qxmpp.git" ]
+CMD cd qxmpp
+CMD [ "git", "submodule update --init --recursive" ]
+CMD mkdir build
+CMD cd build
+CMD [ "cmake", "-G 'Unix Makefiles' -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=NO .." ]
+CMD [ "make", "-j$(nproc)" ]
+CMD [ "make", "install" ]
+CMD cd ./../..
+CMD rm -rvf qxmpp
+CMD [ "git", "clone https://github.com/google/snappy.git" ]
+CMD cd snappy
+CMD [ "git", "submodule update --init --recursive" ]
+CMD mkdir build
+CMD cd build
+CMD [ "cmake", "-G 'Unix Makefiles' -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=OFF -DSNAPPY_BUILD_TESTS=OFF -DSNAPPY_BUILD_BENCHMARKS=OFF .." ]
+CMD [ "make", "-j$(nproc)" ]
+CMD [ "make", "install" ]
+CMD cd ./../..
+CMD rm -rvf snappy
 
 #
 # We had to login to the Docker image itself and compile this by hand manually!
@@ -291,8 +330,8 @@ CMD rm -rvf codec2
 RUN [ "wget", "https://github.com/Hamlib/Hamlib/releases/download/4.1/hamlib-4.1.tar.gz" ]
 RUN tar -xvzf hamlib-4.1.tar.gz
 CMD cd hamlib-4.1
-CMD [ "./configure", "--enable-static --enable-shared" ]
-CMD [ "make", "-j 12" ]
+CMD [ "./configure", "--enable-static --enable-shared --with-xml-support --with-cxx-binding --with-libusb" ]
+CMD [ "make", "-j$(nproc)" ]
 CMD [ "make", "install" ]
 CMD cd ./..
 CMD rm -rvf hamlib-4.1
@@ -310,6 +349,6 @@ CMD cd src/contrib/QtUsb
 CMD mkdir build
 CMD cd build
 CMD [ "qmake", "-makefile .." ]
-CMD [ "make", "-j 12" ]
+CMD [ "make", "-j$(nproc)" ]
 CMD [ "make", "install" ]
 CMD cd ./../../../..

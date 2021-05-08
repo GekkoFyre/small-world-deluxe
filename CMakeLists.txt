@@ -197,7 +197,7 @@ endif(Boost_FOUND)
 # https://github.com/qxmpp-project/qxmpp
 #
 function(install_qxmpp)
-    find_package(QXMPP REQUIRED)
+    find_package(QXmpp REQUIRED)
     if (QXMPP_FOUND)
         include_directories(${QXMPP_INCLUDE_DIRS})
         set(LIBS ${LIBS} ${QXMPP_LIBRARIES})

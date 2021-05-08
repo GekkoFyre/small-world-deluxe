@@ -338,7 +338,8 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         });
 
         QObject::connect(this, &QXmppClient::disconnected, this, [=]() {
-            if (!m_connDetails.server.settings_client.auto_reconnect) {
+            if (!m_connDetails.server.settings_client.auto_reconnect && !m_connDetails.server.url.isEmpty() &&
+                !m_connDetails.jid.isEmpty()) {
                 if (!this->isConnected()) { // We have been disconnected from the given XMPP server!
                     QMessageBox msgBoxPolicy;
                     msgBoxPolicy.setParent(nullptr);
@@ -481,7 +482,11 @@ bool GkXmppClient::isHostnameSame(const QString &hostname, const QString &compar
  */
 QString GkXmppClient::getUsername(const QString &username)
 {
+    #if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
+    auto domain = username.split('@', QString::SkipEmptyParts);
+    #else
     auto domain = username.split('@', Qt::SkipEmptyParts);
+    #endif
     if (!domain.empty()) {
         return domain.first();
     }
@@ -497,7 +502,11 @@ QString GkXmppClient::getUsername(const QString &username)
  */
 QString GkXmppClient::getHostname(const QString &username)
 {
+    #if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
+    auto domain = username.split('@', QString::SkipEmptyParts);
+    #else
     auto domain = username.split('@', Qt::SkipEmptyParts);
+    #endif
     if (!domain.empty()) {
         return domain.last();
     }

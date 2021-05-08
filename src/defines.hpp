@@ -69,6 +69,7 @@
 #include <QString>
 #include <QVector>
 #include <QVariant>
+#include <QtGlobal>
 #include <QPointer>
 #include <QDateTime>
 #include <QHostInfo>
