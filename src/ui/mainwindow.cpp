@@ -2218,11 +2218,15 @@ void MainWindow::readHunspellSettings()
  */
 void MainWindow::launchXmppRosterDlg()
 {
-    if (!gkXmppRosterDlg->isVisible()) { // The dialog window has not been launched yet, and whether we should show it or not!
-        gkXmppRosterDlg->setWindowFlags(Qt::Window);
-        gkXmppRosterDlg->show();
+    if (!gkConnDetails.server.url.isEmpty() && !gkConnDetails.jid.isEmpty()) {
+        if (!gkXmppRosterDlg->isVisible()) { // The dialog window has not been launched yet, and whether we should show it or not!
+            gkXmppRosterDlg->setWindowFlags(Qt::Window);
+            gkXmppRosterDlg->show();
+            return;
+        }
     }
 
+    launchSettingsWin();
     return;
 }
 

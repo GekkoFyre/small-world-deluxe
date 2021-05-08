@@ -198,6 +198,15 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
                          gkEventLogger, SLOT(recvXmppLog(QXmppLogger::MessageType, const QString &)));
 
         //
+        // Initialize all the SIGNALS and SLOTS for QXmppRosterManager...
+        QObject::connect(m_rosterManager.get(), SIGNAL(presenceChanged(const QString &, const QString &)), this, SLOT(presenceChanged(const QString &, const QString &)));
+        QObject::connect(m_rosterManager.get(), SIGNAL(rosterReceived()), this, SLOT(handleRosterReceived()));
+        QObject::connect(m_rosterManager.get(), SIGNAL(subscriptionReceived(const QString &)), this, SLOT(notifyNewSubscription(const QString &)));
+        QObject::connect(m_rosterManager.get(), SIGNAL(itemAdded(const QString &)), this, SLOT(itemAdded(const QString &)));
+        QObject::connect(m_rosterManager.get(), SIGNAL(itemRemoved(const QString &)), this, SLOT(itemRemoved(const QString &)));
+        QObject::connect(m_rosterManager.get(), SIGNAL(itemChanged(const QString &)), this, SLOT(itemChanged(const QString &)));
+
+        //
         // Find the XMPP servers as defined by either the user themselves or GekkoFyre Networks...
         QString dns_lookup_str;
         switch (m_connDetails.server.type) {
@@ -310,10 +319,6 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
             }
 
             //
-            // Initialize all the SIGNALS and SLOTS for QXmppRosterManager...
-            initRosterMgr();
-
-            //
             // Manage queues that were created prior to a full connection being made...
             for (; !m_availStatusTypeQueue.empty(); m_availStatusTypeQueue.pop()) {
                 m_presence->setAvailableStatusType(m_availStatusTypeQueue.front());
@@ -325,14 +330,16 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
 
             //
             // Request vCard of all the bareJids in roster...
-            const QStringList bareJids = m_rosterManager->getRosterBareJids();
-            for (const auto &bareJid : bareJids) {
-                m_vCardManager->requestVCard(bareJid);
+            if (!m_rosterList.isEmpty()) {
+                for (const auto &entry: m_rosterList) {
+                    m_vCardManager->requestVCard(entry.bareJid);
+                }
             }
         });
 
         QObject::connect(this, &QXmppClient::disconnected, this, [=]() {
-            if (!m_connDetails.server.settings_client.auto_reconnect) {
+            if (!m_connDetails.server.settings_client.auto_reconnect && !m_connDetails.server.url.isEmpty() &&
+                !m_connDetails.jid.isEmpty()) {
                 if (!this->isConnected()) { // We have been disconnected from the given XMPP server!
                     QMessageBox msgBoxPolicy;
                     msgBoxPolicy.setParent(nullptr);
@@ -475,7 +482,11 @@ bool GkXmppClient::isHostnameSame(const QString &hostname, const QString &compar
  */
 QString GkXmppClient::getUsername(const QString &username)
 {
+    #if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
+    auto domain = username.split('@', QString::SkipEmptyParts);
+    #else
     auto domain = username.split('@', Qt::SkipEmptyParts);
+    #endif
     if (!domain.empty()) {
         return domain.first();
     }
@@ -491,7 +502,11 @@ QString GkXmppClient::getUsername(const QString &username)
  */
 QString GkXmppClient::getHostname(const QString &username)
 {
+    #if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
+    auto domain = username.split('@', QString::SkipEmptyParts);
+    #else
     auto domain = username.split('@', Qt::SkipEmptyParts);
+    #endif
     if (!domain.empty()) {
         return domain.last();
     }
@@ -507,6 +522,57 @@ QString GkXmppClient::getHostname(const QString &username)
 GekkoFyre::Network::GkXmpp::GkNetworkState GkXmppClient::getNetworkState() const
 {
     return m_netState;
+}
+
+/**
+ * @brief GkXmppClient::isJidExist determines whether the JID exists or not.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid The user in question.
+ * @return Whether the given bareJid exists or not.
+ */
+bool GkXmppClient::isJidExist(const QString &bareJid)
+{
+    for (const auto &entry: m_rosterList) {
+        if (entry.bareJid == bareJid) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * @brief GkXmppClient::isJidOnline checks to see whether the bareJid is online, in any capacity, at all.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid The user in question.
+ * @return Whether the given bareJid is online, in any capacity, at all.
+ */
+bool GkXmppClient::isJidOnline(const QString &bareJid)
+{
+    for (const auto &entry: m_rosterList) {
+        if (entry.bareJid == bareJid) {
+            switch (entry.presence->availableStatusType()) {
+                case QXmppPresence::Online:
+                    return true;
+                case QXmppPresence::Away:
+                    return true;
+                case QXmppPresence::XA:
+                    return true;
+                case QXmppPresence::DND:
+                    return true;
+                case QXmppPresence::Chat:
+                    return true;
+                case QXmppPresence::Invisible:
+                    return false;
+                default:
+                    return false;
+            }
+
+            break;
+        }
+    }
+
+    return false;
 }
 
 /**
@@ -743,15 +809,18 @@ void GkXmppClient::clientConnected()
 void GkXmppClient::handleRosterReceived()
 {
     auto rosterBareJids = m_rosterManager->getRosterBareJids();
-    for (const auto &bareJid: rosterBareJids) {
-        GkXmppCallsign callsign;
-        callsign.bareJid = bareJid;
-        callsign.presence = std::make_shared<QXmppPresence>(QXmppPresence::Type::Unsubscribed);
-        callsign.subStatus = m_rosterManager->getRosterEntry(bareJid).subscriptionType();
-        m_rosterList.push_back(callsign);
-        emit updateRoster();
+    if (!rosterBareJids.isEmpty()) {
+        for (const auto &rawBareJid: rosterBareJids) {
+            const auto jidItem = m_rosterManager->getRosterEntry(rawBareJid);
+            GkXmppCallsign callsign;
+            callsign.bareJid = jidItem.bareJid();
+            callsign.presence = std::make_shared<QXmppPresence>(QXmppPresence::Type::Unsubscribed);
+            callsign.subStatus = jidItem.subscriptionType();
+            m_rosterList.push_back(callsign);
+        }
     }
 
+    emit updateRoster();
     return;
 }
 
@@ -1038,6 +1107,26 @@ void GkXmppClient::unblockUser(const QString &bareJid)
 
             break;
         }
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppClient::subscribeToUser requests a subscription to the given contact. As a result, the server will initiate
+ * a roster push, causing the `m_rosterManager->itemAdded()` or `m_rosterManager->itemChanged()` signal to be emitted.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid
+ */
+void GkXmppClient::subscribeToUser(const QString &bareJid, const QString &reason)
+{
+    if (!bareJid.isEmpty()) {
+        if (!reason.isEmpty()) {
+            m_rosterManager->subscribe(bareJid, reason);
+            return;
+        }
+
+        m_rosterManager->subscribe(bareJid);
     }
 
     return;
@@ -1481,22 +1570,6 @@ void GkXmppClient::handleSslGreeting()
 }
 
 /**
- * @brief GkXmppClient::initRosterMgr
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkXmppClient::initRosterMgr()
-{
-    QObject::connect(m_rosterManager.get(), SIGNAL(presenceChanged(const QString &, const QString &)), this, SLOT(presenceChanged(const QString &, const QString &)), Qt::UniqueConnection);
-    QObject::connect(m_rosterManager.get(), SIGNAL(rosterReceived()), this, SLOT(handleRosterReceived()), Qt::UniqueConnection);
-    QObject::connect(m_rosterManager.get(), SIGNAL(subscriptionReceived(const QString &)), this, SLOT(notifyNewSubscription(const QString &)), Qt::UniqueConnection);
-    QObject::connect(m_rosterManager.get(), SIGNAL(itemAdded(const QString &)), this, SLOT(itemAdded(const QString &)), Qt::UniqueConnection);
-    QObject::connect(m_rosterManager.get(), SIGNAL(itemRemoved(const QString &)), this, SLOT(itemRemoved(const QString &)), Qt::UniqueConnection);
-    QObject::connect(m_rosterManager.get(), SIGNAL(itemChanged(const QString &)), this, SLOT(itemChanged(const QString &)), Qt::UniqueConnection);
-
-    return;
-}
-
-/**
  * @brief GkXmppClient::versionReceivedSlot
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param version
@@ -1518,15 +1591,24 @@ void GkXmppClient::versionReceivedSlot(const QXmppVersionIq &version)
  */
 void GkXmppClient::notifyNewSubscription(const QString &bareJid)
 {
-    gkEventLogger->publishEvent(tr("User, \"%1\", wishes to add you to their roster!").arg(getUsername(bareJid)),
-                                GkSeverity::Info, "", true, true, false, false);
-    GkXmppCallsign callsign;
-    callsign.bareJid = bareJid;
-    callsign.presence = std::make_shared<QXmppPresence>(QXmppPresence::Type::Unsubscribed);
-    callsign.subStatus = m_rosterManager->getRosterEntry(bareJid).subscriptionType();
-    m_rosterList.push_back(callsign);
-    emit updateRoster();
-    emit sendSubscriptionRequest(bareJid);
+    if (!bareJid.isEmpty()) {
+        if (!m_rosterList.isEmpty()) {
+            for (const auto &entry: m_rosterList) {
+                if (entry.bareJid == bareJid) {
+                    GkXmppCallsign callsign;
+                    callsign.bareJid = bareJid;
+                    callsign.presence = std::make_shared<QXmppPresence>(QXmppPresence::Type::Unsubscribed);
+                    callsign.subStatus = entry.subStatus;
+                    m_rosterList.push_back(callsign);
+                    emit updateRoster();
+                    emit sendSubscriptionRequest(bareJid);
+                    gkEventLogger->publishEvent(tr("User, \"%1\", wishes to add you to their roster!").arg(getUsername(bareJid)),
+                                                GkSeverity::Info, "", true, true, false, false);
+                    break;
+                }
+            }
+        }
+    }
 
     return;
 }
@@ -1552,7 +1634,7 @@ void GkXmppClient::itemAdded(const QString &bareJid)
  */
 void GkXmppClient::itemRemoved(const QString &bareJid)
 {
-    emit delJidToRoster(bareJid);
+    emit delJidFromRoster(bareJid);
     gkEventLogger->publishEvent(tr("User, \"%1\", successfully removed from roster!").arg(getUsername(bareJid)),
                                 GkSeverity::Info, "", true, true, false, false);
 

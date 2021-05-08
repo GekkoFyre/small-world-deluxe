@@ -48,7 +48,7 @@
 # Note that environment variables can be set in several places
 # See https://docs.gitlab.com/ee/ci/variables/#priority-of-environment-variables
 
-image: gekkofyre/swd-arch-linux:hamlib
+image: gekkofyre/swd-debug-arch-linux:latest
 stages:
 - sworld_debug_archlinux_x86_64
 - sworld_sentry_archlinux_x86_64
@@ -69,39 +69,19 @@ variables:
 
 sworld_debug_archlinux_x86_64:
   stage: sworld_debug_archlinux_x86_64
-  image: gekkofyre/swd-arch-linux:hamlib
+  image: gekkofyre/swd-debug-arch-linux:latest
   before_script:
   - pacman -Sy --noconfirm
   - pacman -Syyu --noconfirm
-  - pacman -S hunspell
-  - pacman -S hunspell-en
   - export CC=/usr/bin/clang
   - export CXX=/usr/bin/clang++
   - strip --remove-section=.note.ABI-tag /usr/lib64/libQt5Core.so.5
-  - git clone https://github.com/google/snappy.git
-  - cd snappy && git submodule update --init --recursive && mkdir build && cd build
-  - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=OFF -DSNAPPY_BUILD_TESTS=OFF -DSNAPPY_BUILD_BENCHMARKS=OFF ..
-  - make -j 4 && make install
-  - cd ./../..
-  - rm -rvf snappy
-  - git clone https://gitlab.xiph.org/xiph/libopusenc.git
-  - cd libopusenc && git submodule update --init --recursive
-  - ./autogen.sh
-  - ./configure --enable-static && make -j 6 && make install
-  - cd ./..
-  - rm -rvf libopusenc
-  - git clone https://github.com/drowe67/codec2.git
-  - cd codec2 && git submodule update --init --recursive && mkdir build && cd build
-  - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=OFF ..
-  - make -j 4 && make install
-  - cd ./../..
-  - rm -rvf codec2
   script:
   - export CC=/usr/bin/clang
   - export CXX=/usr/bin/clang++
   - mkdir -p src_build && cd src_build
   - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=OFF -DGFYRE_BUILD_STATIC=ON ..
-  - make -j 4
+  - make -j$(nproc)
   - cd ./..
   after_script:
   - echo "Finished execution of Preparatory Build and secondary, lesser stage!"
