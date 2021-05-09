@@ -236,6 +236,7 @@ find_package(OpusEnc REQUIRED)
 if (OpusEnc_FOUND)
     include_directories(${OpusEnc_INCLUDE_DIRS})
     set(LIBS ${LIBS} ${OpusEnc_LIBRARIES})
+    message(STATUS "The 'libopusenc' audio (de-/en-)coding file creation libraries have been configured!")
 else()
     message(FATAL_ERROR "The 'libopusenc' audio (de-/en-)coding file creation libraries could not be found!")
 endif(OpusEnc_FOUND)
@@ -248,8 +249,9 @@ find_package(Sndfile REQUIRED)
 if (SNDFILE_FOUND)
     include_directories(${SNDFILE_INCLUDE_DIRS})
     set(LIBS ${LIBS} ${SNDFILE_LIBRARIES})
+    message(STATUS "The 'libsndfile' audio (de-/en-)coding libraries have been configured!")
 else()
-    message(FATAL_ERROR "The 'libsndfile' audio (de-/en-)coding libraries have been configured!")
+    message(FATAL_ERROR "The 'libsndfile' audio (de-/en-)coding libraries could not be found!")
 endif(SNDFILE_FOUND)
 
 install_qxmpp() # Install QXmpp as non-static!
@@ -259,6 +261,7 @@ if (LINUX)
     if (UDEV_FOUND)
         include_directories(${UDEV_INCLUDE_DIRS})
         set(LIBS ${LIBS} ${UDEV_LIBRARIES})
+        message(STATUS "The 'udev' SystemD libraries have been configured!")
     else()
         message(FATAL_ERROR "The 'udev' SystemD libraries could not be found!")
     endif(UDEV_FOUND)
@@ -286,30 +289,43 @@ find_package(Threads REQUIRED)
 
 if (Threads_FOUND)
     set(LIBS ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
+    message(STATUS "The 'Threads' libraries have been configured!")
 else()
     message(FATAL_ERROR "Could not find the Threads library!")
 endif(Threads_FOUND)
 
 #
-# Hunspell
-# http://hunspell.github.io/
+# ICU
 #
-find_package(Hunspell REQUIRED)
-if (HUNSPELL_FOUND)
-    include_directories(${HUNSPELL_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${HUNSPELL_LIBRARIES})
+find_package(Icuuc REQUIRED)
+if (ICUUC_FOUND)
+    set(LIBS ${LIBS} ${ICUUC_LIBRARIES})
+    message(STATUS "The 'icuuc' library has been configured!")
+else()
+    message(FATAL_ERROR "The 'icuuc' library could not be found!")
+endif(ICUUC_FOUND)
+
+#
+# Nuspell
+# https://nuspell.github.io/
+#
+find_package(Nuspell REQUIRED)
+if (NUSPELL_FOUND)
+    include_directories(${NUSPELL_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${NUSPELL_LIBRARIES})
     file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/dictionaries/dictionaries" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Library")
     file(RENAME "${CMAKE_CURRENT_BINARY_DIR}/Library/dictionaries" "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling")
 
     #
     # Remove all the unneeded files now!
-    file(GLOB_RECURSE RM_HUNSPELL_FILES_JS "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling/*.js")
-    file(GLOB_RECURSE RM_HUNSPELL_FILES_JSON "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling/*.json")
-    file(REMOVE ${RM_HUNSPELL_FILES_JS})
-    file(REMOVE ${RM_HUNSPELL_FILES_JSON})
+    file(GLOB_RECURSE RM_NUSPELL_FILES_JS "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling/*.js")
+    file(GLOB_RECURSE RM_NUSPELL_FILES_JSON "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling/*.json")
+    file(REMOVE ${RM_NUSPELL_FILES_JS})
+    file(REMOVE ${RM_NUSPELL_FILES_JSON})
+    message(STATUS "The 'Nuspell' spelling and grammar checking libraries have been configured!")
 else()
-    message(FATAL_ERROR "The 'Hunspell' spell-checking library has been configured!")
-endif(HUNSPELL_FOUND)
+    message(FATAL_ERROR "The 'Nuspell' spelling and grammar checking libraries could not be found!")
+endif(NUSPELL_FOUND)
 
 find_package(OpenSSL REQUIRED)
 if (OPENSSL_FOUND)
@@ -326,6 +342,7 @@ find_package(ZLIB REQUIRED)
 if (ZLIB_FOUND)
     include_directories(${ZLIB_INCLUDE_DIRS})
     set(LIBS ${LIBS} ${ZLIB_LIBRARIES})
+    message(STATUS "The 'ZLIB' compression library has been configured!")
 else()
     message(FATAL_ERROR "The 'ZLIB' compression library could not be found!")
 endif(ZLIB_FOUND)

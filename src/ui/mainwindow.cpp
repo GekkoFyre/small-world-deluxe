@@ -51,6 +51,8 @@
 #include "src/contrib/Gist/src/Gist.h"
 #include <boost/exception/all.hpp>
 #include <boost/chrono/chrono.hpp>
+#include <nuspell/finder.hxx>
+#include <nuspell/dictionary.hxx>
 #include <cmath>
 #include <chrono>
 #include <ostream>
@@ -2188,25 +2190,33 @@ void MainWindow::readHunspellSettings()
         QString curr_chosen_dict = gkDb->read_lang_dict_settings(Language::GkDictionary::ChosenDictLang);
 
         if (!curr_chosen_dict.isEmpty()) {
-            if (curr_chosen_dict == Filesystem::hunspellDisabledOption) { // The user has chosen to disable Hunspell entirely!
+            if (curr_chosen_dict == Filesystem::nuspellDisabledOption) { // The user has chosen to disable Hunspell entirely!
                 return;
             }
         }
 
         if (curr_chosen_dict.isEmpty()) {
-            curr_chosen_dict = Filesystem::hunspellSpellDefLang; // Default language dictionary to use if none has been specified!
+            curr_chosen_dict = Filesystem::nuspellSpellDefLang; // Default language dictionary to use if none has been specified!
         }
 
         fs::path active_dict_dir = gkFileIo->getLangFile(curr_chosen_dict, Language::GkLangSettings::DictLang);
         if (fs::exists(active_dict_dir, ec)) {
             if (fs::is_directory(active_dict_dir, ec)) {
-                fs::path active_aff = fs::path(active_dict_dir.string() + native_slash.string() + Filesystem::hunspellSpellAffExt);
-                fs::path active_dic = fs::path(active_dict_dir.string() + native_slash.string() + Filesystem::hunspellSpellDicExt);
+                fs::path active_aff = fs::path(active_dict_dir.string() + native_slash.string() + Filesystem::nuspellSpellAffExt);
+                fs::path active_dic = fs::path(active_dict_dir.string() + native_slash.string() + Filesystem::nuspellSpellDicExt);
 
                 if (fs::exists(active_aff, ec) && fs::exists(active_dic, ec)) {
                     //
                     // The *.aff and *.dic exists!
-                    m_Hunspell = std::make_shared<Hunspell>(active_aff.string().c_str(), active_dic.string().c_str());
+                    auto dict_list = std::vector<std::pair<std::string, std::string>>();
+                    nuspell::search_default_dirs_for_dicts(dict_list);
+                    auto dict_name_and_path = nuspell::find_dictionary(dict_list, "en_US");
+                    if (dict_name_and_path == end(dict_list)) {
+                        return;
+                    }
+
+                    auto &dict_path = dict_name_and_path->second;
+                    auto dict = nuspell::Dictionary::load_from_path(dict_path);
                 }
             }
 

@@ -957,7 +957,7 @@ void DialogSettings::prefill_uri_lookup_method()
  */
 void DialogSettings::prefill_lang_dictionaries()
 {
-    ui->comboBox_accessibility_dict->addItem(Filesystem::hunspellDisabledOption);
+    ui->comboBox_accessibility_dict->addItem(Filesystem::nuspellDisabledOption);
     ui->comboBox_accessibility_dict->addItem("bg");
     ui->comboBox_accessibility_dict->addItem("br");
     ui->comboBox_accessibility_dict->addItem("ca");
@@ -2105,7 +2105,7 @@ bool DialogSettings::read_settings()
                 ui->comboBox_accessibility_dict->setCurrentIndex(idx);
             }
         } else {
-            qint32 idx = ui->comboBox_accessibility_dict->findData(Filesystem::hunspellSpellDefLang);
+            qint32 idx = ui->comboBox_accessibility_dict->findData(Filesystem::nuspellSpellDefLang);
             if (idx >= 0) { // -1 means it is not found!
                 ui->comboBox_accessibility_dict->setCurrentIndex(idx);
             }

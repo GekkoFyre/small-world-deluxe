@@ -880,7 +880,7 @@ void GkLevelDb::write_lang_dict_settings(const QString &value, const Settings::L
                 batch.Put("GkChosenDictLang", value.toStdString());
                 break;
             default:
-                throw std::runtime_error(tr("Invalid key has been provided for writing Hunspell dictionary settings relating to Google LevelDB!").toStdString());
+                throw std::runtime_error(tr("Invalid key has been provided for writing Nuspell dictionary settings relating to Google LevelDB!").toStdString());
         }
 
         status = db->Write(write_options, &batch);
