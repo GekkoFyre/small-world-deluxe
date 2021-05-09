@@ -209,7 +209,7 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
         QObject::connect(m_registerManager.get(), &QXmppRegistrationManager::passwordChanged, this, [=](const QString &newPassword) {
             Q_UNUSED(newPassword);
             gkEventLogger->publishEvent(tr("Password successfully changed for user, \"%1\", that's registered with XMPP server: %2").arg(m_reg_user)
-                                                .arg(m_reg_domain), GkSeverity::Info, "", true, true, false, false);
+                                                .arg(QHostAddress(m_reg_domain).toString()), GkSeverity::Info, "", true, true, false, false);
             m_xmppClient->disconnectFromServer();
         });
 
@@ -265,7 +265,7 @@ void GkXmppRegistrationDialog::externalUserSignup(const quint16 &network_port, c
     m_connDetails.jid = m_reg_jid;
     m_connDetails.email = m_reg_email;
     m_connDetails.password = m_reg_password;
-    m_connDetails.server.domain = m_reg_domain;
+    m_connDetails.server.domain = QHostAddress(m_reg_domain);
 
     // TODO: Implement proper captcha support!
 
@@ -306,7 +306,7 @@ void GkXmppRegistrationDialog::prefillFormFields(const QString &jid, const QStri
     if (ui->stackedWidget_xmpp_registration_dialog->currentWidget() == ui->page_account_signup_ui) {
         if (!jid.isEmpty()) {
             if (!m_reg_user.isEmpty() && !m_reg_domain.isEmpty()) {
-                ui->lineEdit_username->setText(QString("%1@%2").arg(m_reg_user).arg(m_reg_domain));
+                ui->lineEdit_username->setText(QString("%1@%2").arg(m_reg_user).arg(QHostAddress(m_reg_domain).toString()));
             }
         }
 
@@ -391,7 +391,7 @@ void GkXmppRegistrationDialog::on_pushButton_signup_submit_clicked()
         m_connDetails.jid = m_reg_jid;
         m_connDetails.email = m_reg_email;
         m_connDetails.password = m_reg_password;
-        m_connDetails.server.domain = m_reg_domain;
+        m_connDetails.server.domain = QHostAddress(m_reg_domain);
         m_connDetails.username = m_reg_user;
 
         if (m_reg_remember_credentials) {
@@ -483,7 +483,7 @@ void GkXmppRegistrationDialog::on_pushButton_login_submit_clicked()
 
             //
             // Attempt a login to the server!
-            loginToServer(m_xmppClient->getHostname(jid), network_port, m_xmppClient->getUsername(jid), jid, old_password);
+            loginToServer(m_xmppClient->getHostname(jid), network_port, jid, old_password);
 
             return;
         } else {
@@ -850,8 +850,8 @@ void GkXmppRegistrationDialog::handleRegistrationForm(const QXmppRegisterIq &reg
  * @param password The password of the registrant to login as.
  * @param credentials_fail Whether to fail or not if there are no credentials, or invalid credentials, provided.
  */
-void GkXmppRegistrationDialog::loginToServer(const QString &hostname, const quint16 &network_port, const QString &username,
-                                             const QString &password, const QString &jid, const bool &credentials_fail)
+void GkXmppRegistrationDialog::loginToServer(const QString &hostname, const quint16 &network_port, const QString &password,
+                                             const QString &jid, const bool &credentials_fail)
 {
     try {
         //
@@ -860,20 +860,20 @@ void GkXmppRegistrationDialog::loginToServer(const QString &hostname, const quin
             m_xmppClient->disconnectFromServer();
         }
 
-        if (!username.isEmpty() && !password.isEmpty()) {
+        if (!jid.isEmpty() && !password.isEmpty()) {
             //
             // A username and password has been provided!
-            QString user_hostname = m_xmppClient->getHostname(username); // Just in-case the user has entered a differing hostname!
+            QString user_hostname = m_xmppClient->getHostname(jid); // Just in-case the user has entered a differing hostname!
             if (!user_hostname.isEmpty()) {
                 //
                 // A hostname has been provided as well and thusly derived from the username!
-                m_xmppClient->createConnectionToServer(user_hostname, network_port, username, password, jid, false);
+                m_xmppClient->createConnectionToServer(user_hostname, network_port, password, jid, false);
                 return;
             }
 
             //
             // No hostname has been provided, therefore we will use the pre-configured settings (if any)!
-            m_xmppClient->createConnectionToServer(hostname, network_port, username, password, jid, false);
+            m_xmppClient->createConnectionToServer(hostname, network_port, password, jid, false);
             return;
         }
 
@@ -916,7 +916,7 @@ void GkXmppRegistrationDialog::userSignup(const quint16 &network_port, const QSt
         if (!hostname.isEmpty() && !username.isEmpty()) {
             //
             // A hostname has been provided as well and thusly derived from the username!
-            m_xmppClient->createConnectionToServer(hostname, network_port, QString(), QString(), QString(), true);
+            m_xmppClient->createConnectionToServer(hostname, network_port, QString(), QString(), true);
             return;
         }
     } catch (const std::exception &e) {

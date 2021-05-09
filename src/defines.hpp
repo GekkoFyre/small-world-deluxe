@@ -277,7 +277,8 @@ namespace GekkoFyre {
 #define GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_PRESENCE_IDX (0)
 #define GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_BAREJID_IDX (1)
 #define GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_NICKNAME_IDX (2)
-#define GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_TOTAL_IDX (3)
+#define GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_REASON_IDX (3)
+#define GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_TOTAL_IDX (4)
 
 #define GK_XMPP_ROSTER_BLOCKED_TABLEVIEW_MODEL_BAREJID_IDX (0)
 #define GK_XMPP_ROSTER_BLOCKED_TABLEVIEW_MODEL_REASON_IDX (1)
@@ -314,6 +315,7 @@ namespace General {
     constexpr char appVersion[] = "0.0.1";
     constexpr char appRelease[] = "Pre-alpha";
     constexpr char xmppVersion[] = "Alpha";
+    constexpr char xmppResourceGFyre[] = "GekkoFyre";
     constexpr char codeRepository[] = "https://code.gekkofyre.io/amateur-radio/small-world-deluxe";
     constexpr char officialWebsite[] = "https://swdeluxe.io/";
 
@@ -342,13 +344,12 @@ namespace Filesystem {
     constexpr char tmpExtension[] = ".tmp";                             // The file extension give to temporary files
 
     //
-    // Hunspell & Spelling dictionaries
-    constexpr char hunspellLibraryDir[] = "Library";                    // The 'Library' dir which is used by the Hunspell libs
-    constexpr char hunspellSpellDir[] = "Spelling";                     // The 'Spelling' dir, present underneath 'Library', which is used by the Hunspell libs
-    constexpr char hunspellSpellAffExt[] = "index.aff";                 // The *.aff file-extension for Hunspell dictionaries
-    constexpr char hunspellSpellDicExt[] = "index.dic";                 // The *.dic file-extension for Hunspell dictionaries
-    constexpr char hunspellSpellDefLang[] = "en";                       // The default dictionary language to use for Hunspell
-    constexpr char hunspellDisabledOption[] = "No dictionary";          // The disabled option which appears within the QCombobox
+    // Nuspell & Spelling dictionaries
+    constexpr char nuspellLibraryDir[] = "Library";                    // The 'Library' dir which is used by the Nuspell libs
+    constexpr char nuspellSpellDir[] = "Spelling";                     // The 'Spelling' dir, present underneath 'Library', which is used by the Nuspell libs
+    constexpr char nuspellSpellDic[] = "index";                        // The *.dic and *.aff file for Nuspell dictionaries
+    constexpr char nuspellSpellDefLang[] = "en";                       // The default dictionary language to use for Nuspell
+    constexpr char nuspellDisabledOption[] = "No dictionary";          // The disabled option which appears within the QCombobox
 
     //
     // User interface language
@@ -490,6 +491,7 @@ namespace Network {
             QIcon presence;
             QString bareJid;
             QString nickName;
+            QString reason;
             bool added;
         };
 

@@ -43,6 +43,8 @@
 
 #include "src/defines.hpp"
 #include "src/gk_xmpp_client.hpp"
+#include <nuspell/finder.hxx>
+#include <nuspell/dictionary.hxx>
 #include <memory>
 #include <QString>
 #include <QObject>
@@ -58,7 +60,8 @@ class GkXmppMessageDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit GkXmppMessageDialog(QPointer<GekkoFyre::GkXmppClient> xmppClient, const QString &bareJid, QWidget *parent = nullptr);
+    explicit GkXmppMessageDialog(std::shared_ptr<nuspell::Dictionary> nuspellDict, QPointer<GekkoFyre::GkXmppClient> xmppClient,
+                                 const QString &bareJid, QWidget *parent = nullptr);
     ~GkXmppMessageDialog();
 
 private slots:
@@ -68,9 +71,15 @@ private slots:
     void on_toolButton_attach_file_clicked();
     void on_toolButton_view_roster_clicked();
     void on_textBrowser_recv_msg_dlg_customContextMenuRequested(const QPoint &pos);
+    void on_lineEdit_message_search_returnPressed();
 
 private:
     Ui::GkXmppMessageDialog *ui;
+
+    //
+    // Spell-checking, dictionaries, etc.
+    //
+    std::shared_ptr<nuspell::Dictionary> m_nuspellDict;
 
     //
     // QXmpp and XMPP related

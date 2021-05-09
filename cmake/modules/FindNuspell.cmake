@@ -39,23 +39,23 @@
 #
 
 find_package(PkgConfig)
-pkg_check_modules(PC_HUNSPELL QUIET "hunspell")
-set(HUNSPELL_DEFINITIONS ${PC_HUNSPELL_CFLAGS_OTHER})
+pkg_check_modules(PC_NUSPELL QUIET "nuspell")
+set(NUSPELL_DEFINITIONS ${PC_NUSPELL_CFLAGS_OTHER})
 
-find_path(HUNSPELL_INCLUDE_DIR
-    NAMES "hunspell/hunspell.hxx" "hunspell/hunspell.h"
-    HINTS ${PC_HUNSPELL_INCLUDE_DIR} ${PC_HUNSPELL_INCLUDE_DIRS}
+find_path(NUSPELL_INCLUDE_DIR
+    NAMES "nuspell/nuspell_export.h" "nuspell/dictionary.hxx" "nuspell/unicode.hxx"
+    HINTS ${PC_NUSPELL_INCLUDE_DIR} ${PC_NUSPELL_INCLUDE_DIRS}
     PATHS "/usr/local/include" "/usr/include" "/opt/local/include" "/mingw64/include")
 
-find_library(HUNSPELL_LIBRARY
-    NAMES "libhunspell" "hunspell" "libhunspell-1.7" "libhunspell-1.6" "libhunspell-1.5" "libhunspell-1.4" "libhunspell-1.3"
-    HINTS ${PC_HUNSPELL_LIBDIR} ${PC_HUNSPELL_LIBRARY_DIRS}
+find_library(NUSPELL_LIBRARY
+    NAMES "libnuspell" "nuspell"
+    HINTS ${PC_NUSPELL_LIBDIR} ${PC_NUSPELL_LIBRARY_DIRS}
     PATHS "/usr/local/lib" "/usr/local/lib64" "/usr/lib" "/usr/lib64" "/mingw64/bin" "/mingw64/lib" "/usr/lib/x86_64-linux-gnu" "/sw/lib" "/opt/local/lib")
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Hunspell DEFAULT_MSG HUNSPELL_LIBRARY HUNSPELL_INCLUDE_DIR)
+find_package_handle_standard_args(Nuspell DEFAULT_MSG NUSPELL_LIBRARY NUSPELL_INCLUDE_DIR)
 
-mark_as_advanced(HUNSPELL_INCLUDE_DIR HUNSPELL_LIBRARY)
+mark_as_advanced(NUSPELL_INCLUDE_DIR NUSPELL_LIBRARY)
 
-set(HUNSPELL_LIBRARIES ${HUNSPELL_LIBRARY})
-set(HUNSPELL_INCLUDE_DIRS ${HUNSPELL_INCLUDE_DIR})
+set(NUSPELL_LIBRARIES ${NUSPELL_LIBRARY})
+set(NUSPELL_INCLUDE_DIRS ${NUSPELL_INCLUDE_DIR})

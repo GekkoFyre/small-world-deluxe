@@ -64,7 +64,8 @@
 #include <leveldb/db.h>
 #include <leveldb/status.h>
 #include <leveldb/options.h>
-#include <hunspell/hunspell.hxx>
+#include <nuspell/finder.hxx>
+#include <nuspell/dictionary.hxx>
 #include <stdexcept>
 #include <exception>
 #include <utility>
@@ -162,6 +163,7 @@ private slots:
     void on_actionOnline_triggered();
     void on_actionInvisible_triggered();
     void on_actionOffline_triggered();
+    void readXmppSettings();
 
     //
     // Documentation
@@ -442,11 +444,6 @@ private:
     QPointer<QTimer> info_timer;
 
     //
-    // Hunspell & Spelling dictionaries
-    //
-    std::shared_ptr<Hunspell> m_Hunspell;
-
-    //
     // This sub-section contains all the boolean variables pertaining to the QPushButtons on QMainWindow that
     // possess a logic state of some kind. If the button holds a TRUE value, it'll be 'Green' in colour, otherwise
     // it'll appear 'Red' in order to display its FALSE value.
@@ -473,6 +470,11 @@ private:
     void updateVolumeDisplayWidgets();
     void defaultInputAudioDev(const std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice> &input_dev);
     void defaultOutputAudioDev(const std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice> &output_dev);
+
+    //
+    // Spell-checking, dictionaries, etc.
+    //
+    std::shared_ptr<nuspell::Dictionary> m_nuspellDict;
 
     //
     // QFileDialog related
@@ -523,10 +525,12 @@ private:
     bool steadyTimer(const int &seconds);
     QRect findActiveScreen();
 
+    //
+    // XMPP and related
+    //
     void createXmppConnection();
-    void readXmppSettings();
 
-    void readHunspellSettings();
+    void readNuspellSettings();
 
     //
     // System tray icon related functions

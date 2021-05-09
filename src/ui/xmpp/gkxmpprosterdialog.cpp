@@ -68,9 +68,9 @@ using namespace GkXmpp;
 using namespace Security;
 
 GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPointer<GekkoFyre::GkXmppClient> xmppClient,
-                                       QPointer<GekkoFyre::GkLevelDb> database, QPointer<GkEventLogger> eventLogger,
-                                       const bool &skipConnectionCheck, QWidget *parent) : shownXmppPreviewNotice(false),
-                                       QDialog(parent), ui(new Ui::GkXmppRosterDialog)
+                                       QPointer<GekkoFyre::GkLevelDb> database, std::shared_ptr<nuspell::Dictionary> nuspellDict,
+                                       QPointer<GkEventLogger> eventLogger, const bool &skipConnectionCheck, QWidget *parent) :
+                                       shownXmppPreviewNotice(false), QDialog(parent), ui(new Ui::GkXmppRosterDialog)
 {
     ui->setupUi(this);
 
@@ -78,6 +78,7 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
         gkConnDetails = connection_details;
         m_xmppClient = std::move(xmppClient);
         gkDb = std::move(database);
+        m_nuspellDict = std::move(nuspellDict);
         gkEventLogger = std::move(eventLogger);
 
         ui->comboBox_current_status->setCurrentIndex(GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX);
@@ -114,7 +115,6 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
         QObject::connect(m_xmppClient, SIGNAL(delJidFromRoster(const QString &)), this, SLOT(delJidFromRoster(const QString &)));
         QObject::connect(m_xmppClient, SIGNAL(changeRosterJid(const QString &)), this, SLOT(changeRosterJid(const QString &)));
 
-        QObject::connect(ui->label_self_nickname, SIGNAL(clicked(const QString &)), this, SLOT(editNicknameLabel(const QString &)));
         defaultClientAvatarPlaceholder();
         ui->label_self_nickname->setText(tr("Anonymous"));
         if (!gkConnDetails.nickname.isEmpty()) {
@@ -255,11 +255,33 @@ void GkXmppRosterDialog::on_label_self_nickname_customContextMenuRequested(const
  */
 void GkXmppRosterDialog::subscriptionRequestRecv(const QString &bareJid)
 {
+    subscriptionRequestRecv(bareJid, QString());
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::subscriptionRequestRecv handles the processing and management of external subscription requests
+ * to the given, connected towards XMPP server in question. This function will only work if Small World Deluxe is actively
+ * connected towards an XMPP server at the time.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid The external user's details.
+ * @param reason The reason for making the subscription request, as defined by the external user.
+ */
+void GkXmppRosterDialog::subscriptionRequestRecv(const QString &bareJid, const QString &reason)
+{
     if (!bareJid.isEmpty()) {
         updateRoster();
         for (const auto &entry: m_rosterList) {
             if (entry.bareJid == bareJid) {
-                insertRosterPendingTable(m_xmppClient->presenceToIcon(entry.presence->availableStatusType()), bareJid, entry.vCard.nickname);
+                if (!reason.isEmpty()) {
+                    insertRosterPendingTable(m_xmppClient->presenceToIcon(entry.presence->availableStatusType()), bareJid, entry.vCard.nickname);
+                } else {
+                    insertRosterPendingTable(m_xmppClient->presenceToIcon(entry.presence->availableStatusType()), bareJid, entry.vCard.nickname);
+                }
+
+                gkEventLogger->publishEvent(tr("Another user of %1 with the nickname/callsign, \"%2\", is requesting to share presence details with you!")
+                                            .arg(General::productName).arg(bareJid), GkSeverity::Info, "",
+                                            true, true, false, false);
                 break;
             }
         }
@@ -283,6 +305,16 @@ void GkXmppRosterDialog::subscriptionRequestRetracted(const QString &bareJid)
         updateActions();
     }
 
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::updateRoster
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRosterDialog::updateRoster()
+{
+    m_rosterList = m_xmppClient->getRosterMap();
     return;
 }
 
@@ -348,16 +380,6 @@ void GkXmppRosterDialog::delJidFromRoster(const QString &bareJid)
  */
 void GkXmppRosterDialog::changeRosterJid(const QString &bareJid)
 {
-    return;
-}
-
-/**
- * @brief GkXmppRosterDialog::updateRoster
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkXmppRosterDialog::updateRoster()
-{
-    m_rosterList = m_xmppClient->getRosterMap();
     return;
 }
 
@@ -449,21 +471,41 @@ void GkXmppRosterDialog::removeRosterPresenceTable(const QString &bareJid)
 /**
  * @brief GkXmppRosterDialog::insertRosterPendingTable
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param presence
- * @param bareJid
- * @param nickname
+ * @param online_status The requesting user's online availability and status (i.e. presence).
+ * @param bareJid The requesting user's identification.
+ * @param nickname The requesting user's nickname, if any.
  */
-void GkXmppRosterDialog::insertRosterPendingTable(const QIcon &presence, const QString &bareJid, const QString &nickname)
+void GkXmppRosterDialog::insertRosterPendingTable(const QIcon &online_status, const QString &bareJid, const QString &nickname)
+{
+    insertRosterPendingTable(online_status, bareJid, nickname, QString());
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::insertRosterPendingTable
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param online_status The requesting user's online availability and status (i.e. presence).
+ * @param bareJid The requesting user's identification.
+ * @param nickname The requesting user's nickname, if any.
+ * @param reason The requesting user's reason for making the subscription request.
+ */
+void GkXmppRosterDialog::insertRosterPendingTable(const QIcon &online_status, const QString &bareJid, const QString &nickname,
+                                                  const QString &reason)
 {
     if (!bareJid.isEmpty() || !nickname.isEmpty()) {
         GkPendingTableViewModel pending_model;
-        pending_model.presence = QIcon();
-        if (!presence.isNull()) {
-            pending_model.presence = presence;
+        pending_model.presence = QIcon(":/resources/contrib/images/raster/gekkofyre-networks/red-halftone-circle.png");
+        if (!online_status.isNull()) {
+            pending_model.presence = online_status;
         }
 
         pending_model.bareJid = bareJid;
         pending_model.nickName = nickname;
+        pending_model.reason = "";
+        if (reason.isEmpty()) {
+            pending_model.reason = reason;
+        }
+
         pending_model.added = false;
         m_pendingRosterData.push_back(pending_model);
         emit updatePendingTableViewModel();
@@ -558,8 +600,8 @@ void GkXmppRosterDialog::removeRosterBlockedTable(const QString &bareJid)
 void GkXmppRosterDialog::reconnectToXmpp()
 {
     if (!m_xmppClient->isConnected() || m_xmppClient->getNetworkState() != GkNetworkState::Connecting) {
-        m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, gkConnDetails.username,
-                                               gkConnDetails.password, gkConnDetails.jid, false);
+        m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, gkConnDetails.password,
+                                               gkConnDetails.jid, false);
     }
 
     return;
@@ -572,7 +614,7 @@ void GkXmppRosterDialog::reconnectToXmpp()
  */
 void GkXmppRosterDialog::launchMsgDlg(const QString &bareJid)
 {
-    gkXmppMsgDlg = new GkXmppMessageDialog(m_xmppClient, bareJid, this);
+    gkXmppMsgDlg = new GkXmppMessageDialog(m_nuspellDict, m_xmppClient, bareJid, this);
     if (gkXmppMsgDlg) {
         if (!gkXmppMsgDlg->isVisible()) {
             gkXmppMsgDlg->setWindowFlags(Qt::Window);

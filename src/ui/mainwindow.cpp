@@ -790,7 +790,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Hunspell & Spelling dictionaries
         //
-        readHunspellSettings();
+        readNuspellSettings();
 
         //
         // QPrinter-specific options!
@@ -906,7 +906,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the QXmpp client!
         m_xmppClient = new GkXmppClient(gkConnDetails, gkDb, gkFileIo, gkEventLogger, false, nullptr);
-        gkXmppRosterDlg = new GkXmppRosterDialog(gkConnDetails, m_xmppClient, gkDb, gkEventLogger, true, this);
+        gkXmppRosterDlg = new GkXmppRosterDialog(gkConnDetails, m_xmppClient, gkDb, m_nuspellDict, gkEventLogger, true, this);
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
@@ -1066,6 +1066,7 @@ void MainWindow::launchSettingsWin(const System::UserInterface::GkSettingsDlgTab
                      this, SLOT(gatherRigCapabilities(const rig_model_t &, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
     QObject::connect(dlg_settings, SIGNAL(addRigInUse(const rig_model_t &, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)),
                      this, SLOT(addRigToMemory(const rig_model_t &, const std::shared_ptr<GekkoFyre::AmateurRadio::Control::GkRadio> &)));
+    QObject::connect(dlg_settings, SIGNAL(updateXmppConfig()), this, SLOT(readXmppSettings()));
 
     //
     // QAudioSystem related
@@ -1999,21 +2000,21 @@ QRect MainWindow::findActiveScreen()
  */
 void MainWindow::createXmppConnection()
 {
-    if (!gkConnDetails.username.isEmpty()) {
+    if (!gkConnDetails.jid.isEmpty()) {
         switch (gkConnDetails.server.type) {
             case GkServerType::GekkoFyre:
                 if (!gkConnDetails.password.isEmpty()) { // A password is required for GekkoFyre Networks' XMPP server!
-                    m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, gkConnDetails.username, gkConnDetails.password, QString(), false);
+                    m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, gkConnDetails.password, gkConnDetails.jid, false);
                 }
 
                 break;
             case GkServerType::Custom:
                 if (!gkConnDetails.password.isEmpty()) { // A password is required for GekkoFyre Networks' XMPP server!
                     // Password provided
-                    m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, gkConnDetails.username, gkConnDetails.password, QString(), true);
+                    m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, gkConnDetails.password, gkConnDetails.jid, true);
                 } else {
                     // Connecting anonymously
-                    m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, gkConnDetails.username, QString(), QString(), true);
+                    m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, QString(), gkConnDetails.jid, true);
                 }
 
                 break;
@@ -2114,8 +2115,10 @@ void MainWindow::readXmppSettings()
 
     if (!xmpp_client_username.isEmpty()) {
         gkConnDetails.username = xmpp_client_username;
+        gkConnDetails.jid = QString(xmpp_client_username + "@" + gkConnDetails.server.url);
     } else {
         gkConnDetails.username = "";
+        gkConnDetails.jid = "";
     }
 
     if (!xmpp_domain_port.isEmpty()) {
@@ -2177,37 +2180,33 @@ void MainWindow::readXmppSettings()
 }
 
 /**
- * @brief MainWindow::readHunspellSettings reads any settings related to Hunspell and its dictionaries from the Google
+ * @brief MainWindow::readNuspellSettings reads any settings related to Hunspell and its dictionaries from the Google
  * LevelDB database attached to the Small World Deluxe instance.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void MainWindow::readHunspellSettings()
+void MainWindow::readNuspellSettings()
 {
     sys::error_code ec;
     try {
         QString curr_chosen_dict = gkDb->read_lang_dict_settings(Language::GkDictionary::ChosenDictLang);
 
         if (!curr_chosen_dict.isEmpty()) {
-            if (curr_chosen_dict == Filesystem::hunspellDisabledOption) { // The user has chosen to disable Hunspell entirely!
+            if (curr_chosen_dict == Filesystem::nuspellDisabledOption) { // The user has chosen to disable Hunspell entirely!
                 return;
             }
         }
 
         if (curr_chosen_dict.isEmpty()) {
-            curr_chosen_dict = Filesystem::hunspellSpellDefLang; // Default language dictionary to use if none has been specified!
+            curr_chosen_dict = Filesystem::nuspellSpellDefLang; // Default language dictionary to use if none has been specified!
         }
 
         fs::path active_dict_dir = gkFileIo->getLangFile(curr_chosen_dict, Language::GkLangSettings::DictLang);
         if (fs::exists(active_dict_dir, ec)) {
             if (fs::is_directory(active_dict_dir, ec)) {
-                fs::path active_aff = fs::path(active_dict_dir.string() + native_slash.string() + Filesystem::hunspellSpellAffExt);
-                fs::path active_dic = fs::path(active_dict_dir.string() + native_slash.string() + Filesystem::hunspellSpellDicExt);
-
-                if (fs::exists(active_aff, ec) && fs::exists(active_dic, ec)) {
-                    //
-                    // The *.aff and *.dic exists!
-                    m_Hunspell = std::make_shared<Hunspell>(active_aff.string().c_str(), active_dic.string().c_str());
-                }
+                fs::path active_dic = fs::path(active_dict_dir.string() + native_slash.string() + Filesystem::nuspellSpellDic);
+                //
+                // The *.aff and *.dic exists!
+                m_nuspellDict = std::make_shared<nuspell::Dictionary>(nuspell::Dictionary::load_from_path(active_dic.string()));
             }
 
             if (ec.failed()) {
@@ -2470,8 +2469,10 @@ void MainWindow::infoBar()
 
         QString curr_utc_time_str = QString::fromStdString(oss_utc_time.str());
         QString curr_utc_date_str = QString::fromStdString(oss_utc_date.str());
-        ui->label_curr_utc_time->setText(curr_utc_time_str);
-        ui->label_curr_utc_date->setText(curr_utc_date_str);
+        ui->label_curr_utc_time->setText(QString("%1 UTC+0").arg(curr_utc_time_str));
+        ui->label_curr_utc_time->setToolTip(tr("Universal Time Coordinated (UTC+0)"));
+        ui->label_curr_utc_date->setText(QString("%1 UTC+0").arg(curr_utc_date_str));
+        ui->label_curr_utc_date->setToolTip(tr("Universal Time Coordinated (UTC+0)"));
 
         freq_t frequency_tmp = ((gkRadioPtr->freq / 1000) / 1000);
         if (frequency_tmp > 0.0) {
