@@ -288,7 +288,7 @@ CMD rm -rvf codec2
 RUN [ "wget", "https://github.com/hunspell/hunspell/files/2573619/hunspell-1.7.0.tar.gz" ]
 RUN tar -xvzf hunspell-1.7.0.tar.gz
 CMD cd hunspell-1.7.0
-CMD [ "autoreconf", "-vfi" ]
+CMD autoreconf -vfi
 CMD [ "./configure", "--enable-static --enable-shared" ]
 CMD [ "make", "-j$(nproc)" ]
 CMD [ "make", "install" ]

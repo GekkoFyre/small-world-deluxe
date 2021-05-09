@@ -1042,7 +1042,7 @@ bool MainWindow::prefillAmateurBands()
  * @brief MainWindow::launchSettingsWin launches the Settings dialog! This is simply a helper function.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void MainWindow::launchSettingsWin()
+void MainWindow::launchSettingsWin(const System::UserInterface::GkSettingsDlgTab &settingsDlgTab)
 {
     QPointer<GkFreqTableModel> gkFreqTableModel = new GkFreqTableModel(gkDb, this);
     QObject::connect(gkFreqTableModel, SIGNAL(addFreq(const GekkoFyre::AmateurRadio::GkFreqs &)),
@@ -1055,7 +1055,7 @@ void MainWindow::launchSettingsWin()
                                                                pref_input_device, pref_output_device, gkRadioLibs,
                                                                gkStringFuncs, gkRadioPtr, gkSerialPortMap, gkUsbPortMap,
                                                                gkFreqList, gkFreqTableModel, gkConnDetails, m_xmppClient,
-                                                               gkEventLogger, gkTextToSpeech, this);
+                                                               gkEventLogger, gkTextToSpeech, settingsDlgTab, this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
@@ -1075,6 +1075,16 @@ void MainWindow::launchSettingsWin()
 
     dlg_settings->show();
 
+    return;
+}
+
+/**
+ * @brief MainWindow::actionLaunchSettingsWin
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void MainWindow::actionLaunchSettingsWin()
+{
+    launchSettingsWin(System::UserInterface::GkSettingsDlgTab::GkGeneralStation);
     return;
 }
 
@@ -2062,7 +2072,7 @@ void MainWindow::readXmppSettings()
     if (!xmpp_auto_connect.isEmpty()) {
         gkConnDetails.server.settings_client.auto_connect = gkDb->boolStr(xmpp_auto_connect.toStdString());
     } else {
-        gkConnDetails.server.settings_client.auto_connect = true;
+        gkConnDetails.server.settings_client.auto_connect = false;
     }
 
     if (!xmpp_auto_reconnect.isEmpty()) {
@@ -2226,7 +2236,7 @@ void MainWindow::launchXmppRosterDlg()
         }
     }
 
-    launchSettingsWin();
+    launchSettingsWin(System::UserInterface::GkSettingsDlgTab::GkGeneralXmpp);
     return;
 }
 
@@ -2243,7 +2253,7 @@ void MainWindow::createTrayActions()
     QObject::connect(m_sstvAction, &QAction::triggered, this, &MainWindow::launchSstvTab);
 
     m_settingsAction = new QAction(tr("&Settings"), this);
-    QObject::connect(m_settingsAction, &QAction::triggered, this, &MainWindow::launchSettingsWin);
+    QObject::connect(m_settingsAction, &QAction::triggered, this, &MainWindow::actionLaunchSettingsWin);
 
     m_restoreAction = new QAction(tr("&Restore"), this);
     QObject::connect(m_restoreAction, &QAction::triggered, this, &QWidget::showNormal);
@@ -2385,7 +2395,7 @@ void MainWindow::on_actionShow_Waterfall_toggled(bool arg1)
  */
 void MainWindow::on_action_Settings_triggered()
 {
-    launchSettingsWin();
+    launchSettingsWin(System::UserInterface::GkSettingsDlgTab::GkGeneralStation);
     return;
 }
 
@@ -2437,7 +2447,7 @@ void MainWindow::on_actionPlay_triggered()
  */
 void MainWindow::on_actionSettings_triggered()
 {
-    launchSettingsWin();
+    launchSettingsWin(System::UserInterface::GkSettingsDlgTab::GkGeneralStation);
     return;
 }
 
@@ -2514,7 +2524,7 @@ void MainWindow::configInputAudioDevice()
 
     switch (ret) {
         case QMessageBox::Ok:
-            launchSettingsWin();
+            launchSettingsWin(System::UserInterface::GkSettingsDlgTab::GkAudioConfig);
             break;
         case QMessageBox::Close:
             QApplication::exit(EXIT_FAILURE);
@@ -3252,7 +3262,7 @@ void MainWindow::on_actionSign_out_triggered()
 
 void MainWindow::on_action_Register_Account_triggered()
 {
-    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountCreate, gkConnDetails, m_xmppClient, gkEventLogger, this);
+    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountCreate, gkConnDetails, m_xmppClient, gkDb, gkEventLogger, this);
     gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
     gkXmppRegistrationDlg->show();
 

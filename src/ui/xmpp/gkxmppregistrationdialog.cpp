@@ -79,6 +79,7 @@ using namespace GkXmpp;
  */
 GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRole, const GkUserConn &connection_details,
                                                    QPointer<GekkoFyre::GkXmppClient> xmppClient,
+                                                   QPointer<GekkoFyre::GkLevelDb> gkDb,
                                                    QPointer<GekkoFyre::GkEventLogger> eventLogger, QWidget *parent) :
                                                    m_netState(GkNetworkState::None), QDialog(parent),
                                                    ui(new Ui::GkXmppRegistrationDialog)
@@ -113,14 +114,21 @@ GkXmppRegistrationDialog::GkXmppRegistrationDialog(const GkRegUiRole &gkRegUiRol
         ui->frame_xmpp_login_captcha_top->setVisible(false);
         ui->frame_xmpp_login_captcha_bottom->setVisible(false);
 
+        gkDekodeDb = std::move(gkDb);
         gkEventLogger = std::move(eventLogger);
         m_xmppClient = std::move(xmppClient);
 
         //
         // QXmpp and XMPP related
         //
+        m_reg_remember_credentials = false;
         m_connDetails = connection_details;
         m_registerManager = m_xmppClient->getRegistrationMgr();
+
+        //
+        // Prefill server-type QComboBox...
+        prefill_xmpp_server_type(GkXmpp::GkServerType::GekkoFyre);
+        prefill_xmpp_server_type(GkXmpp::GkServerType::Custom);
 
         QObject::connect(m_xmppClient, SIGNAL(sendRegistrationForm(const QXmppRegisterIq &)),
                          this, SLOT(handleRegistrationForm(const QXmppRegisterIq &)));
@@ -254,6 +262,11 @@ void GkXmppRegistrationDialog::externalUserSignup(const quint16 &network_port, c
     m_reg_email = email;
     m_reg_password = password;
 
+    m_connDetails.jid = m_reg_jid;
+    m_connDetails.email = m_reg_email;
+    m_connDetails.password = m_reg_password;
+    m_connDetails.server.domain = m_reg_domain;
+
     // TODO: Implement proper captcha support!
 
     userSignup(network_port, jid, password);
@@ -375,6 +388,16 @@ void GkXmppRegistrationDialog::on_pushButton_signup_submit_clicked()
         m_reg_password = new_password;
         m_reg_captcha = captcha;
 
+        m_connDetails.jid = m_reg_jid;
+        m_connDetails.email = m_reg_email;
+        m_connDetails.password = m_reg_password;
+        m_connDetails.server.domain = m_reg_domain;
+        m_connDetails.username = m_reg_user;
+
+        if (m_reg_remember_credentials) {
+            rememberCredentials();
+        }
+
         userSignup(network_port, jid, new_password);
         return;
     }
@@ -453,6 +476,10 @@ void GkXmppRegistrationDialog::on_pushButton_login_submit_clicked()
                 return;
             }
              */
+
+            if (m_reg_remember_credentials) {
+                rememberCredentials();
+            }
 
             //
             // Attempt a login to the server!
@@ -601,6 +628,10 @@ void GkXmppRegistrationDialog::on_pushButton_change_password_cancel_clicked()
  */
 void GkXmppRegistrationDialog::on_pushButton_change_password_submit_clicked()
 {
+    if (m_reg_remember_credentials) {
+        rememberCredentials();
+    }
+
     return;
 }
 
@@ -610,6 +641,10 @@ void GkXmppRegistrationDialog::on_pushButton_change_password_submit_clicked()
  */
 void GkXmppRegistrationDialog::on_pushButton_change_email_submit_clicked()
 {
+    if (m_reg_remember_credentials) {
+        rememberCredentials();
+    }
+
     return;
 }
 
@@ -633,6 +668,130 @@ void GkXmppRegistrationDialog::on_pushButton_change_email_reset_clicked()
  */
 void GkXmppRegistrationDialog::on_pushButton_change_email_cancel_clicked()
 {
+    return;
+}
+
+/**
+ * @brief GkXmppRegistrationDialog::on_comboBox_server_type_currentIndexChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ */
+void GkXmppRegistrationDialog::on_comboBox_server_type_currentIndexChanged(int index)
+{
+    switch (index) {
+        case GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX:
+            m_registerServerType = GkXmpp::GkServerType::GekkoFyre;
+            ui->lineEdit_username->setPlaceholderText(tr("<username>"));
+            readCredentials();
+            return;
+        case GK_XMPP_SERVER_TYPE_COMBO_CUSTOM_IDX:
+            m_registerServerType = GkXmpp::GkServerType::Custom;
+            ui->lineEdit_username->setPlaceholderText(tr("<user>@<host>.<tld>"));
+            readCredentials();
+            return;
+        default:
+            m_registerServerType = GkXmpp::GkServerType::Unknown;
+            ui->lineEdit_username->setPlaceholderText(tr("<user>@<host>.<tld>"));
+            readCredentials();
+            return;
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppRegistrationDialog::on_comboBox_xmpp_login_server_type_currentIndexChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ */
+void GkXmppRegistrationDialog::on_comboBox_xmpp_login_server_type_currentIndexChanged(int index)
+{
+    switch (index) {
+        case GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX:
+            m_loginServerType = GkXmpp::GkServerType::GekkoFyre;
+            ui->lineEdit_login_username->setPlaceholderText(tr("<username>"));
+            readCredentials();
+            return;
+        case GK_XMPP_SERVER_TYPE_COMBO_CUSTOM_IDX:
+            m_loginServerType = GkXmpp::GkServerType::Custom;
+            ui->lineEdit_login_username->setPlaceholderText(tr("<user>@<host>.<tld>"));
+            readCredentials();
+            return;
+        default:
+            m_loginServerType = GkXmpp::GkServerType::Unknown;
+            ui->lineEdit_login_username->setPlaceholderText(tr("<user>@<host>.<tld>"));
+            readCredentials();
+            return;
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppRegistrationDialog::on_comboBox_xmpp_change_password_server_type_currentIndexChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ */
+void GkXmppRegistrationDialog::on_comboBox_xmpp_change_password_server_type_currentIndexChanged(int index)
+{
+    switch (index) {
+        case GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX:
+            m_passwordServerType = GkXmpp::GkServerType::GekkoFyre;
+            ui->lineEdit_change_password_username->setPlaceholderText(tr("<username>"));
+            readCredentials();
+            return;
+        case GK_XMPP_SERVER_TYPE_COMBO_CUSTOM_IDX:
+            m_passwordServerType = GkXmpp::GkServerType::Custom;
+            ui->lineEdit_change_password_username->setPlaceholderText(tr("<user>@<host>.<tld>"));
+            readCredentials();
+            return;
+        default:
+            m_passwordServerType = GkXmpp::GkServerType::Unknown;
+            ui->lineEdit_change_password_username->setPlaceholderText(tr("<user>@<host>.<tld>"));
+            readCredentials();
+            return;
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppRegistrationDialog::on_comboBox_change_email_server_type_currentIndexChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ */
+void GkXmppRegistrationDialog::on_comboBox_change_email_server_type_currentIndexChanged(int index)
+{
+    switch (index) {
+        case GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX:
+            m_emailServerType = GkXmpp::GkServerType::GekkoFyre;
+            ui->lineEdit_change_email_username->setPlaceholderText(tr("<username>"));
+            readCredentials();
+            return;
+        case GK_XMPP_SERVER_TYPE_COMBO_CUSTOM_IDX:
+            m_emailServerType = GkXmpp::GkServerType::Custom;
+            ui->lineEdit_change_email_username->setPlaceholderText(tr("<user>@<host>.<tld>"));
+            readCredentials();
+            return;
+        default:
+            m_emailServerType = GkXmpp::GkServerType::Unknown;
+            ui->lineEdit_change_email_username->setPlaceholderText(tr("<user>@<host>.<tld>"));
+            readCredentials();
+            return;
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppRegistrationDialog::on_checkBox_remember_credentials_stateChanged indicates whether the user credentials, such
+ * as the login username (and if applicable) password, should be saved to the Google LevelDB database or not.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1 Whether the QCheckBox, `ui->checkBox_remember_credentials()`, has been checked or not.
+ */
+void GkXmppRegistrationDialog::on_checkBox_remember_credentials_stateChanged(int arg1)
+{
+    m_reg_remember_credentials = gkDekodeDb->intBool(arg1);
     return;
 }
 
@@ -768,6 +927,189 @@ void GkXmppRegistrationDialog::userSignup(const quint16 &network_port, const QSt
 }
 
 /**
+ * @brief GkXmppRegistrationDialog::rememberCredentials if indicated, remembers the entered credentials for later use
+ * by the Small World Deluxe application itself.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRegistrationDialog::rememberCredentials()
+{
+    if (!m_connDetails.jid.isEmpty() && !m_connDetails.server.url.isEmpty()) {
+        if (ui->stackedWidget_xmpp_registration_dialog->currentWidget() == ui->page_account_signup_ui) {
+            //
+            // Account registration
+            gkDekodeDb->write_xmpp_settings(QString::number(ui->comboBox_server_type->currentIndex()), Settings::GkXmppCfg::XmppServerType);
+            if (m_registerServerType != GkXmpp::GkServerType::GekkoFyre) {
+                if (m_connDetails.server.port >= 80) {
+                    gkDekodeDb->write_xmpp_settings(QString::number(m_connDetails.server.port), Settings::GkXmppCfg::XmppDomainPort);
+                }
+            }
+        } else if (ui->stackedWidget_xmpp_registration_dialog->currentWidget() == ui->page_account_login_ui) {
+            //
+            // Account login
+            gkDekodeDb->write_xmpp_settings(QString::number(ui->comboBox_xmpp_login_server_type->currentIndex()), Settings::GkXmppCfg::XmppServerType);
+            if (m_loginServerType != GkXmpp::GkServerType::GekkoFyre) {
+                if (m_connDetails.server.port >= 80) {
+                    gkDekodeDb->write_xmpp_settings(QString::number(m_connDetails.server.port), Settings::GkXmppCfg::XmppDomainPort);
+                }
+            }
+        } else if (ui->stackedWidget_xmpp_registration_dialog->currentWidget() == ui->page_account_change_password_ui) {
+            //
+            // Account change password
+            gkDekodeDb->write_xmpp_settings(QString::number(ui->comboBox_xmpp_change_password_server_type->currentIndex()), Settings::GkXmppCfg::XmppServerType);
+            if (m_passwordServerType != GkXmpp::GkServerType::GekkoFyre) {
+                if (m_connDetails.server.port >= 80) {
+                    gkDekodeDb->write_xmpp_settings(QString::number(m_connDetails.server.port), Settings::GkXmppCfg::XmppDomainPort);
+                }
+            }
+        } else if (ui->stackedWidget_xmpp_registration_dialog->currentWidget() == ui->page_account_change_email_ui) {
+            //
+            // Account change email
+            gkDekodeDb->write_xmpp_settings(QString::number(ui->comboBox_change_email_server_type->currentIndex()), Settings::GkXmppCfg::XmppServerType);
+            if (m_emailServerType != GkXmpp::GkServerType::GekkoFyre) {
+                if (m_connDetails.server.port >= 80) {
+                    gkDekodeDb->write_xmpp_settings(QString::number(m_connDetails.server.port), Settings::GkXmppCfg::XmppDomainPort);
+                }
+            }
+        } else {
+            //
+            // Unknown!
+            std::throw_with_nested(std::invalid_argument(tr("Error encountered whilst saving credentials to database!").toStdString()));
+        }
+
+        gkDekodeDb->write_xmpp_settings(m_connDetails.jid, Settings::GkXmppCfg::XmppJid);
+        gkDekodeDb->write_xmpp_settings(QString::number(gkDekodeDb->boolInt(ui->checkBox_remember_credentials->isChecked())), Settings::GkXmppCfg::XmppCheckboxRememberCreds);
+
+        if (!m_connDetails.password.isEmpty()) {
+            gkDekodeDb->write_xmpp_settings(m_connDetails.password, Settings::GkXmppCfg::XmppPassword);
+        }
+
+        if (!m_connDetails.email.isEmpty()) {
+            gkDekodeDb->write_xmpp_settings(m_connDetails.email, Settings::GkXmppCfg::XmppEmailAddr);
+        }
+
+        if (!m_connDetails.username.isEmpty()) {
+            gkDekodeDb->write_xmpp_settings(m_connDetails.username, Settings::GkXmppCfg::XmppUsername);
+        }
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppRegistrationDialog::readCredentials reads any remembered credentials and applies them to the form(s), where
+ * they are needed/required.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRegistrationDialog::readCredentials()
+{
+    const QString bareJid = gkDekodeDb->read_xmpp_settings(Settings::GkXmppCfg::XmppJid);
+    const QString email = gkDekodeDb->read_xmpp_settings(Settings::GkXmppCfg::XmppEmailAddr);
+    const QString password = gkDekodeDb->read_xmpp_settings(Settings::GkXmppCfg::XmppPassword);
+    const QString portStr = gkDekodeDb->read_xmpp_settings(Settings::GkXmppCfg::XmppDomainPort);
+
+    if (!email.isEmpty()) {
+        ui->lineEdit_email->setText(email);
+
+    }
+
+    if (!password.isEmpty()) {
+        ui->lineEdit_password->setText(password);
+        ui->lineEdit_login_password->setText(password);
+        ui->lineEdit_change_email_password->setText(password);
+    }
+
+    if (m_registerServerType == GkXmpp::GkServerType::GekkoFyre) {
+        //
+        // User Registration -- GekkoFyre Networks!
+        if (!bareJid.isEmpty()) {
+            ui->lineEdit_username->setText(m_xmppClient->getUsername(bareJid));
+        }
+    } else if (m_registerServerType == GkXmpp::GkServerType::Custom) {
+        //
+        // User Registration -- Custom!
+        if (!bareJid.isEmpty()) {
+            ui->lineEdit_username->setText(bareJid);
+        }
+
+        if (!portStr.isEmpty()) {
+            ui->spinBox_xmpp_port->setValue(portStr.toUInt());
+        }
+    } else {
+        //
+        // User Registration -- Unknown!
+        std::throw_with_nested(std::invalid_argument(tr("Error encountered whilst reading credentials to database!").toStdString()));
+    }
+
+    if (m_loginServerType == GkXmpp::GkServerType::GekkoFyre) {
+        //
+        // User Login -- GekkoFyre Networks!
+        if (!bareJid.isEmpty()) {
+            ui->lineEdit_login_username->setText(m_xmppClient->getUsername(bareJid));
+        }
+    } else if (m_loginServerType == GkXmpp::GkServerType::Custom) {
+        //
+        // User Login -- Custom!
+        if (!bareJid.isEmpty()) {
+            ui->lineEdit_login_username->setText(bareJid);
+        }
+
+        if (!portStr.isEmpty()) {
+            ui->spinBox_login_xmpp_port->setValue(portStr.toUInt());
+        }
+    } else {
+        //
+        // User Login -- Unknown!
+        std::throw_with_nested(std::invalid_argument(tr("Error encountered whilst reading credentials to database!").toStdString()));
+    }
+
+    if (m_passwordServerType == GkXmpp::GkServerType::GekkoFyre) {
+        //
+        // User Change Password -- GekkoFyre Networks!
+        if (!bareJid.isEmpty()) {
+            ui->lineEdit_change_password_username->setText(m_xmppClient->getUsername(bareJid));
+        }
+    } else if (m_passwordServerType == GkXmpp::GkServerType::Custom) {
+        //
+        // User Change Password -- Custom!
+        if (!bareJid.isEmpty()) {
+            ui->lineEdit_change_password_username->setText(bareJid);
+        }
+
+        if (!portStr.isEmpty()) {
+            ui->spinBox_change_password_port->setValue(portStr.toUInt());
+        }
+    } else {
+        //
+        // User Change Password -- Unknown!
+        std::throw_with_nested(std::invalid_argument(tr("Error encountered whilst reading credentials to database!").toStdString()));
+    }
+
+    if (m_emailServerType == GkXmpp::GkServerType::GekkoFyre) {
+        //
+        // User Change Email -- GekkoFyre Networks!
+        if (!bareJid.isEmpty()) {
+            ui->lineEdit_change_email_username->setText(m_xmppClient->getUsername(bareJid));
+        }
+    } else if (m_emailServerType == GkXmpp::GkServerType::Custom) {
+        //
+        // User Change Email -- Custom!
+        if (!bareJid.isEmpty()) {
+            ui->lineEdit_change_email_username->setText(bareJid);
+        }
+
+        if (!portStr.isEmpty()) {
+            ui->spinBox_change_email_port->setValue(portStr.toUInt());
+        }
+    } else {
+        //
+        // User Change Email -- Unknown!
+        std::throw_with_nested(std::invalid_argument(tr("Error encountered whilst reading credentials to database!").toStdString()));
+    }
+
+    return;
+}
+
+/**
  * @brief GkXmppRegistrationDialog::setEmailInputColor adjusts the color of a given QLineEdit widget, dependent on
  * whether there's acceptable user input or not. If there's acceptable user input, the text appears as white, otherwise
  * it will be orange in coloration.
@@ -841,6 +1183,47 @@ void GkXmppRegistrationDialog::handleSuccess()
 void GkXmppRegistrationDialog::updateNetworkState()
 {
     m_netState = m_xmppClient->getNetworkState();
+    return;
+}
+
+/**
+ * @brief GkXmppRegistrationDialog::prefill_xmpp_server_type
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param server_type
+ */
+void GkXmppRegistrationDialog::prefill_xmpp_server_type(const GkXmpp::GkServerType &server_type)
+{
+    switch (server_type) {
+        case GkXmpp::GkServerType::GekkoFyre:
+            ui->comboBox_server_type->insertItem(GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX, tr("GekkoFyre Networks (best choice!)"));
+            ui->comboBox_xmpp_login_server_type->insertItem(GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX, tr("GekkoFyre Networks (best choice!)"));
+            ui->comboBox_xmpp_change_password_server_type->insertItem(GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX, tr("GekkoFyre Networks (best choice!)"));
+            ui->comboBox_change_email_server_type->insertItem(GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX, tr("GekkoFyre Networks (best choice!)"));
+            break;
+        case GkXmpp::GkServerType::Custom:
+            ui->comboBox_server_type->insertItem(GK_XMPP_SERVER_TYPE_COMBO_CUSTOM_IDX, tr("Custom (use with caution)"));
+            ui->comboBox_xmpp_login_server_type->insertItem(GK_XMPP_SERVER_TYPE_COMBO_CUSTOM_IDX, tr("Custom (use with caution)"));
+            ui->comboBox_xmpp_change_password_server_type->insertItem(GK_XMPP_SERVER_TYPE_COMBO_CUSTOM_IDX, tr("Custom (use with caution)"));
+            ui->comboBox_change_email_server_type->insertItem(GK_XMPP_SERVER_TYPE_COMBO_CUSTOM_IDX, tr("Custom (use with caution)"));
+            break;
+        default:
+            std::throw_with_nested(std::invalid_argument(tr("Error encountered whilst pre-filling QComboBoxes for XMPP server-type to use!").toStdString()));
+    }
+
+    const QString serverTypeStr = gkDekodeDb->read_xmpp_settings(Settings::GkXmppCfg::XmppServerType);
+    if (!serverTypeStr.isEmpty()) {
+        on_comboBox_server_type_currentIndexChanged(serverTypeStr.toInt());
+        on_comboBox_xmpp_login_server_type_currentIndexChanged(serverTypeStr.toInt());
+        on_comboBox_xmpp_change_password_server_type_currentIndexChanged(serverTypeStr.toInt());
+        on_comboBox_change_email_server_type_currentIndexChanged(serverTypeStr.toInt());
+        return;
+    }
+
+    on_comboBox_server_type_currentIndexChanged(GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX);
+    on_comboBox_xmpp_login_server_type_currentIndexChanged(GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX);
+    on_comboBox_xmpp_change_password_server_type_currentIndexChanged(GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX);
+    on_comboBox_change_email_server_type_currentIndexChanged(GK_XMPP_SERVER_TYPE_COMBO_GEKKOFYRE_IDX);
+
     return;
 }
 

@@ -529,6 +529,26 @@ namespace System {
         }
     };
 
+    namespace UserInterface {
+        enum GkSettingsDlgTab {
+            GkGeneralStation,
+            GkGeneralFreq,
+            GkGeneralUi,
+            GkGeneralUiBasic,
+            GkGeneralUiThemes,
+            GkGeneralXmpp,
+            GkGeneralEventLogger,
+            GkAudio,
+            GkAudioConfig,
+            GkAudioRecorder,
+            GkAudioApiInfo,
+            GkRadio,
+            GkRadioRig,
+            GkRadioApiInfo,
+            GkCheckForUpdates
+        };
+    }
+
     namespace Cli {
         enum CommandLineParseResult
         {
@@ -731,7 +751,8 @@ namespace Database {
             XmppNickname,
             XmppEmailAddr,
             XmppUriLookupMethod,
-            XmppNetworkTimeout
+            XmppNetworkTimeout,
+            XmppCheckboxRememberCreds
         };
 
         enum Codec2Mode {

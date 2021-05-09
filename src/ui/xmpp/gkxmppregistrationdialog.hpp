@@ -67,6 +67,7 @@ public:
     explicit GkXmppRegistrationDialog(const GekkoFyre::Network::GkXmpp::GkRegUiRole &gkRegUiRole,
                                       const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
                                       QPointer<GekkoFyre::GkXmppClient> xmppClient,
+                                      QPointer<GekkoFyre::GkLevelDb> gkDb,
                                       QPointer<GekkoFyre::GkEventLogger> eventLogger, QWidget *parent = nullptr);
     ~GkXmppRegistrationDialog() override;
 
@@ -94,12 +95,20 @@ private slots:
     void on_pushButton_change_email_reset_clicked();
     void on_pushButton_change_email_cancel_clicked();
 
+    void on_comboBox_server_type_currentIndexChanged(int index);
+    void on_comboBox_xmpp_login_server_type_currentIndexChanged(int index);
+    void on_comboBox_xmpp_change_password_server_type_currentIndexChanged(int index);
+    void on_comboBox_change_email_server_type_currentIndexChanged(int index);
+
     //
     // User, roster and presence details
+    void on_checkBox_remember_credentials_stateChanged(int arg1);
     void handleRegistrationForm(const QXmppRegisterIq &registerIq);
     void loginToServer(const QString &hostname, const quint16 &network_port, const QString &username = "",
                        const QString &password = "", const QString &jid = "", const bool &credentials_fail = false);
     void userSignup(const quint16 &network_port, const QString &jid, const QString &password);
+    void rememberCredentials();
+    void readCredentials();
 
     //
     // QRegularExpression
@@ -121,6 +130,7 @@ signals:
 private:
     Ui::GkXmppRegistrationDialog *ui;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
+    QPointer<GekkoFyre::GkLevelDb> gkDekodeDb;
 
     //
     // QXmpp and XMPP related
@@ -145,12 +155,17 @@ private:
     quint16 m_network_port;
 
     bool m_reg_remember_credentials;
+    GekkoFyre::Network::GkXmpp::GkServerType m_registerServerType;  // Server type for user registration
+    GekkoFyre::Network::GkXmpp::GkServerType m_loginServerType;     // Server type for user login
+    GekkoFyre::Network::GkXmpp::GkServerType m_passwordServerType;  // Server type for change of password
+    GekkoFyre::Network::GkXmpp::GkServerType m_emailServerType;     // Server type for change of email
 
     //
     // General networking
     GekkoFyre::Network::GkXmpp::GkNetworkState m_netState;
     QString m_id;
 
+    void prefill_xmpp_server_type(const GekkoFyre::Network::GkXmpp::GkServerType &server_type);
     void print_exception(const std::exception &e, int level = 0);
 };
 

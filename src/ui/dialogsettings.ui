@@ -1008,6 +1008,9 @@
                                  <property name="frameShadow">
                                   <enum>QFrame::Plain</enum>
                                  </property>
+                                 <property name="readOnly">
+                                  <bool>true</bool>
+                                 </property>
                                  <property name="plainText">
                                   <string>Speech recognition is a feature that is not available at this time, but is planned to be implemented in the near-future. Please check our main website for regular updates by going towards 'Help --&gt; About SWD' from within the main screen!
 
@@ -3766,8 +3769,8 @@ Thanks.</string>
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>944</width>
-                      <height>590</height>
+                      <width>513</width>
+                      <height>375</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_28">
@@ -5517,8 +5520,8 @@ p, li { white-space: pre-wrap; }
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>962</width>
-                      <height>608</height>
+                      <width>257</width>
+                      <height>207</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_35">
@@ -5976,37 +5979,53 @@ p, li { white-space: pre-wrap; }
   <tabstop>doubleSpinBox_freq_calib_intercept</tabstop>
   <tabstop>doubleSpinBox_freq_calib_slope</tabstop>
   <tabstop>tableWidget_station_info</tabstop>
-  <tabstop>scrollArea_ui_xmpp_cfg</tabstop>
-  <tabstop>checkBox_allow_msg_history</tabstop>
-  <tabstop>checkBox_allow_file_transfers</tabstop>
-  <tabstop>checkBox_allow_muc_creation</tabstop>
-  <tabstop>checkBox_connect_automatically</tabstop>
-  <tabstop>lineEdit_xmpp_upload_avatar_file_browser</tabstop>
-  <tabstop>toolButton_xmpp_upload_avatar_browse_file</tabstop>
-  <tabstop>toolButton_xmpp_delete_avatar_from_server</tabstop>
-  <tabstop>toolButton_xmpp_upload_avatar_to_server</tabstop>
-  <tabstop>pushButton_xmpp_cfg_change_password</tabstop>
-  <tabstop>pushButton_xmpp_cfg_change_email</tabstop>
-  <tabstop>pushButton_xmpp_cfg_signup</tabstop>
-  <tabstop>pushButton_xmpp_cfg_login_logout</tabstop>
-  <tabstop>comboBox_xmpp_server_type</tabstop>
+  <tabstop>tabWidget_app_ui</tabstop>
+  <tabstop>scrollArea_ui_user_interface</tabstop>
+  <tabstop>comboBox_accessibility_lang_ui</tabstop>
+  <tabstop>comboBox_accessibility_dict</tabstop>
+  <tabstop>horizontalSlider_access_stt_volume</tabstop>
+  <tabstop>horizontalSlider_access_stt_rate</tabstop>
+  <tabstop>horizontalSlider_access_stt_pitch</tabstop>
+  <tabstop>comboBox_access_stt_engine</tabstop>
+  <tabstop>comboBox_access_stt_language</tabstop>
+  <tabstop>comboBox_access_stt_preset_voice</tabstop>
+  <tabstop>pushButton_access_stt_speak</tabstop>
+  <tabstop>pushButton_access_stt_pause</tabstop>
+  <tabstop>pushButton_access_stt_enable</tabstop>
+  <tabstop>pushButton_access_stt_resume</tabstop>
+  <tabstop>pushButton_access_stt_stop</tabstop>
+  <tabstop>plainTextEdit_access_speech_recog_future_updates</tabstop>
+  <tabstop>checkBox_access_misc_enbl_magnifier</tabstop>
+  <tabstop>lineEdit_access_misc_shortcut_key_magnifier</tabstop>
+  <tabstop>checkBox_compress_settings_db</tabstop>
+  <tabstop>checkBox_send_anon_crash_reports</tabstop>
+  <tabstop>checkBox_waterfall_upon_start</tabstop>
+  <tabstop>checkBox_new_msg_audio_notification</tabstop>
+  <tabstop>checkBox_failed_event_audio_notification</tabstop>
+  <tabstop>horizontalSlider_spectro_min_freq</tabstop>
+  <tabstop>spinBox_spectro_min_freq</tabstop>
+  <tabstop>horizontalSlider_spectro_max_freq</tabstop>
+  <tabstop>spinBox_spectro_max_freq</tabstop>
+  <tabstop>spinBox_spectro_render_thread_settings</tabstop>
+  <tabstop>checkBox_enable_panning</tabstop>
+  <tabstop>checkBox_enable_zooming</tabstop>
+  <tabstop>lineEdit_db_save_loc</tabstop>
+  <tabstop>pushButton_db_save_loc</tabstop>
   <tabstop>spinBox_xmpp_server_port</tabstop>
   <tabstop>lineEdit_xmpp_server_url</tabstop>
-  <tabstop>checkBox_xmpp_server_ssl</tabstop>
-  <tabstop>scrollArea_4</tabstop>
-  <tabstop>comboBox_event_logger_general_verbosity</tabstop>
-  <tabstop>checkBox_event_logger_general_save_history</tabstop>
+  <tabstop>scrollArea</tabstop>
+  <tabstop>groupBox_2</tabstop>
   <tabstop>tabWidget_audio</tabstop>
   <tabstop>scrollArea_audio_config</tabstop>
   <tabstop>comboBox_soundcard_input</tabstop>
-  <tabstop>pushButton_input_sound_test</tabstop>
-  <tabstop>comboBox_audio_input_bit_rate</tabstop>
-  <tabstop>comboBox_audio_input_sample_rate</tabstop>
-  <tabstop>comboBox_soundcard_input_channels</tabstop>
   <tabstop>comboBox_soundcard_output</tabstop>
+  <tabstop>pushButton_input_sound_test</tabstop>
   <tabstop>pushButton_output_sound_test</tabstop>
+  <tabstop>comboBox_audio_input_bit_rate</tabstop>
   <tabstop>comboBox_audio_output_bit_rate</tabstop>
+  <tabstop>comboBox_audio_input_sample_rate</tabstop>
   <tabstop>comboBox_audio_output_sample_rate</tabstop>
+  <tabstop>comboBox_soundcard_input_channels</tabstop>
   <tabstop>comboBox_soundcard_output_channels</tabstop>
   <tabstop>pushButton_refresh_audio_devices</tabstop>
   <tabstop>checkBox_init_rx_audio_upon_start</tabstop>
@@ -6015,6 +6034,12 @@ p, li { white-space: pre-wrap; }
   <tabstop>scrollArea_audio_recorder_config</tabstop>
   <tabstop>horizontalSlider_encoding_audio_quality</tabstop>
   <tabstop>comboBox_encoding_audio_bitrate</tabstop>
+  <tabstop>textBrowser_recorded_playback_feature_desc</tabstop>
+  <tabstop>comboBox_recorded_playback_pref_codec</tabstop>
+  <tabstop>comboBox_recorded_playback_channels</tabstop>
+  <tabstop>comboBox_recorded_playback_split_to_vols</tabstop>
+  <tabstop>horizontalSlider_recorded_playback_def_bitrate</tabstop>
+  <tabstop>checkBox_recorded_playback_multicore_performance</tabstop>
   <tabstop>plainTextEdit_pa_version_text</tabstop>
   <tabstop>tabWidget_radio</tabstop>
   <tabstop>scrollArea_2</tabstop>
@@ -6035,6 +6060,7 @@ p, li { white-space: pre-wrap; }
   <tabstop>radioButton_handshake_hardware</tabstop>
   <tabstop>comboBox_force_ctrl_lines_dtr</tabstop>
   <tabstop>comboBox_force_ctrl_lines_rts</tabstop>
+  <tabstop>lineEdit_adv_ptt_cmd</tabstop>
   <tabstop>radioButton_ptt_method_rts</tabstop>
   <tabstop>radioButton_ptt_method_vox</tabstop>
   <tabstop>radioButton_ptt_method_dtr</tabstop>
@@ -6049,13 +6075,40 @@ p, li { white-space: pre-wrap; }
   <tabstop>radioButton_split_none</tabstop>
   <tabstop>radioButton_split_rig</tabstop>
   <tabstop>radioButton_split_fake_it</tabstop>
-  <tabstop>lineEdit_adv_ptt_cmd</tabstop>
+  <tabstop>pushButton_submit_config</tabstop>
+  <tabstop>pushButton_cancel_config</tabstop>
+  <tabstop>comboBox_event_logger_general_verbosity</tabstop>
+  <tabstop>checkBox_event_logger_general_save_history</tabstop>
   <tabstop>scrollArea_hamlib_api</tabstop>
   <tabstop>plainTextEdit_hamlib_api_version_info</tabstop>
   <tabstop>scrollArea_3</tabstop>
+  <tabstop>checkBox_connect_automatically</tabstop>
+  <tabstop>toolButton_xmpp_upload_avatar_browse_file</tabstop>
+  <tabstop>pushButton_xmpp_cfg_change_password</tabstop>
+  <tabstop>lineEdit_xmpp_upload_avatar_file_browser</tabstop>
+  <tabstop>toolButton_xmpp_delete_avatar_from_server</tabstop>
+  <tabstop>toolButton_xmpp_upload_avatar_to_server</tabstop>
+  <tabstop>pushButton_xmpp_cfg_signup</tabstop>
+  <tabstop>pushButton_xmpp_cfg_change_email</tabstop>
+  <tabstop>pushButton_xmpp_cfg_login_logout</tabstop>
+  <tabstop>comboBox_xmpp_server_type</tabstop>
+  <tabstop>checkBox_allow_msg_history</tabstop>
+  <tabstop>checkBox_automatic_reconnect</tabstop>
+  <tabstop>lineEdit_xmpp_client_username</tabstop>
+  <tabstop>lineEdit_xmpp_client_password</tabstop>
+  <tabstop>lineEdit_xmpp_client_email_address</tabstop>
+  <tabstop>lineEdit_xmpp_server_nickname</tabstop>
+  <tabstop>pushButton_xmpp_cfg_delete_account</tabstop>
+  <tabstop>pushButton_xmpp_cfg_delete_msg_history</tabstop>
+  <tabstop>comboBox_xmpp_server_ssl_errors</tabstop>
+  <tabstop>spinBox_xmpp_server_network_timeout</tabstop>
+  <tabstop>comboBox_xmpp_server_uri_lookup_method</tabstop>
   <tabstop>pushButton_check_for_updates</tabstop>
-  <tabstop>pushButton_submit_config</tabstop>
-  <tabstop>pushButton_cancel_config</tabstop>
+  <tabstop>checkBox_xmpp_server_ssl</tabstop>
+  <tabstop>scrollArea_ui_xmpp_cfg</tabstop>
+  <tabstop>scrollArea_4</tabstop>
+  <tabstop>checkBox_allow_muc_creation</tabstop>
+  <tabstop>checkBox_allow_file_transfers</tabstop>
  </tabstops>
  <resources/>
  <connections/>

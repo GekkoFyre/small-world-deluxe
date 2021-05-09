@@ -229,27 +229,6 @@ set(GALAXY_HAMLIB_CPP
     src/contrib/hamlib++/include/hamlib/rotclass.h)
 
 #
-# Hunspell
-# http://hunspell.github.io/
-#
-find_package(Hunspell REQUIRED)
-if (HUNSPELL_FOUND)
-    include_directories(${HUNSPELL_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${HUNSPELL_LIBRARIES})
-    file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/dictionaries/dictionaries" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Library")
-    file(RENAME "${CMAKE_CURRENT_BINARY_DIR}/Library/dictionaries" "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling")
-
-    #
-    # Remove all the unneeded files now!
-    file(GLOB_RECURSE RM_HUNSPELL_FILES_JS "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling/*.js")
-    file(GLOB_RECURSE RM_HUNSPELL_FILES_JSON "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling/*.json")
-    file(REMOVE ${RM_HUNSPELL_FILES_JS})
-    file(REMOVE ${RM_HUNSPELL_FILES_JSON})
-else()
-    message(FATAL_ERROR "The 'Hunspell' spell-checking library has been configured!")
-endif(HUNSPELL_FOUND)
-
-#
 # OpusEnc
 # https://gitlab.xiph.org/xiph/libopusenc
 #
@@ -310,6 +289,27 @@ if (Threads_FOUND)
 else()
     message(FATAL_ERROR "Could not find the Threads library!")
 endif(Threads_FOUND)
+
+#
+# Hunspell
+# http://hunspell.github.io/
+#
+find_package(Hunspell REQUIRED)
+if (HUNSPELL_FOUND)
+    include_directories(${HUNSPELL_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${HUNSPELL_LIBRARIES})
+    file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/dictionaries/dictionaries" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Library")
+    file(RENAME "${CMAKE_CURRENT_BINARY_DIR}/Library/dictionaries" "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling")
+
+    #
+    # Remove all the unneeded files now!
+    file(GLOB_RECURSE RM_HUNSPELL_FILES_JS "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling/*.js")
+    file(GLOB_RECURSE RM_HUNSPELL_FILES_JSON "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling/*.json")
+    file(REMOVE ${RM_HUNSPELL_FILES_JS})
+    file(REMOVE ${RM_HUNSPELL_FILES_JSON})
+else()
+    message(FATAL_ERROR "The 'Hunspell' spell-checking library has been configured!")
+endif(HUNSPELL_FOUND)
 
 find_package(OpenSSL REQUIRED)
 if (OPENSSL_FOUND)
