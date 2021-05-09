@@ -751,7 +751,8 @@ namespace Database {
             XmppNickname,
             XmppEmailAddr,
             XmppUriLookupMethod,
-            XmppNetworkTimeout
+            XmppNetworkTimeout,
+            XmppCheckboxRememberCreds
         };
 
         enum Codec2Mode {

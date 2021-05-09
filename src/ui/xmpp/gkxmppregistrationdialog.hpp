@@ -107,7 +107,8 @@ private slots:
     void loginToServer(const QString &hostname, const quint16 &network_port, const QString &username = "",
                        const QString &password = "", const QString &jid = "", const bool &credentials_fail = false);
     void userSignup(const quint16 &network_port, const QString &jid, const QString &password);
-    void rememberCredentials(const GekkoFyre::Network::GkXmpp::GkUserConn &conn_details);
+    void rememberCredentials();
+    void readCredentials();
 
     //
     // QRegularExpression

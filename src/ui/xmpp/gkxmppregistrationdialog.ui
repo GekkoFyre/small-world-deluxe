@@ -815,6 +815,16 @@
                 <property name="bottomMargin">
                  <number>0</number>
                 </property>
+                <item row="0" column="0">
+                 <widget class="QLabel" name="label_xmpp_change_password_server_type">
+                  <property name="text">
+                   <string>Server: </string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1">
+                 <widget class="QComboBox" name="comboBox_xmpp_change_password_server_type"/>
+                </item>
                 <item row="1" column="0">
                  <widget class="QLabel" name="label_change_password_username">
                   <property name="text">
@@ -855,21 +865,38 @@
                   </property>
                  </widget>
                 </item>
-                <item row="4" column="1">
+                <item row="3" column="0">
+                 <widget class="QLabel" name="label_change_password_new_input">
+                  <property name="text">
+                   <string>New Password: </string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="3" column="1">
+                 <widget class="QLineEdit" name="lineEdit_change_password_new_input">
+                  <property name="maxLength">
+                   <number>256</number>
+                  </property>
+                  <property name="echoMode">
+                   <enum>QLineEdit::Password</enum>
+                  </property>
+                 </widget>
+                </item>
+                <item row="5" column="1">
                  <widget class="Line" name="line_3">
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
                   </property>
                  </widget>
                 </item>
-                <item row="5" column="0">
+                <item row="6" column="0">
                  <widget class="QLabel" name="label_xmpp_change_password_captcha">
                   <property name="text">
                    <string>Captcha: </string>
                   </property>
                  </widget>
                 </item>
-                <item row="5" column="1">
+                <item row="6" column="1">
                  <widget class="QFrame" name="frame_xmpp_change_password_captcha">
                   <property name="frameShape">
                    <enum>QFrame::NoFrame</enum>
@@ -964,32 +991,25 @@
                   </layout>
                  </widget>
                 </item>
-                <item row="3" column="1">
-                 <widget class="QLineEdit" name="lineEdit_change_password_new_input">
-                  <property name="maxLength">
-                   <number>256</number>
+                <item row="4" column="1">
+                 <widget class="QSpinBox" name="spinBox_change_password_port">
+                  <property name="minimum">
+                   <number>80</number>
                   </property>
-                  <property name="echoMode">
-                   <enum>QLineEdit::Password</enum>
+                  <property name="maximum">
+                   <number>65535</number>
+                  </property>
+                  <property name="value">
+                   <number>5222</number>
                   </property>
                  </widget>
                 </item>
-                <item row="3" column="0">
-                 <widget class="QLabel" name="label_change_password_new_input">
+                <item row="4" column="0">
+                 <widget class="QLabel" name="label_change_password_port">
                   <property name="text">
-                   <string>New Password: </string>
+                   <string>Port: </string>
                   </property>
                  </widget>
-                </item>
-                <item row="0" column="0">
-                 <widget class="QLabel" name="label_xmpp_change_password_server_type">
-                  <property name="text">
-                   <string>Server: </string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="1">
-                 <widget class="QComboBox" name="comboBox_xmpp_change_password_server_type"/>
                 </item>
                </layout>
               </widget>
@@ -1206,21 +1226,21 @@
                   </property>
                  </widget>
                 </item>
-                <item row="4" column="1">
+                <item row="5" column="1">
                  <widget class="Line" name="line_4">
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
                   </property>
                  </widget>
                 </item>
-                <item row="5" column="0">
+                <item row="6" column="0">
                  <widget class="QLabel" name="label_xmpp_change_email_captcha">
                   <property name="text">
                    <string>Captcha: </string>
                   </property>
                  </widget>
                 </item>
-                <item row="5" column="1">
+                <item row="6" column="1">
                  <widget class="QFrame" name="frame_xmpp_change_email_captcha">
                   <property name="frameShape">
                    <enum>QFrame::NoFrame</enum>
@@ -1338,6 +1358,26 @@
                 </item>
                 <item row="0" column="1">
                  <widget class="QComboBox" name="comboBox_change_email_server_type"/>
+                </item>
+                <item row="4" column="1">
+                 <widget class="QSpinBox" name="spinBox_change_email_port">
+                  <property name="minimum">
+                   <number>80</number>
+                  </property>
+                  <property name="maximum">
+                   <number>65535</number>
+                  </property>
+                  <property name="value">
+                   <number>5222</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="4" column="0">
+                 <widget class="QLabel" name="label_change_email_port">
+                  <property name="text">
+                   <string>Port: </string>
+                  </property>
+                 </widget>
                 </item>
                </layout>
               </widget>
