@@ -51,8 +51,6 @@
 #include "src/contrib/Gist/src/Gist.h"
 #include <boost/exception/all.hpp>
 #include <boost/chrono/chrono.hpp>
-#include <nuspell/finder.hxx>
-#include <nuspell/dictionary.hxx>
 #include <cmath>
 #include <chrono>
 #include <ostream>
@@ -792,7 +790,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Hunspell & Spelling dictionaries
         //
-        readHunspellSettings();
+        readNuspellSettings();
 
         //
         // QPrinter-specific options!
@@ -908,7 +906,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the QXmpp client!
         m_xmppClient = new GkXmppClient(gkConnDetails, gkDb, gkFileIo, gkEventLogger, false, nullptr);
-        gkXmppRosterDlg = new GkXmppRosterDialog(gkConnDetails, m_xmppClient, gkDb, gkEventLogger, true, this);
+        gkXmppRosterDlg = new GkXmppRosterDialog(gkConnDetails, m_xmppClient, gkDb, m_nuspellDict, gkEventLogger, true, this);
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
@@ -2179,11 +2177,11 @@ void MainWindow::readXmppSettings()
 }
 
 /**
- * @brief MainWindow::readHunspellSettings reads any settings related to Hunspell and its dictionaries from the Google
+ * @brief MainWindow::readNuspellSettings reads any settings related to Hunspell and its dictionaries from the Google
  * LevelDB database attached to the Small World Deluxe instance.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void MainWindow::readHunspellSettings()
+void MainWindow::readNuspellSettings()
 {
     sys::error_code ec;
     try {
@@ -2202,22 +2200,12 @@ void MainWindow::readHunspellSettings()
         fs::path active_dict_dir = gkFileIo->getLangFile(curr_chosen_dict, Language::GkLangSettings::DictLang);
         if (fs::exists(active_dict_dir, ec)) {
             if (fs::is_directory(active_dict_dir, ec)) {
-                fs::path active_aff = fs::path(active_dict_dir.string() + native_slash.string() + Filesystem::nuspellSpellAffExt);
-                fs::path active_dic = fs::path(active_dict_dir.string() + native_slash.string() + Filesystem::nuspellSpellDicExt);
-
-                if (fs::exists(active_aff, ec) && fs::exists(active_dic, ec)) {
-                    //
-                    // The *.aff and *.dic exists!
-                    auto dict_list = std::vector<std::pair<std::string, std::string>>();
-                    nuspell::search_default_dirs_for_dicts(dict_list);
-                    auto dict_name_and_path = nuspell::find_dictionary(dict_list, "en_US");
-                    if (dict_name_and_path == end(dict_list)) {
-                        return;
-                    }
-
-                    auto &dict_path = dict_name_and_path->second;
-                    auto dict = nuspell::Dictionary::load_from_path(dict_path);
-                }
+                fs::path active_dic = fs::path(active_dict_dir.string() + native_slash.string() + Filesystem::nuspellSpellDic);
+                //
+                // The *.aff and *.dic exists!
+                // auto dict_finder = nuspell::Dict_Finder_For_CLI_Tool();
+                // dict_finder.get_dictionary_path();
+                m_nuspellDict = std::make_shared<nuspell::Dictionary>(nuspell::Dictionary::load_from_path(active_dic.string()));
             }
 
             if (ec.failed()) {

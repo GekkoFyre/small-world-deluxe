@@ -345,8 +345,7 @@ namespace Filesystem {
     // Nuspell & Spelling dictionaries
     constexpr char nuspellLibraryDir[] = "Library";                    // The 'Library' dir which is used by the Nuspell libs
     constexpr char nuspellSpellDir[] = "Spelling";                     // The 'Spelling' dir, present underneath 'Library', which is used by the Nuspell libs
-    constexpr char nuspellSpellAffExt[] = "index.aff";                 // The *.aff file-extension for Nuspell dictionaries
-    constexpr char nuspellSpellDicExt[] = "index.dic";                 // The *.dic file-extension for Nuspell dictionaries
+    constexpr char nuspellSpellDic[] = "index";                        // The *.dic and *.aff file for Nuspell dictionaries
     constexpr char nuspellSpellDefLang[] = "en";                       // The default dictionary language to use for Nuspell
     constexpr char nuspellDisabledOption[] = "No dictionary";          // The disabled option which appears within the QCombobox
 

@@ -64,6 +64,8 @@
 #include <leveldb/db.h>
 #include <leveldb/status.h>
 #include <leveldb/options.h>
+#include <nuspell/finder.hxx>
+#include <nuspell/dictionary.hxx>
 #include <stdexcept>
 #include <exception>
 #include <utility>
@@ -469,6 +471,11 @@ private:
     void defaultOutputAudioDev(const std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice> &output_dev);
 
     //
+    // Spell-checking, dictionaries, etc.
+    //
+    std::shared_ptr<nuspell::Dictionary> m_nuspellDict;
+
+    //
     // QFileDialog related
     //
     bool fileOverloadWarning(const int &file_count, const int &max_num_files = GK_SSTV_FILE_DLG_LOAD_IMGS_MAX_FILES_WARN);
@@ -520,7 +527,7 @@ private:
     void createXmppConnection();
     void readXmppSettings();
 
-    void readHunspellSettings();
+    void readNuspellSettings();
 
     //
     // System tray icon related functions

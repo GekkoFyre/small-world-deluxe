@@ -49,6 +49,8 @@
 #include "src/models/tableview/gk_xmpp_roster_blocked_model.hpp"
 #include "src/ui/xmpp/gkxmppmessagedialog.hpp"
 #include "src/gk_logger.hpp"
+#include <nuspell/finder.hxx>
+#include <nuspell/dictionary.hxx>
 #include <memory>
 #include <QImage>
 #include <QTimer>
@@ -71,8 +73,9 @@ class GkXmppRosterDialog : public QDialog
 
 public:
     explicit GkXmppRosterDialog(const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details, QPointer<GekkoFyre::GkXmppClient> xmppClient,
-                                QPointer<GekkoFyre::GkLevelDb> database, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                                const bool &skipConnectionCheck = false, QWidget *parent = nullptr);
+                                QPointer<GekkoFyre::GkLevelDb> database, std::shared_ptr<nuspell::Dictionary> nuspellDict,
+                                QPointer<GekkoFyre::GkEventLogger> eventLogger, const bool &skipConnectionCheck = false,
+                                QWidget *parent = nullptr);
     ~GkXmppRosterDialog();
 
 private slots:
@@ -170,6 +173,11 @@ private:
     void removeRosterBlockedTable(const QString &bareJid);
     void updateRoster();
     void updateActions();
+
+    //
+    // Spell-checking, dictionaries, etc.
+    //
+    std::shared_ptr<nuspell::Dictionary> m_nuspellDict;
 
     //
     // QXmpp and XMPP related

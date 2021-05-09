@@ -68,9 +68,9 @@ using namespace GkXmpp;
 using namespace Security;
 
 GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPointer<GekkoFyre::GkXmppClient> xmppClient,
-                                       QPointer<GekkoFyre::GkLevelDb> database, QPointer<GkEventLogger> eventLogger,
-                                       const bool &skipConnectionCheck, QWidget *parent) : shownXmppPreviewNotice(false),
-                                       QDialog(parent), ui(new Ui::GkXmppRosterDialog)
+                                       QPointer<GekkoFyre::GkLevelDb> database, std::shared_ptr<nuspell::Dictionary> nuspellDict,
+                                       QPointer<GkEventLogger> eventLogger, const bool &skipConnectionCheck, QWidget *parent) :
+                                       shownXmppPreviewNotice(false), QDialog(parent), ui(new Ui::GkXmppRosterDialog)
 {
     ui->setupUi(this);
 
@@ -78,6 +78,7 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
         gkConnDetails = connection_details;
         m_xmppClient = std::move(xmppClient);
         gkDb = std::move(database);
+        m_nuspellDict = std::move(nuspellDict);
         gkEventLogger = std::move(eventLogger);
 
         ui->comboBox_current_status->setCurrentIndex(GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX);
@@ -572,7 +573,7 @@ void GkXmppRosterDialog::reconnectToXmpp()
  */
 void GkXmppRosterDialog::launchMsgDlg(const QString &bareJid)
 {
-    gkXmppMsgDlg = new GkXmppMessageDialog(m_xmppClient, bareJid, this);
+    gkXmppMsgDlg = new GkXmppMessageDialog(m_nuspellDict, m_xmppClient, bareJid, this);
     if (gkXmppMsgDlg) {
         if (!gkXmppMsgDlg->isVisible()) {
             gkXmppMsgDlg->setWindowFlags(Qt::Window);

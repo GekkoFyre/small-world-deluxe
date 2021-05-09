@@ -67,11 +67,13 @@ using namespace Security;
  * @param bareJid The user we are in communique with!
  * @param parent The parent to this dialog.
  */
-GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::GkXmppClient> xmppClient, const QString &bareJid,
+GkXmppMessageDialog::GkXmppMessageDialog(std::shared_ptr<nuspell::Dictionary> nuspellDict,
+                                         QPointer<GekkoFyre::GkXmppClient> xmppClient, const QString &bareJid,
                                          QWidget *parent) : QDialog(parent), ui(new Ui::GkXmppMessageDialog)
 {
     ui->setupUi(this);
 
+    m_nuspellDict = std::move(nuspellDict);
     gkXmppClient = std::move(xmppClient);
     m_bareJid = bareJid;
 
