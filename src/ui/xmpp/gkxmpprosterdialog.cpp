@@ -559,8 +559,8 @@ void GkXmppRosterDialog::removeRosterBlockedTable(const QString &bareJid)
 void GkXmppRosterDialog::reconnectToXmpp()
 {
     if (!m_xmppClient->isConnected() || m_xmppClient->getNetworkState() != GkNetworkState::Connecting) {
-        m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, gkConnDetails.username,
-                                               gkConnDetails.password, gkConnDetails.jid, false);
+        m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, gkConnDetails.password,
+                                               gkConnDetails.jid, false);
     }
 
     return;

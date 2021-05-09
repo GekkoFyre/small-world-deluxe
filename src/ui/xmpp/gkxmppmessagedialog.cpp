@@ -89,32 +89,66 @@ GkXmppMessageDialog::~GkXmppMessageDialog()
     delete ui;
 }
 
+/**
+ * @brief GkXmppMessageDialog::on_toolButton_font_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
 void GkXmppMessageDialog::on_toolButton_font_clicked()
 {
     return;
 }
 
+/**
+ * @brief GkXmppMessageDialog::on_toolButton_font_reset_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
 void GkXmppMessageDialog::on_toolButton_font_reset_clicked()
 {
     return;
 }
 
+/**
+ * @brief GkXmppMessageDialog::on_toolButton_insert_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
 void GkXmppMessageDialog::on_toolButton_insert_clicked()
 {
     return;
 }
 
+/**
+ * @brief GkXmppMessageDialog::on_toolButton_attach_file_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
 void GkXmppMessageDialog::on_toolButton_attach_file_clicked()
 {
     return;
 }
 
+/**
+ * @brief GkXmppMessageDialog::on_toolButton_view_roster_clicked
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
 void GkXmppMessageDialog::on_toolButton_view_roster_clicked()
 {
     return;
 }
 
+/**
+ * @brief GkXmppMessageDialog::on_textBrowser_recv_msg_dlg_customContextMenuRequested
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param pos
+ */
 void GkXmppMessageDialog::on_textBrowser_recv_msg_dlg_customContextMenuRequested(const QPoint &pos)
+{
+    return;
+}
+
+/**
+ * @brief GkXmppMessageDialog::on_lineEdit_message_search_returnPressed
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppMessageDialog::on_lineEdit_message_search_returnPressed()
 {
     return;
 }

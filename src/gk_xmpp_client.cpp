@@ -216,8 +216,8 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
                 if (m_connDetails.server.settings_client.auto_connect || connectNow) {
                     gkEventLogger->publishEvent(tr("Attempting connection towards GekkoFyre Networks!"), GkSeverity::Info,
                                                 "", false, true, false, false);
-                    createConnectionToServer(GkXmppGekkoFyreCfg::defaultUrl, GK_DEFAULT_XMPP_SERVER_PORT, getUsername(m_connDetails.jid),
-                                             m_connDetails.password, m_connDetails.jid, false);
+                    createConnectionToServer(GkXmppGekkoFyreCfg::defaultUrl, GK_DEFAULT_XMPP_SERVER_PORT, m_connDetails.password,
+                                             m_connDetails.jid, false);
                 }
 
                 break;
@@ -244,8 +244,8 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
                 }
 
                 if (m_connDetails.server.settings_client.auto_connect || connectNow) {
-                    createConnectionToServer(m_connDetails.server.url, m_connDetails.server.port, getUsername(m_connDetails.jid),
-                                             m_connDetails.password, m_connDetails.jid, false);
+                    createConnectionToServer(m_connDetails.server.url, m_connDetails.server.port, m_connDetails.password,
+                                             m_connDetails.jid, false);
                 }
 
                 break;
@@ -1475,8 +1475,8 @@ void GkXmppClient::recvXmppLog(QXmppLogger::MessageType msgType, const QString &
  * @param user_signup
  * @param send_registration_form
  */
-void GkXmppClient::createConnectionToServer(const QString &domain_url, const quint16 &network_port, const QString &username,
-                                            const QString &password, const QString &jid, const bool &user_signup)
+void GkXmppClient::createConnectionToServer(const QString &domain_url, const quint16 &network_port, const QString &password,
+                                            const QString &jid, const bool &user_signup)
 {
     try {
         if (domain_url.isEmpty()) {
@@ -1498,13 +1498,8 @@ void GkXmppClient::createConnectionToServer(const QString &domain_url, const qui
 
         // Attempt a connection to the given XMPP server! If no username and password are give, then we will attempt to
         // connect anonymously!
-        if (!username.isEmpty() && !password.isEmpty() && !m_registerManager->registerOnConnectEnabled()) {
-            if (!jid.isEmpty()) {
-                config.setJid(jid);
-            } else {
-                config.setJid(QString("%1@%2").arg(username).arg(GkXmppGekkoFyreCfg::defaultUrl));
-            }
-
+        if (!jid.isEmpty() && !password.isEmpty() && !m_registerManager->registerOnConnectEnabled()) {
+            config.setJid(jid);
             config.setPassword(password);
             config.setHost(domain_url);
             config.setPort(network_port);

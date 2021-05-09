@@ -99,8 +99,8 @@ public:
                           const bool &connectNow = false, QObject *parent = nullptr);
     ~GkXmppClient() override;
 
-    void createConnectionToServer(const QString &domain_url, const quint16 &network_port, const QString &username = "",
-                                  const QString &password = "", const QString &jid = "", const bool &user_signup = false);
+    void createConnectionToServer(const QString &domain_url, const quint16 &network_port, const QString &password = "",
+                                  const QString &jid = "", const bool &user_signup = false);
     bool createMuc(const QString &room_name, const QString &room_subject, const QString &room_desc);
 
     static bool isHostnameSame(const QString &hostname, const QString &comparison = "");

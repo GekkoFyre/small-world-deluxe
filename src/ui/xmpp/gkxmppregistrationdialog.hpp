@@ -104,8 +104,8 @@ private slots:
     // User, roster and presence details
     void on_checkBox_remember_credentials_stateChanged(int arg1);
     void handleRegistrationForm(const QXmppRegisterIq &registerIq);
-    void loginToServer(const QString &hostname, const quint16 &network_port, const QString &username = "",
-                       const QString &password = "", const QString &jid = "", const bool &credentials_fail = false);
+    void loginToServer(const QString &hostname, const quint16 &network_port, const QString &password = "",
+                       const QString &jid = "", const bool &credentials_fail = false);
     void userSignup(const quint16 &network_port, const QString &jid, const QString &password);
     void rememberCredentials();
     void readCredentials();

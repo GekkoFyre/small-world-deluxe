@@ -71,6 +71,7 @@ private slots:
     void on_toolButton_attach_file_clicked();
     void on_toolButton_view_roster_clicked();
     void on_textBrowser_recv_msg_dlg_customContextMenuRequested(const QPoint &pos);
+    void on_lineEdit_message_search_returnPressed();
 
 private:
     Ui::GkXmppMessageDialog *ui;

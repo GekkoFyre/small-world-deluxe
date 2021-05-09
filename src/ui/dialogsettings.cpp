@@ -710,6 +710,7 @@ void DialogSettings::on_pushButton_submit_config_clicked()
         gkDekodeDb->write_misc_audio_settings(QString::number(outputBitrateIdx), GkAudioCfg::AudioOutputBitrate);
 
         emit addRigInUse(ui->comboBox_rig_selection->currentData().toInt(), gkRadioPtr);
+        emit updateXmppConfig();
 
         QMessageBox::information(this, tr("Thank you"), tr("Your settings have been saved."), QMessageBox::Ok);
         this->close();
@@ -1137,13 +1138,13 @@ void DialogSettings::createXmppConnectionFromSettings()
     if (!m_xmppClient->isConnected()) {
         if (gkConnDetails.server.type == GkServerType::GekkoFyre) {
             QString tmp_jid = QString("%1@%2").arg(ui->lineEdit_xmpp_client_username->text()).arg(GkXmppGekkoFyreCfg::defaultUrl);
-            m_xmppClient->createConnectionToServer(GkXmppGekkoFyreCfg::defaultUrl, ui->spinBox_xmpp_server_port->value(), ui->lineEdit_xmpp_client_username->text(),
+            m_xmppClient->createConnectionToServer(GkXmppGekkoFyreCfg::defaultUrl, ui->spinBox_xmpp_server_port->value(),
                                                    ui->lineEdit_xmpp_client_password->text(), tmp_jid, false);
         } else if (gkConnDetails.server.type == GkServerType::Custom) {
             QString tmp_jid = ui->lineEdit_xmpp_client_username->text();
             QString tmp_reg_user = m_xmppClient->getUsername(tmp_jid); // Extract the username from the given JID and its attached URI!
             QString tmp_reg_domain = m_xmppClient->getHostname(tmp_jid); // Extract the URI from the given JID!
-            m_xmppClient->createConnectionToServer(tmp_reg_domain, ui->spinBox_xmpp_server_port->value(), tmp_reg_user,
+            m_xmppClient->createConnectionToServer(tmp_reg_domain, ui->spinBox_xmpp_server_port->value(),
                                                    ui->lineEdit_xmpp_client_password->text(), tmp_jid, false);
         } else {
             throw std::invalid_argument(tr("Invalid XMPP server type provided!").toStdString());
@@ -3204,14 +3205,34 @@ void DialogSettings::on_pushButton_xmpp_cfg_login_logout_clicked()
 
 void DialogSettings::on_pushButton_xmpp_cfg_delete_account_clicked()
 {
-    createXmppConnectionFromSettings();
+    if (!ui->lineEdit_xmpp_client_username->text().isEmpty() && !ui->lineEdit_xmpp_client_password->text().isEmpty()) {
+        QMessageBox msgBox;
+        msgBox.setParent(nullptr);
+        msgBox.setWindowTitle(tr("Are you sure?"));
+        msgBox.setText(tr("Are you certain about deleting the XMPP account for user, \"%1\"? This action is irreversible!")
+                        .arg(ui->lineEdit_xmpp_client_username->text()));
+        msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+        msgBox.setDefaultButton(QMessageBox::Ok);
+        msgBox.setIcon(QMessageBox::Icon::Warning);
+        int ret = msgBox.exec();
 
-    QObject::connect(m_xmppClient, &QXmppClient::connected, this, [=]() {
-        if (m_xmppClient->deleteUserAccount()) {
-            QMessageBox::information(nullptr, tr("Success!"), tr("User account deleted successfully from the server!"), QMessageBox::Ok);
-            return;
+        switch (ret) {
+            case QMessageBox::Ok:
+                createXmppConnectionFromSettings();
+                QObject::connect(m_xmppClient, &QXmppClient::connected, this, [=]() {
+                    if (m_xmppClient->deleteUserAccount()) {
+                        QMessageBox::information(nullptr, tr("Success!"), tr("User account deleted successfully from the server!"), QMessageBox::Ok);
+                        return;
+                    }
+                });
+
+                return;
+            case QMessageBox::Cancel:
+                return;
+            default:
+                return;
         }
-    });
+    }
 
     return;
 }

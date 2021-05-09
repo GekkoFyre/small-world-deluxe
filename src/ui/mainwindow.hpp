@@ -163,6 +163,7 @@ private slots:
     void on_actionOnline_triggered();
     void on_actionInvisible_triggered();
     void on_actionOffline_triggered();
+    void readXmppSettings();
 
     //
     // Documentation
@@ -524,8 +525,10 @@ private:
     bool steadyTimer(const int &seconds);
     QRect findActiveScreen();
 
+    //
+    // XMPP and related
+    //
     void createXmppConnection();
-    void readXmppSettings();
 
     void readNuspellSettings();
 
