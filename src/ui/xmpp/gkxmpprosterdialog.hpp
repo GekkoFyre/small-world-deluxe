@@ -103,7 +103,9 @@ private slots:
     // XMPP Roster management and related
     //
     void subscriptionRequestRecv(const QString &bareJid);
+    void subscriptionRequestRecv(const QString &bareJid, const QString &reason);
     void subscriptionRequestRetracted(const QString &bareJid);
+    void updateRoster();
     void addJidToRoster(const QString &bareJid); // Subscription request was successful, add new JID!
     void delJidFromRoster(const QString &bareJid); // User requested a deletion from the roster, therefore remove JID!
     void changeRosterJid(const QString &bareJid); // A change needs to be made within the roster, therefore modify JID!
@@ -167,11 +169,11 @@ private:
 
     void insertRosterPresenceTable(const QIcon &presence, const QString &bareJid, const QString &nickname);
     void removeRosterPresenceTable(const QString &bareJid);
-    void insertRosterPendingTable(const QIcon &presence, const QString &bareJid, const QString &nickname);
+    void insertRosterPendingTable(const QIcon &online_status, const QString &bareJid, const QString &nickname);
+    void insertRosterPendingTable(const QIcon &online_status, const QString &bareJid, const QString &nickname, const QString &reason);
     void removeRosterPendingTable(const QString &bareJid);
     void insertRosterBlockedTable(const QString &bareJid, const QString &reason);
     void removeRosterBlockedTable(const QString &bareJid);
-    void updateRoster();
     void updateActions();
 
     //

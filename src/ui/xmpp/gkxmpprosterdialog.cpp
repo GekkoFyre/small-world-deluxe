@@ -256,11 +256,30 @@ void GkXmppRosterDialog::on_label_self_nickname_customContextMenuRequested(const
  */
 void GkXmppRosterDialog::subscriptionRequestRecv(const QString &bareJid)
 {
+    subscriptionRequestRecv(bareJid, QString());
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::subscriptionRequestRecv handles the processing and management of external subscription requests
+ * to the given, connected towards XMPP server in question. This function will only work if Small World Deluxe is actively
+ * connected towards an XMPP server at the time.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid The external user's details.
+ * @param reason The reason for making the subscription request, as defined by the external user.
+ */
+void GkXmppRosterDialog::subscriptionRequestRecv(const QString &bareJid, const QString &reason)
+{
     if (!bareJid.isEmpty()) {
         updateRoster();
         for (const auto &entry: m_rosterList) {
             if (entry.bareJid == bareJid) {
-                insertRosterPendingTable(m_xmppClient->presenceToIcon(entry.presence->availableStatusType()), bareJid, entry.vCard.nickname);
+                if (!reason.isEmpty()) {
+                    insertRosterPendingTable(m_xmppClient->presenceToIcon(entry.presence->availableStatusType()), bareJid, entry.vCard.nickname);
+                } else {
+                    insertRosterPendingTable(m_xmppClient->presenceToIcon(entry.presence->availableStatusType()), bareJid, entry.vCard.nickname);
+                }
+
                 break;
             }
         }
@@ -284,6 +303,16 @@ void GkXmppRosterDialog::subscriptionRequestRetracted(const QString &bareJid)
         updateActions();
     }
 
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::updateRoster
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRosterDialog::updateRoster()
+{
+    m_rosterList = m_xmppClient->getRosterMap();
     return;
 }
 
@@ -349,16 +378,6 @@ void GkXmppRosterDialog::delJidFromRoster(const QString &bareJid)
  */
 void GkXmppRosterDialog::changeRosterJid(const QString &bareJid)
 {
-    return;
-}
-
-/**
- * @brief GkXmppRosterDialog::updateRoster
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkXmppRosterDialog::updateRoster()
-{
-    m_rosterList = m_xmppClient->getRosterMap();
     return;
 }
 
@@ -450,21 +469,41 @@ void GkXmppRosterDialog::removeRosterPresenceTable(const QString &bareJid)
 /**
  * @brief GkXmppRosterDialog::insertRosterPendingTable
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param presence
- * @param bareJid
- * @param nickname
+ * @param online_status The requesting user's online availability and status (i.e. presence).
+ * @param bareJid The requesting user's identification.
+ * @param nickname The requesting user's nickname, if any.
  */
-void GkXmppRosterDialog::insertRosterPendingTable(const QIcon &presence, const QString &bareJid, const QString &nickname)
+void GkXmppRosterDialog::insertRosterPendingTable(const QIcon &online_status, const QString &bareJid, const QString &nickname)
+{
+    insertRosterPendingTable(online_status, bareJid, nickname, QString());
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::insertRosterPendingTable
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param online_status The requesting user's online availability and status (i.e. presence).
+ * @param bareJid The requesting user's identification.
+ * @param nickname The requesting user's nickname, if any.
+ * @param reason The requesting user's reason for making the subscription request.
+ */
+void GkXmppRosterDialog::insertRosterPendingTable(const QIcon &online_status, const QString &bareJid, const QString &nickname,
+                                                  const QString &reason)
 {
     if (!bareJid.isEmpty() || !nickname.isEmpty()) {
         GkPendingTableViewModel pending_model;
-        pending_model.presence = QIcon();
-        if (!presence.isNull()) {
-            pending_model.presence = presence;
+        pending_model.presence = QIcon(":/resources/contrib/images/raster/gekkofyre-networks/red-halftone-circle.png");
+        if (!online_status.isNull()) {
+            pending_model.presence = online_status;
         }
 
         pending_model.bareJid = bareJid;
         pending_model.nickName = nickname;
+        pending_model.reason = "";
+        if (reason.isEmpty()) {
+            pending_model.reason = reason;
+        }
+
         pending_model.added = false;
         m_pendingRosterData.push_back(pending_model);
         emit updatePendingTableViewModel();

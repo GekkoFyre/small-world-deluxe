@@ -295,6 +295,17 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
             }
         });
 
+        QObject::connect(this, &QXmppClient::presenceReceived, this, [=](const QXmppPresence &presence) {
+            gkEventLogger->publishEvent(presence.statusText(), GkSeverity::Info, "", false, true, false, false);
+            switch (presence.type()) {
+                case QXmppPresence::Subscribe:
+                    notifyNewSubscription(QXmppUtils::jidToBareJid(presence.from()));
+                    break;
+                default:
+                    break;
+            }
+        });
+
         //
         // Setting up service discovery correctly for this manager
         // ------------------------------------------------------------
@@ -1513,14 +1524,6 @@ void GkXmppClient::createConnectionToServer(const QString &domain_url, const qui
             }
         }
 
-        if (!m_registerManager->registerOnConnectEnabled()) {
-            //
-            // Enable only if we are not attempting an in-band user registration...
-            QObject::connect(this, &QXmppClient::presenceReceived, this, [=](const QXmppPresence &presence) {
-                gkEventLogger->publishEvent(presence.statusText(), GkSeverity::Info, "", false, true, false, false);
-            });
-        }
-
         //
         // You only need to provide a domain to connectToServer()...
         config.setAutoAcceptSubscriptions(false);
@@ -1580,11 +1583,25 @@ void GkXmppClient::versionReceivedSlot(const QXmppVersionIq &version)
 }
 
 /**
- * @brief GkXmppClient::notifyNewSubscription
+ * @brief GkXmppClient::notifyNewSubscription is the result of a signal that's emitted when a JID asks to subscribe to
+ * the client's presence.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param bareJid
+ * @param bareJid The identification of the user that wants to subscribe to the client's presence.
  */
 void GkXmppClient::notifyNewSubscription(const QString &bareJid)
+{
+    notifyNewSubscription(bareJid, QXmppPresence());
+    return;
+}
+
+/**
+ * @brief GkXmppClient::notifyNewSubscription is the result of a signal that's emitted when a JID asks to subscribe to
+ * the client's presence.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid The identification of the user that wants to subscribe to the client's presence.
+ * @param presence Stanza containing the reason / message (presence.statusText()).
+ */
+void GkXmppClient::notifyNewSubscription(const QString &bareJid, const QXmppPresence &presence)
 {
     if (!bareJid.isEmpty()) {
         if (!m_rosterList.isEmpty()) {
@@ -1596,7 +1613,14 @@ void GkXmppClient::notifyNewSubscription(const QString &bareJid)
                     callsign.subStatus = entry.subStatus;
                     m_rosterList.push_back(callsign);
                     emit updateRoster();
-                    emit sendSubscriptionRequest(bareJid);
+                    if (presence.isXmppStanza()) {
+                        if (!presence.statusText().isEmpty()) {
+                            emit sendSubscriptionRequest(bareJid, presence.statusText());
+                        }
+                    } else {
+                        emit sendSubscriptionRequest(bareJid);
+                    }
+
                     gkEventLogger->publishEvent(tr("User, \"%1\", wishes to add you to their roster!").arg(getUsername(bareJid)),
                                                 GkSeverity::Info, "", true, true, false, false);
                     break;
