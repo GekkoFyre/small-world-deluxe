@@ -274,6 +274,11 @@ signals:
     void changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &input_device);
     void changeOutputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &output_device);
 
+    //
+    // XMPP and related
+    //
+    void updateXmppConfig();
+
 private:
     Ui::DialogSettings *ui;
 

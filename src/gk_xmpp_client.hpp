@@ -99,8 +99,8 @@ public:
                           const bool &connectNow = false, QObject *parent = nullptr);
     ~GkXmppClient() override;
 
-    void createConnectionToServer(const QString &domain_url, const quint16 &network_port, const QString &username = "",
-                                  const QString &password = "", const QString &jid = "", const bool &user_signup = false);
+    void createConnectionToServer(const QString &domain_url, const quint16 &network_port, const QString &password = "",
+                                  const QString &jid = "", const bool &user_signup = false);
     bool createMuc(const QString &room_name, const QString &room_subject, const QString &room_desc);
 
     static bool isHostnameSame(const QString &hostname, const QString &comparison = "");
@@ -168,6 +168,7 @@ private slots:
     //
     // User, roster and presence details
     void notifyNewSubscription(const QString &bareJid);
+    void notifyNewSubscription(const QString &bareJid, const QXmppPresence &presence);
     void handleRosterReceived();
 
     //
@@ -188,8 +189,9 @@ signals:
     void setPresence(const QXmppPresence::Type &pres);
     void sendRegistrationForm(const QXmppRegisterIq &registerIq);
 
-    void sendSubscriptionRequest(const QString &bareJid); // A subscription request was made, therefore notify client!
-    void retractSubscriptionRequest(const QString &bareJid); // A subscription request was retracted, therefore delete JID!
+    void sendSubscriptionRequest(const QString &bareJid);                        // A subscription request was made without a reason, therefore notify the client!
+    void sendSubscriptionRequest(const QString &bareJid, const QString &reason); // A subscription request was made with a reason, therefore notify the client!
+    void retractSubscriptionRequest(const QString &bareJid);                     // A subscription request was retracted, therefore delete JID!
 
     void addJidToRoster(const QString &bareJid); // Subscription request was successful, add new JID!
     void delJidFromRoster(const QString &bareJid); // User requested a deletion from the roster, therefore remove JID!

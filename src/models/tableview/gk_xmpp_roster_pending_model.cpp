@@ -191,6 +191,7 @@ QVariant GkXmppRosterPendingTableViewModel::data(const QModelIndex &index, int r
     const QIcon row_presence = m_data[index.row()].presence;
     const QString row_bareJid = m_data[index.row()].bareJid;
     const QString row_nickname = m_data[index.row()].nickName;
+    const QString row_reason = m_data[index.row()].reason;
 
     switch (index.column()) {
         case GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_PRESENCE_IDX:
@@ -199,6 +200,8 @@ QVariant GkXmppRosterPendingTableViewModel::data(const QModelIndex &index, int r
             return row_bareJid;
         case GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_NICKNAME_IDX:
             return row_nickname;
+        case GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_REASON_IDX:
+            return row_reason;
         default:
             break;
     }
@@ -224,6 +227,8 @@ QVariant GkXmppRosterPendingTableViewModel::headerData(int section, Qt::Orientat
                 return tr("ID#");
             case GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_NICKNAME_IDX:
                 return tr("Nickname");
+            case GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_REASON_IDX:
+                return tr("Reason");
             default:
                 break;
         }

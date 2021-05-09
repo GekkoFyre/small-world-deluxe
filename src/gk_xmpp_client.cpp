@@ -202,6 +202,8 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         QObject::connect(m_rosterManager.get(), SIGNAL(presenceChanged(const QString &, const QString &)), this, SLOT(presenceChanged(const QString &, const QString &)));
         QObject::connect(m_rosterManager.get(), SIGNAL(rosterReceived()), this, SLOT(handleRosterReceived()));
         QObject::connect(m_rosterManager.get(), SIGNAL(subscriptionReceived(const QString &)), this, SLOT(notifyNewSubscription(const QString &)));
+        QObject::connect(m_rosterManager.get(), SIGNAL(subscriptionRequestReceived (const QString &, const QXmppPresence &)),
+                         this, SLOT(notifyNewSubscription(const QString &, const QXmppPresence &)));
         QObject::connect(m_rosterManager.get(), SIGNAL(itemAdded(const QString &)), this, SLOT(itemAdded(const QString &)));
         QObject::connect(m_rosterManager.get(), SIGNAL(itemRemoved(const QString &)), this, SLOT(itemRemoved(const QString &)));
         QObject::connect(m_rosterManager.get(), SIGNAL(itemChanged(const QString &)), this, SLOT(itemChanged(const QString &)));
@@ -216,8 +218,8 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
                 if (m_connDetails.server.settings_client.auto_connect || connectNow) {
                     gkEventLogger->publishEvent(tr("Attempting connection towards GekkoFyre Networks!"), GkSeverity::Info,
                                                 "", false, true, false, false);
-                    createConnectionToServer(GkXmppGekkoFyreCfg::defaultUrl, GK_DEFAULT_XMPP_SERVER_PORT, getUsername(m_connDetails.jid),
-                                             m_connDetails.password, m_connDetails.jid, false);
+                    createConnectionToServer(GkXmppGekkoFyreCfg::defaultUrl, GK_DEFAULT_XMPP_SERVER_PORT, m_connDetails.password,
+                                             m_connDetails.jid, false);
                 }
 
                 break;
@@ -244,8 +246,8 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
                 }
 
                 if (m_connDetails.server.settings_client.auto_connect || connectNow) {
-                    createConnectionToServer(m_connDetails.server.url, m_connDetails.server.port, getUsername(m_connDetails.jid),
-                                             m_connDetails.password, m_connDetails.jid, false);
+                    createConnectionToServer(m_connDetails.server.url, m_connDetails.server.port, m_connDetails.password,
+                                             m_connDetails.jid, false);
                 }
 
                 break;
@@ -289,6 +291,17 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
                     gkEventLogger->publishEvent(tr("Disconnected from XMPP server: %1").arg(m_connDetails.server.url), GkSeverity::Info, "",
                                                 true, true, true, false);
                     m_netState = GkNetworkState::Disconnected;
+                    break;
+                default:
+                    break;
+            }
+        });
+
+        QObject::connect(this, &QXmppClient::presenceReceived, this, [=](const QXmppPresence &presence) {
+            gkEventLogger->publishEvent(presence.statusText(), GkSeverity::Info, "", false, true, false, false);
+            switch (presence.type()) {
+                case QXmppPresence::Subscribe:
+                    notifyNewSubscription(QXmppUtils::jidToBareJid(presence.from()));
                     break;
                 default:
                     break;
@@ -814,8 +827,24 @@ void GkXmppClient::handleRosterReceived()
             const auto jidItem = m_rosterManager->getRosterEntry(rawBareJid);
             GkXmppCallsign callsign;
             callsign.bareJid = jidItem.bareJid();
-            callsign.presence = std::make_shared<QXmppPresence>(QXmppPresence::Type::Unsubscribed);
+            callsign.presence = std::make_shared<QXmppPresence>(QXmppPresence::Type::Unavailable);
             callsign.subStatus = jidItem.subscriptionType();
+            switch (jidItem.subscriptionType()) {
+                case QXmppRosterIq::Item::None:
+                    break;
+                case QXmppRosterIq::Item::From:
+                    break;
+                case QXmppRosterIq::Item::To:
+                    break;
+                case QXmppRosterIq::Item::Remove:
+                    break;
+                case QXmppRosterIq::Item::NotSet:
+                    notifyNewSubscription(callsign.bareJid);
+                    break;
+                default:
+                    break;
+            }
+
             m_rosterList.push_back(callsign);
         }
     }
@@ -1475,8 +1504,8 @@ void GkXmppClient::recvXmppLog(QXmppLogger::MessageType msgType, const QString &
  * @param user_signup
  * @param send_registration_form
  */
-void GkXmppClient::createConnectionToServer(const QString &domain_url, const quint16 &network_port, const QString &username,
-                                            const QString &password, const QString &jid, const bool &user_signup)
+void GkXmppClient::createConnectionToServer(const QString &domain_url, const quint16 &network_port, const QString &password,
+                                            const QString &jid, const bool &user_signup)
 {
     try {
         if (domain_url.isEmpty()) {
@@ -1498,13 +1527,8 @@ void GkXmppClient::createConnectionToServer(const QString &domain_url, const qui
 
         // Attempt a connection to the given XMPP server! If no username and password are give, then we will attempt to
         // connect anonymously!
-        if (!username.isEmpty() && !password.isEmpty() && !m_registerManager->registerOnConnectEnabled()) {
-            if (!jid.isEmpty()) {
-                config.setJid(jid);
-            } else {
-                config.setJid(QString("%1@%2").arg(username).arg(GkXmppGekkoFyreCfg::defaultUrl));
-            }
-
+        if (!jid.isEmpty() && !password.isEmpty() && !m_registerManager->registerOnConnectEnabled()) {
+            config.setJid(jid);
             config.setPassword(password);
             config.setHost(domain_url);
             config.setPort(network_port);
@@ -1516,14 +1540,6 @@ void GkXmppClient::createConnectionToServer(const QString &domain_url, const qui
             } else {
                 throw std::invalid_argument(tr("The given URL (used for the JID) is empty! As such, connection towards the XMPP server cannot proceed.").toStdString());
             }
-        }
-
-        if (!m_registerManager->registerOnConnectEnabled()) {
-            //
-            // Enable only if we are not attempting an in-band user registration...
-            QObject::connect(this, &QXmppClient::presenceReceived, this, [=](const QXmppPresence &presence) {
-                gkEventLogger->publishEvent(presence.statusText(), GkSeverity::Info, "", false, true, false, false);
-            });
         }
 
         //
@@ -1585,29 +1601,45 @@ void GkXmppClient::versionReceivedSlot(const QXmppVersionIq &version)
 }
 
 /**
- * @brief GkXmppClient::notifyNewSubscription
+ * @brief GkXmppClient::notifyNewSubscription is the result of a signal that's emitted when a JID asks to subscribe to
+ * the client's presence.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param bareJid
+ * @param bareJid The identification of the user that wants to subscribe to the client's presence.
  */
 void GkXmppClient::notifyNewSubscription(const QString &bareJid)
 {
-    if (!bareJid.isEmpty()) {
-        if (!m_rosterList.isEmpty()) {
-            for (const auto &entry: m_rosterList) {
-                if (entry.bareJid == bareJid) {
-                    GkXmppCallsign callsign;
-                    callsign.bareJid = bareJid;
-                    callsign.presence = std::make_shared<QXmppPresence>(QXmppPresence::Type::Unsubscribed);
-                    callsign.subStatus = entry.subStatus;
-                    m_rosterList.push_back(callsign);
-                    emit updateRoster();
-                    emit sendSubscriptionRequest(bareJid);
-                    gkEventLogger->publishEvent(tr("User, \"%1\", wishes to add you to their roster!").arg(getUsername(bareJid)),
-                                                GkSeverity::Info, "", true, true, false, false);
-                    break;
-                }
+    notifyNewSubscription(bareJid, QXmppPresence());
+    return;
+}
+
+/**
+ * @brief GkXmppClient::notifyNewSubscription is the result of a signal that's emitted when a JID asks to subscribe to
+ * the client's presence.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid The identification of the user that wants to subscribe to the client's presence.
+ * @param presence Stanza containing the reason / message (presence.statusText()).
+ */
+void GkXmppClient::notifyNewSubscription(const QString &bareJid, const QXmppPresence &presence)
+{
+    try {
+        if (!bareJid.isEmpty()) {
+            GkXmppCallsign callsign;
+            callsign.bareJid = bareJid;
+            callsign.presence = std::make_shared<QXmppPresence>(presence);
+            callsign.subStatus = QXmppRosterIq::Item::SubscriptionType::NotSet; // TODO: Change this so it is set dynamically, and therefore can handle more possible situations!
+            m_rosterList.push_back(callsign);
+            emit updateRoster();
+            if (!presence.statusText().isEmpty()) {
+                emit sendSubscriptionRequest(bareJid, presence.statusText());
+            } else {
+                emit sendSubscriptionRequest(bareJid);
             }
+
+            gkEventLogger->publishEvent(tr("User, \"%1\", wishes to add you to their roster!").arg(getUsername(bareJid)),
+                                        GkSeverity::Info, "", true, true, false, false);
         }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(tr("An issue was encountered whilst processing a subscription request! Error:\n\n%1").arg(QString::fromStdString(e.what())));
     }
 
     return;

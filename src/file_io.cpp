@@ -306,11 +306,11 @@ QString FileIo::defaultDirectory(const QString &base_path, const bool &use_nativ
 }
 
 /**
- * @brief FileIo::getLangFile retrieves the correct system directory value for both Hunspell dictionaries and the language
+ * @brief FileIo::getLangFile retrieves the correct system directory value for both Nuspell dictionaries and the language
  * files for the User Interface itself.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param lang_val The actual language value, whether it be, 'en-AU' (for English, Australian), or something else entirely.
- * @param lang_settings Whether we are dealing with a Hunspell dictionary file or a User Interface language file.
+ * @param lang_settings Whether we are dealing with a Nuspell dictionary file or a User Interface language file.
  * @return The correct, system path to the needed dictionary/language file.
  */
 fs::path FileIo::getLangFile(const QString &lang_val, const Language::GkLangSettings &lang_settings)
@@ -318,7 +318,7 @@ fs::path FileIo::getLangFile(const QString &lang_val, const Language::GkLangSett
     try {
         QString lang_path;
         if (lang_settings == Language::GkLangSettings::DictLang) {
-            lang_path = QDir(QDir::currentPath() + "/" + Filesystem::hunspellLibraryDir + "/" + Filesystem::hunspellSpellDir).path();
+            lang_path = QDir(QDir::currentPath() + "/" + Filesystem::nuspellLibraryDir + "/" + Filesystem::nuspellSpellDir).path();
             fs::path dict_path = QDir(lang_path + "/" + lang_val).path().toStdString();
 
             return dict_path;

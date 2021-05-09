@@ -1,5 +1,3 @@
- #!/bin/bash
-
 #
 #     __                 _ _   __    __           _     _ 
 #    / _\_ __ ___   __ _| | | / / /\ \ \___  _ __| | __| |
@@ -40,19 +38,18 @@
 #   [ 1 ] - https://code.gekkofyre.io/amateur-radio/small-world-deluxe
 #
 
-cd src/contrib
-git submodule update --init --recursive
+find_package(PkgConfig)
+pkg_check_modules(PC_ICUUC QUIET "icuuc")
+set(ICUUC_DEFINITIONS ${PC_ICUUC_CFLAGS_OTHER})
 
-cd leveldb/third_party
-git submodule update --init --recursive
-cd ./../..
+find_library(ICUUC_LIBRARY
+    NAMES "libicuuc" "icuuc"
+    HINTS ${PC_ICUUC_LIBDIR} ${PC_ICUUC_LIBRARY_DIRS}
+    PATHS "/usr/local/lib" "/usr/local/lib64" "/usr/lib" "/usr/lib64" "/mingw64/bin" "/mingw64/lib" "/usr/lib/x86_64-linux-gnu" "/sw/lib" "/opt/local/lib")
 
-cd sentry-native/external
-git submodule update --init --recursive
-cd ./../..
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(Icuuc DEFAULT_MSG ICUUC_LIBRARY)
 
-cd nuspell/external
-git submodule update --init --recursive
-cd ./../../../..
+mark_as_advanced(ICUUC_LIBRARY)
 
-echo "Grabbing of all Git sub-directories has been successful! Please check aforementioned logs for any errors."
+set(ICUUC_LIBRARIES ${ICUUC_LIBRARY})
