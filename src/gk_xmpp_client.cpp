@@ -202,6 +202,8 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         QObject::connect(m_rosterManager.get(), SIGNAL(presenceChanged(const QString &, const QString &)), this, SLOT(presenceChanged(const QString &, const QString &)));
         QObject::connect(m_rosterManager.get(), SIGNAL(rosterReceived()), this, SLOT(handleRosterReceived()));
         QObject::connect(m_rosterManager.get(), SIGNAL(subscriptionReceived(const QString &)), this, SLOT(notifyNewSubscription(const QString &)));
+        QObject::connect(m_rosterManager.get(), SIGNAL(subscriptionRequestReceived (const QString &, const QXmppPresence &)),
+                         this, SLOT(notifyNewSubscription(const QString &, const QXmppPresence &)));
         QObject::connect(m_rosterManager.get(), SIGNAL(itemAdded(const QString &)), this, SLOT(itemAdded(const QString &)));
         QObject::connect(m_rosterManager.get(), SIGNAL(itemRemoved(const QString &)), this, SLOT(itemRemoved(const QString &)));
         QObject::connect(m_rosterManager.get(), SIGNAL(itemChanged(const QString &)), this, SLOT(itemChanged(const QString &)));
@@ -825,8 +827,24 @@ void GkXmppClient::handleRosterReceived()
             const auto jidItem = m_rosterManager->getRosterEntry(rawBareJid);
             GkXmppCallsign callsign;
             callsign.bareJid = jidItem.bareJid();
-            callsign.presence = std::make_shared<QXmppPresence>(QXmppPresence::Type::Unsubscribed);
+            callsign.presence = std::make_shared<QXmppPresence>(QXmppPresence::Type::Unavailable);
             callsign.subStatus = jidItem.subscriptionType();
+            switch (jidItem.subscriptionType()) {
+                case QXmppRosterIq::Item::None:
+                    break;
+                case QXmppRosterIq::Item::From:
+                    break;
+                case QXmppRosterIq::Item::To:
+                    break;
+                case QXmppRosterIq::Item::Remove:
+                    break;
+                case QXmppRosterIq::Item::NotSet:
+                    notifyNewSubscription(callsign.bareJid);
+                    break;
+                default:
+                    break;
+            }
+
             m_rosterList.push_back(callsign);
         }
     }
@@ -1603,30 +1621,25 @@ void GkXmppClient::notifyNewSubscription(const QString &bareJid)
  */
 void GkXmppClient::notifyNewSubscription(const QString &bareJid, const QXmppPresence &presence)
 {
-    if (!bareJid.isEmpty()) {
-        if (!m_rosterList.isEmpty()) {
-            for (const auto &entry: m_rosterList) {
-                if (entry.bareJid == bareJid) {
-                    GkXmppCallsign callsign;
-                    callsign.bareJid = bareJid;
-                    callsign.presence = std::make_shared<QXmppPresence>(QXmppPresence::Type::Unsubscribed);
-                    callsign.subStatus = entry.subStatus;
-                    m_rosterList.push_back(callsign);
-                    emit updateRoster();
-                    if (presence.isXmppStanza()) {
-                        if (!presence.statusText().isEmpty()) {
-                            emit sendSubscriptionRequest(bareJid, presence.statusText());
-                        }
-                    } else {
-                        emit sendSubscriptionRequest(bareJid);
-                    }
-
-                    gkEventLogger->publishEvent(tr("User, \"%1\", wishes to add you to their roster!").arg(getUsername(bareJid)),
-                                                GkSeverity::Info, "", true, true, false, false);
-                    break;
-                }
+    try {
+        if (!bareJid.isEmpty()) {
+            GkXmppCallsign callsign;
+            callsign.bareJid = bareJid;
+            callsign.presence = std::make_shared<QXmppPresence>(presence);
+            callsign.subStatus = QXmppRosterIq::Item::SubscriptionType::NotSet; // TODO: Change this so it is set dynamically, and therefore can handle more possible situations!
+            m_rosterList.push_back(callsign);
+            emit updateRoster();
+            if (!presence.statusText().isEmpty()) {
+                emit sendSubscriptionRequest(bareJid, presence.statusText());
+            } else {
+                emit sendSubscriptionRequest(bareJid);
             }
+
+            gkEventLogger->publishEvent(tr("User, \"%1\", wishes to add you to their roster!").arg(getUsername(bareJid)),
+                                        GkSeverity::Info, "", true, true, false, false);
         }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(tr("An issue was encountered whilst processing a subscription request! Error:\n\n%1").arg(QString::fromStdString(e.what())));
     }
 
     return;

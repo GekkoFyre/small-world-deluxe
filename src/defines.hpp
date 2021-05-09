@@ -315,6 +315,7 @@ namespace General {
     constexpr char appVersion[] = "0.0.1";
     constexpr char appRelease[] = "Pre-alpha";
     constexpr char xmppVersion[] = "Alpha";
+    constexpr char xmppResourceGFyre[] = "GekkoFyre";
     constexpr char codeRepository[] = "https://code.gekkofyre.io/amateur-radio/small-world-deluxe";
     constexpr char officialWebsite[] = "https://swdeluxe.io/";
 

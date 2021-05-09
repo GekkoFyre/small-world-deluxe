@@ -115,7 +115,6 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
         QObject::connect(m_xmppClient, SIGNAL(delJidFromRoster(const QString &)), this, SLOT(delJidFromRoster(const QString &)));
         QObject::connect(m_xmppClient, SIGNAL(changeRosterJid(const QString &)), this, SLOT(changeRosterJid(const QString &)));
 
-        QObject::connect(ui->label_self_nickname, SIGNAL(clicked(const QString &)), this, SLOT(editNicknameLabel(const QString &)));
         defaultClientAvatarPlaceholder();
         ui->label_self_nickname->setText(tr("Anonymous"));
         if (!gkConnDetails.nickname.isEmpty()) {
@@ -280,6 +279,9 @@ void GkXmppRosterDialog::subscriptionRequestRecv(const QString &bareJid, const Q
                     insertRosterPendingTable(m_xmppClient->presenceToIcon(entry.presence->availableStatusType()), bareJid, entry.vCard.nickname);
                 }
 
+                gkEventLogger->publishEvent(tr("Another user of %1 with the nickname/callsign, \"%2\", is requesting to share presence details with you!")
+                                            .arg(General::productName).arg(bareJid), GkSeverity::Info, "",
+                                            true, true, false, false);
                 break;
             }
         }
