@@ -65,9 +65,11 @@
 #include <exception>
 #include <streambuf>
 #include <QList>
+#include <QIcon>
 #include <QString>
 #include <QVector>
 #include <QVariant>
+#include <QtGlobal>
 #include <QPointer>
 #include <QDateTime>
 #include <QHostInfo>
@@ -265,21 +267,21 @@ namespace GekkoFyre {
 #define GK_CSIGN_MSGS_TABLEVIEW_MODEL_TOTAL_IDX (8)     // The total amount of indexes (i.e. columns) for the QTableView model, `GkActiveMsgsTableViewModel`. Be sure to keep this up-to-date!
 
 //
-// QTreeView Models
+// QTableView Models for XMPP
 //
-#define GK_XMPP_ROSTER_TREEWIDGET_MODEL_PRESENCE_IDX (0)
-#define GK_XMPP_ROSTER_TREEWIDGET_MODEL_BAREJID_IDX (1)
-#define GK_XMPP_ROSTER_TREEWIDGET_MODEL_NICKNAME_IDX (2)
-#define GK_XMPP_ROSTER_TREEWIDGET_MODEL_TOTAL_IDX (3)
+#define GK_XMPP_ROSTER_PRESENCE_TABLEVIEW_MODEL_PRESENCE_IDX (0)
+#define GK_XMPP_ROSTER_PRESENCE_TABLEVIEW_MODEL_BAREJID_IDX (1)
+#define GK_XMPP_ROSTER_PRESENCE_TABLEVIEW_MODEL_NICKNAME_IDX (2)
+#define GK_XMPP_ROSTER_PRESENCE_TABLEVIEW_MODEL_TOTAL_IDX (3)
 
-#define GK_XMPP_ROSTER_BLOCKED_TREEWIDGET_MODEL_NICKNAME_IDX (0)
-#define GK_XMPP_ROSTER_BLOCKED_TREEWIDGET_MODEL_REASON_IDX (1)
-#define GK_XMPP_ROSTER_BLOCKED_TREEWIDGET_MODEL_TOTAL_IDX (2)
+#define GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_PRESENCE_IDX (0)
+#define GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_BAREJID_IDX (1)
+#define GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_NICKNAME_IDX (2)
+#define GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_TOTAL_IDX (3)
 
-#define GK_XMPP_ROSTER_PRESENCE_TREEWIDGET_MODEL_COL_SUB_REQUESTS_IDX (0)
-#define GK_XMPP_ROSTER_PRESENCE_TREEWIDGET_MODEL_COL_ONLINE_USERS_IDX (1)
-#define GK_XMPP_ROSTER_PRESENCE_TREEWIDGET_MODEL_COL_OFFLINE_USERS_IDX (2)
-#define GK_XMPP_ROSTER_PRESENCE_TREEWIDGET_MODEL_COL_TOTAL_IDX (3)
+#define GK_XMPP_ROSTER_BLOCKED_TABLEVIEW_MODEL_BAREJID_IDX (0)
+#define GK_XMPP_ROSTER_BLOCKED_TABLEVIEW_MODEL_REASON_IDX (1)
+#define GK_XMPP_ROSTER_BLOCKED_TABLEVIEW_MODEL_TOTAL_IDX (2)
 
 // Hamlib related
 //
@@ -445,6 +447,7 @@ namespace Network {
             QString lastName;
             QString email;
             QString nickname;
+            QString fullName;
             QByteArray avatarImg;
         };
 
@@ -474,6 +477,26 @@ namespace Network {
             QString firstName;                              // The first name of the user, if provided.
             QString lastName;                               // The last name of the user, if provided.
             QString email;                                  // The email address, if any, that's associated with this end-user.
+        };
+
+        struct GkPresenceTableViewModel {
+            QIcon presence;
+            QString bareJid;
+            QString nickName;
+            bool added;
+        };
+
+        struct GkPendingTableViewModel {
+            QIcon presence;
+            QString bareJid;
+            QString nickName;
+            bool added;
+        };
+
+        struct GkBlockedTableViewModel {
+            QString bareJid;
+            QString reason;
+            bool added;
         };
     }
 }
@@ -505,6 +528,26 @@ namespace System {
             membuf(base, size), std::istream(static_cast<std::streambuf*>(this)) {
         }
     };
+
+    namespace UserInterface {
+        enum GkSettingsDlgTab {
+            GkGeneralStation,
+            GkGeneralFreq,
+            GkGeneralUi,
+            GkGeneralUiBasic,
+            GkGeneralUiThemes,
+            GkGeneralXmpp,
+            GkGeneralEventLogger,
+            GkAudio,
+            GkAudioConfig,
+            GkAudioRecorder,
+            GkAudioApiInfo,
+            GkRadio,
+            GkRadioRig,
+            GkRadioApiInfo,
+            GkCheckForUpdates
+        };
+    }
 
     namespace Cli {
         enum CommandLineParseResult
@@ -708,7 +751,8 @@ namespace Database {
             XmppNickname,
             XmppEmailAddr,
             XmppUriLookupMethod,
-            XmppNetworkTimeout
+            XmppNetworkTimeout,
+            XmppCheckboxRememberCreds
         };
 
         enum Codec2Mode {

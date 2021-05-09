@@ -104,6 +104,7 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
                                QPointer<GekkoFyre::GkXmppClient> xmppClient,
                                QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                QPointer<GekkoFyre::GkTextToSpeech> textToSpeechPtr,
+                               const System::UserInterface::GkSettingsDlgTab &settingsDlgTab,
                                QWidget *parent)
     : QDialog(parent), ui(new Ui::DialogSettings)
 {
@@ -143,6 +144,79 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         // Hunspell & Spelling dictionaries
         //
         prefill_lang_dictionaries();
+
+        //
+        // Miscellaneous
+        //
+        gkSettingsDlgTab = settingsDlgTab;
+        switch (gkSettingsDlgTab) {
+            case System::UserInterface::GkSettingsDlgTab::GkGeneralStation:
+                ui->tabWidget_config->setCurrentWidget(ui->tab_0_general);
+                ui->tabWidget_config_general->setCurrentWidget(ui->tab_general_rig_station);
+                break;
+            case System::UserInterface::GkSettingsDlgTab::GkGeneralFreq:
+                ui->tabWidget_config->setCurrentWidget(ui->tab_0_general);
+                ui->tabWidget_config_general->setCurrentWidget(ui->tab_general_ui_radio_freqs);
+                break;
+            case System::UserInterface::GkSettingsDlgTab::GkGeneralUi:
+                ui->tabWidget_config->setCurrentWidget(ui->tab_0_general);
+                ui->tabWidget_config_general->setCurrentWidget(ui->tab_general_app_ui);
+                ui->tabWidget_app_ui->setCurrentWidget(ui->tab_app_ui_basic_accessibility);
+                break;
+            case System::UserInterface::GkSettingsDlgTab::GkGeneralUiBasic:
+                ui->tabWidget_config->setCurrentWidget(ui->tab_0_general);
+                ui->tabWidget_config_general->setCurrentWidget(ui->tab_general_app_ui);
+                ui->tabWidget_app_ui->setCurrentWidget(ui->tab_app_ui_basic_accessibility);
+                break;
+            case System::UserInterface::GkSettingsDlgTab::GkGeneralUiThemes:
+                ui->tabWidget_config->setCurrentWidget(ui->tab_0_general);
+                ui->tabWidget_config_general->setCurrentWidget(ui->tab_general_app_ui);
+                ui->tabWidget_app_ui->setCurrentWidget(ui->tabWidget_app_ui);
+                break;
+            case System::UserInterface::GkSettingsDlgTab::GkGeneralXmpp:
+                ui->tabWidget_config->setCurrentWidget(ui->tab_0_general);
+                ui->tabWidget_config_general->setCurrentWidget(ui->tab_general_xmpp);
+                break;
+            case System::UserInterface::GkSettingsDlgTab::GkGeneralEventLogger:
+                ui->tabWidget_config->setCurrentWidget(ui->tab_0_general);
+                ui->tabWidget_config_general->setCurrentWidget(ui->tab_general_event_logger);
+                break;
+            case System::UserInterface::GkSettingsDlgTab::GkAudio:
+                ui->tabWidget_config->setCurrentWidget(ui->tab_1_audio);
+                ui->tabWidget_audio->setCurrentWidget(ui->tab_audio_config);
+                break;
+            case System::UserInterface::GkSettingsDlgTab::GkAudioConfig:
+                ui->tabWidget_config->setCurrentWidget(ui->tab_1_audio);
+                ui->tabWidget_audio->setCurrentWidget(ui->tab_audio_config);
+                break;
+            case System::UserInterface::GkSettingsDlgTab::GkAudioRecorder:
+                ui->tabWidget_config->setCurrentWidget(ui->tab_1_audio);
+                ui->tabWidget_audio->setCurrentWidget(ui->tab_audio_encoding_settings);
+                break;
+            case System::UserInterface::GkSettingsDlgTab::GkAudioApiInfo:
+                ui->tabWidget_config->setCurrentWidget(ui->tab_1_audio);
+                ui->tabWidget_audio->setCurrentWidget(ui->tabWidget_audio);
+                break;
+            case System::UserInterface::GkSettingsDlgTab::GkRadio:
+                ui->tabWidget_config->setCurrentWidget(ui->tab_2_rig);
+                ui->tabWidget_radio->setCurrentWidget(ui->tab_radio_rig);
+                break;
+            case System::UserInterface::GkSettingsDlgTab::GkRadioRig:
+                ui->tabWidget_config->setCurrentWidget(ui->tab_2_rig);
+                ui->tabWidget_radio->setCurrentWidget(ui->tab_radio_rig);
+                break;
+            case System::UserInterface::GkSettingsDlgTab::GkRadioApiInfo:
+                ui->tabWidget_config->setCurrentWidget(ui->tab_2_rig);
+                ui->tabWidget_radio->setCurrentWidget(ui->tab_radio_hamlib_api);
+                break;
+            case System::UserInterface::GkSettingsDlgTab::GkCheckForUpdates:
+                ui->tabWidget_config->setCurrentWidget(ui->tab_3_check_updates);
+                break;
+            default:
+                ui->tabWidget_config->setCurrentWidget(ui->tab_0_general);
+                ui->tabWidget_config_general->setCurrentWidget(ui->tab_general_rig_station);
+                break;
+        }
 
         //
         // Set default placeholder text, dependent on whether we are within Microsoft Windows or Linux!
@@ -3058,7 +3132,7 @@ void DialogSettings::on_toolButton_xmpp_upload_avatar_to_server_clicked()
 
 void DialogSettings::on_pushButton_xmpp_cfg_change_password_clicked()
 {
-    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountChangePassword, gkConnDetails, m_xmppClient, gkEventLogger, this);
+    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountChangePassword, gkConnDetails, m_xmppClient, gkDekodeDb, gkEventLogger, this);
     gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
     gkXmppRegistrationDlg->setAttribute(Qt::WA_DeleteOnClose, true);
     gkXmppRegistrationDlg->show();
@@ -3069,7 +3143,7 @@ void DialogSettings::on_pushButton_xmpp_cfg_change_password_clicked()
 
 void DialogSettings::on_pushButton_xmpp_cfg_change_email_clicked()
 {
-    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountChangeEmail, gkConnDetails, m_xmppClient, gkEventLogger, this);
+    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountChangeEmail, gkConnDetails, m_xmppClient, gkDekodeDb, gkEventLogger, this);
     gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
     gkXmppRegistrationDlg->setAttribute(Qt::WA_DeleteOnClose, true);
     gkXmppRegistrationDlg->show();
@@ -3080,7 +3154,7 @@ void DialogSettings::on_pushButton_xmpp_cfg_change_email_clicked()
 
 void DialogSettings::on_pushButton_xmpp_cfg_signup_clicked()
 {
-    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountCreate, gkConnDetails, m_xmppClient, gkEventLogger, this);
+    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountCreate, gkConnDetails, m_xmppClient, gkDekodeDb, gkEventLogger, this);
     if (ui->lineEdit_xmpp_client_username->text().isEmpty() || ui->lineEdit_xmpp_client_password->text().isEmpty()) {
         //
         // Open the registration form so that the user knows what information to provide!
@@ -3119,7 +3193,7 @@ void DialogSettings::on_pushButton_xmpp_cfg_signup_clicked()
 
 void DialogSettings::on_pushButton_xmpp_cfg_login_logout_clicked()
 {
-    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountLogin, gkConnDetails, m_xmppClient, gkEventLogger, this);
+    QPointer<GkXmppRegistrationDialog> gkXmppRegistrationDlg = new GkXmppRegistrationDialog(GkRegUiRole::AccountLogin, gkConnDetails, m_xmppClient, gkDekodeDb, gkEventLogger, this);
     gkXmppRegistrationDlg->setWindowFlags(Qt::Window);
     gkXmppRegistrationDlg->setAttribute(Qt::WA_DeleteOnClose, true);
     gkXmppRegistrationDlg->show();

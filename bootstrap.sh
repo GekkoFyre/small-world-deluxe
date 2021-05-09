@@ -47,7 +47,7 @@ cd leveldb/third_party
 git submodule update --init --recursive
 cd ./../..
 
-cd sentry-native\external
+cd sentry-native/external
 git submodule update --init --recursive
 
 echo "Grabbing of all Git sub-directories has been successful! Please check aforementioned logs for any errors."

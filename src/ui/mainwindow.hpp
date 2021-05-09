@@ -258,7 +258,8 @@ private slots:
     //
     // Settings dialog and related
     //
-    void launchSettingsWin();
+    void launchSettingsWin(const GekkoFyre::System::UserInterface::GkSettingsDlgTab &settingsDlgTab = GekkoFyre::System::UserInterface::GkSettingsDlgTab::GkGeneralStation);
+    void actionLaunchSettingsWin();
 
     //
     // System tray icon related functions

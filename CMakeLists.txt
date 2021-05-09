@@ -197,7 +197,7 @@ endif(Boost_FOUND)
 # https://github.com/qxmpp-project/qxmpp
 #
 function(install_qxmpp)
-    find_package(QXMPP REQUIRED)
+    find_package(QXmpp REQUIRED)
     if (QXMPP_FOUND)
         include_directories(${QXMPP_INCLUDE_DIRS})
         set(LIBS ${LIBS} ${QXMPP_LIBRARIES})
@@ -227,27 +227,6 @@ set(GALAXY_HAMLIB_CPP
     src/contrib/hamlib++/rotclass.cc
     src/contrib/hamlib++/include/hamlib/rigclass.h
     src/contrib/hamlib++/include/hamlib/rotclass.h)
-
-#
-# Hunspell
-# http://hunspell.github.io/
-#
-find_package(Hunspell REQUIRED)
-if (HUNSPELL_FOUND)
-    include_directories(${HUNSPELL_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${HUNSPELL_LIBRARIES})
-    file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/dictionaries/dictionaries" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Library")
-    file(RENAME "${CMAKE_CURRENT_BINARY_DIR}/Library/dictionaries" "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling")
-
-    #
-    # Remove all the unneeded files now!
-    file(GLOB_RECURSE RM_HUNSPELL_FILES_JS "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling/*.js")
-    file(GLOB_RECURSE RM_HUNSPELL_FILES_JSON "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling/*.json")
-    file(REMOVE ${RM_HUNSPELL_FILES_JS})
-    file(REMOVE ${RM_HUNSPELL_FILES_JSON})
-else()
-    message(FATAL_ERROR "The 'Hunspell' spell-checking library has been configured!")
-endif(HUNSPELL_FOUND)
 
 #
 # OpusEnc
@@ -310,6 +289,27 @@ if (Threads_FOUND)
 else()
     message(FATAL_ERROR "Could not find the Threads library!")
 endif(Threads_FOUND)
+
+#
+# Hunspell
+# http://hunspell.github.io/
+#
+find_package(Hunspell REQUIRED)
+if (HUNSPELL_FOUND)
+    include_directories(${HUNSPELL_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${HUNSPELL_LIBRARIES})
+    file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/dictionaries/dictionaries" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Library")
+    file(RENAME "${CMAKE_CURRENT_BINARY_DIR}/Library/dictionaries" "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling")
+
+    #
+    # Remove all the unneeded files now!
+    file(GLOB_RECURSE RM_HUNSPELL_FILES_JS "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling/*.js")
+    file(GLOB_RECURSE RM_HUNSPELL_FILES_JSON "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling/*.json")
+    file(REMOVE ${RM_HUNSPELL_FILES_JS})
+    file(REMOVE ${RM_HUNSPELL_FILES_JSON})
+else()
+    message(FATAL_ERROR "The 'Hunspell' spell-checking library has been configured!")
+endif(HUNSPELL_FOUND)
 
 find_package(OpenSSL REQUIRED)
 if (OPENSSL_FOUND)
@@ -660,6 +660,9 @@ set(GALAXY_UI_CPP
     src/models/tableview/gk_logger_model.cpp
     src/models/tableview/gk_active_msgs_model.cpp
     src/models/tableview/gk_callsign_msgs_model.cpp
+	src/models/tableview/gk_xmpp_roster_presence_model.cpp
+	src/models/tableview/gk_xmpp_roster_pending_model.cpp
+	src/models/tableview/gk_xmpp_roster_blocked_model.cpp
     src/models/treeview/xmpp/gk_xmpp_roster_model.cpp)
 
 if(WIN32 OR MSYS OR MINGW)
@@ -757,6 +760,9 @@ set(GALAXY_OBJ_HEADERS
     src/models/tableview/gk_logger_model.hpp
     src/models/tableview/gk_active_msgs_model.hpp
     src/models/tableview/gk_callsign_msgs_model.hpp
+	src/models/tableview/gk_xmpp_roster_presence_model.hpp
+	src/models/tableview/gk_xmpp_roster_pending_model.hpp
+	src/models/tableview/gk_xmpp_roster_blocked_model.hpp
     src/models/treeview/xmpp/gk_xmpp_roster_model.hpp)
 
 if(WIN32 OR MSYS OR MINGW)
