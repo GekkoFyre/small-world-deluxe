@@ -121,6 +121,7 @@ private slots:
     void on_lineEdit_search_roster_inputRejected();
     void on_tableView_callsigns_pending_clicked(const QModelIndex &index);
     void on_tableView_callsigns_pending_doubleClicked(const QModelIndex &index);
+    void on_tableView_callsigns_pending_customContextMenuRequested(const QPoint &pos);
     void on_tableView_callsigns_groups_clicked(const QModelIndex &index);
     void on_tableView_callsigns_groups_doubleClicked(const QModelIndex &index);
     void on_tableView_callsigns_blocked_clicked(const QModelIndex &index);
@@ -129,6 +130,10 @@ private slots:
     void recvUpdatePresenceTableViewModel();
     void recvUpdatePendingTableViewModel();
     void recvUpdateBlockedTableViewModel();
+
+    void enablePresenceTableActions(const bool &enable);
+    void enablePendingTableActions(const bool &enable);
+    void enableBlockedTableActions(const bool &enable);
 
 signals:
     void updateAvailableStatusType(const QXmppPresence::AvailableStatusType &stat_type);
