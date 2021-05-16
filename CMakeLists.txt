@@ -141,6 +141,25 @@ if (LINUX)
     set(SYSCONFIG_INSTALL_DIR "/etc/small-world-deluxe/" CACHE PATH "Location for the settings directory.")
 endif()
 
+#
+# Nuspell
+# https://nuspell.github.io/
+#
+function(nuspell_deps)
+	find_package(Nuspell REQUIRED)
+	if (NUSPELL_FOUND)
+		include_directories(${NUSPELL_INCLUDE_DIRS})
+		set(LIBS ${LIBS} ${NUSPELL_LIBRARIES})
+		message(STATUS "The 'Nuspell' spelling and grammar checking libraries have been configured!")
+	else()
+		message(FATAL_ERROR "The 'Nuspell' spelling and grammar checking libraries could not be found!")
+	endif(NUSPELL_FOUND)
+endfunction()
+
+if (WIN32 OR MSYS OR MINGW)
+	nuspell_deps()
+endif()
+
 find_package(QWT REQUIRED)
 if (QWT_FOUND)
     include_directories(${QWT_INCLUDE_DIRS})
@@ -309,23 +328,9 @@ endif(ICUUC_FOUND)
 # Nuspell
 # https://nuspell.github.io/
 #
-find_package(Nuspell REQUIRED)
-if (NUSPELL_FOUND)
-    include_directories(${NUSPELL_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${NUSPELL_LIBRARIES})
-    file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/dictionaries/dictionaries" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Library")
-    file(RENAME "${CMAKE_CURRENT_BINARY_DIR}/Library/dictionaries" "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling")
-
-    #
-    # Remove all the unneeded files now!
-    file(GLOB_RECURSE RM_NUSPELL_FILES_JS "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling/*.js")
-    file(GLOB_RECURSE RM_NUSPELL_FILES_JSON "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling/*.json")
-    file(REMOVE ${RM_NUSPELL_FILES_JS})
-    file(REMOVE ${RM_NUSPELL_FILES_JSON})
-    message(STATUS "The 'Nuspell' spelling and grammar checking libraries have been configured!")
-else()
-    message(FATAL_ERROR "The 'Nuspell' spelling and grammar checking libraries could not be found!")
-endif(NUSPELL_FOUND)
+if (LINUX)
+	nuspell_deps()
+endif()
 
 find_package(OpenSSL REQUIRED)
 if (OPENSSL_FOUND)
@@ -502,6 +507,22 @@ message(STATUS "The 'Opus' audio (de-/en-)coding libraries have been configured!
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/kissfft")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/kissfft")
 message(STATUS "The 'KissFFT' fourier transform libraries have been configured!")
+
+#
+# Nuspell dictionaries
+#
+file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/dictionaries/dictionaries" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Library")
+file(RENAME "${CMAKE_CURRENT_BINARY_DIR}/Library/dictionaries" "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling")
+
+#
+# Remove all the unneeded files now!
+file(GLOB_RECURSE RM_NUSPELL_FILES_JS "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling/*.js")
+file(GLOB_RECURSE RM_NUSPELL_FILES_JSON "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling/*.json")
+file(REMOVE ${RM_NUSPELL_FILES_JS})
+file(REMOVE ${RM_NUSPELL_FILES_JSON})
+
+#
+# End of dictionaries
 
 #
 # AudioFile by Adam Stark
