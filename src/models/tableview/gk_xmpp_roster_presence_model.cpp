@@ -66,12 +66,14 @@ using namespace Security;
  * @param parent
  */
 GkXmppRosterPresenceTableViewModel::GkXmppRosterPresenceTableViewModel(QPointer<QTableView> tableView,
+                                                                       QPointer<GekkoFyre::GkXmppClient> xmppClient,
                                                                        QWidget *parent) : QAbstractTableModel(parent)
 {
     setParent(parent);
 
     proxyModel = new QSortFilterProxyModel(parent);
     tableView->setModel(proxyModel);
+    m_xmppClient = std::move(xmppClient);
     proxyModel->setSourceModel(this);
 
     return;
@@ -196,7 +198,7 @@ QVariant GkXmppRosterPresenceTableViewModel::data(const QModelIndex &index, int 
         case GK_XMPP_ROSTER_PRESENCE_TABLEVIEW_MODEL_PRESENCE_IDX:
             return row_presence;
         case GK_XMPP_ROSTER_PRESENCE_TABLEVIEW_MODEL_BAREJID_IDX:
-            return row_bareJid;
+            return m_xmppClient->getUsername(row_bareJid);
         case GK_XMPP_ROSTER_PRESENCE_TABLEVIEW_MODEL_NICKNAME_IDX:
             return row_nickname;
         default:
@@ -204,6 +206,55 @@ QVariant GkXmppRosterPresenceTableViewModel::data(const QModelIndex &index, int 
     }
 
     return QVariant();
+}
+
+/**
+ * @brief GkXmppRosterPresenceTableViewModel::setData
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ * @param value
+ * @param role
+ * @return
+ */
+bool GkXmppRosterPresenceTableViewModel::setData(const QModelIndex &index, const QVariant &value, int role)
+{
+    if (index.isValid() && role == Qt::DisplayRole) {
+        qint32 row = index.row();
+        GkXmpp::GkPresenceTableViewModel result;
+        switch (index.column()) {
+            case GK_XMPP_ROSTER_PRESENCE_TABLEVIEW_MODEL_PRESENCE_IDX:
+                result.presence = QIcon(value.toString());
+                break;
+            case GK_XMPP_ROSTER_PRESENCE_TABLEVIEW_MODEL_BAREJID_IDX:
+                result.bareJid = value.toString();
+                break;
+            case GK_XMPP_ROSTER_PRESENCE_TABLEVIEW_MODEL_NICKNAME_IDX:
+                result.nickName = value.toString();
+                break;
+            default:
+                return false;
+        }
+
+        emit dataChanged(index, index);
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * @brief GkXmppRosterPresenceTableViewModel::flags
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ * @return
+ */
+Qt::ItemFlags GkXmppRosterPresenceTableViewModel::flags(const QModelIndex &index) const
+{
+    if (!index.isValid()) {
+        return Qt::ItemIsEnabled;
+    }
+
+    return QAbstractTableModel::flags(index) | Qt::NoItemFlags;
 }
 
 /**

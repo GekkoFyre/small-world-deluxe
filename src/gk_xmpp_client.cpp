@@ -532,6 +532,22 @@ QString GkXmppClient::getHostname(const QString &username)
 }
 
 /**
+ * @brief GkXmppClient::addHostname
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param username
+ * @return
+ */
+QString GkXmppClient::addHostname(const QString &username)
+{
+    QString bareJid = QString(username + "@" + m_connDetails.server.url);
+    if (!bareJid.isEmpty()) {
+        return bareJid;
+    }
+
+    return QString();
+}
+
+/**
  * @brief GkXmppClient::getNetworkState
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return
@@ -841,6 +857,7 @@ void GkXmppClient::handleRosterReceived()
                 case QXmppRosterIq::Item::To:
                     break;
                 case QXmppRosterIq::Item::Remove:
+                    emit retractSubscriptionRequest(callsign.bareJid);
                     break;
                 case QXmppRosterIq::Item::NotSet:
                     notifyNewSubscription(callsign.bareJid);
@@ -1675,6 +1692,7 @@ void GkXmppClient::notifyNewSubscription(const QString &bareJid, const QXmppPres
  */
 void GkXmppClient::itemAdded(const QString &bareJid)
 {
+    emit retractSubscriptionRequest(bareJid);
     emit addJidToRoster(bareJid);
     gkEventLogger->publishEvent(tr("User, \"%1\", successfully added to roster!").arg(getUsername(bareJid)),
                                 GkSeverity::Info, "", true, true, false, false);

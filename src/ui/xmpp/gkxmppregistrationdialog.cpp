@@ -306,7 +306,7 @@ void GkXmppRegistrationDialog::prefillFormFields(const QString &jid, const QStri
     if (ui->stackedWidget_xmpp_registration_dialog->currentWidget() == ui->page_account_signup_ui) {
         if (!jid.isEmpty()) {
             if (!m_reg_user.isEmpty() && !m_reg_domain.isEmpty()) {
-                ui->lineEdit_username->setText(QString("%1@%2").arg(m_reg_user).arg(QHostAddress(m_reg_domain).toString()));
+                ui->lineEdit_username->setText(QString("%1@%2").arg(m_reg_user).arg(m_reg_domain));
             }
         }
 
@@ -402,6 +402,7 @@ void GkXmppRegistrationDialog::on_pushButton_signup_submit_clicked()
         return;
     }
 
+    this->close();
     return;
 }
 
@@ -496,6 +497,7 @@ void GkXmppRegistrationDialog::on_pushButton_login_submit_clicked()
         print_exception(e);
     }
 
+    this->close();
     return;
 }
 
@@ -632,6 +634,7 @@ void GkXmppRegistrationDialog::on_pushButton_change_password_submit_clicked()
         rememberCredentials();
     }
 
+    this->close();
     return;
 }
 
@@ -645,6 +648,7 @@ void GkXmppRegistrationDialog::on_pushButton_change_email_submit_clicked()
         rememberCredentials();
     }
 
+    this->close();
     return;
 }
 
@@ -1037,7 +1041,7 @@ void GkXmppRegistrationDialog::readCredentials()
     } else {
         //
         // User Registration -- Unknown!
-        std::throw_with_nested(std::invalid_argument(tr("Error encountered whilst reading credentials to database!").toStdString()));
+        return;
     }
 
     if (m_loginServerType == GkXmpp::GkServerType::GekkoFyre) {
@@ -1059,7 +1063,7 @@ void GkXmppRegistrationDialog::readCredentials()
     } else {
         //
         // User Login -- Unknown!
-        std::throw_with_nested(std::invalid_argument(tr("Error encountered whilst reading credentials to database!").toStdString()));
+        return;
     }
 
     if (m_passwordServerType == GkXmpp::GkServerType::GekkoFyre) {
@@ -1081,7 +1085,7 @@ void GkXmppRegistrationDialog::readCredentials()
     } else {
         //
         // User Change Password -- Unknown!
-        std::throw_with_nested(std::invalid_argument(tr("Error encountered whilst reading credentials to database!").toStdString()));
+        return;
     }
 
     if (m_emailServerType == GkXmpp::GkServerType::GekkoFyre) {
@@ -1103,7 +1107,7 @@ void GkXmppRegistrationDialog::readCredentials()
     } else {
         //
         // User Change Email -- Unknown!
-        std::throw_with_nested(std::invalid_argument(tr("Error encountered whilst reading credentials to database!").toStdString()));
+        return;
     }
 
     return;

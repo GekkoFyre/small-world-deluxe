@@ -66,12 +66,14 @@ using namespace Security;
  * @param parent
  */
 GkXmppRosterBlockedTableViewModel::GkXmppRosterBlockedTableViewModel(QPointer<QTableView> tableView,
+                                                                     QPointer<GekkoFyre::GkXmppClient> xmppClient,
                                                                      QWidget *parent) : QAbstractTableModel(parent)
 {
     setParent(parent);
 
     proxyModel = new QSortFilterProxyModel(parent);
     tableView->setModel(proxyModel);
+    m_xmppClient = std::move(xmppClient);
     proxyModel->setSourceModel(this);
 
     return;
@@ -193,7 +195,7 @@ QVariant GkXmppRosterBlockedTableViewModel::data(const QModelIndex &index, int r
 
     switch (index.column()) {
         case GK_XMPP_ROSTER_BLOCKED_TABLEVIEW_MODEL_BAREJID_IDX:
-            return row_bareJid;
+            return m_xmppClient->getUsername(row_bareJid);
         case GK_XMPP_ROSTER_BLOCKED_TABLEVIEW_MODEL_REASON_IDX:
             return row_reason;
         default:
@@ -201,6 +203,52 @@ QVariant GkXmppRosterBlockedTableViewModel::data(const QModelIndex &index, int r
     }
 
     return QVariant();
+}
+
+/**
+ * @brief GkXmppRosterBlockedTableViewModel::setData
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ * @param value
+ * @param role
+ * @return
+ */
+bool GkXmppRosterBlockedTableViewModel::setData(const QModelIndex &index, const QVariant &value, int role)
+{
+    if (index.isValid() && role == Qt::DisplayRole) {
+        qint32 row = index.row();
+        GkXmpp::GkBlockedTableViewModel result;
+        switch (index.column()) {
+            case GK_XMPP_ROSTER_BLOCKED_TABLEVIEW_MODEL_BAREJID_IDX:
+                result.bareJid = value.toString();
+                break;
+            case GK_XMPP_ROSTER_BLOCKED_TABLEVIEW_MODEL_REASON_IDX:
+                result.reason = value.toString();
+                break;
+            default:
+                return false;
+        }
+
+        emit dataChanged(index, index);
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * @brief GkXmppRosterBlockedTableViewModel::flags
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ * @return
+ */
+Qt::ItemFlags GkXmppRosterBlockedTableViewModel::flags(const QModelIndex &index) const
+{
+    if (!index.isValid()) {
+        return Qt::ItemIsEnabled;
+    }
+
+    return QAbstractTableModel::flags(index) | Qt::NoItemFlags;
 }
 
 /**

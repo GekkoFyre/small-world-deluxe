@@ -114,17 +114,18 @@ private slots:
     void on_pushButton_add_contact_submit_clicked();
     void on_actionAcceptInvite_triggered();
     void on_actionRefuseInvite_triggered();
-    void on_actionBlockUser_triggered();
+    void on_actionBlockPendingUser_triggered();
+    void on_actionBlockPresenceUser_triggered();
     void on_actionUnblockUser_triggered();
     void on_actionEdit_Nickname_triggered();
     void on_lineEdit_search_roster_returnPressed();
     void on_lineEdit_search_roster_inputRejected();
-    void on_tableView_callsigns_pending_clicked(const QModelIndex &index);
+    void on_tableView_callsigns_pending_pressed(const QModelIndex &index);
     void on_tableView_callsigns_pending_doubleClicked(const QModelIndex &index);
     void on_tableView_callsigns_pending_customContextMenuRequested(const QPoint &pos);
-    void on_tableView_callsigns_groups_clicked(const QModelIndex &index);
+    void on_tableView_callsigns_groups_pressed(const QModelIndex &index);
     void on_tableView_callsigns_groups_doubleClicked(const QModelIndex &index);
-    void on_tableView_callsigns_blocked_clicked(const QModelIndex &index);
+    void on_tableView_callsigns_blocked_pressed(const QModelIndex &index);
     void on_tableView_callsigns_blocked_doubleClicked(const QModelIndex &index);
 
     void recvUpdatePresenceTableViewModel();
