@@ -66,12 +66,14 @@ using namespace Security;
  * @param parent
  */
 GkXmppRosterPendingTableViewModel::GkXmppRosterPendingTableViewModel(QPointer<QTableView> tableView,
+                                                                     QPointer<GekkoFyre::GkXmppClient> xmppClient,
                                                                      QWidget *parent) : QAbstractTableModel(parent)
 {
     setParent(parent);
 
     proxyModel = new QSortFilterProxyModel(parent);
     tableView->setModel(proxyModel);
+    m_xmppClient = std::move(xmppClient);
     proxyModel->setSourceModel(this);
 
     return;
@@ -134,7 +136,7 @@ void GkXmppRosterPendingTableViewModel::removeData(const QString &bareJid)
     for (auto iter = m_data.begin(); iter != m_data.end();) {
         if (iter->bareJid == bareJid) {
             beginRemoveRows(QModelIndex(), (m_data.count() - 1), (m_data.count() - 1));
-            m_data.erase(iter);
+            iter = m_data.erase(iter);
             endRemoveRows();
         } else {
             ++iter;
@@ -195,9 +197,9 @@ QVariant GkXmppRosterPendingTableViewModel::data(const QModelIndex &index, int r
 
     switch (index.column()) {
         case GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_PRESENCE_IDX:
-            return row_presence;
+            return QIcon(row_presence);
         case GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_BAREJID_IDX:
-            return row_bareJid;
+            return m_xmppClient->getUsername(row_bareJid);
         case GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_NICKNAME_IDX:
             return row_nickname;
         case GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_REASON_IDX:
@@ -207,6 +209,58 @@ QVariant GkXmppRosterPendingTableViewModel::data(const QModelIndex &index, int r
     }
 
     return QVariant();
+}
+
+/**
+ * @brief GkXmppRosterPendingTableViewModel::setData
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ * @param value
+ * @param role
+ * @return
+ */
+bool GkXmppRosterPendingTableViewModel::setData(const QModelIndex &index, const QVariant &value, int role)
+{
+    if (index.isValid() && role == Qt::DisplayRole) {
+        qint32 row = index.row();
+        GkXmpp::GkPendingTableViewModel result;
+        switch (index.column()) {
+            case GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_PRESENCE_IDX:
+                result.presence = QIcon(value.toString());
+                break;
+            case GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_BAREJID_IDX:
+                result.bareJid = value.toString();
+                break;
+            case GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_NICKNAME_IDX:
+                result.nickName = value.toString();
+                break;
+            case GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_REASON_IDX:
+                result.reason = value.toString();
+                break;
+            default:
+                return false;
+        }
+
+        emit dataChanged(index, index);
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * @brief GkXmppRosterPendingTableViewModel::flags
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param index
+ * @return
+ */
+Qt::ItemFlags GkXmppRosterPendingTableViewModel::flags(const QModelIndex &index) const
+{
+    if (!index.isValid()) {
+        return Qt::ItemIsEnabled;
+    }
+
+    return QAbstractTableModel::flags(index) | Qt::NoItemFlags;
 }
 
 /**

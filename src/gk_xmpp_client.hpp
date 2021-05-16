@@ -101,11 +101,13 @@ public:
 
     void createConnectionToServer(const QString &domain_url, const quint16 &network_port, const QString &password = "",
                                   const QString &jid = "", const bool &user_signup = false);
+    void killConnectionFromServer(const bool &askReconnectPolicy = false);
     bool createMuc(const QString &room_name, const QString &room_subject, const QString &room_desc);
 
     static bool isHostnameSame(const QString &hostname, const QString &comparison = "");
     static QString getUsername(const QString &username);
     static QString getHostname(const QString &username);
+    QString addHostname(const QString &username);
     GekkoFyre::Network::GkXmpp::GkNetworkState getNetworkState() const;
     bool isJidExist(const QString &bareJid);
     bool isJidOnline(const QString &bareJid);
@@ -267,6 +269,8 @@ private:
     // QXmpp and XMPP related
     //
     QXmppConfiguration config;
+    bool m_askToReconnectAuto;
+    bool m_sslIsEnabled;
     std::shared_ptr<QXmppRegistrationManager> m_registerManager;
     std::unique_ptr<QXmppMucManager> m_mucManager;
     std::unique_ptr<QXmppMucRoom> m_pRoom;

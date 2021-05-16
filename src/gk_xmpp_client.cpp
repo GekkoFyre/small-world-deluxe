@@ -122,6 +122,10 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
             addExtension(m_transferManager.get());
         }
 
+        //
+        // Booleans and other variables
+        m_askToReconnectAuto = false;
+        m_sslIsEnabled = false;
         sys::error_code ec;
         fs::path slash = "/";
         native_slash = slash.make_preferred().native();
@@ -267,7 +271,7 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         QObject::connect(m_registerManager.get(), &QXmppRegistrationManager::registrationSucceeded, this, [=]() {
             gkEventLogger->publishEvent(tr("User, \"%1\", has been successfully registered with XMPP server: %2").arg(configuration().user())
                                                 .arg(configuration().domain()), GkSeverity::Info, "", true, true, false, false);
-            disconnectFromServer();
+            killConnectionFromServer(false);
         });
 
         QObject::connect(m_registerManager.get(), &QXmppRegistrationManager::registrationFailed, [=](const QXmppStanza::Error &error) {
@@ -340,20 +344,12 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
             //
             // Request the client's own vCard from the server...
             m_vCardManager->requestClientVCard();
-
-            //
-            // Request vCard of all the bareJids in roster...
-            if (!m_rosterList.isEmpty()) {
-                for (const auto &entry: m_rosterList) {
-                    m_vCardManager->requestVCard(entry.bareJid);
-                }
-            }
         });
 
         QObject::connect(this, &QXmppClient::disconnected, this, [=]() {
             if (!m_connDetails.server.settings_client.auto_reconnect && !m_connDetails.server.url.isEmpty() &&
                 !m_connDetails.jid.isEmpty()) {
-                if (!this->isConnected()) { // We have been disconnected from the given XMPP server!
+                if (!this->isConnected() && m_askToReconnectAuto) { // We have been disconnected from the given XMPP server!
                     QMessageBox msgBoxPolicy;
                     msgBoxPolicy.setParent(nullptr);
                     msgBoxPolicy.setWindowTitle(tr("Disconnected!"));
@@ -393,7 +389,7 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
 GkXmppClient::~GkXmppClient()
 {
     if (isConnected() || m_netState == GkNetworkState::Connecting) {
-        disconnectFromServer();
+        killConnectionFromServer(false);
     }
 
     QObject::disconnect(this, nullptr, this, nullptr);
@@ -522,6 +518,22 @@ QString GkXmppClient::getHostname(const QString &username)
     #endif
     if (!domain.empty()) {
         return domain.last();
+    }
+
+    return QString();
+}
+
+/**
+ * @brief GkXmppClient::addHostname
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param username
+ * @return
+ */
+QString GkXmppClient::addHostname(const QString &username)
+{
+    QString bareJid = QString(username + "@" + m_connDetails.server.url);
+    if (!bareJid.isEmpty()) {
+        return bareJid;
     }
 
     return QString();
@@ -747,7 +759,7 @@ bool GkXmppClient::deleteUserAccount()
         if (isConnected()) {
             m_registerManager->deleteAccount();
             QObject::connect(m_registerManager.get(), &QXmppRegistrationManager::accountDeleted, [=]() {
-                disconnectFromServer();
+                killConnectionFromServer(false);
                 gkEventLogger->publishEvent(tr("User account deleted successfully!"), GkSeverity::Info, "",
                                             false, true, false, true);
             });
@@ -832,20 +844,23 @@ void GkXmppClient::handleRosterReceived()
             switch (jidItem.subscriptionType()) {
                 case QXmppRosterIq::Item::None:
                     break;
-                case QXmppRosterIq::Item::From:
-                    break;
                 case QXmppRosterIq::Item::To:
+                case QXmppRosterIq::Item::From:
+                    m_rosterList.push_back(callsign);
+                    m_vCardManager->requestVCard(callsign.bareJid);
+                    emit retractSubscriptionRequest(callsign.bareJid);
+                    emit addJidToRoster(callsign.bareJid);
                     break;
                 case QXmppRosterIq::Item::Remove:
+                    emit retractSubscriptionRequest(callsign.bareJid);
                     break;
                 case QXmppRosterIq::Item::NotSet:
+                    m_rosterList.push_back(callsign);
                     notifyNewSubscription(callsign.bareJid);
                     break;
                 default:
                     break;
             }
-
-            m_rosterList.push_back(callsign);
         }
     }
 
@@ -1130,11 +1145,13 @@ void GkXmppClient::unblockUser(const QString &bareJid)
 {
     for (auto iter = m_blockList.begin(); iter != m_blockList.end(); ++iter) {
         if (*iter == bareJid) {
-            m_blockList.erase(iter);
+            iter = m_blockList.erase(iter);
             gkEventLogger->publishEvent(tr("User, \"%1\", has been successfully removed from the blocklist.").arg(bareJid),
                                         GkSeverity::Info, "", true, true, false, false);
 
             break;
+        } else {
+            ++iter;
         }
     }
 
@@ -1338,7 +1355,7 @@ void GkXmppClient::handleError(const QString &errorMsg)
 {
     if (!errorMsg.isEmpty()) {
         if (isConnected() || m_netState == GkNetworkState::Connecting) {
-            disconnectFromServer();
+            killConnectionFromServer(true);
         }
 
         std::cerr << errorMsg.toStdString() << std::endl;
@@ -1576,12 +1593,34 @@ void GkXmppClient::createConnectionToServer(const QString &domain_url, const qui
 }
 
 /**
+ * @brief GkXmppClient::killConnectionFromServer is a housekeeping function for managing disconnections from the configured
+ * XMPP server, while taking into account other facets of Small World Deluxe at the same time and how they might
+ * interact with such a disconnection.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param askReconnectPolicy Whether to ask about reconnecting automatically or not when disconnected suddenly, without
+ * reason, from the configured XMPP server.
+ */
+void GkXmppClient::killConnectionFromServer(const bool &askReconnectPolicy)
+{
+    m_askToReconnectAuto = askReconnectPolicy;
+    disconnectFromServer();
+
+    return;
+}
+
+/**
  * @brief GkXmppClient::handleSslGreeting sends a ping back to the server upon having successfully authenticated on this
  * side (the client's side) regarding SSL/TLS!
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void GkXmppClient::handleSslGreeting()
 {
+    if (m_sslSocket->isEncrypted()) {
+        m_sslIsEnabled = true;
+        return;
+    }
+
+    m_sslIsEnabled = false;
     return;
 }
 
@@ -1634,9 +1673,6 @@ void GkXmppClient::notifyNewSubscription(const QString &bareJid, const QXmppPres
             } else {
                 emit sendSubscriptionRequest(bareJid);
             }
-
-            gkEventLogger->publishEvent(tr("User, \"%1\", wishes to add you to their roster!").arg(getUsername(bareJid)),
-                                        GkSeverity::Info, "", true, true, false, false);
         }
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(tr("An issue was encountered whilst processing a subscription request! Error:\n\n%1").arg(QString::fromStdString(e.what())));
@@ -1652,6 +1688,7 @@ void GkXmppClient::notifyNewSubscription(const QString &bareJid, const QXmppPres
  */
 void GkXmppClient::itemAdded(const QString &bareJid)
 {
+    emit retractSubscriptionRequest(bareJid);
     emit addJidToRoster(bareJid);
     gkEventLogger->publishEvent(tr("User, \"%1\", successfully added to roster!").arg(getUsername(bareJid)),
                                 GkSeverity::Info, "", true, true, false, false);

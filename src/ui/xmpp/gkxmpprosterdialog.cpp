@@ -81,8 +81,11 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
         m_nuspellDict = std::move(nuspellDict);
         gkEventLogger = std::move(eventLogger);
 
+        m_initAppLaunch = true;
+        m_presenceManuallySet = false;
+        m_rosterSearchEnabled = true;
+
         ui->comboBox_current_status->setCurrentIndex(GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX);
-        ui->comboBox_current_status->setEnabled(false);
 
         //
         // Disable tab-ordering for the following widgets...
@@ -96,12 +99,31 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
         ui->pushButton_add_contact_submit->setTabOrder(nullptr, nullptr);
         ui->pushButton_add_contact_cancel->setTabOrder(nullptr, nullptr);
 
+        ui->actionEdit_Contact->setEnabled(false);
+        ui->actionDelete_Contact->setEnabled(false);
+        ui->actionBlockPresenceUser->setEnabled(false);
+        ui->actionBlockPendingUser->setEnabled(false);
+        ui->actionAcceptInvite->setEnabled(false);
+        ui->actionRefuseInvite->setEnabled(false);
+        ui->actionAcceptInvite->setVisible(false);
+        ui->actionRefuseInvite->setVisible(false);
+        ui->actionUnblockUser->setEnabled(false);
+
+        ui->pushButton_self_avatar->setEnabled(false);
+        ui->lineEdit_search_roster->setEnabled(false);
+        ui->tableView_callsigns_groups->setEnabled(false);
+        ui->tableView_callsigns_pending->setEnabled(false);
+        ui->tableView_callsigns_blocked->setEnabled(false);
+        ui->actionEdit_Nickname->setEnabled(false);
+
         QObject::connect(this, SIGNAL(updateClientVCard(const QString &, const QString &, const QString &, const QString &, const QByteArray &)),
                          m_xmppClient, SLOT(updateClientVCardForm(const QString &, const QString &, const QString &, const QString &, const QByteArray &)));
         QObject::connect(m_xmppClient, SIGNAL(savedClientVCard(const QByteArray &)), this, SLOT(recvClientAvatarImg(const QByteArray &)));
         QObject::connect(this, SIGNAL(updateClientAvatarImg(const QImage &)), this, SLOT(updateClientAvatar(const QImage &)));
         QObject::connect(m_xmppClient, SIGNAL(sendUserVCard(const QXmppVCardIq &)), this, SLOT(updateUserVCard(const QXmppVCardIq &)));
 
+        QObject::connect(this, SIGNAL(updateAvailableStatusType(const QXmppPresence::AvailableStatusType &)),
+                         this, SLOT(procAvailableStatusType(const QXmppPresence::AvailableStatusType &)));
         QObject::connect(this, SIGNAL(updateAvailableStatusType(const QXmppPresence::AvailableStatusType &)),
                          m_xmppClient, SLOT(modifyAvailableStatusType(const QXmppPresence::AvailableStatusType &)));
 
@@ -132,26 +154,43 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
         prefillAvailComboBox();
 
         QObject::connect(m_xmppClient, &QXmppClient::connected, this, [=]() {
-            //
-            // Change the presence status to the last used once connected!
-            ui->comboBox_current_status->setCurrentIndex(GK_XMPP_AVAIL_COMBO_AVAILABLE_IDX); // TODO: Implement the Google LevelDB functions for this!
             ui->pushButton_self_avatar->setEnabled(true);
             ui->lineEdit_search_roster->setEnabled(true);
+            ui->tableView_callsigns_groups->setEnabled(true);
+            ui->tableView_callsigns_pending->setEnabled(true);
+            ui->tableView_callsigns_blocked->setEnabled(true);
+            ui->actionEdit_Nickname->setEnabled(true);
+
+            const QString last_online_pres_str = gkDb->read_xmpp_settings(Settings::GkXmppCfg::XmppLastOnlinePresence);
+            if (!last_online_pres_str.isEmpty()) {
+                if (!m_presenceManuallySet) {
+                    const qint32 last_online_pres_idx = last_online_pres_str.toInt();
+                    ui->comboBox_current_status->setCurrentIndex(last_online_pres_idx);
+                }
+            }
+
+            if (ui->comboBox_current_status->currentIndex() == GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX) {
+                ui->comboBox_current_status->setCurrentIndex(GK_XMPP_AVAIL_COMBO_AVAILABLE_IDX);
+            }
         });
 
         QObject::connect(m_xmppClient, &QXmppClient::disconnected, this, [=]() {
-            //
-            // Change the presence status to 'Offline / Unavailable' when disconnected!
-            ui->comboBox_current_status->setCurrentIndex(GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX);
+            ui->comboBox_current_status->setCurrentIndex(GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX); // Change presence status to 'offline' upon disconnection!
             ui->pushButton_self_avatar->setEnabled(false);
             ui->lineEdit_search_roster->setEnabled(false);
+            ui->tableView_callsigns_groups->setEnabled(false);
+            ui->tableView_callsigns_pending->setEnabled(false);
+            ui->tableView_callsigns_blocked->setEnabled(false);
+            ui->actionEdit_Nickname->setEnabled(false);
+
+            cleanupTables();
         });
 
         //
         // Setup and initialize QTableView's...
-        gkXmppPresenceTableViewModel = new GkXmppRosterPresenceTableViewModel(ui->tableView_callsigns_groups, this);
-        gkXmppPendingTableViewModel = new GkXmppRosterPendingTableViewModel(ui->tableView_callsigns_pending, this);
-        gkXmppBlockedTableViewModel = new GkXmppRosterBlockedTableViewModel(ui->tableView_callsigns_blocked, this);
+        gkXmppPresenceTableViewModel = new GkXmppRosterPresenceTableViewModel(ui->tableView_callsigns_groups, m_xmppClient, this);
+        gkXmppPendingTableViewModel = new GkXmppRosterPendingTableViewModel(ui->tableView_callsigns_pending, m_xmppClient, this);
+        gkXmppBlockedTableViewModel = new GkXmppRosterBlockedTableViewModel(ui->tableView_callsigns_blocked, m_xmppClient, this);
 
         //
         // Users and presence
@@ -223,6 +262,9 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
 
 GkXmppRosterDialog::~GkXmppRosterDialog()
 {
+    gkDb->write_xmpp_settings(QString::number(ui->comboBox_current_status->currentIndex()), Settings::GkXmppCfg::XmppLastOnlinePresence);
+    cleanupTables();
+
     delete ui;
 }
 
@@ -279,7 +321,7 @@ void GkXmppRosterDialog::subscriptionRequestRecv(const QString &bareJid, const Q
                     insertRosterPendingTable(m_xmppClient->presenceToIcon(entry.presence->availableStatusType()), bareJid, entry.vCard.nickname);
                 }
 
-                gkEventLogger->publishEvent(tr("Another user of %1 with the nickname/callsign, \"%2\", is requesting to share presence details with you!")
+                gkEventLogger->publishEvent(tr("A user of %1 with the nickname/callsign, \"%2\", is requesting to share presence details with you!")
                                             .arg(General::productName).arg(bareJid), GkSeverity::Info, "",
                                             true, true, false, false);
                 break;
@@ -301,7 +343,7 @@ void GkXmppRosterDialog::subscriptionRequestRecv(const QString &bareJid, const Q
 void GkXmppRosterDialog::subscriptionRequestRetracted(const QString &bareJid)
 {
     if (!bareJid.isEmpty()) {
-        removeRosterPresenceTable(bareJid);
+        removeRosterPendingTable(bareJid);
         updateActions();
     }
 
@@ -392,22 +434,17 @@ void GkXmppRosterDialog::updateActions()
 {
     if (ui->tableView_callsigns_groups->isActiveWindow() && !m_presenceRosterData.isEmpty()) {
         const bool presenceHasSelection = !ui->tableView_callsigns_groups->selectionModel()->selection().isEmpty();
-        ui->actionEdit_Contact->setEnabled(presenceHasSelection);
-        ui->actionDelete_Contact->setEnabled(presenceHasSelection);
-        ui->actionBlockUser->setEnabled(presenceHasSelection);
+        enablePresenceTableActions(presenceHasSelection);
     }
 
     if (ui->tableView_callsigns_pending->isActiveWindow() && !m_pendingRosterData.isEmpty()) {
         const bool pendingHasSelection = !ui->tableView_callsigns_pending->selectionModel()->selection().isEmpty();
-        ui->actionAcceptInvite->setEnabled(pendingHasSelection);
-        ui->actionRefuseInvite->setEnabled(pendingHasSelection);
-        ui->actionAcceptInvite->setVisible(pendingHasSelection);
-        ui->actionRefuseInvite->setVisible(pendingHasSelection);
+        enablePendingTableActions(pendingHasSelection);
     }
 
     if (ui->tableView_callsigns_blocked->isActiveWindow() && !m_blockedRosterData.isEmpty()) {
         const bool blockedHasSelection = !ui->tableView_callsigns_blocked->selectionModel()->selection().isEmpty();
-        ui->actionUnblockUser->setEnabled(blockedHasSelection);
+        enableBlockedTableActions(blockedHasSelection);
     }
 
     return;
@@ -501,7 +538,7 @@ void GkXmppRosterDialog::insertRosterPendingTable(const QIcon &online_status, co
 
         pending_model.bareJid = bareJid;
         pending_model.nickName = nickname;
-        pending_model.reason = "";
+        pending_model.reason = "None specified.";
         if (reason.isEmpty()) {
             pending_model.reason = reason;
         }
@@ -656,6 +693,7 @@ void GkXmppRosterDialog::prefillAvailComboBox()
     ui->comboBox_current_status->setItemIcon(GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX,
                                              QIcon(":/resources/contrib/images/raster/gekkofyre-networks/red-halftone-circle.png"));
 
+    ui->comboBox_current_status->setCurrentIndex(GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX);
     return;
 }
 
@@ -667,7 +705,7 @@ void GkXmppRosterDialog::prefillAvailComboBox()
  */
 void GkXmppRosterDialog::on_comboBox_current_status_currentIndexChanged(int index)
 {
-    if (!m_xmppClient->isConnected()) {
+    if (!m_initAppLaunch) {
         switch (index) {
             case GK_XMPP_AVAIL_COMBO_AVAILABLE_IDX: // Online / Available
                 emit updateAvailableStatusType(QXmppPresence::AvailableStatusType::Online);
@@ -685,13 +723,16 @@ void GkXmppRosterDialog::on_comboBox_current_status_currentIndexChanged(int inde
                 emit updateAvailableStatusType(QXmppPresence::AvailableStatusType::DND);
                 break;
             case GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX: // Offline / Unavailable
-                m_xmppClient->disconnectFromServer();
+                m_xmppClient->killConnectionFromServer(false);
                 break;
             default:
                 break;
         }
+
+        m_presenceManuallySet = true;
     }
 
+    m_initAppLaunch = false;
     return;
 }
 
@@ -736,7 +777,7 @@ void GkXmppRosterDialog::on_tableView_callsigns_groups_customContextMenuRequeste
     contextMenu->addAction(ui->actionAdd_Contact);
     contextMenu->addAction(ui->actionEdit_Contact);
     contextMenu->addAction(ui->actionDelete_Contact);
-    contextMenu->addAction(ui->actionBlockUser);
+    contextMenu->addAction(ui->actionBlockPresenceUser);
 
     updateActions();
 
@@ -745,7 +786,7 @@ void GkXmppRosterDialog::on_tableView_callsigns_groups_customContextMenuRequeste
     ui->actionAdd_Contact->setData(QVariant(pos));
     ui->actionEdit_Contact->setData(QVariant(pos));
     ui->actionDelete_Contact->setData(QVariant(pos));
-    ui->actionBlockUser->setData(QVariant(pos));
+    ui->actionBlockPresenceUser->setData(QVariant(pos));
 
     contextMenu->exec(ui->tableView_callsigns_groups->mapToGlobal(pos));
     QModelIndex index = ui->tableView_callsigns_groups->indexAt(pos); // The exact item that the right-click has been made over!
@@ -975,10 +1016,10 @@ void GkXmppRosterDialog::editNicknameLabel(const QString &value)
  */
 void GkXmppRosterDialog::on_pushButton_add_contact_submit_clicked()
 {
-    QString bareJid = ui->lineEdit_add_contact_username->text();
+    QString username = ui->lineEdit_add_contact_username->text();
     QString reason = ui->lineEdit_add_contact_reason->text();
-    if (!bareJid.isEmpty()) {
-        m_xmppClient->subscribeToUser(bareJid, reason);
+    if (!username.isEmpty()) {
+        m_xmppClient->subscribeToUser(m_xmppClient->addHostname(username), reason); // Convert username into a bareJid!
     }
 
     ui->lineEdit_add_contact_username->clear();
@@ -1007,7 +1048,7 @@ void GkXmppRosterDialog::on_pushButton_add_contact_cancel_clicked()
  */
 void GkXmppRosterDialog::on_actionAcceptInvite_triggered()
 {
-    if (!m_bareJidPresenceSel.isEmpty()) {
+    if (!m_bareJidPendingSel.isEmpty()) {
         QMessageBox msgBox;
         msgBox.setParent(nullptr);
         msgBox.setWindowTitle(tr("Are you sure?"));
@@ -1019,7 +1060,7 @@ void GkXmppRosterDialog::on_actionAcceptInvite_triggered()
 
         switch (ret) {
             case QMessageBox::Ok:
-                emit acceptSubscription(m_bareJidPresenceSel);
+                emit acceptSubscription(m_bareJidPendingSel);
                 break;
             case QMessageBox::Cancel:
                 break;
@@ -1039,7 +1080,7 @@ void GkXmppRosterDialog::on_actionAcceptInvite_triggered()
  */
 void GkXmppRosterDialog::on_actionRefuseInvite_triggered()
 {
-    if (!m_bareJidPresenceSel.isEmpty()) {
+    if (!m_bareJidPendingSel.isEmpty()) {
         QMessageBox msgBox;
         msgBox.setParent(nullptr);
         msgBox.setWindowTitle(tr("Are you sure?"));
@@ -1051,7 +1092,7 @@ void GkXmppRosterDialog::on_actionRefuseInvite_triggered()
 
         switch (ret) {
             case QMessageBox::Ok:
-                emit refuseSubscription(m_bareJidPresenceSel);
+                emit refuseSubscription(m_bareJidPendingSel);
                 break;
             case QMessageBox::Cancel:
                 break;
@@ -1066,10 +1107,42 @@ void GkXmppRosterDialog::on_actionRefuseInvite_triggered()
 }
 
 /**
- * @brief GkXmppRosterDialog::on_actionBlockUser_triggered
+ * @brief GkXmppRosterDialog::on_actionBlockPendingUser_triggered
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void GkXmppRosterDialog::on_actionBlockUser_triggered()
+void GkXmppRosterDialog::on_actionBlockPendingUser_triggered()
+{
+    if (!m_bareJidPendingSel.isEmpty()) {
+        QMessageBox msgBox;
+        msgBox.setParent(nullptr);
+        msgBox.setWindowTitle(tr("Are you sure?"));
+        msgBox.setText(tr("Do you wish to block user, \"%1\"?").arg(m_bareJidPendingSel));
+        msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+        msgBox.setDefaultButton(QMessageBox::Ok);
+        msgBox.setIcon(QMessageBox::Icon::Information);
+        int ret = msgBox.exec();
+
+        switch (ret) {
+            case QMessageBox::Ok:
+                emit blockUser(m_bareJidPendingSel);
+                break;
+            case QMessageBox::Cancel:
+                break;
+            default:
+                break;
+        }
+
+        updateActions();
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::on_actionBlockPresenceUser_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppRosterDialog::on_actionBlockPresenceUser_triggered()
 {
     if (!m_bareJidPresenceSel.isEmpty()) {
         QMessageBox msgBox;
@@ -1136,7 +1209,11 @@ void GkXmppRosterDialog::on_actionUnblockUser_triggered()
 void GkXmppRosterDialog::on_actionEdit_Nickname_triggered()
 {
     if (ui->lineEdit_search_roster->isEnabled()) {
+        m_rosterSearchEnabled = false;
         ui->lineEdit_search_roster->setVisible(true);
+        ui->lineEdit_search_roster->setPlaceholderText(tr("Change nickname..."));
+        ui->lineEdit_search_roster->setText(ui->label_self_nickname->text());
+        ui->lineEdit_search_roster->setFocus();
     }
 
     return;
@@ -1148,10 +1225,24 @@ void GkXmppRosterDialog::on_actionEdit_Nickname_triggered()
  */
 void GkXmppRosterDialog::on_lineEdit_search_roster_returnPressed()
 {
-    QString newNickname = ui->lineEdit_search_roster->text();
-    if (!newNickname.isEmpty()) {
-        // Apply the new nickname!
-        emit updateClientVCard(gkConnDetails.firstName, gkConnDetails.lastName, gkConnDetails.email, newNickname, m_clientAvatarImg);
+    if (!m_rosterSearchEnabled) {
+        //
+        // Nickname edit mode...
+        QString newNickname = ui->lineEdit_search_roster->text();
+        if (!newNickname.isEmpty()) {
+            // Apply the new nickname!
+            emit updateClientVCard(gkConnDetails.firstName, gkConnDetails.lastName, gkConnDetails.email, newNickname, m_clientAvatarImg);
+
+            //
+            // Return back to default settings...
+            ui->lineEdit_search_roster->setPlaceholderText(tr("Search..."));
+            ui->lineEdit_search_roster->clear();
+            m_rosterSearchEnabled = true;
+            return;
+        }
+    } else {
+        //
+        // Roster-search mode...
         return;
     }
 
@@ -1172,22 +1263,23 @@ void GkXmppRosterDialog::on_lineEdit_search_roster_inputRejected()
 }
 
 /**
- * @brief GkXmppRosterDialog::on_tableView_callsigns_pending_clicked
+ * @brief GkXmppRosterDialog::on_tableView_callsigns_pending_pressed
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param index
  */
-void GkXmppRosterDialog::on_tableView_callsigns_pending_clicked(const QModelIndex &index)
+void GkXmppRosterDialog::on_tableView_callsigns_pending_pressed(const QModelIndex &index)
 {
+    updateActions();
     QModelIndex retrieve = gkXmppPendingTableViewModel->index(index.row(), GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_BAREJID_IDX, QModelIndex());
-    QString bareJid = retrieve.data().toString();
-    if (!bareJid.isEmpty()) {
-        if (m_xmppClient->isJidExist(bareJid)) {
-            m_bareJidPendingSel = bareJid;
-        }
-
-        updateActions();
+    QString username = retrieve.data().toString();
+    if (!username.isEmpty()) {
+        enablePendingTableActions(true);
+        m_bareJidPendingSel = m_xmppClient->addHostname(username);
+        enablePendingTableActions(false);
+        return;
     }
 
+    enablePendingTableActions(false);
     return;
 }
 
@@ -1198,37 +1290,67 @@ void GkXmppRosterDialog::on_tableView_callsigns_pending_clicked(const QModelInde
  */
 void GkXmppRosterDialog::on_tableView_callsigns_pending_doubleClicked(const QModelIndex &index)
 {
+    updateActions();
     QModelIndex retrieve = gkXmppPendingTableViewModel->index(index.row(), GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_BAREJID_IDX, QModelIndex());
-    QString bareJid = retrieve.data().toString();
-    if (!bareJid.isEmpty()) {
-        if (m_xmppClient->isJidExist(bareJid)) {
-            m_bareJidPendingSel = bareJid;
-            on_actionAcceptInvite_triggered();
-        }
-
-        updateActions();
+    QString username = retrieve.data().toString();
+    if (!username.isEmpty()) {
+        enablePendingTableActions(true);
+        m_bareJidPendingSel = m_xmppClient->addHostname(username);
+        on_actionAcceptInvite_triggered();
+        enablePendingTableActions(false);
+        return;
     }
+
+    enablePendingTableActions(false);
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::on_tableView_callsigns_pending_customContextMenuRequested
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param pos
+ */
+void GkXmppRosterDialog::on_tableView_callsigns_pending_customContextMenuRequested(const QPoint &pos)
+{
+    std::unique_ptr<QMenu> contextMenu = std::make_unique<QMenu>(ui->label_self_nickname);
+    contextMenu->addAction(ui->actionAcceptInvite);
+    contextMenu->addAction(ui->actionRefuseInvite);
+    contextMenu->addAction(ui->actionBlockPendingUser);
+
+    updateActions();
+
+    //
+    // Save the position data to the QAction
+    ui->actionAcceptInvite->setData(QVariant(pos));
+    ui->actionRefuseInvite->setData(QVariant(pos));
+    ui->actionBlockPendingUser->setData(QVariant(pos));
+    contextMenu->exec(ui->tableView_callsigns_pending->mapToGlobal(pos));
 
     return;
 }
 
 /**
- * @brief GkXmppRosterDialog::on_tableView_callsigns_groups_clicked
+ * @brief GkXmppRosterDialog::on_tableView_callsigns_groups_pressed
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param index
  */
-void GkXmppRosterDialog::on_tableView_callsigns_groups_clicked(const QModelIndex &index)
+void GkXmppRosterDialog::on_tableView_callsigns_groups_pressed(const QModelIndex &index)
 {
+    updateActions();
     QModelIndex retrieve = gkXmppPresenceTableViewModel->index(index.row(), GK_XMPP_ROSTER_PRESENCE_TABLEVIEW_MODEL_BAREJID_IDX, QModelIndex());
-    QString bareJid = retrieve.data().toString();
-    if (!bareJid.isEmpty()) {
+    QString username = retrieve.data().toString();
+    if (!username.isEmpty()) {
+        enablePresenceTableActions(true);
+        QString bareJid = m_xmppClient->addHostname(username);
         if (m_xmppClient->isJidExist(bareJid)) {
             m_bareJidPresenceSel = bareJid;
+            return;
         }
 
-        updateActions();
+        return;
     }
 
+    enablePresenceTableActions(false);
     return;
 }
 
@@ -1239,36 +1361,46 @@ void GkXmppRosterDialog::on_tableView_callsigns_groups_clicked(const QModelIndex
  */
 void GkXmppRosterDialog::on_tableView_callsigns_groups_doubleClicked(const QModelIndex &index)
 {
+    updateActions();
     QModelIndex retrieve = gkXmppPresenceTableViewModel->index(index.row(), GK_XMPP_ROSTER_PRESENCE_TABLEVIEW_MODEL_BAREJID_IDX, QModelIndex());
-    QString bareJid = retrieve.data().toString();
-    if (!bareJid.isEmpty()) {
+    QString username = retrieve.data().toString();
+    if (!username.isEmpty()) {
+        enablePresenceTableActions(true);
+        QString bareJid = m_xmppClient->addHostname(username);
         if (m_xmppClient->isJidExist(bareJid)) {
-            launchMsgDlg(bareJid);
+            launchMsgDlg(username);
+            return;
         }
 
-        updateActions();
+        return;
     }
 
+    enablePresenceTableActions(false);
     return;
 }
 
 /**
- * @brief GkXmppRosterDialog::on_tableView_callsigns_blocked_clicked
+ * @brief GkXmppRosterDialog::on_tableView_callsigns_blocked_pressed
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param index
  */
-void GkXmppRosterDialog::on_tableView_callsigns_blocked_clicked(const QModelIndex &index)
+void GkXmppRosterDialog::on_tableView_callsigns_blocked_pressed(const QModelIndex &index)
 {
+    updateActions();
     QModelIndex retrieve = gkXmppBlockedTableViewModel->index(index.row(), GK_XMPP_ROSTER_BLOCKED_TABLEVIEW_MODEL_BAREJID_IDX, QModelIndex());
-    QString bareJid = retrieve.data().toString();
-    if (!bareJid.isEmpty()) {
+    QString username = retrieve.data().toString();
+    if (!username.isEmpty()) {
+        enableBlockedTableActions(true);
+        QString bareJid = m_xmppClient->addHostname(username);
         if (m_xmppClient->isJidExist(bareJid)) {
             m_bareJidBlockedSel = bareJid;
+            return;
         }
 
-        updateActions();
+        return;
     }
 
+    enableBlockedTableActions(false);
     return;
 }
 
@@ -1279,15 +1411,67 @@ void GkXmppRosterDialog::on_tableView_callsigns_blocked_clicked(const QModelInde
  */
 void GkXmppRosterDialog::on_tableView_callsigns_blocked_doubleClicked(const QModelIndex &index)
 {
+    updateActions();
     QModelIndex retrieve = gkXmppBlockedTableViewModel->index(index.row(), GK_XMPP_ROSTER_BLOCKED_TABLEVIEW_MODEL_BAREJID_IDX, QModelIndex());
-    QString bareJid = retrieve.data().toString();
-    if (!bareJid.isEmpty()) {
+    QString username = retrieve.data().toString();
+    if (!username.isEmpty()) {
+        enableBlockedTableActions(true);
+        QString bareJid = m_xmppClient->addHostname(username);
         if (m_xmppClient->isJidExist(bareJid)) {
-            launchMsgDlg(bareJid);
+            launchMsgDlg(username);
+            return;
         }
 
-        updateActions();
+        return;
     }
+
+    enableBlockedTableActions(false);
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::procAvailableStatusType
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param stat_type
+ */
+void GkXmppRosterDialog::procAvailableStatusType(const QXmppPresence::AvailableStatusType &stat_type)
+{
+    if (!m_xmppClient->isConnected() && m_xmppClient->getNetworkState() != GkNetworkState::Connecting) {
+        reconnectToXmpp();
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::cleanupTables is intended to clean-up all the various QTableViews upon exit of this QDialog, for
+ * example.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @see ui->tableView_callsigns_groups(), ui->tableView_callsigns_pending(), ui->tableView_callsigns_blocked()
+ */
+void GkXmppRosterDialog::cleanupTables()
+{
+    if (!m_presenceRosterData.isEmpty()) {
+        for (const auto &entry: m_presenceRosterData) {
+            removeRosterPresenceTable(entry.bareJid);
+        }
+    }
+
+    if (!m_pendingRosterData.isEmpty()) {
+        for (const auto &entry: m_pendingRosterData) {
+            removeRosterPendingTable(entry.bareJid);
+        }
+    }
+
+    if (!m_blockedRosterData.isEmpty()) {
+        for (const auto &entry: m_blockedRosterData) {
+            removeRosterBlockedTable(entry.bareJid);
+        }
+    }
+
+    m_presenceRosterData.clear();
+    m_pendingRosterData.clear();
+    m_blockedRosterData.clear();
 
     return;
 }
@@ -1335,6 +1519,53 @@ void GkXmppRosterDialog::recvUpdateBlockedTableViewModel()
             gkXmppBlockedTableViewModel->insertData(*iter);
             iter->added = true;
         }
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::enablePresenceTableActions
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param enable
+ */
+void GkXmppRosterDialog::enablePresenceTableActions(const bool &enable)
+{
+    if (ui->tableView_callsigns_groups->isActiveWindow() && !m_presenceRosterData.isEmpty()) {
+        ui->actionEdit_Contact->setEnabled(enable);
+        ui->actionDelete_Contact->setEnabled(enable);
+        ui->actionBlockPendingUser->setEnabled(enable);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::enablePendingTableActions
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param enable
+ */
+void GkXmppRosterDialog::enablePendingTableActions(const bool &enable)
+{
+    if (ui->tableView_callsigns_pending->isActiveWindow() && !m_pendingRosterData.isEmpty()) {
+        ui->actionAcceptInvite->setEnabled(enable);
+        ui->actionRefuseInvite->setEnabled(enable);
+        ui->actionAcceptInvite->setVisible(enable);
+        ui->actionRefuseInvite->setVisible(enable);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::enableBlockedTableActions
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param enable
+ */
+void GkXmppRosterDialog::enableBlockedTableActions(const bool &enable)
+{
+    if (ui->tableView_callsigns_blocked->isActiveWindow() && !m_blockedRosterData.isEmpty()) {
+        ui->actionUnblockUser->setEnabled(enable);
     }
 
     return;
