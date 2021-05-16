@@ -62,6 +62,10 @@ Hunspell by Kevin Hendricks and Caolán McNamara et al.
     <http://hunspell.github.io/>
         GNU General Public License (GPL, version 2)
 
+Nuspell by Dimitrij Mijoski and Sander van Geloven
+    <https://github.com/nuspell/nuspell>
+        GNU Lesser General Public License (LGPL, version 3)
+
 Hunspell Dictionaries by various authors (see documentation within each sub-directory)
     <https://github.com/wooorm/dictionaries>
         GNU General Public License (GPL, version 3)

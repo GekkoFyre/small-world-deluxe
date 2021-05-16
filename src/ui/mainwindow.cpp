@@ -2233,6 +2233,8 @@ void MainWindow::launchXmppRosterDlg()
             gkXmppRosterDlg->show();
             return;
         }
+
+        return;
     }
 
     launchSettingsWin(System::UserInterface::GkSettingsDlgTab::GkGeneralXmpp);
@@ -3243,7 +3245,7 @@ void MainWindow::on_actionView_Roster_triggered()
 void MainWindow::on_actionSign_in_triggered()
 {
     if (m_xmppClient->isConnected()) {
-        m_xmppClient->disconnectFromServer();
+        m_xmppClient->killConnectionFromServer(false);
     }
 
     createXmppConnection();
@@ -3255,7 +3257,7 @@ void MainWindow::on_actionSign_in_triggered()
 void MainWindow::on_actionSign_out_triggered()
 {
     if (m_xmppClient->isConnected()) {
-        m_xmppClient->disconnectFromServer();
+        m_xmppClient->killConnectionFromServer(false);
     }
 
     return;

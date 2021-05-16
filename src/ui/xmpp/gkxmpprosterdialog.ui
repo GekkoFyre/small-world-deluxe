@@ -172,7 +172,11 @@
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="lineEdit_search_roster"/>
+          <widget class="QLineEdit" name="lineEdit_search_roster">
+           <property name="placeholderText">
+            <string>Search...</string>
+           </property>
+          </widget>
          </item>
         </layout>
        </widget>
@@ -252,8 +256,8 @@
                   <rect>
                    <x>0</x>
                    <y>0</y>
-                   <width>352</width>
-                   <height>465</height>
+                   <width>358</width>
+                   <height>457</height>
                   </rect>
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_5">
@@ -309,8 +313,8 @@
                   <rect>
                    <x>0</x>
                    <y>0</y>
-                   <width>352</width>
-                   <height>465</height>
+                   <width>358</width>
+                   <height>457</height>
                   </rect>
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_18">
@@ -363,8 +367,8 @@
                   <rect>
                    <x>0</x>
                    <y>0</y>
-                   <width>352</width>
-                   <height>465</height>
+                   <width>358</width>
+                   <height>457</height>
                   </rect>
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_8">
@@ -567,8 +571,8 @@
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>200</width>
-               <height>144</height>
+               <width>192</width>
+               <height>163</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_16">
@@ -775,7 +779,7 @@
     <string>Refuse the subscription invite.</string>
    </property>
   </action>
-  <action name="actionBlockUser">
+  <action name="actionBlockPendingUser">
    <property name="text">
     <string>Block User</string>
    </property>
@@ -797,6 +801,11 @@
    </property>
    <property name="toolTip">
     <string>Edit your nickname and possibly change it to something else.</string>
+   </property>
+  </action>
+  <action name="actionBlockPresenceUser">
+   <property name="text">
+    <string>Block User</string>
    </property>
   </action>
  </widget>

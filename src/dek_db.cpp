@@ -1577,6 +1577,9 @@ void GkLevelDb::write_xmpp_settings(const QString &value, const Settings::GkXmpp
             case Settings::GkXmppCfg::XmppNetworkTimeout:
                 batch.Put("XmppNetworkTimeout", value.toStdString());
                 break;
+            case Settings::GkXmppCfg::XmppLastOnlinePresence:
+                batch.Put("XmppLastOnlinePresence", value.toStdString());
+                break;
             default:
                 return;
         }
@@ -1798,6 +1801,9 @@ QString GkLevelDb::read_xmpp_settings(const Settings::GkXmppCfg &key)
             break;
         case Settings::GkXmppCfg::XmppNetworkTimeout:
             status = db->Get(read_options, "XmppNetworkTimeout", &value);
+            break;
+        case Settings::GkXmppCfg::XmppLastOnlinePresence:
+            status = db->Get(read_options, "XmppLastOnlinePresence", &value);
             break;
         default:
             return QString();

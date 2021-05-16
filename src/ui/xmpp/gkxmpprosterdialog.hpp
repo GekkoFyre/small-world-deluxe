@@ -114,21 +114,30 @@ private slots:
     void on_pushButton_add_contact_submit_clicked();
     void on_actionAcceptInvite_triggered();
     void on_actionRefuseInvite_triggered();
-    void on_actionBlockUser_triggered();
+    void on_actionBlockPendingUser_triggered();
+    void on_actionBlockPresenceUser_triggered();
     void on_actionUnblockUser_triggered();
     void on_actionEdit_Nickname_triggered();
     void on_lineEdit_search_roster_returnPressed();
     void on_lineEdit_search_roster_inputRejected();
-    void on_tableView_callsigns_pending_clicked(const QModelIndex &index);
+    void on_tableView_callsigns_pending_pressed(const QModelIndex &index);
     void on_tableView_callsigns_pending_doubleClicked(const QModelIndex &index);
-    void on_tableView_callsigns_groups_clicked(const QModelIndex &index);
+    void on_tableView_callsigns_pending_customContextMenuRequested(const QPoint &pos);
+    void on_tableView_callsigns_groups_pressed(const QModelIndex &index);
     void on_tableView_callsigns_groups_doubleClicked(const QModelIndex &index);
-    void on_tableView_callsigns_blocked_clicked(const QModelIndex &index);
+    void on_tableView_callsigns_blocked_pressed(const QModelIndex &index);
     void on_tableView_callsigns_blocked_doubleClicked(const QModelIndex &index);
+
+    void procAvailableStatusType(const QXmppPresence::AvailableStatusType &stat_type);
+    void cleanupTables();
 
     void recvUpdatePresenceTableViewModel();
     void recvUpdatePendingTableViewModel();
     void recvUpdateBlockedTableViewModel();
+
+    void enablePresenceTableActions(const bool &enable);
+    void enablePendingTableActions(const bool &enable);
+    void enableBlockedTableActions(const bool &enable);
 
 signals:
     void updateAvailableStatusType(const QXmppPresence::AvailableStatusType &stat_type);
@@ -186,6 +195,13 @@ private:
     //
     GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
     QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign> m_rosterList;
+
+    //
+    // Boolean values
+    //
+    bool m_initAppLaunch;           // Is this the first time that the Roster dialog has been launched?
+    bool m_presenceManuallySet;     // Has the presence status been manually chosen by the user?
+    bool m_rosterSearchEnabled;     // Are we in roster-search mode or nickname edit?
 
     //
     // VCard management

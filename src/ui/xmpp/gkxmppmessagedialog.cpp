@@ -77,7 +77,10 @@ GkXmppMessageDialog::GkXmppMessageDialog(std::shared_ptr<nuspell::Dictionary> nu
     gkXmppClient = std::move(xmppClient);
     m_bareJid = bareJid;
 
-    ui->label_callsign_2_icon->setPixmap(QPixmap(":/resources/contrib/images/vector/no-attrib/walkie-talkies.svg"));
+    ui->label_callsign_1_stats->setText(QString("1 %1").arg(tr("user in chat")));
+    ui->label_msging_callsign_status->setText("");
+
+    ui->tab_user_msg->setWindowIcon(QPixmap(":/resources/contrib/images/vector/no-attrib/walkie-talkies.svg"));
     ui->toolButton_font->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/font.svg"));
     ui->toolButton_font_reset->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/eraser.svg"));
     ui->toolButton_insert->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/moustache-cream.svg"));
