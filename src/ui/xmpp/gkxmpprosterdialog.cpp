@@ -105,15 +105,10 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
         ui->actionBlockPendingUser->setEnabled(false);
         ui->actionAcceptInvite->setEnabled(false);
         ui->actionRefuseInvite->setEnabled(false);
-        ui->actionAcceptInvite->setVisible(false);
-        ui->actionRefuseInvite->setVisible(false);
         ui->actionUnblockUser->setEnabled(false);
 
         ui->pushButton_self_avatar->setEnabled(false);
         ui->lineEdit_search_roster->setEnabled(false);
-        ui->tableView_callsigns_groups->setEnabled(false);
-        ui->tableView_callsigns_pending->setEnabled(false);
-        ui->tableView_callsigns_blocked->setEnabled(false);
         ui->actionEdit_Nickname->setEnabled(false);
 
         QObject::connect(this, SIGNAL(updateClientVCard(const QString &, const QString &, const QString &, const QString &, const QByteArray &)),
@@ -156,9 +151,6 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
         QObject::connect(m_xmppClient, &QXmppClient::connected, this, [=]() {
             ui->pushButton_self_avatar->setEnabled(true);
             ui->lineEdit_search_roster->setEnabled(true);
-            ui->tableView_callsigns_groups->setEnabled(true);
-            ui->tableView_callsigns_pending->setEnabled(true);
-            ui->tableView_callsigns_blocked->setEnabled(true);
             ui->actionEdit_Nickname->setEnabled(true);
 
             const QString last_online_pres_str = gkDb->read_xmpp_settings(Settings::GkXmppCfg::XmppLastOnlinePresence);
@@ -178,9 +170,6 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
             ui->comboBox_current_status->setCurrentIndex(GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX); // Change presence status to 'offline' upon disconnection!
             ui->pushButton_self_avatar->setEnabled(false);
             ui->lineEdit_search_roster->setEnabled(false);
-            ui->tableView_callsigns_groups->setEnabled(false);
-            ui->tableView_callsigns_pending->setEnabled(false);
-            ui->tableView_callsigns_blocked->setEnabled(false);
             ui->actionEdit_Nickname->setEnabled(false);
 
             cleanupTables();
@@ -1550,8 +1539,6 @@ void GkXmppRosterDialog::enablePendingTableActions(const bool &enable)
     if (ui->tableView_callsigns_pending->isActiveWindow() && !m_pendingRosterData.isEmpty()) {
         ui->actionAcceptInvite->setEnabled(enable);
         ui->actionRefuseInvite->setEnabled(enable);
-        ui->actionAcceptInvite->setVisible(enable);
-        ui->actionRefuseInvite->setVisible(enable);
     }
 
     return;
