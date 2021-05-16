@@ -145,7 +145,7 @@ endif()
 # Nuspell
 # https://nuspell.github.io/
 #
-function(nuspell_deps)
+if (WIN32 OR MSYS OR MINGW)
 	find_package(Nuspell REQUIRED)
 	if (NUSPELL_FOUND)
 		include_directories(${NUSPELL_INCLUDE_DIRS})
@@ -154,10 +154,6 @@ function(nuspell_deps)
 	else()
 		message(FATAL_ERROR "The 'Nuspell' spelling and grammar checking libraries could not be found!")
 	endif(NUSPELL_FOUND)
-endfunction()
-
-if (WIN32 OR MSYS OR MINGW)
-	nuspell_deps()
 endif()
 
 find_package(QWT REQUIRED)
@@ -329,7 +325,14 @@ endif(ICUUC_FOUND)
 # https://nuspell.github.io/
 #
 if (LINUX)
-	nuspell_deps()
+	find_package(Nuspell REQUIRED)
+	if (NUSPELL_FOUND)
+		include_directories(${NUSPELL_INCLUDE_DIRS})
+		set(LIBS ${LIBS} ${NUSPELL_LIBRARIES})
+		message(STATUS "The 'Nuspell' spelling and grammar checking libraries have been configured!")
+	else()
+		message(FATAL_ERROR "The 'Nuspell' spelling and grammar checking libraries could not be found!")
+	endif(NUSPELL_FOUND)
 endif()
 
 find_package(OpenSSL REQUIRED)
