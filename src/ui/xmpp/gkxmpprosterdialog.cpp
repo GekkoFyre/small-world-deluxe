@@ -81,8 +81,9 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
         m_nuspellDict = std::move(nuspellDict);
         gkEventLogger = std::move(eventLogger);
 
+        m_initAppLaunch = true;
+        m_presenceManuallySet = false;
         ui->comboBox_current_status->setCurrentIndex(GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX);
-        ui->comboBox_current_status->setEnabled(false);
 
         //
         // Disable tab-ordering for the following widgets...
@@ -106,12 +107,20 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
         ui->actionRefuseInvite->setVisible(false);
         ui->actionUnblockUser->setEnabled(false);
 
+        ui->pushButton_self_avatar->setEnabled(false);
+        ui->lineEdit_search_roster->setEnabled(false);
+        ui->tableView_callsigns_groups->setEnabled(false);
+        ui->tableView_callsigns_pending->setEnabled(false);
+        ui->tableView_callsigns_blocked->setEnabled(false);
+
         QObject::connect(this, SIGNAL(updateClientVCard(const QString &, const QString &, const QString &, const QString &, const QByteArray &)),
                          m_xmppClient, SLOT(updateClientVCardForm(const QString &, const QString &, const QString &, const QString &, const QByteArray &)));
         QObject::connect(m_xmppClient, SIGNAL(savedClientVCard(const QByteArray &)), this, SLOT(recvClientAvatarImg(const QByteArray &)));
         QObject::connect(this, SIGNAL(updateClientAvatarImg(const QImage &)), this, SLOT(updateClientAvatar(const QImage &)));
         QObject::connect(m_xmppClient, SIGNAL(sendUserVCard(const QXmppVCardIq &)), this, SLOT(updateUserVCard(const QXmppVCardIq &)));
 
+        QObject::connect(this, SIGNAL(updateAvailableStatusType(const QXmppPresence::AvailableStatusType &)),
+                         this, SLOT(procAvailableStatusType(const QXmppPresence::AvailableStatusType &)));
         QObject::connect(this, SIGNAL(updateAvailableStatusType(const QXmppPresence::AvailableStatusType &)),
                          m_xmppClient, SLOT(modifyAvailableStatusType(const QXmppPresence::AvailableStatusType &)));
 
@@ -142,19 +151,32 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
         prefillAvailComboBox();
 
         QObject::connect(m_xmppClient, &QXmppClient::connected, this, [=]() {
-            //
-            // Change the presence status to the last used once connected!
-            ui->comboBox_current_status->setCurrentIndex(GK_XMPP_AVAIL_COMBO_AVAILABLE_IDX); // TODO: Implement the Google LevelDB functions for this!
             ui->pushButton_self_avatar->setEnabled(true);
             ui->lineEdit_search_roster->setEnabled(true);
+            ui->tableView_callsigns_groups->setEnabled(true);
+            ui->tableView_callsigns_pending->setEnabled(true);
+            ui->tableView_callsigns_blocked->setEnabled(true);
+
+            const QString last_online_pres_str = gkDb->read_xmpp_settings(Settings::GkXmppCfg::XmppLastOnlinePresence);
+            if (!last_online_pres_str.isEmpty()) {
+                if (!m_presenceManuallySet) {
+                    const qint32 last_online_pres_idx = last_online_pres_str.toInt();
+                    ui->comboBox_current_status->setCurrentIndex(last_online_pres_idx);
+                }
+            }
+
+            if (ui->comboBox_current_status->currentIndex() == GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX) {
+                ui->comboBox_current_status->setCurrentIndex(GK_XMPP_AVAIL_COMBO_AVAILABLE_IDX);
+            }
         });
 
         QObject::connect(m_xmppClient, &QXmppClient::disconnected, this, [=]() {
-            //
-            // Change the presence status to 'Offline / Unavailable' when disconnected!
-            ui->comboBox_current_status->setCurrentIndex(GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX);
+            ui->comboBox_current_status->setCurrentIndex(GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX); // Change presence status to 'offline' upon disconnection!
             ui->pushButton_self_avatar->setEnabled(false);
             ui->lineEdit_search_roster->setEnabled(false);
+            ui->tableView_callsigns_groups->setEnabled(false);
+            ui->tableView_callsigns_pending->setEnabled(false);
+            ui->tableView_callsigns_blocked->setEnabled(false);
         });
 
         //
@@ -233,6 +255,7 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
 
 GkXmppRosterDialog::~GkXmppRosterDialog()
 {
+    gkDb->write_xmpp_settings(QString::number(ui->comboBox_current_status->currentIndex()), Settings::GkXmppCfg::XmppLastOnlinePresence);
     delete ui;
 }
 
@@ -661,6 +684,7 @@ void GkXmppRosterDialog::prefillAvailComboBox()
     ui->comboBox_current_status->setItemIcon(GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX,
                                              QIcon(":/resources/contrib/images/raster/gekkofyre-networks/red-halftone-circle.png"));
 
+    ui->comboBox_current_status->setCurrentIndex(GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX);
     return;
 }
 
@@ -672,7 +696,7 @@ void GkXmppRosterDialog::prefillAvailComboBox()
  */
 void GkXmppRosterDialog::on_comboBox_current_status_currentIndexChanged(int index)
 {
-    if (!m_xmppClient->isConnected()) {
+    if (!m_initAppLaunch) {
         switch (index) {
             case GK_XMPP_AVAIL_COMBO_AVAILABLE_IDX: // Online / Available
                 emit updateAvailableStatusType(QXmppPresence::AvailableStatusType::Online);
@@ -695,8 +719,11 @@ void GkXmppRosterDialog::on_comboBox_current_status_currentIndexChanged(int inde
             default:
                 break;
         }
+
+        m_presenceManuallySet = true;
     }
 
+    m_initAppLaunch = false;
     return;
 }
 
@@ -1372,6 +1399,20 @@ void GkXmppRosterDialog::on_tableView_callsigns_blocked_doubleClicked(const QMod
     }
 
     enableBlockedTableActions(false);
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::procAvailableStatusType
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param stat_type
+ */
+void GkXmppRosterDialog::procAvailableStatusType(const QXmppPresence::AvailableStatusType &stat_type)
+{
+    if (!m_xmppClient->isConnected() && m_xmppClient->getNetworkState() != GkNetworkState::Connecting) {
+        reconnectToXmpp();
+    }
+
     return;
 }
 

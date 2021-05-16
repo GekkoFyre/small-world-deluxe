@@ -344,14 +344,6 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
             //
             // Request the client's own vCard from the server...
             m_vCardManager->requestClientVCard();
-
-            //
-            // Request vCard of all the bareJids in roster...
-            if (!m_rosterList.isEmpty()) {
-                for (const auto &entry: m_rosterList) {
-                    m_vCardManager->requestVCard(entry.bareJid);
-                }
-            }
         });
 
         QObject::connect(this, &QXmppClient::disconnected, this, [=]() {
@@ -852,21 +844,23 @@ void GkXmppClient::handleRosterReceived()
             switch (jidItem.subscriptionType()) {
                 case QXmppRosterIq::Item::None:
                     break;
-                case QXmppRosterIq::Item::From:
-                    break;
                 case QXmppRosterIq::Item::To:
+                case QXmppRosterIq::Item::From:
+                    m_rosterList.push_back(callsign);
+                    m_vCardManager->requestVCard(callsign.bareJid);
+                    emit retractSubscriptionRequest(callsign.bareJid);
+                    emit addJidToRoster(callsign.bareJid);
                     break;
                 case QXmppRosterIq::Item::Remove:
                     emit retractSubscriptionRequest(callsign.bareJid);
                     break;
                 case QXmppRosterIq::Item::NotSet:
+                    m_rosterList.push_back(callsign);
                     notifyNewSubscription(callsign.bareJid);
                     break;
                 default:
                     break;
             }
-
-            m_rosterList.push_back(callsign);
         }
     }
 

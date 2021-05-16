@@ -128,6 +128,8 @@ private slots:
     void on_tableView_callsigns_blocked_pressed(const QModelIndex &index);
     void on_tableView_callsigns_blocked_doubleClicked(const QModelIndex &index);
 
+    void procAvailableStatusType(const QXmppPresence::AvailableStatusType &stat_type);
+
     void recvUpdatePresenceTableViewModel();
     void recvUpdatePendingTableViewModel();
     void recvUpdateBlockedTableViewModel();
@@ -192,6 +194,8 @@ private:
     //
     GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
     QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign> m_rosterList;
+    bool m_initAppLaunch;
+    bool m_presenceManuallySet;
 
     //
     // VCard management
