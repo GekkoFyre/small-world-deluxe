@@ -151,7 +151,7 @@ public slots:
     //
     // vCard management
     void updateClientVCardForm(const QString &first_name, const QString &last_name, const QString &email,
-                               const QString &callsign, const QByteArray &avatar_pic);
+                               const QString &callsign, const QByteArray &avatar_pic, const QString &img_type);
 
 private slots:
     //
@@ -204,7 +204,7 @@ signals:
     //
     // vCard management
     void sendClientVCard(const QXmppVCardIq &vCard);
-    void savedClientVCard(const QByteArray &avatar_pic);
+    void savedClientVCard(const QByteArray &avatar_pic, const QString &img_type);
     void sendUserVCard(const QXmppVCardIq &vCard);
 
     //

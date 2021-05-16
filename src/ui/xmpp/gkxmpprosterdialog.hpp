@@ -93,9 +93,9 @@ private slots:
     //
     // VCard management
     //
-    void recvClientAvatarImg(const QByteArray &avatar_pic);
+    void recvClientAvatarImg(const QByteArray &avatar_pic, const QString &img_type);
     void defaultClientAvatarPlaceholder();
-    void updateClientAvatar(const QImage &avatar_img);
+    void updateClientAvatar(const QImage &avatar_img, const QString &img_type);
     void updateUserVCard(const QXmppVCardIq &vCard);
     void editNicknameLabel(const QString &value);
 
@@ -142,8 +142,8 @@ private slots:
 signals:
     void updateAvailableStatusType(const QXmppPresence::AvailableStatusType &stat_type);
     void updateClientVCard(const QString &first_name, const QString &last_name, const QString &email,
-                           const QString &callsign, const QByteArray &avatar_pic);
-    void updateClientAvatarImg(const QImage &avatar_img);
+                           const QString &callsign, const QByteArray &avatar_pic, const QString &img_type);
+    void updateClientAvatarImg(const QImage &avatar_img, const QString &img_type);
 
     void acceptSubscription(const QString &bareJid);
     void refuseSubscription(const QString &bareJid);
@@ -206,7 +206,8 @@ private:
     //
     // VCard management
     //
-    QByteArray m_clientAvatarImg;
+    QString m_clientAvatarImgSuffix;
+    QByteArray m_clientAvatarImgBa;
 
     void reconnectToXmpp();
     void launchMsgDlg(const QString &bareJid);

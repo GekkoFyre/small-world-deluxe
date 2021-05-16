@@ -47,6 +47,7 @@
 #include <QMenu>
 #include <QBuffer>
 #include <QRegExp>
+#include <QFileInfo>
 #include <QMessageBox>
 #include <QStringList>
 #include <QImageReader>
@@ -111,10 +112,10 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
         ui->lineEdit_search_roster->setEnabled(false);
         ui->actionEdit_Nickname->setEnabled(false);
 
-        QObject::connect(this, SIGNAL(updateClientVCard(const QString &, const QString &, const QString &, const QString &, const QByteArray &)),
-                         m_xmppClient, SLOT(updateClientVCardForm(const QString &, const QString &, const QString &, const QString &, const QByteArray &)));
-        QObject::connect(m_xmppClient, SIGNAL(savedClientVCard(const QByteArray &)), this, SLOT(recvClientAvatarImg(const QByteArray &)));
-        QObject::connect(this, SIGNAL(updateClientAvatarImg(const QImage &)), this, SLOT(updateClientAvatar(const QImage &)));
+        QObject::connect(this, SIGNAL(updateClientVCard(const QString &, const QString &, const QString &, const QString &, const QByteArray &, const QString &)),
+                         m_xmppClient, SLOT(updateClientVCardForm(const QString &, const QString &, const QString &, const QString &, const QByteArray &, const QString &)));
+        QObject::connect(m_xmppClient, SIGNAL(savedClientVCard(const QByteArray &, const QString &)), this, SLOT(recvClientAvatarImg(const QByteArray &, const QString &)));
+        QObject::connect(this, SIGNAL(updateClientAvatarImg(const QImage &, const QString &)), this, SLOT(updateClientAvatar(const QImage &, const QString &)));
         QObject::connect(m_xmppClient, SIGNAL(sendUserVCard(const QXmppVCardIq &)), this, SLOT(updateUserVCard(const QXmppVCardIq &)));
 
         QObject::connect(this, SIGNAL(updateAvailableStatusType(const QXmppPresence::AvailableStatusType &)),
@@ -826,13 +827,15 @@ void GkXmppRosterDialog::on_actionDelete_Contact_triggered()
  */
 void GkXmppRosterDialog::on_pushButton_self_avatar_clicked()
 {
-    QString filePath = m_xmppClient->obtainAvatarFilePath();
-    if (!filePath.isEmpty()) {
-        QByteArray avatarByteArray = m_xmppClient->processImgToByteArray(filePath);
-        emit updateClientVCard(gkConnDetails.firstName, gkConnDetails.lastName, gkConnDetails.email, gkConnDetails.nickname, avatarByteArray);
-        m_clientAvatarImg = avatarByteArray;
-        QImage avatar_img = QImage::fromData(m_clientAvatarImg);
-        emit updateClientAvatarImg(avatar_img);
+    QString path = m_xmppClient->obtainAvatarFilePath();
+    if (!path.isEmpty()) {
+        QFileInfo filePath = path;
+        QByteArray avatarByteArray = m_xmppClient->processImgToByteArray(filePath.path());
+        emit updateClientVCard(gkConnDetails.firstName, gkConnDetails.lastName, gkConnDetails.email, gkConnDetails.nickname, avatarByteArray, filePath.suffix());
+        m_clientAvatarImgSuffix = filePath.suffix();
+        m_clientAvatarImgBa = avatarByteArray;
+        QImage avatar_img = QImage::fromData(m_clientAvatarImgBa);
+        emit updateClientAvatarImg(avatar_img, filePath.suffix());
     }
 
     return;
@@ -877,18 +880,20 @@ void GkXmppRosterDialog::on_tableView_callsigns_blocked_customContextMenuRequest
  * @brief GkXmppRosterDialog::recvClientAvatarImg receives the current, set avatar image from the given XMPP server for
  * the logged-in client themselves.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param avatar_pic
+ * @param avatar_pic An avatar picture that the connecting client might wish to upload for others to see and identify them.
+ * @param img_type The image format that the avatar is originally within (i.e. PNG, JPEG, GIF, etc).
  */
-void GkXmppRosterDialog::recvClientAvatarImg(const QByteArray &avatar_pic)
+void GkXmppRosterDialog::recvClientAvatarImg(const QByteArray &avatar_pic, const QString &img_type)
 {
     if (!avatar_pic.isEmpty()) {
-        m_clientAvatarImg = avatar_pic;
+        m_clientAvatarImgSuffix = img_type;
+        m_clientAvatarImgBa = avatar_pic;
         QPointer<QBuffer> buffer = new QBuffer(this);
-        buffer->setData(m_clientAvatarImg);
+        buffer->setData(m_clientAvatarImgBa);
         buffer->open(QIODevice::ReadOnly);
         QImageReader imageReader(buffer);
         QImage image = imageReader.read();
-        emit updateClientAvatarImg(image);
+        emit updateClientAvatarImg(image, img_type);
     }
 
     return;
@@ -900,12 +905,12 @@ void GkXmppRosterDialog::recvClientAvatarImg(const QByteArray &avatar_pic)
  */
 void GkXmppRosterDialog::defaultClientAvatarPlaceholder()
 {
-    m_clientAvatarImg = gkDb->read_xmpp_settings(Settings::GkXmppCfg::XmppAvatarByteArray).toUtf8();
-    if (!m_clientAvatarImg.isEmpty()) {
-        QImage avatar_img = QImage::fromData(QByteArray::fromBase64(m_clientAvatarImg));
-        emit updateClientAvatarImg(avatar_img);
+    m_clientAvatarImgBa = gkDb->read_xmpp_settings(Settings::GkXmppCfg::XmppAvatarByteArray).toUtf8();
+    if (!m_clientAvatarImgBa.isEmpty()) {
+        QImage avatar_img = QImage::fromData(QByteArray::fromBase64(m_clientAvatarImgBa));
+        emit updateClientAvatarImg(avatar_img, m_clientAvatarImgSuffix);
     } else {
-        emit updateClientAvatarImg(QImage(":/resources/contrib/images/raster/gekkofyre-networks/CurioDraco/gekkofyre_drgn_server_thumb_transp.png"));
+        emit updateClientAvatarImg(QImage(":/resources/contrib/images/raster/gekkofyre-networks/CurioDraco/gekkofyre_drgn_server_thumb_transp.png"), "png");
     }
 
     return;
@@ -914,17 +919,18 @@ void GkXmppRosterDialog::defaultClientAvatarPlaceholder()
 /**
  * @brief GkXmppRosterDialog::updateClientAvatar
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param avatar_img
+ * @param avatar_img An avatar picture that the connecting client might wish to upload for others to see and identify them.
+ * @param img_type The image format that the avatar is originally within (i.e. PNG, JPEG, GIF, etc).
  */
-void GkXmppRosterDialog::updateClientAvatar(const QImage &avatar_img)
+void GkXmppRosterDialog::updateClientAvatar(const QImage &avatar_img, const QString &img_type)
 {
     ui->pushButton_self_avatar->setIcon(QIcon(QPixmap::fromImage(avatar_img)));
     ui->pushButton_self_avatar->setIconSize(QSize(150, 150));
 
     QByteArray ba;
     QPointer<QBuffer> buffer = new QBuffer(this);
-    buffer->open(QIODevice::WriteOnly);
-    avatar_img.save(buffer, "PNG");
+    buffer->open(QIODevice::ReadOnly);
+    avatar_img.save(buffer, img_type.toStdString().c_str());
     gkDb->write_xmpp_settings(buffer->readAll().toBase64(), Settings::GkXmppCfg::XmppAvatarByteArray);
     gkEventLogger->publishEvent(tr("vCard avatar has been registered for self-client."), GkSeverity::Debug, "", false, true, false, false);
 
@@ -1220,7 +1226,7 @@ void GkXmppRosterDialog::on_lineEdit_search_roster_returnPressed()
         QString newNickname = ui->lineEdit_search_roster->text();
         if (!newNickname.isEmpty()) {
             // Apply the new nickname!
-            emit updateClientVCard(gkConnDetails.firstName, gkConnDetails.lastName, gkConnDetails.email, newNickname, m_clientAvatarImg);
+            emit updateClientVCard(gkConnDetails.firstName, gkConnDetails.lastName, gkConnDetails.email, newNickname, m_clientAvatarImgBa, m_clientAvatarImgSuffix);
 
             //
             // Return back to default settings...

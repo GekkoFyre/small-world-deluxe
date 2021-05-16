@@ -969,13 +969,13 @@ void GkXmppClient::clientVCardReceived()
         if (!photo.isEmpty()) {
             QPointer<QBuffer> buffer = new QBuffer(this);
             buffer->setData(photo);
-            buffer->open(QIODevice::ReadOnly);
+            buffer->open(QIODevice::ReadWrite);
             QImageReader imageReader(buffer);
             QImage image = imageReader.read();
             if (image.save(QString::fromStdString(imgFileName.string()))) {
                 gkEventLogger->publishEvent(tr("vCard avatar saved to filesystem for self-client."),
                                             GkSeverity::Debug, "", false, true, false, false);
-                emit savedClientVCard(photo);
+                emit savedClientVCard(photo, m_clientVCard.photoType());
                 return;
             }
         }
@@ -1212,9 +1212,10 @@ void GkXmppClient::handleRegistrationForm(const QXmppRegisterIq &registerIq)
  * @param email The email address of the connecting client.
  * @param callsign The call-sign, as used in amateur radio, or otherwise a given nickname will do just fine.
  * @param avatar_pic An avatar picture that the connecting client might wish to upload for others to see and identify them.
+ * @param img_type The image format that the avatar is originally within (i.e. PNG, JPEG, GIF, etc).
  */
 void GkXmppClient::updateClientVCardForm(const QString &first_name, const QString &last_name, const QString &email,
-                                         const QString &callsign, const QByteArray &avatar_pic)
+                                         const QString &callsign, const QByteArray &avatar_pic, const QString &img_type)
 {
     QXmppVCardIq client_vcard;
     if (first_name.isEmpty()) {
@@ -1235,6 +1236,7 @@ void GkXmppClient::updateClientVCardForm(const QString &first_name, const QStrin
 
     if (!avatar_pic.isEmpty()) {
         client_vcard.setPhoto(avatar_pic);
+        client_vcard.setPhotoType(img_type);
     }
 
     emit sendClientVCard(client_vcard);
