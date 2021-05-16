@@ -83,6 +83,8 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
 
         m_initAppLaunch = true;
         m_presenceManuallySet = false;
+        m_rosterSearchEnabled = true;
+
         ui->comboBox_current_status->setCurrentIndex(GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX);
 
         //
@@ -112,6 +114,7 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
         ui->tableView_callsigns_groups->setEnabled(false);
         ui->tableView_callsigns_pending->setEnabled(false);
         ui->tableView_callsigns_blocked->setEnabled(false);
+        ui->actionEdit_Nickname->setEnabled(false);
 
         QObject::connect(this, SIGNAL(updateClientVCard(const QString &, const QString &, const QString &, const QString &, const QByteArray &)),
                          m_xmppClient, SLOT(updateClientVCardForm(const QString &, const QString &, const QString &, const QString &, const QByteArray &)));
@@ -156,6 +159,7 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
             ui->tableView_callsigns_groups->setEnabled(true);
             ui->tableView_callsigns_pending->setEnabled(true);
             ui->tableView_callsigns_blocked->setEnabled(true);
+            ui->actionEdit_Nickname->setEnabled(true);
 
             const QString last_online_pres_str = gkDb->read_xmpp_settings(Settings::GkXmppCfg::XmppLastOnlinePresence);
             if (!last_online_pres_str.isEmpty()) {
@@ -177,6 +181,9 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
             ui->tableView_callsigns_groups->setEnabled(false);
             ui->tableView_callsigns_pending->setEnabled(false);
             ui->tableView_callsigns_blocked->setEnabled(false);
+            ui->actionEdit_Nickname->setEnabled(false);
+
+            cleanupTables();
         });
 
         //
@@ -256,6 +263,8 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
 GkXmppRosterDialog::~GkXmppRosterDialog()
 {
     gkDb->write_xmpp_settings(QString::number(ui->comboBox_current_status->currentIndex()), Settings::GkXmppCfg::XmppLastOnlinePresence);
+    cleanupTables();
+
     delete ui;
 }
 
@@ -485,7 +494,7 @@ void GkXmppRosterDialog::removeRosterPresenceTable(const QString &bareJid)
 
         for (auto iter = m_presenceRosterData.begin(); iter != m_presenceRosterData.end();) {
             if (iter->bareJid == bareJid) {
-                m_presenceRosterData.erase(iter);
+                iter = m_presenceRosterData.erase(iter);
                 break;
             } else {
                 ++iter;
@@ -560,7 +569,7 @@ void GkXmppRosterDialog::removeRosterPendingTable(const QString &bareJid)
 
         for (auto iter = m_pendingRosterData.begin(); iter != m_pendingRosterData.end();) {
             if (iter->bareJid == bareJid) {
-                m_pendingRosterData.erase(iter);
+                iter = m_pendingRosterData.erase(iter);
                 break;
             } else {
                 ++iter;
@@ -609,7 +618,7 @@ void GkXmppRosterDialog::removeRosterBlockedTable(const QString &bareJid)
 
         for (auto iter = m_blockedRosterData.begin(); iter != m_blockedRosterData.end();) {
             if (iter->bareJid == bareJid) {
-                m_blockedRosterData.erase(iter);
+                iter = m_blockedRosterData.erase(iter);
                 break;
             } else {
                 ++iter;
@@ -1200,7 +1209,11 @@ void GkXmppRosterDialog::on_actionUnblockUser_triggered()
 void GkXmppRosterDialog::on_actionEdit_Nickname_triggered()
 {
     if (ui->lineEdit_search_roster->isEnabled()) {
+        m_rosterSearchEnabled = false;
         ui->lineEdit_search_roster->setVisible(true);
+        ui->lineEdit_search_roster->setPlaceholderText(tr("Change nickname..."));
+        ui->lineEdit_search_roster->setText(ui->label_self_nickname->text());
+        ui->lineEdit_search_roster->setFocus();
     }
 
     return;
@@ -1212,10 +1225,24 @@ void GkXmppRosterDialog::on_actionEdit_Nickname_triggered()
  */
 void GkXmppRosterDialog::on_lineEdit_search_roster_returnPressed()
 {
-    QString newNickname = ui->lineEdit_search_roster->text();
-    if (!newNickname.isEmpty()) {
-        // Apply the new nickname!
-        emit updateClientVCard(gkConnDetails.firstName, gkConnDetails.lastName, gkConnDetails.email, newNickname, m_clientAvatarImg);
+    if (!m_rosterSearchEnabled) {
+        //
+        // Nickname edit mode...
+        QString newNickname = ui->lineEdit_search_roster->text();
+        if (!newNickname.isEmpty()) {
+            // Apply the new nickname!
+            emit updateClientVCard(gkConnDetails.firstName, gkConnDetails.lastName, gkConnDetails.email, newNickname, m_clientAvatarImg);
+
+            //
+            // Return back to default settings...
+            ui->lineEdit_search_roster->setPlaceholderText(tr("Search..."));
+            ui->lineEdit_search_roster->clear();
+            m_rosterSearchEnabled = true;
+            return;
+        }
+    } else {
+        //
+        // Roster-search mode...
         return;
     }
 
@@ -1412,6 +1439,39 @@ void GkXmppRosterDialog::procAvailableStatusType(const QXmppPresence::AvailableS
     if (!m_xmppClient->isConnected() && m_xmppClient->getNetworkState() != GkNetworkState::Connecting) {
         reconnectToXmpp();
     }
+
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::cleanupTables is intended to clean-up all the various QTableViews upon exit of this QDialog, for
+ * example.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @see ui->tableView_callsigns_groups(), ui->tableView_callsigns_pending(), ui->tableView_callsigns_blocked()
+ */
+void GkXmppRosterDialog::cleanupTables()
+{
+    if (!m_presenceRosterData.isEmpty()) {
+        for (const auto &entry: m_presenceRosterData) {
+            removeRosterPresenceTable(entry.bareJid);
+        }
+    }
+
+    if (!m_pendingRosterData.isEmpty()) {
+        for (const auto &entry: m_pendingRosterData) {
+            removeRosterPendingTable(entry.bareJid);
+        }
+    }
+
+    if (!m_blockedRosterData.isEmpty()) {
+        for (const auto &entry: m_blockedRosterData) {
+            removeRosterBlockedTable(entry.bareJid);
+        }
+    }
+
+    m_presenceRosterData.clear();
+    m_pendingRosterData.clear();
+    m_blockedRosterData.clear();
 
     return;
 }

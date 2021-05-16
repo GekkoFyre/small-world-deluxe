@@ -172,7 +172,11 @@
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="lineEdit_search_roster"/>
+          <widget class="QLineEdit" name="lineEdit_search_roster">
+           <property name="placeholderText">
+            <string>Search...</string>
+           </property>
+          </widget>
          </item>
         </layout>
        </widget>

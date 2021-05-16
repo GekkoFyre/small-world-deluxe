@@ -1145,11 +1145,13 @@ void GkXmppClient::unblockUser(const QString &bareJid)
 {
     for (auto iter = m_blockList.begin(); iter != m_blockList.end(); ++iter) {
         if (*iter == bareJid) {
-            m_blockList.erase(iter);
+            iter = m_blockList.erase(iter);
             gkEventLogger->publishEvent(tr("User, \"%1\", has been successfully removed from the blocklist.").arg(bareJid),
                                         GkSeverity::Info, "", true, true, false, false);
 
             break;
+        } else {
+            ++iter;
         }
     }
 

@@ -136,7 +136,7 @@ void GkXmppRosterBlockedTableViewModel::removeData(const QString &bareJid)
     for (auto iter = m_data.begin(); iter != m_data.end();) {
         if (iter->bareJid == bareJid) {
             beginRemoveRows(QModelIndex(), (m_data.count() - 1), (m_data.count() - 1));
-            m_data.erase(iter);
+            iter = m_data.erase(iter);
             endRemoveRows();
         } else {
             ++iter;
