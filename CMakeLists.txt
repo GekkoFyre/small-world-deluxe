@@ -312,19 +312,19 @@ endif(Threads_FOUND)
 #
 # ICU
 #
-find_package(Icuuc REQUIRED)
-if (ICUUC_FOUND)
-    set(LIBS ${LIBS} ${ICUUC_LIBRARIES})
-    message(STATUS "The 'icuuc' library has been configured!")
+find_package(ICU REQUIRED COMPONENTS i18n data uc)
+if (ICU_FOUND)
+    set(LIBS ${LIBS} ${ICU_LIBRARIES})
+    message(STATUS "The 'ICU' set of internationalization libraries has been configured!")
 else()
-    message(FATAL_ERROR "The 'icuuc' library could not be found!")
-endif(ICUUC_FOUND)
+    message(FATAL_ERROR "The 'ICU' set of internationalization libraries culd not be found!")
+endif(ICU_FOUND)
 
 #
 # Nuspell
 # https://nuspell.github.io/
 #
-if (LINUX)
+if (LINUX AND !MSYS OR !MINGW)
 	find_package(Nuspell REQUIRED)
 	if (NUSPELL_FOUND)
 		include_directories(${NUSPELL_INCLUDE_DIRS})
@@ -922,7 +922,7 @@ if(GFYRE_BUILD_SHARED)
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
-target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} OpenSSL::SSL Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::Multimedia Qt5::SerialPort Qt5::PrintSupport Qt5::Xml Qt5::TextToSpeech Qt5::Test QXmpp::QXmpp Threads::Threads SingleApplication::SingleApplication sentry::sentry Opus::opus leveldb kissfft ${LIBS})
+target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} ICU::i18n ICU::data ICU::uc OpenSSL::SSL Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::Multimedia Qt5::SerialPort Qt5::PrintSupport Qt5::Xml Qt5::TextToSpeech Qt5::Test QXmpp::QXmpp Threads::Threads SingleApplication::SingleApplication sentry::sentry Opus::opus leveldb kissfft ${LIBS})
 
 qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)
 add_dependencies(galaxy resources)
