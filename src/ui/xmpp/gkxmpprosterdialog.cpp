@@ -446,16 +446,14 @@ void GkXmppRosterDialog::updateActions()
  * @param presence
  * @param bareJid
  * @param nickname
+ * @param row At which row you wish to insert the new data. Optional variable.
  */
-void GkXmppRosterDialog::insertRosterPresenceTable(const QIcon &presence, const QString &bareJid, const QString &nickname)
+void GkXmppRosterDialog::insertRosterPresenceTable(const QIcon &presence, const QString &bareJid, const QString &nickname,
+                                                   const qint32 row)
 {
     if (!bareJid.isEmpty() || !nickname.isEmpty()) {
         GkPresenceTableViewModel presence_model;
-        presence_model.presence = QIcon();
-        if (!presence.isNull()) {
-            presence_model.presence = presence;
-        }
-
+        presence_model.presence = presence;
         presence_model.bareJid = bareJid;
         presence_model.nickName = nickname;
         presence_model.added = false;
@@ -470,14 +468,16 @@ void GkXmppRosterDialog::insertRosterPresenceTable(const QIcon &presence, const 
  * @brief GkXmppRosterDialog::removeRosterPresenceTable
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param bareJid
+ * @return The row at which the data was removed from.
  */
-void GkXmppRosterDialog::removeRosterPresenceTable(const QString &bareJid)
+qint32 GkXmppRosterDialog::removeRosterPresenceTable(const QString &bareJid)
 {
     if (!bareJid.isEmpty()) {
         updateRoster();
+        qint32 ret = 0;
         for (const auto &entry: m_presenceRosterData) {
             if (entry.bareJid == bareJid) {
-                gkXmppPresenceTableViewModel->removeData(bareJid);
+                ret = gkXmppPresenceTableViewModel->removeData(bareJid);
                 break;
             }
         }
@@ -490,6 +490,26 @@ void GkXmppRosterDialog::removeRosterPresenceTable(const QString &bareJid)
                 ++iter;
             }
         }
+
+        return ret;
+    }
+
+    return -1;
+}
+
+/**
+ * @brief GkXmppRosterDialog::updateRosterPresenceTable
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param presence
+ * @param bareJid
+ * @param nickname
+ */
+void GkXmppRosterDialog::updateRosterPresenceTable(const QIcon &presence, const QString &bareJid, const QString &nickname)
+{
+    if (!bareJid.isEmpty()) {
+        updateRoster();
+        qint32 ret = removeRosterPresenceTable(bareJid);
+        insertRosterPresenceTable(presence, bareJid, nickname, ret);
     }
 
     return;
@@ -501,8 +521,10 @@ void GkXmppRosterDialog::removeRosterPresenceTable(const QString &bareJid)
  * @param online_status The requesting user's online availability and status (i.e. presence).
  * @param bareJid The requesting user's identification.
  * @param nickname The requesting user's nickname, if any.
+ * @param row At which row you wish to insert the new data. Optional variable.
  */
-void GkXmppRosterDialog::insertRosterPendingTable(const QIcon &online_status, const QString &bareJid, const QString &nickname)
+void GkXmppRosterDialog::insertRosterPendingTable(const QIcon &online_status, const QString &bareJid, const QString &nickname,
+                                                  const qint32 row)
 {
     insertRosterPendingTable(online_status, bareJid, nickname, QString());
     return;
@@ -515,9 +537,10 @@ void GkXmppRosterDialog::insertRosterPendingTable(const QIcon &online_status, co
  * @param bareJid The requesting user's identification.
  * @param nickname The requesting user's nickname, if any.
  * @param reason The requesting user's reason for making the subscription request.
+ * @param row At which row you wish to insert the new data. Optional variable.
  */
 void GkXmppRosterDialog::insertRosterPendingTable(const QIcon &online_status, const QString &bareJid, const QString &nickname,
-                                                  const QString &reason)
+                                                  const QString &reason, const qint32 row)
 {
     if (!bareJid.isEmpty() || !nickname.isEmpty()) {
         GkPendingTableViewModel pending_model;
@@ -545,14 +568,16 @@ void GkXmppRosterDialog::insertRosterPendingTable(const QIcon &online_status, co
  * @brief GkXmppRosterDialog::removeRosterPendingTable
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param bareJid
+ * @return The row at which the data was removed from.
  */
-void GkXmppRosterDialog::removeRosterPendingTable(const QString &bareJid)
+qint32 GkXmppRosterDialog::removeRosterPendingTable(const QString &bareJid)
 {
     if (!bareJid.isEmpty()) {
         updateRoster();
+        qint32 ret = 0;
         for (const auto &entry: m_pendingRosterData) {
             if (entry.bareJid == bareJid) {
-                gkXmppPendingTableViewModel->removeData(bareJid);
+                ret = gkXmppPendingTableViewModel->removeData(bareJid);
                 break;
             }
         }
@@ -565,6 +590,32 @@ void GkXmppRosterDialog::removeRosterPendingTable(const QString &bareJid)
                 ++iter;
             }
         }
+
+        return ret;
+    }
+
+    return -1;
+}
+
+/**
+ * @brief GkXmppRosterDialog::updateRosterPendingTable
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param online_status
+ * @param bareJid
+ * @param nickname
+ * @param reason
+ */
+void GkXmppRosterDialog::updateRosterPendingTable(const QIcon &online_status, const QString &bareJid, const QString &nickname, const QString &reason)
+{
+    if (!bareJid.isEmpty()) {
+        updateRoster();
+        qint32 ret = removeRosterPendingTable(bareJid);
+        if (!reason.isEmpty()) {
+            insertRosterPendingTable(online_status, bareJid, nickname, reason, ret);
+            return;
+        }
+
+        insertRosterPendingTable(online_status, bareJid, nickname, ret);
     }
 
     return;
@@ -575,8 +626,9 @@ void GkXmppRosterDialog::removeRosterPendingTable(const QString &bareJid)
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param bareJid
  * @param reason
+ * @param row At which row you wish to insert the new data. Optional variable.
  */
-void GkXmppRosterDialog::insertRosterBlockedTable(const QString &bareJid, const QString &reason)
+void GkXmppRosterDialog::insertRosterBlockedTable(const QString &bareJid, const QString &reason, const qint32 row)
 {
     if (bareJid.isEmpty()) {
         GkBlockedTableViewModel blocked_model;
@@ -594,14 +646,16 @@ void GkXmppRosterDialog::insertRosterBlockedTable(const QString &bareJid, const 
  * @brief GkXmppRosterDialog::removeRosterBlockedTable
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param bareJid
+ * @return The row at which the data was removed from.
  */
-void GkXmppRosterDialog::removeRosterBlockedTable(const QString &bareJid)
+qint32 GkXmppRosterDialog::removeRosterBlockedTable(const QString &bareJid)
 {
     if (!bareJid.isEmpty()) {
         updateRoster();
+        qint32 ret = 0;
         for (const auto &entry: m_blockedRosterData) {
             if (entry.bareJid == bareJid) {
-                gkXmppBlockedTableViewModel->removeData(bareJid);
+                ret = gkXmppBlockedTableViewModel->removeData(bareJid);
                 break;
             }
         }
@@ -614,6 +668,25 @@ void GkXmppRosterDialog::removeRosterBlockedTable(const QString &bareJid)
                 ++iter;
             }
         }
+
+        return ret;
+    }
+
+    return -1;
+}
+
+/**
+ * @brief GkXmppRosterDialog::updateRosterBlockedTable
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid
+ * @param reason
+ */
+void GkXmppRosterDialog::updateRosterBlockedTable(const QString &bareJid, const QString &reason)
+{
+    if (!bareJid.isEmpty()) {
+        updateRoster();
+        qint32 ret = removeRosterBlockedTable(bareJid);
+        insertRosterBlockedTable(bareJid, reason, ret);
     }
 
     return;
@@ -956,27 +1029,33 @@ void GkXmppRosterDialog::updateUserVCard(const QXmppVCardIq &vCard)
             if (!entry.bareJid.isEmpty()) {
                 if (entry.bareJid == presence_model.bareJid) {
                     presence_model.presence = m_xmppClient->presenceToIcon(entry.presence->availableStatusType());
-                    if (vCard.nickName().isEmpty() && vCard.email().isEmpty() && vCard.fullName().isEmpty()) {
-                        presence_model.nickName = "";
-                        break;
-                    }
-
                     if (!vCard.nickName().isEmpty()) {
                         presence_model.nickName = vCard.nickName();
-                        break;
                     }
 
-                    if (!vCard.email().isEmpty()) {
-                        presence_model.nickName = vCard.email();
-                        break;
-                    }
-
-                    if (!vCard.fullName().isEmpty()) {
+                    if (!vCard.fullName().isEmpty() && presence_model.nickName.isEmpty()) {
                         presence_model.nickName = vCard.fullName();
-                        break;
                     }
 
-                    break;
+                    if (!vCard.email().isEmpty() && presence_model.nickName.isEmpty()) {
+                        presence_model.nickName = vCard.email();
+                    }
+                }
+
+                if (!presence_model.nickName.isEmpty()) {
+                    for (auto iter = m_presenceRosterData.begin(); iter != m_presenceRosterData.end(); ++iter) {
+                        if (entry.bareJid == iter->bareJid) {
+                            iter->nickName = presence_model.nickName;
+                            updateRosterPresenceTable(m_xmppClient->presenceToIcon(m_xmppClient->getBareJidPresence(iter->bareJid).availableStatusType()), iter->bareJid, iter->nickName);
+                        }
+                    }
+
+                    for (auto iter = m_pendingRosterData.begin(); iter != m_pendingRosterData.end(); ++iter) {
+                        if (entry.bareJid == iter->bareJid) {
+                            iter->nickName = presence_model.nickName;
+                            updateRosterPendingTable(m_xmppClient->presenceToIcon(m_xmppClient->getBareJidPresence(iter->bareJid).availableStatusType()), iter->bareJid, iter->nickName);
+                        }
+                    }
                 }
             }
         }

@@ -104,13 +104,14 @@ public:
     void killConnectionFromServer(const bool &askReconnectPolicy = false);
     bool createMuc(const QString &room_name, const QString &room_subject, const QString &room_desc);
 
-    static bool isHostnameSame(const QString &hostname, const QString &comparison = "");
-    static QString getUsername(const QString &username);
-    static QString getHostname(const QString &username);
+    [[nodiscard]] static bool isHostnameSame(const QString &hostname, const QString &comparison = "");
+    [[nodiscard]] static QString getUsername(const QString &username);
+    [[nodiscard]] static QString getHostname(const QString &username);
+    [[nodiscard]] QXmppPresence getBareJidPresence(const QString &bareJid, const QString &resource = "");
     QString addHostname(const QString &username);
-    GekkoFyre::Network::GkXmpp::GkNetworkState getNetworkState() const;
-    bool isJidExist(const QString &bareJid);
-    bool isJidOnline(const QString &bareJid);
+    [[nodiscard]] GekkoFyre::Network::GkXmpp::GkNetworkState getNetworkState() const;
+    [[nodiscard]] bool isJidExist(const QString &bareJid);
+    [[nodiscard]] bool isJidOnline(const QString &bareJid);
 
     //
     // User, roster and presence details

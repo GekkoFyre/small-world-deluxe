@@ -176,13 +176,16 @@ private:
     QString m_bareJidPendingSel;    // Currently selected item for users pending subscription
     QString m_bareJidBlockedSel;    // Currently selected item for blocked users
 
-    void insertRosterPresenceTable(const QIcon &presence, const QString &bareJid, const QString &nickname);
-    void removeRosterPresenceTable(const QString &bareJid);
-    void insertRosterPendingTable(const QIcon &online_status, const QString &bareJid, const QString &nickname);
-    void insertRosterPendingTable(const QIcon &online_status, const QString &bareJid, const QString &nickname, const QString &reason);
-    void removeRosterPendingTable(const QString &bareJid);
-    void insertRosterBlockedTable(const QString &bareJid, const QString &reason);
-    void removeRosterBlockedTable(const QString &bareJid);
+    void insertRosterPresenceTable(const QIcon &presence, const QString &bareJid, const QString &nickname, const qint32 row = -1);
+    qint32 removeRosterPresenceTable(const QString &bareJid);
+    void updateRosterPresenceTable(const QIcon &presence, const QString &bareJid, const QString &nickname);
+    void insertRosterPendingTable(const QIcon &online_status, const QString &bareJid, const QString &nickname, const qint32 row = -1);
+    void insertRosterPendingTable(const QIcon &online_status, const QString &bareJid, const QString &nickname, const QString &reason, const qint32 row = -1);
+    qint32 removeRosterPendingTable(const QString &bareJid);
+    void updateRosterPendingTable(const QIcon &online_status, const QString &bareJid, const QString &nickname, const QString &reason = "");
+    void insertRosterBlockedTable(const QString &bareJid, const QString &reason, const qint32 row = -1);
+    qint32 removeRosterBlockedTable(const QString &bareJid);
+    void updateRosterBlockedTable(const QString &bareJid, const QString &reason);
     void updateActions();
 
     //
