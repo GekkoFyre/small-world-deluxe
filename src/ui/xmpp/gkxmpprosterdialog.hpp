@@ -93,9 +93,9 @@ private slots:
     //
     // VCard management
     //
-    void recvClientAvatarImg(const QByteArray &avatar_pic);
+    void recvClientAvatarImg(const QByteArray &avatar_pic, const QString &img_type);
     void defaultClientAvatarPlaceholder();
-    void updateClientAvatar(const QImage &avatar_img);
+    void updateClientAvatar(const QImage &avatar_img, const QString &img_type);
     void updateUserVCard(const QXmppVCardIq &vCard);
     void editNicknameLabel(const QString &value);
 
@@ -142,8 +142,8 @@ private slots:
 signals:
     void updateAvailableStatusType(const QXmppPresence::AvailableStatusType &stat_type);
     void updateClientVCard(const QString &first_name, const QString &last_name, const QString &email,
-                           const QString &callsign, const QByteArray &avatar_pic);
-    void updateClientAvatarImg(const QImage &avatar_img);
+                           const QString &callsign, const QByteArray &avatar_pic, const QString &img_type);
+    void updateClientAvatarImg(const QImage &avatar_img, const QString &img_type);
 
     void acceptSubscription(const QString &bareJid);
     void refuseSubscription(const QString &bareJid);
@@ -176,13 +176,16 @@ private:
     QString m_bareJidPendingSel;    // Currently selected item for users pending subscription
     QString m_bareJidBlockedSel;    // Currently selected item for blocked users
 
-    void insertRosterPresenceTable(const QIcon &presence, const QString &bareJid, const QString &nickname);
-    void removeRosterPresenceTable(const QString &bareJid);
-    void insertRosterPendingTable(const QIcon &online_status, const QString &bareJid, const QString &nickname);
-    void insertRosterPendingTable(const QIcon &online_status, const QString &bareJid, const QString &nickname, const QString &reason);
-    void removeRosterPendingTable(const QString &bareJid);
-    void insertRosterBlockedTable(const QString &bareJid, const QString &reason);
-    void removeRosterBlockedTable(const QString &bareJid);
+    void insertRosterPresenceTable(const QIcon &presence, const QString &bareJid, const QString &nickname, const qint32 row = -1);
+    qint32 removeRosterPresenceTable(const QString &bareJid);
+    void updateRosterPresenceTable(const QIcon &presence, const QString &bareJid, const QString &nickname);
+    void insertRosterPendingTable(const QIcon &online_status, const QString &bareJid, const QString &nickname, const qint32 row = -1);
+    void insertRosterPendingTable(const QIcon &online_status, const QString &bareJid, const QString &nickname, const QString &reason, const qint32 row = -1);
+    qint32 removeRosterPendingTable(const QString &bareJid);
+    void updateRosterPendingTable(const QIcon &online_status, const QString &bareJid, const QString &nickname, const QString &reason = "");
+    void insertRosterBlockedTable(const QString &bareJid, const QString &reason, const qint32 row = -1);
+    qint32 removeRosterBlockedTable(const QString &bareJid);
+    void updateRosterBlockedTable(const QString &bareJid, const QString &reason);
     void updateActions();
 
     //
@@ -206,7 +209,8 @@ private:
     //
     // VCard management
     //
-    QByteArray m_clientAvatarImg;
+    QString m_clientAvatarImgSuffix;
+    QByteArray m_clientAvatarImgBa;
 
     void reconnectToXmpp();
     void launchMsgDlg(const QString &bareJid);

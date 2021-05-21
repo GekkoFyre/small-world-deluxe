@@ -47,6 +47,7 @@
 #include <QMenu>
 #include <QBuffer>
 #include <QRegExp>
+#include <QFileInfo>
 #include <QMessageBox>
 #include <QStringList>
 #include <QImageReader>
@@ -105,21 +106,16 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
         ui->actionBlockPendingUser->setEnabled(false);
         ui->actionAcceptInvite->setEnabled(false);
         ui->actionRefuseInvite->setEnabled(false);
-        ui->actionAcceptInvite->setVisible(false);
-        ui->actionRefuseInvite->setVisible(false);
         ui->actionUnblockUser->setEnabled(false);
 
         ui->pushButton_self_avatar->setEnabled(false);
         ui->lineEdit_search_roster->setEnabled(false);
-        ui->tableView_callsigns_groups->setEnabled(false);
-        ui->tableView_callsigns_pending->setEnabled(false);
-        ui->tableView_callsigns_blocked->setEnabled(false);
         ui->actionEdit_Nickname->setEnabled(false);
 
-        QObject::connect(this, SIGNAL(updateClientVCard(const QString &, const QString &, const QString &, const QString &, const QByteArray &)),
-                         m_xmppClient, SLOT(updateClientVCardForm(const QString &, const QString &, const QString &, const QString &, const QByteArray &)));
-        QObject::connect(m_xmppClient, SIGNAL(savedClientVCard(const QByteArray &)), this, SLOT(recvClientAvatarImg(const QByteArray &)));
-        QObject::connect(this, SIGNAL(updateClientAvatarImg(const QImage &)), this, SLOT(updateClientAvatar(const QImage &)));
+        QObject::connect(this, SIGNAL(updateClientVCard(const QString &, const QString &, const QString &, const QString &, const QByteArray &, const QString &)),
+                         m_xmppClient, SLOT(updateClientVCardForm(const QString &, const QString &, const QString &, const QString &, const QByteArray &, const QString &)));
+        QObject::connect(m_xmppClient, SIGNAL(savedClientVCard(const QByteArray &, const QString &)), this, SLOT(recvClientAvatarImg(const QByteArray &, const QString &)));
+        QObject::connect(this, SIGNAL(updateClientAvatarImg(const QImage &, const QString &)), this, SLOT(updateClientAvatar(const QImage &, const QString &)));
         QObject::connect(m_xmppClient, SIGNAL(sendUserVCard(const QXmppVCardIq &)), this, SLOT(updateUserVCard(const QXmppVCardIq &)));
 
         QObject::connect(this, SIGNAL(updateAvailableStatusType(const QXmppPresence::AvailableStatusType &)),
@@ -156,9 +152,6 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
         QObject::connect(m_xmppClient, &QXmppClient::connected, this, [=]() {
             ui->pushButton_self_avatar->setEnabled(true);
             ui->lineEdit_search_roster->setEnabled(true);
-            ui->tableView_callsigns_groups->setEnabled(true);
-            ui->tableView_callsigns_pending->setEnabled(true);
-            ui->tableView_callsigns_blocked->setEnabled(true);
             ui->actionEdit_Nickname->setEnabled(true);
 
             const QString last_online_pres_str = gkDb->read_xmpp_settings(Settings::GkXmppCfg::XmppLastOnlinePresence);
@@ -178,9 +171,6 @@ GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPo
             ui->comboBox_current_status->setCurrentIndex(GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX); // Change presence status to 'offline' upon disconnection!
             ui->pushButton_self_avatar->setEnabled(false);
             ui->lineEdit_search_roster->setEnabled(false);
-            ui->tableView_callsigns_groups->setEnabled(false);
-            ui->tableView_callsigns_pending->setEnabled(false);
-            ui->tableView_callsigns_blocked->setEnabled(false);
             ui->actionEdit_Nickname->setEnabled(false);
 
             cleanupTables();
@@ -456,16 +446,14 @@ void GkXmppRosterDialog::updateActions()
  * @param presence
  * @param bareJid
  * @param nickname
+ * @param row At which row you wish to insert the new data. Optional variable.
  */
-void GkXmppRosterDialog::insertRosterPresenceTable(const QIcon &presence, const QString &bareJid, const QString &nickname)
+void GkXmppRosterDialog::insertRosterPresenceTable(const QIcon &presence, const QString &bareJid, const QString &nickname,
+                                                   const qint32 row)
 {
     if (!bareJid.isEmpty() || !nickname.isEmpty()) {
         GkPresenceTableViewModel presence_model;
-        presence_model.presence = QIcon();
-        if (!presence.isNull()) {
-            presence_model.presence = presence;
-        }
-
+        presence_model.presence = presence;
         presence_model.bareJid = bareJid;
         presence_model.nickName = nickname;
         presence_model.added = false;
@@ -480,14 +468,16 @@ void GkXmppRosterDialog::insertRosterPresenceTable(const QIcon &presence, const 
  * @brief GkXmppRosterDialog::removeRosterPresenceTable
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param bareJid
+ * @return The row at which the data was removed from.
  */
-void GkXmppRosterDialog::removeRosterPresenceTable(const QString &bareJid)
+qint32 GkXmppRosterDialog::removeRosterPresenceTable(const QString &bareJid)
 {
     if (!bareJid.isEmpty()) {
         updateRoster();
+        qint32 ret = 0;
         for (const auto &entry: m_presenceRosterData) {
             if (entry.bareJid == bareJid) {
-                gkXmppPresenceTableViewModel->removeData(bareJid);
+                ret = gkXmppPresenceTableViewModel->removeData(bareJid);
                 break;
             }
         }
@@ -500,6 +490,26 @@ void GkXmppRosterDialog::removeRosterPresenceTable(const QString &bareJid)
                 ++iter;
             }
         }
+
+        return ret;
+    }
+
+    return -1;
+}
+
+/**
+ * @brief GkXmppRosterDialog::updateRosterPresenceTable
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param presence
+ * @param bareJid
+ * @param nickname
+ */
+void GkXmppRosterDialog::updateRosterPresenceTable(const QIcon &presence, const QString &bareJid, const QString &nickname)
+{
+    if (!bareJid.isEmpty()) {
+        updateRoster();
+        qint32 ret = removeRosterPresenceTable(bareJid);
+        insertRosterPresenceTable(presence, bareJid, nickname, ret);
     }
 
     return;
@@ -511,8 +521,10 @@ void GkXmppRosterDialog::removeRosterPresenceTable(const QString &bareJid)
  * @param online_status The requesting user's online availability and status (i.e. presence).
  * @param bareJid The requesting user's identification.
  * @param nickname The requesting user's nickname, if any.
+ * @param row At which row you wish to insert the new data. Optional variable.
  */
-void GkXmppRosterDialog::insertRosterPendingTable(const QIcon &online_status, const QString &bareJid, const QString &nickname)
+void GkXmppRosterDialog::insertRosterPendingTable(const QIcon &online_status, const QString &bareJid, const QString &nickname,
+                                                  const qint32 row)
 {
     insertRosterPendingTable(online_status, bareJid, nickname, QString());
     return;
@@ -525,9 +537,10 @@ void GkXmppRosterDialog::insertRosterPendingTable(const QIcon &online_status, co
  * @param bareJid The requesting user's identification.
  * @param nickname The requesting user's nickname, if any.
  * @param reason The requesting user's reason for making the subscription request.
+ * @param row At which row you wish to insert the new data. Optional variable.
  */
 void GkXmppRosterDialog::insertRosterPendingTable(const QIcon &online_status, const QString &bareJid, const QString &nickname,
-                                                  const QString &reason)
+                                                  const QString &reason, const qint32 row)
 {
     if (!bareJid.isEmpty() || !nickname.isEmpty()) {
         GkPendingTableViewModel pending_model;
@@ -555,14 +568,16 @@ void GkXmppRosterDialog::insertRosterPendingTable(const QIcon &online_status, co
  * @brief GkXmppRosterDialog::removeRosterPendingTable
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param bareJid
+ * @return The row at which the data was removed from.
  */
-void GkXmppRosterDialog::removeRosterPendingTable(const QString &bareJid)
+qint32 GkXmppRosterDialog::removeRosterPendingTable(const QString &bareJid)
 {
     if (!bareJid.isEmpty()) {
         updateRoster();
+        qint32 ret = 0;
         for (const auto &entry: m_pendingRosterData) {
             if (entry.bareJid == bareJid) {
-                gkXmppPendingTableViewModel->removeData(bareJid);
+                ret = gkXmppPendingTableViewModel->removeData(bareJid);
                 break;
             }
         }
@@ -575,6 +590,32 @@ void GkXmppRosterDialog::removeRosterPendingTable(const QString &bareJid)
                 ++iter;
             }
         }
+
+        return ret;
+    }
+
+    return -1;
+}
+
+/**
+ * @brief GkXmppRosterDialog::updateRosterPendingTable
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param online_status
+ * @param bareJid
+ * @param nickname
+ * @param reason
+ */
+void GkXmppRosterDialog::updateRosterPendingTable(const QIcon &online_status, const QString &bareJid, const QString &nickname, const QString &reason)
+{
+    if (!bareJid.isEmpty()) {
+        updateRoster();
+        qint32 ret = removeRosterPendingTable(bareJid);
+        if (!reason.isEmpty()) {
+            insertRosterPendingTable(online_status, bareJid, nickname, reason, ret);
+            return;
+        }
+
+        insertRosterPendingTable(online_status, bareJid, nickname, ret);
     }
 
     return;
@@ -585,8 +626,9 @@ void GkXmppRosterDialog::removeRosterPendingTable(const QString &bareJid)
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param bareJid
  * @param reason
+ * @param row At which row you wish to insert the new data. Optional variable.
  */
-void GkXmppRosterDialog::insertRosterBlockedTable(const QString &bareJid, const QString &reason)
+void GkXmppRosterDialog::insertRosterBlockedTable(const QString &bareJid, const QString &reason, const qint32 row)
 {
     if (bareJid.isEmpty()) {
         GkBlockedTableViewModel blocked_model;
@@ -604,14 +646,16 @@ void GkXmppRosterDialog::insertRosterBlockedTable(const QString &bareJid, const 
  * @brief GkXmppRosterDialog::removeRosterBlockedTable
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param bareJid
+ * @return The row at which the data was removed from.
  */
-void GkXmppRosterDialog::removeRosterBlockedTable(const QString &bareJid)
+qint32 GkXmppRosterDialog::removeRosterBlockedTable(const QString &bareJid)
 {
     if (!bareJid.isEmpty()) {
         updateRoster();
+        qint32 ret = 0;
         for (const auto &entry: m_blockedRosterData) {
             if (entry.bareJid == bareJid) {
-                gkXmppBlockedTableViewModel->removeData(bareJid);
+                ret = gkXmppBlockedTableViewModel->removeData(bareJid);
                 break;
             }
         }
@@ -624,6 +668,25 @@ void GkXmppRosterDialog::removeRosterBlockedTable(const QString &bareJid)
                 ++iter;
             }
         }
+
+        return ret;
+    }
+
+    return -1;
+}
+
+/**
+ * @brief GkXmppRosterDialog::updateRosterBlockedTable
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid
+ * @param reason
+ */
+void GkXmppRosterDialog::updateRosterBlockedTable(const QString &bareJid, const QString &reason)
+{
+    if (!bareJid.isEmpty()) {
+        updateRoster();
+        qint32 ret = removeRosterBlockedTable(bareJid);
+        insertRosterBlockedTable(bareJid, reason, ret);
     }
 
     return;
@@ -837,13 +900,15 @@ void GkXmppRosterDialog::on_actionDelete_Contact_triggered()
  */
 void GkXmppRosterDialog::on_pushButton_self_avatar_clicked()
 {
-    QString filePath = m_xmppClient->obtainAvatarFilePath();
-    if (!filePath.isEmpty()) {
-        QByteArray avatarByteArray = m_xmppClient->processImgToByteArray(filePath);
-        emit updateClientVCard(gkConnDetails.firstName, gkConnDetails.lastName, gkConnDetails.email, gkConnDetails.nickname, avatarByteArray);
-        m_clientAvatarImg = avatarByteArray;
-        QImage avatar_img = QImage::fromData(m_clientAvatarImg);
-        emit updateClientAvatarImg(avatar_img);
+    QString path = m_xmppClient->obtainAvatarFilePath();
+    if (!path.isEmpty()) {
+        QFileInfo filePath = path;
+        QByteArray avatarByteArray = m_xmppClient->processImgToByteArray(filePath.path());
+        emit updateClientVCard(gkConnDetails.firstName, gkConnDetails.lastName, gkConnDetails.email, gkConnDetails.nickname, avatarByteArray, filePath.suffix());
+        m_clientAvatarImgSuffix = filePath.suffix();
+        m_clientAvatarImgBa = avatarByteArray;
+        QImage avatar_img = QImage::fromData(m_clientAvatarImgBa);
+        emit updateClientAvatarImg(avatar_img, filePath.suffix());
     }
 
     return;
@@ -888,18 +953,20 @@ void GkXmppRosterDialog::on_tableView_callsigns_blocked_customContextMenuRequest
  * @brief GkXmppRosterDialog::recvClientAvatarImg receives the current, set avatar image from the given XMPP server for
  * the logged-in client themselves.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param avatar_pic
+ * @param avatar_pic An avatar picture that the connecting client might wish to upload for others to see and identify them.
+ * @param img_type The image format that the avatar is originally within (i.e. PNG, JPEG, GIF, etc).
  */
-void GkXmppRosterDialog::recvClientAvatarImg(const QByteArray &avatar_pic)
+void GkXmppRosterDialog::recvClientAvatarImg(const QByteArray &avatar_pic, const QString &img_type)
 {
     if (!avatar_pic.isEmpty()) {
-        m_clientAvatarImg = avatar_pic;
+        m_clientAvatarImgSuffix = img_type;
+        m_clientAvatarImgBa = avatar_pic;
         QPointer<QBuffer> buffer = new QBuffer(this);
-        buffer->setData(m_clientAvatarImg);
+        buffer->setData(m_clientAvatarImgBa);
         buffer->open(QIODevice::ReadOnly);
         QImageReader imageReader(buffer);
         QImage image = imageReader.read();
-        emit updateClientAvatarImg(image);
+        emit updateClientAvatarImg(image, img_type);
     }
 
     return;
@@ -911,12 +978,12 @@ void GkXmppRosterDialog::recvClientAvatarImg(const QByteArray &avatar_pic)
  */
 void GkXmppRosterDialog::defaultClientAvatarPlaceholder()
 {
-    m_clientAvatarImg = gkDb->read_xmpp_settings(Settings::GkXmppCfg::XmppAvatarByteArray).toUtf8();
-    if (!m_clientAvatarImg.isEmpty()) {
-        QImage avatar_img = QImage::fromData(QByteArray::fromBase64(m_clientAvatarImg));
-        emit updateClientAvatarImg(avatar_img);
+    m_clientAvatarImgBa = gkDb->read_xmpp_settings(Settings::GkXmppCfg::XmppAvatarByteArray).toUtf8();
+    if (!m_clientAvatarImgBa.isEmpty()) {
+        QImage avatar_img = QImage::fromData(QByteArray::fromBase64(m_clientAvatarImgBa));
+        emit updateClientAvatarImg(avatar_img, m_clientAvatarImgSuffix);
     } else {
-        emit updateClientAvatarImg(QImage(":/resources/contrib/images/raster/gekkofyre-networks/CurioDraco/gekkofyre_drgn_server_thumb_transp.png"));
+        emit updateClientAvatarImg(QImage(":/resources/contrib/images/raster/gekkofyre-networks/CurioDraco/gekkofyre_drgn_server_thumb_transp.png"), "png");
     }
 
     return;
@@ -925,17 +992,18 @@ void GkXmppRosterDialog::defaultClientAvatarPlaceholder()
 /**
  * @brief GkXmppRosterDialog::updateClientAvatar
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param avatar_img
+ * @param avatar_img An avatar picture that the connecting client might wish to upload for others to see and identify them.
+ * @param img_type The image format that the avatar is originally within (i.e. PNG, JPEG, GIF, etc).
  */
-void GkXmppRosterDialog::updateClientAvatar(const QImage &avatar_img)
+void GkXmppRosterDialog::updateClientAvatar(const QImage &avatar_img, const QString &img_type)
 {
     ui->pushButton_self_avatar->setIcon(QIcon(QPixmap::fromImage(avatar_img)));
     ui->pushButton_self_avatar->setIconSize(QSize(150, 150));
 
     QByteArray ba;
     QPointer<QBuffer> buffer = new QBuffer(this);
-    buffer->open(QIODevice::WriteOnly);
-    avatar_img.save(buffer, "PNG");
+    buffer->open(QIODevice::ReadOnly);
+    avatar_img.save(buffer, img_type.toStdString().c_str());
     gkDb->write_xmpp_settings(buffer->readAll().toBase64(), Settings::GkXmppCfg::XmppAvatarByteArray);
     gkEventLogger->publishEvent(tr("vCard avatar has been registered for self-client."), GkSeverity::Debug, "", false, true, false, false);
 
@@ -961,27 +1029,33 @@ void GkXmppRosterDialog::updateUserVCard(const QXmppVCardIq &vCard)
             if (!entry.bareJid.isEmpty()) {
                 if (entry.bareJid == presence_model.bareJid) {
                     presence_model.presence = m_xmppClient->presenceToIcon(entry.presence->availableStatusType());
-                    if (vCard.nickName().isEmpty() && vCard.email().isEmpty() && vCard.fullName().isEmpty()) {
-                        presence_model.nickName = "";
-                        break;
-                    }
-
                     if (!vCard.nickName().isEmpty()) {
                         presence_model.nickName = vCard.nickName();
-                        break;
                     }
 
-                    if (!vCard.email().isEmpty()) {
-                        presence_model.nickName = vCard.email();
-                        break;
-                    }
-
-                    if (!vCard.fullName().isEmpty()) {
+                    if (!vCard.fullName().isEmpty() && presence_model.nickName.isEmpty()) {
                         presence_model.nickName = vCard.fullName();
-                        break;
                     }
 
-                    break;
+                    if (!vCard.email().isEmpty() && presence_model.nickName.isEmpty()) {
+                        presence_model.nickName = vCard.email();
+                    }
+                }
+
+                if (!presence_model.nickName.isEmpty()) {
+                    for (auto iter = m_presenceRosterData.begin(); iter != m_presenceRosterData.end(); ++iter) {
+                        if (entry.bareJid == iter->bareJid) {
+                            iter->nickName = presence_model.nickName;
+                            updateRosterPresenceTable(m_xmppClient->presenceToIcon(m_xmppClient->getBareJidPresence(iter->bareJid).availableStatusType()), iter->bareJid, iter->nickName);
+                        }
+                    }
+
+                    for (auto iter = m_pendingRosterData.begin(); iter != m_pendingRosterData.end(); ++iter) {
+                        if (entry.bareJid == iter->bareJid) {
+                            iter->nickName = presence_model.nickName;
+                            updateRosterPendingTable(m_xmppClient->presenceToIcon(m_xmppClient->getBareJidPresence(iter->bareJid).availableStatusType()), iter->bareJid, iter->nickName);
+                        }
+                    }
                 }
             }
         }
@@ -1231,7 +1305,7 @@ void GkXmppRosterDialog::on_lineEdit_search_roster_returnPressed()
         QString newNickname = ui->lineEdit_search_roster->text();
         if (!newNickname.isEmpty()) {
             // Apply the new nickname!
-            emit updateClientVCard(gkConnDetails.firstName, gkConnDetails.lastName, gkConnDetails.email, newNickname, m_clientAvatarImg);
+            emit updateClientVCard(gkConnDetails.firstName, gkConnDetails.lastName, gkConnDetails.email, newNickname, m_clientAvatarImgBa, m_clientAvatarImgSuffix);
 
             //
             // Return back to default settings...
@@ -1550,8 +1624,6 @@ void GkXmppRosterDialog::enablePendingTableActions(const bool &enable)
     if (ui->tableView_callsigns_pending->isActiveWindow() && !m_pendingRosterData.isEmpty()) {
         ui->actionAcceptInvite->setEnabled(enable);
         ui->actionRefuseInvite->setEnabled(enable);
-        ui->actionAcceptInvite->setVisible(enable);
-        ui->actionRefuseInvite->setVisible(enable);
     }
 
     return;
