@@ -129,11 +129,14 @@ void GkXmppRosterBlockedTableViewModel::insertData(const GkBlockedTableViewModel
  * @brief GkXmppRosterBlockedTableViewModel::removeData
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param event
+ * @return The row at which the data was removed from.
  */
-void GkXmppRosterBlockedTableViewModel::removeData(const QString &bareJid)
+qint32 GkXmppRosterBlockedTableViewModel::removeData(const QString &bareJid)
 {
     dataBatchMutex.lock();
+    qint32 counter = 0;
     for (auto iter = m_data.begin(); iter != m_data.end();) {
+        ++counter;
         if (iter->bareJid == bareJid) {
             beginRemoveRows(QModelIndex(), (m_data.count() - 1), (m_data.count() - 1));
             iter = m_data.erase(iter);
@@ -148,7 +151,7 @@ void GkXmppRosterBlockedTableViewModel::removeData(const QString &bareJid)
     emit dataChanged(top, bottom);
 
     dataBatchMutex.unlock();
-    return;
+    return counter;
 }
 
 /**

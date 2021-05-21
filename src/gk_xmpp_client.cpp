@@ -378,6 +378,8 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
                     }
                 }
             }
+
+            m_rosterList.clear(); // Clear the roster-list upon disconnection from given XMPP server!
         });
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(tr("An issue has occurred within the XMPP subsystem. Error: %1").arg(QString::fromStdString(e.what())).toStdString()));
@@ -521,6 +523,28 @@ QString GkXmppClient::getHostname(const QString &username)
     }
 
     return QString();
+}
+
+/**
+ * @brief GkXmppClient::getBareJidPresence returns the presence of the given resource of the given bareJid.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid The user in question.
+ * @param resource The given server resource to utilize in the lookup.
+ * @return A QXmppPresence stanza.
+ */
+QXmppPresence GkXmppClient::getBareJidPresence(const QString &bareJid, const QString &resource)
+{
+    switch (m_connDetails.server.type) {
+        case GkXmpp::GekkoFyre:
+            return m_rosterManager->getPresence(bareJid, General::xmppResourceGFyre);
+        case GkXmpp::Custom:
+            return m_rosterManager->getPresence(bareJid, resource);
+        case GkXmpp::Unknown:
+            return m_rosterManager->getPresence(bareJid, resource);
+        default:
+            throw std::invalid_argument(tr("Invalid argument provided with attempted lookup for presence status of user, \"%1\"!")
+                                        .arg(getUsername(bareJid)).toStdString());
+    }
 }
 
 /**
@@ -881,10 +905,20 @@ void GkXmppClient::vCardReceived(const QXmppVCardIq &vCard)
         gkEventLogger->publishEvent(tr("vCard received for user, \"%1\"").arg(bareJid), GkSeverity::Debug,
                                     "", false, true, false, false);
 
+        sys::error_code ec;
         fs::path imgFileName = fs::path(vcard_save_path.string() + native_slash.string() + bareJid.toStdString() + ".png");
         fs::path xmlFileName = fs::path(vcard_save_path.string() + native_slash.string() + bareJid.toStdString() + ".xml");
-        GkXmppVCard vCardTmp;
 
+        // TODO: How should we deal with `imgFileName`?
+        if (fs::exists(xmlFileName, ec)) {
+            fs::remove(xmlFileName, ec);
+        }
+
+        if (ec.failed()) {
+            throw std::runtime_error(ec.message());
+        }
+
+        GkXmppVCard vCardTmp;
         QFile xmlFile(QString::fromStdString(xmlFileName.string()));
         if (xmlFile.open(QIODevice::ReadWrite)) {
             QXmlStreamWriter stream(&xmlFile);
@@ -969,13 +1003,13 @@ void GkXmppClient::clientVCardReceived()
         if (!photo.isEmpty()) {
             QPointer<QBuffer> buffer = new QBuffer(this);
             buffer->setData(photo);
-            buffer->open(QIODevice::ReadOnly);
+            buffer->open(QIODevice::ReadWrite);
             QImageReader imageReader(buffer);
             QImage image = imageReader.read();
             if (image.save(QString::fromStdString(imgFileName.string()))) {
                 gkEventLogger->publishEvent(tr("vCard avatar saved to filesystem for self-client."),
                                             GkSeverity::Debug, "", false, true, false, false);
-                emit savedClientVCard(photo);
+                emit savedClientVCard(photo, m_clientVCard.photoType());
                 return;
             }
         }
@@ -1212,29 +1246,31 @@ void GkXmppClient::handleRegistrationForm(const QXmppRegisterIq &registerIq)
  * @param email The email address of the connecting client.
  * @param callsign The call-sign, as used in amateur radio, or otherwise a given nickname will do just fine.
  * @param avatar_pic An avatar picture that the connecting client might wish to upload for others to see and identify them.
+ * @param img_type The image format that the avatar is originally within (i.e. PNG, JPEG, GIF, etc).
  */
 void GkXmppClient::updateClientVCardForm(const QString &first_name, const QString &last_name, const QString &email,
-                                         const QString &callsign, const QByteArray &avatar_pic)
+                                         const QString &callsign, const QByteArray &avatar_pic, const QString &img_type)
 {
     QXmppVCardIq client_vcard;
-    if (first_name.isEmpty()) {
+    if (!first_name.isEmpty()) {
         client_vcard.setFirstName(first_name);
     }
 
-    if (last_name.isEmpty()) {
+    if (!last_name.isEmpty()) {
         client_vcard.setLastName(last_name);
     }
 
-    if (callsign.isEmpty()) {
+    if (!callsign.isEmpty()) {
         client_vcard.setNickName(callsign);
     }
 
-    if (email.isEmpty()) {
+    if (!email.isEmpty()) {
         client_vcard.setEmail(email);
     }
 
     if (!avatar_pic.isEmpty()) {
         client_vcard.setPhoto(avatar_pic);
+        client_vcard.setPhotoType(img_type);
     }
 
     emit sendClientVCard(client_vcard);
