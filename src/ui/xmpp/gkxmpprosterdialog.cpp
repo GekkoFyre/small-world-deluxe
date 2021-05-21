@@ -307,8 +307,6 @@ void GkXmppRosterDialog::subscriptionRequestRecv(const QString &bareJid, const Q
             if (entry.bareJid == bareJid) {
                 if (!reason.isEmpty()) {
                     insertRosterPendingTable(m_xmppClient->presenceToIcon(entry.presence->availableStatusType()), bareJid, entry.vCard.nickname);
-                } else {
-                    insertRosterPendingTable(m_xmppClient->presenceToIcon(entry.presence->availableStatusType()), bareJid, entry.vCard.nickname);
                 }
 
                 gkEventLogger->publishEvent(tr("A user of %1 with the nickname/callsign, \"%2\", is requesting to share presence details with you!")
@@ -365,9 +363,6 @@ void GkXmppRosterDialog::addJidToRoster(const QString &bareJid)
                 if (m_xmppClient->isJidOnline(bareJid)) {
                     insertRosterPresenceTable(m_xmppClient->presenceToIcon(entry.presence->availableStatusType()),
                                               bareJid, entry.vCard.nickname);
-                } else {
-                    insertRosterPresenceTable(m_xmppClient->presenceToIcon(entry.presence->availableStatusType()),
-                                              bareJid, entry.vCard.nickname);
                 }
 
                 break;
@@ -390,8 +385,6 @@ void GkXmppRosterDialog::delJidFromRoster(const QString &bareJid)
         for (const auto &entry: m_rosterList) {
             if (entry.bareJid == bareJid) {
                 if (m_xmppClient->isJidOnline(bareJid)) {
-                    removeRosterPresenceTable(bareJid);
-                } else {
                     removeRosterPresenceTable(bareJid);
                 }
 
