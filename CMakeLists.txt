@@ -324,7 +324,7 @@ endif(ICU_FOUND)
 # Nuspell
 # https://nuspell.github.io/
 #
-if (LINUX AND !MSYS OR !MINGW)
+if (LINUX OR !MSYS OR !MINGW)
 	find_package(Nuspell REQUIRED)
 	if (NUSPELL_FOUND)
 		include_directories(${NUSPELL_INCLUDE_DIRS})
