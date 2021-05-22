@@ -88,8 +88,8 @@ option(GFYRE_BUILD_SHARED "Build Small World Deluxe as a shared library/package.
 option(GFYRE_SWORLD_DBG_VERBOSITY "Enable DEBUG verbosity for Small World Deluxe and its use of third-party libraries throughout the program itself." OFF)
 option(GFYRE_BOOST_CPP_DBG "Enable the use of debug libraries for the Boost C++ dependency!" OFF)
 
-option(ENBL_VALGRIND_SUPPORT "Allows for the use of Valgrind memory analysis on the application, thereby disabling certain, otherwise needed features that enhance the user-experience." OFF)
-option(ENBL_CLANG_ADDRESS_SANITIZER "LLVM's AddressSanitizer is a fast memory error detector. Clang support must be enabled for this to work." OFF)
+option(GFYRE_ENBL_VALGRIND_SUPPORT "Allows for the use of Valgrind memory analysis on the application, thereby disabling certain, otherwise needed features that enhance the user-experience." OFF)
+option(GFYRE_ENBL_CLANG_ADDRESS_SANITIZER "LLVM's AddressSanitizer is a fast memory error detector. Clang support must be enabled for this to work." OFF)
 
 option(BUILD_CODEC2_SUPPORT "Enable support for the 'Codec2' open source speech codec library." OFF)
 
@@ -918,6 +918,7 @@ endif(GFYRE_BUILD_STATIC)
 # Build Small World Deluxe as a shared package!
 #
 if(GFYRE_BUILD_SHARED)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC" )
     add_library(galaxy SHARED ${QM_FILES} ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP} ${GALAXY_HAMLIB_CPP} ${GALAXY_WINTOAST_HPP} ${GALAXY_WINTOAST_CPP})
     
     # add_library(galaxy_fort STATIC ${GALAXY_WSJTX_QRA64_FORT})
@@ -973,6 +974,13 @@ SET(CMAKE_CXX_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG")
 SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
 
 if(MSYS OR MINGW OR LINUX)
+    #
+    # https://clang.llvm.org/docs/AddressSanitizer.html
+    #
+    if(GFYRE_ENBL_CLANG_ADDRESS_SANITIZER)
+        set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+        set (CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_STATIC_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address -lasan -static-libasan")
+    endif()
     if (CMAKE_CXX_COMPILER_ID MATCHES "clang")
         #
         # Using regular Clang or AppleClang
@@ -984,13 +992,6 @@ if(MSYS OR MINGW OR LINUX)
             set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
         endif()
         add_compile_options(-Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-missing-field-initializers)
-        
-        #
-        # https://clang.llvm.org/docs/AddressSanitizer.html
-        #
-        if(ENBL_CLANG_ADDRESS_SANITIZER)
-            set(CMAKE_BUILD_TYPE "ASAN")
-        endif()
     elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
         #
         # Using GCC

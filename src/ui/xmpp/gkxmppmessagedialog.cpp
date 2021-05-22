@@ -44,6 +44,7 @@
 #include <utility>
 #include <QIcon>
 #include <QPixmap>
+#include <QKeyEvent>
 
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
