@@ -43,25 +43,41 @@
 
 #include "src/defines.hpp"
 #include "src/gk_xmpp_client.hpp"
+#include "src/gk_string_funcs.hpp"
+#include "src/models/tableview/gk_xmpp_recv_msgs_model.hpp"
 #include <nuspell/finder.hxx>
 #include <nuspell/dictionary.hxx>
 #include <memory>
+#include <QEvent>
 #include <QString>
 #include <QObject>
 #include <QDialog>
 #include <QPointer>
+#include <QStringList>
 
 namespace Ui {
 class GkXmppMessageDialog;
 }
+
+class GkPlainTextKeyEnter : public QObject {
+    Q_OBJECT
+
+protected:
+    bool eventFilter(QObject *obj, QEvent *event);
+
+signals:
+    void submitMsgEnterKey();
+
+};
 
 class GkXmppMessageDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit GkXmppMessageDialog(std::shared_ptr<nuspell::Dictionary> nuspellDict, QPointer<GekkoFyre::GkXmppClient> xmppClient,
-                                 const QString &bareJid, QWidget *parent = nullptr);
+    explicit GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> stringFuncs, std::shared_ptr<nuspell::Dictionary> nuspellDict,
+                                 const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details, QPointer<GekkoFyre::GkXmppClient> xmppClient,
+                                 const QStringList &bareJids, QWidget *parent = nullptr);
     ~GkXmppMessageDialog();
 
 private slots:
@@ -70,11 +86,21 @@ private slots:
     void on_toolButton_insert_clicked();
     void on_toolButton_attach_file_clicked();
     void on_toolButton_view_roster_clicked();
-    void on_textBrowser_recv_msg_dlg_customContextMenuRequested(const QPoint &pos);
+    void on_tableView_recv_msg_dlg_customContextMenuRequested(const QPoint &pos);
+    void on_textEdit_tx_msg_dialog_customContextMenuRequested(const QPoint &pos);
     void on_lineEdit_message_search_returnPressed();
+
+    void updateInterface(const QStringList &bareJids);
+    void determineNickname();
+    void submitMsgEnterKey();
 
 private:
     Ui::GkXmppMessageDialog *ui;
+
+    //
+    // QTableView and related
+    //
+    QPointer<GekkoFyre::GkXmppRecvMsgsTableViewModel> gkXmppRecvMsgsTableViewModel;
 
     //
     // Spell-checking, dictionaries, etc.
@@ -82,9 +108,16 @@ private:
     std::shared_ptr<nuspell::Dictionary> m_nuspellDict;
 
     //
+    // Miscellaneous
+    //
+    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
+
+    //
     // QXmpp and XMPP related
     //
-    QPointer<GekkoFyre::GkXmppClient> gkXmppClient;
-    QString m_bareJid;
+    GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
+    QPointer<GekkoFyre::GkXmppClient> m_xmppClient;
+    QStringList m_bareJids;
+    QString m_clientNickname;
 };
 

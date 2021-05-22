@@ -281,6 +281,9 @@
                     <property name="verticalScrollBarPolicy">
                      <enum>Qt::ScrollBarAlwaysOff</enum>
                     </property>
+                    <property name="selectionBehavior">
+                     <enum>QAbstractItemView::SelectRows</enum>
+                    </property>
                    </widget>
                   </item>
                  </layout>
@@ -334,6 +337,12 @@
                    <widget class="QTableView" name="tableView_callsigns_pending">
                     <property name="contextMenuPolicy">
                      <enum>Qt::CustomContextMenu</enum>
+                    </property>
+                    <property name="verticalScrollBarPolicy">
+                     <enum>Qt::ScrollBarAlwaysOff</enum>
+                    </property>
+                    <property name="selectionBehavior">
+                     <enum>QAbstractItemView::SelectRows</enum>
                     </property>
                    </widget>
                   </item>
@@ -391,6 +400,9 @@
                     </property>
                     <property name="verticalScrollBarPolicy">
                      <enum>Qt::ScrollBarAlwaysOff</enum>
+                    </property>
+                    <property name="selectionBehavior">
+                     <enum>QAbstractItemView::SelectRows</enum>
                     </property>
                    </widget>
                   </item>

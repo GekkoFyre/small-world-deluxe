@@ -284,6 +284,11 @@ namespace GekkoFyre {
 #define GK_XMPP_ROSTER_BLOCKED_TABLEVIEW_MODEL_REASON_IDX (1)
 #define GK_XMPP_ROSTER_BLOCKED_TABLEVIEW_MODEL_TOTAL_IDX (2)
 
+#define GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_DATETIME_IDX (0)
+#define GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_NICKNAME_IDX (1)
+#define GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_MSG_IDX (2)
+#define GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_TOTAL_IDX (3)
+
 // Hamlib related
 //
 #define GK_HAMLIB_DEFAULT_TIMEOUT (3000)                // The default timeout value for Hamlib, measured in milliseconds.
@@ -499,6 +504,13 @@ namespace Network {
             QString bareJid;
             QString reason;
             bool added;
+        };
+
+        struct GkRecvMsgsTableViewModel {
+            QDateTime timestamp;
+            QString bareJid;
+            QString nickName;
+            QString message;
         };
     }
 }

@@ -68,14 +68,16 @@ using namespace Network;
 using namespace GkXmpp;
 using namespace Security;
 
-GkXmppRosterDialog::GkXmppRosterDialog(const GkUserConn &connection_details, QPointer<GekkoFyre::GkXmppClient> xmppClient,
-                                       QPointer<GekkoFyre::GkLevelDb> database, std::shared_ptr<nuspell::Dictionary> nuspellDict,
-                                       QPointer<GkEventLogger> eventLogger, const bool &skipConnectionCheck, QWidget *parent) :
-                                       shownXmppPreviewNotice(false), QDialog(parent), ui(new Ui::GkXmppRosterDialog)
+GkXmppRosterDialog::GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFuncs, const GkUserConn &connection_details,
+                                       QPointer<GekkoFyre::GkXmppClient> xmppClient, QPointer<GekkoFyre::GkLevelDb> database,
+                                       std::shared_ptr<nuspell::Dictionary> nuspellDict, QPointer<GkEventLogger> eventLogger,
+                                       const bool &skipConnectionCheck, QWidget *parent) : shownXmppPreviewNotice(false),
+                                       QDialog(parent), ui(new Ui::GkXmppRosterDialog)
 {
     ui->setupUi(this);
 
     try {
+        gkStringFuncs = std::move(stringFuncs);
         gkConnDetails = connection_details;
         m_xmppClient = std::move(xmppClient);
         gkDb = std::move(database);
@@ -703,11 +705,31 @@ void GkXmppRosterDialog::reconnectToXmpp()
 /**
  * @brief GkXmppRosterDialog::launchMsgDlg
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param bareJid The user we are in communique with!
+ * @param bareJid The user we are in communiqué with!
  */
 void GkXmppRosterDialog::launchMsgDlg(const QString &bareJid)
 {
-    gkXmppMsgDlg = new GkXmppMessageDialog(m_nuspellDict, m_xmppClient, bareJid, this);
+    QStringList bareJids;
+    bareJids << bareJid;
+    gkXmppMsgDlg = new GkXmppMessageDialog(gkStringFuncs, m_nuspellDict, gkConnDetails, m_xmppClient, bareJids, this);
+    if (gkXmppMsgDlg) {
+        if (!gkXmppMsgDlg->isVisible()) {
+            gkXmppMsgDlg->setWindowFlags(Qt::Window);
+            gkXmppMsgDlg->show();
+        }
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::launchMsgDlg
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid A list of all the users we are in communiqué with!
+ */
+void GkXmppRosterDialog::launchMsgDlg(const QStringList &bareJids)
+{
+    gkXmppMsgDlg = new GkXmppMessageDialog(gkStringFuncs, m_nuspellDict, gkConnDetails, m_xmppClient, bareJids, this);
     if (gkXmppMsgDlg) {
         if (!gkXmppMsgDlg->isVisible()) {
             gkXmppMsgDlg->setWindowFlags(Qt::Window);
@@ -1435,7 +1457,7 @@ void GkXmppRosterDialog::on_tableView_callsigns_groups_doubleClicked(const QMode
         enablePresenceTableActions(true);
         QString bareJid = m_xmppClient->addHostname(username);
         if (m_xmppClient->isJidExist(bareJid)) {
-            launchMsgDlg(username);
+            launchMsgDlg(bareJid);
             return;
         }
 
@@ -1485,7 +1507,7 @@ void GkXmppRosterDialog::on_tableView_callsigns_blocked_doubleClicked(const QMod
         enableBlockedTableActions(true);
         QString bareJid = m_xmppClient->addHostname(username);
         if (m_xmppClient->isJidExist(bareJid)) {
-            launchMsgDlg(username);
+            launchMsgDlg(bareJid);
             return;
         }
 

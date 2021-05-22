@@ -138,18 +138,15 @@
            <number>7</number>
           </property>
           <item>
-           <widget class="QTextBrowser" name="textBrowser_recv_msg_dlg">
+           <widget class="QTableView" name="tableView_recv_msg_dlg">
             <property name="contextMenuPolicy">
              <enum>Qt::CustomContextMenu</enum>
             </property>
             <property name="horizontalScrollBarPolicy">
              <enum>Qt::ScrollBarAlwaysOff</enum>
             </property>
-            <property name="autoFormatting">
-             <set>QTextEdit::AutoBulletList</set>
-            </property>
-            <property name="acceptRichText">
-             <bool>false</bool>
+            <property name="selectionBehavior">
+             <enum>QAbstractItemView::SelectRows</enum>
             </property>
            </widget>
           </item>
@@ -283,6 +280,9 @@
           </item>
           <item>
            <widget class="QTextEdit" name="textEdit_tx_msg_dialog">
+            <property name="contextMenuPolicy">
+             <enum>Qt::CustomContextMenu</enum>
+            </property>
             <property name="horizontalScrollBarPolicy">
              <enum>Qt::ScrollBarAlwaysOff</enum>
             </property>
@@ -314,7 +314,6 @@
   <tabstop>toolButton_font_reset</tabstop>
   <tabstop>toolButton_insert</tabstop>
   <tabstop>toolButton_attach_file</tabstop>
-  <tabstop>textBrowser_recv_msg_dlg</tabstop>
   <tabstop>tabWidget_chat_window</tabstop>
  </tabstops>
  <resources/>

@@ -56,6 +56,7 @@
 #include "src/gk_logger.hpp"
 #include "src/gk_modem.hpp"
 #include "src/gk_system.hpp"
+#include "src/gk_string_funcs.hpp"
 #include "src/gk_text_to_speech.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
