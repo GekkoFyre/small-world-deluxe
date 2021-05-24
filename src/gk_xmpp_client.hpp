@@ -52,6 +52,7 @@
 #include <qxmpp/QXmppGlobal.h>
 #include <qxmpp/QXmppClient.h>
 #include <qxmpp/QXmppLogger.h>
+#include <qxmpp/QXmppMessage.h>
 #include <qxmpp/QXmppVCardIq.h>
 #include <qxmpp/QXmppDataForm.h>
 #include <qxmpp/QXmppPresence.h>
@@ -108,6 +109,7 @@ public:
     [[nodiscard]] static QString getUsername(const QString &username);
     [[nodiscard]] static QString getHostname(const QString &username);
     [[nodiscard]] QXmppPresence getBareJidPresence(const QString &bareJid, const QString &resource = "");
+    [[nodiscard]] QString getJidNickname(const QString &bareJid);
     QString addHostname(const QString &username);
     [[nodiscard]] GekkoFyre::Network::GkXmpp::GkNetworkState getNetworkState() const;
     [[nodiscard]] bool isJidExist(const QString &bareJid);
@@ -144,6 +146,7 @@ public slots:
     void blockUser(const QString &bareJid);
     void unblockUser(const QString &bareJid);
     void subscribeToUser(const QString &bareJid, const QString &reason = "");
+    void unsubscribeToUser(const QString &bareJid, const QString &reason = "");
 
     //
     // Registration management
@@ -153,6 +156,10 @@ public slots:
     // vCard management
     void updateClientVCardForm(const QString &first_name, const QString &last_name, const QString &email,
                                const QString &callsign, const QByteArray &avatar_pic, const QString &img_type);
+
+    //
+    // Message handling
+    void sendXmppMsg(const QXmppMessage &msg);
 
 private slots:
     //
@@ -186,6 +193,10 @@ private slots:
 
     void handleSslGreeting();
 
+    //
+    // Message handling
+    void recvXmppMsg(const QXmppMessage &message);
+
 signals:
     //
     // User, roster and presence details
@@ -212,6 +223,10 @@ signals:
     // Event & Logging management
     void sendError(const QString &error);
     void sendError(const QXmppClient::Error &error);
+
+    //
+    // Message handling
+    void recvXmppMsgUpdate(const QXmppMessage &message);
 
 private:
     QPointer<GekkoFyre::GkLevelDb> gkDb;

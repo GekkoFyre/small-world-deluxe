@@ -308,7 +308,7 @@ void GkXmppRosterDialog::subscriptionRequestRecv(const QString &bareJid, const Q
         for (const auto &entry: m_rosterList) {
             if (entry.bareJid == bareJid) {
                 if (!reason.isEmpty()) {
-                    insertRosterPendingTable(m_xmppClient->presenceToIcon(entry.presence->availableStatusType()), bareJid, entry.vCard.nickname);
+                    insertRosterPendingTable(m_xmppClient->presenceToIcon(entry.presence->availableStatusType()), bareJid, entry.vCard.nickName());
                 }
 
                 gkEventLogger->publishEvent(tr("A user of %1 with the nickname/callsign, \"%2\", is requesting to share presence details with you!")
@@ -364,7 +364,7 @@ void GkXmppRosterDialog::addJidToRoster(const QString &bareJid)
             if (entry.bareJid == bareJid) {
                 if (m_xmppClient->isJidOnline(bareJid)) {
                     insertRosterPresenceTable(m_xmppClient->presenceToIcon(entry.presence->availableStatusType()),
-                                              bareJid, entry.vCard.nickname);
+                                              bareJid, entry.vCard.nickName());
                 }
 
                 break;
@@ -386,10 +386,7 @@ void GkXmppRosterDialog::delJidFromRoster(const QString &bareJid)
     if (!bareJid.isEmpty()) {
         for (const auto &entry: m_rosterList) {
             if (entry.bareJid == bareJid) {
-                if (m_xmppClient->isJidOnline(bareJid)) {
-                    removeRosterPresenceTable(bareJid);
-                }
-
+                removeRosterPresenceTable(bareJid);
                 break;
             }
         }
@@ -407,6 +404,7 @@ void GkXmppRosterDialog::delJidFromRoster(const QString &bareJid)
  */
 void GkXmppRosterDialog::changeRosterJid(const QString &bareJid)
 {
+    delJidFromRoster(bareJid);
     return;
 }
 
@@ -711,7 +709,7 @@ void GkXmppRosterDialog::launchMsgDlg(const QString &bareJid)
 {
     QStringList bareJids;
     bareJids << bareJid;
-    gkXmppMsgDlg = new GkXmppMessageDialog(gkStringFuncs, m_spellChecker, gkConnDetails, m_xmppClient, bareJids, this);
+    gkXmppMsgDlg = new GkXmppMessageDialog(gkStringFuncs, gkEventLogger, m_spellChecker, gkConnDetails, m_xmppClient, bareJids, this);
     if (gkXmppMsgDlg) {
         if (!gkXmppMsgDlg->isVisible()) {
             gkXmppMsgDlg->setWindowFlags(Qt::Window);
@@ -729,7 +727,7 @@ void GkXmppRosterDialog::launchMsgDlg(const QString &bareJid)
  */
 void GkXmppRosterDialog::launchMsgDlg(const QStringList &bareJids)
 {
-    gkXmppMsgDlg = new GkXmppMessageDialog(gkStringFuncs, m_spellChecker, gkConnDetails, m_xmppClient, bareJids, this);
+    gkXmppMsgDlg = new GkXmppMessageDialog(gkStringFuncs, gkEventLogger, m_spellChecker, gkConnDetails, m_xmppClient, bareJids, this);
     if (gkXmppMsgDlg) {
         if (!gkXmppMsgDlg->isVisible()) {
             gkXmppMsgDlg->setWindowFlags(Qt::Window);
@@ -902,9 +900,31 @@ void GkXmppRosterDialog::on_actionEdit_Contact_triggered()
  */
 void GkXmppRosterDialog::on_actionDelete_Contact_triggered()
 {
-    QModelIndex idx = ui->tableView_callsigns_groups->indexAt(ui->actionDelete_Contact->data().toPoint());
-    QVariant data = ui->tableView_callsigns_groups->model()->data(idx);
-    QString text = data.toString();
+    QModelIndex index = ui->tableView_callsigns_groups->indexAt(ui->actionDelete_Contact->data().toPoint());
+    QModelIndex retrieve = gkXmppPresenceTableViewModel->index(index.row(), GK_XMPP_ROSTER_PRESENCE_TABLEVIEW_MODEL_BAREJID_IDX, QModelIndex());
+    QVariant data = ui->tableView_callsigns_groups->model()->data(retrieve);
+    QString username = data.toString();
+
+    if (!username.isEmpty()) {
+        QMessageBox msgBox;
+        msgBox.setParent(nullptr);
+        msgBox.setWindowTitle(tr("Are you sure?"));
+        msgBox.setText(tr("Unsubscribe from presence for user, \"%1\"?").arg(username));
+        msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+        msgBox.setDefaultButton(QMessageBox::Ok);
+        msgBox.setIcon(QMessageBox::Icon::Information);
+        int ret = msgBox.exec();
+
+        switch (ret) {
+            case QMessageBox::Ok:
+                m_xmppClient->unsubscribeToUser(m_xmppClient->addHostname(username));
+                break;
+            case QMessageBox::Cancel:
+                break;
+            default:
+                break;
+        }
+    }
 
     return;
 }

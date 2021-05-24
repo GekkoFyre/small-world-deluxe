@@ -73,7 +73,7 @@ public:
     [[nodiscard]] QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
 
 public slots:
-    void insertData(const GekkoFyre::Network::GkXmpp::GkRecvMsgsTableViewModel &data);
+    void insertData(const QString &bareJid, const QString &msg);
     qint32 removeData(const QDateTime &timestamp, const QString &bareJid);
 
 private:

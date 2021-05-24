@@ -50,6 +50,7 @@
 #include <boost/filesystem.hpp>
 #include <qwt/qwt_interval.h>
 #include <qxmpp/QXmppGlobal.h>
+#include <qxmpp/QXmppVCardIq.h>
 #include <qxmpp/QXmppPresence.h>
 #include <qxmpp/QXmppRosterIq.h>
 #include <map>
@@ -447,19 +448,10 @@ namespace Network {
             quint16 port;
         };
 
-        struct GkXmppVCard {
-            QString firstName;
-            QString lastName;
-            QString email;
-            QString nickname;
-            QString fullName;
-            QByteArray avatarImg;
-        };
-
         struct GkXmppCallsign {
             GkHost server;
             QString bareJid;
-            GkXmppVCard vCard;
+            QXmppVCardIq vCard;
             std::shared_ptr<QXmppPresence> presence;
             QXmppRosterIq::Item::SubscriptionType subStatus;
         };
@@ -506,10 +498,10 @@ namespace Network {
         };
 
         struct GkRecvMsgsTableViewModel {
-            QDateTime timestamp;
-            QString bareJid;
-            QString nickName;
-            QString message;
+            QDateTime timestamp;    // The current Date & Time, in UTC+0 format.
+            QString bareJid;        // The bareJid this data belongs towards.
+            QString nickName;       // The nickname of the given bareJid.
+            QString message;        // The message the user wishes to send.
         };
     }
 }

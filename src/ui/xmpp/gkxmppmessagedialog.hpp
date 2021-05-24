@@ -46,6 +46,8 @@
 #include "src/gk_string_funcs.hpp"
 #include "src/models/tableview/gk_xmpp_recv_msgs_model.hpp"
 #include <QtSpell.hpp>
+#include <qxmpp/QXmppMessage.h>
+#include <queue>
 #include <memory>
 #include <QEvent>
 #include <QString>
@@ -74,9 +76,9 @@ class GkXmppMessageDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<QtSpell::TextEditChecker> spellChecking,
-                                 const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details, QPointer<GekkoFyre::GkXmppClient> xmppClient,
-                                 const QStringList &bareJids, QWidget *parent = nullptr);
+    explicit GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                                 QPointer<QtSpell::TextEditChecker> spellChecking, const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
+                                 QPointer<GekkoFyre::GkXmppClient> xmppClient, const QStringList &bareJids, QWidget *parent = nullptr);
     ~GkXmppMessageDialog();
 
 private slots:
@@ -92,6 +94,13 @@ private slots:
     void updateInterface(const QStringList &bareJids);
     void determineNickname();
     void submitMsgEnterKey();
+    void updateToolbarStatus(const QString &value);
+
+    void recvXmppMsg(const QXmppMessage &msg);
+
+signals:
+    void updateToolbar(const QString &value);
+    void sendXmppMsg(const QXmppMessage &msg);
 
 private:
     Ui::GkXmppMessageDialog *ui;
@@ -110,12 +119,15 @@ private:
     // Miscellaneous
     //
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
+    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
+    std::queue<QString> m_toolBarTextQueue;
 
     //
     // QXmpp and XMPP related
     //
     GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
     QPointer<GekkoFyre::GkXmppClient> m_xmppClient;
+    GekkoFyre::Network::GkXmpp::GkNetworkState m_netState;
     QStringList m_bareJids;
     QString m_clientNickname;
 };

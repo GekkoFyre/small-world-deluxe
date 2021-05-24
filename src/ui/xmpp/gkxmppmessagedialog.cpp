@@ -41,6 +41,8 @@
 
 #include "gkxmppmessagedialog.hpp"
 #include "ui_gkxmppmessagedialog.h"
+#include <chrono>
+#include <thread>
 #include <utility>
 #include <iostream>
 #include <QIcon>
@@ -88,18 +90,25 @@ bool GkPlainTextKeyEnter::eventFilter(QObject *obj, QEvent *event)
  * @param bareJid The user we are in communiqué with!
  * @param parent The parent to this dialog.
  */
-GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<QtSpell::TextEditChecker> spellChecking,
-                                         const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
+GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                                         QPointer<QtSpell::TextEditChecker> spellChecking, const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
                                          QPointer<GekkoFyre::GkXmppClient> xmppClient, const QStringList &bareJids,
                                          QWidget *parent) : QDialog(parent), ui(new Ui::GkXmppMessageDialog)
 {
     ui->setupUi(this);
 
     gkStringFuncs = std::move(stringFuncs);
+    gkEventLogger = std::move(eventLogger);
     gkConnDetails = connection_details;
     m_spellChecker = std::move(spellChecking);
     m_xmppClient = std::move(xmppClient);
     m_bareJids = bareJids;
+
+    //
+    // Setup and initialize signals and slots...
+    QObject::connect(this, SIGNAL(updateToolbar(const QString &)), this, SLOT(updateToolbarStatus(const QString &)));
+    QObject::connect(this, SIGNAL(sendXmppMsg(const QXmppMessage &)), m_xmppClient, SLOT(sendXmppMsg(const QXmppMessage &)));
+    QObject::connect(m_xmppClient, SIGNAL(recvXmppMsgUpdate(const QXmppMessage &)), this, SLOT(recvXmppMsg(const QXmppMessage &)));
 
     //
     // Setup and initialize QTableView's...
@@ -222,14 +231,14 @@ void GkXmppMessageDialog::updateInterface(const QStringList &bareJids)
         for (const auto &rosterJid: tmpRosterList) {
             if (bareJid == rosterJid.bareJid) {
                 if (bareJids.count() == 1) {
-                    ui->tabWidget_chat_window->setTabText(0, gkStringFuncs->trimStrToCharLength(rosterJid.vCard.nickname, 16, true));
+                    ui->tabWidget_chat_window->setTabText(0, gkStringFuncs->trimStrToCharLength(rosterJid.vCard.nickName(), 16, true));
                     ui->label_callsign_2_name->setText(tr("Welcome, %1 and %2!").arg(m_xmppClient->getUsername(gkConnDetails.jid)).arg(m_xmppClient->getUsername(bareJid)));
-                    setWindowTitle(tr("%1 -- Small World Deluxe").arg(gkStringFuncs->trimStrToCharLength(rosterJid.vCard.nickname, 32, true)));
+                    setWindowTitle(tr("%1 -- Small World Deluxe").arg(gkStringFuncs->trimStrToCharLength(rosterJid.vCard.nickName(), 32, true)));
                     break;
                 } else {
-                    ui->tabWidget_chat_window->setTabText(0, QString("%1, ...").arg(gkStringFuncs->trimStrToCharLength(rosterJid.vCard.nickname, 16, false)));
+                    ui->tabWidget_chat_window->setTabText(0, QString("%1, ...").arg(gkStringFuncs->trimStrToCharLength(rosterJid.vCard.nickName(), 16, false)));
                     ui->label_callsign_2_name->setText(tr("Welcome, %1, %2, etc.!").arg(m_xmppClient->getUsername(gkConnDetails.jid)).arg(m_xmppClient->getUsername(bareJid)));
-                    setWindowTitle(tr("%1, etc. -- Small World Deluxe").arg(gkStringFuncs->trimStrToCharLength(rosterJid.vCard.nickname, 32, true)));
+                    setWindowTitle(tr("%1, etc. -- Small World Deluxe").arg(gkStringFuncs->trimStrToCharLength(rosterJid.vCard.nickName(), 32, true)));
                     break;
                 }
             }
@@ -270,8 +279,99 @@ void GkXmppMessageDialog::determineNickname()
  */
 void GkXmppMessageDialog::submitMsgEnterKey()
 {
-    auto plaintext = ui->textEdit_tx_msg_dialog->toPlainText();
-    ui->textEdit_tx_msg_dialog->clear();
+    m_netState = m_xmppClient->getNetworkState();
+    if (!m_xmppClient->isConnected() || m_netState != GkNetworkState::Connected) {
+        QMessageBox msgBox;
+        msgBox.setParent(nullptr);
+        msgBox.setWindowTitle(tr("Disconnected"));
+        msgBox.setText(tr("You are currently not connected to any XMPP server! Make a connection now?"));
+        msgBox.setStandardButtons(QMessageBox::Cancel | QMessageBox::Ok);
+        msgBox.setDefaultButton(QMessageBox::Ok);
+        msgBox.setIcon(QMessageBox::Icon::Warning);
+        int ret = msgBox.exec();
+
+        switch (ret) {
+            case QMessageBox::Ok:
+                m_xmppClient->createConnectionToServer(gkConnDetails.server.url, gkConnDetails.server.port, gkConnDetails.password,
+                                                       gkConnDetails.jid, false);
+                break;
+            case QMessageBox::Cancel:
+                return;
+            default:
+                return;
+        }
+    }
+
+    if (m_xmppClient->isConnected()) {
+        const auto plaintext = ui->textEdit_tx_msg_dialog->toPlainText();
+        if (!plaintext.isEmpty()) {
+            for (const auto bareJid: m_bareJids) {
+                if (!bareJid.isEmpty()) {
+                    QXmppMessage msg;
+                    msg.setFrom(gkConnDetails.jid);
+                    msg.setTo(bareJid);
+                    msg.setBody(plaintext);
+                    msg.setReceiptRequested(true);
+
+                    if (msg.isXmppStanza()) {
+                        emit sendXmppMsg(msg);
+                    }
+                }
+            }
+        }
+
+        ui->textEdit_tx_msg_dialog->clear();
+    } else {
+        emit updateToolbar(tr("Attempting to make a connection... please wait..."));
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppMessageDialog::updateToolbarStatus
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value
+ */
+void GkXmppMessageDialog::updateToolbarStatus(const QString &value)
+{
+    if (!value.isEmpty()) {
+        m_toolBarTextQueue.emplace(value);
+        qint32 counter = 0;
+        while (!m_toolBarTextQueue.empty()) {
+            if (counter > 0) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+            }
+
+            ui->label_msging_callsign_status->setText(m_toolBarTextQueue.front());
+            m_toolBarTextQueue.pop();
+            ++counter;
+        }
+
+        QPointer<QTimer> toolbarTimer = new QTimer(this);
+        QObject::connect(toolbarTimer, &QTimer::timeout, ui->label_msging_callsign_status, &QLabel::clear);
+        toolbarTimer->start(3000);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppMessageDialog::recvXmppMsg notifies that an XMPP message stanza is received. The QXmppMessage parameter
+ * contains the details of the message sent to this client. In other words whenever someone sends you a message this signal
+ * is emitted.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param msg The received message stanza in question.
+ */
+void GkXmppMessageDialog::recvXmppMsg(const QXmppMessage &msg)
+{
+    if (msg.isXmppStanza() && !msg.body().isEmpty()) {
+        if (!this->isActiveWindow()) {
+            gkEventLogger->publishEvent(gkStringFuncs->trimStrToCharLength(msg.body(), 80, true), GkSeverity::Info, "", true, true, false, false);
+        }
+
+        gkXmppRecvMsgsTableViewModel->insertData(msg.from(), msg.body());
+    }
 
     return;
 }

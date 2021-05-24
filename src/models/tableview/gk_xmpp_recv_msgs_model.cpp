@@ -107,14 +107,20 @@ void GkXmppRecvMsgsTableViewModel::populateData(const QList<GkRecvMsgsTableViewM
 /**
  * @brief GkXmppRecvMsgsTableViewModel::insertData
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param event
+ * @param bareJid
+ * @param msg
  */
-void GkXmppRecvMsgsTableViewModel::insertData(const GkRecvMsgsTableViewModel &data)
+void GkXmppRecvMsgsTableViewModel::insertData(const QString &bareJid, const QString &msg)
 {
     dataBatchMutex.lock();
 
     beginInsertRows(QModelIndex(), m_data.count(), m_data.count());
-    m_data.append(data);
+    GkRecvMsgsTableViewModel recvMsg;
+    recvMsg.timestamp = QDateTime::currentDateTimeUtc();
+    recvMsg.bareJid = bareJid;
+    recvMsg.message = msg;
+    recvMsg.nickName = m_xmppClient->getJidNickname(recvMsg.bareJid);
+    m_data.append(recvMsg);
     endInsertRows();
 
     auto top = this->createIndex((m_data.count() - 1), 0, nullptr);
@@ -200,7 +206,7 @@ QVariant GkXmppRecvMsgsTableViewModel::data(const QModelIndex &index, int role) 
 
     switch (index.column()) {
         case GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_DATETIME_IDX:
-            return row_timestamp;
+            return row_timestamp.toString("dd.MM.yyyy h:mm:ss ap");
         case GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_NICKNAME_IDX:
             return row_nickname;
         case GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_MSG_IDX:
