@@ -524,19 +524,6 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/kissfft")
 message(STATUS "The 'KissFFT' fourier transform libraries have been configured!")
 
 #
-# Nuspell dictionaries
-#
-file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/dictionaries/dictionaries" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Library")
-file(RENAME "${CMAKE_CURRENT_BINARY_DIR}/Library/dictionaries" "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling")
-
-#
-# Remove all the unneeded files now!
-file(GLOB_RECURSE RM_NUSPELL_FILES_JS "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling/*.js")
-file(GLOB_RECURSE RM_NUSPELL_FILES_JSON "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling/*.json")
-file(REMOVE ${RM_NUSPELL_FILES_JS})
-file(REMOVE ${RM_NUSPELL_FILES_JSON})
-
-#
 # End of dictionaries
 
 #

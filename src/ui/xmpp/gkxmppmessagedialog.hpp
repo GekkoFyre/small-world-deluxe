@@ -93,10 +93,6 @@ private slots:
     void determineNickname();
     void submitMsgEnterKey();
 
-signals:
-    void spelling(const bool &failed);
-    void spellingSuggest(const QString &value);
-
 private:
     Ui::GkXmppMessageDialog *ui;
 
