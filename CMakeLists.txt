@@ -421,6 +421,18 @@ else()
 endif(Vorbis_FOUND)
 
 #
+# QtSpell
+# https://github.com/manisandro/qtspell
+#
+find_package(QtSpell REQUIRED)
+if (QTSPELL_FOUND)
+    include_directories(${QTSPELL_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${QTSPELL_LIBRARIES})
+else()
+    message(STATUS "The 'QtSpell' spelling libraries have been configured!")
+endif(QTSPELL_FOUND)
+
+#
 # https://xiph.org/vorbis/
 #
 find_package(Ogg REQUIRED)

@@ -65,8 +65,7 @@
 #include <leveldb/db.h>
 #include <leveldb/status.h>
 #include <leveldb/options.h>
-#include <nuspell/finder.hxx>
-#include <nuspell/dictionary.hxx>
+#include <QtSpell.hpp>
 #include <stdexcept>
 #include <exception>
 #include <utility>
@@ -475,7 +474,7 @@ private:
     //
     // Spell-checking, dictionaries, etc.
     //
-    std::shared_ptr<nuspell::Dictionary> m_nuspellDict;
+    QPointer<QtSpell::TextEditChecker> m_spellChecker;
 
     //
     // QFileDialog related
@@ -531,7 +530,10 @@ private:
     //
     void createXmppConnection();
 
-    void readNuspellSettings();
+    //
+    // Spell-checking, dictionaries, etc.
+    //
+    void readEnchantSettings();
 
     //
     // System tray icon related functions

@@ -81,9 +81,6 @@ public:
     QString defaultDirectory(const QString &base_path, const bool &use_native_slashes = false,
                              const QString &append_dir = Filesystem::defaultDirAppend);
 
-    // Hunspell & UI Language
-    boost::filesystem::path getLangFile(const QString &lang_val, const GekkoFyre::Database::Settings::Language::GkLangSettings &lang_settings);
-
 protected:
     static std::vector<boost::filesystem::path> analyze_dir(const boost::filesystem::path &dirPath, const std::vector<std::string> &dirsToSkip = { });
 

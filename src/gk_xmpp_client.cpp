@@ -912,10 +912,9 @@ void GkXmppClient::vCardReceived(const QXmppVCardIq &vCard)
         // TODO: How should we deal with `imgFileName`?
         if (fs::exists(xmlFileName, ec)) {
             fs::remove(xmlFileName, ec);
-        }
-
-        if (ec.failed()) {
-            throw std::runtime_error(ec.message());
+            if (ec.failed()) {
+                throw std::runtime_error(ec.message());
+            }
         }
 
         GkXmppVCard vCardTmp;

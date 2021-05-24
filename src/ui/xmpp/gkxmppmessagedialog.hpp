@@ -45,8 +45,7 @@
 #include "src/gk_xmpp_client.hpp"
 #include "src/gk_string_funcs.hpp"
 #include "src/models/tableview/gk_xmpp_recv_msgs_model.hpp"
-#include <nuspell/finder.hxx>
-#include <nuspell/dictionary.hxx>
+#include <QtSpell.hpp>
 #include <memory>
 #include <QEvent>
 #include <QString>
@@ -75,7 +74,7 @@ class GkXmppMessageDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> stringFuncs, std::shared_ptr<nuspell::Dictionary> nuspellDict,
+    explicit GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<QtSpell::TextEditChecker> spellChecking,
                                  const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details, QPointer<GekkoFyre::GkXmppClient> xmppClient,
                                  const QStringList &bareJids, QWidget *parent = nullptr);
     ~GkXmppMessageDialog();
@@ -87,12 +86,16 @@ private slots:
     void on_toolButton_attach_file_clicked();
     void on_toolButton_view_roster_clicked();
     void on_tableView_recv_msg_dlg_customContextMenuRequested(const QPoint &pos);
-    void on_textEdit_tx_msg_dialog_customContextMenuRequested(const QPoint &pos);
+    void on_textEdit_tx_msg_dialog_textChanged();
     void on_lineEdit_message_search_returnPressed();
 
     void updateInterface(const QStringList &bareJids);
     void determineNickname();
     void submitMsgEnterKey();
+
+signals:
+    void spelling(const bool &failed);
+    void spellingSuggest(const QString &value);
 
 private:
     Ui::GkXmppMessageDialog *ui;
@@ -105,7 +108,7 @@ private:
     //
     // Spell-checking, dictionaries, etc.
     //
-    std::shared_ptr<nuspell::Dictionary> m_nuspellDict;
+    QPointer<QtSpell::TextEditChecker> m_spellChecker;
 
     //
     // Miscellaneous

@@ -70,7 +70,7 @@ using namespace Security;
 
 GkXmppRosterDialog::GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFuncs, const GkUserConn &connection_details,
                                        QPointer<GekkoFyre::GkXmppClient> xmppClient, QPointer<GekkoFyre::GkLevelDb> database,
-                                       std::shared_ptr<nuspell::Dictionary> nuspellDict, QPointer<GkEventLogger> eventLogger,
+                                       QPointer<QtSpell::TextEditChecker> spellChecking, QPointer<GkEventLogger> eventLogger,
                                        const bool &skipConnectionCheck, QWidget *parent) : shownXmppPreviewNotice(false),
                                        QDialog(parent), ui(new Ui::GkXmppRosterDialog)
 {
@@ -81,7 +81,7 @@ GkXmppRosterDialog::GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFu
         gkConnDetails = connection_details;
         m_xmppClient = std::move(xmppClient);
         gkDb = std::move(database);
-        m_nuspellDict = std::move(nuspellDict);
+        m_spellChecker = std::move(spellChecking);
         gkEventLogger = std::move(eventLogger);
 
         m_initAppLaunch = true;
@@ -711,7 +711,7 @@ void GkXmppRosterDialog::launchMsgDlg(const QString &bareJid)
 {
     QStringList bareJids;
     bareJids << bareJid;
-    gkXmppMsgDlg = new GkXmppMessageDialog(gkStringFuncs, m_nuspellDict, gkConnDetails, m_xmppClient, bareJids, this);
+    gkXmppMsgDlg = new GkXmppMessageDialog(gkStringFuncs, m_spellChecker, gkConnDetails, m_xmppClient, bareJids, this);
     if (gkXmppMsgDlg) {
         if (!gkXmppMsgDlg->isVisible()) {
             gkXmppMsgDlg->setWindowFlags(Qt::Window);
@@ -729,7 +729,7 @@ void GkXmppRosterDialog::launchMsgDlg(const QString &bareJid)
  */
 void GkXmppRosterDialog::launchMsgDlg(const QStringList &bareJids)
 {
-    gkXmppMsgDlg = new GkXmppMessageDialog(gkStringFuncs, m_nuspellDict, gkConnDetails, m_xmppClient, bareJids, this);
+    gkXmppMsgDlg = new GkXmppMessageDialog(gkStringFuncs, m_spellChecker, gkConnDetails, m_xmppClient, bareJids, this);
     if (gkXmppMsgDlg) {
         if (!gkXmppMsgDlg->isVisible()) {
             gkXmppMsgDlg->setWindowFlags(Qt::Window);

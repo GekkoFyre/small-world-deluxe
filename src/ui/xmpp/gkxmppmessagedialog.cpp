@@ -42,6 +42,7 @@
 #include "gkxmppmessagedialog.hpp"
 #include "ui_gkxmppmessagedialog.h"
 #include <utility>
+#include <iostream>
 #include <QIcon>
 #include <QPixmap>
 #include <QKeyEvent>
@@ -87,7 +88,7 @@ bool GkPlainTextKeyEnter::eventFilter(QObject *obj, QEvent *event)
  * @param bareJid The user we are in communiqué with!
  * @param parent The parent to this dialog.
  */
-GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> stringFuncs, std::shared_ptr<nuspell::Dictionary> nuspellDict,
+GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<QtSpell::TextEditChecker> spellChecking,
                                          const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
                                          QPointer<GekkoFyre::GkXmppClient> xmppClient, const QStringList &bareJids,
                                          QWidget *parent) : QDialog(parent), ui(new Ui::GkXmppMessageDialog)
@@ -96,7 +97,7 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
 
     gkStringFuncs = std::move(stringFuncs);
     gkConnDetails = connection_details;
-    m_nuspellDict = std::move(nuspellDict);
+    m_spellChecker = std::move(spellChecking);
     m_xmppClient = std::move(xmppClient);
     m_bareJids = bareJids;
 
@@ -124,6 +125,7 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
     QPointer<GkPlainTextKeyEnter> gkPlaintextKeyEnter = new GkPlainTextKeyEnter();
     QObject::connect(gkPlaintextKeyEnter, SIGNAL(submitMsgEnterKey()), this, SLOT(submitMsgEnterKey()));
     ui->textEdit_tx_msg_dialog->installEventFilter(gkPlaintextKeyEnter);
+    m_spellChecker->setTextEdit(ui->textEdit_tx_msg_dialog); // Add the QtSpell spelling-checker to the QTextEdit object!
 
     determineNickname();
     updateInterface(m_bareJids);
@@ -190,11 +192,10 @@ void GkXmppMessageDialog::on_tableView_recv_msg_dlg_customContextMenuRequested(c
 }
 
 /**
- * @brief GkXmppMessageDialog::on_textEdit_tx_msg_dialog_customContextMenuRequested
+ * @brief GkXmppMessageDialog::on_textEdit_tx_msg_dialog_textChanged
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param pos
  */
-void GkXmppMessageDialog::on_textEdit_tx_msg_dialog_customContextMenuRequested(const QPoint &pos)
+void GkXmppMessageDialog::on_textEdit_tx_msg_dialog_textChanged()
 {
     return;
 }

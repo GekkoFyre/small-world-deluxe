@@ -57,6 +57,8 @@
 #include <QLocale>
 #include <QWidget>
 #include <QResource>
+#include <QTranslator>
+#include <QLibraryInfo>
 #include <QApplication>
 #include <QStyleFactory>
 #include <QSplashScreen>
@@ -95,6 +97,13 @@ int main(int argc, char *argv[])
     QCoreApplication::addLibraryPath(".");
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 
+    //
+    // QtSpell
+    // https://github.com/manisandro/qtspell/blob/master/examples/example.cpp
+    //
+    QTranslator qtTranslator;
+    qtTranslator.load("qt_" + QLocale::system().name(), QLibraryInfo::location(QLibraryInfo::TranslationsPath));
+
     #ifndef GK_ENBL_VALGRIND_SUPPORT
     //
     // This, unintentionally, prevents the launching of Valgrind, Dr. Memory, etc. and other such
@@ -103,8 +112,11 @@ int main(int argc, char *argv[])
     if (app.isSecondary()) {
         app.exit();
     }
+
+    SingleApplication::instance()->installTranslator(&qtTranslator);
     #else
     QApplication app(argc, argv);
+    QApplication::instance()->installTranslator(&qtTranslator);
     #endif
 
     QCoreApplication::setOrganizationName(GekkoFyre::General::companyName);
