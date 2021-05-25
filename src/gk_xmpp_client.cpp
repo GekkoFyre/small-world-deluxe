@@ -225,6 +225,17 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         QObject::connect(m_rosterManager.get(), SIGNAL(itemChanged(const QString &)), this, SLOT(itemChanged(const QString &)));
 
         //
+        // QXmppArchiveManager and QXmppMamManager handling...
+        QObject::connect(m_xmppArchiveMgr.get(), SIGNAL(archiveChatReceived(const QXmppArchiveChat &, const QXmppResultSetReply &)),
+                         this, SLOT(archiveChatReceived(const QXmppArchiveChat &, const QXmppResultSetReply &)), Qt::UniqueConnection);
+        QObject::connect(m_xmppArchiveMgr.get(), SIGNAL(archiveListReceived(const QList<QXmppArchiveChat> &, const QXmppResultSetReply &)),
+                         this, SLOT(archiveListReceived(const QList<QXmppArchiveChat> &, const QXmppResultSetReply &)), Qt::UniqueConnection);
+        QObject::connect(m_xmppMamMgr.get(), SIGNAL(archivedMessageReceived(const QString &, const QXmppMessage &)),
+                         this, SLOT(archivedMessageReceived(const QString &, const QXmppMessage &)), Qt::UniqueConnection);
+        QObject::connect(m_xmppMamMgr.get(), SIGNAL(resultsRecieved(const QString &, const QXmppResultSetReply &, bool)),
+                         this, SLOT(resultsRecieved(const QString &, const QXmppResultSetReply &, bool)), Qt::UniqueConnection);
+
+        //
         // Find the XMPP servers as defined by either the user themselves or GekkoFyre Networks...
         QString dns_lookup_str;
         switch (m_connDetails.server.type) {
@@ -334,15 +345,6 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         // connect as below...
         //
         QObject::connect(this, &QXmppClient::connected, this, [=]() {
-            QObject::connect(m_xmppArchiveMgr.get(), SIGNAL(archiveChatReceived(const QXmppArchiveChat &, const QXmppResultSetReply &)),
-                             this, SLOT(archiveChatReceived(const QXmppArchiveChat &, const QXmppResultSetReply &)), Qt::UniqueConnection);
-            QObject::connect(m_xmppArchiveMgr.get(), SIGNAL(archiveListReceived(const QList<QXmppArchiveChat> &, const QXmppResultSetReply &)),
-                             this, SLOT(archiveListReceived(const QList<QXmppArchiveChat> &, const QXmppResultSetReply &)), Qt::UniqueConnection);
-            QObject::connect(m_xmppMamMgr.get(), SIGNAL(archivedMessageReceived(const QString &, const QXmppMessage &)),
-                             this, SLOT(archivedMessageReceived(const QString &, const QXmppMessage &)), Qt::UniqueConnection);
-            QObject::connect(m_xmppMamMgr.get(), SIGNAL(resultsRecieved(const QString &, const QXmppResultSetReply &, bool)),
-                             this, SLOT(resultsRecieved(const QString &, const QXmppResultSetReply &, bool)), Qt::UniqueConnection);
-
             //
             // The service discovery manager is added to the client by default...
             if (m_discoMgr) {
@@ -1917,13 +1919,13 @@ QString GkXmppClient::getErrorCondition(const QXmppStanza::Error::Condition &con
 }
 
 /**
- * @brief GkXmppClient::recvXmppMsg notifies that an XMPP message stanza is received. The QXmppMessage parameter contains
- * the details of the message sent to this client. In other words whenever someone sends you a message this signal is
- * emitted.
+ * @brief GkXmppClient::recvXmppMsgUpdate notifies that an XMPP message stanza is received. The QXmppMessage parameter
+ * contains the details of the message sent to this client. In other words whenever someone sends you a message this signal
+ * is emitted.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param message The received message stanza in question.
  */
-void GkXmppClient::recvXmppMsg(const QXmppMessage &message)
+void GkXmppClient::recvXmppMsgUpdate(const QXmppMessage &message)
 {
     try {
         switch (message.type()) {
@@ -1934,11 +1936,11 @@ void GkXmppClient::recvXmppMsg(const QXmppMessage &message)
             case QXmppMessage::Error:
                 throw std::invalid_argument(tr("Chat message received with an error!").toStdString());
             case QXmppMessage::Chat:
-                emit recvXmppMsgUpdate(message);
+                emit xmppMsgUpdate(message);
                 gkEventLogger->publishEvent(tr("QXmppMessage stanza has been received!"), GkSeverity::Debug, "", false, true, false, false);
                 return;
             case QXmppMessage::GroupChat:
-                emit recvXmppMsgUpdate(message);
+                emit xmppMsgUpdate(message);
                 gkEventLogger->publishEvent(tr("QXmppMessage stanza has been received!"), GkSeverity::Debug, "", false, true, false, false);
                 return;
             case QXmppMessage::Headline:
@@ -2004,21 +2006,24 @@ void GkXmppClient::archiveChatReceived(const QXmppArchiveChat &chat, const QXmpp
  */
 void GkXmppClient::archivedMessageReceived(const QString &queryId, const QXmppMessage &message)
 {
-    for (auto iter = m_rosterList.begin(); iter != m_rosterList.end();) {
-        if (iter->bareJid == message.from()) {
-            iter->messages += message;
-        } else {
-            ++iter;
+    auto rosterList = m_rosterList;
+    std::future<void> msgRecvFuture = std::async(std::launch::deferred, [&rosterList, queryId, message]() {
+        for (auto iter = rosterList.begin(); iter != rosterList.end();) {
+            if (iter->bareJid == message.from()) {
+                iter->messages += message;
+            } else {
+                ++iter;
+            }
         }
-    }
 
-    for (auto iter = m_rosterList.begin(); iter != m_rosterList.end();) {
-        if (iter->bareJid == message.to()) {
-            iter->messages += message;
-        } else {
-            ++iter;
+        for (auto iter = rosterList.begin(); iter != rosterList.end();) {
+            if (iter->bareJid == message.to()) {
+                iter->messages += message;
+            } else {
+                ++iter;
+            }
         }
-    }
+    });
 
     return;
 }

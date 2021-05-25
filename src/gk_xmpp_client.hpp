@@ -205,7 +205,7 @@ private slots:
 
     //
     // Message handling and QXmppArchiveManager-related
-    void recvXmppMsg(const QXmppMessage &message);
+    void recvXmppMsgUpdate(const QXmppMessage &message);
     void archiveListReceived(const QList<QXmppArchiveChat> &chats, const QXmppResultSetReply &rsmReply);
     void archiveChatReceived(const QXmppArchiveChat &chat, const QXmppResultSetReply &rsmReply);
 
@@ -243,7 +243,7 @@ signals:
 
     //
     // Message handling and QXmppArchiveManager-related
-    void recvXmppMsgUpdate(const QXmppMessage &message);
+    void xmppMsgUpdate(const QXmppMessage &message);
     void updateMsgHistory();
 
     //

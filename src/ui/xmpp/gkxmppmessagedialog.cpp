@@ -108,7 +108,7 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
     // Setup and initialize signals and slots...
     QObject::connect(this, SIGNAL(updateToolbar(const QString &)), this, SLOT(updateToolbarStatus(const QString &)));
     QObject::connect(this, SIGNAL(sendXmppMsg(const QXmppMessage &)), m_xmppClient, SLOT(sendXmppMsg(const QXmppMessage &)));
-    QObject::connect(m_xmppClient, SIGNAL(recvXmppMsgUpdate(const QXmppMessage &)), this, SLOT(recvXmppMsg(const QXmppMessage &)));
+    QObject::connect(m_xmppClient, SIGNAL(xmppMsgUpdate(const QXmppMessage &)), this, SLOT(recvXmppMsg(const QXmppMessage &)));
     QObject::connect(m_xmppClient, SIGNAL(updateMsgHistory()), this, SLOT(updateMsgHistory()));
     QObject::connect(m_xmppClient, SIGNAL(msgArchiveSuccReceived()), this, SLOT(msgArchiveSuccReceived()));
     QObject::connect(this, SIGNAL(updateMamArchive(const QString &)), this, SLOT(procMamArchive(const QString &)));
@@ -142,10 +142,22 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
     determineNickname();
     updateInterface(m_bareJids);
 
+    if (!m_xmppClient->isConnected()) {
+        ui->textEdit_tx_msg_dialog->setEnabled(false);
+    }
+
+    if (m_xmppClient->isConnected()) {
+        ui->textEdit_tx_msg_dialog->setEnabled(true);
+        getArchivedMessages();
+    }
+
     QObject::connect(m_xmppClient, &QXmppClient::connected, this, [=]() {
-        for (const auto &bareJid: m_bareJids) {
-            m_xmppClient->getArchivedMessages(bareJid);
-        }
+        ui->textEdit_tx_msg_dialog->setEnabled(true);
+        getArchivedMessages();
+    });
+
+    QObject::connect(m_xmppClient, &QXmppClient::disconnected, this, [=]() {
+        ui->textEdit_tx_msg_dialog->setEnabled(false);
     });
 }
 
@@ -316,14 +328,9 @@ void GkXmppMessageDialog::submitMsgEnterKey()
         if (!plaintext.isEmpty()) {
             for (const auto bareJid: m_bareJids) {
                 if (!bareJid.isEmpty()) {
-                    QXmppMessage msg;
-                    msg.setFrom(gkConnDetails.jid);
-                    msg.setTo(bareJid);
-                    msg.setBody(plaintext);
-                    msg.setType(QXmppMessage::Chat);
-
-                    if (msg.isXmppStanza()) {
-                        emit sendXmppMsg(msg);
+                    const auto toMsg = createXmppMessageIq(bareJid, gkConnDetails.jid, plaintext);
+                    if (toMsg.isXmppStanza()) {
+                        emit sendXmppMsg(toMsg);
                     }
                 }
             }
@@ -424,6 +431,25 @@ void GkXmppMessageDialog::updateMsgHistory()
 }
 
 /**
+ * @brief GkXmppMessageDialog::createXmppMessageIq is simply a helper function to create a QXmppMessage stanza.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param to The recepient of this message.
+ * @param from The sender of this message.
+ * @param message The body of the given message.
+ * @return The thusly created QXmppMessage stanza.
+ */
+QXmppMessage GkXmppMessageDialog::createXmppMessageIq(const QString &to, const QString &from, const QString &message) const
+{
+    QXmppMessage xmppMsg;
+    xmppMsg.setFrom(from);
+    xmppMsg.setTo(to);
+    xmppMsg.setBody(message);
+    xmppMsg.setType(QXmppMessage::Chat);
+
+    return xmppMsg;
+}
+
+/**
  * @brief GkXmppMessageDialog::msgArchiveSuccReceived
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
@@ -454,6 +480,19 @@ void GkXmppMessageDialog::procMamArchive(const QString &bareJid)
                 }
             }
         }
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppMessageDialog::getArchivedMessages
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppMessageDialog::getArchivedMessages()
+{
+    for (const auto &bareJid: m_bareJids) {
+        m_xmppClient->getArchivedMessages(QString(), QString(), bareJid);
     }
 
     return;

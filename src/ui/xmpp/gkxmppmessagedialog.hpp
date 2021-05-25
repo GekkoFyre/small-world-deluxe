@@ -101,11 +101,13 @@ private slots:
     void recvXmppMsg(const QXmppMessage &msg);
     void procMsgArchive(const QString &bareJid);
     void updateMsgHistory();
+    QXmppMessage createXmppMessageIq(const QString &to, const QString &from, const QString &message) const;
 
     //
     // QXmppMamManager handling
     void msgArchiveSuccReceived();
     void procMamArchive(const QString &bareJid);
+    void getArchivedMessages();
 
 signals:
     void updateToolbar(const QString &value);
