@@ -78,6 +78,7 @@
 #include <QList>
 #include <QTimer>
 #include <QString>
+#include <QThread>
 #include <QObject>
 #include <QPointer>
 #include <QSslError>
