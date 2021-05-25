@@ -52,14 +52,19 @@
 #include <qxmpp/QXmppGlobal.h>
 #include <qxmpp/QXmppClient.h>
 #include <qxmpp/QXmppLogger.h>
+#include <qxmpp/QXmppMessage.h>
 #include <qxmpp/QXmppVCardIq.h>
 #include <qxmpp/QXmppDataForm.h>
 #include <qxmpp/QXmppPresence.h>
+#include <qxmpp/QXmppResultSet.h>
+#include <qxmpp/QXmppArchiveIq.h>
 #include <qxmpp/QXmppVersionIq.h>
+#include <qxmpp/QXmppMamManager.h>
 #include <qxmpp/QXmppRegisterIq.h>
 #include <qxmpp/QXmppMucManager.h>
 #include <qxmpp/QXmppVCardManager.h>
 #include <qxmpp/QXmppRosterManager.h>
+#include <qxmpp/QXmppArchiveManager.h>
 #include <qxmpp/QXmppVersionManager.h>
 #include <qxmpp/QXmppTransferManager.h>
 #include <qxmpp/QXmppClientExtension.h>
@@ -73,6 +78,7 @@
 #include <QList>
 #include <QTimer>
 #include <QString>
+#include <QThread>
 #include <QObject>
 #include <QPointer>
 #include <QSslError>
@@ -108,6 +114,7 @@ public:
     [[nodiscard]] static QString getUsername(const QString &username);
     [[nodiscard]] static QString getHostname(const QString &username);
     [[nodiscard]] QXmppPresence getBareJidPresence(const QString &bareJid, const QString &resource = "");
+    [[nodiscard]] QString getJidNickname(const QString &bareJid);
     QString addHostname(const QString &username);
     [[nodiscard]] GekkoFyre::Network::GkXmpp::GkNetworkState getNetworkState() const;
     [[nodiscard]] bool isJidExist(const QString &bareJid);
@@ -123,6 +130,12 @@ public:
     QIcon presenceToIcon(const QXmppPresence::AvailableStatusType &xmppPresence);
     bool deleteUserAccount();
     QString obtainAvatarFilePath();
+
+    //
+    // QXmppMamManager handling
+    void getArchivedMessages(const QString &to = QString(), const QString &node = QString(), const QString &jid = QString(),
+                             const QDateTime &start = QDateTime(), const QDateTime &end = QDateTime(),
+                             const QXmppResultSetQuery &resultSetQuery = QXmppResultSetQuery());
 
     //
     // vCard management
@@ -144,6 +157,7 @@ public slots:
     void blockUser(const QString &bareJid);
     void unblockUser(const QString &bareJid);
     void subscribeToUser(const QString &bareJid, const QString &reason = "");
+    void unsubscribeToUser(const QString &bareJid, const QString &reason = "");
 
     //
     // Registration management
@@ -153,6 +167,10 @@ public slots:
     // vCard management
     void updateClientVCardForm(const QString &first_name, const QString &last_name, const QString &email,
                                const QString &callsign, const QByteArray &avatar_pic, const QString &img_type);
+
+    //
+    // Message handling
+    void sendXmppMsg(const QXmppMessage &msg);
 
 private slots:
     //
@@ -186,6 +204,17 @@ private slots:
 
     void handleSslGreeting();
 
+    //
+    // Message handling and QXmppArchiveManager-related
+    void recvXmppMsgUpdate(const QXmppMessage &message);
+    void archiveListReceived(const QList<QXmppArchiveChat> &chats, const QXmppResultSetReply &rsmReply);
+    void archiveChatReceived(const QXmppArchiveChat &chat, const QXmppResultSetReply &rsmReply);
+
+    //
+    // QXmppMamManager handling
+    void archivedMessageReceived(const QString &queryId, const QXmppMessage &message);
+    void resultsRecieved(const QString &queryId, const QXmppResultSetReply &resultSetReply, bool complete);
+
 signals:
     //
     // User, roster and presence details
@@ -212,6 +241,15 @@ signals:
     // Event & Logging management
     void sendError(const QString &error);
     void sendError(const QXmppClient::Error &error);
+
+    //
+    // Message handling and QXmppArchiveManager-related
+    void xmppMsgUpdate(const QXmppMessage &message);
+    void updateMsgHistory();
+
+    //
+    // QXmppMamManager handling
+    void msgArchiveSuccReceived();
 
 private:
     QPointer<GekkoFyre::GkLevelDb> gkDb;
@@ -243,7 +281,7 @@ private:
     std::shared_ptr<QXmppRosterManager> m_rosterManager;
     QStringList rosterGroups;
     QVector<QString> m_blockList;
-    QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign> m_rosterList;
+    QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign> m_rosterList;   // A list of all the bareJids, including the client themselves!
 
     //
     // Filesystem & Directories
@@ -275,6 +313,8 @@ private:
     std::shared_ptr<QXmppRegistrationManager> m_registerManager;
     std::unique_ptr<QXmppMucManager> m_mucManager;
     std::unique_ptr<QXmppMucRoom> m_pRoom;
+    std::unique_ptr<QXmppArchiveManager> m_xmppArchiveMgr;
+    std::unique_ptr<QXmppMamManager> m_xmppMamMgr;
     std::unique_ptr<QXmppTransferManager> m_transferManager;
     std::unique_ptr<QXmppVCardManager> m_vCardManager;
     QScopedPointer<QXmppLogger> m_xmppLogger;

@@ -104,6 +104,7 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
                                QPointer<GekkoFyre::GkXmppClient> xmppClient,
                                QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                QPointer<GekkoFyre::GkTextToSpeech> textToSpeechPtr,
+                               QPointer<QtSpell::TextEditChecker> spellChecking,
                                const System::UserInterface::GkSettingsDlgTab &settingsDlgTab,
                                QWidget *parent)
     : QDialog(parent), ui(new Ui::DialogSettings)
@@ -126,6 +127,8 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         gkEventLogger = std::move(eventLogger);
         gkTextToSpeech = std::move(textToSpeechPtr);
         gkSerialPortMap = com_ports;
+
+        m_spellChecker = std::move(spellChecking);
 
         gkAudioInput = audioSysInput;
         gkAudioOutput = audioSysOutput;
@@ -958,98 +961,12 @@ void DialogSettings::prefill_uri_lookup_method()
  */
 void DialogSettings::prefill_lang_dictionaries()
 {
-    ui->comboBox_accessibility_dict->addItem(Filesystem::nuspellDisabledOption);
-    ui->comboBox_accessibility_dict->addItem("bg");
-    ui->comboBox_accessibility_dict->addItem("br");
-    ui->comboBox_accessibility_dict->addItem("ca");
-    ui->comboBox_accessibility_dict->addItem("ca-valencia");
-    ui->comboBox_accessibility_dict->addItem("cs");
-    ui->comboBox_accessibility_dict->addItem("da");
-    ui->comboBox_accessibility_dict->addItem("de");
-    ui->comboBox_accessibility_dict->addItem("de-AT");
-    ui->comboBox_accessibility_dict->addItem("de-CH");
-    ui->comboBox_accessibility_dict->addItem("el");
-    ui->comboBox_accessibility_dict->addItem("el-polyton");
-    ui->comboBox_accessibility_dict->addItem("en");
-    ui->comboBox_accessibility_dict->addItem("en-AU");
-    ui->comboBox_accessibility_dict->addItem("en-CA");
-    ui->comboBox_accessibility_dict->addItem("en-GB");
-    ui->comboBox_accessibility_dict->addItem("en-ZA");
-    ui->comboBox_accessibility_dict->addItem("eo");
-    ui->comboBox_accessibility_dict->addItem("es");
-    ui->comboBox_accessibility_dict->addItem("es-AR");
-    ui->comboBox_accessibility_dict->addItem("es-BO");
-    ui->comboBox_accessibility_dict->addItem("es-CL");
-    ui->comboBox_accessibility_dict->addItem("es-CO");
-    ui->comboBox_accessibility_dict->addItem("es-CR");
-    ui->comboBox_accessibility_dict->addItem("es-CU");
-    ui->comboBox_accessibility_dict->addItem("es-DO");
-    ui->comboBox_accessibility_dict->addItem("es-EC");
-    ui->comboBox_accessibility_dict->addItem("es-GT");
-    ui->comboBox_accessibility_dict->addItem("es-HN");
-    ui->comboBox_accessibility_dict->addItem("es-MX");
-    ui->comboBox_accessibility_dict->addItem("es-NI");
-    ui->comboBox_accessibility_dict->addItem("es-PA");
-    ui->comboBox_accessibility_dict->addItem("es-PE");
-    ui->comboBox_accessibility_dict->addItem("es-PH");
-    ui->comboBox_accessibility_dict->addItem("es-PR");
-    ui->comboBox_accessibility_dict->addItem("es-PY");
-    ui->comboBox_accessibility_dict->addItem("es-SV");
-    ui->comboBox_accessibility_dict->addItem("es-US");
-    ui->comboBox_accessibility_dict->addItem("es-UY");
-    ui->comboBox_accessibility_dict->addItem("es-VE");
-    ui->comboBox_accessibility_dict->addItem("et");
-    ui->comboBox_accessibility_dict->addItem("eu");
-    ui->comboBox_accessibility_dict->addItem("fa");
-    ui->comboBox_accessibility_dict->addItem("fo");
-    ui->comboBox_accessibility_dict->addItem("fr");
-    ui->comboBox_accessibility_dict->addItem("fur");
-    ui->comboBox_accessibility_dict->addItem("fy");
-    ui->comboBox_accessibility_dict->addItem("ga");
-    ui->comboBox_accessibility_dict->addItem("gd");
-    ui->comboBox_accessibility_dict->addItem("gl");
-    ui->comboBox_accessibility_dict->addItem("he");
-    ui->comboBox_accessibility_dict->addItem("hr");
-    ui->comboBox_accessibility_dict->addItem("hu");
-    ui->comboBox_accessibility_dict->addItem("hy");
-    ui->comboBox_accessibility_dict->addItem("hyw");
-    ui->comboBox_accessibility_dict->addItem("ia");
-    ui->comboBox_accessibility_dict->addItem("ie");
-    ui->comboBox_accessibility_dict->addItem("is");
-    ui->comboBox_accessibility_dict->addItem("it");
-    ui->comboBox_accessibility_dict->addItem("ka");
-    ui->comboBox_accessibility_dict->addItem("ko");
-    ui->comboBox_accessibility_dict->addItem("la");
-    ui->comboBox_accessibility_dict->addItem("lb");
-    ui->comboBox_accessibility_dict->addItem("lt");
-    ui->comboBox_accessibility_dict->addItem("ltg");
-    ui->comboBox_accessibility_dict->addItem("lv");
-    ui->comboBox_accessibility_dict->addItem("mk");
-    ui->comboBox_accessibility_dict->addItem("mn");
-    ui->comboBox_accessibility_dict->addItem("nb");
-    ui->comboBox_accessibility_dict->addItem("nds");
-    ui->comboBox_accessibility_dict->addItem("ne");
-    ui->comboBox_accessibility_dict->addItem("nl");
-    ui->comboBox_accessibility_dict->addItem("nn");
-    ui->comboBox_accessibility_dict->addItem("oc");
-    ui->comboBox_accessibility_dict->addItem("pl");
-    ui->comboBox_accessibility_dict->addItem("pt");
-    ui->comboBox_accessibility_dict->addItem("pt-PT");
-    ui->comboBox_accessibility_dict->addItem("ro");
-    ui->comboBox_accessibility_dict->addItem("ru");
-    ui->comboBox_accessibility_dict->addItem("rw");
-    ui->comboBox_accessibility_dict->addItem("sk");
-    ui->comboBox_accessibility_dict->addItem("sl");
-    ui->comboBox_accessibility_dict->addItem("sr");
-    ui->comboBox_accessibility_dict->addItem("sr-Latn");
-    ui->comboBox_accessibility_dict->addItem("sv");
-    ui->comboBox_accessibility_dict->addItem("sv-FI");
-    ui->comboBox_accessibility_dict->addItem("tk");
-    ui->comboBox_accessibility_dict->addItem("tlh");
-    ui->comboBox_accessibility_dict->addItem("tlh-Latn");
-    ui->comboBox_accessibility_dict->addItem("tr");
-    ui->comboBox_accessibility_dict->addItem("uk");
-    ui->comboBox_accessibility_dict->addItem("vi");
+    auto langList = m_spellChecker->getLanguageList();
+    for (const auto &lang: langList) {
+        if (!lang.isEmpty()) {
+            ui->comboBox_accessibility_dict->addItem(lang);
+        }
+    }
 
     return;
 }
@@ -2106,7 +2023,7 @@ bool DialogSettings::read_settings()
                 ui->comboBox_accessibility_dict->setCurrentIndex(idx);
             }
         } else {
-            qint32 idx = ui->comboBox_accessibility_dict->findData(Filesystem::nuspellSpellDefLang);
+            qint32 idx = ui->comboBox_accessibility_dict->findData(Filesystem::enchantSpellDefLang);
             if (idx >= 0) { // -1 means it is not found!
                 ui->comboBox_accessibility_dict->setCurrentIndex(idx);
             }

@@ -86,6 +86,8 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
                                                                       m_registerManager(findExtension<QXmppRegistrationManager>()),
                                                                       m_versionMgr(findExtension<QXmppVersionManager>()),
                                                                       m_vCardManager(findExtension<QXmppVCardManager>()),
+                                                                      m_xmppArchiveMgr(findExtension<QXmppArchiveManager>()),
+                                                                      m_xmppMamMgr(findExtension<QXmppMamManager>()),
                                                                       m_xmppLogger(QXmppLogger::getLogger()),
                                                                       m_discoMgr(findExtension<QXmppDiscoveryManager>()),
                                                                       QXmppClient(parent)
@@ -101,6 +103,8 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         m_registerManager = std::make_shared<QXmppRegistrationManager>();
         m_mucManager = std::make_unique<QXmppMucManager>();
         m_transferManager = std::make_unique<QXmppTransferManager>();
+        m_xmppArchiveMgr = std::make_unique<QXmppArchiveManager>();
+        m_xmppMamMgr = std::make_unique<QXmppMamManager>();
 
         addExtension(m_rosterManager.get());
         addExtension(m_versionMgr.get());
@@ -120,6 +124,14 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
 
         if (m_transferManager) {
             addExtension(m_transferManager.get());
+        }
+
+        if (m_xmppArchiveMgr) {
+            addExtension(m_xmppArchiveMgr.get());
+        }
+
+        if (m_xmppMamMgr) {
+            addExtension(m_xmppMamMgr.get());
         }
 
         //
@@ -213,6 +225,17 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         QObject::connect(m_rosterManager.get(), SIGNAL(itemChanged(const QString &)), this, SLOT(itemChanged(const QString &)));
 
         //
+        // QXmppArchiveManager and QXmppMamManager handling...
+        QObject::connect(m_xmppArchiveMgr.get(), SIGNAL(archiveChatReceived(const QXmppArchiveChat &, const QXmppResultSetReply &)),
+                         this, SLOT(archiveChatReceived(const QXmppArchiveChat &, const QXmppResultSetReply &)));
+        QObject::connect(m_xmppArchiveMgr.get(), SIGNAL(archiveListReceived(const QList<QXmppArchiveChat> &, const QXmppResultSetReply &)),
+                         this, SLOT(archiveListReceived(const QList<QXmppArchiveChat> &, const QXmppResultSetReply &)));
+        QObject::connect(m_xmppMamMgr.get(), SIGNAL(archivedMessageReceived(const QString &, const QXmppMessage &)),
+                         this, SLOT(archivedMessageReceived(const QString &, const QXmppMessage &)));
+        QObject::connect(m_xmppMamMgr.get(), SIGNAL(resultsRecieved(const QString &, const QXmppResultSetReply &, bool)),
+                         this, SLOT(resultsRecieved(const QString &, const QXmppResultSetReply &, bool)));
+
+        //
         // Find the XMPP servers as defined by either the user themselves or GekkoFyre Networks...
         QString dns_lookup_str;
         switch (m_connDetails.server.type) {
@@ -265,6 +288,7 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         // As soon as you connect towards a XMPP server with no JID, this connection should come alive provided that
         // the most minimal of in-band user registration is supported by said server!
         //
+        QObject::connect(this, SIGNAL(messageReceived(const QXmppMessage &)), this, SLOT(recvXmppMsgUpdate(const QXmppMessage &)));
         QObject::connect(m_registerManager.get(), SIGNAL(registrationFormReceived(const QXmppRegisterIq &)),
                          this, SLOT(handleRegistrationForm(const QXmppRegisterIq &)));
 
@@ -548,6 +572,36 @@ QXmppPresence GkXmppClient::getBareJidPresence(const QString &bareJid, const QSt
 }
 
 /**
+ * @brief GkXmppClient::getJidNickname
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid
+ * @return
+ */
+QString GkXmppClient::getJidNickname(const QString &bareJid)
+{
+    for (const auto &roster: m_rosterList) {
+        if (roster.bareJid == bareJid) {
+            QString ret;
+            if (!roster.vCard.nickName().isEmpty()) {
+                ret = roster.vCard.nickName();
+            }
+
+            if (!roster.vCard.fullName().isEmpty() && ret.isEmpty()) {
+                ret = roster.vCard.fullName();
+            }
+
+            if (!roster.vCard.email().isEmpty() && ret.isEmpty()) {
+                ret = roster.vCard.email();
+            }
+
+            return ret;
+        }
+    }
+
+    return QString();
+}
+
+/**
  * @brief GkXmppClient::addHostname
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param username
@@ -810,6 +864,26 @@ QString GkXmppClient::obtainAvatarFilePath()
 }
 
 /**
+ * @brief GkXmppClient::getArchivedMessages retrieves archived messages. For each received message, the
+ * `m_xmppMamMgr->archiveMessageReceived()` signal is emitted. Once all messages are received, the `m_xmppMamMgr->resultsRecieved()`
+ * signal is emitted. It returns a result set that can be used to page through the results. The number of results may
+ * be limited by the server.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param to
+ * @param node
+ * @param jid
+ * @param start
+ * @param end
+ * @param resultSetQuery
+ */
+void GkXmppClient::getArchivedMessages(const QString &to, const QString &node, const QString &jid, const QDateTime &start,
+                                       const QDateTime &end, const QXmppResultSetQuery &resultSetQuery)
+{
+    m_xmppMamMgr->retrieveArchivedMessages(to, node, jid, start, end, resultSetQuery);
+    return;
+}
+
+/**
  * @brief GkXmppClient::processImgToByteArray processes a given image, or avatar in this case, into a QByteArray so that
  * it is readily usable by QXmppVCardManager().
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -840,7 +914,7 @@ void GkXmppClient::clientConnected()
     m_vCardManager->requestVCard(m_connDetails.jid);
     GkXmpp::GkXmppCallsign client_callsign;
     client_callsign.presence = std::make_shared<QXmppPresence>(statusToPresence(m_connDetails.status));
-    client_callsign.vCard.nickname = m_connDetails.nickname;
+    client_callsign.vCard.nickName() = m_connDetails.nickname;
     client_callsign.server = m_connDetails.server;
     client_callsign.bareJid = m_connDetails.jid;
     m_rosterList.push_back(client_callsign);
@@ -867,7 +941,10 @@ void GkXmppClient::handleRosterReceived()
             callsign.subStatus = jidItem.subscriptionType();
             switch (jidItem.subscriptionType()) {
                 case QXmppRosterIq::Item::None:
+                    emit retractSubscriptionRequest(callsign.bareJid);
+                    emit delJidFromRoster(callsign.bareJid);
                     break;
+                case QXmppRosterIq::Item::Both:
                 case QXmppRosterIq::Item::To:
                 case QXmppRosterIq::Item::From:
                     m_rosterList.push_back(callsign);
@@ -912,13 +989,11 @@ void GkXmppClient::vCardReceived(const QXmppVCardIq &vCard)
         // TODO: How should we deal with `imgFileName`?
         if (fs::exists(xmlFileName, ec)) {
             fs::remove(xmlFileName, ec);
+            if (ec.failed()) {
+                throw std::runtime_error(ec.message());
+            }
         }
 
-        if (ec.failed()) {
-            throw std::runtime_error(ec.message());
-        }
-
-        GkXmppVCard vCardTmp;
         QFile xmlFile(QString::fromStdString(xmlFileName.string()));
         if (xmlFile.open(QIODevice::ReadWrite)) {
             QXmlStreamWriter stream(&xmlFile);
@@ -926,20 +1001,14 @@ void GkXmppClient::vCardReceived(const QXmppVCardIq &vCard)
             xmlFile.close();
             emit sendUserVCard(vCard);
 
-            vCardTmp.firstName = vCard.firstName();
-            vCardTmp.lastName = vCard.lastName();
-            vCardTmp.nickname = vCard.nickName();
-            vCardTmp.email = vCard.email();
-
             gkEventLogger->publishEvent(tr("vCard XML data saved to filesystem for user, \"%1\"").arg(bareJid),
                                         GkSeverity::Debug, "", false, true, false, false);
         }
 
         QByteArray photo = vCard.photo();
-        vCardTmp.avatarImg = photo;
         for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
             if (iter->bareJid == bareJid) {
-                iter->vCard = vCardTmp;
+                iter->vCard = vCard;
                 break;
             }
         }
@@ -974,7 +1043,6 @@ void GkXmppClient::clientVCardReceived()
         m_clientVCard = m_vCardManager->clientVCard();
         fs::path imgFileName = fs::path(vcard_save_path.string() + native_slash.string() + config.jid().toStdString() + ".png");
         fs::path xmlFileName = fs::path(vcard_save_path.string() + native_slash.string() + config.jid().toStdString() + ".xml");
-        GkXmppVCard vCardTmp;
 
         QFile xmlFile(QString::fromStdString(xmlFileName.string()));
         if (xmlFile.open(QIODevice::ReadWrite)) {
@@ -982,20 +1050,14 @@ void GkXmppClient::clientVCardReceived()
             m_clientVCard.toXml(&stream);
             xmlFile.close();
 
-            vCardTmp.firstName = m_clientVCard.firstName();
-            vCardTmp.lastName = m_clientVCard.lastName();
-            vCardTmp.nickname = m_clientVCard.nickName();
-            vCardTmp.email = m_clientVCard.email();
-
             gkEventLogger->publishEvent(tr("vCard XML data saved to filesystem for self-client."),
                                         GkSeverity::Debug, "", false, true, false, false);
         }
 
         QByteArray photo = m_clientVCard.photo();
-        vCardTmp.avatarImg = photo;
         for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
             if (iter->bareJid == m_connDetails.jid) {
-                iter->vCard = vCardTmp;
+                iter->vCard = m_clientVCard;
                 break;
             }
         }
@@ -1196,7 +1258,8 @@ void GkXmppClient::unblockUser(const QString &bareJid)
  * @brief GkXmppClient::subscribeToUser requests a subscription to the given contact. As a result, the server will initiate
  * a roster push, causing the `m_rosterManager->itemAdded()` or `m_rosterManager->itemChanged()` signal to be emitted.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param bareJid
+ * @param bareJid The identification of the user that wants to subscribe to the client's presence.
+ * @param reason The reason for making the subscription, as defined by the client.
  */
 void GkXmppClient::subscribeToUser(const QString &bareJid, const QString &reason)
 {
@@ -1207,6 +1270,26 @@ void GkXmppClient::subscribeToUser(const QString &bareJid, const QString &reason
         }
 
         m_rosterManager->subscribe(bareJid);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppClient::unsubscribeToUser removes a subscription to the given contact.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid The identification of the user that wants to unsubscribe from the client's presence.
+ * @param reason The reason for making the unsubscription, as defined by the client.
+ */
+void GkXmppClient::unsubscribeToUser(const QString &bareJid, const QString &reason)
+{
+    if (!bareJid.isEmpty()) {
+        if (!reason.isEmpty()) {
+            m_rosterManager->unsubscribe(bareJid, reason);
+            return;
+        }
+
+        m_rosterManager->unsubscribe(bareJid);
     }
 
     return;
@@ -1274,6 +1357,21 @@ void GkXmppClient::updateClientVCardForm(const QString &first_name, const QStrin
     }
 
     emit sendClientVCard(client_vcard);
+    return;
+}
+
+/**
+ * @brief GkXmppClient::sendXmppMsg is a utility function to send messages to all the resources associated with the specified
+ * bareJid(s) within the contained QXmppMessage stanza.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param msg The QXmppMessage to process and ultimately, transmit.
+ */
+void GkXmppClient::sendXmppMsg(const QXmppMessage &msg)
+{
+    if (msg.isXmppStanza()) {
+        sendPacket(msg);
+    }
+
     return;
 }
 
@@ -1818,4 +1916,138 @@ QString GkXmppClient::getErrorCondition(const QXmppStanza::Error::Condition &con
     }
 
     return QString();
+}
+
+/**
+ * @brief GkXmppClient::recvXmppMsgUpdate notifies that an XMPP message stanza is received. The QXmppMessage parameter
+ * contains the details of the message sent to this client. In other words whenever someone sends you a message this signal
+ * is emitted.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param message The received message stanza in question.
+ */
+void GkXmppClient::recvXmppMsgUpdate(const QXmppMessage &message)
+{
+    try {
+        switch (message.type()) {
+            case QXmppMessage::Normal:
+                gkEventLogger->publishEvent(tr("Received a message with type, \"Normal\", not sure what to do with it so skipping for now..."), GkSeverity::Debug,
+                                            "", false, true, false, false);
+                return;
+            case QXmppMessage::Error:
+                throw std::invalid_argument(tr("Chat message received with an error!").toStdString());
+            case QXmppMessage::Chat:
+                emit xmppMsgUpdate(message);
+                gkEventLogger->publishEvent(tr("QXmppMessage stanza has been received!"), GkSeverity::Debug, "", false, true, false, false);
+                return;
+            case QXmppMessage::GroupChat:
+                emit xmppMsgUpdate(message);
+                gkEventLogger->publishEvent(tr("QXmppMessage stanza has been received!"), GkSeverity::Debug, "", false, true, false, false);
+                return;
+            case QXmppMessage::Headline:
+                gkEventLogger->publishEvent(tr("Received a message with type, \"Headline\", not sure what to do with it so skipping for now..."), GkSeverity::Debug,
+                                            "", false, true, false, false);
+                return;
+            default:
+                return;
+        }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppClient::archiveListReceived processes and manages the archiving of chat messages and their histories from
+ * a given XMPP server, provided said server supports this functionality.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param chats
+ * @param rsmReply
+ */
+void GkXmppClient::archiveListReceived(const QList<QXmppArchiveChat> &chats, const QXmppResultSetReply &rsmReply)
+{
+    for (const auto &chat: chats) {
+        for (auto iter = m_rosterList.begin(); iter != m_rosterList.end();) {
+            if (iter->bareJid == chat.with()) {
+                iter->archive_messages = chat.messages();
+            }
+        }
+    }
+
+    emit updateMsgHistory();
+    return;
+}
+
+/**
+ * @brief GkXmppClient::archiveChatReceived processes and manages the archiving of chat messages and their histories from
+ * a given XMPP server, provided said server supports this functionality.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param chat
+ * @param rsmReply
+ */
+void GkXmppClient::archiveChatReceived(const QXmppArchiveChat &chat, const QXmppResultSetReply &rsmReply)
+{
+    for (auto iter = m_rosterList.begin(); iter != m_rosterList.end();) {
+        if (iter->bareJid == chat.with()) {
+            for (const auto &message: chat.messages()) {
+                iter->archive_messages.push_back(message);
+            }
+
+            break;
+        }
+    }
+
+    emit updateMsgHistory();
+    return;
+}
+
+/**
+ * @brief GkXmppClient::archivedMessageReceived is a signal that's emitted when an archived message is received.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param queryId
+ * @param message
+ */
+void GkXmppClient::archivedMessageReceived(const QString &queryId, const QXmppMessage &message)
+{
+    try {
+        for (auto iter = m_rosterList.begin(); iter != m_rosterList.end();) {
+            if (iter->bareJid == message.from()) {
+                if (message.isXmppStanza() && !message.body().isEmpty()) {
+                    iter->messages.push_back(message);
+                    break;
+                }
+            } else {
+                ++iter;
+            }
+        }
+
+        for (auto iter = m_rosterList.begin(); iter != m_rosterList.end();) {
+            if (iter->bareJid == message.to()) {
+                if (message.isXmppStanza() && !message.body().isEmpty()) {
+                    iter->messages.push_back(message);
+                    break;
+                }
+            } else {
+                ++iter;
+            }
+        }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "",
+                                    false, true, false, true);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppClient::resultsRecieved is a signal that's emitted when all results for a request have been received.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param queryId
+ * @param resultSetReply
+ * @param complete
+ */
+void GkXmppClient::resultsRecieved(const QString &queryId, const QXmppResultSetReply &resultSetReply, bool complete)
+{
+    emit msgArchiveSuccReceived();
+    return;
 }

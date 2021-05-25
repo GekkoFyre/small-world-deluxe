@@ -39,7 +39,7 @@
  **
  ****************************************************************************************************/
 
-#include "src/models/tableview/gk_xmpp_roster_pending_model.hpp"
+#include "src/models/tableview/gk_xmpp_recv_msgs_model.hpp"
 #include <utility>
 #include <QVBoxLayout>
 #include <QHeaderView>
@@ -60,14 +60,14 @@ using namespace GkXmpp;
 using namespace Security;
 
 /**
- * @brief GkXmppRosterPendingTableViewModel::GkXmppRosterPendingTableViewModel
+ * @brief GkXmppRecvMsgsTableViewModel::GkXmppRecvMsgsTableViewModel
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param database
  * @param parent
  */
-GkXmppRosterPendingTableViewModel::GkXmppRosterPendingTableViewModel(QPointer<QTableView> tableView,
-                                                                     QPointer<GekkoFyre::GkXmppClient> xmppClient,
-                                                                     QWidget *parent) : QAbstractTableModel(parent)
+GkXmppRecvMsgsTableViewModel::GkXmppRecvMsgsTableViewModel(QPointer<QTableView> tableView,
+                                                           QPointer<GekkoFyre::GkXmppClient> xmppClient,
+                                                           QWidget *parent) : QAbstractTableModel(parent)
 {
     setParent(parent);
 
@@ -80,20 +80,20 @@ GkXmppRosterPendingTableViewModel::GkXmppRosterPendingTableViewModel(QPointer<QT
 }
 
 /**
- * @brief GkXmppRosterPendingTableViewModel::~GkXmppRosterPendingTableViewModel
+ * @brief GkXmppRecvMsgsTableViewModel::~GkXmppRecvMsgsTableViewModel
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-GkXmppRosterPendingTableViewModel::~GkXmppRosterPendingTableViewModel()
+GkXmppRecvMsgsTableViewModel::~GkXmppRecvMsgsTableViewModel()
 {
     return;
 }
 
 /**
- * @brief GkXmppRosterPendingTableViewModel::populateData
+ * @brief GkXmppRecvMsgsTableViewModel::populateData
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param event_logs
  */
-void GkXmppRosterPendingTableViewModel::populateData(const QList<GkPendingTableViewModel> &data_list)
+void GkXmppRecvMsgsTableViewModel::populateData(const QList<GkRecvMsgsTableViewModel> &data_list)
 {
     dataBatchMutex.lock();
 
@@ -105,20 +105,27 @@ void GkXmppRosterPendingTableViewModel::populateData(const QList<GkPendingTableV
 }
 
 /**
- * @brief GkXmppRosterPendingTableViewModel::insertData
+ * @brief GkXmppRecvMsgsTableViewModel::insertData
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param event
+ * @param bareJid The identity of the user, as it should appear on the XMPP server.
+ * @param msg The message data to be inserted.
+ * @param timestamp The date/time to be inserted.
  */
-void GkXmppRosterPendingTableViewModel::insertData(const GkPendingTableViewModel &data)
+void GkXmppRecvMsgsTableViewModel::insertData(const QString &bareJid, const QString &msg, const QDateTime &timestamp)
 {
     dataBatchMutex.lock();
 
     beginInsertRows(QModelIndex(), m_data.count(), m_data.count());
-    m_data.append(data);
+    GkRecvMsgsTableViewModel recvMsg;
+    recvMsg.timestamp = timestamp;
+    recvMsg.bareJid = bareJid;
+    recvMsg.message = msg;
+    recvMsg.nickName = m_xmppClient->getJidNickname(recvMsg.bareJid);
+    m_data.append(recvMsg);
     endInsertRows();
 
     auto top = this->createIndex((m_data.count() - 1), 0, nullptr);
-    auto bottom = this->createIndex((m_data.count() - 1), GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_TOTAL_IDX, nullptr);
+    auto bottom = this->createIndex((m_data.count() - 1), GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_TOTAL_IDX, nullptr);
     emit dataChanged(top, bottom);
 
     dataBatchMutex.unlock();
@@ -126,18 +133,19 @@ void GkXmppRosterPendingTableViewModel::insertData(const GkPendingTableViewModel
 }
 
 /**
- * @brief GkXmppRosterPendingTableViewModel::removeData
+ * @brief GkXmppRecvMsgsTableViewModel::removeData
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param bareJid The username for which the roster item is to be removed from.
+ * @param timestamp The Date/Time at which the message is to be removed from.
+ * @param bareJid The username for which the message is to be removed from.
  * @return The row at which the data was removed from.
  */
-qint32 GkXmppRosterPendingTableViewModel::removeData(const QString &bareJid)
+qint32 GkXmppRecvMsgsTableViewModel::removeData(const QDateTime &timestamp, const QString &bareJid)
 {
     dataBatchMutex.lock();
     qint32 counter = 0;
     for (auto iter = m_data.begin(); iter != m_data.end();) {
         ++counter;
-        if (iter->bareJid == bareJid) {
+        if (iter->timestamp == timestamp && iter->bareJid == bareJid) {
             beginRemoveRows(QModelIndex(), (m_data.count() - 1), (m_data.count() - 1));
             iter = m_data.erase(iter);
             endRemoveRows();
@@ -147,7 +155,7 @@ qint32 GkXmppRosterPendingTableViewModel::removeData(const QString &bareJid)
     }
 
     auto top = this->createIndex((m_data.count() - 1), 0, nullptr);
-    auto bottom = this->createIndex((m_data.count() - 1), GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_TOTAL_IDX, nullptr);
+    auto bottom = this->createIndex((m_data.count() - 1), GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_TOTAL_IDX, nullptr);
     emit dataChanged(top, bottom);
 
     dataBatchMutex.unlock();
@@ -155,12 +163,12 @@ qint32 GkXmppRosterPendingTableViewModel::removeData(const QString &bareJid)
 }
 
 /**
- * @brief GkXmppRosterPendingTableViewModel::rowCount
+ * @brief GkXmppRecvMsgsTableViewModel::rowCount
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param parent
  * @return
  */
-int GkXmppRosterPendingTableViewModel::rowCount(const QModelIndex &parent) const
+int GkXmppRecvMsgsTableViewModel::rowCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
 
@@ -168,45 +176,42 @@ int GkXmppRosterPendingTableViewModel::rowCount(const QModelIndex &parent) const
 }
 
 /**
- * @brief GkXmppRosterPendingTableViewModel::columnCount
+ * @brief GkXmppRecvMsgsTableViewModel::columnCount
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param parent
  * @return
  */
-int GkXmppRosterPendingTableViewModel::columnCount(const QModelIndex &parent) const
+int GkXmppRecvMsgsTableViewModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
 
-    return GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_TOTAL_IDX; // Make sure to add the total of columns from within `GkXmppRosterPendingTableViewModel::headerData()`!
+    return GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_TOTAL_IDX; // Make sure to add the total of columns from within `GkXmppRecvMsgsTableViewModel::headerData()`!
 }
 
 /**
- * @brief GkXmppRosterPendingTableViewModel::data
+ * @brief GkXmppRecvMsgsTableViewModel::data
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param index
  * @param role
  * @return
  */
-QVariant GkXmppRosterPendingTableViewModel::data(const QModelIndex &index, int role) const
+QVariant GkXmppRecvMsgsTableViewModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid() || role != Qt::DisplayRole) {
         return QVariant();
     }
 
-    const QIcon row_presence = m_data[index.row()].presence;
-    const QString row_bareJid = m_data[index.row()].bareJid;
+    const QDateTime row_timestamp = m_data[index.row()].timestamp;
     const QString row_nickname = m_data[index.row()].nickName;
-    const QString row_reason = m_data[index.row()].reason;
+    const QString row_message = m_data[index.row()].message;
 
     switch (index.column()) {
-        case GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_PRESENCE_IDX:
-            return QIcon(row_presence);
-        case GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_BAREJID_IDX:
-            return m_xmppClient->getUsername(row_bareJid);
-        case GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_NICKNAME_IDX:
+        case GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_DATETIME_IDX:
+            return row_timestamp.toString("dd.MM.yyyy h:mm:ss ap");
+        case GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_NICKNAME_IDX:
             return row_nickname;
-        case GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_REASON_IDX:
-            return row_reason;
+        case GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_MSG_IDX:
+            return row_message;
         default:
             break;
     }
@@ -215,30 +220,27 @@ QVariant GkXmppRosterPendingTableViewModel::data(const QModelIndex &index, int r
 }
 
 /**
- * @brief GkXmppRosterPendingTableViewModel::setData
+ * @brief GkXmppRecvMsgsTableViewModel::setData
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param index
  * @param value
  * @param role
  * @return
  */
-bool GkXmppRosterPendingTableViewModel::setData(const QModelIndex &index, const QVariant &value, int role)
+bool GkXmppRecvMsgsTableViewModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
     if (index.isValid() && role == Qt::DisplayRole) {
         qint32 row = index.row();
-        GkXmpp::GkPendingTableViewModel result;
+        GkXmpp::GkRecvMsgsTableViewModel result;
         switch (index.column()) {
-            case GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_PRESENCE_IDX:
-                result.presence = QIcon(value.toString());
+            case GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_DATETIME_IDX:
+                result.timestamp = value.toDateTime();
                 break;
-            case GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_BAREJID_IDX:
-                result.bareJid = value.toString();
-                break;
-            case GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_NICKNAME_IDX:
+            case GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_NICKNAME_IDX:
                 result.nickName = value.toString();
                 break;
-            case GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_REASON_IDX:
-                result.reason = value.toString();
+            case GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_MSG_IDX:
+                result.message = value.toString();
                 break;
             default:
                 return false;
@@ -252,12 +254,12 @@ bool GkXmppRosterPendingTableViewModel::setData(const QModelIndex &index, const 
 }
 
 /**
- * @brief GkXmppRosterPendingTableViewModel::flags
+ * @brief GkXmppRecvMsgsTableViewModel::flags
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param index
  * @return
  */
-Qt::ItemFlags GkXmppRosterPendingTableViewModel::flags(const QModelIndex &index) const
+Qt::ItemFlags GkXmppRecvMsgsTableViewModel::flags(const QModelIndex &index) const
 {
     if (!index.isValid()) {
         return Qt::ItemIsEnabled;
@@ -267,25 +269,23 @@ Qt::ItemFlags GkXmppRosterPendingTableViewModel::flags(const QModelIndex &index)
 }
 
 /**
- * @brief GkXmppRosterPendingTableViewModel::headerData
+ * @brief GkXmppRecvMsgsTableViewModel::headerData
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param section
  * @param orientation
  * @param role
  * @return
  */
-QVariant GkXmppRosterPendingTableViewModel::headerData(int section, Qt::Orientation orientation, int role) const
+QVariant GkXmppRecvMsgsTableViewModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
         switch (section) {
-            case GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_PRESENCE_IDX:
-                return tr("Presence");
-            case GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_BAREJID_IDX:
-                return tr("ID#");
-            case GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_NICKNAME_IDX:
+            case GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_DATETIME_IDX:
+                return tr("Timestamp");
+            case GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_NICKNAME_IDX:
                 return tr("Nickname");
-            case GK_XMPP_ROSTER_PENDING_TABLEVIEW_MODEL_REASON_IDX:
-                return tr("Reason");
+            case GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_MSG_IDX:
+                return tr("Message");
             default:
                 break;
         }

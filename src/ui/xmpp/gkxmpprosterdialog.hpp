@@ -44,13 +44,13 @@
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
 #include "src/gk_xmpp_client.hpp"
+#include "src/gk_string_funcs.hpp"
 #include "src/models/tableview/gk_xmpp_roster_presence_model.hpp"
 #include "src/models/tableview/gk_xmpp_roster_pending_model.hpp"
 #include "src/models/tableview/gk_xmpp_roster_blocked_model.hpp"
 #include "src/ui/xmpp/gkxmppmessagedialog.hpp"
 #include "src/gk_logger.hpp"
-#include <nuspell/finder.hxx>
-#include <nuspell/dictionary.hxx>
+#include <QtSpell.hpp>
 #include <memory>
 #include <QImage>
 #include <QTimer>
@@ -61,6 +61,7 @@
 #include <QDialog>
 #include <QPointer>
 #include <QByteArray>
+#include <QStringList>
 #include <QTreeWidgetItem>
 
 namespace Ui {
@@ -72,10 +73,10 @@ class GkXmppRosterDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit GkXmppRosterDialog(const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details, QPointer<GekkoFyre::GkXmppClient> xmppClient,
-                                QPointer<GekkoFyre::GkLevelDb> database, std::shared_ptr<nuspell::Dictionary> nuspellDict,
-                                QPointer<GekkoFyre::GkEventLogger> eventLogger, const bool &skipConnectionCheck = false,
-                                QWidget *parent = nullptr);
+    explicit GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFuncs, const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
+                                QPointer<GekkoFyre::GkXmppClient> xmppClient, QPointer<GekkoFyre::GkLevelDb> database,
+                                QPointer<QtSpell::TextEditChecker> spellChecking, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                                const bool &skipConnectionCheck = false, QWidget *parent = nullptr);
     ~GkXmppRosterDialog();
 
 private slots:
@@ -191,13 +192,18 @@ private:
     //
     // Spell-checking, dictionaries, etc.
     //
-    std::shared_ptr<nuspell::Dictionary> m_nuspellDict;
+    QPointer<QtSpell::TextEditChecker> m_spellChecker;
 
     //
     // QXmpp and XMPP related
     //
     GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
     QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign> m_rosterList;
+
+    //
+    // Miscellaneous
+    //
+    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
 
     //
     // Boolean values
@@ -214,6 +220,7 @@ private:
 
     void reconnectToXmpp();
     void launchMsgDlg(const QString &bareJid);
+    void launchMsgDlg(const QStringList &bareJids);
     void prefillAvailComboBox();
 };
 

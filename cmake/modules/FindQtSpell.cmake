@@ -39,17 +39,23 @@
 #
 
 find_package(PkgConfig)
-pkg_check_modules(PC_ICUUC QUIET "icuuc")
-set(ICUUC_DEFINITIONS ${PC_ICUUC_CFLAGS_OTHER})
+pkg_check_modules(PC_QTSPELL QUIET "qtspell")
+set(QTSPELL_DEFINITIONS ${PC_QTSPELL_CFLAGS_OTHER})
 
-find_library(ICUUC_LIBRARY
-    NAMES "libicuuc" "icuuc"
-    HINTS ${PC_ICUUC_LIBDIR} ${PC_ICUUC_LIBRARY_DIRS}
+find_path(QTSPELL_INCLUDE_DIR
+    NAMES "QtSpell.hpp"
+    HINTS ${PC_QTSPELL_INCLUDE_DIR} ${PC_QTSPELL_INCLUDE_DIRS}
+    PATHS "/usr/local/include/QtSpell-qt5" "/usr/include/QtSpell-qt5" "/opt/local/include/QtSpell-qt5" "/mingw64/include/QtSpell-qt5" "/usr/include/x86_64-linux-gnu/QtSpell-qt5")
+
+find_library(QTSPELL_LIBRARY
+    NAMES "qtspell-qt5" "libqtspell-qt5" "qtspell-qt4" "libqtspell-qt4" "qtspell" "libqtspell"
+    HINTS ${PC_QTSPELL_LIBDIR} ${PC_QTSPELL_LIBRARY_DIRS}
     PATHS "/usr/local/lib" "/usr/local/lib64" "/usr/lib" "/usr/lib64" "/mingw64/bin" "/mingw64/lib" "/usr/lib/x86_64-linux-gnu" "/sw/lib" "/opt/local/lib")
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Icuuc DEFAULT_MSG ICUUC_LIBRARY)
+find_package_handle_standard_args(QtSpell DEFAULT_MSG QTSPELL_LIBRARY QTSPELL_INCLUDE_DIR)
 
-mark_as_advanced(ICUUC_LIBRARY)
+mark_as_advanced(QTSPELL_INCLUDE_DIR QTSPELL_LIBRARY)
 
-set(ICUUC_LIBRARIES ${ICUUC_LIBRARY})
+set(QTSPELL_LIBRARIES ${QTSPELL_LIBRARY})
+set(QTSPELL_INCLUDE_DIRS ${QTSPELL_INCLUDE_DIR})

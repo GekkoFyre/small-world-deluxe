@@ -58,26 +58,17 @@ KissFFT by Mark Borgerding <Mark@Borgerding.net>
     <https://github.com/mborgerding/kissfft>
         BSD 3-clause License
 
-Hunspell by Kevin Hendricks and Caolán McNamara et al.
-    <http://hunspell.github.io/>
-        GNU General Public License (GPL, version 2)
-
 Nuspell by Dimitrij Mijoski and Sander van Geloven
     <https://github.com/nuspell/nuspell>
         GNU Lesser General Public License (LGPL, version 3)
 
-Hunspell Dictionaries by various authors (see documentation within each sub-directory)
-    <https://github.com/wooorm/dictionaries>
-        GNU General Public License (GPL, version 3)
-        GNU General Public License (GPL, version 2)
-        GNU Lesser General Public License (LGPL, version 3)
+Enchant by Reuben Thomas et al.
+    <https://github.com/AbiWord/enchant>
         GNU Lesser General Public License (LGPL, version 2.1)
-        Mozilla Public License (MPL, version 1.1)
-        The MIT License
-        BSD 3-clause License
-        Apache License (APL, version 2)
-        Creative Commons Attribution Share Alike 3.0 Unported (CC BY-SA 3.0)
-        Creative Commons Attribution 3.0 International (CC BY 3.0)
+
+QtSpell by Sandro Mani
+    <https://github.com/manisandro/qtspell>
+        GNU General Public License (GPL, version 3)
 
 AudioFile by Adam Stark
     <https://github.com/adamstark/AudioFile>

@@ -98,8 +98,8 @@ sworld_sentry_archlinux_x86_64:
   - curl -sL https://sentry.io/get-cli/ | bash
   script:
   - sentry-cli --auth-token $GK_SENTRY_AUTH_KEY --url $GK_SENTRY_URL upload-dif -o
-    gekkofyre-networks -p small-world-deluxe ./src_build/ --include-sources --log-level=error
-  - sentry-cli releases new $MAJOR.$MINOR.$PATCH --project small-world-deluxe
+    $GK_SENTRY_ORG -p small-world-deluxe ./src_build/ --include-sources --log-level=error
+  - sentry-cli releases new $MAJOR.$MINOR.$PATCH --org $GK_SENTRY_ORG --project small-world-deluxe
   - sentry-cli releases set-commits $MAJOR.$MINOR.$PATCH --auto
   after_script:
   - echo "Finished uploading data to Sentry server!"

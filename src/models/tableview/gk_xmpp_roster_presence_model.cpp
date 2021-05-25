@@ -128,7 +128,7 @@ void GkXmppRosterPresenceTableViewModel::insertData(const GkPresenceTableViewMod
 /**
  * @brief GkXmppRosterPresenceTableViewModel::removeData
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param event
+ * @param bareJid The username for which the roster item is to be removed from.
  * @return The row at which the data was removed from.
  */
 qint32 GkXmppRosterPresenceTableViewModel::removeData(const QString &bareJid)

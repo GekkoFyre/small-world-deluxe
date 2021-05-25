@@ -308,6 +308,30 @@ QString StringFuncs::zeroPadding(const QVariant &num, const qint32 &places)
 }
 
 /**
+ * @brief StringFuncs::trimStrToCharLength will trim a given string value to only so many characters instead.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value The given string value.
+ * @param places Trim to only this character length.
+ * @param ellipsis Whether to add a, `...`, at the end or not, provided the given string value has been trimmed.
+ * @return The trimmed length of string.
+ */
+QString StringFuncs::trimStrToCharLength(const QString &value, const qint32 &places, const bool &ellipsis)
+{
+    QString tmp = value; // Create a temporary variable so that we are no longer working with a const...
+    tmp.truncate(places); // Truncate to only so many places...
+    if (value.size() > places) {
+        if (ellipsis) {
+            QString ret = QString("%1...").arg(tmp); // Add ellipsis at the end of the string now...
+            return ret;
+        }
+
+        return tmp;
+    }
+
+    return value;
+}
+
+/**
  * @brief StringFuncs::fileSizeHumanReadable will 'prettify' a given file-size, converting it to kilobytes, megabytes,
  * gigabytes, etc. as needed, thusly making it more human readable.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
