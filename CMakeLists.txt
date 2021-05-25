@@ -88,8 +88,8 @@ option(GFYRE_BUILD_SHARED "Build Small World Deluxe as a shared library/package.
 option(GFYRE_SWORLD_DBG_VERBOSITY "Enable DEBUG verbosity for Small World Deluxe and its use of third-party libraries throughout the program itself." OFF)
 option(GFYRE_BOOST_CPP_DBG "Enable the use of debug libraries for the Boost C++ dependency!" OFF)
 
-option(ENBL_VALGRIND_SUPPORT "Allows for the use of Valgrind memory analysis on the application, thereby disabling certain, otherwise needed features that enhance the user-experience." OFF)
-option(ENBL_CLANG_ADDRESS_SANITIZER "LLVM's AddressSanitizer is a fast memory error detector. Clang support must be enabled for this to work." OFF)
+option(GFYRE_ENBL_VALGRIND_SUPPORT "Allows for the use of Valgrind memory analysis on the application, thereby disabling certain, otherwise needed features that enhance the user-experience." OFF)
+option(GFYRE_ENBL_CLANG_ADDRESS_SANITIZER "LLVM's AddressSanitizer is a fast memory error detector. Clang support must be enabled for this to work." OFF)
 
 option(BUILD_CODEC2_SUPPORT "Enable support for the 'Codec2' open source speech codec library." OFF)
 
@@ -312,19 +312,19 @@ endif(Threads_FOUND)
 #
 # ICU
 #
-find_package(Icuuc REQUIRED)
-if (ICUUC_FOUND)
-    set(LIBS ${LIBS} ${ICUUC_LIBRARIES})
-    message(STATUS "The 'icuuc' library has been configured!")
+find_package(ICU REQUIRED COMPONENTS i18n data uc)
+if (ICU_FOUND)
+    set(LIBS ${LIBS} ${ICU_LIBRARIES})
+    message(STATUS "The 'ICU' set of internationalization libraries has been configured!")
 else()
-    message(FATAL_ERROR "The 'icuuc' library could not be found!")
-endif(ICUUC_FOUND)
+    message(FATAL_ERROR "The 'ICU' set of internationalization libraries culd not be found!")
+endif(ICU_FOUND)
 
 #
 # Nuspell
 # https://nuspell.github.io/
 #
-if (LINUX)
+if (LINUX OR !MSYS OR !MINGW)
 	find_package(Nuspell REQUIRED)
 	if (NUSPELL_FOUND)
 		include_directories(${NUSPELL_INCLUDE_DIRS})
@@ -421,6 +421,18 @@ else()
 endif(Vorbis_FOUND)
 
 #
+# QtSpell
+# https://github.com/manisandro/qtspell
+#
+find_package(QtSpell REQUIRED)
+if (QTSPELL_FOUND)
+    include_directories(${QTSPELL_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${QTSPELL_LIBRARIES})
+else()
+    message(STATUS "The 'QtSpell' spelling libraries have been configured!")
+endif(QTSPELL_FOUND)
+
+#
 # https://xiph.org/vorbis/
 #
 find_package(Ogg REQUIRED)
@@ -510,19 +522,6 @@ message(STATUS "The 'Opus' audio (de-/en-)coding libraries have been configured!
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/kissfft")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/kissfft")
 message(STATUS "The 'KissFFT' fourier transform libraries have been configured!")
-
-#
-# Nuspell dictionaries
-#
-file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/dictionaries/dictionaries" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Library")
-file(RENAME "${CMAKE_CURRENT_BINARY_DIR}/Library/dictionaries" "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling")
-
-#
-# Remove all the unneeded files now!
-file(GLOB_RECURSE RM_NUSPELL_FILES_JS "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling/*.js")
-file(GLOB_RECURSE RM_NUSPELL_FILES_JSON "${CMAKE_CURRENT_BINARY_DIR}/Library/Spelling/*.json")
-file(REMOVE ${RM_NUSPELL_FILES_JS})
-file(REMOVE ${RM_NUSPELL_FILES_JSON})
 
 #
 # End of dictionaries
@@ -701,6 +700,7 @@ set(GALAXY_UI_CPP
     src/models/tableview/gk_logger_model.cpp
     src/models/tableview/gk_active_msgs_model.cpp
     src/models/tableview/gk_callsign_msgs_model.cpp
+    src/models/tableview/gk_xmpp_recv_msgs_model.cpp
 	src/models/tableview/gk_xmpp_roster_presence_model.cpp
 	src/models/tableview/gk_xmpp_roster_pending_model.cpp
 	src/models/tableview/gk_xmpp_roster_blocked_model.cpp
@@ -801,6 +801,7 @@ set(GALAXY_OBJ_HEADERS
     src/models/tableview/gk_logger_model.hpp
     src/models/tableview/gk_active_msgs_model.hpp
     src/models/tableview/gk_callsign_msgs_model.hpp
+    src/models/tableview/gk_xmpp_recv_msgs_model.hpp
 	src/models/tableview/gk_xmpp_roster_presence_model.hpp
 	src/models/tableview/gk_xmpp_roster_pending_model.hpp
 	src/models/tableview/gk_xmpp_roster_blocked_model.hpp
@@ -916,13 +917,14 @@ endif(GFYRE_BUILD_STATIC)
 # Build Small World Deluxe as a shared package!
 #
 if(GFYRE_BUILD_SHARED)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC" )
     add_library(galaxy SHARED ${QM_FILES} ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP} ${GALAXY_HAMLIB_CPP} ${GALAXY_WINTOAST_HPP} ${GALAXY_WINTOAST_CPP})
     
     # add_library(galaxy_fort STATIC ${GALAXY_WSJTX_QRA64_FORT})
 endif(GFYRE_BUILD_SHARED)
 
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
-target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} OpenSSL::SSL Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::Multimedia Qt5::SerialPort Qt5::PrintSupport Qt5::Xml Qt5::TextToSpeech Qt5::Test QXmpp::QXmpp Threads::Threads SingleApplication::SingleApplication sentry::sentry Opus::opus leveldb kissfft ${LIBS})
+target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} ICU::i18n ICU::data ICU::uc OpenSSL::SSL Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::Multimedia Qt5::SerialPort Qt5::PrintSupport Qt5::Xml Qt5::TextToSpeech Qt5::Test QXmpp::QXmpp Threads::Threads SingleApplication::SingleApplication sentry::sentry Opus::opus leveldb kissfft ${LIBS})
 
 qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)
 add_dependencies(galaxy resources)
@@ -971,6 +973,13 @@ SET(CMAKE_CXX_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG")
 SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
 
 if(MSYS OR MINGW OR LINUX)
+    #
+    # https://clang.llvm.org/docs/AddressSanitizer.html
+    #
+    if(GFYRE_ENBL_CLANG_ADDRESS_SANITIZER)
+        set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+        set (CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_STATIC_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address -lasan -static-libasan")
+    endif()
     if (CMAKE_CXX_COMPILER_ID MATCHES "clang")
         #
         # Using regular Clang or AppleClang
@@ -982,13 +991,6 @@ if(MSYS OR MINGW OR LINUX)
             set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
         endif()
         add_compile_options(-Werror -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-int-in-bool-context -Wno-missing-field-initializers)
-        
-        #
-        # https://clang.llvm.org/docs/AddressSanitizer.html
-        #
-        if(ENBL_CLANG_ADDRESS_SANITIZER)
-            set(CMAKE_BUILD_TYPE "ASAN")
-        endif()
     elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
         #
         # Using GCC

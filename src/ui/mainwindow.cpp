@@ -790,7 +790,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Hunspell & Spelling dictionaries
         //
-        readNuspellSettings();
+        readEnchantSettings();
 
         //
         // QPrinter-specific options!
@@ -863,6 +863,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         QPointer<GkPlainTextSubmit> widget_mesg_outgoing = new GkPlainTextSubmit(ui->frame_mesg_log);
         ui->verticalLayout_3->addWidget(widget_mesg_outgoing);
+        m_spellChecker->setTextEdit(widget_mesg_outgoing);
         widget_mesg_outgoing->setTabChangesFocus(true);
         widget_mesg_outgoing->setPlaceholderText(tr("Enter your outgoing messages here..."));
         QObject::connect(widget_mesg_outgoing, SIGNAL(execFuncAfterEvent(const QString &)),
@@ -906,7 +907,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the QXmpp client!
         m_xmppClient = new GkXmppClient(gkConnDetails, gkDb, gkFileIo, gkEventLogger, false, nullptr);
-        gkXmppRosterDlg = new GkXmppRosterDialog(gkConnDetails, m_xmppClient, gkDb, m_nuspellDict, gkEventLogger, true, this);
+        gkXmppRosterDlg = new GkXmppRosterDialog(gkStringFuncs, gkConnDetails, m_xmppClient, gkDb, m_spellChecker, gkEventLogger, true, this);
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
@@ -1055,7 +1056,7 @@ void MainWindow::launchSettingsWin(const System::UserInterface::GkSettingsDlgTab
                                                                pref_input_device, pref_output_device, gkRadioLibs,
                                                                gkStringFuncs, gkRadioPtr, gkSerialPortMap, gkUsbPortMap,
                                                                gkFreqList, gkFreqTableModel, gkConnDetails, m_xmppClient,
-                                                               gkEventLogger, gkTextToSpeech, settingsDlgTab, this);
+                                                               gkEventLogger, gkTextToSpeech, m_spellChecker, settingsDlgTab, this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
@@ -2180,38 +2181,25 @@ void MainWindow::readXmppSettings()
 }
 
 /**
- * @brief MainWindow::readNuspellSettings reads any settings related to Hunspell and its dictionaries from the Google
+ * @brief MainWindow::readEnchantSettings reads any settings related to Hunspell and its dictionaries from the Google
  * LevelDB database attached to the Small World Deluxe instance.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void MainWindow::readNuspellSettings()
+void MainWindow::readEnchantSettings()
 {
-    sys::error_code ec;
     try {
         QString curr_chosen_dict = gkDb->read_lang_dict_settings(Language::GkDictionary::ChosenDictLang);
+        if (curr_chosen_dict.isEmpty()) {
+            curr_chosen_dict = Filesystem::enchantSpellDefLang; // Default language dictionary to use if none has been specified!
+        }
+
+        m_spellChecker = new QtSpell::TextEditChecker(this);
+        m_spellChecker->setDecodeLanguageCodes(true);
+        m_spellChecker->setShowCheckSpellingCheckbox(true);
+        m_spellChecker->setUndoRedoEnabled(true);
 
         if (!curr_chosen_dict.isEmpty()) {
-            if (curr_chosen_dict == Filesystem::nuspellDisabledOption) { // The user has chosen to disable Hunspell entirely!
-                return;
-            }
-        }
-
-        if (curr_chosen_dict.isEmpty()) {
-            curr_chosen_dict = Filesystem::nuspellSpellDefLang; // Default language dictionary to use if none has been specified!
-        }
-
-        fs::path active_dict_dir = gkFileIo->getLangFile(curr_chosen_dict, Language::GkLangSettings::DictLang);
-        if (fs::exists(active_dict_dir, ec)) {
-            if (fs::is_directory(active_dict_dir, ec)) {
-                fs::path active_dic = fs::path(active_dict_dir.string() + native_slash.string() + Filesystem::nuspellSpellDic);
-                //
-                // The *.aff and *.dic exists!
-                m_nuspellDict = std::make_shared<nuspell::Dictionary>(nuspell::Dictionary::load_from_path(active_dic.string()));
-            }
-
-            if (ec.failed()) {
-                throw std::invalid_argument(tr("An issue was encountered while attempting to read Hunspell dictionary! Error: %1").arg(QString::fromStdString(ec.message())).toStdString());
-            }
+            m_spellChecker->setLanguage(curr_chosen_dict);
         }
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(e.what()));

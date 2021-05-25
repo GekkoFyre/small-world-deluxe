@@ -128,7 +128,7 @@ void GkXmppRosterBlockedTableViewModel::insertData(const GkBlockedTableViewModel
 /**
  * @brief GkXmppRosterBlockedTableViewModel::removeData
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param event
+ * @param bareJid The username for which the roster item is to be removed from.
  * @return The row at which the data was removed from.
  */
 qint32 GkXmppRosterBlockedTableViewModel::removeData(const QString &bareJid)

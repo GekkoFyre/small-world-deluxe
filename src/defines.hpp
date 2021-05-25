@@ -50,8 +50,11 @@
 #include <boost/filesystem.hpp>
 #include <qwt/qwt_interval.h>
 #include <qxmpp/QXmppGlobal.h>
+#include <qxmpp/QXmppVCardIq.h>
+#include <qxmpp/QXmppMessage.h>
 #include <qxmpp/QXmppPresence.h>
 #include <qxmpp/QXmppRosterIq.h>
+#include <qxmpp/QXmppArchiveIq.h>
 #include <map>
 #include <list>
 #include <vector>
@@ -284,6 +287,11 @@ namespace GekkoFyre {
 #define GK_XMPP_ROSTER_BLOCKED_TABLEVIEW_MODEL_REASON_IDX (1)
 #define GK_XMPP_ROSTER_BLOCKED_TABLEVIEW_MODEL_TOTAL_IDX (2)
 
+#define GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_DATETIME_IDX (0)
+#define GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_NICKNAME_IDX (1)
+#define GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_MSG_IDX (2)
+#define GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_TOTAL_IDX (3)
+
 // Hamlib related
 //
 #define GK_HAMLIB_DEFAULT_TIMEOUT (3000)                // The default timeout value for Hamlib, measured in milliseconds.
@@ -348,8 +356,7 @@ namespace Filesystem {
     constexpr char nuspellLibraryDir[] = "Library";                    // The 'Library' dir which is used by the Nuspell libs
     constexpr char nuspellSpellDir[] = "Spelling";                     // The 'Spelling' dir, present underneath 'Library', which is used by the Nuspell libs
     constexpr char nuspellSpellDic[] = "index";                        // The *.dic and *.aff file for Nuspell dictionaries
-    constexpr char nuspellSpellDefLang[] = "en";                       // The default dictionary language to use for Nuspell
-    constexpr char nuspellDisabledOption[] = "No dictionary";          // The disabled option which appears within the QCombobox
+    constexpr char enchantSpellDefLang[] = "en_US";                       // The default dictionary language to use for Nuspell
 
     //
     // User interface language
@@ -443,19 +450,12 @@ namespace Network {
             quint16 port;
         };
 
-        struct GkXmppVCard {
-            QString firstName;
-            QString lastName;
-            QString email;
-            QString nickname;
-            QString fullName;
-            QByteArray avatarImg;
-        };
-
         struct GkXmppCallsign {
             GkHost server;
             QString bareJid;
-            GkXmppVCard vCard;
+            QXmppVCardIq vCard;
+            QList<QXmppArchiveMessage> archive_messages;
+            QList<QXmppMessage> messages;
             std::shared_ptr<QXmppPresence> presence;
             QXmppRosterIq::Item::SubscriptionType subStatus;
         };
@@ -499,6 +499,13 @@ namespace Network {
             QString bareJid;
             QString reason;
             bool added;
+        };
+
+        struct GkRecvMsgsTableViewModel {
+            QDateTime timestamp;    // The current Date & Time, in UTC+0 format.
+            QString bareJid;        // The bareJid this data belongs towards.
+            QString nickName;       // The nickname of the given bareJid.
+            QString message;        // The message the user wishes to send.
         };
     }
 }

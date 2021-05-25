@@ -43,25 +43,42 @@
 
 #include "src/defines.hpp"
 #include "src/gk_xmpp_client.hpp"
-#include <nuspell/finder.hxx>
-#include <nuspell/dictionary.hxx>
+#include "src/gk_string_funcs.hpp"
+#include "src/models/tableview/gk_xmpp_recv_msgs_model.hpp"
+#include <QtSpell.hpp>
+#include <qxmpp/QXmppMessage.h>
+#include <queue>
 #include <memory>
+#include <QEvent>
 #include <QString>
 #include <QObject>
 #include <QDialog>
 #include <QPointer>
+#include <QStringList>
 
 namespace Ui {
 class GkXmppMessageDialog;
 }
+
+class GkPlainTextKeyEnter : public QObject {
+    Q_OBJECT
+
+protected:
+    bool eventFilter(QObject *obj, QEvent *event);
+
+signals:
+    void submitMsgEnterKey();
+
+};
 
 class GkXmppMessageDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit GkXmppMessageDialog(std::shared_ptr<nuspell::Dictionary> nuspellDict, QPointer<GekkoFyre::GkXmppClient> xmppClient,
-                                 const QString &bareJid, QWidget *parent = nullptr);
+    explicit GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                                 QPointer<QtSpell::TextEditChecker> spellChecking, const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
+                                 QPointer<GekkoFyre::GkXmppClient> xmppClient, const QStringList &bareJids, QWidget *parent = nullptr);
     ~GkXmppMessageDialog();
 
 private slots:
@@ -70,21 +87,66 @@ private slots:
     void on_toolButton_insert_clicked();
     void on_toolButton_attach_file_clicked();
     void on_toolButton_view_roster_clicked();
-    void on_textBrowser_recv_msg_dlg_customContextMenuRequested(const QPoint &pos);
+    void on_tableView_recv_msg_dlg_customContextMenuRequested(const QPoint &pos);
+    void on_textEdit_tx_msg_dialog_textChanged();
     void on_lineEdit_message_search_returnPressed();
+
+    void updateInterface(const QStringList &bareJids);
+    void determineNickname();
+    void submitMsgEnterKey();
+    void updateToolbarStatus(const QString &value);
+
+    //
+    // Message handling and QXmppArchiveManager-related
+    void recvXmppMsg(const QXmppMessage &msg);
+    void procMsgArchive(const QString &bareJid);
+    void updateMsgHistory();
+    QXmppMessage createXmppMessageIq(const QString &to, const QString &from, const QString &message) const;
+
+    //
+    // QXmppMamManager handling
+    void msgArchiveSuccReceived();
+    void procMamArchive(const QString &bareJid);
+    void getArchivedMessages();
+
+signals:
+    void updateToolbar(const QString &value);
+
+    //
+    // Message handling and QXmppArchiveManager-related
+    void sendXmppMsg(const QXmppMessage &msg);
+
+    //
+    // QXmppMamManager handling
+    void updateMamArchive(const QString &bareJid);
 
 private:
     Ui::GkXmppMessageDialog *ui;
 
     //
+    // QTableView and related
+    //
+    QPointer<GekkoFyre::GkXmppRecvMsgsTableViewModel> gkXmppRecvMsgsTableViewModel;
+
+    //
     // Spell-checking, dictionaries, etc.
     //
-    std::shared_ptr<nuspell::Dictionary> m_nuspellDict;
+    QPointer<QtSpell::TextEditChecker> m_spellChecker;
+
+    //
+    // Miscellaneous
+    //
+    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
+    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
+    std::queue<QString> m_toolBarTextQueue;
 
     //
     // QXmpp and XMPP related
     //
-    QPointer<GekkoFyre::GkXmppClient> gkXmppClient;
-    QString m_bareJid;
+    GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
+    QPointer<GekkoFyre::GkXmppClient> m_xmppClient;
+    GekkoFyre::Network::GkXmpp::GkNetworkState m_netState;
+    QStringList m_bareJids;
+    QString m_clientNickname;
 };
 

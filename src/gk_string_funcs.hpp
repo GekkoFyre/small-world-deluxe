@@ -94,6 +94,7 @@ public:
 
     QList<int> extractNumbersFromStr(const QString &str);
     QString zeroPadding(const QVariant &num, const qint32 &places);
+    QString trimStrToCharLength(const QString &value, const qint32 &places, const bool &ellipsis = false);
 
     QString fileSizeHumanReadable(const qint64 &file_size);
     qreal getPeakValue(const QAudioFormat &format);

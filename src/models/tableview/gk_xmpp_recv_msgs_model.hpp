@@ -10,7 +10,7 @@
  **                / /\ / _ \ | | | \ \/ / _ \              
  **               / /_//  __/ | |_| |>  <  __/              
  **              /___,' \___|_|\__,_/_/\_\___|              
- **                                                                 
+ **
  **
  **   If you have downloaded the source code for "Small World Deluxe" and are reading this,
  **   then thank you from the bottom of our hearts for making use of our hard work, sweat
@@ -23,7 +23,7 @@
  **   the Free Software Foundation, either version 3 of the License, or
  **   (at your option) any later version.
  **
- **   Small World is distributed in the hope that it will be useful,
+ **   Small world is distributed in the hope that it will be useful,
  **   but WITHOUT ANY WARRANTY; without even the implied warranty of
  **   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  **   GNU General Public License for more details.
@@ -38,51 +38,52 @@
  **   [ 1 ] - https://code.gekkofyre.io/amateur-radio/small-world-deluxe
  **
  ****************************************************************************************************/
- 
+
 #pragma once
 
 #include "src/defines.hpp"
-#include <boost/filesystem.hpp>
-#include <boost/exception/all.hpp>
-#include <boost/random.hpp>
-#include <boost/random/random_device.hpp>
-#include <functional>
-#include <algorithm>
-#include <iterator>
-#include <vector>
-#include <random>
-#include <string>
+#include "src/gk_xmpp_client.hpp"
 #include <memory>
-#include <limits>
-#include <array>
+#include <QList>
+#include <QMutex>
 #include <QObject>
 #include <QString>
+#include <QVariant>
+#include <QDateTime>
+#include <QTableView>
+#include <QModelIndex>
+#include <QAbstractTableModel>
+#include <QSortFilterProxyModel>
 
 namespace GekkoFyre {
 
-class FileIo : public QObject {
+class GkXmppRecvMsgsTableViewModel : public QAbstractTableModel {
     Q_OBJECT
 
 public:
-    explicit FileIo(QObject *parent = nullptr);
-    ~FileIo() override;
+    explicit GkXmppRecvMsgsTableViewModel(QPointer<QTableView> tableView, QPointer<GekkoFyre::GkXmppClient> xmppClient, QWidget *parent = nullptr);
+    ~GkXmppRecvMsgsTableViewModel() override;
 
-    static std::vector<boost::filesystem::path> boost_dir_iterator(const boost::filesystem::path &dirPath, boost::system::error_code ec,
-            const std::vector<std::string> &dirsToSkip = { });
-    static bool checkSettingsExist(const bool &is_file, const boost::filesystem::path &fileName = GekkoFyre::Filesystem::fileName);
+    void populateData(const QList<GekkoFyre::Network::GkXmpp::GkRecvMsgsTableViewModel> &data_list);
+    [[nodiscard]] int rowCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
+    [[nodiscard]] int columnCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
 
-    void write_initial_settings(const QString &value, const GekkoFyre::Database::Settings::init_cfg &key);
-    QString read_initial_settings(const GekkoFyre::Database::Settings::init_cfg &key);
+    [[nodiscard]] QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
+    bool setData(const QModelIndex &index, const QVariant &value, int role) Q_DECL_OVERRIDE;
+    [[nodiscard]] Qt::ItemFlags flags(const QModelIndex &index) const Q_DECL_OVERRIDE;
+    [[nodiscard]] QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
 
-    [[nodiscard]] size_t generateRandInteger(const size_t &min_integer_size, const size_t &max_integer_size,
-                               const size_t &desired_result_less_than) const;
+public slots:
+    void insertData(const QString &bareJid, const QString &msg, const QDateTime &timestamp = QDateTime::currentDateTimeUtc());
+    qint32 removeData(const QDateTime &timestamp, const QString &bareJid);
 
-    std::string get_file_contents(const boost::filesystem::path &filePath);
-    QString defaultDirectory(const QString &base_path, const bool &use_native_slashes = false,
-                             const QString &append_dir = Filesystem::defaultDirAppend);
+private:
+    QList<GekkoFyre::Network::GkXmpp::GkRecvMsgsTableViewModel> m_data;
 
-protected:
-    static std::vector<boost::filesystem::path> analyze_dir(const boost::filesystem::path &dirPath, const std::vector<std::string> &dirsToSkip = { });
+    QPointer<QSortFilterProxyModel> proxyModel;
+    QPointer<QTableView> table;
+    QPointer<GekkoFyre::GkXmppClient> m_xmppClient;
 
+    QMutex dataBatchMutex;
 };
 };
