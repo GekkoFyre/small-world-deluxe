@@ -109,6 +109,9 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
     QObject::connect(this, SIGNAL(updateToolbar(const QString &)), this, SLOT(updateToolbarStatus(const QString &)));
     QObject::connect(this, SIGNAL(sendXmppMsg(const QXmppMessage &)), m_xmppClient, SLOT(sendXmppMsg(const QXmppMessage &)));
     QObject::connect(m_xmppClient, SIGNAL(recvXmppMsgUpdate(const QXmppMessage &)), this, SLOT(recvXmppMsg(const QXmppMessage &)));
+    QObject::connect(m_xmppClient, SIGNAL(updateMsgHistory()), this, SLOT(updateMsgHistory()));
+    QObject::connect(m_xmppClient, SIGNAL(msgArchiveSuccReceived()), this, SLOT(msgArchiveSuccReceived()));
+    QObject::connect(this, SIGNAL(updateMamArchive(const QString &)), this, SLOT(procMamArchive(const QString &)));
 
     //
     // Setup and initialize QTableView's...
@@ -138,6 +141,12 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
 
     determineNickname();
     updateInterface(m_bareJids);
+
+    QObject::connect(m_xmppClient, &QXmppClient::connected, this, [=]() {
+        for (const auto &bareJid: m_bareJids) {
+            m_xmppClient->getArchivedMessages(bareJid);
+        }
+    });
 }
 
 GkXmppMessageDialog::~GkXmppMessageDialog()
@@ -311,7 +320,7 @@ void GkXmppMessageDialog::submitMsgEnterKey()
                     msg.setFrom(gkConnDetails.jid);
                     msg.setTo(bareJid);
                     msg.setBody(plaintext);
-                    msg.setReceiptRequested(true);
+                    msg.setType(QXmppMessage::Chat);
 
                     if (msg.isXmppStanza()) {
                         emit sendXmppMsg(msg);
@@ -371,6 +380,80 @@ void GkXmppMessageDialog::recvXmppMsg(const QXmppMessage &msg)
         }
 
         gkXmppRecvMsgsTableViewModel->insertData(msg.from(), msg.body());
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppMessageDialog::procMsgArchive processes and manages the archiving of chat messages and their histories from
+ * a given XMPP server, provided said server supports this functionality. This will take the information gathered from
+ * the, `m_xmppClient`, object and insert it into the appropriate QTableView.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid The username in relation to the chat history being requested.
+ */
+void GkXmppMessageDialog::procMsgArchive(const QString &bareJid)
+{
+    auto rosterMap = m_xmppClient->getRosterMap();
+    for (const auto &roster: rosterMap) {
+        if (roster.bareJid == bareJid) {
+            if (!roster.archive_messages.isEmpty()) {
+                for (const auto &message: roster.archive_messages) {
+                    gkXmppRecvMsgsTableViewModel->insertData(bareJid, message.body(), message.date());
+                }
+            }
+        }
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppMessageDialog::updateMsgHistory
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppMessageDialog::updateMsgHistory()
+{
+    for (const auto &bareJid: m_bareJids) {
+        procMsgArchive(bareJid);
+    }
+
+    procMsgArchive(gkConnDetails.jid);
+
+    return;
+}
+
+/**
+ * @brief GkXmppMessageDialog::msgArchiveSuccReceived
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkXmppMessageDialog::msgArchiveSuccReceived()
+{
+    for (const auto &bareJid: m_bareJids) {
+        emit updateMamArchive(bareJid);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppMessageDialog::procMamArchive
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid
+ */
+void GkXmppMessageDialog::procMamArchive(const QString &bareJid)
+{
+    if (!bareJid.isEmpty()) {
+        const auto rosterMap = m_xmppClient->getRosterMap();
+        for (const auto &roster: rosterMap) {
+            if (roster.bareJid == bareJid) {
+                if (!roster.messages.isEmpty()) {
+                    for (const auto &message: roster.messages) {
+                        gkXmppRecvMsgsTableViewModel->insertData(bareJid, message.body(), message.stamp());
+                    }
+                }
+            }
+        }
     }
 
     return;

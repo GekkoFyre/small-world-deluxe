@@ -51,8 +51,10 @@
 #include <qwt/qwt_interval.h>
 #include <qxmpp/QXmppGlobal.h>
 #include <qxmpp/QXmppVCardIq.h>
+#include <qxmpp/QXmppMessage.h>
 #include <qxmpp/QXmppPresence.h>
 #include <qxmpp/QXmppRosterIq.h>
+#include <qxmpp/QXmppArchiveIq.h>
 #include <map>
 #include <list>
 #include <vector>
@@ -452,6 +454,8 @@ namespace Network {
             GkHost server;
             QString bareJid;
             QXmppVCardIq vCard;
+            QList<QXmppArchiveMessage> archive_messages;
+            QList<QXmppMessage> messages;
             std::shared_ptr<QXmppPresence> presence;
             QXmppRosterIq::Item::SubscriptionType subStatus;
         };

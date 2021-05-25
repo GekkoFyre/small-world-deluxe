@@ -107,16 +107,17 @@ void GkXmppRecvMsgsTableViewModel::populateData(const QList<GkRecvMsgsTableViewM
 /**
  * @brief GkXmppRecvMsgsTableViewModel::insertData
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param bareJid
- * @param msg
+ * @param bareJid The identity of the user, as it should appear on the XMPP server.
+ * @param msg The message data to be inserted.
+ * @param timestamp The date/time to be inserted.
  */
-void GkXmppRecvMsgsTableViewModel::insertData(const QString &bareJid, const QString &msg)
+void GkXmppRecvMsgsTableViewModel::insertData(const QString &bareJid, const QString &msg, const QDateTime &timestamp)
 {
     dataBatchMutex.lock();
 
     beginInsertRows(QModelIndex(), m_data.count(), m_data.count());
     GkRecvMsgsTableViewModel recvMsg;
-    recvMsg.timestamp = QDateTime::currentDateTimeUtc();
+    recvMsg.timestamp = timestamp;
     recvMsg.bareJid = bareJid;
     recvMsg.message = msg;
     recvMsg.nickName = m_xmppClient->getJidNickname(recvMsg.bareJid);

@@ -49,6 +49,7 @@
 #include <QObject>
 #include <QString>
 #include <QVariant>
+#include <QDateTime>
 #include <QTableView>
 #include <QModelIndex>
 #include <QAbstractTableModel>
@@ -73,7 +74,7 @@ public:
     [[nodiscard]] QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
 
 public slots:
-    void insertData(const QString &bareJid, const QString &msg);
+    void insertData(const QString &bareJid, const QString &msg, const QDateTime &timestamp = QDateTime::currentDateTimeUtc());
     qint32 removeData(const QDateTime &timestamp, const QString &bareJid);
 
 private:

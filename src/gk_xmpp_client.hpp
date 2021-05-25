@@ -56,11 +56,15 @@
 #include <qxmpp/QXmppVCardIq.h>
 #include <qxmpp/QXmppDataForm.h>
 #include <qxmpp/QXmppPresence.h>
+#include <qxmpp/QXmppResultSet.h>
+#include <qxmpp/QXmppArchiveIq.h>
 #include <qxmpp/QXmppVersionIq.h>
+#include <qxmpp/QXmppMamManager.h>
 #include <qxmpp/QXmppRegisterIq.h>
 #include <qxmpp/QXmppMucManager.h>
 #include <qxmpp/QXmppVCardManager.h>
 #include <qxmpp/QXmppRosterManager.h>
+#include <qxmpp/QXmppArchiveManager.h>
 #include <qxmpp/QXmppVersionManager.h>
 #include <qxmpp/QXmppTransferManager.h>
 #include <qxmpp/QXmppClientExtension.h>
@@ -125,6 +129,12 @@ public:
     QIcon presenceToIcon(const QXmppPresence::AvailableStatusType &xmppPresence);
     bool deleteUserAccount();
     QString obtainAvatarFilePath();
+
+    //
+    // QXmppMamManager handling
+    void getArchivedMessages(const QString &to = QString(), const QString &node = QString(), const QString &jid = QString(),
+                             const QDateTime &start = QDateTime(), const QDateTime &end = QDateTime(),
+                             const QXmppResultSetQuery &resultSetQuery = QXmppResultSetQuery());
 
     //
     // vCard management
@@ -194,8 +204,15 @@ private slots:
     void handleSslGreeting();
 
     //
-    // Message handling
+    // Message handling and QXmppArchiveManager-related
     void recvXmppMsg(const QXmppMessage &message);
+    void archiveListReceived(const QList<QXmppArchiveChat> &chats, const QXmppResultSetReply &rsmReply);
+    void archiveChatReceived(const QXmppArchiveChat &chat, const QXmppResultSetReply &rsmReply);
+
+    //
+    // QXmppMamManager handling
+    void archivedMessageReceived(const QString &queryId, const QXmppMessage &message);
+    void resultsRecieved(const QString &queryId, const QXmppResultSetReply &resultSetReply, bool complete);
 
 signals:
     //
@@ -225,8 +242,13 @@ signals:
     void sendError(const QXmppClient::Error &error);
 
     //
-    // Message handling
+    // Message handling and QXmppArchiveManager-related
     void recvXmppMsgUpdate(const QXmppMessage &message);
+    void updateMsgHistory();
+
+    //
+    // QXmppMamManager handling
+    void msgArchiveSuccReceived();
 
 private:
     QPointer<GekkoFyre::GkLevelDb> gkDb;
@@ -258,7 +280,7 @@ private:
     std::shared_ptr<QXmppRosterManager> m_rosterManager;
     QStringList rosterGroups;
     QVector<QString> m_blockList;
-    QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign> m_rosterList;
+    QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign> m_rosterList;   // A list of all the bareJids, including the client themselves!
 
     //
     // Filesystem & Directories
@@ -290,6 +312,8 @@ private:
     std::shared_ptr<QXmppRegistrationManager> m_registerManager;
     std::unique_ptr<QXmppMucManager> m_mucManager;
     std::unique_ptr<QXmppMucRoom> m_pRoom;
+    std::unique_ptr<QXmppArchiveManager> m_xmppArchiveMgr;
+    std::unique_ptr<QXmppMamManager> m_xmppMamMgr;
     std::unique_ptr<QXmppTransferManager> m_transferManager;
     std::unique_ptr<QXmppVCardManager> m_vCardManager;
     QScopedPointer<QXmppLogger> m_xmppLogger;

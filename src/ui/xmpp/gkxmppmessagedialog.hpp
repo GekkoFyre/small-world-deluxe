@@ -96,11 +96,27 @@ private slots:
     void submitMsgEnterKey();
     void updateToolbarStatus(const QString &value);
 
+    //
+    // Message handling and QXmppArchiveManager-related
     void recvXmppMsg(const QXmppMessage &msg);
+    void procMsgArchive(const QString &bareJid);
+    void updateMsgHistory();
+
+    //
+    // QXmppMamManager handling
+    void msgArchiveSuccReceived();
+    void procMamArchive(const QString &bareJid);
 
 signals:
     void updateToolbar(const QString &value);
+
+    //
+    // Message handling and QXmppArchiveManager-related
     void sendXmppMsg(const QXmppMessage &msg);
+
+    //
+    // QXmppMamManager handling
+    void updateMamArchive(const QString &bareJid);
 
 private:
     Ui::GkXmppMessageDialog *ui;
