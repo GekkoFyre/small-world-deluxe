@@ -475,12 +475,10 @@ qint32 GkXmppRosterDialog::removeRosterPresenceTable(const QString &bareJid)
             }
         }
 
-        for (auto iter = m_presenceRosterData.begin(); iter != m_presenceRosterData.end();) {
+        for (auto iter = m_presenceRosterData.begin(); iter != m_presenceRosterData.end(); ++iter) {
             if (iter->bareJid == bareJid) {
                 iter = m_presenceRosterData.erase(iter);
                 break;
-            } else {
-                ++iter;
             }
         }
 
@@ -575,12 +573,10 @@ qint32 GkXmppRosterDialog::removeRosterPendingTable(const QString &bareJid)
             }
         }
 
-        for (auto iter = m_pendingRosterData.begin(); iter != m_pendingRosterData.end();) {
+        for (auto iter = m_pendingRosterData.begin(); iter != m_pendingRosterData.end(); ++iter) {
             if (iter->bareJid == bareJid) {
                 iter = m_pendingRosterData.erase(iter);
                 break;
-            } else {
-                ++iter;
             }
         }
 
@@ -653,12 +649,10 @@ qint32 GkXmppRosterDialog::removeRosterBlockedTable(const QString &bareJid)
             }
         }
 
-        for (auto iter = m_blockedRosterData.begin(); iter != m_blockedRosterData.end();) {
+        for (auto iter = m_blockedRosterData.begin(); iter != m_blockedRosterData.end(); ++iter) {
             if (iter->bareJid == bareJid) {
                 iter = m_blockedRosterData.erase(iter);
                 break;
-            } else {
-                ++iter;
             }
         }
 

@@ -223,6 +223,7 @@ RUN pacman -S qt5-charts --noconfirm
 RUN pacman -S qt5-3d --noconfirm
 RUN pacman -S qt5-connectivity --noconfirm
 RUN pacman -S qt5-speech --noconfirm
+RUN pacman -S qtspell --noconfirm
 RUN pacman -S zstd --noconfirm
 RUN pacman -S libusb --noconfirm
 RUN pacman -S hidapi --noconfirm

@@ -1967,7 +1967,7 @@ void GkXmppClient::recvXmppMsgUpdate(const QXmppMessage &message)
 void GkXmppClient::archiveListReceived(const QList<QXmppArchiveChat> &chats, const QXmppResultSetReply &rsmReply)
 {
     for (const auto &chat: chats) {
-        for (auto iter = m_rosterList.begin(); iter != m_rosterList.end();) {
+        for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
             if (iter->bareJid == chat.with()) {
                 iter->archive_messages = chat.messages();
             }
@@ -1987,13 +1987,11 @@ void GkXmppClient::archiveListReceived(const QList<QXmppArchiveChat> &chats, con
  */
 void GkXmppClient::archiveChatReceived(const QXmppArchiveChat &chat, const QXmppResultSetReply &rsmReply)
 {
-    for (auto iter = m_rosterList.begin(); iter != m_rosterList.end();) {
+    for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
         if (iter->bareJid == chat.with()) {
             for (const auto &message: chat.messages()) {
                 iter->archive_messages.push_back(message);
             }
-
-            break;
         }
     }
 
@@ -2010,25 +2008,21 @@ void GkXmppClient::archiveChatReceived(const QXmppArchiveChat &chat, const QXmpp
 void GkXmppClient::archivedMessageReceived(const QString &queryId, const QXmppMessage &message)
 {
     try {
-        for (auto iter = m_rosterList.begin(); iter != m_rosterList.end();) {
+        for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
             if (iter->bareJid == message.from()) {
                 if (message.isXmppStanza() && !message.body().isEmpty()) {
                     iter->messages.push_back(message);
                     break;
                 }
-            } else {
-                ++iter;
             }
         }
 
-        for (auto iter = m_rosterList.begin(); iter != m_rosterList.end();) {
+        for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
             if (iter->bareJid == message.to()) {
                 if (message.isXmppStanza() && !message.body().isEmpty()) {
                     iter->messages.push_back(message);
                     break;
                 }
-            } else {
-                ++iter;
             }
         }
     } catch (const std::exception &e) {
