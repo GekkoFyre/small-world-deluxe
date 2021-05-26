@@ -57,6 +57,7 @@
 #include <QVariant>
 #include <QSysInfo>
 #include <QDebug>
+#include <tuple>
 #include <algorithm>
 #include <exception>
 #include <iterator>
@@ -128,12 +129,14 @@ void GkLevelDb::writeMultipleKeys(const std::string &base_key_name, const std::v
             std::copy(values.begin(), values.end(), std::back_inserter(values_modifiable));
             auto preexisting_values = readMultipleKeys(base_key_name);
 
-            preexisting_values.emplace_back();
             if (!preexisting_values.empty()) {
-                std::copy(preexisting_values.begin(), preexisting_values.end(), std::back_inserter(values_modifiable));
+                values_modifiable.insert(std::end(values_modifiable), std::begin(preexisting_values), std::end(preexisting_values));
+                writeHashedKeys(base_key_name, preexisting_values, allow_empty_values);
+                return;
             }
 
-            writeHashedKeys(base_key_name, preexisting_values, allow_empty_values);
+            writeHashedKeys(base_key_name, values_modifiable, allow_empty_values);
+            return;
         } else {
             throw std::invalid_argument(tr("Empty string provided while writing key or value to Google LevelDB database!").toStdString());
         }
@@ -1533,8 +1536,8 @@ void GkLevelDb::write_xmpp_chat_log(const QString &bareJid, const QList<QXmppMes
 
                 if (!message_history.empty() && !timestamp_history.empty()) {
                     if (message_history.size() == timestamp_history.size()) {
-                        writeMultipleKeys(msg_key, message_history, true);
-                        writeMultipleKeys(timestamp_key, timestamp_history, true);
+                        writeMultipleKeys(msg_key, message_history, false);
+                        writeMultipleKeys(timestamp_key, timestamp_history, false);
                         return;
                     }
 
@@ -1543,7 +1546,7 @@ void GkLevelDb::write_xmpp_chat_log(const QString &bareJid, const QList<QXmppMes
             }
         }
     } catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
+        std::throw_with_nested(std::runtime_error(e.what()));
     }
 
     return;
@@ -2002,31 +2005,38 @@ void GkLevelDb::writeHashedKeys(const std::string &base_key_name, const std::vec
                                 const bool &allow_empty_values)
 {
     try {
-        leveldb::WriteBatch batch;
-        leveldb::Status status;
-        std::map<std::string, std::string> key_value_map;
+        if (!base_key_name.empty() && !values.empty()) {
+            leveldb::WriteBatch batch;
+            leveldb::Status status;
+            std::vector<std::tuple<std::string, std::string>> key_value_map;
 
-        for (const auto &value: values) {
             qint64 curr_unix_epoch = QDateTime::currentMSecsSinceEpoch();
-            std::string new_key_name = std::string(base_key_name + '!' + std::to_string(curr_unix_epoch));
-            key_value_map.emplace(std::make_pair(new_key_name, value));
-        }
-
-        for (const auto &key_value: key_value_map) {
-            if (!key_value.first.empty()) {
-                if (!key_value.second.empty() || (allow_empty_values && key_value.second.empty())) {
-                    batch.Put(key_value.first, key_value.second);
+            for (const auto &value: values) {
+                if (!value.empty()) {
+                    const std::string new_key_name = std::string(base_key_name + '!' + std::to_string(curr_unix_epoch));
+                    key_value_map.emplace_back(std::make_pair(new_key_name, value));
+                    ++curr_unix_epoch;
                 }
             }
-        }
 
-        leveldb::WriteOptions write_options;
-        write_options.sync = true;
+            if (!key_value_map.empty()) {
+                for (const auto &key_value: key_value_map) {
+                    if (!std::get<0>(key_value).empty()) {
+                        if (!std::get<1>(key_value).empty() || (allow_empty_values && std::get<1>(key_value).empty())) {
+                            batch.Put(std::get<0>(key_value), std::get<1>(key_value));
+                        }
+                    }
+                }
 
-        status = db->Write(write_options, &batch);
+                leveldb::WriteOptions write_options;
+                write_options.sync = true;
 
-        if (!status.ok()) { // Abort because of error!
-            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+                status = db->Write(write_options, &batch);
+
+                if (!status.ok()) { // Abort because of error!
+                    throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+                }
+            }
         }
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(e.what()));

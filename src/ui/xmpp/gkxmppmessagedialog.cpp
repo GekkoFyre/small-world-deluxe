@@ -472,19 +472,23 @@ void GkXmppMessageDialog::msgArchiveSuccReceived()
  */
 void GkXmppMessageDialog::procMamArchive(const QString &bareJid)
 {
-    if (!bareJid.isEmpty()) {
-        const auto rosterMap = m_xmppClient->getRosterMap();
-        for (const auto &roster: rosterMap) {
-            if (roster.bareJid == bareJid) {
-                if (!roster.messages.isEmpty()) {
-                    for (const auto &message: roster.messages) {
-                        gkXmppRecvMsgsTableViewModel->insertData(bareJid, message.body(), message.stamp());
-                    }
+    try {
+        if (!bareJid.isEmpty()) {
+            const auto rosterMap = m_xmppClient->getRosterMap();
+            for (const auto &roster: rosterMap) {
+                if (roster.bareJid == bareJid) {
+                    if (!roster.messages.isEmpty()) {
+                        for (const auto &message: roster.messages) {
+                            gkXmppRecvMsgsTableViewModel->insertData(bareJid, message.body(), message.stamp());
+                        }
 
-                    gkDb->write_xmpp_chat_log(roster.bareJid, roster.messages);
+                        gkDb->write_xmpp_chat_log(roster.bareJid, roster.messages);
+                    }
                 }
             }
         }
+    } catch (const std::exception &e) {
+        gkStringFuncs->print_exception(e);
     }
 
     return;
