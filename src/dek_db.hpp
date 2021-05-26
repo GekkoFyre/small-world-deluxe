@@ -46,13 +46,16 @@
 #include "src/file_io.hpp"
 #include <leveldb/db.h>
 #include <leveldb/status.h>
+#include <qxmpp/QXmppMessage.h>
 #include <map>
 #include <memory>
 #include <string>
 #include <QRect>
 #include <QObject>
+#include <QVector>
 #include <QString>
 #include <QPointer>
+#include <QDateTime>
 #include <QStringList>
 #include <QAudioFormat>
 
@@ -118,10 +121,13 @@ public:
 
     void capture_sys_info();
 
+    void write_xmpp_chat_log(const QString &bareJid, const QList<QXmppMessage> &messages);
+    [[nodiscard]] QList<QXmppMessage> update_xmpp_chat_log(const QString &bareJid, const QList<QXmppMessage> &messages) const;
     void write_xmpp_settings(const QString &value, const GekkoFyre::Database::Settings::GkXmppCfg &key);
     void write_xmpp_vcard_data(const QMap<QString, std::pair<QByteArray, QByteArray>> &vcard_roster);
     void write_xmpp_alpha_notice(const bool &value);
     void remove_xmpp_vcard_data(const QMap<QString, std::pair<QByteArray, QByteArray>> &vcard_roster);
+    [[nodiscard]] QList<QXmppMessage> read_xmpp_chat_log(const QString &bareJid);
     QString read_xmpp_settings(const GekkoFyre::Database::Settings::GkXmppCfg &key);
     bool read_xmpp_alpha_notice();
 
@@ -182,7 +188,7 @@ private:
     void writeMultipleKeys(const std::string &base_key_name, const std::string &value, const bool &allow_empty_values = false);
     bool deleteKeyFromMultiple(const std::string &base_key_name, const std::string &removed_value,
                                const bool &allow_empty_values = false);
-    std::vector<std::string> readMultipleKeys(const std::string &base_key_name);
+    std::vector<std::string> readMultipleKeys(const std::string &base_key_name) const;
     void writeHashedKeys(const std::string &base_key_name, const std::vector<std::string> &values,
                          const bool &allow_empty_values = false);
 

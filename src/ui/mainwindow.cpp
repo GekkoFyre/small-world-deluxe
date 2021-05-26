@@ -906,7 +906,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         //
         // Initialize the QXmpp client!
-        m_xmppClient = new GkXmppClient(gkConnDetails, gkDb, gkFileIo, gkEventLogger, false, nullptr);
+        m_xmppClient = new GkXmppClient(gkConnDetails, gkDb, gkStringFuncs, gkFileIo, gkEventLogger, false, nullptr);
         gkXmppRosterDlg = new GkXmppRosterDialog(gkStringFuncs, gkConnDetails, m_xmppClient, gkDb, m_spellChecker, gkEventLogger, true, this);
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);

@@ -703,7 +703,7 @@ void GkXmppRosterDialog::launchMsgDlg(const QString &bareJid)
 {
     QStringList bareJids;
     bareJids << bareJid;
-    gkXmppMsgDlg = new GkXmppMessageDialog(gkStringFuncs, gkEventLogger, m_spellChecker, gkConnDetails, m_xmppClient, bareJids, this);
+    gkXmppMsgDlg = new GkXmppMessageDialog(gkStringFuncs, gkEventLogger, gkDb, m_spellChecker, gkConnDetails, m_xmppClient, bareJids, this);
     if (gkXmppMsgDlg) {
         if (!gkXmppMsgDlg->isVisible()) {
             gkXmppMsgDlg->setWindowFlags(Qt::Window);
@@ -721,7 +721,7 @@ void GkXmppRosterDialog::launchMsgDlg(const QString &bareJid)
  */
 void GkXmppRosterDialog::launchMsgDlg(const QStringList &bareJids)
 {
-    gkXmppMsgDlg = new GkXmppMessageDialog(gkStringFuncs, gkEventLogger, m_spellChecker, gkConnDetails, m_xmppClient, bareJids, this);
+    gkXmppMsgDlg = new GkXmppMessageDialog(gkStringFuncs, gkEventLogger, gkDb, m_spellChecker, gkConnDetails, m_xmppClient, bareJids, this);
     if (gkXmppMsgDlg) {
         if (!gkXmppMsgDlg->isVisible()) {
             gkXmppMsgDlg->setWindowFlags(Qt::Window);

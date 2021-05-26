@@ -43,9 +43,11 @@
 
 #include "src/defines.hpp"
 #include <boost/filesystem.hpp>
+#include <qxmpp/QXmppMessage.h>
 #include <QAudioFormat>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QDateTime>
 #include <QPointer>
 #include <QObject>
 #include <QString>
@@ -89,6 +91,9 @@ public:
     std::deque<std::string> csvSplitter(const std::string &csv_vals);
     std::deque<std::string> csvRemoveElement(const std::deque<std::string> &csv_elements, const std::string &val_to_remove);
     std::string csvOutputString(const std::deque<std::string> &csv_elements);
+
+    [[nodiscard]] QDateTime calcMinTimestampForXmppMsgHistory(const QList<QXmppMessage> &messages);
+    [[nodiscard]] QDateTime calcMaxTimestampForXmppMsgHistory(const QList<QXmppMessage> &messages);
 
     static QString htmlSpecialCharEncoding(const QString &string);
 

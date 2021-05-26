@@ -337,6 +337,8 @@ namespace General {
             constexpr char jidLookupKey[] = "GkXmppStoredJid";
             constexpr char keyToConvXmlStream[] = "GkXmlStream";
             constexpr char keyToConvAvatarImg[] = "GkAvatarImg";
+            constexpr char keyToConvMsgHistory[] = "msg";
+            constexpr char keyToConvTimestampHistory[] = "timestamp";
         }
     }
 }

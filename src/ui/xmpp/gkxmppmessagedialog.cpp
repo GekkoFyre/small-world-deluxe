@@ -45,6 +45,7 @@
 #include <thread>
 #include <utility>
 #include <iostream>
+#include <QMap>
 #include <QIcon>
 #include <QPixmap>
 #include <QKeyEvent>
@@ -91,7 +92,8 @@ bool GkPlainTextKeyEnter::eventFilter(QObject *obj, QEvent *event)
  * @param parent The parent to this dialog.
  */
 GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                                         QPointer<QtSpell::TextEditChecker> spellChecking, const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
+                                         QPointer<GekkoFyre::GkLevelDb> database, QPointer<QtSpell::TextEditChecker> spellChecking,
+                                         const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
                                          QPointer<GekkoFyre::GkXmppClient> xmppClient, const QStringList &bareJids,
                                          QWidget *parent) : QDialog(parent), ui(new Ui::GkXmppMessageDialog)
 {
@@ -99,6 +101,7 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
 
     gkStringFuncs = std::move(stringFuncs);
     gkEventLogger = std::move(eventLogger);
+    gkDb = std::move(database);
     gkConnDetails = connection_details;
     m_spellChecker = std::move(spellChecking);
     m_xmppClient = std::move(xmppClient);
@@ -477,6 +480,8 @@ void GkXmppMessageDialog::procMamArchive(const QString &bareJid)
                     for (const auto &message: roster.messages) {
                         gkXmppRecvMsgsTableViewModel->insertData(bareJid, message.body(), message.stamp());
                     }
+
+                    gkDb->write_xmpp_chat_log(roster.bareJid, roster.messages);
                 }
             }
         }
