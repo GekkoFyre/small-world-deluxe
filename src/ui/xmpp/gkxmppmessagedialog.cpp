@@ -111,7 +111,8 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
     //
     // Setup and initialize signals and slots...
     QObject::connect(this, SIGNAL(updateToolbar(const QString &)), this, SLOT(updateToolbarStatus(const QString &)));
-    QObject::connect(this, SIGNAL(sendXmppMsg(const QXmppMessage &)), m_xmppClient, SLOT(sendXmppMsg(const QXmppMessage &)));
+    QObject::connect(this, SIGNAL(sendXmppMsg(const QString &, const QXmppMessage &, const QDateTime &, const QDateTime &)),
+                     m_xmppClient, SLOT(sendXmppMsg(const QString &, const QXmppMessage &, const QDateTime &, const QDateTime &)));
     QObject::connect(m_xmppClient, SIGNAL(xmppMsgUpdate(const QXmppMessage &)), this, SLOT(recvXmppMsg(const QXmppMessage &)));
     QObject::connect(m_xmppClient, SIGNAL(updateMsgHistory()), this, SLOT(updateMsgHistory()));
     QObject::connect(m_xmppClient, SIGNAL(msgArchiveSuccReceived()), this, SLOT(msgArchiveSuccReceived()));
@@ -152,12 +153,12 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
 
     if (m_xmppClient->isConnected()) {
         ui->textEdit_tx_msg_dialog->setEnabled(true);
-        getArchivedMessages();
+        getArchivedMessages(); // Gather anything possible from the Google LevelDB database!
     }
 
     QObject::connect(m_xmppClient, &QXmppClient::connected, this, [=]() {
         ui->textEdit_tx_msg_dialog->setEnabled(true);
-        getArchivedMessages();
+        getArchivedMessages(); // Now gather any data possible from the given XMPP server via the Internet!
     });
 
     QObject::connect(m_xmppClient, &QXmppClient::disconnected, this, [=]() {
@@ -334,7 +335,7 @@ void GkXmppMessageDialog::submitMsgEnterKey()
                 if (!bareJid.isEmpty()) {
                     const auto toMsg = createXmppMessageIq(bareJid, gkConnDetails.jid, plaintext);
                     if (toMsg.isXmppStanza()) {
-                        emit sendXmppMsg(toMsg);
+                        emit sendXmppMsg(bareJid, toMsg, toMsg.stamp(), QDateTime::currentDateTimeUtc());
                     }
                 }
             }
@@ -342,7 +343,10 @@ void GkXmppMessageDialog::submitMsgEnterKey()
 
         ui->textEdit_tx_msg_dialog->clear();
     } else {
-        emit updateToolbar(tr("Attempting to make a connection... please wait..."));
+        m_netState = m_xmppClient->getNetworkState();
+        if (m_netState == GkNetworkState::Connecting) {
+            emit updateToolbar(tr("Attempting to make a connection... please wait..."));
+        }
     }
 
     return;
@@ -484,7 +488,10 @@ void GkXmppMessageDialog::procMamArchive(const QString &bareJid)
                         }
 
                         gkDb->write_xmpp_chat_log(roster.bareJid, roster.messages);
+                        break;
                     }
+
+                    break;
                 }
             }
         }

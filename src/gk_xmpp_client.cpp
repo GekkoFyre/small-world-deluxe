@@ -309,11 +309,14 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         QObject::connect(this, &QXmppClient::stateChanged, this, [=](QXmppClient::State state) {
             switch (state) {
                 case ConnectingState:
+                    emit updateProgressBar((1 / GK_XMPP_CREATE_CONN_PROG_BAR_TOT_PERCT) * 100);
                     gkEventLogger->publishEvent(tr("...attempting to make connection towards XMPP server: %1").arg(m_connDetails.server.url), GkSeverity::Info, "",
                                                 true, true, true, false);
                     m_netState = GkNetworkState::Connecting;
+                    emit connecting();
                     break;
                 case ConnectedState:
+                    emit updateProgressBar((2 / GK_XMPP_CREATE_CONN_PROG_BAR_TOT_PERCT) * 100);
                     gkEventLogger->publishEvent(tr("Connected to XMPP server: %1").arg(m_connDetails.server.url), GkSeverity::Info, "",
                                                 true, true, true, false);
                     m_netState = GkNetworkState::Connected;
@@ -928,6 +931,7 @@ QByteArray GkXmppClient::processImgToByteArray(const QString &filePath)
  */
 void GkXmppClient::clientConnected()
 {
+    emit updateProgressBar((3 / GK_XMPP_CREATE_CONN_PROG_BAR_TOT_PERCT) * 100);
     gkEventLogger->publishEvent(tr("A connection has been successfully made towards XMPP server: %1").arg(m_connDetails.server.url),
                                 GkSeverity::Info, "", true, true, true, false);
 
@@ -1132,6 +1136,7 @@ void GkXmppClient::presenceChanged(const QString &bareJid, const QString &resour
             if (iter->bareJid == bareJid) {
                 iter->presence = std::make_shared<QXmppPresence>(m_rosterManager->getPresence(bareJid, resource));
                 emit updateRoster();
+                emit updateProgressBar((4 / GK_XMPP_CREATE_CONN_PROG_BAR_TOT_PERCT) * 100);
                 gkEventLogger->publishEvent(tr("Presence changed for user, \"%1\", towards: %2")
                                                     .arg(bareJid).arg(resource));
                 break;
@@ -1385,12 +1390,32 @@ void GkXmppClient::updateClientVCardForm(const QString &first_name, const QStrin
  * @brief GkXmppClient::sendXmppMsg is a utility function to send messages to all the resources associated with the specified
  * bareJid(s) within the contained QXmppMessage stanza.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid The identity of the user in question, for the message archive with which we are processing for.
  * @param msg The QXmppMessage to process and ultimately, transmit.
+ * @param beginTimestamp The beginning timestamp, from which to filter the search results beginning at in obtaining the
+ * message history for a given bareJid. This is a Internet bandwidth/data saving measure.
+ * @param endTimestamp The end timestamp, from which to filter the search results up towards in obtaining the message
+ * history for a given bareJid. This is a Internet bandwidth/data saving measure.
  */
-void GkXmppClient::sendXmppMsg(const QXmppMessage &msg)
+void GkXmppClient::sendXmppMsg(const QString &bareJid, const QXmppMessage &msg, const QDateTime &beginTimestamp,
+                                const QDateTime &endTimestamp)
 {
     if (msg.isXmppStanza()) {
         sendPacket(msg);
+    }
+
+    if (!m_rosterList.isEmpty()) {
+        for (const auto &roster: m_rosterList) {
+            if (!roster.bareJid.isEmpty()) {
+                if (roster.bareJid == bareJid) {
+                    if (beginTimestamp.isValid() || endTimestamp.isValid()) {
+                        getArchivedMessages(m_connDetails.jid, QString(), roster.bareJid, beginTimestamp, endTimestamp, QXmppResultSetQuery());
+                    } else {
+                        getArchivedMessages(m_connDetails.jid, QString(), roster.bareJid, QDateTime::currentDateTimeUtc(), QDateTime::currentDateTimeUtc(), QXmppResultSetQuery());
+                    }
+                }
+            }
+        }
     }
 
     return;

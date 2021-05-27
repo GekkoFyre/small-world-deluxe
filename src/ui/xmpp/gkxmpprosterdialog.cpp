@@ -52,6 +52,8 @@
 #include <QMessageBox>
 #include <QStringList>
 #include <QImageReader>
+#include <QApplication>
+#include <QDesktopWidget>
 #include <QRegExpValidator>
 
 using namespace GekkoFyre;
@@ -85,9 +87,11 @@ GkXmppRosterDialog::GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFu
         m_spellChecker = std::move(spellChecking);
         gkEventLogger = std::move(eventLogger);
 
+        m_progressBar = new QProgressBar(nullptr);
         m_initAppLaunch = true;
         m_presenceManuallySet = false;
         m_rosterSearchEnabled = true;
+        m_connectingInit = false;
 
         ui->comboBox_current_status->setCurrentIndex(GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX);
 
@@ -152,6 +156,26 @@ GkXmppRosterDialog::GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFu
         // Fill out the presence status ComboBox!
         prefillAvailComboBox();
 
+        QObject::connect(m_xmppClient, &GkXmppClient::connecting, this, [=]() {
+            if (!m_connectingInit) {
+                //
+                // QProgressBar initialization (m_progressBar) and display within the center of the screen!
+                QObject::connect(m_xmppClient, SIGNAL(updateProgressBar(const qint32 &)), m_progressBar, SLOT(setValue(const qint32 &)));
+                QObject::connect(m_xmppClient, SIGNAL(updateProgressBar(const qint32 &)), this, SLOT(checkProgressBar(const qint32 &)));
+                m_progressBar->setMinimum(GK_XMPP_CREATE_CONN_PROG_BAR_MIN_PERCT);
+                m_progressBar->setMaximum(GK_XMPP_CREATE_CONN_PROG_BAR_MAX_PERCT);
+                m_progressBar->setHidden(false);
+                m_progressBar->setOrientation(Qt::Orientation::Horizontal);
+                m_progressBar->setVisible(true);
+                m_progressBar->setParent(this);
+                ui->verticalLayout->addWidget(m_progressBar);
+                m_progressBar->show();
+                m_progressBar->move((QApplication::desktop()->width() - m_progressBar->width()) / 2,
+                                    (QApplication::desktop()->height() - m_progressBar->height()) / 2);
+                m_connectingInit = true;
+            }
+        });
+
         QObject::connect(m_xmppClient, &QXmppClient::connected, this, [=]() {
             ui->pushButton_self_avatar->setEnabled(true);
             ui->lineEdit_search_roster->setEnabled(true);
@@ -171,6 +195,7 @@ GkXmppRosterDialog::GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFu
         });
 
         QObject::connect(m_xmppClient, &QXmppClient::disconnected, this, [=]() {
+            m_connectingInit = false;
             ui->comboBox_current_status->setCurrentIndex(GK_XMPP_AVAIL_COMBO_UNAVAILABLE_IDX); // Change presence status to 'offline' upon disconnection!
             ui->pushButton_self_avatar->setEnabled(false);
             ui->lineEdit_search_roster->setEnabled(false);
@@ -1576,6 +1601,23 @@ void GkXmppRosterDialog::cleanupTables()
     m_presenceRosterData.clear();
     m_pendingRosterData.clear();
     m_blockedRosterData.clear();
+
+    return;
+}
+
+/**
+ * @brief GkXmppRosterDialog::checkProgressBar checks the given QProgressBar, usually `m_progressBar` in this case, to
+ * see if it has reached the designated maximum value and if so, make the UI widget now hidden so the user can no longer
+ * see it anymore. The QProgressBar has thusly served its purpose for now.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param percentage The current value that the QProgressBar is set at.
+ */
+void GkXmppRosterDialog::checkProgressBar(const qint32 &percentage)
+{
+    if (percentage >= m_progressBar->maximum()) {
+        m_progressBar->setVisible(false);
+        m_progressBar->setHidden(true);
+    }
 
     return;
 }

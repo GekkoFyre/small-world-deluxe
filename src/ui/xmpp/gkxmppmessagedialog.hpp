@@ -55,6 +55,7 @@
 #include <QObject>
 #include <QDialog>
 #include <QPointer>
+#include <QDateTime>
 #include <QStringList>
 
 namespace Ui {
@@ -117,7 +118,8 @@ signals:
 
     //
     // Message handling and QXmppArchiveManager-related
-    void sendXmppMsg(const QXmppMessage &msg);
+    void sendXmppMsg(const QString &bareJid, const QXmppMessage &msg, const QDateTime &beginTimestamp,
+                     const QDateTime &endTimestamp);
 
     //
     // QXmppMamManager handling
