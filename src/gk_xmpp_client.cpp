@@ -309,11 +309,14 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         QObject::connect(this, &QXmppClient::stateChanged, this, [=](QXmppClient::State state) {
             switch (state) {
                 case ConnectingState:
+                    emit updateProgressBar((1 / GK_XMPP_CREATE_CONN_PROG_BAR_TOT_PERCT) * 100);
                     gkEventLogger->publishEvent(tr("...attempting to make connection towards XMPP server: %1").arg(m_connDetails.server.url), GkSeverity::Info, "",
                                                 true, true, true, false);
                     m_netState = GkNetworkState::Connecting;
+                    emit connecting();
                     break;
                 case ConnectedState:
+                    emit updateProgressBar((2 / GK_XMPP_CREATE_CONN_PROG_BAR_TOT_PERCT) * 100);
                     gkEventLogger->publishEvent(tr("Connected to XMPP server: %1").arg(m_connDetails.server.url), GkSeverity::Info, "",
                                                 true, true, true, false);
                     m_netState = GkNetworkState::Connected;
@@ -928,6 +931,7 @@ QByteArray GkXmppClient::processImgToByteArray(const QString &filePath)
  */
 void GkXmppClient::clientConnected()
 {
+    emit updateProgressBar((3 / GK_XMPP_CREATE_CONN_PROG_BAR_TOT_PERCT) * 100);
     gkEventLogger->publishEvent(tr("A connection has been successfully made towards XMPP server: %1").arg(m_connDetails.server.url),
                                 GkSeverity::Info, "", true, true, true, false);
 
@@ -1132,6 +1136,7 @@ void GkXmppClient::presenceChanged(const QString &bareJid, const QString &resour
             if (iter->bareJid == bareJid) {
                 iter->presence = std::make_shared<QXmppPresence>(m_rosterManager->getPresence(bareJid, resource));
                 emit updateRoster();
+                emit updateProgressBar((4 / GK_XMPP_CREATE_CONN_PROG_BAR_TOT_PERCT) * 100);
                 gkEventLogger->publishEvent(tr("Presence changed for user, \"%1\", towards: %2")
                                                     .arg(bareJid).arg(resource));
                 break;

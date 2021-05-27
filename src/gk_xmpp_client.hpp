@@ -233,6 +233,7 @@ signals:
     void changeRosterJid(const QString &bareJid); // A change needs to be made within the roster, therefore modify JID!
 
     void updateRoster();
+    void updateProgressBar(const qint32 &percentage); // Progress bar for monitoring connection status towards a given XMPP server!
 
     //
     // vCard management
@@ -244,6 +245,7 @@ signals:
     // Event & Logging management
     void sendError(const QString &error);
     void sendError(const QXmppClient::Error &error);
+    void connecting();
 
     //
     // Message handling and QXmppArchiveManager-related
