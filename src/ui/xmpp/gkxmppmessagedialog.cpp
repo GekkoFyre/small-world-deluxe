@@ -488,7 +488,10 @@ void GkXmppMessageDialog::procMamArchive(const QString &bareJid)
                         }
 
                         gkDb->write_xmpp_chat_log(roster.bareJid, roster.messages);
+                        break;
                     }
+
+                    break;
                 }
             }
         }
