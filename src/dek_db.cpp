@@ -215,7 +215,7 @@ bool GkLevelDb::deleteKeyFromMultiple(const std::string &base_key_name, const st
             throw std::invalid_argument(tr("Empty string provided while modifying key or value with Google LevelDB database!").toStdString());
         }
     } catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+        std::throw_with_nested(std::runtime_error(e.what()));
     }
 
     return false;
@@ -240,7 +240,9 @@ std::vector<std::string> GkLevelDb::readMultipleKeys(const std::string &base_key
 
             read_options.verify_checksums = true;
             leveldb::Iterator *it = db->NewIterator(read_options);
-            for (it->Seek(std::string(base_key_name + "!")); it->Valid() && it->key().ToString() < std::string(base_key_name + "!~"); it->Next()) {
+            const std::string base_key_idx = std::string(base_key_name + "!");
+            const std::string base_key_rnd = std::string(base_key_name + "!~");
+            for (it->Seek(base_key_idx); it->Valid() && it->key().ToString() < base_key_rnd; it->Next()) {
                 if (!it->value().empty()) {
                     values.emplace_back(it->value().ToString());
                 }
@@ -1829,7 +1831,7 @@ void GkLevelDb::write_xmpp_alpha_notice(const bool &value)
  * @param bareJid
  * @return
  */
-QList<QXmppMessage> GkLevelDb::read_xmpp_chat_log(const QString &bareJid)
+QList<QXmppMessage> GkLevelDb::read_xmpp_chat_log(const QString &bareJid) const
 {
     try {
         const std::string msg_key = QString("%1_%2").arg(bareJid).arg(General::Xmpp::GoogleLevelDb::keyToConvMsgHistory).toStdString();
@@ -1852,7 +1854,7 @@ QList<QXmppMessage> GkLevelDb::read_xmpp_chat_log(const QString &bareJid)
             throw std::runtime_error(tr("An error has occurred whilst reading recorded message history!").toStdString());
         }
     } catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
+        std::throw_with_nested(std::runtime_error(e.what()));
     }
 
     return QList<QXmppMessage>();

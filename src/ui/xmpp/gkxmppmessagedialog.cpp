@@ -44,6 +44,7 @@
 #include <chrono>
 #include <thread>
 #include <utility>
+#include <iterator>
 #include <iostream>
 #include <QMap>
 #include <QIcon>

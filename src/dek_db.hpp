@@ -127,7 +127,7 @@ public:
     void write_xmpp_vcard_data(const QMap<QString, std::pair<QByteArray, QByteArray>> &vcard_roster);
     void write_xmpp_alpha_notice(const bool &value);
     void remove_xmpp_vcard_data(const QMap<QString, std::pair<QByteArray, QByteArray>> &vcard_roster);
-    [[nodiscard]] QList<QXmppMessage> read_xmpp_chat_log(const QString &bareJid);
+    [[nodiscard]] QList<QXmppMessage> read_xmpp_chat_log(const QString &bareJid) const;
     QString read_xmpp_settings(const GekkoFyre::Database::Settings::GkXmppCfg &key);
     bool read_xmpp_alpha_notice();
 

@@ -460,6 +460,7 @@ namespace Network {
             QList<QXmppMessage> messages;
             std::shared_ptr<QXmppPresence> presence;
             QXmppRosterIq::Item::SubscriptionType subStatus;
+            bool rosterRecordedMsgHistoryUpdated;
         };
 
         struct GkXmppBlocklist {

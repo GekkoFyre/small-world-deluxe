@@ -44,6 +44,7 @@
 #include "src/ui/xmpp/gkxmppregistrationdialog.hpp"
 #include <qxmpp/QXmppPresence.h>
 #include <utility>
+#include <iterator>
 #include <QMenu>
 #include <QBuffer>
 #include <QRegExp>

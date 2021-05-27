@@ -216,7 +216,7 @@ private slots:
     // QXmppMamManager handling
     void archivedMessageReceived(const QString &queryId, const QXmppMessage &message);
     void resultsRecieved(const QString &queryId, const QXmppResultSetReply &resultSetReply, bool complete);
-    void updateRecordedMsgHistory();
+    void updateRecordedMsgHistory(const QString &bareJid);
 
 signals:
     //
@@ -286,7 +286,6 @@ private:
     QStringList rosterGroups;
     QVector<QString> m_blockList;
     QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign> m_rosterList;   // A list of all the bareJids, including the client themselves!
-    bool rosterRecordedMsgHistoryUpdated;
 
     //
     // Filesystem & Directories
