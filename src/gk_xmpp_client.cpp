@@ -44,6 +44,7 @@
 #include <qxmpp/QXmppUtils.h>
 #include <qxmpp/QXmppStreamFeatures.h>
 #include <iostream>
+#include <iterator>
 #include <exception>
 #include <QFile>
 #include <QImage>
@@ -81,21 +82,23 @@ namespace sys = boost::system;
  * @param parent The parent object.
  */
 GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoFyre::GkLevelDb> database,
-                           QPointer<GekkoFyre::FileIo> fileIo, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                           const bool &connectNow, QObject *parent) : m_rosterManager(findExtension<QXmppRosterManager>()),
-                                                                      m_registerManager(findExtension<QXmppRegistrationManager>()),
-                                                                      m_versionMgr(findExtension<QXmppVersionManager>()),
-                                                                      m_vCardManager(findExtension<QXmppVCardManager>()),
-                                                                      m_xmppArchiveMgr(findExtension<QXmppArchiveManager>()),
-                                                                      m_xmppMamMgr(findExtension<QXmppMamManager>()),
-                                                                      m_xmppLogger(QXmppLogger::getLogger()),
-                                                                      m_discoMgr(findExtension<QXmppDiscoveryManager>()),
-                                                                      QXmppClient(parent)
+                           QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::FileIo> fileIo,
+                           QPointer<GekkoFyre::GkEventLogger> eventLogger, const bool &connectNow,
+                           QObject *parent) : m_rosterManager(findExtension<QXmppRosterManager>()),
+                                              m_registerManager(findExtension<QXmppRegistrationManager>()),
+                                              m_versionMgr(findExtension<QXmppVersionManager>()),
+                                              m_vCardManager(findExtension<QXmppVCardManager>()),
+                                              m_xmppArchiveMgr(findExtension<QXmppArchiveManager>()),
+                                              m_xmppMamMgr(findExtension<QXmppMamManager>()),
+                                              m_xmppLogger(QXmppLogger::getLogger()),
+                                              m_discoMgr(findExtension<QXmppDiscoveryManager>()),
+                                              QXmppClient(parent)
 {
     try {
         setParent(parent);
         m_connDetails = connection_details;
         gkDb = std::move(database);
+        gkStringFuncs = std::move(stringFuncs);
         gkFileIo = std::move(fileIo);
         gkEventLogger = std::move(eventLogger);
         m_sslSocket = new QSslSocket(this);
@@ -879,6 +882,23 @@ QString GkXmppClient::obtainAvatarFilePath()
 void GkXmppClient::getArchivedMessages(const QString &to, const QString &node, const QString &jid, const QDateTime &start,
                                        const QDateTime &end, const QXmppResultSetQuery &resultSetQuery)
 {
+    if (!m_rosterList.isEmpty()) {
+        updateRecordedMsgHistory(jid);
+        if (!start.isValid() || !end.isValid()) {
+            for (const auto &roster: m_rosterList) {
+                if (jid == roster.bareJid) {
+                    if (!roster.messages.isEmpty()) {
+                        const auto min_timestamp = gkStringFuncs->calcMinTimestampForXmppMsgHistory(roster.messages);;
+                        const auto max_timestamp = gkStringFuncs->calcMaxTimestampForXmppMsgHistory(roster.messages);;
+                        m_xmppMamMgr->retrieveArchivedMessages(to, node, jid, min_timestamp, max_timestamp, resultSetQuery);
+
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
     m_xmppMamMgr->retrieveArchivedMessages(to, node, jid, start, end, resultSetQuery);
     return;
 }
@@ -917,6 +937,7 @@ void GkXmppClient::clientConnected()
     client_callsign.vCard.nickName() = m_connDetails.nickname;
     client_callsign.server = m_connDetails.server;
     client_callsign.bareJid = m_connDetails.jid;
+    client_callsign.rosterRecordedMsgHistoryUpdated = false;
     m_rosterList.push_back(client_callsign);
     emit updateRoster();
 
@@ -1967,7 +1988,7 @@ void GkXmppClient::recvXmppMsgUpdate(const QXmppMessage &message)
 void GkXmppClient::archiveListReceived(const QList<QXmppArchiveChat> &chats, const QXmppResultSetReply &rsmReply)
 {
     for (const auto &chat: chats) {
-        for (auto iter = m_rosterList.begin(); iter != m_rosterList.end();) {
+        for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
             if (iter->bareJid == chat.with()) {
                 iter->archive_messages = chat.messages();
             }
@@ -1987,13 +2008,11 @@ void GkXmppClient::archiveListReceived(const QList<QXmppArchiveChat> &chats, con
  */
 void GkXmppClient::archiveChatReceived(const QXmppArchiveChat &chat, const QXmppResultSetReply &rsmReply)
 {
-    for (auto iter = m_rosterList.begin(); iter != m_rosterList.end();) {
+    for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
         if (iter->bareJid == chat.with()) {
             for (const auto &message: chat.messages()) {
                 iter->archive_messages.push_back(message);
             }
-
-            break;
         }
     }
 
@@ -2010,25 +2029,21 @@ void GkXmppClient::archiveChatReceived(const QXmppArchiveChat &chat, const QXmpp
 void GkXmppClient::archivedMessageReceived(const QString &queryId, const QXmppMessage &message)
 {
     try {
-        for (auto iter = m_rosterList.begin(); iter != m_rosterList.end();) {
+        for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
             if (iter->bareJid == message.from()) {
                 if (message.isXmppStanza() && !message.body().isEmpty()) {
                     iter->messages.push_back(message);
                     break;
                 }
-            } else {
-                ++iter;
             }
         }
 
-        for (auto iter = m_rosterList.begin(); iter != m_rosterList.end();) {
+        for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
             if (iter->bareJid == message.to()) {
                 if (message.isXmppStanza() && !message.body().isEmpty()) {
                     iter->messages.push_back(message);
                     break;
                 }
-            } else {
-                ++iter;
             }
         }
     } catch (const std::exception &e) {
@@ -2049,5 +2064,41 @@ void GkXmppClient::archivedMessageReceived(const QString &queryId, const QXmppMe
 void GkXmppClient::resultsRecieved(const QString &queryId, const QXmppResultSetReply &resultSetReply, bool complete)
 {
     emit msgArchiveSuccReceived();
+    return;
+}
+
+/**
+ * @brief GkXmppClient::updateRecordedMsgHistory will update the recorded message history for all users on the variable,
+ * `m_rosterList`, and is designed to be run only just once.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid The user identity to update in question with regard to message history.
+ */
+void GkXmppClient::updateRecordedMsgHistory(const QString &bareJid)
+{
+    try {
+        if (!m_rosterList.isEmpty()) {
+            //
+            // Update the recorded message history for each roster member from the Google LevelDB database!
+            for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
+                if (!iter->bareJid.isEmpty() && !iter->rosterRecordedMsgHistoryUpdated) {
+                    if (iter->bareJid == bareJid) {
+                        const auto msg_history = gkDb->read_xmpp_chat_log(iter->bareJid);
+                        if (!msg_history.isEmpty()) {
+                            for (const auto &msg: msg_history) {
+                                iter->messages.push_back(msg);
+                            }
+
+                            iter->rosterRecordedMsgHistoryUpdated = true;
+                        }
+
+                        break;
+                    }
+                }
+            }
+        }
+    } catch (const std::exception &e) {
+        gkStringFuncs->print_exception(e);
+    }
+
     return;
 }

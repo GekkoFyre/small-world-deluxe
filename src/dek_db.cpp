@@ -54,10 +54,10 @@
 #include <QApplication>
 #include <QMessageBox>
 #include <QTextCodec>
-#include <QDateTime>
 #include <QVariant>
 #include <QSysInfo>
 #include <QDebug>
+#include <tuple>
 #include <algorithm>
 #include <exception>
 #include <iterator>
@@ -129,12 +129,14 @@ void GkLevelDb::writeMultipleKeys(const std::string &base_key_name, const std::v
             std::copy(values.begin(), values.end(), std::back_inserter(values_modifiable));
             auto preexisting_values = readMultipleKeys(base_key_name);
 
-            preexisting_values.emplace_back();
             if (!preexisting_values.empty()) {
-                std::copy(preexisting_values.begin(), preexisting_values.end(), std::back_inserter(values_modifiable));
+                values_modifiable.insert(std::end(values_modifiable), std::begin(preexisting_values), std::end(preexisting_values));
+                writeHashedKeys(base_key_name, preexisting_values, allow_empty_values);
+                return;
             }
 
-            writeHashedKeys(base_key_name, preexisting_values, allow_empty_values);
+            writeHashedKeys(base_key_name, values_modifiable, allow_empty_values);
+            return;
         } else {
             throw std::invalid_argument(tr("Empty string provided while writing key or value to Google LevelDB database!").toStdString());
         }
@@ -213,7 +215,7 @@ bool GkLevelDb::deleteKeyFromMultiple(const std::string &base_key_name, const st
             throw std::invalid_argument(tr("Empty string provided while modifying key or value with Google LevelDB database!").toStdString());
         }
     } catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+        std::throw_with_nested(std::runtime_error(e.what()));
     }
 
     return false;
@@ -228,7 +230,7 @@ bool GkLevelDb::deleteKeyFromMultiple(const std::string &base_key_name, const st
  * @note miste...@googlemail.com <https://groups.google.com/g/leveldb/c/Bq30nafYSTY/m/NTbE0lqxEAYJ>.
  * @see GkLevelDb::writeMultipleKeys().
  */
-std::vector<std::string> GkLevelDb::readMultipleKeys(const std::string &base_key_name)
+std::vector<std::string> GkLevelDb::readMultipleKeys(const std::string &base_key_name) const
 {
     try {
         if (!base_key_name.empty()) {
@@ -238,7 +240,9 @@ std::vector<std::string> GkLevelDb::readMultipleKeys(const std::string &base_key
 
             read_options.verify_checksums = true;
             leveldb::Iterator *it = db->NewIterator(read_options);
-            for (it->Seek(std::string(base_key_name + "!")); it->Valid() && it->key().ToString() < std::string(base_key_name + "!~"); it->Next()) {
+            const std::string base_key_idx = std::string(base_key_name + "!");
+            const std::string base_key_rnd = std::string(base_key_name + "!~");
+            for (it->Seek(base_key_idx); it->Valid() && it->key().ToString() < base_key_rnd; it->Next()) {
                 if (!it->value().empty()) {
                     values.emplace_back(it->value().ToString());
                 }
@@ -1506,6 +1510,98 @@ void GkLevelDb::capture_sys_info()
 }
 
 /**
+ * @brief GkLevelDb::write_xmpp_chat_log writes the user's chat history to the Google LevelDB database, thereby removing
+ * the need to download unnecessary data from a given XMPP server over the Internet.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid The username associated with the archived message history in question.
+ * @param messages The message history to be archived and recorded to the Google LevelDB database.
+ */
+void GkLevelDb::write_xmpp_chat_log(const QString &bareJid, const QList<QXmppMessage> &messages)
+{
+    try {
+        if (!bareJid.isEmpty() && !messages.isEmpty()) {
+            const std::string msg_key = QString("%1_%2").arg(bareJid).arg(General::Xmpp::GoogleLevelDb::keyToConvMsgHistory).toStdString();
+            const std::string timestamp_key = QString("%1_%2").arg(bareJid).arg(General::Xmpp::GoogleLevelDb::keyToConvTimestampHistory).toStdString();
+            const auto exist_msg_history = readMultipleKeys(msg_key);
+            const auto exist_timestamp_history = readMultipleKeys(timestamp_key);
+
+            const auto proc_messages = update_xmpp_chat_log(bareJid, messages);
+            if (!proc_messages.isEmpty()) {
+                std::vector<std::string> message_history;
+                std::vector<std::string> timestamp_history;
+                for (const auto &message: proc_messages) {
+                    if (!message.body().isEmpty()) {
+                        message_history.emplace_back(message.body().toStdString());
+                        timestamp_history.emplace_back(message.stamp().toString().toStdString());
+                    }
+                }
+
+                if (!message_history.empty() && !timestamp_history.empty()) {
+                    if (message_history.size() == timestamp_history.size()) {
+                        writeMultipleKeys(msg_key, message_history, false);
+                        writeMultipleKeys(timestamp_key, timestamp_history, false);
+                        return;
+                    }
+
+                    throw std::runtime_error(tr("An error has occurred whilst recording message history!").toStdString());
+                }
+            }
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return;
+}
+
+/**
+ * @brief GkLevelDb::update_xmpp_chat_log takes in pre-existing message histories and only keeps the information that is
+ * truly needed, removing all the extraneous information in the process.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid The username associated with the archived message history in question.
+ * @param messages The message history that is to be processed.
+ * @return The processed message history, with all 'doubled-up' information removed.
+ */
+QList<QXmppMessage> GkLevelDb::update_xmpp_chat_log(const QString &bareJid, const QList<QXmppMessage> &messages) const
+{
+    try {
+        if (!bareJid.isEmpty() && !messages.isEmpty()) {
+            const std::string msg_key = QString("%1_%2").arg(bareJid).arg(General::Xmpp::GoogleLevelDb::keyToConvMsgHistory).toStdString();
+            const std::string timestamp_key = QString("%1_%2").arg(bareJid).arg(General::Xmpp::GoogleLevelDb::keyToConvTimestampHistory).toStdString();
+            const auto exist_msg_history = readMultipleKeys(msg_key);
+            const auto exist_timestamp_history = readMultipleKeys(timestamp_key);
+
+            if (!exist_msg_history.empty() && !exist_timestamp_history.empty()) {
+                if (exist_msg_history.size() == exist_timestamp_history.size()) {
+                    QList<QXmppMessage> tmp_messages;
+                    std::copy(messages.begin(), messages.end(), std::back_inserter(tmp_messages));
+                    if (!tmp_messages.isEmpty()) {
+                        for (const auto &timestamp: exist_timestamp_history) {
+                            for (auto iter = tmp_messages.begin(); iter != tmp_messages.end(); ++iter) {
+                                if (timestamp == iter->stamp().toString().toStdString()) {
+                                    iter = tmp_messages.erase(iter);
+                                    break;
+                                }
+                            }
+                        }
+
+                        return tmp_messages;
+                    }
+                }
+
+                throw std::runtime_error(tr("An error has occurred whilst processing message history!").toStdString());
+            }
+
+            return messages;
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return QList<QXmppMessage>();
+}
+
+/**
  * @brief GkLevelDb::write_xmpp_settings writes out and saves given XMPP settings to a pre-configured Google LevelDB
  * database for future reading and processing.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -1730,6 +1826,41 @@ void GkLevelDb::write_xmpp_alpha_notice(const bool &value)
 }
 
 /**
+ * @brief GkLevelDb::read_xmpp_chat_log
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid
+ * @return
+ */
+QList<QXmppMessage> GkLevelDb::read_xmpp_chat_log(const QString &bareJid) const
+{
+    try {
+        const std::string msg_key = QString("%1_%2").arg(bareJid).arg(General::Xmpp::GoogleLevelDb::keyToConvMsgHistory).toStdString();
+        const std::string timestamp_key = QString("%1_%2").arg(bareJid).arg(General::Xmpp::GoogleLevelDb::keyToConvTimestampHistory).toStdString();
+        QList<QXmppMessage> messages;
+        const auto exist_msg_history = readMultipleKeys(msg_key);
+        const auto exist_timestamp_history = readMultipleKeys(timestamp_key);
+        if (!exist_msg_history.empty() && !exist_timestamp_history.empty()) {
+            if (exist_msg_history.size() == exist_timestamp_history.size()) {
+                for (size_t i = 0; i < exist_msg_history.size(); ++i) {
+                    QXmppMessage message;
+                    message.setStamp(QDateTime::fromString(QString::fromStdString(exist_timestamp_history.at(i))));
+                    message.setBody(QString::fromStdString(exist_msg_history.at(i)));
+                    messages.insert(i, message);
+                }
+
+                return messages;
+            }
+
+            throw std::runtime_error(tr("An error has occurred whilst reading recorded message history!").toStdString());
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return QList<QXmppMessage>();
+}
+
+/**
  * @brief GkLevelDb::read_xmpp_settings reads out the previously saved XMPP settings from the given Google LevelDB
  * database for further processing.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -1880,31 +2011,38 @@ void GkLevelDb::writeHashedKeys(const std::string &base_key_name, const std::vec
                                 const bool &allow_empty_values)
 {
     try {
-        leveldb::WriteBatch batch;
-        leveldb::Status status;
-        std::map<std::string, std::string> key_value_map;
+        if (!base_key_name.empty() && !values.empty()) {
+            leveldb::WriteBatch batch;
+            leveldb::Status status;
+            std::vector<std::tuple<std::string, std::string>> key_value_map;
 
-        for (const auto &value: values) {
             qint64 curr_unix_epoch = QDateTime::currentMSecsSinceEpoch();
-            std::string new_key_name = std::string(base_key_name + '!' + std::to_string(curr_unix_epoch));
-            key_value_map.emplace(std::make_pair(new_key_name, value));
-        }
-
-        for (const auto &key_value: key_value_map) {
-            if (!key_value.first.empty()) {
-                if (!key_value.second.empty() || (allow_empty_values && key_value.second.empty())) {
-                    batch.Put(key_value.first, key_value.second);
+            for (const auto &value: values) {
+                if (!value.empty()) {
+                    const std::string new_key_name = std::string(base_key_name + '!' + std::to_string(curr_unix_epoch));
+                    key_value_map.emplace_back(std::make_pair(new_key_name, value));
+                    ++curr_unix_epoch;
                 }
             }
-        }
 
-        leveldb::WriteOptions write_options;
-        write_options.sync = true;
+            if (!key_value_map.empty()) {
+                for (const auto &key_value: key_value_map) {
+                    if (!std::get<0>(key_value).empty()) {
+                        if (!std::get<1>(key_value).empty() || (allow_empty_values && std::get<1>(key_value).empty())) {
+                            batch.Put(std::get<0>(key_value), std::get<1>(key_value));
+                        }
+                    }
+                }
 
-        status = db->Write(write_options, &batch);
+                leveldb::WriteOptions write_options;
+                write_options.sync = true;
 
-        if (!status.ok()) { // Abort because of error!
-            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+                status = db->Write(write_options, &batch);
+
+                if (!status.ok()) { // Abort because of error!
+                    throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+                }
+            }
         }
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(e.what()));

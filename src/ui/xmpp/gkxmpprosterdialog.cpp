@@ -44,6 +44,7 @@
 #include "src/ui/xmpp/gkxmppregistrationdialog.hpp"
 #include <qxmpp/QXmppPresence.h>
 #include <utility>
+#include <iterator>
 #include <QMenu>
 #include <QBuffer>
 #include <QRegExp>
@@ -475,12 +476,10 @@ qint32 GkXmppRosterDialog::removeRosterPresenceTable(const QString &bareJid)
             }
         }
 
-        for (auto iter = m_presenceRosterData.begin(); iter != m_presenceRosterData.end();) {
+        for (auto iter = m_presenceRosterData.begin(); iter != m_presenceRosterData.end(); ++iter) {
             if (iter->bareJid == bareJid) {
                 iter = m_presenceRosterData.erase(iter);
                 break;
-            } else {
-                ++iter;
             }
         }
 
@@ -575,12 +574,10 @@ qint32 GkXmppRosterDialog::removeRosterPendingTable(const QString &bareJid)
             }
         }
 
-        for (auto iter = m_pendingRosterData.begin(); iter != m_pendingRosterData.end();) {
+        for (auto iter = m_pendingRosterData.begin(); iter != m_pendingRosterData.end(); ++iter) {
             if (iter->bareJid == bareJid) {
                 iter = m_pendingRosterData.erase(iter);
                 break;
-            } else {
-                ++iter;
             }
         }
 
@@ -653,12 +650,10 @@ qint32 GkXmppRosterDialog::removeRosterBlockedTable(const QString &bareJid)
             }
         }
 
-        for (auto iter = m_blockedRosterData.begin(); iter != m_blockedRosterData.end();) {
+        for (auto iter = m_blockedRosterData.begin(); iter != m_blockedRosterData.end(); ++iter) {
             if (iter->bareJid == bareJid) {
                 iter = m_blockedRosterData.erase(iter);
                 break;
-            } else {
-                ++iter;
             }
         }
 
@@ -709,7 +704,7 @@ void GkXmppRosterDialog::launchMsgDlg(const QString &bareJid)
 {
     QStringList bareJids;
     bareJids << bareJid;
-    gkXmppMsgDlg = new GkXmppMessageDialog(gkStringFuncs, gkEventLogger, m_spellChecker, gkConnDetails, m_xmppClient, bareJids, this);
+    gkXmppMsgDlg = new GkXmppMessageDialog(gkStringFuncs, gkEventLogger, gkDb, m_spellChecker, gkConnDetails, m_xmppClient, bareJids, this);
     if (gkXmppMsgDlg) {
         if (!gkXmppMsgDlg->isVisible()) {
             gkXmppMsgDlg->setWindowFlags(Qt::Window);
@@ -727,7 +722,7 @@ void GkXmppRosterDialog::launchMsgDlg(const QString &bareJid)
  */
 void GkXmppRosterDialog::launchMsgDlg(const QStringList &bareJids)
 {
-    gkXmppMsgDlg = new GkXmppMessageDialog(gkStringFuncs, gkEventLogger, m_spellChecker, gkConnDetails, m_xmppClient, bareJids, this);
+    gkXmppMsgDlg = new GkXmppMessageDialog(gkStringFuncs, gkEventLogger, gkDb, m_spellChecker, gkConnDetails, m_xmppClient, bareJids, this);
     if (gkXmppMsgDlg) {
         if (!gkXmppMsgDlg->isVisible()) {
             gkXmppMsgDlg->setWindowFlags(Qt::Window);

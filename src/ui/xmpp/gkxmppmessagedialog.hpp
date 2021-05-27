@@ -42,6 +42,7 @@
 #pragma once
 
 #include "src/defines.hpp"
+#include "src/dek_db.hpp"
 #include "src/gk_xmpp_client.hpp"
 #include "src/gk_string_funcs.hpp"
 #include "src/models/tableview/gk_xmpp_recv_msgs_model.hpp"
@@ -77,8 +78,10 @@ class GkXmppMessageDialog : public QDialog
 
 public:
     explicit GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                                 QPointer<QtSpell::TextEditChecker> spellChecking, const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
-                                 QPointer<GekkoFyre::GkXmppClient> xmppClient, const QStringList &bareJids, QWidget *parent = nullptr);
+                                 QPointer<GekkoFyre::GkLevelDb> database, QPointer<QtSpell::TextEditChecker> spellChecking,
+                                 const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
+                                 QPointer<GekkoFyre::GkXmppClient> xmppClient, const QStringList &bareJids,
+                                 QWidget *parent = nullptr);
     ~GkXmppMessageDialog();
 
 private slots:
@@ -138,6 +141,7 @@ private:
     //
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
+    QPointer<GekkoFyre::GkLevelDb> gkDb;
     std::queue<QString> m_toolBarTextQueue;
 
     //
