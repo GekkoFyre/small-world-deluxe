@@ -45,6 +45,7 @@
 #include "src/dek_db.hpp"
 #include "src/file_io.hpp"
 #include "src/gk_logger.hpp"
+#include "src/gk_string_funcs.hpp"
 #include "src/models/system/gk_network_ping_model.hpp"
 #include <boost/exception/all.hpp>
 #include <boost/filesystem.hpp>
@@ -101,8 +102,9 @@ class GkXmppClient : public QXmppClient {
 
 public:
     explicit GkXmppClient(const Network::GkXmpp::GkUserConn &connection_details, QPointer<GekkoFyre::GkLevelDb> database,
-                          QPointer<GekkoFyre::FileIo> fileIo, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                          const bool &connectNow = false, QObject *parent = nullptr);
+                          QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::FileIo> fileIo,
+                          QPointer<GekkoFyre::GkEventLogger> eventLogger, const bool &connectNow = false,
+                          QObject *parent = nullptr);
     ~GkXmppClient() override;
 
     void createConnectionToServer(const QString &domain_url, const quint16 &network_port, const QString &password = "",
@@ -214,6 +216,7 @@ private slots:
     // QXmppMamManager handling
     void archivedMessageReceived(const QString &queryId, const QXmppMessage &message);
     void resultsRecieved(const QString &queryId, const QXmppResultSetReply &resultSetReply, bool complete);
+    void updateRecordedMsgHistory(const QString &bareJid);
 
 signals:
     //
@@ -255,6 +258,7 @@ private:
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::FileIo> gkFileIo;
     QPointer<GkEventLogger> gkEventLogger;
+    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GkNetworkPingModel> gkNetworkPing;
     QList<QDnsServiceRecord> m_dnsRecords;
 

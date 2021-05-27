@@ -135,14 +135,13 @@ qint32 GkXmppRosterPresenceTableViewModel::removeData(const QString &bareJid)
 {
     dataBatchMutex.lock();
     qint32 counter = 0;
-    for (auto iter = m_data.begin(); iter != m_data.end();) {
+    for (auto iter = m_data.begin(); iter != m_data.end(); ++iter) {
         ++counter;
         if (iter->bareJid == bareJid) {
             beginRemoveRows(QModelIndex(), (m_data.count() - 1), (m_data.count() - 1));
             iter = m_data.erase(iter);
             endRemoveRows();
-        } else {
-            ++iter;
+            break;
         }
     }
 
