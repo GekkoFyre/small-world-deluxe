@@ -50,6 +50,7 @@
 #include <boost/exception/all.hpp>
 #include <boost/filesystem.hpp>
 #include <qxmpp/QXmppIq.h>
+#include <qxmpp/QXmppStanza.h>
 #include <qxmpp/QXmppGlobal.h>
 #include <qxmpp/QXmppClient.h>
 #include <qxmpp/QXmppLogger.h>
@@ -83,6 +84,7 @@
 #include <QObject>
 #include <QPointer>
 #include <QSslError>
+#include <QDateTime>
 #include <QByteArray>
 #include <QSslSocket>
 #include <QDnsLookup>
@@ -92,6 +94,7 @@
 #include <QElapsedTimer>
 #include <QNetworkReply>
 #include <QScopedPointer>
+#include <QAbstractSocket>
 #include <QCoreApplication>
 #include <QDnsServiceRecord>
 
@@ -172,7 +175,8 @@ public slots:
 
     //
     // Message handling
-    void sendXmppMsg(const QXmppMessage &msg);
+    void sendXmppMsg(const QString &bareJid, const QXmppMessage &msg, const QDateTime &beginTimestamp,
+                     const QDateTime &endTimestamp);
 
 private slots:
     //
