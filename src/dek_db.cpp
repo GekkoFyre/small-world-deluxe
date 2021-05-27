@@ -1525,27 +1525,57 @@ void GkLevelDb::write_xmpp_chat_log(const QString &bareJid, const QList<QXmppMes
             const auto exist_msg_history = readMultipleKeys(msg_key);
             const auto exist_timestamp_history = readMultipleKeys(timestamp_key);
 
-            const auto proc_messages = update_xmpp_chat_log(bareJid, messages);
-            if (!proc_messages.isEmpty()) {
-                std::vector<std::string> message_history;
-                std::vector<std::string> timestamp_history;
-                for (const auto &message: proc_messages) {
-                    if (!message.body().isEmpty()) {
-                        message_history.emplace_back(message.body().toStdString());
-                        timestamp_history.emplace_back(message.stamp().toString().toStdString());
-                    }
+            if (!exist_msg_history.empty() && !exist_timestamp_history.empty()) {
+                if (exist_msg_history.size() != exist_timestamp_history.size()) {
+                    throw std::runtime_error(tr("An error has occurred with the processing of your XMPP message history!").toStdString());
                 }
 
-                if (!message_history.empty() && !timestamp_history.empty()) {
-                    if (message_history.size() == timestamp_history.size()) {
-                        writeMultipleKeys(msg_key, message_history, false);
-                        writeMultipleKeys(timestamp_key, timestamp_history, false);
-                        return;
-                    }
+                //
+                // We need to add the timestamp information towards, `exist_msg_history`, so that a proper comparison of its
+                // variables can be made with the function, `GkLevelDb::update_xmpp_chat_log()`!
+                //
+                QList<QXmppMessage> recordedMsgHistory;
+                for (size_t i = 0; i < exist_msg_history.size(); ++i) {
+                    QXmppMessage message;
+                    message.setBody(QString::fromStdString(exist_msg_history.at(i)));
+                    message.setStamp(QDateTime::fromString(QString::fromStdString(exist_timestamp_history.at(i))));
+                    recordedMsgHistory.insert(static_cast<qint32>(i), message);
+                }
 
-                    throw std::runtime_error(tr("An error has occurred whilst recording message history!").toStdString());
+                if (!recordedMsgHistory.isEmpty()) {
+                    //
+                    // Process the message history for any extraneous (i.e. non-unique) data!
+                    const auto proc_msg_history = update_xmpp_chat_log(bareJid, recordedMsgHistory, messages);
+                    if (!proc_msg_history.isEmpty()) {
+                        for (const auto &msg: proc_msg_history) {
+                            if (msg.isXmppStanza() && (!msg.body().isEmpty() && msg.stamp().isValid())) {
+                                writeMultipleKeys(msg_key, msg.body().toStdString(), false);
+                                writeMultipleKeys(timestamp_key, msg.stamp().toString().toStdString(), false);
+                            }
+                        }
+                    }
                 }
             }
+
+            std::vector<std::string> msg_body_str;
+            std::vector<std::string> msg_stamp_str;
+            for (const auto &message: messages) {
+                if (message.isXmppStanza() && (!message.body().isEmpty() && message.stamp().isValid())) {
+                    msg_body_str.emplace_back(message.body().toStdString());
+                    msg_stamp_str.emplace_back(message.stamp().toString().toStdString());
+                }
+            }
+
+            if (!msg_body_str.empty() && !msg_stamp_str.empty()) {
+                if (msg_body_str.size() != msg_stamp_str.size()) {
+                    throw std::runtime_error(tr("An error has occurred with the processing of your XMPP message history!").toStdString());
+                }
+
+                writeMultipleKeys(msg_key, msg_body_str, false);
+                writeMultipleKeys(timestamp_key, msg_stamp_str, false);
+            }
+
+            return;
         }
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(e.what()));
@@ -1559,40 +1589,31 @@ void GkLevelDb::write_xmpp_chat_log(const QString &bareJid, const QList<QXmppMes
  * truly needed, removing all the extraneous information in the process.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param bareJid The username associated with the archived message history in question.
- * @param messages The message history that is to be processed.
+ * @param original_msgs The message history that is to be processed.
+ * @param comparison_msgs The message history that is to be compared against.
  * @return The processed message history, with all 'doubled-up' information removed.
  */
-QList<QXmppMessage> GkLevelDb::update_xmpp_chat_log(const QString &bareJid, const QList<QXmppMessage> &messages) const
+QList<QXmppMessage> GkLevelDb::update_xmpp_chat_log(const QString &bareJid, const QList<QXmppMessage> &original_msgs,
+                                                    const QList<QXmppMessage> &comparison_msgs) const
 {
     try {
-        if (!bareJid.isEmpty() && !messages.isEmpty()) {
-            const std::string msg_key = QString("%1_%2").arg(bareJid).arg(General::Xmpp::GoogleLevelDb::keyToConvMsgHistory).toStdString();
-            const std::string timestamp_key = QString("%1_%2").arg(bareJid).arg(General::Xmpp::GoogleLevelDb::keyToConvTimestampHistory).toStdString();
-            const auto exist_msg_history = readMultipleKeys(msg_key);
-            const auto exist_timestamp_history = readMultipleKeys(timestamp_key);
-
-            if (!exist_msg_history.empty() && !exist_timestamp_history.empty()) {
-                if (exist_msg_history.size() == exist_timestamp_history.size()) {
-                    QList<QXmppMessage> tmp_messages;
-                    std::copy(messages.begin(), messages.end(), std::back_inserter(tmp_messages));
-                    if (!tmp_messages.isEmpty()) {
-                        for (const auto &timestamp: exist_timestamp_history) {
-                            for (auto iter = tmp_messages.begin(); iter != tmp_messages.end(); ++iter) {
-                                if (timestamp == iter->stamp().toString().toStdString()) {
-                                    iter = tmp_messages.erase(iter);
-                                    break;
-                                }
-                            }
+        if (!original_msgs.isEmpty() && !comparison_msgs.isEmpty()) {
+            QList<QXmppMessage> tmp_messages;
+            std::copy(original_msgs.begin(), original_msgs.end(), std::back_inserter(tmp_messages));
+            if (!tmp_messages.isEmpty()) {
+                for (const auto &msg: comparison_msgs) {
+                    for (auto iter = tmp_messages.begin(); iter != tmp_messages.end(); ++iter) {
+                        if (iter->stamp() == msg.stamp()) {
+                            iter = tmp_messages.erase(iter);
+                            break;
                         }
-
-                        return tmp_messages;
                     }
                 }
 
-                throw std::runtime_error(tr("An error has occurred whilst processing message history!").toStdString());
+                return tmp_messages;
             }
 
-            return messages;
+            throw std::runtime_error(tr("An error has occurred whilst processing message history!").toStdString());
         }
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(e.what()));

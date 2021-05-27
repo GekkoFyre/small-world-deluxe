@@ -62,6 +62,7 @@
 #include <QPointer>
 #include <QByteArray>
 #include <QStringList>
+#include <QProgressBar>
 #include <QTreeWidgetItem>
 
 namespace Ui {
@@ -131,6 +132,7 @@ private slots:
 
     void procAvailableStatusType(const QXmppPresence::AvailableStatusType &stat_type);
     void cleanupTables();
+    void checkProgressBar(const qint32 &percentage);
 
     void recvUpdatePresenceTableViewModel();
     void recvUpdatePendingTableViewModel();
@@ -204,6 +206,8 @@ private:
     // Miscellaneous
     //
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
+    QPointer<QProgressBar> m_progressBar;
+    bool m_connectingInit;
 
     //
     // Boolean values
