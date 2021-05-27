@@ -1571,16 +1571,20 @@ QList<QXmppMessage> GkLevelDb::update_xmpp_chat_log(const QString &bareJid, cons
 
             if (!exist_msg_history.empty() && !exist_timestamp_history.empty()) {
                 if (exist_msg_history.size() == exist_timestamp_history.size()) {
-                    QList<QXmppMessage> tmp_messages = messages;
-                    for (const auto &timestamp: exist_timestamp_history) {
-                        for (auto iter = tmp_messages.begin(); iter != tmp_messages.end(); ++iter) {
-                            if (timestamp == iter->stamp().toString().toStdString()) {
-                                iter = tmp_messages.erase(iter);
+                    QList<QXmppMessage> tmp_messages;
+                    std::copy(messages.begin(), messages.end(), std::back_inserter(tmp_messages));
+                    if (!tmp_messages.isEmpty()) {
+                        for (const auto &timestamp: exist_timestamp_history) {
+                            for (auto iter = tmp_messages.begin(); iter != tmp_messages.end(); ++iter) {
+                                if (timestamp == iter->stamp().toString().toStdString()) {
+                                    iter = tmp_messages.erase(iter);
+                                    break;
+                                }
                             }
                         }
-                    }
 
-                    return tmp_messages;
+                        return tmp_messages;
+                    }
                 }
 
                 throw std::runtime_error(tr("An error has occurred whilst processing message history!").toStdString());
@@ -1589,7 +1593,7 @@ QList<QXmppMessage> GkLevelDb::update_xmpp_chat_log(const QString &bareJid, cons
             return messages;
         }
     } catch (const std::exception &e) {
-        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
+        std::throw_with_nested(std::runtime_error(e.what()));
     }
 
     return QList<QXmppMessage>();
