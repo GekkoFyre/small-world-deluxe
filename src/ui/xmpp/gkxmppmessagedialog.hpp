@@ -112,6 +112,7 @@ private slots:
     void msgArchiveSuccReceived();
     void procMamArchive(const QString &bareJid);
     void getArchivedMessages();
+    void getArchivedMessagesFromDb(const QString &bareJid, const bool &insertData, const bool &presented = false);
 
 signals:
     void updateToolbar(const QString &value);

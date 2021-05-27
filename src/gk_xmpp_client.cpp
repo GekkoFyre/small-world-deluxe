@@ -709,6 +709,22 @@ QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign> GkXmppClient::getRosterMap()
 }
 
 /**
+ * @brief GkXmppClient::updateRosterMap will update the roster list, `m_rosterList`, with new information and data.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param rosterList
+ */
+void GkXmppClient::updateRosterMap(const QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &rosterList)
+{
+    if (!rosterList.isEmpty()) {
+        m_rosterList.clear();
+        m_rosterList.shrink_to_fit();
+        std::copy(rosterList.begin(), rosterList.end(), std::back_inserter(m_rosterList));
+    }
+
+    return;
+}
+
+/**
  * @brief GkXmppClient::statusToPresence
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param status
@@ -891,12 +907,21 @@ void GkXmppClient::getArchivedMessages(const QString &to, const QString &node, c
             for (const auto &roster: m_rosterList) {
                 if (jid == roster.bareJid) {
                     if (!roster.messages.isEmpty()) {
-                        const auto min_timestamp = gkStringFuncs->calcMinTimestampForXmppMsgHistory(roster.messages);;
-                        const auto max_timestamp = gkStringFuncs->calcMaxTimestampForXmppMsgHistory(roster.messages);;
-                        m_xmppMamMgr->retrieveArchivedMessages(to, node, jid, min_timestamp, max_timestamp, resultSetQuery);
+                        QList<QXmppMessage> msg_history;
+                        for (const auto &message: roster.messages) {
+                            msg_history.push_back(message.message);
+                        }
 
-                        return;
+                        if (!msg_history.isEmpty()) {
+                            const auto min_timestamp = gkStringFuncs->calcMinTimestampForXmppMsgHistory(msg_history);;
+                            const auto max_timestamp = gkStringFuncs->calcMaxTimestampForXmppMsgHistory(msg_history);;
+                            m_xmppMamMgr->retrieveArchivedMessages(to, node, jid, min_timestamp, max_timestamp, resultSetQuery);
+
+                            return;
+                        }
                     }
+
+                    break;
                 }
             }
         }
@@ -941,7 +966,6 @@ void GkXmppClient::clientConnected()
     client_callsign.vCard.nickName() = m_connDetails.nickname;
     client_callsign.server = m_connDetails.server;
     client_callsign.bareJid = m_connDetails.jid;
-    client_callsign.rosterRecordedMsgHistoryUpdated = false;
     m_rosterList.push_back(client_callsign);
     emit updateRoster();
 
@@ -2015,7 +2039,19 @@ void GkXmppClient::archiveListReceived(const QList<QXmppArchiveChat> &chats, con
     for (const auto &chat: chats) {
         for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
             if (iter->bareJid == chat.with()) {
-                iter->archive_messages = chat.messages();
+                QList<GkXmppArchiveMsg> msg_struct_list;
+                for (const auto &message: chat.messages()) {
+                    GkXmppArchiveMsg arch_msg;
+                    arch_msg.message = message;
+                    arch_msg.presented = false;
+                    msg_struct_list.push_back(arch_msg);
+                }
+
+                if (!msg_struct_list.isEmpty()) {
+                    std::copy(msg_struct_list.begin(), msg_struct_list.end(), std::back_inserter(iter->archive_messages));
+                }
+
+                break;
             }
         }
     }
@@ -2035,9 +2071,19 @@ void GkXmppClient::archiveChatReceived(const QXmppArchiveChat &chat, const QXmpp
 {
     for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
         if (iter->bareJid == chat.with()) {
+            QList<GkXmppArchiveMsg> arch_msg_list;
             for (const auto &message: chat.messages()) {
-                iter->archive_messages.push_back(message);
+                GkXmppArchiveMsg arch_msg;
+                arch_msg.message = message;
+                arch_msg.presented = false;
+                arch_msg_list.push_back(arch_msg);
             }
+
+            if (!arch_msg_list.isEmpty()) {
+                std::copy(arch_msg_list.begin(), arch_msg_list.end(), std::back_inserter(iter->archive_messages));
+            }
+
+            break;
         }
     }
 
@@ -2056,19 +2102,37 @@ void GkXmppClient::archivedMessageReceived(const QString &queryId, const QXmppMe
     try {
         for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
             if (iter->bareJid == message.from()) {
+                QList<GkXmppMamMsg> mam_msg_list;
                 if (message.isXmppStanza() && !message.body().isEmpty()) {
-                    iter->messages.push_back(message);
-                    break;
+                    GkXmppMamMsg mam_msg;
+                    mam_msg.message = message;
+                    mam_msg.presented = false;
+                    mam_msg_list.push_back(mam_msg);
                 }
+
+                if (!mam_msg_list.isEmpty()) {
+                    std::copy(mam_msg_list.begin(), mam_msg_list.end(), std::back_inserter(iter->messages));
+                }
+
+                break;
             }
         }
 
+        QList<GkXmppMamMsg> mam_msg_list;
         for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
             if (iter->bareJid == message.to()) {
                 if (message.isXmppStanza() && !message.body().isEmpty()) {
-                    iter->messages.push_back(message);
-                    break;
+                    GkXmppMamMsg mam_msg;
+                    mam_msg.message = message;
+                    mam_msg.presented = false;
+                    mam_msg_list.push_back(mam_msg);
                 }
+
+                if (!mam_msg_list.isEmpty()) {
+                    std::copy(mam_msg_list.begin(), mam_msg_list.end(), std::back_inserter(iter->messages));
+                }
+
+                break;
             }
         }
     } catch (const std::exception &e) {
@@ -2105,15 +2169,16 @@ void GkXmppClient::updateRecordedMsgHistory(const QString &bareJid)
             //
             // Update the recorded message history for each roster member from the Google LevelDB database!
             for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
-                if (!iter->bareJid.isEmpty() && !iter->rosterRecordedMsgHistoryUpdated) {
+                if (!iter->bareJid.isEmpty()) {
                     if (iter->bareJid == bareJid) {
                         const auto msg_history = gkDb->read_xmpp_chat_log(iter->bareJid);
                         if (!msg_history.isEmpty()) {
                             for (const auto &msg: msg_history) {
-                                iter->messages.push_back(msg);
+                                GkXmppMamMsg mam_msg;
+                                mam_msg.message = msg;
+                                mam_msg.presented = false;
+                                iter->messages.push_back(mam_msg);
                             }
-
-                            iter->rosterRecordedMsgHistoryUpdated = true;
                         }
 
                         break;

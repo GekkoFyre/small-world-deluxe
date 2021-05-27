@@ -129,6 +129,7 @@ public:
     // User, roster and presence details
     std::shared_ptr<QXmppRegistrationManager> getRegistrationMgr();
     QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign> getRosterMap();
+    void updateRosterMap(const QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &rosterList);
     QXmppPresence statusToPresence(const Network::GkXmpp::GkOnlineStatus &status);
     Network::GkXmpp::GkOnlineStatus presenceToStatus(const QXmppPresence::AvailableStatusType &xmppPresence);
     QString presenceToString(const QXmppPresence::AvailableStatusType &xmppPresence);
