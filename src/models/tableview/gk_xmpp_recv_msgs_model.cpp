@@ -95,12 +95,10 @@ GkXmppRecvMsgsTableViewModel::~GkXmppRecvMsgsTableViewModel()
  */
 void GkXmppRecvMsgsTableViewModel::populateData(const QList<GkRecvMsgsTableViewModel> &data_list)
 {
-    dataBatchMutex.lock();
-
+    std::lock_guard<std::mutex> lock_guard(m_dataBatchMutex);
     m_data.clear();
     m_data = data_list;
 
-    dataBatchMutex.unlock();
     return;
 }
 
@@ -113,8 +111,7 @@ void GkXmppRecvMsgsTableViewModel::populateData(const QList<GkRecvMsgsTableViewM
  */
 void GkXmppRecvMsgsTableViewModel::insertData(const QString &bareJid, const QString &msg, const QDateTime &timestamp)
 {
-    dataBatchMutex.lock();
-
+    std::lock_guard<std::mutex> lock_guard(m_dataBatchMutex);
     beginInsertRows(QModelIndex(), m_data.count(), m_data.count());
     GkRecvMsgsTableViewModel recvMsg;
     recvMsg.timestamp = timestamp;
@@ -128,8 +125,31 @@ void GkXmppRecvMsgsTableViewModel::insertData(const QString &bareJid, const QStr
     auto bottom = this->createIndex((m_data.count() - 1), GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_TOTAL_IDX, nullptr);
     emit dataChanged(top, bottom);
 
-    dataBatchMutex.unlock();
     return;
+}
+
+/**
+ * @brief GkXmppRecvMsgsTableViewModel::removeData removes ALL the data from the given QTableView model.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return
+ */
+qint32 GkXmppRecvMsgsTableViewModel::removeData()
+{
+    std::lock_guard<std::mutex> lock_guard(m_dataBatchMutex);
+    if (!m_data.isEmpty()) {
+        qint32 counter = m_data.size();
+        beginRemoveRows(QModelIndex(), 0, 0);
+        m_data.clear();
+        endRemoveRows();
+
+        auto top = this->createIndex(0, 0, nullptr);
+        auto bottom = this->createIndex(0, GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_TOTAL_IDX, nullptr);
+        emit dataChanged(top, bottom);
+
+        return counter;
+    }
+
+    return 0;
 }
 
 /**
@@ -141,7 +161,7 @@ void GkXmppRecvMsgsTableViewModel::insertData(const QString &bareJid, const QStr
  */
 qint32 GkXmppRecvMsgsTableViewModel::removeData(const QDateTime &timestamp, const QString &bareJid)
 {
-    dataBatchMutex.lock();
+    std::lock_guard<std::mutex> lock_guard(m_dataBatchMutex);
     qint32 counter = 0;
     for (auto iter = m_data.begin(); iter != m_data.end(); ++iter) {
         ++counter;
@@ -157,7 +177,6 @@ qint32 GkXmppRecvMsgsTableViewModel::removeData(const QDateTime &timestamp, cons
     auto bottom = this->createIndex((m_data.count() - 1), GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_TOTAL_IDX, nullptr);
     emit dataChanged(top, bottom);
 
-    dataBatchMutex.unlock();
     return counter;
 }
 

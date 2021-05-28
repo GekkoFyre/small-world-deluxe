@@ -72,7 +72,9 @@
 #include <qxmpp/QXmppClientExtension.h>
 #include <qxmpp/QXmppDiscoveryManager.h>
 #include <qxmpp/QXmppRegistrationManager.h>
+#include <mutex>
 #include <queue>
+#include <thread>
 #include <memory>
 #include <utility>
 #include <QMap>
@@ -314,6 +316,11 @@ private:
     // Queue's relating to XMPP
     //
     std::queue<QXmppPresence::AvailableStatusType> m_availStatusTypeQueue;
+
+    //
+    // Multithreading, mutexes, etc.
+    //
+    std::mutex m_updateRosterMapMtx;
 
     //
     // QXmpp and XMPP related

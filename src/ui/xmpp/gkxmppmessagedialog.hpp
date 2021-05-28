@@ -49,6 +49,8 @@
 #include <QtSpell.hpp>
 #include <qxmpp/QXmppMessage.h>
 #include <queue>
+#include <mutex>
+#include <thread>
 #include <memory>
 #include <QEvent>
 #include <QString>
@@ -138,6 +140,11 @@ private:
     // Spell-checking, dictionaries, etc.
     //
     QPointer<QtSpell::TextEditChecker> m_spellChecker;
+
+    //
+    // Multithreading, mutexes, etc.
+    //
+    std::mutex m_archivedMsgsFromDbMtx;
 
     //
     // Miscellaneous

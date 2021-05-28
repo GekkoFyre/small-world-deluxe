@@ -43,9 +43,10 @@
 
 #include "src/defines.hpp"
 #include "src/gk_xmpp_client.hpp"
+#include <mutex>
+#include <thread>
 #include <memory>
 #include <QList>
-#include <QMutex>
 #include <QObject>
 #include <QString>
 #include <QVariant>
@@ -75,6 +76,7 @@ public:
 
 public slots:
     void insertData(const QString &bareJid, const QString &msg, const QDateTime &timestamp = QDateTime::currentDateTimeUtc());
+    qint32 removeData();
     qint32 removeData(const QDateTime &timestamp, const QString &bareJid);
 
 private:
@@ -84,6 +86,9 @@ private:
     QPointer<QTableView> table;
     QPointer<GekkoFyre::GkXmppClient> m_xmppClient;
 
-    QMutex dataBatchMutex;
+    //
+    // Multithreading, mutexes, etc.
+    //
+    std::mutex m_dataBatchMutex;
 };
 };

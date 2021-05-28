@@ -417,11 +417,14 @@ void GkXmppMessageDialog::recvXmppMsg(const QXmppMessage &msg)
 void GkXmppMessageDialog::procMsgArchive(const QString &bareJid)
 {
     auto rosterMap = m_xmppClient->getRosterMap();
-    for (const auto &roster: rosterMap) {
-        if (roster.bareJid == bareJid) {
-            if (!roster.archive_messages.isEmpty()) {
-                for (const auto &message: roster.archive_messages) {
-                    gkXmppRecvMsgsTableViewModel->insertData(bareJid, message.message.body(), message.message.date());
+    if (!rosterMap.isEmpty()) {
+        gkXmppRecvMsgsTableViewModel.clear();
+        for (const auto &roster: rosterMap) {
+            if (roster.bareJid == bareJid) {
+                if (!roster.archive_messages.isEmpty()) {
+                    for (const auto &message: roster.archive_messages) {
+                        gkXmppRecvMsgsTableViewModel->insertData(bareJid, message.message.body(), message.message.date());
+                    }
                 }
             }
         }
@@ -518,24 +521,28 @@ void GkXmppMessageDialog::getArchivedMessagesFromDb(const QString &bareJid, cons
     try {
         if (!bareJid.isEmpty()) {
             auto rosterMap = m_xmppClient->getRosterMap();
-            for (auto roster = rosterMap.begin(); roster != rosterMap.end(); ++roster) {
-                if (roster->bareJid == bareJid) {
-                    if (!roster->messages.isEmpty()) {
-                        for (auto iter = roster->messages.begin(); iter != roster->messages.end(); ++iter) {
-                            if (!iter->presented && insertData) {
-                                gkXmppRecvMsgsTableViewModel->insertData(bareJid, iter->message.body(), iter->message.stamp());
-                                iter->presented = true;
-                            } else {
-                                iter->presented = presented;
+            if (!rosterMap.isEmpty()) {
+                std::lock_guard<std::mutex> lock_guard(m_archivedMsgsFromDbMtx);
+                gkXmppRecvMsgsTableViewModel->removeData();
+                for (auto roster = rosterMap.begin(); roster != rosterMap.end(); ++roster) {
+                    if (roster->bareJid == bareJid) {
+                        if (!roster->messages.isEmpty()) {
+                            for (auto iter = roster->messages.begin(); iter != roster->messages.end(); ++iter) {
+                                if (!iter->presented && insertData) {
+                                    gkXmppRecvMsgsTableViewModel->insertData(bareJid, iter->message.body(), iter->message.stamp());
+                                    iter->presented = true;
+                                } else {
+                                    iter->presented = presented;
+                                }
                             }
+
+                            m_xmppClient->updateRosterMap(rosterMap);
+                            break;
                         }
 
-                        m_xmppClient->updateRosterMap(rosterMap);
                         ui->tableView_recv_msg_dlg->scrollToBottom();
                         break;
                     }
-
-                    break;
                 }
             }
         }

@@ -716,6 +716,7 @@ QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign> GkXmppClient::getRosterMap()
 void GkXmppClient::updateRosterMap(const QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &rosterList)
 {
     if (!rosterList.isEmpty()) {
+        std::lock_guard<std::mutex> lock_guard(m_updateRosterMapMtx);
         m_rosterList.clear();
         m_rosterList.shrink_to_fit();
         std::copy(rosterList.begin(), rosterList.end(), std::back_inserter(m_rosterList));
