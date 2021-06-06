@@ -72,7 +72,9 @@
 #include <qxmpp/QXmppClientExtension.h>
 #include <qxmpp/QXmppDiscoveryManager.h>
 #include <qxmpp/QXmppRegistrationManager.h>
+#include <mutex>
 #include <queue>
+#include <thread>
 #include <memory>
 #include <utility>
 #include <QMap>
@@ -129,6 +131,7 @@ public:
     // User, roster and presence details
     std::shared_ptr<QXmppRegistrationManager> getRegistrationMgr();
     QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign> getRosterMap();
+    void updateRosterMap(const QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &rosterList);
     QXmppPresence statusToPresence(const Network::GkXmpp::GkOnlineStatus &status);
     Network::GkXmpp::GkOnlineStatus presenceToStatus(const QXmppPresence::AvailableStatusType &xmppPresence);
     QString presenceToString(const QXmppPresence::AvailableStatusType &xmppPresence);
@@ -313,6 +316,11 @@ private:
     // Queue's relating to XMPP
     //
     std::queue<QXmppPresence::AvailableStatusType> m_availStatusTypeQueue;
+
+    //
+    // Multithreading, mutexes, etc.
+    //
+    std::mutex m_updateRosterMapMtx;
 
     //
     // QXmpp and XMPP related
