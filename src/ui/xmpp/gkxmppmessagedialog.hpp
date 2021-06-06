@@ -49,6 +49,8 @@
 #include <QtSpell.hpp>
 #include <qxmpp/QXmppMessage.h>
 #include <queue>
+#include <mutex>
+#include <thread>
 #include <memory>
 #include <QEvent>
 #include <QString>
@@ -112,6 +114,7 @@ private slots:
     void msgArchiveSuccReceived();
     void procMamArchive(const QString &bareJid);
     void getArchivedMessages();
+    void getArchivedMessagesFromDb(const QString &bareJid, const bool &insertData, const bool &presented = false);
 
 signals:
     void updateToolbar(const QString &value);
@@ -137,6 +140,11 @@ private:
     // Spell-checking, dictionaries, etc.
     //
     QPointer<QtSpell::TextEditChecker> m_spellChecker;
+
+    //
+    // Multithreading, mutexes, etc.
+    //
+    std::mutex m_archivedMsgsFromDbMtx;
 
     //
     // Miscellaneous

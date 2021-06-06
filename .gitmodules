@@ -46,3 +46,6 @@
 [submodule "src/contrib/qtspell"]
 	path = src/contrib/qtspell
 	url = https://github.com/manisandro/qtspell.git
+[submodule "src/contrib/curl"]
+	path = src/contrib/curl
+	url = https://github.com/curl/curl.git

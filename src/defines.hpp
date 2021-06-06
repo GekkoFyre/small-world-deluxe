@@ -434,6 +434,16 @@ namespace Network {
             AvatarImg
         };
 
+        struct GkXmppMamMsg {
+            bool presented = false;
+            QXmppMessage message;
+        };
+
+        struct GkXmppArchiveMsg {
+            bool presented = false;
+            QXmppArchiveMessage message;
+        };
+
         struct GkClientSettings {
             bool allow_msg_history;                         // Shall we keep a message history with this server, provided it's a supported extension?
             bool allow_file_xfers;                          // Shall we allow file transfers with this server, provided it's a supported extension?
@@ -460,11 +470,10 @@ namespace Network {
             GkHost server;
             QString bareJid;
             QXmppVCardIq vCard;
-            QList<QXmppArchiveMessage> archive_messages;
-            QList<QXmppMessage> messages;
+            QList<GkXmppArchiveMsg> archive_messages;
+            QList<GkXmppMamMsg> messages;
             std::shared_ptr<QXmppPresence> presence;
             QXmppRosterIq::Item::SubscriptionType subStatus;
-            bool rosterRecordedMsgHistoryUpdated;
         };
 
         struct GkXmppBlocklist {

@@ -492,6 +492,25 @@ else()
 endif()
 
 #
+# Curl by Daniel Stenberg
+# https://github.com/curl/curl
+#
+set(BUILD_CURL_EXE OFF CACHE BOOL "Set to ON to build curl executable.")
+set(CURL_LTO ON CACHE BOOL "Turn on compiler Link Time Optimizations for libcurl.")
+set(HTTP_ONLY ON CACHE BOOL "Disables all protocols except HTTP (This overrides all CURL_DISABLE_* options).")
+if (CMAKE_BUILD_TYPE MATCHES DEBUG)
+    set(ENABLE_DEBUG ON CACHE BOOL "Enable debug mode for libcurl.")
+    set(ENABLE_CURLDEBUG ON CACHE BOOL "Another flag for enabling debug mode with regards to libcurl.")
+else()
+    set(ENABLE_DEBUG OFF CACHE BOOL "Enable debug mode for libcurl.")
+    set(ENABLE_CURLDEBUG OFF CACHE BOOL "Another flag for enabling debug mode with regards to libcurl.")
+endif()
+
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/curl")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/curl/include")
+message(STATUS "The 'libcurl' command-line tool and library for transferring network data has been configured!")
+
+#
 # Google LevelDB [ https://github.com/google/leveldb ]
 #
 set(LEVELDB_BUILD_TESTS OFF CACHE BOOL "Build Google LevelDB tests. This is not required for the compilation of Small World Deluxe." FORCE)

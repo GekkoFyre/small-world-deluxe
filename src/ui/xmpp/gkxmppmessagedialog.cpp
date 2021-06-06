@@ -129,6 +129,7 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
     ui->tableView_recv_msg_dlg->horizontalHeader()->setHidden(true);
     ui->tableView_recv_msg_dlg->setVisible(true);
     ui->tableView_recv_msg_dlg->show();
+    ui->tableView_recv_msg_dlg->scrollToBottom();
 
     ui->label_callsign_1_stats->setText(QString("1 %1").arg(tr("user in chat")));
     ui->label_msging_callsign_status->setText("");
@@ -163,6 +164,12 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
 
     QObject::connect(m_xmppClient, &QXmppClient::disconnected, this, [=]() {
         ui->textEdit_tx_msg_dialog->setEnabled(false);
+    });
+
+    QObject::connect(this, &GkXmppMessageDialog::finished, this, [=]() {
+        for (const auto &bareJid: m_bareJids) {
+            getArchivedMessagesFromDb(bareJid, false, false);
+        }
     });
 }
 
@@ -410,11 +417,14 @@ void GkXmppMessageDialog::recvXmppMsg(const QXmppMessage &msg)
 void GkXmppMessageDialog::procMsgArchive(const QString &bareJid)
 {
     auto rosterMap = m_xmppClient->getRosterMap();
-    for (const auto &roster: rosterMap) {
-        if (roster.bareJid == bareJid) {
-            if (!roster.archive_messages.isEmpty()) {
-                for (const auto &message: roster.archive_messages) {
-                    gkXmppRecvMsgsTableViewModel->insertData(bareJid, message.body(), message.date());
+    if (!rosterMap.isEmpty()) {
+        gkXmppRecvMsgsTableViewModel.clear();
+        for (const auto &roster: rosterMap) {
+            if (roster.bareJid == bareJid) {
+                if (!roster.archive_messages.isEmpty()) {
+                    for (const auto &message: roster.archive_messages) {
+                        gkXmppRecvMsgsTableViewModel->insertData(bareJid, message.message.body(), message.message.date());
+                    }
                 }
             }
         }
@@ -478,23 +488,7 @@ void GkXmppMessageDialog::msgArchiveSuccReceived()
 void GkXmppMessageDialog::procMamArchive(const QString &bareJid)
 {
     try {
-        if (!bareJid.isEmpty()) {
-            const auto rosterMap = m_xmppClient->getRosterMap();
-            for (const auto &roster: rosterMap) {
-                if (roster.bareJid == bareJid) {
-                    if (!roster.messages.isEmpty()) {
-                        for (const auto &message: roster.messages) {
-                            gkXmppRecvMsgsTableViewModel->insertData(bareJid, message.body(), message.stamp());
-                        }
-
-                        gkDb->write_xmpp_chat_log(roster.bareJid, roster.messages);
-                        break;
-                    }
-
-                    break;
-                }
-            }
-        }
+        getArchivedMessagesFromDb(bareJid, true, true);
     } catch (const std::exception &e) {
         gkStringFuncs->print_exception(e);
     }
@@ -510,6 +504,50 @@ void GkXmppMessageDialog::getArchivedMessages()
 {
     for (const auto &bareJid: m_bareJids) {
         m_xmppClient->getArchivedMessages(QString(), QString(), bareJid);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppMessageDialog::getArchivedMessagesFromDb
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid
+ * @param insertData
+ * @param presented
+ */
+void GkXmppMessageDialog::getArchivedMessagesFromDb(const QString &bareJid, const bool &insertData, const bool &presented)
+{
+    try {
+        if (!bareJid.isEmpty()) {
+            auto rosterMap = m_xmppClient->getRosterMap();
+            if (!rosterMap.isEmpty()) {
+                std::lock_guard<std::mutex> lock_guard(m_archivedMsgsFromDbMtx);
+                gkXmppRecvMsgsTableViewModel->removeData();
+                for (auto roster = rosterMap.begin(); roster != rosterMap.end(); ++roster) {
+                    if (roster->bareJid == bareJid) {
+                        if (!roster->messages.isEmpty()) {
+                            for (auto iter = roster->messages.begin(); iter != roster->messages.end(); ++iter) {
+                                if (!iter->presented && insertData) {
+                                    gkXmppRecvMsgsTableViewModel->insertData(bareJid, iter->message.body(), iter->message.stamp());
+                                    iter->presented = true;
+                                } else {
+                                    iter->presented = presented;
+                                }
+                            }
+
+                            m_xmppClient->updateRosterMap(rosterMap);
+                            break;
+                        }
+
+                        ui->tableView_recv_msg_dlg->scrollToBottom();
+                        break;
+                    }
+                }
+            }
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
     }
 
     return;

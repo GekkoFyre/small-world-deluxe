@@ -102,6 +102,10 @@ libopusenc by Xiph.Org Foundation and Jean-Marc Valin et al.
     <http://opus-codec.org/>
         BSD 3-clause License
 
+libcurl by Daniel Stenberg et al.
+    <https://github.com/curl/curl/>
+        Public License w/ Copyright
+
 libiconv-win-build by Bruno Haible
     <https://github.com/kiyolee/libiconv-win-build/>
         GNU General Public License (GPL, version 3)
