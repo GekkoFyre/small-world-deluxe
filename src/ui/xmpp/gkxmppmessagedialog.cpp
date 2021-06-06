@@ -100,77 +100,84 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
 {
     ui->setupUi(this);
 
-    gkStringFuncs = std::move(stringFuncs);
-    gkEventLogger = std::move(eventLogger);
-    gkDb = std::move(database);
-    gkConnDetails = connection_details;
-    m_spellChecker = std::move(spellChecking);
-    m_xmppClient = std::move(xmppClient);
-    m_bareJids = bareJids;
+    try {
+        gkStringFuncs = std::move(stringFuncs);
+        gkEventLogger = std::move(eventLogger);
+        gkDb = std::move(database);
+        gkConnDetails = connection_details;
+        m_spellChecker = std::move(spellChecking);
+        m_xmppClient = std::move(xmppClient);
+        m_bareJids = bareJids;
 
-    //
-    // Setup and initialize signals and slots...
-    QObject::connect(this, SIGNAL(updateToolbar(const QString &)), this, SLOT(updateToolbarStatus(const QString &)));
-    QObject::connect(this, SIGNAL(sendXmppMsg(const QString &, const QXmppMessage &, const QDateTime &, const QDateTime &)),
-                     m_xmppClient, SLOT(sendXmppMsg(const QString &, const QXmppMessage &, const QDateTime &, const QDateTime &)));
-    QObject::connect(m_xmppClient, SIGNAL(xmppMsgUpdate(const QXmppMessage &)), this, SLOT(recvXmppMsg(const QXmppMessage &)));
-    QObject::connect(m_xmppClient, SIGNAL(updateMsgHistory()), this, SLOT(updateMsgHistory()));
-    QObject::connect(m_xmppClient, SIGNAL(msgArchiveSuccReceived()), this, SLOT(msgArchiveSuccReceived()));
-    QObject::connect(this, SIGNAL(updateMamArchive(const QString &)), this, SLOT(procMamArchive(const QString &)));
+        //
+        // Setup and initialize signals and slots...
+        QObject::connect(this, SIGNAL(updateToolbar(const QString &)), this, SLOT(updateToolbarStatus(const QString &)));
+        QObject::connect(this, SIGNAL(sendXmppMsg(const QString &, const QXmppMessage &, const QDateTime &, const QDateTime &)),
+                         m_xmppClient, SLOT(sendXmppMsg(const QString &, const QXmppMessage &, const QDateTime &, const QDateTime &)));
+        QObject::connect(m_xmppClient, SIGNAL(xmppMsgUpdate(const QXmppMessage &)), this, SLOT(recvXmppMsg(const QXmppMessage &)));
+        QObject::connect(m_xmppClient, SIGNAL(updateMsgHistory()), this, SLOT(updateMsgHistory()));
+        QObject::connect(m_xmppClient, SIGNAL(msgArchiveSuccReceived()), this, SLOT(msgArchiveSuccReceived()));
+        QObject::connect(this, SIGNAL(updateMamArchive(const QString &)), this, SLOT(procMamArchive(const QString &)));
 
-    //
-    // Setup and initialize QTableView's...
-    gkXmppRecvMsgsTableViewModel = new GkXmppRecvMsgsTableViewModel(ui->tableView_recv_msg_dlg, m_xmppClient, this);
-    ui->tableView_recv_msg_dlg->setModel(gkXmppRecvMsgsTableViewModel);
+        //
+        // Setup and initialize QTableView's...
+        gkXmppRecvMsgsTableViewModel = new GkXmppRecvMsgsTableViewModel(ui->tableView_recv_msg_dlg, m_xmppClient, this);
+        ui->tableView_recv_msg_dlg->setModel(gkXmppRecvMsgsTableViewModel);
 
-    ui->tableView_recv_msg_dlg->horizontalHeader()->setSectionResizeMode(GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_DATETIME_IDX, QHeaderView::ResizeToContents);
-    ui->tableView_recv_msg_dlg->horizontalHeader()->setSectionResizeMode(GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_NICKNAME_IDX, QHeaderView::ResizeToContents);
-    ui->tableView_recv_msg_dlg->horizontalHeader()->setStretchLastSection(true);
-    ui->tableView_recv_msg_dlg->horizontalHeader()->setHidden(true);
-    ui->tableView_recv_msg_dlg->setVisible(true);
-    ui->tableView_recv_msg_dlg->show();
-    ui->tableView_recv_msg_dlg->scrollToBottom();
+        ui->tableView_recv_msg_dlg->horizontalHeader()->setSectionResizeMode(GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_DATETIME_IDX, QHeaderView::ResizeToContents);
+        ui->tableView_recv_msg_dlg->horizontalHeader()->setSectionResizeMode(GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_NICKNAME_IDX, QHeaderView::ResizeToContents);
+        ui->tableView_recv_msg_dlg->horizontalHeader()->setStretchLastSection(true);
+        ui->tableView_recv_msg_dlg->horizontalHeader()->setHidden(true);
+        ui->tableView_recv_msg_dlg->setVisible(true);
+        ui->tableView_recv_msg_dlg->show();
+        ui->tableView_recv_msg_dlg->scrollToBottom();
 
-    ui->label_callsign_1_stats->setText(QString("1 %1").arg(tr("user in chat")));
-    ui->label_msging_callsign_status->setText("");
+        ui->label_callsign_1_stats->setText(QString("1 %1").arg(tr("user in chat")));
+        ui->label_msging_callsign_status->setText("");
 
-    ui->tab_user_msg->setWindowIcon(QPixmap(":/resources/contrib/images/vector/no-attrib/walkie-talkies.svg"));
-    ui->toolButton_font->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/font.svg"));
-    ui->toolButton_font_reset->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/eraser.svg"));
-    ui->toolButton_insert->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/moustache-cream.svg"));
-    ui->toolButton_attach_file->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/attached-file.svg"));
+        ui->tab_user_msg->setWindowIcon(QPixmap(":/resources/contrib/images/vector/no-attrib/walkie-talkies.svg"));
+        ui->toolButton_font->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/font.svg"));
+        ui->toolButton_font_reset->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/eraser.svg"));
+        ui->toolButton_insert->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/moustache-cream.svg"));
+        ui->toolButton_attach_file->setIcon(QIcon(":/resources/contrib/images/vector/no-attrib/attached-file.svg"));
 
-    QPointer<GkPlainTextKeyEnter> gkPlaintextKeyEnter = new GkPlainTextKeyEnter();
-    QObject::connect(gkPlaintextKeyEnter, SIGNAL(submitMsgEnterKey()), this, SLOT(submitMsgEnterKey()));
-    ui->textEdit_tx_msg_dialog->installEventFilter(gkPlaintextKeyEnter);
-    m_spellChecker->setTextEdit(ui->textEdit_tx_msg_dialog); // Add the QtSpell spelling-checker to the QTextEdit object!
+        QPointer<GkPlainTextKeyEnter> gkPlaintextKeyEnter = new GkPlainTextKeyEnter();
+        QObject::connect(gkPlaintextKeyEnter, SIGNAL(submitMsgEnterKey()), this, SLOT(submitMsgEnterKey()));
+        ui->textEdit_tx_msg_dialog->installEventFilter(gkPlaintextKeyEnter);
+        m_spellChecker->setTextEdit(ui->textEdit_tx_msg_dialog); // Add the QtSpell spelling-checker to the QTextEdit object!
 
-    determineNickname();
-    updateInterface(m_bareJids);
+        determineNickname();
+        updateInterface(m_bareJids);
 
-    if (!m_xmppClient->isConnected()) {
-        ui->textEdit_tx_msg_dialog->setEnabled(false);
-    }
-
-    if (m_xmppClient->isConnected()) {
-        ui->textEdit_tx_msg_dialog->setEnabled(true);
-        getArchivedMessages(); // Gather anything possible from the Google LevelDB database!
-    }
-
-    QObject::connect(m_xmppClient, &QXmppClient::connected, this, [=]() {
-        ui->textEdit_tx_msg_dialog->setEnabled(true);
-        getArchivedMessages(); // Now gather any data possible from the given XMPP server via the Internet!
-    });
-
-    QObject::connect(m_xmppClient, &QXmppClient::disconnected, this, [=]() {
-        ui->textEdit_tx_msg_dialog->setEnabled(false);
-    });
-
-    QObject::connect(this, &GkXmppMessageDialog::finished, this, [=]() {
-        for (const auto &bareJid: m_bareJids) {
-            getArchivedMessagesFromDb(bareJid, false, false);
+        if (!m_xmppClient->isConnected()) {
+            ui->textEdit_tx_msg_dialog->setEnabled(false);
         }
-    });
+
+        if (m_xmppClient->isConnected()) {
+            ui->textEdit_tx_msg_dialog->setEnabled(true);
+            getArchivedMessages(); // Gather anything possible from the Google LevelDB database!
+        }
+
+        QObject::connect(m_xmppClient, &QXmppClient::connected, this, [=]() {
+            ui->textEdit_tx_msg_dialog->setEnabled(true);
+            getArchivedMessages(); // Now gather any data possible from the given XMPP server via the Internet!
+        });
+
+        QObject::connect(m_xmppClient, &QXmppClient::disconnected, this, [=]() {
+            ui->textEdit_tx_msg_dialog->setEnabled(false);
+        });
+
+        QObject::connect(this, &GkXmppMessageDialog::finished, this, [=]() {
+            for (const auto &bareJid: m_bareJids) {
+                getArchivedMessagesFromDb(bareJid, false, false);
+            }
+        });
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(tr("An error has occurred related to XMPP functions. The error in question:\n\n%1").arg(QString::fromStdString(e.what())),
+                                    GkSeverity::Fatal, "", false, true, false, true);
+    }
+
+    return;
 }
 
 GkXmppMessageDialog::~GkXmppMessageDialog()
@@ -510,11 +517,15 @@ void GkXmppMessageDialog::getArchivedMessages()
 }
 
 /**
- * @brief GkXmppMessageDialog::getArchivedMessagesFromDb
+ * @brief GkXmppMessageDialog::getArchivedMessagesFromDb attempts to get previously archived messages from the Google
+ * LevelDB database that is associated with this user's instance of Small World Deluxe, and insert them into the chat
+ * window, thereby saving bandwidth from not having to unnecessarily re-download messages from the given XMPP server
+ * again.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param bareJid
- * @param insertData
- * @param presented
+ * @param bareJid The user we are in communiqué with!
+ * @param insertData Whether to insert the archived messages into the given QTableView or not.
+ * @param presented Should we update the fact that these messages are now already 'presented' (and thereby inserted into
+ * the QTableView) or not?
  */
 void GkXmppMessageDialog::getArchivedMessagesFromDb(const QString &bareJid, const bool &insertData, const bool &presented)
 {
