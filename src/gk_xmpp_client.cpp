@@ -902,11 +902,14 @@ QString GkXmppClient::obtainAvatarFilePath()
 void GkXmppClient::getArchivedMessages(const QString &to, const QString &node, const QString &jid, const QDateTime &start,
                                        const QDateTime &end, const QXmppResultSetQuery &resultSetQuery)
 {
+    Q_UNUSED(node);
+    Q_UNUSED(end);
+
     if (!m_rosterList.isEmpty()) {
-        updateRecordedMsgHistory(jid);
-        if (!start.isValid() || !end.isValid()) {
-            for (const auto &roster: m_rosterList) {
-                if (jid == roster.bareJid) {
+        for (const auto &roster: m_rosterList) {
+            updateRecordedMsgHistory(roster.bareJid);
+            if (!start.isValid()) {
+                if (to == roster.bareJid && jid != m_connDetails.jid) {
                     if (!roster.messages.isEmpty()) {
                         QList<QXmppMessage> msg_history;
                         for (const auto &message: roster.messages) {
@@ -914,9 +917,10 @@ void GkXmppClient::getArchivedMessages(const QString &to, const QString &node, c
                         }
 
                         if (!msg_history.isEmpty()) {
-                            const auto min_timestamp = gkStringFuncs->calcMinTimestampForXmppMsgHistory(msg_history);;
-                            const auto max_timestamp = gkStringFuncs->calcMaxTimestampForXmppMsgHistory(msg_history);;
-                            m_xmppMamMgr->retrieveArchivedMessages(to, node, jid, min_timestamp, max_timestamp, resultSetQuery);
+                            const auto min_timestamp = gkStringFuncs->calcMinTimestampForXmppMsgHistory(msg_history);
+                            gkEventLogger->publishEvent(tr("Minimum date required for message archive retrieval is: %1").arg(QDateTime(min_timestamp).toString("dd MMM yyyy @ hh:mm:ss.zzz")),
+                                                        GkSeverity::Debug, "", false, true, false, false);
+                            m_xmppMamMgr->retrieveArchivedMessages(roster.bareJid, "", m_connDetails.jid, min_timestamp, QDateTime(), resultSetQuery);
 
                             return;
                         }
@@ -928,7 +932,7 @@ void GkXmppClient::getArchivedMessages(const QString &to, const QString &node, c
         }
     }
 
-    m_xmppMamMgr->retrieveArchivedMessages(to, node, jid, start, end, resultSetQuery);
+    m_xmppMamMgr->retrieveArchivedMessages(to, "", jid, start, QDateTime(), resultSetQuery);
     return;
 }
 
@@ -1433,7 +1437,7 @@ void GkXmppClient::sendXmppMsg(const QString &bareJid, const QXmppMessage &msg, 
         for (const auto &roster: m_rosterList) {
             if (!roster.bareJid.isEmpty()) {
                 if (roster.bareJid == bareJid) {
-                    if (beginTimestamp.isValid() || endTimestamp.isValid()) {
+                    if (beginTimestamp.isValid() && endTimestamp.isValid()) {
                         getArchivedMessages(m_connDetails.jid, QString(), roster.bareJid, beginTimestamp, endTimestamp, QXmppResultSetQuery());
                     } else {
                         getArchivedMessages(m_connDetails.jid, QString(), roster.bareJid, QDateTime::currentDateTimeUtc(), QDateTime::currentDateTimeUtc(), QXmppResultSetQuery());
@@ -2100,6 +2104,7 @@ void GkXmppClient::archiveChatReceived(const QXmppArchiveChat &chat, const QXmpp
  */
 void GkXmppClient::archivedMessageReceived(const QString &queryId, const QXmppMessage &message)
 {
+    Q_UNUSED(queryId);
     try {
         for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
             if (iter->bareJid == message.from()) {

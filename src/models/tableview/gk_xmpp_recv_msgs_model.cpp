@@ -122,8 +122,8 @@ void GkXmppRecvMsgsTableViewModel::insertData(const QString &bareJid, const QStr
         m_data.append(recvMsg);
         endInsertRows();
 
-        auto top = this->createIndex((m_data.count() - 1), 0, nullptr);
-        auto bottom = this->createIndex((m_data.count() - 1), GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_TOTAL_IDX, nullptr);
+        auto top = this->createIndex((m_data.count() + 1), 0, nullptr);
+        auto bottom = this->createIndex((m_data.count() + 1), GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_TOTAL_IDX, nullptr);
         emit dataChanged(top, bottom);
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(e.what()));
@@ -249,7 +249,7 @@ QVariant GkXmppRecvMsgsTableViewModel::data(const QModelIndex &index, int role) 
 
     switch (index.column()) {
         case GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_DATETIME_IDX:
-            return row_timestamp.toString("dd.MM.yyyy h:mm:ss ap");
+            return row_timestamp.toString("[ dd MMM yy ] h:mm:ss ap");
         case GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_NICKNAME_IDX:
             return row_nickname;
         case GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_MSG_IDX:

@@ -110,6 +110,10 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
         m_bareJids = bareJids;
 
         //
+        // Initialize any boolean values...
+        startupSucc = false; // Has startup of this class already succeeded?
+
+        //
         // Setup and initialize signals and slots...
         QObject::connect(this, SIGNAL(updateToolbar(const QString &)), this, SLOT(updateToolbarStatus(const QString &)));
         QObject::connect(this, SIGNAL(sendXmppMsg(const QString &, const QXmppMessage &, const QDateTime &, const QDateTime &)),
@@ -144,7 +148,7 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
         QPointer<GkPlainTextKeyEnter> gkPlaintextKeyEnter = new GkPlainTextKeyEnter();
         QObject::connect(gkPlaintextKeyEnter, SIGNAL(submitMsgEnterKey()), this, SLOT(submitMsgEnterKey()));
         ui->textEdit_tx_msg_dialog->installEventFilter(gkPlaintextKeyEnter);
-        m_spellChecker->setTextEdit(ui->textEdit_tx_msg_dialog); // Add the QtSpell spelling-checker to the QTextEdit object!
+        // m_spellChecker->setTextEdit(ui->textEdit_tx_msg_dialog); // Add the QtSpell spelling-checker to the QTextEdit object!
 
         determineNickname();
         updateInterface(m_bareJids);
@@ -469,6 +473,7 @@ QXmppMessage GkXmppMessageDialog::createXmppMessageIq(const QString &to, const Q
     xmppMsg.setFrom(from);
     xmppMsg.setTo(to);
     xmppMsg.setBody(message);
+    xmppMsg.setStamp(QDateTime::currentDateTimeUtc());
     xmppMsg.setType(QXmppMessage::Chat);
 
     return xmppMsg;
@@ -480,8 +485,12 @@ QXmppMessage GkXmppMessageDialog::createXmppMessageIq(const QString &to, const Q
  */
 void GkXmppMessageDialog::msgArchiveSuccReceived()
 {
-    for (const auto &bareJid: m_bareJids) {
-        emit updateMamArchive(bareJid);
+    if (!startupSucc) {
+        for (const auto &bareJid: m_bareJids) {
+            emit updateMamArchive(bareJid);
+        }
+
+        startupSucc = true;
     }
 
     return;
@@ -495,7 +504,9 @@ void GkXmppMessageDialog::msgArchiveSuccReceived()
 void GkXmppMessageDialog::procMamArchive(const QString &bareJid)
 {
     try {
-        getArchivedMessagesFromDb(bareJid, true, true);
+        if (!startupSucc) {
+            getArchivedMessagesFromDb(bareJid, true, true);
+        }
     } catch (const std::exception &e) {
         gkStringFuncs->print_exception(e);
     }
@@ -510,7 +521,7 @@ void GkXmppMessageDialog::procMamArchive(const QString &bareJid)
 void GkXmppMessageDialog::getArchivedMessages()
 {
     for (const auto &bareJid: m_bareJids) {
-        m_xmppClient->getArchivedMessages(QString(), QString(), bareJid);
+        m_xmppClient->getArchivedMessages(gkConnDetails.jid, QString(), bareJid);
     }
 
     return;
@@ -548,7 +559,6 @@ void GkXmppMessageDialog::getArchivedMessagesFromDb(const QString &bareJid, cons
                             }
 
                             m_xmppClient->updateRosterMap(rosterMap);
-                            break;
                         }
 
                         ui->tableView_recv_msg_dlg->scrollToBottom();
