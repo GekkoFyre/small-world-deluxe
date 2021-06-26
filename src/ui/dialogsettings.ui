@@ -603,7 +603,7 @@
                           <x>0</x>
                           <y>0</y>
                           <width>908</width>
-                          <height>1108</height>
+                          <height>1146</height>
                          </rect>
                         </property>
                         <layout class="QVBoxLayout" name="verticalLayout_23">
@@ -616,7 +616,7 @@
                             <item>
                              <widget class="QGroupBox" name="groupBox_accessibility_lang_spellchecking">
                               <property name="title">
-                               <string>Language</string>
+                               <string>Language &amp;&amp; Date / Time</string>
                               </property>
                               <layout class="QVBoxLayout" name="verticalLayout_66">
                                <item>
@@ -661,14 +661,14 @@
                                      <property name="bottomMargin">
                                       <number>0</number>
                                      </property>
-                                     <item row="0" column="0">
+                                     <item row="1" column="0">
                                       <widget class="QLabel" name="label_accessibility_lang_ui">
                                        <property name="text">
                                         <string>UI Language: </string>
                                        </property>
                                       </widget>
                                      </item>
-                                     <item row="0" column="1">
+                                     <item row="1" column="1">
                                       <widget class="QFrame" name="frame_accessibility_lang_ui">
                                        <property name="frameShape">
                                         <enum>QFrame::NoFrame</enum>
@@ -695,6 +695,40 @@
                                            <string>Change the display language of the user interface itself.</string>
                                           </property>
                                          </widget>
+                                        </item>
+                                       </layout>
+                                      </widget>
+                                     </item>
+                                     <item row="2" column="0">
+                                      <widget class="QLabel" name="label_accessibility_lang_tz">
+                                       <property name="text">
+                                        <string>Timezone: </string>
+                                       </property>
+                                      </widget>
+                                     </item>
+                                     <item row="2" column="1">
+                                      <widget class="QFrame" name="frame_accessibility_lang_tz">
+                                       <property name="frameShape">
+                                        <enum>QFrame::NoFrame</enum>
+                                       </property>
+                                       <property name="frameShadow">
+                                        <enum>QFrame::Plain</enum>
+                                       </property>
+                                       <layout class="QHBoxLayout" name="horizontalLayout_57">
+                                        <property name="leftMargin">
+                                         <number>0</number>
+                                        </property>
+                                        <property name="topMargin">
+                                         <number>0</number>
+                                        </property>
+                                        <property name="rightMargin">
+                                         <number>0</number>
+                                        </property>
+                                        <property name="bottomMargin">
+                                         <number>0</number>
+                                        </property>
+                                        <item>
+                                         <widget class="QComboBox" name="comboBox_accessibility_lang_tz"/>
                                         </item>
                                        </layout>
                                       </widget>
@@ -757,6 +791,56 @@
                                            <string>Choose a dictionary that can be used for spell-checking typos. This is separate to the UI Language.</string>
                                           </property>
                                          </widget>
+                                        </item>
+                                       </layout>
+                                      </widget>
+                                     </item>
+                                     <item row="1" column="0">
+                                      <spacer name="horizontalSpacer_32">
+                                       <property name="orientation">
+                                        <enum>Qt::Horizontal</enum>
+                                       </property>
+                                       <property name="sizeHint" stdset="0">
+                                        <size>
+                                         <width>40</width>
+                                         <height>20</height>
+                                        </size>
+                                       </property>
+                                      </spacer>
+                                     </item>
+                                     <item row="1" column="1">
+                                      <widget class="QFrame" name="frame_accessibility_dict_horizontal_spacer">
+                                       <property name="frameShape">
+                                        <enum>QFrame::NoFrame</enum>
+                                       </property>
+                                       <property name="frameShadow">
+                                        <enum>QFrame::Plain</enum>
+                                       </property>
+                                       <layout class="QHBoxLayout" name="horizontalLayout_58">
+                                        <property name="leftMargin">
+                                         <number>0</number>
+                                        </property>
+                                        <property name="topMargin">
+                                         <number>0</number>
+                                        </property>
+                                        <property name="rightMargin">
+                                         <number>0</number>
+                                        </property>
+                                        <property name="bottomMargin">
+                                         <number>0</number>
+                                        </property>
+                                        <item>
+                                         <spacer name="horizontalSpacer_33">
+                                          <property name="orientation">
+                                           <enum>Qt::Horizontal</enum>
+                                          </property>
+                                          <property name="sizeHint" stdset="0">
+                                           <size>
+                                            <width>339</width>
+                                            <height>20</height>
+                                           </size>
+                                          </property>
+                                         </spacer>
                                         </item>
                                        </layout>
                                       </widget>
@@ -2032,8 +2116,8 @@ Thanks.</string>
                          <rect>
                           <x>0</x>
                           <y>0</y>
-                          <width>922</width>
-                          <height>540</height>
+                          <width>399</width>
+                          <height>117</height>
                          </rect>
                         </property>
                         <layout class="QVBoxLayout" name="verticalLayout_69">
@@ -2136,7 +2220,7 @@ Thanks.</string>
                       <x>0</x>
                       <y>0</y>
                       <width>930</width>
-                      <height>593</height>
+                      <height>686</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_60">
@@ -2773,6 +2857,135 @@ Thanks.</string>
                                      </widget>
                                     </item>
                                    </layout>
+                                  </widget>
+                                 </item>
+                                </layout>
+                               </widget>
+                              </item>
+                             </layout>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QGroupBox" name="groupBox_xmpp_cfg_msg_archiving">
+                          <property name="title">
+                           <string>Message Archiving</string>
+                          </property>
+                          <layout class="QVBoxLayout" name="verticalLayout_71">
+                           <item>
+                            <widget class="QFrame" name="frame_xmpp_cfg_msg_archiving_upper">
+                             <property name="frameShape">
+                              <enum>QFrame::NoFrame</enum>
+                             </property>
+                             <property name="frameShadow">
+                              <enum>QFrame::Plain</enum>
+                             </property>
+                             <layout class="QHBoxLayout" name="horizontalLayout_59">
+                              <property name="leftMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="topMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="rightMargin">
+                               <number>0</number>
+                              </property>
+                              <property name="bottomMargin">
+                               <number>0</number>
+                              </property>
+                              <item>
+                               <widget class="QFrame" name="frame_cfg_msg_archiving_upper_left">
+                                <property name="frameShape">
+                                 <enum>QFrame::NoFrame</enum>
+                                </property>
+                                <property name="frameShadow">
+                                 <enum>QFrame::Plain</enum>
+                                </property>
+                                <layout class="QFormLayout" name="formLayout_40">
+                                 <property name="leftMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="topMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="rightMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="bottomMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <item row="0" column="0">
+                                  <widget class="QLabel" name="label_cfg_msg_archiving_offline">
+                                   <property name="text">
+                                    <string>Offline Archive: </string>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                 <item row="0" column="1">
+                                  <widget class="QCheckBox" name="checkBox_cfg_msg_archiving_offline">
+                                   <property name="text">
+                                    <string/>
+                                   </property>
+                                   <property name="checked">
+                                    <bool>true</bool>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                 <item row="1" column="0">
+                                  <widget class="QLabel" name="label_cfg_msg_archiving_server_archive">
+                                   <property name="text">
+                                    <string>Archive on Server: </string>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                 <item row="1" column="1">
+                                  <widget class="QCheckBox" name="checkBox_cfg_msg_archiving_server_archive">
+                                   <property name="text">
+                                    <string/>
+                                   </property>
+                                   <property name="checked">
+                                    <bool>true</bool>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                </layout>
+                               </widget>
+                              </item>
+                              <item>
+                               <widget class="QFrame" name="frame_cfg_msg_archiving_upper_right">
+                                <property name="frameShape">
+                                 <enum>QFrame::NoFrame</enum>
+                                </property>
+                                <property name="frameShadow">
+                                 <enum>QFrame::Plain</enum>
+                                </property>
+                                <layout class="QFormLayout" name="formLayout_41">
+                                 <property name="leftMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="topMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="rightMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <property name="bottomMargin">
+                                  <number>0</number>
+                                 </property>
+                                 <item row="0" column="0">
+                                  <widget class="QLabel" name="label_cfg_msg_archiving_timespan">
+                                   <property name="text">
+                                    <string>Archive Timespan: </string>
+                                   </property>
+                                  </widget>
+                                 </item>
+                                 <item row="0" column="1">
+                                  <widget class="QDateEdit" name="dateEdit_cfg_msg_archiving_timespan">
+                                   <property name="calendarPopup">
+                                    <bool>true</bool>
+                                   </property>
                                   </widget>
                                  </item>
                                 </layout>

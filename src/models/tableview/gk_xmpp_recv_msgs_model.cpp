@@ -111,19 +111,23 @@ void GkXmppRecvMsgsTableViewModel::populateData(const QList<GkRecvMsgsTableViewM
  */
 void GkXmppRecvMsgsTableViewModel::insertData(const QString &bareJid, const QString &msg, const QDateTime &timestamp)
 {
-    std::lock_guard<std::mutex> lock_guard(m_dataBatchMutex);
-    beginInsertRows(QModelIndex(), m_data.count(), m_data.count());
-    GkRecvMsgsTableViewModel recvMsg;
-    recvMsg.timestamp = timestamp;
-    recvMsg.bareJid = bareJid;
-    recvMsg.message = msg;
-    recvMsg.nickName = m_xmppClient->getJidNickname(recvMsg.bareJid);
-    m_data.append(recvMsg);
-    endInsertRows();
+    try {
+        std::lock_guard<std::mutex> lock_guard(m_dataBatchMutex);
+        beginInsertRows(QModelIndex(), m_data.count(), m_data.count());
+        GkRecvMsgsTableViewModel recvMsg;
+        recvMsg.timestamp = timestamp;
+        recvMsg.bareJid = bareJid;
+        recvMsg.message = msg;
+        recvMsg.nickName = m_xmppClient->getJidNickname(recvMsg.bareJid);
+        m_data.append(recvMsg);
+        endInsertRows();
 
-    auto top = this->createIndex((m_data.count() - 1), 0, nullptr);
-    auto bottom = this->createIndex((m_data.count() - 1), GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_TOTAL_IDX, nullptr);
-    emit dataChanged(top, bottom);
+        auto top = this->createIndex((m_data.count() + 1), 0, nullptr);
+        auto bottom = this->createIndex((m_data.count() + 1), GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_TOTAL_IDX, nullptr);
+        emit dataChanged(top, bottom);
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
 
     return;
 }
@@ -135,18 +139,30 @@ void GkXmppRecvMsgsTableViewModel::insertData(const QString &bareJid, const QStr
  */
 qint32 GkXmppRecvMsgsTableViewModel::removeData()
 {
-    std::lock_guard<std::mutex> lock_guard(m_dataBatchMutex);
-    if (!m_data.isEmpty()) {
-        qint32 counter = m_data.size();
-        beginRemoveRows(QModelIndex(), 0, 0);
-        m_data.clear();
-        endRemoveRows();
+    try {
+        std::lock_guard<std::mutex> lock_guard(m_dataBatchMutex);
+        if (!m_data.isEmpty()) {
+            qint32 counter = 0;
+            qint32 data_size = m_data.count();
+            for (auto iter = m_data.begin(); iter != m_data.end(); ++iter) {
+                ++counter;
+                beginRemoveRows(QModelIndex(), (m_data.count() - 1), (m_data.count() - 1));
+                iter = m_data.erase(iter);
+                endRemoveRows();
 
-        auto top = this->createIndex(0, 0, nullptr);
-        auto bottom = this->createIndex(0, GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_TOTAL_IDX, nullptr);
-        emit dataChanged(top, bottom);
+                if (data_size == counter) {
+                    break;
+                }
+            }
 
-        return counter;
+            auto top = this->createIndex((m_data.count() - counter), 0, nullptr);
+            auto bottom = this->createIndex((m_data.count() - counter), GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_TOTAL_IDX, nullptr);
+            emit dataChanged(top, bottom);
+
+            return counter;
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
     }
 
     return 0;
@@ -161,23 +177,31 @@ qint32 GkXmppRecvMsgsTableViewModel::removeData()
  */
 qint32 GkXmppRecvMsgsTableViewModel::removeData(const QDateTime &timestamp, const QString &bareJid)
 {
-    std::lock_guard<std::mutex> lock_guard(m_dataBatchMutex);
-    qint32 counter = 0;
-    for (auto iter = m_data.begin(); iter != m_data.end(); ++iter) {
-        ++counter;
-        if (iter->timestamp == timestamp && iter->bareJid == bareJid) {
-            beginRemoveRows(QModelIndex(), (m_data.count() - 1), (m_data.count() - 1));
-            iter = m_data.erase(iter);
-            endRemoveRows();
-            break;
+    try {
+        std::lock_guard<std::mutex> lock_guard(m_dataBatchMutex);
+        if (!m_data.isEmpty()) {
+            qint32 counter = 0;
+            for (auto iter = m_data.begin(); iter != m_data.end(); ++iter) {
+                ++counter;
+                if (iter->timestamp == timestamp && iter->bareJid == bareJid) {
+                    beginRemoveRows(QModelIndex(), (m_data.count() - 1), (m_data.count() - 1));
+                    iter = m_data.erase(iter);
+                    endRemoveRows();
+                    break;
+                }
+            }
+
+            auto top = this->createIndex((m_data.count() - 1), 0, nullptr);
+            auto bottom = this->createIndex((m_data.count() - 1), GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_TOTAL_IDX, nullptr);
+            emit dataChanged(top, bottom);
+
+            return counter;
         }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
     }
 
-    auto top = this->createIndex((m_data.count() - 1), 0, nullptr);
-    auto bottom = this->createIndex((m_data.count() - 1), GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_TOTAL_IDX, nullptr);
-    emit dataChanged(top, bottom);
-
-    return counter;
+    return 0;
 }
 
 /**
@@ -225,7 +249,7 @@ QVariant GkXmppRecvMsgsTableViewModel::data(const QModelIndex &index, int role) 
 
     switch (index.column()) {
         case GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_DATETIME_IDX:
-            return row_timestamp.toString("dd.MM.yyyy h:mm:ss ap");
+            return row_timestamp.toString("[ dd MMM yy ] h:mm:ss ap");
         case GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_NICKNAME_IDX:
             return row_nickname;
         case GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_MSG_IDX:

@@ -153,6 +153,7 @@ private:
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     std::queue<QString> m_toolBarTextQueue;
+    bool startupSucc; // Has startup of this class already succeeded?
 
     //
     // QXmpp and XMPP related

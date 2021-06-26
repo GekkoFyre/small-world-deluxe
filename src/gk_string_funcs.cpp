@@ -257,11 +257,16 @@ QDateTime StringFuncs::calcMinTimestampForXmppMsgHistory(const QList<QXmppMessag
 {
     try {
         if (!messages.isEmpty()) {
-            QDateTime min_timestamp = messages.at(0).stamp();
-            if (messages.size() > 1) {
-                for (const auto &message: messages) {
-                    if (min_timestamp < message.stamp()) {
-                        min_timestamp = message.stamp();
+            QDateTime min_timestamp = QDateTime::currentDateTimeUtc();
+            for (const auto &message: messages) {
+                if (message.isXmppStanza() && !message.body().isEmpty()) {
+                    min_timestamp = messages.at(0).stamp();
+                    if (messages.size() > 1) {
+                        if (min_timestamp < message.stamp()) {
+                            min_timestamp = message.stamp();
+                        }
+                    } else {
+                        break;
                     }
                 }
             }

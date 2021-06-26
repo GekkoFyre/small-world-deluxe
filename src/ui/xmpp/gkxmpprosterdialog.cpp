@@ -42,6 +42,7 @@
 #include "gkxmpprosterdialog.hpp"
 #include "ui_gkxmpprosterdialog.h"
 #include "src/ui/xmpp/gkxmppregistrationdialog.hpp"
+#include "src/ui/xmpp/gkxmppmessagedialog.hpp"
 #include <qxmpp/QXmppPresence.h>
 #include <utility>
 #include <iterator>
@@ -729,10 +730,12 @@ void GkXmppRosterDialog::launchMsgDlg(const QString &bareJid)
 {
     QStringList bareJids;
     bareJids << bareJid;
-    gkXmppMsgDlg = new GkXmppMessageDialog(gkStringFuncs, gkEventLogger, gkDb, m_spellChecker, gkConnDetails, m_xmppClient, bareJids, this);
+    QPointer<GkXmppMessageDialog> gkXmppMsgDlg = new GkXmppMessageDialog(gkStringFuncs, gkEventLogger, gkDb, m_spellChecker, gkConnDetails, m_xmppClient, bareJids, this);
     if (gkXmppMsgDlg) {
         if (!gkXmppMsgDlg->isVisible()) {
             gkXmppMsgDlg->setWindowFlags(Qt::Window);
+            gkXmppMsgDlg->setAttribute(Qt::WA_DeleteOnClose, true);
+            QObject::connect(gkXmppMsgDlg, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
             gkXmppMsgDlg->show();
         }
     }
@@ -747,10 +750,12 @@ void GkXmppRosterDialog::launchMsgDlg(const QString &bareJid)
  */
 void GkXmppRosterDialog::launchMsgDlg(const QStringList &bareJids)
 {
-    gkXmppMsgDlg = new GkXmppMessageDialog(gkStringFuncs, gkEventLogger, gkDb, m_spellChecker, gkConnDetails, m_xmppClient, bareJids, this);
+    QPointer<GkXmppMessageDialog> gkXmppMsgDlg = new GkXmppMessageDialog(gkStringFuncs, gkEventLogger, gkDb, m_spellChecker, gkConnDetails, m_xmppClient, bareJids, this);
     if (gkXmppMsgDlg) {
         if (!gkXmppMsgDlg->isVisible()) {
             gkXmppMsgDlg->setWindowFlags(Qt::Window);
+            gkXmppMsgDlg->setAttribute(Qt::WA_DeleteOnClose, true);
+            QObject::connect(gkXmppMsgDlg, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
             gkXmppMsgDlg->show();
         }
     }

@@ -48,7 +48,6 @@
 #include "src/models/tableview/gk_xmpp_roster_presence_model.hpp"
 #include "src/models/tableview/gk_xmpp_roster_pending_model.hpp"
 #include "src/models/tableview/gk_xmpp_roster_blocked_model.hpp"
-#include "src/ui/xmpp/gkxmppmessagedialog.hpp"
 #include "src/gk_logger.hpp"
 #include <QtSpell.hpp>
 #include <memory>
@@ -163,7 +162,6 @@ private:
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::GkXmppClient> m_xmppClient;
-    QPointer<GkXmppMessageDialog> gkXmppMsgDlg;
     bool shownXmppPreviewNotice;
 
     //

@@ -355,7 +355,7 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
     } catch (...) {
         QString error_msg = tr("An unknown exception has occurred. There are no further details.");
-        gkEventLogger->publishEvent(error_msg, GkSeverity::Error, "", true, true);
+        gkEventLogger->publishEvent(error_msg, GkSeverity::Fatal, "", false, true, false, true);
     }
 }
 
