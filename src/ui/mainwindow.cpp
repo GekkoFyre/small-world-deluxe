@@ -304,7 +304,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                     enableSentry = gkDb->read_sentry_settings(GkSentry::GivenConsent);
                 }
 
-                if (enableSentry) {
+                if (enableSentry && gkSystem->isInternetAvailable()) { // Check that both Sentry is explicitly enabled and that the end-user is connected towards the Internet to begin with!
                     //
                     // Initialize Sentry!
                     // https://blog.sentry.io/2019/09/26/fixing-native-apps-with-sentry
@@ -312,7 +312,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                     //
                     sen_opt = sentry_options_new();
 
-                    #ifndef __linux__
+                    //
+                    // File and directory paths relating to usage of Crashpad...
                     const QString curr_path = QDir::currentPath();
                     const fs::path crashpad_handler_windows = fs::path(curr_path.toStdString() + native_slash.string() + Filesystem::gk_crashpad_handler_win);
                     const fs::path crashpad_handler_linux = fs::path(curr_path.toStdString() + native_slash.string() + Filesystem::gk_crashpad_handler_linux);
@@ -330,7 +331,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
                     // The handler is a Crashpad-specific background process
                     sentry_options_set_handler_path(sen_opt, handler_to_use.string().c_str());
-                    #endif
 
                     const fs::path sentry_crash_dir = fs::path(Filesystem::defaultDirAppend + native_slash.string() + Filesystem::gk_sentry_dump_dir);
                     const fs::path gk_minidump = gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation),
@@ -355,10 +355,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
                     // Release information
                     sentry_options_set_environment(sen_opt, General::gk_sentry_env);
-                    sentry_options_set_release(sen_opt, General::appVersion);
+                    sentry_options_set_release(sen_opt, QString("%1@%2")
+                    .arg(QString::fromStdString(General::gk_sentry_project_name))
+                    .arg(QString::fromStdString(General::appVersion))
+                    .toStdString().c_str());
 
                     // Server and URI details!
-                    sentry_options_set_dsn(sen_opt, General::gk_sentry_uri);
+                    sentry_options_set_dsn(sen_opt, General::gk_sentry_dsn_uri);
 
                     // Initialize the SDK and start the Crashpad/Breakpad handler
                     sentry_init(sen_opt);
@@ -401,7 +404,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 QObject::connect(gkEventLogger, SIGNAL(removeEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &)),
                                  gkEventLoggerModel, SLOT(removeData(const GekkoFyre::System::Events::Logging::GkEventLogging &)));
 
-                gkEventLogger->publishEvent(tr("Events log initiated."), GkSeverity::Info);
+                gkEventLogger->publishEvent(tr("Events log initiated."), GkSeverity::Info, false, true, true, false);
+                if (enableSentry) {
+                    sentry_start_session();
+                    sentry_reinstall_backend();
+                    gkEventLogger->publishEvent(tr("Exception and crash monitoring as enabled by Sentry is now active."), GkSeverity::Info, false, true, false, false);
+                }
 
                 // Initialize the Radio Database pointer!
                 if (gkRadioPtr == nullptr) {

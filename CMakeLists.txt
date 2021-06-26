@@ -94,6 +94,10 @@ option(GFYRE_ENBL_CLANG_ADDRESS_SANITIZER "LLVM's AddressSanitizer is a fast mem
 option(BUILD_CODEC2_SUPPORT "Enable support for the 'Codec2' open source speech codec library." OFF)
 
 #
+# Install / copy directory for CMake modules...
+set(CMAKE_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/modules")
+
+#
 # Detect if we are dealing with the Linux operating system and not Apple OS/X
 #
 if(UNIX AND NOT APPLE)
@@ -454,44 +458,6 @@ endif(Iconv_FOUND)
 set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-arcs -ftest-coverage -mwindows")
 
 #
-# Sentry (Native SDK for C/C++)
-# https://github.com/getsentry/sentry-native
-#
-set(SENTRY_PIC ON CACHE BOOL "Build Sentry as a position independent library" FORCE)
-set(SENTRY_EXPORT_SYMBOLS OFF CACHE BOOL "By default, sentry exposes all symbols in the dynamic symbol table. You might want to disable it in case the program intends to dlopen third-party shared libraries and avoid symbol collisions." FORCE)
-
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-    set(SENTRY_BUILD_RUNTIMESTATIC OFF CACHE BOOL "Disables linking with the static MSVC runtime. Has no effect if the compiler is not MSVC.")
-endif()
-
-if (LINUX)
-    #
-    # Currently Crashpad support on Linux via Sentry is very much unsupported as of the moment; see the link(s) down below...
-    # https://github.com/getsentry/sentry-native
-    # https://github.com/getsentry/sentry-native/issues/46
-    #
-    set(SENTRY_BACKEND "breakpad" CACHE STRING "The type of crash manager to use." FORCE)
-    set(SENTRY_BREAKPAD_SYSTEM OFF CACHE BOOL "This instructs the build system to use system-installed breakpad or crashpad libraries instead of using the in-tree version. This is generally not recommended for crashpad, as sentry uses a patched version that has attachment support.")
-else()
-    #
-    # Use Crashpad for all other operating systems, since support for everything but Linux is okay as of the moment (with the exception of Android but we have no plans for that right now)...
-    #
-    set(SENTRY_BACKEND "crashpad" CACHE STRING "The type of crash manager to use." FORCE)
-    set(SENTRY_CRASHPAD_SYSTEM OFF CACHE BOOL "This instructs the build system to use system-installed breakpad or crashpad libraries instead of using the in-tree version. This is generally not recommended for crashpad, as sentry uses a patched version that has attachment support.")
-endif()
-
-set(SENTRY_BUILD_TESTS OFF CACHE BOOL "Build sentry-native tests. This is not required for the compilation of Small World Deluxe." FORCE)
-set(SENTRY_BUILD_EXAMPLES OFF CACHE BOOL "Build sentry-native example(s). This is not required for the compilation of Small World Deluxe." FORCE)
-set(SENTRY_LINK_PTHREAD ON CACHE BOOL "Links to the pthread library on Unix targets.")
-set(SENTRY_BUILD_FORCE32 OFF CACHE BOOL "Otherwise forces cross-compilation from 64-bit host to 32-bit target. Only has an effect on Linux." FORCE)
-
-if(WIN32)
-    set(SENTRY_TRANSPORT "winhttp" CACHE STRING "Please do not modify this." FORCE)
-else()
-    set(SENTRY_TRANSPORT "curl" CACHE STRING "Please do not modify this." FORCE)
-endif()
-
-#
 # Curl by Daniel Stenberg
 # https://github.com/curl/curl
 #
@@ -509,6 +475,37 @@ endif()
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/curl")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/curl/include")
 message(STATUS "The 'libcurl' command-line tool and library for transferring network data has been configured!")
+
+#
+# Sentry (Native SDK for C/C++)
+# https://github.com/getsentry/sentry-native
+#
+set(SENTRY_INTEGRATION_QT ON CACHE BOOL "Build Qt integration." FORCE)
+set(SENTRY_BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries (.dll/.so) instead of static ones (.lib/.a)" FORCE)
+set(SENTRY_PIC ON CACHE BOOL "Build Sentry as a position independent library" FORCE)
+
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+    set(SENTRY_BUILD_RUNTIMESTATIC OFF CACHE BOOL "Disables linking with the static MSVC runtime. Has no effect if the compiler is not MSVC.")
+endif()
+
+#
+# Use Crashpad (and therefore the more modern crash reporting system) for all major operating systems based around the personal computer (Android, iOS, etc. and the like are therefore unsupported but we currently have no plans for the mobile market right now)...
+# A feature matrix can be seen here towards the bottom of the page: https://github.com/getsentry/sentry-native
+#
+set(SENTRY_BACKEND "crashpad" CACHE STRING "The type of crash manager to use." FORCE)
+set(SENTRY_CRASHPAD_SYSTEM OFF CACHE BOOL "This instructs the build system to use system-installed breakpad or crashpad libraries instead of using the in-tree version. This is generally not recommended for crashpad, as sentry uses a patched version that has attachment support.")
+set(SENTRY_BREAKPAD_SYSTEM OFF CACHE BOOL "This instructs the build system to use system-installed breakpad or crashpad libraries instead of using the in-tree version. This is generally not recommended for crashpad, as sentry uses a patched version that has attachment support.")
+
+set(SENTRY_BUILD_TESTS OFF CACHE BOOL "Build sentry-native tests. This is not required for the compilation of Small World Deluxe." FORCE)
+set(SENTRY_BUILD_EXAMPLES OFF CACHE BOOL "Build sentry-native example(s). This is not required for the compilation of Small World Deluxe." FORCE)
+set(SENTRY_LINK_PTHREAD ON CACHE BOOL "Links to the pthread library on Unix targets.")
+set(SENTRY_BUILD_FORCE32 OFF CACHE BOOL "Otherwise forces cross-compilation from 64-bit host to 32-bit target. Only has an effect on Linux." FORCE)
+
+if(WIN32)
+    set(SENTRY_TRANSPORT "winhttp" CACHE STRING "Please do not modify this." FORCE)
+else()
+    set(SENTRY_TRANSPORT "curl" CACHE STRING "Please do not modify this." FORCE)
+endif()
 
 #
 # Google LevelDB [ https://github.com/google/leveldb ]
@@ -959,23 +956,26 @@ target_link_libraries(smallworld PRIVATE galaxy)
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
-if (NOT LINUX)
-    #
-    # Copy the crashpad handler to the root of the binary build directory, for easy access!
-    # https://cmake.org/cmake/help/latest/module/FetchContent.html
-    # https://www.thetopsites.net/article/52110824.shtml
-    #
-    if(WIN32 OR MSYS OR MINGW)
-        add_custom_command(TARGET smallworld
-                        POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy
-                        ${CMAKE_CURRENT_BINARY_DIR}/src/contrib/sentry-native/crashpad_build/handler/crashpad_handler.exe
-                        ${CMAKE_CURRENT_BINARY_DIR}/crashpad_handler.exe)
-    else()
-        add_custom_command(TARGET smallworld
-                        POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy
-                        ${CMAKE_CURRENT_BINARY_DIR}/src/contrib/sentry-native/crashpad_build/handler/crashpad_handler
-                        ${CMAKE_CURRENT_BINARY_DIR}/crashpad_handler)
-    endif()
+#
+# Copy the crashpad handler to the root of the binary build directory, for easy access!
+# https://cmake.org/cmake/help/latest/module/FetchContent.html
+# https://www.thetopsites.net/article/52110824.shtml
+#
+if(WIN32 OR MSYS OR MINGW)
+    add_custom_command(TARGET smallworld
+                    POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy
+                    ${CMAKE_CURRENT_BINARY_DIR}/src/contrib/sentry-native/crashpad_build/handler/crashpad_handler.exe
+                    ${CMAKE_CURRENT_BINARY_DIR}/crashpad_handler.exe)
+else()
+    add_custom_command(TARGET smallworld
+                    POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy
+                    ${CMAKE_CURRENT_BINARY_DIR}/src/contrib/sentry-native/crashpad_build/handler/crashpad_handler
+                    ${CMAKE_CURRENT_BINARY_DIR}/crashpad_handler)
+
+    add_custom_command(TARGET smallworld
+                    POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy
+                    ${CMAKE_CURRENT_BINARY_DIR}/src/contrib/sentry-native/crashpad_build/handler/libcrashpad_handler_lib.a
+                    ${CMAKE_CURRENT_BINARY_DIR}/libcrashpad_handler_lib.a)
 endif()
 
 INSTALL(TARGETS smallworld)

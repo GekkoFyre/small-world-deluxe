@@ -133,6 +133,8 @@ GkEventLoggerTableViewModel::~GkEventLoggerTableViewModel()
     sentry_event_value_add_stacktrace(capture_logger_exit, nullptr, 0);
     sentry_capture_event(capture_logger_exit);
 
+    // Clear any memory used by Sentry & Crashpad before making sure the process itself terminates...
+    sentry_close(); // Replaces the former function, `sentry_shutdown()`!
     return;
 }
 

@@ -45,6 +45,11 @@
 #include <QMessageBox>
 #include <QtGlobal>
 
+#if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
+#include <initguid.h>
+#include <netlistmgr.h>
+#endif
+
 using namespace GekkoFyre;
 using namespace Database;
 using namespace Settings;
@@ -67,6 +72,55 @@ GkSystem::GkSystem(QPointer<GekkoFyre::StringFuncs> stringFuncs, QObject *parent
 GkSystem::~GkSystem()
 {
     return;
+}
+
+/**
+ * @brief GkSystem::isInternetAvailable checks the connectivity of the user's own, local computer/machine and determines
+ * if an Internet connection is readily available. If so, returns true but otherwise, it will return false. This works
+ * for both Microsoft Windows and Linux operating systems.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return A true boolean value will be returned if a readily available Internet connection is usable on the user's own,
+ * local machine but otherwise, a false boolean value will be returned.
+ */
+bool GkSystem::isInternetAvailable() {
+    #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
+    std::unique_ptr<INetworkListManager> inlm;
+    HRESULT hr = CoCreateInstance(CLSID_NetworkListManager, nullptr, CLSCTX_ALL, IID_INetworkListManager, (LPVOID *)&inlm);
+    if (SUCCEEDED(hr)) {
+        NLM_CONNECTIVITY con;
+        hr = inlm->GetConnectivity(&con);
+        if (hr == S_OK) {
+            if (con & NLM_CONNECTIVITY_IPV4_INTERNET || con & NLM_CONNECTIVITY_IPV6_INTERNET) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        return true;
+    }
+    #elif __linux__
+    //
+    // TODO: Insert a check to see that `/sbin/route` is at all installed on the end-user's computer/machine, instead of blindly
+    // running the command and hoping for the best!
+    //
+    FILE *output;
+    if (!(output = popen("/sbin/route -n | grep -c '^0\\.0\\.0\\.0'", "r"))) {
+        return true;
+    }
+
+    unsigned int i;
+    fscanf(output, "%u", &i);
+    pclose(output);
+
+    if (i == 0) {
+        return false;
+    } else {
+        return true;
+    }
+    #endif
+
+    return false;
 }
 
 /**
