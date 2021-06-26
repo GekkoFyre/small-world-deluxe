@@ -54,9 +54,8 @@ stages:
 - sworld_sentry_archlinux_x86_64
 - test
 include:
-- template: SAST.gitlab-ci.yml
-- template: Secret-Detection.gitlab-ci.yml
 - template: Security/SAST.gitlab-ci.yml
+- template: Security/Secret-Detection.gitlab-ci.yml
 variables:
   SAST_DISABLE_DIND: 'true'
   GIT_SUBMODULE_STRATEGY: recursive
