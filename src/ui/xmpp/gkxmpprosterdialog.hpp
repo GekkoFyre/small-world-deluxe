@@ -49,7 +49,6 @@
 #include "src/models/tableview/gk_xmpp_roster_pending_model.hpp"
 #include "src/models/tableview/gk_xmpp_roster_blocked_model.hpp"
 #include "src/gk_logger.hpp"
-#include <QtSpell.hpp>
 #include <memory>
 #include <QImage>
 #include <QTimer>
@@ -75,8 +74,8 @@ class GkXmppRosterDialog : public QDialog
 public:
     explicit GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFuncs, const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
                                 QPointer<GekkoFyre::GkXmppClient> xmppClient, QPointer<GekkoFyre::GkLevelDb> database,
-                                QPointer<QtSpell::TextEditChecker> spellChecking, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                                const bool &skipConnectionCheck = false, QWidget *parent = nullptr);
+                                QPointer<GekkoFyre::GkEventLogger> eventLogger, const bool &skipConnectionCheck = false,
+                                QWidget *parent = nullptr);
     ~GkXmppRosterDialog();
 
 private slots:
@@ -192,7 +191,7 @@ private:
     //
     // Spell-checking, dictionaries, etc.
     //
-    QPointer<QtSpell::TextEditChecker> m_spellChecker;
+    // QPointer<QtSpell::TextEditChecker> m_spellChecker;
 
     //
     // QXmpp and XMPP related

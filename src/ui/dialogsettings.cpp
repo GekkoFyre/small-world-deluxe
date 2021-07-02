@@ -104,7 +104,6 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
                                QPointer<GekkoFyre::GkXmppClient> xmppClient,
                                QPointer<GekkoFyre::GkEventLogger> eventLogger,
                                QPointer<GekkoFyre::GkTextToSpeech> textToSpeechPtr,
-                               QPointer<QtSpell::TextEditChecker> spellChecking,
                                const System::UserInterface::GkSettingsDlgTab &settingsDlgTab,
                                QWidget *parent)
     : QDialog(parent), ui(new Ui::DialogSettings)
@@ -127,8 +126,6 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         gkEventLogger = std::move(eventLogger);
         gkTextToSpeech = std::move(textToSpeechPtr);
         gkSerialPortMap = com_ports;
-
-        m_spellChecker = std::move(spellChecking);
 
         gkAudioInput = audioSysInput;
         gkAudioOutput = audioSysOutput;
@@ -961,13 +958,6 @@ void DialogSettings::prefill_uri_lookup_method()
  */
 void DialogSettings::prefill_lang_dictionaries()
 {
-    auto langList = m_spellChecker->getLanguageList();
-    for (const auto &lang: langList) {
-        if (!lang.isEmpty()) {
-            ui->comboBox_accessibility_dict->addItem(lang);
-        }
-    }
-
     return;
 }
 

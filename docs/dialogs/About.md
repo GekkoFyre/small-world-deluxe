@@ -31,8 +31,6 @@ Please see [CREDITS](https://code.gekkofyre.io/amateur-radio/small-world-deluxe/
 
 `Enchant -- Copyright © 1998 - 2020 AbiSource Community. All rights reserved.`
 
-`QtSpell - Copyright © 2014 Sandro Mani.`
-
 `QwtWaterfallplot -- Copyright © 2019 Amine Mzoughi.`
 
 ------

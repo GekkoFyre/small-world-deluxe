@@ -871,9 +871,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         QPointer<GkPlainTextSubmit> widget_mesg_outgoing = new GkPlainTextSubmit(ui->frame_mesg_log);
         ui->verticalLayout_3->addWidget(widget_mesg_outgoing);
-        #ifdef GFYRE_ENBL_QTSPELL_LIBS
-        m_spellChecker->setTextEdit(widget_mesg_outgoing);
-        #endif
+        // m_spellChecker->setTextEdit(widget_mesg_outgoing);
         widget_mesg_outgoing->setTabChangesFocus(true);
         widget_mesg_outgoing->setPlaceholderText(tr("Enter your outgoing messages here..."));
         QObject::connect(widget_mesg_outgoing, SIGNAL(execFuncAfterEvent(const QString &)),
@@ -917,7 +915,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the QXmpp client!
         m_xmppClient = new GkXmppClient(gkConnDetails, gkDb, gkStringFuncs, gkFileIo, gkEventLogger, false, nullptr);
-        gkXmppRosterDlg = new GkXmppRosterDialog(gkStringFuncs, gkConnDetails, m_xmppClient, gkDb, m_spellChecker, gkEventLogger, true, this);
+        gkXmppRosterDlg = new GkXmppRosterDialog(gkStringFuncs, gkConnDetails, m_xmppClient, gkDb, gkEventLogger, true, this);
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
@@ -1066,7 +1064,7 @@ void MainWindow::launchSettingsWin(const System::UserInterface::GkSettingsDlgTab
                                                                pref_input_device, pref_output_device, gkRadioLibs,
                                                                gkStringFuncs, gkRadioPtr, gkSerialPortMap, gkUsbPortMap,
                                                                gkFreqList, gkFreqTableModel, gkConnDetails, m_xmppClient,
-                                                               gkEventLogger, gkTextToSpeech, m_spellChecker, settingsDlgTab, this);
+                                                               gkEventLogger, gkTextToSpeech, settingsDlgTab, this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
@@ -2203,17 +2201,8 @@ void MainWindow::readEnchantSettings()
             curr_chosen_dict = Filesystem::enchantSpellDefLang; // Default language dictionary to use if none has been specified!
         }
 
-        #ifdef GFYRE_ENBL_QTSPELL_LIBS
-        m_spellChecker = new QtSpell::TextEditChecker(this);
-        m_spellChecker->setDecodeLanguageCodes(true);
-        m_spellChecker->setShowCheckSpellingCheckbox(true);
-        m_spellChecker->setUndoRedoEnabled(true);
-        #endif
-
         if (!curr_chosen_dict.isEmpty()) {
-            #ifdef GFYRE_ENBL_QTSPELL_LIBS
-            m_spellChecker->setLanguage(curr_chosen_dict);
-            #endif
+            // m_spellChecker->setLanguage(curr_chosen_dict);
         }
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(e.what()));
