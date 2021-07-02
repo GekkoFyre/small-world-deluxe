@@ -871,7 +871,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         QPointer<GkPlainTextSubmit> widget_mesg_outgoing = new GkPlainTextSubmit(ui->frame_mesg_log);
         ui->verticalLayout_3->addWidget(widget_mesg_outgoing);
+        #ifdef GFYRE_ENBL_QTSPELL_LIBS
         m_spellChecker->setTextEdit(widget_mesg_outgoing);
+        #endif
         widget_mesg_outgoing->setTabChangesFocus(true);
         widget_mesg_outgoing->setPlaceholderText(tr("Enter your outgoing messages here..."));
         QObject::connect(widget_mesg_outgoing, SIGNAL(execFuncAfterEvent(const QString &)),
@@ -2201,13 +2203,17 @@ void MainWindow::readEnchantSettings()
             curr_chosen_dict = Filesystem::enchantSpellDefLang; // Default language dictionary to use if none has been specified!
         }
 
+        #ifdef GFYRE_ENBL_QTSPELL_LIBS
         m_spellChecker = new QtSpell::TextEditChecker(this);
         m_spellChecker->setDecodeLanguageCodes(true);
         m_spellChecker->setShowCheckSpellingCheckbox(true);
         m_spellChecker->setUndoRedoEnabled(true);
+        #endif
 
         if (!curr_chosen_dict.isEmpty()) {
+            #ifdef GFYRE_ENBL_QTSPELL_LIBS
             m_spellChecker->setLanguage(curr_chosen_dict);
+            #endif
         }
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(e.what()));

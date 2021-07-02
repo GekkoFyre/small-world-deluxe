@@ -441,13 +441,17 @@ endif(Vorbis_FOUND)
 # QtSpell
 # https://github.com/manisandro/qtspell
 #
-find_package(QtSpell REQUIRED)
-if (QTSPELL_FOUND)
-    include_directories(${QTSPELL_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${QTSPELL_LIBRARIES})
-else()
-    message(STATUS "The 'QtSpell' spelling libraries have been configured!")
-endif(QTSPELL_FOUND)
+if (LINUX)
+    find_package(QtSpell REQUIRED)
+    if (QTSPELL_FOUND)
+        include_directories(${QTSPELL_INCLUDE_DIRS})
+        set(LIBS ${LIBS} ${QTSPELL_LIBRARIES})
+        add_definitions(-DGFYRE_ENBL_QTSPELL_LIBS)
+        message(STATUS "The 'QtSpell' spelling libraries have been configured!")
+    else()
+        message(FATAL_ERROR "The 'QtSpell' spelling libraries could not be found!")
+    endif(QTSPELL_FOUND)
+endif()
 
 #
 # https://xiph.org/vorbis/
