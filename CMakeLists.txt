@@ -325,6 +325,19 @@ else()
 endif(ICU_FOUND)
 
 #
+# Curl by Daniel Stenberg
+# https://github.com/curl/curl
+#
+find_package(CURL REQUIRED)
+if (CURL_FOUND)
+    include_directories(${CURL_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${CURL_LIBRARIES})
+	message(STATUS "The 'libcurl' command-line tool and library for transferring network data has been configured!")
+else()
+	message(FATAL_ERROR "The 'libcurl' command-line tool and library for transferring network data could not be found!")
+endif(CURL_FOUND)
+
+#
 # Nuspell
 # https://nuspell.github.io/
 #
@@ -458,25 +471,6 @@ endif(Iconv_FOUND)
 set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_RELEASE} -fprofile-arcs -ftest-coverage -mwindows")
 
 #
-# Curl by Daniel Stenberg
-# https://github.com/curl/curl
-#
-set(BUILD_CURL_EXE OFF CACHE BOOL "Set to ON to build curl executable.")
-set(CURL_LTO ON CACHE BOOL "Turn on compiler Link Time Optimizations for libcurl.")
-set(HTTP_ONLY ON CACHE BOOL "Disables all protocols except HTTP (This overrides all CURL_DISABLE_* options).")
-if (CMAKE_BUILD_TYPE MATCHES DEBUG)
-    set(ENABLE_DEBUG ON CACHE BOOL "Enable debug mode for libcurl.")
-    set(ENABLE_CURLDEBUG ON CACHE BOOL "Another flag for enabling debug mode with regards to libcurl.")
-else()
-    set(ENABLE_DEBUG OFF CACHE BOOL "Enable debug mode for libcurl.")
-    set(ENABLE_CURLDEBUG OFF CACHE BOOL "Another flag for enabling debug mode with regards to libcurl.")
-endif()
-
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/curl")
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/curl/include")
-message(STATUS "The 'libcurl' command-line tool and library for transferring network data has been configured!")
-
-#
 # Sentry (Native SDK for C/C++)
 # https://github.com/getsentry/sentry-native
 #
@@ -540,7 +534,6 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/kissfft")
 message(STATUS "The 'KissFFT' fourier transform libraries have been configured!")
 
 #
-# End of dictionaries
 
 #
 # AudioFile by Adam Stark

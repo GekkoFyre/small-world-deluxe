@@ -134,7 +134,7 @@ GkEventLoggerTableViewModel::~GkEventLoggerTableViewModel()
     sentry_capture_event(capture_logger_exit);
 
     // Clear any memory used by Sentry & Crashpad before making sure the process itself terminates...
-    sentry_close(); // Replaces the former function, `sentry_shutdown()`!
+    sentry_shutdown(); // TODO: Replace with, `sentry_close()`, upon updating Sentry in the future!
     return;
 }
 
