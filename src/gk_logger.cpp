@@ -137,10 +137,6 @@ GkEventLogger::GkEventLogger(const QPointer<QSystemTrayIcon> &sysTrayIcon, const
 
 GkEventLogger::~GkEventLogger()
 {
-    // Clear any memory used by Sentry & Crashpad before making sure the process itself terminates!
-    sentry_shutdown();
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
     return;
 }
 

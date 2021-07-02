@@ -474,7 +474,11 @@ private:
     //
     // Spell-checking, dictionaries, etc.
     //
+    #ifdef GFYRE_ENBL_QTSPELL_LIBS
     QPointer<QtSpell::TextEditChecker> m_spellChecker;
+    #else
+    void *m_spellChecker;
+    #endif
 
     //
     // QFileDialog related
