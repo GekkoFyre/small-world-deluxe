@@ -67,6 +67,7 @@ public:
     explicit GkSystem(QPointer<GekkoFyre::StringFuncs> stringFuncs, QObject *parent = nullptr);
     ~GkSystem() override;
 
+    bool isInternetAvailable();
     qint32 getNumCpuCores();
     QString renameCommsDevice(const qint32 &port, const GekkoFyre::AmateurRadio::GkConnType &conn_type);
 
