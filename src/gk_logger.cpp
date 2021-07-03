@@ -49,6 +49,10 @@
 #include <QDateTime>
 #include <QStandardPaths>
 
+#if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
+#include <windows.h>
+#endif
+
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
 using namespace Database;
@@ -82,12 +86,13 @@ namespace sys = boost::system;
  * @param parent
  */
 GkEventLogger::GkEventLogger(const QPointer<QSystemTrayIcon> &sysTrayIcon, const QPointer<GekkoFyre::StringFuncs> &stringFuncs,
-                             QPointer<GekkoFyre::FileIo> fileIo, QObject *parent)
+                             QPointer<GekkoFyre::FileIo> fileIo, const quintptr &win_id, QObject *parent)
 {
     try {
         setParent(parent);
         m_trayIcon = std::move(sysTrayIcon);
         gkStringFuncs = std::move(stringFuncs);
+        m_windowId = win_id;
 
         //
         // File I/O
@@ -96,7 +101,8 @@ GkEventLogger::GkEventLogger(const QPointer<QSystemTrayIcon> &sysTrayIcon, const
         fs::path slash = "/";
         fs::path native_slash = slash.make_preferred().native();
 
-        const fs::path dir_to_append = fs::path(Filesystem::defaultDirAppend + native_slash.string() + Filesystem::fileLogData);
+        const fs::path dir_to_append = fs::path(General::companyName + native_slash.string() + Filesystem::defaultDirAppend +
+                                                native_slash.string() + Filesystem::fileLogData);
         const fs::path log_data_loc = gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation),
                                                                  true, QString::fromStdString(dir_to_append.string())).toStdString();
         if (fs::exists(log_data_loc)) { // Entity already exists!
@@ -146,9 +152,16 @@ GkEventLogger::~GkEventLogger()
  * @param event The event message itself.
  * @param severity The severity of the issue, where it's just a warning all the way to a fatal error.
  * @param arguments Any arguments that are associated with the event message. This tends to be left blank.
+ * @param sys_notification
+ * @param publishToConsole
+ * @param publishToStatusBar
+ * @param displayMsgBox
+ * @param flashTaskbar Whether to flash the taskbar and/or active window. This is dependent upon host operating system
+ * functionality, of course!
  */
 void GkEventLogger::publishEvent(const QString &event, const GkSeverity &severity, const QVariant &arguments, const bool &sys_notification,
-                                 const bool &publishToConsole, const bool &publishToStatusBar, const bool &displayMsgBox)
+                                 const bool &publishToConsole, const bool &publishToStatusBar, const bool &displayMsgBox,
+                                 const bool &flashTaskbar)
 {
     //
     // TODO: Introduce proper mutex'ing for multithreading!
@@ -196,8 +209,24 @@ void GkEventLogger::publishEvent(const QString &event, const GkSeverity &severit
         }
     }
 
-    // TODO: Write out in a neater format! Such as XML, CSV, etc.
+    if (flashTaskbar) {
+        #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
+        FLASHWINFO flash_info;
+        flash_info.cbSize = sizeof(FLASHWINFO);
+        flash_info.hwnd = (HWND)m_windowId;
+        flash_info.uCount = GK_EVENTLOG_TASKBAR_FLASHER_PERIOD_COUNT; // Flash for only 20-periods
+        flash_info.dwTimeout = GK_EVENTLOG_TASKBAR_FLASHER_DURAT_COUNT; // Duration in milliseconds between flashes
+        flash_info.dwFlags = FLASHW_TRAY; // Flash only taskbar button
+        FlashWindowEx(&flash_info);
+        #elif __linux__
+        // TODO: Implement functionality for Linux operating systems!
+        #endif
+    }
+
     gkWriteCsvIo.write(event_log.mesg.message.toStdString().c_str(), event_log.mesg.message.length());
+    const QString tmp_event_out = QString("%1\n\n").arg(event_log.mesg.message);
+    gkWriteCsvIo.write(tmp_event_out.toStdString().c_str(), tmp_event_out.length());
+
     return;
 }
 

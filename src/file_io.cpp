@@ -198,7 +198,8 @@ QString FileIo::read_initial_settings(const Database::Settings::init_cfg &key)
 
     switch (key) {
     case DbName:
-        value = QString::fromStdString(fs::path(Filesystem::defaultDirAppend + native_slash.string() + Filesystem::fileName).string());
+        value = QString::fromStdString(fs::path(General::companyName + native_slash.string() + Filesystem::defaultDirAppend +
+                                        native_slash.string() + Filesystem::fileName).string());
         break;
     case DbExt:
         value = "";
