@@ -168,12 +168,6 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
         QObject::connect(m_xmppClient, &QXmppClient::disconnected, this, [=]() {
             ui->textEdit_tx_msg_dialog->setEnabled(false);
         });
-
-        QObject::connect(this, &GkXmppMessageDialog::finished, this, [=]() {
-            for (const auto &bareJid: m_bareJids) {
-                getArchivedMessagesFromDb(bareJid, false, false);
-            }
-        });
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(tr("An error has occurred related to XMPP functions. The error in question:\n\n%1").arg(QString::fromStdString(e.what())),
                                     GkSeverity::Fatal, "", false, true, false, true);
@@ -530,6 +524,7 @@ void GkXmppMessageDialog::getArchivedMessages()
  * LevelDB database that is associated with this user's instance of Small World Deluxe, and insert them into the chat
  * window, thereby saving bandwidth from not having to unnecessarily re-download messages from the given XMPP server
  * again.
+ * NOTE: The Google LevelDB functionality is currently disabled!
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param bareJid The user we are in communiqué with!
  * @param insertData Whether to insert the archived messages into the given QTableView or not.

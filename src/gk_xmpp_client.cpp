@@ -378,38 +378,6 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         });
 
         QObject::connect(this, &QXmppClient::disconnected, this, [=]() {
-            if (!m_connDetails.server.settings_client.auto_reconnect && !m_connDetails.server.url.isEmpty() &&
-                !m_connDetails.jid.isEmpty()) {
-                if (!this->isConnected() && m_askToReconnectAuto) { // We have been disconnected from the given XMPP server!
-                    QMessageBox msgBoxPolicy;
-                    msgBoxPolicy.setParent(nullptr);
-                    msgBoxPolicy.setWindowTitle(tr("Disconnected!"));
-                    msgBoxPolicy.setText(tr("You have been disconnected from the XMPP server, \"%1\"! Do you wish to enable a automatic reconnect policy?").arg(m_connDetails.server.url));
-                    msgBoxPolicy.setStandardButtons(QMessageBox::Apply | QMessageBox::Ignore | QMessageBox::Cancel);
-                    msgBoxPolicy.setDefaultButton(QMessageBox::Apply);
-                    msgBoxPolicy.setIcon(QMessageBox::Icon::Information);
-                    qint32 ret = msgBoxPolicy.exec();
-                    switch (ret) {
-                        case QMessageBox::Apply:
-                            gkDb->write_xmpp_settings(QString::fromStdString(gkDb->boolEnum(true)), GkXmppCfg::XmppAutoReconnect);
-                            gkDb->write_xmpp_settings(QString::fromStdString(gkDb->boolEnum(false)), GkXmppCfg::XmppAutoReconnectIgnore);
-                            return;
-                        case QMessageBox::Ignore:
-                            gkDb->write_xmpp_settings(QString::fromStdString(gkDb->boolEnum(true)), GkXmppCfg::XmppAutoReconnectIgnore);
-                            gkDb->write_xmpp_settings(QString::fromStdString(gkDb->boolEnum(false)), GkXmppCfg::XmppAutoReconnect);
-                            return;
-                        case QMessageBox::Cancel:
-                            gkDb->write_xmpp_settings(QString::fromStdString(gkDb->boolEnum(false)), GkXmppCfg::XmppAutoReconnect);
-                            gkDb->write_xmpp_settings(QString::fromStdString(gkDb->boolEnum(false)), GkXmppCfg::XmppAutoReconnectIgnore);
-                            return;
-                        default:
-                            gkDb->write_xmpp_settings(QString::fromStdString(gkDb->boolEnum(false)), GkXmppCfg::XmppAutoReconnect);
-                            gkDb->write_xmpp_settings(QString::fromStdString(gkDb->boolEnum(false)), GkXmppCfg::XmppAutoReconnectIgnore);
-                            return;
-                    }
-                }
-            }
-
             m_rosterList.clear(); // Clear the roster-list upon disconnection from given XMPP server!
         });
     } catch (const std::exception &e) {
@@ -933,7 +901,7 @@ void GkXmppClient::getArchivedMessages(const QString &to, const QString &node, c
         }
     }
 
-    m_xmppMamMgr->retrieveArchivedMessages(to, "", jid, start, QDateTime(), resultSetQuery);
+    m_xmppMamMgr->retrieveArchivedMessages(to, "", jid, QDateTime::currentDateTime().addDays(-28), QDateTime::currentDateTime(), resultSetQuery);
     return;
 }
 
