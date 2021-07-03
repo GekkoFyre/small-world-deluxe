@@ -145,7 +145,8 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         fs::path slash = "/";
         native_slash = slash.make_preferred().native();
 
-        const fs::path dir_to_append = fs::path(Filesystem::defaultDirAppend + native_slash.string() + Filesystem::xmppVCardDir);
+        const fs::path dir_to_append = fs::path(General::companyName + native_slash.string() + Filesystem::defaultDirAppend +
+                                                native_slash.string() + Filesystem::xmppVCardDir);
         vcard_save_path = gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation),
                                                                     true, QString::fromStdString(dir_to_append.string())).toStdString(); // Path to save final database towards
         if (!fs::exists(vcard_save_path)) {
@@ -1431,20 +1432,6 @@ void GkXmppClient::sendXmppMsg(const QString &bareJid, const QXmppMessage &msg, 
 {
     if (msg.isXmppStanza()) {
         sendPacket(msg);
-    }
-
-    if (!m_rosterList.isEmpty()) {
-        for (const auto &roster: m_rosterList) {
-            if (!roster.bareJid.isEmpty()) {
-                if (roster.bareJid == bareJid) {
-                    if (beginTimestamp.isValid() && endTimestamp.isValid()) {
-                        getArchivedMessages(m_connDetails.jid, QString(), roster.bareJid, beginTimestamp, endTimestamp, QXmppResultSetQuery());
-                    } else {
-                        getArchivedMessages(m_connDetails.jid, QString(), roster.bareJid, QDateTime::currentDateTimeUtc(), QDateTime::currentDateTimeUtc(), QXmppResultSetQuery());
-                    }
-                }
-            }
-        }
     }
 
     return;

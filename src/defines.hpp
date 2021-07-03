@@ -256,6 +256,9 @@ namespace GekkoFyre {
 #define GK_EVENTLOG_SEVERITY_ERROR_IDX (5)
 #define GK_EVENTLOG_SEVERITY_FATAL_IDX (6)
 
+#define GK_EVENTLOG_TASKBAR_FLASHER_PERIOD_COUNT (15)   // Total amount of periods to flash for!
+#define GK_EVENTLOG_TASKBAR_FLASHER_DURAT_COUNT (750)   // Duration, in milliseconds, between each flashing period.
+
 #define GK_ACTIVE_MSGS_TABLEVIEW_MODEL_OFFSET_IDX (0)
 #define GK_ACTIVE_MSGS_TABLEVIEW_MODEL_DATETIME_IDX (1)
 #define GK_ACTIVE_MSGS_TABLEVIEW_MODEL_AGE_IDX (2)

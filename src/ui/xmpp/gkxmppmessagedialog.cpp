@@ -93,8 +93,7 @@ bool GkPlainTextKeyEnter::eventFilter(QObject *obj, QEvent *event)
  * @param parent The parent to this dialog.
  */
 GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                                         QPointer<GekkoFyre::GkLevelDb> database, QPointer<QtSpell::TextEditChecker> spellChecking,
-                                         const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
+                                         QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
                                          QPointer<GekkoFyre::GkXmppClient> xmppClient, const QStringList &bareJids,
                                          QWidget *parent) : QDialog(parent), ui(new Ui::GkXmppMessageDialog)
 {
@@ -105,7 +104,6 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
         gkEventLogger = std::move(eventLogger);
         gkDb = std::move(database);
         gkConnDetails = connection_details;
-        m_spellChecker = std::move(spellChecking);
         m_xmppClient = std::move(xmppClient);
         m_bareJids = bareJids;
 

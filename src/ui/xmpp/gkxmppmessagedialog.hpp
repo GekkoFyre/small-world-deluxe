@@ -46,7 +46,6 @@
 #include "src/gk_xmpp_client.hpp"
 #include "src/gk_string_funcs.hpp"
 #include "src/models/tableview/gk_xmpp_recv_msgs_model.hpp"
-#include <QtSpell.hpp>
 #include <qxmpp/QXmppMessage.h>
 #include <queue>
 #include <mutex>
@@ -81,8 +80,7 @@ class GkXmppMessageDialog : public QDialog
 
 public:
     explicit GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                                 QPointer<GekkoFyre::GkLevelDb> database, QPointer<QtSpell::TextEditChecker> spellChecking,
-                                 const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
+                                 QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
                                  QPointer<GekkoFyre::GkXmppClient> xmppClient, const QStringList &bareJids,
                                  QWidget *parent = nullptr);
     ~GkXmppMessageDialog();
@@ -139,7 +137,7 @@ private:
     //
     // Spell-checking, dictionaries, etc.
     //
-    QPointer<QtSpell::TextEditChecker> m_spellChecker;
+    // QPointer<QtSpell::TextEditChecker> m_spellChecker;
 
     //
     // Multithreading, mutexes, etc.
