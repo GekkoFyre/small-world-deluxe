@@ -279,7 +279,7 @@ GkXmppRosterDialog::GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFu
 
 GkXmppRosterDialog::~GkXmppRosterDialog()
 {
-    gkDb->write_xmpp_settings(QString::number(ui->comboBox_current_status->currentIndex()), Settings::GkXmppCfg::XmppLastOnlinePresence);
+    // gkDb->write_xmpp_settings(QString::number(ui->comboBox_current_status->currentIndex()), Settings::GkXmppCfg::XmppLastOnlinePresence);
     cleanupTables();
 
     delete ui;
