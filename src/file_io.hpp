@@ -79,7 +79,7 @@ public:
 
     std::string get_file_contents(const boost::filesystem::path &filePath);
     QString defaultDirectory(const QString &base_path, const bool &use_native_slashes = false,
-                             const QString &append_dir = Filesystem::defaultDirAppend);
+                             const QString &append_dir = QString(General::companyName + QString("/") + Filesystem::defaultDirAppend));
 
 protected:
     static std::vector<boost::filesystem::path> analyze_dir(const boost::filesystem::path &dirPath, const std::vector<std::string> &dirsToSkip = { });

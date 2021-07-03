@@ -144,7 +144,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     fs::path slash = "/";
     native_slash = slash.make_preferred().native();
 
-    const fs::path dir_to_append = fs::path(Filesystem::defaultDirAppend + native_slash.string() + Filesystem::fileName);
+    const fs::path dir_to_append = fs::path(General::companyName + native_slash.string() + Filesystem::defaultDirAppend +
+                                            native_slash.string() + Filesystem::fileName);
     const fs::path swrld_save_path = gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation),
                                                                 true, QString::fromStdString(dir_to_append.string())).toStdString(); // Path to save final database towards
 
@@ -332,7 +333,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                     // The handler is a Crashpad-specific background process
                     sentry_options_set_handler_path(sen_opt, handler_to_use.string().c_str());
 
-                    const fs::path sentry_crash_dir = fs::path(Filesystem::defaultDirAppend + native_slash.string() + Filesystem::gk_sentry_dump_dir);
+                    const fs::path sentry_crash_dir = fs::path(General::companyName + native_slash.string() + Filesystem::defaultDirAppend +
+                                                                native_slash.string() + Filesystem::gk_sentry_dump_dir);
                     const fs::path gk_minidump = gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation),
                                                                             true, QString::fromStdString(sentry_crash_dir.string())).toStdString();
 
@@ -398,7 +400,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 ui->tableView_maingui_logs->horizontalHeader()->setSectionResizeMode(GK_EVENTLOG_TABLEVIEW_MODEL_MESSAGE_IDX, QHeaderView::Stretch);
                 ui->tableView_maingui_logs->show();
 
-                gkEventLogger = new GkEventLogger(m_trayIcon, gkStringFuncs, gkFileIo, this);
+                gkEventLogger = new GkEventLogger(m_trayIcon, gkStringFuncs, gkFileIo, this->winId(), this);
                 QObject::connect(gkEventLogger, SIGNAL(sendEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &)),
                                  gkEventLoggerModel, SLOT(insertData(const GekkoFyre::System::Events::Logging::GkEventLogging &)));
                 QObject::connect(gkEventLogger, SIGNAL(removeEvent(const GekkoFyre::System::Events::Logging::GkEventLogging &)),
@@ -871,9 +873,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         QPointer<GkPlainTextSubmit> widget_mesg_outgoing = new GkPlainTextSubmit(ui->frame_mesg_log);
         ui->verticalLayout_3->addWidget(widget_mesg_outgoing);
-        #ifdef GFYRE_ENBL_QTSPELL_LIBS
-        m_spellChecker->setTextEdit(widget_mesg_outgoing);
-        #endif
+        // m_spellChecker->setTextEdit(widget_mesg_outgoing);
         widget_mesg_outgoing->setTabChangesFocus(true);
         widget_mesg_outgoing->setPlaceholderText(tr("Enter your outgoing messages here..."));
         QObject::connect(widget_mesg_outgoing, SIGNAL(execFuncAfterEvent(const QString &)),
@@ -917,7 +917,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the QXmpp client!
         m_xmppClient = new GkXmppClient(gkConnDetails, gkDb, gkStringFuncs, gkFileIo, gkEventLogger, false, nullptr);
-        gkXmppRosterDlg = new GkXmppRosterDialog(gkStringFuncs, gkConnDetails, m_xmppClient, gkDb, m_spellChecker, gkEventLogger, true, this);
+        gkXmppRosterDlg = new GkXmppRosterDialog(gkStringFuncs, gkConnDetails, m_xmppClient, gkDb, gkEventLogger, true, this);
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
@@ -1066,7 +1066,7 @@ void MainWindow::launchSettingsWin(const System::UserInterface::GkSettingsDlgTab
                                                                pref_input_device, pref_output_device, gkRadioLibs,
                                                                gkStringFuncs, gkRadioPtr, gkSerialPortMap, gkUsbPortMap,
                                                                gkFreqList, gkFreqTableModel, gkConnDetails, m_xmppClient,
-                                                               gkEventLogger, gkTextToSpeech, m_spellChecker, settingsDlgTab, this);
+                                                               gkEventLogger, gkTextToSpeech, settingsDlgTab, this);
     dlg_settings->setWindowFlags(Qt::Window);
     dlg_settings->setAttribute(Qt::WA_DeleteOnClose, true);
     QObject::connect(dlg_settings, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
@@ -2203,17 +2203,8 @@ void MainWindow::readEnchantSettings()
             curr_chosen_dict = Filesystem::enchantSpellDefLang; // Default language dictionary to use if none has been specified!
         }
 
-        #ifdef GFYRE_ENBL_QTSPELL_LIBS
-        m_spellChecker = new QtSpell::TextEditChecker(this);
-        m_spellChecker->setDecodeLanguageCodes(true);
-        m_spellChecker->setShowCheckSpellingCheckbox(true);
-        m_spellChecker->setUndoRedoEnabled(true);
-        #endif
-
         if (!curr_chosen_dict.isEmpty()) {
-            #ifdef GFYRE_ENBL_QTSPELL_LIBS
-            m_spellChecker->setLanguage(curr_chosen_dict);
-            #endif
+            // m_spellChecker->setLanguage(curr_chosen_dict);
         }
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(e.what()));

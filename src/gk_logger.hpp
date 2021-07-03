@@ -66,13 +66,13 @@ class GkEventLogger : public QObject {
 
 public:
     explicit GkEventLogger(const QPointer<QSystemTrayIcon> &sysTrayIcon, const QPointer<GekkoFyre::StringFuncs> &stringFuncs,
-                           QPointer<GekkoFyre::FileIo> fileIo, QObject *parent = nullptr);
+                           QPointer<GekkoFyre::FileIo> fileIo, const quintptr &win_id, QObject *parent = nullptr);
     ~GkEventLogger() override;
 
 public slots:
     void publishEvent(const QString &event, const GekkoFyre::System::Events::Logging::GkSeverity &severity = GekkoFyre::System::Events::Logging::GkSeverity::Warning,
                       const QVariant &arguments = "", const bool &sys_notification = false, const bool &publishToConsole = true,
-                      const bool &publishToStatusBar = false, const bool &displayMsgBox = false);
+                      const bool &publishToStatusBar = false, const bool &displayMsgBox = false, const bool &flashTaskbar = false);
     void recvXmppLog(QXmppLogger::MessageType msg_type, QString msg);
 
 signals:
@@ -89,6 +89,10 @@ private:
     // File I/O
     QPointer<GekkoFyre::FileIo> gkFileIo;
     QFile gkWriteCsvIo;
+
+    //
+    // Microsoft Windows
+    quintptr m_windowId;
 
     #if defined(GFYRE_ENBL_MSVC_WINTOAST)
     std::unique_ptr<WinToastLib::WinToastTemplate> toastTempl;
