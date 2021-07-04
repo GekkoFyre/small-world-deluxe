@@ -70,11 +70,7 @@ GkXmppRecvMsgsTableViewModel::GkXmppRecvMsgsTableViewModel(QPointer<QTableView> 
                                                            QWidget *parent) : QAbstractTableModel(parent)
 {
     setParent(parent);
-
-    proxyModel = new QSortFilterProxyModel(parent);
-    tableView->setModel(proxyModel);
     m_xmppClient = std::move(xmppClient);
-    proxyModel->setSourceModel(this);
 
     return;
 }
@@ -108,20 +104,42 @@ void GkXmppRecvMsgsTableViewModel::populateData(const QList<GkRecvMsgsTableViewM
  * @param bareJid The identity of the user, as it should appear on the XMPP server.
  * @param msg The message data to be inserted.
  * @param timestamp The date/time to be inserted.
+ * @param doNotAddToTable As the variable name suggests, do not make any modifications to the QTableView itself. Only
+ * modify `m_data` instead.
  */
 void GkXmppRecvMsgsTableViewModel::insertData(const QString &bareJid, const QString &msg, const QDateTime &timestamp)
 {
     try {
         std::lock_guard<std::mutex> lock_guard(m_dataBatchMutex);
-        beginInsertRows(QModelIndex(), m_data.count(), m_data.count());
+        qint32 idx = -1;
+        if (!m_data.isEmpty()) {
+            //
+            // Find the nearest timestamp to the one provided!
+            const auto comp_timestamp = m_xmppClient->compareTimestamps(std::vector<GkRecvMsgsTableViewModel>(m_data.begin(), m_data.end()),
+                                                                        timestamp.toMSecsSinceEpoch());
+            for (qint32 i = 0; i < m_data.size(); ++i) {
+                if (m_data.at(i).timestamp.toMSecsSinceEpoch() == comp_timestamp) {
+                    idx = i;
+                }
+            }
+        }
+
         GkRecvMsgsTableViewModel recvMsg;
         recvMsg.timestamp = timestamp;
         recvMsg.bareJid = bareJid;
         recvMsg.message = msg;
         recvMsg.nickName = m_xmppClient->getJidNickname(recvMsg.bareJid);
-        m_data.append(recvMsg);
-        endInsertRows();
 
+        //
+        // Insert the data into the QTableView itself!
+        beginInsertRows(QModelIndex(), m_data.count(), m_data.count());
+        if (!m_data.isEmpty() && idx >= 0) {
+            m_data.insert(m_data.begin() + idx, recvMsg);
+        } else {
+            m_data.push_back(recvMsg);
+        }
+
+        endInsertRows();
         auto top = this->createIndex((m_data.count() + 1), 0, nullptr);
         auto bottom = this->createIndex((m_data.count() + 1), GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_TOTAL_IDX, nullptr);
         emit dataChanged(top, bottom);

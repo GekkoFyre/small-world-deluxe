@@ -43,10 +43,6 @@
 
 #include "src/defines.hpp"
 #include "src/gk_xmpp_client.hpp"
-#include <mutex>
-#include <thread>
-#include <memory>
-#include <QList>
 #include <QObject>
 #include <QString>
 #include <QVariant>
@@ -54,42 +50,32 @@
 #include <QTableView>
 #include <QModelIndex>
 #include <QAbstractTableModel>
+#include <QSortFilterProxyModel>
 
 namespace GekkoFyre {
 
-class GkXmppRecvMsgsTableViewModel : public QAbstractTableModel {
+class GkQDateTimeFilterProxyModel : public QSortFilterProxyModel {
     Q_OBJECT
 
 public:
-    explicit GkXmppRecvMsgsTableViewModel(QPointer<QTableView> tableView, QPointer<GekkoFyre::GkXmppClient> xmppClient, QWidget *parent = nullptr);
-    ~GkXmppRecvMsgsTableViewModel() override;
+    explicit GkQDateTimeFilterProxyModel(QObject *parent = nullptr);
+    ~GkQDateTimeFilterProxyModel() override;
 
-    void populateData(const QList<GekkoFyre::Network::GkXmpp::GkRecvMsgsTableViewModel> &data_list);
-    [[nodiscard]] int rowCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
-    [[nodiscard]] int columnCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
+    [[nodiscard]] QDateTime filterMinimumDateTime() const { return minTimestamp; }
+    void setFilterMinimumDateTime(QDateTime timestamp);
 
-    [[nodiscard]] QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
-    bool setData(const QModelIndex &index, const QVariant &value, int role) Q_DECL_OVERRIDE;
-    [[nodiscard]] Qt::ItemFlags flags(const QModelIndex &index) const Q_DECL_OVERRIDE;
-    [[nodiscard]] QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
+    [[nodiscard]] QDateTime filterMaximumDateTime() const { return maxTimestamp; }
+    void setFilterMaximumDateTime(QDateTime timestamp);
 
-public slots:
-    void insertData(const QString &bareJid, const QString &msg, const QDateTime &timestamp = QDateTime::currentDateTimeUtc());
-    qint32 removeData();
-    qint32 removeData(const QDateTime &timestamp, const QString &bareJid);
+protected:
+    bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const override;
+    [[nodiscard]] bool lessThan(const QModelIndex &left, const QModelIndex &right) const override;
 
 private:
-    QList<GekkoFyre::Network::GkXmpp::GkRecvMsgsTableViewModel> m_data;
+    QDateTime minTimestamp;
+    QDateTime maxTimestamp;
 
-    //
-    // Miscellaneous
-    QPointer<QTableView> table;
-    QPointer<GekkoFyre::GkXmppClient> m_xmppClient;
-
-    //
-    // Multithreading, mutexes, etc.
-    //
-    std::mutex m_dataBatchMutex;
+    [[nodiscard]] bool dateInRange(QDateTime timestamp) const;
 
 };
 };

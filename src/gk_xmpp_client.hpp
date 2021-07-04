@@ -65,6 +65,7 @@
 #include <qxmpp/QXmppRegisterIq.h>
 #include <qxmpp/QXmppMucManager.h>
 #include <qxmpp/QXmppVCardManager.h>
+#include <qxmpp/QXmppCarbonManager.h>
 #include <qxmpp/QXmppRosterManager.h>
 #include <qxmpp/QXmppArchiveManager.h>
 #include <qxmpp/QXmppVersionManager.h>
@@ -128,22 +129,22 @@ public:
     [[nodiscard]] bool isJidOnline(const QString &bareJid);
 
     //
+    // Date & Time Management
+    [[nodiscard]] QDateTime calcMinTimestampForXmppMsgHistory(const QString &bareJid, const QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &msg_history);
+    [[nodiscard]] QDateTime calcMaxTimestampForXmppMsgHistory(const QString &bareJid, const QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &msg_history);
+    [[nodiscard]] qint64 compareTimestamps(const std::vector<GekkoFyre::Network::GkXmpp::GkRecvMsgsTableViewModel> &data, const qint64 &value);
+
+    //
     // User, roster and presence details
     std::shared_ptr<QXmppRegistrationManager> getRegistrationMgr();
-    QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign> getRosterMap();
-    void updateRosterMap(const QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &rosterList);
+    QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> getRosterMap();
+    void updateRosterMap(const QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &rosterList);
     QXmppPresence statusToPresence(const Network::GkXmpp::GkOnlineStatus &status);
     Network::GkXmpp::GkOnlineStatus presenceToStatus(const QXmppPresence::AvailableStatusType &xmppPresence);
     QString presenceToString(const QXmppPresence::AvailableStatusType &xmppPresence);
     QIcon presenceToIcon(const QXmppPresence::AvailableStatusType &xmppPresence);
     bool deleteUserAccount();
     QString obtainAvatarFilePath();
-
-    //
-    // QXmppMamManager handling
-    void getArchivedMessages(const QString &to = QString(), const QString &node = QString(), const QString &jid = QString(),
-                             const QDateTime &start = QDateTime(), const QDateTime &end = QDateTime(),
-                             const QXmppResultSetQuery &resultSetQuery = QXmppResultSetQuery());
 
     //
     // vCard management
@@ -177,9 +178,14 @@ public slots:
                                const QString &callsign, const QByteArray &avatar_pic, const QString &img_type);
 
     //
+    // QXmppMamManager handling
+    void getArchivedMessages(const QString &to = QString(), const QString &node = QString(), const QString &jid = QString(),
+                             const QDateTime &start = QDateTime(), const QDateTime &end = QDateTime(),
+                             const QXmppResultSetQuery &resultSetQuery = QXmppResultSetQuery());
+
+    //
     // Message handling
-    void sendXmppMsg(const QString &bareJid, const QXmppMessage &msg, const QDateTime &beginTimestamp,
-                     const QDateTime &endTimestamp);
+    void sendXmppMsg(const QXmppMessage &msg);
 
 private slots:
     //
@@ -294,7 +300,7 @@ private:
     std::shared_ptr<QXmppRosterManager> m_rosterManager;
     QStringList rosterGroups;
     QVector<QString> m_blockList;
-    QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign> m_rosterList;   // A list of all the bareJids, including the client themselves!
+    QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> m_rosterList;   // A list of all the bareJids, including the client themselves!
 
     //
     // Filesystem & Directories
@@ -328,6 +334,7 @@ private:
     QXmppConfiguration config;
     bool m_askToReconnectAuto;
     bool m_sslIsEnabled;
+    bool m_isMuc;
     std::shared_ptr<QXmppRegistrationManager> m_registerManager;
     std::unique_ptr<QXmppMucManager> m_mucManager;
     std::unique_ptr<QXmppMucRoom> m_pRoom;
@@ -335,6 +342,7 @@ private:
     std::unique_ptr<QXmppMamManager> m_xmppMamMgr;
     std::unique_ptr<QXmppTransferManager> m_transferManager;
     std::unique_ptr<QXmppVCardManager> m_vCardManager;
+    std::unique_ptr<QXmppCarbonManager> m_xmppCarbonMgr;
     QScopedPointer<QXmppLogger> m_xmppLogger;
 
     GekkoFyre::Network::GkXmpp::GkNetworkState m_netState;
