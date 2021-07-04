@@ -90,5 +90,6 @@ private:
     // Multithreading, mutexes, etc.
     //
     std::mutex m_dataBatchMutex;
+
 };
 };

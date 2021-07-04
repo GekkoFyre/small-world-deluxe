@@ -132,6 +132,7 @@ public:
     // Date & Time Management
     [[nodiscard]] QDateTime calcMinTimestampForXmppMsgHistory(const QString &bareJid, const QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &msg_history);
     [[nodiscard]] QDateTime calcMaxTimestampForXmppMsgHistory(const QString &bareJid, const QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &msg_history);
+    [[nodiscard]] qint64 compareTimestamps(const std::vector<GekkoFyre::Network::GkXmpp::GkRecvMsgsTableViewModel> &data, const qint64 &value);
 
     //
     // User, roster and presence details

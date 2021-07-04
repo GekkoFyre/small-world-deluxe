@@ -46,6 +46,7 @@
 #include <utility>
 #include <iterator>
 #include <iostream>
+#include <algorithm>
 #include <QMap>
 #include <QIcon>
 #include <QPixmap>
@@ -118,8 +119,8 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
         QObject::connect(m_xmppClient, SIGNAL(xmppMsgUpdate(const QXmppMessage &)), this, SLOT(recvXmppMsg(const QXmppMessage &)));
         QObject::connect(m_xmppClient, SIGNAL(updateMsgHistory()), this, SLOT(updateMsgHistory()));
         QObject::connect(m_xmppClient, SIGNAL(msgArchiveSuccReceived()), this, SLOT(msgArchiveSuccReceived()));
-        QObject::connect(this, SIGNAL(updateMamArchive(const QString &, const bool &, const bool &)),
-                         this, SLOT(procMamArchive(const QString &, const bool &, const bool &)));
+        QObject::connect(this, SIGNAL(updateMamArchive(const bool &, const bool &)),
+                         this, SLOT(procMamArchive(const bool &, const bool &)));
 
         //
         // Setup and initialize QTableView's...
@@ -484,9 +485,9 @@ QXmppMessage GkXmppMessageDialog::createXmppMessageIq(const QString &to, const Q
 void GkXmppMessageDialog::msgArchiveSuccReceived()
 {
     if (!startupSucc) {
-        emit updateMamArchive(gkConnDetails.jid, true, true);
+        emit updateMamArchive(true, true);
         for (const auto &bareJid: m_bareJids) {
-            emit updateMamArchive(bareJid, false, true);
+            emit updateMamArchive(false, true);
         }
 
         startupSucc = true;
@@ -499,17 +500,16 @@ void GkXmppMessageDialog::msgArchiveSuccReceived()
  * @brief GkXmppMessageDialog::procMamArchive is a helper class for dealing with the processing of recorded messages that
  * have been archived to a given XMPP server, according to specification, XEP-0313 (Message Archive Management).
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param bareJid The user we are in communiqué with!
  * @param wipeExistingHistory Whether to wipe the pre-existing chat history or not, specifically from the given QTableView
  * object, GekkoFyre::GkXmppRecvMsgsTableViewModel().
  * @param presented Should we update the fact that these messages are now already 'presented' (and thereby inserted into
  * the QTableView) or not?
  */
-void GkXmppMessageDialog::procMamArchive(const QString &bareJid, const bool &wipeExistingHistory, const bool &presented)
+void GkXmppMessageDialog::procMamArchive(const bool &wipeExistingHistory, const bool &presented)
 {
     try {
         if (!startupSucc) {
-            getArchivedMessagesFromDb(bareJid, true, wipeExistingHistory, presented);
+            getArchivedMessagesFromDb(true, wipeExistingHistory, presented);
         }
     } catch (const std::exception &e) {
         gkStringFuncs->print_exception(e);
@@ -538,7 +538,6 @@ void GkXmppMessageDialog::getArchivedMessages()
  * again.
  * NOTE: The Google LevelDB functionality is currently disabled!
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param bareJid The user we are in communiqué with!
  * @param insertData Whether to insert the archived messages into the given QTableView or not.
  * @param wipeExistingHistory Whether to wipe the pre-existing chat history or not, specifically from the given QTableView
  * object, GekkoFyre::GkXmppRecvMsgsTableViewModel().
@@ -547,39 +546,40 @@ void GkXmppMessageDialog::getArchivedMessages()
  * @param presented Should we update the fact that these messages are now already 'presented' (and thereby inserted into
  * the QTableView) or not?
  */
-void GkXmppMessageDialog::getArchivedMessagesFromDb(const QString &bareJid, const bool &insertData, const bool &wipeExistingHistory,
+void GkXmppMessageDialog::getArchivedMessagesFromDb(const bool &insertData, const bool &wipeExistingHistory,
                                                     const bool &updateSortFilterProxy, const bool &presented)
 {
     try {
-        if (!bareJid.isEmpty()) {
-            auto rosterMap = m_xmppClient->getRosterMap(); // Grab the `GkXmppCallsign()` object and temporarily store it in memory for just use in this function!
-            if (!rosterMap.isEmpty()) {
-                std::lock_guard<std::mutex> lock_guard(m_archivedMsgsFromDbMtx);
-                if (wipeExistingHistory) {
-                    gkXmppRecvMsgsTableViewModel->removeData();
-                }
+        auto rosterMap = m_xmppClient->getRosterMap(); // Grab the `GkXmppCallsign()` object and temporarily store it in memory for just use in this function!
+        if (!rosterMap.isEmpty()) {
+            std::lock_guard<std::mutex> lock_guard(m_archivedMsgsFromDbMtx);
+            if (wipeExistingHistory) {
+                gkXmppRecvMsgsTableViewModel->removeData();
+            }
 
-                for (auto roster = rosterMap.begin(); roster != rosterMap.end(); ++roster) {
-                    if (roster->bareJid == bareJid) {
-                        gkEventLogger->publishEvent(tr("Gathering archived messages for XMPP user, \"%1\", from the database!").arg(roster->bareJid), GkSeverity::Debug,
-                                                    "", false, true, false, false, false);
-                        if (!roster->messages.isEmpty()) {
-                            for (auto iter = roster->messages.begin(); iter != roster->messages.end(); ++iter) {
-                                if (!iter->presented && insertData) {
-                                    gkXmppRecvMsgsTableViewModel->insertData(bareJid, iter->message.body(), iter->message.stamp());
-                                    iter->presented = true;
-                                } else {
-                                    iter->presented = presented;
-                                }
-                            }
+            for (auto roster = rosterMap.begin(); roster != rosterMap.end(); ++roster) {
+                gkEventLogger->publishEvent(tr("Gathering archived messages for XMPP user, \"%1\", from the database!").arg(roster->bareJid), GkSeverity::Debug,
+                                            "", false, true, false, false, false);
+                if (!roster->messages.isEmpty()) {
+                    //
+                    // Performs a comparison between two, QDateTime objects, and sorts the QList accordingly!
+                    // std::sort(roster->messages.begin(), roster->messages.end(), [](const GkXmppMamMsg &left, const GkXmppMamMsg &right)->bool{ return left.message.stamp().toMSecsSinceEpoch() < right.message.stamp().toMSecsSinceEpoch(); });
 
-                            m_xmppClient->updateRosterMap(rosterMap);
+                    //
+                    // Insert the archived messages, now downloaded from the given XMPP server and then sorted, into the QTableView provided!
+                    for (auto iter = roster->messages.begin(); iter != roster->messages.end(); ++iter) {
+                        if (!iter->presented && insertData) {
+                            gkXmppRecvMsgsTableViewModel->insertData(roster->bareJid, iter->message.body(), iter->message.stamp());
+                            iter->presented = true;
+                        } else {
+                            iter->presented = presented;
                         }
-
-                        ui->tableView_recv_msg_dlg->scrollToBottom();
-                        break;
                     }
+
+                    m_xmppClient->updateRosterMap(rosterMap);
                 }
+
+                ui->tableView_recv_msg_dlg->scrollToBottom();
             }
         }
     } catch (const std::exception &e) {

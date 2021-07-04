@@ -742,6 +742,27 @@ QDateTime GkXmppClient::calcMaxTimestampForXmppMsgHistory(const QString &bareJid
 }
 
 /**
+ * @brief GkXmppClient::compareTimestamps compares a given QList() of timestamps and returns the closet
+ * matching value to the given input reference.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param data The QList of data for making comparisons.
+ * @param value The reference value in which to make the comparison against.
+ * @return The closest, compared, value which has been found.
+ */
+qint64 GkXmppClient::compareTimestamps(const std::vector<GekkoFyre::Network::GkXmpp::GkRecvMsgsTableViewModel> &data,
+                                       const qint64 &value)
+{
+    std::vector<qint64> timestamps;
+    for (const auto &stanza: data) {
+        timestamps.push_back(stanza.timestamp.toMSecsSinceEpoch());
+    }
+
+    auto const it = std::lower_bound(timestamps.begin(), timestamps.end(), value);
+    if (it == timestamps.end()) { return -1; }
+    return *it;
+}
+
+/**
  * @brief GkXmppClient::getRegistrationMgr
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return

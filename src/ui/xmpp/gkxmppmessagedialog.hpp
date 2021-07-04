@@ -110,9 +110,9 @@ private slots:
     //
     // QXmppMamManager handling
     void msgArchiveSuccReceived();
-    void procMamArchive(const QString &bareJid, const bool &wipeExistingHistory = false, const bool &presented = false);
+    void procMamArchive(const bool &wipeExistingHistory = false, const bool &presented = false);
     void getArchivedMessages();
-    void getArchivedMessagesFromDb(const QString &bareJid, const bool &insertData, const bool &wipeExistingHistory = false,
+    void getArchivedMessagesFromDb(const bool &insertData, const bool &wipeExistingHistory = false,
                                    const bool &updateSortFilterProxy = false, const bool &presented = false);
 
 signals:
@@ -124,7 +124,8 @@ signals:
 
     //
     // QXmppMamManager handling
-    void updateMamArchive(const QString &bareJid, const bool &wipeExistingHistory = false, const bool &presented = false);
+    void updateMamArchive(const bool &wipeExistingHistory = false, const bool &presented = false);
+    void updateTableModel();
 
 private:
     Ui::GkXmppMessageDialog *ui;
@@ -161,5 +162,6 @@ private:
     GekkoFyre::Network::GkXmpp::GkNetworkState m_netState;
     QStringList m_bareJids;
     QString m_clientNickname;
+
 };
 
