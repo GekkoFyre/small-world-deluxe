@@ -65,6 +65,7 @@
 #include <qxmpp/QXmppRegisterIq.h>
 #include <qxmpp/QXmppMucManager.h>
 #include <qxmpp/QXmppVCardManager.h>
+#include <qxmpp/QXmppCarbonManager.h>
 #include <qxmpp/QXmppRosterManager.h>
 #include <qxmpp/QXmppArchiveManager.h>
 #include <qxmpp/QXmppVersionManager.h>
@@ -140,12 +141,6 @@ public:
     QString obtainAvatarFilePath();
 
     //
-    // QXmppMamManager handling
-    void getArchivedMessages(const QString &to = QString(), const QString &node = QString(), const QString &jid = QString(),
-                             const QDateTime &start = QDateTime(), const QDateTime &end = QDateTime(),
-                             const QXmppResultSetQuery &resultSetQuery = QXmppResultSetQuery());
-
-    //
     // vCard management
     QByteArray processImgToByteArray(const QString &filePath);
 
@@ -177,9 +172,14 @@ public slots:
                                const QString &callsign, const QByteArray &avatar_pic, const QString &img_type);
 
     //
+    // QXmppMamManager handling
+    void getArchivedMessages(const QString &to = QString(), const QString &node = QString(), const QString &jid = QString(),
+                             const QDateTime &start = QDateTime(), const QDateTime &end = QDateTime(),
+                             const QXmppResultSetQuery &resultSetQuery = QXmppResultSetQuery());
+
+    //
     // Message handling
-    void sendXmppMsg(const QString &bareJid, const QXmppMessage &msg, const QDateTime &beginTimestamp,
-                     const QDateTime &endTimestamp);
+    void sendXmppMsg(const QXmppMessage &msg);
 
 private slots:
     //
@@ -328,6 +328,7 @@ private:
     QXmppConfiguration config;
     bool m_askToReconnectAuto;
     bool m_sslIsEnabled;
+    bool m_isMuc;
     std::shared_ptr<QXmppRegistrationManager> m_registerManager;
     std::unique_ptr<QXmppMucManager> m_mucManager;
     std::unique_ptr<QXmppMucRoom> m_pRoom;
@@ -335,6 +336,7 @@ private:
     std::unique_ptr<QXmppMamManager> m_xmppMamMgr;
     std::unique_ptr<QXmppTransferManager> m_transferManager;
     std::unique_ptr<QXmppVCardManager> m_vCardManager;
+    std::unique_ptr<QXmppCarbonManager> m_xmppCarbonMgr;
     QScopedPointer<QXmppLogger> m_xmppLogger;
 
     GekkoFyre::Network::GkXmpp::GkNetworkState m_netState;

@@ -90,6 +90,7 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
                                               m_vCardManager(findExtension<QXmppVCardManager>()),
                                               m_xmppArchiveMgr(findExtension<QXmppArchiveManager>()),
                                               m_xmppMamMgr(findExtension<QXmppMamManager>()),
+                                              m_xmppCarbonMgr(findExtension<QXmppCarbonManager>()),
                                               m_xmppLogger(QXmppLogger::getLogger()),
                                               m_discoMgr(findExtension<QXmppDiscoveryManager>()),
                                               QXmppClient(parent)
@@ -108,6 +109,7 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         m_transferManager = std::make_unique<QXmppTransferManager>();
         m_xmppArchiveMgr = std::make_unique<QXmppArchiveManager>();
         m_xmppMamMgr = std::make_unique<QXmppMamManager>();
+        m_xmppCarbonMgr = std::make_unique<QXmppCarbonManager>();
 
         addExtension(m_rosterManager.get());
         addExtension(m_versionMgr.get());
@@ -137,10 +139,16 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
             addExtension(m_xmppMamMgr.get());
         }
 
+        if (m_xmppCarbonMgr) {
+            addExtension(m_xmppCarbonMgr.get());
+            m_xmppCarbonMgr->setCarbonsEnabled(true);
+        }
+
         //
         // Booleans and other variables
         m_askToReconnectAuto = false;
         m_sslIsEnabled = false;
+        m_isMuc = false;
         sys::error_code ec;
         fs::path slash = "/";
         native_slash = slash.make_preferred().native();
@@ -293,6 +301,11 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         // the most minimal of in-band user registration is supported by said server!
         //
         QObject::connect(this, SIGNAL(messageReceived(const QXmppMessage &)), this, SLOT(recvXmppMsgUpdate(const QXmppMessage &)));
+        if (m_xmppCarbonMgr->carbonsEnabled()) {
+            QObject::connect(m_xmppCarbonMgr.get(), SIGNAL(messageSent(const QXmppMessage &)), this, SLOT(recvXmppMsgUpdate(const QXmppMessage &)));
+            QObject::connect(m_xmppCarbonMgr.get(), SIGNAL(messageReceived(const QXmppMessage &)), this, SLOT(recvXmppMsgUpdate(const QXmppMessage &)));
+        }
+        
         QObject::connect(m_registerManager.get(), SIGNAL(registrationFormReceived(const QXmppRegisterIq &)),
                          this, SLOT(handleRegistrationForm(const QXmppRegisterIq &)));
 
@@ -874,34 +887,39 @@ void GkXmppClient::getArchivedMessages(const QString &to, const QString &node, c
     Q_UNUSED(node);
     Q_UNUSED(end);
 
-    if (!m_rosterList.isEmpty()) {
-        for (const auto &roster: m_rosterList) {
-            updateRecordedMsgHistory(roster.bareJid);
-            if (!start.isValid()) {
-                if (to == roster.bareJid && jid != m_connDetails.jid) {
-                    if (!roster.messages.isEmpty()) {
-                        QList<QXmppMessage> msg_history;
-                        for (const auto &message: roster.messages) {
-                            msg_history.push_back(message.message);
+    try {
+        if (!m_rosterList.isEmpty()) {
+            for (const auto &roster: m_rosterList) {
+                updateRecordedMsgHistory(roster.bareJid);
+                if (!start.isValid()) {
+                    if (to == roster.bareJid && jid != m_connDetails.jid) {
+                        if (!roster.messages.isEmpty()) {
+                            QList<QXmppMessage> msg_history;
+                            for (const auto &message: roster.messages) {
+                                msg_history.push_back(message.message);
+                            }
+
+                            if (!msg_history.isEmpty()) {
+                                const auto min_timestamp = gkStringFuncs->calcMinTimestampForXmppMsgHistory(msg_history);
+                                gkEventLogger->publishEvent(tr("Minimum date required for message archive retrieval is: %1").arg(QDateTime(min_timestamp).toString("dd MMM yyyy @ hh:mm:ss.zzz")),
+                                                            GkSeverity::Debug, "", false, true, false, false);
+                                m_xmppMamMgr->retrieveArchivedMessages(roster.bareJid, "", m_connDetails.jid, min_timestamp, QDateTime(), resultSetQuery);
+
+                                return;
+                            }
                         }
 
-                        if (!msg_history.isEmpty()) {
-                            const auto min_timestamp = gkStringFuncs->calcMinTimestampForXmppMsgHistory(msg_history);
-                            gkEventLogger->publishEvent(tr("Minimum date required for message archive retrieval is: %1").arg(QDateTime(min_timestamp).toString("dd MMM yyyy @ hh:mm:ss.zzz")),
-                                                        GkSeverity::Debug, "", false, true, false, false);
-                            m_xmppMamMgr->retrieveArchivedMessages(roster.bareJid, "", m_connDetails.jid, min_timestamp, QDateTime(), resultSetQuery);
-
-                            return;
-                        }
+                        break;
                     }
-
-                    break;
                 }
             }
         }
+
+        m_xmppMamMgr->retrieveArchivedMessages(to, "", jid, QDateTime::currentDateTime().addDays(-28), QDateTime::currentDateTime(), resultSetQuery);
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true, false);
     }
 
-    m_xmppMamMgr->retrieveArchivedMessages(to, "", jid, QDateTime::currentDateTime().addDays(-28), QDateTime::currentDateTime(), resultSetQuery);
     return;
 }
 
@@ -1049,7 +1067,7 @@ void GkXmppClient::vCardReceived(const QXmppVCardIq &vCard)
             }
         }
     } catch (const std::exception &e) {
-        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);
+        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true, false);
     }
 
     return;
@@ -1099,7 +1117,7 @@ void GkXmppClient::clientVCardReceived()
             }
         }
     } catch (const std::exception &e) {
-        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);
+        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true, false);
     }
 
     return;
@@ -1388,15 +1406,9 @@ void GkXmppClient::updateClientVCardForm(const QString &first_name, const QStrin
  * @brief GkXmppClient::sendXmppMsg is a utility function to send messages to all the resources associated with the specified
  * bareJid(s) within the contained QXmppMessage stanza.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param bareJid The identity of the user in question, for the message archive with which we are processing for.
  * @param msg The QXmppMessage to process and ultimately, transmit.
- * @param beginTimestamp The beginning timestamp, from which to filter the search results beginning at in obtaining the
- * message history for a given bareJid. This is a Internet bandwidth/data saving measure.
- * @param endTimestamp The end timestamp, from which to filter the search results up towards in obtaining the message
- * history for a given bareJid. This is a Internet bandwidth/data saving measure.
  */
-void GkXmppClient::sendXmppMsg(const QString &bareJid, const QXmppMessage &msg, const QDateTime &beginTimestamp,
-                                const QDateTime &endTimestamp)
+void GkXmppClient::sendXmppMsg(const QXmppMessage &msg)
 {
     if (msg.isXmppStanza()) {
         sendPacket(msg);
@@ -1981,7 +1993,7 @@ void GkXmppClient::recvXmppMsgUpdate(const QXmppMessage &message)
                 return;
         }
     } catch (const std::exception &e) {
-        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);
+        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true, false);
     }
 
     return;

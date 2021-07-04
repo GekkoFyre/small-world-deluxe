@@ -119,8 +119,7 @@ signals:
 
     //
     // Message handling and QXmppArchiveManager-related
-    void sendXmppMsg(const QString &bareJid, const QXmppMessage &msg, const QDateTime &beginTimestamp,
-                     const QDateTime &endTimestamp);
+    void sendXmppMsg(const QXmppMessage &msg);
 
     //
     // QXmppMamManager handling

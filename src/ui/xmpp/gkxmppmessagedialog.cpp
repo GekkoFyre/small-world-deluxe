@@ -114,8 +114,7 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
         //
         // Setup and initialize signals and slots...
         QObject::connect(this, SIGNAL(updateToolbar(const QString &)), this, SLOT(updateToolbarStatus(const QString &)));
-        QObject::connect(this, SIGNAL(sendXmppMsg(const QString &, const QXmppMessage &, const QDateTime &, const QDateTime &)),
-                         m_xmppClient, SLOT(sendXmppMsg(const QString &, const QXmppMessage &, const QDateTime &, const QDateTime &)));
+        QObject::connect(this, SIGNAL(sendXmppMsg(const QXmppMessage &)), m_xmppClient, SLOT(sendXmppMsg(const QXmppMessage &)));
         QObject::connect(m_xmppClient, SIGNAL(xmppMsgUpdate(const QXmppMessage &)), this, SLOT(recvXmppMsg(const QXmppMessage &)));
         QObject::connect(m_xmppClient, SIGNAL(updateMsgHistory()), this, SLOT(updateMsgHistory()));
         QObject::connect(m_xmppClient, SIGNAL(msgArchiveSuccReceived()), this, SLOT(msgArchiveSuccReceived()));
@@ -162,7 +161,10 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
 
         QObject::connect(m_xmppClient, &QXmppClient::connected, this, [=]() {
             ui->textEdit_tx_msg_dialog->setEnabled(true);
-            getArchivedMessages(); // Now gather any data possible from the given XMPP server via the Internet!
+
+            //
+            // Now gather any data possible from the given XMPP server via the Internet!
+            getArchivedMessages();
         });
 
         QObject::connect(m_xmppClient, &QXmppClient::disconnected, this, [=]() {
@@ -345,7 +347,7 @@ void GkXmppMessageDialog::submitMsgEnterKey()
                 if (!bareJid.isEmpty()) {
                     const auto toMsg = createXmppMessageIq(bareJid, gkConnDetails.jid, plaintext);
                     if (toMsg.isXmppStanza()) {
-                        emit sendXmppMsg(bareJid, toMsg, toMsg.stamp(), QDateTime::currentDateTimeUtc());
+                        emit sendXmppMsg(toMsg);
                     }
                 }
             }
@@ -466,6 +468,8 @@ QXmppMessage GkXmppMessageDialog::createXmppMessageIq(const QString &to, const Q
     xmppMsg.setTo(to);
     xmppMsg.setBody(message);
     xmppMsg.setStamp(QDateTime::currentDateTimeUtc());
+    xmppMsg.setPrivate(false);
+    xmppMsg.setReceiptRequested(true);
     xmppMsg.setType(QXmppMessage::Chat);
 
     return xmppMsg;
@@ -482,6 +486,7 @@ void GkXmppMessageDialog::msgArchiveSuccReceived()
             emit updateMamArchive(bareJid);
         }
 
+        emit updateMamArchive(gkConnDetails.jid);
         startupSucc = true;
     }
 
@@ -513,7 +518,7 @@ void GkXmppMessageDialog::procMamArchive(const QString &bareJid)
 void GkXmppMessageDialog::getArchivedMessages()
 {
     for (const auto &bareJid: m_bareJids) {
-        m_xmppClient->getArchivedMessages(gkConnDetails.jid, QString(), bareJid);
+        m_xmppClient->getArchivedMessages(gkConnDetails.jid, QString(), bareJid); // Get archived messages sent by the Jid in question!
     }
 
     return;
@@ -538,9 +543,11 @@ void GkXmppMessageDialog::getArchivedMessagesFromDb(const QString &bareJid, cons
             auto rosterMap = m_xmppClient->getRosterMap();
             if (!rosterMap.isEmpty()) {
                 std::lock_guard<std::mutex> lock_guard(m_archivedMsgsFromDbMtx);
-                gkXmppRecvMsgsTableViewModel->removeData();
+                // gkXmppRecvMsgsTableViewModel->removeData();
                 for (auto roster = rosterMap.begin(); roster != rosterMap.end(); ++roster) {
                     if (roster->bareJid == bareJid) {
+                        gkEventLogger->publishEvent(tr("Gathering archived messages for XMPP user, \"%1\", from the database!").arg(roster->bareJid), GkSeverity::Debug,
+                                                    "", false, true, false, false, false);
                         if (!roster->messages.isEmpty()) {
                             for (auto iter = roster->messages.begin(); iter != roster->messages.end(); ++iter) {
                                 if (!iter->presented && insertData) {

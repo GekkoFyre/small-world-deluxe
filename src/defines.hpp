@@ -446,7 +446,7 @@ namespace Network {
 
         struct GkXmppArchiveMsg {
             bool presented = false;
-            QXmppArchiveMessage message;
+            QXmppArchiveMessage message; // TODO: Implement proper functionality for this or remove it completely!
         };
 
         struct GkClientSettings {
