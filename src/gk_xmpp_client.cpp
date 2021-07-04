@@ -305,7 +305,7 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
             QObject::connect(m_xmppCarbonMgr.get(), SIGNAL(messageSent(const QXmppMessage &)), this, SLOT(recvXmppMsgUpdate(const QXmppMessage &)));
             QObject::connect(m_xmppCarbonMgr.get(), SIGNAL(messageReceived(const QXmppMessage &)), this, SLOT(recvXmppMsgUpdate(const QXmppMessage &)));
         }
-        
+
         QObject::connect(m_registerManager.get(), SIGNAL(registrationFormReceived(const QXmppRegisterIq &)),
                          this, SLOT(handleRegistrationForm(const QXmppRegisterIq &)));
 
@@ -667,6 +667,81 @@ bool GkXmppClient::isJidOnline(const QString &bareJid)
 }
 
 /**
+ * @brief GkXmppClient::calcMinTimestampForXmppMsgHistory calculates the most minimum timestamp applicable to a QList of
+ * XMPP messages for use in message history archive retrieval functions and so on.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid The user we are in communiqué with!
+ * @param msg_history The given list of XMPP messages to calculate the most minimum QDateTime timestamp from.
+ * @return The most mimimum QDateTime timestamp applicable to the given list of XMPP messages.
+ */
+QDateTime GkXmppClient::calcMinTimestampForXmppMsgHistory(const QString &bareJid, const QList<GkXmppCallsign> &msg_history)
+{
+    try {
+        if (!msg_history.isEmpty()) {
+            QDateTime min_timestamp = QDateTime::currentDateTimeUtc();
+            for (const auto &stanza: msg_history) {
+                if (stanza.bareJid == bareJid) {
+                    for (const auto &mam: stanza.messages) {
+                        if (mam.message.isXmppStanza() && !mam.message.body().isEmpty()) {
+                            min_timestamp = stanza.messages.at(0).message.stamp();
+                            if (msg_history.size() > 1) {
+                                if (min_timestamp < mam.message.stamp()) {
+                                    min_timestamp = mam.message.stamp();
+                                }
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+
+                    break;
+                }
+            }
+
+            return min_timestamp;
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(tr("An error has occurred whilst calculating timestamp information from XMPP message history data.\n\n%1").arg(QString::fromStdString(e.what())).toStdString()));
+    }
+
+    return QDateTime::currentDateTimeUtc();
+}
+
+/**
+ * @brief GkXmppClient::calcMaxTimestampForXmppMsgHistory calculates the most maximum timestamp applicable to a QList of
+ * XMPP messages for use in message history archive retrieval functions and so on.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bareJid The user we are in communiqué with!
+ * @param msg_history The given list of XMPP messages to calculate the most maxmimum QDateTime timestamp from.
+ * @return The most maximum QDateTime timestamp applicable to the given list of XMPP messages.
+ */
+QDateTime GkXmppClient::calcMaxTimestampForXmppMsgHistory(const QString &bareJid, const QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &msg_history)
+{
+    try {
+        if (!msg_history.isEmpty()) {
+            if (msg_history.size() > 1) {
+                for (const auto &stanza: msg_history) {
+                    if (stanza.bareJid == bareJid) {
+                        QDateTime max_timestamp = stanza.messages.at(0).message.stamp();
+                        for (const auto &mam: stanza.messages) {
+                            if (max_timestamp > mam.message.stamp()) {
+                                max_timestamp = mam.message.stamp();
+                            }
+                        }
+
+                        return max_timestamp;
+                    }
+                }
+            }
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(tr("An error has occurred whilst calculating timestamp information from XMPP message history data.\n\n%1").arg(QString::fromStdString(e.what())).toStdString()));
+    }
+
+    return QDateTime::currentDateTimeUtc();
+}
+
+/**
  * @brief GkXmppClient::getRegistrationMgr
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return
@@ -681,13 +756,13 @@ std::shared_ptr<QXmppRegistrationManager> GkXmppClient::getRegistrationMgr()
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @return
  */
-QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign> GkXmppClient::getRosterMap()
+QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> GkXmppClient::getRosterMap()
 {
     if (!m_rosterList.isEmpty()) {
         return m_rosterList;
     }
 
-    return QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign>();
+    return QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign>();
 }
 
 /**
@@ -695,12 +770,11 @@ QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign> GkXmppClient::getRosterMap()
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param rosterList
  */
-void GkXmppClient::updateRosterMap(const QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &rosterList)
+void GkXmppClient::updateRosterMap(const QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &rosterList)
 {
     if (!rosterList.isEmpty()) {
         std::lock_guard<std::mutex> lock_guard(m_updateRosterMapMtx);
         m_rosterList.clear();
-        m_rosterList.shrink_to_fit();
         std::copy(rosterList.begin(), rosterList.end(), std::back_inserter(m_rosterList));
     }
 
@@ -894,19 +968,12 @@ void GkXmppClient::getArchivedMessages(const QString &to, const QString &node, c
                 if (!start.isValid()) {
                     if (to == roster.bareJid && jid != m_connDetails.jid) {
                         if (!roster.messages.isEmpty()) {
-                            QList<QXmppMessage> msg_history;
-                            for (const auto &message: roster.messages) {
-                                msg_history.push_back(message.message);
-                            }
+                            const auto min_timestamp = calcMinTimestampForXmppMsgHistory(to, m_rosterList);
+                            gkEventLogger->publishEvent(tr("Minimum date required for message archive retrieval is: %1").arg(QDateTime(min_timestamp).toString("dd MMM yyyy @ hh:mm:ss.zzz")),
+                                                        GkSeverity::Debug, "", false, true, false, false);
+                            m_xmppMamMgr->retrieveArchivedMessages(roster.bareJid, "", m_connDetails.jid, min_timestamp, QDateTime(), resultSetQuery);
 
-                            if (!msg_history.isEmpty()) {
-                                const auto min_timestamp = gkStringFuncs->calcMinTimestampForXmppMsgHistory(msg_history);
-                                gkEventLogger->publishEvent(tr("Minimum date required for message archive retrieval is: %1").arg(QDateTime(min_timestamp).toString("dd MMM yyyy @ hh:mm:ss.zzz")),
-                                                            GkSeverity::Debug, "", false, true, false, false);
-                                m_xmppMamMgr->retrieveArchivedMessages(roster.bareJid, "", m_connDetails.jid, min_timestamp, QDateTime(), resultSetQuery);
-
-                                return;
-                            }
+                            return;
                         }
 
                         break;

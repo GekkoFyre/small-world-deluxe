@@ -70,11 +70,7 @@ GkXmppRecvMsgsTableViewModel::GkXmppRecvMsgsTableViewModel(QPointer<QTableView> 
                                                            QWidget *parent) : QAbstractTableModel(parent)
 {
     setParent(parent);
-
-    proxyModel = new QSortFilterProxyModel(parent);
-    tableView->setModel(proxyModel);
     m_xmppClient = std::move(xmppClient);
-    proxyModel->setSourceModel(this);
 
     return;
 }
@@ -124,6 +120,7 @@ void GkXmppRecvMsgsTableViewModel::insertData(const QString &bareJid, const QStr
 
         auto top = this->createIndex((m_data.count() + 1), 0, nullptr);
         auto bottom = this->createIndex((m_data.count() + 1), GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_TOTAL_IDX, nullptr);
+
         emit dataChanged(top, bottom);
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(e.what()));

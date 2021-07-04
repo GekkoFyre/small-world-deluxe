@@ -129,10 +129,15 @@ public:
     [[nodiscard]] bool isJidOnline(const QString &bareJid);
 
     //
+    // Date & Time Management
+    [[nodiscard]] QDateTime calcMinTimestampForXmppMsgHistory(const QString &bareJid, const QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &msg_history);
+    [[nodiscard]] QDateTime calcMaxTimestampForXmppMsgHistory(const QString &bareJid, const QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &msg_history);
+
+    //
     // User, roster and presence details
     std::shared_ptr<QXmppRegistrationManager> getRegistrationMgr();
-    QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign> getRosterMap();
-    void updateRosterMap(const QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &rosterList);
+    QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> getRosterMap();
+    void updateRosterMap(const QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &rosterList);
     QXmppPresence statusToPresence(const Network::GkXmpp::GkOnlineStatus &status);
     Network::GkXmpp::GkOnlineStatus presenceToStatus(const QXmppPresence::AvailableStatusType &xmppPresence);
     QString presenceToString(const QXmppPresence::AvailableStatusType &xmppPresence);
@@ -294,7 +299,7 @@ private:
     std::shared_ptr<QXmppRosterManager> m_rosterManager;
     QStringList rosterGroups;
     QVector<QString> m_blockList;
-    QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign> m_rosterList;   // A list of all the bareJids, including the client themselves!
+    QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> m_rosterList;   // A list of all the bareJids, including the client themselves!
 
     //
     // Filesystem & Directories

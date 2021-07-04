@@ -110,9 +110,10 @@ private slots:
     //
     // QXmppMamManager handling
     void msgArchiveSuccReceived();
-    void procMamArchive(const QString &bareJid);
+    void procMamArchive(const QString &bareJid, const bool &wipeExistingHistory = false, const bool &presented = false);
     void getArchivedMessages();
-    void getArchivedMessagesFromDb(const QString &bareJid, const bool &insertData, const bool &presented = false);
+    void getArchivedMessagesFromDb(const QString &bareJid, const bool &insertData, const bool &wipeExistingHistory = false,
+                                   const bool &updateSortFilterProxy = false, const bool &presented = false);
 
 signals:
     void updateToolbar(const QString &value);
@@ -123,7 +124,7 @@ signals:
 
     //
     // QXmppMamManager handling
-    void updateMamArchive(const QString &bareJid);
+    void updateMamArchive(const QString &bareJid, const bool &wipeExistingHistory = false, const bool &presented = false);
 
 private:
     Ui::GkXmppMessageDialog *ui;
