@@ -50,6 +50,7 @@
 #include "src/models/tableview/gk_xmpp_roster_blocked_model.hpp"
 #include "src/gk_logger.hpp"
 #include <memory>
+#include <QList>
 #include <QImage>
 #include <QTimer>
 #include <QVector>
@@ -197,7 +198,7 @@ private:
     // QXmpp and XMPP related
     //
     GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
-    QVector<GekkoFyre::Network::GkXmpp::GkXmppCallsign> m_rosterList;
+    QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> m_rosterList;
 
     //
     // Miscellaneous

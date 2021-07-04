@@ -247,69 +247,6 @@ std::string StringFuncs::csvOutputString(const std::deque<std::string> &csv_elem
 }
 
 /**
- * @brief StringFuncs::calcMinTimestampForXmppMsgHistory calculates the most minimum timestamp applicable to a QList of
- * XMPP messages for use in message history archive retrieval functions and so on.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param messages The given list of XMPP messages to calculate the most minimum QDateTime timestamp from.
- * @return The most mimimum QDateTime timestamp applicable to the given list of XMPP messages.
- */
-QDateTime StringFuncs::calcMinTimestampForXmppMsgHistory(const QList<QXmppMessage> &messages)
-{
-    try {
-        if (!messages.isEmpty()) {
-            QDateTime min_timestamp = QDateTime::currentDateTimeUtc();
-            for (const auto &message: messages) {
-                if (message.isXmppStanza() && !message.body().isEmpty()) {
-                    min_timestamp = messages.at(0).stamp();
-                    if (messages.size() > 1) {
-                        if (min_timestamp < message.stamp()) {
-                            min_timestamp = message.stamp();
-                        }
-                    } else {
-                        break;
-                    }
-                }
-            }
-
-            return min_timestamp;
-        }
-    } catch (const std::exception &e) {
-        std::throw_with_nested(std::runtime_error(tr("An error has occurred whilst calculating timestamp information from XMPP message history data.\n\n%1").arg(QString::fromStdString(e.what())).toStdString()));
-    }
-
-    return QDateTime::currentDateTimeUtc();
-}
-
-/**
- * @brief StringFuncs::calcMaxTimestampForXmppMsgHistory calculates the most maximum timestamp applicable to a QList of
- * XMPP messages for use in message history archive retrieval functions and so on.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param messages The given list of XMPP messages to calculate the most maxmimum QDateTime timestamp from.
- * @return The most maximum QDateTime timestamp applicable to the given list of XMPP messages.
- */
-QDateTime StringFuncs::calcMaxTimestampForXmppMsgHistory(const QList<QXmppMessage> &messages)
-{
-    try {
-        if (!messages.isEmpty()) {
-            QDateTime max_timestamp = messages.at(0).stamp();
-            if (messages.size() > 1) {
-                for (const auto &message: messages) {
-                    if (max_timestamp > message.stamp()) {
-                        max_timestamp = message.stamp();
-                    }
-                }
-            }
-
-            return max_timestamp;
-        }
-    } catch (const std::exception &e) {
-        std::throw_with_nested(std::runtime_error(tr("An error has occurred whilst calculating timestamp information from XMPP message history data.\n\n%1").arg(QString::fromStdString(e.what())).toStdString()));
-    }
-
-    return QDateTime::currentDateTimeUtc();
-}
-
-/**
  * @brief StringFuncs::htmlSpecialCharEncoding
  * @author wysota <https://www.qtcentre.org/threads/52456-HTML-Unicode-ampersand-encoding?p=234858#post234858>,
  * Phobos A. D'thorga <phobos.gekko@gekkofyre.io>.

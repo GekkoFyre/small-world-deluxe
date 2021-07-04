@@ -947,7 +947,9 @@ MainWindow::~MainWindow()
         vu_meter_thread.join();
     }
 
-    delete db; // Free the pointer for the Google LevelDB library!
+    // delete db;
+    // TODO: Must fix SEGFAULT's that occur with the aforementioned line of code...
+
     delete ui;
 }
 
