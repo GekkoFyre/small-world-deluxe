@@ -49,6 +49,7 @@
 #include <QFile>
 #include <QImage>
 #include <QBuffer>
+#include <QSysInfo>
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QImageReader>
@@ -209,8 +210,12 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         m_presence = std::make_shared<QXmppPresence>();
 
         if (m_versionMgr) {
+            QSysInfo sysInfo;
             m_versionMgr->setClientName(General::companyNameMin);
             m_versionMgr->setClientVersion(General::appVersion);
+            m_versionMgr->setClientOs(sysInfo.prettyProductName());
+            gkEventLogger->publishEvent(tr("Client O/S configured as, \"%1\", with regard to XMPP settings.").arg(sysInfo.prettyProductName()), GkSeverity::Debug,
+                                        "", false, true, false, false, false);
             QObject::connect(m_versionMgr.get(), SIGNAL(versionReceived(const QXmppVersionIq &)),
                              this, SLOT(versionReceivedSlot(const QXmppVersionIq &)));
         }
@@ -964,46 +969,84 @@ QString GkXmppClient::obtainAvatarFilePath()
 }
 
 /**
- * @brief GkXmppClient::getArchivedMessages retrieves archived messages. For each received message, the
+ * @brief GkXmppClient::getArchivedMessagesBulk retrieves archived messages. For each received message, the
  * `m_xmppMamMgr->archiveMessageReceived()` signal is emitted. Once all messages are received, the `m_xmppMamMgr->resultsRecieved()`
  * signal is emitted. It returns a result set that can be used to page through the results. The number of results may
- * be limited by the server.
+ * be limited by the server. This function in particular tries to receive all of the archived messages in question via
+ * a bulk manner, grabbing what it can and as much of it as possible, quite unlike its cousin function which is much
+ * more fine-tuned, GkXmppClient::getArchivedMessagesFine().
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param to
  * @param node
- * @param jid
+ * @param from
  * @param start
  * @param end
  * @param resultSetQuery
+ * @see GkXmppClient::getArchivedMessagesFine().
  */
-void GkXmppClient::getArchivedMessages(const QString &to, const QString &node, const QString &jid, const QDateTime &start,
-                                       const QDateTime &end, const QXmppResultSetQuery &resultSetQuery)
+void GkXmppClient::getArchivedMessagesBulk(const QString &to, const QString &node, const QString &from, const QDateTime &start,
+                                           const QDateTime &end, const QXmppResultSetQuery &resultSetQuery)
+{
+    Q_UNUSED(node);
+    Q_UNUSED(end);
+    Q_UNUSED(start);
+    Q_UNUSED(end);
+
+    try {
+        //
+        // It is VERY IMPORTANT that we execute this particular function!
+        updateRecordedMsgHistory(to);
+        updateRecordedMsgHistory(from);
+
+        //
+        // Retrieve any archived messages from the given XMPP server as according to the specification, XEP-0313!
+        m_xmppMamMgr->retrieveArchivedMessages(to, "", from, QDateTime::currentDateTime().addDays(-5), QDateTime::currentDateTime(), resultSetQuery);
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true, false);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppClient::getArchivedMessagesFine retrieves archived messages. For each received message, the
+ * `m_xmppMamMgr->archiveMessageReceived()` signal is emitted. Once all messages are received, the `m_xmppMamMgr->resultsRecieved()`
+ * signal is emitted. It returns a result set that can be used to page through the results. The number of results may
+ * be limited by the server. This particular function tries to selectively receive only a few archived messages at a
+ * time, quite unlike its cousin function, GkXmppClient::getArchivedMessagesBulk().
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param to
+ * @param node
+ * @param from
+ * @param start
+ * @param end
+ * @param resultSetQuery
+ * @see GkXmppClient::getArchivedMessagesBulk().
+ */
+void GkXmppClient::getArchivedMessagesFine(const QString &to, const QString &node, const QString &from,
+                                           const QDateTime &start, const QDateTime &end,
+                                           const QXmppResultSetQuery &resultSetQuery)
 {
     Q_UNUSED(node);
     Q_UNUSED(end);
 
     try {
         if (!m_rosterList.isEmpty()) {
-            for (const auto &roster: m_rosterList) {
-                updateRecordedMsgHistory(roster.bareJid);
-                if (!start.isValid()) {
-                    if (to == roster.bareJid && jid != m_connDetails.jid) {
-                        if (!roster.messages.isEmpty()) {
-                            const auto min_timestamp = calcMinTimestampForXmppMsgHistory(to, m_rosterList);
-                            gkEventLogger->publishEvent(tr("Minimum date required for message archive retrieval is: %1").arg(QDateTime(min_timestamp).toString("dd MMM yyyy @ hh:mm:ss.zzz")),
-                                                        GkSeverity::Debug, "", false, true, false, false);
-                            m_xmppMamMgr->retrieveArchivedMessages(roster.bareJid, "", m_connDetails.jid, min_timestamp, QDateTime(), resultSetQuery);
-
-                            return;
-                        }
-
-                        break;
-                    }
-                }
+            updateRecordedMsgHistory(from); // It is VERY IMPORTANT that we execute this function!
+            QDateTime min_timestamp;
+            if (start.isValid()) {
+                min_timestamp = start;
+            } else {
+                min_timestamp = calcMinTimestampForXmppMsgHistory(from, m_rosterList);
             }
-        }
 
-        m_xmppMamMgr->retrieveArchivedMessages(to, "", jid, QDateTime::currentDateTime().addDays(-28), QDateTime::currentDateTime(), resultSetQuery);
+            gkEventLogger->publishEvent(tr("Minimum date required for message archive retrieval is: %1").arg(QDateTime(min_timestamp).toString("dd MMM yyyy @ hh:mm:ss.zzz")),
+                                        GkSeverity::Debug, "", false, true, false, false);
+
+            //
+            // Retrieve any archived messages from the given XMPP server as according to the specification, XEP-0313!
+            m_xmppMamMgr->retrieveArchivedMessages(to, "", from, min_timestamp, QDateTime::currentDateTime(), resultSetQuery);
+        }
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true, false);
     }
@@ -1499,7 +1542,7 @@ void GkXmppClient::updateClientVCardForm(const QString &first_name, const QStrin
 void GkXmppClient::sendXmppMsg(const QXmppMessage &msg)
 {
     if (msg.isXmppStanza()) {
-        sendPacket(msg);
+        const bool msg_sent_succ = sendPacket(msg);
     }
 
     return;
@@ -2179,6 +2222,9 @@ void GkXmppClient::archivedMessageReceived(const QString &queryId, const QXmppMe
             }
         }
 
+        //
+        // NOTE: DO NOT DELETE THIS WITHOUT analyzing the differences in the two code blocks CAREFULLY, firstly!
+        //
         QList<GkXmppMamMsg> mam_msg_list;
         for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
             if (iter->bareJid == message.to()) {
@@ -2219,7 +2265,8 @@ void GkXmppClient::resultsRecieved(const QString &queryId, const QXmppResultSetR
 
 /**
  * @brief GkXmppClient::updateRecordedMsgHistory will update the recorded message history for all users on the variable,
- * `m_rosterList`, and is designed to be run only just once.
+ * `m_rosterList`. Originally designed to be only executed once, it has now been refactored to be run multiple times as
+ * required.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param bareJid The user identity to update in question with regard to message history.
  */

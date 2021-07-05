@@ -51,6 +51,8 @@
 #include <QIcon>
 #include <QPixmap>
 #include <QKeyEvent>
+#include <QFileDialog>
+#include <QStandardPaths>
 
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
@@ -187,51 +189,6 @@ GkXmppMessageDialog::~GkXmppMessageDialog()
 }
 
 /**
- * @brief GkXmppMessageDialog::on_toolButton_font_clicked
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkXmppMessageDialog::on_toolButton_font_clicked()
-{
-    return;
-}
-
-/**
- * @brief GkXmppMessageDialog::on_toolButton_font_reset_clicked
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkXmppMessageDialog::on_toolButton_font_reset_clicked()
-{
-    return;
-}
-
-/**
- * @brief GkXmppMessageDialog::on_toolButton_insert_clicked
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkXmppMessageDialog::on_toolButton_insert_clicked()
-{
-    return;
-}
-
-/**
- * @brief GkXmppMessageDialog::on_toolButton_attach_file_clicked
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkXmppMessageDialog::on_toolButton_attach_file_clicked()
-{
-    return;
-}
-
-/**
- * @brief GkXmppMessageDialog::on_toolButton_view_roster_clicked
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkXmppMessageDialog::on_toolButton_view_roster_clicked()
-{
-    return;
-}
-
-/**
  * @brief GkXmppMessageDialog::on_tableView_recv_msg_dlg_customContextMenuRequested
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param pos
@@ -256,6 +213,67 @@ void GkXmppMessageDialog::on_textEdit_tx_msg_dialog_textChanged()
  */
 void GkXmppMessageDialog::on_lineEdit_message_search_returnPressed()
 {
+    return;
+}
+
+/**
+ * @brief GkXmppMessageDialog::on_toolButton_view_roster_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
+void GkXmppMessageDialog::on_toolButton_view_roster_triggered(QAction *arg1)
+{
+    QMessageBox::information(nullptr, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+    return;
+}
+
+/**
+ * @brief GkXmppMessageDialog::on_toolButton_font_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
+void GkXmppMessageDialog::on_toolButton_font_triggered(QAction *arg1)
+{
+    QMessageBox::information(nullptr, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+    return;
+}
+
+/**
+ * @brief GkXmppMessageDialog::on_toolButton_font_reset_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
+void GkXmppMessageDialog::on_toolButton_font_reset_triggered(QAction *arg1)
+{
+    QMessageBox::information(nullptr, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+    return;
+}
+
+/**
+ * @brief GkXmppMessageDialog::on_toolButton_insert_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
+void GkXmppMessageDialog::on_toolButton_insert_triggered(QAction *arg1)
+{
+    QMessageBox::information(nullptr, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+    return;
+}
+
+/**
+ * @brief GkXmppMessageDialog::on_toolButton_attach_file_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
+void GkXmppMessageDialog::on_toolButton_attach_file_triggered(QAction *arg1)
+{
+    QString filePath = QFileDialog::getOpenFileName(nullptr, tr("Open Image"), QStandardPaths::writableLocation(QStandardPaths::PicturesLocation),
+                                                    tr("All Image Files (*.png *.jpg *.jpeg *.jpe *.jfif *.exif *.bmp *.gif);;PNG (*.png);;JPEG (*.jpg *.jpeg *.jpe *.jfif *.exif);;Bitmap (*.bmp);;GIF (*.gif);;All Files (*.*)"));
+    if (!filePath.isEmpty()) {
+        // TODO: Implement this function!
+        return;
+    }
+
     return;
 }
 
@@ -351,6 +369,7 @@ void GkXmppMessageDialog::submitMsgEnterKey()
                     const auto toMsg = createXmppMessageIq(bareJid, gkConnDetails.jid, plaintext);
                     if (toMsg.isXmppStanza()) {
                         emit sendXmppMsg(toMsg);
+                        m_xmppClient->getArchivedMessagesFine(gkConnDetails.jid, QString(), bareJid);
                     }
                 }
             }
@@ -519,13 +538,13 @@ void GkXmppMessageDialog::procMamArchive(const bool &wipeExistingHistory, const 
 }
 
 /**
- * @brief GkXmppMessageDialog::getArchivedMessages
+ * @brief GkXmppMessageDialog::getArchivedMessagesBulk
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void GkXmppMessageDialog::getArchivedMessages()
 {
     for (const auto &bareJid: m_bareJids) {
-        m_xmppClient->getArchivedMessages(gkConnDetails.jid, QString(), bareJid); // Get archived messages sent by the Jid in question!
+        m_xmppClient->getArchivedMessagesBulk(gkConnDetails.jid, QString(), bareJid); // Get archived messages sent by the Jid in question!
     }
 
     return;

@@ -46,6 +46,7 @@
 #include "src/file_io.hpp"
 #include "src/gk_logger.hpp"
 #include "src/gk_string_funcs.hpp"
+#include "src/gk_xmpp_msg_handler.hpp"
 #include "src/models/system/gk_network_ping_model.hpp"
 #include <boost/exception/all.hpp>
 #include <boost/filesystem.hpp>
@@ -179,9 +180,12 @@ public slots:
 
     //
     // QXmppMamManager handling
-    void getArchivedMessages(const QString &to = QString(), const QString &node = QString(), const QString &jid = QString(),
-                             const QDateTime &start = QDateTime(), const QDateTime &end = QDateTime(),
-                             const QXmppResultSetQuery &resultSetQuery = QXmppResultSetQuery());
+    void getArchivedMessagesBulk(const QString &to = QString(), const QString &node = QString(), const QString &from = QString(),
+                                 const QDateTime &start = QDateTime(), const QDateTime &end = QDateTime(),
+                                 const QXmppResultSetQuery &resultSetQuery = QXmppResultSetQuery());
+    void getArchivedMessagesFine(const QString &to = QString(), const QString &node = QString(), const QString &from = QString(),
+                                 const QDateTime &start = QDateTime(), const QDateTime &end = QDateTime(),
+                                 const QXmppResultSetQuery &resultSetQuery = QXmppResultSetQuery());
 
     //
     // Message handling
