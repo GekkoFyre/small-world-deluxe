@@ -142,7 +142,6 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
 
         if (m_xmppCarbonMgr) {
             addExtension(m_xmppCarbonMgr.get());
-            m_xmppCarbonMgr->setCarbonsEnabled(true);
         }
 
         //
@@ -249,8 +248,15 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
                          this, SLOT(archiveListReceived(const QList<QXmppArchiveChat> &, const QXmppResultSetReply &)));
         QObject::connect(m_xmppMamMgr.get(), SIGNAL(archivedMessageReceived(const QString &, const QXmppMessage &)),
                          this, SLOT(archivedMessageReceived(const QString &, const QXmppMessage &)));
+
+        //
+        // The spelling mistake for the SIGNAL, QXmppMamManager::resultsRecieved(), seems to be unknowingly intentional by
+        // the authors of QXmpp, according to the documentation provided here: https://doc.qxmpp.org/qxmpp-1/classQXmppMamManager.html
+        // Tests done and provided by GekkoFyre Networks also show that the SIGNAL works as intended only with the spelling
+        // mistake present, so whoever pushed through this change must likely be dyslexic or at the very least, a bad speller!
+        //
         QObject::connect(m_xmppMamMgr.get(), SIGNAL(resultsRecieved(const QString &, const QXmppResultSetReply &, bool)),
-                         this, SLOT(resultsRecieved(const QString &, const QXmppResultSetReply &, bool)));
+                         this, SLOT(resultsReceived(const QString &, const QXmppResultSetReply &, bool)));
 
         //
         // Find the XMPP servers as defined by either the user themselves or GekkoFyre Networks...
@@ -306,11 +312,6 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         // the most minimal of in-band user registration is supported by said server!
         //
         QObject::connect(this, SIGNAL(messageReceived(const QXmppMessage &)), this, SLOT(recvXmppMsgUpdate(const QXmppMessage &)));
-        if (m_xmppCarbonMgr->carbonsEnabled()) {
-            QObject::connect(m_xmppCarbonMgr.get(), SIGNAL(messageSent(const QXmppMessage &)), this, SLOT(recvXmppMsgUpdate(const QXmppMessage &)));
-            QObject::connect(m_xmppCarbonMgr.get(), SIGNAL(messageReceived(const QXmppMessage &)), this, SLOT(recvXmppMsgUpdate(const QXmppMessage &)));
-        }
-
         QObject::connect(m_registerManager.get(), SIGNAL(registrationFormReceived(const QXmppRegisterIq &)),
                          this, SLOT(handleRegistrationForm(const QXmppRegisterIq &)));
 
@@ -393,6 +394,12 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
             //
             // Request the client's own vCard from the server...
             m_vCardManager->requestClientVCard();
+
+            //
+            // Enable carbon copies for this client!
+            m_xmppCarbonMgr->setCarbonsEnabled(true);
+            QObject::connect(m_xmppCarbonMgr.get(), SIGNAL(messageSent(const QXmppMessage &)), this, SLOT(recvXmppMsgUpdate(const QXmppMessage &)));
+            QObject::connect(m_xmppCarbonMgr.get(), SIGNAL(messageReceived(const QXmppMessage &)), this, SLOT(recvXmppMsgUpdate(const QXmppMessage &)));
         });
 
         QObject::connect(this, &QXmppClient::disconnected, this, [=]() {
@@ -970,7 +977,7 @@ QString GkXmppClient::obtainAvatarFilePath()
 
 /**
  * @brief GkXmppClient::getArchivedMessagesBulk retrieves archived messages. For each received message, the
- * `m_xmppMamMgr->archiveMessageReceived()` signal is emitted. Once all messages are received, the `m_xmppMamMgr->resultsRecieved()`
+ * `m_xmppMamMgr->archivedMessageReceived()` signal is emitted. Once all messages are received, the `m_xmppMamMgr->resultsRecieved()`
  * signal is emitted. It returns a result set that can be used to page through the results. The number of results may
  * be limited by the server. This function in particular tries to receive all of the archived messages in question via
  * a bulk manner, grabbing what it can and as much of it as possible, quite unlike its cousin function which is much
@@ -1010,7 +1017,7 @@ void GkXmppClient::getArchivedMessagesBulk(const QString &to, const QString &nod
 
 /**
  * @brief GkXmppClient::getArchivedMessagesFine retrieves archived messages. For each received message, the
- * `m_xmppMamMgr->archiveMessageReceived()` signal is emitted. Once all messages are received, the `m_xmppMamMgr->resultsRecieved()`
+ * `m_xmppMamMgr->archivedMessageReceived()` signal is emitted. Once all messages are received, the `m_xmppMamMgr->resultsRecieved()`
  * signal is emitted. It returns a result set that can be used to page through the results. The number of results may
  * be limited by the server. This particular function tries to selectively receive only a few archived messages at a
  * time, quite unlike its cousin function, GkXmppClient::getArchivedMessagesBulk().
@@ -2195,27 +2202,32 @@ void GkXmppClient::archiveChatReceived(const QXmppArchiveChat &chat, const QXmpp
 }
 
 /**
- * @brief GkXmppClient::archivedMessageReceived is a signal that's emitted when an archived message is received.
+ * @brief GkXmppClient::archivedMessageReceived is a signal that's emitted when an archived message is received. Inserts
+ * QXmppMessage stanzas into the class-wide variable, `m_rosterList`, if applicable.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param queryId
- * @param message
+ * @param queryId Unknown.
+ * @param message The message stanza itself that the comparison is either to be made against and/or to be inserted into
+ * memory via the class-wide variable, `m_rosterList`.
+ * @see GkXmppClient::getArchivedMessagesBulk(), GkXmppClient::getArchivedMessagesFine(), GkXmppClient::filterArchivedMessage()
  */
 void GkXmppClient::archivedMessageReceived(const QString &queryId, const QXmppMessage &message)
 {
     Q_UNUSED(queryId);
+
+    //
+    // TODO: Optimize this function somehow? Surely there's gotta be a better way than comparing message-by-message
+    //  every MAM archive pull...
+
     try {
         for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
             if (iter->bareJid == message.from()) {
                 QList<GkXmppMamMsg> mam_msg_list;
                 if (message.isXmppStanza() && !message.body().isEmpty()) {
-                    GkXmppMamMsg mam_msg;
-                    mam_msg.message = message;
-                    mam_msg.presented = false;
-                    mam_msg_list.push_back(mam_msg);
-                }
-
-                if (!mam_msg_list.isEmpty()) {
-                    std::copy(mam_msg_list.begin(), mam_msg_list.end(), std::back_inserter(iter->messages));
+                    if (!iter->messages.isEmpty()) {
+                        m_filterArchivedMsgFut.emplace_back(std::make_pair(message, std::async(&GkXmppClient::filterArchivedMessage, this, m_rosterList, message)));
+                    } else {
+                        insertArchiveMessage(message);
+                    }
                 }
 
                 break;
@@ -2225,18 +2237,15 @@ void GkXmppClient::archivedMessageReceived(const QString &queryId, const QXmppMe
         //
         // NOTE: DO NOT DELETE THIS WITHOUT analyzing the differences in the two code blocks CAREFULLY, firstly!
         //
-        QList<GkXmppMamMsg> mam_msg_list;
         for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
             if (iter->bareJid == message.to()) {
+                QList<GkXmppMamMsg> mam_msg_list;
                 if (message.isXmppStanza() && !message.body().isEmpty()) {
-                    GkXmppMamMsg mam_msg;
-                    mam_msg.message = message;
-                    mam_msg.presented = false;
-                    mam_msg_list.push_back(mam_msg);
-                }
-
-                if (!mam_msg_list.isEmpty()) {
-                    std::copy(mam_msg_list.begin(), mam_msg_list.end(), std::back_inserter(iter->messages));
+                    if (!iter->messages.isEmpty()) {
+                        m_filterArchivedMsgFut.emplace_back(std::make_pair(message, std::async(&GkXmppClient::filterArchivedMessage, this, m_rosterList, message)));
+                    } else {
+                        insertArchiveMessage(message);
+                    }
                 }
 
                 break;
@@ -2251,15 +2260,35 @@ void GkXmppClient::archivedMessageReceived(const QString &queryId, const QXmppMe
 }
 
 /**
- * @brief GkXmppClient::resultsRecieved is a signal that's emitted when all results for a request have been received.
+ * @brief GkXmppClient::resultsReceived is a signal that's emitted when all results for a request have been received.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param queryId
  * @param resultSetReply
  * @param complete
  */
-void GkXmppClient::resultsRecieved(const QString &queryId, const QXmppResultSetReply &resultSetReply, bool complete)
+void GkXmppClient::resultsReceived(const QString &queryId, const QXmppResultSetReply &resultSetReply, bool complete)
 {
-    emit msgArchiveSuccReceived();
+    try {
+        //
+        // Unwrap the std::vector of std::async-laced std::future's and obtain the results laying therein!
+        gkEventLogger->publishEvent(tr("There are %1 archived messages to unpack!").arg(QString::number(m_filterArchivedMsgFut.size() + 1)), GkSeverity::Debug,
+                                    "", false, true, false, false, false);
+
+        for (auto filter = m_filterArchivedMsgFut.begin(); filter != m_filterArchivedMsgFut.end(); ++filter) {
+            const bool result = filter->second.get();
+            if (result) { // The message therefore does not exist within memory (i.e. `m_rosterList`) already!
+                insertArchiveMessage(filter->first);
+            }
+
+            m_filterArchivedMsgFut.erase(filter); // Erase the object from the std::vector() as we can't call .get() on
+            // the same std::future() twice, at least not without invoking an exception/crash!
+        }
+
+        emit msgArchiveSuccReceived();
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(e.what(), GkSeverity::Fatal, "", false, true, false, true);
+    }
+
     return;
 }
 
@@ -2296,6 +2325,92 @@ void GkXmppClient::updateRecordedMsgHistory(const QString &bareJid)
         }
     } catch (const std::exception &e) {
         gkStringFuncs->print_exception(e);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppClient::filterArchivedMessage filters archived messages according to XMPP standard, XEP-0313, as they
+ * come in via functions, GkXmppClient::getArchivedMessagesBulk() and/or GkXmppClient::getArchivedMessagesFine(), to see
+ * if they're already existing in program memory already via variable, `m_rosterList`.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param rosterList A reference to the class-wide variable, `m_rosterList`.
+ * @param message The message stanza itself that the comparison is to be made against.
+ * @see GkXmppClient::getArchivedMessagesBulk(), GkXmppClient::getArchivedMessagesFine(), GkXmppClient::archivedMessageReceived().
+ */
+bool GkXmppClient::filterArchivedMessage(const QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &rosterList,
+                                         const QXmppMessage &message)
+{
+    try {
+        for (const auto &roster: rosterList) {
+            if (roster.bareJid == message.from()) {
+                if (message.isXmppStanza() && !message.body().isEmpty()) {
+                    for (const auto &existing: roster.messages) {
+                        if (existing.message.stamp() != message.stamp() && existing.message.body() != message.body()) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        //
+        // NOTE: DO NOT DELETE THIS WITHOUT analyzing the differences in the two code blocks CAREFULLY, firstly!
+        //
+        for (const auto &roster: rosterList) {
+            if (roster.bareJid == message.to()) {
+                if (message.isXmppStanza() && !message.body().isEmpty()) {
+                    for (const auto &existing: roster.messages) {
+                        if (existing.message.stamp() != message.stamp() && existing.message.body() != message.body()) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(e.what(), GkSeverity::Fatal, "", false, true, false, true);
+    }
+
+    return false;
+}
+
+/**
+ * @brief GkXmppClient::insertArchiveMessage inserts a QXmppMessage stanza according to XMPP standard, XEP-0313, into the
+ * class-wide variable, `m_rosterList`, but only after it has passed all the tests, including filters.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param message The message stanza itself that is to be inserted into memory.
+ * @see GkXmppClient::archivedMessageReceived().
+ */
+void GkXmppClient::insertArchiveMessage(const QXmppMessage &message)
+{
+    try {
+        if (message.isXmppStanza() && !message.body().isEmpty()) {
+            for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
+                if (iter->bareJid == message.from()) {
+                    GkXmppMamMsg mam_msg;
+                    mam_msg.message = message;
+                    mam_msg.presented = false;
+                    iter->messages.push_back(mam_msg);
+
+                    break;
+                }
+            }
+
+            for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
+                if (iter->bareJid == message.to()) {
+                    GkXmppMamMsg mam_msg;
+                    mam_msg.message = message;
+                    mam_msg.presented = false;
+                    iter->messages.push_back(mam_msg);
+
+                    break;
+                }
+            }
+        }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(e.what(), GkSeverity::Fatal, "", false, true, false, true);
     }
 
     return;

@@ -489,7 +489,6 @@ QXmppMessage GkXmppMessageDialog::createXmppMessageIq(const QString &to, const Q
     xmppMsg.setFrom(from);
     xmppMsg.setTo(to);
     xmppMsg.setBody(message);
-    xmppMsg.setStamp(QDateTime::currentDateTimeUtc());
     xmppMsg.setPrivate(false);
     xmppMsg.setReceiptRequested(true);
     xmppMsg.setType(QXmppMessage::Chat);

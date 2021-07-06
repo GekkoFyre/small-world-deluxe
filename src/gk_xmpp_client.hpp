@@ -76,6 +76,7 @@
 #include <qxmpp/QXmppRegistrationManager.h>
 #include <mutex>
 #include <queue>
+#include <future>
 #include <thread>
 #include <memory>
 #include <utility>
@@ -232,7 +233,7 @@ private slots:
     //
     // QXmppMamManager handling
     void archivedMessageReceived(const QString &queryId, const QXmppMessage &message);
-    void resultsRecieved(const QString &queryId, const QXmppResultSetReply &resultSetReply, bool complete);
+    void resultsReceived(const QString &queryId, const QXmppResultSetReply &resultSetReply, bool complete);
     void updateRecordedMsgHistory(const QString &bareJid);
 
 signals:
@@ -274,6 +275,9 @@ signals:
     void msgArchiveSuccReceived();
 
 private:
+    bool filterArchivedMessage(const QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &rosterList, const QXmppMessage &message);
+    void insertArchiveMessage(const QXmppMessage &message);
+
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::FileIo> gkFileIo;
     QPointer<GkEventLogger> gkEventLogger;
@@ -331,6 +335,7 @@ private:
     // Multithreading, mutexes, etc.
     //
     std::mutex m_updateRosterMapMtx;
+    std::vector<std::pair<QXmppMessage, std::future<bool>>> m_filterArchivedMsgFut;
 
     //
     // QXmpp and XMPP related

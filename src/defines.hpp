@@ -439,6 +439,11 @@ namespace Network {
             AvatarImg
         };
 
+        enum GkXmppPageDirection {
+            PageForwards = 0,
+            PageBackwards
+        };
+
         struct GkXmppMamMsg {
             bool presented = false;
             QXmppMessage message;
