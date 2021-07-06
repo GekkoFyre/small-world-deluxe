@@ -46,6 +46,7 @@
 #include "src/file_io.hpp"
 #include "src/gk_logger.hpp"
 #include "src/gk_string_funcs.hpp"
+#include "src/gk_xmpp_msg_handler.hpp"
 #include "src/models/system/gk_network_ping_model.hpp"
 #include <boost/exception/all.hpp>
 #include <boost/filesystem.hpp>
@@ -75,6 +76,7 @@
 #include <qxmpp/QXmppRegistrationManager.h>
 #include <mutex>
 #include <queue>
+#include <future>
 #include <thread>
 #include <memory>
 #include <utility>
@@ -179,9 +181,12 @@ public slots:
 
     //
     // QXmppMamManager handling
-    void getArchivedMessages(const QString &to = QString(), const QString &node = QString(), const QString &jid = QString(),
-                             const QDateTime &start = QDateTime(), const QDateTime &end = QDateTime(),
-                             const QXmppResultSetQuery &resultSetQuery = QXmppResultSetQuery());
+    void getArchivedMessagesBulk(const QString &to = QString(), const QString &node = QString(), const QString &from = QString(),
+                                 const QDateTime &start = QDateTime(), const QDateTime &end = QDateTime(),
+                                 const QXmppResultSetQuery &resultSetQuery = QXmppResultSetQuery());
+    void getArchivedMessagesFine(const QString &to = QString(), const QString &node = QString(), const QString &from = QString(),
+                                 const QDateTime &start = QDateTime(), const QDateTime &end = QDateTime(),
+                                 const QXmppResultSetQuery &resultSetQuery = QXmppResultSetQuery());
 
     //
     // Message handling
@@ -228,7 +233,7 @@ private slots:
     //
     // QXmppMamManager handling
     void archivedMessageReceived(const QString &queryId, const QXmppMessage &message);
-    void resultsRecieved(const QString &queryId, const QXmppResultSetReply &resultSetReply, bool complete);
+    void resultsReceived(const QString &queryId, const QXmppResultSetReply &resultSetReply, bool complete);
     void updateRecordedMsgHistory(const QString &bareJid);
 
 signals:
@@ -270,6 +275,9 @@ signals:
     void msgArchiveSuccReceived();
 
 private:
+    bool filterArchivedMessage(const QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &rosterList, const QXmppMessage &message);
+    void insertArchiveMessage(const QXmppMessage &message);
+
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::FileIo> gkFileIo;
     QPointer<GkEventLogger> gkEventLogger;
@@ -303,6 +311,10 @@ private:
     QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> m_rosterList;   // A list of all the bareJids, including the client themselves!
 
     //
+    // QXmppMamManager handling
+    QMap<qint64, std::pair<bool, QXmppMessage>> m_sharedMessageIdentifiers; // The key is the unique message timestamp and the value consists of whether the message already exists in memory!
+
+    //
     // Filesystem & Directories
     //
     boost::filesystem::path native_slash;
@@ -327,6 +339,7 @@ private:
     // Multithreading, mutexes, etc.
     //
     std::mutex m_updateRosterMapMtx;
+    std::vector<std::pair<QXmppMessage, std::future<bool>>> m_filterArchivedMsgFut;
 
     //
     // QXmpp and XMPP related

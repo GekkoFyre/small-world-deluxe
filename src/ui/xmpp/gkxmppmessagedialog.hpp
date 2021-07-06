@@ -86,14 +86,14 @@ public:
     ~GkXmppMessageDialog();
 
 private slots:
-    void on_toolButton_font_clicked();
-    void on_toolButton_font_reset_clicked();
-    void on_toolButton_insert_clicked();
-    void on_toolButton_attach_file_clicked();
-    void on_toolButton_view_roster_clicked();
     void on_tableView_recv_msg_dlg_customContextMenuRequested(const QPoint &pos);
     void on_textEdit_tx_msg_dialog_textChanged();
     void on_lineEdit_message_search_returnPressed();
+    void on_toolButton_view_roster_triggered(QAction *arg1);
+    void on_toolButton_font_triggered(QAction *arg1);
+    void on_toolButton_font_reset_triggered(QAction *arg1);
+    void on_toolButton_insert_triggered(QAction *arg1);
+    void on_toolButton_attach_file_triggered(QAction *arg1);
 
     void updateInterface(const QStringList &bareJids);
     void determineNickname();
@@ -110,10 +110,10 @@ private slots:
     //
     // QXmppMamManager handling
     void msgArchiveSuccReceived();
-    void procMamArchive(const bool &wipeExistingHistory = false, const bool &presented = false);
+    void procMamArchive(const bool &wipeExistingHistory = false);
     void getArchivedMessages();
     void getArchivedMessagesFromDb(const bool &insertData, const bool &wipeExistingHistory = false,
-                                   const bool &updateSortFilterProxy = false, const bool &presented = false);
+                                   const bool &updateSortFilterProxy = false);
 
 signals:
     void updateToolbar(const QString &value);
@@ -124,7 +124,7 @@ signals:
 
     //
     // QXmppMamManager handling
-    void updateMamArchive(const bool &wipeExistingHistory = false, const bool &presented = false);
+    void updateMamArchive(const bool &wipeExistingHistory = false);
     void updateTableModel();
 
 private:

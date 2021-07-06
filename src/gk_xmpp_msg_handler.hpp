@@ -39,55 +39,24 @@
  **
  ****************************************************************************************************/
 
-#include "src/gk_xmpp_chat.hpp"
-#include <utility>
-#include <exception>
-#include <QMessageBox>
+#pragma once
 
-using namespace GekkoFyre;
-using namespace GkAudioFramework;
-using namespace Database;
-using namespace Settings;
-using namespace Audio;
-using namespace AmateurRadio;
-using namespace Control;
-using namespace Spectrograph;
-using namespace System;
-using namespace Events;
-using namespace Logging;
-using namespace Network;
-using namespace GkXmpp;
+#include "src/defines.hpp"
+#include <memory>
+#include <QString>
+#include <QThread>
+#include <QObject>
+#include <QPointer>
+#include <QCoreApplication>
 
-GkXmppChat::GkXmppChat(QPointer<GekkoFyre::GkXmppClient> xmppClient, const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
-                       QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QThread(parent)
-{
-    setParent(parent);
-    gkEventLogger = std::move(eventLogger);
+namespace GekkoFyre {
 
-    //
-    // QXmpp and XMPP related
-    //
-    gkConnDetails = connection_details;
-    m_xmppClient = std::move(xmppClient);
+class GkXmppMsgHandler : public QObject {
+    Q_OBJECT
 
-    start();
+public:
+    explicit GkXmppMsgHandler(QObject *parent = nullptr);
+    ~GkXmppMsgHandler() override;
 
-    // Move event processing of GkXmppChat to this thread
-    QObject::moveToThread(this);
-}
-
-GkXmppChat::~GkXmppChat()
-{
-    quit();
-    wait();
-}
-
-/**
- * @brief GkXmppClient::run
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkXmppChat::run()
-{
-    exec();
-    return;
-}
+};
+};
