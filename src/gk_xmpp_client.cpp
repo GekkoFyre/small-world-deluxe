@@ -398,8 +398,8 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
             //
             // Enable carbon copies for this client!
             m_xmppCarbonMgr->setCarbonsEnabled(true);
-            QObject::connect(m_xmppCarbonMgr.get(), SIGNAL(messageSent(const QXmppMessage &)), this, SLOT(recvXmppMsgUpdate(const QXmppMessage &)));
-            QObject::connect(m_xmppCarbonMgr.get(), SIGNAL(messageReceived(const QXmppMessage &)), this, SLOT(recvXmppMsgUpdate(const QXmppMessage &)));
+            QObject::connect(m_xmppCarbonMgr.get(), &QXmppCarbonManager::messageSent, this, &QXmppClient::messageReceived);
+            QObject::connect(m_xmppCarbonMgr.get(), &QXmppCarbonManager::messageReceived, this, &QXmppClient::messageReceived);
         });
 
         QObject::connect(this, &QXmppClient::disconnected, this, [=]() {
@@ -981,7 +981,7 @@ QString GkXmppClient::obtainAvatarFilePath()
  * signal is emitted. It returns a result set that can be used to page through the results. The number of results may
  * be limited by the server. This function in particular tries to receive all of the archived messages in question via
  * a bulk manner, grabbing what it can and as much of it as possible, quite unlike its cousin function which is much
- * more fine-tuned, GkXmppClient::getArchivedMessagesFine().
+ * more fine-tuned, GkXmppClient::getArchivedMessagesBulk().
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param to
  * @param node
@@ -989,7 +989,7 @@ QString GkXmppClient::obtainAvatarFilePath()
  * @param start
  * @param end
  * @param resultSetQuery
- * @see GkXmppClient::getArchivedMessagesFine().
+ * @see GkXmppClient::getArchivedMessagesBulk().
  */
 void GkXmppClient::getArchivedMessagesBulk(const QString &to, const QString &node, const QString &from, const QDateTime &start,
                                            const QDateTime &end, const QXmppResultSetQuery &resultSetQuery)
@@ -1005,55 +1005,13 @@ void GkXmppClient::getArchivedMessagesBulk(const QString &to, const QString &nod
         updateRecordedMsgHistory(to);
         updateRecordedMsgHistory(from);
 
+        QXmppResultSetQuery queryLimit;
+        queryLimit.setBefore("");
+        queryLimit.setMax(GK_XMPP_MAM_BACKLOG_FETCH_COUNT);
+
         //
         // Retrieve any archived messages from the given XMPP server as according to the specification, XEP-0313!
-        m_xmppMamMgr->retrieveArchivedMessages(to, "", from, QDateTime::currentDateTime().addDays(-5), QDateTime::currentDateTime(), resultSetQuery);
-    } catch (const std::exception &e) {
-        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true, false);
-    }
-
-    return;
-}
-
-/**
- * @brief GkXmppClient::getArchivedMessagesFine retrieves archived messages. For each received message, the
- * `m_xmppMamMgr->archivedMessageReceived()` signal is emitted. Once all messages are received, the `m_xmppMamMgr->resultsRecieved()`
- * signal is emitted. It returns a result set that can be used to page through the results. The number of results may
- * be limited by the server. This particular function tries to selectively receive only a few archived messages at a
- * time, quite unlike its cousin function, GkXmppClient::getArchivedMessagesBulk().
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param to
- * @param node
- * @param from
- * @param start
- * @param end
- * @param resultSetQuery
- * @see GkXmppClient::getArchivedMessagesBulk().
- */
-void GkXmppClient::getArchivedMessagesFine(const QString &to, const QString &node, const QString &from,
-                                           const QDateTime &start, const QDateTime &end,
-                                           const QXmppResultSetQuery &resultSetQuery)
-{
-    Q_UNUSED(node);
-    Q_UNUSED(end);
-
-    try {
-        if (!m_rosterList.isEmpty()) {
-            updateRecordedMsgHistory(from); // It is VERY IMPORTANT that we execute this function!
-            QDateTime min_timestamp;
-            if (start.isValid()) {
-                min_timestamp = start;
-            } else {
-                min_timestamp = calcMinTimestampForXmppMsgHistory(from, m_rosterList);
-            }
-
-            gkEventLogger->publishEvent(tr("Minimum date required for message archive retrieval is: %1").arg(QDateTime(min_timestamp).toString("dd MMM yyyy @ hh:mm:ss.zzz")),
-                                        GkSeverity::Debug, "", false, true, false, false);
-
-            //
-            // Retrieve any archived messages from the given XMPP server as according to the specification, XEP-0313!
-            m_xmppMamMgr->retrieveArchivedMessages(to, "", from, min_timestamp, QDateTime::currentDateTime(), resultSetQuery);
-        }
+        m_xmppMamMgr->retrieveArchivedMessages({}, {}, from, {}, QDateTime::currentDateTimeUtc(), queryLimit);
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true, false);
     }
@@ -1673,7 +1631,7 @@ void GkXmppClient::handleError(const QString &errorMsg)
         }
 
         std::cerr << errorMsg.toStdString() << std::endl;
-        QMessageBox::warning(nullptr, tr("Error!"), errorMsg, QMessageBox::Ok);
+        gkEventLogger->publishEvent(errorMsg, GkSeverity::Fatal, "", false, true, false, true, false);
     }
 
     return;
@@ -2208,7 +2166,7 @@ void GkXmppClient::archiveChatReceived(const QXmppArchiveChat &chat, const QXmpp
  * @param queryId Unknown.
  * @param message The message stanza itself that the comparison is either to be made against and/or to be inserted into
  * memory via the class-wide variable, `m_rosterList`.
- * @see GkXmppClient::getArchivedMessagesBulk(), GkXmppClient::getArchivedMessagesFine(), GkXmppClient::filterArchivedMessage()
+ * @see GkXmppClient::getArchivedMessagesBulk(), GkXmppClient::getArchivedMessagesBulk(), GkXmppClient::filterArchivedMessage()
  */
 void GkXmppClient::archivedMessageReceived(const QString &queryId, const QXmppMessage &message)
 {
@@ -2336,12 +2294,12 @@ void GkXmppClient::updateRecordedMsgHistory(const QString &bareJid)
 
 /**
  * @brief GkXmppClient::filterArchivedMessage filters archived messages according to XMPP standard, XEP-0313, as they
- * come in via functions, GkXmppClient::getArchivedMessagesBulk() and/or GkXmppClient::getArchivedMessagesFine(), to see
+ * come in via functions, GkXmppClient::getArchivedMessagesBulk() and/or GkXmppClient::getArchivedMessagesBulk(), to see
  * if they're already existing in program memory already via variable, `m_rosterList`.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param rosterList A reference to the class-wide variable, `m_rosterList`.
  * @param message The message stanza itself that the comparison is to be made against.
- * @see GkXmppClient::getArchivedMessagesBulk(), GkXmppClient::getArchivedMessagesFine(), GkXmppClient::archivedMessageReceived().
+ * @see GkXmppClient::getArchivedMessagesBulk(), GkXmppClient::getArchivedMessagesBulk(), GkXmppClient::archivedMessageReceived().
  */
 bool GkXmppClient::filterArchivedMessage(const QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &rosterList,
                                          const QXmppMessage &message)
@@ -2349,16 +2307,15 @@ bool GkXmppClient::filterArchivedMessage(const QList<GekkoFyre::Network::GkXmpp:
     try {
         for (const auto &roster: rosterList) {
             if (roster.bareJid == message.to()) {
-                if (message.isXmppStanza() && !message.body().isEmpty()) {
+                if (message.isXmppStanza() && !message.body().isEmpty() && !message.id().isEmpty()) {
                     for (const auto &existing: roster.messages) {
-                        if (existing.message.stamp() != message.stamp() && existing.message.body() != message.body()) { // Message identifiers are shared across carbon copies, so be aware of this fact!
-                            m_sharedMessageIdentifiers.insert(existing.message.stamp().toMSecsSinceEpoch(), std::make_pair(false, existing.message));
+                        if (existing.message.id() != message.id()) { // Message identifiers are shared across carbon copies, so be aware of this fact!
                             return true; // Return the fact that the object did not originally exist in memory...
                         }
-
-                        return false; // The object already existed in memory
                     }
                 }
+
+                return false; // The object already existed in memory
             }
         }
 
@@ -2367,36 +2324,22 @@ bool GkXmppClient::filterArchivedMessage(const QList<GekkoFyre::Network::GkXmpp:
         //
         for (const auto &roster: rosterList) {
             if (roster.bareJid == message.from()) {
-                if (message.isXmppStanza() && !message.body().isEmpty()) {
+                if (message.isXmppStanza() && !message.body().isEmpty() && !message.id().isEmpty()) {
                     for (const auto &existing: roster.messages) {
-                        if (existing.message.stamp() != message.stamp() && existing.message.body() != message.body()) {
+                        if (existing.message.id() != message.id()) {
                             return true;
                         }
-
-                        //
-                        // Test whether a carbon copy (if applicable) already exists in memory or not, according to its
-                        // specific circumstances!
-                        for (auto sharedMsg = m_sharedMessageIdentifiers.begin(); sharedMsg != m_sharedMessageIdentifiers.end(); ++sharedMsg) {
-                            if (sharedMsg->second.to() == roster.bareJid) {
-                                if (sharedMsg.key() == existing.message.stamp().toMSecsSinceEpoch()) { // Do the unique identifiers match?
-                                    if (!sharedMsg->first) { // The object does not exist in memory yet!
-                                        sharedMsg->first = true; // Mark the object as existing in memory!
-                                        return true; // Return the fact that the object did not originally exist in memory...
-                                    }
-                                }
-                            }
-                        }
-
-                        return false; // The object already existed in memory
                     }
                 }
+
+                return false; // The object already existed in memory
             }
         }
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(e.what(), GkSeverity::Fatal, "", false, true, false, true);
     }
 
-    return false;
+    return false; // Something has gone wrong without being detected?
 }
 
 /**

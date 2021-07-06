@@ -370,7 +370,6 @@ void GkXmppMessageDialog::submitMsgEnterKey()
                     const auto toMsg = createXmppMessageIq(bareJid, gkConnDetails.jid, plaintext);
                     if (toMsg.isXmppStanza()) {
                         emit sendXmppMsg(toMsg);
-                        m_xmppClient->getArchivedMessagesFine(gkConnDetails.jid, QString(), bareJid);
                     }
                 }
             }
@@ -489,11 +488,12 @@ QXmppMessage GkXmppMessageDialog::createXmppMessageIq(const QString &to, const Q
     QUuid uuid = QUuid::createUuid();
     QXmppMessage xmppMsg;
     xmppMsg.setId(uuid.toString());
+    xmppMsg.setStamp(QDateTime::currentDateTimeUtc());
     xmppMsg.setFrom(from);
     xmppMsg.setTo(to);
     xmppMsg.setBody(message);
     xmppMsg.setPrivate(false);
-    xmppMsg.setReceiptRequested(true);
+    // xmppMsg.setReceiptRequested(true);
     xmppMsg.setType(QXmppMessage::Chat);
 
     return xmppMsg;
