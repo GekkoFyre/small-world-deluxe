@@ -110,10 +110,10 @@ private slots:
     //
     // QXmppMamManager handling
     void msgArchiveSuccReceived();
-    void procMamArchive(const bool &wipeExistingHistory = false, const bool &presented = false);
+    void procMamArchive(const bool &wipeExistingHistory = false);
     void getArchivedMessages();
     void getArchivedMessagesFromDb(const bool &insertData, const bool &wipeExistingHistory = false,
-                                   const bool &updateSortFilterProxy = false, const bool &presented = false);
+                                   const bool &updateSortFilterProxy = false);
 
 signals:
     void updateToolbar(const QString &value);
@@ -124,7 +124,7 @@ signals:
 
     //
     // QXmppMamManager handling
-    void updateMamArchive(const bool &wipeExistingHistory = false, const bool &presented = false);
+    void updateMamArchive(const bool &wipeExistingHistory = false);
     void updateTableModel();
 
 private:

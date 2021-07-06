@@ -2221,7 +2221,6 @@ void GkXmppClient::archivedMessageReceived(const QString &queryId, const QXmppMe
     try {
         for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
             if (iter->bareJid == message.from()) {
-                QList<GkXmppMamMsg> mam_msg_list;
                 if (message.isXmppStanza() && !message.body().isEmpty()) {
                     if (!iter->messages.isEmpty()) {
                         m_filterArchivedMsgFut.emplace_back(std::make_pair(message, std::async(&GkXmppClient::filterArchivedMessage, this, m_rosterList, message)));
@@ -2239,7 +2238,6 @@ void GkXmppClient::archivedMessageReceived(const QString &queryId, const QXmppMe
         //
         for (auto iter = m_rosterList.begin(); iter != m_rosterList.end(); ++iter) {
             if (iter->bareJid == message.to()) {
-                QList<GkXmppMamMsg> mam_msg_list;
                 if (message.isXmppStanza() && !message.body().isEmpty()) {
                     if (!iter->messages.isEmpty()) {
                         m_filterArchivedMsgFut.emplace_back(std::make_pair(message, std::async(&GkXmppClient::filterArchivedMessage, this, m_rosterList, message)));
@@ -2279,11 +2277,17 @@ void GkXmppClient::resultsReceived(const QString &queryId, const QXmppResultSetR
             if (result) { // The message therefore does not exist within memory (i.e. `m_rosterList`) already!
                 insertArchiveMessage(filter->first);
             }
-
-            m_filterArchivedMsgFut.erase(filter); // Erase the object from the std::vector() as we can't call .get() on
-            // the same std::future() twice, at least not without invoking an exception/crash!
         }
 
+        //
+        // Erase the objects from the std::vector() as we can't call .get() on the same std::future() twice, at least not
+        // without invoking an exception/crash!
+        m_filterArchivedMsgFut.clear();
+        m_filterArchivedMsgFut.shrink_to_fit();
+
+        //
+        // Tell the program that receiving of all (applicable) messages from the archives of the given XMPP server has been
+        // accomplished and is (hopefully) successful!
         emit msgArchiveSuccReceived();
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(e.what(), GkSeverity::Fatal, "", false, true, false, true);
@@ -2344,12 +2348,15 @@ bool GkXmppClient::filterArchivedMessage(const QList<GekkoFyre::Network::GkXmpp:
 {
     try {
         for (const auto &roster: rosterList) {
-            if (roster.bareJid == message.from()) {
+            if (roster.bareJid == message.to()) {
                 if (message.isXmppStanza() && !message.body().isEmpty()) {
                     for (const auto &existing: roster.messages) {
-                        if (existing.message.stamp() != message.stamp() && existing.message.body() != message.body()) {
-                            return true;
+                        if (existing.message.stamp() != message.stamp() && existing.message.body() != message.body()) { // Message identifiers are shared across carbon copies, so be aware of this fact!
+                            m_sharedMessageIdentifiers.insert(existing.message.stamp().toMSecsSinceEpoch(), std::make_pair(false, existing.message));
+                            return true; // Return the fact that the object did not originally exist in memory...
                         }
+
+                        return false; // The object already existed in memory
                     }
                 }
             }
@@ -2359,12 +2366,28 @@ bool GkXmppClient::filterArchivedMessage(const QList<GekkoFyre::Network::GkXmpp:
         // NOTE: DO NOT DELETE THIS WITHOUT analyzing the differences in the two code blocks CAREFULLY, firstly!
         //
         for (const auto &roster: rosterList) {
-            if (roster.bareJid == message.to()) {
+            if (roster.bareJid == message.from()) {
                 if (message.isXmppStanza() && !message.body().isEmpty()) {
                     for (const auto &existing: roster.messages) {
                         if (existing.message.stamp() != message.stamp() && existing.message.body() != message.body()) {
                             return true;
                         }
+
+                        //
+                        // Test whether a carbon copy (if applicable) already exists in memory or not, according to its
+                        // specific circumstances!
+                        for (auto sharedMsg = m_sharedMessageIdentifiers.begin(); sharedMsg != m_sharedMessageIdentifiers.end(); ++sharedMsg) {
+                            if (sharedMsg->second.to() == roster.bareJid) {
+                                if (sharedMsg.key() == existing.message.stamp().toMSecsSinceEpoch()) { // Do the unique identifiers match?
+                                    if (!sharedMsg->first) { // The object does not exist in memory yet!
+                                        sharedMsg->first = true; // Mark the object as existing in memory!
+                                        return true; // Return the fact that the object did not originally exist in memory...
+                                    }
+                                }
+                            }
+                        }
+
+                        return false; // The object already existed in memory
                     }
                 }
             }

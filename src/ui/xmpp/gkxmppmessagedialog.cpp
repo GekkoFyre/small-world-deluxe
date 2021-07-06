@@ -49,6 +49,7 @@
 #include <algorithm>
 #include <QMap>
 #include <QIcon>
+#include <QUuid>
 #include <QPixmap>
 #include <QKeyEvent>
 #include <QFileDialog>
@@ -121,8 +122,8 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
         QObject::connect(m_xmppClient, SIGNAL(xmppMsgUpdate(const QXmppMessage &)), this, SLOT(recvXmppMsg(const QXmppMessage &)));
         QObject::connect(m_xmppClient, SIGNAL(updateMsgHistory()), this, SLOT(updateMsgHistory()));
         QObject::connect(m_xmppClient, SIGNAL(msgArchiveSuccReceived()), this, SLOT(msgArchiveSuccReceived()));
-        QObject::connect(this, SIGNAL(updateMamArchive(const bool &, const bool &)),
-                         this, SLOT(procMamArchive(const bool &, const bool &)));
+        QObject::connect(this, SIGNAL(updateMamArchive(const bool &)),
+                         this, SLOT(procMamArchive(const bool &)));
 
         //
         // Setup and initialize QTableView's...
@@ -485,7 +486,9 @@ void GkXmppMessageDialog::updateMsgHistory()
  */
 QXmppMessage GkXmppMessageDialog::createXmppMessageIq(const QString &to, const QString &from, const QString &message) const
 {
+    QUuid uuid = QUuid::createUuid();
     QXmppMessage xmppMsg;
+    xmppMsg.setId(uuid.toString());
     xmppMsg.setFrom(from);
     xmppMsg.setTo(to);
     xmppMsg.setBody(message);
@@ -503,9 +506,9 @@ QXmppMessage GkXmppMessageDialog::createXmppMessageIq(const QString &to, const Q
 void GkXmppMessageDialog::msgArchiveSuccReceived()
 {
     if (!startupSucc) {
-        emit updateMamArchive(true, true);
+        emit updateMamArchive(true);
         for (const auto &bareJid: m_bareJids) {
-            emit updateMamArchive(false, true);
+            emit updateMamArchive(false);
         }
 
         startupSucc = true;
@@ -520,14 +523,12 @@ void GkXmppMessageDialog::msgArchiveSuccReceived()
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param wipeExistingHistory Whether to wipe the pre-existing chat history or not, specifically from the given QTableView
  * object, GekkoFyre::GkXmppRecvMsgsTableViewModel().
- * @param presented Should we update the fact that these messages are now already 'presented' (and thereby inserted into
- * the QTableView) or not?
  */
-void GkXmppMessageDialog::procMamArchive(const bool &wipeExistingHistory, const bool &presented)
+void GkXmppMessageDialog::procMamArchive(const bool &wipeExistingHistory)
 {
     try {
         if (!startupSucc) {
-            getArchivedMessagesFromDb(true, wipeExistingHistory, presented);
+            getArchivedMessagesFromDb(true, wipeExistingHistory);
         }
     } catch (const std::exception &e) {
         gkStringFuncs->print_exception(e);
@@ -561,11 +562,9 @@ void GkXmppMessageDialog::getArchivedMessages()
  * object, GekkoFyre::GkXmppRecvMsgsTableViewModel().
  * @param updateSortFilterProxy Should the QSortFilterProxyModel for the QTableView be updated and reset back to its beginning
  * values (please use this sparingly because of required system resources for calculations!)?
- * @param presented Should we update the fact that these messages are now already 'presented' (and thereby inserted into
- * the QTableView) or not?
  */
 void GkXmppMessageDialog::getArchivedMessagesFromDb(const bool &insertData, const bool &wipeExistingHistory,
-                                                    const bool &updateSortFilterProxy, const bool &presented)
+                                                    const bool &updateSortFilterProxy)
 {
     try {
         auto rosterMap = m_xmppClient->getRosterMap(); // Grab the `GkXmppCallsign()` object and temporarily store it in memory for just use in this function!
@@ -589,8 +588,6 @@ void GkXmppMessageDialog::getArchivedMessagesFromDb(const bool &insertData, cons
                         if (!iter->presented && insertData) {
                             gkXmppRecvMsgsTableViewModel->insertData(roster->bareJid, iter->message.body(), iter->message.stamp());
                             iter->presented = true;
-                        } else {
-                            iter->presented = presented;
                         }
                     }
 

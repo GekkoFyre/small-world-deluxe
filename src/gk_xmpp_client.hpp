@@ -311,6 +311,10 @@ private:
     QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> m_rosterList;   // A list of all the bareJids, including the client themselves!
 
     //
+    // QXmppMamManager handling
+    QMap<qint64, std::pair<bool, QXmppMessage>> m_sharedMessageIdentifiers; // The key is the unique message timestamp and the value consists of whether the message already exists in memory!
+
+    //
     // Filesystem & Directories
     //
     boost::filesystem::path native_slash;
