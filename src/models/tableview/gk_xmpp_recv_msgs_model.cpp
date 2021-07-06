@@ -267,7 +267,7 @@ QVariant GkXmppRecvMsgsTableViewModel::data(const QModelIndex &index, int role) 
 
     switch (index.column()) {
         case GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_DATETIME_IDX:
-            return row_timestamp.toString("[ dd MMM yy ] h:mm:ss ap");
+            return row_timestamp.toLocalTime().toString("[ dd MMM yy ] h:mm:ss ap");
         case GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_NICKNAME_IDX:
             return row_nickname;
         case GK_XMPP_RECV_MSGS_TABLEVIEW_MODEL_MSG_IDX:

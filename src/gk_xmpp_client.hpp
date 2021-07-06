@@ -184,9 +184,6 @@ public slots:
     void getArchivedMessagesBulk(const QString &to = QString(), const QString &node = QString(), const QString &from = QString(),
                                  const QDateTime &start = QDateTime(), const QDateTime &end = QDateTime(),
                                  const QXmppResultSetQuery &resultSetQuery = QXmppResultSetQuery());
-    void getArchivedMessagesFine(const QString &to = QString(), const QString &node = QString(), const QString &from = QString(),
-                                 const QDateTime &start = QDateTime(), const QDateTime &end = QDateTime(),
-                                 const QXmppResultSetQuery &resultSetQuery = QXmppResultSetQuery());
 
     //
     // Message handling
@@ -309,10 +306,6 @@ private:
     QStringList rosterGroups;
     QVector<QString> m_blockList;
     QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> m_rosterList;   // A list of all the bareJids, including the client themselves!
-
-    //
-    // QXmppMamManager handling
-    QMap<qint64, std::pair<bool, QXmppMessage>> m_sharedMessageIdentifiers; // The key is the unique message timestamp and the value consists of whether the message already exists in memory!
 
     //
     // Filesystem & Directories
