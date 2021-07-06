@@ -676,7 +676,7 @@ set(GALAXY_UI_CPP
     src/gk_audio_encoding.cpp
     src/gk_audio_decoding.cpp
     src/gk_xmpp_client.cpp
-    src/gk_xmpp_chat.cpp
+	src/gk_xmpp_msg_handler.cpp
     src/gk_cli.cpp
     src/gk_modem.cpp
     src/gk_frequency_list.cpp
@@ -777,7 +777,7 @@ set(GALAXY_OBJ_HEADERS
     src/gk_audio_encoding.hpp
     src/gk_audio_decoding.hpp
     src/gk_xmpp_client.hpp
-    src/gk_xmpp_chat.hpp
+	src/gk_xmpp_msg_handler.hpp
     src/gk_cli.hpp
     src/gk_modem.hpp
     src/gk_frequency_list.hpp

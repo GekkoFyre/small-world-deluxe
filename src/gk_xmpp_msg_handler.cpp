@@ -39,37 +39,40 @@
  **
  ****************************************************************************************************/
 
-#pragma once
+#include "src/gk_xmpp_msg_handler.hpp"
+#include <exception>
+#include <QMessageBox>
 
-#include "src/defines.hpp"
-#include "src/gk_logger.hpp"
-#include "src/gk_xmpp_client.hpp"
-#include <string>
-#include <vector>
-#include <QObject>
-#include <QThread>
-#include <QPointer>
+using namespace GekkoFyre;
+using namespace GkAudioFramework;
+using namespace Database;
+using namespace Settings;
+using namespace Audio;
+using namespace AmateurRadio;
+using namespace Control;
+using namespace Spectrograph;
+using namespace System;
+using namespace Events;
+using namespace Logging;
+using namespace Network;
+using namespace GkXmpp;
+using namespace Security;
 
-namespace GekkoFyre {
+/**
+ * @brief GkXmppMsgHandler::GkXmppMsgHandler
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param parent The parent object.
+ */
+GkXmppMsgHandler::GkXmppMsgHandler(QObject *parent) : QObject(parent)
+{
+    try {
+        setParent(parent);
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(tr("An issue has occurred within the XMPP subsystem. Error: %1").arg(QString::fromStdString(e.what())).toStdString()));
+    }
 
-class GkXmppChat : public QThread {
-    Q_OBJECT
+    return;
+}
 
-public:
-    explicit GkXmppChat(QPointer<GekkoFyre::GkXmppClient> xmppClient, const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
-                        QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
-    ~GkXmppChat() override;
-
-    void run() Q_DECL_OVERRIDE;
-
-private:
-    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
-
-    //
-    // QXmpp and XMPP related
-    //
-    GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
-    QPointer<GekkoFyre::GkXmppClient> m_xmppClient;
-
-};
-};
+GkXmppMsgHandler::~GkXmppMsgHandler()
+{}

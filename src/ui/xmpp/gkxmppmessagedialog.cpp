@@ -49,8 +49,11 @@
 #include <algorithm>
 #include <QMap>
 #include <QIcon>
+#include <QUuid>
 #include <QPixmap>
 #include <QKeyEvent>
+#include <QFileDialog>
+#include <QStandardPaths>
 
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
@@ -119,8 +122,8 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
         QObject::connect(m_xmppClient, SIGNAL(xmppMsgUpdate(const QXmppMessage &)), this, SLOT(recvXmppMsg(const QXmppMessage &)));
         QObject::connect(m_xmppClient, SIGNAL(updateMsgHistory()), this, SLOT(updateMsgHistory()));
         QObject::connect(m_xmppClient, SIGNAL(msgArchiveSuccReceived()), this, SLOT(msgArchiveSuccReceived()));
-        QObject::connect(this, SIGNAL(updateMamArchive(const bool &, const bool &)),
-                         this, SLOT(procMamArchive(const bool &, const bool &)));
+        QObject::connect(this, SIGNAL(updateMamArchive(const bool &)),
+                         this, SLOT(procMamArchive(const bool &)));
 
         //
         // Setup and initialize QTableView's...
@@ -187,51 +190,6 @@ GkXmppMessageDialog::~GkXmppMessageDialog()
 }
 
 /**
- * @brief GkXmppMessageDialog::on_toolButton_font_clicked
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkXmppMessageDialog::on_toolButton_font_clicked()
-{
-    return;
-}
-
-/**
- * @brief GkXmppMessageDialog::on_toolButton_font_reset_clicked
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkXmppMessageDialog::on_toolButton_font_reset_clicked()
-{
-    return;
-}
-
-/**
- * @brief GkXmppMessageDialog::on_toolButton_insert_clicked
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkXmppMessageDialog::on_toolButton_insert_clicked()
-{
-    return;
-}
-
-/**
- * @brief GkXmppMessageDialog::on_toolButton_attach_file_clicked
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkXmppMessageDialog::on_toolButton_attach_file_clicked()
-{
-    return;
-}
-
-/**
- * @brief GkXmppMessageDialog::on_toolButton_view_roster_clicked
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkXmppMessageDialog::on_toolButton_view_roster_clicked()
-{
-    return;
-}
-
-/**
  * @brief GkXmppMessageDialog::on_tableView_recv_msg_dlg_customContextMenuRequested
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param pos
@@ -256,6 +214,67 @@ void GkXmppMessageDialog::on_textEdit_tx_msg_dialog_textChanged()
  */
 void GkXmppMessageDialog::on_lineEdit_message_search_returnPressed()
 {
+    return;
+}
+
+/**
+ * @brief GkXmppMessageDialog::on_toolButton_view_roster_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
+void GkXmppMessageDialog::on_toolButton_view_roster_triggered(QAction *arg1)
+{
+    QMessageBox::information(nullptr, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+    return;
+}
+
+/**
+ * @brief GkXmppMessageDialog::on_toolButton_font_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
+void GkXmppMessageDialog::on_toolButton_font_triggered(QAction *arg1)
+{
+    QMessageBox::information(nullptr, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+    return;
+}
+
+/**
+ * @brief GkXmppMessageDialog::on_toolButton_font_reset_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
+void GkXmppMessageDialog::on_toolButton_font_reset_triggered(QAction *arg1)
+{
+    QMessageBox::information(nullptr, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+    return;
+}
+
+/**
+ * @brief GkXmppMessageDialog::on_toolButton_insert_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
+void GkXmppMessageDialog::on_toolButton_insert_triggered(QAction *arg1)
+{
+    QMessageBox::information(nullptr, tr("Information..."), tr("Apologies, but this function does not work yet."), QMessageBox::Ok);
+    return;
+}
+
+/**
+ * @brief GkXmppMessageDialog::on_toolButton_attach_file_triggered
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param arg1
+ */
+void GkXmppMessageDialog::on_toolButton_attach_file_triggered(QAction *arg1)
+{
+    QString filePath = QFileDialog::getOpenFileName(nullptr, tr("Open Image"), QStandardPaths::writableLocation(QStandardPaths::PicturesLocation),
+                                                    tr("All Image Files (*.png *.jpg *.jpeg *.jpe *.jfif *.exif *.bmp *.gif);;PNG (*.png);;JPEG (*.jpg *.jpeg *.jpe *.jfif *.exif);;Bitmap (*.bmp);;GIF (*.gif);;All Files (*.*)"));
+    if (!filePath.isEmpty()) {
+        // TODO: Implement this function!
+        return;
+    }
+
     return;
 }
 
@@ -351,6 +370,7 @@ void GkXmppMessageDialog::submitMsgEnterKey()
                     const auto toMsg = createXmppMessageIq(bareJid, gkConnDetails.jid, plaintext);
                     if (toMsg.isXmppStanza()) {
                         emit sendXmppMsg(toMsg);
+                        m_xmppClient->getArchivedMessagesFine(gkConnDetails.jid, QString(), bareJid);
                     }
                 }
             }
@@ -466,11 +486,12 @@ void GkXmppMessageDialog::updateMsgHistory()
  */
 QXmppMessage GkXmppMessageDialog::createXmppMessageIq(const QString &to, const QString &from, const QString &message) const
 {
+    QUuid uuid = QUuid::createUuid();
     QXmppMessage xmppMsg;
+    xmppMsg.setId(uuid.toString());
     xmppMsg.setFrom(from);
     xmppMsg.setTo(to);
     xmppMsg.setBody(message);
-    xmppMsg.setStamp(QDateTime::currentDateTimeUtc());
     xmppMsg.setPrivate(false);
     xmppMsg.setReceiptRequested(true);
     xmppMsg.setType(QXmppMessage::Chat);
@@ -485,9 +506,9 @@ QXmppMessage GkXmppMessageDialog::createXmppMessageIq(const QString &to, const Q
 void GkXmppMessageDialog::msgArchiveSuccReceived()
 {
     if (!startupSucc) {
-        emit updateMamArchive(true, true);
+        emit updateMamArchive(true);
         for (const auto &bareJid: m_bareJids) {
-            emit updateMamArchive(false, true);
+            emit updateMamArchive(false);
         }
 
         startupSucc = true;
@@ -502,14 +523,12 @@ void GkXmppMessageDialog::msgArchiveSuccReceived()
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param wipeExistingHistory Whether to wipe the pre-existing chat history or not, specifically from the given QTableView
  * object, GekkoFyre::GkXmppRecvMsgsTableViewModel().
- * @param presented Should we update the fact that these messages are now already 'presented' (and thereby inserted into
- * the QTableView) or not?
  */
-void GkXmppMessageDialog::procMamArchive(const bool &wipeExistingHistory, const bool &presented)
+void GkXmppMessageDialog::procMamArchive(const bool &wipeExistingHistory)
 {
     try {
         if (!startupSucc) {
-            getArchivedMessagesFromDb(true, wipeExistingHistory, presented);
+            getArchivedMessagesFromDb(true, wipeExistingHistory);
         }
     } catch (const std::exception &e) {
         gkStringFuncs->print_exception(e);
@@ -519,13 +538,13 @@ void GkXmppMessageDialog::procMamArchive(const bool &wipeExistingHistory, const 
 }
 
 /**
- * @brief GkXmppMessageDialog::getArchivedMessages
+ * @brief GkXmppMessageDialog::getArchivedMessagesBulk
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void GkXmppMessageDialog::getArchivedMessages()
 {
     for (const auto &bareJid: m_bareJids) {
-        m_xmppClient->getArchivedMessages(gkConnDetails.jid, QString(), bareJid); // Get archived messages sent by the Jid in question!
+        m_xmppClient->getArchivedMessagesBulk(gkConnDetails.jid, QString(), bareJid); // Get archived messages sent by the Jid in question!
     }
 
     return;
@@ -543,11 +562,9 @@ void GkXmppMessageDialog::getArchivedMessages()
  * object, GekkoFyre::GkXmppRecvMsgsTableViewModel().
  * @param updateSortFilterProxy Should the QSortFilterProxyModel for the QTableView be updated and reset back to its beginning
  * values (please use this sparingly because of required system resources for calculations!)?
- * @param presented Should we update the fact that these messages are now already 'presented' (and thereby inserted into
- * the QTableView) or not?
  */
 void GkXmppMessageDialog::getArchivedMessagesFromDb(const bool &insertData, const bool &wipeExistingHistory,
-                                                    const bool &updateSortFilterProxy, const bool &presented)
+                                                    const bool &updateSortFilterProxy)
 {
     try {
         auto rosterMap = m_xmppClient->getRosterMap(); // Grab the `GkXmppCallsign()` object and temporarily store it in memory for just use in this function!
@@ -571,8 +588,6 @@ void GkXmppMessageDialog::getArchivedMessagesFromDb(const bool &insertData, cons
                         if (!iter->presented && insertData) {
                             gkXmppRecvMsgsTableViewModel->insertData(roster->bareJid, iter->message.body(), iter->message.stamp());
                             iter->presented = true;
-                        } else {
-                            iter->presented = presented;
                         }
                     }
 
