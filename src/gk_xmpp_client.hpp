@@ -181,9 +181,8 @@ public slots:
 
     //
     // QXmppMamManager handling
-    void getArchivedMessagesBulk(const QString &to = QString(), const QString &node = QString(), const QString &from = QString(),
-                                 const QDateTime &start = QDateTime(), const QDateTime &end = QDateTime(),
-                                 const QXmppResultSetQuery &resultSetQuery = QXmppResultSetQuery());
+    void getArchivedMessagesBulk(const QString &from = QString());
+    void getArchivedMessagesFine(const QString &from = QString());
 
     //
     // Message handling
@@ -268,8 +267,9 @@ signals:
     void updateMsgHistory();
 
     //
-    // QXmppMamManager handling
+    // Message handling and QXmppMamManager handling
     void msgArchiveSuccReceived();
+    void procXmppMsg(const QXmppMessage &msg, const bool &wipeExistingHistory = false);
 
 private:
     bool filterArchivedMessage(const QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &rosterList, const QXmppMessage &message);
