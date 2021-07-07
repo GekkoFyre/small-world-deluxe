@@ -981,39 +981,58 @@ QString GkXmppClient::obtainAvatarFilePath()
  * signal is emitted. It returns a result set that can be used to page through the results. The number of results may
  * be limited by the server. This function in particular tries to receive all of the archived messages in question via
  * a bulk manner, grabbing what it can and as much of it as possible, quite unlike its cousin function which is much
- * more fine-tuned, GkXmppClient::getArchivedMessagesBulk().
+ * more fine-tuned, GkXmppClient::getArchivedMessagesFine().
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param to
- * @param node
  * @param from
- * @param start
- * @param end
- * @param resultSetQuery
- * @see GkXmppClient::getArchivedMessagesBulk().
+ * @see GkXmppClient::getArchivedMessagesFine().
  */
-void GkXmppClient::getArchivedMessagesBulk(const QString &to, const QString &node, const QString &from, const QDateTime &start,
-                                           const QDateTime &end, const QXmppResultSetQuery &resultSetQuery)
+void GkXmppClient::getArchivedMessagesBulk(const QString &from)
 {
-    Q_UNUSED(node);
-    Q_UNUSED(end);
-    Q_UNUSED(start);
-    Q_UNUSED(end);
-
     try {
-        //
-        // It is VERY IMPORTANT that we execute this particular function!
-        updateRecordedMsgHistory(to);
-        updateRecordedMsgHistory(from);
-
         QXmppResultSetQuery queryLimit;
         queryLimit.setBefore("");
-        queryLimit.setMax(GK_XMPP_MAM_BACKLOG_FETCH_COUNT);
+        queryLimit.setMax(GK_XMPP_MAM_BACKLOG_BULK_FETCH_COUNT);
 
         //
         // Retrieve any archived messages from the given XMPP server as according to the specification, XEP-0313!
         m_xmppMamMgr->retrieveArchivedMessages({}, {}, from, {}, QDateTime::currentDateTimeUtc(), queryLimit);
     } catch (const std::exception &e) {
-        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true, false);
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppClient::getArchivedMessagesFine retrieves archived messages. For each received message, the
+ * `m_xmppMamMgr->archivedMessageReceived()` signal is emitted. Once all messages are received, the `m_xmppMamMgr->resultsRecieved()`
+ * signal is emitted. It returns a result set that can be used to page through the results. The number of results may
+ * be limited by the server. This function in particular tries to receive a particular set of the archived messages in
+ * question via a filtered manner, grabbing what it via calculated QDateTime's, quite unlike its cousin function which is
+ * more for grabbing a bulk amount of messages, GkXmppClient::getArchivedMessagesBulk().
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param from
+ * @see GkXmppClient::getArchivedMessagesBulk()
+ */
+void GkXmppClient::getArchivedMessagesFine(const QString &from)
+{
+    try {
+        QXmppResultSetQuery queryLimit;
+        queryLimit.setBefore("");
+        queryLimit.setMax(GK_XMPP_MAM_BACKLOG_FINE_FETCH_COUNT);
+
+        //
+        // Calculate the most minimum timestamp we can possibly use, therefore minimizing the amount of bandwidth used to
+        // download archived messages over the Internet!
+        const QDateTime min_time = calcMinTimestampForXmppMsgHistory(from, m_rosterList);
+        gkEventLogger->publishEvent(tr("Most minimum XEP-0313 timestamp calculated for user, \"%1\", is: %2.").arg(from, min_time.toLocalTime().toString()),
+                                    GkSeverity::Debug, "", false, true, false, false, false);
+
+        //
+        // Retrieve any archived messages from the given XMPP server as according to the specification, XEP-0313!
+        m_xmppMamMgr->retrieveArchivedMessages({}, {}, from, min_time, QDateTime::currentDateTimeUtc(), queryLimit);
+    } catch (const std:: exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
     }
 
     return;
@@ -1508,6 +1527,9 @@ void GkXmppClient::sendXmppMsg(const QXmppMessage &msg)
 {
     if (msg.isXmppStanza()) {
         const bool msg_sent_succ = sendPacket(msg);
+        if (msg_sent_succ) {
+            getArchivedMessagesFine(msg.to());
+        }
     }
 
     return;
@@ -2166,7 +2188,7 @@ void GkXmppClient::archiveChatReceived(const QXmppArchiveChat &chat, const QXmpp
  * @param queryId Unknown.
  * @param message The message stanza itself that the comparison is either to be made against and/or to be inserted into
  * memory via the class-wide variable, `m_rosterList`.
- * @see GkXmppClient::getArchivedMessagesBulk(), GkXmppClient::getArchivedMessagesBulk(), GkXmppClient::filterArchivedMessage()
+ * @see GkXmppClient::getArchivedMessagesBulk(), GkXmppClient::getArchivedMessagesFine(), GkXmppClient::filterArchivedMessage()
  */
 void GkXmppClient::archivedMessageReceived(const QString &queryId, const QXmppMessage &message)
 {
@@ -2233,6 +2255,7 @@ void GkXmppClient::resultsReceived(const QString &queryId, const QXmppResultSetR
         for (auto filter = m_filterArchivedMsgFut.begin(); filter != m_filterArchivedMsgFut.end(); ++filter) {
             const bool result = filter->second.get();
             if (result) { // The message therefore does not exist within memory (i.e. `m_rosterList`) already!
+                emit procXmppMsg(filter->first, false);
                 insertArchiveMessage(filter->first);
             }
         }
@@ -2294,12 +2317,12 @@ void GkXmppClient::updateRecordedMsgHistory(const QString &bareJid)
 
 /**
  * @brief GkXmppClient::filterArchivedMessage filters archived messages according to XMPP standard, XEP-0313, as they
- * come in via functions, GkXmppClient::getArchivedMessagesBulk() and/or GkXmppClient::getArchivedMessagesBulk(), to see
+ * come in via functions, GkXmppClient::getArchivedMessagesBulk() and/or GkXmppClient::getArchivedMessagesFine(), to see
  * if they're already existing in program memory already via variable, `m_rosterList`.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param rosterList A reference to the class-wide variable, `m_rosterList`.
  * @param message The message stanza itself that the comparison is to be made against.
- * @see GkXmppClient::getArchivedMessagesBulk(), GkXmppClient::getArchivedMessagesBulk(), GkXmppClient::archivedMessageReceived().
+ * @see GkXmppClient::getArchivedMessagesBulk(), GkXmppClient::getArchivedMessagesFine(), GkXmppClient::archivedMessageReceived().
  */
 bool GkXmppClient::filterArchivedMessage(const QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &rosterList,
                                          const QXmppMessage &message)
