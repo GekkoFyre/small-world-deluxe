@@ -139,6 +139,10 @@ namespace GekkoFyre {
 #define GK_XMPP_CREATE_CONN_PROG_BAR_MAX_PERCT (100)
 #define GK_XMPP_CREATE_CONN_PROG_BAR_TOT_PERCT (4)
 
+#define GK_XMPP_MAM_BACKLOG_BULK_FETCH_COUNT (125)
+#define GK_XMPP_MAM_BACKLOG_FINE_FETCH_COUNT (1)
+#define GK_XMPP_MAM_THREAD_SLEEP_MILLISECS (3000)
+
 #define GK_DEFAULT_XMPP_SERVER_PORT (5222)
 #define GK_XMPP_AVAIL_COMBO_AVAILABLE_IDX (0)
 #define GK_XMPP_AVAIL_COMBO_AWAY_FROM_KB_IDX (1)
@@ -379,6 +383,8 @@ namespace Filesystem {
     constexpr char gk_crashpad_handler_linux[] = "crashpad_handler";    // The name of the Crashpad handler executable under Linux and possibly Unix-like operating systems.
 
     constexpr char linux_sys_tty[] = "/sys/class/tty/";                 // The location of the TTY-devices under most major Linux distributions
+
+    #define GK_SYSTEM_FILE_LOG_DATA_MAX_SIZE_BYTES (33554432)
 }
 
 namespace Network {

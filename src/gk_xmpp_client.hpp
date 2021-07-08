@@ -138,21 +138,25 @@ public:
 
     //
     // User, roster and presence details
-    std::shared_ptr<QXmppRegistrationManager> getRegistrationMgr();
-    QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> getRosterMap();
+    [[nodiscard]] std::shared_ptr<QXmppRegistrationManager> getRegistrationMgr();
+    [[nodiscard]] QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> getRosterMap();
     void updateRosterMap(const QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &rosterList);
-    QXmppPresence statusToPresence(const Network::GkXmpp::GkOnlineStatus &status);
-    Network::GkXmpp::GkOnlineStatus presenceToStatus(const QXmppPresence::AvailableStatusType &xmppPresence);
-    QString presenceToString(const QXmppPresence::AvailableStatusType &xmppPresence);
-    QIcon presenceToIcon(const QXmppPresence::AvailableStatusType &xmppPresence);
+    [[nodiscard]] QXmppPresence statusToPresence(const Network::GkXmpp::GkOnlineStatus &status);
+    [[nodiscard]] Network::GkXmpp::GkOnlineStatus presenceToStatus(const QXmppPresence::AvailableStatusType &xmppPresence);
+    [[nodiscard]] QString presenceToString(const QXmppPresence::AvailableStatusType &xmppPresence);
+    [[nodiscard]] QIcon presenceToIcon(const QXmppPresence::AvailableStatusType &xmppPresence);
     bool deleteUserAccount();
-    QString obtainAvatarFilePath();
+    [[nodiscard]] QString obtainAvatarFilePath();
+
+    //
+    // Message and QXmppMamManager handling
+    [[nodiscard]] bool getMsgRecved() const;
 
     //
     // vCard management
-    QByteArray processImgToByteArray(const QString &filePath);
+    [[nodiscard]] QByteArray processImgToByteArray(const QString &filePath);
 
-    QString getErrorCondition(const QXmppStanza::Error::Condition &condition);
+    [[nodiscard]] QString getErrorCondition(const QXmppStanza::Error::Condition &condition);
 
 public slots:
     void clientConnected();
@@ -181,12 +185,7 @@ public slots:
 
     //
     // QXmppMamManager handling
-    void getArchivedMessagesBulk(const QString &to = QString(), const QString &node = QString(), const QString &from = QString(),
-                                 const QDateTime &start = QDateTime(), const QDateTime &end = QDateTime(),
-                                 const QXmppResultSetQuery &resultSetQuery = QXmppResultSetQuery());
-    void getArchivedMessagesFine(const QString &to = QString(), const QString &node = QString(), const QString &from = QString(),
-                                 const QDateTime &start = QDateTime(), const QDateTime &end = QDateTime(),
-                                 const QXmppResultSetQuery &resultSetQuery = QXmppResultSetQuery());
+    void getArchivedMessagesBulk(const QString &from = QString());
 
     //
     // Message handling
@@ -235,6 +234,7 @@ private slots:
     void archivedMessageReceived(const QString &queryId, const QXmppMessage &message);
     void resultsReceived(const QString &queryId, const QXmppResultSetReply &resultSetReply, bool complete);
     void updateRecordedMsgHistory(const QString &bareJid);
+    void setMsgRecved(const bool &setValid);
 
 signals:
     //
@@ -271,11 +271,13 @@ signals:
     void updateMsgHistory();
 
     //
-    // QXmppMamManager handling
+    // Message handling and QXmppMamManager handling
     void msgArchiveSuccReceived();
+    void procXmppMsg(const QXmppMessage &msg, const bool &wipeExistingHistory = false);
+    void msgRecved(const bool &setValid);
 
 private:
-    bool filterArchivedMessage(const QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &rosterList, const QXmppMessage &message);
+    [[nodiscard]] bool filterArchivedMessage(const QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> &rosterList, const QXmppMessage &message);
     void insertArchiveMessage(const QXmppMessage &message);
 
     QPointer<GekkoFyre::GkLevelDb> gkDb;
@@ -311,10 +313,6 @@ private:
     QList<GekkoFyre::Network::GkXmpp::GkXmppCallsign> m_rosterList;   // A list of all the bareJids, including the client themselves!
 
     //
-    // QXmppMamManager handling
-    QMap<qint64, std::pair<bool, QXmppMessage>> m_sharedMessageIdentifiers; // The key is the unique message timestamp and the value consists of whether the message already exists in memory!
-
-    //
     // Filesystem & Directories
     //
     boost::filesystem::path native_slash;
@@ -336,9 +334,16 @@ private:
     std::queue<QXmppPresence::AvailableStatusType> m_availStatusTypeQueue;
 
     //
+    // Message handling
+    void getArchivedMessagesFine(qint32 recursion, const QString &from = QString(), const QDateTime &preset_time = {});
+    bool m_msgRecved;
+
+    //
     // Multithreading, mutexes, etc.
     //
     std::mutex m_updateRosterMapMtx;
+    std::mutex m_archivedMsgsFineMtx;
+    std::thread m_archivedMsgsFineThread;
     std::vector<std::pair<QXmppMessage, std::future<bool>>> m_filterArchivedMsgFut;
 
     //

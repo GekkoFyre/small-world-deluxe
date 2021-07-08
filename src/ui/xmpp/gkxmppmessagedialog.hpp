@@ -110,10 +110,8 @@ private slots:
     //
     // QXmppMamManager handling
     void msgArchiveSuccReceived();
-    void procMamArchive(const bool &wipeExistingHistory = false);
-    void getArchivedMessages();
-    void getArchivedMessagesFromDb(const bool &insertData, const bool &wipeExistingHistory = false,
-                                   const bool &updateSortFilterProxy = false);
+    void dlArchivedMessages();
+    void getArchivedMessagesFromDb(const QXmppMessage &message, const bool &wipeExistingHistory = false);
 
 signals:
     void updateToolbar(const QString &value);
@@ -124,8 +122,8 @@ signals:
 
     //
     // QXmppMamManager handling
-    void updateMamArchive(const bool &wipeExistingHistory = false);
     void updateTableModel();
+    void msgRecved(const bool &setValid);
 
 private:
     Ui::GkXmppMessageDialog *ui;
@@ -152,7 +150,6 @@ private:
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     std::queue<QString> m_toolBarTextQueue;
-    bool startupSucc; // Has startup of this class already succeeded?
 
     //
     // QXmpp and XMPP related
