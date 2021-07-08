@@ -116,6 +116,14 @@ GkEventLogger::GkEventLogger(const QPointer<QSystemTrayIcon> &sysTrayIcon, const
         }
 
         gkWriteCsvIo.setFileName(QString::fromStdString(log_data_loc.string()));
+        if (gkWriteCsvIo.size() > GK_SYSTEM_FILE_LOG_DATA_MAX_SIZE_BYTES) {
+            bool succ = gkWriteCsvIo.remove();
+            if (!succ) {
+                throw std::runtime_error(tr("Unable to delete file, \"%1\", due to its excessive size which exceeds the recommended amount of %2 MB. An error was henceforth encountered.")
+                .arg(QString::fromStdString(log_data_loc.string()), QString::number(GK_SYSTEM_FILE_LOG_DATA_MAX_SIZE_BYTES)).toStdString());
+            }
+        }
+
         if (!gkWriteCsvIo.open(QFile::Append | QFile::Text)) {
             throw std::runtime_error(tr("Error with opening File I/O for logging data!").toStdString());
         }

@@ -43,6 +43,7 @@
 #include <qxmpp/QXmppMucIq.h>
 #include <qxmpp/QXmppUtils.h>
 #include <qxmpp/QXmppStreamFeatures.h>
+#include <chrono>
 #include <iostream>
 #include <iterator>
 #include <exception>
@@ -149,6 +150,7 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         m_askToReconnectAuto = false;
         m_sslIsEnabled = false;
         m_isMuc = false;
+        m_msgRecved = false;
         sys::error_code ec;
         fs::path slash = "/";
         native_slash = slash.make_preferred().native();
@@ -248,6 +250,7 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
                          this, SLOT(archiveListReceived(const QList<QXmppArchiveChat> &, const QXmppResultSetReply &)));
         QObject::connect(m_xmppMamMgr.get(), SIGNAL(archivedMessageReceived(const QString &, const QXmppMessage &)),
                          this, SLOT(archivedMessageReceived(const QString &, const QXmppMessage &)));
+        QObject::connect(this, SIGNAL(msgRecved(const bool &)), this, SLOT(setMsgRecved(const bool &)));
 
         //
         // The spelling mistake for the SIGNAL, QXmppMamManager::resultsRecieved(), seems to be unknowingly intentional by
@@ -976,6 +979,16 @@ QString GkXmppClient::obtainAvatarFilePath()
 }
 
 /**
+ * @brief GkXmppClient::getMsgRecved
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return
+ */
+bool GkXmppClient::getMsgRecved() const
+{
+    return m_msgRecved;
+}
+
+/**
  * @brief GkXmppClient::getArchivedMessagesBulk retrieves archived messages. For each received message, the
  * `m_xmppMamMgr->archivedMessageReceived()` signal is emitted. Once all messages are received, the `m_xmppMamMgr->resultsRecieved()`
  * signal is emitted. It returns a result set that can be used to page through the results. The number of results may
@@ -1011,10 +1024,12 @@ void GkXmppClient::getArchivedMessagesBulk(const QString &from)
  * question via a filtered manner, grabbing what it via calculated QDateTime's, quite unlike its cousin function which is
  * more for grabbing a bulk amount of messages, GkXmppClient::getArchivedMessagesBulk().
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param from
+ * @param recursion The amount of times this function has been recurisvely executed.
+ * @param from The bareJid we are receiving from.
+ * @param preset_time A pre-calculated time to use instead that is faster and more reliable, provided it's available.
  * @see GkXmppClient::getArchivedMessagesBulk()
  */
-void GkXmppClient::getArchivedMessagesFine(const QString &from)
+void GkXmppClient::getArchivedMessagesFine(qint32 recursion, const QString &from, const QDateTime &preset_time)
 {
     try {
         QXmppResultSetQuery queryLimit;
@@ -1024,13 +1039,28 @@ void GkXmppClient::getArchivedMessagesFine(const QString &from)
         //
         // Calculate the most minimum timestamp we can possibly use, therefore minimizing the amount of bandwidth used to
         // download archived messages over the Internet!
-        const QDateTime min_time = calcMinTimestampForXmppMsgHistory(from, m_rosterList);
+        QDateTime min_time;
+        if (preset_time.isValid() && !preset_time.isNull()) {
+            min_time = preset_time;
+        } else {
+            min_time = calcMinTimestampForXmppMsgHistory(from, m_rosterList);
+        }
+
+        if (!min_time.isValid() || min_time.isNull()) {
+            throw std::invalid_argument(tr("Unable to calculate a minimum time value for grabbing newly archived messages from the given XMPP server!").toStdString());
+        }
+
         gkEventLogger->publishEvent(tr("Most minimum XEP-0313 timestamp calculated for user, \"%1\", is: %2.").arg(from, min_time.toLocalTime().toString()),
                                     GkSeverity::Debug, "", false, true, false, false, false);
 
-        //
-        // Retrieve any archived messages from the given XMPP server as according to the specification, XEP-0313!
-        m_xmppMamMgr->retrieveArchivedMessages({}, {}, from, min_time, QDateTime::currentDateTimeUtc(), queryLimit);
+        while (!m_msgRecved) {
+            //
+            // Retrieve any archived messages from the given XMPP server as according to the specification, XEP-0313!
+            m_xmppMamMgr->retrieveArchivedMessages({}, {}, from, min_time, QDateTime::currentDateTimeUtc(), queryLimit);
+            std::this_thread::sleep_for(std::chrono::milliseconds(GK_XMPP_MAM_THREAD_SLEEP_MILLISECS));
+        }
+
+        return;
     } catch (const std:: exception &e) {
         std::throw_with_nested(std::runtime_error(e.what()));
     }
@@ -1528,7 +1558,17 @@ void GkXmppClient::sendXmppMsg(const QXmppMessage &msg)
     if (msg.isXmppStanza()) {
         const bool msg_sent_succ = sendPacket(msg);
         if (msg_sent_succ) {
-            getArchivedMessagesFine(msg.to());
+            if (m_archivedMsgsFineThread.joinable()) {
+                m_archivedMsgsFineThread.join();
+            }
+
+            if (!m_archivedMsgsFineThread.joinable()) {
+                const QDateTime curr_time = QDateTime::currentDateTimeUtc();
+                m_archivedMsgsFineThread = std::thread(&GkXmppClient::getArchivedMessagesFine, this, 0, msg.to(), curr_time);
+                m_archivedMsgsFineThread.detach();
+            }
+
+            emit msgRecved(false);
         }
     }
 
@@ -2310,6 +2350,21 @@ void GkXmppClient::updateRecordedMsgHistory(const QString &bareJid)
         }
     } catch (const std::exception &e) {
         gkStringFuncs->print_exception(e);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkXmppClient::setMsgRecved
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param setValid
+ */
+void GkXmppClient::setMsgRecved(const bool &setValid)
+{
+    m_msgRecved = false;
+    if (setValid) {
+        m_msgRecved = true;
     }
 
     return;
