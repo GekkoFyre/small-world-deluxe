@@ -120,6 +120,7 @@ GkXmppMessageDialog::GkXmppMessageDialog(QPointer<GekkoFyre::StringFuncs> string
         QObject::connect(m_xmppClient, SIGNAL(msgArchiveSuccReceived()), this, SLOT(msgArchiveSuccReceived()));
         QObject::connect(m_xmppClient, SIGNAL(procXmppMsg(const QXmppMessage &, const bool &)),
                          this, SLOT(getArchivedMessagesFromDb(const QXmppMessage &, const bool &)));
+        QObject::connect(this, SIGNAL(msgRecved(const bool &)), m_xmppClient, SIGNAL(msgRecved(const bool &)));
 
         //
         // Setup and initialize QTableView's...
@@ -439,6 +440,7 @@ void GkXmppMessageDialog::recvXmppMsg(const QXmppMessage &msg)
  */
 void GkXmppMessageDialog::procMsgArchive(const QString &bareJid)
 {
+    // TODO: Refactor this code!
     auto rosterMap = m_xmppClient->getRosterMap();
     if (!rosterMap.isEmpty()) {
         gkXmppRecvMsgsTableViewModel.clear();
@@ -539,6 +541,9 @@ void GkXmppMessageDialog::getArchivedMessagesFromDb(const QXmppMessage &message,
 
         if (message.isXmppStanza() && !message.body().isEmpty()) {
             gkXmppRecvMsgsTableViewModel->insertData(message.to(), message.body(), message.stamp());
+            if (!m_xmppClient->getMsgRecved()) {
+                emit msgRecved(true);
+            }
         }
 
         ui->tableView_recv_msg_dlg->scrollToBottom();
