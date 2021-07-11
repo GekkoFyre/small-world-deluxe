@@ -37,7 +37,6 @@
 
 #include "src/ui/gkaudioplaydialog.hpp"
 #include "ui_gkaudioplaydialog.h"
-#include <boost/exception/all.hpp>
 #include <exception>
 #include <utility>
 #include <QTimer>
@@ -106,7 +105,7 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
 GkAudioPlayDialog::~GkAudioPlayDialog()
 {
     if (audio_out_play) {
-        gkPaAudioPlayer->stop(m_audioFile.path().toStdString());
+        gkPaAudioPlayer->stop(m_audioFile);
         gkEventLogger->publishEvent(tr("Stopped playing audio file, \"%1\"").arg(m_audioFile.path()), GkSeverity::Info, "", true, true, true, false);
     }
 
@@ -192,7 +191,7 @@ void GkAudioPlayDialog::on_pushButton_playback_stop_clicked()
 {
     if (!audio_out_stop) {
         gkStringFuncs->changePushButtonColor(ui->pushButton_playback_stop, false);
-        gkPaAudioPlayer->stop(m_audioFile.path().toStdString());
+        gkPaAudioPlayer->stop(m_audioFile);
         gkEventLogger->publishEvent(tr("Stopped playing audio file, \"%1\"").arg(m_audioFile.path()), GkSeverity::Info, "", true, true, true, false);
 
         audio_out_stop = true;
@@ -231,7 +230,7 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
 
             GkAudioFramework::CodecSupport codec_used = gkDb->convCodecSupportFromIdxToEnum(ui->comboBox_playback_rec_codec->currentData().toInt());
             if (m_pbackAudioFile.exists() && codec_used != GkAudioFramework::CodecSupport::Loopback) {
-                gkPaAudioPlayer->play(codec_used, m_audioFile.path().toStdString());
+                gkPaAudioPlayer->play(codec_used, m_audioFile);
                 gkEventLogger->publishEvent(
                         tr("Started playing audio file, \"%1\"").arg(m_audioFile.path()),
                         GkSeverity::Info, "", true, true, true, false);
@@ -246,7 +245,7 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
                 .arg(m_pbackAudioFile.fileName()).toStdString());
             }
         } else {
-            gkPaAudioPlayer->stop(m_audioFile.path().toStdString());
+            gkPaAudioPlayer->stop(m_audioFile);
             gkEventLogger->publishEvent(tr("Stopped playing audio file, \"%1\"").arg(m_audioFile.path()), GkSeverity::Info, "", true, true, true, false);
 
             gkStringFuncs->changePushButtonColor(ui->pushButton_playback_play, true);
@@ -300,11 +299,11 @@ void GkAudioPlayDialog::on_pushButton_playback_record_clicked()
             }
 
             GkAudioFramework::CodecSupport codec_used = gkDb->convCodecSupportFromIdxToEnum(ui->comboBox_playback_rec_codec->currentData().toInt());
-            if (m_recordDirPath.isReadable()) {
+            if (m_recordDirPath.isReadable()) { // Verify that the directory itself exists!
                 ui->lineEdit_playback_file_location->setText(m_recordDirPath.path());
-                gkDb->write_audio_playback_dlg_settings(QString::fromStdString(m_recordDirPath.path().toStdString()), AudioPlaybackDlg::GkRecordDlgLastFolderBrowsed);
+                gkDb->write_audio_playback_dlg_settings(m_recordDirPath.path(), AudioPlaybackDlg::GkRecordDlgLastFolderBrowsed);
                 if (codec_used != GkAudioFramework::CodecSupport::Loopback) {
-                    gkPaAudioPlayer->record(codec_used, m_recordDirPath.path().toStdString());
+                    gkPaAudioPlayer->record(codec_used, m_recordDirPath);
                 } else {
                     throw std::runtime_error(tr("Loopback mode is unsupported during recording!").toStdString());
                 }

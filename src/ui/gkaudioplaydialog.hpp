@@ -44,7 +44,6 @@
 #include "src/file_io.hpp"
 #include "src/pa_audio_player.hpp"
 #include <AudioFile.h>
-#include <boost/filesystem.hpp>
 #include <memory>
 #include <string>
 #include <vector>
@@ -60,9 +59,6 @@
 #include <QAudioOutput>
 #include <QAudioFormat>
 #include <QAudioDeviceInfo>
-
-namespace fs = boost::filesystem;
-namespace sys = boost::system;
 
 namespace Ui {
 class GkAudioPlayDialog;
