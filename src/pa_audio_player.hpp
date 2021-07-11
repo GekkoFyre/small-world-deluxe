@@ -46,18 +46,14 @@
 #include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
 #include <AudioFile.h>
-#include <boost/filesystem.hpp>
-#include <boost/exception/all.hpp>
 #include <memory>
 #include <string>
+#include <QDir>
 #include <QString>
 #include <QObject>
 #include <QPointer>
 #include <QAudioInput>
 #include <QAudioOutput>
-
-namespace fs = boost::filesystem;
-namespace sys = boost::system;
 
 namespace GekkoFyre {
 
@@ -73,11 +69,11 @@ public:
                              std::shared_ptr<AudioFile<double>> audioFileLib, QObject *parent = nullptr);
     virtual ~GkPaAudioPlayer();
 
-    void play(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const fs::path &audio_file);
+    void play(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const QDir &audio_file);
     void play(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
-    void record(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const fs::path &record_dir);
-    void loop(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const fs::path &audio_file);
-    void stop(const fs::path &audio_file);
+    void record(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const QDir &record_dir);
+    void loop(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const QDir &audio_file);
+    void stop(const QDir &audio_file);
     void loopback();
 
 private:
@@ -88,7 +84,6 @@ private:
 
     //
     // AudioFile objects and related
-    //
     std::shared_ptr<AudioFile<double>> gkAudioFile;
 
 };

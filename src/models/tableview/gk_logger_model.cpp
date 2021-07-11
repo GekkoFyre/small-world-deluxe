@@ -261,7 +261,7 @@ QVariant GkEventLoggerTableViewModel::data(const QModelIndex &index, int role) c
     case GK_EVENTLOG_TABLEVIEW_MODEL_EVENT_NO_IDX:
         return row_event_no;
     case GK_EVENTLOG_TABLEVIEW_MODEL_DATETIME_IDX:
-        return timestamp.toString(tr("yyyy-MM-dd hh:mm:ss"));
+        return timestamp.toString(General::Logging::dateTimeFormatting);
     case GK_EVENTLOG_TABLEVIEW_MODEL_SEVERITY_IDX:
         return row_severity_str;
     case GK_EVENTLOG_TABLEVIEW_MODEL_MESSAGE_IDX:

@@ -56,6 +56,7 @@ using namespace Events;
 using namespace Logging;
 using namespace Network;
 using namespace GkXmpp;
+using namespace Security;
 
 /**
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -82,7 +83,7 @@ GkPaAudioPlayer::~GkPaAudioPlayer()
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param audio_file
  */
-void GkPaAudioPlayer::play(const GkAudioFramework::CodecSupport &supported_codec, const fs::path &audio_file)
+void GkPaAudioPlayer::play(const GkAudioFramework::CodecSupport &supported_codec, const QDir &audio_file)
 {
     try {
         streamHandler->processEvent(GkAudioFramework::AudioEventType::start, audio_file, supported_codec, false);
@@ -102,7 +103,7 @@ void GkPaAudioPlayer::play(const GkAudioFramework::CodecSupport &supported_codec
 void GkPaAudioPlayer::play(const GkAudioFramework::CodecSupport &supported_codec)
 {
     try {
-        streamHandler->processEvent(GkAudioFramework::AudioEventType::start, fs::path(), supported_codec, false);
+        streamHandler->processEvent(GkAudioFramework::AudioEventType::start, QDir(), supported_codec, false);
     } catch (const std::exception &e) {
         QMessageBox::warning(nullptr, tr("Error!"), tr("A stream processing error has occurred with regards to the PortAudio library handling functions. Error:\n\n%1")
                 .arg(QString::fromStdString(e.what())), QMessageBox::Ok);
@@ -118,7 +119,7 @@ void GkPaAudioPlayer::play(const GkAudioFramework::CodecSupport &supported_codec
  * @param supported_codec The codec to use when creating the recording, whether it be Opus, PCM, FLAC, etc.
  * @param record_dir The directory to which recordings are to be saved towards.
  */
-void GkPaAudioPlayer::record(const CodecSupport &supported_codec, const fs::path &record_dir)
+void GkPaAudioPlayer::record(const CodecSupport &supported_codec, const QDir &record_dir)
 {
     try {
         streamHandler->processEvent(GkAudioFramework::AudioEventType::record, record_dir, supported_codec, false);
@@ -135,7 +136,7 @@ void GkPaAudioPlayer::record(const CodecSupport &supported_codec, const fs::path
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param audio_file
  */
-void GkPaAudioPlayer::loop(const GkAudioFramework::CodecSupport &supported_codec, const fs::path &audio_file)
+void GkPaAudioPlayer::loop(const GkAudioFramework::CodecSupport &supported_codec, const QDir &audio_file)
 {
     try {
         streamHandler->processEvent(GkAudioFramework::AudioEventType::start, audio_file, supported_codec, true);
@@ -152,7 +153,7 @@ void GkPaAudioPlayer::loop(const GkAudioFramework::CodecSupport &supported_codec
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param audio_file
  */
-void GkPaAudioPlayer::stop(const fs::path &audio_file)
+void GkPaAudioPlayer::stop(const QDir &audio_file)
 {
     try {
         streamHandler->processEvent(GkAudioFramework::AudioEventType::stop, audio_file);

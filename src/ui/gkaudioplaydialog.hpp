@@ -44,12 +44,12 @@
 #include "src/file_io.hpp"
 #include "src/pa_audio_player.hpp"
 #include <AudioFile.h>
-#include <boost/filesystem.hpp>
 #include <memory>
 #include <string>
 #include <vector>
 #include <thread>
 #include <mutex>
+#include <QDir>
 #include <QFile>
 #include <QObject>
 #include <QDialog>
@@ -59,9 +59,6 @@
 #include <QAudioOutput>
 #include <QAudioFormat>
 #include <QAudioDeviceInfo>
-
-namespace fs = boost::filesystem;
-namespace sys = boost::system;
 
 namespace Ui {
 class GkAudioPlayDialog;
@@ -82,13 +79,16 @@ public:
                                QWidget *parent = nullptr);
     ~GkAudioPlayDialog() override;
 
+    //
+    // QAudioSystem initialization and buffers
     GekkoFyre::Database::Settings::GkAudioChannels determineAudioChannels();
 
 private slots:
+    //
+    // QPushButtons, etc.
     void on_pushButton_reset_clicked();
     void on_pushButton_close_clicked();
     void on_pushButton_playback_stop_clicked();
-    void on_pushButton_playback_browse_file_loc_clicked();
     void on_pushButton_playback_play_clicked();
     void on_pushButton_playback_record_clicked();
     void on_pushButton_playback_skip_back_clicked();
@@ -112,8 +112,13 @@ private:
     QPointer<GekkoFyre::GkPaAudioPlayer> gkPaAudioPlayer;
 
     //
-    // QPushButtons, etc.
+    // Filesystem paths and related
+    QFile m_pbackAudioFile;
+    QDir m_audioFile;
+    QDir m_recordDirPath;
+
     //
+    // QPushButtons, etc.
     bool audio_out_play;
     bool audio_out_stop;
     bool audio_out_record;
@@ -122,7 +127,6 @@ private:
 
     //
     // QAudioSystem initialization and buffers
-    //
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
     GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
@@ -130,17 +134,12 @@ private:
 
     //
     // Audio encoding related objects
-    //
     GekkoFyre::GkAudioFramework::CodecSupport m_rec_codec_chosen;
     qint32 m_encode_bitrate_chosen;
 
     //
     // AudioFile objects and related
-    //
     std::shared_ptr<AudioFile<double>> gkAudioFile;
-
-    QFile r_pback_audio_file;
-    fs::path audio_file_path;
     GekkoFyre::GkAudioFramework::AudioFileInfo gkAudioFileInfo;
 
     template <typename T>
