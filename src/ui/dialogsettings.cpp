@@ -343,6 +343,14 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
         ui->lineEdit_xmpp_client_email_address->setValidator(new QRegularExpressionValidator(rxEmail, this));
 
         //
+        // QXmpp variables and widgets
+        ui->dateEdit_cfg_msg_archiving_timespan->setDisplayFormat(General::Xmpp::dateTimeFormatting);
+        ui->dateEdit_cfg_msg_archiving_timespan->setDateTime(QDateTime::currentDateTime().toLocalTime());
+        ui->dateEdit_cfg_msg_archiving_timespan->setMinimumDateTime(QDateTime::currentDateTime().addYears(GK_XMPP_MAM_MIN_DATETIME_YEARS).toLocalTime());
+        xmppUpdateCalendarThread = std::thread(&DialogSettings::xmppUpdateCalendarDateTime, this, QDateTime::currentDateTime().toLocalTime());
+        xmppUpdateCalendarThread.detach();
+
+        //
         // Validate inputs for the Username
         //
         QRegularExpression rxUsername(R"(\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}\b)", QRegularExpression::CaseInsensitiveOption);
@@ -362,6 +370,10 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
  */
 DialogSettings::~DialogSettings()
 {
+    if (xmppUpdateCalendarThread.joinable()) {
+        xmppUpdateCalendarThread.join();
+    }
+
     delete rig_comboBox;
     delete mfg_comboBox;
 
@@ -728,6 +740,21 @@ void DialogSettings::on_pushButton_submit_config_clicked()
 void DialogSettings::on_pushButton_cancel_config_clicked()
 {
     this->close();
+}
+
+/**
+ * @brief DialogSettings::xmppUpdateCalendarDateTime updates the widget, `ui->dateEdit_cfg_msg_archiving_timespan()`,
+ * with the latest timing and date information.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param startTime The time and/or date at which to start the updates from.
+ */
+void DialogSettings::xmppUpdateCalendarDateTime(const QDateTime &startTime)
+{
+    std::lock_guard<std::mutex> lock_guard(xmppUpdateCalendarMtx);
+    ui->dateEdit_cfg_msg_archiving_timespan->setMaximumDateTime(QDateTime::currentDateTime().toLocalTime());
+    std::this_thread::sleep_for(std::chrono::milliseconds(GK_XMPP_MAN_SLEEP_DATETIME_MILLISECS));
+
+    return;
 }
 
 /**
@@ -3284,6 +3311,36 @@ void DialogSettings::on_comboBox_accessibility_lang_ui_currentIndexChanged(int i
  * @param arg1
  */
 void DialogSettings::on_comboBox_accessibility_dict_currentIndexChanged(const QString &arg1)
+{
+    return;
+}
+
+/**
+ * @brief DialogSettings::on_horizontalSlider_accessibility_appearance_ui_scale_valueChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value
+ */
+void DialogSettings::on_horizontalSlider_accessibility_appearance_ui_scale_valueChanged(int value)
+{
+    return;
+}
+
+/**
+ * @brief DialogSettings::on_checkBox_accessibility_appearance_enbl_custom_font_toggled
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param checked
+ */
+void DialogSettings::on_checkBox_accessibility_appearance_enbl_custom_font_toggled(bool checked)
+{
+    return;
+}
+
+/**
+ * @brief DialogSettings::on_fontComboBox_accessibility_appearance_custom_font_currentFontChanged
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param f
+ */
+void DialogSettings::on_fontComboBox_accessibility_appearance_custom_font_currentFontChanged(const QFont &f)
 {
     return;
 }

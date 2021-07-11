@@ -881,26 +881,6 @@ if (ENBL_VALGRIND_SUPPORT)
 endif()
 
 #
-# https://gist.github.com/giraldeau/546ba5512a74dfe9d8ea0862d66db412
-#
-# qt5_create_translation(QM_FILES ${GALAXY_UI_CPP} SmallWorldDeluxe_en_US.ts SmallWorldDeluxe_de_DE.ts) # Create the translation files for Small World Deluxe!
-
-#
-# Only call lrelease on each translation files to create qm files.
-# This command assumes that the ts files already exists (manually created).
-#
-# qt5_add_translation(QM_FILES SmallWorldDeluxe_en_US.ts SmallWorldDeluxe_de_DE.ts)
-
-#
-# The qm files are generated in the build tree, but the qrc file is inside the
-# source directory and the path to resources are relative to the location of
-# the qrc file itself. We use configure_file() to copy the qrc file in the build
-# directory such that it can find the qm translations files. The qrc file is
-# copied if it doesn't exist in the destination or if it is modified.
-#
-# configure_file(translations.qrc ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
-
-#
 # Build Small World Deluxe as a static package!
 #
 if(GFYRE_BUILD_STATIC)
@@ -925,13 +905,34 @@ endif(GFYRE_BUILD_SHARED)
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
 target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} ICU::i18n ICU::data ICU::uc OpenSSL::SSL Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::Multimedia Qt5::SerialPort Qt5::PrintSupport Qt5::Xml Qt5::TextToSpeech Qt5::Test QXmpp::QXmpp Threads::Threads SingleApplication::SingleApplication sentry::sentry Opus::opus leveldb kissfft ${LIBS})
 
+#
+# Qt Translations
+#
+qt5_create_translation(QM_FILES ${GALAXY_UI_CPP} ${UI_HEADERS} ${GALAXY_OBJ_HEADERS} gk_english.ts)
+
+#
+# The qm files are generated in the build tree, but the qrc file is inside the
+# source directory and the path to resources are relative to the location of
+# the qrc file itself. We use configure_file() to copy the qrc file in the build
+# directory such that it can find the qm translations files. The qrc file is
+# copied if it doesn't exist in the destination or if it is modified.
+#
+# configure_file(translations.qrc ${CMAKE_BINARY_DIR} COPYONLY)
+
 qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)
 add_dependencies(galaxy resources)
 
 set(SWRLD_EXEC ${SWRLD_EXEC}
     src/main.cpp)
 
-add_executable(smallworld WIN32 ${SWRLD_EXEC})
+if(WIN32 OR MSYS OR MINGW)
+    add_executable(smallworld WIN32 ${SWRLD_EXEC})
+elseif(LINUX)
+    add_executable(smallworld ${SWRLD_EXEC})
+else()
+    message(FATAL_ERROR "Unsupported operating system detected! Please check back at the official code repository for further updates. Thank you.")
+endif()
+
 target_compile_options(smallworld PRIVATE -fPIC)
 target_compile_definitions(galaxy PRIVATE -DUSE_KISS_FFT)
 target_link_libraries(smallworld PRIVATE galaxy)
