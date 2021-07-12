@@ -109,8 +109,8 @@ GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, co
 
 GkPaStreamHandler::~GkPaStreamHandler()
 {
-    if (!procMediaEventLoop.isNull()) {
-        delete procMediaEventLoop;
+    if (procMediaEventLoop->isRunning()) {
+        procMediaEventLoop->quit();
     }
 
     return;

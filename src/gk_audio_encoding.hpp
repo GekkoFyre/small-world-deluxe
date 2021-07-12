@@ -48,6 +48,7 @@
 #include <sndfile.hh>
 #include <opus/opusenc.h>
 #include <mutex>
+#include <thread>
 #include <cstdio>
 #include <memory>
 #include <string>
@@ -130,16 +131,16 @@ public slots:
                      const qint32 &bitrate, const GekkoFyre::GkAudioFramework::CodecSupport &codec_choice,
                      const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER, const qint32 &application = OPUS_APPLICATION_AUDIO);
     void stopEncode();
-    void processAudioInEncode();
-    void processAudioOutEncode();
+    void processAudioInEncode(const GkAudioFramework::CodecSupport &codec, const qint32 &bitrate, const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
+    void processAudioOutEncode(const GkAudioFramework::CodecSupport &codec, const qint32 &bitrate, const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
 
 private slots:
     void stopCaller();
     void handleError(const QString &msg, const GekkoFyre::System::Events::Logging::GkSeverity &severity);
 
-    void encodeOpus();
-    void encodeVorbis();
-    void encodeFLAC();
+    void encodeOpus(const qint32 &bitrate, const qint32 &frame_size = AUDIO_OPUS_MAX_FRAME_SIZE);
+    void encodeVorbis(const qint32 &bitrate, const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
+    void encodeFLAC(const qint32 &bitrate, const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
 
 signals:
     void pauseEncode();
@@ -154,7 +155,6 @@ private:
 
     //
     // QAudioSystem initialization and buffers
-    //
     GekkoFyre::Database::Settings::Audio::GkDevice gkInputDev;
     GekkoFyre::Database::Settings::Audio::GkDevice gkOutputDev;
     QPointer<QAudioInput> gkAudioInput;
@@ -162,11 +162,9 @@ private:
 
     //
     // Encoder variables
-    //
     bool m_initialized = false;                                 // Whether an encoding operation has begun or not; therefore block other attempts until this singular one has stopped.
-    QDir m_file_path;                                       // The file-path to the audio file where the encoded information will be written.
+    QDir m_file_path;                                           // The file-path to the audio file where the encoded information will be written.
     QByteArray m_buffer;                                        // A QByteArray, providing more readily accessible information as needed by the FLAC, Ogg Vorbis, Ogg Opus, etc. encoders.
-    GkAudioFramework::CodecSupport m_chosen_codec;              // The chosen audio encoding codec, whether it be FLAC, Ogg Vorbis, Ogg Opus, etc.
     QPointer<QBuffer> gkAudioInputBuf;                          // For reading RAW PCM audio data from a given QAudioInput into.
     QPointer<QBuffer> gkAudioOutputBuf;                         // For reading RAW PCM audio data from a given QAudioOutput into.
     QPointer<QBuffer> m_encoded_buf;                            // For holding the encoded data whether it be FLAC, Ogg Vorbis, Ogg Opus, etc. as calculated from `record_input_buf`.
@@ -175,7 +173,6 @@ private:
 
     //
     // Opus related
-    //
     opus_int32 m_sample_rate = 48000;
     qint32 m_channels = 0;
     qint32 m_frame_size = 0;
@@ -183,11 +180,12 @@ private:
     OggOpusComments *m_opus_comments = nullptr;
 
     //
-    // Multithreading related objects
-    //
-    std::mutex async_ogg_opus_mtx;
-    std::mutex async_ogg_vorbis_mtx;
-    std::mutex async_flac_mtx;
+    // Multithreading and mutexes
+    std::mutex m_asyncOggOpusMtx;
+    std::mutex m_asyncOggVorbisMtx;
+    std::mutex m_asyncFlacMtx;
+    std::thread m_audioInEncodeThread;
+    std::thread m_audioOutEncodeThread;
 
 };
 };
