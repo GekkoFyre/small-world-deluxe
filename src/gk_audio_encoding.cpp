@@ -40,7 +40,6 @@
  ****************************************************************************************************/
 
 #include "src/gk_audio_encoding.hpp"
-#include <boost/exception/all.hpp>
 #include <vector>
 #include <cstring>
 #include <iostream>
@@ -178,7 +177,7 @@ void GkAudioEncoding::stopEncode()
  * @param application
  * @note rafix07 <https://stackoverflow.com/questions/53405439/how-to-use-stdasync-on-a-queue-of-vectors-or-a-vector-of-vectors-to-sort>.
  */
-void GkAudioEncoding::startCaller(const fs::path &media_path, const Database::Settings::Audio::GkDevice &audio_dev_info,
+void GkAudioEncoding::startCaller(const QDir &media_path, const Database::Settings::Audio::GkDevice &audio_dev_info,
                                   const qint32 &bitrate, const GkAudioFramework::CodecSupport &codec_choice,
                                   const qint32 &frame_size, const qint32 &application)
 {
@@ -190,6 +189,7 @@ void GkAudioEncoding::startCaller(const fs::path &media_path, const Database::Se
         m_chosen_codec = codec_choice;
         m_file_path = media_path;
         m_channels = gkAudioInput->format().channelCount();
+        const char *file_path_tmp = m_file_path.path().toStdString().c_str();
 
         //
         // QAudio defines Stereo as a count of '3' for some odd reason??? No idea why...
@@ -220,11 +220,11 @@ void GkAudioEncoding::startCaller(const fs::path &media_path, const Database::Se
             // https://stackoverflow.com/questions/46786922/how-to-confirm-opus-encode-buffer-size
             //
             qint32 err;
-            m_opus_encoder = ope_encoder_create_file(m_file_path.string().c_str(), m_opus_comments, m_sample_rate, m_channels, 0, &err);
+            m_opus_encoder = ope_encoder_create_file(file_path_tmp, m_opus_comments, m_sample_rate, m_channels, 0, &err);
 
             if (!m_opus_encoder) {
-                emit error(tr("Error encoding to file: %1\n\n%2").arg(QString::fromStdString(m_file_path.string()))
-                                   .arg(QString::fromStdString(ope_strerror(err))), GkSeverity::Fatal);
+                emit error(tr("Error encoding to file: %1\n\n%2").arg(m_file_path.path(), QString::fromStdString(ope_strerror(err))),
+                           GkSeverity::Fatal);
 
                 ope_comments_destroy(m_opus_comments);
                 return;
@@ -243,8 +243,8 @@ void GkAudioEncoding::startCaller(const fs::path &media_path, const Database::Se
             m_encoded_buf->open(QBuffer::ReadWrite);
             m_handle_in = SndfileHandle(m_virtual_io, (void *)m_encoded_buf, SFM_WRITE, SF_FORMAT_OGG | SF_FORMAT_VORBIS, m_channels, m_sample_rate);
             if (!m_handle_in) {
-                emit error(tr("Error encoding to file: %1\n\n%2").arg(QString::fromStdString(m_file_path.string()))
-                                   .arg(QString::fromStdString(m_handle_in.strError())), GkSeverity::Fatal);
+                emit error(tr("Error encoding to file: %1\n\n%2").arg(m_file_path.path(), QString::fromStdString(m_handle_in.strError())),
+                           GkSeverity::Fatal);
             }
 
             m_handle_in.setString(SF_STR_ARTIST, tr("%1 by %2 et al.")
@@ -254,10 +254,10 @@ void GkAudioEncoding::startCaller(const fs::path &media_path, const Database::Se
 
             if (!m_out_file.isOpen()) {
                 m_out_file.setParent(this);
-                m_out_file.setFileName(QString::fromStdString(m_file_path.string()));
+                m_out_file.setFileName(m_file_path.path());
                 if (!m_out_file.open(QIODevice::WriteOnly)) {
                     throw std::runtime_error(tr("Error with opening file, \"%1\"")
-                                                     .arg(QString::fromStdString(m_file_path.string())).toStdString());
+                    .arg(m_file_path.path()).toStdString());
                 }
             } else {
                 throw std::runtime_error(tr("Race condition encountered: only a singular recording instance may be open at a time!").toStdString());
@@ -284,8 +284,8 @@ void GkAudioEncoding::startCaller(const fs::path &media_path, const Database::Se
             m_encoded_buf->open(QBuffer::ReadWrite);
             m_handle_in = SndfileHandle(m_virtual_io, (void *)m_encoded_buf, SFM_WRITE, SF_FORMAT_OGG | SF_FORMAT_VORBIS, m_channels, m_sample_rate);
             if (!m_handle_in) {
-                emit error(tr("Error encoding to file: %1\n\n%2").arg(QString::fromStdString(m_file_path.string()))
-                                   .arg(QString::fromStdString(m_handle_in.strError())), GkSeverity::Fatal);
+                emit error(tr("Error encoding to file: %1\n\n%2").arg(m_file_path.path(), QString::fromStdString(m_handle_in.strError())),
+                           GkSeverity::Fatal);
             }
 
             m_handle_in.setString(SF_STR_ARTIST, tr("%1 by %2 et al.")
@@ -295,10 +295,9 @@ void GkAudioEncoding::startCaller(const fs::path &media_path, const Database::Se
 
             if (!m_out_file.isOpen()) {
                 m_out_file.setParent(this);
-                m_out_file.setFileName(QString::fromStdString(m_file_path.string()));
+                m_out_file.setFileName(m_file_path.path());
                 if (!m_out_file.open(QIODevice::WriteOnly)) {
-                    throw std::runtime_error(tr("Error with opening file, \"%1\"")
-                                                     .arg(QString::fromStdString(m_file_path.string())).toStdString());
+                    throw std::runtime_error(tr("Error with opening file, \"%1\"").arg(m_file_path.path()).toStdString());
                 }
             } else {
                 throw std::runtime_error(tr("Race condition encountered: only a singular recording instance may be open at a time!").toStdString());
@@ -432,8 +431,8 @@ void GkAudioEncoding::encodeOpus()
 
             err = ope_encoder_write(m_opus_encoder, input_frame.data(), m_frame_size);
             if (err != OPE_OK) {
-                emit error(tr("Error encoding to file: %1\n\n%2").arg(QString::fromStdString(m_file_path.string()))
-                                   .arg(QString::fromStdString(ope_strerror(err))), GkSeverity::Fatal);
+                emit error(tr("Error encoding to file: %1\n\n%2").arg(m_file_path.path(), QString::fromStdString(ope_strerror(err))),
+                           GkSeverity::Fatal);
 
                 ope_comments_destroy(m_opus_comments);
                 return;
@@ -441,8 +440,8 @@ void GkAudioEncoding::encodeOpus()
 
             err = ope_encoder_drain(m_opus_encoder);
             if (err != OPE_OK) {
-                emit error(tr("Error encoding to file: %1\n\n%2").arg(QString::fromStdString(m_file_path.string()))
-                                   .arg(QString::fromStdString(ope_strerror(err))), GkSeverity::Fatal);
+                emit error(tr("Error encoding to file: %1\n\n%2").arg(m_file_path.path(), QString::fromStdString(ope_strerror(err))),
+                           GkSeverity::Fatal);
 
                 ope_comments_destroy(m_opus_comments);
                 return;

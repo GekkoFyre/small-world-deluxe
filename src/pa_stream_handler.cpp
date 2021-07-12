@@ -161,7 +161,7 @@ void GkPaStreamHandler::processEvent(GkAudioFramework::AudioEventType audioEvent
                 break;
         }
     } catch (const std::exception &e) {
-        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Error, true, true, false, false);
+        std::throw_with_nested(e.what());
     }
 
     return;
@@ -232,7 +232,6 @@ void GkPaStreamHandler::playMediaFile(const QDir &media_path, const GkAudioFrame
 void GkPaStreamHandler::recordMediaFile(const QDir &media_path, const GkAudioFramework::CodecSupport &supported_codec,
                                         qint32 encoding_bitrate)
 {
-    sys::error_code ec;
     try {
         if (encoding_bitrate >= 8) {
             if (pref_input_device.is_enabled) {
@@ -434,7 +433,7 @@ QDir GkPaStreamHandler::createRecordMediaFile(const QDir &media_path, const Code
     const QDir mediaRetPath = QDir(media_path.path() + "/" + QString::number(epochSecs) + "_" + QString::fromStdString(randStr) + extension);
 
     if (create_file) {
-        fs::ofstream(mediaRetPath); // Create the dummy file!
+        QDir().mkpath(mediaRetPath.path()); // Create the dummy file!
     }
 
     return mediaRetPath;

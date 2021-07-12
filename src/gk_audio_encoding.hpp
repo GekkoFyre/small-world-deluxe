@@ -47,11 +47,11 @@
 #include <sndfile.h>
 #include <sndfile.hh>
 #include <opus/opusenc.h>
-#include <boost/filesystem.hpp>
 #include <mutex>
 #include <cstdio>
 #include <memory>
 #include <string>
+#include <QDir>
 #include <QFile>
 #include <QObject>
 #include <QBuffer>
@@ -61,9 +61,6 @@
 #include <QAudioInput>
 #include <QAudioOutput>
 #include <QAudioFormat>
-
-namespace fs = boost::filesystem;
-namespace sys = boost::system;
 
 namespace GekkoFyre {
 
@@ -129,7 +126,7 @@ public:
     QString codecEnumToStr(const GkAudioFramework::CodecSupport &codec);
 
 public slots:
-    void startCaller(const fs::path &media_path, const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev_info,
+    void startCaller(const QDir &media_path, const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev_info,
                      const qint32 &bitrate, const GekkoFyre::GkAudioFramework::CodecSupport &codec_choice,
                      const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER, const qint32 &application = OPUS_APPLICATION_AUDIO);
     void stopEncode();
@@ -167,7 +164,7 @@ private:
     // Encoder variables
     //
     bool m_initialized = false;                                 // Whether an encoding operation has begun or not; therefore block other attempts until this singular one has stopped.
-    fs::path m_file_path;                                       // The file-path to the audio file where the encoded information will be written.
+    QDir m_file_path;                                       // The file-path to the audio file where the encoded information will be written.
     QByteArray m_buffer;                                        // A QByteArray, providing more readily accessible information as needed by the FLAC, Ogg Vorbis, Ogg Opus, etc. encoders.
     GkAudioFramework::CodecSupport m_chosen_codec;              // The chosen audio encoding codec, whether it be FLAC, Ogg Vorbis, Ogg Opus, etc.
     QPointer<QBuffer> gkAudioInputBuf;                          // For reading RAW PCM audio data from a given QAudioInput into.
