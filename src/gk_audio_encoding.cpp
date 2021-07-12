@@ -206,7 +206,6 @@ void GkAudioEncoding::startCaller(const QDir &media_path, const Database::Settin
         // Initiate variables
         m_file_path = media_path;
         m_frameSize = frame_size;
-        const char *file_path_tmp = m_file_path.path().toStdString().c_str();
 
         if (audio_dev_info.default_input_dev) {
             //
