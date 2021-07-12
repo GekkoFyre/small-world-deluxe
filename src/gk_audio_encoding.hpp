@@ -131,16 +131,18 @@ public slots:
                      const qint32 &bitrate, const GekkoFyre::GkAudioFramework::CodecSupport &codec_choice,
                      const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER, const qint32 &application = OPUS_APPLICATION_AUDIO);
     void stopEncode();
-    void processAudioInEncode(const GkAudioFramework::CodecSupport &codec, const qint32 &bitrate, const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
-    void processAudioOutEncode(const GkAudioFramework::CodecSupport &codec, const qint32 &bitrate, const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
+    void processAudioInEncode(const GkAudioFramework::CodecSupport &codec, const qint32 &bitrate, const qint32 &sample_rate,
+                              const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
+    void processAudioOutEncode(const GkAudioFramework::CodecSupport &codec, const qint32 &bitrate, const qint32 &sample_rate,
+                               const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
 
 private slots:
     void stopCaller();
     void handleError(const QString &msg, const GekkoFyre::System::Events::Logging::GkSeverity &severity);
 
-    void encodeOpus(const qint32 &bitrate, const qint32 &frame_size = AUDIO_OPUS_MAX_FRAME_SIZE);
-    void encodeVorbis(const qint32 &bitrate, const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
-    void encodeFLAC(const qint32 &bitrate, const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
+    void encodeOpus(const qint32 &bitrate, const qint32 &sample_rate, const qint32 &frame_size = AUDIO_OPUS_MAX_FRAME_SIZE);
+    void encodeVorbis(const qint32 &bitrate, const qint32 &sample_rate, const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
+    void encodeFLAC(const qint32 &bitrate, const qint32 &sample_rate, const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
 
 signals:
     void pauseEncode();
@@ -173,11 +175,10 @@ private:
 
     //
     // Opus related
-    opus_int32 m_sample_rate = 48000;
     qint32 m_channels = 0;
-    qint32 m_frame_size = 0;
-    OggOpusEnc *m_opus_encoder = nullptr;
-    OggOpusComments *m_opus_comments = nullptr;
+    qint32 m_frameSize = 0;
+    OpusEncoder *m_opusEncoder = nullptr;
+    OggOpusComments *m_opusComments = nullptr;
 
     //
     // Multithreading and mutexes
@@ -186,6 +187,8 @@ private:
     std::mutex m_asyncFlacMtx;
     std::thread m_audioInEncodeThread;
     std::thread m_audioOutEncodeThread;
+
+    void opusCleanup();
 
 };
 };
