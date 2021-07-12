@@ -77,6 +77,11 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
     gkEventLogger = std::move(eventLogger);
 
     //
+    // Create SIGNALS and SLOTS
+    QObject::connect(this, SIGNAL(recStatus(const GekkoFyre::GkAudioFramework::GkAudioRecordStatus &)),
+                     gkAudioEncoding, SLOT(setRecStatus(const GekkoFyre::GkAudioFramework::GkAudioRecordStatus &)));
+
+    //
     // Initialize variables
     //
     pref_input_device = input_device;
@@ -104,6 +109,7 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
 
 GkAudioPlayDialog::~GkAudioPlayDialog()
 {
+    emit recStatus(GkAudioRecordStatus::Defunct);
     if (audio_out_play) {
         gkPaAudioPlayer->stop(m_audioFile);
         gkEventLogger->publishEvent(tr("Stopped playing audio file, \"%1\"").arg(m_audioFile.path()), GkSeverity::Info, "", true, true, true, false);
@@ -294,6 +300,7 @@ void GkAudioPlayDialog::on_pushButton_playback_record_clicked()
                 //
                 // End recording state...
                 gkStringFuncs->changePushButtonColor(ui->pushButton_playback_record, true);
+                emit recStatus(GkAudioRecordStatus::Finished);
                 audio_out_record = false;
             }
 
@@ -302,6 +309,7 @@ void GkAudioPlayDialog::on_pushButton_playback_record_clicked()
                 ui->lineEdit_playback_file_location->setText(m_recordDirPath.path());
                 gkDb->write_audio_playback_dlg_settings(m_recordDirPath.path(), AudioPlaybackDlg::GkRecordDlgLastFolderBrowsed);
                 if (codec_used != GkAudioFramework::CodecSupport::Loopback) {
+                    emit recStatus(GkAudioRecordStatus::Active);
                     gkPaAudioPlayer->record(codec_used, m_recordDirPath);
                 } else {
                     throw std::runtime_error(tr("Loopback mode is unsupported during recording!").toStdString());

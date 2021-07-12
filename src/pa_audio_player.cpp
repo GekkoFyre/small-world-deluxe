@@ -83,7 +83,7 @@ GkPaAudioPlayer::~GkPaAudioPlayer()
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param audio_file
  */
-void GkPaAudioPlayer::play(const GkAudioFramework::CodecSupport &supported_codec, const QDir &audio_file)
+void GkPaAudioPlayer::play(const GkAudioFramework::CodecSupport &supported_codec, const QFileInfo &audio_file)
 {
     try {
         streamHandler->processEvent(GkAudioFramework::AudioEventType::start, audio_file, supported_codec, false);
@@ -103,7 +103,7 @@ void GkPaAudioPlayer::play(const GkAudioFramework::CodecSupport &supported_codec
 void GkPaAudioPlayer::play(const GkAudioFramework::CodecSupport &supported_codec)
 {
     try {
-        streamHandler->processEvent(GkAudioFramework::AudioEventType::start, QDir(), supported_codec, false);
+        streamHandler->processEvent(GkAudioFramework::AudioEventType::start, QFileInfo(), supported_codec, false);
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(tr("A stream processing error has occurred with regards to the multimedia library handling functions. Error:\n\n%1")
                                                           .arg(QString::fromStdString(e.what())).toStdString()));
@@ -136,7 +136,7 @@ void GkPaAudioPlayer::record(const CodecSupport &supported_codec, const QDir &re
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param audio_file
  */
-void GkPaAudioPlayer::loop(const GkAudioFramework::CodecSupport &supported_codec, const QDir &audio_file)
+void GkPaAudioPlayer::loop(const GkAudioFramework::CodecSupport &supported_codec, const QFileInfo &audio_file)
 {
     try {
         streamHandler->processEvent(GkAudioFramework::AudioEventType::start, audio_file, supported_codec, true);
@@ -153,7 +153,7 @@ void GkPaAudioPlayer::loop(const GkAudioFramework::CodecSupport &supported_codec
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param audio_file
  */
-void GkPaAudioPlayer::stop(const QDir &audio_file)
+void GkPaAudioPlayer::stop(const QFileInfo &audio_file)
 {
     try {
         streamHandler->processEvent(GkAudioFramework::AudioEventType::stop, audio_file);
@@ -172,7 +172,7 @@ void GkPaAudioPlayer::stop(const QDir &audio_file)
 void GkPaAudioPlayer::loopback()
 {
     try {
-        streamHandler->processEvent(GkAudioFramework::AudioEventType::loopback);
+        streamHandler->processEvent(GkAudioFramework::AudioEventType::loopback, QFileInfo());
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(tr("A stream processing error has occurred with regards to the multimedia library handling functions. Error:\n\n%1")
                                                           .arg(QString::fromStdString(e.what())).toStdString()));
