@@ -52,6 +52,7 @@
 #include <QString>
 #include <QObject>
 #include <QPointer>
+#include <QFileInfo>
 #include <QAudioInput>
 #include <QAudioOutput>
 
@@ -69,11 +70,11 @@ public:
                              std::shared_ptr<AudioFile<double>> audioFileLib, QObject *parent = nullptr);
     virtual ~GkPaAudioPlayer();
 
-    void play(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const QDir &audio_file);
+    void play(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const QFileInfo &audio_file);
     void play(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
     void record(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const QDir &record_dir);
-    void loop(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const QDir &audio_file);
-    void stop(const QDir &audio_file);
+    void loop(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const QFileInfo &audio_file);
+    void stop(const QFileInfo &audio_file);
     void loopback();
 
 private:

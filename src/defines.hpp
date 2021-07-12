@@ -1102,6 +1102,13 @@ namespace GkAudioFramework {
         loopback
     };
 
+    enum GkAudioRecordStatus {
+        Active,
+        Finished,
+        Paused,
+        Defunct
+    };
+
     enum Bitrate {
         LosslessCompressed,
         LosslessUncompressed,

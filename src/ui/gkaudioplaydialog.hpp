@@ -55,6 +55,7 @@
 #include <QDialog>
 #include <QString>
 #include <QPointer>
+#include <QFileInfo>
 #include <QAudioInput>
 #include <QAudioOutput>
 #include <QAudioFormat>
@@ -101,6 +102,7 @@ private slots:
 
 signals:
     void beginRecording(const bool &recording_is_started);
+    void recStatus(const GekkoFyre::GkAudioFramework::GkAudioRecordStatus &status); // Sets the status for when recording; whether active, stopped, or to pause...
 
 private:
     Ui::GkAudioPlayDialog *ui;
@@ -114,7 +116,7 @@ private:
     //
     // Filesystem paths and related
     QFile m_pbackAudioFile;
-    QDir m_audioFile;
+    QFileInfo m_audioFile;
     QDir m_recordDirPath;
 
     //

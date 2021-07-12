@@ -557,6 +557,7 @@ Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::IARURegions);
 Q_DECLARE_METATYPE(GekkoFyre::Spectrograph::GkGraphType);
 Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::Bitrate);
 Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::CodecSupport);
+Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::GkAudioRecordStatus);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkFreqs);
 Q_DECLARE_METATYPE(boost::filesystem::path);
 Q_DECLARE_METATYPE(RIG);

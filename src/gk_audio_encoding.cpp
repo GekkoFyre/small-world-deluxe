@@ -45,6 +45,7 @@
 #include <utility>
 #include <iterator>
 #include <exception>
+#include <QDir>
 #include <QtGui>
 #include <QDateTime>
 #include <QMessageBox>
@@ -92,7 +93,10 @@ GkAudioEncoding::GkAudioEncoding(const QPointer<QBuffer> &audioInputBuf, const Q
     gkInputDev = input_device;
     gkOutputDev = output_device;
 
+    //
+    // Initialize variables
     m_initialized = false;
+    m_recActive = GkAudioRecordStatus::Defunct;
 
     //
     // Open and initialize the buffers for reading and writing purposes!
@@ -103,6 +107,8 @@ GkAudioEncoding::GkAudioEncoding(const QPointer<QBuffer> &audioInputBuf, const Q
     QObject::connect(this, SIGNAL(pauseEncode()), this, SLOT(stopCaller()));
     QObject::connect(this, SIGNAL(error(const QString &, const GekkoFyre::System::Events::Logging::GkSeverity &)),
                      this, SLOT(handleError(const QString &, const GekkoFyre::System::Events::Logging::GkSeverity &)));
+    QObject::connect(this, SIGNAL(recStatus(const GekkoFyre::GkAudioFramework::GkAudioRecordStatus &)),
+                     this, SLOT(setRecStatus(const GekkoFyre::GkAudioFramework::GkAudioRecordStatus &)));
 
     return;
 }
@@ -167,6 +173,17 @@ QString GkAudioEncoding::codecEnumToStr(const CodecSupport &codec)
 }
 
 /**
+ * @brief GkAudioEncoding::getRecStatus gets the status of whether recording is active or not throughout Small World
+ * Deluxe. This also applies to whether any encoding is being performed, since both have an effect on one another.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return
+ */
+GkAudioRecordStatus GkAudioEncoding::getRecStatus() const
+{
+    return m_recActive;
+}
+
+/**
  * @brief GkAudioEncoding::stopEncode halts the encoding process from the upper-most level.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
@@ -188,7 +205,7 @@ void GkAudioEncoding::stopEncode()
  * @param application
  * @note rafix07 <https://stackoverflow.com/questions/53405439/how-to-use-stdasync-on-a-queue-of-vectors-or-a-vector-of-vectors-to-sort>.
  */
-void GkAudioEncoding::startCaller(const QDir &media_path, const Database::Settings::Audio::GkDevice &audio_dev_info,
+void GkAudioEncoding::startCaller(const QFileInfo &media_path, const Database::Settings::Audio::GkDevice &audio_dev_info,
                                   const qint32 &bitrate, const GkAudioFramework::CodecSupport &codec_choice,
                                   const qint32 &frame_size, const qint32 &application)
 {
@@ -204,7 +221,10 @@ void GkAudioEncoding::startCaller(const QDir &media_path, const Database::Settin
 
         //
         // Initiate variables
-        m_file_path = media_path;
+        if (media_path.exists()) {
+            m_file_path = media_path; // The location of where to make the recording!
+        }
+
         m_frameSize = frame_size;
 
         if (audio_dev_info.default_input_dev) {
@@ -428,6 +448,19 @@ void GkAudioEncoding::processAudioOutEncode(const GkAudioFramework::CodecSupport
 }
 
 /**
+ * @brief GkAudioEncoding::setRecStatus sets the status of whether recording is active or not throughout Small World
+ * Deluxe. This also applies to whether any encoding is being performed, since both have an effect on one another.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param status
+ */
+void GkAudioEncoding::setRecStatus(const GekkoFyre::GkAudioFramework::GkAudioRecordStatus &status)
+{
+    m_recActive = status;
+
+    return;
+}
+
+/**
  * @brief GkAudioEncoding::encodeOpus will perform an encoding with the Ogg Opus library and its parameters.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>,
  * александр дмитрыч <https://stackoverflow.com/questions/51638654/how-to-encode-and-decode-audio-data-with-opus>
@@ -450,45 +483,79 @@ void GkAudioEncoding::encodeOpus(const qint32 &bitrate, const qint32 &sample_rat
         throw std::invalid_argument(tr("Invalid sample rate provided whilst trying to encode with the Opus codec!").toStdString());
     }
 
-    if (m_out_file.isOpen()) {
-        qint32 err = 0;
-        std::lock_guard<std::mutex> lock_g(m_asyncOggOpusMtx);
-        const qint32 m_size = int(sizeof(float)) * m_channels * frame_size;
-        m_opusEncoder = opus_encoder_create(sample_rate, m_channels, OPUS_APPLICATION_AUDIO, &err);
+    const QDir dir_tmp = m_file_path.path(); // NOTE: Returns the file's path. This doesn't include the file name.
+    const QString dir_path = dir_tmp.path();
+    if (!dir_tmp.exists()) {
+        bool ret = QDir().mkpath(dir_path);
+        if (!ret) {
+            throw std::runtime_error(tr("Unsuccessfully created directory, \"%1\"!").arg(dir_path).toStdString());
+        }
+    }
+
+    QDir::setCurrent(dir_path);
+    m_out_file.setFileName(m_file_path.fileName());
+    if (m_file_path.exists()) {
+        m_out_file.remove();
+    }
+
+    m_out_file.open(QIODevice::ReadWrite, QIODevice::NewOnly);
+    if (!m_out_file.isOpen()) {
+        throw std::runtime_error(tr("Error with opening file, \"%1\"!").arg(m_file_path.fileName()).toStdString());
+    }
+
+    //
+    // Read any pre-existing data into the QByteArray, such as if we started encoding with Ogg Opus at a previous stage
+    // but then paused for some reason or another!
+    if (!m_out_file.readAll().isEmpty()) {
+        m_fileData = m_out_file.readAll();
+    }
+
+    qint32 err = 0;
+    std::lock_guard<std::mutex> lock_g(m_asyncOggOpusMtx);
+    const qint32 m_size = int(sizeof(float)) * m_channels * frame_size;
+    m_opusEncoder = opus_encoder_create(sample_rate, m_channels, OPUS_APPLICATION_AUDIO, &err);
+
+    //
+    // Set the desired bit-rate while other parameters can be set as needed, also. Just remember that the Opus library
+    // is designed to have good defaults by standard, so only set parameters you know that are really needed. Doing so
+    // otherwise is likely to result in worsened multimedia quality and/or overall performance.
+    //
+    err = opus_encoder_ctl(m_opusEncoder, OPUS_SET_BITRATE(bitrate));
+    while (!m_buffer.isEmpty() && m_recActive == GkAudioRecordStatus::Active) {
+        QByteArray input = m_buffer.mid(0, m_size);
+        m_buffer.remove(0, m_size);
 
         //
-        // Set the desired bit-rate while other parameters can be set as needed, also. Just remember that the Opus library
-        // is designed to have good defaults by standard, so only set parameters you know that are really needed. Doing so
-        // otherwise is likely to result in worsened multimedia quality and/or overall performance.
+        // Create and initiate the encoded Opus multimedia file comments!
+        m_opusComments = ope_comments_create();
+        ope_comments_add(m_opusComments, "ARTIST", tr("%1 by %2 et al.")
+                .arg(General::productName, General::companyName).toStdString().c_str());
+        ope_comments_add(m_opusComments, "TITLE", tr("Recorded on %1")
+                .arg(QDateTime::currentDateTime().toString()).toStdString().c_str());
+
+        QByteArray output = QByteArray(AUDIO_OPUS_MAX_FRAME_SIZE * 3, char(0));
+
         //
-        err = opus_encoder_ctl(m_opusEncoder, OPUS_SET_BITRATE(bitrate));
-        while (!m_buffer.isEmpty()) {
-            QByteArray input = m_buffer.mid(0, m_size);
-            m_buffer.remove(0, m_size);
-
-            //
-            // Create and initiate the encoded Opus multimedia file comments!
-            m_opusComments = ope_comments_create();
-            ope_comments_add(m_opusComments, "ARTIST", tr("%1 by %2 et al.")
-                    .arg(General::productName, General::companyName).toStdString().c_str());
-            ope_comments_add(m_opusComments, "TITLE", tr("Recorded on %1")
-                    .arg(QDateTime::currentDateTime().toString()).toStdString().c_str());
-
-            QByteArray output = QByteArray(AUDIO_OPUS_MAX_FRAME_SIZE * 3, char(0));
-
-            //
-            // Encode the frame...
-            const qint32 nbBytes = opus_encode_float(m_opusEncoder, reinterpret_cast<const float*>(input.constData()), frame_size, reinterpret_cast<uchar*>(output.data()), AUDIO_OPUS_MAX_FRAME_SIZE * 3);
-            if (nbBytes < 0) {
-                emit error(tr("Error encoding to file: %1\n\n%2").arg(m_file_path.path()),
-                           GkSeverity::Fatal);
-
-                opusCleanup();
-                return;
-            }
+        // Encode the frame...
+        const qint32 nbBytes = opus_encode_float(m_opusEncoder, reinterpret_cast<const float*>(input.constData()), frame_size, reinterpret_cast<uchar*>(output.data()), AUDIO_OPUS_MAX_FRAME_SIZE * 3);
+        if (nbBytes < 0) {
+            emit error(tr("Error encoding to file: %1\n\n%2").arg(m_file_path.path()),
+                       GkSeverity::Fatal);
 
             opusCleanup();
+            return;
         }
+
+        //
+        // Write out the encoded, Ogg Opus data, to the given output file in question!
+        m_fileData.insert(m_out_file.size() + 1, output.data());
+        m_out_file.seek(0);
+        m_out_file.write(m_fileData);
+
+        //
+        // Perform any cleanup operations now...
+        m_out_file.close();
+        opusCleanup();
     }
 
     return;
