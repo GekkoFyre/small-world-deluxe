@@ -934,14 +934,20 @@ MainWindow::~MainWindow()
     emit stopRecOutput();
     emit disconnectRigInUse(gkRadioPtr->gkRig, gkRadioPtr);
 
-    gkAudioEncodingThread.quit();
-    gkAudioEncodingThread.wait();
+    if (gkAudioEncodingThread.isRunning()) {
+        gkAudioEncodingThread.quit();
+        gkAudioEncodingThread.wait();
+    }
 
-    gkAudioInputThread.quit();
-    gkAudioInputThread.wait();
+    if (gkAudioInputThread.isRunning()) {
+        gkAudioInputThread.quit();
+        gkAudioInputThread.wait();
+    }
 
-    gkAudioOutputThread.quit();
-    gkAudioOutputThread.wait();
+    if (gkAudioOutputThread.isRunning()) {
+        gkAudioOutputThread.quit();
+        gkAudioOutputThread.wait();
+    }
 
     if (vu_meter_thread.joinable()) {
         vu_meter_thread.join();

@@ -252,8 +252,7 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
             audio_out_play = false;
         }
     } catch (const std::exception &e) {
-        gkEventLogger->publishEvent(tr("Issue with playback of audio file, \"%1\".\n\nError: %2").arg(m_pbackAudioFile.fileName()).arg(QString::fromStdString(e.what())),
-                                    GkSeverity::Fatal, "", true, true, false, false);
+        gkStringFuncs->print_exception(e);
     }
 
     return;
@@ -318,7 +317,7 @@ void GkAudioPlayDialog::on_pushButton_playback_record_clicked()
             // TODO: Implement the ability to STOP recording!
         }
     } catch (const std::exception &e) {
-        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true, false);
+        gkStringFuncs->print_exception(e);
     }
 
     return;
