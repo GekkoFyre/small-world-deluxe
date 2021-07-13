@@ -82,7 +82,7 @@ public:
 
     //
     // QAudioSystem initialization and buffers
-    GekkoFyre::Database::Settings::GkAudioChannels determineAudioChannels();
+    [[nodiscard]] GekkoFyre::Database::Settings::GkAudioChannels determineAudioChannels();
 
 private slots:
     //
@@ -99,10 +99,12 @@ private slots:
     void on_horizontalSlider_playback_rec_bitrate_valueChanged(int value);
 
     void resetStopButtonColor();
+    void clearForms(const GekkoFyre::GkAudioFramework::GkClearForms &cat);
 
 signals:
     void beginRecording(const bool &recording_is_started);
     void recStatus(const GekkoFyre::GkAudioFramework::GkAudioRecordStatus &status); // Sets the status for when recording; whether active, stopped, or to pause...
+    void cleanupForms(const GekkoFyre::GkAudioFramework::GkClearForms &cat);
 
 private:
     Ui::GkAudioPlayDialog *ui;
@@ -115,15 +117,13 @@ private:
 
     //
     // Filesystem paths and related
-    QFile m_pbackAudioFile;
-    QFileInfo m_audioFile;
     QDir m_recordDirPath;
 
     //
     // QPushButtons, etc.
     bool audio_out_play;
     bool audio_out_stop;
-    bool audio_out_record;
+    bool m_audioRecReady;
     bool audio_out_skip_fwd;
     bool audio_out_skip_bck;
 
@@ -131,8 +131,8 @@ private:
     // QAudioSystem initialization and buffers
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
-    GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
-    GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
+    GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;   // Preferred input audio device
+    GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;  // Preferred output audio device
 
     //
     // Audio encoding related objects
@@ -141,8 +141,9 @@ private:
 
     //
     // AudioFile objects and related
-    std::shared_ptr<AudioFile<double>> gkAudioFile;
-    GekkoFyre::GkAudioFramework::AudioFileInfo gkAudioFileInfo;
+    std::shared_ptr<AudioFile<double>> gkAudioFile;                     // Buffer for playback
+    GekkoFyre::GkAudioFramework::AudioFileInfo gkAudioFileInfo;         // Information on file destined for playback!
+    GekkoFyre::Database::Settings::GkAudioChannels m_audioChannels;     // Audio channel information for both playback and recording!
 
     template <typename T>
     struct gkConvertDoubleToFloat {

@@ -127,8 +127,10 @@ GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, co
 
 GkPaStreamHandler::~GkPaStreamHandler()
 {
-    if (procMediaEventLoop->isRunning()) {
-        procMediaEventLoop->quit();
+    if (procMediaEventLoop) {
+        if (procMediaEventLoop->isRunning()) {
+            procMediaEventLoop->quit();
+        }
     }
 
     return;

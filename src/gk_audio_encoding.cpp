@@ -521,6 +521,10 @@ void GkAudioEncoding::encodeOpus(const qint32 &bitrate, const qint32 &sample_rat
     // otherwise is likely to result in worsened multimedia quality and/or overall performance.
     //
     err = opus_encoder_ctl(m_opusEncoder, OPUS_SET_BITRATE(bitrate));
+    gkEventLogger->publishEvent(tr("Initiate encoding with Opus as the codec! Frame size: %1. Sample rate: %2. Bit rate: %3. Channels: %4.")
+    .arg(QString::number(m_size), QString::number(sample_rate), QString::number(bitrate), QString::number(m_channels)), GkSeverity::Info, "",
+    false, true, false, false, false);
+
     while (!m_buffer.isEmpty() && m_recActive == GkAudioRecordStatus::Active) {
         QByteArray input = m_buffer.mid(0, m_size);
         m_buffer.remove(0, m_size);

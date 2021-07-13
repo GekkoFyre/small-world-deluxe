@@ -80,10 +80,13 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
     // Create SIGNALS and SLOTS
     QObject::connect(this, SIGNAL(recStatus(const GekkoFyre::GkAudioFramework::GkAudioRecordStatus &)),
                      gkAudioEncoding, SLOT(setRecStatus(const GekkoFyre::GkAudioFramework::GkAudioRecordStatus &)));
+    QObject::connect(this, SIGNAL(cleanupForms(const GekkoFyre::GkAudioFramework::GkClearForms &)),
+                     this, SLOT(clearForms(const GekkoFyre::GkAudioFramework::GkClearForms &)));
 
     //
     // Initialize variables
     //
+    gkAudioFileInfo = {};
     pref_input_device = input_device;
     pref_output_device = output_device;
     m_rec_codec_chosen = CodecSupport::PCM;
@@ -96,7 +99,7 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
     //
     audio_out_play = false;
     audio_out_stop = false;
-    audio_out_record = false;
+    m_audioRecReady = false;
     audio_out_skip_fwd = false;
     audio_out_skip_bck = false;
 
@@ -111,8 +114,8 @@ GkAudioPlayDialog::~GkAudioPlayDialog()
 {
     emit recStatus(GkAudioRecordStatus::Defunct);
     if (audio_out_play) {
-        gkPaAudioPlayer->stop(m_audioFile);
-        gkEventLogger->publishEvent(tr("Stopped playing audio file, \"%1\"").arg(m_audioFile.path()), GkSeverity::Info, "", true, true, true, false);
+        gkPaAudioPlayer->stop(gkAudioFileInfo.audio_file_path);
+        gkEventLogger->publishEvent(tr("Stopped playing audio file, \"%1\"").arg(gkAudioFileInfo.audio_file_path.fileName()), GkSeverity::Info, "", true, true, true, false);
     }
 
     delete ui;
@@ -127,30 +130,28 @@ GkAudioPlayDialog::~GkAudioPlayDialog()
  */
 GkAudioChannels GkAudioPlayDialog::determineAudioChannels()
 {
-    //
-    // TODO: This is in need of updating!
-    if (!m_pbackAudioFile.fileName().isEmpty()) {
+    if (!gkAudioFileInfo.audio_file_path.exists()) {
         // We currently have a file selected!
-        if (gkAudioFile->getNumChannels() == 1) {
+        if (gkAudioFile->isMono()) {
             //
             // Mono
             //
+            gkAudioFileInfo.num_audio_channels = Database::Settings::GkAudioChannels::Mono;
             return Database::Settings::GkAudioChannels::Mono;
-        } else if (gkAudioFile->getNumChannels() == 2) {
+        } else if (gkAudioFile->isStereo()) {
             //
             // Stereo
             //
+            gkAudioFileInfo.num_audio_channels = Database::Settings::GkAudioChannels::Both;
             return GkAudioChannels::Both;
         } else {
             if (gkAudioFile->getNumChannels() > 2) {
                 gkAudioFileInfo.num_audio_channels = Database::Settings::GkAudioChannels::Surround;
+                return GkAudioChannels::Surround;
             } else {
                 gkAudioFileInfo.num_audio_channels = Database::Settings::GkAudioChannels::Unknown;
-                gkEventLogger->publishEvent(tr("Unable to accurately determine the number of audio channels within multimedia file, \"%1\", for unknown reasons.")
-                                                    .arg(gkAudioFileInfo.audio_file_path.fileName()), GkSeverity::Warning, "", true,
-                                            true, false, false);
-
-                return GkAudioChannels::Unknown;
+                throw std::invalid_argument(tr("Unable to accurately determine the number of audio channels within multimedia file, \"%1\", for unknown reasons.")
+                .arg(gkAudioFileInfo.audio_file_path.fileName()).toStdString());
             }
         }
     }
@@ -168,19 +169,9 @@ void GkAudioPlayDialog::on_pushButton_reset_clicked()
     // Return everything back to its previous state, or as close to it as possible!
     //
 
-    ui->lineEdit_playback_file_location->clear();
-    ui->lineEdit_playback_file_size->clear();
-    ui->lineEdit_playback_file_name->clear();
-    ui->lineEdit_playback_audio_codec->clear();
-    ui->lineEdit_playback_bitrate->clear();
-    ui->lineEdit_playback_sample_rate->clear();
+    emit cleanupForms(GkClearForms::All);
     ui->progressBar_playback->setValue(ui->progressBar_playback->minimum());
 
-    if (m_pbackAudioFile.isOpen()) {
-        m_pbackAudioFile.close();
-    }
-
-    m_pbackAudioFile.reset();
     gkAudioFileInfo = {};
 
     return;
@@ -197,8 +188,8 @@ void GkAudioPlayDialog::on_pushButton_playback_stop_clicked()
 {
     if (!audio_out_stop) {
         gkStringFuncs->changePushButtonColor(ui->pushButton_playback_stop, false);
-        gkPaAudioPlayer->stop(m_audioFile);
-        gkEventLogger->publishEvent(tr("Stopped playing audio file, \"%1\"").arg(m_audioFile.path()), GkSeverity::Info, "", true, true, true, false);
+        gkPaAudioPlayer->stop(gkAudioFileInfo.audio_file_path);
+        gkEventLogger->publishEvent(tr("Stopped playing audio file, \"%1\"").arg(gkAudioFileInfo.audio_file_path.fileName()), GkSeverity::Info, "", true, true, true, false);
 
         audio_out_stop = true;
         QTimer::singleShot(1000, this, SLOT(resetStopButtonColor()));
@@ -222,23 +213,58 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
             gkStringFuncs->changePushButtonColor(ui->pushButton_playback_play, false);
             audio_out_play = true;
 
-            QFileDialog fileDialog(this, tr("Load Audio File for Playback"), QStandardPaths::writableLocation(QStandardPaths::MusicLocation),
-                                   tr("Audio Files (*.wav *.ogg *.opus);;All Files (*.*)"));
-            fileDialog.setFileMode(QFileDialog::ExistingFile);
-            fileDialog.setAcceptMode(QFileDialog::AcceptOpen);
-            fileDialog.setViewMode(QFileDialog::Detail);
-
-            const auto remembered_path = gkDb->read_audio_playback_dlg_settings(AudioPlaybackDlg::GkAudioDlgLastFolderBrowsed);
-            if (!remembered_path.isEmpty()) {
-                // There has been a previously used path that the user has used, and it's been remembered by Google LevelDB!
-                fileDialog.setDirectory(remembered_path);
+            auto def_path = gkDb->read_audio_playback_dlg_settings(AudioPlaybackDlg::GkAudioDlgLastFolderBrowsed); // There has been a previously used path that the user has used, and it's been remembered by Google LevelDB!
+            if (def_path.isEmpty()) {
+                def_path = QStandardPaths::writableLocation(QStandardPaths::MusicLocation);
             }
 
+            //
+            // Open a QFileDialog so a user may choose a multimedia to open and then thusly play!
+            const QString filePath = QFileDialog::getOpenFileName(this, tr("Load Audio File for Playback"), def_path,
+                                                                  tr("Audio Files (*.wav *.ogg *.opus);;All Files (*.*)"));
+            if (filePath.isEmpty()) { // No file has supposedly been chosen!
+                emit cleanupForms(GkClearForms::Playback);
+                return;
+            }
+
+            gkAudioFileInfo.audio_file_path.setFile(filePath);
+            gkAudioFile->load(gkAudioFileInfo.audio_file_path.filePath().toStdString());
+
+            //
+            // Write out information about the file in question!
+            emit cleanupForms(GkClearForms::All);
+            gkAudioFileInfo.file_size = gkAudioFileInfo.audio_file_path.size();
+            gkAudioFileInfo.file_size_hr = gkStringFuncs->fileSizeHumanReadable(gkAudioFileInfo.file_size);
+            gkAudioFileInfo.sample_rate = gkAudioFile->getSampleRate();
+            gkAudioFileInfo.bit_depth = gkAudioFile->getBitDepth();
+            gkAudioFileInfo.length_in_secs = gkAudioFile->getLengthInSeconds();
+            gkAudioFileInfo.num_samples_per_channel = gkAudioFile->getNumSamplesPerChannel();
+
+            //
+            // Determine whether the audio file is Mono, Stereo, or something else in nature, and add it to the global
+            // variables for this class...
+            m_audioChannels = determineAudioChannels();
+
+            QString lengthSecs = tr("0 seconds");
+            if (gkAudioFileInfo.length_in_secs > 1.0f) {
+                lengthSecs = gkStringFuncs->convSecondsToMinutes(gkAudioFileInfo.length_in_secs);
+            }
+
+            //
+            // Write out aforementioned file information to the UI now!
+            ui->lineEdit_playback_file_location->setText(gkAudioFileInfo.audio_file_path.filePath());
+            ui->lineEdit_playback_file_size->setText(gkAudioFileInfo.file_size_hr);
+            ui->lineEdit_playback_file_name->setText(tr("%1 (%2) -- %3")
+            .arg(gkAudioFileInfo.audio_file_path.fileName(), lengthSecs,
+                 gkDb->convertAudioChannelsStr(gkAudioFileInfo.num_audio_channels)));
+            ui->lineEdit_playback_bitrate->setText(QString::number(gkAudioFileInfo.bit_depth));
+            ui->lineEdit_playback_sample_rate->setText(QString::number(gkAudioFileInfo.sample_rate));
+
             GkAudioFramework::CodecSupport codec_used = gkDb->convCodecSupportFromIdxToEnum(ui->comboBox_playback_rec_codec->currentData().toInt());
-            if (m_pbackAudioFile.exists() && codec_used != GkAudioFramework::CodecSupport::Loopback) {
-                gkPaAudioPlayer->play(codec_used, m_audioFile);
+            if (gkAudioFileInfo.audio_file_path.exists() && codec_used != GkAudioFramework::CodecSupport::Loopback) {
+                gkPaAudioPlayer->play(codec_used, gkAudioFileInfo.audio_file_path.filePath());
                 gkEventLogger->publishEvent(
-                        tr("Started playing audio file, \"%1\"").arg(m_audioFile.path()),
+                        tr("Started playing audio file, \"%1\"").arg(gkAudioFileInfo.audio_file_path.filePath()),
                         GkSeverity::Info, "", true, true, true, false);
                 ui->progressBar_playback->setFormat(tr("%p%")); // Modify the QProgressBar to display the correct text!
             } else if (codec_used == GkAudioFramework::CodecSupport::Loopback) {
@@ -248,11 +274,11 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
                 ui->progressBar_playback->setFormat(tr("%p%")); // Modify the QProgressBar to display the correct text!
             } else {
                 throw std::runtime_error(tr("Error with audio playback! Does the file, \"%1\", actually exist?")
-                .arg(m_pbackAudioFile.fileName()).toStdString());
+                .arg(gkAudioFileInfo.audio_file_path.fileName()).toStdString());
             }
         } else {
-            gkPaAudioPlayer->stop(m_audioFile);
-            gkEventLogger->publishEvent(tr("Stopped playing audio file, \"%1\"").arg(m_audioFile.path()), GkSeverity::Info, "", true, true, true, false);
+            gkPaAudioPlayer->stop(gkAudioFileInfo.audio_file_path);
+            gkEventLogger->publishEvent(tr("Stopped playing audio file, \"%1\"").arg(gkAudioFileInfo.audio_file_path.fileName()), GkSeverity::Info, "", true, true, true, false);
 
             gkStringFuncs->changePushButtonColor(ui->pushButton_playback_play, true);
             audio_out_play = false;
@@ -272,57 +298,70 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
 void GkAudioPlayDialog::on_pushButton_playback_record_clicked()
 {
     try {
-        if (!audio_out_record) {
+        if (m_recordDirPath.path().isEmpty() || !m_audioRecReady) { // We first need to choose a destination to record towards!
+            auto def_path = gkDb->read_audio_playback_dlg_settings(AudioPlaybackDlg::GkRecordDlgLastFolderBrowsed); // There has been a previously used path that the user has used, and it's been remembered by Google LevelDB!
+            if (def_path.isEmpty()) {
+                def_path = QStandardPaths::writableLocation(QStandardPaths::MusicLocation);
+            }
+
             //
-            // Do start recording!
-            gkStringFuncs->changePushButtonColor(ui->pushButton_playback_record, false);
-            audio_out_record = true;
-
-            QFileDialog fileDialog(this, tr("Save Directory for Recordings"), QStandardPaths::writableLocation(QStandardPaths::MusicLocation));
-            fileDialog.setFileMode(QFileDialog::Directory);
-            fileDialog.setAcceptMode(QFileDialog::AcceptOpen);
-            fileDialog.setViewMode(QFileDialog::List);
-
-            m_recordDirPath.setPath(gkDb->read_audio_playback_dlg_settings(AudioPlaybackDlg::GkRecordDlgLastFolderBrowsed));
-            if (!m_recordDirPath.isEmpty()) {
-                // There has been a previously used path that the user has used, and it's been remembered by Google LevelDB!
-                fileDialog.setDirectory(m_recordDirPath);
+            // Open a QFileDialog so a user may choose a directory to save files within!
+            const QString filePath = QFileDialog::getExistingDirectory(this, tr("Save Directory for Recordings"), def_path);
+            gkDb->write_audio_playback_dlg_settings(QString::number(ui->comboBox_playback_rec_codec->currentIndex()),
+                                                    AudioPlaybackDlg::GkRecordDlgLastCodecSelected);
+            if (filePath.isEmpty()) { // No file has supposedly been chosen!
+                emit cleanupForms(GkClearForms::Recording);
+                return;
             }
 
-            if (fileDialog.exec()) {
-                QStringList selectedFile = fileDialog.selectedFiles();
-                if (!selectedFile.isEmpty())  {
-                    for (const auto &file: selectedFile) {
-                        m_recordDirPath.setPath(file);
-                    }
-                }
-            } else {
-                //
-                // End recording state...
-                gkStringFuncs->changePushButtonColor(ui->pushButton_playback_record, true);
-                emit recStatus(GkAudioRecordStatus::Finished);
-                audio_out_record = false;
+            if (!m_recordDirPath.isReadable()) {
+                emit cleanupForms(GkClearForms::Recording);
+                throw std::invalid_argument(tr("Unable to use directory, \"%1\", for reading and/or writing!")
+                .arg(m_recordDirPath.path()).toStdString());
             }
 
-            GkAudioFramework::CodecSupport codec_used = gkDb->convCodecSupportFromIdxToEnum(ui->comboBox_playback_rec_codec->currentData().toInt());
+            //
+            // The chosen directory/path is legitimate and ready-to-use!
+            ui->lineEdit_playback_file_location->setText(m_recordDirPath.path());
+            gkDb->write_audio_playback_dlg_settings(m_recordDirPath.path(), AudioPlaybackDlg::GkRecordDlgLastFolderBrowsed);
+
+            //
+            // Reset all of the form elements and set the designated path...
+            emit cleanupForms(GkClearForms::All);
+            const auto last_codec_used = gkDb->read_audio_playback_dlg_settings(AudioPlaybackDlg::GkRecordDlgLastCodecSelected);
+
+            ui->comboBox_playback_rec_codec->setCurrentIndex(last_codec_used.toInt());
+            m_recordDirPath.setPath(filePath);
+            m_audioRecReady = true; // Recording state is TRUE!
+            emit recStatus(GkAudioRecordStatus::Paused);
+
+            return;
+        } else if (gkAudioEncoding->getRecStatus() == GkAudioRecordStatus::Paused) { // Now that the destination has been chosen, start recording when the button is pressed again!
+            //
+            // Start recording; begin state...
             if (m_recordDirPath.isReadable()) { // Verify that the directory itself exists!
-                ui->lineEdit_playback_file_location->setText(m_recordDirPath.path());
-                gkDb->write_audio_playback_dlg_settings(m_recordDirPath.path(), AudioPlaybackDlg::GkRecordDlgLastFolderBrowsed);
+                //
+                // Determine the codec used...
+                GkAudioFramework::CodecSupport codec_used = gkDb->convCodecSupportFromIdxToEnum(ui->comboBox_playback_rec_codec->currentData().toInt());
                 if (codec_used != GkAudioFramework::CodecSupport::Loopback) {
                     emit recStatus(GkAudioRecordStatus::Active);
                     gkPaAudioPlayer->record(codec_used, m_recordDirPath);
+                    gkStringFuncs->changePushButtonColor(ui->pushButton_playback_record, false);
                 } else {
                     throw std::runtime_error(tr("Loopback mode is unsupported during recording!").toStdString());
                 }
+            } else {
+                throw std::invalid_argument(tr("Unable to use directory, \"%1\", for reading and/or writing!")
+                                                    .arg(m_recordDirPath.path()).toStdString());
             }
         } else {
             //
-            // End or pause recording...
+            // End or pause recording; end state...
+            m_audioRecReady = false; // Recording state is FALSE!
+            emit recStatus(GkAudioRecordStatus::Finished);
             gkStringFuncs->changePushButtonColor(ui->pushButton_playback_record, true);
-            audio_out_record = false;
 
-            //
-            // TODO: Implement the ability to STOP recording!
+            return;
         }
     } catch (const std::exception &e) {
         gkStringFuncs->print_exception(e);
@@ -415,6 +454,58 @@ void GkAudioPlayDialog::resetStopButtonColor()
 
     gkStringFuncs->changePushButtonColor(ui->pushButton_playback_play, true);
     audio_out_play = false;
+
+    return;
+}
+
+/**
+ * @brief GkAudioPlayDialog::clearForms will clear and reset the UI forms back to their default state.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param cat The category of UI elements to clear, whether it be for example, just the Playback section, Recording, or
+ * everything at once.
+ */
+void GkAudioPlayDialog::clearForms(const GkClearForms &cat)
+{
+    switch (cat) {
+        case GkClearForms::Playback:
+            ui->lineEdit_playback_file_location->clear();
+            ui->lineEdit_playback_file_size->clear();
+            ui->lineEdit_playback_file_name->clear();
+            ui->lineEdit_playback_audio_codec->clear();
+            ui->lineEdit_playback_bitrate->clear();
+            ui->lineEdit_playback_sample_rate->clear();
+            ui->label_playback_timer->setText(tr("-- : --"));
+            ui->progressBar_playback->setFormat(tr("Waiting for user input..."));
+
+            break;
+        case GkClearForms::Recording:
+            ui->lineEdit_playback_file_location->clear();
+            ui->lineEdit_playback_file_size->clear();
+            ui->lineEdit_playback_audio_codec->clear();
+            ui->lineEdit_playback_bitrate->clear();
+            ui->lineEdit_playback_sample_rate->clear();
+            ui->comboBox_playback_rec_codec->setCurrentIndex(AUDIO_PLAYBACK_CODEC_VORBIS_IDX);
+            ui->horizontalSlider_playback_rec_bitrate->setValue(AUDIO_RECORDING_DEF_BITRATE);
+            ui->label_playback_timer->setText(tr("-- : --"));
+            ui->progressBar_playback->setFormat(tr("Waiting for user input..."));
+
+            break;
+        case GkClearForms::All:
+            ui->lineEdit_playback_file_location->clear();
+            ui->lineEdit_playback_file_size->clear();
+            ui->lineEdit_playback_file_name->clear();
+            ui->lineEdit_playback_audio_codec->clear();
+            ui->lineEdit_playback_bitrate->clear();
+            ui->lineEdit_playback_sample_rate->clear();
+            ui->comboBox_playback_rec_codec->setCurrentIndex(AUDIO_PLAYBACK_CODEC_VORBIS_IDX);
+            ui->horizontalSlider_playback_rec_bitrate->setValue(AUDIO_RECORDING_DEF_BITRATE);
+            ui->label_playback_timer->setText(tr("-- : --"));
+            ui->progressBar_playback->setFormat(tr("Waiting for user input..."));
+
+            break;
+        default:
+            break;
+    }
 
     return;
 }
