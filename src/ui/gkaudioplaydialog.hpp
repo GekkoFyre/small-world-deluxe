@@ -123,7 +123,7 @@ private:
     // QPushButtons, etc.
     bool audio_out_play;
     bool audio_out_stop;
-    bool audio_out_record;
+    bool m_audioRecReady;
     bool audio_out_skip_fwd;
     bool audio_out_skip_bck;
 

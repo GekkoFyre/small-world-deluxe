@@ -99,7 +99,7 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
     //
     audio_out_play = false;
     audio_out_stop = false;
-    audio_out_record = false;
+    m_audioRecReady = false;
     audio_out_skip_fwd = false;
     audio_out_skip_bck = false;
 
@@ -298,7 +298,7 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
 void GkAudioPlayDialog::on_pushButton_playback_record_clicked()
 {
     try {
-        if (m_recordDirPath.isEmpty() && !audio_out_record) { // We first need to choose a destination to record towards!
+        if (m_recordDirPath.path().isEmpty() || !m_audioRecReady) { // We first need to choose a destination to record towards!
             auto def_path = gkDb->read_audio_playback_dlg_settings(AudioPlaybackDlg::GkRecordDlgLastFolderBrowsed); // There has been a previously used path that the user has used, and it's been remembered by Google LevelDB!
             if (def_path.isEmpty()) {
                 def_path = QStandardPaths::writableLocation(QStandardPaths::MusicLocation);
@@ -307,37 +307,62 @@ void GkAudioPlayDialog::on_pushButton_playback_record_clicked()
             //
             // Open a QFileDialog so a user may choose a directory to save files within!
             const QString filePath = QFileDialog::getExistingDirectory(this, tr("Save Directory for Recordings"), def_path);
+            gkDb->write_audio_playback_dlg_settings(QString::number(ui->comboBox_playback_rec_codec->currentIndex()),
+                                                    AudioPlaybackDlg::GkRecordDlgLastCodecSelected);
             if (filePath.isEmpty()) { // No file has supposedly been chosen!
                 emit cleanupForms(GkClearForms::Recording);
                 return;
             }
 
-            emit cleanupForms(GkClearForms::All);
-            m_recordDirPath.setPath(filePath);
+            if (!m_recordDirPath.isReadable()) {
+                emit cleanupForms(GkClearForms::Recording);
+                throw std::invalid_argument(tr("Unable to use directory, \"%1\", for reading and/or writing!")
+                .arg(m_recordDirPath.path()).toStdString());
+            }
 
-            GkAudioFramework::CodecSupport codec_used = gkDb->convCodecSupportFromIdxToEnum(ui->comboBox_playback_rec_codec->currentData().toInt());
+            //
+            // The chosen directory/path is legitimate and ready-to-use!
+            ui->lineEdit_playback_file_location->setText(m_recordDirPath.path());
+            gkDb->write_audio_playback_dlg_settings(m_recordDirPath.path(), AudioPlaybackDlg::GkRecordDlgLastFolderBrowsed);
+
+            //
+            // Reset all of the form elements and set the designated path...
+            emit cleanupForms(GkClearForms::All);
+            const auto last_codec_used = gkDb->read_audio_playback_dlg_settings(AudioPlaybackDlg::GkRecordDlgLastCodecSelected);
+
+            ui->comboBox_playback_rec_codec->setCurrentIndex(last_codec_used.toInt());
+            m_recordDirPath.setPath(filePath);
+            m_audioRecReady = true; // Recording state is TRUE!
+            emit recStatus(GkAudioRecordStatus::Paused);
+
+            return;
+        } else if (gkAudioEncoding->getRecStatus() == GkAudioRecordStatus::Paused) { // Now that the destination has been chosen, start recording when the button is pressed again!
+            //
+            // Start recording; begin state...
             if (m_recordDirPath.isReadable()) { // Verify that the directory itself exists!
-                ui->lineEdit_playback_file_location->setText(m_recordDirPath.path());
-                gkDb->write_audio_playback_dlg_settings(m_recordDirPath.path(), AudioPlaybackDlg::GkRecordDlgLastFolderBrowsed);
+                //
+                // Determine the codec used...
+                GkAudioFramework::CodecSupport codec_used = gkDb->convCodecSupportFromIdxToEnum(ui->comboBox_playback_rec_codec->currentData().toInt());
                 if (codec_used != GkAudioFramework::CodecSupport::Loopback) {
                     emit recStatus(GkAudioRecordStatus::Active);
                     gkPaAudioPlayer->record(codec_used, m_recordDirPath);
+                    gkStringFuncs->changePushButtonColor(ui->pushButton_playback_record, false);
                 } else {
                     throw std::runtime_error(tr("Loopback mode is unsupported during recording!").toStdString());
                 }
+            } else {
+                throw std::invalid_argument(tr("Unable to use directory, \"%1\", for reading and/or writing!")
+                                                    .arg(m_recordDirPath.path()).toStdString());
             }
-        } else { // Now that the destination has been chosen, start recording when the button is pressed again!
-            gkStringFuncs->changePushButtonColor(ui->pushButton_playback_record, false);
-            audio_out_record = true; // Recording state is TRUE!
+        } else {
+            //
+            // End or pause recording; end state...
+            m_audioRecReady = false; // Recording state is FALSE!
+            emit recStatus(GkAudioRecordStatus::Finished);
+            gkStringFuncs->changePushButtonColor(ui->pushButton_playback_record, true);
 
             return;
         }
-
-        //
-        // End or pause recording; end state...
-        gkStringFuncs->changePushButtonColor(ui->pushButton_playback_record, true);
-        audio_out_record = false; // Recording state is FALSE!
-        emit recStatus(GkAudioRecordStatus::Finished);
     } catch (const std::exception &e) {
         gkStringFuncs->print_exception(e);
     }
