@@ -202,6 +202,8 @@ namespace GekkoFyre {
 #define AUDIO_PLAYBACK_CODEC_OPUS_IDX (1)
 #define AUDIO_PLAYBACK_CODEC_FLAC_IDX (2)
 
+#define AUDIO_RECORDING_DEF_BITRATE (192)
+
 //
 // Mostly regarding FFTW functions
 //
@@ -1067,6 +1069,12 @@ namespace Spectrograph {
 }
 
 namespace GkAudioFramework {
+    enum GkClearForms {
+        Playback,
+        Recording,
+        All
+    };
+
     struct GkRecord {
         float *buffer;
         size_t bufferBytes;

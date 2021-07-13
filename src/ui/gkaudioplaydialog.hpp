@@ -99,10 +99,12 @@ private slots:
     void on_horizontalSlider_playback_rec_bitrate_valueChanged(int value);
 
     void resetStopButtonColor();
+    void clearForms(const GekkoFyre::GkAudioFramework::GkClearForms &cat);
 
 signals:
     void beginRecording(const bool &recording_is_started);
     void recStatus(const GekkoFyre::GkAudioFramework::GkAudioRecordStatus &status); // Sets the status for when recording; whether active, stopped, or to pause...
+    void cleanupForms(const GekkoFyre::GkAudioFramework::GkClearForms &cat);
 
 private:
     Ui::GkAudioPlayDialog *ui;
