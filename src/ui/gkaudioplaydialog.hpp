@@ -82,7 +82,7 @@ public:
 
     //
     // QAudioSystem initialization and buffers
-    GekkoFyre::Database::Settings::GkAudioChannels determineAudioChannels();
+    [[nodiscard]] GekkoFyre::Database::Settings::GkAudioChannels determineAudioChannels();
 
 private slots:
     //
@@ -115,8 +115,6 @@ private:
 
     //
     // Filesystem paths and related
-    QFile m_pbackAudioFile;
-    QFileInfo m_audioFile;
     QDir m_recordDirPath;
 
     //
@@ -131,8 +129,8 @@ private:
     // QAudioSystem initialization and buffers
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
-    GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
-    GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
+    GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;   // Preferred input audio device
+    GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;  // Preferred output audio device
 
     //
     // Audio encoding related objects
@@ -141,8 +139,9 @@ private:
 
     //
     // AudioFile objects and related
-    std::shared_ptr<AudioFile<double>> gkAudioFile;
-    GekkoFyre::GkAudioFramework::AudioFileInfo gkAudioFileInfo;
+    std::shared_ptr<AudioFile<double>> gkAudioFile;                     // Buffer for playback
+    GekkoFyre::GkAudioFramework::AudioFileInfo gkAudioFileInfo;         // Information on file destined for playback!
+    GekkoFyre::Database::Settings::GkAudioChannels m_audioChannels;     // Audio channel information for both playback and recording!
 
     template <typename T>
     struct gkConvertDoubleToFloat {
