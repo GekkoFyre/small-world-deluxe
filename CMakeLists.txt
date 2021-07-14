@@ -937,9 +937,6 @@ target_compile_options(smallworld PRIVATE -fPIC)
 target_compile_definitions(galaxy PRIVATE -DUSE_KISS_FFT)
 target_link_libraries(smallworld PRIVATE galaxy)
 
-include(CMakePackageConfigHelpers)
-include(GNUInstallDirs)
-
 #
 # Copy the crashpad handler to the root of the binary build directory, for easy access!
 # https://cmake.org/cmake/help/latest/module/FetchContent.html
@@ -962,7 +959,29 @@ else()
                     ${CMAKE_CURRENT_BINARY_DIR}/libcrashpad_handler_lib.a)
 endif()
 
-INSTALL(TARGETS smallworld)
+if(WIN32 OR MSYS OR MINGW)
+	if (EXISTS "$ENV{SystemDrive}/Program Files")
+		INSTALL(TARGETS smallworld
+				CONFIGURATIONS Debug
+				RUNTIME DESTINATION Debug/bin
+				LIBRARY DESTINATION Debug/lib)
+		INSTALL(TARGETS smallworld
+				CONFIGURATIONS Release
+				RUNTIME DESTINATION bin
+				LIBRARY DESTINATION lib)
+	endif()
+elseif (LINUX)
+		INSTALL(TARGETS smallworld
+				CONFIGURATIONS Debug
+				RUNTIME DESTINATION Debug/bin
+				LIBRARY DESTINATION Debug/lib)
+		INSTALL(TARGETS smallworld
+				CONFIGURATIONS Release
+				RUNTIME DESTINATION bin
+				LIBRARY DESTINATION lib)
+else()
+	message(FATAL_ERROR "Unsupported operating system detected! Please check back at the official code repository for further updates. Thank you.")
+endif()
 
 SET(CMAKE_C_FLAGS_DEBUG_INIT            "-g")
 SET(CMAKE_C_FLAGS_MINSIZEREL_INIT       "-Os -DNDEBUG")
