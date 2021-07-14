@@ -62,19 +62,21 @@ class GkPaAudioPlayer : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkPaAudioPlayer(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
-                             const GekkoFyre::Database::Settings::Audio::GkDevice &input_device,
-                             QPointer<QAudioOutput> audioOutput, QPointer<QAudioInput> audioInput,
-                             QPointer<GekkoFyre::GkAudioEncoding> audioEncoding,
+    explicit GkPaAudioPlayer(QPointer<GekkoFyre::GkLevelDb> database, QPointer<QAudioOutput> audioOutput,
+                             QPointer<QAudioInput> audioInput, QPointer<GekkoFyre::GkAudioEncoding> audioEncoding,
                              const QPointer<GekkoFyre::GkEventLogger> &eventLogger,
                              std::shared_ptr<AudioFile<double>> audioFileLib, QObject *parent = nullptr);
     virtual ~GkPaAudioPlayer();
 
-    void play(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const QFileInfo &audio_file);
-    void play(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
-    void record(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const QDir &record_dir);
-    void loop(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const QFileInfo &audio_file);
-    void stop(const QFileInfo &audio_file);
+    void play(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const QFileInfo &audio_file,
+              const GekkoFyre::Database::Settings::Audio::GkDevice &audio_device);
+    void play(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
+              const GekkoFyre::Database::Settings::Audio::GkDevice &audio_device);
+    void record(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const QDir &record_dir,
+                const GekkoFyre::Database::Settings::Audio::GkDevice &audio_device);
+    void loop(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const QFileInfo &audio_file,
+              const GekkoFyre::Database::Settings::Audio::GkDevice &audio_device);
+    void stop(const QFileInfo &audio_file, const GekkoFyre::Database::Settings::Audio::GkDevice &audio_device);
     void loopback();
 
 private:

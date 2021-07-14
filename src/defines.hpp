@@ -203,6 +203,8 @@ namespace GekkoFyre {
 #define AUDIO_PLAYBACK_CODEC_FLAC_IDX (2)
 
 #define AUDIO_RECORDING_DEF_BITRATE (192)
+#define AUDIO_RECORDING_SOURCE_INPUT_IDX (0)
+#define AUDIO_RECORDING_SOURCE_OUTPUT_IDX (1)
 
 //
 // Mostly regarding FFTW functions

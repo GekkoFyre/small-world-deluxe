@@ -227,7 +227,7 @@ void GkAudioEncoding::startCaller(const QFileInfo &media_path, const Database::S
 
         m_frameSize = frame_size;
 
-        if (audio_dev_info.default_input_dev) {
+        if (audio_dev_info.audio_src == GkAudioSource::Input) {
             //
             // Input device
             m_channels = gkAudioInput->format().channelCount();
@@ -257,7 +257,7 @@ void GkAudioEncoding::startCaller(const QFileInfo &media_path, const Database::S
             //
             // Ogg Opus
             //
-            if (audio_dev_info.default_input_dev) {
+            if (audio_dev_info.audio_src == GkAudioSource::Input) {
                 //
                 // Input device
                 if (m_audioInEncodeThread.joinable()) {
@@ -268,7 +268,7 @@ void GkAudioEncoding::startCaller(const QFileInfo &media_path, const Database::S
                                                     std::ref(bitrate), std::ref(audio_dev_info.chosen_sample_rate),
                                                     std::ref(frame_size));
                 m_audioInEncodeThread.detach();
-            } else if (audio_dev_info.default_output_dev) {
+            } else if (audio_dev_info.audio_src == GkAudioSource::Output) {
                 //
                 // Output device
                 if (m_audioOutEncodeThread.joinable()) {
@@ -288,7 +288,7 @@ void GkAudioEncoding::startCaller(const QFileInfo &media_path, const Database::S
             //
             // Ogg Vorbis
             //
-            if (audio_dev_info.default_input_dev) {
+            if (audio_dev_info.audio_src == GkAudioSource::Input) {
                 //
                 // Input device
                 if (m_audioInEncodeThread.joinable()) {
@@ -299,7 +299,7 @@ void GkAudioEncoding::startCaller(const QFileInfo &media_path, const Database::S
                                                     std::ref(bitrate), std::ref(audio_dev_info.chosen_sample_rate),
                                                     std::ref(frame_size));
                 m_audioInEncodeThread.detach();
-            } else if (audio_dev_info.default_output_dev) {
+            } else if (audio_dev_info.audio_src == GkAudioSource::Output) {
                 //
                 // Output device
                 if (m_audioOutEncodeThread.joinable()) {
@@ -319,7 +319,7 @@ void GkAudioEncoding::startCaller(const QFileInfo &media_path, const Database::S
             //
             // FLAC
             //
-            if (audio_dev_info.default_input_dev) {
+            if (audio_dev_info.audio_src == GkAudioSource::Input) {
                 //
                 // Input device
                 if (m_audioInEncodeThread.joinable()) {
@@ -330,7 +330,7 @@ void GkAudioEncoding::startCaller(const QFileInfo &media_path, const Database::S
                                                     std::ref(bitrate), std::ref(audio_dev_info.chosen_sample_rate),
                                                     std::ref(frame_size));
                 m_audioInEncodeThread.detach();
-            } else if (audio_dev_info.default_output_dev) {
+            } else if (audio_dev_info.audio_src == GkAudioSource::Output) {
                 //
                 // Output device
                 if (m_audioOutEncodeThread.joinable()) {

@@ -151,7 +151,9 @@ private:
         T operator () (const U &x) const { return static_cast<T> (x); }
     };
 
+    void audioPlaybackHelper(const GekkoFyre::GkAudioFramework::CodecSupport &codec_used, const QString &file_path);
     void prefillCodecComboBoxes(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
+    void prefillAudioSourceComboBoxes();
 
 };
 
