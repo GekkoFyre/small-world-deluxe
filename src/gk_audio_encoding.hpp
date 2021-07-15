@@ -129,9 +129,8 @@ class GkAudioEncoding : public QObject {
 public:
     explicit GkAudioEncoding(const QPointer<QBuffer> &audioInputBuf, const QPointer<QBuffer> &audioOutputBuf,
                              QPointer<GekkoFyre::GkLevelDb> database, QPointer<QAudioOutput> audioOutput,
-                             QPointer<QAudioInput> audioInput, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
-                             const GekkoFyre::Database::Settings::Audio::GkDevice &input_device,
-                             QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
+                             QPointer<QAudioInput> audioInput, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                             QObject *parent = nullptr);
     ~GkAudioEncoding() override;
 
     QString codecEnumToStr(const GkAudioFramework::CodecSupport &codec);
@@ -172,8 +171,6 @@ private:
 
     //
     // QAudioSystem initialization and buffers
-    GekkoFyre::Database::Settings::Audio::GkDevice gkInputDev;
-    GekkoFyre::Database::Settings::Audio::GkDevice gkOutputDev;
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
 

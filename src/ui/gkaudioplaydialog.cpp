@@ -351,10 +351,20 @@ void GkAudioPlayDialog::on_pushButton_playback_record_clicked()
                     emit recStatus(GkAudioRecordStatus::Active);
                     switch (ui->comboBox_playback_rec_source->currentIndex()) {
                         case AUDIO_RECORDING_SOURCE_INPUT_IDX:
-                            gkPaAudioPlayer->record(codec_used, m_recordDirPath, pref_input_device);
+                        {
+                            auto rec_future = std::async(std::launch::deferred, &GkPaAudioPlayer::record, gkPaAudioPlayer, std::ref(codec_used),
+                                                         std::ref(m_recordDirPath), std::ref(pref_output_device));
+                            rec_future.get();
+                        }
+
                             break;
                         case AUDIO_RECORDING_SOURCE_OUTPUT_IDX:
-                            gkPaAudioPlayer->record(codec_used, m_recordDirPath, pref_output_device);
+                        {
+                            auto rec_future = std::async(std::launch::deferred, &GkPaAudioPlayer::record, gkPaAudioPlayer, std::ref(codec_used),
+                                                         std::ref(m_recordDirPath), std::ref(pref_output_device));
+                            rec_future.get();
+                        }
+
                             break;
                         default:
                             throw std::invalid_argument(tr("Invalid argument provided for audio device determination, when attempting to record!").toStdString());
@@ -366,7 +376,7 @@ void GkAudioPlayDialog::on_pushButton_playback_record_clicked()
                 }
             } else {
                 throw std::invalid_argument(tr("Unable to use directory, \"%1\", for reading and/or writing!")
-                                                    .arg(m_recordDirPath.path()).toStdString());
+                .arg(m_recordDirPath.path()).toStdString());
             }
         } else {
             //

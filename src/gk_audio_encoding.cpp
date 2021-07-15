@@ -81,8 +81,8 @@ using namespace GkXmpp;
 
 GkAudioEncoding::GkAudioEncoding(const QPointer<QBuffer> &audioInputBuf, const QPointer<QBuffer> &audioOutputBuf,
                                  QPointer<GekkoFyre::GkLevelDb> database, QPointer<QAudioOutput> audioOutput,
-                                 QPointer<QAudioInput> audioInput, const GkDevice &output_device, const GkDevice &input_device,
-                                 QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QObject(parent)
+                                 QPointer<QAudioInput> audioInput, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                                 QObject *parent) : QObject(parent)
 {
     setParent(parent);
     gkDb = std::move(database);
@@ -90,8 +90,6 @@ GkAudioEncoding::GkAudioEncoding(const QPointer<QBuffer> &audioInputBuf, const Q
 
     gkAudioInput = std::move(audioInput);
     gkAudioOutput = std::move(audioOutput);
-    gkInputDev = input_device;
-    gkOutputDev = output_device;
 
     //
     // Initialize variables
@@ -396,20 +394,24 @@ void GkAudioEncoding::handleError(const QString &msg, const GkSeverity &severity
 void GkAudioEncoding::processAudioInEncode(const GkAudioFramework::CodecSupport &codec, const qint32 &bitrate,
                                            const qint32 &sample_rate, const qint32 &frame_size)
 {
-    if (m_initialized) {
-        gkAudioInputBuf->seek(0);
-        m_buffer.append(gkAudioInputBuf->readAll());
-        while (!m_buffer.isEmpty()) {
-            if (codec == CodecSupport::Opus) {
-                encodeOpus(bitrate, sample_rate, frame_size);
-            } else if (codec == CodecSupport::OggVorbis) {
-                encodeVorbis(bitrate, sample_rate, frame_size);
-            } else if (codec == CodecSupport::FLAC) {
-                encodeFLAC(bitrate, sample_rate, frame_size);
-            } else {
-                throw std::invalid_argument(tr("The codec you have chosen is not supported as of yet, please try another!").toStdString());
+    try {
+        if (m_initialized) {
+            gkAudioInputBuf->seek(0);
+            m_buffer.append(gkAudioInputBuf->readAll());
+            while (!m_buffer.isEmpty()) {
+                if (codec == CodecSupport::Opus) {
+                    encodeOpus(bitrate, sample_rate, frame_size);
+                } else if (codec == CodecSupport::OggVorbis) {
+                    encodeVorbis(bitrate, sample_rate, frame_size);
+                } else if (codec == CodecSupport::FLAC) {
+                    encodeFLAC(bitrate, sample_rate, frame_size);
+                } else {
+                    throw std::invalid_argument(tr("The codec you have chosen is not supported as of yet, please try another!").toStdString());
+                }
             }
         }
+    } catch (const std::exception &e) {
+
     }
 
     return;

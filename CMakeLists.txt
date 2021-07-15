@@ -40,16 +40,32 @@
 
 cmake_minimum_required(VERSION 3.5 FATAL_ERROR) # This version is needed to properly search for libpthreads
 
-# https://gitlab.kitware.com/cmake/community/wikis/doc/cmake/Useful-Variables#system-compiler-information
-if(${CMAKE_VERSION} VERSION_GREATER "3.15.0")
-    cmake_policy(SET CMP0091 NEW)
+cmake_policy(SET CMP0020 NEW)
+cmake_policy(SET CMP0025 NEW)
+
+#
+# https://cmake.org/cmake/help/latest/policy/CMP0054.html
+if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.1.0")
+	cmake_policy(SET CMP0054 NEW)
 endif()
 
-CMAKE_POLICY(SET CMP0020 NEW)
-cmake_policy(SET CMP0074 NEW)
-cmake_policy(SET CMP0054 NEW)
-cmake_policy(SET CMP0087 NEW)
-cmake_policy(SET CMP0025 NEW)
+#
+# https://cmake.org/cmake/help/latest/policy/CMP0074.html
+if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
+	cmake_policy(SET CMP0074 NEW)
+endif()
+
+#
+# https://cmake.org/cmake/help/git-stage/policy/CMP0087.html
+if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.14.0")
+	cmake_policy(SET CMP0087 NEW)
+endif()
+
+#
+# https://cmake.org/cmake/help/git-stage/policy/CMP0091.html
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.15.0")
+    cmake_policy(SET CMP0091 NEW)
+endif()
 
 #
 # RPATH is aimed at Linux installations primarily

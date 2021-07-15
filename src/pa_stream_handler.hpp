@@ -47,9 +47,11 @@
 #include "src/gk_pcm_file_stream.hpp"
 #include "src/gk_audio_encoding.hpp"
 #include <AudioFile.h>
+#include <mutex>
 #include <memory>
 #include <vector>
 #include <string>
+#include <thread>
 #include <QDir>
 #include <QMap>
 #include <QObject>
@@ -151,15 +153,22 @@ private:
     QFileInfo m_mediaFile;
 
     //
+    // Multithreading and mutexes
+    std::mutex m_recordMediaFileHelperMutex;
+    std::mutex m_createRecordMediaFileInfoMutex;
+    std::mutex m_createRecordMediaFileDirMutex;
+    std::thread m_recordMediaFileHelperThread;
+
+    //
     // QAudioSystem initialization and buffers
     QPointer<QEventLoop> procMediaEventLoop;
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
     QMap<QString, AudioFile<double>> gkSounds;
 
-    void playMediaFileHelper(const QFileInfo &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
+    void playMediaFileHelper(QFileInfo media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
                              const GekkoFyre::Database::Settings::Audio::GkDevice &audio_device);
-    void recordMediaFileHelper(const QFileInfo &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
+    void recordMediaFileHelper(QFileInfo media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
                                qint32 encoding_bitrate, const GekkoFyre::Database::Settings::Audio::GkDevice &audio_device);
 
 };
