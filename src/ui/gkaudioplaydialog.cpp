@@ -92,7 +92,7 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
     m_rec_codec_chosen = CodecSupport::PCM;
     m_encode_bitrate_chosen = 8;
     gkAudioFile = std::make_shared<AudioFile<double>>();
-    gkPaAudioPlayer = new GkPaAudioPlayer(gkDb, pref_output_device, pref_input_device, gkAudioOutput, gkAudioInput, gkAudioEncoding, gkEventLogger, gkAudioFile, this);
+    gkPaAudioPlayer = new GkPaAudioPlayer(gkDb, gkAudioOutput, gkAudioInput, gkAudioEncoding, gkEventLogger, gkAudioFile, this);
 
     //
     // QPushButtons, etc.
@@ -103,18 +103,22 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
     audio_out_skip_fwd = false;
     audio_out_skip_bck = false;
 
+    pref_input_device.audio_src = GkAudioSource::Input;
+    pref_output_device.audio_src = GkAudioSource::Output;
+
     prefillCodecComboBoxes(GkAudioFramework::CodecSupport::OggVorbis);
     prefillCodecComboBoxes(GkAudioFramework::CodecSupport::FLAC);
     prefillCodecComboBoxes(GkAudioFramework::CodecSupport::Opus);
     prefillCodecComboBoxes(GkAudioFramework::CodecSupport::PCM);
     prefillCodecComboBoxes(GkAudioFramework::CodecSupport::Loopback);
+    prefillAudioSourceComboBoxes();
 }
 
 GkAudioPlayDialog::~GkAudioPlayDialog()
 {
     emit recStatus(GkAudioRecordStatus::Defunct);
     if (audio_out_play) {
-        gkPaAudioPlayer->stop(gkAudioFileInfo.audio_file_path);
+        gkPaAudioPlayer->stop(gkAudioFileInfo.audio_file_path, GkDevice());
         gkEventLogger->publishEvent(tr("Stopped playing audio file, \"%1\"").arg(gkAudioFileInfo.audio_file_path.fileName()), GkSeverity::Info, "", true, true, true, false);
     }
 
@@ -188,7 +192,7 @@ void GkAudioPlayDialog::on_pushButton_playback_stop_clicked()
 {
     if (!audio_out_stop) {
         gkStringFuncs->changePushButtonColor(ui->pushButton_playback_stop, false);
-        gkPaAudioPlayer->stop(gkAudioFileInfo.audio_file_path);
+        gkPaAudioPlayer->stop(gkAudioFileInfo.audio_file_path, GkDevice());
         gkEventLogger->publishEvent(tr("Stopped playing audio file, \"%1\"").arg(gkAudioFileInfo.audio_file_path.fileName()), GkSeverity::Info, "", true, true, true, false);
 
         audio_out_stop = true;
@@ -262,13 +266,13 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
 
             GkAudioFramework::CodecSupport codec_used = gkDb->convCodecSupportFromIdxToEnum(ui->comboBox_playback_rec_codec->currentData().toInt());
             if (gkAudioFileInfo.audio_file_path.exists() && codec_used != GkAudioFramework::CodecSupport::Loopback) {
-                gkPaAudioPlayer->play(codec_used, gkAudioFileInfo.audio_file_path.filePath());
+                audioPlaybackHelper(codec_used, gkAudioFileInfo.audio_file_path.filePath());
                 gkEventLogger->publishEvent(
                         tr("Started playing audio file, \"%1\"").arg(gkAudioFileInfo.audio_file_path.filePath()),
                         GkSeverity::Info, "", true, true, true, false);
                 ui->progressBar_playback->setFormat(tr("%p%")); // Modify the QProgressBar to display the correct text!
             } else if (codec_used == GkAudioFramework::CodecSupport::Loopback) {
-                gkPaAudioPlayer->play(codec_used);
+                audioPlaybackHelper(codec_used, gkAudioFileInfo.audio_file_path.filePath());
                 gkEventLogger->publishEvent(
                         tr("Started audio device loopback!"), GkSeverity::Info, "", true, true, true, false);
                 ui->progressBar_playback->setFormat(tr("%p%")); // Modify the QProgressBar to display the correct text!
@@ -277,7 +281,7 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
                 .arg(gkAudioFileInfo.audio_file_path.fileName()).toStdString());
             }
         } else {
-            gkPaAudioPlayer->stop(gkAudioFileInfo.audio_file_path);
+            gkPaAudioPlayer->stop(gkAudioFileInfo.audio_file_path, GkDevice());
             gkEventLogger->publishEvent(tr("Stopped playing audio file, \"%1\"").arg(gkAudioFileInfo.audio_file_path.fileName()), GkSeverity::Info, "", true, true, true, false);
 
             gkStringFuncs->changePushButtonColor(ui->pushButton_playback_play, true);
@@ -345,14 +349,34 @@ void GkAudioPlayDialog::on_pushButton_playback_record_clicked()
                 GkAudioFramework::CodecSupport codec_used = gkDb->convCodecSupportFromIdxToEnum(ui->comboBox_playback_rec_codec->currentData().toInt());
                 if (codec_used != GkAudioFramework::CodecSupport::Loopback) {
                     emit recStatus(GkAudioRecordStatus::Active);
-                    gkPaAudioPlayer->record(codec_used, m_recordDirPath);
+                    switch (ui->comboBox_playback_rec_source->currentIndex()) {
+                        case AUDIO_RECORDING_SOURCE_INPUT_IDX:
+                        {
+                            auto rec_future = std::async(std::launch::deferred, &GkPaAudioPlayer::record, gkPaAudioPlayer, std::ref(codec_used),
+                                                         std::ref(m_recordDirPath), std::ref(pref_output_device));
+                            rec_future.get();
+                        }
+
+                            break;
+                        case AUDIO_RECORDING_SOURCE_OUTPUT_IDX:
+                        {
+                            auto rec_future = std::async(std::launch::deferred, &GkPaAudioPlayer::record, gkPaAudioPlayer, std::ref(codec_used),
+                                                         std::ref(m_recordDirPath), std::ref(pref_output_device));
+                            rec_future.get();
+                        }
+
+                            break;
+                        default:
+                            throw std::invalid_argument(tr("Invalid argument provided for audio device determination, when attempting to record!").toStdString());
+                    }
+
                     gkStringFuncs->changePushButtonColor(ui->pushButton_playback_record, false);
                 } else {
                     throw std::runtime_error(tr("Loopback mode is unsupported during recording!").toStdString());
                 }
             } else {
                 throw std::invalid_argument(tr("Unable to use directory, \"%1\", for reading and/or writing!")
-                                                    .arg(m_recordDirPath.path()).toStdString());
+                .arg(m_recordDirPath.path()).toStdString());
             }
         } else {
             //
@@ -511,6 +535,32 @@ void GkAudioPlayDialog::clearForms(const GkClearForms &cat)
 }
 
 /**
+ * @brief GkAudioPlayDialog::audioPlaybackHelper
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param codec_used
+ * @param file_path
+ */
+void GkAudioPlayDialog::audioPlaybackHelper(const CodecSupport &codec_used, const QString &file_path)
+{
+    try {
+        switch (ui->comboBox_playback_rec_source->currentIndex()) {
+            case AUDIO_RECORDING_SOURCE_INPUT_IDX:
+                gkPaAudioPlayer->play(codec_used, file_path, pref_input_device);
+                break;
+            case AUDIO_RECORDING_SOURCE_OUTPUT_IDX:
+                gkPaAudioPlayer->play(codec_used, file_path, pref_output_device);
+                break;
+            default:
+                throw std::invalid_argument(tr("Invalid argument provided for audio device determination, when attempting playback!").toStdString());
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(e.what());
+    }
+
+    return;
+}
+
+/**
  * @brief GkAudioPlayDialog::prefillCodecComboBoxes
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param supported_codec
@@ -538,6 +588,18 @@ void GkAudioPlayDialog::prefillCodecComboBoxes(const CodecSupport &supported_cod
         case CodecSupport::Unknown:
             break;
     }
+
+    return;
+}
+
+/**
+ * @brief GkAudioPlayDialog::prefillAudioSourceComboBoxes
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkAudioPlayDialog::prefillAudioSourceComboBoxes()
+{
+    ui->comboBox_playback_rec_source->insertItem(AUDIO_RECORDING_SOURCE_INPUT_IDX, tr("Audio Input [ %1 ]").arg(pref_input_device.audio_dev_str), AUDIO_RECORDING_SOURCE_INPUT_IDX);
+    ui->comboBox_playback_rec_source->insertItem(AUDIO_RECORDING_SOURCE_OUTPUT_IDX, tr("Audio Output [ %1 ]").arg(pref_output_device.audio_dev_str), AUDIO_RECORDING_SOURCE_OUTPUT_IDX);
 
     return;
 }

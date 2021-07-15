@@ -40,16 +40,32 @@
 
 cmake_minimum_required(VERSION 3.5 FATAL_ERROR) # This version is needed to properly search for libpthreads
 
-# https://gitlab.kitware.com/cmake/community/wikis/doc/cmake/Useful-Variables#system-compiler-information
-if(${CMAKE_VERSION} VERSION_GREATER "3.15.0")
-    cmake_policy(SET CMP0091 NEW)
+cmake_policy(SET CMP0020 NEW)
+cmake_policy(SET CMP0025 NEW)
+
+#
+# https://cmake.org/cmake/help/latest/policy/CMP0054.html
+if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.1.0")
+	cmake_policy(SET CMP0054 NEW)
 endif()
 
-CMAKE_POLICY(SET CMP0020 NEW)
-cmake_policy(SET CMP0074 NEW)
-cmake_policy(SET CMP0054 NEW)
-cmake_policy(SET CMP0087 NEW)
-cmake_policy(SET CMP0025 NEW)
+#
+# https://cmake.org/cmake/help/latest/policy/CMP0074.html
+if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
+	cmake_policy(SET CMP0074 NEW)
+endif()
+
+#
+# https://cmake.org/cmake/help/git-stage/policy/CMP0087.html
+if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.14.0")
+	cmake_policy(SET CMP0087 NEW)
+endif()
+
+#
+# https://cmake.org/cmake/help/git-stage/policy/CMP0091.html
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.15.0")
+    cmake_policy(SET CMP0091 NEW)
+endif()
 
 #
 # RPATH is aimed at Linux installations primarily
@@ -937,9 +953,6 @@ target_compile_options(smallworld PRIVATE -fPIC)
 target_compile_definitions(galaxy PRIVATE -DUSE_KISS_FFT)
 target_link_libraries(smallworld PRIVATE galaxy)
 
-include(CMakePackageConfigHelpers)
-include(GNUInstallDirs)
-
 #
 # Copy the crashpad handler to the root of the binary build directory, for easy access!
 # https://cmake.org/cmake/help/latest/module/FetchContent.html
@@ -962,7 +975,29 @@ else()
                     ${CMAKE_CURRENT_BINARY_DIR}/libcrashpad_handler_lib.a)
 endif()
 
-INSTALL(TARGETS smallworld)
+if(WIN32 OR MSYS OR MINGW)
+	if (EXISTS "$ENV{SystemDrive}/Program Files")
+		INSTALL(TARGETS smallworld
+				CONFIGURATIONS Debug
+				RUNTIME DESTINATION Debug/bin
+				LIBRARY DESTINATION Debug/lib)
+		INSTALL(TARGETS smallworld
+				CONFIGURATIONS Release
+				RUNTIME DESTINATION bin
+				LIBRARY DESTINATION lib)
+	endif()
+elseif (LINUX)
+		INSTALL(TARGETS smallworld
+				CONFIGURATIONS Debug
+				RUNTIME DESTINATION Debug/bin
+				LIBRARY DESTINATION Debug/lib)
+		INSTALL(TARGETS smallworld
+				CONFIGURATIONS Release
+				RUNTIME DESTINATION bin
+				LIBRARY DESTINATION lib)
+else()
+	message(FATAL_ERROR "Unsupported operating system detected! Please check back at the official code repository for further updates. Thank you.")
+endif()
 
 SET(CMAKE_C_FLAGS_DEBUG_INIT            "-g")
 SET(CMAKE_C_FLAGS_MINSIZEREL_INIT       "-Os -DNDEBUG")
