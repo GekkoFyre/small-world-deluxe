@@ -122,16 +122,6 @@ GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, QP
 
 GkPaStreamHandler::~GkPaStreamHandler()
 {
-    if (procMediaEventLoop) {
-        if (procMediaEventLoop->isRunning()) {
-            procMediaEventLoop->quit();
-        }
-    }
-
-    if (m_recordMediaFileHelperThread.joinable()) {
-        m_recordMediaFileHelperThread.join();
-    }
-
     return;
 }
 
@@ -278,14 +268,7 @@ void GkPaStreamHandler::playMediaFile(const QDir &media_path, const CodecSupport
 void GkPaStreamHandler::recordMediaFile(const QFileInfo &media_path, const GkAudioFramework::CodecSupport &supported_codec,
                                         qint32 encoding_bitrate, const GkDevice &audio_device)
 {
-    if (m_recordMediaFileHelperThread.joinable()) {
-        m_recordMediaFileHelperThread.join();
-    }
-
-    m_recordMediaFileHelperThread = std::thread(&GkPaStreamHandler::recordMediaFileHelper, this, media_path, std::ref(supported_codec),
-                                                encoding_bitrate, std::ref(audio_device));
-    m_recordMediaFileHelperThread.detach();
-
+    recordMediaFileHelper(media_path, supported_codec, encoding_bitrate, audio_device);
     return;
 }
 
@@ -299,14 +282,8 @@ void GkPaStreamHandler::recordMediaFile(const QFileInfo &media_path, const GkAud
 void GkPaStreamHandler::recordMediaFile(const QDir &media_path, const CodecSupport &supported_codec,
                                         qint32 encoding_bitrate, const GkDevice &audio_device)
 {
-    if (m_recordMediaFileHelperThread.joinable()) {
-        m_recordMediaFileHelperThread.join();
-    }
-
     const QFileInfo file_info_tmp(media_path.path());
-    m_recordMediaFileHelperThread = std::thread(&GkPaStreamHandler::recordMediaFileHelper, this, file_info_tmp, std::ref(supported_codec),
-                                                encoding_bitrate, std::ref(audio_device));
-    m_recordMediaFileHelperThread.detach();
+    recordMediaFileHelper(file_info_tmp, supported_codec, encoding_bitrate, audio_device);
 
     return;
 }
@@ -504,12 +481,6 @@ void GkPaStreamHandler::playMediaFileHelper(QFileInfo media_path, const CodecSup
                     return;
             }
 
-            procMediaEventLoop = new QEventLoop(this);
-            do {
-                procMediaEventLoop->exec(QEventLoop::WaitForMoreEvents);
-            } while (gkAudioOutput->state() == QAudio::ActiveState);
-
-            delete procMediaEventLoop;
             emit stopMedia(media_path);
             break;
         }
@@ -553,14 +524,6 @@ void GkPaStreamHandler::recordMediaFileHelper(QFileInfo media_path, const CodecS
                     // PCM, Ogg Vorbis, etc.
                     emit initEncode(m_mediaFile, audio_device, encoding_bitrate, supported_codec, AUDIO_FRAMES_PER_BUFFER);
                 }
-
-                procMediaEventLoop = new QEventLoop(this);
-                do {
-                    if (!procMediaEventLoop.isNull()) {
-                        procMediaEventLoop->exec(QEventLoop::WaitForMoreEvents);
-                    }
-                } while (gkAudioInput->state() == QAudio::ActiveState && gkAudioEncoding->getRecStatus() == GkAudioRecordStatus::Active);
-                delete procMediaEventLoop;
             } else {
                 //
                 // There is no audio device that has been chosen!

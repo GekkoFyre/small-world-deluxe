@@ -734,10 +734,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the audio codec encoding/decoding libraries!
         //
-        gkAudioEncoding = new GkAudioEncoding(gkAudioInputBuf, gkAudioOutputBuf, gkDb, gkAudioOutput, gkAudioInput, gkEventLogger, &gkAudioEncodingThread);
-        gkAudioEncoding->moveToThread(&gkAudioEncodingThread);
-        QObject::connect(&gkAudioEncodingThread, &QThread::finished, gkAudioEncoding, &QObject::deleteLater);
-        gkAudioEncodingThread.start();
+        gkAudioEncoding = new GkAudioEncoding(gkAudioInputBuf, gkAudioOutputBuf, gkDb, gkAudioOutput, gkAudioInput, gkEventLogger, &gkAudioInputThread);
+        gkAudioEncoding->moveToThread(&gkAudioInputThread);
 
         //
         // Initialize the Waterfall / Spectrograph
@@ -748,7 +746,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                                gkSpectroWaterfall, gkStringFuncs, gkEventLogger, &gkAudioInputThread);
         gkFftAudio->moveToThread(&gkAudioInputThread);
         QObject::connect(&gkAudioInputThread, &QThread::finished, gkFftAudio, &QObject::deleteLater);
-        gkAudioInputThread.start();
 
         if (!gkAudioOutput.isNull()) {
             QObject::connect(&gkAudioOutputThread, &QThread::finished, gkFftAudio, &QObject::deleteLater);
@@ -776,6 +773,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // Add the spectrograph / waterfall to the QMainWindow!
         ui->horizontalLayout_12->addWidget(gkSpectroWaterfall);
         #endif
+
+        //
+        // Start the audio input thread!
+        gkAudioInputThread.start();
 
         //
         // Sound & Audio Devices
@@ -935,11 +936,6 @@ MainWindow::~MainWindow()
     emit stopRecInput();
     emit stopRecOutput();
     emit disconnectRigInUse(gkRadioPtr->gkRig, gkRadioPtr);
-
-    if (gkAudioEncodingThread.isRunning()) {
-        gkAudioEncodingThread.quit();
-        gkAudioEncodingThread.wait();
-    }
 
     if (gkAudioInputThread.isRunning()) {
         gkAudioInputThread.quit();

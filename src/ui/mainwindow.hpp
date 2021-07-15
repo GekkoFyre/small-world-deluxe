@@ -111,7 +111,6 @@ class MainWindow : public QMainWindow
     Q_OBJECT
     QThread gkAudioInputThread;
     QThread gkAudioOutputThread;
-    QThread gkAudioEncodingThread;
 
 public:
     explicit MainWindow(QWidget *parent = nullptr);

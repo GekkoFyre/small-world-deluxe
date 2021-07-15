@@ -59,7 +59,6 @@
 #include <QThread>
 #include <QPointer>
 #include <QFileInfo>
-#include <QEventLoop>
 #include <QByteArray>
 #include <QAudioInput>
 #include <QAudioOutput>
@@ -157,11 +156,9 @@ private:
     std::mutex m_recordMediaFileHelperMutex;
     std::mutex m_createRecordMediaFileInfoMutex;
     std::mutex m_createRecordMediaFileDirMutex;
-    std::thread m_recordMediaFileHelperThread;
 
     //
     // QAudioSystem initialization and buffers
-    QPointer<QEventLoop> procMediaEventLoop;
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
     QMap<QString, AudioFile<double>> gkSounds;

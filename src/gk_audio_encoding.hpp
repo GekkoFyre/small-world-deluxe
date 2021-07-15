@@ -141,10 +141,6 @@ public slots:
                      const qint32 &bitrate, const GekkoFyre::GkAudioFramework::CodecSupport &codec_choice,
                      const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER, const qint32 &application = OPUS_APPLICATION_AUDIO);
     void stopEncode();
-    void processAudioInEncode(const GkAudioFramework::CodecSupport &codec, const qint32 &bitrate, const qint32 &sample_rate,
-                              const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
-    void processAudioOutEncode(const GkAudioFramework::CodecSupport &codec, const qint32 &bitrate, const qint32 &sample_rate,
-                               const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
 
     void setRecStatus(const GekkoFyre::GkAudioFramework::GkAudioRecordStatus &status);
 
@@ -152,9 +148,12 @@ private slots:
     void stopCaller();
     void handleError(const QString &msg, const GekkoFyre::System::Events::Logging::GkSeverity &severity);
 
-    void encodeOpus(const qint32 &bitrate, const qint32 &sample_rate, const qint32 &frame_size = AUDIO_OPUS_MAX_FRAME_SIZE);
-    void encodeVorbis(const qint32 &bitrate, const qint32 &sample_rate, const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
-    void encodeFLAC(const qint32 &bitrate, const qint32 &sample_rate, const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
+    void encodeOpus(const qint32 &bitrate, qint32 sample_rate, const Database::Settings::GkAudioSource &audio_src,
+                    const qint32 &frame_size = AUDIO_OPUS_MAX_FRAME_SIZE);
+    void encodeVorbis(const qint32 &bitrate, qint32 sample_rate, const Database::Settings::GkAudioSource &audio_src,
+                      const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
+    void encodeFLAC(const qint32 &bitrate, qint32 sample_rate, const Database::Settings::GkAudioSource &audio_src,
+                    const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
 
 signals:
     void pauseEncode();
@@ -202,8 +201,9 @@ private:
     std::mutex m_asyncOggOpusMtx;
     std::mutex m_asyncOggVorbisMtx;
     std::mutex m_asyncFlacMtx;
-    std::thread m_audioInEncodeThread;
-    std::thread m_audioOutEncodeThread;
+    std::thread m_encodeOpusThread;
+    std::thread m_encodeVorbisThread;
+    std::thread m_encodeFLACThread;
 
     void opusCleanup();
 

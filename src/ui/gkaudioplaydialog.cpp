@@ -351,20 +351,10 @@ void GkAudioPlayDialog::on_pushButton_playback_record_clicked()
                     emit recStatus(GkAudioRecordStatus::Active);
                     switch (ui->comboBox_playback_rec_source->currentIndex()) {
                         case AUDIO_RECORDING_SOURCE_INPUT_IDX:
-                        {
-                            auto rec_future = std::async(std::launch::deferred, &GkPaAudioPlayer::record, gkPaAudioPlayer, std::ref(codec_used),
-                                                         std::ref(m_recordDirPath), std::ref(pref_output_device));
-                            rec_future.get();
-                        }
-
+                            gkPaAudioPlayer->record(codec_used, m_recordDirPath, pref_input_device);
                             break;
                         case AUDIO_RECORDING_SOURCE_OUTPUT_IDX:
-                        {
-                            auto rec_future = std::async(std::launch::deferred, &GkPaAudioPlayer::record, gkPaAudioPlayer, std::ref(codec_used),
-                                                         std::ref(m_recordDirPath), std::ref(pref_output_device));
-                            rec_future.get();
-                        }
-
+                            gkPaAudioPlayer->record(codec_used, m_recordDirPath, pref_output_device);
                             break;
                         default:
                             throw std::invalid_argument(tr("Invalid argument provided for audio device determination, when attempting to record!").toStdString());
