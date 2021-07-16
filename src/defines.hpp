@@ -188,6 +188,7 @@ namespace GekkoFyre {
 #define AUDIO_OPUS_MAX_FRAME_SIZE (1276)
 #define AUDIO_OPUS_FILE_PTR_READ_SIZE (256)                     // To be used with `fread` <http://www.cplusplus.com/reference/cstdio/fread/>.
 #define AUDIO_OPUS_DEFAULT_SAMPLE_RATE (48000)                  // The default sampling rate to use when encoding/decoding with Ogg Opus audio (measured in kHz).
+#define AUDIO_ENCODING_VAR_PRIME_SLEEP_MILLISECS (1000)         // The amount of time to wait for (in milliseconds) while the buffers prime themselves, before continuing with the rest of the encoding functions!
 
 #define AUDIO_SINE_WAVE_PLAYBACK_SECS (3)                       // Play the sine wave test sample for three seconds!
 #define AUDIO_VU_METER_UPDATE_MILLISECS (125)                   // How often the volume meter should update, in milliseconds.

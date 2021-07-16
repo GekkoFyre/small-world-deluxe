@@ -41,6 +41,7 @@
 
 #include "src/gk_audio_encoding.hpp"
 #include <vector>
+#include <chrono>
 #include <cstring>
 #include <utility>
 #include <iterator>
@@ -108,6 +109,8 @@ GkAudioEncoding::GkAudioEncoding(const QPointer<QBuffer> &audioInputBuf, const Q
                      this, SLOT(handleError(const QString &, const GekkoFyre::System::Events::Logging::GkSeverity &)));
     QObject::connect(this, SIGNAL(recStatus(const GekkoFyre::GkAudioFramework::GkAudioRecordStatus &)),
                      this, SLOT(setRecStatus(const GekkoFyre::GkAudioFramework::GkAudioRecordStatus &)));
+    QObject::connect(this, SIGNAL(updateAudioBuffers(const GekkoFyre::Database::Settings::GkAudioSource &)),
+                     this, SLOT(refreshAudioBuffers(const GekkoFyre::Database::Settings::GkAudioSource &)));
 
     return;
 }
@@ -217,6 +220,24 @@ void GkAudioEncoding::startCaller(const QFileInfo &media_path, const qint32 &bit
             return;
         }
 
+        if (audio_source == GkAudioSource::Input) {
+            if (gkAudioInput->state() != QAudio::ActiveState) {
+                gkEventLogger->publishEvent(tr("Audio encoding has terminated early. Reason: Audio 'input' was not active."), GkSeverity::Error, "",
+                                            false, true, false, true, false);
+                emit recStatus(GkAudioRecordStatus::Defunct);
+                return;
+            }
+        } else if (audio_source == GkAudioSource::Output) {
+            if (gkAudioOutput->state() != QAudio::ActiveState) {
+                gkEventLogger->publishEvent(tr("Audio encoding has terminated early. Reason: Audio 'output' was not active."), GkSeverity::Error, "",
+                                            false, true, false, true, false);
+                emit recStatus(GkAudioRecordStatus::Defunct);
+                return;
+            }
+        } else {
+            throw std::invalid_argument(tr("An invalid or currently unsupported audio source has been chosen!").toStdString());
+        }
+
         //
         // Clear the audio buffer prior to use!
         m_buffer.clear();
@@ -264,8 +285,8 @@ void GkAudioEncoding::startCaller(const QFileInfo &media_path, const qint32 &bit
                 m_encodeOpusThread.join();
             }
 
-            m_encodeOpusThread = std::thread(&GkAudioEncoding::encodeOpus, this, std::ref(bitrate), gkAudioInput->format().sampleRate(),
-                                             std::ref(audio_source), std::ref(frame_size));
+            m_encodeOpusThread = std::thread(&GkAudioEncoding::encodeOpus, this, std::ref(bitrate), std::ref(audio_source),
+                                             std::ref(frame_size));
             m_encodeOpusThread.detach();
         } else if (codec_choice == CodecSupport::OggVorbis) {
             //
@@ -346,19 +367,13 @@ void GkAudioEncoding::setRecStatus(const GekkoFyre::GkAudioFramework::GkAudioRec
  * @param sample_rate The sample rate at which to encode with (i.e. 48,000 Hz).
  * @param frame_size The size of the audio frame(s) in question.
  */
-void GkAudioEncoding::encodeOpus(const qint32 &bitrate, qint32 sample_rate, const GkAudioSource &audio_src,
-                                 const qint32 &frame_size)
+void GkAudioEncoding::encodeOpus(const qint32 &bitrate, const GkAudioSource &audio_src, const qint32 &frame_size)
 {
     //
     // Ogg Opus
     //
     try {
         std::lock_guard<std::mutex> lock_g(m_encodeOggOpusMtx);
-        const opus_int32 m_sample_rate = sample_rate;
-        if (m_sample_rate < 8000) {
-            throw std::invalid_argument(tr("Invalid sample rate provided whilst trying to encode with the Opus codec!").toStdString());
-        }
-
         const QDir dir_tmp = m_file_path.path(); // NOTE: Returns the file's path. This doesn't include the file name.
         const QString dir_path = dir_tmp.path();
         if (!dir_tmp.exists()) {
@@ -401,27 +416,51 @@ void GkAudioEncoding::encodeOpus(const qint32 &bitrate, qint32 sample_rate, cons
         m_initialized = true;
         err = opus_encoder_ctl(m_opusEncoder, OPUS_SET_BITRATE(bitrate));
         gkEventLogger->publishEvent(tr("Initiate encoding with Opus as the codec! Frame size: %1. Sample rate: %2. Bit rate: %3. Channels: %4.")
-                                            .arg(QString::number(m_size), QString::number(sample_rate), QString::number(bitrate), QString::number(m_channels)), GkSeverity::Info, "",
+                                            .arg(QString::number(m_size), QString::number(AUDIO_OPUS_DEFAULT_SAMPLE_RATE), QString::number(bitrate), QString::number(m_channels)), GkSeverity::Info, "",
                                     false, true, false, false, false);
         if (err != OPUS_OK) {
             throw std::runtime_error(gkStringFuncs->handleOpusError(err).toStdString());
         }
 
+        emit updateAudioBuffers(audio_src); // Execute this just once before the do-while loop, in order to prime the variables beforehand!
+        // std::this_thread::sleep_for (std::chrono::milliseconds(AUDIO_ENCODING_VAR_PRIME_SLEEP_MILLISECS));
+
         do {
             if (!m_initialized) {
+                if (m_opusEncoder) {
+                    opus_encoder_destroy(m_opusEncoder);
+                }
+
                 return;
             }
 
             if (audio_src == GkAudioSource::Input) {
-                gkAudioInputBuf->seek(0);
-                m_buffer.append(gkAudioInputBuf->readAll());
+                if (gkAudioInput->state() != QAudio::ActiveState) {
+                    gkEventLogger->publishEvent(tr("Opus encoding has terminated early. Reason: Audio 'input' was not active."), GkSeverity::Error, "",
+                                                false, true, false, true, false);
+                    emit recStatus(GkAudioRecordStatus::Defunct);
+                    if (m_opusEncoder) {
+                        opus_encoder_destroy(m_opusEncoder);
+                    }
+
+                    return;
+                }
             } else if (audio_src == GkAudioSource::Output) {
-                gkAudioOutputBuf->seek(0);
-                m_buffer.append(gkAudioOutputBuf->readAll());
+                if (gkAudioOutput->state() != QAudio::ActiveState) {
+                    gkEventLogger->publishEvent(tr("Opus encoding has terminated early. Reason: Audio 'output' was not active."), GkSeverity::Error, "",
+                                                false, true, false, true, false);
+                    emit recStatus(GkAudioRecordStatus::Defunct);
+                    if (m_opusEncoder) {
+                        opus_encoder_destroy(m_opusEncoder);
+                    }
+
+                    return;
+                }
             } else {
                 throw std::invalid_argument(tr("An invalid or currently unsupported audio source has been chosen!").toStdString());
             }
 
+            emit updateAudioBuffers(audio_src);
             const auto result = opusEncodeHelper(m_opusEncoder, frame_size, m_size, AUDIO_OPUS_MAX_FRAME_SIZE * 3);
             if (!result.isEmpty()) {
                 //
@@ -659,6 +698,41 @@ void GkAudioEncoding::encodeFLAC(const qint32 &bitrate, qint32 sample_rate, cons
 }
 
 /**
+ * @brief GkAudioEncoding::refreshAudioBuffers refreshes/updates the audio buffers for both the audio input and/or output
+ * devices.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param audio_src The audio source for which buffers to update henceforth.
+ */
+void GkAudioEncoding::refreshAudioBuffers(const GkAudioSource &audio_src)
+{
+    if (audio_src == GkAudioSource::Input) {
+        if (gkAudioInput->state() != QAudio::ActiveState) {
+            emit recStatus(GkAudioRecordStatus::Defunct);
+            return;
+        }
+
+        do {
+            gkAudioInputBuf->seek(0);
+            m_buffer.append(gkAudioInputBuf->readAll());
+        } while (m_buffer.isEmpty());
+    } else if (audio_src == GkAudioSource::Output) {
+        if (gkAudioOutput->state() != QAudio::ActiveState) {
+            emit recStatus(GkAudioRecordStatus::Defunct);
+            return;
+        }
+
+        do {
+            gkAudioOutputBuf->seek(0);
+            m_buffer.append(gkAudioOutputBuf->readAll());
+        } while (m_buffer.isEmpty());
+    } else {
+        return;
+    }
+
+    return;
+}
+
+/**
  * @brief GkAudioEncoding::opusEncodeHelper performs the actual encoding of given QByteArray data (obtained via either
  * QAudioInput and/or QAudioOutput) into Ogg Opus data before returning said data also as a QByteArray, for easy handling
  * via other Qt functions/code.
@@ -682,8 +756,8 @@ QByteArray GkAudioEncoding::opusEncodeHelper(OpusEncoder *opusEncoder, const qin
 
         //
         // Encode the frame...
-        const qint32 nbBytes = opus_encode_float(opusEncoder, reinterpret_cast<const float*>(input.constData()), frame_size,
-                                                 reinterpret_cast<uchar*>(output.data()), max_packet_size);
+        const qint32 nbBytes = opus_encode_float(opusEncoder, reinterpret_cast<const float *>(input.constData()), frame_size,
+                                                 reinterpret_cast<uchar *>(output.data()), max_packet_size);
         if (nbBytes < 0) {
             emit error(tr("Error encoding to file: %1").arg(m_file_path.path()), GkSeverity::Fatal);
 
@@ -719,6 +793,9 @@ void GkAudioEncoding::opusCleanup()
         ope_comments_destroy(m_opusComments);
     }
 
-    opus_encoder_destroy(m_opusEncoder);
+    if (m_opusEncoder) {
+        opus_encoder_destroy(m_opusEncoder);
+    }
+
     return;
 }

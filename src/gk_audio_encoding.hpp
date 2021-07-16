@@ -149,12 +149,14 @@ private slots:
     void stopCaller();
     void handleError(const QString &msg, const GekkoFyre::System::Events::Logging::GkSeverity &severity);
 
-    void encodeOpus(const qint32 &bitrate, qint32 sample_rate, const GekkoFyre::Database::Settings::GkAudioSource &audio_src,
+    void encodeOpus(const qint32 &bitrate, const GekkoFyre::Database::Settings::GkAudioSource &audio_src,
                     const qint32 &frame_size = AUDIO_OPUS_MAX_FRAME_SIZE);
     void encodeVorbis(const qint32 &bitrate, qint32 sample_rate, const GekkoFyre::Database::Settings::GkAudioSource &audio_src,
                       const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
     void encodeFLAC(const qint32 &bitrate, qint32 sample_rate, const GekkoFyre::Database::Settings::GkAudioSource &audio_src,
                     const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
+
+    void refreshAudioBuffers(const GekkoFyre::Database::Settings::GkAudioSource &audio_src);
 
 signals:
     void pauseEncode();
@@ -164,6 +166,7 @@ signals:
     void initialize();
 
     void recStatus(const GekkoFyre::GkAudioFramework::GkAudioRecordStatus &status);
+    void updateAudioBuffers(const GekkoFyre::Database::Settings::GkAudioSource &audio_src);
 
 private:
     QPointer<GekkoFyre::GkLevelDb> gkDb;
@@ -210,6 +213,7 @@ private:
     [[nodiscard]] QByteArray opusEncodeHelper(OpusEncoder *opusEncoder, const qint32 &frame_size,
                                               const qint32 &m_size, const qint32 &max_packet_size);
     void opusCleanup();
+    void processByteArray();
 
 };
 };
