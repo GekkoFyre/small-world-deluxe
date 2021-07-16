@@ -44,6 +44,7 @@
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
+#include "src/gk_string_funcs.hpp"
 #include <sndfile.h>
 #include <sndfile.hh>
 #include <opus/opusenc.h>
@@ -129,22 +130,18 @@ class GkAudioEncoding : public QObject {
 public:
     explicit GkAudioEncoding(const QPointer<QBuffer> &audioInputBuf, const QPointer<QBuffer> &audioOutputBuf,
                              QPointer<GekkoFyre::GkLevelDb> database, QPointer<QAudioOutput> audioOutput,
-                             QPointer<QAudioInput> audioInput, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                             QObject *parent = nullptr);
+                             QPointer<QAudioInput> audioInput, QPointer<GekkoFyre::StringFuncs> stringFuncs,
+                             QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkAudioEncoding() override;
 
     QString codecEnumToStr(const GkAudioFramework::CodecSupport &codec);
     [[nodiscard]] GekkoFyre::GkAudioFramework::GkAudioRecordStatus getRecStatus() const;
 
 public slots:
-    void startCaller(const QFileInfo &media_path, const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev_info,
-                     const qint32 &bitrate, const GekkoFyre::GkAudioFramework::CodecSupport &codec_choice,
-                     const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER, const qint32 &application = OPUS_APPLICATION_AUDIO);
+    void startCaller(const QFileInfo &media_path, const qint32 &bitrate, const GekkoFyre::GkAudioFramework::CodecSupport &codec_choice,
+                     const GekkoFyre::Database::Settings::GkAudioSource &audio_source, const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER,
+                     const qint32 &application = OPUS_APPLICATION_AUDIO);
     void stopEncode();
-    void processAudioInEncode(const GkAudioFramework::CodecSupport &codec, const qint32 &bitrate, const qint32 &sample_rate,
-                              const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
-    void processAudioOutEncode(const GkAudioFramework::CodecSupport &codec, const qint32 &bitrate, const qint32 &sample_rate,
-                               const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
 
     void setRecStatus(const GekkoFyre::GkAudioFramework::GkAudioRecordStatus &status);
 
@@ -152,9 +149,12 @@ private slots:
     void stopCaller();
     void handleError(const QString &msg, const GekkoFyre::System::Events::Logging::GkSeverity &severity);
 
-    void encodeOpus(const qint32 &bitrate, const qint32 &sample_rate, const qint32 &frame_size = AUDIO_OPUS_MAX_FRAME_SIZE);
-    void encodeVorbis(const qint32 &bitrate, const qint32 &sample_rate, const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
-    void encodeFLAC(const qint32 &bitrate, const qint32 &sample_rate, const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
+    void encodeOpus(const qint32 &bitrate, qint32 sample_rate, const GekkoFyre::Database::Settings::GkAudioSource &audio_src,
+                    const qint32 &frame_size = AUDIO_OPUS_MAX_FRAME_SIZE);
+    void encodeVorbis(const qint32 &bitrate, qint32 sample_rate, const GekkoFyre::Database::Settings::GkAudioSource &audio_src,
+                      const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
+    void encodeFLAC(const qint32 &bitrate, qint32 sample_rate, const GekkoFyre::Database::Settings::GkAudioSource &audio_src,
+                    const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
 
 signals:
     void pauseEncode();
@@ -167,6 +167,7 @@ signals:
 
 private:
     QPointer<GekkoFyre::GkLevelDb> gkDb;
+    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
     //
@@ -199,11 +200,12 @@ private:
 
     //
     // Multithreading and mutexes
-    std::mutex m_asyncOggOpusMtx;
-    std::mutex m_asyncOggVorbisMtx;
-    std::mutex m_asyncFlacMtx;
-    std::thread m_audioInEncodeThread;
-    std::thread m_audioOutEncodeThread;
+    std::mutex m_encodeOggOpusMtx;
+    std::mutex m_encodeOggVorbisMtx;
+    std::mutex m_encodeFlacMtx;
+    std::thread m_encodeOpusThread;
+    std::thread m_encodeVorbisThread;
+    std::thread m_encodeFLACThread;
 
     void opusCleanup();
 

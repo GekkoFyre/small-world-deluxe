@@ -149,6 +149,38 @@ QString StringFuncs::addErrorMsg(const QString &orig_msg, const QString &err_msg
 }
 
 /**
+ * @brief StringFuncs::handleOpusError will handle any Opus-related error condition and output a message related to that.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param err The error condition itself to handle.
+ * @return The message related to the Opus error condition.
+ */
+QString StringFuncs::handleOpusError(const qint32 &err) const
+{
+    switch (err) {
+        case OPUS_OK:
+            return tr("No error.");
+        case OPUS_BAD_ARG:
+            return tr("One or more invalid/out of range arguments.");
+        case OPUS_BUFFER_TOO_SMALL:
+            return tr("Not enough bytes allocated in the buffer.");
+        case OPUS_INTERNAL_ERROR:
+            return tr("An internal error was detected.");
+        case OPUS_INVALID_PACKET:
+            return tr("The compressed data passed is corrupted.");
+        case OPUS_UNIMPLEMENTED:
+            return tr("Invalid/unsupported request number.");
+        case OPUS_INVALID_STATE:
+            return tr("An encoder or decoder structure is invalid or already freed.");
+        case OPUS_ALLOC_FAIL:
+            return tr("Memory allocation has failed.");
+        default:
+            return tr("Unhandled exception.");
+    }
+
+    return QString();
+}
+
+/**
  * @brief StringFuncs::csvSplitter splits up a given string of CSV elements, using ',' as the delimiter, and outputs it
  * as a std::vector<std::string> ready for use and modification by other functions.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>

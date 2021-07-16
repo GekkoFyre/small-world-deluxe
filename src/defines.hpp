@@ -880,7 +880,7 @@ namespace Database {
                 bool is_enabled;                                                    // Whether this device (as the `QAudioInput` or `QAudioOutput`) is enabled as the primary choice by the end-user, for example, with regards to the spectrograph / waterfall.
                 GkAudioSource audio_src;                                            // Is the audio device in question an input? Output if FALSE, UNSURE if either.
                 QAudioFormat user_settings;                                         // The user defined settings for this particular audio device.
-                quint32 chosen_sample_rate;                                         // The chosen sample rate, as configured by the end-user.
+                quint32 chosen_sample_rate;                                         // The chosen sample rate, as configured by the end-user. TODO: Replace this with `user_settings` instead!
                 GkAudioChannels sel_channels;                                       // The selected audio channel configuration.
             };
         }
