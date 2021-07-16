@@ -207,6 +207,8 @@ private:
     std::thread m_encodeVorbisThread;
     std::thread m_encodeFLACThread;
 
+    [[nodiscard]] QByteArray opusEncodeHelper(OpusEncoder *opusEncoder, const qint32 &frame_size,
+                                              const qint32 &m_size, const qint32 &max_packet_size);
     void opusCleanup();
 
 };
