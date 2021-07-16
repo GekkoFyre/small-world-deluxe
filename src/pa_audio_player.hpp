@@ -69,14 +69,14 @@ public:
     virtual ~GkPaAudioPlayer();
 
     void play(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const QFileInfo &audio_file,
-              const GekkoFyre::Database::Settings::Audio::GkDevice &audio_device);
+              const GekkoFyre::Database::Settings::GkAudioSource &audio_source);
     void play(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
-              const GekkoFyre::Database::Settings::Audio::GkDevice &audio_device);
+              const GekkoFyre::Database::Settings::GkAudioSource &audio_source);
     void record(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const QDir &record_dir,
-                const GekkoFyre::Database::Settings::Audio::GkDevice &audio_device);
+                const GekkoFyre::Database::Settings::GkAudioSource &audio_source);
     void loop(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const QFileInfo &audio_file,
-              const GekkoFyre::Database::Settings::Audio::GkDevice &audio_device);
-    void stop(const QFileInfo &audio_file, const GekkoFyre::Database::Settings::Audio::GkDevice &audio_device);
+              const GekkoFyre::Database::Settings::GkAudioSource &audio_source);
+    void stop(const QFileInfo &audio_file, const GekkoFyre::Database::Settings::GkAudioSource &audio_source);
     void loopback();
 
 private:

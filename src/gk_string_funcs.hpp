@@ -44,6 +44,7 @@
 #include "src/defines.hpp"
 #include <boost/filesystem.hpp>
 #include <qxmpp/QXmppMessage.h>
+#include <opus/opus_defines.h>
 #include <QAudioFormat>
 #include <QMessageBox>
 #include <QPushButton>
@@ -87,6 +88,8 @@ public:
     QString getStringFromUnsignedChar(unsigned char *str);
     std::vector<int> convStrToIntArray(const QString &str);
     QString addErrorMsg(const QString &orig_msg, const QString &err_msg);
+
+    [[nodiscard]] QString handleOpusError(const qint32 &err) const;
 
     std::deque<std::string> csvSplitter(const std::string &csv_vals);
     std::deque<std::string> csvRemoveElement(const std::deque<std::string> &csv_elements, const std::string &val_to_remove);

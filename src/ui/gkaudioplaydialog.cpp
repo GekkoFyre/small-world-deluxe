@@ -93,6 +93,7 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
     m_encode_bitrate_chosen = 8;
     gkAudioFile = std::make_shared<AudioFile<double>>();
     gkPaAudioPlayer = new GkPaAudioPlayer(gkDb, gkAudioOutput, gkAudioInput, gkAudioEncoding, gkEventLogger, gkAudioFile, this);
+    gkPaAudioPlayer->moveToThread(parent->thread());
 
     //
     // QPushButtons, etc.
@@ -118,7 +119,7 @@ GkAudioPlayDialog::~GkAudioPlayDialog()
 {
     emit recStatus(GkAudioRecordStatus::Defunct);
     if (audio_out_play) {
-        gkPaAudioPlayer->stop(gkAudioFileInfo.audio_file_path, GkDevice());
+        gkPaAudioPlayer->stop(gkAudioFileInfo.audio_file_path, GkAudioSource());
         gkEventLogger->publishEvent(tr("Stopped playing audio file, \"%1\"").arg(gkAudioFileInfo.audio_file_path.fileName()), GkSeverity::Info, "", true, true, true, false);
     }
 
@@ -192,7 +193,7 @@ void GkAudioPlayDialog::on_pushButton_playback_stop_clicked()
 {
     if (!audio_out_stop) {
         gkStringFuncs->changePushButtonColor(ui->pushButton_playback_stop, false);
-        gkPaAudioPlayer->stop(gkAudioFileInfo.audio_file_path, GkDevice());
+        gkPaAudioPlayer->stop(gkAudioFileInfo.audio_file_path, GkAudioSource());
         gkEventLogger->publishEvent(tr("Stopped playing audio file, \"%1\"").arg(gkAudioFileInfo.audio_file_path.fileName()), GkSeverity::Info, "", true, true, true, false);
 
         audio_out_stop = true;
@@ -281,7 +282,7 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
                 .arg(gkAudioFileInfo.audio_file_path.fileName()).toStdString());
             }
         } else {
-            gkPaAudioPlayer->stop(gkAudioFileInfo.audio_file_path, GkDevice());
+            gkPaAudioPlayer->stop(gkAudioFileInfo.audio_file_path, GkAudioSource());
             gkEventLogger->publishEvent(tr("Stopped playing audio file, \"%1\"").arg(gkAudioFileInfo.audio_file_path.fileName()), GkSeverity::Info, "", true, true, true, false);
 
             gkStringFuncs->changePushButtonColor(ui->pushButton_playback_play, true);
@@ -351,10 +352,10 @@ void GkAudioPlayDialog::on_pushButton_playback_record_clicked()
                     emit recStatus(GkAudioRecordStatus::Active);
                     switch (ui->comboBox_playback_rec_source->currentIndex()) {
                         case AUDIO_RECORDING_SOURCE_INPUT_IDX:
-                            gkPaAudioPlayer->record(codec_used, m_recordDirPath, pref_input_device);
+                            gkPaAudioPlayer->record(codec_used, m_recordDirPath, pref_input_device.audio_src);
                             break;
                         case AUDIO_RECORDING_SOURCE_OUTPUT_IDX:
-                            gkPaAudioPlayer->record(codec_used, m_recordDirPath, pref_output_device);
+                            gkPaAudioPlayer->record(codec_used, m_recordDirPath, pref_output_device.audio_src);
                             break;
                         default:
                             throw std::invalid_argument(tr("Invalid argument provided for audio device determination, when attempting to record!").toStdString());
@@ -535,10 +536,10 @@ void GkAudioPlayDialog::audioPlaybackHelper(const CodecSupport &codec_used, cons
     try {
         switch (ui->comboBox_playback_rec_source->currentIndex()) {
             case AUDIO_RECORDING_SOURCE_INPUT_IDX:
-                gkPaAudioPlayer->play(codec_used, file_path, pref_input_device);
+                gkPaAudioPlayer->play(codec_used, file_path, pref_input_device.audio_src);
                 break;
             case AUDIO_RECORDING_SOURCE_OUTPUT_IDX:
-                gkPaAudioPlayer->play(codec_used, file_path, pref_output_device);
+                gkPaAudioPlayer->play(codec_used, file_path, pref_output_device.audio_src);
                 break;
             default:
                 throw std::invalid_argument(tr("Invalid argument provided for audio device determination, when attempting playback!").toStdString());
