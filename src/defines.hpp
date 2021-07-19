@@ -185,7 +185,6 @@ namespace GekkoFyre {
 #define AUDIO_OPUS_FRAMES_PER_BUFFER (960)                      // This is specific to the Opus multimedia encoding/decoding library.
 #define AUDIO_OPUS_MAX_FRAMES_PER_BUFFER (1276)
 #define AUDIO_OPUS_INT_SIZE (2)
-#define AUDIO_OPUS_MAX_FRAME_SIZE (1276)
 #define AUDIO_OPUS_FILE_PTR_READ_SIZE (256)                     // To be used with `fread` <http://www.cplusplus.com/reference/cstdio/fread/>.
 #define AUDIO_OPUS_DEFAULT_SAMPLE_RATE (48000)                  // The default sampling rate to use when encoding/decoding with Ogg Opus audio (measured in kHz).
 #define AUDIO_ENCODING_VAR_PRIME_SLEEP_MILLISECS (1000)         // The amount of time to wait for (in milliseconds) while the buffers prime themselves, before continuing with the rest of the encoding functions!

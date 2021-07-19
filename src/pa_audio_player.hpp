@@ -73,7 +73,7 @@ public:
     void play(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
               const GekkoFyre::Database::Settings::GkAudioSource &audio_source);
     void record(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const QDir &record_dir,
-                const GekkoFyre::Database::Settings::GkAudioSource &audio_source);
+                const qint32 &bitrate, const GekkoFyre::Database::Settings::GkAudioSource &audio_source);
     void loop(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const QFileInfo &audio_file,
               const GekkoFyre::Database::Settings::GkAudioSource &audio_source);
     void stop(const QFileInfo &audio_file, const GekkoFyre::Database::Settings::GkAudioSource &audio_source);

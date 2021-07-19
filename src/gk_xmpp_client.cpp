@@ -236,7 +236,7 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         QObject::connect(m_rosterManager.get(), SIGNAL(presenceChanged(const QString &, const QString &)), this, SLOT(presenceChanged(const QString &, const QString &)));
         QObject::connect(m_rosterManager.get(), SIGNAL(rosterReceived()), this, SLOT(handleRosterReceived()));
         QObject::connect(m_rosterManager.get(), SIGNAL(subscriptionReceived(const QString &)), this, SLOT(notifyNewSubscription(const QString &)));
-        QObject::connect(m_rosterManager.get(), SIGNAL(subscriptionRequestReceived (const QString &, const QXmppPresence &)),
+        QObject::connect(m_rosterManager.get(), SIGNAL(subscriptionRequestReceived (const QString &, const QXmppPresence &)), // TODO: No such signal?
                          this, SLOT(notifyNewSubscription(const QString &, const QXmppPresence &)));
         QObject::connect(m_rosterManager.get(), SIGNAL(itemAdded(const QString &)), this, SLOT(itemAdded(const QString &)));
         QObject::connect(m_rosterManager.get(), SIGNAL(itemRemoved(const QString &)), this, SLOT(itemRemoved(const QString &)));
