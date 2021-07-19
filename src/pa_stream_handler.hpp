@@ -84,7 +84,6 @@ public:
                       const QDir &mediaFilePath = QDir(), const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec = GekkoFyre::GkAudioFramework::CodecSupport::Unknown,
                       bool loop_media = false, qint32 encode_bitrate = 8);
 
-    QFileInfo createRecordMediaFile(const QFileInfo &media_path, const GkAudioFramework::CodecSupport &supported_codec);
     QFileInfo createRecordMediaFile(const QDir &media_path, const GkAudioFramework::CodecSupport &supported_codec);
 
 private slots:
@@ -92,11 +91,10 @@ private slots:
                        const GekkoFyre::Database::Settings::GkAudioSource &audio_source);
     void playMediaFile(const QDir &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
                        const GekkoFyre::Database::Settings::GkAudioSource &audio_source);
-    void recordMediaFile(const QFileInfo &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
-                         const GekkoFyre::Database::Settings::GkAudioSource &audio_source, qint32 encoding_bitrate);
     void recordMediaFile(const QDir &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
                          const GekkoFyre::Database::Settings::GkAudioSource &audio_source, qint32 encoding_bitrate);
     void stopMediaFile(const QFileInfo &media_path);
+    void stopMediaFile(const QDir &media_path);
     void startMediaLoopback();
     void playbackHandleStateChanged(QAudio::State changed_state);
     void recordingHandleStateChanged(QAudio::State changed_state);
@@ -111,8 +109,6 @@ signals:
 
     //
     // Recording of multimedia files
-    void recordMedia(const QFileInfo &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
-                     const GekkoFyre::Database::Settings::GkAudioSource &audio_source, qint32 encoding_bitrate);
     void recordMedia(const QDir &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
                      const GekkoFyre::Database::Settings::GkAudioSource &audio_source, qint32 encoding_bitrate);
 
@@ -165,7 +161,8 @@ private:
 
     void playMediaFileHelper(QFileInfo media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
                              const GekkoFyre::Database::Settings::GkAudioSource &audio_source);
-    void recordMediaFileHelper(QFileInfo media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
+
+    void recordMediaFileHelper(QDir media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
                                const GekkoFyre::Database::Settings::GkAudioSource &audio_source, qint32 encoding_bitrate);
 
 };

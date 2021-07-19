@@ -101,8 +101,6 @@ GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, QP
 
     //
     // Recording of multimedia files
-    QObject::connect(this, SIGNAL(recordMedia(const QFileInfo &, const GekkoFyre::GkAudioFramework::CodecSupport &, const GekkoFyre::Database::Settings::GkAudioSource &, qint32,)),
-                     this, SLOT(recordMediaFile(const QFileInfo &, const GekkoFyre::GkAudioFramework::CodecSupport &, const GekkoFyre::Database::Settings::GkAudioSource &, qint32)));
     QObject::connect(this, SIGNAL(recordMedia(const QDir &, const GekkoFyre::GkAudioFramework::CodecSupport &, const GekkoFyre::Database::Settings::GkAudioSource &, qint32)),
                      this, SLOT(recordMediaFile(const QDir &, const GekkoFyre::GkAudioFramework::CodecSupport &, const GekkoFyre::Database::Settings::GkAudioSource &, qint32)));
 
@@ -116,6 +114,7 @@ GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, QP
     QObject::connect(this, SIGNAL(startLoopback()), this, SLOT(startMediaLoopback()));
     QObject::connect(this, SIGNAL(initEncode(const QFileInfo &, const qint32 &, const GekkoFyre::GkAudioFramework::CodecSupport &, const GekkoFyre::Database::Settings::GkAudioSource &, const qint32 &, const qint32 &)),
                      gkAudioEncoding, SLOT(startCaller(const QFileInfo &, const qint32 &, const GekkoFyre::GkAudioFramework::CodecSupport &, const GekkoFyre::Database::Settings::GkAudioSource &, const qint32 &, const qint32 &)));
+
     return;
 }
 
@@ -153,9 +152,8 @@ void GkPaStreamHandler::processEvent(GkAudioFramework::AudioEventType audioEvent
 
                 break;
             case GkAudioFramework::AudioEventType::record:
-                if (mediaFilePath.isReadable()) {
-                    emit recordMedia(mediaFilePath, supported_codec, audio_source, encode_bitrate);
-                }
+                //
+                // NOTE: Only handled with a QDir-enabled function!
 
                 break;
             case GkAudioFramework::AudioEventType::loopback:
@@ -212,7 +210,10 @@ void GkPaStreamHandler::processEvent(GkAudioFramework::AudioEventType audioEvent
 
                 break;
             case GkAudioFramework::AudioEventType::loopback:
+            {
                 emit startLoopback();
+            }
+
                 break;
             case GkAudioFramework::AudioEventType::stop:
                 if (mediaFilePath.isReadable()) {
@@ -275,55 +276,19 @@ void GkPaStreamHandler::playMediaFile(const QDir &media_path, const CodecSupport
  * @param audio_source The audio source in question, whether it is input, output, or a mix of the two.
  * @param encoding_bitrate The bitrate at which to encode with (i.e. 192 kbit/sec).
  */
-void GkPaStreamHandler::recordMediaFile(const QFileInfo &media_path, const GkAudioFramework::CodecSupport &supported_codec,
-                                        const GkAudioSource &audio_source, qint32 encoding_bitrate)
-{
-    try {
-        if (audio_source == GkAudioSource::Input) {
-            if (!gkAudioInput.isNull()) {
-                recordMediaFileHelper(media_path, supported_codec, audio_source, encoding_bitrate);
-            } else {
-                throw std::invalid_argument(tr("You must configure a suitable audio device within the Settings before continuing!").toStdString());
-            }
-        } else if (audio_source == GkAudioSource::Output) {
-            if (!gkAudioOutput.isNull()) {
-                recordMediaFileHelper(media_path, supported_codec, audio_source, encoding_bitrate);
-            } else {
-                throw std::invalid_argument(tr("You must configure a suitable audio device within the Settings before continuing!").toStdString());
-            }
-        } else {
-            throw std::invalid_argument(tr("An invalid or currently unsupported audio source has been chosen!").toStdString());
-        }
-    } catch (const std::exception &e) {
-        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "",
-                                    false, true, false, true, false);
-    }
-
-    return;
-}
-
-/**
- * @brief GkPaStreamHandler::recordMediaFile record data to a multimedia file on the end-user's storage media of choice.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param media_path The multimedia file to make the recording towards.
- * @param supported_codec The codec you would like to make the recording with.
- * @param audio_source The audio source in question, whether it is input, output, or a mix of the two.
- * @param encoding_bitrate The bitrate at which to encode with (i.e. 192 kbit/sec).
- */
 void GkPaStreamHandler::recordMediaFile(const QDir &media_path, const CodecSupport &supported_codec,
                                         const GkAudioSource &audio_source, qint32 encoding_bitrate)
 {
     try {
-        const QFileInfo file_info_tmp(media_path.path());
         if (audio_source == GkAudioSource::Input) {
             if (!gkAudioInput.isNull()) {
-                recordMediaFileHelper(file_info_tmp, supported_codec, audio_source, encoding_bitrate);
+                recordMediaFileHelper(media_path, supported_codec, audio_source, encoding_bitrate);
             } else {
                 throw std::invalid_argument(tr("You must configure a suitable audio device within the Settings before continuing!").toStdString());
             }
         } else if (audio_source == GkAudioSource::Output) {
             if (!gkAudioOutput.isNull()) {
-                recordMediaFileHelper(file_info_tmp, supported_codec, audio_source, encoding_bitrate);
+                recordMediaFileHelper(media_path, supported_codec, audio_source, encoding_bitrate);
             } else {
                 throw std::invalid_argument(tr("You must configure a suitable audio device within the Settings before continuing!").toStdString());
             }
@@ -392,6 +357,30 @@ void GkPaStreamHandler::stopMediaFile(const QFileInfo &media_path)
     }
 
     gkSounds.remove(media_path.path()); // Must be deleted outside of the loop!
+    return;
+}
+
+/**
+ * @brief GkPaStreamHandler::stopMediaFile
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param media_path
+ */
+void GkPaStreamHandler::stopMediaFile(const QDir &media_path)
+{
+    for (auto media = gkSounds.begin(); media != gkSounds.end(); ++media) {
+        if (media.key() == media_path.path()) {
+            gkPcmFileStream->stop();
+
+            if (gkAudioOutput->state() == QAudio::ActiveState) {
+                gkAudioOutput->stop();
+            }
+
+            break;
+        }
+    }
+
+    gkSounds.remove(media_path.path()); // Must be deleted outside of the loop!
+    return;
 }
 
 /*
@@ -460,30 +449,6 @@ void GkPaStreamHandler::recordingHandleStateChanged(QAudio::State changed_state)
  * @param supported_codec The file extension to use.
  * @return
  */
-QFileInfo GkPaStreamHandler::createRecordMediaFile(const QFileInfo &media_path, const CodecSupport &supported_codec)
-{
-    try {
-        std::lock_guard<std::mutex> lock_guard(m_createRecordMediaFileInfoMutex);
-        const auto randStr = gkDb->createRandomString(16);
-        const auto epochSecs = QDateTime::currentSecsSinceEpoch();
-        const auto extension = gkDb->convCodecFormatToFileExtension(supported_codec);
-        const QFileInfo mediaRetPath = QFileInfo(media_path.path() + "/" + QString::number(epochSecs) + "_" + QString::fromStdString(randStr) + extension);
-
-        return mediaRetPath;
-    } catch (const std::exception &e) {
-        std::throw_with_nested(e.what());
-    }
-
-    return QFileInfo();
-}
-
-/**
- * @brief GkPaStreamHandler::createRecordMediaFile
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param media_path The path to where the file is stored.
- * @param supported_codec The file extension to use.
- * @return
- */
 QFileInfo GkPaStreamHandler::createRecordMediaFile(const QDir &media_path, const CodecSupport &supported_codec)
 {
     try {
@@ -491,7 +456,11 @@ QFileInfo GkPaStreamHandler::createRecordMediaFile(const QDir &media_path, const
         const auto randStr = gkDb->createRandomString(16);
         const auto epochSecs = QDateTime::currentSecsSinceEpoch();
         const auto extension = gkDb->convCodecFormatToFileExtension(supported_codec);
-        const QFileInfo mediaRetPath = QFileInfo(media_path.path() + "/" + QString::number(epochSecs) + "_" + QString::fromStdString(randStr) + extension);
+        QFileInfo mediaRetPath;
+        mediaRetPath.setFile(media_path.absolutePath() + "/" + QString::number(epochSecs) + "_" + QString::fromStdString(randStr) + extension);
+        if (mediaRetPath.exists()) { // Retry and until we get to a folder name that does not already exist!
+            mediaRetPath = createRecordMediaFile(media_path, supported_codec);
+        }
 
         return mediaRetPath;
     } catch (const std::exception &e) {
@@ -595,15 +564,15 @@ void GkPaStreamHandler::playMediaFileHelper(QFileInfo media_path, const CodecSup
 }
 
 /**
- * @brief GkPaStreamHandler::recordMediaFile record data to a multimedia file on the end-user's storage media of choice.
+ * @brief GkPaStreamHandler::recordMediaFileHelper record data to a multimedia file on the end-user's storage media of choice.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param media_path The multimedia file to make the recording towards.
  * @param supported_codec The codec you would like to make the recording with.
  * @param audio_source The audio source in question, whether it is input, output, or a mix of the two.
  * @param encoding_bitrate The bitrate at which to encode with (i.e. 192 kbit/sec).
  */
-void GkPaStreamHandler::recordMediaFileHelper(QFileInfo media_path, const CodecSupport &supported_codec,
-                                              const GkAudioSource &audio_source, qint32 encoding_bitrate)
+void GkPaStreamHandler::recordMediaFileHelper(QDir media_path, const CodecSupport &supported_codec,
+                                              const Settings::GkAudioSource &audio_source, qint32 encoding_bitrate)
 {
     try {
         std::lock_guard<std::mutex> lock_guard(m_recordMediaFileHelperMutex);
@@ -618,7 +587,7 @@ void GkPaStreamHandler::recordMediaFileHelper(QFileInfo media_path, const CodecS
                 //
                 // Use a differing FRAME SIZE for Opus!
                 // Ogg Opus only
-                emit initEncode(m_mediaFile, encoding_bitrate, supported_codec, audio_source, AUDIO_OPUS_MAX_FRAME_SIZE);
+                emit initEncode(m_mediaFile, encoding_bitrate, supported_codec, audio_source, AUDIO_OPUS_FRAMES_PER_BUFFER);
             } else {
                 //
                 // Create a media file with a randomized name within the given path, for recording purposes!
@@ -635,4 +604,6 @@ void GkPaStreamHandler::recordMediaFileHelper(QFileInfo media_path, const CodecS
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);
     }
+
+    return;
 }

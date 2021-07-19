@@ -339,7 +339,7 @@ void GkFFTAudio::samplesUpdated()
 {
     try {
         std::vector<double> remainder;
-        auto splitAudioSamples = gkStringFuncs->chunker(audioSamples, (AUDIO_FRAMES_PER_BUFFER * 2));
+        const auto splitAudioSamples = gkStringFuncs->chunker(audioSamples, (AUDIO_FRAMES_PER_BUFFER * 2));
         for (const auto &samples_vec: splitAudioSamples) {
             if (!samples_vec.empty()) {
                 if (samples_vec.size() == (AUDIO_FRAMES_PER_BUFFER * 2)) {

@@ -349,13 +349,14 @@ void GkAudioPlayDialog::on_pushButton_playback_record_clicked()
                 // Determine the codec used...
                 GkAudioFramework::CodecSupport codec_used = gkDb->convCodecSupportFromIdxToEnum(ui->comboBox_playback_rec_codec->currentData().toInt());
                 if (codec_used != GkAudioFramework::CodecSupport::Loopback) {
-                    emit recStatus(GkAudioRecordStatus::Active);
                     switch (ui->comboBox_playback_rec_source->currentIndex()) {
                         case AUDIO_RECORDING_SOURCE_INPUT_IDX:
-                            gkPaAudioPlayer->record(codec_used, m_recordDirPath, pref_input_device.audio_src);
+                            emit recStatus(GkAudioRecordStatus::Active);
+                            gkPaAudioPlayer->record(codec_used, m_recordDirPath, ui->horizontalSlider_playback_rec_bitrate->value(), pref_input_device.audio_src);
                             break;
                         case AUDIO_RECORDING_SOURCE_OUTPUT_IDX:
-                            gkPaAudioPlayer->record(codec_used, m_recordDirPath, pref_output_device.audio_src);
+                            emit recStatus(GkAudioRecordStatus::Active);
+                            gkPaAudioPlayer->record(codec_used, m_recordDirPath, ui->horizontalSlider_playback_rec_bitrate->value(), pref_output_device.audio_src);
                             break;
                         default:
                             throw std::invalid_argument(tr("Invalid argument provided for audio device determination, when attempting to record!").toStdString());

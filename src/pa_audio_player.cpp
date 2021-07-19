@@ -120,14 +120,16 @@ void GkPaAudioPlayer::play(const GkAudioFramework::CodecSupport &supported_codec
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param supported_codec The codec to use when creating the recording, whether it be Opus, PCM, FLAC, etc.
  * @param record_dir The directory to which recordings are to be saved towards.
+ * @param bitrate The encoding bitrate to use.
  * @param audio_source The audio device to record from, which is either the input or output, or even a mix of the
  * aforementioned two.
  */
-void GkPaAudioPlayer::record(const CodecSupport &supported_codec, const QDir &record_dir, const GkAudioSource &audio_source)
+void GkPaAudioPlayer::record(const CodecSupport &supported_codec, const QDir &record_dir, const qint32 &bitrate,
+                             const GkAudioSource &audio_source)
 {
     try {
         streamHandler->processEvent(GkAudioFramework::AudioEventType::record, audio_source, record_dir,
-                                    supported_codec, false);
+                                    supported_codec, false, bitrate);
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(tr("A stream processing error has occurred with regards to the multimedia library handling functions. Error:\n\n%1")
                                                           .arg(QString::fromStdString(e.what())).toStdString()));
