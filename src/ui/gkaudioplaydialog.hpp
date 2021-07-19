@@ -98,6 +98,8 @@ private slots:
     void on_comboBox_playback_rec_codec_currentIndexChanged(int index);
     void on_horizontalSlider_playback_rec_bitrate_valueChanged(int value);
 
+    void setBytesRead(const qint64 &bytes, const bool &uncompressed = false);
+
     void resetStopButtonColor();
     void clearForms(const GekkoFyre::GkAudioFramework::GkClearForms &cat);
 
@@ -144,6 +146,8 @@ private:
     std::shared_ptr<AudioFile<double>> gkAudioFile;                     // Buffer for playback
     GekkoFyre::GkAudioFramework::AudioFileInfo gkAudioFileInfo;         // Information on file destined for playback!
     GekkoFyre::Database::Settings::GkAudioChannels m_audioChannels;     // Audio channel information for both playback and recording!
+    qint64 encode_compressed_bytes;
+    qint64 encode_uncompressed_bytes;
 
     template <typename T>
     struct gkConvertDoubleToFloat {

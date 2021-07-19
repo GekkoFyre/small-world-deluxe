@@ -735,8 +735,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the audio codec encoding/decoding libraries!
         //
-        gkAudioEncoding = new GkAudioEncoding(gkAudioInputBuf, gkAudioOutputBuf, gkDb, gkAudioOutput,
-                                              gkAudioInput, gkStringFuncs, gkEventLogger, &gkAudioInputThread);
+        gkAudioEncoding = new GkAudioEncoding(gkDb, gkAudioOutput, gkAudioInput, gkStringFuncs, gkEventLogger, &gkAudioInputThread);
         gkAudioEncoding->moveToThread(&gkAudioInputThread);
         QObject::connect(&gkAudioInputThread, &QThread::finished, gkAudioEncoding, &QObject::deleteLater);
 
