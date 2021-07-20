@@ -448,7 +448,7 @@ void GkAudioEncoding::encodeOpus(const qint32 &bitrate, qint32 sample_rate, cons
                     //
                     // Convert from littleEndian...
                     for (qint32 j = 0; j < AUDIO_OPUS_FRAMES_PER_BUFFER; ++j) {
-                        input_frame[j] = qFromLittleEndian<opus_int16>(m_buffer.data() + j * sizeof(opus_int16));
+                        input_frame[j] = qFromLittleEndian<opus_int16>(m_buffer.data() + j * 2);
                     }
 
                     //
@@ -465,7 +465,7 @@ void GkAudioEncoding::encodeOpus(const qint32 &bitrate, qint32 sample_rate, cons
 
                     //
                     // Commit out the memory buffer to the file itself!
-                    const qint32 buf_size = AUDIO_OPUS_FRAMES_PER_BUFFER * sizeof(opus_int16);
+                    const qint32 buf_size = AUDIO_OPUS_FRAMES_PER_BUFFER * 2;
                     m_buffer.remove(0, buf_size);
                     ret -= buf_size;
                 }
