@@ -68,9 +68,7 @@ extern "C"
 {
 #endif
 
-#include "src/contrib/opus/include/opus.h"
-#include "src/contrib/opus/include/opus_types.h"
-#include "src/contrib/opus/include/opus_defines.h"
+#include <opus/opusenc.h>
 
 #ifdef __cplusplus
 }
@@ -150,7 +148,7 @@ private slots:
     void stopCaller();
     void handleError(const QString &msg, const GekkoFyre::System::Events::Logging::GkSeverity &severity);
 
-    void encodeOpus(const qint32 &bitrate, const GekkoFyre::Database::Settings::GkAudioSource &audio_src,
+    void encodeOpus(const qint32 &bitrate, qint32 sample_rate, const GekkoFyre::Database::Settings::GkAudioSource &audio_src,
                     const QFileInfo &media_path, const qint32 &frame_size = AUDIO_OPUS_FRAMES_PER_BUFFER);
     void encodeVorbis(const qint32 &bitrate, qint32 sample_rate, const GekkoFyre::Database::Settings::GkAudioSource &audio_src,
                       const QFileInfo &media_path, const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
@@ -198,7 +196,7 @@ private:
     // Opus related
     qint32 m_channels = 0;
     qint32 m_frameSize = 0;
-    OpusEncoder *m_opusEncoder = nullptr;
+    OggOpusEnc *m_opusEncoder = nullptr;
     OggOpusComments *m_opusComments = nullptr;
 
     //
@@ -211,7 +209,6 @@ private:
     std::thread m_encodeVorbisThread;
     std::thread m_encodeFLACThread;
 
-    QByteArray opusEncodeHelper(OpusEncoder *opusEnc, const QFileInfo &media_path);
     void opusCleanup();
     void processByteArray();
 
