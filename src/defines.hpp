@@ -67,6 +67,7 @@
 #include <iostream>
 #include <exception>
 #include <streambuf>
+#include <QDir>
 #include <QList>
 #include <QIcon>
 #include <QString>
@@ -74,6 +75,7 @@
 #include <QVariant>
 #include <QtGlobal>
 #include <QPointer>
+#include <QFileInfo>
 #include <QDateTime>
 #include <QHostInfo>
 #include <QByteArray>
@@ -141,6 +143,8 @@ namespace GekkoFyre {
 
 #define GK_XMPP_MAM_BACKLOG_BULK_FETCH_COUNT (125)
 #define GK_XMPP_MAM_BACKLOG_FINE_FETCH_COUNT (1)
+#define GK_XMPP_MAM_MIN_DATETIME_YEARS (-15)
+#define GK_XMPP_MAN_SLEEP_DATETIME_MILLISECS (1000)
 #define GK_XMPP_MAM_THREAD_SLEEP_MILLISECS (3000)
 
 #define GK_DEFAULT_XMPP_SERVER_PORT (5222)
@@ -181,8 +185,9 @@ namespace GekkoFyre {
 #define AUDIO_OPUS_FRAMES_PER_BUFFER (960)                      // This is specific to the Opus multimedia encoding/decoding library.
 #define AUDIO_OPUS_MAX_FRAMES_PER_BUFFER (1276)
 #define AUDIO_OPUS_INT_SIZE (2)
-#define AUDIO_OPUS_MAX_FRAME_SIZE (1276)
 #define AUDIO_OPUS_FILE_PTR_READ_SIZE (256)                     // To be used with `fread` <http://www.cplusplus.com/reference/cstdio/fread/>.
+#define AUDIO_OPUS_DEFAULT_SAMPLE_RATE (48000)                  // The default sampling rate to use when encoding/decoding with Ogg Opus audio (measured in kHz).
+#define AUDIO_ENCODING_VAR_PRIME_SLEEP_MILLISECS (1000)         // The amount of time to wait for (in milliseconds) while the buffers prime themselves, before continuing with the rest of the encoding functions!
 
 #define AUDIO_SINE_WAVE_PLAYBACK_SECS (3)                       // Play the sine wave test sample for three seconds!
 #define AUDIO_VU_METER_UPDATE_MILLISECS (125)                   // How often the volume meter should update, in milliseconds.
@@ -197,6 +202,10 @@ namespace GekkoFyre {
 #define AUDIO_PLAYBACK_CODEC_VORBIS_IDX (0)
 #define AUDIO_PLAYBACK_CODEC_OPUS_IDX (1)
 #define AUDIO_PLAYBACK_CODEC_FLAC_IDX (2)
+
+#define AUDIO_RECORDING_DEF_BITRATE (192)
+#define AUDIO_RECORDING_SOURCE_INPUT_IDX (0)
+#define AUDIO_RECORDING_SOURCE_OUTPUT_IDX (1)
 
 //
 // Mostly regarding FFTW functions
@@ -343,8 +352,14 @@ namespace General {
     constexpr char gk_sentry_env[] = "development"; // TODO: Make sure to change this upon releasing a proper version of Small World Deluxe!
     constexpr char gk_sentry_project_name[] = "small-world-deluxe"; // The actual name of the project as it is both registered and appears within Sentry itself; it is critical that this is set correctly!
 
+    namespace Logging {
+        constexpr char dateTimeFormatting[] = "yyyy-MM-dd hh:mm:ss";
+    }
+
     namespace Xmpp {
         constexpr char captchaNamespace[] = "urn:xmpp:captcha";
+        constexpr char dateTimeFormatting[] = "yyyy-MM-dd hh:mm:ss";
+
         namespace GoogleLevelDb {
             constexpr char jidLookupKey[] = "GkXmppStoredJid";
             constexpr char keyToConvXmlStream[] = "GkXmlStream";
@@ -754,7 +769,8 @@ namespace Database {
 
         enum AudioPlaybackDlg {
             GkAudioDlgLastFolderBrowsed,
-            GkRecordDlgLastFolderBrowsed
+            GkRecordDlgLastFolderBrowsed,
+            GkRecordDlgLastCodecSelected
         };
 
         enum general_stat_cfg {
@@ -865,7 +881,7 @@ namespace Database {
                 bool is_enabled;                                                    // Whether this device (as the `QAudioInput` or `QAudioOutput`) is enabled as the primary choice by the end-user, for example, with regards to the spectrograph / waterfall.
                 GkAudioSource audio_src;                                            // Is the audio device in question an input? Output if FALSE, UNSURE if either.
                 QAudioFormat user_settings;                                         // The user defined settings for this particular audio device.
-                quint32 chosen_sample_rate;                                         // The chosen sample rate, as configured by the end-user.
+                quint32 chosen_sample_rate;                                         // The chosen sample rate, as configured by the end-user. TODO: Replace this with `user_settings` instead!
                 GkAudioChannels sel_channels;                                       // The selected audio channel configuration.
             };
         }
@@ -1057,6 +1073,12 @@ namespace Spectrograph {
 }
 
 namespace GkAudioFramework {
+    enum GkClearForms {
+        Playback,
+        Recording,
+        All
+    };
+
     struct GkRecord {
         float *buffer;
         size_t bufferBytes;
@@ -1092,6 +1114,13 @@ namespace GkAudioFramework {
         loopback
     };
 
+    enum GkAudioRecordStatus {
+        Active,
+        Finished,
+        Paused,
+        Defunct
+    };
+
     enum Bitrate {
         LosslessCompressed,
         LosslessUncompressed,
@@ -1105,7 +1134,7 @@ namespace GkAudioFramework {
     };
 
     struct AudioFileInfo {
-        boost::filesystem::path audio_file_path;                                // The path to the audio file itself, if known.
+        QFileInfo audio_file_path;                                              // The path to the audio file itself, if known.
         bool is_output;                                                         // Are we dealing with this as an input or output file?
         QString track_title;                                                    // The title of the audio track (i.e. metadata) within the audio file itself, if there is such information present.
         QString file_size_hr;                                                   // The human-readable form of the file-size parameter.

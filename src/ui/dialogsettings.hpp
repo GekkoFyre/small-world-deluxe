@@ -47,7 +47,9 @@
 #include "src/models/tableview/gk_frequency_model.hpp"
 #include <boost/logic/tribool.hpp>
 #include <list>
+#include <mutex>
 #include <tuple>
+#include <thread>
 #include <memory>
 #include <vector>
 #include <string>
@@ -117,26 +119,22 @@ private slots:
 
     //
     // Rig selection
-    //
     void on_comboBox_rig_selection_currentIndexChanged(int index = -1);
 
     //
     // Data Bits
-    //
     void on_radioButton_data_bits_default_clicked();
     void on_radioButton_data_bits_seven_clicked();
     void on_radioButton_data_bits_eight_clicked();
 
     //
     // Stop Bits
-    //
     void on_radioButton_stop_bits_default_clicked();
     void on_radioButton_stop_bits_one_clicked();
     void on_radioButton_stop_bits_two_clicked();
 
     //
     // Handshake
-    //
     void on_radioButton_handshake_default_clicked();
     void on_radioButton_handshake_none_clicked();
     void on_radioButton_handshake_xon_xoff_clicked();
@@ -144,7 +142,6 @@ private slots:
 
     //
     // PTT Method
-    //
     void on_radioButton_ptt_method_vox_clicked();
     void on_radioButton_ptt_method_dtr_clicked();
     void on_radioButton_ptt_method_cat_clicked();
@@ -152,32 +149,27 @@ private slots:
 
     //
     // Transmit Audio Source
-    //
     void on_radioButton_tx_audio_src_rear_data_clicked();
     void on_radioButton_tx_audio_src_front_mic_clicked();
 
     //
     // Mode
-    //
     void on_radioButton_mode_none_clicked();
     void on_radioButton_mode_usb_clicked();
     void on_radioButton_mode_data_pkt_clicked();
 
     //
     // Split Operation
-    //
     void on_radioButton_split_none_clicked();
     void on_radioButton_split_rig_clicked();
     void on_radioButton_split_fake_it_clicked();
 
     //
     // Setting's Dialog signals
-    //
     void on_DialogSettings_rejected();
 
     //
     // Spectrograph & Waterfall
-    //
     void on_spinBox_spectro_min_freq_valueChanged(int arg1);
     void on_spinBox_spectro_max_freq_valueChanged(int arg1);
     void on_horizontalSlider_spectro_min_freq_sliderMoved(int position);
@@ -187,7 +179,6 @@ private slots:
 
     //
     // Frequency List
-    //
     void on_pushButton_freq_list_new_clicked();
     void on_pushButton_freq_list_edit_clicked();
     void on_pushButton_freq_list_delete_clicked();
@@ -197,13 +188,11 @@ private slots:
 
     //
     // General Settings
-    //
     void on_checkBox_new_msg_audio_notification_stateChanged(int arg1);
     void on_checkBox_failed_event_audio_notification_stateChanged(int arg1);
 
     //
     // Text-to-speech Settings
-    //
     void on_pushButton_access_stt_speak_clicked();
     void on_pushButton_access_stt_pause_clicked();
     void on_pushButton_access_stt_enable_clicked();
@@ -222,7 +211,6 @@ private slots:
 
     //
     // QAudioSystem & Multimedia related
-    //
     void on_comboBox_soundcard_input_currentIndexChanged(int index = -1);
     void on_comboBox_soundcard_output_currentIndexChanged(int index = -1);
     void on_pushButton_input_sound_test_clicked();
@@ -234,7 +222,6 @@ private slots:
 
     //
     // XMPP Settings
-    //
     void on_toolButton_xmpp_upload_avatar_browse_file_clicked();
     void on_toolButton_xmpp_delete_avatar_from_server_clicked();
     void on_toolButton_xmpp_upload_avatar_to_server_clicked();
@@ -251,17 +238,21 @@ private slots:
     void on_lineEdit_xmpp_server_url_textChanged(const QString &arg1);
 
     //
-    // Language & Dictionaries
-    //
+    // Accessibility -- Language & Dictionaries
     void on_comboBox_accessibility_lang_ui_currentIndexChanged(int index);
     void on_comboBox_accessibility_dict_currentIndexChanged(const QString &arg1);
+
+    //
+    // Accessibility -- UI & Appearance
+    void on_horizontalSlider_accessibility_appearance_ui_scale_valueChanged(int value);
+    void on_checkBox_accessibility_appearance_enbl_custom_font_toggled(bool checked);
+    void on_fontComboBox_accessibility_appearance_custom_font_currentFontChanged(const QFont &f);
 
 signals:
     void changeSelectedTTSEngine(const QString &name);
 
     //
     // Hamlib and transceiver related
-    //
     void changeConnPort(const QString &conn_port, const GekkoFyre::AmateurRadio::GkConnMethod &conn_method);
     void usbPortsDisabled(const bool &active);
     void comPortsDisabled(const bool &active);
@@ -270,13 +261,11 @@ signals:
 
     //
     // QAudioSystem and related
-    //
     void changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &input_device);
     void changeOutputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &output_device);
 
     //
     // XMPP and related
-    //
     void updateXmppConfig();
 
 private:
@@ -284,7 +273,6 @@ private:
 
     //
     // Converts an object, such as an `enum`, to the underlying type (i.e. an `integer` in the given example)
-    //
     template <typename E>
     constexpr typename std::underlying_type<E>::type to_underlying(E e) noexcept {
         return static_cast<typename std::underlying_type<E>::type>(e);
@@ -304,9 +292,13 @@ private:
 
     //
     // QXmpp and XMPP related
-    //
     QPointer<GekkoFyre::GkXmppClient> m_xmppClient;
     GekkoFyre::Network::GkXmpp::GkUserConn gkConnDetails;
+
+    //
+    // Multithreading and mutexes
+    std::mutex xmppUpdateCalendarMtx;
+    std::thread xmppUpdateCalendarThread;
 
     static QComboBox *rig_comboBox;
     static QComboBox *mfg_comboBox;
@@ -340,6 +332,10 @@ private:
     std::vector<std::pair<QAudioDeviceInfo, GekkoFyre::Database::Settings::Audio::GkDevice>> avail_output_audio_devs;
     GekkoFyre::Database::Settings::Audio::GkDevice chosen_input_audio_dev;
     GekkoFyre::Database::Settings::Audio::GkDevice chosen_output_audio_dev;
+
+    //
+    // QXmpp and XMPP related
+    void xmppUpdateCalendarDateTime(const QDateTime &startTime = QDateTime::currentDateTime().toLocalTime());
 
     static int prefill_rig_selection(const rig_caps *caps, void *data);
     static QMultiMap<rig_model_t, std::tuple<QString, QString, GekkoFyre::AmateurRadio::rig_type>> init_model_names();

@@ -40,16 +40,32 @@
 
 cmake_minimum_required(VERSION 3.5 FATAL_ERROR) # This version is needed to properly search for libpthreads
 
-# https://gitlab.kitware.com/cmake/community/wikis/doc/cmake/Useful-Variables#system-compiler-information
-if(${CMAKE_VERSION} VERSION_GREATER "3.15.0")
-    cmake_policy(SET CMP0091 NEW)
+cmake_policy(SET CMP0020 NEW)
+cmake_policy(SET CMP0025 NEW)
+
+#
+# https://cmake.org/cmake/help/latest/policy/CMP0054.html
+if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.1.0")
+	cmake_policy(SET CMP0054 NEW)
 endif()
 
-CMAKE_POLICY(SET CMP0020 NEW)
-cmake_policy(SET CMP0074 NEW)
-cmake_policy(SET CMP0054 NEW)
-cmake_policy(SET CMP0087 NEW)
-cmake_policy(SET CMP0025 NEW)
+#
+# https://cmake.org/cmake/help/latest/policy/CMP0074.html
+if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
+	cmake_policy(SET CMP0074 NEW)
+endif()
+
+#
+# https://cmake.org/cmake/help/git-stage/policy/CMP0087.html
+if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.14.0")
+	cmake_policy(SET CMP0087 NEW)
+endif()
+
+#
+# https://cmake.org/cmake/help/git-stage/policy/CMP0091.html
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.15.0")
+    cmake_policy(SET CMP0091 NEW)
+endif()
 
 #
 # RPATH is aimed at Linux installations primarily
@@ -881,26 +897,6 @@ if (ENBL_VALGRIND_SUPPORT)
 endif()
 
 #
-# https://gist.github.com/giraldeau/546ba5512a74dfe9d8ea0862d66db412
-#
-# qt5_create_translation(QM_FILES ${GALAXY_UI_CPP} SmallWorldDeluxe_en_US.ts SmallWorldDeluxe_de_DE.ts) # Create the translation files for Small World Deluxe!
-
-#
-# Only call lrelease on each translation files to create qm files.
-# This command assumes that the ts files already exists (manually created).
-#
-# qt5_add_translation(QM_FILES SmallWorldDeluxe_en_US.ts SmallWorldDeluxe_de_DE.ts)
-
-#
-# The qm files are generated in the build tree, but the qrc file is inside the
-# source directory and the path to resources are relative to the location of
-# the qrc file itself. We use configure_file() to copy the qrc file in the build
-# directory such that it can find the qm translations files. The qrc file is
-# copied if it doesn't exist in the destination or if it is modified.
-#
-# configure_file(translations.qrc ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
-
-#
 # Build Small World Deluxe as a static package!
 #
 if(GFYRE_BUILD_STATIC)
@@ -925,19 +921,37 @@ endif(GFYRE_BUILD_SHARED)
 set_property(TARGET galaxy PROPERTY AUTOMOC ON)
 target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} ICU::i18n ICU::data ICU::uc OpenSSL::SSL Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network Qt5::Multimedia Qt5::SerialPort Qt5::PrintSupport Qt5::Xml Qt5::TextToSpeech Qt5::Test QXmpp::QXmpp Threads::Threads SingleApplication::SingleApplication sentry::sentry Opus::opus leveldb kissfft ${LIBS})
 
+#
+# Qt Translations
+#
+qt5_create_translation(QM_FILES ${GALAXY_UI_CPP} ${UI_HEADERS} ${GALAXY_OBJ_HEADERS} gk_english.ts)
+
+#
+# The qm files are generated in the build tree, but the qrc file is inside the
+# source directory and the path to resources are relative to the location of
+# the qrc file itself. We use configure_file() to copy the qrc file in the build
+# directory such that it can find the qm translations files. The qrc file is
+# copied if it doesn't exist in the destination or if it is modified.
+#
+# configure_file(translations.qrc ${CMAKE_BINARY_DIR} COPYONLY)
+
 qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)
 add_dependencies(galaxy resources)
 
 set(SWRLD_EXEC ${SWRLD_EXEC}
     src/main.cpp)
 
-add_executable(smallworld WIN32 ${SWRLD_EXEC})
+if(WIN32 OR MSYS OR MINGW)
+    add_executable(smallworld WIN32 ${SWRLD_EXEC})
+elseif(LINUX)
+    add_executable(smallworld ${SWRLD_EXEC})
+else()
+    message(FATAL_ERROR "Unsupported operating system detected! Please check back at the official code repository for further updates. Thank you.")
+endif()
+
 target_compile_options(smallworld PRIVATE -fPIC)
 target_compile_definitions(galaxy PRIVATE -DUSE_KISS_FFT)
 target_link_libraries(smallworld PRIVATE galaxy)
-
-include(CMakePackageConfigHelpers)
-include(GNUInstallDirs)
 
 #
 # Copy the crashpad handler to the root of the binary build directory, for easy access!
@@ -961,7 +975,29 @@ else()
                     ${CMAKE_CURRENT_BINARY_DIR}/libcrashpad_handler_lib.a)
 endif()
 
-INSTALL(TARGETS smallworld)
+if(WIN32 OR MSYS OR MINGW)
+	if (EXISTS "$ENV{SystemDrive}/Program Files")
+		INSTALL(TARGETS smallworld
+				CONFIGURATIONS Debug
+				RUNTIME DESTINATION Debug/bin
+				LIBRARY DESTINATION Debug/lib)
+		INSTALL(TARGETS smallworld
+				CONFIGURATIONS Release
+				RUNTIME DESTINATION bin
+				LIBRARY DESTINATION lib)
+	endif()
+elseif (LINUX)
+		INSTALL(TARGETS smallworld
+				CONFIGURATIONS Debug
+				RUNTIME DESTINATION Debug/bin
+				LIBRARY DESTINATION Debug/lib)
+		INSTALL(TARGETS smallworld
+				CONFIGURATIONS Release
+				RUNTIME DESTINATION bin
+				LIBRARY DESTINATION lib)
+else()
+	message(FATAL_ERROR "Unsupported operating system detected! Please check back at the official code repository for further updates. Thank you.")
+endif()
 
 SET(CMAKE_C_FLAGS_DEBUG_INIT            "-g")
 SET(CMAKE_C_FLAGS_MINSIZEREL_INIT       "-Os -DNDEBUG")

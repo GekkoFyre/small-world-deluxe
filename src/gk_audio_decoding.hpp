@@ -61,7 +61,7 @@ extern "C"
 {
 #endif
 
-#include <opus.h>
+#include "src/contrib/opus/include/opus.h"
 
 #ifdef __cplusplus
 } // extern "C"

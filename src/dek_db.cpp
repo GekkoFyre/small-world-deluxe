@@ -630,6 +630,9 @@ void GkLevelDb::write_audio_playback_dlg_settings(const QString &value, const Au
             case AudioPlaybackDlg::GkRecordDlgLastFolderBrowsed:
                 batch.Put("GkRecordDlgLastFolderBrowsed", value.toStdString());
                 break;
+            case AudioPlaybackDlg::GkRecordDlgLastCodecSelected:
+                batch.Put("GkRecordDlgLastCodecSelected", value.toStdString());
+                break;
             default:
                 throw std::runtime_error(tr("Invalid key has been provided for writing Audio Playback settings relating to Google LevelDB!").toStdString());
         }
@@ -2647,6 +2650,9 @@ QString GkLevelDb::read_audio_playback_dlg_settings(const AudioPlaybackDlg &key)
             break;
         case AudioPlaybackDlg::GkRecordDlgLastFolderBrowsed:
             status = db->Get(read_options, "GkRecordDlgLastFolderBrowsed", &value);
+            break;
+        case AudioPlaybackDlg::GkRecordDlgLastCodecSelected:
+            status = db->Get(read_options, "GkRecordDlgLastCodecSelected", &value);
             break;
         default:
             throw std::runtime_error(tr("Invalid key has been provided for reading Audio Playback dialog settings relating to Google LevelDB!").toStdString());

@@ -47,25 +47,23 @@
 #include "src/gk_pcm_file_stream.hpp"
 #include "src/gk_audio_encoding.hpp"
 #include <AudioFile.h>
-#include <boost/filesystem.hpp>
-#include <boost/exception/all.hpp>
-#include <map>
+#include <mutex>
 #include <memory>
 #include <vector>
 #include <string>
+#include <thread>
+#include <QDir>
+#include <QMap>
 #include <QObject>
 #include <QString>
 #include <QThread>
 #include <QPointer>
-#include <QEventLoop>
+#include <QFileInfo>
 #include <QByteArray>
 #include <QAudioInput>
 #include <QAudioOutput>
 #include <QAudioFormat>
 #include <QAudioDeviceInfo>
-
-namespace fs = boost::filesystem;
-namespace sys = boost::system;
 
 namespace GekkoFyre {
 
@@ -73,37 +71,66 @@ class GkPaStreamHandler : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, const GekkoFyre::Database::Settings::Audio::GkDevice &output_device,
-                               const GekkoFyre::Database::Settings::Audio::GkDevice &input_device, QPointer<QAudioOutput> audioOutput,
+    explicit GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, QPointer<QAudioOutput> audioOutput,
                                QPointer<QAudioInput> audioInput, QPointer<GekkoFyre::GkAudioEncoding> audioEncoding,
                                QPointer<GekkoFyre::GkEventLogger> eventLogger, std::shared_ptr<AudioFile<double>> audioFileLib,
                                QObject *parent = nullptr);
     ~GkPaStreamHandler() override;
 
-    void processEvent(GkAudioFramework::AudioEventType audioEventType, const fs::path &mediaFilePath = fs::path(),
-                      const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec = GekkoFyre::GkAudioFramework::CodecSupport::Unknown,
+    void processEvent(GkAudioFramework::AudioEventType audioEventType, const GekkoFyre::Database::Settings::GkAudioSource &audio_source,
+                      const QFileInfo &mediaFilePath = QFileInfo(), const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec = GekkoFyre::GkAudioFramework::CodecSupport::Unknown,
+                      bool loop_media = false, qint32 encode_bitrate = 8);
+    void processEvent(GkAudioFramework::AudioEventType audioEventType, const GekkoFyre::Database::Settings::GkAudioSource &audio_source,
+                      const QDir &mediaFilePath = QDir(), const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec = GekkoFyre::GkAudioFramework::CodecSupport::Unknown,
                       bool loop_media = false, qint32 encode_bitrate = 8);
 
+    QFileInfo createRecordMediaFile(const QDir &media_path, const GkAudioFramework::CodecSupport &supported_codec);
+
 private slots:
-    void playMediaFile(const fs::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
-    void recordMediaFile(const fs::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
-                         qint32 encoding_bitrate);
-    void stopMediaFile(const fs::path &media_path);
+    void playMediaFile(const QFileInfo &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
+                       const GekkoFyre::Database::Settings::GkAudioSource &audio_source);
+    void playMediaFile(const QDir &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
+                       const GekkoFyre::Database::Settings::GkAudioSource &audio_source);
+    void recordMediaFile(const QDir &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
+                         const GekkoFyre::Database::Settings::GkAudioSource &audio_source, qint32 encoding_bitrate);
+    void stopMediaFile(const QFileInfo &media_path);
+    void stopMediaFile(const QDir &media_path);
     void startMediaLoopback();
     void playbackHandleStateChanged(QAudio::State changed_state);
     void recordingHandleStateChanged(QAudio::State changed_state);
 
 signals:
-    void playMedia(const fs::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
-    void recordMedia(const fs::path &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, qint32 encoding_bitrate);
-    void stopMedia(const fs::path &media_path);
+    //
+    // Playing of multimedia files
+    void playMedia(const QFileInfo &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
+                   const GekkoFyre::Database::Settings::GkAudioSource &audio_source);
+    void playMedia(const QDir &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
+                   const GekkoFyre::Database::Settings::GkAudioSource &audio_source);
+
+    //
+    // Recording of multimedia files
+    void recordMedia(const QDir &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
+                     const GekkoFyre::Database::Settings::GkAudioSource &audio_source, qint32 encoding_bitrate);
+
+    //
+    // Stopping of either playing or recording of multimedia files
+    void stopMedia(const QFileInfo &media_path);
+    void stopMedia(const QDir &media_path);
+
+    //
+    // Miscellaneous
     void startLoopback();
+
+    //
+    // Changing the playback state of multimedia files (i.e. for recording, playing, etc.)
     void changePlaybackState(QAudio::State changed_state);
     void changeRecorderState(QAudio::State changed_state);
 
-    void initEncode(const fs::path &media_path, const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev_info,
-                    const qint32 &bitrate, const GekkoFyre::GkAudioFramework::CodecSupport &codec_choice,
-                    const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER, const qint32 &application = OPUS_APPLICATION_AUDIO);
+    //
+    // Encoding of multimedia files
+    void initEncode(const QFileInfo &media_path, const qint32 &bitrate, const GekkoFyre::GkAudioFramework::CodecSupport &codec_choice,
+                    const GekkoFyre::Database::Settings::GkAudioSource &audio_source, const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER,
+                    const qint32 &application = OPUS_APPLICATION_AUDIO);
     void writeEncode(const QByteArray &data);
 
 private:
@@ -113,25 +140,30 @@ private:
 
     //
     // AudioFile objects and related
-    //
     std::shared_ptr<AudioFile<double>> gkAudioFile;
 
     //
     // Audio encoding related objects
-    //
     QPointer<GekkoFyre::GkAudioEncoding> gkAudioEncoding;
+    QFileInfo m_mediaFile;
+
+    //
+    // Multithreading and mutexes
+    std::mutex m_recordMediaFileHelperMutex;
+    std::mutex m_createRecordMediaFileInfoMutex;
+    std::mutex m_createRecordMediaFileDirMutex;
 
     //
     // QAudioSystem initialization and buffers
-    //
-    QPointer<QEventLoop> procMediaEventLoop;
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
-    GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
-    GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
-    std::map<fs::path, AudioFile<double>> gkSounds;
+    QMap<QString, AudioFile<double>> gkSounds;
 
-    fs::path createRecordMediaFile(const fs::path &media_path, const GkAudioFramework::CodecSupport &supported_codec, const bool &create_file = false);
+    void playMediaFileHelper(QFileInfo media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
+                             const GekkoFyre::Database::Settings::GkAudioSource &audio_source);
+
+    void recordMediaFileHelper(QDir media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
+                               const GekkoFyre::Database::Settings::GkAudioSource &audio_source, qint32 encoding_bitrate);
 
 };
 };

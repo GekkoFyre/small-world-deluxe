@@ -128,7 +128,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<GekkoFyre::AmateurRadio::IARURegions>("GekkoFyre::AmateurRadio::IARURegions");
     qRegisterMetaType<GekkoFyre::Spectrograph::GkGraphType>("GekkoFyre::Spectrograph::GkGraphType");
     qRegisterMetaType<GekkoFyre::GkAudioFramework::Bitrate>("GekkoFyre::GkAudioFramework::Bitrate");
+    qRegisterMetaType<GekkoFyre::GkAudioFramework::GkClearForms>("GekkoFyre::GkAudioFramework::GkClearForms");
     qRegisterMetaType<GekkoFyre::GkAudioFramework::CodecSupport>("GekkoFyre::GkAudioFramework::CodecSupport");
+    qRegisterMetaType<GekkoFyre::Database::Settings::GkAudioSource>("GekkoFyre::Database::Settings::GkAudioSource");
+    qRegisterMetaType<GekkoFyre::GkAudioFramework::GkAudioRecordStatus>("GekkoFyre::GkAudioFramework::GkAudioRecordStatus");
     qRegisterMetaType<GekkoFyre::AmateurRadio::GkFreqs>("GekkoFyre::AmateurRadio::GkFreqs");
     qRegisterMetaType<boost::filesystem::path>("boost::filesystem::path");
     qRegisterMetaType<RIG>("RIG");
@@ -732,10 +735,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the audio codec encoding/decoding libraries!
         //
-        gkAudioEncoding = new GkAudioEncoding(gkAudioInputBuf, gkAudioOutputBuf, gkDb, gkAudioOutput, gkAudioInput, pref_output_device, pref_input_device, gkEventLogger, &gkAudioEncodingThread);
-        gkAudioEncoding->moveToThread(&gkAudioEncodingThread);
-        QObject::connect(&gkAudioEncodingThread, &QThread::finished, gkAudioEncoding, &QObject::deleteLater);
-        gkAudioEncodingThread.start();
+        gkAudioEncoding = new GkAudioEncoding(gkDb, gkAudioOutput, gkAudioInput, gkAudioInputBuf, gkStringFuncs, gkEventLogger, &gkAudioInputThread);
+        gkAudioEncoding->moveToThread(&gkAudioInputThread);
+        QObject::connect(&gkAudioInputThread, &QThread::finished, gkAudioEncoding, &QObject::deleteLater);
 
         //
         // Initialize the Waterfall / Spectrograph
@@ -746,7 +748,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                                gkSpectroWaterfall, gkStringFuncs, gkEventLogger, &gkAudioInputThread);
         gkFftAudio->moveToThread(&gkAudioInputThread);
         QObject::connect(&gkAudioInputThread, &QThread::finished, gkFftAudio, &QObject::deleteLater);
-        gkAudioInputThread.start();
 
         if (!gkAudioOutput.isNull()) {
             QObject::connect(&gkAudioOutputThread, &QThread::finished, gkFftAudio, &QObject::deleteLater);
@@ -756,7 +757,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // Enable updating and clearing of QBuffer pointers across Small World Deluxe!
         QObject::connect(this, SIGNAL(updateAudioIn()), this, SLOT(processAudioInMainBuffer()));
         QObject::connect(this, SIGNAL(updateAudioIn()), gkFftAudio, SLOT(processAudioInFft()));
-        QObject::connect(this, SIGNAL(updateAudioIn()), gkAudioEncoding, SLOT(processAudioInEncode()));
+        QObject::connect(this, SIGNAL(updateAudioIn()), gkAudioEncoding, SLOT(procAudioInBuffer()));
 
         //
         // Allow the changing of Audio I/O with regard to recording audio streams
@@ -774,6 +775,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // Add the spectrograph / waterfall to the QMainWindow!
         ui->horizontalLayout_12->addWidget(gkSpectroWaterfall);
         #endif
+
+        //
+        // Start the audio input thread!
+        gkAudioInputThread.start();
 
         //
         // Sound & Audio Devices
@@ -934,14 +939,15 @@ MainWindow::~MainWindow()
     emit stopRecOutput();
     emit disconnectRigInUse(gkRadioPtr->gkRig, gkRadioPtr);
 
-    gkAudioEncodingThread.quit();
-    gkAudioEncodingThread.wait();
+    if (gkAudioInputThread.isRunning()) {
+        gkAudioInputThread.quit();
+        gkAudioInputThread.wait();
+    }
 
-    gkAudioInputThread.quit();
-    gkAudioInputThread.wait();
-
-    gkAudioOutputThread.quit();
-    gkAudioOutputThread.wait();
+    if (gkAudioOutputThread.isRunning()) {
+        gkAudioOutputThread.quit();
+        gkAudioOutputThread.wait();
+    }
 
     if (vu_meter_thread.joinable()) {
         vu_meter_thread.join();
@@ -1126,7 +1132,9 @@ void MainWindow::launchAudioPlayerWin()
                                                                        gkStringFuncs, gkAudioEncoding, gkEventLogger, this);
     gkAudioPlayDlg->setWindowFlags(Qt::Window);
     gkAudioPlayDlg->setAttribute(Qt::WA_DeleteOnClose, true);
+    gkAudioPlayDlg->moveToThread(&gkAudioInputThread);
     QObject::connect(gkAudioPlayDlg, SIGNAL(destroyed(QObject*)), this, SLOT(show()));
+    QObject::connect(&gkAudioInputThread, &QThread::finished, gkAudioInput, &QObject::deleteLater);
 
     gkAudioPlayDlg->show();
 }
@@ -2580,7 +2588,7 @@ void MainWindow::processAudioInMain()
 }
 
 /**
- * @brief MainWindow::processAudioInMainBuffer
+ * @brief MainWindow::procAudioInBuffer
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void MainWindow::processAudioInMainBuffer()

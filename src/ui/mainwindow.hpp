@@ -111,7 +111,6 @@ class MainWindow : public QMainWindow
     Q_OBJECT
     QThread gkAudioInputThread;
     QThread gkAudioOutputThread;
-    QThread gkAudioEncodingThread;
 
 public:
     explicit MainWindow(QWidget *parent = nullptr);
@@ -556,7 +555,10 @@ Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::DigitalModes);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::IARURegions);
 Q_DECLARE_METATYPE(GekkoFyre::Spectrograph::GkGraphType);
 Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::Bitrate);
+Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::GkClearForms);
 Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::CodecSupport);
+Q_DECLARE_METATYPE(GekkoFyre::Database::Settings::GkAudioSource);
+Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::GkAudioRecordStatus);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkFreqs);
 Q_DECLARE_METATYPE(boost::filesystem::path);
 Q_DECLARE_METATYPE(RIG);

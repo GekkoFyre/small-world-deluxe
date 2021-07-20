@@ -44,24 +44,22 @@
 #include "src/file_io.hpp"
 #include "src/pa_audio_player.hpp"
 #include <AudioFile.h>
-#include <boost/filesystem.hpp>
 #include <memory>
 #include <string>
 #include <vector>
 #include <thread>
 #include <mutex>
+#include <QDir>
 #include <QFile>
 #include <QObject>
 #include <QDialog>
 #include <QString>
 #include <QPointer>
+#include <QFileInfo>
 #include <QAudioInput>
 #include <QAudioOutput>
 #include <QAudioFormat>
 #include <QAudioDeviceInfo>
-
-namespace fs = boost::filesystem;
-namespace sys = boost::system;
 
 namespace Ui {
 class GkAudioPlayDialog;
@@ -82,13 +80,16 @@ public:
                                QWidget *parent = nullptr);
     ~GkAudioPlayDialog() override;
 
-    GekkoFyre::Database::Settings::GkAudioChannels determineAudioChannels();
+    //
+    // QAudioSystem initialization and buffers
+    [[nodiscard]] GekkoFyre::Database::Settings::GkAudioChannels determineAudioChannels();
 
 private slots:
+    //
+    // QPushButtons, etc.
     void on_pushButton_reset_clicked();
     void on_pushButton_close_clicked();
     void on_pushButton_playback_stop_clicked();
-    void on_pushButton_playback_browse_file_loc_clicked();
     void on_pushButton_playback_play_clicked();
     void on_pushButton_playback_record_clicked();
     void on_pushButton_playback_skip_back_clicked();
@@ -97,10 +98,15 @@ private slots:
     void on_comboBox_playback_rec_codec_currentIndexChanged(int index);
     void on_horizontalSlider_playback_rec_bitrate_valueChanged(int value);
 
+    void setBytesRead(const qint64 &bytes, const bool &uncompressed = false);
+
     void resetStopButtonColor();
+    void clearForms(const GekkoFyre::GkAudioFramework::GkClearForms &cat);
 
 signals:
     void beginRecording(const bool &recording_is_started);
+    void recStatus(const GekkoFyre::GkAudioFramework::GkAudioRecordStatus &status); // Sets the status for when recording; whether active, stopped, or to pause...
+    void cleanupForms(const GekkoFyre::GkAudioFramework::GkClearForms &cat);
 
 private:
     Ui::GkAudioPlayDialog *ui;
@@ -112,36 +118,36 @@ private:
     QPointer<GekkoFyre::GkPaAudioPlayer> gkPaAudioPlayer;
 
     //
-    // QPushButtons, etc.
+    // Filesystem paths and related
+    QDir m_recordDirPath;
+
     //
+    // QPushButtons, etc.
     bool audio_out_play;
     bool audio_out_stop;
-    bool audio_out_record;
+    bool m_audioRecReady;
     bool audio_out_skip_fwd;
     bool audio_out_skip_bck;
 
     //
     // QAudioSystem initialization and buffers
-    //
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
-    GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;
-    GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;
+    GekkoFyre::Database::Settings::Audio::GkDevice pref_input_device;   // Preferred input audio device
+    GekkoFyre::Database::Settings::Audio::GkDevice pref_output_device;  // Preferred output audio device
 
     //
     // Audio encoding related objects
-    //
     GekkoFyre::GkAudioFramework::CodecSupport m_rec_codec_chosen;
     qint32 m_encode_bitrate_chosen;
 
     //
     // AudioFile objects and related
-    //
-    std::shared_ptr<AudioFile<double>> gkAudioFile;
-
-    QFile r_pback_audio_file;
-    fs::path audio_file_path;
-    GekkoFyre::GkAudioFramework::AudioFileInfo gkAudioFileInfo;
+    std::shared_ptr<AudioFile<double>> gkAudioFile;                     // Buffer for playback
+    GekkoFyre::GkAudioFramework::AudioFileInfo gkAudioFileInfo;         // Information on file destined for playback!
+    GekkoFyre::Database::Settings::GkAudioChannels m_audioChannels;     // Audio channel information for both playback and recording!
+    qint64 encode_compressed_bytes;
+    qint64 encode_uncompressed_bytes;
 
     template <typename T>
     struct gkConvertDoubleToFloat {
@@ -149,7 +155,9 @@ private:
         T operator () (const U &x) const { return static_cast<T> (x); }
     };
 
+    void audioPlaybackHelper(const GekkoFyre::GkAudioFramework::CodecSupport &codec_used, const QString &file_path);
     void prefillCodecComboBoxes(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
+    void prefillAudioSourceComboBoxes();
 
 };
 

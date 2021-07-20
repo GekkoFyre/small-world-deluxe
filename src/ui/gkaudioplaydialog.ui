@@ -61,8 +61,8 @@
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>568</width>
-               <height>532</height>
+               <width>582</width>
+               <height>557</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -75,57 +75,32 @@
                  <item row="0" column="0">
                   <widget class="QLabel" name="label_playback_file_loc">
                    <property name="text">
-                    <string>Location:        </string>
+                    <string>Selection:      </string>
                    </property>
                   </widget>
                  </item>
                  <item row="0" column="1">
-                  <widget class="QFrame" name="frame_playback_file_location">
-                   <property name="frameShape">
-                    <enum>QFrame::NoFrame</enum>
+                  <widget class="QLineEdit" name="lineEdit_playback_file_location">
+                   <property name="toolTip">
+                    <string>The location of the file for either playback or recording.</string>
                    </property>
-                   <property name="frameShadow">
-                    <enum>QFrame::Plain</enum>
+                   <property name="readOnly">
+                    <bool>true</bool>
                    </property>
-                   <layout class="QHBoxLayout" name="horizontalLayout_2">
-                    <property name="leftMargin">
-                     <number>0</number>
-                    </property>
-                    <property name="topMargin">
-                     <number>0</number>
-                    </property>
-                    <property name="rightMargin">
-                     <number>0</number>
-                    </property>
-                    <property name="bottomMargin">
-                     <number>0</number>
-                    </property>
-                    <item>
-                     <widget class="QLineEdit" name="lineEdit_playback_file_location">
-                      <property name="readOnly">
-                       <bool>true</bool>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QPushButton" name="pushButton_playback_browse_file_loc">
-                      <property name="text">
-                       <string>Browse</string>
-                      </property>
-                     </widget>
-                    </item>
-                   </layout>
                   </widget>
                  </item>
                  <item row="1" column="0">
                   <widget class="QLabel" name="label_playback_file_size">
                    <property name="text">
-                    <string>File Size:        </string>
+                    <string>File Size: </string>
                    </property>
                   </widget>
                  </item>
                  <item row="1" column="1">
                   <widget class="QLineEdit" name="lineEdit_playback_file_size">
+                   <property name="toolTip">
+                    <string>The size of the aforementioned file.</string>
+                   </property>
                    <property name="readOnly">
                     <bool>true</bool>
                    </property>
@@ -157,14 +132,14 @@
                    </property>
                   </widget>
                  </item>
-                 <item row="1" column="0">
+                 <item row="2" column="0">
                   <widget class="QLabel" name="label_playback_rec_bitrate">
                    <property name="text">
                     <string>Bitrate:          </string>
                    </property>
                   </widget>
                  </item>
-                 <item row="1" column="1">
+                 <item row="2" column="1">
                   <widget class="QFrame" name="frame_playback_rec_bitrate">
                    <property name="frameShape">
                     <enum>QFrame::NoFrame</enum>
@@ -222,6 +197,16 @@
                     </item>
                    </layout>
                   </widget>
+                 </item>
+                 <item row="1" column="0">
+                  <widget class="QLabel" name="label_playback_rec_source">
+                   <property name="text">
+                    <string>Source: </string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="1">
+                  <widget class="QComboBox" name="comboBox_playback_rec_source"/>
                  </item>
                 </layout>
                </widget>
@@ -590,10 +575,10 @@ QPushButton:disabled {
                 </sizepolicy>
                </property>
                <property name="frameShape">
-                <enum>QFrame::StyledPanel</enum>
+                <enum>QFrame::NoFrame</enum>
                </property>
                <property name="frameShadow">
-                <enum>QFrame::Raised</enum>
+                <enum>QFrame::Plain</enum>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_15">
                 <item>
@@ -615,10 +600,10 @@ QPushButton:disabled {
              <item>
               <widget class="QFrame" name="frame_api_details_2">
                <property name="frameShape">
-                <enum>QFrame::StyledPanel</enum>
+                <enum>QFrame::NoFrame</enum>
                </property>
                <property name="frameShadow">
-                <enum>QFrame::Raised</enum>
+                <enum>QFrame::Plain</enum>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_13">
                 <property name="leftMargin">
@@ -642,10 +627,10 @@ QPushButton:disabled {
                    </sizepolicy>
                   </property>
                   <property name="frameShape">
-                   <enum>QFrame::StyledPanel</enum>
+                   <enum>QFrame::NoFrame</enum>
                   </property>
                   <property name="frameShadow">
-                   <enum>QFrame::Raised</enum>
+                   <enum>QFrame::Plain</enum>
                   </property>
                   <layout class="QVBoxLayout" name="verticalLayout_17">
                    <item>
@@ -667,19 +652,19 @@ QPushButton:disabled {
                 <item>
                  <widget class="QFrame" name="frame_api_details_inner_2">
                   <property name="frameShape">
-                   <enum>QFrame::StyledPanel</enum>
+                   <enum>QFrame::NoFrame</enum>
                   </property>
                   <property name="frameShadow">
-                   <enum>QFrame::Raised</enum>
+                   <enum>QFrame::Plain</enum>
                   </property>
                   <layout class="QVBoxLayout" name="verticalLayout_16">
                    <item>
                     <widget class="QFrame" name="frame">
                      <property name="frameShape">
-                      <enum>QFrame::StyledPanel</enum>
+                      <enum>QFrame::NoFrame</enum>
                      </property>
                      <property name="frameShadow">
-                      <enum>QFrame::Raised</enum>
+                      <enum>QFrame::Plain</enum>
                      </property>
                      <layout class="QHBoxLayout" name="horizontalLayout_13">
                       <item>
@@ -753,10 +738,10 @@ QPushButton:disabled {
                    </sizepolicy>
                   </property>
                   <property name="frameShape">
-                   <enum>QFrame::StyledPanel</enum>
+                   <enum>QFrame::NoFrame</enum>
                   </property>
                   <property name="frameShadow">
-                   <enum>QFrame::Raised</enum>
+                   <enum>QFrame::Plain</enum>
                   </property>
                   <layout class="QVBoxLayout" name="verticalLayout_18">
                    <item>
@@ -787,10 +772,10 @@ QPushButton:disabled {
                 </sizepolicy>
                </property>
                <property name="frameShape">
-                <enum>QFrame::StyledPanel</enum>
+                <enum>QFrame::NoFrame</enum>
                </property>
                <property name="frameShadow">
-                <enum>QFrame::Raised</enum>
+                <enum>QFrame::Plain</enum>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_14">
                 <item>
