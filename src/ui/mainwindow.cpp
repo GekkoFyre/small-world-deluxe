@@ -735,8 +735,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //
         // Initialize the audio codec encoding/decoding libraries!
         //
-        gkAudioEncoding = new GkAudioEncoding(gkAudioInputBuf, gkAudioOutputBuf, gkDb, gkAudioOutput,
-                                              gkAudioInput, gkStringFuncs, gkEventLogger, &gkAudioInputThread);
+        gkAudioEncoding = new GkAudioEncoding(gkDb, gkAudioOutput, gkAudioInput, gkAudioInputBuf, gkStringFuncs, gkEventLogger, &gkAudioInputThread);
         gkAudioEncoding->moveToThread(&gkAudioInputThread);
         QObject::connect(&gkAudioInputThread, &QThread::finished, gkAudioEncoding, &QObject::deleteLater);
 
@@ -758,7 +757,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         // Enable updating and clearing of QBuffer pointers across Small World Deluxe!
         QObject::connect(this, SIGNAL(updateAudioIn()), this, SLOT(processAudioInMainBuffer()));
         QObject::connect(this, SIGNAL(updateAudioIn()), gkFftAudio, SLOT(processAudioInFft()));
-        QObject::connect(this, SIGNAL(updateAudioIn()), gkAudioEncoding, SLOT(processAudioInEncode()));
+        QObject::connect(this, SIGNAL(updateAudioIn()), gkAudioEncoding, SLOT(procAudioInBuffer()));
 
         //
         // Allow the changing of Audio I/O with regard to recording audio streams
@@ -2589,7 +2588,7 @@ void MainWindow::processAudioInMain()
 }
 
 /**
- * @brief MainWindow::processAudioInMainBuffer
+ * @brief MainWindow::procAudioInBuffer
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void MainWindow::processAudioInMainBuffer()

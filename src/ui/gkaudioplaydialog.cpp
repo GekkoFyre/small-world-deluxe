@@ -80,6 +80,8 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
     // Create SIGNALS and SLOTS
     QObject::connect(this, SIGNAL(recStatus(const GekkoFyre::GkAudioFramework::GkAudioRecordStatus &)),
                      gkAudioEncoding, SLOT(setRecStatus(const GekkoFyre::GkAudioFramework::GkAudioRecordStatus &)));
+    QObject::connect(gkAudioEncoding, SIGNAL(bytesRead(const qint64 &, const bool &)),
+                     this, SLOT(setBytesRead(const const qint64 &, const bool &)));
     QObject::connect(this, SIGNAL(cleanupForms(const GekkoFyre::GkAudioFramework::GkClearForms &)),
                      this, SLOT(clearForms(const GekkoFyre::GkAudioFramework::GkClearForms &)));
 
@@ -454,6 +456,30 @@ void GkAudioPlayDialog::on_horizontalSlider_playback_rec_bitrate_valueChanged(in
 
     if (bitrate_val % 8 == 0) {
         m_encode_bitrate_chosen = bitrate_val;
+    }
+
+    return;
+}
+
+/**
+ * @brief GkAudioPlayDialog::setBytesRead adjusts the GUI widget(s) in question to display the amount of bytes read so
+ * far, whether it be for uncompressed or compressed data.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param bytes The amount of data read so far, measured in bytes.
+ * @param uncompressed Are we displaying measurements for uncompressed or compressed data?
+ */
+void GkAudioPlayDialog::setBytesRead(const qint64 &bytes, const bool &uncompressed)
+{
+    // const auto hr_file_size = gkStringFuncs->fileSizeHumanReadable(bytes);
+    if (uncompressed) {
+        encode_uncompressed_bytes = bytes;
+    } else {
+        encode_compressed_bytes = bytes;
+    }
+
+    if (encode_compressed_bytes <= encode_uncompressed_bytes) {
+        ui->progressBar_playback->setFormat("%p%");
+        ui->progressBar_playback->setValue((encode_uncompressed_bytes / encode_compressed_bytes) * 100);
     }
 
     return;
