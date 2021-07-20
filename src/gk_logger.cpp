@@ -246,6 +246,14 @@ void GkEventLogger::publishEvent(const QString &event, const GkSeverity &severit
  */
 void GkEventLogger::recvXmppLog(QXmppLogger::MessageType msg_type, QString msg)
 {
+    if (msg.isNull()) {
+        return;
+    }
+
+    if (msg.isEmpty()) {
+        return;
+    }
+
     GkSeverity severity;
     switch (msg_type) {
         case QXmppLogger::MessageType::NoMessage:

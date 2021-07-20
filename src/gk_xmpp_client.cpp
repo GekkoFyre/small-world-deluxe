@@ -1687,8 +1687,9 @@ void GkXmppClient::handleError(QXmppClient::Error errorMsg)
  */
 void GkXmppClient::handleError(const QString &errorMsg)
 {
-    if (!errorMsg.isEmpty()) {
-        if (isConnected() || m_netState == GkNetworkState::Connecting) {
+    if (!errorMsg.isNull() && !errorMsg.isEmpty()) {
+        if (isConnected() || m_netState != GkNetworkState::Disconnected) {
+            m_netState = GkNetworkState::Disconnected;
             killConnectionFromServer(true);
         }
 
@@ -1709,7 +1710,9 @@ void GkXmppClient::handleSslErrors(const QList<QSslError> &errorMsg)
 {
     if (!errorMsg.isEmpty()) {
         for (const auto &error: errorMsg) {
-            emit sendError(error.errorString());
+            if (!error.errorString().isEmpty()) {
+                emit sendError(error.errorString());
+            }
         }
     }
 
@@ -1938,6 +1941,7 @@ void GkXmppClient::killConnectionFromServer(const bool &askReconnectPolicy)
 {
     m_askToReconnectAuto = askReconnectPolicy;
     disconnectFromServer();
+    m_netState = GkNetworkState::Disconnected;
 
     return;
 }
