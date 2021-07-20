@@ -78,8 +78,9 @@ using namespace Network;
 using namespace GkXmpp;
 
 GkAudioEncoding::GkAudioEncoding(QPointer<GekkoFyre::GkLevelDb> database, QPointer<QAudioOutput> audioOutput,
-                                 QPointer<QAudioInput> audioInput, QPointer<GekkoFyre::StringFuncs> stringFuncs,
-                                 QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QObject(parent)
+                                 QPointer<QAudioInput> audioInput, QPointer<QBuffer> audioInputBuf,
+                                 QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                                 QObject *parent) : QObject(parent)
 {
     setParent(parent);
     gkDb = std::move(database);
@@ -88,6 +89,7 @@ GkAudioEncoding::GkAudioEncoding(QPointer<GekkoFyre::GkLevelDb> database, QPoint
 
     gkAudioInput = std::move(audioInput);
     gkAudioOutput = std::move(audioOutput);
+    gkAudioInputBuf = std::move(audioInputBuf);
 
     //
     // Initialize variables
@@ -103,11 +105,6 @@ GkAudioEncoding::GkAudioEncoding(QPointer<GekkoFyre::GkLevelDb> database, QPoint
                      this, SLOT(handleError(const QString &, const GekkoFyre::System::Events::Logging::GkSeverity &)));
     QObject::connect(this, SIGNAL(recStatus(const GekkoFyre::GkAudioFramework::GkAudioRecordStatus &)),
                      this, SLOT(setRecStatus(const GekkoFyre::GkAudioFramework::GkAudioRecordStatus &)));
-
-    //
-    // Setup I/O!
-    m_audioInputBuf = gkAudioInput->start();
-    QObject::connect(m_audioInputBuf, &QIODevice::readyRead, this, &GkAudioEncoding::onReadyRead);
 
     return;
 }
@@ -346,6 +343,21 @@ void GkAudioEncoding::setRecStatus(const GekkoFyre::GkAudioFramework::GkAudioRec
 }
 
 /**
+ * @brief GkAudioEncoding::procAudioInBuffer works coincide with the MainWindow::processAudioInMainBuffer() function from
+ * the body of the Small World Deluxe application, to update the main QAudioInput buffer(s) associated with any audio
+ * devices.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @see MainWindow::processAudioInMainBuffer().
+ */
+void GkAudioEncoding::procAudioInBuffer()
+{
+    gkAudioInputBuf->seek(0);
+    m_buffer.append(gkAudioInputBuf->readAll());
+
+    return;
+}
+
+/**
  * @brief GkAudioEncoding::encodeOpus will perform an encoding with the Ogg Opus library and its parameters.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>,
  * александр дмитрыч <https://stackoverflow.com/questions/51638654/how-to-encode-and-decode-audio-data-with-opus>
@@ -418,8 +430,17 @@ void GkAudioEncoding::encodeOpus(const qint32 &bitrate, qint32 sample_rate, cons
                                              .arg(media_path.fileName(), gkStringFuncs->handleOpusError(err)).toStdString());
         }
 
+        //
+        // https://stackoverflow.com/questions/46786922/how-to-confirm-opus-encode-buffer-size
+        qint32 frame_size = AUDIO_OPUS_FRAMES_PER_BUFFER;
+        if (sample_rate == 48000) {
+            //
+            // The frame-size must therefore be 10 milliseconds for stereo!
+            frame_size = ((48000 / 1000) * 2) * 10;
+        }
+
         qint32 ret = m_buffer.size();
-        while (1) {
+        while (m_recActive == GkAudioRecordStatus::Active) {
             if (ret > 0) {
                 opus_int16 input_frame[AUDIO_OPUS_FRAMES_PER_BUFFER] = {};
                 const qint32 total_bytes_ready = m_buffer.size();
@@ -428,15 +449,6 @@ void GkAudioEncoding::encodeOpus(const qint32 &bitrate, qint32 sample_rate, cons
                     // Convert from littleEndian...
                     for (qint32 j = 0; j < AUDIO_OPUS_FRAMES_PER_BUFFER; ++j) {
                         input_frame[j] = qFromLittleEndian<opus_int16>(m_buffer.data() + j * sizeof(opus_int16));
-                    }
-
-                    //
-                    // https://stackoverflow.com/questions/46786922/how-to-confirm-opus-encode-buffer-size
-                    qint32 frame_size = AUDIO_OPUS_FRAMES_PER_BUFFER;
-                    if (sample_rate == 48000) {
-                        //
-                        // The frame-size must therefore be 10 milliseconds for stereo!
-                        frame_size = ((48000 / 1000) * 2) * 10;
                     }
 
                     //
@@ -449,7 +461,7 @@ void GkAudioEncoding::encodeOpus(const qint32 &bitrate, qint32 sample_rate, cons
                     }
 
                     m_totalCompBytesWritten += nbBytes;
-                    emit bytesRead(m_totalCompBytesWritten, false);
+                    emit bytesRead(m_totalCompBytesWritten, false); // Emit the total amount of compressed bytes written!
 
                     //
                     // Commit out the memory buffer to the file itself!
@@ -617,16 +629,6 @@ void GkAudioEncoding::encodeFLAC(const qint32 &bitrate, qint32 sample_rate, cons
         gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true, false);
     }
 
-    return;
-}
-
-/**
- * @brief GkAudioEncoding::onReadyRead
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- */
-void GkAudioEncoding::onReadyRead()
-{
-    m_buffer.append(m_audioInputBuf->readAll()); // Record QAudioInput to the buffer object, `m_buffer`!
     return;
 }
 
