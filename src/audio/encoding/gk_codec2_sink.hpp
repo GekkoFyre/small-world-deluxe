@@ -61,16 +61,26 @@
 
 namespace GekkoFyre {
 
-class GkCodec2Sink : public QObject {
+class GkCodec2Sink : public QIODevice {
     Q_OBJECT
 
 public:
-    explicit GkCodec2Sink(QPointer<GekkoFyre::GkLevelDb> database, QPointer<QAudioOutput> audioOutput, QPointer<QAudioInput> audioInput, QPointer<QBuffer> audioInputBuf, QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
+    explicit GkCodec2Sink(QPointer<GekkoFyre::GkLevelDb> database, QPointer<QAudioOutput> audioOutput, QPointer<QAudioInput> audioInput,
+                          QPointer<QBuffer> audioInputBuf, QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkCodec2Sink() override;
+
+    qint64 readData(char *data, qint64 maxlen);
+    qint64 writeData(const char *data, qint64 len);
+
+public slots:
+    void start();
+    void stop();
+
+signals:
+    void volume(qint32 vol);
 
 private:
     QPointer<GekkoFyre::GkLevelDb> gkDb;
-    QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
     //
@@ -88,6 +98,11 @@ private:
     //
     // Encoder variables
     bool m_initialized = false;                                 // Whether an encoding operation has begun or not; therefore block other attempts until this singular one has stopped.
+
+    //
+    // Filesystem and related
+    QPointer<QSaveFile> file;                                   // The file that the encoded data is to be saved towards.
+    QPointer<QSaveFile> file_pcm;                               // If the user desires so, then a PCM WAV file can be created as an adjunct too!
 
 };
 };

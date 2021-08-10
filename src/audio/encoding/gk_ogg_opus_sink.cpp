@@ -61,11 +61,11 @@ using namespace Logging;
 using namespace Network;
 using namespace GkXmpp;
 
-GkOggOpusSink::GkOggOpusSink(QPointer<GekkoFyre::GkLevelDb> database, QPointer<QAudioOutput> audioOutput, QPointer<QAudioInput> audioInput, QPointer<QBuffer> audioInputBuf, QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QObject(parent)
+GkOggOpusSink::GkOggOpusSink(QPointer<GekkoFyre::GkLevelDb> database, QPointer<QAudioOutput> audioOutput, QPointer<QAudioInput> audioInput,
+                             QPointer<QBuffer> audioInputBuf, QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QIODevice(parent)
 {
     setParent(parent);
     gkDb = std::move(database);
-    gkStringFuncs = std::move(stringFuncs);
     gkEventLogger = std::move(eventLogger);
 
     gkAudioInput = std::move(audioInput);
@@ -82,3 +82,42 @@ GkOggOpusSink::GkOggOpusSink(QPointer<GekkoFyre::GkLevelDb> database, QPointer<Q
 
 GkOggOpusSink::~GkOggOpusSink()
 {}
+
+/**
+ * @brief GkCodec2Sink::readData
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+qint64 GkOggOpusSink::readData(char *data, qint64 maxlen)
+{
+    return 0;
+}
+
+/**
+ * @brief GkPcmWavSink::writeData
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param data
+ * @param len
+ * @return
+ */
+qint64 GkOggOpusSink::writeData(const char *data, qint64 len)
+{
+    return 0;
+}
+
+/**
+ * @brief GkCodec2Sink::start
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkOggOpusSink::start()
+{
+    return;
+}
+
+/**
+ * @brief GkPcmWavSink::stop
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkOggOpusSink::stop()
+{
+    return;
+}
