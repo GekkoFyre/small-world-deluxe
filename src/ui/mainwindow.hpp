@@ -65,6 +65,7 @@
 #include <leveldb/db.h>
 #include <leveldb/status.h>
 #include <leveldb/options.h>
+#include <qwt/qwt_legend_data.h>
 #include <stdexcept>
 #include <exception>
 #include <utility>
