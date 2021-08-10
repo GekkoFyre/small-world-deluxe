@@ -704,6 +704,11 @@ set(GALAXY_UI_CPP
     src/pa_stream_handler.cpp
     src/gk_sinewave.cpp
     src/pa_audio_player.cpp
+	src/audio/encoding/gk_pcm_wav_sink.cpp
+	src/audio/encoding/gk_ogg_opus_sink.cpp
+	src/audio/encoding/gk_flac_sink.cpp
+	src/audio/encoding/gk_ogg_vorbis_sink.cpp
+	src/audio/encoding/gk_codec2_sink.cpp
     src/ui/widgets/gk_vu_change_widget.cpp
     src/ui/widgets/gk_vu_meter_widget.cpp
     src/ui/widgets/gk_submit_msg.cpp
@@ -806,6 +811,11 @@ set(GALAXY_OBJ_HEADERS
     src/gk_sinewave.hpp
     src/gk_waterfall_data.hpp
     src/pa_audio_player.hpp
+	src/audio/encoding/gk_pcm_wav_sink.hpp
+	src/audio/encoding/gk_ogg_opus_sink.hpp
+	src/audio/encoding/gk_flac_sink.hpp
+	src/audio/encoding/gk_ogg_vorbis_sink.hpp
+	src/audio/encoding/gk_codec2_sink.hpp
     src/ui/widgets/gk_vu_change_widget.hpp
     src/ui/widgets/gk_vu_meter_widget.hpp
     src/ui/widgets/gk_submit_msg.hpp

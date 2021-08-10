@@ -45,6 +45,11 @@
 #include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
 #include "src/gk_string_funcs.hpp"
+#include "src/audio/encoding/gk_codec2_sink.hpp"
+#include "src/audio/encoding/gk_flac_sink.hpp"
+#include "src/audio/encoding/gk_ogg_opus_sink.hpp"
+#include "src/audio/encoding/gk_ogg_vorbis_sink.hpp"
+#include "src/audio/encoding/gk_pcm_wav_sink.hpp"
 #include <sndfile.h>
 #include <sndfile.hh>
 #include <mutex>
