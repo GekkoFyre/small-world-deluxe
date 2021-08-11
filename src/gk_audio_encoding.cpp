@@ -40,11 +40,6 @@
  ****************************************************************************************************/
 
 #include "src/gk_audio_encoding.hpp"
-#include "src/audio/encoding/gk_codec2_sink.hpp"
-#include "src/audio/encoding/gk_flac_sink.hpp"
-#include "src/audio/encoding/gk_ogg_opus_sink.hpp"
-#include "src/audio/encoding/gk_ogg_vorbis_sink.hpp"
-#include "src/audio/encoding/gk_pcm_wav_sink.hpp"
 #include <vector>
 #include <chrono>
 #include <cstring>
@@ -82,6 +77,18 @@ using namespace Logging;
 using namespace Network;
 using namespace GkXmpp;
 
+/**
+ * @brief GkAudioEncoding::GkAudioEncoding
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param database
+ * @param audioOutput
+ * @param audioInput
+ * @param audioInputBuf
+ * @param stringFuncs
+ * @param eventLogger
+ * @param parent
+ * @note Audio Input Example <https://doc.qt.io/qt-5/qtmultimedia-multimedia-audioinput-example.html>.
+ */
 GkAudioEncoding::GkAudioEncoding(QPointer<GekkoFyre::GkLevelDb> database, QPointer<QAudioOutput> audioOutput,
                                  QPointer<QAudioInput> audioInput, QPointer<QBuffer> audioInputBuf,
                                  QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::GkEventLogger> eventLogger,
@@ -189,13 +196,43 @@ GkAudioRecordStatus GkAudioEncoding::getRecStatus() const
     return m_recActive;
 }
 
+GkAudioFramework::CodecSupport GkAudioEncoding::getCodec()
+{
+    return m_codecUsed;
+}
+
 /**
  * @brief GkAudioEncoding::stopEncode halts the encoding process from the upper-most level.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
 void GkAudioEncoding::stopEncode()
 {
-    QTimer::singleShot(0, this, &GkAudioEncoding::stopEncode);
+    switch (m_codecUsed) {
+        case GkAudioFramework::CodecSupport::Codec2:
+            if (m_codec2Sink) {
+                m_codec2Sink->stop();
+            }
+
+            break;
+        case GkAudioFramework::CodecSupport::PCM:
+            // TODO: Complete the code for this!
+            break;
+        case GkAudioFramework::CodecSupport::Loopback:
+            // TODO: Complete the code for this!
+            break;
+        case GkAudioFramework::CodecSupport::OggVorbis:
+            // TODO: Complete the code for this!
+            break;
+        case GkAudioFramework::CodecSupport::Opus:
+            // TODO: Complete the code for this!
+            break;
+        case GkAudioFramework::CodecSupport::FLAC:
+            // TODO: Complete the code for this!
+            break;
+        default:
+            break;
+    }
+
     return;
 }
 
@@ -271,6 +308,7 @@ void GkAudioEncoding::startCaller(const QFileInfo &media_path, const qint32 &bit
             //
             // Ogg Opus
             //
+            m_codecUsed = GkAudioFramework::CodecSupport::Opus;
             if (m_encodeOpusThread.joinable()) {
                 m_encodeOpusThread.join();
             }
@@ -281,6 +319,7 @@ void GkAudioEncoding::startCaller(const QFileInfo &media_path, const qint32 &bit
             //
             // Ogg Vorbis
             //
+            m_codecUsed = GkAudioFramework::CodecSupport::OggVorbis;
             if (m_encodeVorbisThread.joinable()) {
                 m_encodeVorbisThread.join();
             }
@@ -292,6 +331,7 @@ void GkAudioEncoding::startCaller(const QFileInfo &media_path, const qint32 &bit
             //
             // FLAC
             //
+            m_codecUsed = GkAudioFramework::CodecSupport::FLAC;
             if (m_encodeFLACThread.joinable()) {
                 m_encodeFLACThread.join();
             }
@@ -303,7 +343,7 @@ void GkAudioEncoding::startCaller(const QFileInfo &media_path, const qint32 &bit
             //
             // Codec2
             //
-
+            m_codecUsed = GkAudioFramework::CodecSupport::Codec2;
             encodeCodec2(audio_source, media_path);
         } else {
             throw std::invalid_argument(tr("Invalid audio encoding codec specified! It is either not supported yet or an error was made.").toStdString());
@@ -653,13 +693,15 @@ void GkAudioEncoding::encodeFLAC(const qint32 &bitrate, qint32 sample_rate, cons
 void GkAudioEncoding::encodeCodec2(const Settings::GkAudioSource &audio_src, const QFileInfo &media_path)
 {
     try {
-        QPointer<GkCodec2Sink> m_codec2Sink = new GkCodec2Sink(media_path.absoluteFilePath(), CODEC2_MODE_1300, true, false, gkEventLogger, this);
+        m_codec2Sink = new GkCodec2Sink(media_path.absoluteFilePath(), CODEC2_MODE_1300, true, false, gkEventLogger, this);
         m_codec2Sink->start();
         if (audio_src == GkAudioSource::Input) {
             emit stopRecInput();
+            gkAudioInput->moveToThread(this->thread());
             gkAudioInput->start(m_codec2Sink);
         } else if (audio_src == GkAudioSource::Output) {
             emit stopRecOutput();
+            gkAudioOutput->moveToThread(this->thread());
             gkAudioOutput->start(m_codec2Sink);
         } else {
             throw std::invalid_argument(tr("An invalid or currently unsupported audio source has been chosen!").toStdString());

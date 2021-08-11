@@ -133,6 +133,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<GekkoFyre::Database::Settings::GkAudioSource>("GekkoFyre::Database::Settings::GkAudioSource");
     qRegisterMetaType<GekkoFyre::GkAudioFramework::GkAudioRecordStatus>("GekkoFyre::GkAudioFramework::GkAudioRecordStatus");
     qRegisterMetaType<GekkoFyre::AmateurRadio::GkFreqs>("GekkoFyre::AmateurRadio::GkFreqs");
+    qRegisterMetaType<GekkoFyre::GkAudioFramework::AudioEventType>("GekkoFyre::GkAudioFramework::AudioEventType");
     qRegisterMetaType<boost::filesystem::path>("boost::filesystem::path");
     qRegisterMetaType<RIG>("RIG");
     qRegisterMetaType<size_t>("size_t");
@@ -565,6 +566,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                 // Given audio parameters are supported, as defined by the user previously!
                                 pref_input_device = input_dev.second;
                                 gkAudioInput = new QAudioInput(input_dev.first, user_input_settings, &gkAudioInputThread);
+                                const qint32 input_buf_size = inputDevSampleRateVal * gkDb->read_misc_audio_settings(GkAudioCfg::AudioInputChannels).toInt() * (inputDevSampleSizeVal / 8);
+                                gkAudioInput->setBufferSize(input_buf_size); // 1 second
                                 gkEventLogger->publishEvent(tr("Now using the input audio device, \"%1\".").arg(pref_input_device.audio_device_info.deviceName()),
                                                             GkSeverity::Info, "", false, true, false, false);
                             } else {
@@ -657,6 +660,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                 // Given audio parameters are supported, as defined by the user previously!
                                 pref_output_device = output_dev.second;
                                 gkAudioOutput = new QAudioOutput(output_dev.first, user_output_settings, &gkAudioOutputThread);
+                                const qint32 output_buf_size = outputDevSampleRateVal * gkDb->read_misc_audio_settings(GkAudioCfg::AudioOutputChannels).toInt() * (outputDevSampleSizeVal / 8);
+                                gkAudioOutput->setBufferSize(output_buf_size); // 1 second
                                 gkEventLogger->publishEvent(tr("Now using the output audio device, \"%1\".").arg(pref_output_device.audio_device_info.deviceName()),
                                                             GkSeverity::Info, "", false, true, false, false);
                             } else {

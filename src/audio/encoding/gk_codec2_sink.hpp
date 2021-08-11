@@ -117,8 +117,8 @@ private:
     //
     // Filesystem and related
     QFileInfo m_fileInfo;
-    QPointer<QSaveFile> m_file;                                 // The file that the encoded data is to be saved towards.
-    QPointer<QSaveFile> m_filePcm;                              // If the user desires so, then a PCM WAV file can be created as an adjunct too!
+    QPointer<QFile> m_file;                                 // The file that the encoded data is to be saved towards.
+    QPointer<QFile> m_filePcm;                              // If the user desires so, then a PCM WAV file can be created as an adjunct too!
 
     //
     // Miscellaneous

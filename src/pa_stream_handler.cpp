@@ -98,6 +98,8 @@ GkPaStreamHandler::GkPaStreamHandler(QPointer<GekkoFyre::GkLevelDb> database, QP
     // Stopping of either playing or recording of multimedia files
     QObject::connect(this, SIGNAL(stopMedia(const QFileInfo &)), this, SLOT(stopMediaFile(const QFileInfo &)));
     QObject::connect(this, SIGNAL(stopMedia(const QDir &)), this, SLOT(stopMediaFile(const QDir &)));
+    QObject::connect(this, SIGNAL(stopRecording(const QFileInfo &)), this, SLOT(stopRecordingFile(const QFileInfo &)));
+    QObject::connect(this, SIGNAL(stopRecording(const QDir &)), this, SLOT(stopRecordingFile(const QDir &)));
 
     //
     // Recording of multimedia files
@@ -160,8 +162,28 @@ void GkPaStreamHandler::processEvent(GkAudioFramework::AudioEventType audioEvent
                 emit startLoopback();
                 break;
             case GkAudioFramework::AudioEventType::stop:
-                if (mediaFilePath.isReadable()) {
-                    emit stopMedia(mediaFilePath);
+                if (mediaFilePath.exists()) {
+                    for (const auto &file: gkAudioEvents.toStdMap()) {
+                        switch (file.first) {
+                            case GkAudioFramework::AudioEventType::start:
+                                if (mediaFilePath == file.second) { // Path to file that is being played!
+                                    emit stopMedia(mediaFilePath); // TODO: Finish coding this!
+                                }
+
+                                break;
+                            case GkAudioFramework::AudioEventType::record:
+                                emit stopRecording(mediaFilePath);
+                                break;
+                            case GkAudioFramework::AudioEventType::loopback:
+                                if (mediaFilePath == file.second) {
+                                    emit stopLoopback(mediaFilePath); // TODO: Finish coding this!
+                                }
+
+                                break;
+                            default:
+                                break;
+                        }
+                    }
                 }
 
                 break;
@@ -383,6 +405,48 @@ void GkPaStreamHandler::stopMediaFile(const QDir &media_path)
     return;
 }
 
+/**
+ * @brief GkPaStreamHandler::stopRecordingFile
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param media_path
+ */
+void GkPaStreamHandler::stopRecordingFile(const QFileInfo &media_path)
+{
+    if (gkAudioInput->state() == QAudio::ActiveState) {
+        gkAudioEncoding->stopEncode();
+        gkAudioInput->stop();
+    }
+
+    if (gkAudioOutput->state() == QAudio::ActiveState) {
+        gkAudioEncoding->stopEncode();
+        gkAudioOutput->stop();
+    }
+
+    gkAudioEvents.remove(GkAudioFramework::AudioEventType::record, media_path.absoluteFilePath());
+    return;
+}
+
+/**
+ * @brief GkPaStreamHandler::stopRecordingFile
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param media_path
+ */
+void GkPaStreamHandler::stopRecordingFile(const QDir &media_path)
+{
+    if (gkAudioInput->state() == QAudio::ActiveState) {
+        gkAudioEncoding->stopEncode();
+        gkAudioInput->stop();
+    }
+
+    if (gkAudioOutput->state() == QAudio::ActiveState) {
+        gkAudioEncoding->stopEncode();
+        gkAudioOutput->stop();
+    }
+
+    gkAudioEvents.remove(GkAudioFramework::AudioEventType::record, media_path.absolutePath());
+    return;
+}
+
 /*
  * @brief GkPaStreamHandler::playbackHandleStateChanged
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -462,6 +526,7 @@ QFileInfo GkPaStreamHandler::createRecordMediaFile(const QDir &media_path, const
             mediaRetPath = createRecordMediaFile(media_path, supported_codec);
         }
 
+        gkAudioEvents.insert(GkAudioFramework::AudioEventType::record, mediaRetPath.absoluteFilePath()); // Path to file that is being recorded!
         return mediaRetPath;
     } catch (const std::exception &e) {
         std::throw_with_nested(e.what());

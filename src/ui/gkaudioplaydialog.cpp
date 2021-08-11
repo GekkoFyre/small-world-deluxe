@@ -122,7 +122,12 @@ GkAudioPlayDialog::~GkAudioPlayDialog()
 {
     emit recStatus(GkAudioRecordStatus::Defunct);
     if (audio_out_play) {
-        gkPaAudioPlayer->stop(gkAudioFileInfo.audio_file_path, GkAudioSource());
+        if (!m_recordDirPath.isEmpty()) {
+            gkPaAudioPlayer->stop(m_recordDirPath.absolutePath(), GkAudioSource()); // Directory path to where recordings are saved!
+        } else {
+            gkPaAudioPlayer->stop(gkAudioFileInfo.audio_file_path, GkAudioSource()); // Path to file that is being played!
+        }
+
         gkEventLogger->publishEvent(tr("Stopped playing audio file, \"%1\"").arg(gkAudioFileInfo.audio_file_path.fileName()), GkSeverity::Info, "", true, true, true, false);
     }
 
@@ -196,7 +201,13 @@ void GkAudioPlayDialog::on_pushButton_playback_stop_clicked()
 {
     if (!audio_out_stop) {
         gkStringFuncs->changePushButtonColor(ui->pushButton_playback_stop, false);
-        gkPaAudioPlayer->stop(gkAudioFileInfo.audio_file_path, GkAudioSource());
+        if (!m_recordDirPath.isEmpty()) {
+            gkPaAudioPlayer->stop(m_recordDirPath.absolutePath(), GkAudioSource()); // Directory path to where recordings are saved!
+        } else {
+            gkPaAudioPlayer->stop(gkAudioFileInfo.audio_file_path, GkAudioSource()); // Path to file that is being played!
+        }
+        
+        gkStringFuncs->changePushButtonColor(ui->pushButton_playback_record, true);
         gkEventLogger->publishEvent(tr("Stopped playing audio file, \"%1\"").arg(gkAudioFileInfo.audio_file_path.fileName()), GkSeverity::Info, "", true, true, true, false);
 
         audio_out_stop = true;
@@ -353,10 +364,12 @@ void GkAudioPlayDialog::on_pushButton_playback_record_clicked()
                     switch (ui->comboBox_playback_rec_source->currentIndex()) {
                         case AUDIO_RECORDING_SOURCE_INPUT_IDX:
                             emit recStatus(GkAudioRecordStatus::Active);
+                            recordLockSettings(false);
                             gkPaAudioPlayer->record(m_rec_codec_chosen, m_recordDirPath, ui->horizontalSlider_playback_rec_bitrate->value(), pref_input_device.audio_src);
                             break;
                         case AUDIO_RECORDING_SOURCE_OUTPUT_IDX:
                             emit recStatus(GkAudioRecordStatus::Active);
+                            recordLockSettings(false);
                             gkPaAudioPlayer->record(m_rec_codec_chosen, m_recordDirPath, ui->horizontalSlider_playback_rec_bitrate->value(), pref_output_device.audio_src);
                             break;
                         default:
@@ -623,6 +636,24 @@ void GkAudioPlayDialog::prefillAudioSourceComboBoxes()
 {
     ui->comboBox_playback_rec_source->insertItem(AUDIO_RECORDING_SOURCE_INPUT_IDX, tr("Audio Input [ %1 ]").arg(pref_input_device.audio_dev_str), AUDIO_RECORDING_SOURCE_INPUT_IDX);
     ui->comboBox_playback_rec_source->insertItem(AUDIO_RECORDING_SOURCE_OUTPUT_IDX, tr("Audio Output [ %1 ]").arg(pref_output_device.audio_dev_str), AUDIO_RECORDING_SOURCE_OUTPUT_IDX);
+
+    return;
+}
+
+/**
+ * @brief GkAudioPlayDialog::recordLockSettings will lock the form/settings upon a recording session being initiated, with
+ * the exception of the 'Stop' button and related.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void GkAudioPlayDialog::recordLockSettings(const bool &unlock)
+{
+    ui->comboBox_playback_rec_codec->setEnabled(unlock);
+    ui->comboBox_playback_rec_source->setEnabled(unlock);
+    ui->horizontalSlider_playback_rec_bitrate->setEnabled(unlock);
+
+    ui->pushButton_playback_skip_back->setEnabled(unlock);
+    ui->pushButton_playback_skip_forward->setEnabled(unlock);
+    ui->pushButton_playback_play->setEnabled(unlock);
 
     return;
 }

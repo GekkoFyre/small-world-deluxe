@@ -45,6 +45,11 @@
 #include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
 #include "src/gk_string_funcs.hpp"
+#include "src/audio/encoding/gk_codec2_sink.hpp"
+#include "src/audio/encoding/gk_flac_sink.hpp"
+#include "src/audio/encoding/gk_ogg_opus_sink.hpp"
+#include "src/audio/encoding/gk_ogg_vorbis_sink.hpp"
+#include "src/audio/encoding/gk_pcm_wav_sink.hpp"
 #include <sndfile.h>
 #include <sndfile.hh>
 #include <mutex>
@@ -135,6 +140,7 @@ public:
 
     QString codecEnumToStr(const GkAudioFramework::CodecSupport &codec);
     [[nodiscard]] GekkoFyre::GkAudioFramework::GkAudioRecordStatus getRecStatus() const;
+    [[nodiscard]] GkAudioFramework::CodecSupport getCodec();
 
 public slots:
     void startCaller(const QFileInfo &media_path, const qint32 &bitrate, const GekkoFyre::GkAudioFramework::CodecSupport &codec_choice,
@@ -190,8 +196,13 @@ private:
     qint64 m_totalCompBytesWritten;
 
     //
+    // QAudio Sinks
+    QPointer<GkCodec2Sink> m_codec2Sink;
+
+    //
     // Status variables
     GekkoFyre::GkAudioFramework::GkAudioRecordStatus m_recActive;
+    GkAudioFramework::CodecSupport m_codecUsed;
 
     //
     // Encoder variables

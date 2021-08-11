@@ -159,5 +159,7 @@ private:
     void prefillCodecComboBoxes(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec);
     void prefillAudioSourceComboBoxes();
 
+    void recordLockSettings(const bool &unlock = false);
+
 };
 

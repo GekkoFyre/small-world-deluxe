@@ -64,7 +64,7 @@ using namespace GkXmpp;
 
 GkCodec2Sink::GkCodec2Sink(const QString &fileLoc, const qint32 &codec2_mode, const qint32 &natural, const bool &save_pcm_copy,
                            QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QIODevice(parent), codec2(nullptr),
-                           buf(nullptr), bits(nullptr), m_file(new QSaveFile(this)), m_filePcm(new QSaveFile(this))
+                           buf(nullptr), bits(nullptr), m_file(new QFile(this)), m_filePcm(new QFile(this))
 {
     setParent(parent);
     gkEventLogger = std::move(eventLogger);
@@ -100,7 +100,7 @@ GkCodec2Sink::GkCodec2Sink(const QString &fileLoc, const qint32 &codec2_mode, co
 
     m_fileInfo.setFile(m_fileLoc);
     m_file->setFileName(m_fileInfo.absoluteFilePath());
-    if (!m_file->open(QIODevice::WriteOnly)) {
+    if (!m_file->open(QIODevice::WriteOnly | QIODevice::Truncate)) {
         m_done = true;
         m_failed = true;
         gkEventLogger->publishEvent(tr("Unable to open file for Codec2 encoding: %1").arg(m_file->fileName()),
@@ -226,7 +226,7 @@ bool GkCodec2Sink::isDone()
  */
 void GkCodec2Sink::start()
 {
-    open(QIODevice::WriteOnly);
+    open(QIODevice::WriteOnly | QIODevice::Truncate);
     return;
 }
 
@@ -237,9 +237,9 @@ void GkCodec2Sink::start()
 void GkCodec2Sink::stop()
 {
     close();
-    m_file->commit();
+    m_file->close();
     if (m_savePcmCopy) {
-        m_filePcm->commit();
+        m_filePcm->close();
     }
 
     return;
