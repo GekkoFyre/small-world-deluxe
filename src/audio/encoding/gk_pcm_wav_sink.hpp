@@ -66,7 +66,7 @@ class GkPcmWavSink : public QIODevice {
     Q_OBJECT
 
 public:
-    explicit GkPcmWavSink(QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
+    explicit GkPcmWavSink(const QString &fileLoc, QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkPcmWavSink() override;
 
     qint64 readData(char *data, qint64 maxlen);

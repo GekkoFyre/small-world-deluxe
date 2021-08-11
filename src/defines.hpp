@@ -197,11 +197,12 @@ namespace GekkoFyre {
 #define GK_AUDIO_VOL_MAX_PERCENTAGE (75.0)
 #define GK_AUDIO_VOL_FACTOR (1.3334)
 
-#define AUDIO_PLAYBACK_CODEC_PCM_IDX (3)
-#define AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX (4)
-#define AUDIO_PLAYBACK_CODEC_VORBIS_IDX (0)
-#define AUDIO_PLAYBACK_CODEC_OPUS_IDX (1)
-#define AUDIO_PLAYBACK_CODEC_FLAC_IDX (2)
+#define AUDIO_PLAYBACK_CODEC_PCM_IDX (4)
+#define AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX (5)
+#define AUDIO_PLAYBACK_CODEC_VORBIS_IDX (1)
+#define AUDIO_PLAYBACK_CODEC_CODEC2_IDX (0)
+#define AUDIO_PLAYBACK_CODEC_OPUS_IDX (2)
+#define AUDIO_PLAYBACK_CODEC_FLAC_IDX (3)
 
 #define AUDIO_RECORDING_DEF_BITRATE (192)
 #define AUDIO_RECORDING_SOURCE_INPUT_IDX (0)
@@ -386,6 +387,15 @@ namespace Filesystem {
     constexpr char nuspellSpellDir[] = "Spelling";                      // The 'Spelling' dir, present underneath 'Library', which is used by the Nuspell libs
     constexpr char nuspellSpellDic[] = "index";                         // The *.dic and *.aff file for Nuspell dictionaries
     constexpr char enchantSpellDefLang[] = "en_US";                     // The default dictionary language to use for Nuspell
+
+    //
+    // Audio subsystem
+    constexpr char audio_format_pcm_wav[] = "wav";
+    constexpr char audio_format_ogg_vorbis[] = "ogg";
+    constexpr char audio_format_ogg_opus[] = "opus";
+    constexpr char audio_format_flac[] = "flac";
+    constexpr char audio_format_mp3[] = "mp3";
+    constexpr char audio_format_codec2[] = "dat";
 
     //
     // User interface language
@@ -1101,6 +1111,7 @@ namespace GkAudioFramework {
         PCM,
         Loopback,
         OggVorbis,
+        Codec2,
         Opus,
         FLAC,
         Unsupported,

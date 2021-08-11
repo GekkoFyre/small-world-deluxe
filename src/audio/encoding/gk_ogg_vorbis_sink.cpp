@@ -74,7 +74,7 @@ using namespace Logging;
 using namespace Network;
 using namespace GkXmpp;
 
-GkOggVorbisSink::GkOggVorbisSink(QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QIODevice(parent)
+GkOggVorbisSink::GkOggVorbisSink(const QString &fileLoc, QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QIODevice(parent)
 {
     setParent(parent);
     gkEventLogger = std::move(eventLogger);

@@ -788,6 +788,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QObject::connect(this, SIGNAL(startRecInput()), this, SLOT(startRecordingInput()));
         QObject::connect(this, SIGNAL(startRecOutput()), this, SLOT(startRecordingOutput()));
 
+        //
+        // Audio Encoding & Related
+        //
+        QObject::connect(gkAudioEncoding, SIGNAL(stopRecInput()), this, SIGNAL(stopRecInput()));
+        QObject::connect(gkAudioEncoding, SIGNAL(stopRecOutput()), this, SIGNAL(stopRecOutput()));
+        QObject::connect(gkAudioEncoding, SIGNAL(startRecInput()), this, SIGNAL(startRecInput()));
+        QObject::connect(gkAudioEncoding, SIGNAL(startRecOutput()), this, SIGNAL(startRecOutput()));
+
         QObject::connect(this, SIGNAL(refreshVuDisplay(const qreal &, const qreal &, const int &)),
                          gkVuMeter, SLOT(levelChanged(const qreal &, const qreal &, const int &)));
         QObject::connect(this, SIGNAL(changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)),

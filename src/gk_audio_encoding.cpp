@@ -40,6 +40,11 @@
  ****************************************************************************************************/
 
 #include "src/gk_audio_encoding.hpp"
+#include "src/audio/encoding/gk_codec2_sink.hpp"
+#include "src/audio/encoding/gk_flac_sink.hpp"
+#include "src/audio/encoding/gk_ogg_opus_sink.hpp"
+#include "src/audio/encoding/gk_ogg_vorbis_sink.hpp"
+#include "src/audio/encoding/gk_pcm_wav_sink.hpp"
 #include <vector>
 #include <chrono>
 #include <cstring>
@@ -294,6 +299,12 @@ void GkAudioEncoding::startCaller(const QFileInfo &media_path, const qint32 &bit
             m_encodeFLACThread = std::thread(&GkAudioEncoding::encodeFLAC, this, bitrate, gkAudioInput->format().sampleRate(),
                                              std::ref(audio_source), media_path, m_frameSize);
             m_encodeFLACThread.detach();
+        } else if (codec_choice == CodecSupport::Codec2) {
+            //
+            // Codec2
+            //
+
+            encodeCodec2(audio_source, media_path);
         } else {
             throw std::invalid_argument(tr("Invalid audio encoding codec specified! It is either not supported yet or an error was made.").toStdString());
         }
@@ -627,6 +638,34 @@ void GkAudioEncoding::encodeFLAC(const qint32 &bitrate, qint32 sample_rate, cons
         } while (!m_buffer.isEmpty() || m_recActive == GkAudioRecordStatus::Active);
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true, false);
+    }
+
+    return;
+}
+
+/**
+ * @brief GkAudioEncoding::encodeCodec2 begins the audio encoding process with the Codec2 speech/telephony, low bit-rate,
+ * audio codec.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param audio_src The audio source in question, whether it is input, output, or a mix of the two.
+ * @param media_path The location of where to save the audio file output (i.e. as a file).
+ */
+void GkAudioEncoding::encodeCodec2(const Settings::GkAudioSource &audio_src, const QFileInfo &media_path)
+{
+    try {
+        QPointer<GkCodec2Sink> m_codec2Sink = new GkCodec2Sink(media_path.absoluteFilePath(), CODEC2_MODE_1300, true, false, gkEventLogger, this);
+        m_codec2Sink->start();
+        if (audio_src == GkAudioSource::Input) {
+            emit stopRecInput();
+            gkAudioInput->start(m_codec2Sink);
+        } else if (audio_src == GkAudioSource::Output) {
+            emit stopRecOutput();
+            gkAudioOutput->start(m_codec2Sink);
+        } else {
+            throw std::invalid_argument(tr("An invalid or currently unsupported audio source has been chosen!").toStdString());
+        }
+    } catch (const std::exception &e) {
+        gkStringFuncs->print_exception(e);
     }
 
     return;

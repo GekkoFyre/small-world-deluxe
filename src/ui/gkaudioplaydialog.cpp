@@ -91,7 +91,7 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
     gkAudioFileInfo = {};
     pref_input_device = input_device;
     pref_output_device = output_device;
-    m_rec_codec_chosen = CodecSupport::PCM;
+    m_rec_codec_chosen = CodecSupport::Codec2;
     m_encode_bitrate_chosen = 8;
     gkAudioFile = std::make_shared<AudioFile<double>>();
     gkPaAudioPlayer = new GkPaAudioPlayer(gkDb, gkAudioOutput, gkAudioInput, gkAudioEncoding, gkEventLogger, gkAudioFile, this);
@@ -109,6 +109,7 @@ GkAudioPlayDialog::GkAudioPlayDialog(QPointer<GkLevelDb> database,
     pref_input_device.audio_src = GkAudioSource::Input;
     pref_output_device.audio_src = GkAudioSource::Output;
 
+    prefillCodecComboBoxes(GkAudioFramework::CodecSupport::Codec2);
     prefillCodecComboBoxes(GkAudioFramework::CodecSupport::OggVorbis);
     prefillCodecComboBoxes(GkAudioFramework::CodecSupport::FLAC);
     prefillCodecComboBoxes(GkAudioFramework::CodecSupport::Opus);
@@ -267,15 +268,14 @@ void GkAudioPlayDialog::on_pushButton_playback_play_clicked()
             ui->lineEdit_playback_bitrate->setText(QString::number(gkAudioFileInfo.bit_depth));
             ui->lineEdit_playback_sample_rate->setText(QString::number(gkAudioFileInfo.sample_rate));
 
-            GkAudioFramework::CodecSupport codec_used = gkDb->convCodecSupportFromIdxToEnum(ui->comboBox_playback_rec_codec->currentData().toInt());
-            if (gkAudioFileInfo.audio_file_path.exists() && codec_used != GkAudioFramework::CodecSupport::Loopback) {
-                audioPlaybackHelper(codec_used, gkAudioFileInfo.audio_file_path.filePath());
+            if (gkAudioFileInfo.audio_file_path.exists() && m_rec_codec_chosen != GkAudioFramework::CodecSupport::Loopback) {
+                audioPlaybackHelper(m_rec_codec_chosen, gkAudioFileInfo.audio_file_path.filePath());
                 gkEventLogger->publishEvent(
                         tr("Started playing audio file, \"%1\"").arg(gkAudioFileInfo.audio_file_path.filePath()),
                         GkSeverity::Info, "", true, true, true, false);
                 ui->progressBar_playback->setFormat(tr("%p%")); // Modify the QProgressBar to display the correct text!
-            } else if (codec_used == GkAudioFramework::CodecSupport::Loopback) {
-                audioPlaybackHelper(codec_used, gkAudioFileInfo.audio_file_path.filePath());
+            } else if (m_rec_codec_chosen == GkAudioFramework::CodecSupport::Loopback) {
+                audioPlaybackHelper(m_rec_codec_chosen, gkAudioFileInfo.audio_file_path.filePath());
                 gkEventLogger->publishEvent(
                         tr("Started audio device loopback!"), GkSeverity::Info, "", true, true, true, false);
                 ui->progressBar_playback->setFormat(tr("%p%")); // Modify the QProgressBar to display the correct text!
@@ -349,16 +349,15 @@ void GkAudioPlayDialog::on_pushButton_playback_record_clicked()
             if (m_recordDirPath.isReadable()) { // Verify that the directory itself exists!
                 //
                 // Determine the codec used...
-                GkAudioFramework::CodecSupport codec_used = gkDb->convCodecSupportFromIdxToEnum(ui->comboBox_playback_rec_codec->currentData().toInt());
-                if (codec_used != GkAudioFramework::CodecSupport::Loopback) {
+                if (m_rec_codec_chosen != GkAudioFramework::CodecSupport::Loopback) {
                     switch (ui->comboBox_playback_rec_source->currentIndex()) {
                         case AUDIO_RECORDING_SOURCE_INPUT_IDX:
                             emit recStatus(GkAudioRecordStatus::Active);
-                            gkPaAudioPlayer->record(codec_used, m_recordDirPath, ui->horizontalSlider_playback_rec_bitrate->value(), pref_input_device.audio_src);
+                            gkPaAudioPlayer->record(m_rec_codec_chosen, m_recordDirPath, ui->horizontalSlider_playback_rec_bitrate->value(), pref_input_device.audio_src);
                             break;
                         case AUDIO_RECORDING_SOURCE_OUTPUT_IDX:
                             emit recStatus(GkAudioRecordStatus::Active);
-                            gkPaAudioPlayer->record(codec_used, m_recordDirPath, ui->horizontalSlider_playback_rec_bitrate->value(), pref_output_device.audio_src);
+                            gkPaAudioPlayer->record(m_rec_codec_chosen, m_recordDirPath, ui->horizontalSlider_playback_rec_bitrate->value(), pref_output_device.audio_src);
                             break;
                         default:
                             throw std::invalid_argument(tr("Invalid argument provided for audio device determination, when attempting to record!").toStdString());
@@ -436,6 +435,9 @@ void GkAudioPlayDialog::on_comboBox_playback_rec_codec_currentIndexChanged(int i
             return;
         case AUDIO_PLAYBACK_CODEC_FLAC_IDX:
             m_rec_codec_chosen = CodecSupport::FLAC;
+            return;
+        case AUDIO_PLAYBACK_CODEC_CODEC2_IDX:
+            m_rec_codec_chosen = CodecSupport::Codec2;
             return;
         default:
             break;
@@ -555,18 +557,18 @@ void GkAudioPlayDialog::clearForms(const GkClearForms &cat)
 /**
  * @brief GkAudioPlayDialog::audioPlaybackHelper
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param codec_used
+ * @param m_rec_codec_chosen
  * @param file_path
  */
-void GkAudioPlayDialog::audioPlaybackHelper(const CodecSupport &codec_used, const QString &file_path)
+void GkAudioPlayDialog::audioPlaybackHelper(const CodecSupport &m_rec_codec_chosen, const QString &file_path)
 {
     try {
         switch (ui->comboBox_playback_rec_source->currentIndex()) {
             case AUDIO_RECORDING_SOURCE_INPUT_IDX:
-                gkPaAudioPlayer->play(codec_used, file_path, pref_input_device.audio_src);
+                gkPaAudioPlayer->play(m_rec_codec_chosen, file_path, pref_input_device.audio_src);
                 break;
             case AUDIO_RECORDING_SOURCE_OUTPUT_IDX:
-                gkPaAudioPlayer->play(codec_used, file_path, pref_output_device.audio_src);
+                gkPaAudioPlayer->play(m_rec_codec_chosen, file_path, pref_output_device.audio_src);
                 break;
             default:
                 throw std::invalid_argument(tr("Invalid argument provided for audio device determination, when attempting playback!").toStdString());
@@ -600,6 +602,9 @@ void GkAudioPlayDialog::prefillCodecComboBoxes(const CodecSupport &supported_cod
             break;
         case CodecSupport::FLAC:
             ui->comboBox_playback_rec_codec->insertItem(AUDIO_PLAYBACK_CODEC_FLAC_IDX, tr("FLAC"), AUDIO_PLAYBACK_CODEC_FLAC_IDX);
+            break;
+        case CodecSupport::Codec2:
+            ui->comboBox_playback_rec_codec->insertItem(AUDIO_PLAYBACK_CODEC_CODEC2_IDX, tr("Codec2"), AUDIO_PLAYBACK_CODEC_CODEC2_IDX);
             break;
         case CodecSupport::Unsupported:
             break;

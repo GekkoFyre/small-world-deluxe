@@ -66,7 +66,7 @@ class GkFlacSink : public QIODevice {
     Q_OBJECT
 
 public:
-    explicit GkFlacSink(QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
+    explicit GkFlacSink(const QString &fileLoc, QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkFlacSink() override;
 
     qint64 readData(char *data, qint64 maxlen);

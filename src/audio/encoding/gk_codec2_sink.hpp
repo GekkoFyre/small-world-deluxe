@@ -57,17 +57,32 @@
 #include <QAudioOutput>
 #include <QAudioFormat>
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#include <codec2/codec2.h>
+
+#ifdef __cplusplus
+}
+#endif
+
 namespace GekkoFyre {
 
 class GkCodec2Sink : public QIODevice {
     Q_OBJECT
 
 public:
-    explicit GkCodec2Sink(QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
+    explicit GkCodec2Sink(const QString &fileLoc, const qint32 &codec2_mode, const qint32 &natural, const bool &save_pcm_copy,
+                          QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkCodec2Sink() override;
 
     qint64 readData(char *data, qint64 maxlen);
     qint64 writeData(const char *data, qint64 len);
+
+    bool isFailed();
+    bool isDone();
 
 public slots:
     void start();
@@ -80,22 +95,36 @@ private:
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
     //
-    // QAudioSystem initialization and buffers
-    qint64 m_totalUncompBytesRead;
-    qint64 m_totalCompBytesWritten;
-
-    //
     // Status variables
     GekkoFyre::GkAudioFramework::GkAudioRecordStatus m_recActive;
 
     //
     // Encoder variables
+    CODEC2 *codec2;                                             // The Codec2 pointer itself.
     bool m_initialized = false;                                 // Whether an encoding operation has begun or not; therefore block other attempts until this singular one has stopped.
+    QString m_fileLoc;                                          // The filename to write-out the encoded data towards!
+    qint32 m_mode;                                              // The Codec2 mode to employ!
+
+    //
+    // Buffers
+    short *buf;
+    unsigned char *bits;
+    qint32 nsam;
+    qint32 nbit;
+    qint32 nbyte;
+    qint32 buf_empt;
 
     //
     // Filesystem and related
-    QPointer<QSaveFile> file;                                   // The file that the encoded data is to be saved towards.
-    QPointer<QSaveFile> file_pcm;                               // If the user desires so, then a PCM WAV file can be created as an adjunct too!
+    QFileInfo m_fileInfo;
+    QPointer<QSaveFile> m_file;                                 // The file that the encoded data is to be saved towards.
+    QPointer<QSaveFile> m_filePcm;                              // If the user desires so, then a PCM WAV file can be created as an adjunct too!
+
+    //
+    // Miscellaneous
+    bool m_failed;
+    bool m_done;
+    bool m_savePcmCopy;
 
 };
 };

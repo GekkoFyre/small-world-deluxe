@@ -61,7 +61,7 @@ using namespace Logging;
 using namespace Network;
 using namespace GkXmpp;
 
-GkOggOpusSink::GkOggOpusSink(QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QIODevice(parent)
+GkOggOpusSink::GkOggOpusSink(const QString &fileLoc, QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QIODevice(parent)
 {
     setParent(parent);
     gkEventLogger = std::move(eventLogger);

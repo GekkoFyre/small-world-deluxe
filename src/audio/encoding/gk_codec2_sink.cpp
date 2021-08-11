@@ -40,7 +40,8 @@
  ****************************************************************************************************/
 
 #include "src/audio/encoding/gk_codec2_sink.hpp"
-#include <vector>
+#include <cstring>
+#include <cstdlib>
 #include <cstring>
 #include <utility>
 #include <exception>
@@ -61,21 +62,80 @@ using namespace Logging;
 using namespace Network;
 using namespace GkXmpp;
 
-GkCodec2Sink::GkCodec2Sink(QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QIODevice(parent)
+GkCodec2Sink::GkCodec2Sink(const QString &fileLoc, const qint32 &codec2_mode, const qint32 &natural, const bool &save_pcm_copy,
+                           QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QIODevice(parent), codec2(nullptr),
+                           buf(nullptr), bits(nullptr), m_file(new QSaveFile(this)), m_filePcm(new QSaveFile(this))
 {
     setParent(parent);
     gkEventLogger = std::move(eventLogger);
 
     //
     // Initialize variables
+    m_done = false;
+    m_failed = false;
+    m_savePcmCopy = save_pcm_copy;
+    buf_empt = 0;
+    m_fileLoc = fileLoc;
+    m_mode = codec2_mode;
     m_initialized = false;
     m_recActive = GkAudioRecordStatus::Defunct;
+
+    //
+    // Initialize Codec2!
+    codec2 = codec2_create(m_mode);
+    if (codec2 == nullptr) {
+        m_done = true;
+        m_failed = true;
+        gkEventLogger->publishEvent(tr("Unable to initialize Codec2. Perhaps you are using an unsupported mode?"),
+                                    GkSeverity::Fatal, "", false, true, false, true, false);
+        return;
+    }
+
+    nsam = codec2_samples_per_frame(codec2);
+    nbit = codec2_bits_per_frame(codec2);
+    buf = (short *)malloc(nsam * sizeof(short));
+    nbyte = ((nbit + 7) / 8);
+    bits = (unsigned char *)malloc(nbyte * sizeof(char));
+    codec2_set_natural_or_gray(codec2, !natural);
+
+    m_fileInfo.setFile(m_fileLoc);
+    m_file->setFileName(m_fileInfo.absoluteFilePath());
+    if (!m_file->open(QIODevice::WriteOnly)) {
+        m_done = true;
+        m_failed = true;
+        gkEventLogger->publishEvent(tr("Unable to open file for Codec2 encoding: %1").arg(m_file->fileName()),
+                                    GkSeverity::Fatal, "", false, true, false, true, false);
+        return;
+    }
+
+    m_filePcm->setFileName(QDir::toNativeSeparators(m_fileInfo.absolutePath() + "/" + m_fileInfo.baseName() + "." + Filesystem::audio_format_pcm_wav));
+    if (m_savePcmCopy) {
+        if (!m_filePcm->open(QIODevice::WriteOnly)) {
+            m_done = true;
+            m_failed = true;
+            gkEventLogger->publishEvent(tr("Unable to open file for Codec2 encoding: %1").arg(m_filePcm->fileName()),
+                                        GkSeverity::Fatal, "", false, true, false, true, false);
+            return;
+        }
+    }
 
     return;
 }
 
 GkCodec2Sink::~GkCodec2Sink()
-{}
+{
+    if (codec2) {
+        codec2_destroy(codec2);
+    }
+
+    if (buf) {
+        free(buf);
+    }
+
+    if (bits) {
+        free(bits);
+    }
+}
 
 /**
  * @brief GkCodec2Sink::readData
@@ -86,6 +146,9 @@ GkCodec2Sink::~GkCodec2Sink()
  */
 qint64 GkCodec2Sink::readData(char *data, qint64 maxlen)
 {
+    Q_UNUSED(data);
+    Q_UNUSED(maxlen);
+
     return 0;
 }
 
@@ -98,7 +161,63 @@ qint64 GkCodec2Sink::readData(char *data, qint64 maxlen)
  */
 qint64 GkCodec2Sink::writeData(const char *data, qint64 len)
 {
-    return 0;
+    if (m_done) {
+        QTimer::singleShot(0, this, SLOT(stop()));
+    }
+
+    auto *ptr = reinterpret_cast<const short *>(data);
+    qint32 maxval = 0;
+    for (qint32 i = 0; i < len / sizeof(short); ++i) {
+        qint32 val = std::abs((qint32)(*ptr));
+        if (val > maxval) {
+            maxval = val;
+        }
+
+        ++ptr;
+    }
+
+    if (m_savePcmCopy) {
+        m_filePcm->write(data, len);
+    }
+
+    for (qint32 buf_ptr = 0; buf_ptr < len;) {
+        qint32 read_bytes = qMin(((qint64)(sizeof(short) * nsam - buf_empt)), len - buf_ptr);
+        if (read_bytes != ((qint64)(sizeof(short) * nsam - buf_empt))) {
+            std::memcpy(buf + buf_empt / sizeof(short), data + buf_ptr, read_bytes);
+            buf_empt += read_bytes;
+            buf_ptr += read_bytes;
+            break;
+        } else {
+            std::memcpy(buf + buf_empt / sizeof(short), data + buf_ptr, read_bytes);
+            codec2_encode(codec2, bits, buf);
+            m_file->write((char *)bits, nbyte);
+            buf_empt = 0;
+        }
+
+        buf_ptr += read_bytes;
+    }
+
+    return len;
+}
+
+/**
+ * @brief GkCodec2Sink::isFailed refers to the fact as to whether the encoding operation has failed or not!
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return Has the encoding operation failed?
+ */
+bool GkCodec2Sink::isFailed()
+{
+    return m_failed;
+}
+
+/**
+ * @brief GkCodec2Sink::isDone has the encoding operation finished? Failed? Any of these states will return a true value.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @return refers to whether the encoding operation has finished, failed, etc. all of which will return as 'true'.
+ */
+bool GkCodec2Sink::isDone()
+{
+    return m_done;
 }
 
 /**
@@ -107,6 +226,7 @@ qint64 GkCodec2Sink::writeData(const char *data, qint64 len)
  */
 void GkCodec2Sink::start()
 {
+    open(QIODevice::WriteOnly);
     return;
 }
 
@@ -116,5 +236,11 @@ void GkCodec2Sink::start()
  */
 void GkCodec2Sink::stop()
 {
+    close();
+    m_file->commit();
+    if (m_savePcmCopy) {
+        m_filePcm->commit();
+    }
+
     return;
 }

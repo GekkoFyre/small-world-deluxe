@@ -45,11 +45,6 @@
 #include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
 #include "src/gk_string_funcs.hpp"
-#include "src/audio/encoding/gk_codec2_sink.hpp"
-#include "src/audio/encoding/gk_flac_sink.hpp"
-#include "src/audio/encoding/gk_ogg_opus_sink.hpp"
-#include "src/audio/encoding/gk_ogg_vorbis_sink.hpp"
-#include "src/audio/encoding/gk_pcm_wav_sink.hpp"
 #include <sndfile.h>
 #include <sndfile.hh>
 #include <mutex>
@@ -160,6 +155,7 @@ private slots:
                       const QFileInfo &media_path, const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
     void encodeFLAC(const qint32 &bitrate, qint32 sample_rate, const GekkoFyre::Database::Settings::GkAudioSource &audio_src,
                     const QFileInfo &media_path, const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
+    void encodeCodec2(const GekkoFyre::Database::Settings::GkAudioSource &audio_src, const QFileInfo &media_path);
 
 signals:
     void pauseEncode();
@@ -168,6 +164,15 @@ signals:
     void error(const QString &msg, const GekkoFyre::System::Events::Logging::GkSeverity &severity);
     void initialize();
 
+    //
+    // Audio related
+    void stopRecInput();
+    void stopRecOutput();
+    void startRecInput();
+    void startRecOutput();
+
+    //
+    // Encoding related
     void recStatus(const GekkoFyre::GkAudioFramework::GkAudioRecordStatus &status);
     void bytesRead(const qint64 &bytes, const bool &uncompressed = false);
 

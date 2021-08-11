@@ -74,7 +74,7 @@ class GkOggOpusSink : public QIODevice {
     Q_OBJECT
 
 public:
-    explicit GkOggOpusSink(QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
+    explicit GkOggOpusSink(const QString &fileLoc, QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkOggOpusSink() override;
 
     qint64 readData(char *data, qint64 maxlen);
