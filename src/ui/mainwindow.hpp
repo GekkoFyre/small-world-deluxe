@@ -398,6 +398,7 @@ private:
     qreal calcVolumeFactor(const qreal &vol_level, const qreal &factor = GK_AUDIO_VOL_FACTOR);
     double global_rx_audio_volume;
     double global_tx_audio_volume;
+    quint32 m_maxAmplitude;
 
     //
     // Multithreading

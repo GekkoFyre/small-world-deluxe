@@ -43,8 +43,11 @@
 
 #include "src/defines.hpp"
 #include "src/gk_logger.hpp"
+#include <sndfile.h>
+#include <sndfile.hh>
 #include <mutex>
 #include <thread>
+#include <cstdio>
 #include <memory>
 #include <string>
 #include <QObject>
@@ -57,26 +60,15 @@
 #include <QAudioOutput>
 #include <QAudioFormat>
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#include <opus/opusenc.h>
-
-#ifdef __cplusplus
-}
-#endif
-
 namespace GekkoFyre {
 
-class GkOggOpusSink : public QIODevice {
+class GkFlacSource : public QIODevice {
     Q_OBJECT
 
 public:
-    explicit GkOggOpusSink(const QString &fileLoc, const quint32 &maxAmplitude, const QAudioFormat &format,
-                           QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
-    ~GkOggOpusSink() override;
+    explicit GkFlacSource(const QString &fileLoc, const quint32 &maxAmplitude, const QAudioFormat &format,
+                        QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
+    ~GkFlacSource() override;
 
     qint64 readData(char *data, qint64 maxlen) Q_DECL_OVERRIDE;
     qint64 writeData(const char *data, qint64 len) Q_DECL_OVERRIDE;

@@ -63,8 +63,9 @@ using namespace Network;
 using namespace GkXmpp;
 
 GkCodec2Sink::GkCodec2Sink(const QString &fileLoc, const qint32 &codec2_mode, const qint32 &natural, const bool &save_pcm_copy,
-                           QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QIODevice(parent), codec2(nullptr),
-                           buf(nullptr), bits(nullptr), m_file(new QFile(this)), m_filePcm(new QFile(this))
+                           const quint32 &maxAmplitude, const QAudioFormat &format, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                           QObject *parent) : QIODevice(parent), codec2(nullptr), buf(nullptr), bits(nullptr), m_file(new QFile(this)),
+                           m_filePcm(new QFile(this))
 {
     setParent(parent);
     gkEventLogger = std::move(eventLogger);
@@ -73,6 +74,8 @@ GkCodec2Sink::GkCodec2Sink(const QString &fileLoc, const qint32 &codec2_mode, co
     // Initialize variables
     m_done = false;
     m_failed = false;
+    m_maxAmplitude = maxAmplitude;
+    m_audioFormat = format;
     m_savePcmCopy = save_pcm_copy;
     buf_empt = 0;
     m_fileLoc = fileLoc;

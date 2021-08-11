@@ -547,6 +547,9 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/AudioFile")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/AudioFile")
 message(STATUS "The 'AudioFile' libraries have been configured!")
 
+#
+# WSJT-X
+#
 set(GALAXY_WSJTX_QRA64_C
     ${GALAXY_WSJTX_QRA64_C}
     src/contrib/wsjt-x/lib/ftrsd/int.h
@@ -709,6 +712,11 @@ set(GALAXY_UI_CPP
 	src/audio/encoding/gk_flac_sink.cpp
 	src/audio/encoding/gk_ogg_vorbis_sink.cpp
 	src/audio/encoding/gk_codec2_sink.cpp
+	src/audio/decoding/gk_pcm_wav_source.cpp
+	src/audio/decoding/gk_ogg_opus_source.cpp
+	src/audio/decoding/gk_flac_source.cpp
+	src/audio/decoding/gk_ogg_vorbis_source.cpp
+	src/audio/decoding/gk_codec2_source.cpp
     src/ui/widgets/gk_vu_change_widget.cpp
     src/ui/widgets/gk_vu_meter_widget.cpp
     src/ui/widgets/gk_submit_msg.cpp
@@ -816,6 +824,11 @@ set(GALAXY_OBJ_HEADERS
 	src/audio/encoding/gk_flac_sink.hpp
 	src/audio/encoding/gk_ogg_vorbis_sink.hpp
 	src/audio/encoding/gk_codec2_sink.hpp
+	src/audio/decoding/gk_pcm_wav_source.hpp
+	src/audio/decoding/gk_ogg_opus_source.hpp
+	src/audio/decoding/gk_flac_source.hpp
+	src/audio/decoding/gk_ogg_vorbis_source.hpp
+	src/audio/decoding/gk_codec2_source.hpp
     src/ui/widgets/gk_vu_change_widget.hpp
     src/ui/widgets/gk_vu_meter_widget.hpp
     src/ui/widgets/gk_submit_msg.hpp

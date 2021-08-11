@@ -61,13 +61,19 @@ using namespace Logging;
 using namespace Network;
 using namespace GkXmpp;
 
-GkFlacSink::GkFlacSink(const QString &fileLoc, QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QIODevice(parent)
+GkFlacSink::GkFlacSink(const QString &fileLoc, const quint32 &maxAmplitude, const QAudioFormat &format,
+                       QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QIODevice(parent)
 {
     setParent(parent);
     gkEventLogger = std::move(eventLogger);
 
     //
     // Initialize variables
+    m_done = false;
+    m_failed = false;
+    m_maxAmplitude = maxAmplitude;
+    m_audioFormat = format;
+    m_fileLoc = fileLoc;
     m_initialized = false;
     m_recActive = GkAudioRecordStatus::Defunct;
 

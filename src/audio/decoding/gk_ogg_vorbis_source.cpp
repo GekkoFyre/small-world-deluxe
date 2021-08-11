@@ -39,7 +39,7 @@
  **
  ****************************************************************************************************/
 
-#include "src/audio/encoding/gk_ogg_opus_sink.hpp"
+#include "src/audio/decoding/gk_ogg_vorbis_source.hpp"
 #include <vector>
 #include <cstring>
 #include <utility>
@@ -61,8 +61,8 @@ using namespace Logging;
 using namespace Network;
 using namespace GkXmpp;
 
-GkOggOpusSink::GkOggOpusSink(const QString &fileLoc, const quint32 &maxAmplitude, const QAudioFormat &format,
-                             QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QIODevice(parent)
+GkOggVorbisSource::GkOggVorbisSource(const QString &fileLoc, const quint32 &maxAmplitude, const QAudioFormat &format,
+                       QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QIODevice(parent)
 {
     setParent(parent);
     gkEventLogger = std::move(eventLogger);
@@ -80,14 +80,14 @@ GkOggOpusSink::GkOggOpusSink(const QString &fileLoc, const quint32 &maxAmplitude
     return;
 }
 
-GkOggOpusSink::~GkOggOpusSink()
+GkOggVorbisSource::~GkOggVorbisSource()
 {}
 
 /**
  * @brief GkCodec2Sink::readData
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-qint64 GkOggOpusSink::readData(char *data, qint64 maxlen)
+qint64 GkOggVorbisSource::readData(char *data, qint64 maxlen)
 {
     return 0;
 }
@@ -99,7 +99,7 @@ qint64 GkOggOpusSink::readData(char *data, qint64 maxlen)
  * @param len
  * @return
  */
-qint64 GkOggOpusSink::writeData(const char *data, qint64 len)
+qint64 GkOggVorbisSource::writeData(const char *data, qint64 len)
 {
     return 0;
 }
@@ -108,7 +108,7 @@ qint64 GkOggOpusSink::writeData(const char *data, qint64 len)
  * @brief GkCodec2Sink::start
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void GkOggOpusSink::start()
+void GkOggVorbisSource::start()
 {
     return;
 }
@@ -117,7 +117,7 @@ void GkOggOpusSink::start()
  * @brief GkPcmWavSink::stop
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  */
-void GkOggOpusSink::stop()
+void GkOggVorbisSource::stop()
 {
     return;
 }

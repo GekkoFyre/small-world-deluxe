@@ -45,7 +45,6 @@
 #include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
 #include "src/gk_string_funcs.hpp"
-#include "src/audio/encoding/gk_codec2_sink.hpp"
 #include "src/audio/encoding/gk_flac_sink.hpp"
 #include "src/audio/encoding/gk_ogg_opus_sink.hpp"
 #include "src/audio/encoding/gk_ogg_vorbis_sink.hpp"
@@ -66,6 +65,10 @@
 #include <QAudioInput>
 #include <QAudioOutput>
 #include <QAudioFormat>
+
+#ifdef CODEC2_LIBS_ENBLD
+#include "src/audio/encoding/gk_codec2_sink.hpp"
+#endif
 
 #ifdef __cplusplus
 extern "C"
@@ -155,13 +158,19 @@ private slots:
     void stopCaller();
     void handleError(const QString &msg, const GekkoFyre::System::Events::Logging::GkSeverity &severity);
 
-    void encodeOpus(const qint32 &bitrate, qint32 sample_rate, const GekkoFyre::Database::Settings::GkAudioSource &audio_src,
-                    const QFileInfo &media_path, const qint32 &frame_size = AUDIO_OPUS_FRAMES_PER_BUFFER);
-    void encodeVorbis(const qint32 &bitrate, qint32 sample_rate, const GekkoFyre::Database::Settings::GkAudioSource &audio_src,
-                      const QFileInfo &media_path, const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
-    void encodeFLAC(const qint32 &bitrate, qint32 sample_rate, const GekkoFyre::Database::Settings::GkAudioSource &audio_src,
-                    const QFileInfo &media_path, const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
-    void encodeCodec2(const GekkoFyre::Database::Settings::GkAudioSource &audio_src, const QFileInfo &media_path);
+    void encodeOpus(const qint32 &bitrate, qint32 sample_rate, const quint32 &max_amplitude,
+                    const GekkoFyre::Database::Settings::GkAudioSource &audio_src, const QFileInfo &media_path,
+                    const qint32 &frame_size = AUDIO_OPUS_FRAMES_PER_BUFFER);
+    void encodeVorbis(const qint32 &bitrate, qint32 sample_rate, const quint32 &max_amplitude,
+                      const GekkoFyre::Database::Settings::GkAudioSource &audio_src, const QFileInfo &media_path,
+                      const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
+    void encodeFLAC(const qint32 &bitrate, qint32 sample_rate, const quint32 &max_amplitude,
+                    const GekkoFyre::Database::Settings::GkAudioSource &audio_src, const QFileInfo &media_path,
+                    const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER);
+    void encodeCodec2(const quint32 &max_amplitude, const GekkoFyre::Database::Settings::GkAudioSource &audio_src,
+                      const QFileInfo &media_path);
+    void encodePcmWav(const quint32 &max_amplitude, const GekkoFyre::Database::Settings::GkAudioSource &audio_src,
+                      const QFileInfo &media_path);
 
 signals:
     void pauseEncode();
@@ -197,7 +206,14 @@ private:
 
     //
     // QAudio Sinks
+    QPointer<GkOggOpusSink> m_oggOpusSink;
+    QPointer<GkOggVorbisSink> m_oggVorbisSink;
+    QPointer<GkFlacSink> m_flacSink;
+    QPointer<GkPcmWavSink> m_pcmWavSink;
+
+    #ifdef CODEC2_LIBS_ENBLD
     QPointer<GkCodec2Sink> m_codec2Sink;
+    #endif
 
     //
     // Status variables
@@ -211,6 +227,7 @@ private:
     QPointer<QBuffer> m_encoded_buf;                            // For holding the encoded data whether it be FLAC, Ogg Vorbis, Ogg Opus, etc. as calculated from `record_input_buf`.
     SndfileHandle m_handle_in;                                  // The libsndfile handler, for all related operations such as reading, writing (and hence conversion), etc.
     QSaveFile m_out_file;
+    quint32 m_maxAmplitude = 0;
 
     //
     // Opus related
@@ -221,13 +238,7 @@ private:
 
     //
     // Multithreading and mutexes
-    std::mutex m_encodeOggOpusMtx;
-    std::mutex m_encodeOggVorbisMtx;
-    std::mutex m_encodeFlacMtx;
     std::mutex m_refreshAudioBufs;
-    std::thread m_encodeOpusThread;
-    std::thread m_encodeVorbisThread;
-    std::thread m_encodeFLACThread;
 
     void opusCleanup();
 

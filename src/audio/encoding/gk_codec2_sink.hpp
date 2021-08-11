@@ -50,7 +50,7 @@
 #include <QObject>
 #include <QBuffer>
 #include <QPointer>
-#include <QSaveFile>
+#include <QFile>
 #include <QIODevice>
 #include <QByteArray>
 #include <QAudioInput>
@@ -62,7 +62,9 @@ extern "C"
 {
 #endif
 
+#ifdef CODEC2_LIBS_ENBLD
 #include <codec2/codec2.h>
+#endif
 
 #ifdef __cplusplus
 }
@@ -75,11 +77,12 @@ class GkCodec2Sink : public QIODevice {
 
 public:
     explicit GkCodec2Sink(const QString &fileLoc, const qint32 &codec2_mode, const qint32 &natural, const bool &save_pcm_copy,
-                          QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
+                          const quint32 &maxAmplitude, const QAudioFormat &format, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                          QObject *parent = nullptr);
     ~GkCodec2Sink() override;
 
-    qint64 readData(char *data, qint64 maxlen);
-    qint64 writeData(const char *data, qint64 len);
+    qint64 readData(char *data, qint64 maxlen) Q_DECL_OVERRIDE;
+    qint64 writeData(const char *data, qint64 len) Q_DECL_OVERRIDE;
 
     bool isFailed();
     bool isDone();
@@ -122,9 +125,11 @@ private:
 
     //
     // Miscellaneous
+    QAudioFormat m_audioFormat;
     bool m_failed;
     bool m_done;
     bool m_savePcmCopy;
+    quint32 m_maxAmplitude;
 
 };
 };
