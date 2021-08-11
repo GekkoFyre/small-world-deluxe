@@ -61,16 +61,10 @@ using namespace Logging;
 using namespace Network;
 using namespace GkXmpp;
 
-GkOggOpusSink::GkOggOpusSink(QPointer<GekkoFyre::GkLevelDb> database, QPointer<QAudioOutput> audioOutput, QPointer<QAudioInput> audioInput,
-                             QPointer<QBuffer> audioInputBuf, QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QIODevice(parent)
+GkOggOpusSink::GkOggOpusSink(QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QIODevice(parent)
 {
     setParent(parent);
-    gkDb = std::move(database);
     gkEventLogger = std::move(eventLogger);
-
-    gkAudioInput = std::move(audioInput);
-    gkAudioOutput = std::move(audioOutput);
-    gkAudioInputBuf = std::move(audioInputBuf);
 
     //
     // Initialize variables

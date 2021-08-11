@@ -42,9 +42,7 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
-#include "src/gk_string_funcs.hpp"
 #include <mutex>
 #include <thread>
 #include <memory>
@@ -65,8 +63,7 @@ class GkCodec2Sink : public QIODevice {
     Q_OBJECT
 
 public:
-    explicit GkCodec2Sink(QPointer<GekkoFyre::GkLevelDb> database, QPointer<QAudioOutput> audioOutput, QPointer<QAudioInput> audioInput,
-                          QPointer<QBuffer> audioInputBuf, QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
+    explicit GkCodec2Sink(QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
     ~GkCodec2Sink() override;
 
     qint64 readData(char *data, qint64 maxlen);
@@ -80,14 +77,10 @@ signals:
     void volume(qint32 vol);
 
 private:
-    QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
     //
     // QAudioSystem initialization and buffers
-    QPointer<QAudioInput> gkAudioInput;
-    QPointer<QAudioOutput> gkAudioOutput;
-    QPointer<QBuffer> gkAudioInputBuf;
     qint64 m_totalUncompBytesRead;
     qint64 m_totalCompBytesWritten;
 
