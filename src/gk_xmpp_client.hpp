@@ -80,6 +80,7 @@
 #include <thread>
 #include <memory>
 #include <utility>
+#include <QDir>
 #include <QMap>
 #include <QUrl>
 #include <QList>
@@ -89,6 +90,7 @@
 #include <QObject>
 #include <QPointer>
 #include <QSslError>
+#include <QFileInfo>
 #include <QDateTime>
 #include <QByteArray>
 #include <QSslSocket>
@@ -316,7 +318,7 @@ private:
     // Filesystem & Directories
     //
     boost::filesystem::path native_slash;
-    boost::filesystem::path vcard_save_path;
+    QDir vcard_save_path;
 
     //
     // vCard management

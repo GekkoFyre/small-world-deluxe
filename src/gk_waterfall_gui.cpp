@@ -48,6 +48,7 @@
 #include <stdexcept>
 #include <exception>
 #include <utility>
+#include <QPen>
 #include <QColormap>
 #include <QGridLayout>
 #include <QApplication>

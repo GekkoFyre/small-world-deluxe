@@ -133,6 +133,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     qRegisterMetaType<GekkoFyre::Database::Settings::GkAudioSource>("GekkoFyre::Database::Settings::GkAudioSource");
     qRegisterMetaType<GekkoFyre::GkAudioFramework::GkAudioRecordStatus>("GekkoFyre::GkAudioFramework::GkAudioRecordStatus");
     qRegisterMetaType<GekkoFyre::AmateurRadio::GkFreqs>("GekkoFyre::AmateurRadio::GkFreqs");
+    qRegisterMetaType<GekkoFyre::GkAudioFramework::AudioEventType>("GekkoFyre::GkAudioFramework::AudioEventType");
     qRegisterMetaType<boost::filesystem::path>("boost::filesystem::path");
     qRegisterMetaType<RIG>("RIG");
     qRegisterMetaType<size_t>("size_t");
@@ -565,6 +566,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                 // Given audio parameters are supported, as defined by the user previously!
                                 pref_input_device = input_dev.second;
                                 gkAudioInput = new QAudioInput(input_dev.first, user_input_settings, &gkAudioInputThread);
+                                const qint32 input_buf_size = inputDevSampleRateVal * gkDb->read_misc_audio_settings(GkAudioCfg::AudioInputChannels).toInt() * (inputDevSampleSizeVal / 8);
+                                gkAudioInput->setBufferSize(input_buf_size); // 1 second
                                 gkEventLogger->publishEvent(tr("Now using the input audio device, \"%1\".").arg(pref_input_device.audio_device_info.deviceName()),
                                                             GkSeverity::Info, "", false, true, false, false);
                             } else {
@@ -657,6 +660,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                 // Given audio parameters are supported, as defined by the user previously!
                                 pref_output_device = output_dev.second;
                                 gkAudioOutput = new QAudioOutput(output_dev.first, user_output_settings, &gkAudioOutputThread);
+                                const qint32 output_buf_size = outputDevSampleRateVal * gkDb->read_misc_audio_settings(GkAudioCfg::AudioOutputChannels).toInt() * (outputDevSampleSizeVal / 8);
+                                gkAudioOutput->setBufferSize(output_buf_size); // 1 second
                                 gkEventLogger->publishEvent(tr("Now using the output audio device, \"%1\".").arg(pref_output_device.audio_device_info.deviceName()),
                                                             GkSeverity::Info, "", false, true, false, false);
                             } else {
@@ -788,6 +793,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QObject::connect(this, SIGNAL(startRecInput()), this, SLOT(startRecordingInput()));
         QObject::connect(this, SIGNAL(startRecOutput()), this, SLOT(startRecordingOutput()));
 
+        //
+        // Audio Encoding & Related
+        //
+        QObject::connect(gkAudioEncoding, SIGNAL(stopRecInput()), this, SIGNAL(stopRecInput()));
+        QObject::connect(gkAudioEncoding, SIGNAL(stopRecOutput()), this, SIGNAL(stopRecOutput()));
+        QObject::connect(gkAudioEncoding, SIGNAL(startRecInput()), this, SIGNAL(startRecInput()));
+        QObject::connect(gkAudioEncoding, SIGNAL(startRecOutput()), this, SIGNAL(startRecOutput()));
+
         QObject::connect(this, SIGNAL(refreshVuDisplay(const qreal &, const qreal &, const int &)),
                          gkVuMeter, SLOT(levelChanged(const qreal &, const qreal &, const int &)));
         QObject::connect(this, SIGNAL(changeInputAudioInterface(const GekkoFyre::Database::Settings::Audio::GkDevice &)),
@@ -845,8 +858,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 //
                 // Start recording of configured input audio device!
                 emit startRecInput();
-                vu_meter_thread = std::thread(&MainWindow::updateVolumeDisplayWidgets, this);
-                vu_meter_thread.detach();
+                // vu_meter_thread = std::thread(&MainWindow::updateVolumeDisplayWidgets, this);
+                // vu_meter_thread.detach();
             }
         }
 
@@ -1608,29 +1621,66 @@ qreal MainWindow::calcVolumeFactor(const qreal &vol_level, const qreal &factor)
 void MainWindow::updateVolumeDisplayWidgets()
 {
     try {
+        // TODO: Finish this ASAP!
         if (ui->checkBox_rx_tx_vol_toggle->isChecked()) { // Input audio is chosen!
             if (gkAudioInputBuf->isReadable()) {
                 std::lock_guard<std::mutex> lck_guard(mtx_update_vol_widgets);
                 std::this_thread::sleep_for(std::chrono::milliseconds(2500)); // TODO: This is a huge source of SEGFAULTS!
-                const qint32 num_samples = AUDIO_FRAMES_PER_BUFFER * gkAudioInput->format().channelCount(); // Assert that stereo actually equals stereo!
+                const qint32 numSamples = AUDIO_FRAMES_PER_BUFFER * gkAudioInput->format().channelCount(); // Assert that stereo actually equals stereo!
                 while (gkAudioInput->state() == QAudio::ActiveState) {
                     //
                     // Input audio stream is open and active!
                     //
-                    QByteArray vol_input_ba(std::move(gkAudioInputByteArrayBuf));
-                    while (!vol_input_ba.isEmpty() && !vol_input_ba.isNull()) {
-                        std::vector<double> recv_samples(vol_input_ba.begin(), vol_input_ba.end());
-                        const double largest_element = *std::max_element(recv_samples.begin(), recv_samples.end());
-                        const double dB_calc = 20 * std::log10(largest_element);
-                        emit refreshVuDisplay(dB_calc, GK_AUDIO_PEAK_MAX, recv_samples.size());
+                    if (m_maxAmplitude) {
+                        Q_ASSERT(gkAudioInput->format().sampleSize() % 8 == 0);
+                        const qint32 channelBytes = gkAudioInput->format().sampleSize() / 8;
 
-                        //
-                        // We are done with all the data as a whole, therefore clear the lot!
-                        vol_input_ba.clear();
-                        recv_samples.clear();
+                        quint32 maxValue = 0;
+                        const unsigned char *ptr = reinterpret_cast<const unsigned char *>(gkAudioInputBuf.data());
+                        for (qint32 i = 0; i < numSamples; ++i) {
+                            for (qint32 j = 0; j < gkAudioInput->format().channelCount(); ++j) {
+                                quint32 value = 0;
+
+                                if (gkAudioInput->format().sampleSize() == 8 && gkAudioInput->format().sampleType() == QAudioFormat::UnSignedInt) {
+                                    value = *reinterpret_cast<const quint8 *>(ptr);
+                                } else if (gkAudioInput->format().sampleSize() == 8 && gkAudioInput->format().sampleType() == QAudioFormat::SignedInt) {
+                                    value = qAbs(*reinterpret_cast<const qint8*>(ptr));
+                                } else if (gkAudioInput->format().sampleSize() == 16 && gkAudioInput->format().sampleType() == QAudioFormat::UnSignedInt) {
+                                    if (gkAudioInput->format().byteOrder() == QAudioFormat::LittleEndian) {
+                                        value = qFromLittleEndian<quint16>(ptr);
+                                    } else {
+                                        value = qFromBigEndian<quint16>(ptr);
+                                    }
+                                } else if (gkAudioInput->format().sampleSize() == 16 && gkAudioInput->format().sampleType() == QAudioFormat::SignedInt) {
+                                    if (gkAudioInput->format().byteOrder() == QAudioFormat::LittleEndian) {
+                                        value = qAbs(qFromLittleEndian<qint16>(ptr));
+                                    } else {
+                                        value = qAbs(qFromBigEndian<qint16>(ptr));
+                                    }
+                                } else if (gkAudioInput->format().sampleSize() == 32 && gkAudioInput->format().sampleType() == QAudioFormat::UnSignedInt) {
+                                    if (gkAudioInput->format().byteOrder() == QAudioFormat::LittleEndian) {
+                                        value = qFromLittleEndian<quint32>(ptr);
+                                    } else {
+                                        value = qFromBigEndian<quint32>(ptr);
+                                    }
+                                } else if (gkAudioInput->format().sampleSize() == 32 && gkAudioInput->format().sampleType() == QAudioFormat::SignedInt) {
+                                    if (gkAudioInput->format().byteOrder() == QAudioFormat::LittleEndian) {
+                                        value = qAbs(qFromLittleEndian<qint32>(ptr));
+                                    } else {
+                                        value = qAbs(qFromBigEndian<qint32>(ptr));
+                                    }
+                                } else if (gkAudioInput->format().sampleSize() == 32 && gkAudioInput->format().sampleType() == QAudioFormat::Float) {
+                                    value = qAbs(*reinterpret_cast<const float *>(ptr) * 0x7fffffff); // assumes 0-1.0
+                                }
+
+                                maxValue = qMax(value, maxValue);
+                                ptr += channelBytes;
+                            }
+                        }
+
+                        maxValue = qMin(maxValue, m_maxAmplitude);
+                        const qreal m_level = qreal(maxValue) / m_maxAmplitude;
                     }
-
-                    vol_input_ba.clear();
                 }
             }
         } else { // Output audio is chosen!
@@ -1642,23 +1692,7 @@ void MainWindow::updateVolumeDisplayWidgets()
                     //
                     // Output audio stream is open and active!
                     //
-                    QByteArray vol_output_ba(std::move(gkAudioOutputByteArrayBuf));
-                    while (!vol_output_ba.isEmpty() && !vol_output_ba.isNull()) {
-                        std::vector<double> recv_samples(vol_output_ba.begin(), vol_output_ba.end());
-                        double largest_element = *std::max_element(recv_samples.begin(), recv_samples.end());
-
-                        const double dB_calc = 20 * std::log10(largest_element);
-                        const double dB_max = 20 * std::log10(GK_AUDIO_PEAK_MAX); // TODO: Fix this so it works with other audio bit-rates than just 16-bit!
-
-                        emit refreshVuDisplay(dB_calc, dB_max, recv_samples.size());
-
-                        //
-                        // We are done with all the data as a whole, therefore clear the lot!
-                        vol_output_ba.clear();
-                        recv_samples.clear();
-                    }
-
-                    vol_output_ba.clear();
+                    break;
                 }
             }
         }

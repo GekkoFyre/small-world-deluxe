@@ -93,11 +93,16 @@ private slots:
                        const GekkoFyre::Database::Settings::GkAudioSource &audio_source);
     void recordMediaFile(const QDir &media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
                          const GekkoFyre::Database::Settings::GkAudioSource &audio_source, qint32 encoding_bitrate);
-    void stopMediaFile(const QFileInfo &media_path);
-    void stopMediaFile(const QDir &media_path);
     void startMediaLoopback();
     void playbackHandleStateChanged(QAudio::State changed_state);
     void recordingHandleStateChanged(QAudio::State changed_state);
+
+    //
+    // Stopping of either playing or recording of multimedia files
+    void stopMediaFile(const QFileInfo &media_path);
+    void stopMediaFile(const QDir &media_path);
+    void stopRecordingFile(const QFileInfo &media_path);
+    void stopRecordingFile(const QDir &media_path);
 
 signals:
     //
@@ -116,6 +121,10 @@ signals:
     // Stopping of either playing or recording of multimedia files
     void stopMedia(const QFileInfo &media_path);
     void stopMedia(const QDir &media_path);
+    void stopRecording(const QFileInfo &media_path);
+    void stopRecording(const QDir &media_path);
+    void stopLoopback(const QFileInfo &media_path);
+    void stopLoopback(const QDir &media_path);
 
     //
     // Miscellaneous
@@ -158,6 +167,7 @@ private:
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
     QMap<QString, AudioFile<double>> gkSounds;
+    QMultiMap<GekkoFyre::GkAudioFramework::AudioEventType, QString> gkAudioEvents;
 
     void playMediaFileHelper(QFileInfo media_path, const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
                              const GekkoFyre::Database::Settings::GkAudioSource &audio_source);
