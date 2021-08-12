@@ -794,7 +794,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QObject::connect(this, SIGNAL(startRecOutput()), this, SLOT(startRecordingOutput()));
 
         //
-        // Audio Encoding & Related
+        // Audio Devices & Related
         //
         QObject::connect(gkAudioEncoding, SIGNAL(stopRecInput()), this, SIGNAL(stopRecInput()));
         QObject::connect(gkAudioEncoding, SIGNAL(stopRecOutput()), this, SIGNAL(stopRecOutput()));
@@ -2986,15 +2986,23 @@ void MainWindow::stopRecordingOutput()
 void MainWindow::startRecordingInput()
 {
     try {
-        if (gkAudioInput->state() == QAudio::StoppedState) {
-            emit stopRecInput();
-
-            if (avail_input_audio_devs.empty()) {
-                throw std::invalid_argument(tr("No input audio devices have been found!").toStdString());
-            }
+        if (avail_input_audio_devs.empty()) {
+            throw std::invalid_argument(tr("No input audio devices have been found!").toStdString());
         }
 
+        if (gkAudioInput->state() == QAudio::ActiveState) {
+            emit stopRecInput();
+        }
+
+        if (!gkAudioInputThread.isRunning()) {
+            gkAudioInputThread.start();
+        }
+
+        gkAudioInput->moveToThread(&gkAudioInputThread);
+        gkAudioInput->setNotifyInterval(100);
+        gkAudioInput->start(gkAudioInputBuf);
         gkFftAudio->processEvent(Spectrograph::GkFftEventType::record);
+
         return;
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(tr("Problem encountered with initializing input audio device. Error:\n\n%1").arg(QString::fromStdString(e.what())),
@@ -3011,15 +3019,23 @@ void MainWindow::startRecordingInput()
 void MainWindow::startRecordingOutput()
 {
     try {
-        if (gkAudioOutput->state() == QAudio::StoppedState) {
-            emit stopRecOutput();
-
-            if (avail_output_audio_devs.empty()) {
-                throw std::invalid_argument(tr("No output audio devices have been found!").toStdString());
-            }
+        if (avail_output_audio_devs.empty()) {
+            throw std::invalid_argument(tr("No output audio devices have been found!").toStdString());
         }
 
+        if (gkAudioOutput->state() == QAudio::ActiveState) {
+            emit stopRecOutput();
+        }
+
+        if (!gkAudioOutputThread.isRunning()) {
+            gkAudioOutputThread.start();
+        }
+
+        gkAudioOutput->moveToThread(&gkAudioOutputThread);
+        gkAudioOutput->setNotifyInterval(100);
+        gkAudioOutput->start(gkAudioOutputBuf);
         gkFftAudio->processEvent(Spectrograph::GkFftEventType::record);
+
         return;
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(tr("Problem encountered with initializing input audio device. Error:\n\n%1").arg(QString::fromStdString(e.what())),

@@ -47,6 +47,7 @@
 #include <exception>
 #include <QDir>
 #include <QtGui>
+#include <QTimer>
 
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
@@ -64,7 +65,7 @@ using namespace GkXmpp;
 
 GkPcmWavSink::GkPcmWavSink(const QString &fileLoc, const quint32 &maxAmplitude, const QAudioFormat &format,
                            QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QIODevice(parent),
-                           m_maxAmplitude(0), m_file(new QFile(this))
+                           m_sndfile(), m_maxAmplitude(0)
 {
     setParent(parent);
     gkEventLogger = std::move(eventLogger);
@@ -80,17 +81,26 @@ GkPcmWavSink::GkPcmWavSink(const QString &fileLoc, const quint32 &maxAmplitude, 
     m_recActive = GkAudioRecordStatus::Defunct;
 
     //
-    // Initialize the AudioFile object!
-    gkAudioFile = std::make_shared<AudioFile<double>>();
-
+    // Manage and set file location!
     m_fileInfo.setFile(m_fileLoc);
-    m_file->setFileName(m_fileInfo.absoluteFilePath());
-    if (!m_file->open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-        m_done = true;
-        m_failed = true;
-        gkEventLogger->publishEvent(tr("Unable to open file for PCM/WAV encoding: %1").arg(m_file->fileName()),
-                                    GkSeverity::Fatal, "", false, true, false, true, false);
-        return;
+
+    if (m_audioFormat.sampleSize() == 8 && m_audioFormat.sampleType() == QAudioFormat::UnSignedInt) {
+        //
+        // quint8
+        m_sndfile = std::make_unique<SndfileHandle>(m_fileInfo.filePath().toStdString(), SFM_WRITE, SF_FORMAT_WAV | SF_FORMAT_PCM_U8,
+                                                    m_audioFormat.channelCount(), m_audioFormat.sampleRate());
+    } else if (m_audioFormat.sampleSize() == 16 && m_audioFormat.sampleType() == QAudioFormat::SignedInt) {
+        if (m_audioFormat.byteOrder() == QAudioFormat::LittleEndian) {
+            //
+            // qint16 (qAbs(qFromLittleEndian))
+            m_sndfile = std::make_unique<SndfileHandle>(m_fileInfo.filePath().toStdString(), SFM_WRITE, SF_FORMAT_WAV | SF_FORMAT_PCM_16,
+                                                        m_audioFormat.channelCount(), m_audioFormat.sampleRate());
+        }
+    } else if (m_audioFormat.sampleSize() == 32 && m_audioFormat.sampleType() == QAudioFormat::Float) {
+        //
+        // Assumes 0 - 1.0!
+        // qAbs(*reinterpret_cast<const float *>(ptr) * 0x7fffffff)
+        // TODO: Add support for this as soon as possible, plus for 24-bit sample rates too!
     }
 
     return;
@@ -120,9 +130,25 @@ qint64 GkPcmWavSink::readData(char *data, qint64 maxlen)
  * @param data
  * @param len
  * @return
+ * @note Audio Input Example <https://doc.qt.io/qt-5/qtmultimedia-multimedia-audioinput-example.html>,
+ * libsndfile usage example <https://forum.bela.io/d/746-libsndfile-writing-mostly-silent-audio-files>.
  */
 qint64 GkPcmWavSink::writeData(const char *data, qint64 len)
 {
+    if (m_done) {
+        QTimer::singleShot(0, this, SLOT(stop()));
+    }
+
+    if (m_sndfile) {
+        for (qint32 buf_ptr = 0; buf_ptr < len;) {
+            qint32 read_bytes = len - buf_ptr;
+            m_sndfile->writef(qFromLittleEndian<const short *>(data), len);
+            buf_ptr += read_bytes; // This serves as the iterator counter!
+        }
+
+        m_sndfile->writeSync();
+    }
+
     return len;
 }
 
@@ -132,6 +158,7 @@ qint64 GkPcmWavSink::writeData(const char *data, qint64 len)
  */
 void GkPcmWavSink::start()
 {
+    open(QIODevice::WriteOnly | QIODevice::Truncate);
     return;
 }
 
@@ -142,8 +169,6 @@ void GkPcmWavSink::start()
 void GkPcmWavSink::stop()
 {
     close();
-    m_file->close();
-
     return;
 }
 

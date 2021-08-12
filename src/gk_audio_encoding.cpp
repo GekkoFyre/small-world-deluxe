@@ -197,13 +197,18 @@ void GkAudioEncoding::stopEncode()
 {
     switch (m_codecUsed) {
         case GkAudioFramework::CodecSupport::Codec2:
+            #ifdef CODEC2_LIBS_ENBLD
             if (m_codec2Sink) {
                 m_codec2Sink->stop();
             }
+            #endif
 
             break;
         case GkAudioFramework::CodecSupport::PCM:
-            // TODO: Complete the code for this!
+            if (m_pcmWavSink) {
+                m_pcmWavSink->stop();
+            }
+
             break;
         case GkAudioFramework::CodecSupport::Loopback:
             // TODO: Complete the code for this!
@@ -220,6 +225,11 @@ void GkAudioEncoding::stopEncode()
         default:
             break;
     }
+
+    //
+    // Start the recording session behind the FFT / Spectrograph once again, now that we are no longer
+    // taking its resources for encoding and/or playback!
+    emit startRecInput();
 
     return;
 }

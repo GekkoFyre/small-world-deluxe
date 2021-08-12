@@ -43,7 +43,7 @@
 
 #include "src/defines.hpp"
 #include "src/gk_logger.hpp"
-#include <AudioFile.h>
+#include <sndfile.hh>
 #include <mutex>
 #include <thread>
 #include <cstdio>
@@ -86,16 +86,17 @@ private:
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
     //
-    // AudioFile objects and related
-    std::shared_ptr<AudioFile<double>> gkAudioFile;
-
-    //
     // QAudio related
     qreal m_level = 0;
 
     //
     // Status variables
     GekkoFyre::GkAudioFramework::GkAudioRecordStatus m_recActive;
+
+    //
+    // libsndfile variables
+    // https://github.com/libsndfile/libsndfile/blob/master/examples/sndfilehandle.cc
+    std::unique_ptr<SndfileHandle> m_sndfile;
 
     //
     // Encoder variables
@@ -105,7 +106,6 @@ private:
     //
     // Filesystem and related
     QFileInfo m_fileInfo;
-    QPointer<QFile> m_file;                                 // The file that the encoded data is to be saved towards.
 
     //
     // Miscellaneous

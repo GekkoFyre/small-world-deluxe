@@ -578,7 +578,7 @@ HRESULT GkSystem::WindowsFirewallAddApp(INetFwProfile *fwProfile, const wchar_t 
         hr = fwApps->Add(fwApp);
         if (FAILED(hr)) {
             auto errMsg = processHResult(hr);
-            emit publishEventMsg(tr("Add failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
+            emit publishEventMsg(tr("Additions to Microsoft Windows firewall have failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Error, "", false, true, false, false);
 
             goto error;
         }
@@ -773,7 +773,7 @@ HRESULT GkSystem::WindowsFirewallPortAdd(INetFwProfile *fwProfile, LONG portNumb
         hr = fwOpenPorts->Add(fwOpenPort);
         if (FAILED(hr)) {
             auto errMsg = processHResult(hr);
-            emit publishEventMsg(tr("Add failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Fatal, "", false, true, false, true);
+            emit publishEventMsg(tr("Additions to Microsoft Windows firewall have failed: 0x%1lx").arg(gkStringFuncs->zeroPadding(errMsg, GK_MICROSOFT_HR_ERROR_MSG_ZERO_PADDING)), GkSeverity::Error, "", false, true, false, false);
 
             goto error;
         }

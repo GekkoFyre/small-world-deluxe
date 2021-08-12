@@ -43,6 +43,7 @@
 
 //-V::1042
 
+#include "src/gk_app_vers.hpp"
 #include "src/gk_string_funcs.hpp"
 #include "src/contrib/hamlib++/include/hamlib/rigclass.h"
 #include <boost/exception/all.hpp>
@@ -341,9 +342,6 @@ namespace General {
     constexpr char companyNameMin[] = "GekkoFyre";
     constexpr char productName[] = "Small World Deluxe";
     constexpr char executableName[] = "smallworld";
-    constexpr char appVersion[] = "0.0.1"; // TODO: Make sure to update this upon every release/revision change!
-    constexpr char appRelease[] = "Pre-alpha"; // TODO: The same as the immediate above also applies to this line!
-    constexpr char xmppVersion[] = "Alpha"; // TODO: And to this as well!
     constexpr char xmppResourceGFyre[] = "GekkoFyre";
     constexpr char codeRepository[] = "https://code.gekkofyre.io/amateur-radio/small-world-deluxe";
     constexpr char officialWebsite[] = "https://swdeluxe.io/";

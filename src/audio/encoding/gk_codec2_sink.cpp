@@ -47,6 +47,7 @@
 #include <exception>
 #include <QDir>
 #include <QtGui>
+#include <QTimer>
 
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
