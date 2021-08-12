@@ -65,6 +65,7 @@
 #include <leveldb/db.h>
 #include <leveldb/status.h>
 #include <leveldb/options.h>
+#include <qwt/qwt_legend_data.h>
 #include <stdexcept>
 #include <exception>
 #include <utility>
@@ -397,6 +398,7 @@ private:
     qreal calcVolumeFactor(const qreal &vol_level, const qreal &factor = GK_AUDIO_VOL_FACTOR);
     double global_rx_audio_volume;
     double global_tx_audio_volume;
+    quint32 m_maxAmplitude;
 
     //
     // Multithreading
@@ -539,7 +541,7 @@ private:
     void createTrayActions();
     void createTrayIcon();
 
-    void print_exception(const std::exception &e, int level = 0);
+    void print_exception(const std::exception &e, const bool &displayMsgBox = false, int level = 0);
 
 };
 
@@ -560,6 +562,7 @@ Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::CodecSupport);
 Q_DECLARE_METATYPE(GekkoFyre::Database::Settings::GkAudioSource);
 Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::GkAudioRecordStatus);
 Q_DECLARE_METATYPE(GekkoFyre::AmateurRadio::GkFreqs);
+Q_DECLARE_METATYPE(GekkoFyre::GkAudioFramework::AudioEventType);
 Q_DECLARE_METATYPE(boost::filesystem::path);
 Q_DECLARE_METATYPE(RIG);
 Q_DECLARE_METATYPE(size_t);

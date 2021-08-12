@@ -42,60 +42,94 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/pa_stream_handler.hpp"
-#include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
-#include <AudioFile.h>
+#include <mutex>
+#include <thread>
 #include <memory>
 #include <string>
-#include <QDir>
-#include <QString>
 #include <QObject>
+#include <QBuffer>
 #include <QPointer>
-#include <QFileInfo>
+#include <QFile>
+#include <QIODevice>
+#include <QByteArray>
 #include <QAudioInput>
 #include <QAudioOutput>
+#include <QAudioFormat>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#ifdef CODEC2_LIBS_ENBLD
+#include <codec2/codec2.h>
+#endif
+
+#ifdef __cplusplus
+}
+#endif
 
 namespace GekkoFyre {
 
-class GkPaAudioPlayer : public QObject {
+class GkCodec2Sink : public QIODevice {
     Q_OBJECT
 
 public:
-    explicit GkPaAudioPlayer(QPointer<GekkoFyre::GkLevelDb> database, QPointer<QAudioOutput> audioOutput,
-                             QPointer<QAudioInput> audioInput, QPointer<GekkoFyre::GkAudioEncoding> audioEncoding,
-                             const QPointer<GekkoFyre::GkEventLogger> &eventLogger,
-                             std::shared_ptr<AudioFile<double>> audioFileLib, QObject *parent = nullptr);
-    virtual ~GkPaAudioPlayer();
+    explicit GkCodec2Sink(const QString &fileLoc, const qint32 &codec2_mode, const qint32 &natural, const bool &save_pcm_copy,
+                          const quint32 &maxAmplitude, const QAudioFormat &format, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                          QObject *parent = nullptr);
+    ~GkCodec2Sink() override;
 
-    void play(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const QFileInfo &audio_file,
-              const GekkoFyre::Database::Settings::GkAudioSource &audio_source);
-    void play(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
-              const GekkoFyre::Database::Settings::GkAudioSource &audio_source);
-    void record(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const QDir &record_dir,
-                const qint32 &bitrate, const GekkoFyre::Database::Settings::GkAudioSource &audio_source);
-    void loop(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const QFileInfo &audio_file,
-              const GekkoFyre::Database::Settings::GkAudioSource &audio_source);
-    void stop(const QFileInfo &audio_file, const GekkoFyre::Database::Settings::GkAudioSource &audio_source);
-    void loopback();
+    qint64 readData(char *data, qint64 maxlen) Q_DECL_OVERRIDE;
+    qint64 writeData(const char *data, qint64 len) Q_DECL_OVERRIDE;
+
+    bool isFailed();
+    bool isDone();
+
+public slots:
+    void start();
+    void stop();
 
 signals:
-    //
-    // Audio related
-    void stopRecInput();
-    void stopRecOutput();
-    void startRecInput();
-    void startRecOutput();
+    void volume(qint32 vol);
 
 private:
-    QPointer<QAudioInput> gkAudioInput;
-    QPointer<QAudioOutput> gkAudioOutput;
-    QPointer<GekkoFyre::GkAudioEncoding> gkAudioEncoding;
-    QPointer<GkPaStreamHandler> streamHandler;
+    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
     //
-    // AudioFile objects and related
-    std::shared_ptr<AudioFile<double>> gkAudioFile;
+    // Status variables
+    GekkoFyre::GkAudioFramework::GkAudioRecordStatus m_recActive;
+
+    //
+    // Encoder variables
+    CODEC2 *codec2;                                             // The Codec2 pointer itself.
+    bool m_initialized = false;                                 // Whether an encoding operation has begun or not; therefore block other attempts until this singular one has stopped.
+    QString m_fileLoc;                                          // The filename to write-out the encoded data towards!
+    qint32 m_mode;                                              // The Codec2 mode to employ!
+
+    //
+    // Buffers
+    short *buf;
+    unsigned char *bits;
+    qint32 nsam;
+    qint32 nbit;
+    qint32 nbyte;
+    qint32 buf_empt;
+
+    //
+    // Filesystem and related
+    QFileInfo m_fileInfo;
+    QPointer<QFile> m_file;                                 // The file that the encoded data is to be saved towards.
+    QPointer<QFile> m_filePcm;                              // If the user desires so, then a PCM WAV file can be created as an adjunct too!
+
+    //
+    // Miscellaneous
+    QAudioFormat m_audioFormat;
+    bool m_failed;
+    bool m_done;
+    bool m_savePcmCopy;
+    quint32 m_maxAmplitude;
 
 };
 };

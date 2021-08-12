@@ -39,26 +39,17 @@
  **
  ****************************************************************************************************/
 
+#include "src/gk_app_vers.hpp"
 #include "src/defines.hpp"
 #include "src/ui/mainwindow.hpp"
-#include <boost/exception/all.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/locale.hpp>
-#include <boost/locale/generator.hpp>
 #include <singleapplication.h>
 #include <exception>
 #include <iostream>
-#include <cstdlib>
-#include <csignal>
-#include <locale>
-#include <clocale>
 #include <QTimer>
-#include <QString>
-#include <QLocale>
-#include <QWidget>
 #include <QResource>
+#include <QStringList>
 #include <QTranslator>
-#include <QLibraryInfo>
 #include <QApplication>
 #include <QStyleFactory>
 #include <QSplashScreen>
@@ -98,11 +89,20 @@ int main(int argc, char *argv[])
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 
     //
-    // QtSpell
-    // https://github.com/manisandro/qtspell/blob/master/examples/example.cpp
-    //
-    QTranslator qtTranslator;
-    qtTranslator.load("qt_" + QLocale::system().name(), QLibraryInfo::location(QLibraryInfo::TranslationsPath));
+    // Setup the translation settings!
+    QTranslator translator;
+    const QStringList uiLanguages = QLocale::system().uiLanguages();
+    for (const QString &locale: uiLanguages) {
+        const QString baseName = "smallworld_" + QLocale(locale).name();
+        if (translator.load(":/i18n/" + baseName)) {
+            #ifndef GK_ENBL_VALGRIND_SUPPORT
+            SingleApplication::instance()->installTranslator(&translator);
+            #else
+            QApplication::instance()->installTranslator(&qtTranslator);
+            #endif
+            break;
+        }
+    }
 
     #ifndef GK_ENBL_VALGRIND_SUPPORT
     //
@@ -113,10 +113,8 @@ int main(int argc, char *argv[])
         app.exit();
     }
 
-    SingleApplication::instance()->installTranslator(&qtTranslator);
     #else
     QApplication app(argc, argv);
-    QApplication::instance()->installTranslator(&qtTranslator);
     #endif
 
     QCoreApplication::setOrganizationName(GekkoFyre::General::companyName);

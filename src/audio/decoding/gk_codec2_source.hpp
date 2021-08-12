@@ -42,60 +42,70 @@
 #pragma once
 
 #include "src/defines.hpp"
-#include "src/pa_stream_handler.hpp"
-#include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
-#include <AudioFile.h>
+#include <mutex>
+#include <thread>
+#include <cstdio>
 #include <memory>
 #include <string>
-#include <QDir>
-#include <QString>
 #include <QObject>
+#include <QBuffer>
 #include <QPointer>
-#include <QFileInfo>
+#include <QSaveFile>
+#include <QIODevice>
+#include <QByteArray>
 #include <QAudioInput>
 #include <QAudioOutput>
+#include <QAudioFormat>
 
 namespace GekkoFyre {
 
-class GkPaAudioPlayer : public QObject {
+class GkCodec2Source : public QIODevice {
     Q_OBJECT
 
 public:
-    explicit GkPaAudioPlayer(QPointer<GekkoFyre::GkLevelDb> database, QPointer<QAudioOutput> audioOutput,
-                             QPointer<QAudioInput> audioInput, QPointer<GekkoFyre::GkAudioEncoding> audioEncoding,
-                             const QPointer<GekkoFyre::GkEventLogger> &eventLogger,
-                             std::shared_ptr<AudioFile<double>> audioFileLib, QObject *parent = nullptr);
-    virtual ~GkPaAudioPlayer();
+    explicit GkCodec2Source(const QString &fileLoc, const quint32 &maxAmplitude, const QAudioFormat &format,
+                        QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent = nullptr);
+    ~GkCodec2Source() override;
 
-    void play(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const QFileInfo &audio_file,
-              const GekkoFyre::Database::Settings::GkAudioSource &audio_source);
-    void play(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec,
-              const GekkoFyre::Database::Settings::GkAudioSource &audio_source);
-    void record(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const QDir &record_dir,
-                const qint32 &bitrate, const GekkoFyre::Database::Settings::GkAudioSource &audio_source);
-    void loop(const GekkoFyre::GkAudioFramework::CodecSupport &supported_codec, const QFileInfo &audio_file,
-              const GekkoFyre::Database::Settings::GkAudioSource &audio_source);
-    void stop(const QFileInfo &audio_file, const GekkoFyre::Database::Settings::GkAudioSource &audio_source);
-    void loopback();
+    qint64 readData(char *data, qint64 maxlen) Q_DECL_OVERRIDE;
+    qint64 writeData(const char *data, qint64 len) Q_DECL_OVERRIDE;
+
+public slots:
+    void start();
+    void stop();
 
 signals:
-    //
-    // Audio related
-    void stopRecInput();
-    void stopRecOutput();
-    void startRecInput();
-    void startRecOutput();
+    void volume(qint32 vol);
 
 private:
-    QPointer<QAudioInput> gkAudioInput;
-    QPointer<QAudioOutput> gkAudioOutput;
-    QPointer<GekkoFyre::GkAudioEncoding> gkAudioEncoding;
-    QPointer<GkPaStreamHandler> streamHandler;
+    QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
 
     //
-    // AudioFile objects and related
-    std::shared_ptr<AudioFile<double>> gkAudioFile;
+    // QAudioSystem initialization and buffers
+    qint64 m_totalUncompBytesRead;
+    qint64 m_totalCompBytesWritten;
+
+    //
+    // Status variables
+    GekkoFyre::GkAudioFramework::GkAudioRecordStatus m_recActive;
+
+    //
+    // Encoder variables
+    bool m_initialized = false;                                 // Whether an encoding operation has begun or not; therefore block other attempts until this singular one has stopped.
+    QString m_fileLoc;                                          // The filename to write-out the encoded data towards!
+
+    //
+    // Filesystem and related
+    QPointer<QSaveFile> file;                                   // The file that the encoded data is to be saved towards.
+    QPointer<QSaveFile> file_pcm;                               // If the user desires so, then a PCM WAV file can be created as an adjunct too!
+
+    //
+    // Miscellaneous
+    QAudioFormat m_audioFormat;
+    bool m_failed;
+    bool m_done;
+    quint32 m_maxAmplitude;
 
 };
 };

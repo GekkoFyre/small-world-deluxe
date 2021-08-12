@@ -3146,6 +3146,8 @@ GekkoFyre::GkAudioFramework::CodecSupport GkLevelDb::convCodecSupportFromIdxToEn
             return GekkoFyre::GkAudioFramework::CodecSupport::Opus;
         case AUDIO_PLAYBACK_CODEC_FLAC_IDX:
             return GekkoFyre::GkAudioFramework::CodecSupport::FLAC;
+        case AUDIO_PLAYBACK_CODEC_CODEC2_IDX:
+            return GekkoFyre::GkAudioFramework::CodecSupport::Codec2;
         default:
             return GekkoFyre::GkAudioFramework::CodecSupport::Unsupported;
     }
@@ -3173,6 +3175,8 @@ QString GkLevelDb::convCodecFormatToFileExtension(const CodecSupport &codec_supp
             return QString(".ogg");
         case CodecSupport::FLAC:
             return QString(".opus");
+        case CodecSupport::Codec2:
+            return QString(".c2");
         case CodecSupport::Unsupported:
             return tr(".unsupported");
         case CodecSupport::Unknown:

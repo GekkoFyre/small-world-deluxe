@@ -43,6 +43,7 @@
 
 //-V::1042
 
+#include "src/gk_app_vers.hpp"
 #include "src/gk_string_funcs.hpp"
 #include "src/contrib/hamlib++/include/hamlib/rigclass.h"
 #include <boost/exception/all.hpp>
@@ -197,11 +198,12 @@ namespace GekkoFyre {
 #define GK_AUDIO_VOL_MAX_PERCENTAGE (75.0)
 #define GK_AUDIO_VOL_FACTOR (1.3334)
 
-#define AUDIO_PLAYBACK_CODEC_PCM_IDX (3)
-#define AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX (4)
-#define AUDIO_PLAYBACK_CODEC_VORBIS_IDX (0)
-#define AUDIO_PLAYBACK_CODEC_OPUS_IDX (1)
-#define AUDIO_PLAYBACK_CODEC_FLAC_IDX (2)
+#define AUDIO_PLAYBACK_CODEC_PCM_IDX (4)
+#define AUDIO_PLAYBACK_CODEC_LOOPBACK_IDX (5)
+#define AUDIO_PLAYBACK_CODEC_VORBIS_IDX (1)
+#define AUDIO_PLAYBACK_CODEC_CODEC2_IDX (0)
+#define AUDIO_PLAYBACK_CODEC_OPUS_IDX (2)
+#define AUDIO_PLAYBACK_CODEC_FLAC_IDX (3)
 
 #define AUDIO_RECORDING_DEF_BITRATE (192)
 #define AUDIO_RECORDING_SOURCE_INPUT_IDX (0)
@@ -340,9 +342,6 @@ namespace General {
     constexpr char companyNameMin[] = "GekkoFyre";
     constexpr char productName[] = "Small World Deluxe";
     constexpr char executableName[] = "smallworld";
-    constexpr char appVersion[] = "0.0.1"; // TODO: Make sure to update this upon every release/revision change!
-    constexpr char appRelease[] = "Pre-alpha"; // TODO: The same as the immediate above also applies to this line!
-    constexpr char xmppVersion[] = "Alpha"; // TODO: And to this as well!
     constexpr char xmppResourceGFyre[] = "GekkoFyre";
     constexpr char codeRepository[] = "https://code.gekkofyre.io/amateur-radio/small-world-deluxe";
     constexpr char officialWebsite[] = "https://swdeluxe.io/";
@@ -386,6 +385,15 @@ namespace Filesystem {
     constexpr char nuspellSpellDir[] = "Spelling";                      // The 'Spelling' dir, present underneath 'Library', which is used by the Nuspell libs
     constexpr char nuspellSpellDic[] = "index";                         // The *.dic and *.aff file for Nuspell dictionaries
     constexpr char enchantSpellDefLang[] = "en_US";                     // The default dictionary language to use for Nuspell
+
+    //
+    // Audio subsystem
+    constexpr char audio_format_pcm_wav[] = "wav";
+    constexpr char audio_format_ogg_vorbis[] = "ogg";
+    constexpr char audio_format_ogg_opus[] = "opus";
+    constexpr char audio_format_flac[] = "flac";
+    constexpr char audio_format_mp3[] = "mp3";
+    constexpr char audio_format_codec2[] = "dat";
 
     //
     // User interface language
@@ -1101,6 +1109,7 @@ namespace GkAudioFramework {
         PCM,
         Loopback,
         OggVorbis,
+        Codec2,
         Opus,
         FLAC,
         Unsupported,

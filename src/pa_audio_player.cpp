@@ -73,6 +73,18 @@ GkPaAudioPlayer::GkPaAudioPlayer(QPointer<GekkoFyre::GkLevelDb> database, QPoint
     streamHandler = new GkPaStreamHandler(std::move(database), gkAudioOutput, gkAudioInput, gkAudioEncoding, eventLogger, gkAudioFile, parent);
     streamHandler->moveToThread(parent->thread());
 
+    //
+    // Audio Devices & Related
+    //
+    QObject::connect(streamHandler, SIGNAL(stopRecInput()), this, SIGNAL(stopRecInput()));
+    QObject::connect(streamHandler, SIGNAL(stopRecOutput()), this, SIGNAL(stopRecOutput()));
+    QObject::connect(streamHandler, SIGNAL(startRecInput()), this, SIGNAL(startRecInput()));
+    QObject::connect(streamHandler, SIGNAL(startRecOutput()), this, SIGNAL(startRecOutput()));
+    QObject::connect(this, SIGNAL(stopRecInput()), gkAudioEncoding, SIGNAL(stopRecInput()));
+    QObject::connect(this, SIGNAL(stopRecOutput()), gkAudioEncoding, SIGNAL(stopRecOutput()));
+    QObject::connect(this, SIGNAL(startRecInput()), gkAudioEncoding, SIGNAL(startRecInput()));
+    QObject::connect(this, SIGNAL(startRecOutput()), gkAudioEncoding, SIGNAL(startRecOutput()));
+
     return;
 }
 
