@@ -191,7 +191,7 @@ void GkPaStreamHandler::processEvent(GkAudioFramework::AudioEventType audioEvent
                 break;
         }
     } catch (const std::exception &e) {
-        std::throw_with_nested(e.what());
+        std::throw_with_nested(std::runtime_error(e.what()));
     }
 
     return;
@@ -247,7 +247,7 @@ void GkPaStreamHandler::processEvent(GkAudioFramework::AudioEventType audioEvent
                 break;
         }
     } catch (const std::exception &e) {
-        std::throw_with_nested(e.what());
+        std::throw_with_nested(std::runtime_error(e.what()));
     }
 
     return;
@@ -529,7 +529,7 @@ QFileInfo GkPaStreamHandler::createRecordMediaFile(const QDir &media_path, const
         gkAudioEvents.insert(GkAudioFramework::AudioEventType::record, mediaRetPath.absoluteFilePath()); // Path to file that is being recorded!
         return mediaRetPath;
     } catch (const std::exception &e) {
-        std::throw_with_nested(e.what());
+        std::throw_with_nested(std::runtime_error(e.what()));
     }
 
     return QFileInfo();
@@ -622,7 +622,7 @@ void GkPaStreamHandler::playMediaFileHelper(QFileInfo media_path, const CodecSup
             throw std::invalid_argument(tr("Invalid audio encoding codec specified! It is either not supported yet or an error was made.").toStdString());
         }
     } catch (const std::exception &e) {
-        std::throw_with_nested(e.what());
+        std::throw_with_nested(std::runtime_error(e.what()));
     }
 
     return;

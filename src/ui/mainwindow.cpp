@@ -1193,7 +1193,7 @@ bool MainWindow::radioInitStart()
 
         return true;
     } catch (const std::exception &e) {
-        print_exception(e);
+        print_exception(e, false);
     }
 
     return false;
@@ -1840,7 +1840,7 @@ void MainWindow::processFirewallRules(INetFwProfile *pfwProfile)
 
         return;
     } catch (const std::exception &e) {
-        std::throw_with_nested(e.what());
+        print_exception(e, false);
     }
 
     return;
@@ -1869,7 +1869,7 @@ bool MainWindow::addSwdSysFirewall(INetFwProfile *pfwProfile, const QString &ful
 
         return true;
     } catch (const std::exception &e) {
-        std::throw_with_nested(e.what());
+        std::throw_with_nested(std::runtime_error(e.what()));
     }
 
     return false;
@@ -1914,7 +1914,7 @@ bool MainWindow::addPortSysFirewall(INetFwProfile *pfwProfile, const qint32 &net
 
         return false;
     } catch (const std::exception &e) {
-        std::throw_with_nested(e.what());
+        std::throw_with_nested(std::runtime_error(e.what()));
     }
 
     return false;
@@ -3641,17 +3641,20 @@ void MainWindow::on_action_Battery_Calculator_triggered()
 /**
  * @brief MainWindow::print_exception
  * @param e
+ * @param displayMsgBox Whether to display a QMessageBox or not to the end-user.
  * @param level
  */
-void MainWindow::print_exception(const std::exception &e, int level)
+void MainWindow::print_exception(const std::exception &e, const bool &displayMsgBox, int level)
 {
     gkEventLogger->publishEvent(e.what(), GkSeverity::Warning, "", false);
-    QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+    if (displayMsgBox) {
+        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
 
     try {
         std::rethrow_if_nested(e);
     } catch (const std::exception &e) {
-        print_exception(e, level + 1);
+        print_exception(e, displayMsgBox, level + 1);
     } catch (...) {}
 
     return;
