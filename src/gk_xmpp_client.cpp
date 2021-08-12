@@ -155,15 +155,16 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         fs::path slash = "/";
         native_slash = slash.make_preferred().native();
 
-        const QDir dir_to_append = QString(QString::fromStdString(General::companyName) + "/" + QString::fromStdString(Filesystem::defaultDirAppend) + "/" + QString::fromStdString(Filesystem::xmppVCardDir));
-        vcard_save_path.setPath(gkFileIo->defaultDirectory(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation), true, dir_to_append.absolutePath())); // Path to save final database towards
+        const QString dir_to_append = QDir::toNativeSeparators(QString::fromStdString(General::companyName) + "/" + QString::fromStdString(Filesystem::defaultDirAppend) + "/" + QString::fromStdString(Filesystem::xmppVCardDir));
+        vcard_save_path.setPath(QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/" + dir_to_append)); // Path to save final database towards
         if (!vcard_save_path.exists()) {
-            if (vcard_save_path.mkpath(".")) {
+            if (vcard_save_path.mkpath(vcard_save_path.absolutePath())) {
                 gkEventLogger->publishEvent(tr("Directory, \"%1\", has been created successfully!")
                 .arg(vcard_save_path.absolutePath()), GkSeverity::Info, "", false,
                 true, false, false);
             } else {
-                throw std::runtime_error(tr("Unsuccessfully attempted to capture vCards for XMPP user roster. Error: %1").arg(QString::fromStdString(ec.message())).toStdString());
+                throw std::runtime_error(tr("Unsuccessfully attempted to capture vCards for XMPP user roster. Directory: %1")
+                .arg(vcard_save_path.absolutePath()).toStdString());
             }
         }
 
