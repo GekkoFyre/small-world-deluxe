@@ -79,6 +79,14 @@ public:
     void stop(const QFileInfo &audio_file, const GekkoFyre::Database::Settings::GkAudioSource &audio_source);
     void loopback();
 
+signals:
+    //
+    // Audio related
+    void stopRecInput();
+    void stopRecOutput();
+    void startRecInput();
+    void startRecOutput();
+
 private:
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;

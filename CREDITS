@@ -98,9 +98,9 @@ libopusenc by Xiph.Org Foundation and Jean-Marc Valin et al.
     <http://opus-codec.org/>
         BSD 3-clause License
 
-libcurl by Daniel Stenberg et al.
-    <https://github.com/curl/curl/>
-        Public License w/ Copyright
+aria2 by Tatsuhiro Tsujikawa and Ross Smith II et al.
+	<https://aria2.github.io/>
+		GNU General Public License (GPL, version 2)
 
 libiconv-win-build by Bruno Haible
     <https://github.com/kiyolee/libiconv-win-build/>

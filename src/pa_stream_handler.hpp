@@ -136,6 +136,13 @@ signals:
     void changeRecorderState(QAudio::State changed_state);
 
     //
+    // Audio related
+    void stopRecInput();
+    void stopRecOutput();
+    void startRecInput();
+    void startRecOutput();
+
+    //
     // Encoding of multimedia files
     void initEncode(const QFileInfo &media_path, const qint32 &bitrate, const GekkoFyre::GkAudioFramework::CodecSupport &codec_choice,
                     const GekkoFyre::Database::Settings::GkAudioSource &audio_source, const qint32 &frame_size = AUDIO_FRAMES_PER_BUFFER,

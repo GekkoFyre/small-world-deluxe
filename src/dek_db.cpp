@@ -3175,6 +3175,8 @@ QString GkLevelDb::convCodecFormatToFileExtension(const CodecSupport &codec_supp
             return QString(".ogg");
         case CodecSupport::FLAC:
             return QString(".opus");
+        case CodecSupport::Codec2:
+            return QString(".c2");
         case CodecSupport::Unsupported:
             return tr(".unsupported");
         case CodecSupport::Unknown:

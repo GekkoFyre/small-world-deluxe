@@ -43,6 +43,6 @@
 [submodule "src/contrib/nuspell"]
 	path = src/contrib/nuspell
 	url = https://github.com/nuspell/nuspell.git
-[submodule "src/contrib/curl"]
-	path = src/contrib/curl
-	url = https://github.com/curl/curl.git
+[submodule "src/contrib/aria2"]
+	path = src/contrib/aria2
+	url = https://github.com/aria2/aria2.git

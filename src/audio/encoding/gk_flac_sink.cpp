@@ -46,6 +46,7 @@
 #include <exception>
 #include <QDir>
 #include <QtGui>
+#include <QTimer>
 
 using namespace GekkoFyre;
 using namespace GkAudioFramework;
@@ -77,6 +78,50 @@ GkFlacSink::GkFlacSink(const QString &fileLoc, const quint32 &maxAmplitude, cons
     m_initialized = false;
     m_recActive = GkAudioRecordStatus::Defunct;
 
+    if (m_audioFormat.sampleSize() == 8 && m_audioFormat.sampleType() == QAudioFormat::UnSignedInt) {
+        //
+        // quint8
+    } else if (m_audioFormat.sampleSize() == 8 && m_audioFormat.sampleType() == QAudioFormat::SignedInt) {
+        //
+        // qint8
+    } else if (m_audioFormat.sampleSize() == 16 && m_audioFormat.sampleType() == QAudioFormat::UnSignedInt) {
+        if (m_audioFormat.byteOrder() == QAudioFormat::LittleEndian) {
+            //
+            // quint16 (qFromLittleEndian)
+        } else {
+            //
+            // quint16 (qFromBigEndian)
+        }
+    } else if (m_audioFormat.sampleSize() == 16 && m_audioFormat.sampleType() == QAudioFormat::SignedInt) {
+        if (m_audioFormat.byteOrder() == QAudioFormat::LittleEndian) {
+            //
+            // qint16 (qAbs(qFromLittleEndian))
+        } else {
+            //
+            // qint16 (qAbs(qFromBigEndian))
+        }
+    } else if (m_audioFormat.sampleSize() == 32 && m_audioFormat.sampleType() == QAudioFormat::UnSignedInt) {
+        if (m_audioFormat.byteOrder() == QAudioFormat::LittleEndian) {
+            //
+            // quint32 (qFromLittleEndian)
+        } else {
+            //
+            // quint32 (qFromBigEndian)
+        }
+    } else if (m_audioFormat.sampleSize() == 32 && m_audioFormat.sampleType() == QAudioFormat::SignedInt) {
+        if (m_audioFormat.byteOrder() == QAudioFormat::LittleEndian) {
+            //
+            // qint32 (qAbs(qFromLittleEndian))
+        } else {
+            //
+            // qint32 (qAbs(qFromBigEndian))
+        }
+    } else if (m_audioFormat.sampleSize() == 32 && m_audioFormat.sampleType() == QAudioFormat::Float) {
+        //
+        // Assumes 0 - 1.0!
+        // qAbs(*reinterpret_cast<const float *>(ptr) * 0x7fffffff)
+    }
+
     return;
 }
 
@@ -98,6 +143,7 @@ qint64 GkFlacSink::readData(char *data, qint64 maxlen)
  * @param data
  * @param len
  * @return
+ * @note Audio Input Example <https://doc.qt.io/qt-5/qtmultimedia-multimedia-audioinput-example.html>.
  */
 qint64 GkFlacSink::writeData(const char *data, qint64 len)
 {

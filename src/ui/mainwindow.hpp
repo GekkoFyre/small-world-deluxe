@@ -541,7 +541,7 @@ private:
     void createTrayActions();
     void createTrayIcon();
 
-    void print_exception(const std::exception &e, int level = 0);
+    void print_exception(const std::exception &e, const bool &displayMsgBox = false, int level = 0);
 
 };
 

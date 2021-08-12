@@ -587,7 +587,7 @@ void GkAudioPlayDialog::audioPlaybackHelper(const CodecSupport &m_rec_codec_chos
                 throw std::invalid_argument(tr("Invalid argument provided for audio device determination, when attempting playback!").toStdString());
         }
     } catch (const std::exception &e) {
-        std::throw_with_nested(e.what());
+        std::throw_with_nested(std::runtime_error(e.what()));
     }
 
     return;

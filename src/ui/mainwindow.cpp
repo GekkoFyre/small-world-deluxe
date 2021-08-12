@@ -794,7 +794,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QObject::connect(this, SIGNAL(startRecOutput()), this, SLOT(startRecordingOutput()));
 
         //
-        // Audio Encoding & Related
+        // Audio Devices & Related
         //
         QObject::connect(gkAudioEncoding, SIGNAL(stopRecInput()), this, SIGNAL(stopRecInput()));
         QObject::connect(gkAudioEncoding, SIGNAL(stopRecOutput()), this, SIGNAL(stopRecOutput()));
@@ -1193,7 +1193,7 @@ bool MainWindow::radioInitStart()
 
         return true;
     } catch (const std::exception &e) {
-        print_exception(e);
+        print_exception(e, false);
     }
 
     return false;
@@ -1840,7 +1840,7 @@ void MainWindow::processFirewallRules(INetFwProfile *pfwProfile)
 
         return;
     } catch (const std::exception &e) {
-        std::throw_with_nested(e.what());
+        print_exception(e, false);
     }
 
     return;
@@ -1869,7 +1869,7 @@ bool MainWindow::addSwdSysFirewall(INetFwProfile *pfwProfile, const QString &ful
 
         return true;
     } catch (const std::exception &e) {
-        std::throw_with_nested(e.what());
+        std::throw_with_nested(std::runtime_error(e.what()));
     }
 
     return false;
@@ -1914,7 +1914,7 @@ bool MainWindow::addPortSysFirewall(INetFwProfile *pfwProfile, const qint32 &net
 
         return false;
     } catch (const std::exception &e) {
-        std::throw_with_nested(e.what());
+        std::throw_with_nested(std::runtime_error(e.what()));
     }
 
     return false;
@@ -2986,15 +2986,23 @@ void MainWindow::stopRecordingOutput()
 void MainWindow::startRecordingInput()
 {
     try {
-        if (gkAudioInput->state() == QAudio::StoppedState) {
-            emit stopRecInput();
-
-            if (avail_input_audio_devs.empty()) {
-                throw std::invalid_argument(tr("No input audio devices have been found!").toStdString());
-            }
+        if (avail_input_audio_devs.empty()) {
+            throw std::invalid_argument(tr("No input audio devices have been found!").toStdString());
         }
 
+        if (gkAudioInput->state() == QAudio::ActiveState) {
+            emit stopRecInput();
+        }
+
+        if (!gkAudioInputThread.isRunning()) {
+            gkAudioInputThread.start();
+        }
+
+        gkAudioInput->moveToThread(&gkAudioInputThread);
+        gkAudioInput->setNotifyInterval(100);
+        gkAudioInput->start(gkAudioInputBuf);
         gkFftAudio->processEvent(Spectrograph::GkFftEventType::record);
+
         return;
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(tr("Problem encountered with initializing input audio device. Error:\n\n%1").arg(QString::fromStdString(e.what())),
@@ -3011,15 +3019,23 @@ void MainWindow::startRecordingInput()
 void MainWindow::startRecordingOutput()
 {
     try {
-        if (gkAudioOutput->state() == QAudio::StoppedState) {
-            emit stopRecOutput();
-
-            if (avail_output_audio_devs.empty()) {
-                throw std::invalid_argument(tr("No output audio devices have been found!").toStdString());
-            }
+        if (avail_output_audio_devs.empty()) {
+            throw std::invalid_argument(tr("No output audio devices have been found!").toStdString());
         }
 
+        if (gkAudioOutput->state() == QAudio::ActiveState) {
+            emit stopRecOutput();
+        }
+
+        if (!gkAudioOutputThread.isRunning()) {
+            gkAudioOutputThread.start();
+        }
+
+        gkAudioOutput->moveToThread(&gkAudioOutputThread);
+        gkAudioOutput->setNotifyInterval(100);
+        gkAudioOutput->start(gkAudioOutputBuf);
         gkFftAudio->processEvent(Spectrograph::GkFftEventType::record);
+
         return;
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(tr("Problem encountered with initializing input audio device. Error:\n\n%1").arg(QString::fromStdString(e.what())),
@@ -3625,17 +3641,20 @@ void MainWindow::on_action_Battery_Calculator_triggered()
 /**
  * @brief MainWindow::print_exception
  * @param e
+ * @param displayMsgBox Whether to display a QMessageBox or not to the end-user.
  * @param level
  */
-void MainWindow::print_exception(const std::exception &e, int level)
+void MainWindow::print_exception(const std::exception &e, const bool &displayMsgBox, int level)
 {
     gkEventLogger->publishEvent(e.what(), GkSeverity::Warning, "", false);
-    QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+    if (displayMsgBox) {
+        QMessageBox::warning(nullptr, tr("Error!"), e.what(), QMessageBox::Ok);
+    }
 
     try {
         std::rethrow_if_nested(e);
     } catch (const std::exception &e) {
-        print_exception(e, level + 1);
+        print_exception(e, displayMsgBox, level + 1);
     } catch (...) {}
 
     return;

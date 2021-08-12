@@ -73,10 +73,11 @@ endif()
 set(CMAKE_INSTALL_RPATH $ORIGIN $ORIGIN/lib) # Relative path to lib-dir...
 set(INSTALL_RPATH_USE_LINK_PATH true)
 
-project(smallworld C CXX)
+project(smallworld LANGUAGES C CXX)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
@@ -341,17 +342,72 @@ else()
 endif(ICU_FOUND)
 
 #
-# Curl by Daniel Stenberg
-# https://github.com/curl/curl
+# Aria2 by Tatsuhiro Tsujikawa and Ross Smith II et al.
+# https://aria2.github.io/
 #
-find_package(CURL REQUIRED)
-if (CURL_FOUND)
-    include_directories(${CURL_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${CURL_LIBRARIES})
-	message(STATUS "The 'libcurl' command-line tool and library for transferring network data has been configured!")
+find_package(Aria2 REQUIRED)
+if (ARIA2_FOUND)
+    include_directories(${ARIA2_INCLUDE_DIRS})
+    # set(LIBS ${LIBS} ${ARIA2_LIBRARIES})
+	message(STATUS "The 'aria2' command-line tool and library for transferring network data has been configured!")
 else()
-	message(FATAL_ERROR "The 'libcurl' command-line tool and library for transferring network data could not be found!")
-endif(CURL_FOUND)
+	message(FATAL_ERROR "The 'aria2' command-line tool and library for transferring network data could not be found!")
+endif(ARIA2_FOUND)
+
+find_package(LibXml2 REQUIRED)
+if (LibXml2_FOUND)
+    include_directories(${LIBXML2_INCLUDE_DIRS})
+    # set(LIBS ${LIBS} ${LIBXML2_LIBRARIES})
+	message(STATUS "The 'LibXml2' library has been configured!")
+else()
+	message(FATAL_ERROR "The 'LibXml2' library could not be found!")
+endif(LibXml2_FOUND)
+
+#
+# C-ares for asynchronous DNS requests
+# https://c-ares.haxx.se/
+#
+find_package(Cares REQUIRED)
+if (CARES_FOUND)
+    include_directories(${CARES_INCLUDE_DIRS})
+    # set(LIBS ${LIBS} ${CARES_LIBRARIES})
+	message(STATUS "The 'c-ares' library for asynchronous DNS requests has been configured!")
+else()
+	message(FATAL_ERROR "The 'c-ares' library for asynchronous DNS requests could not be found!")
+endif(CARES_FOUND)
+
+find_package(Gettext REQUIRED)
+if (GETTEXT_FOUND)
+    # set(LIBS ${LIBS} ${GETTEXT_LIBRARIES})
+	message(STATUS "The 'gettext' library has been configured!")
+else()
+	message(FATAL_ERROR "The 'gettext' library could not be found!")
+endif(GETTEXT_FOUND)
+
+find_package(LibIntl REQUIRED)
+if (LIBINTL_FOUND)
+    # set(LIBS ${LIBS} ${LIBINTL_LIBRARIES})
+	message(STATUS "The 'libintl' internationalization library has been configured!")
+else()
+	message(FATAL_ERROR "The 'libintl' internationalization library could not be found!")
+endif(LIBINTL_FOUND)
+
+find_package(LibSsh2 REQUIRED)
+if (LIBSSH2_FOUND)
+    # set(LIBS ${LIBS} ${LIBSSH2_LIBRARIES})
+	message(STATUS "The 'libssh2' SSH libraries have been configured!")
+else()
+	message(FATAL_ERROR "The 'libssh2' SSH libraries could not be found!")
+endif(LIBSSH2_FOUND)
+
+find_package(SQLite3 REQUIRED)
+if (SQLite3_FOUND)
+    include_directories(${SQLite3_INCLUDE_DIRS})
+    # set(LIBS ${LIBS} ${SQLite3_LIBRARIES})
+	message(STATUS "The 'SQLite3' library has been configured!")
+else()
+	message(FATAL_ERROR "The 'SQLite3' library could not be found!")
+endif(SQLite3_FOUND)
 
 #
 # Nuspell
@@ -413,11 +469,13 @@ if (BUILD_CODEC2_SUPPORT)
             
             set(GALAXY_CODEC2_CPP
                 ${GALAXY_CODEC2_CPP}
-                src/gk_codec2.cpp)
+                src/gk_codec2.cpp
+				src/audio/encoding/gk_codec2_sink.cpp)
             
             set(GALAXY_CODEC2_HPP
                 ${GALAXY_CODEC2_HPP}
-                src/gk_codec2.hpp)
+                src/gk_codec2.hpp
+				src/audio/encoding/gk_codec2_sink.hpp)
         else()
             message(FATAL_ERROR "The 'Codec2' open source speech codec library could not be found!")
         endif(CODEC2_FOUND)
@@ -711,7 +769,6 @@ set(GALAXY_UI_CPP
 	src/audio/encoding/gk_ogg_opus_sink.cpp
 	src/audio/encoding/gk_flac_sink.cpp
 	src/audio/encoding/gk_ogg_vorbis_sink.cpp
-	src/audio/encoding/gk_codec2_sink.cpp
 	src/audio/decoding/gk_pcm_wav_source.cpp
 	src/audio/decoding/gk_ogg_opus_source.cpp
 	src/audio/decoding/gk_flac_source.cpp
@@ -823,7 +880,6 @@ set(GALAXY_OBJ_HEADERS
 	src/audio/encoding/gk_ogg_opus_sink.hpp
 	src/audio/encoding/gk_flac_sink.hpp
 	src/audio/encoding/gk_ogg_vorbis_sink.hpp
-	src/audio/encoding/gk_codec2_sink.hpp
 	src/audio/decoding/gk_pcm_wav_source.hpp
 	src/audio/decoding/gk_ogg_opus_source.hpp
 	src/audio/decoding/gk_flac_source.hpp
@@ -852,6 +908,32 @@ elseif(LINUX)
 elseif(APPLE)
     message(SEND_ERROR "We do not currently support compilation for Apple Mac OS/X systems at this stage. Sorry!")
 endif()
+
+#
+# Do not compile UIC for these!
+#
+set(GK_APP_VERS_HPP
+	${GK_APP_VERS_HPP}
+	src/gk_app_vers.hpp)
+
+set_property(SOURCE ${GK_APP_VERS_HPP} PROPERTY SKIP_AUTOUIC ON)
+
+#
+# Compile UIC!
+#
+set(GK_AUTO_UPDATE_CPP
+	${GK_AUTO_UPDATE_CPP}
+	src/update/main.cpp
+	src/update/gk_auto_update.cpp
+	src/update/gk_check_update.cpp)
+
+#
+# Compile UIC!
+#
+set(GK_AUTO_UPDATE_HEADERS
+	${GK_AUTO_UPDATE_HEADERS}
+	src/update/gk_auto_update.hpp
+	src/update/gk_check_update.hpp)
 
 #
 # Do not compile UIC for these!
@@ -901,7 +983,13 @@ if (MSYS OR MINGW)
         -lsetupapi
         -lole32
         -loleaut32
-        -lgdi32)
+        -lgdi32
+		-lws2_32
+		-lwsock32
+		-lcrypto
+		-liphlpapi
+		-lcares
+		-lxml2)
 else()
     #
     # Just an empty container for now!
@@ -923,7 +1011,7 @@ endif()
 # Build Small World Deluxe as a static package!
 #
 if(GFYRE_BUILD_STATIC)
-    add_library(galaxy STATIC ${QM_FILES} ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP} ${GALAXY_HAMLIB_CPP} ${GALAXY_WINTOAST_HPP} ${GALAXY_WINTOAST_CPP})
+    add_library(galaxy STATIC ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP} ${GALAXY_HAMLIB_CPP} ${GALAXY_WINTOAST_HPP} ${GALAXY_WINTOAST_CPP} ${GK_APP_VERS_HPP})
     if(WIN32 OR MSYS OR MINGW)
         target_link_libraries(galaxy PUBLIC "-static")
     endif()
@@ -936,7 +1024,7 @@ endif(GFYRE_BUILD_STATIC)
 #
 if(GFYRE_BUILD_SHARED)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC" )
-    add_library(galaxy SHARED ${QM_FILES} ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP} ${GALAXY_HAMLIB_CPP} ${GALAXY_WINTOAST_HPP} ${GALAXY_WINTOAST_CPP})
+    add_library(galaxy SHARED ${GALAXY_SRC_CPP} ${GALAXY_SRC_CPP_NON_MINGW} ${GALAXY_UI_CPP} ${UI_MOC} ${GALAXY_OBJ_HEADERS} ${GALAXY_SRC_HEADERS} ${GALAXY_SRC_HEADERS_NON_MINGW} ${UI_HEADERS} ${GALAXY_CODEC2_CPP} ${GALAXY_CODEC2_HPP} ${GALAXY_WSJTX_WSPR_C} ${GALAXY_GIST_CPP} ${GALAXY_GIST_HPP} ${GALAXY_HAMLIB_CPP} ${GALAXY_WINTOAST_HPP} ${GALAXY_WINTOAST_CPP} ${GK_APP_VERS_HPP})
     
     # add_library(galaxy_fort STATIC ${GALAXY_WSJTX_QRA64_FORT})
 endif(GFYRE_BUILD_SHARED)
@@ -946,8 +1034,18 @@ target_link_libraries(galaxy PUBLIC ${GK_EXTRA_LIBS} ICU::i18n ICU::data ICU::uc
 
 #
 # Qt Translations
+# https://gist.github.com/02JanDal/70a39f2cc3d2002b3588
 #
-qt5_create_translation(QM_FILES ${GALAXY_UI_CPP} ${UI_HEADERS} ${GALAXY_OBJ_HEADERS} gk_english.ts)
+SET_DIRECTORY_PROPERTIES(PROPERTIES CLEAN_NO_CUSTOM 1)
+set(TS_BASE_FILES lang/translations/smallworld_en_US.ts)
+# qt5_create_translation(QM_FILES ${GALAXY_UI_CPP} ${UI_HEADERS} ${GALAXY_OBJ_HEADERS} ${TS_BASE_FILES} OPTIONS -source-language en_US -no-obsolete)
+# qt5_add_translation(QM_FILES ${TS_BASE_FILES})
+
+#
+# Create custom target for the generation and updating of translation files, as this tends to be a slow process otherwise
+# that might tie up an otherwise normal compilation...
+#
+# add_custom_target(translations_update DEPENDS ${QM_FILES})
 
 #
 # The qm files are generated in the build tree, but the qrc file is inside the
@@ -956,7 +1054,7 @@ qt5_create_translation(QM_FILES ${GALAXY_UI_CPP} ${UI_HEADERS} ${GALAXY_OBJ_HEAD
 # directory such that it can find the qm translations files. The qrc file is
 # copied if it doesn't exist in the destination or if it is modified.
 #
-# configure_file(translations.qrc ${CMAKE_BINARY_DIR} COPYONLY)
+# configure_file(translations.qrc ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
 
 qt5_add_binary_resources(resources src/sworld_res.qrc OPTIONS -no-compress)
 add_dependencies(galaxy resources)
@@ -964,17 +1062,29 @@ add_dependencies(galaxy resources)
 set(SWRLD_EXEC ${SWRLD_EXEC}
     src/main.cpp)
 
+#
+# Compile the primary executable for Small World Deluxe!
+#
 if(WIN32 OR MSYS OR MINGW)
-    add_executable(smallworld WIN32 ${SWRLD_EXEC})
+    add_executable(smallworld WIN32 ${SWRLD_EXEC} ${QM_FILES})
 elseif(LINUX)
-    add_executable(smallworld ${SWRLD_EXEC})
+    add_executable(smallworld ${SWRLD_EXEC} ${QM_FILES})
 else()
     message(FATAL_ERROR "Unsupported operating system detected! Please check back at the official code repository for further updates. Thank you.")
 endif()
 
-target_compile_options(smallworld PRIVATE -fPIC)
+target_compile_options(smallworld PRIVATE -fPIC) # Compile with position independent code!
 target_compile_definitions(galaxy PRIVATE -DUSE_KISS_FFT)
-target_link_libraries(smallworld PRIVATE galaxy)
+target_link_libraries(smallworld PRIVATE galaxy) # Link with the 'Galaxy' set of libraries for good measure!
+
+#
+# Compile the automatic updater and checker for Small World Deluxe! It's a separate executable so that 
+# end-user firewalls do not automatically block the primary for being network accessible.
+#
+add_executable(gk_update ${GK_AUTO_UPDATE_CPP} ${GK_AUTO_UPDATE_HEADERS} ${QM_FILES} ${GK_APP_VERS_HPP})
+target_compile_options(gk_update PRIVATE -fPIC) # Compile with position independent code!
+set_property(TARGET gk_update PROPERTY AUTOMOC ON)
+target_link_libraries(gk_update PUBLIC ${ARIA2_LIBRARIES} ${LIBINTL_LIBRARIES} ${GETTEXT_LIBRARIES} ${ZLIB_LIBRARIES} ${LIBSSH2_LIBRARIES} ${ICU_LIBRARIES} ${Iconv_LIBRARIES} ${SQLite3_LIBRARIES} ${CARES_LIBRARIES} LibXml2::LibXml2 OpenSSL::SSL ${GK_EXTRA_LIBS} Qt5::Core Qt5::Network SingleApplication::SingleApplication)
 
 #
 # Copy the crashpad handler to the root of the binary build directory, for easy access!
