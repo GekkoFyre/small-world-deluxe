@@ -40,13 +40,64 @@
  ****************************************************************************************************/
 
 #include "src/update/gk_check_update.hpp"
+#include <iostream>
 
 using namespace GekkoFyre;
 
 GkCheckUpdate::GkCheckUpdate(QObject *parent) : QObject(parent)
 {
+    aria2::SessionConfig config;
+    aria_session.reset(aria2::sessionNew(aria2::KeyVals(), config), [](aria2::Session* s){aria2::sessionFinal(s);});
+
     return;
 }
 
 GkCheckUpdate::~GkCheckUpdate()
 {}
+
+/**
+ * @brief GkCheckUpdate::downloadEventCallback
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param session
+ * @param event
+ * @param gid
+ * @param userData
+ * @return
+ */
+qint32 GkCheckUpdate::downloadEventCallback(std::shared_ptr<aria2::Session> session, aria2::DownloadEvent event,
+                                            aria2::A2Gid gid, void *userData)
+{
+    switch (event) {
+        case aria2::EVENT_ON_DOWNLOAD_COMPLETE:
+            break;
+        case aria2::EVENT_ON_DOWNLOAD_ERROR:
+            break;
+        default:
+            return 0;
+    }
+
+    std::cerr << " [" << aria2::gidToHex(gid) << "] ";
+    aria2::DownloadHandle* dh = aria2::getDownloadHandle(session.get(), gid);
+    if (!dh) {
+        return 0;
+    }
+
+    if (dh->getNumFiles() > 0) {
+        aria2::FileData f = dh->getFile(1);
+
+        //
+        // Path maybe empty if the filename has not been determined yet!
+        if (f.path.empty()) {
+            if (!f.uris.empty()) {
+                std::cerr << f.uris[0].uri;
+            }
+        } else {
+            std::cerr << f.path;
+        }
+    }
+
+    aria2::deleteDownloadHandle(dh);
+    std::cerr << std::endl;
+
+    return 0;
+}

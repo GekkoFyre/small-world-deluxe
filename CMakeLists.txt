@@ -342,17 +342,72 @@ else()
 endif(ICU_FOUND)
 
 #
-# Curl by Daniel Stenberg
-# https://github.com/curl/curl
+# Aria2 by Tatsuhiro Tsujikawa and Ross Smith II et al.
+# https://aria2.github.io/
 #
-find_package(CURL REQUIRED)
-if (CURL_FOUND)
-    include_directories(${CURL_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${CURL_LIBRARIES})
-	message(STATUS "The 'libcurl' command-line tool and library for transferring network data has been configured!")
+find_package(Aria2 REQUIRED)
+if (ARIA2_FOUND)
+    include_directories(${ARIA2_INCLUDE_DIRS})
+    # set(LIBS ${LIBS} ${ARIA2_LIBRARIES})
+	message(STATUS "The 'aria2' command-line tool and library for transferring network data has been configured!")
 else()
-	message(FATAL_ERROR "The 'libcurl' command-line tool and library for transferring network data could not be found!")
-endif(CURL_FOUND)
+	message(FATAL_ERROR "The 'aria2' command-line tool and library for transferring network data could not be found!")
+endif(ARIA2_FOUND)
+
+find_package(LibXml2 REQUIRED)
+if (LibXml2_FOUND)
+    include_directories(${LIBXML2_INCLUDE_DIRS})
+    # set(LIBS ${LIBS} ${LIBXML2_LIBRARIES})
+	message(STATUS "The 'LibXml2' library has been configured!")
+else()
+	message(FATAL_ERROR "The 'LibXml2' library could not be found!")
+endif(LibXml2_FOUND)
+
+#
+# C-ares for asynchronous DNS requests
+# https://c-ares.haxx.se/
+#
+find_package(Cares REQUIRED)
+if (CARES_FOUND)
+    include_directories(${CARES_INCLUDE_DIRS})
+    # set(LIBS ${LIBS} ${CARES_LIBRARIES})
+	message(STATUS "The 'c-ares' library for asynchronous DNS requests has been configured!")
+else()
+	message(FATAL_ERROR "The 'c-ares' library for asynchronous DNS requests could not be found!")
+endif(CARES_FOUND)
+
+find_package(Gettext REQUIRED)
+if (GETTEXT_FOUND)
+    # set(LIBS ${LIBS} ${GETTEXT_LIBRARIES})
+	message(STATUS "The 'gettext' library has been configured!")
+else()
+	message(FATAL_ERROR "The 'gettext' library could not be found!")
+endif(GETTEXT_FOUND)
+
+find_package(LibIntl REQUIRED)
+if (LIBINTL_FOUND)
+    # set(LIBS ${LIBS} ${LIBINTL_LIBRARIES})
+	message(STATUS "The 'libintl' internationalization library has been configured!")
+else()
+	message(FATAL_ERROR "The 'libintl' internationalization library could not be found!")
+endif(LIBINTL_FOUND)
+
+find_package(LibSsh2 REQUIRED)
+if (LIBSSH2_FOUND)
+    # set(LIBS ${LIBS} ${LIBSSH2_LIBRARIES})
+	message(STATUS "The 'libssh2' SSH libraries have been configured!")
+else()
+	message(FATAL_ERROR "The 'libssh2' SSH libraries could not be found!")
+endif(LIBSSH2_FOUND)
+
+find_package(SQLite3 REQUIRED)
+if (SQLite3_FOUND)
+    include_directories(${SQLite3_INCLUDE_DIRS})
+    # set(LIBS ${LIBS} ${SQLite3_LIBRARIES})
+	message(STATUS "The 'SQLite3' library has been configured!")
+else()
+	message(FATAL_ERROR "The 'SQLite3' library could not be found!")
+endif(SQLite3_FOUND)
 
 #
 # Nuspell
@@ -928,7 +983,13 @@ if (MSYS OR MINGW)
         -lsetupapi
         -lole32
         -loleaut32
-        -lgdi32)
+        -lgdi32
+		-lws2_32
+		-lwsock32
+		-lcrypto
+		-liphlpapi
+		-lcares
+		-lxml2)
 else()
     #
     # Just an empty container for now!
@@ -1023,7 +1084,7 @@ target_link_libraries(smallworld PRIVATE galaxy) # Link with the 'Galaxy' set of
 add_executable(gk_update ${GK_AUTO_UPDATE_CPP} ${GK_AUTO_UPDATE_HEADERS} ${QM_FILES} ${GK_APP_VERS_HPP})
 target_compile_options(gk_update PRIVATE -fPIC) # Compile with position independent code!
 set_property(TARGET gk_update PROPERTY AUTOMOC ON)
-target_link_libraries(gk_update PUBLIC Qt5::Core Qt5::Network SingleApplication::SingleApplication)
+target_link_libraries(gk_update PUBLIC ${ARIA2_LIBRARIES} ${LIBINTL_LIBRARIES} ${GETTEXT_LIBRARIES} ${ZLIB_LIBRARIES} ${LIBSSH2_LIBRARIES} ${ICU_LIBRARIES} ${Iconv_LIBRARIES} ${SQLite3_LIBRARIES} ${CARES_LIBRARIES} LibXml2::LibXml2 OpenSSL::SSL ${GK_EXTRA_LIBS} Qt5::Core Qt5::Network SingleApplication::SingleApplication)
 
 #
 # Copy the crashpad handler to the root of the binary build directory, for easy access!

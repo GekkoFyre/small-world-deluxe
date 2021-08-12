@@ -41,11 +41,13 @@
 
 #pragma once
 
+#include <aria2/aria2.h>
 #include <memory>
 #include <string>
 #include <QObject>
 #include <QPointer>
 #include <QSaveFile>
+#include <QByteArray>
 
 namespace GekkoFyre {
 
@@ -55,6 +57,12 @@ class GkCheckUpdate : public QObject {
 public:
     explicit GkCheckUpdate(QObject *parent = nullptr);
     ~GkCheckUpdate() override;
+
+private:
+    std::shared_ptr<aria2::Session> aria_session;
+
+    qint32 downloadEventCallback(std::shared_ptr<aria2::Session> session, aria2::DownloadEvent event, aria2::A2Gid gid,
+                                 void *userData);
 
 };
 };
