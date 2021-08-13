@@ -46,3 +46,6 @@
 [submodule "src/contrib/aria2"]
 	path = src/contrib/aria2
 	url = https://github.com/aria2/aria2.git
+[submodule "src/contrib/c-ares"]
+	path = src/contrib/c-ares
+	url = https://github.com/c-ares/c-ares.git
