@@ -72,9 +72,6 @@ using namespace Network;
 using namespace GkXmpp;
 using namespace Security;
 
-namespace fs = boost::filesystem;
-namespace sys = boost::system;
-
 /**
  * @brief GkXmppClient::GkXmppClient The client-class for all such XMPP calls within Small World Deluxe.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -85,8 +82,8 @@ namespace sys = boost::system;
  */
 GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoFyre::GkLevelDb> database,
                            QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::FileIo> fileIo,
-                           QPointer<GekkoFyre::GkEventLogger> eventLogger, const bool &connectNow,
-                           QObject *parent) : m_rosterManager(findExtension<QXmppRosterManager>()),
+                           QPointer<GekkoFyre::GkSystem> system, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                           const bool &connectNow, QObject *parent) : m_rosterManager(findExtension<QXmppRosterManager>()),
                                               m_registerManager(findExtension<QXmppRegistrationManager>()),
                                               m_versionMgr(findExtension<QXmppVersionManager>()),
                                               m_vCardManager(findExtension<QXmppVCardManager>()),
@@ -151,9 +148,6 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         m_sslIsEnabled = false;
         m_isMuc = false;
         m_msgRecved = false;
-        sys::error_code ec;
-        fs::path slash = "/";
-        native_slash = slash.make_preferred().native();
 
         const QString dir_to_append = QDir::toNativeSeparators(QString::fromStdString(General::companyName) + "/" + QString::fromStdString(Filesystem::defaultDirAppend) + "/" + QString::fromStdString(Filesystem::xmppVCardDir));
         vcard_save_path.setPath(QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/" + dir_to_append)); // Path to save final database towards
@@ -1154,8 +1148,8 @@ void GkXmppClient::vCardReceived(const QXmppVCardIq &vCard)
         gkEventLogger->publishEvent(tr("vCard received for user, \"%1\"").arg(bareJid), GkSeverity::Debug,
                                     "", false, true, false, false);
 
-        QFileInfo imgFileName = QString(vcard_save_path.absolutePath() + "/" + bareJid + ".png");
-        QFileInfo xmlFileName = QString(vcard_save_path.absolutePath() + "/" + bareJid + ".xml");
+        QFileInfo imgFileName = QDir::toNativeSeparators(vcard_save_path.absolutePath() + "/" + bareJid + ".png");
+        QFileInfo xmlFileName = QDir::toNativeSeparators(vcard_save_path.absolutePath() + "/" + bareJid + ".xml");
 
         // TODO: How should we deal with `imgFileName`?
         if (xmlFileName.exists()) {
@@ -1216,8 +1210,8 @@ void GkXmppClient::clientVCardReceived()
 {
     try {
         m_clientVCard = m_vCardManager->clientVCard();
-        QFileInfo imgFileName = QString(vcard_save_path.absolutePath() + "/" + config.jid() + ".png");
-        QFileInfo xmlFileName = QString(vcard_save_path.absolutePath() + "/" + config.jid() + ".xml");
+        QFileInfo imgFileName = QDir::toNativeSeparators(vcard_save_path.absolutePath() + "/" + config.jid() + ".png");
+        QFileInfo xmlFileName = QDir::toNativeSeparators(vcard_save_path.absolutePath() + "/" + config.jid() + ".xml");
 
         QFile xmlFile(xmlFileName.absoluteFilePath());
         if (xmlFile.open(QIODevice::ReadWrite)) {

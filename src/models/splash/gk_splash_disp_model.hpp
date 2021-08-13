@@ -1,12 +1,16 @@
 /**
- **  ______  ______  ___   ___  ______  ______  ______  ______       
- ** /_____/\/_____/\/___/\/__/\/_____/\/_____/\/_____/\/_____/\      
- ** \:::_ \ \::::_\/\::.\ \\ \ \:::_ \ \:::_ \ \::::_\/\:::_ \ \     
- **  \:\ \ \ \:\/___/\:: \/_) \ \:\ \ \ \:\ \ \ \:\/___/\:(_) ) )_   
- **   \:\ \ \ \::___\/\:. __  ( (\:\ \ \ \:\ \ \ \::___\/\: __ `\ \  
- **    \:\/.:| \:\____/\: \ )  \ \\:\_\ \ \:\/.:| \:\____/\ \ `\ \ \ 
- **     \____/_/\_____\/\__\/\__\/ \_____\/\____/_/\_____\/\_\/ \_\/ 
- **                                                                 
+ **     __                 _ _   __    __           _     _ 
+ **    / _\_ __ ___   __ _| | | / / /\ \ \___  _ __| | __| |
+ **    \ \| '_ ` _ \ / _` | | | \ \/  \/ / _ \| '__| |/ _` |
+ **    _\ \ | | | | | (_| | | |  \  /\  / (_) | |  | | (_| |
+ **    \__/_| |_| |_|\__,_|_|_|   \/  \/ \___/|_|  |_|\__,_|
+ **                                                         
+ **                  ___     _                              
+ **                 /   \___| |_   ___  _____               
+ **                / /\ / _ \ | | | \ \/ / _ \              
+ **               / /_//  __/ | |_| |>  <  __/              
+ **              /___,' \___|_|\__,_/_/\_\___|              
+ **
  **
  **   If you have downloaded the source code for "Small World Deluxe" and are reading this,
  **   then thank you from the bottom of our hearts for making use of our hard work, sweat
@@ -19,7 +23,7 @@
  **   the Free Software Foundation, either version 3 of the License, or
  **   (at your option) any later version.
  **
- **   Small World is distributed in the hope that it will be useful,
+ **   Small world is distributed in the hope that it will be useful,
  **   but WITHOUT ANY WARRANTY; without even the implied warranty of
  **   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  **   GNU General Public License for more details.
@@ -39,29 +43,30 @@
 
 #include "src/defines.hpp"
 #include <QObject>
-#include <QDialog>
+#include <QWidget>
 #include <QString>
+#include <QPointer>
+#include <QPainter>
+#include <QApplication>
+#include <QSplashScreen>
 
-namespace Ui {
-class AboutDialog;
-}
+namespace GekkoFyre {
 
-class AboutDialog : public QDialog
-{
+class GkSplashDispModel : public QSplashScreen {
     Q_OBJECT
 
 public:
-    explicit AboutDialog(QWidget *parent = nullptr);
-    ~AboutDialog() override;
+    explicit GkSplashDispModel(QApplication *aApp, QWidget *parent = nullptr);
+    ~GkSplashDispModel() override;
 
-private slots:
-    void on_buttonBox_close_rejected();
-    void on_pushButton_icon_clicked();
-    void on_pushButton_software_updates_clicked();
+    QApplication *app;
+    qint32 m_progress;
 
-private:
-    Ui::AboutDialog *ui;
+public slots:
+    void setProgress(const qint32 &value);
 
-    qint32 button_counter;
+protected:
+    void drawContents(QPainter *painter) Q_DECL_OVERRIDE;
+
 };
-
+};
