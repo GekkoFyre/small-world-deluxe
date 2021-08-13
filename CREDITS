@@ -98,6 +98,10 @@ libopusenc by Xiph.Org Foundation and Jean-Marc Valin et al.
     <http://opus-codec.org/>
         BSD 3-clause License
 
+c-ares by Daniel Stenberg et al.
+	<https://c-ares.haxx.se/>
+		The MIT License
+
 aria2 by Tatsuhiro Tsujikawa and Ross Smith II et al.
 	<https://aria2.github.io/>
 		GNU General Public License (GPL, version 2)

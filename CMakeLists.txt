@@ -363,19 +363,6 @@ else()
 	message(FATAL_ERROR "The 'LibXml2' library could not be found!")
 endif(LibXml2_FOUND)
 
-#
-# C-ares for asynchronous DNS requests
-# https://c-ares.haxx.se/
-#
-find_package(Cares REQUIRED)
-if (CARES_FOUND)
-    include_directories(${CARES_INCLUDE_DIRS})
-    # set(LIBS ${LIBS} ${CARES_LIBRARIES})
-	message(STATUS "The 'c-ares' library for asynchronous DNS requests has been configured!")
-else()
-	message(FATAL_ERROR "The 'c-ares' library for asynchronous DNS requests could not be found!")
-endif(CARES_FOUND)
-
 find_package(Gettext REQUIRED)
 if (GETTEXT_FOUND)
     # set(LIBS ${LIBS} ${GETTEXT_LIBRARIES})
@@ -604,6 +591,23 @@ message(STATUS "The 'KissFFT' fourier transform libraries have been configured!"
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/AudioFile")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/AudioFile")
 message(STATUS "The 'AudioFile' libraries have been configured!")
+
+#
+# c-ares by Daniel Stenberg et al.
+# https://c-ares.haxx.se/
+#
+set(CARES_STATIC ON CACHE BOOL "Build c-ares as a static library." FORCE)
+set(CARES_SHARED OFF CACHE BOOL "Build c-ares as a shared library." FORCE)
+if (CARES_STATIC)
+	set(CARES_STATIC_PIC ON CACHE BOOL "Build the c-ares static library as PIC (position independent)." FORCE)
+endif()
+
+set(CARES_BUILD_TESTS OFF CACHE BOOL "Build and run tests for the c-ares set of libraries." FORCE)
+set(CARES_BUILD_TOOLS OFF CACHE BOOL "Build tools for the c-ares set of libraries." FORCE)
+
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/c-ares")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/c-ares/include")
+message(STATUS "The 'c-ares' library for asynchronous DNS requests has been configured!")
 
 #
 # WSJT-X
@@ -988,7 +992,6 @@ if (MSYS OR MINGW)
 		-lwsock32
 		-lcrypto
 		-liphlpapi
-		-lcares
 		-lxml2)
 else()
     #
@@ -1084,7 +1087,7 @@ target_link_libraries(smallworld PRIVATE galaxy) # Link with the 'Galaxy' set of
 add_executable(gk_update ${GK_AUTO_UPDATE_CPP} ${GK_AUTO_UPDATE_HEADERS} ${QM_FILES} ${GK_APP_VERS_HPP})
 target_compile_options(gk_update PRIVATE -fPIC) # Compile with position independent code!
 set_property(TARGET gk_update PROPERTY AUTOMOC ON)
-target_link_libraries(gk_update PUBLIC ${ARIA2_LIBRARIES} ${LIBINTL_LIBRARIES} ${GETTEXT_LIBRARIES} ${ZLIB_LIBRARIES} ${LIBSSH2_LIBRARIES} ${ICU_LIBRARIES} ${Iconv_LIBRARIES} ${SQLite3_LIBRARIES} ${CARES_LIBRARIES} LibXml2::LibXml2 OpenSSL::SSL ${GK_EXTRA_LIBS} Qt5::Core Qt5::Network SingleApplication::SingleApplication)
+target_link_libraries(gk_update PUBLIC ${ARIA2_LIBRARIES} ${LIBINTL_LIBRARIES} ${GETTEXT_LIBRARIES} ${ZLIB_LIBRARIES} ${LIBSSH2_LIBRARIES} ${ICU_LIBRARIES} ${Iconv_LIBRARIES} ${SQLite3_LIBRARIES} LibXml2::LibXml2 OpenSSL::SSL ${GK_EXTRA_LIBS} cares Qt5::Core Qt5::Network SingleApplication::SingleApplication)
 
 #
 # Copy the crashpad handler to the root of the binary build directory, for easy access!
