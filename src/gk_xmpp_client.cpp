@@ -100,6 +100,7 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         gkDb = std::move(database);
         gkStringFuncs = std::move(stringFuncs);
         gkFileIo = std::move(fileIo);
+        gkSystem = std::move(system);
         gkEventLogger = std::move(eventLogger);
         m_sslSocket = new QSslSocket(this);
 
@@ -1058,8 +1059,8 @@ void GkXmppClient::getArchivedMessagesFine(qint32 recursion, const QString &from
  */
 QByteArray GkXmppClient::processImgToByteArray(const QString &filePath)
 {
-    QPointer<QFile> imageFile = new QFile(filePath);
-    imageFile->open(QIODevice::ReadOnly);
+    QPointer<QFile> imageFile = new QFile(filePath, this);
+    imageFile->open(QIODevice::ReadOnly | QIODevice::Truncate);
     QByteArray byteArray = imageFile->readAll();
     imageFile->close();
     delete imageFile;
@@ -1209,15 +1210,15 @@ void GkXmppClient::vCardReceived(const QXmppVCardIq &vCard)
 void GkXmppClient::clientVCardReceived()
 {
     try {
-        m_clientVCard = m_vCardManager->clientVCard();
-        QFileInfo imgFileName = QDir::toNativeSeparators(vcard_save_path.absolutePath() + "/" + config.jid() + ".png");
-        QFileInfo xmlFileName = QDir::toNativeSeparators(vcard_save_path.absolutePath() + "/" + config.jid() + ".xml");
+        const QXmppVCardIq m_clientVCard = m_vCardManager->clientVCard();
+        const QFileInfo imgFileLoc = QDir::toNativeSeparators(vcard_save_path.absolutePath() + "/" + config.jid() + ".png");
+        const QFileInfo xmlFileLoc = QDir::toNativeSeparators(vcard_save_path.absolutePath() + "/" + config.jid() + ".xml");
 
-        QFile xmlFile(xmlFileName.absoluteFilePath());
-        if (xmlFile.open(QIODevice::ReadWrite)) {
-            QXmlStreamWriter stream(&xmlFile);
+        QPointer<QFile> xmlFile = new QFile(xmlFileLoc.absoluteFilePath(), this);
+        if (xmlFile->open(QIODevice::ReadWrite | QIODevice::Truncate)) { // Overwrite the XML file wholly each time, no matter if it is pre-existing or not!
+            QXmlStreamWriter stream(xmlFile);
             m_clientVCard.toXml(&stream);
-            xmlFile.close();
+            xmlFile->close();
 
             gkEventLogger->publishEvent(tr("vCard XML data saved to filesystem for self-client."),
                                         GkSeverity::Debug, "", false, true, false, false);
@@ -1231,18 +1232,23 @@ void GkXmppClient::clientVCardReceived()
             }
         }
 
-        if (!photo.isEmpty()) {
-            QPointer<QBuffer> buffer = new QBuffer(this);
-            buffer->setData(photo);
-            buffer->open(QIODevice::ReadWrite);
-            QImageReader imageReader(buffer);
-            QDir::setCurrent(imgFileName.absolutePath()); // Set the working directory to this!
-            QImage image = imageReader.read();
-            if (image.save(imgFileName.absoluteFilePath())) {
-                gkEventLogger->publishEvent(tr("vCard avatar saved to filesystem for self-client."),
-                                            GkSeverity::Debug, "", false, true, false, false);
-                emit savedClientVCard(photo, m_clientVCard.photoType());
-                return;
+        if (!photo.isNull()) {
+            if (!photo.isEmpty()) {
+                QPointer<QBuffer> buffer = new QBuffer(this);
+                buffer->setData(photo);
+                buffer->open(QIODevice::ReadWrite);
+                QImageReader imageReader(buffer);
+                QDir::setCurrent(imgFileLoc.absolutePath()); // Set the working directory to this!
+                QImage image = imageReader.read();
+                if (image.save(imgFileLoc.absoluteFilePath(), m_clientVCard.photoType().toStdString().c_str())) {
+                    gkEventLogger->publishEvent(tr("vCard avatar saved to filesystem for self-client."),
+                                                GkSeverity::Debug, "", false, true, false, false);
+                    emit savedClientVCard(photo, m_clientVCard.photoType());
+                    return;
+                }
+            } else {
+                gkEventLogger->publishEvent(tr("No client avatar that has been previously saved to the connected towards XMPP server was detected; using defaults."), GkSeverity::Info, "",
+                                            false, true, false, false, false);
             }
         }
     } catch (const std::exception &e) {

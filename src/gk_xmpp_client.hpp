@@ -283,6 +283,7 @@ private:
 
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::FileIo> gkFileIo;
+    QPointer<GekkoFyre::GkSystem> gkSystem;
     QPointer<GkEventLogger> gkEventLogger;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GkNetworkPingModel> gkNetworkPing;
@@ -317,11 +318,6 @@ private:
     // Filesystem & Directories
     //
     QDir vcard_save_path;
-
-    //
-    // vCard management
-    //
-    QXmppVCardIq m_clientVCard;
 
     //
     // SSL / TLS / STARTTLS

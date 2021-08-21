@@ -1021,14 +1021,16 @@ void GkXmppRosterDialog::on_tableView_callsigns_blocked_customContextMenuRequest
  */
 void GkXmppRosterDialog::recvClientAvatarImg(const QByteArray &avatar_pic, const QString &img_type)
 {
-    if (!avatar_pic.isEmpty()) {
-        m_clientAvatarImgBa = avatar_pic;
-        QPointer<QBuffer> buffer = new QBuffer(this);
-        buffer->setData(m_clientAvatarImgBa);
-        buffer->open(QIODevice::ReadOnly);
-        QImageReader imageReader(buffer);
-        const QImage image = imageReader.read();
-        emit updateClientAvatarImg(image, img_type);
+    if (!avatar_pic.isNull()) {
+        if (!avatar_pic.isEmpty()) {
+            m_clientAvatarImgBa = avatar_pic;
+            QPointer<QBuffer> buffer = new QBuffer(this);
+            buffer->open(QIODevice::ReadWrite | QIODevice::Truncate);
+            buffer->setData(m_clientAvatarImgBa);
+            QImageReader imageReader(buffer);
+            const QImage image = imageReader.read();
+            emit updateClientAvatarImg(image, img_type);
+        }
     }
 
     return;
@@ -1041,12 +1043,14 @@ void GkXmppRosterDialog::recvClientAvatarImg(const QByteArray &avatar_pic, const
 void GkXmppRosterDialog::defaultClientAvatarPlaceholder()
 {
     m_clientAvatarImgBa = gkDb->read_xmpp_settings(Settings::GkXmppCfg::XmppAvatarByteArray).toUtf8();
-    if (!m_clientAvatarImgBa.isEmpty()) {
-        QImage avatar_img = QImage::fromData(QByteArray::fromBase64(m_clientAvatarImgBa));
-        const auto mime_type = gkSystem->getImgFormat(m_clientAvatarImgBa, true);
-        emit updateClientAvatarImg(avatar_img, mime_type);
-    } else {
-        emit updateClientAvatarImg(QImage(":/resources/contrib/images/raster/gekkofyre-networks/CurioDraco/gekkofyre_drgn_server_thumb_transp.png"), "png");
+    if (!m_clientAvatarImgBa.isNull()) {
+        if (!m_clientAvatarImgBa.isEmpty()) {
+            QImage avatar_img = QImage::fromData(QByteArray::fromBase64(m_clientAvatarImgBa));
+            const auto mime_type = gkSystem->getImgFormat(m_clientAvatarImgBa, true);
+            emit updateClientAvatarImg(avatar_img, mime_type);
+        } else {
+            emit updateClientAvatarImg(QImage(":/resources/contrib/images/raster/gekkofyre-networks/CurioDraco/gekkofyre_drgn_server_thumb_transp.png"), "png");
+        }
     }
 
     return;
