@@ -44,11 +44,17 @@
 #include "src/defines.hpp"
 #include "src/gk_string_funcs.hpp"
 #include "src/gk_logger.hpp"
+#include <mutex>
+#include <thread>
 #include <string>
 #include <cstdio>
+#include <memory>
+#include <exception>
 #include <QObject>
 #include <QString>
 #include <QPointer>
+#include <QMimeType>
+#include <QByteArray>
 
 #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
 #include <windows.h>
@@ -70,6 +76,9 @@ public:
     bool isInternetAvailable();
     qint32 getNumCpuCores();
     QString renameCommsDevice(const qint32 &port, const GekkoFyre::AmateurRadio::GkConnType &conn_type);
+
+    QString getImgFormat(const QByteArray &data, const bool &suffix = true);
+    QString isImgFormatSupported(const QMimeType &mime_type, const QString &str, const bool &suffix = true);
 
     #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
     HRESULT WindowsFirewallInitialize(OUT INetFwProfile **fwProfile);

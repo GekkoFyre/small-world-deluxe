@@ -209,9 +209,6 @@ DialogSettings::DialogSettings(QPointer<GkLevelDb> dkDb,
                 ui->tabWidget_config->setCurrentWidget(ui->tab_2_rig);
                 ui->tabWidget_radio->setCurrentWidget(ui->tab_radio_hamlib_api);
                 break;
-            case System::UserInterface::GkSettingsDlgTab::GkCheckForUpdates:
-                ui->tabWidget_config->setCurrentWidget(ui->tab_3_check_updates);
-                break;
             default:
                 ui->tabWidget_config->setCurrentWidget(ui->tab_0_general);
                 ui->tabWidget_config_general->setCurrentWidget(ui->tab_general_rig_station);

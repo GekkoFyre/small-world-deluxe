@@ -42,8 +42,10 @@
 #include "src/gk_system.hpp"
 #include <exception>
 #include <utility>
-#include <QMessageBox>
 #include <QtGlobal>
+#include <QMessageBox>
+#include <QImageReader>
+#include <QMimeDatabase>
 
 #if defined(_WIN32) || defined(__MINGW64__) || defined(__CYGWIN__)
 #include <initguid.h>
@@ -72,6 +74,71 @@ GkSystem::GkSystem(QPointer<GekkoFyre::StringFuncs> stringFuncs, QObject *parent
 GkSystem::~GkSystem()
 {
     return;
+}
+
+/**
+ * @brief GkSystem::getImgFormat obtain the MIME data of the given QByteArray of raw data (i.e. image format such as
+ * either 'PNG' or 'JPEG') through analysis of said raw data, and return it as a QString.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param data The QByteArray of raw data for the analysis to be made against.
+ * @param suffix Whether to return just the suffix (i.e. 'jpeg') instead of just the actual, full MIME format (i.e.
+ * image/jpeg).
+ * @return The detected MIME data/format from the given QByteArray of raw data, as a QString for easier use of application.
+ */
+QString GkSystem::getImgFormat(const QByteArray &data, const bool &suffix)
+{
+    try {
+        std::unique_ptr<QMimeDatabase> mime_db = std::make_unique<QMimeDatabase>();
+        const auto mime_type = mime_db->mimeTypeForData(data);
+
+        //
+        // Ensure that the image is supported by the Qt Project set of libraries!
+        const QString dataStr = QString::fromUtf8(data);
+        const auto det_type = isImgFormatSupported(mime_type, dataStr, suffix);
+        return det_type;
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return "application/octet-stream";
+}
+
+/**
+ * @brief GkSystem::isImgFormatSupported whether the given image format (i.e. MIME data) is supported by the Qt Project
+ * set of libraries or not.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param mime_type The MIME data to make the comparison against within the Qt Project MIME database for image formats.
+ * @param str The QString to make the MIME data comparison against with `mime_type`.
+ * @param suffix Whether to return just the suffix (i.e. 'jpeg') instead of just the actual, full MIME format (i.e.
+ * image/jpeg).
+ * @return The detected MIME data/format from the given QByteArray of raw data, as a QString for easier use of application.
+ */
+QString GkSystem::isImgFormatSupported(const QMimeType &mime_type, const QString &str, const bool &suffix)
+{
+    try {
+        //
+        // Ensure that the image is supported by the Qt Project set of libraries!
+        for (const auto &det_suffix: mime_type.suffixes()) {
+            for (const auto &supported_img: QImageReader::supportedImageFormats()) {
+                //
+                // Now compare against the list of supported image formats for within the Qt Project set
+                // of libraries!
+                if (suffix) { // Only make use of a suffix!
+                    if (str.contains(det_suffix, Qt::CaseInsensitive)) {
+                        return det_suffix;
+                    }
+                } else {
+                    if (det_suffix == supported_img) {
+                        return det_suffix;
+                    }
+                }
+            }
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return "application/octet-stream";
 }
 
 /**
@@ -815,5 +882,4 @@ QString GkSystem::processHResult(const HRESULT &hr)
 
     return errMsgStr;
 }
-
 #endif

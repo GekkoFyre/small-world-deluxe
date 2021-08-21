@@ -371,13 +371,15 @@ else()
 	message(FATAL_ERROR "The 'gettext' library could not be found!")
 endif(GETTEXT_FOUND)
 
-find_package(LibIntl REQUIRED)
-if (LIBINTL_FOUND)
-    # set(LIBS ${LIBS} ${LIBINTL_LIBRARIES})
-	message(STATUS "The 'libintl' internationalization library has been configured!")
-else()
-	message(FATAL_ERROR "The 'libintl' internationalization library could not be found!")
-endif(LIBINTL_FOUND)
+if(WIN32 OR MSYS OR MINGW)
+	find_package(LibIntl REQUIRED)
+	if (LIBINTL_FOUND)
+		# set(LIBS ${LIBS} ${LIBINTL_LIBRARIES})
+		message(STATUS "The 'libintl' internationalization library has been configured!")
+	else()
+		message(FATAL_ERROR "The 'libintl' internationalization library could not be found!")
+	endif(LIBINTL_FOUND)
+endif()
 
 find_package(LibSsh2 REQUIRED)
 if (LIBSSH2_FOUND)
@@ -782,6 +784,7 @@ set(GALAXY_UI_CPP
     src/ui/widgets/gk_vu_meter_widget.cpp
     src/ui/widgets/gk_submit_msg.cpp
     src/ui/widgets/gk_display_image.cpp
+	src/models/splash/gk_splash_disp_model.cpp
     src/models/system/gk_network_ping_model.cpp
     src/models/tableview/gk_frequency_model.cpp
     src/models/tableview/gk_logger_model.cpp
@@ -893,6 +896,7 @@ set(GALAXY_OBJ_HEADERS
     src/ui/widgets/gk_vu_meter_widget.hpp
     src/ui/widgets/gk_submit_msg.hpp
     src/ui/widgets/gk_display_image.hpp
+	src/models/splash/gk_splash_disp_model.hpp
     src/models/system/gk_network_ping_model.hpp
     src/models/tableview/gk_frequency_model.hpp
     src/models/tableview/gk_logger_model.hpp

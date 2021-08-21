@@ -45,11 +45,10 @@
 #include "src/dek_db.hpp"
 #include "src/file_io.hpp"
 #include "src/gk_logger.hpp"
+#include "src/gk_system.hpp"
 #include "src/gk_string_funcs.hpp"
 #include "src/gk_xmpp_msg_handler.hpp"
 #include "src/models/system/gk_network_ping_model.hpp"
-#include <boost/exception/all.hpp>
-#include <boost/filesystem.hpp>
 #include <qxmpp/QXmppIq.h>
 #include <qxmpp/QXmppStanza.h>
 #include <qxmpp/QXmppGlobal.h>
@@ -113,8 +112,8 @@ class GkXmppClient : public QXmppClient {
 public:
     explicit GkXmppClient(const Network::GkXmpp::GkUserConn &connection_details, QPointer<GekkoFyre::GkLevelDb> database,
                           QPointer<GekkoFyre::StringFuncs> stringFuncs, QPointer<GekkoFyre::FileIo> fileIo,
-                          QPointer<GekkoFyre::GkEventLogger> eventLogger, const bool &connectNow = false,
-                          QObject *parent = nullptr);
+                          QPointer<GekkoFyre::GkSystem> system, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                          const bool &connectNow = false, QObject *parent = nullptr);
     ~GkXmppClient() override;
 
     void createConnectionToServer(const QString &domain_url, const quint16 &network_port, const QString &password = "",
@@ -284,6 +283,7 @@ private:
 
     QPointer<GekkoFyre::GkLevelDb> gkDb;
     QPointer<GekkoFyre::FileIo> gkFileIo;
+    QPointer<GekkoFyre::GkSystem> gkSystem;
     QPointer<GkEventLogger> gkEventLogger;
     QPointer<GekkoFyre::StringFuncs> gkStringFuncs;
     QPointer<GkNetworkPingModel> gkNetworkPing;
@@ -317,13 +317,7 @@ private:
     //
     // Filesystem & Directories
     //
-    boost::filesystem::path native_slash;
     QDir vcard_save_path;
-
-    //
-    // vCard management
-    //
-    QXmppVCardIq m_clientVCard;
 
     //
     // SSL / TLS / STARTTLS

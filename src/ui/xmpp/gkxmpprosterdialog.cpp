@@ -74,8 +74,9 @@ using namespace Security;
 
 GkXmppRosterDialog::GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFuncs, const GkUserConn &connection_details,
                                        QPointer<GekkoFyre::GkXmppClient> xmppClient, QPointer<GekkoFyre::GkLevelDb> database,
-                                       QPointer<GkEventLogger> eventLogger, const bool &skipConnectionCheck,
-                                       QWidget *parent) : shownXmppPreviewNotice(false), QDialog(parent), ui(new Ui::GkXmppRosterDialog)
+                                       QPointer<GekkoFyre::GkSystem> system, QPointer<GkEventLogger> eventLogger,
+                                       const bool &skipConnectionCheck, QWidget *parent) : shownXmppPreviewNotice(false),
+                                       QDialog(parent), ui(new Ui::GkXmppRosterDialog)
 {
     ui->setupUi(this);
 
@@ -84,6 +85,7 @@ GkXmppRosterDialog::GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFu
         gkConnDetails = connection_details;
         m_xmppClient = std::move(xmppClient);
         gkDb = std::move(database);
+        gkSystem = std::move(system);
         gkEventLogger = std::move(eventLogger);
 
         m_progressBar = new QProgressBar(nullptr);
@@ -958,15 +960,18 @@ void GkXmppRosterDialog::on_actionDelete_Contact_triggered()
  */
 void GkXmppRosterDialog::on_pushButton_self_avatar_clicked()
 {
-    QString path = m_xmppClient->obtainAvatarFilePath();
+    const QString path = m_xmppClient->obtainAvatarFilePath();
     if (!path.isEmpty()) {
-        QFileInfo filePath = path;
-        QByteArray avatarByteArray = m_xmppClient->processImgToByteArray(filePath.path());
-        emit updateClientVCard(gkConnDetails.firstName, gkConnDetails.lastName, gkConnDetails.email, gkConnDetails.nickname, avatarByteArray, filePath.suffix());
-        m_clientAvatarImgSuffix = filePath.suffix();
-        m_clientAvatarImgBa = avatarByteArray;
-        QImage avatar_img = QImage::fromData(m_clientAvatarImgBa);
-        emit updateClientAvatarImg(avatar_img, filePath.suffix());
+        const QFileInfo filePath = path;
+        if (filePath.exists() && filePath.isFile()) {
+            const QByteArray avatarByteArray = m_xmppClient->processImgToByteArray(filePath.absoluteFilePath());
+            m_clientAvatarImgBa = avatarByteArray;
+            const QImage avatar_img = QImage::fromData(m_clientAvatarImgBa);
+            const auto mime_type = gkSystem->getImgFormat(m_clientAvatarImgBa, true);
+
+            emit updateClientVCard(gkConnDetails.firstName, gkConnDetails.lastName, gkConnDetails.email, gkConnDetails.nickname, avatarByteArray, mime_type);
+            emit updateClientAvatarImg(avatar_img, mime_type);
+        }
     }
 
     return;
@@ -1016,15 +1021,16 @@ void GkXmppRosterDialog::on_tableView_callsigns_blocked_customContextMenuRequest
  */
 void GkXmppRosterDialog::recvClientAvatarImg(const QByteArray &avatar_pic, const QString &img_type)
 {
-    if (!avatar_pic.isEmpty()) {
-        m_clientAvatarImgSuffix = img_type;
-        m_clientAvatarImgBa = avatar_pic;
-        QPointer<QBuffer> buffer = new QBuffer(this);
-        buffer->setData(m_clientAvatarImgBa);
-        buffer->open(QIODevice::ReadOnly);
-        QImageReader imageReader(buffer);
-        QImage image = imageReader.read();
-        emit updateClientAvatarImg(image, img_type);
+    if (!avatar_pic.isNull()) {
+        if (!avatar_pic.isEmpty()) {
+            m_clientAvatarImgBa = avatar_pic;
+            QPointer<QBuffer> buffer = new QBuffer(this);
+            buffer->open(QIODevice::ReadWrite | QIODevice::Truncate);
+            buffer->setData(m_clientAvatarImgBa);
+            QImageReader imageReader(buffer);
+            const QImage image = imageReader.read();
+            emit updateClientAvatarImg(image, img_type);
+        }
     }
 
     return;
@@ -1037,11 +1043,14 @@ void GkXmppRosterDialog::recvClientAvatarImg(const QByteArray &avatar_pic, const
 void GkXmppRosterDialog::defaultClientAvatarPlaceholder()
 {
     m_clientAvatarImgBa = gkDb->read_xmpp_settings(Settings::GkXmppCfg::XmppAvatarByteArray).toUtf8();
-    if (!m_clientAvatarImgBa.isEmpty()) {
-        QImage avatar_img = QImage::fromData(QByteArray::fromBase64(m_clientAvatarImgBa));
-        emit updateClientAvatarImg(avatar_img, m_clientAvatarImgSuffix);
-    } else {
-        emit updateClientAvatarImg(QImage(":/resources/contrib/images/raster/gekkofyre-networks/CurioDraco/gekkofyre_drgn_server_thumb_transp.png"), "png");
+    if (!m_clientAvatarImgBa.isNull()) {
+        if (!m_clientAvatarImgBa.isEmpty()) {
+            QImage avatar_img = QImage::fromData(QByteArray::fromBase64(m_clientAvatarImgBa));
+            const auto mime_type = gkSystem->getImgFormat(m_clientAvatarImgBa, true);
+            emit updateClientAvatarImg(avatar_img, mime_type);
+        } else {
+            emit updateClientAvatarImg(QImage(":/resources/contrib/images/raster/gekkofyre-networks/CurioDraco/gekkofyre_drgn_server_thumb_transp.png"), "png");
+        }
     }
 
     return;
@@ -1363,7 +1372,8 @@ void GkXmppRosterDialog::on_lineEdit_search_roster_returnPressed()
         QString newNickname = ui->lineEdit_search_roster->text();
         if (!newNickname.isEmpty()) {
             // Apply the new nickname!
-            emit updateClientVCard(gkConnDetails.firstName, gkConnDetails.lastName, gkConnDetails.email, newNickname, m_clientAvatarImgBa, m_clientAvatarImgSuffix);
+            const auto mime_type = gkSystem->getImgFormat(m_clientAvatarImgBa, true);
+            emit updateClientVCard(gkConnDetails.firstName, gkConnDetails.lastName, gkConnDetails.email, newNickname, m_clientAvatarImgBa, mime_type);
 
             //
             // Return back to default settings...

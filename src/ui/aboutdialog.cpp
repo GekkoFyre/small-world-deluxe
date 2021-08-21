@@ -40,6 +40,7 @@
 #include <QSize>
 #include <QIcon>
 #include <QPixmap>
+#include <QProcess>
 
 using namespace GekkoFyre;
 using namespace Database;
@@ -100,3 +101,14 @@ void AboutDialog::on_pushButton_icon_clicked()
 
     return;
 }
+
+/**
+ * @brief AboutDialog::on_pushButton_software_updates_clicked initiates a check for the latest updates with regard to
+ * Small World Deluxe itself, in a safe and secure manner.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ */
+void AboutDialog::on_pushButton_software_updates_clicked()
+{
+    return;
+}
+

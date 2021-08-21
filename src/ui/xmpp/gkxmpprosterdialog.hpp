@@ -43,6 +43,7 @@
 
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
+#include "src/gk_system.hpp"
 #include "src/gk_xmpp_client.hpp"
 #include "src/gk_string_funcs.hpp"
 #include "src/models/tableview/gk_xmpp_roster_presence_model.hpp"
@@ -75,8 +76,8 @@ class GkXmppRosterDialog : public QDialog
 public:
     explicit GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFuncs, const GekkoFyre::Network::GkXmpp::GkUserConn &connection_details,
                                 QPointer<GekkoFyre::GkXmppClient> xmppClient, QPointer<GekkoFyre::GkLevelDb> database,
-                                QPointer<GekkoFyre::GkEventLogger> eventLogger, const bool &skipConnectionCheck = false,
-                                QWidget *parent = nullptr);
+                                QPointer<GekkoFyre::GkSystem> system, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+                                const bool &skipConnectionCheck = false, QWidget *parent = nullptr);
     ~GkXmppRosterDialog();
 
 private slots:
@@ -161,6 +162,7 @@ private:
 
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
     QPointer<GekkoFyre::GkLevelDb> gkDb;
+    QPointer<GekkoFyre::GkSystem> gkSystem;
     QPointer<GekkoFyre::GkXmppClient> m_xmppClient;
     bool shownXmppPreviewNotice;
 
@@ -217,7 +219,6 @@ private:
     //
     // VCard management
     //
-    QString m_clientAvatarImgSuffix;
     QByteArray m_clientAvatarImgBa;
 
     void reconnectToXmpp();
