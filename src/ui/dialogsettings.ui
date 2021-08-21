@@ -126,7 +126,7 @@
                       <x>0</x>
                       <y>0</y>
                       <width>944</width>
-                      <height>590</height>
+                      <height>600</height>
                      </rect>
                     </property>
                     <property name="sizePolicy">
@@ -351,8 +351,8 @@
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>944</width>
-                      <height>590</height>
+                      <width>302</width>
+                      <height>424</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_20">
@@ -601,9 +601,9 @@
                         <property name="geometry">
                          <rect>
                           <x>0</x>
-                          <y>-351</y>
-                          <width>908</width>
-                          <height>1249</height>
+                          <y>0</y>
+                          <width>500</width>
+                          <height>1130</height>
                          </rect>
                         </property>
                         <layout class="QVBoxLayout" name="verticalLayout_23">
@@ -2301,8 +2301,8 @@ Thanks.</string>
                          <rect>
                           <x>0</x>
                           <y>0</y>
-                          <width>430</width>
-                          <height>115</height>
+                          <width>382</width>
+                          <height>109</height>
                          </rect>
                         </property>
                         <layout class="QVBoxLayout" name="verticalLayout_69">
@@ -2404,8 +2404,8 @@ Thanks.</string>
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>930</width>
-                      <height>685</height>
+                      <width>428</width>
+                      <height>612</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_60">
@@ -3465,8 +3465,8 @@ Thanks.</string>
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>944</width>
-                      <height>590</height>
+                      <width>338</width>
+                      <height>80</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_49">
@@ -3639,7 +3639,7 @@ Thanks.</string>
                          <x>0</x>
                          <y>0</y>
                          <width>944</width>
-                         <height>590</height>
+                         <height>600</height>
                         </rect>
                        </property>
                        <layout class="QVBoxLayout" name="verticalLayout_29">
@@ -4167,8 +4167,8 @@ Thanks.</string>
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>513</width>
-                      <height>375</height>
+                      <width>432</width>
+                      <height>349</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_28">
@@ -4327,9 +4327,9 @@ Thanks.</string>
                                  <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;title&gt;The&lt;/title&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Noto Sans'; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:8pt;&quot;&gt;The &lt;/span&gt;&lt;span style=&quot; font-family:'Courier New'; font-size:8pt;&quot;&gt;*.fyr&lt;/span&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:8pt;&quot;&gt; data format allows the recording of multiple information sources via &lt;/span&gt;&lt;span style=&quot; font-family:'Courier New'; font-size:8pt;&quot;&gt;Small World Deluxe&lt;/span&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:8pt;&quot;&gt; all at once and we are designing it from the ground-up to meet the needs of those within the amateur radio community first and foremost. Further to this, it is planned that the end-user will be able to 'replay' the recorded information in real-time while being given the option to speed up playback or slow down as needed.&lt;/span&gt;&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:8pt;&quot;&gt;To see more information on what this feature is capable of at present, then please see the up-to-date page &lt;/span&gt;&lt;a href=&quot;https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/wikis/Features/Recorded-Playback&quot;&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:8pt; text-decoration: underline; color:#0000ff;&quot;&gt;within our official Wiki&lt;/span&gt;&lt;/a&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:8pt;&quot;&gt;!&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:7.875pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;The &lt;/span&gt;&lt;span style=&quot; font-family:'Courier New'; font-size:8pt;&quot;&gt;*.fyr&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt; data format allows the recording of multiple information sources via &lt;/span&gt;&lt;span style=&quot; font-family:'Courier New'; font-size:8pt;&quot;&gt;Small World Deluxe&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt; all at once and we are designing it from the ground-up to meet the needs of those within the amateur radio community first and foremost. Further to this, it is planned that the end-user will be able to 'replay' the recorded information in real-time while being given the option to speed up playback or slow down as needed.&lt;/span&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;To see more information on what this feature is capable of at present, then please see the up-to-date page &lt;/span&gt;&lt;a href=&quot;https://code.gekkofyre.io/amateur-radio/small-world-deluxe/-/wikis/Features/Recorded-Playback&quot;&gt;&lt;span style=&quot; font-size:8pt; text-decoration: underline; color:#0000ff;&quot;&gt;within our official Wiki&lt;/span&gt;&lt;/a&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;!&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                                 </property>
                                </widget>
                               </item>
@@ -4863,7 +4863,7 @@ p, li { white-space: pre-wrap; }
                          <x>0</x>
                          <y>0</y>
                          <width>930</width>
-                         <height>724</height>
+                         <height>644</height>
                         </rect>
                        </property>
                        <layout class="QVBoxLayout" name="verticalLayout_33">
@@ -5918,8 +5918,8 @@ p, li { white-space: pre-wrap; }
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>257</width>
-                      <height>207</height>
+                      <width>239</width>
+                      <height>202</height>
                      </rect>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_35">
@@ -6093,189 +6093,6 @@ p, li { white-space: pre-wrap; }
                      </item>
                     </layout>
                    </widget>
-                  </widget>
-                 </item>
-                </layout>
-               </widget>
-              </widget>
-             </item>
-            </layout>
-           </widget>
-           <widget class="QWidget" name="tab_3_check_updates">
-            <attribute name="title">
-             <string>Check for Updates</string>
-            </attribute>
-            <layout class="QVBoxLayout" name="verticalLayout_53">
-             <item>
-              <widget class="QScrollArea" name="scrollArea_3">
-               <property name="frameShape">
-                <enum>QFrame::NoFrame</enum>
-               </property>
-               <property name="horizontalScrollBarPolicy">
-                <enum>Qt::ScrollBarAlwaysOff</enum>
-               </property>
-               <property name="widgetResizable">
-                <bool>true</bool>
-               </property>
-               <widget class="QWidget" name="scrollAreaWidgetContents_5">
-                <property name="geometry">
-                 <rect>
-                  <x>0</x>
-                  <y>0</y>
-                  <width>966</width>
-                  <height>640</height>
-                 </rect>
-                </property>
-                <layout class="QVBoxLayout" name="verticalLayout_54">
-                 <item>
-                  <widget class="QFrame" name="frame_16">
-                   <property name="frameShape">
-                    <enum>QFrame::NoFrame</enum>
-                   </property>
-                   <property name="frameShadow">
-                    <enum>QFrame::Plain</enum>
-                   </property>
-                   <layout class="QVBoxLayout" name="verticalLayout_55">
-                    <item>
-                     <widget class="QFrame" name="frame_17">
-                      <property name="frameShape">
-                       <enum>QFrame::NoFrame</enum>
-                      </property>
-                      <property name="frameShadow">
-                       <enum>QFrame::Plain</enum>
-                      </property>
-                      <layout class="QVBoxLayout" name="verticalLayout_57">
-                       <item>
-                        <widget class="QLabel" name="label_updates_header">
-                         <property name="font">
-                          <font>
-                           <pointsize>16</pointsize>
-                          </font>
-                         </property>
-                         <property name="text">
-                          <string>Updates</string>
-                         </property>
-                         <property name="alignment">
-                          <set>Qt::AlignCenter</set>
-                         </property>
-                        </widget>
-                       </item>
-                       <item>
-                        <widget class="QLabel" name="label_current_app_version_header">
-                         <property name="font">
-                          <font>
-                           <pointsize>11</pointsize>
-                          </font>
-                         </property>
-                         <property name="text">
-                          <string>&lt;Version&gt; (0000-00-0000)</string>
-                         </property>
-                         <property name="alignment">
-                          <set>Qt::AlignCenter</set>
-                         </property>
-                        </widget>
-                       </item>
-                      </layout>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QFrame" name="frame_18">
-                      <property name="frameShape">
-                       <enum>QFrame::NoFrame</enum>
-                      </property>
-                      <property name="frameShadow">
-                       <enum>QFrame::Plain</enum>
-                      </property>
-                      <layout class="QFormLayout" name="formLayout_30">
-                       <item row="0" column="0">
-                        <widget class="QLabel" name="label_version_form_sub_header">
-                         <property name="text">
-                          <string>Available version: </string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="0" column="1">
-                        <widget class="QLabel" name="label_actual_version_info">
-                         <property name="text">
-                          <string>&lt;Unknown&gt; (0000-00-0000)</string>
-                         </property>
-                        </widget>
-                       </item>
-                      </layout>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QFrame" name="frame_19">
-                      <property name="frameShape">
-                       <enum>QFrame::NoFrame</enum>
-                      </property>
-                      <property name="frameShadow">
-                       <enum>QFrame::Plain</enum>
-                      </property>
-                      <layout class="QVBoxLayout" name="verticalLayout_56">
-                       <item>
-                        <widget class="QLabel" name="label_updates_sub_header">
-                         <property name="font">
-                          <font>
-                           <pointsize>11</pointsize>
-                          </font>
-                         </property>
-                         <property name="text">
-                          <string>Updates</string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item>
-                        <widget class="QPushButton" name="pushButton_check_for_updates">
-                         <property name="text">
-                          <string>Check for Updates</string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item>
-                        <widget class="QProgressBar" name="progressBar_update_completion">
-                         <property name="value">
-                          <number>0</number>
-                         </property>
-                        </widget>
-                       </item>
-                       <item>
-                        <spacer name="horizontalSpacer_28">
-                         <property name="orientation">
-                          <enum>Qt::Horizontal</enum>
-                         </property>
-                         <property name="sizeHint" stdset="0">
-                          <size>
-                           <width>40</width>
-                           <height>20</height>
-                          </size>
-                         </property>
-                        </spacer>
-                       </item>
-                       <item>
-                        <widget class="QLabel" name="label_available_updates">
-                         <property name="text">
-                          <string>There are no new updates at this time.</string>
-                         </property>
-                        </widget>
-                       </item>
-                      </layout>
-                     </widget>
-                    </item>
-                    <item>
-                     <spacer name="verticalSpacer_11">
-                      <property name="orientation">
-                       <enum>Qt::Vertical</enum>
-                      </property>
-                      <property name="sizeHint" stdset="0">
-                       <size>
-                        <width>20</width>
-                        <height>40</height>
-                       </size>
-                      </property>
-                     </spacer>
-                    </item>
-                   </layout>
                   </widget>
                  </item>
                 </layout>
@@ -6479,7 +6296,6 @@ p, li { white-space: pre-wrap; }
   <tabstop>checkBox_event_logger_general_save_history</tabstop>
   <tabstop>scrollArea_hamlib_api</tabstop>
   <tabstop>plainTextEdit_hamlib_api_version_info</tabstop>
-  <tabstop>scrollArea_3</tabstop>
   <tabstop>checkBox_connect_automatically</tabstop>
   <tabstop>toolButton_xmpp_upload_avatar_browse_file</tabstop>
   <tabstop>pushButton_xmpp_cfg_change_password</tabstop>
@@ -6501,7 +6317,6 @@ p, li { white-space: pre-wrap; }
   <tabstop>comboBox_xmpp_server_ssl_errors</tabstop>
   <tabstop>spinBox_xmpp_server_network_timeout</tabstop>
   <tabstop>comboBox_xmpp_server_uri_lookup_method</tabstop>
-  <tabstop>pushButton_check_for_updates</tabstop>
   <tabstop>checkBox_xmpp_server_ssl</tabstop>
   <tabstop>scrollArea_ui_xmpp_cfg</tabstop>
   <tabstop>scrollArea_4</tabstop>

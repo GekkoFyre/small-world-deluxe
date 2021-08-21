@@ -286,8 +286,6 @@ protected slots:
     void audioOutHandleStateChanged(QAudio::State changed_state);
 
 public slots:
-    void updateProgressBar(const bool &enable, const size_t &min, const size_t &max);
-
     //
     // Audio related
     //

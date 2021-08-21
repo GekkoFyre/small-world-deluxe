@@ -934,8 +934,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
         //
         // Initialize the QXmpp client!
-        m_xmppClient = new GkXmppClient(gkConnDetails, gkDb, gkStringFuncs, gkFileIo, gkEventLogger, false, nullptr);
-        gkXmppRosterDlg = new GkXmppRosterDialog(gkStringFuncs, gkConnDetails, m_xmppClient, gkDb, gkEventLogger, true, this);
+        m_xmppClient = new GkXmppClient(gkConnDetails, gkDb, gkStringFuncs, gkFileIo, gkSystem, gkEventLogger, false, nullptr);
+        gkXmppRosterDlg = new GkXmppRosterDialog(gkStringFuncs, gkConnDetails, m_xmppClient, gkDb, gkSystem, gkEventLogger, true, this);
     } catch (const std::exception &e) {
         QMessageBox::warning(this, tr("Error!"), tr("An error was encountered upon launch!\n\n%1").arg(e.what()), QMessageBox::Ok);
         QApplication::exit(EXIT_FAILURE);
@@ -3059,29 +3059,6 @@ void MainWindow::restartInputAudioInterface(const GkDevice &input_device)
     } catch (const std::exception &e) {
         gkEventLogger->publishEvent(tr("Problem encountered with restarting input audio device. Error:\n\n%1").arg(QString::fromStdString(e.what())),
                                     GkSeverity::Error, "", false, true, false, true);
-    }
-
-    return;
-}
-
-/**
- * @brief MainWindow::updateProgressBar will launch and manage a QProgressBar via signals and slots.
- * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
- * @param enable Whether the QProgressBar should be displayed to the user or not via the GUI.
- * @param min The most minimum value possible.
- * @param max The most maximum value possible.
- */
-void MainWindow::updateProgressBar(const bool &enable, const size_t &min, const size_t &max)
-{
-    Q_UNUSED(min);
-    Q_UNUSED(max);
-
-    try {
-        if (enable) {
-            // Launch the QProgressBar!
-        }
-    } catch (const std::exception &e) {
-        QMessageBox::warning(this, tr("Error!"), e.what(), QMessageBox::Ok);
     }
 
     return;

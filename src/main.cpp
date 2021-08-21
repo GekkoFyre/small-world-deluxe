@@ -42,17 +42,18 @@
 #include "src/gk_app_vers.hpp"
 #include "src/defines.hpp"
 #include "src/ui/mainwindow.hpp"
+#include "src/models/splash/gk_splash_disp_model.hpp"
 #include <boost/locale.hpp>
 #include <singleapplication.h>
 #include <exception>
 #include <iostream>
+#include <memory>
 #include <QTimer>
 #include <QResource>
 #include <QStringList>
 #include <QTranslator>
 #include <QApplication>
 #include <QStyleFactory>
-#include <QSplashScreen>
 
 namespace fs = boost::filesystem;
 
@@ -132,12 +133,10 @@ int main(int argc, char *argv[])
     //
     // For some reason this too interferes with Valgrind, Dr. Memory, etc. and other such
     // diagnostic tools for reasons that are currently unknown.
-    QPixmap pixmap(":/resources/contrib/images/vector/gekkofyre-networks/rionquosue/logo_blank_border_text_square_rionquosue.svg");
-    int width = pixmap.width();
-    int height = pixmap.height();
-    QSplashScreen splash(pixmap.scaled((width / 2), (height / 2), Qt::KeepAspectRatio), Qt::WindowStaysOnTopHint);
-    splash.show();
-    QTimer::singleShot(3000, &splash, &QWidget::close);
+    std::unique_ptr<GekkoFyre::GkSplashDispModel> splash_model = std::make_unique<GekkoFyre::GkSplashDispModel>(&app);
+    splash_model->show();
+    splash_model->setProgress(10);
+    QTimer::singleShot(3000, splash_model.get(), &QWidget::close);
     #endif
 
     //

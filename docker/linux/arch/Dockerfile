@@ -244,7 +244,7 @@ RUN pacman -S texinfo --noconfirm
 RUN pacman -S libusb-compat --noconfirm
 RUN pacman -S cmake --noconfirm
 RUN pacman -S wget --noconfirm
-RUN pacman -S curl --noconfirm
+RUN pacman -S aria2 --noconfirm
 
 USER devel
 RUN yay -S conan --noconfirm
