@@ -1735,6 +1735,48 @@ void GkLevelDb::write_xmpp_settings(const QString &value, const Settings::GkXmpp
 }
 
 /**
+ * @brief GkLevelDb::write_xmpp_recall is for the recalling of specific settings, such as folder locations, which are
+ * saved to a pre-configured Google LevelDB database for future reading and processing.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param value The actual configuration value to be saved.
+ * @param key The setting in question that the value is to be saved under.
+ */
+void GkLevelDb::write_xmpp_recall(const QString &value, const Settings::GkXmppRecall &key)
+{
+    try {
+        // Put key-value
+        leveldb::WriteBatch batch;
+        leveldb::Status status;
+
+        switch (key) {
+            case Settings::GkXmppRecall::XmppAvatarFolderDir:
+                batch.Put("XmppAvatarFolderDir", value.toStdString());
+                break;
+            default:
+                return;
+        }
+
+        std::time_t curr_time = std::time(nullptr);
+        std::stringstream ss;
+        ss << curr_time;
+        batch.Put("CurrTime", ss.str());
+
+        leveldb::WriteOptions write_options;
+        write_options.sync = true;
+
+        status = db->Write(write_options, &batch);
+
+        if (!status.ok()) { // Abort because of error!
+            throw std::runtime_error(tr("Issues have been encountered while trying to write towards the user profile! Error:\n\n%1").arg(QString::fromStdString(status.ToString())).toStdString());
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(nullptr, tr("Error!"), QString::fromStdString(e.what()), QMessageBox::Ok);
+    }
+
+    return;
+}
+
+/**
  * @brief GkLevelDb::write_xmpp_vcard_data stores the information of users as outputted by the QXmppRosterManager upon
  * a successful connection having been made to a given XMPP server.
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
@@ -1969,6 +2011,32 @@ QString GkLevelDb::read_xmpp_settings(const Settings::GkXmppCfg &key)
             break;
         case Settings::GkXmppCfg::XmppLastOnlinePresence:
             status = db->Get(read_options, "XmppLastOnlinePresence", &value);
+            break;
+        default:
+            return QString();
+    }
+
+    return QString::fromStdString(value);
+}
+
+/**
+ * @brief GkLevelDb::read_xmpp_recall reads out the previously saved XMPP recall information from the given Google LevelDB
+ * database for further processing.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param key The setting in question that the value we are trying to retrieve is saved under.
+ * @return Our previously saved value from the pre-configured Google LevelDB database.
+ */
+QString GkLevelDb::read_xmpp_recall(const Settings::GkXmppRecall &key)
+{
+    leveldb::Status status;
+    leveldb::ReadOptions read_options;
+    std::string value = "";
+
+    read_options.verify_checksums = true;
+
+    switch (key) {
+        case Settings::GkXmppRecall::XmppAvatarFolderDir:
+            status = db->Get(read_options, "XmppAvatarFolderDir", &value);
             break;
         default:
             return QString();

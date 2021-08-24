@@ -960,18 +960,24 @@ void GkXmppRosterDialog::on_actionDelete_Contact_triggered()
  */
 void GkXmppRosterDialog::on_pushButton_self_avatar_clicked()
 {
-    const QString path = m_xmppClient->obtainAvatarFilePath();
-    if (!path.isEmpty()) {
-        const QFileInfo filePath = path;
-        if (filePath.exists() && filePath.isFile()) {
-            const QByteArray avatarByteArray = m_xmppClient->processImgToByteArray(filePath.absoluteFilePath());
-            m_clientAvatarImgBa = avatarByteArray;
-            const QImage avatar_img = QImage::fromData(m_clientAvatarImgBa);
-            const auto mime_type = gkSystem->getImgFormat(m_clientAvatarImgBa, true);
+    try {
+        const QString saved_path = gkDb->read_xmpp_recall(Settings::GkXmppRecall::XmppAvatarFolderDir);
+        const QString ret_path = m_xmppClient->obtainAvatarFilePath(saved_path);
+        if (!ret_path.isEmpty()) {
+            const QFileInfo filePath = ret_path;
+            if (filePath.exists() && filePath.isFile()) {
+                gkDb->write_xmpp_recall(filePath.absolutePath(), Settings::GkXmppRecall::XmppAvatarFolderDir);
+                const QByteArray avatarByteArray = m_xmppClient->processImgToByteArray(filePath.absoluteFilePath());
+                m_clientAvatarImgBa = avatarByteArray;
+                const QImage avatar_img = QImage::fromData(m_clientAvatarImgBa);
+                const auto mime_type = gkSystem->getImgFormat(m_clientAvatarImgBa, true);
 
-            emit updateClientVCard(gkConnDetails.firstName, gkConnDetails.lastName, gkConnDetails.email, gkConnDetails.nickname, avatarByteArray, mime_type);
-            emit updateClientAvatarImg(avatar_img, mime_type);
+                emit updateClientVCard(gkConnDetails.firstName, gkConnDetails.lastName, gkConnDetails.email, gkConnDetails.nickname, avatarByteArray, mime_type);
+                emit updateClientAvatarImg(avatar_img, mime_type);
+            }
         }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(tr("Error with reading/writing avatar!"), GkSeverity::Fatal, "", false, true, false, true, false);
     }
 
     return;
@@ -1024,10 +1030,9 @@ void GkXmppRosterDialog::recvClientAvatarImg(const QByteArray &avatar_pic, const
     if (!avatar_pic.isNull()) {
         if (!avatar_pic.isEmpty()) {
             m_clientAvatarImgBa = avatar_pic;
-            QPointer<QBuffer> buffer = new QBuffer(this);
-            buffer->open(QIODevice::ReadWrite | QIODevice::Truncate);
-            buffer->setData(m_clientAvatarImgBa);
-            QImageReader imageReader(buffer);
+            QPointer<QBuffer> buffer = new QBuffer(&m_clientAvatarImgBa, this);
+            buffer->open(QIODevice::ReadOnly | QIODevice::Truncate);
+            QImageReader imageReader(buffer, img_type.toStdString().c_str());
             const QImage image = imageReader.read();
             emit updateClientAvatarImg(image, img_type);
         }
@@ -1067,12 +1072,16 @@ void GkXmppRosterDialog::updateClientAvatar(const QImage &avatar_img, const QStr
     ui->pushButton_self_avatar->setIcon(QIcon(QPixmap::fromImage(avatar_img)));
     ui->pushButton_self_avatar->setIconSize(QSize(150, 150));
 
-    QByteArray ba;
-    QPointer<QBuffer> buffer = new QBuffer(this);
-    buffer->open(QIODevice::ReadOnly);
-    avatar_img.save(buffer, img_type.toStdString().c_str());
-    gkDb->write_xmpp_settings(buffer->readAll().toBase64(), Settings::GkXmppCfg::XmppAvatarByteArray);
-    gkEventLogger->publishEvent(tr("vCard avatar has been registered for self-client."), GkSeverity::Debug, "", false, true, false, false);
+    //
+    // Only update the Google LevelDB database with an avatar image if connected!
+    if (m_xmppClient->isConnected() && m_xmppClient->getNetworkState() != GkNetworkState::Connecting) {
+        QByteArray ba;
+        QPointer<QBuffer> buffer = new QBuffer(this);
+        buffer->open(QIODevice::ReadWrite);
+        avatar_img.save(buffer, img_type.toStdString().c_str()); // Write the QImage into a QBuffer for later saving via Google LevelDB!
+        gkDb->write_xmpp_settings(buffer->readAll().toBase64(), Settings::GkXmppCfg::XmppAvatarByteArray);
+        gkEventLogger->publishEvent(tr("vCard avatar has been registered for self-client."), GkSeverity::Debug, "", false, true, false, false);
+    }
 
     return;
 }

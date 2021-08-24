@@ -147,7 +147,7 @@ public:
     [[nodiscard]] QString presenceToString(const QXmppPresence::AvailableStatusType &xmppPresence);
     [[nodiscard]] QIcon presenceToIcon(const QXmppPresence::AvailableStatusType &xmppPresence);
     bool deleteUserAccount();
-    [[nodiscard]] QString obtainAvatarFilePath();
+    [[nodiscard]] QString obtainAvatarFilePath(const QString &set_dir_path = "");
 
     //
     // Message and QXmppMamManager handling

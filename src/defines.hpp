@@ -821,6 +821,10 @@ namespace Database {
             XmppLastOnlinePresence
         };
 
+        enum GkXmppRecall {
+            XmppAvatarFolderDir
+        };
+
         enum Codec2Mode {
             freeDvMode2020,
             freeDvMode700D,
