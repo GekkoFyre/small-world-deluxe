@@ -965,19 +965,17 @@ void GkXmppRosterDialog::on_pushButton_self_avatar_clicked()
         const QString ret_path = m_xmppClient->obtainAvatarFilePath(saved_path);
         if (!ret_path.isEmpty()) {
             const QFileInfo filePath = ret_path;
-            if (filePath.exists() && filePath.isFile()) {
-                gkDb->write_xmpp_recall(filePath.absolutePath(), Settings::GkXmppRecall::XmppAvatarFolderDir);
-                const QByteArray avatarByteArray = m_xmppClient->processImgToByteArray(filePath.absoluteFilePath());
-                m_clientAvatarImgBa = avatarByteArray;
-                const QImage avatar_img = QImage::fromData(m_clientAvatarImgBa);
-                const auto mime_type = gkSystem->getImgFormat(m_clientAvatarImgBa, true);
+            gkDb->write_xmpp_recall(filePath.canonicalPath(), Settings::GkXmppRecall::XmppAvatarFolderDir);
+            const QByteArray avatarByteArray = m_xmppClient->processImgToByteArray(filePath);
+            m_clientAvatarImgBa = avatarByteArray;
+            const QImage avatar_img = QImage::fromData(m_clientAvatarImgBa);
+            const auto mime_type = gkSystem->getImgFormat(m_clientAvatarImgBa, true);
 
-                emit updateClientVCard(gkConnDetails.firstName, gkConnDetails.lastName, gkConnDetails.email, gkConnDetails.nickname, avatarByteArray, mime_type);
-                emit updateClientAvatarImg(avatar_img, mime_type);
-            }
+            emit updateClientVCard(gkConnDetails.firstName, gkConnDetails.lastName, gkConnDetails.email, gkConnDetails.nickname, avatarByteArray, mime_type);
+            emit updateClientAvatarImg(avatar_img, mime_type);
         }
     } catch (const std::exception &e) {
-        gkEventLogger->publishEvent(tr("Error with reading/writing avatar!"), GkSeverity::Fatal, "", false, true, false, true, false);
+        gkStringFuncs->print_exception(e);
     }
 
     return;

@@ -155,7 +155,7 @@ public:
 
     //
     // vCard management
-    [[nodiscard]] QByteArray processImgToByteArray(const QString &filePath);
+    [[nodiscard]] QByteArray processImgToByteArray(const QFileInfo &filePath);
 
     [[nodiscard]] QString getErrorCondition(const QXmppStanza::Error::Condition &condition);
 

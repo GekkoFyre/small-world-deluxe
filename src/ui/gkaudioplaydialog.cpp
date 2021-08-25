@@ -123,7 +123,7 @@ GkAudioPlayDialog::~GkAudioPlayDialog()
     emit recStatus(GkAudioRecordStatus::Defunct);
     if (audio_out_play) {
         if (!m_recordDirPath.isEmpty()) {
-            gkPaAudioPlayer->stop(m_recordDirPath.absolutePath(), GkAudioSource()); // Directory path to where recordings are saved!
+            gkPaAudioPlayer->stop(m_recordDirPath.canonicalPath(), GkAudioSource()); // Directory path to where recordings are saved!
         } else {
             gkPaAudioPlayer->stop(gkAudioFileInfo.audio_file_path, GkAudioSource()); // Path to file that is being played!
         }
@@ -202,7 +202,7 @@ void GkAudioPlayDialog::on_pushButton_playback_stop_clicked()
     if (!audio_out_stop) {
         gkStringFuncs->changePushButtonColor(ui->pushButton_playback_stop, false);
         if (!m_recordDirPath.isEmpty()) {
-            gkPaAudioPlayer->stop(m_recordDirPath.absolutePath(), GkAudioSource()); // Directory path to where recordings are saved!
+            gkPaAudioPlayer->stop(m_recordDirPath.canonicalPath(), GkAudioSource()); // Directory path to where recordings are saved!
         } else {
             gkPaAudioPlayer->stop(gkAudioFileInfo.audio_file_path, GkAudioSource()); // Path to file that is being played!
         }

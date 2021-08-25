@@ -103,7 +103,7 @@ GkCodec2Sink::GkCodec2Sink(const QString &fileLoc, const qint32 &codec2_mode, co
     codec2_set_natural_or_gray(codec2, !natural);
 
     m_fileInfo.setFile(m_fileLoc);
-    m_file->setFileName(m_fileInfo.absoluteFilePath());
+    m_file->setFileName(m_fileInfo.canonicalFilePath());
     if (!m_file->open(QIODevice::WriteOnly | QIODevice::Truncate)) {
         m_done = true;
         m_failed = true;
@@ -112,7 +112,7 @@ GkCodec2Sink::GkCodec2Sink(const QString &fileLoc, const qint32 &codec2_mode, co
         return;
     }
 
-    m_filePcm->setFileName(QDir::toNativeSeparators(m_fileInfo.absolutePath() + "/" + m_fileInfo.baseName() + "." + Filesystem::audio_format_pcm_wav));
+    m_filePcm->setFileName(QDir::toNativeSeparators(m_fileInfo.canonicalPath() + "/" + m_fileInfo.baseName() + "." + Filesystem::audio_format_pcm_wav));
     if (m_savePcmCopy) {
         if (!m_filePcm->open(QIODevice::WriteOnly)) {
             m_done = true;

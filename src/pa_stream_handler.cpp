@@ -422,7 +422,7 @@ void GkPaStreamHandler::stopRecordingFile(const QFileInfo &media_path)
         gkAudioOutput->stop();
     }
 
-    gkAudioEvents.remove(GkAudioFramework::AudioEventType::record, media_path.absoluteFilePath());
+    gkAudioEvents.remove(GkAudioFramework::AudioEventType::record, media_path.canonicalFilePath());
     return;
 }
 
@@ -443,7 +443,7 @@ void GkPaStreamHandler::stopRecordingFile(const QDir &media_path)
         gkAudioOutput->stop();
     }
 
-    gkAudioEvents.remove(GkAudioFramework::AudioEventType::record, media_path.absolutePath());
+    gkAudioEvents.remove(GkAudioFramework::AudioEventType::record, media_path.canonicalPath());
     return;
 }
 
@@ -521,12 +521,12 @@ QFileInfo GkPaStreamHandler::createRecordMediaFile(const QDir &media_path, const
         const auto epochSecs = QDateTime::currentSecsSinceEpoch();
         const auto extension = gkDb->convCodecFormatToFileExtension(supported_codec);
         QFileInfo mediaRetPath;
-        mediaRetPath.setFile(media_path.absolutePath() + "/" + QString::number(epochSecs) + "_" + QString::fromStdString(randStr) + extension);
+        mediaRetPath.setFile(media_path.canonicalPath() + "/" + QString::number(epochSecs) + "_" + QString::fromStdString(randStr) + extension);
         if (mediaRetPath.exists()) { // Retry and until we get to a folder name that does not already exist!
             mediaRetPath = createRecordMediaFile(media_path, supported_codec);
         }
 
-        gkAudioEvents.insert(GkAudioFramework::AudioEventType::record, mediaRetPath.absoluteFilePath()); // Path to file that is being recorded!
+        gkAudioEvents.insert(GkAudioFramework::AudioEventType::record, mediaRetPath.canonicalFilePath()); // Path to file that is being recorded!
         return mediaRetPath;
     } catch (const std::exception &e) {
         std::throw_with_nested(std::runtime_error(e.what()));

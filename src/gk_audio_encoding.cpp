@@ -506,14 +506,14 @@ void GkAudioEncoding::encodeOpus(const qint32 &bitrate, qint32 sample_rate, cons
         // Ogg Opus
         //
         if (audio_src == GkAudioSource::Input) {
-            m_oggOpusSink = new GkOggOpusSink(media_path.absoluteFilePath(), max_amplitude, gkAudioInput->format(),
+            m_oggOpusSink = new GkOggOpusSink(media_path.canonicalFilePath(), max_amplitude, gkAudioInput->format(),
                                               gkEventLogger, this);
             m_oggOpusSink->start();
             emit stopRecInput();
             gkAudioInput->moveToThread(this->thread());
             gkAudioInput->start(m_oggOpusSink);
         } else if (audio_src == GkAudioSource::Output) {
-            m_oggOpusSink = new GkOggOpusSink(media_path.absoluteFilePath(), max_amplitude, gkAudioOutput->format(),
+            m_oggOpusSink = new GkOggOpusSink(media_path.canonicalFilePath(), max_amplitude, gkAudioOutput->format(),
                                               gkEventLogger, this);
             m_oggOpusSink->start();
             emit stopRecOutput();
@@ -547,14 +547,14 @@ void GkAudioEncoding::encodeVorbis(const qint32 &bitrate, qint32 sample_rate, co
         // Ogg Opus
         //
         if (audio_src == GkAudioSource::Input) {
-            m_oggVorbisSink = new GkOggVorbisSink(media_path.absoluteFilePath(), max_amplitude, gkAudioInput->format(),
+            m_oggVorbisSink = new GkOggVorbisSink(media_path.canonicalFilePath(), max_amplitude, gkAudioInput->format(),
                                                   gkEventLogger, this);
             m_oggVorbisSink->start();
             emit stopRecInput();
             gkAudioInput->moveToThread(this->thread());
             gkAudioInput->start(m_oggVorbisSink);
         } else if (audio_src == GkAudioSource::Output) {
-            m_oggVorbisSink = new GkOggVorbisSink(media_path.absoluteFilePath(), max_amplitude, gkAudioOutput->format(),
+            m_oggVorbisSink = new GkOggVorbisSink(media_path.canonicalFilePath(), max_amplitude, gkAudioOutput->format(),
                                                   gkEventLogger, this);
             m_oggVorbisSink->start();
             emit stopRecOutput();
@@ -588,13 +588,13 @@ void GkAudioEncoding::encodeFLAC(const qint32 &bitrate, qint32 sample_rate, cons
         // Ogg Opus
         //
         if (audio_src == GkAudioSource::Input) {
-            m_flacSink = new GkFlacSink(media_path.absoluteFilePath(), max_amplitude, gkAudioInput->format(), gkEventLogger, this);
+            m_flacSink = new GkFlacSink(media_path.canonicalFilePath(), max_amplitude, gkAudioInput->format(), gkEventLogger, this);
             m_flacSink->start();
             emit stopRecInput();
             gkAudioInput->moveToThread(this->thread());
             gkAudioInput->start(m_flacSink);
         } else if (audio_src == GkAudioSource::Output) {
-            m_flacSink = new GkFlacSink(media_path.absoluteFilePath(), max_amplitude, gkAudioInput->format(), gkEventLogger, this);
+            m_flacSink = new GkFlacSink(media_path.canonicalFilePath(), max_amplitude, gkAudioInput->format(), gkEventLogger, this);
             m_flacSink->start();
             emit stopRecOutput();
             gkAudioOutput->moveToThread(this->thread());
@@ -623,7 +623,7 @@ void GkAudioEncoding::encodeCodec2(const quint32 &max_amplitude, const Settings:
     try {
         if (audio_src == GkAudioSource::Input) {
             #ifdef CODEC2_LIBS_ENBLD
-            m_codec2Sink = new GkCodec2Sink(media_path.absoluteFilePath(), CODEC2_MODE_1300, true, false, max_amplitude,
+            m_codec2Sink = new GkCodec2Sink(media_path.canonicalFilePath(), CODEC2_MODE_1300, true, false, max_amplitude,
                                             gkAudioInput->format(), gkEventLogger, this);
             m_codec2Sink->start();
             emit stopRecInput();
@@ -632,7 +632,7 @@ void GkAudioEncoding::encodeCodec2(const quint32 &max_amplitude, const Settings:
             #endif
         } else if (audio_src == GkAudioSource::Output) {
             #ifdef CODEC2_LIBS_ENBLD
-            m_codec2Sink = new GkCodec2Sink(media_path.absoluteFilePath(), CODEC2_MODE_1300, true, false, max_amplitude,
+            m_codec2Sink = new GkCodec2Sink(media_path.canonicalFilePath(), CODEC2_MODE_1300, true, false, max_amplitude,
                                             gkAudioOutput->format(), gkEventLogger, this);
             m_codec2Sink->start();
             emit stopRecOutput();
@@ -661,14 +661,14 @@ void GkAudioEncoding::encodePcmWav(const quint32 &max_amplitude, const Settings:
 {
     try {
         if (audio_src == GkAudioSource::Input) {
-            m_pcmWavSink = new GkPcmWavSink(media_path.absoluteFilePath(), max_amplitude, gkAudioInput->format(),
+            m_pcmWavSink = new GkPcmWavSink(media_path.canonicalFilePath(), max_amplitude, gkAudioInput->format(),
                                             gkEventLogger, this);
             m_pcmWavSink->start();
             emit stopRecInput();
             gkAudioInput->moveToThread(this->thread());
             gkAudioInput->start(m_pcmWavSink);
         } else if (audio_src == GkAudioSource::Output) {
-            m_pcmWavSink = new GkPcmWavSink(media_path.absoluteFilePath(), max_amplitude, gkAudioOutput->format(),
+            m_pcmWavSink = new GkPcmWavSink(media_path.canonicalFilePath(), max_amplitude, gkAudioOutput->format(),
                                             gkEventLogger, this);
             m_pcmWavSink->start();
             emit stopRecOutput();

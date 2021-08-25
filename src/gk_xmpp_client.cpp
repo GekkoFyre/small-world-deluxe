@@ -44,6 +44,7 @@
 #include <qxmpp/QXmppUtils.h>
 #include <qxmpp/QXmppStreamFeatures.h>
 #include <chrono>
+#include <cstring>
 #include <iostream>
 #include <iterator>
 #include <exception>
@@ -153,13 +154,13 @@ GkXmppClient::GkXmppClient(const GkUserConn &connection_details, QPointer<GekkoF
         const QString dir_to_append = QDir::toNativeSeparators(QString::fromStdString(General::companyName) + "/" + QString::fromStdString(Filesystem::defaultDirAppend) + "/" + QString::fromStdString(Filesystem::xmppVCardDir));
         vcard_save_path.setPath(QDir::toNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/" + dir_to_append)); // Path to save final database towards
         if (!vcard_save_path.exists()) {
-            if (vcard_save_path.mkpath(vcard_save_path.absolutePath())) {
+            if (vcard_save_path.mkpath(vcard_save_path.canonicalPath())) {
                 gkEventLogger->publishEvent(tr("Directory, \"%1\", has been created successfully!")
-                .arg(vcard_save_path.absolutePath()), GkSeverity::Info, "", false,
+                .arg(vcard_save_path.canonicalPath()), GkSeverity::Info, "", false,
                 true, false, false);
             } else {
                 throw std::runtime_error(tr("Unsuccessfully attempted to capture vCards for XMPP user roster. Directory: %1")
-                .arg(vcard_save_path.absolutePath()).toStdString());
+                .arg(vcard_save_path.canonicalPath()).toStdString());
             }
         }
 
@@ -1064,15 +1065,26 @@ void GkXmppClient::getArchivedMessagesFine(qint32 recursion, const QString &from
  * @return The QByteArray as produced from the given image file.
  * @see GkXmppClient::updateClientVCardForm().
  */
-QByteArray GkXmppClient::processImgToByteArray(const QString &filePath)
+QByteArray GkXmppClient::processImgToByteArray(const QFileInfo &filePath)
 {
-    QPointer<QFile> imageFile = new QFile(filePath, this);
-    imageFile->open(QIODevice::ReadOnly | QIODevice::Truncate);
-    QByteArray byteArray = imageFile->readAll();
-    imageFile->close();
-    delete imageFile;
+    try {
+        if (filePath.exists() && filePath.isFile() && filePath.isReadable()) {
+            QScopedPointer<QFile> imageFile = QScopedPointer<QFile>(new QFile(filePath.canonicalFilePath(), this));
+            if (!imageFile->open(QIODevice::ReadOnly)) {
+                throw std::invalid_argument(tr("Error with reading avatar! Unable to open file: %1").arg(filePath.canonicalFilePath()).toStdString());
+            }
 
-    return byteArray;
+            const QByteArray byteArray = imageFile->readAll();
+            imageFile->close();
+            return byteArray;
+        } else {
+            throw std::invalid_argument(tr("Error with reading avatar!").toStdString());
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(e.what()));
+    }
+
+    return QByteArray();
 }
 
 /**
@@ -1156,14 +1168,14 @@ void GkXmppClient::vCardReceived(const QXmppVCardIq &vCard)
         gkEventLogger->publishEvent(tr("vCard received for user, \"%1\"").arg(bareJid), GkSeverity::Debug,
                                     "", false, true, false, false);
 
-        QFileInfo imgFileName = QDir::toNativeSeparators(vcard_save_path.absolutePath() + "/" + bareJid + ".png");
-        QFileInfo xmlFileName = QDir::toNativeSeparators(vcard_save_path.absolutePath() + "/" + bareJid + ".xml");
+        QFileInfo imgFileName = QDir::toNativeSeparators(vcard_save_path.canonicalPath() + "/" + bareJid + ".png");
+        QFileInfo xmlFileName = QDir::toNativeSeparators(vcard_save_path.canonicalPath() + "/" + bareJid + ".xml");
 
-        QFile xmlFile(xmlFileName.absoluteFilePath());
+        QFile xmlFile(xmlFileName.canonicalFilePath());
         if (xmlFile.exists()) {
             if (!xmlFile.remove()) {
                 throw std::runtime_error(tr("An error was encountered with removing file, \"%1\"!")
-                .arg(xmlFileName.absoluteFilePath()).toStdString());
+                .arg(xmlFileName.canonicalFilePath()).toStdString());
             }
         }
 
@@ -1177,11 +1189,11 @@ void GkXmppClient::vCardReceived(const QXmppVCardIq &vCard)
                                         GkSeverity::Debug, "", false, true, false, false);
         }
 
-        QFile imgFile(imgFileName.absoluteFilePath());
+        QFile imgFile(imgFileName.canonicalFilePath());
         if (imgFile.exists()) {
             if (!imgFile.remove()) {
                 throw std::runtime_error(tr("An error was encountered with removing file, \"%1\"!")
-                .arg(imgFileName.absoluteFilePath()).toStdString());
+                .arg(imgFileName.canonicalFilePath()).toStdString());
             }
         }
 
@@ -1198,14 +1210,14 @@ void GkXmppClient::vCardReceived(const QXmppVCardIq &vCard)
             buffer->open(QIODevice::ReadOnly);
             QImageReader imageReader(buffer, vCard.photoType().toStdString().c_str());
             QImage image = imageReader.read();
-            QDir::setCurrent(imgFileName.absolutePath()); // Set the working directory to this!
-            if (image.save(imgFileName.absoluteFilePath())) {
+            QDir::setCurrent(imgFileName.canonicalPath()); // Set the working directory to this!
+            if (image.save(imgFileName.canonicalFilePath())) {
                 gkEventLogger->publishEvent(tr("vCard avatar saved to filesystem for user, \"%1\"").arg(bareJid),
                                             GkSeverity::Debug, "", false, true, false, false);
                 return;
             } else {
                 throw std::runtime_error(tr("Error encountered with saving image data for file, \"%1\"!")
-                .arg(imgFileName.absoluteFilePath()).toStdString());
+                .arg(imgFileName.canonicalFilePath()).toStdString());
             }
         }
     } catch (const std::exception &e) {
@@ -1223,15 +1235,15 @@ void GkXmppClient::vCardReceived(const QXmppVCardIq &vCard)
 void GkXmppClient::clientVCardReceived()
 {
     const QXmppVCardIq m_clientVCard = m_vCardManager->clientVCard();
-    const QFileInfo imgFileLoc = QDir::toNativeSeparators(vcard_save_path.absolutePath() + "/" + config.jidBare() + ".png");
-    const QFileInfo xmlFileLoc = QDir::toNativeSeparators(vcard_save_path.absolutePath() + "/" + config.jidBare() + ".xml");
+    const QFileInfo imgFileLoc = QDir::toNativeSeparators(vcard_save_path.canonicalPath() + "/" + config.jidBare() + ".png");
+    const QFileInfo xmlFileLoc = QDir::toNativeSeparators(vcard_save_path.canonicalPath() + "/" + config.jidBare() + ".xml");
 
     try {
         //
         // Read/write out user contact information!
         if (xmlFileLoc.absoluteDir().exists() && xmlFileLoc.absoluteDir().isReadable()) {
-            QDir::setCurrent(xmlFileLoc.absolutePath()); // Set the working directory to this!
-            QPointer<QFile> xmlFile = new QFile(xmlFileLoc.absoluteFilePath(), this);
+            QDir::setCurrent(xmlFileLoc.canonicalPath()); // Set the working directory to this!
+            QPointer<QFile> xmlFile = new QFile(xmlFileLoc.canonicalFilePath(), this);
             if (xmlFile->open(QIODevice::ReadWrite | QIODevice::Truncate)) { // Overwrite the XML file wholly each time, no matter if it is pre-existing or not!
                 QXmlStreamWriter stream(xmlFile);
                 m_clientVCard.toXml(&stream);
@@ -1264,9 +1276,9 @@ void GkXmppClient::clientVCardReceived()
                     QPointer<QBuffer> buffer = new QBuffer(&photo, this);
                     buffer->open(QIODevice::ReadOnly);
                     QImageReader imageReader(buffer, m_clientVCard.photoType().toStdString().c_str());
-                    QDir::setCurrent(imgFileLoc.absolutePath()); // Set the working directory to this!
+                    QDir::setCurrent(imgFileLoc.canonicalPath()); // Set the working directory to this!
                     QImage image = imageReader.read();
-                    if (image.save(imgFileLoc.absoluteFilePath(), m_clientVCard.photoType().toStdString().c_str())) {
+                    if (image.save(imgFileLoc.canonicalFilePath(), m_clientVCard.photoType().toStdString().c_str())) {
                         gkEventLogger->publishEvent(tr("vCard avatar saved to filesystem for self-client."),
                                                     GkSeverity::Debug, "", false, true, false, false);
                         emit savedClientVCard(photo, m_clientVCard.photoType());
