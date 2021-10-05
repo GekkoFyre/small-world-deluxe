@@ -123,7 +123,7 @@ GkXmppRosterDialog::GkXmppRosterDialog(QPointer<GekkoFyre::StringFuncs> stringFu
         QObject::connect(this, SIGNAL(updateClientVCard(const QString &, const QString &, const QString &, const QString &, const QByteArray &, const QString &)),
                          m_xmppClient, SLOT(updateClientVCardForm(const QString &, const QString &, const QString &, const QString &, const QByteArray &, const QString &)));
         QObject::connect(m_xmppClient, SIGNAL(savedClientVCard(const QByteArray &, const QString &)), this, SLOT(recvClientAvatarImg(const QByteArray &, const QString &)));
-        QObject::connect(this, SIGNAL(updateClientAvatarImg(const QImage &, const QString &)), this, SLOT(updateClientAvatar(const QImage &, const QString &)));
+        QObject::connect(this, SIGNAL(updateClientAvatarImg(const QByteArray &, const QString &)), this, SLOT(updateClientAvatar(const QByteArray &, const QString &)));
         QObject::connect(m_xmppClient, SIGNAL(sendUserVCard(const QXmppVCardIq &)), this, SLOT(updateUserVCard(const QXmppVCardIq &)));
 
         QObject::connect(this, SIGNAL(updateAvailableStatusType(const QXmppPresence::AvailableStatusType &)),
@@ -966,13 +966,45 @@ void GkXmppRosterDialog::on_pushButton_self_avatar_clicked()
         if (!ret_path.isEmpty()) {
             const QFileInfo filePath = ret_path;
             gkDb->write_xmpp_recall(filePath.canonicalPath(), Settings::GkXmppRecall::XmppAvatarFolderDir);
-            const QByteArray avatarByteArray = m_xmppClient->processImgToByteArray(filePath);
-            m_clientAvatarImgBa = avatarByteArray;
-            const QImage avatar_img = QImage::fromData(m_clientAvatarImgBa);
-            const auto mime_type = gkSystem->getImgFormat(m_clientAvatarImgBa, true);
+            QByteArray avatarByteArray = m_xmppClient->processImgToByteArray(filePath);
+            if (!avatarByteArray.isNull()) {
+                if (!avatarByteArray.isEmpty()) {
+                    const auto mime_type = gkSystem->getImgFormat(avatarByteArray, true);
+                    const QString mime_type_uppercase = mime_type.toUpper();
 
-            emit updateClientVCard(gkConnDetails.firstName, gkConnDetails.lastName, gkConnDetails.email, gkConnDetails.nickname, avatarByteArray, mime_type);
-            emit updateClientAvatarImg(avatar_img, mime_type);
+                    //
+                    // Determine if the image data needs converting to JPEG or not!
+                    if (mime_type_uppercase == "JPEG" || mime_type_uppercase == "JPG") {
+                        //
+                        // Already a JPEG image! So we can proceed as normal...
+                        //
+                        m_clientAvatarImgBa = avatarByteArray;
+                    } else {
+                        //
+                        // Convert the image to JPEG!
+                        // https://doc.qt.io/qt-5/qimage.html#save
+                        // https://doc.qt.io/qt-5/qtimageformats-index.html
+                        //
+                        QImage convert;
+                        QBuffer buffer(&avatarByteArray);
+                        buffer.open(QIODevice::WriteOnly);
+                        if (!convert.save(&buffer, General::Xmpp::Avatar::defaultAvatarFormatSuffix, 85)) {
+                            throw std::runtime_error(tr("There has been an error with converting your avatar from, \"%1\", towards, \"%2\"!")
+                            .arg(mime_type_uppercase, General::Xmpp::Avatar::defaultAvatarFormatSuffix).toStdString());
+                        }
+
+                        buffer.seek(0);
+                        QByteArray conv_array = buffer.readAll();
+                        m_clientAvatarImgBa = conv_array;
+                    }
+
+                    emit updateClientVCard(gkConnDetails.firstName, gkConnDetails.lastName, gkConnDetails.email, gkConnDetails.nickname, avatarByteArray,
+                                           General::Xmpp::Avatar::defaultAvatarFormat);
+                    emit updateClientAvatarImg(m_clientAvatarImgBa, General::Xmpp::Avatar::defaultAvatarFormatSuffix);
+
+                    return;
+                }
+            }
         }
     } catch (const std::exception &e) {
         gkStringFuncs->print_exception(e);
@@ -1027,12 +1059,7 @@ void GkXmppRosterDialog::recvClientAvatarImg(const QByteArray &avatar_pic, const
 {
     if (!avatar_pic.isNull()) {
         if (!avatar_pic.isEmpty()) {
-            m_clientAvatarImgBa = avatar_pic;
-            QPointer<QBuffer> buffer = new QBuffer(&m_clientAvatarImgBa, this);
-            buffer->open(QIODevice::ReadOnly | QIODevice::Truncate);
-            QImageReader imageReader(buffer, img_type.toStdString().c_str());
-            const QImage image = imageReader.read();
-            emit updateClientAvatarImg(image, img_type);
+            emit updateClientAvatarImg(avatar_pic, img_type);
         }
     }
 
@@ -1048,11 +1075,19 @@ void GkXmppRosterDialog::defaultClientAvatarPlaceholder()
     m_clientAvatarImgBa = gkDb->read_xmpp_settings(Settings::GkXmppCfg::XmppAvatarByteArray).toUtf8();
     if (!m_clientAvatarImgBa.isNull()) {
         if (!m_clientAvatarImgBa.isEmpty()) {
-            QImage avatar_img = QImage::fromData(QByteArray::fromBase64(m_clientAvatarImgBa));
             const auto mime_type = gkSystem->getImgFormat(m_clientAvatarImgBa, true);
-            emit updateClientAvatarImg(avatar_img, mime_type);
+            emit updateClientAvatarImg(m_clientAvatarImgBa, mime_type);
         } else {
-            emit updateClientAvatarImg(QImage(":/resources/contrib/images/raster/gekkofyre-networks/CurioDraco/gekkofyre_drgn_server_thumb_transp.png"), "png");
+            QImage img_to_save = QImage(":/resources/contrib/images/raster/gekkofyre-networks/CurioDraco/gekkofyre_drgn_server_thumb_transp.png");
+            QByteArray arr;
+            QBuffer buf(&arr);
+            buf.open(QIODevice::WriteOnly);
+            img_to_save.save(&buf, "PNG");
+            if (!arr.isNull()) {
+                if (!arr.isEmpty()) {
+                    emit updateClientAvatarImg(arr, "PNG");
+                }
+            }
         }
     }
 
@@ -1065,20 +1100,25 @@ void GkXmppRosterDialog::defaultClientAvatarPlaceholder()
  * @param avatar_img An avatar picture that the connecting client might wish to upload for others to see and identify them.
  * @param img_type The image format that the avatar is originally within (i.e. PNG, JPEG, GIF, etc).
  */
-void GkXmppRosterDialog::updateClientAvatar(const QImage &avatar_img, const QString &img_type)
+void GkXmppRosterDialog::updateClientAvatar(const QByteArray &avatar_img, const QString &img_type)
 {
-    ui->pushButton_self_avatar->setIcon(QIcon(QPixmap::fromImage(avatar_img)));
-    ui->pushButton_self_avatar->setIconSize(QSize(150, 150));
+    try {
+        if (!avatar_img.isNull()) {
+            if (!avatar_img.isEmpty()) {
+                const auto pixmap = m_xmppClient->rescaleAvatarImg(avatar_img, img_type);
+                ui->pushButton_self_avatar->setIcon(QIcon(pixmap));
+                ui->pushButton_self_avatar->setIconSize(QSize(150, 150));
 
-    //
-    // Only update the Google LevelDB database with an avatar image if connected!
-    if (m_xmppClient->isConnected() && m_xmppClient->getNetworkState() != GkNetworkState::Connecting) {
-        QByteArray ba;
-        QPointer<QBuffer> buffer = new QBuffer(this);
-        buffer->open(QIODevice::ReadWrite);
-        avatar_img.save(buffer, img_type.toStdString().c_str()); // Write the QImage into a QBuffer for later saving via Google LevelDB!
-        gkDb->write_xmpp_settings(buffer->readAll().toBase64(), Settings::GkXmppCfg::XmppAvatarByteArray);
-        gkEventLogger->publishEvent(tr("vCard avatar has been registered for self-client."), GkSeverity::Debug, "", false, true, false, false);
+                //
+                // Only update the Google LevelDB database with an avatar image if connected!
+                if (m_xmppClient->isConnected() && m_xmppClient->getNetworkState() != GkNetworkState::Connecting) {
+                    gkDb->write_xmpp_settings(avatar_img, Settings::GkXmppCfg::XmppAvatarByteArray);
+                    gkEventLogger->publishEvent(tr("vCard avatar has been registered for self-client."), GkSeverity::Debug, "", false, true, false, false);
+                }
+            }
+        }
+    } catch (const std::exception &e) {
+        gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true, false);
     }
 
     return;

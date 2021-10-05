@@ -564,7 +564,7 @@ QXmppPresence GkXmppClient::getBareJidPresence(const QString &bareJid, const QSt
  */
 QString GkXmppClient::getJidNickname(const QString &bareJid)
 {
-    for (const auto &roster: m_rosterList) {
+    for (const auto &roster: m_rosterList) { // Have to remove the, "<username>/GekkoFyre", etc. if present!
         if (roster.bareJid == bareJid) {
             QString ret;
             if (!roster.vCard.nickName().isEmpty()) {
@@ -658,6 +658,31 @@ bool GkXmppClient::isJidOnline(const QString &bareJid)
 
             break;
         }
+    }
+
+    return false;
+}
+
+/**
+ * @brief GkXmppClient::isAvatarImgScaleOk checks whether the end-user's avatar meets certain criteria for image scaling sizes.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param avatar_img The given end-users avatar that is to be tested against.
+ * @param img_type The image format (i.e. extension) of the given end-users avatar.
+ * @return Whether the end-users avatar checks out okay or not.
+ */
+bool GkXmppClient::isAvatarImgScaleOk(const QByteArray &avatar_img, const QString &img_type)
+{
+    try {
+        QPixmap pixmap;
+        if (!pixmap.loadFromData(avatar_img, img_type.toStdString().c_str())) {
+            throw std::runtime_error(tr("Unable to load avatar image from raw data!").toStdString());
+        }
+
+        if (pixmap.size().width() > GK_XMPP_AVATAR_SIZE_MAX_WIDTH || pixmap.size().height() > GK_XMPP_AVATAR_SIZE_MAX_HEIGHT) {
+            return true;
+        }
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(tr("An issue has occurred whilst processing your avatar image. Error:\n\n%1").arg(QString::fromStdString(e.what())).toStdString()));
     }
 
     return false;
@@ -1085,6 +1110,37 @@ QByteArray GkXmppClient::processImgToByteArray(const QFileInfo &filePath)
     }
 
     return QByteArray();
+}
+
+/**
+ * @brief GkXmppClient::rescaleAvatarImg scales a given end-user's avatar image to a pre-specified, constrained size.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param avatar_img The given end-users avatar that is to be modified.
+ * @param img_type The image format (i.e. extension) of the given end-users avatar.
+ * @return The now scaled end-users avatar.
+ */
+QPixmap GkXmppClient::rescaleAvatarImg(const QByteArray &avatar_img, const QString &img_type)
+{
+    try {
+        QPixmap pixmap;
+        if (!pixmap.loadFromData(avatar_img, img_type.toStdString().c_str())) {
+            throw std::runtime_error(tr("Unable to load avatar image from raw data!").toStdString());
+        }
+
+        if (!isAvatarImgScaleOk(avatar_img, img_type)) {
+            // Make sure to use bilinear filtering despite its potential performance constraints on slower computer
+            // systems...
+            pixmap.scaled(QSize(150, 150), Qt::AspectRatioMode::KeepAspectRatioByExpanding,
+                          Qt::TransformationMode::SmoothTransformation);
+            return pixmap;
+        }
+
+        return pixmap;
+    } catch (const std::exception &e) {
+        std::throw_with_nested(std::runtime_error(tr("An issue has occurred whilst processing your avatar image. Error:\n\n%1").arg(QString::fromStdString(e.what())).toStdString()));
+    }
+
+    return QPixmap();
 }
 
 /**

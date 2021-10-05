@@ -166,6 +166,9 @@ namespace GekkoFyre {
 #define GK_XMPP_NETWORK_STATE_UPDATE_SECS (1)
 #define GK_XMPP_HANDLE_DISCONNECTION_SINGLE_SHOT_TIMER_SECS (5)
 
+#define GK_XMPP_AVATAR_SIZE_MAX_WIDTH (150)
+#define GK_XMPP_AVATAR_SIZE_MAX_HEIGHT (150)
+
 //
 // Networking settings (also sometimes related to XMPP!)
 //
@@ -365,6 +368,11 @@ namespace General {
             constexpr char keyToConvAvatarImg[] = "GkAvatarImg";
             constexpr char keyToConvMsgHistory[] = "msg";
             constexpr char keyToConvTimestampHistory[] = "timestamp";
+        }
+
+        namespace Avatar {
+            constexpr char defaultAvatarFormat[] = "image/JPEG";
+            constexpr char defaultAvatarFormatSuffix[] = "JPEG";
         }
     }
 }
