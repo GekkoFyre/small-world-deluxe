@@ -206,6 +206,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         btn_radio_tune = false;
         btn_radio_monitor = false;
 
+        mInputDevice = nullptr;
+        mOutputDevice = nullptr;
         global_rx_audio_volume = 0.0;
         global_tx_audio_volume = 0.0;
 
@@ -483,6 +485,67 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             gkFreqList->publishFreqList();
             gkAudioDevices = new GekkoFyre::AudioDevices(gkDb, gkFileIo, gkFreqList, gkStringFuncs, gkEventLogger, gkSystem, this);
 
+            //
+            // Set default values! NOTE: Setting just a context isn't enough, as you also need to make it 'current'. More
+            // to follow!
+            mInputCtxCurr = false;
+            mOutputCtxCurr = false;
+
+            //
+            // Output audio device
+            try {
+                //
+                // Initialize output device!
+                mOutputDevice = alcOpenDevice(nullptr);
+
+                //
+                // Create OpenAL context for output audio device!
+                if (!alcCall(alcCreateContext, mOutputCtx, mOutputDevice, mOutputDevice, nullptr) || !mOutputCtx) {
+                    throw std::runtime_error(tr("ERROR: Could not create audio context for output device!").toStdString());
+                }
+
+                if (!alcCall(alcMakeContextCurrent, mOutputCtxCurr, mOutputDevice, mOutputCtx) || mOutputCtxCurr != ALC_TRUE) {
+                    throw std::runtime_error(tr("ERROR: Attempt at making the audio context current has failed for output device!").toStdString());
+                }
+            } catch (const std::exception &e) {
+                gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);
+            }
+
+            //
+            // Input audio device
+            try {
+                //
+                // Initialize input device!
+                mInputDevice = alcOpenDevice(nullptr);
+
+                //
+                // Create OpenAL context for input audio device!
+                if (!alcCall(alcCreateContext, mInputCtx, mInputDevice, mInputDevice, nullptr) || !mInputCtx) {
+                    throw std::runtime_error(tr("ERROR: Could not create audio context for input device!").toStdString());
+                }
+
+                if (!alcCall(alcMakeContextCurrent, mInputCtxCurr, mInputDevice, mInputCtx) || mInputCtxCurr != ALC_TRUE) {
+                    throw std::runtime_error(tr("ERROR: Attempt at making the audio context current has failed for input device!").toStdString());
+                }
+            } catch (const std::exception &e) {
+                gkEventLogger->publishEvent(QString::fromStdString(e.what()), GkSeverity::Fatal, "", false, true, false, true);
+            }
+
+            //
+            // Prior to attempting an enumeration, OpenAL provides an extension querying mechanism which allows
+            // you to know whether the runtime OpenAL implementation supports a specific extension. In our case,
+            // we want to check whether OpenAL supports enumerating devices...
+            //
+            ALboolean enumeration;
+            enumeration = alcIsExtensionPresent(nullptr, "ALC_ENUMERATION_EXT");
+            if (enumeration == AL_FALSE) {
+                throw std::runtime_error(tr("The version of OpenAL that is currently installed is not supported! Please "
+                                            "upgrade to a later version before continuing.").toStdString());
+            }
+
+            //
+            // The enumeration extension is supported by OpenAL!
+
             const auto outputDeviceInfos = QAudioDeviceInfo::availableDevices(QAudio::AudioOutput);
             const auto inputDeviceInfos = QAudioDeviceInfo::availableDevices(QAudio::AudioInput);
 
@@ -504,92 +567,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             // Input audio devices
             //
             if (!avail_input_audio_devs.empty()) {
-                if (!input_audio_device_settings.isEmpty() && !input_audio_device_settings.isNull()) {
-                    for (const auto &input_dev: avail_input_audio_devs) {
-                        if (input_dev.second.audio_dev_str == input_audio_device_settings) {
-                            //
-                            // Preferred input audio device as set by the user previously!
-                            //
-                            qint32 inputDevSampleRateIdx = gkDb->read_misc_audio_settings(GkAudioCfg::AudioInputSampleRate).toInt();
-                            qint32 inputDevSampleSizeIdx = gkDb->read_misc_audio_settings(GkAudioCfg::AudioInputBitrate).toInt();
-                            qint32 inputDevSampleRateVal = 0;
-                            qint32 inputDevSampleSizeVal = 0;
-                            auto inputDevSampleType = QAudioFormat::SampleType::Unknown;
-
-                            // Get the stored value from the Google LevelDB database for the sample rate! NOTE: The 'index' parameter
-                            // refers to its stored value within the QComboBox via the Settings Dialog. For those wondering where the
-                            // value originally came from!
-                            quint32 sample_rate_counter = 0;
-                            for (const auto &sample_rate: input_dev.second.audio_device_info.supportedSampleRates()) {
-                                if (sample_rate_counter == inputDevSampleRateIdx) {
-                                    inputDevSampleRateVal = sample_rate;
-                                    break;
-                                }
-
-                                ++sample_rate_counter;
-                            }
-
-                            quint32 sample_size_counter = 0;
-                            for (const auto &sample_size: input_dev.second.audio_device_info.supportedSampleSizes()) {
-                                if (sample_size_counter == inputDevSampleSizeIdx) {
-                                    inputDevSampleSizeVal = sample_size;
-                                    break;
-                                }
-
-                                ++sample_size_counter;
-                            }
-
-                            QAudioFormat user_input_settings;
-                            user_input_settings.setChannelCount(gkDb->read_misc_audio_settings(GkAudioCfg::AudioInputChannels).toInt());
-
-                            // Sets the sample rate as accordingly in Hertz (e.g. 44,100 kHz)
-                            user_input_settings.setSampleRate(inputDevSampleRateVal);
-
-                            // See: https://doc.qt.io/qt-5/qaudioformat.html#SampleType-enum
-                            auto sample_type_val = gkDb->convAudioBitRateToEnum(inputDevSampleSizeVal);
-                            if (sample_type_val != QAudioFormat::Unknown) {
-                                user_input_settings.setSampleType(sample_type_val);
-                            } else {
-                                throw std::invalid_argument(tr("Unable to determine sample-type for given input audio device!").toStdString());
-                            }
-
-                            // This is typically 8 or 16, but some systems may support higher sample sizes
-                            user_input_settings.setSampleSize(inputDevSampleSizeVal);
-
-                            // You'll typically want Little Endian for this value
-                            user_input_settings.setByteOrder(QAudioFormat::LittleEndian);
-
-                            // Unless there's good reason, you will wish to leave this alone...
-                            user_input_settings.setCodec("audio/pcm");
-
-                            if (input_dev.second.audio_device_info.isFormatSupported(user_input_settings)) {
-                                // Given audio parameters are supported, as defined by the user previously!
-                                pref_input_device = input_dev.second;
-                                gkAudioInput = new QAudioInput(input_dev.first, user_input_settings, &gkAudioInputThread);
-                                const qint32 input_buf_size = inputDevSampleRateVal * gkDb->read_misc_audio_settings(GkAudioCfg::AudioInputChannels).toInt() * (inputDevSampleSizeVal / 8);
-                                gkAudioInput->setBufferSize(input_buf_size); // 1 second
-                                gkEventLogger->publishEvent(tr("Now using the input audio device, \"%1\".").arg(pref_input_device.audio_device_info.deviceName()),
-                                                            GkSeverity::Info, "", false, true, false, false);
-                            } else {
-                                // Given audio parameters are NOT supported, therefore use defaults for now and let the user know!
-                                defaultInputAudioDev(input_dev);
-                                gkEventLogger->publishEvent(tr("Previously set audio parameters for the input device are not supported! Please visit the Settings Dialog and reconfigure."),
-                                                            GkSeverity::Warning, "", false, true, false, true);
-                            }
-                        }
-                    }
-                } else {
-                    for (const auto &input_dev: avail_input_audio_devs) {
-                        if (input_dev.second.default_input_dev) {
-                            //
-                            // Use the default input audio device!
-                            //
-                            defaultInputAudioDev(input_dev);
-                            gkEventLogger->publishEvent(tr("Now using the input audio device, \"%1\".").arg(pref_input_device.audio_device_info.deviceName()),
-                                                        GkSeverity::Info, "", false, true, false, false);
-                        }
-                    }
-                }
             } else {
                 throw std::runtime_error(tr("Could not find any input audio devices!").toStdString());
             }
@@ -598,92 +575,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             // Output audio devices
             //
             if (!avail_output_audio_devs.empty()) {
-                if (!output_audio_device_settings.isEmpty() && !output_audio_device_settings.isNull()) {
-                    for (const auto &output_dev: avail_output_audio_devs) {
-                        if (output_dev.second.audio_dev_str == output_audio_device_settings) {
-                            //
-                            // Preferred output audio device as set by the user previously!
-                            //
-                            qint32 outputDevSampleRateIdx = gkDb->read_misc_audio_settings(GkAudioCfg::AudioOutputSampleRate).toInt();
-                            qint32 outputDevSampleSizeIdx = gkDb->read_misc_audio_settings(GkAudioCfg::AudioOutputBitrate).toInt();
-                            qint32 outputDevSampleRateVal = 0;
-                            qint32 outputDevSampleSizeVal = 0;
-                            auto outputDevSampleType = QAudioFormat::SampleType::Unknown;
-
-                            // Get the stored value from the Google LevelDB database for the sample rate! NOTE: The 'index' parameter
-                            // refers to its stored value within the QComboBox via the Settings Dialog. For those wondering where the
-                            // value originally came from!
-                            quint32 sample_rate_counter = 0;
-                            for (const auto &sample_rate: output_dev.second.audio_device_info.supportedSampleRates()) {
-                                if (sample_rate_counter == outputDevSampleRateIdx) {
-                                    outputDevSampleRateVal = sample_rate;
-                                    break;
-                                }
-
-                                ++sample_rate_counter;
-                            }
-
-                            quint32 sample_size_counter = 0;
-                            for (const auto &sample_size: output_dev.second.audio_device_info.supportedSampleSizes()) {
-                                if (sample_size_counter == outputDevSampleSizeIdx) {
-                                    outputDevSampleSizeVal = sample_size;
-                                    break;
-                                }
-
-                                ++sample_size_counter;
-                            }
-
-                            QAudioFormat user_output_settings;
-                            user_output_settings.setChannelCount(gkDb->read_misc_audio_settings(GkAudioCfg::AudioOutputChannels).toInt());
-
-                            // Sets the sample rate as accordingly in Hertz (e.g. 44,100 kHz)
-                            user_output_settings.setSampleRate(outputDevSampleRateVal);
-
-                            // See: https://doc.qt.io/qt-5/qaudioformat.html#SampleType-enum
-                            auto sample_type_val = gkDb->convAudioBitRateToEnum(outputDevSampleSizeVal);
-                            if (sample_type_val != QAudioFormat::Unknown) {
-                                user_output_settings.setSampleType(sample_type_val);
-                            } else {
-                                throw std::invalid_argument(tr("Unable to determine sample-type for given output audio device!").toStdString());
-                            }
-
-                            // This is typically 8 or 16, but some systems may support higher sample sizes
-                            user_output_settings.setSampleSize(outputDevSampleSizeVal);
-
-                            // You'll typically want Little Endian for this value
-                            user_output_settings.setByteOrder(QAudioFormat::LittleEndian);
-
-                            // Unless there's good reason, you will wish to leave this alone...
-                            user_output_settings.setCodec("audio/pcm");
-
-                            if (output_dev.second.audio_device_info.isFormatSupported(user_output_settings)) {
-                                // Given audio parameters are supported, as defined by the user previously!
-                                pref_output_device = output_dev.second;
-                                gkAudioOutput = new QAudioOutput(output_dev.first, user_output_settings, &gkAudioOutputThread);
-                                const qint32 output_buf_size = outputDevSampleRateVal * gkDb->read_misc_audio_settings(GkAudioCfg::AudioOutputChannels).toInt() * (outputDevSampleSizeVal / 8);
-                                gkAudioOutput->setBufferSize(output_buf_size); // 1 second
-                                gkEventLogger->publishEvent(tr("Now using the output audio device, \"%1\".").arg(pref_output_device.audio_device_info.deviceName()),
-                                                            GkSeverity::Info, "", false, true, false, false);
-                            } else {
-                                // Given audio parameters are NOT supported, therefore use defaults for now and let the user know!
-                                defaultOutputAudioDev(output_dev);
-                                gkEventLogger->publishEvent(tr("Previously set audio parameters for the output device are not supported! Please visit the Settings Dialog and reconfigure."),
-                                                            GkSeverity::Warning, "", false, true, false, true);
-                            }
-                        }
-                    }
-                } else {
-                    for (const auto &output_dev: avail_output_audio_devs) {
-                        if (output_dev.second.default_output_dev) {
-                            //
-                            // Use the default output audio device!
-                            //
-                            defaultOutputAudioDev(output_dev);
-                            gkEventLogger->publishEvent(tr("Now using the output audio device, \"%1\".").arg(pref_output_device.audio_device_info.deviceName()),
-                                                        GkSeverity::Info, "", false, true, false, false);
-                        }
-                    }
-                }
             } else {
                 throw std::runtime_error(tr("Could not find any output audio devices!").toStdString());
             }
@@ -965,6 +856,14 @@ MainWindow::~MainWindow()
     if (vu_meter_thread.joinable()) {
         vu_meter_thread.join();
     }
+
+    alcCall(alcDestroyContext, mOutputDevice, mOutputCtx);
+    alcCall(alcDestroyContext, mInputDevice, mInputCtx);
+
+    ALCboolean audio_output_closed;
+    ALCboolean audio_input_closed;
+    alcCall(alcCloseDevice, audio_output_closed, mOutputDevice, mOutputDevice);
+    alcCall(alcCloseDevice, audio_input_closed, mInputDevice, mInputDevice);
 
     // delete db;
     // TODO: Must fix SEGFAULT's that occur with the aforementioned line of code...

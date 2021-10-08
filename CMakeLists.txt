@@ -278,6 +278,19 @@ else()
 endif(OpusEnc_FOUND)
 
 #
+# OpenAL
+# https://www.openal.org/
+#
+find_package(OpenAL REQUIRED)
+if (OPENAL_FOUND)
+    include_directories(${OPENAL_INCLUDE_DIR})
+    set(LIBS ${LIBS} ${OPENAL_LIBRARY})
+    message(STATUS "The open source 'OpenAL' 3D audio library has been configured!")
+else()
+    message(FATAL_ERROR "The open source 'OpenAL' 3D audio library could not be found!")
+endif(OPENAL_FOUND)
+
+#
 # libsndfile
 # https://github.com/libsndfile/libsndfile
 #

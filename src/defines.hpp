@@ -49,6 +49,9 @@
 #include <boost/exception/all.hpp>
 #include <boost/logic/tribool.hpp>
 #include <boost/filesystem.hpp>
+#include <AL/al.h>
+#include <AL/alc.h>
+#include <AL/alext.h>
 #include <qwt/qwt_interval.h>
 #include <qxmpp/QXmppGlobal.h>
 #include <qxmpp/QXmppVCardIq.h>
@@ -891,16 +894,31 @@ namespace Database {
         };
 
         namespace Audio {
+            enum SampleType { Unknown, SignedInt, UnSignedInt, Float };
+            enum Endian { BigEndian = QSysInfo::BigEndian, LittleEndian = QSysInfo::LittleEndian };
+            struct GkFormat {
+                SampleType sample_type;
+                Endian endian_type;
+                qint32 bytesPerFrame;
+            };
+
+            struct GkAudioDeviceInfo {
+                QList<qint32> supported_sample_rates;
+                QList<qint32> supported_channel_counts;
+                QList<qint32> supported_sample_sizes;
+                QList<Endian> supported_byte_orders;
+                QList<SampleType> supported_sample_types;
+            };
+
             struct GkDevice {
                 QString audio_dev_str;                                              // The name of the device itself, as a formatted string.
-                QString realm_str;                                                  // The API that this particular audio device belongs towards.
-                QAudioDeviceInfo audio_device_info;                                 // Pointer to the actual audio device in question.
+                GkAudioDeviceInfo audio_device_info;                                // Further, detailed information of the actual audio device in question.
                 bool user_config_succ;                                              // Whether this audio device information has been gathered as the result of user activity or default action by Small World Deluxe.
                 bool default_output_dev;                                            // Is this the default device for the system?
                 bool default_input_dev;                                             // Is this the default device for the system?
                 bool is_enabled;                                                    // Whether this device (as the `QAudioInput` or `QAudioOutput`) is enabled as the primary choice by the end-user, for example, with regards to the spectrograph / waterfall.
                 GkAudioSource audio_src;                                            // Is the audio device in question an input? Output if FALSE, UNSURE if either.
-                QAudioFormat user_settings;                                         // The user defined settings for this particular audio device.
+                GkFormat user_settings;                                             // The user defined settings for this particular audio device.
                 quint32 chosen_sample_rate;                                         // The chosen sample rate, as configured by the end-user. TODO: Replace this with `user_settings` instead!
                 GkAudioChannels sel_channels;                                       // The selected audio channel configuration.
             };

@@ -297,6 +297,108 @@ float AudioDevices::calcAudioBufferTimeNeeded(const GkAudioChannels &num_channel
 }
 
 /**
+ * @brief AudioDevices::checkAlErrors A function to make OpenAL error detection a little bit easier.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>,
+ * IndieGameDev.net <https://indiegamedev.net/2020/02/15/the-complete-guide-to-openal-with-c-part-1-playing-a-sound/>
+ * @param filename
+ * @param line
+ * @return
+ */
+bool AudioDevices::checkAlErrors(const std::string &filename, const std::uint_fast32_t line, ALCdevice *device)
+{
+    ALCenum error = alcGetError(device);
+    if (error != ALC_NO_ERROR) {
+        std::cerr << tr("***ERROR*** (").toStdString() << filename << ": " << line << ")" << std::endl;
+        switch(error) {
+            case ALC_INVALID_VALUE: {
+                QString err_invalid_value = tr("ALC_INVALID_VALUE: an invalid value was passed to an OpenAL function");
+                std::cerr << err_invalid_value.toStdString();
+                QMessageBox::warning(nullptr, tr("Error!"), err_invalid_value, QMessageBox::Ok);
+            }
+
+                break;
+            case ALC_INVALID_DEVICE: {
+                QString err_invalid_device = tr("ALC_INVALID_DEVICE: a bad device was passed to an OpenAL function");
+                std::cerr << err_invalid_device.toStdString();
+                QMessageBox::warning(nullptr, tr("Error!"), err_invalid_device, QMessageBox::Ok);
+            }
+                break;
+            case ALC_INVALID_CONTEXT: {
+                QString err_invalid_context = tr("ALC_INVALID_CONTEXT: a bad context was passed to an OpenAL function");
+                std::cerr << err_invalid_context.toStdString();
+                QMessageBox::warning(nullptr, tr("Error!"), err_invalid_context, QMessageBox::Ok);
+            }
+
+                break;
+            case ALC_INVALID_ENUM: {
+                QString err_invalid_enum = tr(
+                        "ALC_INVALID_ENUM: an unknown enum value was passed to an OpenAL function");
+                std::cerr << err_invalid_enum.toStdString();
+                QMessageBox::warning(nullptr, tr("Error!"), err_invalid_enum, QMessageBox::Ok);
+            }
+
+                break;
+            case ALC_OUT_OF_MEMORY: {
+                QString err_out_of_memory = tr(
+                        "ALC_OUT_OF_MEMORY: an unknown enum value was passed to an OpenAL function");
+                std::cerr << err_out_of_memory.toStdString();
+                QMessageBox::warning(nullptr, tr("Error!"), err_out_of_memory, QMessageBox::Ok);
+            }
+
+                break;
+            default: {
+                QString err_unknown = tr("UNKNOWN ALC ERROR: ");
+                std::cerr << err_unknown.toStdString() << error;
+                QMessageBox::warning(nullptr, tr("Error!"), err_unknown, QMessageBox::Ok);
+            }
+
+                break;
+        }
+
+        std::cerr << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * @brief AudioDevices::enumerateAudioDevices will list/enumerate the audio devices (both input and output as specified)
+ * for the given end-user's computer system, as provided by the OpenAL audio library.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param devices The OpenAL audio library pointer to use.
+ * @param is_output_dev Whether we are working with output devices or input.
+ * @return The enumerated list of audio devices.
+ */
+QList<GkDevice> AudioDevices::enumerateAudioDevices(ALCdevice *device, const ALCchar *devices, const bool &is_output_dev) {
+    if (!alcCall(alcGetString, devices, device, nullptr, ALC_DEVICE_SPECIFIER)) {
+        return QList<GkDevice>();
+    }
+
+    const char *ptr = devices;
+    QStringList devicesList;
+    do {
+        devicesList.push_back(QString::fromStdString(ptr));
+        ptr += devicesList.back().size() + 1;
+    } while(*(ptr + 1) != '\0');
+
+    QList<GkDevice> device_list;
+    for (const auto &dev: devicesList) {
+        GkDevice audio;
+        if (is_output_dev) {
+            audio.audio_src = GkAudioSource::Output;
+        } else {
+            audio.audio_src = GkAudioSource::Input;
+        }
+
+        audio.audio_dev_str = dev;
+        device_list.push_back(audio);
+    }
+
+    return device_list;
+}
+
+/**
  * @brief AudioDevices::rtAudioVersionNumber returns the actual version of PortAudio
  * itself, as a QString().
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>

@@ -47,6 +47,9 @@
 #include "src/gk_frequency_list.hpp"
 #include "src/gk_logger.hpp"
 #include "src/gk_system.hpp"
+#include <AL/al.h>
+#include <AL/alc.h>
+#include <AL/alext.h>
 #include <mutex>
 #include <vector>
 #include <string>
@@ -61,6 +64,8 @@
 #include <QPointer>
 #include <QAudioFormat>
 #include <QAudioDeviceInfo>
+
+#define alcCall(function, device, ...) AudioDevices::alcCallImpl(__FILE__, __LINE__, function, device, __VA_ARGS__)
 
 namespace GekkoFyre {
 
@@ -85,8 +90,33 @@ public:
                                     const size_t &fft_samples_per_line, const size_t &audio_buf_sampling_length,
                                     const size_t &buf_size);
 
+    static bool checkAlErrors(const std::string &filename, const std::uint_fast32_t line, ALCdevice *device);
+    QList<GekkoFyre::Database::Settings::Audio::GkDevice> enumerateAudioDevices(ALCdevice *device, const ALCchar *devices, const bool &is_output_dev = false);
+
     QString rtAudioVersionNumber();
     QString rtAudioVersionText();
+
+    /**
+     * @author IndieGameDev.net <https://indiegamedev.net/2020/02/15/the-complete-guide-to-openal-with-c-part-1-playing-a-sound/>
+     * @return
+     */
+    template<typename alcFunction, typename... Params>
+    static auto alcCallImpl(const char *filename, const std::uint_fast32_t line, alcFunction function, ALCdevice *device,
+                     Params... params)->typename std::enable_if_t<std::is_same_v<void, decltype(function(params...))>, bool> {
+        function(std::forward<Params>(params)...);
+        return checkAlErrors(filename, line, device);
+    }
+
+    /**
+     * @author IndieGameDev.net <https://indiegamedev.net/2020/02/15/the-complete-guide-to-openal-with-c-part-1-playing-a-sound/>
+     * @return
+     */
+    template<typename alcFunction, typename ReturnType, typename... Params>
+    static auto alcCallImpl(const char *filename, const std::uint_fast32_t line, alcFunction function, ReturnType& returnValue,
+                     ALCdevice *device, Params... params)->typename std::enable_if_t<!std::is_same_v<void, decltype(function(params...))>, bool>{
+        returnValue = function(std::forward<Params>(params)...);
+        return checkAlErrors(filename, line, device);
+    }
 
 private:
     QPointer<GkLevelDb> gkDekodeDb;

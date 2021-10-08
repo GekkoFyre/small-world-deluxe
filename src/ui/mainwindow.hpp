@@ -62,6 +62,9 @@
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
 #include <sentry.h>
+#include <AL/al.h>
+#include <AL/alc.h>
+#include <AL/alext.h>
 #include <leveldb/db.h>
 #include <leveldb/status.h>
 #include <leveldb/options.h>
@@ -372,6 +375,12 @@ private:
     //
     // QAudioSystem initialization, buffers, and event-loops
     //
+    ALCdevice *mInputDevice;
+    ALCdevice *mOutputDevice;
+    ALCcontext *mInputCtx;
+    ALCcontext *mOutputCtx;
+    ALCboolean mInputCtxCurr;
+    ALCboolean mOutputCtxCurr;
     QPointer<QAudioInput> gkAudioInput;
     QPointer<QAudioOutput> gkAudioOutput;
     QPointer<GkVuAdjust> gkVuAdjustDlg;
