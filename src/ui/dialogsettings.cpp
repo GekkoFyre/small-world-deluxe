@@ -2233,35 +2233,9 @@ void DialogSettings::on_comboBox_input_audio_dev_bitrate_currentIndexChanged(int
         const QString curr_sel_input_dev = ui->comboBox_soundcard_input->itemData(index).toString();
         if (!curr_sel_input_dev.isEmpty()) {
             if (it->audio_dev_str == curr_sel_input_dev) {
-                if (it->sel_channels == GkAudioChannels::Mono) {
-                    switch (index) {
-                        case GK_AUDIO_BITRATE_8_IDX:
-                            it->pref_audio_format = AL_FORMAT_MONO8;
-                            return;
-                        case GK_AUDIO_BITRATE_16_IDX:
-                            it->pref_audio_format = AL_FORMAT_MONO16;
-                            return;
-                        case GK_AUDIO_BITRATE_24_IDX:
-                            it->pref_audio_format = AL_FORMAT_MONO_FLOAT32;
-                            return;
-                        default:
-                            std::throw_with_nested(std::runtime_error(tr("ERROR: Unable to accurately determine bit-rate for input audio device!").toStdString()));
-                    }
-                } else if (it->sel_channels == GkAudioChannels::Stereo) {
-                    switch (index) {
-                        case GK_AUDIO_BITRATE_8_IDX:
-                            it->pref_audio_format = AL_FORMAT_STEREO8;
-                            return;
-                        case GK_AUDIO_BITRATE_16_IDX:
-                            it->pref_audio_format = AL_FORMAT_STEREO16;
-                            return;
-                        case GK_AUDIO_BITRATE_24_IDX:
-                            it->pref_audio_format = AL_FORMAT_STEREO_FLOAT32;
-                            return;
-                        default:
-                            std::throw_with_nested(std::runtime_error(tr("ERROR: Unable to accurately determine bit-rate for input audio device!").toStdString()));
-                    }
-                }
+                const auto input_audio_dev_format = gkAudioDevices->calcAudioDevFormat(it->sel_channels, index);
+                it->pref_audio_format = input_audio_dev_format;
+                return;
             } else {
                 ++it;
             }

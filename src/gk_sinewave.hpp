@@ -44,6 +44,7 @@
 #include "src/defines.hpp"
 #include "src/dek_db.hpp"
 #include "src/gk_logger.hpp"
+#include "src/audio_devices.hpp"
 #include <memory>
 #include <vector>
 #include <string>
@@ -58,20 +59,20 @@ class GkSinewaveOutput : public QObject {
     Q_OBJECT
 
 public:
-    explicit GkSinewaveOutput(const GekkoFyre::Database::Settings::Audio::GkDevice &audio_dev, QPointer<GekkoFyre::GkEventLogger> eventLogger,
+    explicit GkSinewaveOutput(ALCdevice *input_dev, const GekkoFyre::Database::Settings::Audio::GkDevice &audio_info,
+                              QPointer<GekkoFyre::AudioDevices> audioDevices, QPointer<GekkoFyre::GkEventLogger> eventLogger,
                               QObject *parent = nullptr);
     ~GkSinewaveOutput() override;
 
 public slots:
     void playSound(quint32 milliseconds);
 
-private slots:
-    void writeMore();
-
 private:
+    QPointer<GekkoFyre::AudioDevices> gkAudioDevices;
     QPointer<GekkoFyre::GkEventLogger> gkEventLogger;
-    GekkoFyre::Database::Settings::Audio::GkDevice gkAudioDevice;
+    GekkoFyre::Database::Settings::Audio::GkDevice gkAudioInfo;
 
+    ALCdevice *mInputDevice;
     QTimer *timer;
 
 };

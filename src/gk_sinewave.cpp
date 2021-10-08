@@ -60,11 +60,16 @@ using namespace Logging;
  * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
  * @param parent
  */
-GkSinewaveOutput::GkSinewaveOutput(const GkDevice &audio_dev, QPointer<GekkoFyre::GkEventLogger> eventLogger,
-                                   QObject *parent) : QObject(parent)
+GkSinewaveOutput::GkSinewaveOutput(ALCdevice *input_dev, const GkDevice &audio_info, QPointer<GekkoFyre::AudioDevices> audioDevices,
+                                   QPointer<GekkoFyre::GkEventLogger> eventLogger, QObject *parent) : QObject(parent)
 {
+    mInputDevice = input_dev;
+    gkAudioDevices = std::move(audioDevices);
     gkEventLogger = std::move(eventLogger);
-    gkAudioDevice = audio_dev;
+    gkAudioInfo = audio_info;
+
+    ALuint buffer;
+    alCall(alGenBuffers, 1, &buffer);
 }
 
 GkSinewaveOutput::~GkSinewaveOutput()
@@ -75,14 +80,6 @@ GkSinewaveOutput::~GkSinewaveOutput()
  * @param milliseconds
  */
 void GkSinewaveOutput::playSound(quint32 milliseconds)
-{
-    return;
-}
-
-/**
- * @brief GkSinewaveOutput::writeMore
- */
-void GkSinewaveOutput::writeMore()
 {
     return;
 }

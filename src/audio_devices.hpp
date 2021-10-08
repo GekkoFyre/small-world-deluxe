@@ -65,6 +65,7 @@
 #include <QAudioFormat>
 #include <QAudioDeviceInfo>
 
+#define alCall(function, ...) AudioDevices::alCallImpl(__FILE__, __LINE__, function, __VA_ARGS__)
 #define alcCall(function, device, ...) AudioDevices::alcCallImpl(__FILE__, __LINE__, function, device, __VA_ARGS__)
 
 namespace GekkoFyre {
@@ -88,8 +89,11 @@ public:
                                     const size_t &fft_samples_per_line, const size_t &audio_buf_sampling_length,
                                     const size_t &buf_size);
 
-    static bool checkAlErrors(const std::string &filename, const std::uint_fast32_t line, ALCdevice *device);
+    static bool checkAlErrors(const std::string &filename, const std::uint_fast32_t line);
+    static bool checkAlcErrors(const std::string &filename, const std::uint_fast32_t line, ALCdevice *device);
     QList<GekkoFyre::Database::Settings::Audio::GkDevice> enumerateAudioDevices(const ALCenum param);
+    ALenum calcAudioDevFormat(const Database::Settings::GkAudioChannels &audio_channels, const qint32 &audio_bitrate_idx);
+    ALCint getAudioDevSampleRate(ALCdevice *device);
 
     Database::Settings::GkAudioChannels convAudioChannelsToEnum(const qint32 &num_channels);
 
@@ -100,11 +104,34 @@ public:
      * @author IndieGameDev.net <https://indiegamedev.net/2020/02/15/the-complete-guide-to-openal-with-c-part-1-playing-a-sound/>
      * @return
      */
+    template<typename alFunction, typename... Params>
+    static auto alCallImpl(const char *filename, const std::uint_fast32_t line, alFunction function, Params... params)
+    ->typename std::enable_if_t<!std::is_same_v<void, decltype(function(params...))>, decltype(function(params...))> {
+        auto ret = function(std::forward<Params>(params)...);
+        checkAlErrors(filename, line);
+        return ret;
+    }
+
+    /**
+     * @author IndieGameDev.net <https://indiegamedev.net/2020/02/15/the-complete-guide-to-openal-with-c-part-1-playing-a-sound/>
+     * @return
+     */
+    template<typename alFunction, typename... Params>
+    static auto alCallImpl(const char* filename, const std::uint_fast32_t line, alFunction function, Params... params)
+    ->typename std::enable_if_t<std::is_same_v<void, decltype(function(params...))>, bool> {
+        function(std::forward<Params>(params)...);
+        return checkAlErrors(filename, line);
+    }
+
+    /**
+     * @author IndieGameDev.net <https://indiegamedev.net/2020/02/15/the-complete-guide-to-openal-with-c-part-1-playing-a-sound/>
+     * @return
+     */
     template<typename alcFunction, typename... Params>
     static auto alcCallImpl(const char *filename, const std::uint_fast32_t line, alcFunction function, ALCdevice *device,
                      Params... params)->typename std::enable_if_t<std::is_same_v<void, decltype(function(params...))>, bool> {
         function(std::forward<Params>(params)...);
-        return checkAlErrors(filename, line, device);
+        return checkAlcErrors(filename, line, device);
     }
 
     /**
@@ -115,7 +142,7 @@ public:
     static auto alcCallImpl(const char *filename, const std::uint_fast32_t line, alcFunction function, ReturnType& returnValue,
                      ALCdevice *device, Params... params)->typename std::enable_if_t<!std::is_same_v<void, decltype(function(params...))>, bool>{
         returnValue = function(std::forward<Params>(params)...);
-        return checkAlErrors(filename, line, device);
+        return checkAlcErrors(filename, line, device);
     }
 
 private:

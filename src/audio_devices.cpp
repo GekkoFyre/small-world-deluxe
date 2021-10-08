@@ -245,12 +245,76 @@ float AudioDevices::calcAudioBufferTimeNeeded(const GkAudioChannels &num_channel
  * @param line
  * @return
  */
-bool AudioDevices::checkAlErrors(const std::string &filename, const std::uint_fast32_t line, ALCdevice *device)
+bool AudioDevices::checkAlErrors(const std::string &filename, const std::uint_fast32_t line)
+{
+    ALenum error = alGetError();
+    if (error != AL_NO_ERROR) {
+        std::cerr << tr("***ERROR*** (").toStdString() << filename << ": " << line << ")" << std::endl;
+        switch (error) {
+            case AL_INVALID_NAME: {
+                QString err_invalid_name = tr("AL_INVALID_NAME: a bad name (ID) was passed to an OpenAL function");
+                std::cerr << err_invalid_name.toStdString();
+                QMessageBox::warning(nullptr, tr("Error!"), err_invalid_name, QMessageBox::Ok);
+            }
+
+                break;
+            case AL_INVALID_ENUM: {
+                QString err_invalid_enum = tr("AL_INVALID_ENUM: an invalid enum value was passed to an OpenAL function");
+                std::cerr << err_invalid_enum.toStdString();
+                QMessageBox::warning(nullptr, tr("Error!"), err_invalid_enum, QMessageBox::Ok);
+            }
+                break;
+            case AL_INVALID_VALUE: {
+                QString err_invalid_value = tr("AL_INVALID_VALUE: an invalid value was passed to an OpenAL function");
+                std::cerr << err_invalid_value.toStdString();
+                QMessageBox::warning(nullptr, tr("Error!"), err_invalid_value, QMessageBox::Ok);
+            }
+
+                break;
+            case AL_INVALID_OPERATION: {
+                QString err_invalid_operation = tr("AL_INVALID_OPERATION: the requested operation is not valid");
+                std::cerr << err_invalid_operation.toStdString();
+                QMessageBox::warning(nullptr, tr("Error!"), err_invalid_operation, QMessageBox::Ok);
+            }
+
+                break;
+            case AL_OUT_OF_MEMORY: {
+                QString err_out_of_memory = tr("AL_OUT_OF_MEMORY: the requested operation resulted in OpenAL running out of memory");
+                std::cerr << err_out_of_memory.toStdString();
+                QMessageBox::warning(nullptr, tr("Error!"), err_out_of_memory, QMessageBox::Ok);
+            }
+
+                break;
+            default: {
+                QString err_unknown = tr("UNKNOWN AL ERROR: ");
+                std::cerr << err_unknown.toStdString() << error;
+                QMessageBox::warning(nullptr, tr("Error!"), err_unknown, QMessageBox::Ok);
+            }
+
+                break;
+        }
+
+        std::cerr << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * @brief AudioDevices::checkAlcErrors A function to make OpenAL error detection a little bit easier.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>,
+ * IndieGameDev.net <https://indiegamedev.net/2020/02/15/the-complete-guide-to-openal-with-c-part-1-playing-a-sound/>
+ * @param filename
+ * @param line
+ * @return
+ */
+bool AudioDevices::checkAlcErrors(const std::string &filename, const std::uint_fast32_t line, ALCdevice *device)
 {
     ALCenum error = alcGetError(device);
     if (error != ALC_NO_ERROR) {
         std::cerr << tr("***ERROR*** (").toStdString() << filename << ": " << line << ")" << std::endl;
-        switch(error) {
+        switch (error) {
             case ALC_INVALID_VALUE: {
                 QString err_invalid_value = tr("ALC_INVALID_VALUE: an invalid value was passed to an OpenAL function");
                 std::cerr << err_invalid_value.toStdString();
@@ -272,16 +336,14 @@ bool AudioDevices::checkAlErrors(const std::string &filename, const std::uint_fa
 
                 break;
             case ALC_INVALID_ENUM: {
-                QString err_invalid_enum = tr(
-                        "ALC_INVALID_ENUM: an unknown enum value was passed to an OpenAL function");
+                QString err_invalid_enum = tr("ALC_INVALID_ENUM: an unknown enum value was passed to an OpenAL function");
                 std::cerr << err_invalid_enum.toStdString();
                 QMessageBox::warning(nullptr, tr("Error!"), err_invalid_enum, QMessageBox::Ok);
             }
 
                 break;
             case ALC_OUT_OF_MEMORY: {
-                QString err_out_of_memory = tr(
-                        "ALC_OUT_OF_MEMORY: an unknown enum value was passed to an OpenAL function");
+                QString err_out_of_memory = tr("ALC_OUT_OF_MEMORY: an unknown enum value was passed to an OpenAL function");
                 std::cerr << err_out_of_memory.toStdString();
                 QMessageBox::warning(nullptr, tr("Error!"), err_out_of_memory, QMessageBox::Ok);
             }
@@ -349,6 +411,57 @@ QList<GkDevice> AudioDevices::enumerateAudioDevices(const ALCenum param) {
     // https://github.com/kcat/openal-soft/issues/350
 
     return device_list;
+}
+
+/**
+ * @brief AudioDevices::calcAudioDevFormat will calculate an audio format that's applicable to the given audio device.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param audio_channels The number of audio channels (i.e. typically either Mono or Stereo).
+ * @param audio_bitrate_idx See, `ui->comboBox_input_audio_dev_bitrate()`, under, `Ui::DialogSettings()`.
+ * @return The calculated audio format applicable to the given audio device.
+ */
+ALenum AudioDevices::calcAudioDevFormat(const Settings::GkAudioChannels &audio_channels, const qint32 &audio_bitrate_idx)
+{
+    if (audio_channels == GkAudioChannels::Mono) {
+        switch (audio_bitrate_idx) {
+            case GK_AUDIO_BITRATE_8_IDX:
+                return AL_FORMAT_MONO8;
+            case GK_AUDIO_BITRATE_16_IDX:
+                return AL_FORMAT_MONO16;
+            case GK_AUDIO_BITRATE_24_IDX:
+                return AL_FORMAT_MONO_FLOAT32;
+            default:
+                std::throw_with_nested(std::runtime_error(tr("ERROR: Unable to accurately determine bit-rate for input audio device!").toStdString()));
+        }
+    } else if (audio_channels == GkAudioChannels::Stereo) {
+        switch (audio_bitrate_idx) {
+            case GK_AUDIO_BITRATE_8_IDX:
+                return AL_FORMAT_STEREO8;
+            case GK_AUDIO_BITRATE_16_IDX:
+                return AL_FORMAT_STEREO16;
+            case GK_AUDIO_BITRATE_24_IDX:
+                return AL_FORMAT_STEREO_FLOAT32;
+            default:
+                std::throw_with_nested(std::runtime_error(tr("ERROR: Unable to accurately determine bit-rate for input audio device!").toStdString()));
+        }
+    }
+
+    return 0;
+}
+
+/**
+ * @brief AudioDevices::getAudioDevSampleRate obtains the sampling rate for the (usually output) audio device, with the
+ * latter being either chosen by the end-user or appropriated from the system as the default device.
+ * @author Phobos A. D'thorga <phobos.gekko@gekkofyre.io>
+ * @param device The output audio device to query in question.
+ * @return The sampling rate of the given output audio device.
+ */
+ALCint AudioDevices::getAudioDevSampleRate(ALCdevice *device)
+{
+    ALCint srate = 0;
+    alcGetIntegerv(device, ALC_FREQUENCY, 1, &srate);
+
+    return srate;
 }
 
 /**

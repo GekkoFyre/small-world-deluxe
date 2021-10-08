@@ -508,6 +508,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                     QList<GkDevice>::iterator it = gkSysOutputAudioDevs.begin();
                     while (it != gkSysOutputAudioDevs.end()) {
                         if (it->audio_dev_str == output_audio_device_saved) {
+                            it->pref_sample_rate = gkAudioDevices->getAudioDevSampleRate(mOutputDevice);
                             it->is_enabled = true;
                             break;
                         } else {

@@ -216,7 +216,7 @@ namespace GekkoFyre {
 //
 // Settings Dialog
 //
-#define GK_AUDIO_DEVS_STR_LENGTH (44)
+#define GK_AUDIO_DEVS_STR_LENGTH (40)
 
 #define GK_AUDIO_SAMPLE_RATE_8000_IDX (0)
 #define GK_AUDIO_SAMPLE_RATE_11025_IDX (1)
